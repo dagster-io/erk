@@ -334,7 +334,7 @@ def test_fastapi_endpoint(client):
 - subprocess: Shell interpretation issues, PATH dependencies
 - Test clients: Direct Python invocation, no shell quirks
 
-**Rule**: Always use appropriate test clients. Only use subprocess for true end-to-end integration tests (Layer 5).
+**Rule**: Always use appropriate test clients. Only use subprocess for true end-to-end integration tests (Layer 5 "smoke").
 
 ---
 

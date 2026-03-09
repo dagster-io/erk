@@ -19,17 +19,17 @@ description:
 This skill provides a **defense-in-depth testing strategy** with five layers for Python applications:
 
 ```
-┌─────────────────────────────────────────┐
-│  Layer 5: Business Logic Integration Tests (5%)  │  ← Smoke tests over real system
-├─────────────────────────────────────────┤
-│  Layer 4: Business Logic Tests (70%)   │  ← Tests over fakes (MOST TESTS)
-├─────────────────────────────────────────┤
-│  Layer 3: Pure Unit Tests (10%)        │  ← Zero dependencies, isolated testing
-├─────────────────────────────────────────┤
-│  Layer 2: Integration Sanity Tests (10%)│  ← Fast validation with mocking
-├─────────────────────────────────────────┤
-│  Layer 1: Fake Infrastructure Tests (5%)│  ← Verify test doubles work
-└─────────────────────────────────────────┘
+┌─────────────────────────────────────────────────┐
+│  Layer 5 "smoke": Business Logic Integration Tests (5%)  │  ← Smoke tests over real system
+├─────────────────────────────────────────────────┤
+│  Layer 4 "logic": Business Logic Tests (70%)             │  ← Tests over fakes (MOST TESTS)
+├─────────────────────────────────────────────────┤
+│  Layer 3 "pure": Pure Unit Tests (10%)                   │  ← Zero dependencies, isolated testing
+├─────────────────────────────────────────────────┤
+│  Layer 2 "real-sanity": Integration Sanity Tests (10%)   │  ← Fast validation with mocking
+├─────────────────────────────────────────────────┤
+│  Layer 1 "fake-check": Fake Infrastructure Tests (5%)    │  ← Verify test doubles work
+└─────────────────────────────────────────────────┘
 ```
 
 **Philosophy**: Test business logic extensively over fast in-memory fakes. Use real implementations sparingly for integration validation.
@@ -95,11 +95,11 @@ This skill provides a **defense-in-depth testing strategy** with five layers for
 
 **Contents**:
 
-- Layer 1: Unit tests of fakes (verify test infrastructure)
-- Layer 2: Integration sanity tests with mocking (quick validation)
-- Layer 3: Pure unit tests (zero dependencies, isolated testing)
-- Layer 4: Business logic over fakes (majority of tests)
-- Layer 5: Business logic integration tests (smoke tests over real systems)
+- Layer 1 "fake-check": Unit tests of fakes (verify test infrastructure)
+- Layer 2 "real-sanity": Integration sanity tests with mocking (quick validation)
+- Layer 3 "pure": Pure unit tests (zero dependencies, isolated testing)
+- Layer 4 "logic": Business logic over fakes (majority of tests)
+- Layer 5 "smoke": Business logic integration tests (smoke tests over real systems)
 - Decision tree: where should my test go?
 - Test distribution examples
 
@@ -244,7 +244,7 @@ This skill provides a **defense-in-depth testing strategy** with five layers for
 
 ```
 ┌──────────────────────────────────────────────────────────────┐
-│ Layer 5: Business Logic Integration Tests (5%)               │
+│ Layer 5 "smoke": Business Logic Integration Tests (5%)       │
 │ ┌──────────────────────────────────────────────────────────┐ │
 │ │ Real database, filesystem, APIs, actual subprocess        │ │
 │ │ Purpose: Smoke tests, catch integration issues           │ │
@@ -255,7 +255,7 @@ This skill provides a **defense-in-depth testing strategy** with five layers for
 └──────────────────────────────────────────────────────────────┘
 
 ┌──────────────────────────────────────────────────────────────┐
-│ Layer 4: Business Logic Tests (70%) ← MOST TESTS HERE       │
+│ Layer 4 "logic": Business Logic Tests (70%) ← MOST TESTS    │
 │ ┌──────────────────────────────────────────────────────────┐ │
 │ │ FakeDatabase, FakeApiClient, FakeFileSystem              │ │
 │ │ Purpose: Test features and business logic extensively    │ │
@@ -266,7 +266,7 @@ This skill provides a **defense-in-depth testing strategy** with five layers for
 └──────────────────────────────────────────────────────────────┘
 
 ┌──────────────────────────────────────────────────────────────┐
-│ Layer 3: Pure Unit Tests (10%)                               │
+│ Layer 3 "pure": Pure Unit Tests (10%)                        │
 │ ┌──────────────────────────────────────────────────────────┐ │
 │ │ Zero dependencies, no fakes, no mocks                    │ │
 │ │ Purpose: Test isolated utilities and helpers             │ │
@@ -277,7 +277,7 @@ This skill provides a **defense-in-depth testing strategy** with five layers for
 └──────────────────────────────────────────────────────────────┘
 
 ┌──────────────────────────────────────────────────────────────┐
-│ Layer 2: Integration Sanity Tests (10%)                      │
+│ Layer 2 "real-sanity": Integration Sanity Tests (10%)        │
 │ ┌──────────────────────────────────────────────────────────┐ │
 │ │ RealDatabase with mocked connections                     │ │
 │ │ Purpose: Quick validation, catch syntax errors           │ │
@@ -288,7 +288,7 @@ This skill provides a **defense-in-depth testing strategy** with five layers for
 └──────────────────────────────────────────────────────────────┘
 
 ┌──────────────────────────────────────────────────────────────┐
-│ Layer 1: Fake Infrastructure Tests (5%)                      │
+│ Layer 1 "fake-check": Fake Infrastructure Tests (5%)         │
 │ ┌──────────────────────────────────────────────────────────┐ │
 │ │ Test FakeDatabase itself                                 │ │
 │ │ Purpose: Verify test infrastructure is reliable          │ │
@@ -310,26 +310,26 @@ This skill provides a **defense-in-depth testing strategy** with five layers for
 
 ## Layer Selection Guide
 
-**Distinguishing Layer 3 (Pure Unit) from Layer 4 (Business Logic):**
+**Distinguishing Layer 3 "pure" from Layer 4 "logic":**
 
-- **Layer 3 (Pure Unit Tests)**: ZERO dependencies - no fakes, no mocks, no external state
+- **Layer 3 "pure" (Pure Unit Tests)**: ZERO dependencies - no fakes, no mocks, no external state
   - Testing string utilities: `sanitize_branch_name("feat/FOO")` → `"feat-foo"`
   - Testing parsers: `parse_git_status("## main")` → `{"branch": "main"}`
   - Testing data structures: `LinkedList.append()` without any external dependencies
 
-- **Layer 4 (Business Logic Tests)**: Uses fakes for external dependencies
+- **Layer 4 "logic" (Business Logic Tests)**: Uses fakes for external dependencies
   - Testing commands: `create_worktree(fake_git, name="feature")`
   - Testing workflows: `submit_pr(fake_gh, fake_git, ...)`
   - Testing business logic that coordinates multiple integrations
 
-**If your test imports a Fake\*, it belongs in Layer 4, not Layer 3.**
+**If your test imports a Fake\*, it belongs in Layer 4 "logic", not Layer 3 "pure".**
 
 ## Default Testing Strategy
 
 **When in doubt**:
 
-- Write test over fakes (Layer 4) for business logic
-- Write pure unit test (Layer 3) for utilities/helpers with no dependencies
+- Write test over fakes (Layer 4 "logic") for business logic
+- Write pure unit test (Layer 3 "pure") for utilities/helpers with no dependencies
 - Use `pytest` with fixtures
 - Use `tmp_path` fixture (not hardcoded paths)
 - Follow examples in `quick-reference.md`
