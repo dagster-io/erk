@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "plan_id": 9113,
+  "sessions": [
+    {
+      "session_id": "98cd6a0a-375b-4539-b2dc-2c596b1a4266",
+      "stage": "impl",
+      "source": "remote",
+      "uploaded_at": "2026-03-09T22:55:35.236550+00:00",
+      "files": [
+        "impl-98cd6a0a-375b-4539-b2dc-2c596b1a4266-98cd6a0a-375b-4539-b2dc-2c596b1a4266-part1.xml",
+        "impl-98cd6a0a-375b-4539-b2dc-2c596b1a4266-98cd6a0a-375b-4539-b2dc-2c596b1a4266-part2.xml",
+        "impl-98cd6a0a-375b-4539-b2dc-2c596b1a4266-98cd6a0a-375b-4539-b2dc-2c596b1a4266-part3.xml"
+      ],
+      "user_turns": 2,
+      "duration_minutes": 3,
+      "raw_size_kb": 118,
+      "xml_size_kb": 47,
+      "git_branch": "plnd/remove-default-mcp-03-09-2250"
+    }
+  ]
+}
