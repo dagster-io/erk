@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "plan_id": 9066,
+  "sessions": [
+    {
+      "session_id": "296aadd4-4317-452e-8852-c76fc8dae4f2",
+      "stage": "impl",
+      "source": "local",
+      "uploaded_at": "2026-03-09T15:49:19.290158+00:00",
+      "files": [
+        "impl-296aadd4-4317-452e-8852-c76fc8dae4f2-296aadd4-4317-452e-8852-c76fc8dae4f2-part1.xml",
+        "impl-296aadd4-4317-452e-8852-c76fc8dae4f2-296aadd4-4317-452e-8852-c76fc8dae4f2-part2.xml",
+        "impl-296aadd4-4317-452e-8852-c76fc8dae4f2-296aadd4-4317-452e-8852-c76fc8dae4f2-part3.xml"
+      ],
+      "user_turns": 2,
+      "duration_minutes": 2,
+      "raw_size_kb": 154,
+      "xml_size_kb": 38,
+      "git_branch": "plnd/add-a-new-tool-to-the-erk-03-09-1542"
+    }
+  ]
+}
