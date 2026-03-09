@@ -38,20 +38,28 @@ def mcp_exposed(*, name: str, description: str) -> Callable[[click.Command], cli
     return decorator
 
 
-def discover_mcp_commands(group: click.Command) -> list[tuple[click.Command, McpMeta]]:
+def discover_mcp_commands(
+    group: click.Command,
+    *,
+    _parent_path: tuple[str, ...],
+) -> list[tuple[click.Command, McpMeta, tuple[str, ...]]]:
     """Walk the Click command tree and return commands with MCP metadata.
 
     Args:
         group: Root Click group to walk
+        _parent_path: Internal accumulator for the command path (do not pass)
 
     Returns:
-        List of (command, McpMeta) tuples for all @mcp_exposed commands
+        List of (command, McpMeta, command_path) tuples for all @mcp_exposed commands.
+        command_path is the tuple of Click command names from root to the command
+        (excluding the root group itself), e.g. ("pr", "list") for ``erk pr list``.
     """
-    result: list[tuple[click.Command, McpMeta]] = []
+    result: list[tuple[click.Command, McpMeta, tuple[str, ...]]] = []
     meta = _MCP_REGISTRY.get(group)
     if meta is not None:
-        result.append((group, meta))
+        result.append((group, meta, _parent_path))
     if isinstance(group, click.Group):
         for cmd in group.commands.values():
-            result.extend(discover_mcp_commands(cmd))
+            child_path = (*_parent_path, cmd.name) if cmd.name is not None else _parent_path
+            result.extend(discover_mcp_commands(cmd, _parent_path=child_path))
     return result

@@ -1,12 +1,16 @@
 """Command to fetch and display a single plan."""
 
+from dataclasses import dataclass
 from datetime import datetime
+from typing import Any
 
 import click
 
 from erk.cli.github_parsing import parse_issue_identifier
 from erk.cli.repo_resolution import get_remote_github, resolved_repo_option
 from erk.core.context import ErkContext
+from erk_shared.agentclick.json_command import json_command
+from erk_shared.agentclick.mcp_exposed import mcp_exposed
 from erk_shared.context.types import NoRepoSentinel
 from erk_shared.core.typing_utils import narrow_to_literal
 from erk_shared.gateway.github.issues.types import IssueNotFound
@@ -40,6 +44,53 @@ from erk_shared.gateway.github.types import GitHubRepoId
 from erk_shared.output.output import user_output
 from erk_shared.plan_store.conversion import github_issue_to_plan
 from erk_shared.plan_store.types import Plan, PlanNotFound
+
+
+@dataclass(frozen=True)
+class PrViewResult:
+    """JSON result for erk pr view."""
+
+    plan_id: str
+    title: str
+    state: str
+    url: str | None
+    labels: list[str]
+    assignees: list[str]
+    created_at: str
+    updated_at: str
+    objective_id: int | None
+    branch: str | None
+    header_fields: dict[str, object]
+    body: str | None
+
+    def to_json_dict(self) -> dict[str, Any]:
+        result: dict[str, Any] = {
+            "plan_id": self.plan_id,
+            "title": self.title,
+            "state": self.state,
+            "url": self.url,
+            "labels": self.labels,
+            "assignees": self.assignees,
+            "created_at": self.created_at,
+            "updated_at": self.updated_at,
+            "objective_id": self.objective_id,
+            "branch": self.branch,
+            "header_fields": _serialize_header_fields(self.header_fields),
+        }
+        if self.body is not None:
+            result["body"] = self.body
+        return result
+
+
+def _serialize_header_fields(fields: dict[str, object]) -> dict[str, object]:
+    """Serialize header fields, converting datetime values to ISO 8601 strings."""
+    result: dict[str, object] = {}
+    for key, value in fields.items():
+        if isinstance(value, datetime):
+            result[key] = value.isoformat()
+        else:
+            result[key] = value
+    return result
 
 
 def _format_value(value: object) -> str:
@@ -222,6 +273,14 @@ def _format_header_section(header_info: dict[str, object], *, plan_url: str | No
     return lines
 
 
+@mcp_exposed(
+    name="pr_view",
+    description=(
+        "View a specific plan's metadata, header info, and body content."
+        " Returns plan title, state, labels, timestamps, and header metadata."
+    ),
+)
+@json_command(exclude_json_input=frozenset({"repo_id"}), output_types=(PrViewResult,))
 @click.command("view")
 @click.argument("identifier", type=str, required=False, default=None)
 @click.option("--full", "-f", is_flag=True, help="Show full plan body")
@@ -233,7 +292,8 @@ def pr_view(
     *,
     full: bool,
     repo_id: GitHubRepoId,
-) -> None:
+    json_mode: bool,
+) -> PrViewResult | None:
     """Fetch and display a plan by identifier.
 
     IDENTIFIER can be a plain number (e.g., "42") or a GitHub issue URL
@@ -308,7 +368,24 @@ def pr_view(
     else:
         header_info = plan.header_fields
 
+    if json_mode:
+        return PrViewResult(
+            plan_id=plan_id,
+            title=plan.title,
+            state=plan.state.value,
+            url=plan.url,
+            labels=plan.labels,
+            assignees=plan.assignees,
+            created_at=plan.created_at.isoformat(),
+            updated_at=plan.updated_at.isoformat(),
+            objective_id=plan.objective_id,
+            branch=str(header_info[BRANCH_NAME]) if BRANCH_NAME in header_info else None,
+            header_fields=header_info,
+            body=plan.body if full else None,
+        )
+
     _display_plan(plan, plan_id=plan_id, header_info=header_info, full=full)
+    return None
 
 
 def _display_plan(

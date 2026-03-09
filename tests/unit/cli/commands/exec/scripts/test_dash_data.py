@@ -3,15 +3,14 @@
 import json
 from datetime import UTC, datetime
 
-from erk.cli.commands.exec.scripts.dash_data import _serialize_plan_row
-from erk.tui.data.types import PlanRowData
+from erk.tui.data.types import PlanRowData, serialize_plan_row
 from erk_shared.gateway.plan_data_provider.fake import make_plan_row
 
 
 def test_serialize_plan_row_basic() -> None:
     """Test basic serialization of PlanRowData to dict."""
     row = make_plan_row(123, "Test Plan")
-    result = _serialize_plan_row(row)
+    result = serialize_plan_row(row)
 
     assert result["plan_id"] == 123
     assert result["plan_url"] == "https://github.com/test/repo/issues/123"
@@ -84,7 +83,7 @@ def test_serialize_plan_row_datetime_fields() -> None:
         status_display="-",
     )
 
-    result = _serialize_plan_row(row)
+    result = serialize_plan_row(row)
 
     assert result["last_local_impl_at"] == "2025-06-15T12:30:00+00:00"
     assert result["last_remote_impl_at"] == "2025-06-15T12:30:00+00:00"
@@ -152,7 +151,7 @@ def test_serialize_plan_row_tuple_to_list() -> None:
         status_display="-",
     )
 
-    result = _serialize_plan_row(row)
+    result = serialize_plan_row(row)
 
     assert isinstance(result["log_entries"], list)
     assert len(result["log_entries"]) == 1
@@ -169,7 +168,7 @@ def test_serialize_plan_row_with_pr_data() -> None:
         pr_title="Fix something",
         pr_state="OPEN",
     )
-    result = _serialize_plan_row(row)
+    result = serialize_plan_row(row)
 
     assert result["pr_number"] == 200
     assert result["pr_url"] == "https://github.com/test/repo/pull/200"
@@ -180,7 +179,7 @@ def test_serialize_plan_row_with_pr_data() -> None:
 def test_serialize_plan_row_all_fields_present() -> None:
     """Test that all PlanRowData fields appear in serialized output."""
     row = make_plan_row(1, "All Fields")
-    result = _serialize_plan_row(row)
+    result = serialize_plan_row(row)
 
     expected_fields = {
         "plan_id",
@@ -307,7 +306,7 @@ def test_serialize_plan_row_json_roundtrip() -> None:
         status_display="-",
     )
 
-    result = _serialize_plan_row(row)
+    result = serialize_plan_row(row)
     json_str = json.dumps(result)
     parsed = json.loads(json_str)
 

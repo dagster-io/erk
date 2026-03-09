@@ -14,8 +14,6 @@ from erk_mcp.server import (
     _run_erk,
     _run_erk_json,
     create_mcp,
-    plan_list,
-    plan_view,
 )
 
 
@@ -72,72 +70,8 @@ class TestRunErk:
             _run_erk(["exec", "dash-data", "--state", "open"])
 
 
-class TestPlanList:
-    """Tests for plan_list MCP tool."""
-
-    @patch("erk_mcp.server._run_erk")
-    def test_without_state_filter(self, mock_run_erk: patch) -> None:
-        mock_run_erk.return_value = subprocess.CompletedProcess(
-            args=[], returncode=0, stdout='[{"id": 1}]', stderr=""
-        )
-
-        result = plan_list(state=None)
-
-        assert result == '[{"id": 1}]'
-        mock_run_erk.assert_called_once_with(["exec", "dash-data"])
-
-    @patch("erk_mcp.server._run_erk")
-    def test_with_state_filter(self, mock_run_erk: patch) -> None:
-        mock_run_erk.return_value = subprocess.CompletedProcess(
-            args=[], returncode=0, stdout='[{"id": 1, "state": "open"}]', stderr=""
-        )
-
-        result = plan_list(state="open")
-
-        assert result == '[{"id": 1, "state": "open"}]'
-        mock_run_erk.assert_called_once_with(["exec", "dash-data", "--state", "open"])
-
-    @patch("erk_mcp.server._run_erk")
-    def test_with_closed_state(self, mock_run_erk: patch) -> None:
-        mock_run_erk.return_value = subprocess.CompletedProcess(
-            args=[], returncode=0, stdout="[]", stderr=""
-        )
-
-        result = plan_list(state="closed")
-
-        assert result == "[]"
-        mock_run_erk.assert_called_once_with(["exec", "dash-data", "--state", "closed"])
-
-
-class TestPlanView:
-    """Tests for plan_view MCP tool."""
-
-    @patch("erk_mcp.server._run_erk")
-    def test_returns_plan_info(self, mock_run_erk: patch) -> None:
-        mock_run_erk.return_value = subprocess.CompletedProcess(
-            args=[], returncode=0, stdout='{"title": "My Plan", "body": "# Plan"}', stderr=""
-        )
-
-        result = plan_view(plan_id=42)
-
-        assert result == '{"title": "My Plan", "body": "# Plan"}'
-        mock_run_erk.assert_called_once_with(["exec", "get-plan-info", "42", "--include-body"])
-
-    @patch("erk_mcp.server._run_erk")
-    def test_converts_plan_id_to_string(self, mock_run_erk: patch) -> None:
-        mock_run_erk.return_value = subprocess.CompletedProcess(
-            args=[], returncode=0, stdout="{}", stderr=""
-        )
-
-        plan_view(plan_id=100)
-
-        args = mock_run_erk.call_args[0][0]
-        assert args[2] == "100"
-        assert isinstance(args[2], str)
-
-
 class TestRunErkJson:
-    """Tests for _run_erk_json subprocess wrapper."""
+    """Tests for _run_erk_json subprocess wrapper with command path tuples."""
 
     @patch("erk_mcp.server.subprocess.run")
     def test_pipes_json_stdin_with_json_flag(self, mock_run: patch) -> None:
@@ -148,7 +82,7 @@ class TestRunErkJson:
             stderr="",
         )
 
-        result = _run_erk_json("one-shot", {"prompt": "Fix bug"})
+        result = _run_erk_json(("one-shot",), {"prompt": "Fix bug"})
 
         assert result == '{"success": true}'
         mock_run.assert_called_once_with(
@@ -168,9 +102,29 @@ class TestRunErkJson:
             stderr="",
         )
 
-        result = _run_erk_json("one-shot", {"prompt": "Do something"})
+        result = _run_erk_json(("one-shot",), {"prompt": "Do something"})
 
         assert result == '{"success": false, "error_type": "auth_required"}'
+
+    @patch("erk_mcp.server.subprocess.run")
+    def test_subcommand_path_expands_correctly(self, mock_run: patch) -> None:
+        mock_run.return_value = subprocess.CompletedProcess(
+            args=["erk", "pr", "list", "--json"],
+            returncode=0,
+            stdout='{"success": true, "plans": []}',
+            stderr="",
+        )
+
+        result = _run_erk_json(("pr", "list"), {"state": "open"})
+
+        assert result == '{"success": true, "plans": []}'
+        mock_run.assert_called_once_with(
+            ["erk", "pr", "list", "--json"],
+            input='{"state": "open"}',
+            capture_output=True,
+            text=True,
+            check=False,
+        )
 
 
 class TestJsonCommandTool:
@@ -183,7 +137,7 @@ class TestJsonCommandTool:
         )
         tool = JsonCommandTool(
             name="test_tool",
-            cli_command="test-cmd",
+            cli_command_path=("test-cmd",),
             description="Test",
             parameters={"type": "object", "properties": {"a": {"type": "string"}}},
         )
@@ -200,7 +154,7 @@ class TestJsonCommandTool:
         )
         tool = JsonCommandTool(
             name="test_tool",
-            cli_command="test-cmd",
+            cli_command_path=("test-cmd",),
             description="Test",
             parameters={"type": "object", "properties": {"a": {"type": "string"}}},
         )
@@ -217,7 +171,7 @@ class TestJsonCommandTool:
         )
         tool = JsonCommandTool(
             name="test_tool",
-            cli_command="test-cmd",
+            cli_command_path=("test-cmd",),
             description="Test",
             parameters={"type": "object", "properties": {"a": {"type": "string"}}},
         )
@@ -228,13 +182,13 @@ class TestJsonCommandTool:
         assert call_args[1]["input"] == '{"prompt": "hello", "model": "opus", "dry_run": true}'
 
     @patch("erk_mcp.server.subprocess.run")
-    def test_uses_correct_cli_command(self, mock_run: patch) -> None:
+    def test_uses_correct_cli_command_path(self, mock_run: patch) -> None:
         mock_run.return_value = subprocess.CompletedProcess(
             args=[], returncode=0, stdout='{"success": true}', stderr=""
         )
         tool = JsonCommandTool(
             name="my_tool",
-            cli_command="my-command",
+            cli_command_path=("my-command",),
             description="Test",
             parameters={"type": "object", "properties": {"x": {"type": "string"}}},
         )
@@ -249,15 +203,57 @@ class TestJsonCommandTool:
             check=False,
         )
 
+    @patch("erk_mcp.server.subprocess.run")
+    def test_subcommand_path_in_tool(self, mock_run: patch) -> None:
+        mock_run.return_value = subprocess.CompletedProcess(
+            args=[], returncode=0, stdout='{"success": true}', stderr=""
+        )
+        tool = JsonCommandTool(
+            name="pr_list",
+            cli_command_path=("pr", "list"),
+            description="List plans",
+            parameters={"type": "object", "properties": {}},
+        )
+
+        asyncio.run(tool.run({"state": "open"}))
+
+        mock_run.assert_called_once_with(
+            ["erk", "pr", "list", "--json"],
+            input='{"state": "open"}',
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+
     def test_discovered_tools_include_one_shot(self) -> None:
         tools = _build_json_command_tools()
         tool_names = {t.name for t in tools}
         assert "one_shot" in tool_names
 
-    def test_one_shot_tool_has_correct_cli_command(self) -> None:
+    def test_one_shot_tool_has_correct_command_path(self) -> None:
         tools = _build_json_command_tools()
         one_shot_tool = [t for t in tools if t.name == "one_shot"][0]
-        assert one_shot_tool.cli_command == "one-shot"
+        assert one_shot_tool.cli_command_path == ("one-shot",)
+
+    def test_discovered_tools_include_pr_list(self) -> None:
+        tools = _build_json_command_tools()
+        tool_names = {t.name for t in tools}
+        assert "pr_list" in tool_names
+
+    def test_pr_list_tool_has_subcommand_path(self) -> None:
+        tools = _build_json_command_tools()
+        pr_list_tool = [t for t in tools if t.name == "pr_list"][0]
+        assert pr_list_tool.cli_command_path == ("pr", "list")
+
+    def test_discovered_tools_include_pr_view(self) -> None:
+        tools = _build_json_command_tools()
+        tool_names = {t.name for t in tools}
+        assert "pr_view" in tool_names
+
+    def test_pr_view_tool_has_subcommand_path(self) -> None:
+        tools = _build_json_command_tools()
+        pr_view_tool = [t for t in tools if t.name == "pr_view"][0]
+        assert pr_view_tool.cli_command_path == ("pr", "view")
 
 
 class TestCreateMcp:
@@ -282,4 +278,4 @@ class TestCreateMcp:
         tools = asyncio.run(server.list_tools())
         tool_names = {t.name for t in tools}
 
-        assert tool_names == {"plan_list", "plan_view", "one_shot"}
+        assert tool_names == {"pr_list", "pr_view", "one_shot"}

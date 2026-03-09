@@ -50,9 +50,12 @@ def test_output_types_matches_return_annotation() -> None:
         else:
             return_types = _unwrap_return_types(return_annotation)
             declared_types = set(meta.output_types)
-            if return_types != declared_types:
+            # NoneType in the union is allowed (means "command emitted JSON
+            # inline or returned nothing"); strip it before comparing.
+            return_types_no_none = return_types - {type(None)}
+            if return_types_no_none != declared_types:
                 failures.append(
-                    f"{cmd.name}: return annotation types {return_types}"
+                    f"{cmd.name}: return annotation types {return_types_no_none}"
                     f" != output_types {declared_types}"
                 )
 

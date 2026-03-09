@@ -38,4 +38,4 @@ Add to `~/.claude/settings.json`:
 }
 ```
 
-Then start the server before launching Claude Code. The `plan_list`, `plan_view`, and `one_shot` tools will be available in your session.
+Then start the server before launching Claude Code. The `pr_list`, `pr_view`, and `one_shot` tools will be available in your session.
