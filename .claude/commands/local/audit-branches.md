@@ -30,6 +30,27 @@ Parse the JSON output. The structure contains:
 
 If `success` is false, display the error and stop.
 
+### Phase 1b: Cross-Reference Graphite Stack
+
+The `audit-collect` command may miss stale plan branches that are tracked by Graphite but have closed/merged PRs. These appear as "active" in audit-collect but are actually dead.
+
+Run `gt log short --no-interactive` to get the full Graphite stack, then for any `plnd/*` branches NOT already categorized by audit-collect, check their PR state:
+
+```bash
+gh pr list --head "<branch>" --state all --json number,state --jq '.[0] | "\(.number) \(.state)"'
+```
+
+Also check commits ahead: `git rev-list --count master.."<branch>"`
+
+Branches with closed/merged PRs (especially those with only 1 commit ahead — just the plan commit) are safe to delete. Add them to the cleanup list.
+
+For each, untrack from Graphite before deleting:
+```bash
+gt branch untrack "<branch>" --no-interactive --force
+git branch -D "<branch>"
+git push origin --delete "<branch>" 2>/dev/null || true
+```
+
 ### Phase 2: Untrack Stubs
 
 If `stubs_tracked_by_graphite` is non-empty, untrack each stub from Graphite:
@@ -59,6 +80,12 @@ Total: {total_local_branches} local branches, {total_worktrees} worktrees, {tota
 | Branch   | Reason   | Has Remote   |
 | -------- | -------- | ------------ |
 | {branch} | {reason} | {has_remote} |
+
+For `planned-pr-context/*` branches in auto-cleanup: extract the PR number from the branch name (e.g., `planned-pr-context/8939` → PR #8939), check each PR's state via `gh pr view <number> --json state -q .state`, and separate into:
+- **Closed/Merged PR**: safe to delete (include in cleanup)
+- **Open PR**: keep (exclude from cleanup)
+
+Present them as a sub-table showing which are deletable vs kept.
 
 **Closed PR Branches** (if any):
 
