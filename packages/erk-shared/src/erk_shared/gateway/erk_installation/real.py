@@ -79,6 +79,7 @@ class RealErkInstallation(ErkInstallation):
             show_hidden_commands=bool(data.get("show_hidden_commands", False)),
             prompt_learn_on_land=bool(data.get("prompt_learn_on_land", True)),
             cmux_integration=bool(data.get("cmux_integration", False)),
+            anthropic_api_fast_path=bool(data.get("anthropic_api_fast_path", False)),
             interactive_agent=interactive_agent,
         )
 
@@ -138,6 +139,7 @@ class RealErkInstallation(ErkInstallation):
         doc["show_hidden_commands"] = config.show_hidden_commands
         doc["prompt_learn_on_land"] = config.prompt_learn_on_land
         doc["cmux_integration"] = config.cmux_integration
+        doc["anthropic_api_fast_path"] = config.anthropic_api_fast_path
 
         # Add [interactive-agent] section if any non-default values are set
         ic = config.interactive_agent

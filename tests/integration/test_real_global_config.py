@@ -22,6 +22,7 @@ def test_global_config_test_factory_method(tmp_path: Path) -> None:
     assert config.shell_setup_complete is True
     assert config.github_planning is True
     assert config.show_hidden_commands is False
+    assert config.anthropic_api_fast_path is False
 
 
 def test_global_config_test_factory_with_overrides(tmp_path: Path) -> None:
@@ -164,6 +165,56 @@ shell_setup_complete = true
 
     # Should default to False
     assert loaded.show_hidden_commands is False
+
+
+def test_real_config_store_roundtrip_anthropic_api_fast_path(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Test that RealErkInstallation correctly saves and loads anthropic_api_fast_path."""
+    monkeypatch.setattr("pathlib.Path.home", lambda: tmp_path)
+
+    erk_dir = tmp_path / ".erk"
+    erk_dir.mkdir()
+
+    installation = RealErkInstallation()
+
+    config = GlobalConfig(
+        erk_root=tmp_path / "erks",
+        use_graphite=True,
+        shell_setup_complete=True,
+        github_planning=True,
+        anthropic_api_fast_path=True,
+    )
+    installation.save_config(config)
+
+    loaded = installation.load_config()
+    assert loaded.anthropic_api_fast_path is True
+
+    content = (erk_dir / "config.toml").read_text(encoding="utf-8")
+    assert "anthropic_api_fast_path = true" in content
+
+
+def test_real_config_store_loads_anthropic_api_fast_path_default(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Test that RealErkInstallation defaults anthropic_api_fast_path to False if missing."""
+    monkeypatch.setattr("pathlib.Path.home", lambda: tmp_path)
+
+    erk_dir = tmp_path / ".erk"
+    erk_dir.mkdir()
+    (erk_dir / "config.toml").write_text(
+        f"""
+erk_root = "{tmp_path / "erks"}"
+use_graphite = true
+shell_setup_complete = true
+""".strip(),
+        encoding="utf-8",
+    )
+
+    installation = RealErkInstallation()
+    loaded = installation.load_config()
+
+    assert loaded.anthropic_api_fast_path is False
 
 
 def test_create_global_config_creates_parent_directory(tmp_path: Path) -> None:

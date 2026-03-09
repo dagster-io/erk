@@ -72,6 +72,7 @@ Key fields in GlobalConfig (as of this writing):
 - `show_hidden_commands: bool` — expose hidden CLI commands
 - `prompt_learn_on_land: bool` — prompt for learn extraction after landing PRs
 - `cmux_integration: bool` — enable cmux workspace creation on PR checkout
+- `anthropic_api_fast_path: bool` — use Anthropic API directly before falling back to CLI
 - `interactive_agent: InteractiveAgentConfig` — interactive agent settings
 
 ## Related Documentation

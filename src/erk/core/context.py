@@ -657,18 +657,22 @@ def create_context(*, dry_run: bool, script: bool = False, debug: bool = False) 
             graphite_branch_ops = DryRunGraphiteBranchOps(graphite_branch_ops)
         github = DryRunLocalGitHub(github)
 
-    # 10. Create prompt executor (FallbackPromptExecutor: API-first, CLI-fallback)
-    from erk.core.anthropic_prompt_executor import AnthropicApiPromptExecutor
-    from erk.core.fallback_prompt_executor import FallbackPromptExecutor
-
+    # 10. Create prompt executor (optionally API-first via FallbackPromptExecutor)
     cli_executor = create_prompt_executor(
         global_config=global_config,
         console=console,
     )
-    prompt_executor: PromptExecutor = FallbackPromptExecutor(
-        api_executor=AnthropicApiPromptExecutor(),
-        cli_executor=cli_executor,
-    )
+    prompt_executor: PromptExecutor
+    if global_config is not None and global_config.anthropic_api_fast_path:
+        from erk.core.anthropic_prompt_executor import AnthropicApiPromptExecutor
+        from erk.core.fallback_prompt_executor import FallbackPromptExecutor
+
+        prompt_executor = FallbackPromptExecutor(
+            api_executor=AnthropicApiPromptExecutor(),
+            cli_executor=cli_executor,
+        )
+    else:
+        prompt_executor = cli_executor
 
     # 11. Create claude installation and agent launcher
     from erk_shared.gateway.agent_docs.dry_run import DryRunAgentDocs
