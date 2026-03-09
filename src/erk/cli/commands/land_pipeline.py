@@ -200,6 +200,9 @@ def _resolve_current_branch(
         f"No pull request found for branch '{current_branch}'.",
     )
 
+    user_output(
+        click.style("  ✓", fg="green") + f" Target: PR #{pr_details.number} [{current_branch}]"
+    )
     return dataclasses.replace(
         state,
         branch=current_branch,
@@ -242,6 +245,7 @@ def _resolve_pr(
     is_current_branch = current_branch == branch
     worktree_path = ctx.git.worktree.find_worktree_for_branch(main_repo_root, branch)
 
+    user_output(click.style("  ✓", fg="green") + f" Target: PR #{pr_details.number} [{branch}]")
     return dataclasses.replace(
         state,
         branch=branch,
@@ -272,6 +276,9 @@ def _resolve_branch(
     is_current_branch = current_branch == branch_name
     worktree_path = ctx.git.worktree.find_worktree_for_branch(main_repo_root, branch_name)
 
+    user_output(
+        click.style("  ✓", fg="green") + f" Target: PR #{pr_details.number} [{branch_name}]"
+    )
     return dataclasses.replace(
         state,
         branch=branch_name,
@@ -310,6 +317,7 @@ def validate_pr(ctx: ErkContext, state: LandState) -> LandState | LandError:
         f"(state: {state.pr_details.state}).\n"
         f"PR #{state.pr_number} has already been {state.pr_details.state.lower()}.",
     )
+    user_output(click.style("  ✓", fg="green") + f" PR #{state.pr_number} is open")
 
     # PR base is trunk (skip for Graphite)
     if not state.use_graphite:
@@ -322,6 +330,7 @@ def validate_pr(ctx: ErkContext, state: LandState) -> LandState | LandError:
             + "Run: gt restack && gt submit\n"
             + f"Then retry: erk land {state.branch}",
         )
+        user_output(click.style("  ✓", fg="green") + " PR base targets trunk")
 
     # Unresolved comments check
     check_unresolved_comments(ctx, state.main_repo_root, state.pr_number, force=state.force)
@@ -335,6 +344,10 @@ def resolve_plan_id(ctx: ErkContext, state: LandState) -> LandState | LandError:
     Populates: plan_id.
     """
     plan_id = ctx.plan_backend.resolve_plan_id_for_branch(state.main_repo_root, state.branch)
+    if plan_id is not None:
+        user_output(click.style("  ✓", fg="green") + " Plan context resolved")
+    else:
+        user_output(click.style("  No linked plan", dim=True))
     return dataclasses.replace(state, plan_id=plan_id)
 
 
@@ -373,6 +386,8 @@ def resolve_objective(ctx: ErkContext, state: LandState) -> LandState | LandErro
     Populates: objective_number.
     """
     objective_number = get_objective_for_branch(ctx, state.main_repo_root, state.branch)
+    if objective_number is not None:
+        user_output(click.style("  ✓", fg="green") + f" Linked to objective #{objective_number}")
     return dataclasses.replace(state, objective_number=objective_number)
 
 
