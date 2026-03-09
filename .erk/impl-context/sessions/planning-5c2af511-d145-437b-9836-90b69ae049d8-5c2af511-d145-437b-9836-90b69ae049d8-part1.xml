@@ -1,0 +1,893 @@
+<session>
+  <meta branch="plnd/O9009-mcp-one-shot-input-s-03-08-1904" />
+  <meta model="claude-opus-4-6" />
+  <user>In this stack we've added a bunch of generic infrastructure to handle JSON commands; this is what the objective is about. Also MCP infrastructure, etc. I want to move all of the generic framework stuff into a subpackage of erk shared called  agentclick. while I'm not doing it yet but preparing to publish a top-level package in Pyri called agent click that can encapsulate this entire experience of building an agent-optimized CLI with the --jation --schema and an MCP solution, all built in</user>
+  <usage input_tokens="3" cache_creation_input_tokens="14468" cache_read_input_tokens="9738" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 14468}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>I'll explore the codebase to understand the current generic framework infrastructure and plan the move to `src/erk/shared/agentclick/`.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="14468" cache_read_input_tokens="9738" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 14468}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01799K5perHwjumzCTnbGJgA">
+    <param name="description">Explore JSON command infrastructure</param>
+    <param name="subagent_type">Explore</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 976 chars]...derstand what was added
+
+Run `git log --oneline master..HEAD` to see what's in this stack.</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="14468" cache_read_input_tokens="9738" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 14468}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01C7jZxgLdhzbLmqv7p5P65Q">
+    <param name="description">Explore MCP and CLI integration</param>
+    <param name="subagent_type">Explore</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 692 chars]...Search broadly for "mcp", "json_command", "JsonCommand", "schema", "tool" in source files.</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="14468" cache_read_input_tokens="9738" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 14468}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_011VYsRYUgyXJnc7mbr86xbr">
+    <param name="description">Explore shared package structure</param>
+    <param name="subagent_type">Explore</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 695 chars]...any references to "agentclick" or "agent_click" in case there's already something started.</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="14468" cache_read_input_tokens="9738" output_tokens="1207" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 14468, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01C7jZxgLdhzbLmqv7p5P65Q">
+Perfect! Now I have a comprehensive understanding. Let me provide a complete exploration report:
+
+## MCP Server Implementation Exploration Report
+
+I've successfully explored the MCP (Model Context Protocol) server implementation and how it connects to the CLI/JSON command system. Here's what I found:
+
+### 1. **Core Architecture Files**
+
+#### Key Source Files:
+- `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/src/erk/cli/mcp_exposed.py` - Decorator and discovery mechanism
+- `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/src/erk/cli/json_command.py` - JSON command harness with --json and --schema flags
+- `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/src/erk/cli/json_schema.py` - JSON Schema generation for Click commands
+- `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-mcp/src/erk_mcp/server.py` - FastMCP server implementation
+- `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-mcp/src/erk_mcp/__main__.py` - MCP entry point
+
+#### Test Files:
+- `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/tests/unit/cli/test_mcp_cli_sync.py` - Parity tests
+
+### 2. **Decorator-Based Auto-Discovery Pattern**
+
+**@mcp_exposed decorator** (`mcp_exposed.py`):
+- Attaches `McpMeta` (name, description) to Click commands
+- `discover_mcp_commands(cli)` walks the Click tree and returns commands with `_mcp_meta` attribute
+- Applied ABOVE `@json_command` in the decorator stack
+
+**Example:**
+```python
+@mcp_exposed(name="one_shot", description="Submit a task for...")
+@json_command(exclude_json_input=..., output_types=...)
+@click.command("one-shot")
+
+... [137 lines omitted] ...
+
+  - JSON error serialization (catches `UserFacingCliError` and outputs structured JSON)
+  - `--schema` flag outputs full JSON Schema document (input + output + error shapes)
+5. On error: catches `UserFacingCliError` and emits structured error JSON
+- `build_schema_document()` - Full schema document with input/output/error shapes
+- Does NOT raise on non-zero exit (--json guarantees structured error output)
+   - Standard `_run_erk()`: Raises on error (hand-written tools)
+5. **Structured errors**: `--json` guarantees error output flows through even on failure
+  </tool_result>
+  <tool_result tool="toolu_011VYsRYUgyXJnc7mbr86xbr">
+Excellent! Now I have comprehensive information about the codebase. Let me compile my findings:
+
+## Summary: Current State of `erk-shared` Package and Codebase
+
+Based on my thorough exploration of the codebase, here are the key findings:
+
+### 1. **erk-shared Package Structure** (`packages/erk-shared/`)
+
+The `erk-shared` package is a well-organized workspace member containing:
+
+**Core modules:**
+- `config/` - Configuration schema and management
+- `context/` - Context factories, helpers, and testing utilities
+- `core/` - Core business logic (frontmatter, script_writer, health_check_runner, prompt_executor, objective/plan services)
+- `entity_store/` - Entity persistence and state management
+- `gateway/` - Extensive gateway abstraction with 40+ implementations (git, github, graphite, shell, browser, clipboard, http, parallel, time, etc.)
+- `hooks/` - Logging hooks and types
+- `impl_context.py` / `impl_folder.py` - Implementation context and folder handling
+- `learn/` - Learning/training subsystem (extraction, tracking, impl_events)
+- `output/` - Output formatting (next_steps, user/machine output)
+- `plan_store/` - Plan persistence (backend, conversion, PR lifecycle)
+- `scratch/` - Scratch storage (markers, snapshots, session markers)
+- `sessions/` - Session discovery and manifest
+- `stack/` - Stack validation
+- `subprocess_utils.py` - Subprocess wrapper utilities
+
+**Dependencies** (from pyproject.toml):
+- `pyyaml&gt;=6.0`
+- `python-frontmatter&gt;=1.0.0`
+- `click&gt;=8.1.7` (Click is already available!)
+
+... [78 lines omitted] ...
+
+- `src/erk/cli/ensure.py` - `UserFacingCliError` (extends click.ClickException)
+- Error handling with `UserFacingCliError` extends Click's exception system
+  </tool_result>
+  <tool_result tool="toolu_01799K5perHwjumzCTnbGJgA">
+Perfect! Now I have all the information needed. Let me create a comprehensive summary.
+
+## Summary: Generic JSON Command and MCP Infrastructure
+
+Based on my thorough exploration of the codebase, here's the complete picture of the generic JSON command and MCP infrastructure:
+
+### 1. **Core Framework Files (Generic, Reusable)**
+
+**Location:** `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/src/erk/cli/`
+
+These are the **framework foundation** — generic Click decorators/utilities with zero erk-specific dependencies:
+
+1. **`json_command.py`** (256 lines)
+   - `@json_command` decorator: Adds `--json` and `--schema` flags to Click commands
+   - Implements JSON input from stdin mapping
+   - Handles `UserFacingCliError` serialization
+   - Provides `emit_json()` and `emit_json_result()` for output
+   - Stores metadata in `JsonCommandMeta` (exclude_json_input, required_json_input, output_types)
+   - **Generic:** No erk-specific imports; works with any Click command
+
+2. **`json_schema.py`** (256 lines)
+   - `click_param_to_json_schema()`: Converts Click parameters to JSON Schema types
+   - `command_input_schema()`: Generates input schema from Click command parameters
+   - `output_type_schema()`: Generates output schema from result types
+   - `dataclass_to_json_schema()`: Auto-generates schema from dataclass fields
+   - `build_schema_document()`: Assembles complete schema (input + output + error)
+   - Supports two output patterns: `to_json_dict()` method or plain dataclasses
+   - **Generic:** Works with any decorated Click command
+
+3. **`mcp_exposed.py`** (56 lines)
+
+... [184 lines omitted] ...
+
+### 2. **Error Handling (Generic)**
+- `UserFacingCliError`: Click exception with `error_type` field for JSON serialization
+- Caught by `@json_command` wrapper and serialized as `{"success": false, "error_type": "...", "message": "..."}`
+   - `_run_erk_json()`: **Critical pattern** — Runs `erk &lt;command&gt; --json`, pipes params as JSON stdin, **does NOT raise on non-zero exit** (returns stdout with structured error JSON)
+├── ensure.py                # UserFacingCliError (generic)
+- Error handling pattern (`UserFacingCliError`)
+3. **Structured Errors:** `UserFacingCliError` → JSON serialization → agent receives structured error
+6. **Non-Raising JSON:** `_run_erk_json()` returns stdout without raising, agents see structured errors
+- Structured JSON in/out with full error handling
+  </tool_result>
+  <usage input_tokens="4032" cache_creation_input_tokens="3773" cache_read_input_tokens="24206" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3773}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Good exploration results. Let me read the key files that would need to move to understand their dependencies precisely.</assistant>
+  <usage input_tokens="4032" cache_creation_input_tokens="3773" cache_read_input_tokens="24206" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3773}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01TuQPyCcYTnXpD8s39oGFMT">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/src/erk/cli/json_command.py</param>
+  </tool_use>
+  <usage input_tokens="4032" cache_creation_input_tokens="3773" cache_read_input_tokens="24206" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3773}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01TuQPyCcYTnXpD8s39oGFMT">
+     1→"""JSON command harness for CLI commands (input + output + schema).
+     2→
+     3→Adds --json and --schema flags to Click commands with:
+     4→- JSON error serialization (catches UserFacingCliError)
+     5→- JSON input from stdin (when piped, maps keys to Click params)
+     6→- emit_json_result() for structured output via to_json_dict() protocol
+     7→- --schema flag to output JSON Schema for input/output/error shapes
+     8→
+     9→Commands return a result object with to_json_dict() or as a dataclass;
+    10→the decorator auto-serializes it via emit_json_result() when --json is active.
+    11→Commands may also call emit_json()/emit_json_result() inline and return None.
+    12→"""
+    13→
+    14→import dataclasses
+    15→import json
+    16→import sys
+    17→from dataclasses import dataclass
+    18→from typing import Any, overload
+    19→
+    20→import click
+    21→
+    22→from erk.cli.ensure import UserFacingCliError
+    23→
+    24→
+    25→@dataclass(frozen=True)
+    26→class JsonCommandMeta:
+    27→    """Metadata stored on Command objects decorated with @json_command."""
+    28→
+    29→    exclude_json_input: frozenset[str]
+    30→    required_json_input: frozenset[str]
+
+... [226 lines omitted] ...
+
+    54→    """Add --json/--schema flags, JSON input mapping, and JSON error handling to a Click command.
+    66→    - UserFacingCliError is caught and serialized as JSON to stdout
+    67→    - SystemExit and other exceptions pass through unchanged
+    70→    - Outputs JSON Schema document for the command's input/output/error shapes
+    95→        json.JSONDecodeError: If stdin contains invalid JSON
+    96→        ValueError: If stdin JSON is not an object
+   105→        raise ValueError("JSON input must be an object")
+   164→        except json.JSONDecodeError as exc:
+   165→            error_data = {
+   167→                "error_type": "invalid_json_input",
+   170→            click.echo(json.dumps(error_data))
+   172→        except ValueError as exc:
+   173→            error_data = {
+   175→                "error_type": "invalid_json_input",
+   178→            click.echo(json.dumps(error_data))
+   186→                    error_data = {
+   188→                        "error_type": "invalid_json_input",
+   191→                    click.echo(json.dumps(error_data))
+   202→                error_data = {
+   204→                    "error_type": "invalid_json_input",
+   207→                click.echo(json.dumps(error_data))
+   215→        except UserFacingCliError as exc:
+   216→            error_data = {
+   218→                "error_type": exc.error_type,
+   221→            click.echo(json.dumps(error_data))
+   246→        TypeError: If result has no to_json_dict() and is not a dataclass
+   254→        raise TypeError(f"Cannot serialize {type_name}: no to_json_dict() and not a dataclass")
+  </tool_result>
+  <tool_use name="Read" id="toolu_01EM48CqtFf7bYfjhfFuYgao">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/src/erk/cli/json_schema.py</param>
+  </tool_use>
+  <usage input_tokens="4032" cache_creation_input_tokens="3773" cache_read_input_tokens="24206" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3773}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01EM48CqtFf7bYfjhfFuYgao">
+     1→"""JSON Schema generation for @json_command Click commands.
+     2→
+     3→Provides:
+     4→- Click parameter type → JSON Schema type mapping
+     5→- Input schema generation from Click command parameters
+     6→- Output schema generation from result types with json_schema() or plain dataclasses
+     7→- Full schema document assembly (input + output + error)
+     8→"""
+     9→
+    10→import dataclasses
+    11→import types
+    12→from typing import Any, Union, get_args, get_origin
+    13→
+    14→import click
+    15→
+    16→from erk.cli.json_command import JsonCommandMeta
+    17→
+    18→# Internal params injected by the decorator that should never appear in schemas
+    19→_INTERNAL_PARAMS = frozenset({"json_mode", "schema_mode", "ctx"})
+    20→
+    21→ERROR_SCHEMA: dict[str, Any] = {
+    22→    "type": "object",
+    23→    "properties": {
+    24→        "success": {"type": "boolean", "const": False},
+    25→        "error_type": {"type": "string"},
+    26→        "message": {"type": "string"},
+    27→    },
+    28→    "required": ["success", "error_type", "message"],
+    29→}
+    30→
+
+... [226 lines omitted] ...
+
+   124→    - Else raise TypeError
+   154→    raise TypeError(
+   228→    Returns a dict with command name, input_schema, output_schema, and error_schema.
+   242→        "error_schema": ERROR_SCHEMA,
+  </tool_result>
+  <tool_use name="Read" id="toolu_01H8B8atY8HERJCWXzHaTdD5">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/src/erk/cli/mcp_exposed.py</param>
+  </tool_use>
+  <usage input_tokens="4032" cache_creation_input_tokens="3773" cache_read_input_tokens="24206" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3773}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01H8B8atY8HERJCWXzHaTdD5">
+     1→"""Decorator and discovery for auto-exposing @json_command CLIs as MCP tools."""
+     2→
+     3→from collections.abc import Callable
+     4→from dataclasses import dataclass
+     5→
+     6→import click
+     7→
+     8→
+     9→@dataclass(frozen=True)
+    10→class McpMeta:
+    11→    """MCP metadata attached to a Click command by @mcp_exposed."""
+    12→
+    13→    name: str
+    14→    description: str
+    15→
+    16→
+    17→def mcp_exposed(*, name: str, description: str) -&gt; Callable[[click.Command], click.Command]:
+    18→    """Mark a @json_command for automatic MCP exposure.
+    19→
+    20→    Apply above @json_command in the decorator stack:
+    21→
+    22→        @mcp_exposed(name="one_shot", description="...")
+    23→        @json_command(...)
+    24→        @click.command("one-shot")
+    25→
+    26→    Args:
+    27→        name: MCP tool name
+    28→        description: MCP tool description
+    29→    """
+    30→
+
+... [26 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01EESqCtNiCcvERZ1nkijkVH">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/src/erk/cli/ensure.py</param>
+  </tool_use>
+  <usage input_tokens="4032" cache_creation_input_tokens="3773" cache_read_input_tokens="24206" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3773}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01EESqCtNiCcvERZ1nkijkVH">
+     1→"""CLI error handling utilities with styled output.
+     2→
+     3→This module provides the Ensure class for asserting invariants in CLI commands
+     4→with consistent, user-friendly error messages. All errors use red "Error:" prefix
+     5→for visual consistency.
+     6→
+     7→Domain-Specific Methods:
+     8→- Git state validations (branch checks, worktree existence, clean state)
+     9→- Configuration validations (required fields, format checks)
+    10→- Argument validations (count, type, range)
+    11→- File/path validations (readable, writable, not hidden)
+    12→- String/collection validations (non-empty, non-null)
+    13→- External tool validations (gh CLI installed)
+    14→"""
+    15→
+    16→from __future__ import annotations
+    17→
+    18→import shutil
+    19→from pathlib import Path
+    20→from typing import TYPE_CHECKING, Any, TypeVar
+    21→
+    22→import click
+    23→
+    24→from erk_shared.gateway.graphite.disabled import GraphiteDisabled, GraphiteDisabledError
+    25→from erk_shared.output.output import user_output
+    26→
+    27→if TYPE_CHECKING:
+    28→    from erk.core.context import ErkContext
+    29→
+    30→T = TypeVar("T")
+
+... [562 lines omitted] ...
+
+    33→class UserFacingCliError(click.ClickException):
+    34→    """Exception for user-facing CLI errors with styled output.
+    36→    Extends click.ClickException so Click catches it automatically at every
+    37→    level (groups, subgroups, commands) and converts it to a styled error
+    42→        raise UserFacingCliError("Not a GitHub repository", error_type="cli_error")
+    43→        raise UserFacingCliError(push_result.message, error_type="cli_error")
+    46→    def __init__(self, message: str, *, error_type: str) -&gt; None:
+    49→        self.error_type = error_type
+    52→        """Display styled error message to stderr."""
+    53→        user_output(click.style("Error: ", fg="red") + self.format_message())
+    57→    """Helper class for asserting invariants with consistent error handling."""
+    60→    def invariant(condition: bool, error_message: str) -&gt; None:
+    61→        """Ensure condition is true, otherwise output styled error and exit.
+    65→            error_message: Error message to display if condition is false.
+    66→                          "Error: " prefix will be added automatically in red.
+    69→            UserFacingCliError: If condition is false
+    72→            raise UserFacingCliError(error_message, error_type="cli_error")
+    75→    def truthy(value: T, error_message: str) -&gt; T:
+    76→        """Ensure value is truthy, otherwise output styled error and exit.
+    80→            error_message: Error message to display if value is falsy.
+    81→                          "Error: " prefix will be added automatically in red.
+    87→            UserFacingCliError: If value is falsy
+    90→            raise UserFacingCliError(error_message, error_type="cli_error")
+    94→    def not_none(value: T | None, error_message: str) -&gt; T:
+    95→        """Ensure value is not None, otherwise output styled error and exit.
+   103→            error_message: Error message to display if value is None.
+   104→                          "Error: " prefix will be added automatically in red.
+   110→            UserFacingCliError: If value is None
+   119→            raise UserFacingCliError(error_message, error_type="cli_error")
+   137→            click.UsageError: If both --dangerous and --safe are provided
+   140→            raise click.UsageError("--dangerous and --safe are mutually exclusive")
+   153→        error_message: str | None = None,
+   155→        """Ensure path exists, otherwise output styled error and exit.
+   166→            error_message: Optional custom error message. If not provided,
+   168→                          "Error: " prefix will be added automatically in red.
+   171→            UserFacingCliError: If path does not exist
+   174→            &gt;&gt;&gt; # Basic usage with default error message
+   177→            &gt;&gt;&gt; # With custom error message
+   181→            if error_message is None:
+   182→                error_message = f"Path not found: {path}"
+   183→            raise UserFacingCliError(error_message, error_type="cli_error")
+   186→    def not_empty(value: str | list | dict | None, error_message: str) -&gt; None:
+   191→            error_message: Error message to display if value is empty.
+   192→                          "Error: " prefix will be added automatically in red.
+   195→            UserFacingCliError: If value is None, empty string, empty list, or empty dict
+   202→            raise UserFacingCliError(error_message, error_type="cli_error")
+   206→        """Ensure worktree exists at path, otherwise output styled error and exit.
+   211→            name: Optional worktree name for friendlier error message
+   218→            &gt;&gt;&gt; Ensure.git_worktree_exists(ctx, wt_path)  # Uses path in error
+   221→            error_message = f"Worktree '{name}' does not exist"
+   223→            error_message = f"Worktree not found: {wt_path}"
+   224→        Ensure.path_exists(ctx, wt_path, error_message)
+   228→        """Ensure git branch exists, otherwise output styled error and exit.
+   236→            UserFacingCliError: If branch does not exist
+   243→            raise UserFacingCliError(
+   245→                error_type="cli_error",
+   250→        """Ensure currently in a git worktree, otherwise output styled error and exit.
+   253→            ctx: Application context (for error handling)
+   257→            UserFacingCliError: If not in a git worktree
+   264→            raise UserFacingCliError(
+   266→                error_type="cli_error",
+   273→        error_message: str | None = None,
+   275→        """Ensure argument count matches expected, otherwise output styled error and exit.
+   280→            error_message: Optional custom error message
+   283→            UserFacingCliError: If argument count does not match expected
+   290→            if error_message is None:
+   292→                    error_message = f"Expected no arguments, got {len(args)}"
+   294→                    error_message = f"Expected 1 argument, got {len(args)}"
+   296→                    error_message = f"Expected {expected} arguments, got {len(args)}"
+   297→            raise UserFacingCliError(error_message, error_type="cli_error")
+   303→        error_message: str | None = None,
+   305→        """Ensure configuration field is set, otherwise output styled error and exit.
+   310→            error_message: Optional custom error message
+   313→            UserFacingCliError: If field is not set (None or missing)
+   324→        except AttributeError:
+   327→            except (KeyError, TypeError):
+   331→            if error_message is None:
+   332→                error_message = (
+   336→            raise UserFacingCliError(error_message, error_type="cli_error")
+   339→    def path_is_dir(ctx: ErkContext, path: Path, error_message: str | None = None) -&gt; None:
+   340→        """Ensure path exists and is a directory, otherwise output styled error and exit.
+   345→            error_message: Optional custom error message
+   348→            UserFacingCliError: If path doesn't exist or is not a directory
+   353→        Ensure.path_exists(ctx, path, error_message)
+   355→            if error_message is None:
+   356→                error_message = f"Path is not a directory: {path}"
+   357→            raise UserFacingCliError(error_message, error_type="cli_error")
+   360→    def path_not_exists(ctx: ErkContext, path: Path, error_message: str) -&gt; None:
+   361→        """Ensure path does NOT exist, otherwise output styled error and exit.
+   368→            error_message: Error message to display if path exists
+   371→            UserFacingCliError: If path already exists
+   382→            raise UserFacingCliError(error_message, error_type="cli_error")
+   392→            UserFacingCliError: If gh CLI is not found on PATH
+   400→            raise UserFacingCliError(
+   404→                error_type="cli_error",
+   415→            UserFacingCliError: If gt CLI is not found on PATH
+   423→            raise UserFacingCliError(
+   427→                error_type="cli_error",
+   435→        outputs a helpful error message based on why Graphite is unavailable
+   444→            UserFacingCliError: If Graphite is disabled or not installed
+   452→            error = GraphiteDisabledError(ctx.graphite.reason)
+   453→            raise UserFacingCliError(str(error), error_type="cli_error")
+   463→            UserFacingCliError: If claude CLI is not found on PATH
+   471→            raise UserFacingCliError(
+   475→                error_type="cli_error",
+   489→            UserFacingCliError: If gt is not authenticated
+   499→            raise UserFacingCliError(
+   503→                error_type="cli_error",
+   519→            UserFacingCliError: If gh is not installed or not authenticated
+   530→            raise UserFacingCliError(
+   534→                error_type="cli_error",
+   553→        If branch exists and is NOT tracked, errors with remediation steps.
+   580→        # Branch exists but is not tracked - error with remediation
+   581→        raise UserFacingCliError(
+   590→            error_type="cli_error",
+  </tool_result>
+  <tool_use name="Read" id="toolu_019AXUY72D7Z17JcnnVHkmyS">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-mcp/src/erk_mcp/server.py</param>
+  </tool_use>
+  <usage input_tokens="4032" cache_creation_input_tokens="3773" cache_read_input_tokens="24206" output_tokens="470" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3773, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_019AXUY72D7Z17JcnnVHkmyS">
+     1→"""FastMCP server exposing erk capabilities as MCP tools."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→import json
+     6→import subprocess
+     7→from typing import TYPE_CHECKING, Any
+     8→
+     9→from anyio import to_thread
+    10→from fastmcp.tools.tool import Tool, ToolResult
+    11→
+    12→from erk.cli.json_schema import command_input_schema
+    13→from erk.cli.mcp_exposed import discover_mcp_commands
+    14→
+    15→if TYPE_CHECKING:
+    16→    from fastmcp import FastMCP
+    17→
+    18→DEFAULT_MCP_NAME = "erk"
+    19→
+    20→
+    21→def _run_erk(args: list[str]) -&gt; subprocess.CompletedProcess[str]:
+    22→    """Run an erk CLI command and return the result."""
+    23→    result = subprocess.run(
+    24→        ["erk", *args],
+    25→        capture_output=True,
+    26→        text=True,
+    27→        check=False,
+    28→    )
+    29→    if result.returncode != 0:
+    30→        stderr = result.stderr.strip()
+
+... [85 lines omitted] ...
+
+    31→        raise RuntimeError(f"erk {' '.join(args)} failed (exit {result.returncode}): {stderr}")
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="20731" cache_read_input_tokens="27979" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 20731}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me check what imports these modules from elsewhere to understand the dependency graph.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="20731" cache_read_input_tokens="27979" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 20731}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_0115idqG2wUnrsuzA3A7UN8r">
+    <param name="pattern">from erk\.cli\.json_command import|from erk\.cli\.json_schema import|from erk\.cli\.mcp_exposed import</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="20731" cache_read_input_tokens="27979" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 20731}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0115idqG2wUnrsuzA3A7UN8r">
+src/erk/cli/json_command.py:150:            from erk.cli.json_schema import build_schema_document
+src/erk/cli/json_schema.py:16:from erk.cli.json_command import JsonCommandMeta
+packages/erk-mcp/src/erk_mcp/server.py:12:from erk.cli.json_schema import command_input_schema
+packages/erk-mcp/src/erk_mcp/server.py:13:from erk.cli.mcp_exposed import discover_mcp_commands
+src/erk/cli/commands/one_shot.py:28:from erk.cli.json_command import json_command
+src/erk/cli/commands/one_shot.py:29:from erk.cli.mcp_exposed import mcp_exposed
+docs/learned/integrations/mcp-integration.md:75:2. Import `from erk.cli.mcp_exposed import mcp_exposed`
+tests/unit/cli/test_json_schema.py:8:from erk.cli.json_command import json_command
+tests/unit/cli/test_json_schema.py:9:from erk.cli.json_schema import (
+tests/unit/cli/test_json_command.py:14:from erk.cli.json_command import JsonCommandMeta, emit_json, emit_json_result, json_command
+tests/unit/cli/test_mcp_cli_sync.py:12:from erk.cli.json_schema import command_input_schema  # noqa: E402
+tests/unit/cli/test_mcp_cli_sync.py:13:from erk.cli.mcp_exposed import discover_mcp_commands  # noqa: E402
+  </tool_result>
+  <tool_use name="Grep" id="toolu_018rfihamPXRmAvHpJhP1bsu">
+    <param name="pattern">from erk\.cli\.ensure import UserFacingCliError</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="20731" cache_read_input_tokens="27979" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 20731}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_018rfihamPXRmAvHpJhP1bsu">
+src/erk/cli/repo_resolution.py:9:from erk.cli.ensure import UserFacingCliError
+src/erk/cli/json_command.py:22:from erk.cli.ensure import UserFacingCliError
+src/erk/cli/commands/pr/submit_pipeline.py:28:from erk.cli.ensure import UserFacingCliError
+src/erk/cli/commands/objective/view_cmd.py:15:from erk.cli.ensure import UserFacingCliError
+tests/commands/test_ensure_worktree.py:48:from erk.cli.ensure import UserFacingCliError
+tests/unit/cli/test_json_command.py:13:from erk.cli.ensure import UserFacingCliError
+tests/unit/cli/test_navigation_helpers.py:18:from erk.cli.ensure import UserFacingCliError
+tests/unit/cli/commands/land/test_resolvers.py:12:from erk.cli.ensure import UserFacingCliError
+tests/unit/cli/commands/land/test_cleanup_and_navigate.py:12:from erk.cli.ensure import UserFacingCliError
+tests/unit/cli/commands/land/test_validate_pr_for_landing.py:8:from erk.cli.ensure import UserFacingCliError
+tests/unit/cli/commands/land/test_land_stack.py:8:from erk.cli.ensure import UserFacingCliError
+tests/unit/cli/commands/land/pipeline/test_validate_pr.py:13:from erk.cli.ensure import UserFacingCliError
+tests/unit/cli/commands/land/pipeline/test_run_validation_pipeline.py:12:from erk.cli.ensure import UserFacingCliError
+tests/unit/cli/commands/land/pipeline/test_resolve_target.py:13:from erk.cli.ensure import UserFacingCliError
+docs/learned/cli/output-styling.md:513:from erk.cli.ensure import UserFacingCliError
+  </tool_result>
+  <tool_use name="Read" id="toolu_01DD9W7yZvJoRidGSdo3nW7d">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/tests/unit/cli/test_mcp_cli_sync.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="20731" cache_read_input_tokens="27979" output_tokens="1163" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 20731, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01DD9W7yZvJoRidGSdo3nW7d">
+     1→"""Parity tests: every @mcp_exposed command is discovered and has correct schema."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→import asyncio
+     6→
+     7→import pytest
+     8→
+     9→pytest.importorskip("erk_mcp.server", reason="erk-mcp package not installed")
+    10→
+    11→from erk.cli.cli import cli  # noqa: E402
+    12→from erk.cli.json_schema import command_input_schema  # noqa: E402
+    13→from erk.cli.mcp_exposed import discover_mcp_commands  # noqa: E402
+    14→from erk_mcp.server import _build_json_command_tools, create_mcp  # noqa: E402
+    15→
+    16→
+    17→def test_every_mcp_exposed_command_is_registered_as_mcp_tool() -&gt; None:
+    18→    """Every command with _mcp_meta in the Click tree appears as an MCP tool."""
+    19→    discovered = discover_mcp_commands(cli)
+    20→    assert len(discovered) &gt; 0, "No @mcp_exposed commands found — check CLI imports"
+    21→
+    22→    server = create_mcp()
+    23→    tools = asyncio.run(server.list_tools())
+    24→    tool_names = {t.name for t in tools}
+    25→
+    26→    for _cmd, meta in discovered:
+    27→        assert meta.name in tool_names, f"@mcp_exposed '{meta.name}' not registered as MCP tool"
+    28→
+    29→
+    30→def test_mcp_tool_schema_matches_click_derived_schema() -&gt; None:
+
+... [37 lines omitted] ...
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="7367" cache_read_input_tokens="48710" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7367}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now let me check a couple more things - what else is in `src/erk/cli/` that might be generic, and the help formatter.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="7367" cache_read_input_tokens="48710" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7367}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_014HGpX9nRM61VLMySxY22gM">
+    <param name="command">ls -la /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/src/erk/cli/*.py</param>
+    <param name="description">List all Python files in erk/cli/</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="7367" cache_read_input_tokens="48710" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7367}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014HGpX9nRM61VLMySxY22gM">
+-rw-r--r--@ 1 schrockn  staff      0 Jan 14 04:55 /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/src/erk/cli/__init__.py
+-rw-r--r--@ 1 schrockn  staff  16678 Mar  8 09:11 /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/src/erk/cli/activation.py
+-rw-r--r--@ 1 schrockn  staff   1547 Jan 14 04:55 /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/src/erk/cli/alias.py
+-rw-r--r--@ 1 schrockn  staff    785 Mar  7 19:05 /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/src/erk/cli/capability_check.py
+-rw-r--r--@ 1 schrockn  staff   9112 Mar  7 19:05 /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/src/erk/cli/cli.py
+-rw-r--r--@ 1 schrockn  staff  12757 Mar  7 19:05 /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/src/erk/cli/config.py
+-rw-r--r--@ 1 schrockn  staff   2054 Mar  8 14:31 /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/src/erk/cli/constants.py
+-rw-r--r--@ 1 schrockn  staff   2449 Jan 14 04:55 /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/src/erk/cli/core.py
+-rw-r--r--@ 1 schrockn  staff    335 Jan 14 04:55 /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/src/erk/cli/debug.py
+-rw-r--r--@ 1 schrockn  staff   5275 Mar  7 19:05 /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/src/erk/cli/ensure_ideal.py
+-rw-r--r--@ 1 schrockn  staff  22400 Mar  8 19:06 /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/src/erk/cli/ensure.py
+-rw-r--r--@ 1 schrockn  staff   3152 Mar  7 19:05 /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/src/erk/cli/github_parsing.py
+-rw-r--r--@ 1 schrockn  staff   2677 Jan 14 04:55 /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/src/erk/cli/graphite_command.py
+-rw-r--r--@ 1 schrockn  staff   2683 Mar  7 19:05 /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/src/erk/cli/graphite.py
+-rw-r--r--@ 1 schrockn  staff  12269 Mar  7 19:05 /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/src/erk/cli/help_formatter.py
+-rw-r--r--@ 1 schrockn  staff   8795 Mar  8 19:06 /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/src/erk/cli/json_command.py
+-rw-r--r--@ 1 schrockn  staff   7818 Mar  8 19:06 /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/src/erk/cli/json_schema.py
+-rw-r--r--@ 1 schrockn  staff   1592 Mar  8 20:04 /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/src/erk/cli/mcp_exposed.py
+-rw-r--r--@ 1 schrockn  staff  18101 Mar  8 09:11 /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/src/erk/cli/output.py
+-rw-r--r--@ 1 schrockn  staff   2537 Mar  8 19:06 /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/src/erk/cli/repo_resolution.py
+-rw-r--r--@ 1 schrockn  staff   1474 Mar  7 19:05 /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/src/erk/cli/script_output.py
+-rw-r--r--@ 1 schrockn  staff   6595 Mar  7 19:05 /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/src/erk/cli/shell_utils.py
+-rw-r--r--@ 1 schrockn  staff   3377 Jan 14 04:55 /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/src/erk/cli/subprocess_utils.py
+-rw-r--r--@ 1 schrockn  staff   1926 Mar  7 19:05 /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/src/erk/cli/uvx_detection.py
+  </tool_result>
+  <tool_use name="Read" id="toolu_01WHVNB7FXSxNvef1nfYBmiz">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/src/erk/cli/help_formatter.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="7367" cache_read_input_tokens="48710" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7367}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01WHVNB7FXSxNvef1nfYBmiz">
+     1→"""Custom Click help formatter for organized command display."""
+     2→
+     3→import shutil
+     4→from collections.abc import Callable
+     5→from typing import Any, TypeVar, cast
+     6→
+     7→import click
+     8→
+     9→from erk.cli.alias import get_aliases
+    10→from erk_shared.gateway.erk_installation.real import RealErkInstallation
+    11→from erk_shared.gateway.graphite.disabled import GraphiteDisabled
+    12→
+    13→F = TypeVar("F", bound=Callable[..., object])
+    14→
+    15→# Type names for Graphite-requiring commands (checked by string to avoid circular imports)
+    16→_GRAPHITE_COMMAND_TYPES = frozenset(
+    17→    {
+    18→        "GraphiteCommand",
+    19→        "GraphiteCommandWithHiddenOptions",
+    20→        "GraphiteGroup",
+    21→    }
+    22→)
+    23→
+    24→
+    25→def _requires_graphite(cmd: click.Command) -&gt; bool:
+    26→    """Check if a command requires Graphite integration.
+    27→
+    28→    Uses class name matching to avoid circular imports with graphite_command.py.
+    29→    """
+    30→    return type(cmd).__name__ in _GRAPHITE_COMMAND_TYPES
+
+... [318 lines omitted] ...
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01NS3oxTYycsHSpecXbBUSnp">
+    <param name="command">ls -la /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/ | head -30</param>
+    <param name="description">List erk-shared package top-level contents</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="7367" cache_read_input_tokens="48710" output_tokens="390" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 7367, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01NS3oxTYycsHSpecXbBUSnp">
+total 240
+-rw-r--r--@  1 schrockn  staff    837 Mar  7 19:05 __init__.py
+drwxr-xr-x@ 17 schrockn  staff    544 Mar  8 10:51 __pycache__
+drwxr-xr-x@ 35 schrockn  staff   1120 Mar  8 09:11 .
+drwxr-xr-x@  3 schrockn  staff     96 Jan 14 04:55 ..
+drwxr-xr-x@  3 schrockn  staff     96 Mar  7 19:05 branch_manager
+drwxr-xr-x@  5 schrockn  staff    160 Mar  8 09:11 config
+drwxr-xr-x@  9 schrockn  staff    288 Mar  8 09:11 context
+drwxr-xr-x@ 12 schrockn  staff    384 Mar  8 09:11 core
+-rw-r--r--@  1 schrockn  staff    681 Jan 14 04:55 debug_timing.py
+-rw-r--r--@  1 schrockn  staff    870 Jan 14 04:55 debug.py
+drwxr-xr-x@  8 schrockn  staff    256 Mar  8 14:45 entity_store
+-rw-r--r--@  1 schrockn  staff    613 Jan 14 04:55 env.py
+drwxr-xr-x@ 32 schrockn  staff   1024 Mar  8 09:11 gateway
+drwxr-xr-x@  5 schrockn  staff    160 Mar  7 19:05 git
+drwxr-xr-x@  5 schrockn  staff    160 Mar  7 19:05 github
+drwxr-xr-x@  3 schrockn  staff     96 Mar  7 19:05 github_admin
+drwxr-xr-x@  6 schrockn  staff    192 Jan 14 04:55 hooks
+-rw-r--r--@  1 schrockn  staff   5667 Mar  7 19:05 impl_context.py
+-rw-r--r--@  1 schrockn  staff  17572 Mar  7 19:05 impl_folder.py
+drwxr-xr-x@  8 schrockn  staff    256 Mar  7 19:05 learn
+-rw-r--r--@  1 schrockn  staff  30375 Mar  8 09:11 naming.py
+-rw-r--r--@  1 schrockn  staff   4120 Mar  7 19:05 non_ideal_state.py
+-rw-r--r--@  1 schrockn  staff   1041 Mar  8 09:11 objective_apply_landed_update_result.py
+-rw-r--r--@  1 schrockn  staff   1317 Mar  7 19:05 objective_fetch_context_result.py
+drwxr-xr-x@  6 schrockn  staff    192 Mar  8 09:11 output
+drwxr-xr-x@ 11 schrockn  staff    352 Mar  8 09:11 plan_store
+-rw-r--r--@  1 schrockn  staff   7641 Mar  7 19:05 plan_utils.py
+-rw-r--r--@  1 schrockn  staff   4495 Mar  8 09:11 plan_workflow.py
+drwxr-xr-x@  3 schrockn  staff     96 Mar  8 09:11 printing
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="7445" cache_read_input_tokens="56077" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7445}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I have a thorough understanding of the code. Let me launch a Plan agent to design the implementation.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="7445" cache_read_input_tokens="56077" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7445}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01PoFJgZeksTXhnjpfrTAcAJ">
+    <param name="description">Design agentclick refactor plan</param>
+    <param name="subagent_type">Plan</param>
+    <param name="prompt">Design an implementation plan for moving generic agent-optimized CLI framework code from `...[truncated 3864 chars]... implementation plan with the exact file operations, import changes, and testing strategy.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="7445" cache_read_input_tokens="56077" output_tokens="7610" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 7445, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01PoFJgZeksTXhnjpfrTAcAJ">
+Now I have all the information needed. Let me compile the full implementation plan.
+
+Here is the detailed implementation plan for moving the generic agent-optimized CLI framework code into `packages/erk-shared/src/erk_shared/agentclick/`.
+
+---
+
+## Implementation Plan: Extract `agentclick` into `erk_shared`
+
+### Overview
+
+Move three modules (`json_command.py`, `json_schema.py`, `mcp_exposed.py`) plus the generic part of `UserFacingCliError` from `src/erk/cli/` into a new `packages/erk-shared/src/erk_shared/agentclick/` subpackage. This involves creating a new `AgentCliError` base class, updating all import sites, moving tests, and updating mock patch targets.
+
+---
+
+### Phase 1: Create the `agentclick` subpackage in `erk_shared`
+
+**Step 1.1: Create the directory structure**
+
+Create these new files:
+```
+packages/erk-shared/src/erk_shared/agentclick/
+  __init__.py           (empty, per project convention)
+  errors.py             (AgentCliError base class)
+  json_command.py       (moved from src/erk/cli/json_command.py)
+  json_schema.py        (moved from src/erk/cli/json_schema.py)
+  mcp_exposed.py        (moved from src/erk/cli/mcp_exposed.py)
+```
+
+**Step 1.2: Create `errors.py`** with the new `AgentCliError` base class
+
+
+... [256 lines omitted] ...
+
+"""Base error class for agent-optimized CLI commands."""
+class AgentCliError(click.ClickException):
+    """Exception for CLI errors with structured error_type for JSON serialization.
+    Extends click.ClickException with an error_type field for structured
+    JSON error output. Framework-level: no application-specific styling.
+        raise AgentCliError("something went wrong", error_type="cli_error")
+    def __init__(self, message: str, *, error_type: str) -&gt; None:
+        self.error_type = error_type
+Note: NO custom `show()` method. The default `click.ClickException.show()` is sufficient for the generic framework. Applications subclass and add their own styling.
+- Line 22: Change `from erk.cli.ensure import UserFacingCliError` to `from erk_shared.agentclick.errors import AgentCliError`
+- Line 215: Change `except UserFacingCliError as exc:` to `except AgentCliError as exc:`
+- Docstring references to `UserFacingCliError` updated to `AgentCliError`
+This is safe because `UserFacingCliError` (which remains in `erk.cli.ensure`) will become a subclass of `AgentCliError`, so `except AgentCliError` still catches `UserFacingCliError`.
+### Phase 2: Modify `UserFacingCliError` to subclass `AgentCliError`
+class UserFacingCliError(click.ClickException):
+    def __init__(self, message: str, *, error_type: str) -&gt; None:
+        self.error_type = error_type
+        user_output(click.style("Error: ", fg="red") + self.format_message())
+from erk_shared.agentclick.errors import AgentCliError
+class UserFacingCliError(AgentCliError):
+    """Application-specific CLI error with styled output.
+    Inherits error_type from AgentCliError. Adds erk-specific
+    styled error display via user_output.
+        """Display styled error message to stderr."""
+        user_output(click.style("Error: ", fg="red") + self.format_message())
+The `__init__` method is inherited from `AgentCliError` -- no need to duplicate. The `show()` method provides the erk-specific styling.
+| `tests/unit/cli/test_json_command.py` line 13 | `from erk.cli.ensure import UserFacingCliError` | `from erk.cli.ensure import UserFacingCliError` (unchanged -- still testing with erk's subclass) |
+All 30+ files that import `UserFacingCliError` or `Ensure` from `erk.cli.ensure` do NOT need changes. `UserFacingCliError` stays in `erk.cli.ensure`, just with a different parent class.
+- `tests/unit/cli/test_json_command.py` -- Some tests use `UserFacingCliError` directly (testing that the framework catches it). These tests exercise the IS-A relationship between `UserFacingCliError` and `AgentCliError`. However, these tests could actually work with `AgentCliError` alone.
+  - **Decision**: Split this file. Move the pure framework tests to `packages/erk-shared/tests/unit/agentclick/test_json_command.py` using `AgentCliError` instead of `UserFacingCliError`. The test `test_output_types_matches_return_annotation` (line 521ff) MUST stay because it imports `erk.cli.cli` (the erk CLI root group).
+  test_json_command.py     (framework-level tests using AgentCliError)
+2. `packages/erk-shared/src/erk_shared/agentclick/errors.py` -- `AgentCliError` class
+7. `packages/erk-shared/tests/unit/agentclick/test_json_command.py` -- framework-level tests using `AgentCliError`
+12. `src/erk/cli/ensure.py` -- `UserFacingCliError` subclasses `AgentCliError`, add import
+2. **Modify `UserFacingCliError` to subclass `AgentCliError`** (Phase 2) -- establishes the IS-A relationship
+1. **Mock patch target**: The `unittest.mock.patch` calls reference the module path where `read_stdin_json` is defined. Since `json_command.py` moves, the patch target changes. Both locations in `test_json_command.py` (line 35) and `test_one_shot_json.py` (line 234) must be updated. Missing these causes tests to silently pass with the wrong mock target (no error, just the mock has no effect).
+3. **`UserFacingCliError` IS-A `AgentCliError`**: The `except AgentCliError` in the new `json_command.py` catches both `AgentCliError` and `UserFacingCliError`. All existing erk code that raises `UserFacingCliError` continues to work without changes.
+- `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/src/erk/cli/ensure.py` -- Must modify `UserFacingCliError` to subclass `AgentCliError` instead of `click.ClickException`
+  </tool_result>
+  <usage input_tokens="3" cache_creation_input_tokens="76123" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 76123}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me check a couple more files before writing the final plan.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="76123" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 76123}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_016awWXpf5L3HuAgAdoq3CFL">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/tests/unit/cli/test_json_command.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="76123" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 76123}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016awWXpf5L3HuAgAdoq3CFL">
+     1→"""Tests for @json_command decorator, emit_json, emit_json_result, and --schema flag."""
+     2→
+     3→import json
+     4→import types
+     5→import typing
+     6→from dataclasses import dataclass
+     7→from typing import Any
+     8→from unittest.mock import patch
+     9→
+    10→import click
+    11→from click.testing import CliRunner
+    12→
+    13→from erk.cli.ensure import UserFacingCliError
+    14→from erk.cli.json_command import JsonCommandMeta, emit_json, emit_json_result, json_command
+    15→
+    16→# -- Helpers --
+    17→
+    18→
+    19→def _make_test_command() -&gt; click.Command:
+    20→    """Create a minimal Click command decorated with @json_command for testing."""
+    21→
+    22→    @json_command
+    23→    @click.command("test-cmd")
+    24→    def test_cmd(*, json_mode: bool) -&gt; None:
+    25→        if json_mode:
+    26→            emit_json({"key": "value"})
+    27→            return
+    28→        click.echo("human output")
+    29→
+    30→    return test_cmd
+
+... [546 lines omitted] ...
+
+    68→def test_catches_user_facing_error() -&gt; None:
+    69→    """UserFacingCliError is serialized as JSON when --json is active."""
+    72→    @click.command("error-cmd")
+    73→    def error_cmd(*, json_mode: bool) -&gt; None:
+    74→        raise UserFacingCliError("something went wrong", error_type="cli_error")
+    77→    result = runner.invoke(error_cmd, ["--json"])
+    81→    assert data["error_type"] == "cli_error"
+    85→def test_preserves_error_type() -&gt; None:
+    86→    """Custom error_type is preserved in JSON output."""
+    89→    @click.command("typed-error-cmd")
+    90→    def typed_error_cmd(*, json_mode: bool) -&gt; None:
+    91→        raise UserFacingCliError("auth failed", error_type="auth_required")
+    94→    result = runner.invoke(typed_error_cmd, ["--json"])
+    98→    assert data["error_type"] == "auth_required"
+    99→    assert data["message"] == "auth failed"
+   115→def test_error_without_json_flag_uses_normal_handling() -&gt; None:
+   116→    """Without --json, UserFacingCliError uses Click's normal error handling."""
+   119→    @click.command("normal-error-cmd")
+   120→    def normal_error_cmd(*, json_mode: bool) -&gt; None:
+   121→        raise UserFacingCliError("normal error", error_type="cli_error")
+   124→    result = runner.invoke(normal_error_cmd, [])
+   126→    # Should NOT be JSON — Click's normal error handling
+   127→    assert "normal error" in result.output
+   128→    # Verify it's not valid JSON (it's the styled Click error)
+   135→        except json.JSONDecodeError:
+   159→    assert result.exit_code == 0, f"Failed: {result.output}"
+   166→def test_json_input_unknown_keys_error() -&gt; None:
+   167→    """Unknown keys produce JSON error."""
+   182→    assert data["error_type"] == "invalid_json_input"
+   221→    assert data["error_type"] == "invalid_json_input"
+   226→    """Missing required field produces JSON error."""
+   241→    assert data["error_type"] == "invalid_json_input"
+   353→        except json.JSONDecodeError:
+   446→    """--schema outputs a valid schema document with input/output/error schemas."""
+   462→    assert "error_schema" in doc
+   463→    assert doc["error_schema"]["properties"]["success"]["const"] is False
+   547→    failures = []
+   560→                failures.append(f"{cmd.name}: return None but output_types={meta.output_types!r}")
+   565→                failures.append(
+   570→    assert not failures, "output_types mismatch:\n" + "\n".join(failures)
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01HkvpLcxJvzHmT2C9EQu91M">
+    <param name="command">grep -n "testpaths\|json_command\|mock.patch\|patch(" /Users/schrockn/.erk/repos/erk/workt...[truncated 95 chars]...Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/tests/commands/ 2&gt;/dev/null | head -20</param>
+    <param name="description">Check pyproject testpaths and find any additional mock patch targets</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="76123" cache_read_input_tokens="0" output_tokens="418" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 76123, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01HkvpLcxJvzHmT2C9EQu91M">
+129:testpaths = ["tests", "packages/erk-dev/tests", "packages/erk-statusline/tests"]
+---
+Binary file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/tests/commands/one_shot/__pycache__/test_one_shot_json.cpython-313-pytest-9.0.2.pyc matches
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/tests/commands/one_shot/test_one_shot_json.py:234:            "erk.cli.json_command.read_stdin_json",
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="8092" cache_read_input_tokens="76123" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 8092}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>I have everything I need. Let me write the final plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="8092" cache_read_input_tokens="76123" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 8092}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_017iHa8ZEmyToUZYE6Rm9bNL">
+    <param name="file_path">/Users/schrockn/.claude/plans/tranquil-forging-perlis.md</param>
+    <param name="content"># Extract `agentclick` Subpackage from `erk.cli`
+
+## Context
+
+This stack added generic fra...[truncated 6798 chars]... patch target)
+uv run pytest tests/commands/one_shot/ -v
+
+# Full fast-CI
+make fast-ci
+```
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="8092" cache_read_input_tokens="76123" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 8092}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017iHa8ZEmyToUZYE6Rm9bNL">
+File created successfully at: /Users/schrockn/.claude/plans/tranquil-forging-perlis.md
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_013ga5kzBzEWhHrzSnQx1wNi">
+    <param name="query">select:ExitPlanMode</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3370" cache_read_input_tokens="84215" output_tokens="78" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3370, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_013ga5kzBzEWhHrzSnQx1wNi">
+
+  </tool_result>
+</session>

@@ -1,0 +1,649 @@
+<session>
+  <meta branch="plnd/O9009-mcp-one-shot-input-s-03-08-1904" />
+  <meta model="claude-sonnet-4-6" />
+  <tool_use name="ExitPlanMode" id="toolu_015Zo7uHUuvw5C3XG9fHN9RW">
+    <param name="allowedPrompts">[{'tool': 'Bash', 'prompt': 'delete files'}, {'tool': 'Bash', 'prompt': 'run tests with pytest and make'}, {'tool': 'Bash', 'prompt': 'list directory contents'}]</param>
+    <param name="plan"># Extract `agentclick` Subpackage from `erk.cli`
+
+## Context
+
+This stack added generic fra...[truncated 6798 chars]... patch target)
+uv run pytest tests/commands/one_shot/ -v
+
+# Full fast-CI
+make fast-ci
+```
+</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="738" cache_read_input_tokens="87585" output_tokens="108" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 738, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_015Zo7uHUuvw5C3XG9fHN9RW">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/tranquil-forging-perlis.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Extract `agentclick` Subpackage from `erk.cli`
+Current context: (wt:erk-slot-12) (br:plnd/O9009-mcp-one-shot-input-s-03-08-1904) (pr:#9029)\n\nWhat would you like to do with this plan?"
+  header: "br:plnd/O900"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create new branch and planned PR. Stays on current branch." - Create a new branch, save plan as draft PR.
+  2. "Implement without saving" - Implement directly on the current branch without saving a plan PR.
+  3. "View/Edit the Plan" - Open plan in editor to review or modify before deciding.
+
+If user chooses 'Create new branch and planned PR':
+  1. Run /erk:plan-save
+  2. Call ExitPlanMode to end the planning session.
+
+If user chooses 'Implement without saving':
+  1. Create implement-now marker:
+     erk exec marker create --session-id 5c2af511-d145-437b-9836-90b69ae049d8 \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly on the current branch.
+     Do NOT run 'erk exec setup-impl' or create a new branch.
+     Read the plan from: /Users/schrockn/.claude/plans/tranquil-forging-perlis.md
+     Implement changes, run CI, and optionally 'erk pr submit' when done.
+
+... [6 lines omitted] ...
+  </tool_result>
+  <assistant>Here's the plan:
+
+---
+
+# Extract `agentclick` Subpackage from `erk.cli`
+
+## Context
+
+This stack added generic framework infrastructure for agent-optimized CLIs:
+- `@json_command`: Adds `--json`/`--schema` flags to Click commands with JSON stdin input and structured output
+- `@mcp_exposed`: Marks Click commands for MCP auto-discovery
+- JSON Schema generation from Click parameters
+- `UserFacingCliError`: Exception with `error_type` for JSON serialization
+
+These are generic enough to publish as a standalone PyPI package (`agent-click`). This PR moves them into `packages/erk-shared/src/erk_shared/agentclick/` as the staging ground before eventual extraction. `JsonCommandTool` (in `erk-mcp`) stays put since it requires `fastmcp`, which is not an `erk-shared` dependency.
+
+---
+
+## Files to Create
+
+**`errors.py`** — new `AgentCliError(click.ClickException)` base class with `error_type`, no erk-specific styling. `UserFacingCliError` in erk becomes a subclass that adds styled `show()`.
+
+**`json_command.py`** — copy from `src/erk/cli/json_command.py`, update 3 import references to `erk_shared.agentclick.*`, change `except UserFacingCliError` → `except AgentCliError`.
+
+**`json_schema.py`** — copy from `src/erk/cli/json_schema.py`, update 1 import.
+
+**`mcp_exposed.py`** — copy verbatim (only imports `click`).
+
+**`__init__.py`** — empty.
+
+**Test files** — `packages/erk-shared/tests/unit/agentclick/` with framework-level tests (moved from `tests/unit/cli/`), using `AgentCliError` instead of `UserFacingCliError`.
+
+## Files to Delete
+
+- `src/erk/cli/json_command.py`
+- `src/erk/cli/json_schema.py`
+- `src/erk/cli/mcp_exposed.py`
+- `tests/unit/cli/test_json_schema.py` (moved to erk-shared)
+
+## Key Modifications
+
+| File | Change |
+|------|--------|
+| `src/erk/cli/ensure.py` | `UserFacingCliError` subclasses `AgentCliError` (drops `__init__`, inherits it) |
+| `src/erk/cli/commands/one_shot.py` | 2 import updates |
+| `packages/erk-mcp/src/erk_mcp/server.py` | 2 import updates |
+| `tests/unit/cli/test_json_command.py` | Keep only `test_output_types_matches_return_annotation` (imports `erk.cli.cli`) |
+| `tests/unit/cli/test_mcp_cli_sync.py` | 2 import updates |
+| `tests/commands/one_shot/test_one_shot_json.py:234` | Fix `mock.patch` target: `erk.cli.json_command` → `erk_shared.agentclick.json_command` |
+| `pyproject.toml` | Add `packages/erk-shared/tests` to `testpaths` |
+| `docs/learned/integrations/mcp-integration.md` | Update import path example |
+
+---
+
+What would you like to do with this plan?
+
+1. **Create new branch and planned PR** — Create a new branch, save plan as draft PR (stays on current branch)
+2. **Implement without saving** — Implement directly on the current branch without saving a plan PR
+3. **View/Edit the Plan** — Open plan in editor to review or modify before deciding</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="759" cache_read_input_tokens="88323" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 759}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_01Jr5MmBPBUMtoxUDhehHkyT">
+    <param name="query">select:AskUserQuestion</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="759" cache_read_input_tokens="88323" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 759}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Jr5MmBPBUMtoxUDhehHkyT">
+
+  </tool_result>
+  <tool_use name="AskUserQuestion" id="toolu_01TH3NY3Nvda7yweEVWo5tdc">
+    <param name="questions">[{'question': 'What would you like to do with this plan?', 'header': 'br:plnd/O900', 'mult...[truncated 276 chars]...t the Plan', 'description': 'Open plan in editor to review or modify before deciding.'}]}]</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="2356" cache_read_input_tokens="89082" output_tokens="178" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2356, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01TH3NY3Nvda7yweEVWo5tdc">
+The user doesn't want to proceed with this tool use. The tool use was rejected (eg. if it was a file edit, the new_string was NOT written to the file). STOP what you are doing and wait for the user to tell you how to proceed.
+  </tool_result>
+  <user>[Request interrupted by user for tool use]</user>
+  <user>decouple from ensure entirely</user>
+  <usage input_tokens="3" cache_creation_input_tokens="539" cache_read_input_tokens="91438" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 539}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <assistant>Good call. The duck-typing approach is cleaner: `json_command.py` checks for `error_type` on any `click.ClickException`, with no import from or modification to `ensure.py`. Let me update the plan.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="539" cache_read_input_tokens="91438" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 539}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01QS6WVVKcm5kXPbEZCRpdRf">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.claude/plans/tranquil-forging-perlis.md</param>
+    <param name="old_string">### 2. `packages/erk-shared/src/erk_shared/agentclick/errors.py`
+New generic base class — ...[truncated 976 chars]...or` will become a subclass of `AgentCliError`, so `except AgentCliError` still catches it.</param>
+    <param name="new_string">### 2. `packages/erk-shared/src/erk_shared/agentclick/errors.py`
+Generic base class — only...[truncated 1316 chars]...it gets caught by duck typing. agentclick has zero coupling to ensure in either direction.</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="539" cache_read_input_tokens="91438" output_tokens="5291" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 539, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01QS6WVVKcm5kXPbEZCRpdRf">
+The file /Users/schrockn/.claude/plans/tranquil-forging-perlis.md has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01WVd4Zf2qa5KMwQQHbpRBJh">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.claude/plans/tranquil-forging-perlis.md</param>
+    <param name="old_string">## Files to Modify
+
+### `src/erk/cli/ensure.py`
+Add import and change `UserFacingCliError`...[truncated 224 chars]...("Error: ", fg="red") + self.format_message())
+```
+
+### `src/erk/cli/commands/one_shot.py`</param>
+    <param name="new_string">## Files to Modify
+
+### `src/erk/cli/commands/one_shot.py`</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5286" cache_read_input_tokens="91977" output_tokens="277" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 5286, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01WVd4Zf2qa5KMwQQHbpRBJh">
+The file /Users/schrockn/.claude/plans/tranquil-forging-perlis.md has been updated successfully.
+  </tool_result>
+  <assistant>Also update the test section — the moved tests should use `AgentCliError` for tests that specifically test the error-catching, but we can keep `UserFacingCliError` in erk's own test file since the moved tests are framework-level.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="337" cache_read_input_tokens="97263" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 337}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_019fbkS6uSmzAj59eScKNGkP">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.claude/plans/tranquil-forging-perlis.md</param>
+    <param name="old_string">**Test files** — `packages/erk-shared/tests/unit/agentclick/` with framework-level tests (moved from `tests/unit/cli/`), using `AgentCliError` instead of `UserFacingCliError`.</param>
+    <param name="new_string">**Test files** — `packages/erk-shared/tests/unit/agentclick/` with framework-level tests (...[truncated 42 chars]...atching path use `AgentCliError` directly (since agentclick tests cannot import from erk).</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="337" cache_read_input_tokens="97263" output_tokens="309" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 337, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_019fbkS6uSmzAj59eScKNGkP">
+&lt;tool_use_error&gt;String to replace not found in file.
+String: **Test files** — `packages/erk-shared/tests/unit/agentclick/` with framework-level tests (moved from `tests/unit/cli/`), using `AgentCliError` instead of `UserFacingCliError`.&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_use name="Read" id="toolu_01XPRzXfTocGczje6DQzijiQ">
+    <param name="file_path">/Users/schrockn/.claude/plans/tranquil-forging-perlis.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1609" cache_read_input_tokens="97600" output_tokens="75" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1609, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01XPRzXfTocGczje6DQzijiQ">
+     1→# Extract `agentclick` Subpackage from `erk.cli`
+     2→
+     3→## Context
+     4→
+     5→This stack added generic framework infrastructure for agent-optimized CLIs:
+     6→- `@json_command`: Adds `--json`/`--schema` flags to Click commands with JSON stdin input and structured output
+     7→- `@mcp_exposed`: Marks Click commands for MCP auto-discovery
+     8→- JSON Schema generation from Click parameters
+     9→- `UserFacingCliError`: Exception with `error_type` for JSON serialization
+    10→
+    11→These are generic enough to publish as a standalone PyPI package (`agent-click`). This PR moves them into `packages/erk-shared/src/erk_shared/agentclick/` as the staging ground before eventual extraction. `JsonCommandTool` (in `erk-mcp`) stays put since it requires `fastmcp`, which is not an `erk-shared` dependency.
+    12→
+    13→---
+    14→
+    15→## Files to Create
+    16→
+    17→### 1. `packages/erk-shared/src/erk_shared/agentclick/__init__.py`
+    18→Empty file. Per project convention.
+    19→
+    20→### 2. `packages/erk-shared/src/erk_shared/agentclick/errors.py`
+    21→Generic base class — only imports `click`:
+    22→```python
+    23→"""Base error class for agent-optimized CLI commands."""
+    24→import click
+    25→
+    26→class AgentCliError(click.ClickException):
+    27→    """Exception with error_type for JSON serialization by @json_command."""
+    28→    def __init__(self, message: str, *, error_type: str) -&gt; None:
+    29→        super().__init__(message)
+    30→        self.message = message
+
+... [163 lines omitted] ...
+
+    31→        self.error_type = error_type
+    37→- **Remove** `from erk.cli.ensure import UserFacingCliError` entirely
+    38→- Replace error catch with duck-typed check — any `click.ClickException` with an `error_type` attribute is serialized:
+    40→  except click.ClickException as exc:
+    41→      if not hasattr(exc, "error_type"):
+    43→      error_data = {
+    45→          "error_type": exc.error_type,  # type: ignore[attr-defined]
+    48→      click.echo(json.dumps(error_data))
+    53→`ensure.py` is **not modified at all**. `UserFacingCliError` already has `error_type` so it gets caught by duck typing. agentclick has zero coupling to ensure in either direction.
+    70→- `from erk.cli.ensure import UserFacingCliError` → `from erk_shared.agentclick.errors import AgentCliError`
+    72→- Replace `UserFacingCliError(...)` in test bodies with `AgentCliError(...)`
+   153→- `src/erk/cli/ensure.py` — update `UserFacingCliError` to subclass `AgentCliError`
+   162→2. Modify `ensure.py` to make `UserFacingCliError` subclass `AgentCliError`
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="3087" cache_read_input_tokens="99209" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3087}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Good - I can see the plan file still has stale references to modifying `ensure.py`. Let me clean those up.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3087" cache_read_input_tokens="99209" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3087}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_013MdDCSDAQmhkMNjCMrJbk7">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.claude/plans/tranquil-forging-perlis.md</param>
+    <param name="old_string">## Critical Files
+
+- `src/erk/cli/json_command.py` — primary source to move
+- `src/erk/cli...[truncated 541 chars]...k/cli/` files
+5. Move/create test files
+6. Update root `pyproject.toml` testpaths and docs</param>
+    <param name="new_string">## Critical Files
+
+- `src/erk/cli/json_command.py` — primary source to move
+- `src/erk/cli...[truncated 451 chars]...k/cli/` files
+4. Move/create test files
+5. Update root `pyproject.toml` testpaths and docs</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3087" cache_read_input_tokens="99209" output_tokens="687" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3087, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_013MdDCSDAQmhkMNjCMrJbk7">
+The file /Users/schrockn/.claude/plans/tranquil-forging-perlis.md has been updated successfully.
+  </tool_result>
+  <assistant>Also fix the test file section — the moved tests should use `AgentCliError` for the error catch tests (since they're now in agentclick's own test suite and can't import from erk):</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="747" cache_read_input_tokens="102296" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 747}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01R6JYA2oEKyrVbidyN1F8rV">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.claude/plans/tranquil-forging-perlis.md</param>
+    <param name="old_string">Update imports:
+- `from erk.cli.json_command import ...` → `from erk_shared.agentclick.jso...[truncated 222 chars]..._stdin_json"`
+- Replace `UserFacingCliError(...)` in test bodies with `AgentCliError(...)`</param>
+    <param name="new_string">Update imports:
+- `from erk.cli.json_command import ...` → `from erk_shared.agentclick.jso...[truncated 302 chars]...rror(...)` — the moved tests exercise the framework's duck-typing, not erk's styled errors</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="747" cache_read_input_tokens="102296" output_tokens="488" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 747, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01R6JYA2oEKyrVbidyN1F8rV">
+The file /Users/schrockn/.claude/plans/tranquil-forging-perlis.md has been updated successfully.
+  </tool_result>
+  <assistant>Plan is updated. The key change: `json_command.py` in agentclick uses duck-typing to catch any `click.ClickException` with an `error_type` attribute — no import from `ensure.py`, no modification to `ensure.py`. Zero coupling in either direction between agentclick and ensure.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="739" cache_read_input_tokens="103043" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 739}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ExitPlanMode" id="toolu_01CSbdQdzLgj9ECKjQ1dPB8C">
+    <param name="allowedPrompts">[{'tool': 'Bash', 'prompt': 'delete files'}, {'tool': 'Bash', 'prompt': 'run tests with pytest and make'}, {'tool': 'Bash', 'prompt': 'list directory contents'}]</param>
+    <param name="plan"># Extract `agentclick` Subpackage from `erk.cli`
+
+## Context
+
+This stack added generic fra...[truncated 6762 chars]... patch target)
+uv run pytest tests/commands/one_shot/ -v
+
+# Full fast-CI
+make fast-ci
+```
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="739" cache_read_input_tokens="103043" output_tokens="179" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 739, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01CSbdQdzLgj9ECKjQ1dPB8C">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/tranquil-forging-perlis.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Extract `agentclick` Subpackage from `erk.cli`
+Current context: (wt:erk-slot-12) (br:plnd/O9009-mcp-one-shot-input-s-03-08-1904) (pr:#9029)\n\nWhat would you like to do with this plan?"
+  header: "br:plnd/O900"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create new branch and planned PR. Stays on current branch." - Create a new branch, save plan as draft PR.
+  2. "Implement without saving" - Implement directly on the current branch without saving a plan PR.
+  3. "View/Edit the Plan" - Open plan in editor to review or modify before deciding.
+
+If user chooses 'Create new branch and planned PR':
+  1. Run /erk:plan-save
+  2. Call ExitPlanMode to end the planning session.
+
+If user chooses 'Implement without saving':
+  1. Create implement-now marker:
+     erk exec marker create --session-id 5c2af511-d145-437b-9836-90b69ae049d8 \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly on the current branch.
+     Do NOT run 'erk exec setup-impl' or create a new branch.
+     Read the plan from: /Users/schrockn/.claude/plans/tranquil-forging-perlis.md
+     Implement changes, run CI, and optionally 'erk pr submit' when done.
+
+... [6 lines omitted] ...
+  </tool_result>
+  <assistant>Here's the updated plan:
+
+---
+
+# Extract `agentclick` Subpackage from `erk.cli`
+
+## Context
+
+Move generic agent-optimized CLI infrastructure into `packages/erk-shared/src/erk_shared/agentclick/` — preparation for eventual standalone `agent-click` PyPI publication. `ensure.py` is untouched; agentclick uses duck-typing to catch any `click.ClickException` with `error_type`, so zero coupling in either direction.
+
+## Key Design: Duck-Typed Error Catching
+
+```python
+# agentclick/json_command.py — no import from ensure
+except click.ClickException as exc:
+    if not hasattr(exc, "error_type"):
+        raise
+    error_data = {"success": False, "error_type": exc.error_type, ...}
+```
+
+`UserFacingCliError` already has `error_type` → gets caught. `ensure.py` unchanged.
+
+## New Files
+
+- `agentclick/__init__.py` — empty
+- `agentclick/errors.py` — `AgentCliError(click.ClickException)` with `error_type`
+- `agentclick/json_command.py` — moved from `erk/cli/`, duck-typed error catch
+- `agentclick/json_schema.py` — moved from `erk/cli/`
+- `agentclick/mcp_exposed.py` — moved from `erk/cli/` (verbatim)
+- `erk-shared/tests/unit/agentclick/test_json_command.py` — framework tests using `AgentCliError`
+- `erk-shared/tests/unit/agentclick/test_json_schema.py` — moved from erk tests
+
+## Deleted Files
+
+- `src/erk/cli/json_command.py`, `json_schema.py`, `mcp_exposed.py`
+- `tests/unit/cli/test_json_schema.py` (moved)
+
+## Import Updates
+
+| File | Change |
+|------|--------|
+| `src/erk/cli/commands/one_shot.py` | 2 imports → `erk_shared.agentclick.*` |
+| `packages/erk-mcp/src/erk_mcp/server.py` | 2 imports → `erk_shared.agentclick.*` |
+| `tests/unit/cli/test_json_command.py` | Keep only `test_output_types_matches_return_annotation` |
+| `tests/unit/cli/test_mcp_cli_sync.py` | 2 imports → `erk_shared.agentclick.*` |
+| `tests/commands/one_shot/test_one_shot_json.py:234` | Mock patch: `erk.cli.json_command` → `erk_shared.agentclick.json_command` |
+| `pyproject.toml` | Add `packages/erk-shared/tests` to testpaths |
+| `docs/learned/integrations/mcp-integration.md:75` | Update import example |
+
+---
+
+What would you like to do?</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="827" cache_read_input_tokens="103782" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 827}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_0195djgos97NRwPw4rCzMCPT">
+    <param name="questions">[{'question': 'What would you like to do with this plan?', 'header': 'br:plnd/O900', 'mult...[truncated 276 chars]...t the Plan', 'description': 'Open plan in editor to review or modify before deciding.'}]}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="827" cache_read_input_tokens="103782" output_tokens="930" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 827, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0195djgos97NRwPw4rCzMCPT">
+User has answered your questions: "What would you like to do with this plan?"="Create new branch + PR". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="Skill" id="toolu_01FUW9GeiAH1fnWVPuiTuid5">
+    <param name="skill">erk:plan-save</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="92316" cache_read_input_tokens="13349" output_tokens="57" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 92316, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01FUW9GeiAH1fnWVPuiTuid5">
+Launching skill: erk:plan-save
+  </tool_result>
+  <user># /erk:plan-save
+
+Save the current session's plan to GitHub with session context.
+
+## Usage
+
+```bash
+/erk:plan-save                           # Standalone plan
+/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+/erk:plan-save --objective=123           # Explicit objective link (overrides marker)
+/erk:plan-save --current-branch          # Use current branch instead of creating new plnd/ branch
+```
+
+Objective linking: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command. Use `--objective=&lt;number&gt;` to override the marker or provide the link when no marker exists (e.g., during replan).
+
+## Plan Storage
+
+The plan is saved using the configured backend:
+
+- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+  The JSON output contract includes `plan_number`, `plan_url`, `title`, `branch_name`, `plan_backend`.
+
+## Agent Instructions
+
+### Step 1: Parse Arguments
+
+Check `` for the `--plan-type`, `--objective`, and `--current-branch` flags:
+
+```
+If  contains "--plan-type=&lt;type&gt;":
+  - Extract the type (standard or learn)
+  - Store as PLAN_TYPE variable
+  - Set PLAN_TYPE_FLAG to "--plan-type=&lt;type&gt;"
+Else:
+  - Set PLAN_TYPE_FLAG to empty string
+
+If  contains "--objective=&lt;number&gt;":
+  - Extract the number
+  - Set OBJECTIVE_FLAG to "--objective=&lt;number&gt;"
+Else:
+  - Set OBJECTIVE_FLAG to empty string
+
+If  contains "--current-branch":
+  - Set CURRENT_BRANCH_FLAG to "--current-branch"
+Else:
+  - Set CURRENT_BRANCH_FLAG to empty string
+```
+
+### Step 2: Generate Branch Slug
+
+**Skip this step if `--current-branch` was passed.** The current branch is used directly.
+
+Before saving, generate a branch slug from the plan title. Read the plan title from the plan file you wrote in plan mode (the first `# ` heading).
+
+Generate a branch slug from the title:
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+
+Store the result as `BRANCH_SLUG`.
+
+### Step 3: Generate Plan Summary
+
+Write a concise 2-3 sentence summary of the plan. This summary will be visible
+at the top of the PR description (above the collapsed full plan).
+
+Guidelines:
+
+- Focus on WHAT the plan does and WHY
+- Do not repeat the title
+- Plain text, no markdown headers or formatting
+- Avoid special shell characters (backticks, dollar signs)
+- Store as PLAN_SUMMARY
+
+### Step 4: Run Save Command
+
+Run this command with the session ID, summary, and optional flags.
+
+If CURRENT_BRANCH_FLAG is set, pass `--current-branch` (no branch slug needed):
+
+```bash
+erk exec plan-save --format json --session-id="5c2af511-d145-437b-9836-90b69ae049d8" --current-branch --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Otherwise, pass the branch slug:
+
+```bash
+erk exec plan-save --format json --session-id="5c2af511-d145-437b-9836-90b69ae049d8" --branch-slug="${BRANCH_SLUG}" --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Parse the JSON output to extract `plan_number` for verification in Step 5.
+
+If the command fails, display the error and stop.
+
+### Step 5: Verify Objective Link (if applicable)
+
+**Only run this step if `objective_issue` is non-null in the JSON output from Step 4.**
+
+Verify the objective link was saved correctly:
+
+```bash
+erk exec get-plan-metadata &lt;plan_number&gt; objective_issue
+```
+
+Parse the JSON response:
+
+- If `success: true` and `value` matches the expected objective number: verification passed
+- If `success: false` or value doesn't match: verification failed
+
+**On verification success:**
+
+Display: `Verified objective link: #&lt;objective-number&gt;`
+
+**On verification failure:**
+
+Display error and remediation steps:
+
+```
+ERROR: Objective link verification failed
+Expected objective: #&lt;expected&gt;
+Actual: &lt;actual-or-null&gt;
+
+The plan was saved but without the correct objective link.
+Fix: Close draft PR #&lt;plan_number&gt;,
+ensure the objective-context marker exists, and re-run /erk:plan-save.
+```
+
+Exit without creating the plan-saved marker. The session continues so the user can retry.
+
+### Step 6: Update Objective Roadmap (if objective linked)
+
+**Only run this step if `objective_issue` was non-null in JSON output and verification passed.**
+
+Update the objective's roadmap table to show that a plan has been created for this node:
+
+1. **Read the roadmap node marker** to get the node ID:
+
+```bash
+step_id=$(erk exec marker read --session-id "5c2af511-d145-437b-9836-90b69ae049d8" roadmap-step)
+```
+
+If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-plan`.
+
+2. **Update the roadmap table** using the dedicated command:
+
+```bash
+erk exec update-objective-node &lt;objective-issue&gt; --node "$step_id" --pr "#&lt;plan_number&gt;" --status in_progress
+```
+
+This atomically fetches the objective body, finds the matching node row, sets the Status cell to `in-progress`, and writes the updated body back.
+
+3. **Report the update:**
+
+Display: `Updated objective #&lt;objective-issue&gt; roadmap: node &lt;step_id&gt; → plan #&lt;plan_number&gt;`
+
+**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+
+### Step 7: Display Results
+
+**If JSON contains `skipped_duplicate: true`:**
+
+Display: `Plan already saved as #&lt;plan_number&gt; (duplicate skipped)`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options.
+
+**Otherwise, on success**, display:
+
+```
+Plan "&lt;title&gt;" saved as draft PR #&lt;plan_number&gt;
+URL: &lt;issue_url&gt;
+```
+
+If objective was verified, also display: `Verified objective link: #&lt;objective-number&gt;`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options
+(implement in current worktree, implement in new worktree, or done).
+
+On failure, display the error message and suggest:
+
+- Checking that a plan exists (enter Plan mode and exit it first)
+- Verifying GitHub CLI authentication (`gh auth status`)
+- Checking network connectivity
+
+### Step 5: Push Planning Session
+
+After saving successfully, push the planning session for cross-machine learning.
+This captures the in-progress session state so it's available even if implementation
+happens on a different machine.
+
+Run `erk exec capture-session-info` to get the session file path, then push it:
+
+```bash
+erk exec upload-impl-session --session-id "5c2af511-d145-437b-9836-90b69ae049d8" 2&gt;/dev/null || true
+```
+
+If the plan was saved successfully and `plan_number` is known, use push-session directly
+for better stage tracking:
+
+```bash
+erk exec push-session \
+    --session-file "&lt;session_file_path&gt;" \
+    --session-id "5c2af511-d145-437b-9836-90b69ae049d8" \
+    --stage planning \
+    --source local \
+    --plan-id &lt;plan_number&gt; \
+    2&gt;/dev/null || true
+```
+
+Where `&lt;session_file_path&gt;` is obtained from `erk exec capture-session-info` output
+and `&lt;plan_number&gt;` is from Step 2's JSON output.
+
+**Note:** This is non-critical. If it fails, the plan was still saved successfully.
+The `2&gt;/dev/null || true` ensures graceful degradation.
+
+## Session Tracking
+
+After successfully saving a plan, the plan number is stored in a marker file that enables automatic plan updates in the same session.
+
+**To read the saved plan number:**
+
+```bash
+erk exec marker read --session-id "5c2af511-d145-437b-9836-90b69ae049d8" plan-saved-issue
+```
+
+This returns the plan number (exit code 0) or exits with code 1 if no plan was saved in this session.
+</user>
+  <assistant>
+
+Let me execute the plan save workflow.
+
+**Branch slug:** `extract-agentclick-subpackage`
+
+**Plan summary:** Moves generic agent-optimized CLI framework code (json_command, json_schema, mcp_exposed decorators) from src/erk/cli/ into a new erk_shared/agentclick subpackage. Uses duck-typed error catching to fully decouple from ensure.py, preparing for eventual standalone PyPI publication as agent-click.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="2369" cache_read_input_tokens="105665" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2369}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_017vP2UCsH1kraevBSGuKvfb">
+    <param name="command">erk exec plan-save --format json --session-id="5c2af511-d145-437b-9836-90b69ae049d8" --bra...[truncated 238 chars]...couple from ensure.py, preparing for eventual standalone PyPI publication as agent-click."</param>
+    <param name="description">Save plan as draft PR via erk exec plan-save</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2369" cache_read_input_tokens="105665" output_tokens="366" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2369, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_017vP2UCsH1kraevBSGuKvfb">
+{"success": true, "plan_number": 9033, "plan_url": "https://github.com/dagster-io/erk/pull/9033", "title": "[erk-plan] Extract `agentclick` Subpackage from `erk.cli`", "branch_name": "plnd/extract-agentclick-subpack-03-09-0554", "plan_backend": "planned_pr", "objective_issue": null, "archived_to": "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/.erk/scratch/sessions/5c2af511-d145-437b-9836-90b69ae049d8/plan_snapshots/000001-c5f72cf4"}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01GDghND8Cu9gNBwxNcAVocB">
+    <param name="command">erk exec capture-session-info 2&gt;/dev/null | head -5</param>
+    <param name="description">Get session file path for push</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="536" cache_read_input_tokens="108034" output_tokens="91" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 536, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01GDghND8Cu9gNBwxNcAVocB">
+SESSION_ID=5c2af511-d145-437b-9836-90b69ae049d8
+SESSION_FILE=/Users/schrockn/.claude/projects/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-12/5c2af511-d145-437b-9836-90b69ae049d8.jsonl
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01NVr22FbkAv5FPSVMaqfCm9">
+    <param name="command">erk exec push-session \
+    --session-file "/Users/schrockn/.claude/projects/-Users-schroc...[truncated 122 chars]...\
+    --stage planning \
+    --source local \
+    --plan-id 9033 \
+    2&gt;/dev/null || true</param>
+    <param name="description">Push planning session for cross-machine learning</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="196" cache_read_input_tokens="108570" output_tokens="234" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 196, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+</session>
