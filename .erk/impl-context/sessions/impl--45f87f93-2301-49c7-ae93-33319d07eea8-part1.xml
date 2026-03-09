@@ -1,0 +1,1321 @@
+<session>
+  <meta branch="plnd/O9009-json-output-decorato-03-08-1402" />
+  <meta model="claude-opus-4-6" />
+  <user>&lt;command-message&gt;erk:plan-implement is running…&lt;/command-message&gt;
+&lt;command-name&gt;/erk:plan-implement&lt;/command-name&gt;
+&lt;command-args&gt;9013&lt;/command-args&gt;</user>
+  <user># /erk:plan-implement
+
+Implement a plan - either from GitHub, a markdown file, an existing impl directory under `.erk/impl-context/`, or by saving the current plan first.
+
+This is the primary implementation workflow - it orchestrates:
+
+1. Setting up the impl directory under `.erk/impl-context/&lt;branch&gt;/` (from issue, file, existing folder, or fresh plan)
+2. Executing the implementation
+3. Running CI and submitting the PR
+
+## Prerequisites
+
+- Must be in a git repository managed by erk
+- GitHub CLI (`gh`) must be authenticated
+- One of:
+  - A plan number, URL, or file path argument
+  - An existing impl directory under `.erk/impl-context/`
+  - A plan branch checked out (e.g., `plnd/...` or `P{number}-...`)
+  - A plan in `~/.claude/plans/` (from plan mode)
+
+## Usage
+
+```bash
+/erk:plan-implement                    # Use impl directory, detect from branch, or save current plan
+/erk:plan-implement 2521               # Fetch and implement plan #2521
+/erk:plan-implement https://github.com/owner/repo/pull/2521   # URL form
+/erk:plan-implement ./my-plan.md       # Implement from local markdown file
+```
+
+---
+
+## CRITICAL: PR Operations
+
+**NEVER** run direct GitHub CLI commands for PR operations during implementation:
+
+- `gh pr edit` — destroys plan-header metadata block
+- `gh pr ready` — bypasses lifecycle tracking
+- `gh pr close` / `gh pr merge`
+
+All PR operations are handled by `erk pr submit` in Step 13. It automatically:
+
+- Generates the PR title and body
+- Preserves the plan-header metadata block
+- Marks draft PRs as ready for review
+- Updates lifecycle stage
+
+## Agent Instructions
+
+### Step 1: Set Up Implementation
+
+Parse `9013` and run the consolidated setup command:
+
+- **If numeric** (e.g., `2521`): `erk exec setup-impl --issue 2521`
+- **If GitHub URL** (e.g., `https://github.com/.../issues/2521`): Extract number, `erk exec setup-impl --issue 2521`
+- **If path to file** (anything else non-empty): `erk exec setup-impl --file &lt;path&gt;`
+- **If empty**: `erk exec setup-impl` (auto-detects from `.erk/impl-context/`, branch, or fails)
+
+```bash
+erk exec setup-impl [--issue &lt;N&gt; | --file &lt;path&gt;]
+```
+
+This single command handles:
+
+- Fetching plan from GitHub (draft PR)
+- Setting up from a local markdown file
+- Auto-detecting from existing impl directory under `.erk/impl-context/`
+- Auto-detecting plan number from branch name (P{number}-... or PR lookup)
+- Creating/checking out the feature branch
+- Creating impl directory under `.erk/impl-context/&lt;branch&gt;/` with plan content
+- Running impl-init validation
+- Cleaning up `.erk/impl-context/` staging directory (git rm + commit + push)
+
+Otherwise, generate a branch slug and set up from the specified issue:
+
+1. Fetch the title: `gh pr view &lt;ISSUE_ARG&gt; --json title -q .title`
+2. Generate a branch slug from the title:
+   - 2-4 hyphenated lowercase words, max 30 characters
+   - Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+   - Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+   - Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+3. Store as `BRANCH_SLUG`.
+
+```bash
+erk exec setup-impl --issue &lt;ISSUE_ARG&gt; --branch-slug="${BRANCH_SLUG}"
+```
+
+If `setup-impl` exits with code 1 and `error: "no_plan_found"`, fall back to saving the current plan:
+
+Generate a branch slug from the plan title (the first `# ` heading in the plan file):
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Store as `BRANCH_SLUG`
+
+Save the current plan to GitHub and capture the plan number:
+
+```bash
+erk exec plan-save --format json --session-id="${CLAUDE_SESSION_ID}" --branch-slug="${BRANCH_SLUG}"
+```
+
+Parse the JSON output to get `plan_number`, then:
+
+```bash
+erk exec setup-impl --issue &lt;plan_number&gt;
+```
+
+The `setup-impl` output includes `related_docs` (skills and docs to load) and `has_plan_tracking` (whether GitHub issue tracking is active).
+
+If this fails, display the error and stop.
+
+### Step 2: Read Plan and Load Context
+
+Read `plan.md` from the impl directory set up in Step 1 to understand:
+
+- Overall goal and context
+- Context &amp; Understanding sections (API quirks, architectural insights, pitfalls)
+- Implementation phases and dependencies
+- Success criteria
+
+**Context Consumption**: Plans contain expensive discoveries. Ignoring `[CRITICAL:]` tags, "Related Context:" subsections, or "DO NOT" items causes repeated mistakes.
+
+### Step 3: Load Related Documentation
+
+If plan contains "Related Documentation" section, load listed skills via Skill tool and read listed docs.
+
+### Step 4: Create TodoWrite Entries
+
+Create todo entries for each phase from the plan.
+
+### Step 5: Signal GitHub Started
+
+```bash
+erk exec impl-signal started --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This also deletes the Claude plan file (from `~/.claude/plans/`) since:
+
+- The content has been saved to GitHub
+- The content has been snapshotted to `.erk/scratch/`
+- Keeping it could cause confusion if the user tries to re-save
+
+### Step 6: Execute Each Phase Sequentially
+
+For each phase:
+
+1. **Mark phase as in_progress** (in TodoWrite)
+2. **Read task requirements** carefully
+3. **Implement code AND tests together**:
+   - Load `dignified-python-313` skill for coding standards
+   - Load `fake-driven-testing` skill for test patterns
+   - Follow project AGENTS.md standards
+4. **Mark phase as completed** (in TodoWrite)
+5. **Report progress**: changes made, what's next
+
+**Important:** `plan.md` is immutable - NEVER edit during implementation
+
+### Step 7: Report Progress
+
+After each phase: report changes made and what's next.
+
+### Step 8: Final Verification
+
+Confirm all tasks executed, success criteria met, note deviations, summarize changes.
+
+### Step 9: Signal GitHub Ended
+
+```bash
+erk exec impl-signal ended --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+### Step 10: Upload Session for Async Learn
+
+```bash
+erk exec upload-impl-session --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This reads plan reference from the impl directory, captures session info, and uploads for async learn processing.
+
+### Step 11: Clean Up Impl Context
+
+Remove the `.erk/impl-context/` directory from the repo:
+
+```bash
+erk exec cleanup-impl-context
+```
+
+This removes `.erk/impl-context/`, stages the deletion, commits, and pushes — all idempotent.
+
+### Step 12: Run CI Iteratively
+
+1. If `.erk/prompt-hooks/post-plan-implement-ci.md` exists: follow its instructions
+2. Otherwise: check CLAUDE.md/AGENTS.md for CI commands
+
+### Step 13: Submit PR
+
+Push the branch and create or update the PR using the Graphite-aware submit pipeline:
+
+```bash
+erk pr submit
+```
+
+This handles pushing commits, creating/updating the PR, generating the PR description, and enhancing with Graphite stack metadata when available.
+
+After successful submission, signal lifecycle transition:
+
+```bash
+erk exec impl-signal submitted 2&gt;/dev/null || true
+```
+
+Then validate PR completion invariants:
+
+```bash
+erk pr check --stage=impl
+```
+
+This validates PR submission readiness including implementation-specific checks
+(e.g., `.erk/impl-context/` must be cleaned up). If checks fail, display output and warn user.
+
+### Step 14: Output Format
+
+- **Start**: "Setting up implementation..." or "Fetching plan #X..."
+- **After setup**: "Implementation environment ready, reading plan..."
+- **Each phase**: "Phase X: [brief description]" with code changes
+- **End**: "Plan execution complete. [Summary]"
+
+---
+
+## Related Commands
+
+- `/erk:plan-save` - Save plan only, don't implement (for defer-to-later workflow)
+- `/erk:replan` - Re-plan an existing plan with current codebase state
+</user>
+  <assistant>
+
+I'll start by setting up the implementation for plan #9013.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="28549" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 28549, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_015tWdWzoqux7rSgYwqestQN">
+    <param name="command">erk exec setup-impl --issue 9013</param>
+    <param name="description">Set up implementation for plan #9013</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="28549" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 28549, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_015tWdWzoqux7rSgYwqestQN">
+{"success": true, "impl_path": "/home/runner/work/erk/erk/.erk/impl-context/plnd--O9009-json-output-decorato-03-08-1402", "plan_number": 9013, "plan_url": "https://github.com/dagster-io/erk/pull/9013", "branch": "plnd/O9009-json-output-decorato-03-08-1402", "plan_title": "[erk-plan] Plan: @json_output Decorator + Structured Errors + One-Shot JSON", "no_impl": false}
+{"success": true, "source": "issue", "plan_number": 9013, "has_plan_tracking": true, "valid": true, "related_docs": {"skills": [], "docs": []}}
+Already on plan branch 'plnd/O9009-json-output-decorato-03-08-1402', teleporting from remote...
+  </tool_result>
+  <assistant>Good, setup is complete. Let me read the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="362" cache_read_input_tokens="28549" cache_creation="{'ephemeral_5m_input_tokens': 362, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01HuhwqZtLgGoDMbSkbHiPQQ">
+    <param name="file_path">/home/runner/work/erk/erk/.erk/impl-context/plnd--O9009-json-output-decorato-03-08-1402/plan.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="362" cache_read_input_tokens="28549" cache_creation="{'ephemeral_5m_input_tokens': 362, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01HuhwqZtLgGoDMbSkbHiPQQ">
+     1→# Plan: @json_output Decorator + Structured Errors + One-Shot JSON
+     2→
+     3→**Objective:** #9009 (Agent-Friendly CLI)
+     4→**Nodes:** 1.1 (json-output-decorator), 1.2 (structured-cli-errors), 1.3 (one-shot-json)
+     5→
+     6→## Context
+     7→
+     8→Erk CLI commands output human-readable styled text to stderr via `user_output()`. Agents (MCP tools, exec scripts, hooks) need structured JSON on stdout to parse results reliably. This plan creates the `@json_output` decorator infrastructure and wires it into `erk one-shot` as the steelthread.
+     9→
+    10→## Step 1: Create `@json_output` decorator — `src/erk/cli/json_output.py` (NEW)
+    11→
+    12→A decorator applied **above** `@click.command()` that operates on the `click.Command` object (same pattern as `@alias` in `src/erk/cli/alias.py`):
+    13→
+    14→```python
+    15→def json_output(cmd: click.Command) -&gt; click.Command:
+    16→    """Add --json flag and JSON error handling to a Click command."""
+    17→```
+    18→
+    19→**What it does:**
+    20→- Appends `click.Option(["--json"], "json_mode", is_flag=True)` to `cmd.params`
+    21→- Wraps `cmd.callback` to catch `UserFacingCliError` when `json_mode=True`
+    22→- On caught error: `click.echo(json.dumps({"success": false, "error_type": ..., "message": ...}))` then `raise SystemExit(1)`
+    23→- Passes `SystemExit` and other exceptions through unchanged
+    24→- When `json_mode=False`: delegates to original callback unchanged
+    25→
+    26→**No `CliJsonResult` protocol** — commands handle success JSON inline (matching existing patterns in `objective view`, `objective check`). The decorator only handles the error path uniformly.
+    27→
+    28→**Helper function** for commands to emit success JSON:
+    29→```python
+    30→def emit_json(data: dict[str, Any]) -&gt; None:
+
+... [145 lines omitted] ...
+
+    41→- `test_catches_user_facing_error` — error serialized as JSON
+    42→- `test_preserves_error_type` — custom `error_type` in JSON output
+    45→## Step 2: Add `error_type` to `UserFacingCliError` — `src/erk/cli/ensure.py`
+    48→class UserFacingCliError(click.ClickException):
+    49→    def __init__(self, message: str, *, error_type: str = "cli_error") -&gt; None:
+    52→        self.error_type = error_type
+    55→**Default parameter exception:** `UserFacingCliError` extends `click.ClickException` (third-party) and has ~49 existing call sites. Default avoids a 49-file migration for no benefit. New call sites that need classification use the keyword: `raise UserFacingCliError("msg", error_type="auth_required")`.
+    86→@json_output                    # adds --json, catches errors as JSON
+   105→Add `error_type` to key error raises:
+   106→- `_get_remote_github`: `error_type="auth_required"`
+   107→- Empty prompt: `error_type="invalid_input"`
+   108→- Invalid `--repo` format: `error_type="invalid_repo"`
+   122→**Error (automatic via decorator):**
+   124→{"success": false, "error_type": "auth_required", "message": "GitHub authentication required."}
+   132→- `test_json_error_empty_prompt` — verify JSON error with `error_type`
+   133→- `test_json_error_auth` — verify auth error as JSON
+   146→| `src/erk/cli/ensure.py` | Add `error_type` kwarg to `UserFacingCliError.__init__` |
+   147→| `src/erk/cli/commands/one_shot.py` | Add `@json_output`, JSON output branches, error types |
+   164→| `src/erk/cli/ensure.py:33` | `UserFacingCliError` class |
+  </tool_result>
+  <assistant>Now let me load the required skills and read the key reference files in parallel.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3194" cache_read_input_tokens="28911" cache_creation="{'ephemeral_5m_input_tokens': 3194, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="Skill" id="toolu_01Bsh4fgLiddY9Vqn3d8BGzL">
+    <param name="skill">dignified-python</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3194" cache_read_input_tokens="28911" cache_creation="{'ephemeral_5m_input_tokens': 3194, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Bsh4fgLiddY9Vqn3d8BGzL">
+Launching skill: dignified-python
+  </tool_result>
+  <user>Base directory for this skill: /home/runner/work/erk/erk/.claude/skills/dignified-python
+
+# Dignified Python Coding Standards
+
+## Core Knowledge (ALWAYS Loaded)
+
+@dignified-python-core.md
+
+## Version Detection
+
+**Identify the project's minimum Python version** by checking (in order):
+
+1. `pyproject.toml` - Look for `requires-python` field (e.g., `requires-python = "&gt;=3.12"`)
+2. `setup.py` or `setup.cfg` - Look for `python_requires`
+3. `.python-version` file - Contains version like `3.12` or `3.12.0`
+4. Default to Python 3.12 if no version specifier found
+
+**Once identified, load the appropriate version-specific file:**
+
+- Python 3.10: Load `versions/python-3.10.md`
+- Python 3.11: Load `versions/python-3.11.md`
+- Python 3.12: Load `versions/python-3.12.md`
+- Python 3.13: Load `versions/python-3.13.md`
+
+## Conditional Loading (Load Based on Task Patterns)
+
+Core files above cover 80%+ of Python code patterns. Only load these additional files when you detect specific patterns:
+
+Pattern detection examples:
+
+- If task mentions "click" or "CLI" -&gt; Load `cli-patterns.md`
+- If task mentions "subprocess" -&gt; Load `subprocess.md`
+
+## When to Read Each Reference Document
+
+The `references/` directory contains detailed guidance for specialized topics. Load these on-demand when you encounter relevant patterns:
+
+### `references/exception-handling.md`
+
+**Read when**:
+
+- Writing try/except blocks
+- Wrapping third-party APIs that may raise
+- Seeing or writing `from e` or `from None`
+- Unsure if LBYL alternative exists
+
+### `references/interfaces.md`
+
+**Read when**:
+
+- Creating ABC or Protocol classes
+- Writing @abstractmethod decorators
+- Designing gateway layer interfaces
+- Choosing between ABC and Protocol
+
+### `references/typing-advanced.md`
+
+**Read when**:
+
+- Using typing.cast()
+- Creating Literal type aliases
+- Narrowing types in conditional blocks
+
+### `references/module-design.md`
+
+**Read when**:
+
+- Creating new Python modules
+- Adding module-level code (beyond simple constants)
+- Using @cache decorator at module level
+- Seeing Path() or computation at module level
+- Considering inline imports
+
+### `references/api-design.md`
+
+**Read when**:
+
+- Adding default parameter values to functions
+- Defining functions with 5 or more parameters
+- Using ThreadPoolExecutor.submit()
+- Reviewing function signatures
+
+### `references/checklists.md`
+
+**Read when**:
+
+- Final review before committing Python code
+- Unsure if you've followed all rules
+- Need a quick lookup of requirements
+
+## How to Use This Skill
+
+1. **Core knowledge** is loaded automatically (LBYL, pathlib, basic imports, anti-patterns)
+2. **Version detection** happens once - identify the minimum Python version and load the appropriate version file
+3. **Reference documents** are loaded on-demand based on the triggers above
+4. **Additional patterns** may require extra loading (CLI patterns, subprocess)
+5. **Each file is self-contained** with complete guidance for its domain
+</user>
+  <assistant>
+
+Now let me load the core dignified-python standards and detect the Python version, then read the key reference files from the plan.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="892" cache_read_input_tokens="32105" cache_creation="{'ephemeral_5m_input_tokens': 892, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01HgSRVnaQeBH7HCCZd452Vz">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/skills/dignified-python/dignified-python-core.md</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="892" cache_read_input_tokens="32105" cache_creation="{'ephemeral_5m_input_tokens': 892, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01JMDUtx4xcYyy7ejuC7YFFY">
+    <param name="file_path">/home/runner/work/erk/erk/pyproject.toml</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="892" cache_read_input_tokens="32105" cache_creation="{'ephemeral_5m_input_tokens': 892, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01B11NtnFdfvDUwFnGsRvzAg">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/alias.py</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="892" cache_read_input_tokens="32105" cache_creation="{'ephemeral_5m_input_tokens': 892, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01BD8Yg1q9bNBwiNWcHi1CgC">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/ensure.py</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="892" cache_read_input_tokens="32105" cache_creation="{'ephemeral_5m_input_tokens': 892, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01NWx54AyXWjfNoqyvRAduBU">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/one_shot.py</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="892" cache_read_input_tokens="32105" cache_creation="{'ephemeral_5m_input_tokens': 892, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01NatZxVwcmbnUKLVsf6QNKm">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/one_shot_remote_dispatch.py</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="892" cache_read_input_tokens="32105" cache_creation="{'ephemeral_5m_input_tokens': 892, 'ephemeral_1h_input_tokens': 0}" output_tokens="425" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01HgSRVnaQeBH7HCCZd452Vz">
+     1→---
+     2→---
+     3→
+     4→# Dignified Python - Core Standards
+     5→
+     6→This document contains the core Python coding standards that apply to 80%+ of Python code. These principles are loaded with every skill invocation.
+     7→
+     8→For conditional loading of specialized patterns:
+     9→
+    10→- CLI development -&gt; Load `cli-patterns.md`
+    11→- Subprocess operations -&gt; Load `subprocess.md`
+    12→
+    13→For detailed reference material, see the "When to Read Each Reference" section in SKILL.md.
+    14→
+    15→---
+    16→
+    17→## The Cornerstone: LBYL Over EAFP
+    18→
+    19→**Look Before You Leap: Check conditions proactively, NEVER use exceptions for control flow.**
+    20→
+    21→This is the single most important rule in dignified Python. Every pattern below flows from this principle.
+    22→
+    23→```python
+    24→# CORRECT: Check first
+    25→if key in mapping:
+    26→    value = mapping[key]
+    27→    process(value)
+    28→
+    29→# WRONG: Exception as control flow
+    30→try:
+
+... [502 lines omitted] ...
+
+    33→except KeyError:
+    39→## Exception Handling Basics
+    45→LBYL means checking conditions before acting. EAFP (Easier to Ask for Forgiveness than Permission) means trying operations and catching exceptions. In dignified Python, we strongly prefer LBYL.
+    65→# WRONG: KeyError as control flow
+    68→except KeyError:
+    72→### When Exceptions ARE Acceptable
+    74→Exceptions are ONLY acceptable at:
+    76→1. **Error boundaries** (CLI/API level)
+    80→**Default: Let exceptions bubble up**
+    82→**When you must use try-except: scope the try block to the single operation that raises.** Don't wrap multiple operations in one try block — each handler should know exactly what failed. Use early returns to keep subsequent code flat.
+    84→For detailed exception handling patterns including minimal exception scope, B904 chaining, third-party API examples, and anti-patterns, see `references/exception-handling.md`.
+   118→- `.resolve()` raises `OSError` for non-existent paths
+   119→- `.is_relative_to()` raises `ValueError` for invalid comparisons
+   120→- Checking `.exists()` first avoids exceptions entirely (LBYL!)
+   135→# WRONG: Using exceptions for path validation
+   140→except (OSError, ValueError):
+   180→3. **Inline imports only for specific exceptions** (circular deps, TYPE_CHECKING, conditional features)
+   211→**Acceptable exceptions:**
+   480→    log.warning("Non-numeric plan_id")
+   494→- **Raise exception**: When invalid data indicates a programming error or corrupt state
+   521→- **Exception chaining (B904), minimal exception scope**: `references/exception-handling.md`
+  </tool_result>
+  <tool_result tool="toolu_01JMDUtx4xcYyy7ejuC7YFFY">
+     1→[tool.uv.workspace]
+     2→members = ["packages/*"]
+     3→
+     4→[tool.uv.sources]
+     5→erk-dev = { workspace = true }
+     6→erk-mcp = { workspace = true }
+     7→erk-shared = { workspace = true }
+     8→erk-statusline = { workspace = true }
+     9→
+    10→[project]
+    11→name = "erk"
+    12→version = "0.9.9"
+    13→description = "Add your description here"
+    14→readme = "README.md"
+    15→authors = [
+    16→    { name = "Dagster Labs", email = "hello@dagsterlabs.com" }
+    17→]
+    18→requires-python = "&gt;=3.11"
+    19→dependencies = [
+    20→    "anthropic&gt;=0.40.0",
+    21→    "click&gt;=8.1.7",
+    22→    "erk-shared",
+    23→    "erk-statusline",
+    24→    "packaging&gt;=21.0",
+    25→    "pathspec&gt;=0.12.0",
+    26→    "pydantic&gt;=2.0",
+    27→    "pyyaml&gt;=6.0",
+    28→    "python-frontmatter&gt;=1.0.0",
+    29→    "rich&gt;=13.0",
+    30→    "tomlkit&gt;=0.12.0",
+
+... [5 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01B11NtnFdfvDUwFnGsRvzAg">
+     1→"""Command alias decorator for CLI commands."""
+     2→
+     3→from collections.abc import Callable
+     4→from typing import TypeVar
+     5→
+     6→import click
+     7→
+     8→F = TypeVar("F", bound=click.Command)
+     9→C = TypeVar("C", bound=Callable[..., object])
+    10→
+    11→# Store alias metadata on command objects
+    12→ALIAS_ATTR = "_erk_aliases"
+    13→
+    14→
+    15→def alias(*names: str) -&gt; Callable[[F], F]:
+    16→    """Decorator to declare aliases for a Click command.
+    17→
+    18→    Must be applied BEFORE @click.command (i.e., listed above it in the decorator stack).
+    19→    This is because decorators are applied bottom-to-top, so @alias runs AFTER @click.command
+    20→    creates the Command object.
+    21→
+    22→    Usage:
+    23→        @alias("co")
+    24→        @click.command("checkout")
+    25→        def checkout_cmd(...):
+    26→            ...
+    27→    """
+    28→
+    29→    def decorator(cmd: F) -&gt; F:
+    30→        existing = getattr(cmd, ALIAS_ATTR, [])
+
+... [29 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01BD8Yg1q9bNBwiNWcHi1CgC">
+     1→"""CLI error handling utilities with styled output.
+     2→
+     3→This module provides the Ensure class for asserting invariants in CLI commands
+     4→with consistent, user-friendly error messages. All errors use red "Error:" prefix
+     5→for visual consistency.
+     6→
+     7→Domain-Specific Methods:
+     8→- Git state validations (branch checks, worktree existence, clean state)
+     9→- Configuration validations (required fields, format checks)
+    10→- Argument validations (count, type, range)
+    11→- File/path validations (readable, writable, not hidden)
+    12→- String/collection validations (non-empty, non-null)
+    13→- External tool validations (gh CLI installed)
+    14→"""
+    15→
+    16→from __future__ import annotations
+    17→
+    18→import shutil
+    19→from pathlib import Path
+    20→from typing import TYPE_CHECKING, Any, TypeVar
+    21→
+    22→import click
+    23→
+    24→from erk_shared.gateway.graphite.disabled import GraphiteDisabled, GraphiteDisabledError
+    25→from erk_shared.output.output import user_output
+    26→
+    27→if TYPE_CHECKING:
+    28→    from erk.core.context import ErkContext
+    29→
+    30→T = TypeVar("T")
+
+... [558 lines omitted] ...
+
+    33→class UserFacingCliError(click.ClickException):
+    34→    """Exception for user-facing CLI errors with styled output.
+    36→    Extends click.ClickException so Click catches it automatically at every
+    37→    level (groups, subgroups, commands) and converts it to a styled error
+    42→        raise UserFacingCliError("Not a GitHub repository")
+    43→        raise UserFacingCliError(push_result.message)
+    51→        """Display styled error message to stderr."""
+    52→        user_output(click.style("Error: ", fg="red") + self.format_message())
+    56→    """Helper class for asserting invariants with consistent error handling."""
+    59→    def invariant(condition: bool, error_message: str) -&gt; None:
+    60→        """Ensure condition is true, otherwise output styled error and exit.
+    64→            error_message: Error message to display if condition is false.
+    65→                          "Error: " prefix will be added automatically in red.
+    68→            UserFacingCliError: If condition is false
+    71→            raise UserFacingCliError(error_message)
+    74→    def truthy(value: T, error_message: str) -&gt; T:
+    75→        """Ensure value is truthy, otherwise output styled error and exit.
+    79→            error_message: Error message to display if value is falsy.
+    80→                          "Error: " prefix will be added automatically in red.
+    86→            UserFacingCliError: If value is falsy
+    89→            raise UserFacingCliError(error_message)
+    93→    def not_none(value: T | None, error_message: str) -&gt; T:
+    94→        """Ensure value is not None, otherwise output styled error and exit.
+   102→            error_message: Error message to display if value is None.
+   103→                          "Error: " prefix will be added automatically in red.
+   109→            UserFacingCliError: If value is None
+   118→            raise UserFacingCliError(error_message)
+   136→            click.UsageError: If both --dangerous and --safe are provided
+   139→            raise click.UsageError("--dangerous and --safe are mutually exclusive")
+   152→        error_message: str | None = None,
+   154→        """Ensure path exists, otherwise output styled error and exit.
+   165→            error_message: Optional custom error message. If not provided,
+   167→                          "Error: " prefix will be added automatically in red.
+   170→            UserFacingCliError: If path does not exist
+   173→            &gt;&gt;&gt; # Basic usage with default error message
+   176→            &gt;&gt;&gt; # With custom error message
+   180→            if error_message is None:
+   181→                error_message = f"Path not found: {path}"
+   182→            raise UserFacingCliError(error_message)
+   185→    def not_empty(value: str | list | dict | None, error_message: str) -&gt; None:
+   190→            error_message: Error message to display if value is empty.
+   191→                          "Error: " prefix will be added automatically in red.
+   194→            UserFacingCliError: If value is None, empty string, empty list, or empty dict
+   201→            raise UserFacingCliError(error_message)
+   205→        """Ensure worktree exists at path, otherwise output styled error and exit.
+   210→            name: Optional worktree name for friendlier error message
+   217→            &gt;&gt;&gt; Ensure.git_worktree_exists(ctx, wt_path)  # Uses path in error
+   220→            error_message = f"Worktree '{name}' does not exist"
+   222→            error_message = f"Worktree not found: {wt_path}"
+   223→        Ensure.path_exists(ctx, wt_path, error_message)
+   227→        """Ensure git branch exists, otherwise output styled error and exit.
+   235→            UserFacingCliError: If branch does not exist
+   242→            raise UserFacingCliError(
+   248→        """Ensure currently in a git worktree, otherwise output styled error and exit.
+   251→            ctx: Application context (for error handling)
+   255→            UserFacingCliError: If not in a git worktree
+   262→            raise UserFacingCliError(
+   270→        error_message: str | None = None,
+   272→        """Ensure argument count matches expected, otherwise output styled error and exit.
+   277→            error_message: Optional custom error message
+   280→            UserFacingCliError: If argument count does not match expected
+   287→            if error_message is None:
+   289→                    error_message = f"Expected no arguments, got {len(args)}"
+   291→                    error_message = f"Expected 1 argument, got {len(args)}"
+   293→                    error_message = f"Expected {expected} arguments, got {len(args)}"
+   294→            raise UserFacingCliError(error_message)
+   300→        error_message: str | None = None,
+   302→        """Ensure configuration field is set, otherwise output styled error and exit.
+   307→            error_message: Optional custom error message
+   310→            UserFacingCliError: If field is not set (None or missing)
+   321→        except AttributeError:
+   324→            except (KeyError, TypeError):
+   328→            if error_message is None:
+   329→                error_message = (
+   333→            raise UserFacingCliError(error_message)
+   336→    def path_is_dir(ctx: ErkContext, path: Path, error_message: str | None = None) -&gt; None:
+   337→        """Ensure path exists and is a directory, otherwise output styled error and exit.
+   342→            error_message: Optional custom error message
+   345→            UserFacingCliError: If path doesn't exist or is not a directory
+   350→        Ensure.path_exists(ctx, path, error_message)
+   352→            if error_message is None:
+   353→                error_message = f"Path is not a directory: {path}"
+   354→            raise UserFacingCliError(error_message)
+   357→    def path_not_exists(ctx: ErkContext, path: Path, error_message: str) -&gt; None:
+   358→        """Ensure path does NOT exist, otherwise output styled error and exit.
+   365→            error_message: Error message to display if path exists
+   368→            UserFacingCliError: If path already exists
+   379→            raise UserFacingCliError(error_message)
+   389→            UserFacingCliError: If gh CLI is not found on PATH
+   397→            raise UserFacingCliError(
+   411→            UserFacingCliError: If gt CLI is not found on PATH
+   419→            raise UserFacingCliError(
+   430→        outputs a helpful error message based on why Graphite is unavailable
+   439→            UserFacingCliError: If Graphite is disabled or not installed
+   447→            error = GraphiteDisabledError(ctx.graphite.reason)
+   448→            raise UserFacingCliError(str(error))
+   458→            UserFacingCliError: If claude CLI is not found on PATH
+   466→            raise UserFacingCliError(
+   483→            UserFacingCliError: If gt is not authenticated
+   493→            raise UserFacingCliError(
+   512→            UserFacingCliError: If gh is not installed or not authenticated
+   523→            raise UserFacingCliError(
+   545→        If branch exists and is NOT tracked, errors with remediation steps.
+   572→        # Branch exists but is not tracked - error with remediation
+   573→        raise UserFacingCliError(
+  </tool_result>
+  <tool_result tool="toolu_01NWx54AyXWjfNoqyvRAduBU">
+     1→"""Command to dispatch a task for fully autonomous remote execution.
+     2→
+     3→No local planning — the remote Claude explores the codebase, plans the change,
+     4→implements it, and creates a PR.
+     5→
+     6→Usage:
+     7→    erk one-shot "fix the import in config.py"
+     8→    erk one-shot --file prompt.md
+     9→    erk one-shot "add type hints to utils.py" --model opus
+    10→    erk one-shot "fix the typo in README.md" --dry-run
+    11→    erk one-shot "rename issue_number to plan_number in impl_init.py" --plan-only
+    12→    erk one-shot "fix config bug" --repo owner/repo
+    13→"""
+    14→
+    15→from pathlib import Path
+    16→
+    17→import click
+    18→
+    19→from erk.cli.commands.implement_shared import normalize_model_name
+    20→from erk.cli.commands.one_shot_remote_dispatch import (
+    21→    OneShotDispatchParams,
+    22→    dispatch_one_shot_remote,
+    23→)
+    24→from erk.cli.commands.ref_resolution import resolve_dispatch_ref
+    25→from erk.cli.ensure import Ensure, UserFacingCliError
+    26→from erk.core.context import ErkContext, NoRepoSentinel
+    27→from erk_shared.gateway.remote_github.abc import RemoteGitHub
+    28→from erk_shared.gateway.remote_github.real import RealRemoteGitHub
+    29→from erk_shared.output.output import user_output
+    30→
+
+... [186 lines omitted] ...
+
+    45→        UserFacingCliError: If no http_client is available
+    51→        raise UserFacingCliError(
+   178→            raise UserFacingCliError(
+   185→            raise UserFacingCliError(
+   193→        raise click.UsageError("--repo and --ref-current are mutually exclusive")
+  </tool_result>
+  <tool_result tool="toolu_01NatZxVwcmbnUKLVsf6QNKm">
+     1→"""Dispatch logic for one-shot execution via RemoteGitHub REST API.
+     2→
+     3→Uses RemoteGitHub gateway to create branches, commit files, create PRs,
+     4→and dispatch workflows entirely via the GitHub REST API. This is the
+     5→canonical dispatch path for all one-shot commands.
+     6→"""
+     7→
+     8→import time
+     9→from dataclasses import dataclass
+    10→from datetime import UTC
+    11→
+    12→import click
+    13→
+    14→from erk.core.branch_slug_generator import generate_branch_slug
+    15→from erk_shared.core.prompt_executor import PromptExecutor
+    16→from erk_shared.gateway.github.metadata.core import (
+    17→    create_submission_queued_block,
+    18→    render_erk_issue_event,
+    19→)
+    20→from erk_shared.gateway.github.metadata.plan_header import format_plan_header_body
+    21→from erk_shared.gateway.github.parsing import construct_workflow_run_url
+    22→from erk_shared.gateway.github.pr_footer import build_pr_body_footer
+    23→from erk_shared.gateway.http.abc import HttpError
+    24→from erk_shared.gateway.remote_github.abc import RemoteGitHub
+    25→from erk_shared.gateway.time.abc import Time
+    26→from erk_shared.naming import (
+    27→    format_branch_timestamp_suffix,
+    28→    generate_planned_pr_branch_name,
+    29→    sanitize_worktree_name,
+    30→)
+
+... [356 lines omitted] ...
+
+   356→        except HttpError as e:
+   358→                click.style("Warning: ", fg="yellow") + f"Failed to post queued comment: {e}"
+   363→    except Exception as exc:
+   364→        user_output(click.style(f"Failed during: {current_step}", fg="red"))
+  </tool_result>
+  <assistant>Now let me also read the existing one-shot tests and the objective check JSON pattern reference:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="23136" cache_read_input_tokens="32997" cache_creation="{'ephemeral_5m_input_tokens': 23136, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01X4hADa62RRNnTQHacqSECF">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/one_shot/test_one_shot.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="23136" cache_read_input_tokens="32997" cache_creation="{'ephemeral_5m_input_tokens': 23136, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01UmGhjrMzt4ttwCESmzJzKA">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/one_shot/test_one_shot_remote_dispatch.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="23136" cache_read_input_tokens="32997" cache_creation="{'ephemeral_5m_input_tokens': 23136, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_013SXU2sZUdnzxmGnwGjKiG1">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/skills/dignified-python/cli-patterns.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="23136" cache_read_input_tokens="32997" cache_creation="{'ephemeral_5m_input_tokens': 23136, 'ephemeral_1h_input_tokens': 0}" output_tokens="229" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01X4hADa62RRNnTQHacqSECF">
+     1→"""Tests for erk one-shot command."""
+     2→
+     3→from click.testing import CliRunner
+     4→
+     5→from erk.cli.cli import cli
+     6→from erk_shared.gateway.git.fake import FakeGit
+     7→from erk_shared.gateway.github.fake import FakeLocalGitHub
+     8→from erk_shared.gateway.remote_github.fake import FakeRemoteGitHub
+     9→from tests.test_utils.context_builders import build_workspace_test_context
+    10→from tests.test_utils.env_helpers import erk_isolated_fs_env
+    11→
+    12→
+    13→def _make_remote() -&gt; FakeRemoteGitHub:
+    14→    """Create a default FakeRemoteGitHub for tests."""
+    15→    return FakeRemoteGitHub(
+    16→        authenticated_user="testuser",
+    17→        default_branch_name="main",
+    18→        default_branch_sha="abc123",
+    19→        next_pr_number=1,
+    20→        dispatch_run_id="run-1",
+    21→        issues=None,
+    22→        issue_comments=None,
+    23→        pr_references=None,
+    24→    )
+    25→
+    26→
+    27→def test_one_shot_happy_path() -&gt; None:
+    28→    """Test one-shot command creates branch, PR, and triggers workflow."""
+    29→    runner = CliRunner()
+    30→    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+
+... [322 lines omitted] ...
+
+    48→            catch_exceptions=False,
+    51→        assert result.exit_code == 0, f"Command failed: {result.output}"
+   123→            catch_exceptions=False,
+   126→        assert result.exit_code == 0, f"Command failed: {result.output}"
+   157→            catch_exceptions=False,
+   160→        assert result.exit_code == 0, f"Command failed: {result.output}"
+   188→            catch_exceptions=False,
+   191→        assert result.exit_code == 0, f"Command failed: {result.output}"
+   218→            catch_exceptions=False,
+   221→        assert result.exit_code == 0, f"Command failed: {result.output}"
+   254→            catch_exceptions=False,
+   257→        assert result.exit_code == 0, f"Command failed: {result.output}"
+   314→            catch_exceptions=False,
+   317→        assert result.exit_code == 0, f"Command failed: {result.output}"
+  </tool_result>
+  <tool_result tool="toolu_01UmGhjrMzt4ttwCESmzJzKA">
+     1→"""Tests for one-shot remote dispatch (--repo flag path)."""
+     2→
+     3→from click.testing import CliRunner
+     4→
+     5→from erk.cli.cli import cli
+     6→from erk.cli.commands.one_shot_remote_dispatch import (
+     7→    OneShotDispatchParams,
+     8→    dispatch_one_shot_remote,
+     9→)
+    10→from erk_shared.gateway.remote_github.fake import FakeRemoteGitHub
+    11→from erk_shared.gateway.time.fake import FakeTime
+    12→
+    13→
+    14→def test_remote_dispatch_happy_path() -&gt; None:
+    15→    """Test remote dispatch creates branch, PR, and dispatches workflow."""
+    16→    remote = FakeRemoteGitHub(
+    17→        authenticated_user="alice",
+    18→        default_branch_name="main",
+    19→        default_branch_sha="abc123",
+    20→        next_pr_number=42,
+    21→        dispatch_run_id="run-99",
+    22→        issues=None,
+    23→        issue_comments=None,
+    24→        pr_references=None,
+    25→    )
+    26→    time = FakeTime()
+    27→
+    28→    params = OneShotDispatchParams(
+    29→        prompt="fix the bug in config.py",
+    30→        model=None,
+
+... [274 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_013SXU2sZUdnzxmGnwGjKiG1">
+     1→---
+     2→---
+     3→
+     4→# CLI Patterns - Click Best Practices
+     5→
+     6→## Core Rules
+     7→
+     8→1. **Use `click.echo()` for output, NEVER `print()`**
+     9→2. **Exit with `raise SystemExit(1)` for CLI errors**
+    10→3. **Error boundaries at command level**
+    11→4. **Use `err=True` for error output**
+    12→5. **Flush stderr before `click.confirm()`** (prevents buffering hangs)
+    13→
+    14→## Basic Click Patterns
+    15→
+    16→```python
+    17→import click
+    18→from pathlib import Path
+    19→
+    20→# ✅ CORRECT: Use click.echo for output
+    21→@click.command()
+    22→@click.argument("name")
+    23→def greet(name: str) -&gt; None:
+    24→    """Greet the user."""
+    25→    click.echo(f"Hello, {name}!")
+    26→
+    27→# ❌ WRONG: Using print()
+    28→@click.command()
+    29→def greet(name: str) -&gt; None:
+    30→    print(f"Hello, {name}!")  # NEVER use print in CLI
+
+... [132 lines omitted] ...
+
+    33→## Error Handling in CLI
+    36→# ✅ CORRECT: CLI command error boundary
+    43→    except subprocess.CalledProcessError as e:
+    44→        click.echo(f"Error: Command failed: {e.stderr}", err=True)
+    46→    except ValueError as e:
+    47→        click.echo(f"Error: {e}", err=True)
+    57→# Error output to stderr
+    58→click.echo("Error: Operation failed", err=True)
+    62→click.echo(click.style("Warning!", fg="yellow", bold=True))
+   102→click.echo("Warning: This operation is destructive!", err=True)
+   109→click.echo("Warning: This operation is destructive!", err=True)
+   153→2. **Error to stderr**: Use `err=True` for error messages
+   154→3. **Exit cleanly**: Use `raise SystemExit(1)` for errors
+  </tool_result>
+  <assistant>Good, I have all the context I need. Python version is &gt;=3.11. Let me now also check the version-specific file and load the testing tripwires:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="10540" cache_read_input_tokens="56133" cache_creation="{'ephemeral_5m_input_tokens': 10540, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01X4PnQLJ6QQoWbEgKMyTfJT">
+    <param name="todos">[{'content': 'Create @json_output decorator + emit_json helper (src/erk/cli/json_output.py...[truncated 1029 chars]...e checks via devrun', 'status': 'pending', 'activeForm': 'Running tests and type checks'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="10540" cache_read_input_tokens="56133" cache_creation="{'ephemeral_5m_input_tokens': 10540, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01X4PnQLJ6QQoWbEgKMyTfJT">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Let me signal that implementation has started, then begin coding:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="490" cache_read_input_tokens="66673" cache_creation="{'ephemeral_5m_input_tokens': 490, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01BndREMeNN82jD1D3VpJU7L">
+    <param name="command">erk exec impl-signal started --session-id "${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true</param>
+    <param name="description">Signal GitHub impl started</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="490" cache_read_input_tokens="66673" cache_creation="{'ephemeral_5m_input_tokens': 490, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01QiMzMLZZF1QCG1A7qKbR3F">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/skills/dignified-python/versions/python-3.11.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="490" cache_read_input_tokens="66673" cache_creation="{'ephemeral_5m_input_tokens': 490, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01BndREMeNN82jD1D3VpJU7L">
+{
+  "success": false,
+  "event": "started",
+  "error_type": "session-id-required",
+  "message": "Session ID required for impl-signal started. Ensure ${CLAUDE_SESSION_ID} is available in the command context."
+}
+  </tool_result>
+  <tool_result tool="toolu_01QiMzMLZZF1QCG1A7qKbR3F">
+     1→---
+     2→---
+     3→
+     4→# Type Annotations - Python 3.11
+     5→
+     6→This document provides complete, canonical type annotation guidance for Python 3.11.
+     7→
+     8→## Overview
+     9→
+    10→Python 3.11 builds on 3.10's type syntax with the addition of the `Self` type (PEP 673), making method chaining and builder patterns significantly cleaner. All modern syntax from 3.10 continues to work.
+    11→
+    12→**What's new in 3.11:**
+    13→
+    14→- `Self` type for self-returning methods (PEP 673)
+    15→- Variadic generics with TypeVarTuple (PEP 646)
+    16→- Significantly improved error messages
+    17→
+    18→**Available from 3.10:**
+    19→
+    20→- Built-in generic types: `list[T]`, `dict[K, V]`, etc. (PEP 585)
+    21→- Union types with `|` operator (PEP 604)
+    22→- Optional with `X | None`
+    23→
+    24→**What you need from typing module:**
+    25→
+    26→- `Self` for self-returning methods (NEW)
+    27→- `TypeVar` for generic functions/classes
+    28→- `Generic` for generic classes
+    29→- `Protocol` for structural typing (rare - prefer ABC)
+    30→- `TYPE_CHECKING` for conditional imports
+
+... [512 lines omitted] ...
+
+   370→            raise ValueError("FROM table not specified")
+   412→            raise FileNotFoundError(f"Config not found: {path}")
+   473→All code should pass type checking without errors.
+   528→2. **Enjoy improved error messages** (no code changes needed)
+  </tool_result>
+  <assistant>Good. Now I have all the context. Let me also check the `machine_output` function referenced in the plan for JSON stdout and the `test_utils/context_builders.py` for the `build_workspace_test_context`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="5638" cache_read_input_tokens="67163" cache_creation="{'ephemeral_5m_input_tokens': 5638, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01BJbwTgz1S3QLkxoihnTVa6">
+    <param name="pattern">def machine_output</param>
+    <param name="output_mode">content</param>
+    <param name="-A">5</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5638" cache_read_input_tokens="67163" cache_creation="{'ephemeral_5m_input_tokens': 5638, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01RhQg94ahU51mKKWnzbw7Er">
+    <param name="pattern">def build_workspace_test_context</param>
+    <param name="output_mode">content</param>
+    <param name="-A">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5638" cache_read_input_tokens="67163" cache_creation="{'ephemeral_5m_input_tokens': 5638, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01RhQg94ahU51mKKWnzbw7Er">
+tests/test_utils/context_builders.py:20:def build_workspace_test_context(
+tests/test_utils/context_builders.py-21-    env: ErkInMemEnv | ErkIsolatedFsEnv,
+/home/runner/work/erk/erk/tests/test_utils/context_builders.py-22-    *,
+tests/test_utils/context_builders.py-23-    dry_run: bool = False,
+tests/test_utils/context_builders.py-24-    use_graphite: bool = False,
+tests/test_utils/context_builders.py-25-    current_branch: str | None = None,
+/home/runner/work/erk/erk/tests/test_utils/context_builders.py-26-    **kwargs,
+tests/test_utils/context_builders.py-27-) -&gt; ErkContext:
+/home/runner/work/erk/erk/tests/test_utils/context_builders.py-28-    """Build ErkContext for workspace command tests (create, split, consolidate, delete).
+/home/runner/work/erk/erk/tests/test_utils/context_builders.py-29-
+/home/runner/work/erk/erk/tests/test_utils/context_builders.py-30-    This builder provides a standard context configuration for workspace manipulation
+/home/runner/work/erk/erk/tests/test_utils/context_builders.py-31-    commands with sensible defaults and support for common testing scenarios.
+/home/runner/work/erk/erk/tests/test_utils/context_builders.py-32-
+tests/test_utils/context_builders.py-33-    Args:
+tests/test_utils/context_builders.py-34-        env: Pure or isolated erk environment fixture
+tests/test_utils/context_builders.py-35-        dry_run: Whether to wrap git operations with DryRunGit (default: False)
+tests/test_utils/context_builders.py-36-        use_graphite: Whether to enable Graphite integration (default: False)
+tests/test_utils/context_builders.py-37-        current_branch: Current branch name for FakeGit configuration (default: None)
+tests/test_utils/context_builders.py-38-        **kwargs: Additional arguments passed to env.build_context()
+/home/runner/work/erk/erk/tests/test_utils/context_builders.py-39-                  (can include custom git, github, graphite, shell instances)
+/home/runner/work/erk/erk/tests/test_utils/context_builders.py-40-
+  </tool_result>
+  <tool_result tool="toolu_01BJbwTgz1S3QLkxoihnTVa6">
+packages/erk-dev/src/erk_dev/cli/output.py:27:def machine_output(
+packages/erk-dev/src/erk_dev/cli/output.py-28-    message: Any | None = None,
+packages/erk-dev/src/erk_dev/cli/output.py-29-    nl: bool = True,
+packages/erk-dev/src/erk_dev/cli/output.py-30-    color: bool | None = None,
+packages/erk-dev/src/erk_dev/cli/output.py-31-) -&gt; None:
+/home/runner/work/erk/erk/packages/erk-dev/src/erk_dev/cli/output.py-32-    """Output structured data for machine/script consumption.
+--
+packages/erk-shared/src/erk_shared/output/output.py:28:def machine_output(
+packages/erk-shared/src/erk_shared/output/output.py-29-    message: Any | None = None,
+packages/erk-shared/src/erk_shared/output/output.py-30-    nl: bool = True,
+packages/erk-shared/src/erk_shared/output/output.py-31-    color: bool | None = None,
+packages/erk-shared/src/erk_shared/output/output.py-32-) -&gt; None:
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/output/output.py-33-    """Output structured data for machine/script consumption.
+  </tool_result>
+  <assistant>Now I have all the context. Let me start implementing. I'll begin with Steps 1 and 2 (the `@json_output` decorator and the `error_type` on `UserFacingCliError`) in parallel:</assistant>
+  <usage input_tokens="679" cache_creation_input_tokens="958" cache_read_input_tokens="72801" cache_creation="{'ephemeral_5m_input_tokens': 958, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_0123KhWkyLQ1XAK4EP2PLK4V">
+    <param name="todos">[{'content': 'Create @json_output decorator + emit_json helper (src/erk/cli/json_output.py...[truncated 1033 chars]...e checks via devrun', 'status': 'pending', 'activeForm': 'Running tests and type checks'}]</param>
+  </tool_use>
+  <usage input_tokens="679" cache_creation_input_tokens="958" cache_read_input_tokens="72801" cache_creation="{'ephemeral_5m_input_tokens': 958, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_0123KhWkyLQ1XAK4EP2PLK4V">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="Write" id="toolu_01Y66vTxgTBmHDfTpQ1Cm97r">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/json_output.py</param>
+    <param name="content">"""JSON output decorator for CLI commands.
+
+Adds a --json flag to Click commands and handl...[truncated 2346 chars]...uccess=True automatically."""
+    data["success"] = True
+    click.echo(json.dumps(data))
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1185" cache_read_input_tokens="73759" cache_creation="{'ephemeral_5m_input_tokens': 1185, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01J3VWaGcmRdeHCVnipXtP8h">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/ensure.py</param>
+    <param name="old_string">    def __init__(self, message: str) -&gt; None:
+        super().__init__(message)
+        self.message = message</param>
+    <param name="new_string">    def __init__(self, message: str, *, error_type: str = "cli_error") -&gt; None:
+        super().__init__(message)
+        self.message = message
+        self.error_type = error_type</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1185" cache_read_input_tokens="73759" cache_creation="{'ephemeral_5m_input_tokens': 1185, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Y66vTxgTBmHDfTpQ1Cm97r">
+File created successfully at: /home/runner/work/erk/erk/src/erk/cli/json_output.py
+  </tool_result>
+  <tool_result tool="toolu_01J3VWaGcmRdeHCVnipXtP8h">
+The file /home/runner/work/erk/erk/src/erk/cli/ensure.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01KFme6nDCtNYKvqqPZ1aQww">
+    <param name="todos">[{'content': 'Create @json_output decorator + emit_json helper (src/erk/cli/json_output.py...[truncated 1037 chars]...e checks via devrun', 'status': 'pending', 'activeForm': 'Running tests and type checks'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1057" cache_read_input_tokens="74944" cache_creation="{'ephemeral_5m_input_tokens': 1057, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01KFme6nDCtNYKvqqPZ1aQww">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Now let me check if there's a `tests/unit/cli/` directory:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="454" cache_read_input_tokens="76001" cache_creation="{'ephemeral_5m_input_tokens': 454, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Glob" id="toolu_0125QPQMXcbHbxsdDeSniENU">
+    <param name="pattern">tests/unit/cli/**/*.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="454" cache_read_input_tokens="76001" cache_creation="{'ephemeral_5m_input_tokens': 454, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_0125QPQMXcbHbxsdDeSniENU">
+/home/runner/work/erk/erk/tests/unit/cli/__init__.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/__init__.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/branch/__init__.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/codespace/__init__.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/branch/test_create_cmd.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/branch/test_list_cmd.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/codespace/run/__init__.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/codespace/run/objective/__init__.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/codespace/test_remove_cmd.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/codespace/test_set_default_cmd.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/codespace/test_connect_cmd.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/codespace/test_resolve.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/codespace/test_list_cmd.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/codespace/test_setup_cmd.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/codespace/run/objective/test_plan_cmd.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/docs/__init__.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/docs/test_check_cmd.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/docs/test_validate_cmd.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/docs/test_sync_cmd.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/__init__.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/__init__.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_capture_session_info.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_close_prs.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/fixtures.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_add_pr_labels_cmd.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_cleanup_impl_context.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_ci_verify_autofix.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_add_plan_label.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_ci_fetch_summaries.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_ci_update_pr_body.py
+
+... [71 lines omitted] ...
+  </tool_result>
+  <assistant>Good, `tests/unit/cli/` exists. Now let me write the unit tests for the decorator:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3560" cache_read_input_tokens="76455" cache_creation="{'ephemeral_5m_input_tokens': 3560, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Write" id="toolu_01XZSPTY8a3t7TeWe58svGxc">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/test_json_output.py</param>
+    <param name="content">"""Tests for @json_output decorator and emit_json helper."""
+
+import json
+
+import click
+fr...[truncated 3561 chars]...not in parsed
+        except json.JSONDecodeError:
+            pass  # Expected: not JSON
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3560" cache_read_input_tokens="76455" cache_creation="{'ephemeral_5m_input_tokens': 3560, 'ephemeral_1h_input_tokens': 0}" output_tokens="1233" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01XZSPTY8a3t7TeWe58svGxc">
+File created successfully at: /home/runner/work/erk/erk/tests/unit/cli/test_json_output.py
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01NwMPkHxswR8Dxqj4nxhCgf">
+    <param name="todos">[{'content': 'Create @json_output decorator + emit_json helper (src/erk/cli/json_output.py...[truncated 1039 chars]...e checks via devrun', 'status': 'pending', 'activeForm': 'Running tests and type checks'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1276" cache_read_input_tokens="80015" cache_creation="{'ephemeral_5m_input_tokens': 1276, 'ephemeral_1h_input_tokens': 0}" output_tokens="26" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01NwMPkHxswR8Dxqj4nxhCgf">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Now let me run the decorator unit tests quickly to make sure they pass before moving on:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="454" cache_read_input_tokens="81291" cache_creation="{'ephemeral_5m_input_tokens': 454, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01TUqnPnRsAQGfWTPkY1pBMq">
+    <param name="description">Run decorator unit tests</param>
+    <param name="prompt">Run pytest on tests/unit/cli/test_json_output.py and report results. Do NOT fix any errors - just report what passes and fails.</param>
+    <param name="subagent_type">devrun</param>
+    <param name="run_in_background">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="454" cache_read_input_tokens="81291" cache_creation="{'ephemeral_5m_input_tokens': 454, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01TUqnPnRsAQGfWTPkY1pBMq">
+Async agent launched successfully.
+agentId: a1214c5 (This is an internal ID for your use, do not mention it to the user. Use this ID to retrieve results with TaskOutput when the agent finishes).
+The agent is currently working in the background. If you have other tasks you you should continue working on them now. Wait to call TaskOutput until either:
+- If you want to check on the agent's progress - call TaskOutput with block=false to get an immediate update on the agent's status
+- If you run out of things to do and the agent is still running - call TaskOutput with block=true to idle and wait for the agent's result (do not use block=true unless you completely run out of things to do as it will waste time).
+  </tool_result>
+  <assistant>Now let me proceed with Step 4 — add `OneShotDryRunResult` and update `dispatch_one_shot_remote` return type:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="343" cache_read_input_tokens="81745" cache_creation="{'ephemeral_5m_input_tokens': 343, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01QQ6NX7JxMZBnVAn5jo2HMq">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/one_shot_remote_dispatch.py</param>
+    <param name="old_string">@dataclass(frozen=True)
+class OneShotDispatchResult:
+    """Result of a successful one-shot dispatch."""
+
+    pr_number: int
+    run_id: str
+    branch_name: str</param>
+    <param name="new_string">@dataclass(frozen=True)
+class OneShotDispatchResult:
+    """Result of a successful one-sho...[truncated 247 chars]...le: str
+    base_branch: str
+    submitted_by: str
+    model: str | None
+    workflow: str</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="343" cache_read_input_tokens="81745" cache_creation="{'ephemeral_5m_input_tokens': 343, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01QQ6NX7JxMZBnVAn5jo2HMq">
+&lt;tool_use_error&gt;File has not been read yet. Read it first before writing to it.&lt;/tool_use_error&gt;
+  </tool_result>
+  <assistant>I already read the file. Let me re-read it since the Edit tool requires it:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="446" cache_read_input_tokens="82088" cache_creation="{'ephemeral_5m_input_tokens': 446, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01NQhC9ubb5dMv2zL5kD57pG">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/one_shot_remote_dispatch.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="446" cache_read_input_tokens="82088" cache_creation="{'ephemeral_5m_input_tokens': 446, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01NQhC9ubb5dMv2zL5kD57pG">
+     1→"""Dispatch logic for one-shot execution via RemoteGitHub REST API.
+     2→
+     3→Uses RemoteGitHub gateway to create branches, commit files, create PRs,
+     4→and dispatch workflows entirely via the GitHub REST API. This is the
+     5→canonical dispatch path for all one-shot commands.
+     6→"""
+     7→
+     8→import time
+     9→from dataclasses import dataclass
+    10→from datetime import UTC
+    11→
+    12→import click
+    13→
+    14→from erk.core.branch_slug_generator import generate_branch_slug
+    15→from erk_shared.core.prompt_executor import PromptExecutor
+    16→from erk_shared.gateway.github.metadata.core import (
+    17→    create_submission_queued_block,
+    18→    render_erk_issue_event,
+    19→)
+    20→from erk_shared.gateway.github.metadata.plan_header import format_plan_header_body
+    21→from erk_shared.gateway.github.parsing import construct_workflow_run_url
+    22→from erk_shared.gateway.github.pr_footer import build_pr_body_footer
+    23→from erk_shared.gateway.http.abc import HttpError
+    24→from erk_shared.gateway.remote_github.abc import RemoteGitHub
+    25→from erk_shared.gateway.time.abc import Time
+    26→from erk_shared.naming import (
+    27→    format_branch_timestamp_suffix,
+    28→    generate_planned_pr_branch_name,
+    29→    sanitize_worktree_name,
+    30→)
+
+... [356 lines omitted] ...
+
+   356→        except HttpError as e:
+   358→                click.style("Warning: ", fg="yellow") + f"Failed to post queued comment: {e}"
+   363→    except Exception as exc:
+   364→        user_output(click.style(f"Failed during: {current_step}", fg="red"))
+  </tool_result>
+  <assistant>Now let me add the `OneShotDryRunResult` dataclass and change the dry-run path to return it instead of `None`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="5626" cache_read_input_tokens="82534" cache_creation="{'ephemeral_5m_input_tokens': 5626, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01SYD4ybG335hjM6Mc3jdXXY">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/one_shot_remote_dispatch.py</param>
+    <param name="old_string">@dataclass(frozen=True)
+class OneShotDispatchResult:
+    """Result of a successful one-shot dispatch."""
+
+    pr_number: int
+    run_id: str
+    branch_name: str</param>
+    <param name="new_string">@dataclass(frozen=True)
+class OneShotDispatchResult:
+    """Result of a successful one-sho...[truncated 247 chars]...le: str
+    base_branch: str
+    submitted_by: str
+    model: str | None
+    workflow: str</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5626" cache_read_input_tokens="82534" cache_creation="{'ephemeral_5m_input_tokens': 5626, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01SYD4ybG335hjM6Mc3jdXXY">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/one_shot_remote_dispatch.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update the return type and the dry-run path:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="390" cache_read_input_tokens="88160" cache_creation="{'ephemeral_5m_input_tokens': 390, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01UmwpK62p8YWKtUwKqywhdQ">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/one_shot_remote_dispatch.py</param>
+    <param name="old_string">) -&gt; OneShotDispatchResult | None:
+    """Execute the full remote dispatch sequence for a ...[truncated 581 chars]...ispatchResult with pr_number, run_id, branch_name,
+        or None in dry-run mode
+    """</param>
+    <param name="new_string">) -&gt; OneShotDispatchResult | OneShotDryRunResult:
+    """Execute the full remote dispatch ...[truncated 575 chars]...rns:
+        OneShotDispatchResult on success, OneShotDryRunResult in dry-run mode
+    """</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="390" cache_read_input_tokens="88160" cache_creation="{'ephemeral_5m_input_tokens': 390, 'ephemeral_1h_input_tokens': 0}" output_tokens="503" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01UmwpK62p8YWKtUwKqywhdQ">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/one_shot_remote_dispatch.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update the dry-run path to return `OneShotDryRunResult` instead of `None`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="866" cache_read_input_tokens="88550" cache_creation="{'ephemeral_5m_input_tokens': 866, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01GPrmDKXz5u9gDuFUFJQ4Ad">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/one_shot_remote_dispatch.py</param>
+    <param name="old_string">    if dry_run:
+        branch_name = generate_branch_name(
+            params.prompt,
+   ...[truncated 805 chars]...ts.items():
+                user_output(f"Extra input: {key}={value}")
+        return None</param>
+    <param name="new_string">    if dry_run:
+        branch_name = generate_branch_name(
+            params.prompt,
+   ...[truncated 1113 chars]...tted_by,
+            model=params.model,
+            workflow=ONE_SHOT_WORKFLOW,
+        )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="866" cache_read_input_tokens="88550" cache_creation="{'ephemeral_5m_input_tokens': 866, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01GPrmDKXz5u9gDuFUFJQ4Ad">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/one_shot_remote_dispatch.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_0161MT6QJaZNFR98BAcFMijN">
+    <param name="todos">[{'content': 'Create @json_output decorator + emit_json helper (src/erk/cli/json_output.py...[truncated 1041 chars]...e checks via devrun', 'status': 'pending', 'activeForm': 'Running tests and type checks'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="883" cache_read_input_tokens="89416" cache_creation="{'ephemeral_5m_input_tokens': 883, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_0161MT6QJaZNFR98BAcFMijN">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Now let me wire `@json_output` on the `one_shot` command. I need to re-read the file since I need to make edits:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="454" cache_read_input_tokens="90299" cache_creation="{'ephemeral_5m_input_tokens': 454, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+</session>

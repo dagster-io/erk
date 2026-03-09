@@ -1,0 +1,1240 @@
+<session>
+  <meta branch="plnd/O9009-json-output-decorato-03-08-1402" />
+  <meta model="claude-opus-4-6" />
+  <user>&lt;command-message&gt;erk:pr-address is running…&lt;/command-message&gt;
+&lt;command-name&gt;/erk:pr-address&lt;/command-name&gt;
+&lt;command-args&gt;--pr 9013&lt;/command-args&gt;</user>
+  <user># /erk:pr-address
+
+## Description
+
+Fetches unresolved PR review comments AND PR discussion comments from the current branch's PR and addresses them using holistic analysis with smart batching. Comments are grouped by complexity and relationship, then processed batch-by-batch with incremental commits and resolution.
+
+## Usage
+
+```bash
+/erk:pr-address
+/erk:pr-address --all               # Include resolved threads (for reference)
+/erk:pr-address --pr 6631           # Target specific PR
+/erk:pr-address --pr 6631 --all     # Target specific PR with resolved threads
+```
+
+## Prerequisite
+
+**Load the `pr-operations` skill first** for complete command reference and common mistake patterns.
+
+## Agent Instructions
+
+&gt; **Plan mode**: If plan mode is active, run Phases 0-2 (mode detection, classify feedback, display batched plan) as normal — these are read-only. Then write the execution plan to the plan file and call ExitPlanMode. Do NOT execute Phases 3-6 (edits, commits, resolution) until plan mode is exited and the user approves. In Plan File Mode, the same applies: run PF-1 and PF-2, then write the plan and call ExitPlanMode before executing PF-3 through PF-6.
+
+&gt; **Prerequisite**: Load `pr-operations` skill first for command reference.
+
+&gt; **CRITICAL: Use ONLY `erk exec` Commands**
+&gt;
+&gt; See `pr-operations` skill for the complete command reference. Never use raw `gh api` calls for thread operations.
+
+### Phase 0: Mode Detection
+
+Determine the execution mode before any work begins:
+
+1. **Check for `erk-plan-review` label**:
+
+   ```bash
+   gh pr view --json labels -q '.labels[].name' | grep -q '^erk-plan-review$'
+   ```
+
+   If found → **Plan Review Mode** (existing behavior, see Plan Review Mode section in pr-address-workflows docs)
+
+2. **Check if `.erk/impl-context/plan.md` is git-tracked**:
+
+   ```bash
+   git ls-files --error-unmatch .erk/impl-context/plan.md &gt;/dev/null 2&gt;&amp;1
+   ```
+
+   If found → **Plan File Mode** (see below — skip Phases 1-6 entirely)
+
+3. **Neither** → **Code Review Mode** (continue to Phase 1)
+
+---
+
+### Plan File Mode
+
+&gt; **CRITICAL**: In Plan File Mode, you are editing a _document_ — the plan. When a reviewer says "make the language about X more emphatic" or "add a step for Y", you modify the plan _text_. You do NOT make changes to any files described in the plan.
+
+This mode activates when `.erk/impl-context/plan.md` is git-tracked (plan-only PRs). It is a **complete alternative flow** — Phases 1-6 are skipped entirely.
+
+#### PF-1: Classify Feedback
+
+Use the same Task-based classifier as Phase 1:
+
+```
+Task(
+  subagent_type: "general-purpose",
+  model: "haiku",
+  description: "Classify PR feedback",
+  prompt: "Load and follow the skill instructions in .claude/skills/pr-feedback-classifier/SKILL.md
+           Arguments: [pass through --pr &lt;number&gt; if specified] [--include-resolved if --all was specified]
+           Return the complete JSON output as your final message."
+)
+```
+
+Handle errors and empty comments the same way as Phase 1.
+
+#### PF-2: Display Plan
+
+Show the batched execution plan from the classifier output, same format as Phase 2.
+
+#### PF-3: Execute by Batch
+
+For each batch, follow the same structure as Phase 3 with these constraints:
+
+- **ONLY edit `.erk/impl-context/plan.md`** (and `ref.json` if feedback targets it)
+- **Interpret all feedback as "modify the plan text"** — NEVER execute changes the plan describes
+- If a reviewer says "add a step to do X", add text to the plan describing step X. Do NOT actually do X.
+- Use `git add -f .erk/impl-context/plan.md` for commits (directory is gitignored)
+
+Commit messages follow the same batch format:
+
+```bash
+git add -f .erk/impl-context/plan.md
+git commit -m "Address plan review comments (batch N/M)
+
+- &lt;summary of comment 1&gt;
+- &lt;summary of comment 2&gt;"
+```
+
+#### PF-4: Resolve Threads
+
+Same as Phase 4 — resolve all threads via `erk exec resolve-review-threads`.
+
+#### PF-5: Push
+
+Push directly — plan PRs don't use graphite submit:
+
+```bash
+git push
+```
+
+#### PF-6: Done
+
+Skip `update-pr-description` and `upload-impl-session` — plan PRs have their own formatting and lifecycle.
+
+Report the final summary in the same format as Phase 4's final summary, then stop.
+
+---
+
+### Phase 1: Classify Feedback
+
+Use the Task tool (NOT a `/pr-feedback-classifier` skill invocation) to run the classifier. The skill's `context: fork` metadata does not create true subagent isolation in `--print` mode, so we must use an explicit Task tool call to guarantee the classifier runs in a separate agent context:
+
+```
+Task(
+  subagent_type: "general-purpose",
+  model: "haiku",
+  description: "Classify PR feedback",
+  prompt: "Load and follow the skill instructions in .claude/skills/pr-feedback-classifier/SKILL.md
+           Arguments: [pass through --pr &lt;number&gt; if specified] [--include-resolved if --all was specified]
+           Return the complete JSON output as your final message."
+)
+```
+
+Parse the JSON response. The skill returns:
+
+- `success`: Whether the operation succeeded
+- `pr_number`, `pr_title`, `pr_url`: PR metadata
+- `actionable_threads`: Array with `thread_id`, `path`, `line`, `classification`, `action_summary`, `complexity`
+  - `classification`: `"actionable"` (code changes needed) or `"informational"` (user decides to act or dismiss)
+- `discussion_actions`: Array with `comment_id`, `action_summary`, `complexity`
+- `batches`: Execution order with `item_indices` referencing the arrays above
+  - Includes an **Informational** batch (last) for `classification: "informational"` threads
+- `error`: Error message if `success` is false
+
+**Handle errors**: If `success` is false, display the error and exit.
+
+**Handle no comments**: If both `actionable_threads` and `discussion_actions` are empty, display: "No unresolved review comments or discussion comments on PR #NNN." and exit.
+
+### Phase 2: Display Batched Plan
+
+Show the user the batched execution plan from the classifier output:
+
+```
+## Execution Plan
+
+### Batch 1: Local Fixes (3 comments)
+| # | Location | Summary |
+|---|----------|---------|
+| 1 | foo.py:42 | Use LBYL pattern |
+| 2 | bar.py:15 | Add type annotation |
+| 3 | baz.py:99 | Fix typo |
+
+### Batch 2: Single-File Changes (1 comment)
+| # | Location | Summary |
+|---|----------|---------|
+| 4 | impl.py (multiple) | Rename `old_name` to `new_name` throughout |
+
+### Batch 3: Cross-Cutting Changes (2 comments)
+| # | Location | Summary |
+|---|----------|---------|
+| 5 | Multiple files | Update all callers of deprecated function |
+| 6 | docs/ | Update documentation per reviewer request |
+
+### Batch 4: Complex Changes (2 comments -&gt; 1 unified change)
+| # | Location | Summary |
+|---|----------|---------|
+| 7 | impl.py:50 | Fold validate into prepare with union types |
+| 8 | cmd.py:100 | (related to #7 - same refactor) |
+```
+
+**User confirmation flow:**
+
+- **Batch 1-2 (simple)**: Auto-proceed without confirmation
+- **Batch 3-4 (complex)**: Show plan and wait for user approval before executing
+
+### Phase 3: Execute by Batch
+
+For each batch, execute this workflow using the thread IDs from the classifier JSON:
+
+#### Pre-Existing Batch (Special Handling)
+
+If the batch has `complexity: "pre_existing"`, handle it differently — no code changes, no CI, no commit:
+
+1. Resolve all threads in the batch via `erk exec resolve-review-threads` with a standard comment:
+
+```bash
+echo '[{"thread_id": "PRRT_abc", "comment": "Pre-existing issue — this code was moved/restructured, not newly introduced."}, ...]' | erk exec resolve-review-threads
+```
+
+2. Report progress:
+
+```
+## Batch 0: Pre-Existing (Auto-Resolve)
+
+Auto-resolved N pre-existing threads (bot comments on moved/restructured code).
+No code changes needed.
+```
+
+3. Continue to the next batch. Skip Steps 1-5 below for this batch.
+
+#### Step 1: Address All Comments in the Batch
+
+For each comment in the batch:
+
+**For Informational Review Threads** (`classification: "informational"`):
+
+Present the user with a choice using AskUserQuestion:
+
+- **Act**: Make the suggested change, then resolve the thread
+- **Dismiss**: Resolve the thread without code changes (reply with a brief message like "Acknowledged, not acting on this suggestion")
+
+If the user chooses **Act**, proceed as a normal review thread (read file, make fix, track change). If the user chooses **Dismiss**, skip to Step 4 to resolve the thread with a dismissal reply.
+
+**For Actionable Review Threads** (`classification: "actionable"`):
+
+1. Read the file to understand context:
+   - If `line` is specified: Read around that line number
+   - If `line` is null (outdated thread): Read the entire file or search for relevant code mentioned in the comment
+2. Make the fix following the reviewer's feedback
+3. Track the change for the batch commit message
+
+**For Discussion Comments:**
+
+1. Determine if action is needed:
+   - If it's a request (e.g., "Please update docs"), take the requested action
+   - If it's a question, provide an answer or make clarifying changes
+   - If it's architectural feedback/suggestion, investigate the codebase to understand implications
+   - If it's just acknowledgment/thanks, note it and move on
+2. **Investigate the codebase** when the comment requires understanding existing code:
+   - Search for relevant patterns, existing implementations, or related code
+   - Note any interesting findings that inform your decision
+   - Record these findings - they become permanent documentation in the reply
+3. Take action if needed
+
+**Handling False Positives from Automated Reviewers:**
+
+Automated review bots (like `dignified-python-review`, linters, or security scanners) can flag false positives. Before making code changes:
+
+1. **Read the flagged code carefully** - understand what the bot is complaining about
+2. **Verify if it's a false positive** by checking:
+   - Is the pattern the bot wants already implemented nearby? (e.g., LBYL check already exists on a preceding line)
+   - Is the bot misunderstanding the code structure?
+   - Is the bot applying a rule that doesn't fit this specific context?
+3. **If it's a false positive**, do NOT make unnecessary code changes. Instead:
+   - Reply to the comment explaining why it's a false positive
+   - Reference specific line numbers where the correct pattern already exists
+   - Resolve the thread
+
+**For Outdated Review Threads** (`is_outdated: true`):
+
+Outdated threads have `line: null` because the code has changed since the comment was made.
+
+1. **Read the file** at the path (ignore line number - search for relevant code)
+2. **Check if the issue is already fixed** in the current code
+3. **Take action:**
+   - If already fixed -&gt; Proceed directly to Step 4 to resolve the thread
+   - If not fixed -&gt; Apply the fix, then proceed to Step 4
+
+**IMPORTANT**: Outdated threads MUST still be resolved via `erk exec resolve-review-thread`.
+Do not skip resolution just because no code change was needed.
+
+#### Step 2: Run CI Checks
+
+After making all changes in the batch:
+
+```bash
+# Run relevant CI checks for changed files
+# (This may vary by project - use project's test commands)
+```
+
+If CI fails, fix the issues before proceeding.
+
+#### Step 3: Commit the Batch
+
+Create a single commit for all changes in the batch:
+
+```bash
+git add &lt;changed files&gt;
+git commit -m "Address PR review comments (batch N/M)
+
+- &lt;summary of comment 1&gt;
+- &lt;summary of comment 2&gt;
+..."
+```
+
+**Note:** If any changed files are in `.erk/impl-context/` (plan-only PRs), use `git add -f` instead — the directory is gitignored.
+
+#### Step 4: Resolve All Threads in the Batch (MANDATORY)
+
+**This step is NOT optional.** Every thread must be resolved using the thread IDs from the classifier JSON.
+
+After committing, resolve review threads and mark discussion comments.
+
+**For Review Threads** - use the batch command `erk exec resolve-review-threads` to resolve all review threads in a single call. Pipe a JSON array via stdin:
+
+```bash
+echo '[{"thread_id": "PRRT_abc", "comment": "Fixed in commit abc1234"}, {"thread_id": "PRRT_def", "comment": "Applied suggestion"}]' | erk exec resolve-review-threads
+```
+
+Each item has `thread_id` (required) and `comment` (optional). Build the JSON array from the batch's thread IDs and resolution messages, then pipe it in one call.
+
+**For Discussion Comments** - use `erk exec reply-to-discussion-comment` with the `comment_id` from the JSON, with a substantive reply that quotes the original comment and explains what action was taken.
+
+#### Step 5: Report Progress
+
+After completing the batch, report:
+
+```
+## Batch N Complete
+
+Addressed:
+- foo.py:42 - Used LBYL pattern
+- bar.py:15 - Added type annotation
+
+Committed: abc1234 "Address PR review comments (batch 1/3)"
+
+Resolved threads: 2
+Remaining batches: 2
+```
+
+Then proceed to the next batch.
+
+### Phase 4: Final Verification
+
+After all batches complete, re-invoke the classifier to verify all threads are resolved. Use Task tool (NOT skill invocation) for the same `--print` mode isolation reason as Phase 1:
+
+```
+Task(
+  subagent_type: "general-purpose",
+  model: "haiku",
+  description: "Verify PR feedback resolved",
+  prompt: "Load and follow the skill instructions in .claude/skills/pr-feedback-classifier/SKILL.md
+           Arguments: [pass through --pr &lt;number&gt; if originally specified]
+           Return the complete JSON output as your final message."
+)
+```
+
+If `actionable_threads` or `discussion_actions` are non-empty, warn about remaining unresolved items. Both `actionable` and `informational` classified threads should be resolved (either by code changes or by dismissal).
+
+#### Report Final Summary
+
+```
+## All PR Comments Addressed
+
+Total comments: 8
+Pre-existing (auto-resolved): 3
+Actionable (code changes): 5
+Batches: 4
+Commits: 3
+
+All review threads resolved.
+All discussion comments marked with reaction.
+
+Next steps:
+1. Push changes:
+   - **Graphite repos**: `gt submit` (or `gt ss`)
+   - **Plain git repos**: `git push`
+   - If push is rejected (non-fast-forward): Run `/erk:diverge-fix` to resolve. Do NOT use `git pull --rebase`.
+2. Wait for CI to pass
+3. Request re-review if needed
+```
+
+#### Handle Any Skipped Comments
+
+If the user explicitly skipped any comments during the process, list them:
+
+```
+## Skipped Comments (user choice)
+- #5: src/legacy.py:100 - "Refactor this module" (user deferred)
+```
+
+### Phase 5: Update PR Title and Body
+
+After all review comments have been addressed, update the PR to reflect the full scope of changes.
+
+Run:
+
+```bash
+erk exec update-pr-description --session-id "${CLAUDE_SESSION_ID}"
+```
+
+This generates an AI-powered title and body from the full PR diff, preserving existing header and footer metadata.
+
+### Phase 6: Upload Address Session
+
+After addressing review comments, upload the session for cross-machine learning.
+Resolve the plan_id from the current branch, then push the session:
+
+```bash
+erk exec upload-impl-session --session-id "${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This is non-critical — if it fails (no plan tracking, no session found), addressing was still successful.
+
+### Common Mistakes
+
+See `pr-operations` skill for the complete table of common mistakes and correct approaches.
+
+### Error Handling
+
+**No PR for branch:** Display error and suggest creating a PR with `gt create` or `gh pr create`
+
+**GitHub API error:** Display error and suggest checking `gh auth status` and repository access
+
+**CI failure during batch:** Stop, display the failure, and let the user decide whether to fix and continue or abort
+
+
+ARGUMENTS: --pr 9013</user>
+  <assistant>
+
+I'll start by loading the `pr-operations` skill as required, then proceed with the phases.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="30574" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 30574, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Skill" id="toolu_01KzZvT4zHUzVHsJEeciHpyK">
+    <param name="skill">pr-operations</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="30574" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 30574, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01KzZvT4zHUzVHsJEeciHpyK">
+Launching skill: pr-operations
+  </tool_result>
+  <user>Base directory for this skill: /home/runner/work/erk/erk/.claude/skills/pr-operations
+
+# PR Operations Skill
+
+## Core Rule
+
+&gt; **CRITICAL: Use ONLY `erk exec` Commands for PR Thread Operations**
+&gt;
+&gt; - ❌ DO NOT use raw `gh api` calls for thread operations
+&gt; - ❌ DO NOT use `gh pr` commands directly for thread resolution
+&gt; - ✅ ONLY use `erk exec` commands listed below
+&gt;
+&gt; The `erk exec` commands handle thread resolution correctly. Raw API calls only reply without resolving.
+
+## Quick Reference
+
+| Command                       | Purpose                           | Key Point                          |
+| ----------------------------- | --------------------------------- | ---------------------------------- |
+| `get-pr-review-comments`      | Fetch unresolved review threads   | Returns threads with line info     |
+| `get-pr-discussion-comments`  | Fetch PR discussion comments      | Returns top-level comments         |
+| `resolve-review-thread`       | Reply AND resolve a single thread | Does both in one operation         |
+| `resolve-review-threads`      | Batch resolve multiple threads    | JSON stdin, one call for N threads |
+| `reply-to-discussion-comment` | Reply to discussion comment       | For non-code feedback              |
+| `post-pr-inline-comment`      | Post new inline comment           | Creates new review thread          |
+
+## When to Use Each Command
+
+### Fetching Comments
+
+```bash
+# Get all unresolved review threads (code comments)
+erk exec get-pr-review-comments
+
+# Get all discussion comments (top-level PR comments)
+erk exec get-pr-discussion-comments
+
+# Include resolved threads (for reference)
+erk exec get-pr-review-comments --all
+```
+
+### Resolving Review Threads
+
+```bash
+# Resolve a single thread
+erk exec resolve-review-thread --thread-id "PRRT_abc123" --comment "Fixed in commit abc1234"
+
+# Batch resolve multiple threads (preferred for pr-address batches)
+echo '[{"thread_id": "PRRT_abc", "comment": "Fixed"}, {"thread_id": "PRRT_def", "comment": "Applied"}]' | erk exec resolve-review-threads
+```
+
+### Replying to Discussion Comments
+
+```bash
+# For PR discussion comments (not code review threads)
+erk exec reply-to-discussion-comment --comment-id 12345 --reply "**Action taken:** Updated the docs as requested."
+```
+
+## Common Mistakes
+
+| Mistake                                        | Why It's Wrong                | Correct Approach                      |
+| ---------------------------------------------- | ----------------------------- | ------------------------------------- |
+| Using `gh api repos/.../comments/{id}/replies` | Only replies, doesn't resolve | Use `erk exec resolve-review-thread`  |
+| Using `gh pr comment`                          | Doesn't resolve threads       | Use `erk exec resolve-review-thread`  |
+| Skipping resolution for outdated threads       | Threads stay open in PR       | Always resolve, even if already fixed |
+| Generic replies like "Noted"                   | Not useful for PR history     | Include investigation findings        |
+
+## Replying vs Resolving
+
+&gt; **IMPORTANT: Replying ≠ Resolving**
+&gt;
+&gt; - **Replying** (via raw `gh api .../replies`): Adds a comment but thread stays OPEN
+&gt; - **Resolving** (via `erk exec resolve-review-thread`): Adds a comment AND marks thread as RESOLVED
+&gt;
+&gt; Always use `erk exec resolve-review-thread` (single) or `erk exec resolve-review-threads` (batch) - they do both in one operation.
+
+## Comment Classification Model
+
+When analyzing PR feedback, classify comments by complexity and group into batches.
+
+### Complexity Categories
+
+- **Local fix**: Single comment → single location change (e.g., "Fix typo", "Add type annotation")
+- **Multi-location**: Single comment → changes in multiple spots in one file
+- **Cross-cutting**: Single comment → changes across multiple files
+- **Related**: Multiple comments that inform a single unified change
+
+### Batch Ordering
+
+Process batches from simplest to most complex:
+
+| Batch | Complexity                 | Description                         | Example                                                   |
+| ----- | -------------------------- | ----------------------------------- | --------------------------------------------------------- |
+| 1     | Local fixes                | One file, one location per comment  | "Use LBYL pattern at line 42"                             |
+| 2     | Single-file multi-location | One file, multiple locations        | "Rename this variable everywhere in this file"            |
+| 3     | Cross-cutting              | Multiple files affected             | "Update all callers of this function"                     |
+| 4     | Complex/Related            | Multiple comments inform one change | "Fold validate into prepare" + "Use union types for this" |
+
+**Note**: Discussion comments requiring doc updates go in Batch 3 (cross-cutting).
+
+### Batch Confirmation Flow
+
+- **Batch 1-2 (simple)**: Auto-proceed without confirmation
+- **Batch 3-4 (complex)**: Show plan and wait for user approval
+
+## Inline Comment Deduplication
+
+When posting inline review comments, always deduplicate to prevent re-posting existing comments:
+
+1. **Build dedup key**: `(file_path, line_number, body_prefix)` where prefix is first 80 characters of comment body
+2. **Check proximity**: Match within 2-line tolerance (line 42 matches existing comments at lines 40–44)
+3. **Skip duplicates**: If a matching key exists, do not post the comment
+
+This prevents the same feedback from appearing multiple times across review iterations. See [Inline Comment Deduplication](../../docs/learned/review/inline-comment-deduplication.md) for full algorithm details.
+
+## Detailed Documentation
+
+For complete command documentation including JSON output formats, options, and examples:
+
+@references/commands.md
+</user>
+  <assistant>
+
+Now let me proceed with Phase 0: Mode Detection.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="1512" cache_read_input_tokens="30574" cache_creation="{'ephemeral_5m_input_tokens': 1512, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01ASge9kLzRP3dA7YJs9eZjq">
+    <param name="command">gh pr view 9013 --json labels -q '.labels[].name' 2&gt;&amp;1 | grep -q '^erk-plan-review$' &amp;&amp; echo "PLAN_REVIEW" || echo "NOT_PLAN_REVIEW"</param>
+    <param name="description">Check for erk-plan-review label</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="1512" cache_read_input_tokens="30574" cache_creation="{'ephemeral_5m_input_tokens': 1512, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_0187rMsoTUMGBk4WtznA11d7">
+    <param name="command">git ls-files --error-unmatch .erk/impl-context/plan.md &gt;/dev/null 2&gt;&amp;1 &amp;&amp; echo "PLAN_FILE_MODE" || echo "CODE_REVIEW_MODE"</param>
+    <param name="description">Check for tracked plan.md</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="1512" cache_read_input_tokens="30574" cache_creation="{'ephemeral_5m_input_tokens': 1512, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01ASge9kLzRP3dA7YJs9eZjq">
+NOT_PLAN_REVIEW
+  </tool_result>
+  <tool_result tool="toolu_0187rMsoTUMGBk4WtznA11d7">
+CODE_REVIEW_MODE
+  </tool_result>
+  <assistant>**Code Review Mode** detected. Proceeding to Phase 1: Classify Feedback.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="329" cache_read_input_tokens="32086" cache_creation="{'ephemeral_5m_input_tokens': 329, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_017kZPCkKJRntKHVJL4B1B3t">
+    <param name="subagent_type">general-purpose</param>
+    <param name="model">haiku</param>
+    <param name="description">Classify PR feedback</param>
+    <param name="prompt">Load and follow the skill instructions in .claude/skills/pr-feedback-classifier/SKILL.md
+Arguments: --pr 9013
+Return the complete JSON output as your final message.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="329" cache_read_input_tokens="32086" cache_creation="{'ephemeral_5m_input_tokens': 329, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_017kZPCkKJRntKHVJL4B1B3t">
+Now I'll classify the feedback according to the PR Feedback Classifier skill:
+
+Based on the fetched data for PR 9013, here is the complete JSON output:
+
+```json
+{
+  "success": true,
+  "pr_number": 9013,
+  "pr_title": "Add JSON output support to one-shot command with structured error handling",
+  "pr_url": "https://github.com/dagster-io/erk/pull/9013",
+  "actionable_threads": [
+    {
+      "thread_id": "PRRT_kwDOPxC3hc5y3JLY",
+      "type": "review",
+      "path": "src/erk/cli/ensure.py",
+      "line": 46,
+      "is_outdated": false,
+      "classification": "actionable",
+      "pre_existing": false,
+      "action_summary": "Dignified Python violation: Default parameter value violates rule - use keyword-only parameter without default instead",
+      "complexity": "local",
+      "original_comment": "**Dignified Python**: Default parameter value violates rule - use keyword-only parameter without default instead"
+    }
+  ],
+  "discussion_actions": [],
+  "informational_count": 5,
+  "batches": [
+    {
+      "name": "Pre-Existing (Auto-Resolve)",
+      "complexity": "pre_existing",
+
+... [38 lines omitted] ...
+
+  "error": null
+  </tool_result>
+  <assistant>
+
+## Phase 2: Execution Plan
+
+### Batch 1: Local Fixes (1 comment)
+| # | Location | Summary |
+|---|----------|---------|
+| 1 | `src/erk/cli/ensure.py:46` | Default parameter value violates dignified-python rule — use keyword-only parameter without default |
+
+Only 1 simple local fix. Auto-proceeding to Phase 3.
+
+---
+
+## Phase 3: Execute Batch 1
+
+### Step 1: Address the comment
+
+Let me read the file to understand the context:</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="893" cache_read_input_tokens="32415" cache_creation="{'ephemeral_5m_input_tokens': 893, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01EBVcghaH9LaWt5RNM984YM">
+    <param name="todos">[{'content': 'Fix default parameter value in ensure.py:46', 'status': 'in_progress', 'acti...[truncated 274 chars]...ges and update PR', 'status': 'pending', 'activeForm': 'Pushing changes and updating PR'}]</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="893" cache_read_input_tokens="32415" cache_creation="{'ephemeral_5m_input_tokens': 893, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01YRbWXW1YY4jddmLnTAdUNN">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/ensure.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="893" cache_read_input_tokens="32415" cache_creation="{'ephemeral_5m_input_tokens': 893, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01EBVcghaH9LaWt5RNM984YM">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_result tool="toolu_01YRbWXW1YY4jddmLnTAdUNN">
+     1→"""CLI error handling utilities with styled output.
+     2→
+     3→This module provides the Ensure class for asserting invariants in CLI commands
+     4→with consistent, user-friendly error messages. All errors use red "Error:" prefix
+     5→for visual consistency.
+     6→
+     7→Domain-Specific Methods:
+     8→- Git state validations (branch checks, worktree existence, clean state)
+     9→- Configuration validations (required fields, format checks)
+    10→- Argument validations (count, type, range)
+    11→- File/path validations (readable, writable, not hidden)
+    12→- String/collection validations (non-empty, non-null)
+    13→- External tool validations (gh CLI installed)
+    14→"""
+    15→
+    16→from __future__ import annotations
+    17→
+    18→import shutil
+    19→from pathlib import Path
+    20→from typing import TYPE_CHECKING, Any, TypeVar
+    21→
+    22→import click
+    23→
+    24→from erk_shared.gateway.graphite.disabled import GraphiteDisabled, GraphiteDisabledError
+    25→from erk_shared.output.output import user_output
+    26→
+    27→if TYPE_CHECKING:
+    28→    from erk.core.context import ErkContext
+    29→
+    30→T = TypeVar("T")
+
+... [559 lines omitted] ...
+
+    33→class UserFacingCliError(click.ClickException):
+    34→    """Exception for user-facing CLI errors with styled output.
+    36→    Extends click.ClickException so Click catches it automatically at every
+    37→    level (groups, subgroups, commands) and converts it to a styled error
+    42→        raise UserFacingCliError("Not a GitHub repository")
+    43→        raise UserFacingCliError(push_result.message)
+    46→    def __init__(self, message: str, *, error_type: str = "cli_error") -&gt; None:
+    49→        self.error_type = error_type
+    52→        """Display styled error message to stderr."""
+    53→        user_output(click.style("Error: ", fg="red") + self.format_message())
+    57→    """Helper class for asserting invariants with consistent error handling."""
+    60→    def invariant(condition: bool, error_message: str) -&gt; None:
+    61→        """Ensure condition is true, otherwise output styled error and exit.
+    65→            error_message: Error message to display if condition is false.
+    66→                          "Error: " prefix will be added automatically in red.
+    69→            UserFacingCliError: If condition is false
+    72→            raise UserFacingCliError(error_message)
+    75→    def truthy(value: T, error_message: str) -&gt; T:
+    76→        """Ensure value is truthy, otherwise output styled error and exit.
+    80→            error_message: Error message to display if value is falsy.
+    81→                          "Error: " prefix will be added automatically in red.
+    87→            UserFacingCliError: If value is falsy
+    90→            raise UserFacingCliError(error_message)
+    94→    def not_none(value: T | None, error_message: str) -&gt; T:
+    95→        """Ensure value is not None, otherwise output styled error and exit.
+   103→            error_message: Error message to display if value is None.
+   104→                          "Error: " prefix will be added automatically in red.
+   110→            UserFacingCliError: If value is None
+   119→            raise UserFacingCliError(error_message)
+   137→            click.UsageError: If both --dangerous and --safe are provided
+   140→            raise click.UsageError("--dangerous and --safe are mutually exclusive")
+   153→        error_message: str | None = None,
+   155→        """Ensure path exists, otherwise output styled error and exit.
+   166→            error_message: Optional custom error message. If not provided,
+   168→                          "Error: " prefix will be added automatically in red.
+   171→            UserFacingCliError: If path does not exist
+   174→            &gt;&gt;&gt; # Basic usage with default error message
+   177→            &gt;&gt;&gt; # With custom error message
+   181→            if error_message is None:
+   182→                error_message = f"Path not found: {path}"
+   183→            raise UserFacingCliError(error_message)
+   186→    def not_empty(value: str | list | dict | None, error_message: str) -&gt; None:
+   191→            error_message: Error message to display if value is empty.
+   192→                          "Error: " prefix will be added automatically in red.
+   195→            UserFacingCliError: If value is None, empty string, empty list, or empty dict
+   202→            raise UserFacingCliError(error_message)
+   206→        """Ensure worktree exists at path, otherwise output styled error and exit.
+   211→            name: Optional worktree name for friendlier error message
+   218→            &gt;&gt;&gt; Ensure.git_worktree_exists(ctx, wt_path)  # Uses path in error
+   221→            error_message = f"Worktree '{name}' does not exist"
+   223→            error_message = f"Worktree not found: {wt_path}"
+   224→        Ensure.path_exists(ctx, wt_path, error_message)
+   228→        """Ensure git branch exists, otherwise output styled error and exit.
+   236→            UserFacingCliError: If branch does not exist
+   243→            raise UserFacingCliError(
+   249→        """Ensure currently in a git worktree, otherwise output styled error and exit.
+   252→            ctx: Application context (for error handling)
+   256→            UserFacingCliError: If not in a git worktree
+   263→            raise UserFacingCliError(
+   271→        error_message: str | None = None,
+   273→        """Ensure argument count matches expected, otherwise output styled error and exit.
+   278→            error_message: Optional custom error message
+   281→            UserFacingCliError: If argument count does not match expected
+   288→            if error_message is None:
+   290→                    error_message = f"Expected no arguments, got {len(args)}"
+   292→                    error_message = f"Expected 1 argument, got {len(args)}"
+   294→                    error_message = f"Expected {expected} arguments, got {len(args)}"
+   295→            raise UserFacingCliError(error_message)
+   301→        error_message: str | None = None,
+   303→        """Ensure configuration field is set, otherwise output styled error and exit.
+   308→            error_message: Optional custom error message
+   311→            UserFacingCliError: If field is not set (None or missing)
+   322→        except AttributeError:
+   325→            except (KeyError, TypeError):
+   329→            if error_message is None:
+   330→                error_message = (
+   334→            raise UserFacingCliError(error_message)
+   337→    def path_is_dir(ctx: ErkContext, path: Path, error_message: str | None = None) -&gt; None:
+   338→        """Ensure path exists and is a directory, otherwise output styled error and exit.
+   343→            error_message: Optional custom error message
+   346→            UserFacingCliError: If path doesn't exist or is not a directory
+   351→        Ensure.path_exists(ctx, path, error_message)
+   353→            if error_message is None:
+   354→                error_message = f"Path is not a directory: {path}"
+   355→            raise UserFacingCliError(error_message)
+   358→    def path_not_exists(ctx: ErkContext, path: Path, error_message: str) -&gt; None:
+   359→        """Ensure path does NOT exist, otherwise output styled error and exit.
+   366→            error_message: Error message to display if path exists
+   369→            UserFacingCliError: If path already exists
+   380→            raise UserFacingCliError(error_message)
+   390→            UserFacingCliError: If gh CLI is not found on PATH
+   398→            raise UserFacingCliError(
+   412→            UserFacingCliError: If gt CLI is not found on PATH
+   420→            raise UserFacingCliError(
+   431→        outputs a helpful error message based on why Graphite is unavailable
+   440→            UserFacingCliError: If Graphite is disabled or not installed
+   448→            error = GraphiteDisabledError(ctx.graphite.reason)
+   449→            raise UserFacingCliError(str(error))
+   459→            UserFacingCliError: If claude CLI is not found on PATH
+   467→            raise UserFacingCliError(
+   484→            UserFacingCliError: If gt is not authenticated
+   494→            raise UserFacingCliError(
+   513→            UserFacingCliError: If gh is not installed or not authenticated
+   524→            raise UserFacingCliError(
+   546→        If branch exists and is NOT tracked, errors with remediation steps.
+   573→        # Branch exists but is not tracked - error with remediation
+   574→        raise UserFacingCliError(
+  </tool_result>
+  <assistant>I can see the issue at line 46:
+
+```python
+def __init__(self, message: str, *, error_type: str = "cli_error") -&gt; None:
+```
+
+The `error_type` parameter has a default value `"cli_error"`, which violates the dignified-python "no default parameter values" rule. I need to find all callers to understand the impact of removing the default.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="7922" cache_read_input_tokens="33308" cache_creation="{'ephemeral_5m_input_tokens': 7922, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01TcQRUdi969UPa3WaF7C92p">
+    <param name="pattern">UserFacingCliError\(</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="7922" cache_read_input_tokens="33308" cache_creation="{'ephemeral_5m_input_tokens': 7922, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01TcQRUdi969UPa3WaF7C92p">
+tests/unit/cli/test_json_output.py:59:        raise UserFacingCliError("something went wrong")
+tests/unit/cli/test_json_output.py:76:        raise UserFacingCliError("auth failed", error_type="auth_required")
+tests/unit/cli/test_json_output.py:106:        raise UserFacingCliError("normal error")
+docs/learned/cli/error-handling-antipatterns.md:67:    raise UserFacingCliError("Branch name is required")
+docs/learned/cli/error-handling-antipatterns.md:95:        raise UserFacingCliError(
+docs/learned/cli/error-handling-antipatterns.md:167:    raise UserFacingCliError(str(e)) from e
+docs/learned/cli/output-styling.md:518:    raise UserFacingCliError(push_result.message)
+docs/learned/architecture/discriminated-union-error-handling.md:47:    raise UserFacingCliError(str(e))
+docs/learned/architecture/discriminated-union-error-handling.md:91:    raise UserFacingCliError(push_result.message)
+docs/learned/architecture/discriminated-union-error-handling.md:183:    raise UserFacingCliError(result.message)
+src/erk/cli/repo_resolution.py:34:            raise UserFacingCliError(
+src/erk/cli/repo_resolution.py:42:        raise UserFacingCliError(
+src/erk/cli/repo_resolution.py:68:        raise UserFacingCliError(
+src/erk/cli/commands/wt/create_cmd.py:152:            raise UserFacingCliError(
+src/erk/cli/commands/wt/create_cmd.py:192:                        raise UserFacingCliError(
+src/erk/cli/commands/wt/create_cmd.py:202:                    raise UserFacingCliError(
+src/erk/cli/commands/wt/create_cmd.py:213:        raise UserFacingCliError(
+src/erk/cli/commands/objective/view_cmd.py:203:            raise UserFacingCliError(
+src/erk/cli/commands/objective/view_cmd.py:209:            raise UserFacingCliError(
+src/erk/cli/commands/objective/view_cmd.py:215:            raise UserFacingCliError(
+src/erk/cli/commands/objective/view_cmd.py:225:        raise UserFacingCliError(f"Issue #{issue_number} not found")
+src/erk/cli/commands/objective/view_cmd.py:230:        raise UserFacingCliError(
+src/erk/cli/commands/objective/view_cmd.py:241:            raise UserFacingCliError(
+src/erk/cli/commands/admin.py:124:            raise UserFacingCliError(str(e)) from e
+src/erk/cli/commands/admin.py:138:            raise UserFacingCliError(str(e)) from e
+src/erk/cli/commands/admin.py:152:            raise UserFacingCliError(str(e)) from e
+src/erk/cli/commands/admin.py:294:            raise UserFacingCliError(str(e)) from e
+src/erk/cli/commands/admin.py:304:            raise UserFacingCliError(str(e)) from e
+src/erk/cli/commands/admin.py:372:            raise UserFacingCliError(str(e)) from e
+src/erk/cli/commands/admin.py:382:            raise UserFacingCliError(str(e)) from e
+
+... [31 lines omitted] ...
+
+src/erk/cli/commands/admin.py:456:        raise UserFacingCliError(push_result.message)
+src/erk/cli/commands/admin.py:487:        raise UserFacingCliError(push_result.message)
+src/erk/cli/commands/admin.py:500:        raise UserFacingCliError(push_result.message)
+src/erk/cli/commands/one_shot.py:54:        raise UserFacingCliError(
+src/erk/cli/commands/one_shot.py:165:        raise UserFacingCliError("Prompt must not be empty", error_type="invalid_input")
+src/erk/cli/commands/one_shot.py:182:            raise UserFacingCliError(
+src/erk/cli/commands/one_shot.py:190:            raise UserFacingCliError(
+src/erk/cli/commands/pr/submit_pipeline.py:481:        raise UserFacingCliError(push_result.message)
+src/erk/cli/commands/pr/dispatch_cmd.py:273:        raise UserFacingCliError(push_result.message)
+src/erk/cli/ensure.py:33:class UserFacingCliError(click.ClickException):
+src/erk/cli/ensure.py:42:        raise UserFacingCliError("Not a GitHub repository")
+src/erk/cli/ensure.py:43:        raise UserFacingCliError(push_result.message)
+src/erk/cli/ensure.py:72:            raise UserFacingCliError(error_message)
+src/erk/cli/ensure.py:90:            raise UserFacingCliError(error_message)
+src/erk/cli/ensure.py:119:            raise UserFacingCliError(error_message)
+src/erk/cli/ensure.py:183:            raise UserFacingCliError(error_message)
+src/erk/cli/ensure.py:202:            raise UserFacingCliError(error_message)
+src/erk/cli/ensure.py:243:            raise UserFacingCliError(
+src/erk/cli/ensure.py:263:            raise UserFacingCliError(
+src/erk/cli/ensure.py:295:            raise UserFacingCliError(error_message)
+src/erk/cli/ensure.py:334:            raise UserFacingCliError(error_message)
+src/erk/cli/ensure.py:355:            raise UserFacingCliError(error_message)
+src/erk/cli/ensure.py:380:            raise UserFacingCliError(error_message)
+src/erk/cli/ensure.py:398:            raise UserFacingCliError(
+src/erk/cli/ensure.py:420:            raise UserFacingCliError(
+src/erk/cli/ensure.py:449:            raise UserFacingCliError(str(error))
+src/erk/cli/ensure.py:467:            raise UserFacingCliError(
+src/erk/cli/ensure.py:494:            raise UserFacingCliError(
+src/erk/cli/ensure.py:524:            raise UserFacingCliError(
+src/erk/cli/ensure.py:574:        raise UserFacingCliError(
+.claude/skills/dignified-python/references/exception-handling.md:156:    raise UserFacingCliError(f"Failed to read config: {e}") from e
+  </tool_result>
+  <assistant>Let me check which callers actually pass `error_type`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1990" cache_read_input_tokens="41230" cache_creation="{'ephemeral_5m_input_tokens': 1990, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_0182dWc3Yqn2ux3NiWxaSLZ6">
+    <param name="pattern">error_type=</param>
+    <param name="path">/home/runner/work/erk/erk/src</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1990" cache_read_input_tokens="41230" cache_creation="{'ephemeral_5m_input_tokens': 1990, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01YTRrr8XxjjUgPCUpdSBHBC">
+    <param name="pattern">error_type=</param>
+    <param name="path">/home/runner/work/erk/erk/tests</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1990" cache_read_input_tokens="41230" cache_creation="{'ephemeral_5m_input_tokens': 1990, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_0182dWc3Yqn2ux3NiWxaSLZ6">
+src/erk/cli/commands/land_pipeline.py:130:            error_type="invalid_target",
+src/erk/cli/commands/land_pipeline.py:229:            error_type="up_with_pr",
+src/erk/cli/commands/land_pipeline.py:302:            error_type="no_pr_details",
+src/erk/cli/commands/land_pipeline.py:394:                error_type="graphite_merge_failed",
+src/erk/cli/commands/land_pipeline.py:418:                error_type="github_merge_failed",
+src/erk/cli/commands/one_shot.py:56:            error_type="auth_required",
+src/erk/cli/commands/one_shot.py:165:        raise UserFacingCliError("Prompt must not be empty", error_type="invalid_input")
+src/erk/cli/commands/one_shot.py:185:                error_type="invalid_repo",
+src/erk/cli/commands/pr/submit_pipeline.py:151:            error_type="no_branch",
+src/erk/cli/commands/pr/submit_pipeline.py:168:                error_type="issue_linkage_mismatch",
+src/erk/cli/commands/pr/submit_pipeline.py:301:                error_type="remote_diverged",
+src/erk/cli/commands/pr/submit_pipeline.py:336:                error_type="graphite_restack_required",
+src/erk/cli/commands/pr/submit_pipeline.py:347:            error_type="graphite_submit_failed",
+src/erk/cli/commands/pr/submit_pipeline.py:362:            error_type="pr_not_found",
+src/erk/cli/commands/pr/submit_pipeline.py:401:            error_type="github_auth_failed",
+src/erk/cli/commands/pr/submit_pipeline.py:413:            error_type="no_commits",
+src/erk/cli/commands/pr/submit_pipeline.py:434:                error_type="rebase_failed",
+src/erk/cli/commands/pr/submit_pipeline.py:449:            error_type="branch_diverged",
+src/erk/cli/commands/pr/submit_pipeline.py:472:                error_type="branch_diverged",
+src/erk/cli/commands/pr/submit_pipeline.py:493:                    error_type="parent_branch_no_pr",
+src/erk/cli/commands/pr/submit_pipeline.py:573:            error_type="no_base_branch",
+src/erk/cli/commands/pr/submit_pipeline.py:613:            error_type="no_repo",
+src/erk/cli/commands/pr/submit_pipeline.py:668:            error_type="no_diff_file",
+src/erk/cli/commands/pr/submit_pipeline.py:692:            error_type="ai_generation_failed",
+src/erk/cli/commands/pr/submit_pipeline.py:756:            error_type="graphite_enhance_failed",
+src/erk/cli/commands/pr/submit_pipeline.py:783:            error_type="no_pr_number",
+src/erk/cli/commands/pr/submit_pipeline.py:1016:                error_type="unhandled_exception",
+src/erk/cli/commands/pr/submit_pipeline.py:1052:                error_type="unhandled_exception",
+src/erk/cli/commands/exec/scripts/run_review.py:112:            error_type="invalid_flags",
+src/erk/cli/commands/exec/scripts/run_review.py:121:            error_type="invalid_flags",
+
+... [34 lines omitted] ...
+
+src/erk/cli/commands/exec/scripts/run_review.py:130:            error_type="invalid_flags",
+src/erk/cli/commands/exec/scripts/run_review.py:154:            error_type="validation_failed",
+src/erk/cli/commands/exec/scripts/post_or_update_pr_summary.py:80:            error_type="marker_not_in_body",
+src/erk/cli/commands/exec/scripts/post_or_update_pr_summary.py:92:            error_type="find_failed",
+src/erk/cli/commands/exec/scripts/post_or_update_pr_summary.py:111:                error_type="update_failed",
+src/erk/cli/commands/exec/scripts/post_or_update_pr_summary.py:128:                error_type="create_failed",
+src/erk/cli/commands/exec/scripts/resolve_review_thread.py:117:            error_type="comment-failed",
+src/erk/cli/commands/exec/scripts/resolve_review_thread.py:153:            error_type="github-api-failed",
+src/erk/cli/commands/exec/scripts/resolve_review_thread.py:166:            error_type="resolution-failed",
+src/erk/cli/commands/exec/scripts/close_prs.py:67:            error_type="invalid-input",
+src/erk/cli/commands/exec/scripts/close_prs.py:76:                error_type="invalid-input",
+src/erk/cli/commands/exec/scripts/close_prs.py:85:                error_type="invalid-input",
+src/erk/cli/commands/exec/scripts/close_prs.py:93:                error_type="invalid-input",
+src/erk/cli/commands/exec/scripts/close_prs.py:100:                error_type="invalid-input",
+src/erk/cli/commands/exec/scripts/close_prs.py:108:                error_type="invalid-input",
+src/erk/cli/commands/exec/scripts/close_prs.py:140:            error_type="invalid-json",
+src/erk/cli/commands/exec/scripts/add_plan_labels.py:67:            error_type="invalid-input",
+src/erk/cli/commands/exec/scripts/add_plan_labels.py:76:                error_type="invalid-input",
+src/erk/cli/commands/exec/scripts/add_plan_labels.py:85:                error_type="invalid-input",
+src/erk/cli/commands/exec/scripts/add_plan_labels.py:93:                error_type="invalid-input",
+src/erk/cli/commands/exec/scripts/add_plan_labels.py:100:                error_type="invalid-input",
+src/erk/cli/commands/exec/scripts/add_plan_labels.py:108:                error_type="invalid-input",
+src/erk/cli/commands/exec/scripts/add_plan_labels.py:140:            error_type="invalid-json",
+src/erk/cli/commands/exec/scripts/impl_signal.py:84:        error_type=error_type,
+src/erk/cli/commands/exec/scripts/post_pr_inline_comment.py:110:            error_type="pr-not-found",
+src/erk/cli/commands/exec/scripts/post_pr_inline_comment.py:134:            error_type="github-api-failed",
+src/erk/cli/commands/exec/scripts/resolve_review_threads.py:79:            error_type="invalid-input",
+src/erk/cli/commands/exec/scripts/resolve_review_threads.py:88:                error_type="invalid-input",
+src/erk/cli/commands/exec/scripts/resolve_review_threads.py:98:                error_type="invalid-input",
+src/erk/cli/commands/exec/scripts/resolve_review_threads.py:106:                error_type="invalid-input",
+src/erk/cli/commands/exec/scripts/resolve_review_threads.py:114:                error_type="invalid-input",
+src/erk/cli/commands/exec/scripts/resolve_review_threads.py:147:            error_type="invalid-json",
+src/erk/cli/commands/exec/scripts/discover_reviews.py:129:            error_type="pr_fetch_failed",
+src/erk/cli/commands/exec/scripts/discover_reviews.py:150:            error_type="validation_failed",
+  </tool_result>
+  <tool_result tool="toolu_01YTRrr8XxjjUgPCUpdSBHBC">
+tests/unit/cli/commands/pr/submit_pipeline/test_graphite_first_flow.py:92:    """SubmitError(error_type='graphite_submit_failed') on RuntimeError."""
+tests/unit/cli/commands/pr/submit_pipeline/test_graphite_first_flow.py:116:    """SubmitError(error_type='graphite_restack_required') when restack needed."""
+tests/unit/cli/commands/pr/submit_pipeline/test_graphite_first_flow.py:145:    """SubmitError(error_type='pr_not_found') when no PR after gt submit."""
+tests/unit/cli/commands/pr/submit_pipeline/test_graphite_first_flow.py:378:    """SubmitError(error_type='remote_diverged') when branch is behind remote."""
+tests/unit/cli/commands/pr/submit_pipeline/test_prepare_state.py:90:    """current_branch=None =&gt; SubmitError(error_type='no_branch')."""
+tests/unit/cli/commands/pr/submit_pipeline/test_core_submit_flow.py:94:    """SubmitError(error_type='github_auth_failed') when not authenticated."""
+tests/unit/cli/commands/pr/submit_pipeline/test_core_submit_flow.py:106:    """SubmitError(error_type='no_commits') when zero commits ahead of parent."""
+tests/unit/cli/commands/pr/submit_pipeline/test_finalize_pr.py:110:    """SubmitError(error_type='no_pr_number') when pr_number is None."""
+tests/unit/cli/commands/pr/submit_pipeline/test_extract_diff.py:66:    """SubmitError(error_type='no_base_branch') when base_branch is None."""
+tests/unit/cli/commands/exec/scripts/test_plan_save.py:105:    """Short plan: exit code 2, error_type='validation_failed'."""
+tests/unit/cli/test_json_output.py:76:        raise UserFacingCliError("auth failed", error_type="auth_required")
+  </tool_result>
+  <assistant>There are many callers that pass `error_type` explicitly, but the vast majority of callers (in `ensure.py` and other places) do NOT pass `error_type` — they rely on the default `"cli_error"`. Removing the default means updating all those callers to explicitly pass `error_type="cli_error"`.
+
+However, looking more carefully at the dignified-python rule — it says "no default parameter values". The correct approach is to make callers that don't pass `error_type` explicitly pass it. But that would be a massive change touching dozens of files — and the reviewer comment is specifically about line 46.
+
+Let me check if there's a pattern in the codebase for handling this kind of situation — perhaps the convention is to accept the rule means "no default for new code" and this is an existing class. Let me look at `self.error_type` usage to understand if this field is meaningful:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3053" cache_read_input_tokens="43220" cache_creation="{'ephemeral_5m_input_tokens': 3053, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_019TT62LQrn25EHpg1WULdRu">
+    <param name="pattern">\.error_type</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+    <param name="path">/home/runner/work/erk/erk/src</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3053" cache_read_input_tokens="43220" cache_creation="{'ephemeral_5m_input_tokens': 3053, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_019TT62LQrn25EHpg1WULdRu">
+src/erk/cli/commands/exec/scripts/push_and_create_pr.py:70:                "error_type": result.error_type,
+src/erk/cli/commands/exec/scripts/reply_to_discussion_comment.py:105:            exit_with_error(branch_result.error_type, branch_result.message)
+src/erk/cli/commands/exec/scripts/reply_to_discussion_comment.py:112:            exit_with_error(pr_result.error_type, pr_result.message)
+src/erk/cli/commands/exec/scripts/reply_to_discussion_comment.py:118:            exit_with_error(pr_result.error_type, pr_result.message)
+src/erk/cli/commands/exec/scripts/reply_to_discussion_comment.py:125:        exit_with_error(comments_result.error_type, comments_result.message)
+src/erk/cli/commands/exec/scripts/get_pr_discussion_comments.py:51:        exit_with_error(branch_result.error_type, branch_result.message)
+src/erk/cli/commands/exec/scripts/get_pr_discussion_comments.py:61:        exit_with_error(pr_result.error_type, pr_result.message)
+src/erk/cli/commands/exec/scripts/get_pr_discussion_comments.py:71:        exit_with_error(pr_result.error_type, pr_result.message)
+src/erk/cli/commands/exec/scripts/ci_verify_autofix.py:100:        if result.error_type == "command_not_found":
+src/erk/cli/json_output.py:68:                "error_type": exc.error_type,
+src/erk/cli/script_output.py:26:            exit_with_error(e.error_type, str(e))
+src/erk/cli/ensure.py:49:        self.error_type = error_type
+  </tool_result>
+  <assistant>The `error_type` field is used in JSON output and error reporting. It's a meaningful field that callers set explicitly when they want specific error types, and the default `"cli_error"` is used as a catch-all.
+
+The right fix here is to remove the default value and update all callers that don't pass `error_type` to explicitly pass `error_type="cli_error"`. But let me first check — the comment was on the PR diff, so this `__init__` was likely introduced or modified in this PR. Let me check what changed:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="832" cache_read_input_tokens="46273" cache_creation="{'ephemeral_5m_input_tokens': 832, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01FQT4FCLrA6DCXeqetACpHd">
+    <param name="command">git diff master...HEAD -- src/erk/cli/ensure.py</param>
+    <param name="description">Check PR diff for ensure.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="832" cache_read_input_tokens="46273" cache_creation="{'ephemeral_5m_input_tokens': 832, 'ephemeral_1h_input_tokens': 0}" output_tokens="230" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01FQT4FCLrA6DCXeqetACpHd">
+diff --git a/src/erk/cli/ensure.py b/src/erk/cli/ensure.py
+index 910e71102..ceee04f36 100644
+--- a/src/erk/cli/ensure.py
++++ b/src/erk/cli/ensure.py
+@@ -43,9 +43,10 @@ class UserFacingCliError(click.ClickException):
+         raise UserFacingCliError(push_result.message)
+     """
+ 
+-    def __init__(self, message: str) -&gt; None:
++    def __init__(self, message: str, *, error_type: str = "cli_error") -&gt; None:
+         super().__init__(message)
+         self.message = message
++        self.error_type = error_type
+ 
+     def show(self, file: Any = None) -&gt; None:
+         """Display styled error message to stderr."""
+  </tool_result>
+  <assistant>This PR added the `error_type` parameter with a default value. The review comment is correct — per dignified-python rules, default parameter values are forbidden. The fix is to remove the default and update all callers that don't pass `error_type` to explicitly pass it.
+
+However, updating all ~50+ callers that rely on the default would be a massive change. A better approach: since the previous code had no `error_type` at all, the callers that already existed don't pass it. The ones added in this PR do pass it. So I need to add `error_type="cli_error"` to every existing caller that doesn't already pass it.
+
+Let me check how many callers are in the PR diff (new callers that already pass error_type) vs pre-existing callers:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="617" cache_read_input_tokens="47105" cache_creation="{'ephemeral_5m_input_tokens': 617, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01PGEqA83ZsXnUVDYiHenqsJ">
+    <param name="command">git diff master...HEAD -- '*.py' | grep '+.*UserFacingCliError(' | head -40</param>
+    <param name="description">Check new UserFacingCliError calls in PR</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="617" cache_read_input_tokens="47105" cache_creation="{'ephemeral_5m_input_tokens': 617, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01PGEqA83ZsXnUVDYiHenqsJ">
++        raise UserFacingCliError("Prompt must not be empty", error_type="invalid_input")
+@@ -43,9 +43,10 @@ class UserFacingCliError(click.ClickException):
++        raise UserFacingCliError("something went wrong")
++        raise UserFacingCliError("auth failed", error_type="auth_required")
++        raise UserFacingCliError("normal error")
+  </tool_result>
+  <assistant>The PR adds a few new callers. Some pass `error_type`, some don't. The pre-existing callers (dozens of them) all don't pass `error_type` because the parameter didn't exist before this PR.
+
+The pragmatic fix: remove the default value and use a `libcst-refactor` or similar approach to add `error_type="cli_error"` to all callers that don't already pass it. But this is a massive mechanical change that touches many files outside the PR scope.
+
+A more focused approach: since this is new code in this PR, I should remove the default and only update the callers within the PR's diff that don't pass `error_type`. For the pre-existing callers, they all need updating too, but they were broken by this PR adding the param in the first place.
+
+Let me look at this more carefully — the `error_type` was added in this PR. So ALL callers that existed before this PR don't pass it. If I remove the default, all those callers break. The right approach is to use the `libcst-refactor` agent to mechanically add the default to all existing callers.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="398" cache_read_input_tokens="47722" cache_creation="{'ephemeral_5m_input_tokens': 398, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_019gh3ekboq7YVS1saDccqJi">
+    <param name="subagent_type">libcst-refactor</param>
+    <param name="description">Add error_type to all callers</param>
+    <param name="prompt">I need to add `error_type="cli_error"` to every call of `UserFacingCliError(...)` that doe...[truncated 1151 chars]...rror_type="cli_error"` to those that don't already have an `error_type=` keyword argument.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="398" cache_read_input_tokens="47722" cache_creation="{'ephemeral_5m_input_tokens': 398, 'ephemeral_1h_input_tokens': 0}" output_tokens="772" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_019gh3ekboq7YVS1saDccqJi">
+Perfect! Let me create a summary of the changes:
+
+## LibCST Refactoring Results
+
+**Task:** Add `error_type="cli_error"` to all `UserFacingCliError(...)` calls that don't already have an `error_type=` keyword argument.
+
+### Files Modified: 9
+
+**Source files:**
+- `/home/runner/work/erk/erk/src/erk/cli/repo_resolution.py` - 3 calls updated
+- `/home/runner/work/erk/erk/src/erk/cli/ensure.py` - 18 calls updated + docstring examples fixed
+- `/home/runner/work/erk/erk/src/erk/cli/commands/admin.py` - 10 calls updated
+- `/home/runner/work/erk/erk/src/erk/cli/commands/one_shot.py` - 1 call updated
+- `/home/runner/work/erk/erk/src/erk/cli/commands/wt/create_cmd.py` - 4 calls updated
+- `/home/runner/work/erk/erk/src/erk/cli/commands/objective/view_cmd.py` - 6 calls updated
+- `/home/runner/work/erk/erk/src/erk/cli/commands/pr/submit_pipeline.py` - 1 call updated
+- `/home/runner/work/erk/erk/src/erk/cli/commands/pr/dispatch_cmd.py` - 1 call updated
+
+**Test files:**
+- `/home/runner/work/erk/erk/tests/unit/cli/test_json_output.py` - 2 calls updated
+
+### Changes Made:
+
+1. **Added `error_type="cli_error"`** to 46 `UserFacingCliError(...)` calls that were missing it
+2. **Preserved existing `error_type` values** (e.g., `error_type="auth_required"`, `error_type="invalid_input"`, `error_type="invalid_repo"`) - these were correctly left unchanged
+3. **Updated docstring examples** in `UserFacingCliError` class to show the correct usage with `error_type="cli_error"`
+4. **Formatted all changes** using ruff to ensure proper multi-line formatting
+
+### Verification:
+
+
+... [6 lines omitted] ...
+
+- All `UserFacingCliError(...)` calls now have an `error_type=` parameter
+- Calls with existing non-default `error_type` values were preserved
+  </tool_result>
+  <assistant>
+
+Now let me remove the default value from the `__init__` signature itself:</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="32480" cache_read_input_tokens="17255" cache_creation="{'ephemeral_5m_input_tokens': 32480, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01Uk1i33haX1QPRDZ9d76ECa">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/ensure.py</param>
+    <param name="offset">44</param>
+    <param name="limit">10</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="32480" cache_read_input_tokens="17255" cache_creation="{'ephemeral_5m_input_tokens': 32480, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Uk1i33haX1QPRDZ9d76ECa">
+    44→    def __init__(self, message: str, *, error_type: str = "cli_error") -&gt; None:
+    45→        super().__init__(message)
+    46→        self.message = message
+    47→        self.error_type = error_type
+    48→
+    49→    def show(self, file: Any = None) -&gt; None:
+    50→        """Display styled error message to stderr."""
+    51→        user_output(click.style("Error: ", fg="red") + self.format_message())
+    52→
+    53→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01CVq5RFtFtydJCke5hejtL4">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/ensure.py</param>
+    <param name="old_string">    def __init__(self, message: str, *, error_type: str = "cli_error") -&gt; None:</param>
+    <param name="new_string">    def __init__(self, message: str, *, error_type: str) -&gt; None:</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="360" cache_read_input_tokens="49735" cache_creation="{'ephemeral_5m_input_tokens': 360, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01CVq5RFtFtydJCke5hejtL4">
+The file /home/runner/work/erk/erk/src/erk/cli/ensure.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me verify the libcst refactor didn't miss any callers and spot-check a few files:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="366" cache_read_input_tokens="50095" cache_creation="{'ephemeral_5m_input_tokens': 366, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01HdC5ejoEVATjuYDevgY4CP">
+    <param name="todos">[{'content': 'Fix default parameter value in ensure.py:46', 'status': 'completed', 'active...[truncated 276 chars]...ges and update PR', 'status': 'pending', 'activeForm': 'Pushing changes and updating PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="366" cache_read_input_tokens="50095" cache_creation="{'ephemeral_5m_input_tokens': 366, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_0121sawKh4rQ3e8K3PLwBwqN">
+    <param name="subagent_type">devrun</param>
+    <param name="description">Run ty type checker</param>
+    <param name="prompt">Run `ty check` on the project and report the results. I want to make sure there are no cal...[truncated 97 chars]...ue. Report all results, especially any errors related to UserFacingCliError or error_type.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="366" cache_read_input_tokens="50095" cache_creation="{'ephemeral_5m_input_tokens': 366, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01X8S8y7rgQUp4VedGkKbAir">
+    <param name="subagent_type">devrun</param>
+    <param name="description">Run ruff linter</param>
+    <param name="prompt">Run `ruff check src/erk/cli/ensure.py src/erk/cli/repo_resolution.py src/erk/cli/commands/...[truncated 68 chars]...cli/commands/objective/view_cmd.py tests/unit/cli/test_json_output.py` and report results.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="366" cache_read_input_tokens="50095" cache_creation="{'ephemeral_5m_input_tokens': 366, 'ephemeral_1h_input_tokens': 0}" output_tokens="528" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01HdC5ejoEVATjuYDevgY4CP">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_result tool="toolu_01X8S8y7rgQUp4VedGkKbAir">
+ruff failed: 3 issues found
+
+**File: src/erk/cli/ensure.py**
+
+1. **Line 380** (UP022): Prefer `capture_output` over sending `stdout` and `stderr` to `PIPE`
+   - Location: subprocess.run() call for "gh auth status"
+   - Fix: Use `capture_output=True` instead of `stdout=subprocess.PIPE, stderr=subprocess.PIPE`
+
+2. **Line 452** (UP022): Prefer `capture_output` over sending `stdout` and `stderr` to `PIPE`
+   - Location: subprocess.run() call for "gt auth status"
+   - Fix: Use `capture_output=True` instead of `stdout=subprocess.PIPE, stderr=subprocess.PIPE`
+
+3. **Line 477** (UP022): Prefer `capture_output` over sending `stdout` and `stderr` to `PIPE`
+   - Location: subprocess.run() call for "gh auth status"
+   - Fix: Use `capture_output=True` instead of `stdout=subprocess.PIPE, stderr=subprocess.PIPE`
+
+All violations are in `/home/runner/work/erk/erk/src/erk/cli/ensure.py` related to subprocess PIPE usage. These are fixable with `--unsafe-fixes` but require code modification.
+agentId: a3441f5 (for resuming to continue this agent's work if needed)
+  </tool_result>
+  <tool_result tool="toolu_0121sawKh4rQ3e8K3PLwBwqN">
+ty check failed: 30 issues found
+
+**Good news:** I don't see any errors specifically related to `UserFacingCliError` or missing `error_type` keyword arguments. However, there are 30 other type-checking issues in the project:
+
+## Summary of Errors Found:
+
+1. **Unresolved imports** (4 errors):
+   - `/home/runner/work/erk/erk/src/erk/cli/ensure.py:16-19` — Cannot resolve `erk.cli.repo_context`, `erk.core.config.repo_config`, `erk.core.exceptions`, and `erk.gateway.graphite_impl`
+
+2. **Unresolved attributes on `Ensure` class** (7 errors):
+   - `/home/runner/work/erk/erk/src/erk/cli/commands/implement.py:395` — `Ensure.resolve_dangerous` doesn't exist
+   - `/home/runner/work/erk/erk/src/erk/cli/commands/navigation_helpers.py:356` — `Ensure.path_exists` doesn't exist
+   - `/home/runner/work/erk/erk/src/erk/cli/commands/navigation_helpers.py:902` — `Ensure.path_exists` doesn't exist
+   - `/home/runner/work/erk/erk/src/erk/cli/commands/pr/address_cmd.py:52` — `Ensure.resolve_dangerous` doesn't exist
+   - `/home/runner/work/erk/erk/src/erk/cli/commands/pr/create_cmd.py:59` — `Ensure.path_exists` doesn't exist
+   - `/home/runner/work/erk/erk/src/erk/cli/graphite_command.py:47,65` — `Ensure.graphite_available` doesn't exist
+
+3. **Too many positional arguments** (7 errors):
+   - Multiple locations calling `Ensure.gh_authenticated(ctx)` when it expects 0 arguments:
+     - `/home/runner/work/erk/erk/src/erk/cli/commands/land_cmd.py:1610`
+     - `/home/runner/work/erk/erk/src/erk/cli/commands/launch_cmd.py:461`
+     - `/home/runner/work/erk/erk/src/erk/cli/commands/navigation_helpers.py:707`
+     - `/home/runner/work/erk/erk/src/erk/cli/commands/pr/checkout_cmd.py:155`
+
+These are structural issues with method signatures and imports rather than issues with `UserFacingCliError` calls. The `error_type` argument validation appears to be correctly in place across the codebase.
+agentId: aefa67b (for resuming to continue this agent's work if needed)
+  </tool_result>
+  <assistant>No `UserFacingCliError`/`error_type` errors from `ty` — the refactoring was successful. The ruff issues are pre-existing (unrelated to our change). Let me also verify there are no calls in files the libcst agent might have missed:</assistant>
+  <usage input_tokens="371" cache_creation_input_tokens="1308" cache_read_input_tokens="50461" cache_creation="{'ephemeral_5m_input_tokens': 1308, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01Ww4uoEWYG7gDCVYyV7FcPd">
+    <param name="command">grep -rn "UserFacingCliError(" --include="*.py" src/ tests/ | grep -v "error_type=" | grep...[truncated 22 chars]...p -v "^.*:.*#" | grep -v "\.md:" | grep -v "import " | grep -v "docstring" | grep -v '"""'</param>
+    <param name="description">Find callers missing error_type</param>
+  </tool_use>
+  <usage input_tokens="371" cache_creation_input_tokens="1308" cache_read_input_tokens="50461" cache_creation="{'ephemeral_5m_input_tokens': 1308, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Ww4uoEWYG7gDCVYyV7FcPd">
+src/erk/cli/repo_resolution.py:34:            raise UserFacingCliError(
+src/erk/cli/repo_resolution.py:43:        raise UserFacingCliError(
+src/erk/cli/repo_resolution.py:70:        raise UserFacingCliError(
+src/erk/cli/commands/wt/create_cmd.py:152:            raise UserFacingCliError(
+src/erk/cli/commands/wt/create_cmd.py:193:                        raise UserFacingCliError(
+src/erk/cli/commands/wt/create_cmd.py:204:                    raise UserFacingCliError(
+src/erk/cli/commands/wt/create_cmd.py:216:        raise UserFacingCliError(
+src/erk/cli/commands/objective/view_cmd.py:203:            raise UserFacingCliError(
+src/erk/cli/commands/objective/view_cmd.py:210:            raise UserFacingCliError(
+src/erk/cli/commands/objective/view_cmd.py:217:            raise UserFacingCliError(
+src/erk/cli/commands/objective/view_cmd.py:233:        raise UserFacingCliError(
+src/erk/cli/commands/objective/view_cmd.py:245:            raise UserFacingCliError(
+src/erk/cli/commands/one_shot.py:54:        raise UserFacingCliError(
+src/erk/cli/commands/one_shot.py:182:            raise UserFacingCliError(
+src/erk/cli/commands/one_shot.py:190:            raise UserFacingCliError(
+src/erk/cli/ensure.py:131:        raise UserFacingCliError(
+src/erk/cli/ensure.py:153:            raise UserFacingCliError(
+src/erk/cli/ensure.py:159:        raise UserFacingCliError(
+src/erk/cli/ensure.py:244:            raise UserFacingCliError(
+src/erk/cli/ensure.py:260:            raise UserFacingCliError(
+src/erk/cli/ensure.py:364:            raise UserFacingCliError(
+src/erk/cli/ensure.py:387:            raise UserFacingCliError(
+src/erk/cli/ensure.py:402:            raise UserFacingCliError(
+src/erk/cli/ensure.py:433:            raise UserFacingCliError(
+src/erk/cli/ensure.py:459:            raise UserFacingCliError(
+src/erk/cli/ensure.py:484:            raise UserFacingCliError(
+src/erk/cli/ensure.py:523:            raise UserFacingCliError(
+  </tool_result>
+  <assistant>These are multi-line calls where `error_type=` appears on a subsequent line. Let me verify by checking one of them:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1306" cache_read_input_tokens="51769" cache_creation="{'ephemeral_5m_input_tokens': 1306, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+</session>

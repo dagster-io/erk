@@ -1,0 +1,129 @@
+<session>
+  <meta source="agent-a026f7d" />
+  <meta branch="plnd/O9009-json-output-decorato-03-08-1402" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>Run the following inline Python script and report the FULL output:
+
+```bash
+cd /home/runner/work/erk/erk &amp;&amp; uv run python -c "
+from click.testing import CliRunner
+from erk.cli.cli import cli
+from erk_shared.gateway.git.fake import FakeGit
+from erk_shared.gateway.github.fake import FakeLocalGitHub
+from tests.test_utils.context_builders import build_workspace_test_context
+from tests.test_utils.env_helpers import erk_isolated_fs_env
+
+runner = CliRunner()
+with erk_isolated_fs_env(runner, env_overrides=None) as env:
+    env.setup_repo_structure()
+    git = FakeGit(
+        git_common_dirs={env.cwd: env.git_dir},
+        default_branches={env.cwd: 'main'},
+        trunk_branches={env.cwd: 'main'},
+        current_branches={env.cwd: 'main'},
+    )
+    github = FakeLocalGitHub(authenticated=True)
+    ctx = build_workspace_test_context(env, git=git, github=github)
+    result = runner.invoke(
+        cli,
+        ['one-shot', 'fix bug', '--json'],
+        obj=ctx,
+    )
+    print(f'EXIT CODE: {result.exit_code}')
+    print(f'OUTPUT: [{result.output}]')
+    print(f'EXCEPTION: {result.exception}')
+    import traceback
+    if result.exception:
+        traceback.print_exception(type(result.exception), result.exception, result.exception.__traceback__)
+"
+```
+
+Do NOT fix any errors - just report the output.</user>
+  <assistant>I'll run this Python script and report the full output.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="6253" cache_read_input_tokens="6465" cache_creation="{'ephemeral_5m_input_tokens': 6253, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01VobJDyS8mzR41ncGSe4o8q">
+    <param name="command">uv run python -c "
+from click.testing import CliRunner
+from erk.cli.cli import cli
+from er...[truncated 951 chars]...int_exception(type(result.exception), result.exception, result.exception.__traceback__)
+"
+</param>
+    <param name="description">Run inline Python script for CLI test</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6253" cache_read_input_tokens="6465" cache_creation="{'ephemeral_5m_input_tokens': 6253, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01VobJDyS8mzR41ncGSe4o8q">
+EXIT CODE: 1
+OUTPUT: []
+EXCEPTION: GitHub API returned user without login field
+Traceback (most recent call last):
+  File "/home/runner/work/erk/erk/.venv/lib/python3.13/site-packages/click/testing.py", line 504, in invoke
+    return_value = cli.main(args=args or (), prog_name=prog_name, **extra)
+  File "/home/runner/work/erk/erk/.venv/lib/python3.13/site-packages/click/core.py", line 1406, in main
+    rv = self.invoke(ctx)
+  File "/home/runner/work/erk/erk/.venv/lib/python3.13/site-packages/click/core.py", line 1873, in invoke
+    return _process_result(sub_ctx.command.invoke(sub_ctx))
+                           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "/home/runner/work/erk/erk/.venv/lib/python3.13/site-packages/click/core.py", line 1269, in invoke
+    return ctx.invoke(self.callback, **ctx.params)
+           ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/erk/erk/.venv/lib/python3.13/site-packages/click/core.py", line 824, in invoke
+    return callback(*args, **kwargs)
+  File "/home/runner/work/erk/erk/src/erk/cli/json_output.py", line 64, in wrapped_callback
+    return original_callback(**kwargs)
+  File "/home/runner/work/erk/erk/.venv/lib/python3.13/site-packages/click/decorators.py", line 46, in new_func
+    return f(get_current_context().obj, *args, **kwargs)
+  File "/home/runner/work/erk/erk/src/erk/cli/commands/one_shot.py", line 206, in one_shot
+    result = dispatch_one_shot_remote(
+        remote=remote,
+    ...&lt;6 lines&gt;...
+        prompt_executor=ctx.prompt_executor,
+    )
+  File "/home/runner/work/erk/erk/src/erk/cli/commands/one_shot_remote_dispatch.py", line 143, in dispatch_one_shot_remote
+    submitted_by = remote.get_authenticated_user()
+  File "/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/remote_github/real.py", line 37, in get_authenticated_user
+    raise RuntimeError("GitHub API returned user without login field")
+
+... [1 lines omitted] ...
+
+RuntimeError: GitHub API returned user without login field
+  </tool_result>
+  <assistant>## Output Report
+
+**Exit Code:** 1
+
+**Output:** (empty)
+
+**Exception:** `RuntimeError: GitHub API returned user without login field`
+
+**Full Traceback:**
+```
+Traceback (most recent call last):
+  File "/home/runner/work/erk/erk/.venv/lib/python3.13/site-packages/click/testing.py", line 504, in invoke
+    return_value = cli.main(args=args or (), prog_name=prog_name, **extra)
+  File "/home/runner/work/erk/erk/.venv/lib/python3.13/site-packages/click/core.py", line 1406, in main
+    rv = self.invoke(ctx)
+  File "/home/runner/work/erk/erk/.venv/lib/python3.13/site-packages/click/core.py", line 1873, in invoke
+    return _process_result(sub_ctx.command.invoke(sub_ctx))
+  File "/home/runner/work/erk/erk/.venv/lib/python3.13/site-packages/click/core.py", line 1269, in invoke
+    return ctx.invoke(self.callback, **ctx.params)
+  File "/home/runner/work/erk/erk/.venv/lib/python3.13/site-packages/click/core.py", line 824, in invoke
+    return callback(*args, **kwargs)
+  File "/home/runner/work/erk/erk/src/erk/cli/json_output.py", line 64, in wrapped_callback
+    return original_callback(**kwargs)
+  File "/home/runner/work/erk/erk/.venv/lib/python3.13/site-packages/click/decorators.py", line 46, in new_func
+    return f(get_current_context().obj, *args, **kwargs)
+  File "/home/runner/work/erk/erk/src/erk/cli/commands/one_shot.py", line 206, in one_shot
+    result = dispatch_one_shot_remote(remote=remote, ...)
+  File "/home/runner/work/erk/erk/src/erk/cli/commands/one_shot_remote_dispatch.py", line 143, in dispatch_one_shot_remote
+    submitted_by = remote.get_authenticated_user()
+  File "/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/remote_github/real.py", line 37, in get_authenticated_user
+    raise RuntimeError("GitHub API returned user without login field")
+```
+
+**Key observations:**
+- The error occurs in the GitHub API user authentication layer
+- The fake GitHub instance is not properly configured with user login information
+- The error is raised from `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/remote_github/real.py` line 37
+- The JSON output decorator was successfully invoked (line 64 in json_output.py), but the command failed before producing any output</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="1144" cache_read_input_tokens="12718" cache_creation="{'ephemeral_5m_input_tokens': 1144, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>

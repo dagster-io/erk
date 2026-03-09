@@ -1,0 +1,316 @@
+<session>
+  <meta source="agent-a7f9d3d" />
+  <meta branch="plnd/O9009-json-output-decorato-03-08-1402" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>Run `pytest tests/unit/cli/test_json_output.py tests/unit/cli/test_ensure.py -x -v` and report results. These are the tests most likely to be affected by the UserFacingCliError error_type change.</user>
+  <assistant>I'll run the specified tests to check for any issues related to the UserFacingCliError error_type change.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="5889" cache_read_input_tokens="6453" cache_creation="{'ephemeral_5m_input_tokens': 5889, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01Qx8ZYabGJs92QfTRdQKrZ6">
+    <param name="command">uv run pytest tests/unit/cli/test_json_output.py tests/unit/cli/test_ensure.py -x -v</param>
+    <param name="description">Run pytest tests for json_output and ensure CLI modules</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="5889" cache_read_input_tokens="6453" cache_creation="{'ephemeral_5m_input_tokens': 5889, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Qx8ZYabGJs92QfTRdQKrZ6">
+Exit code 1
+============================= test session starts ==============================
+platform linux -- Python 3.13.12, pytest-9.0.2, pluggy-1.6.0
+rootdir: /home/runner/work/erk/erk
+configfile: pyproject.toml
+plugins: anyio-4.12.1, cov-7.0.0, xdist-3.8.0, asyncio-1.3.0
+asyncio: mode=Mode.AUTO, debug=False, asyncio_default_fixture_loop_scope=function, asyncio_default_test_loop_scope=function
+collected 0 items / 1 error
+
+==================================== ERRORS ====================================
+_____________ ERROR collecting tests/unit/cli/test_json_output.py ______________
+ImportError while importing test module '/home/runner/work/erk/erk/tests/unit/cli/test_json_output.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+../../_temp/uv-python-dir/cpython-3.13.12-linux-x86_64-gnu/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/unit/cli/test_json_output.py:8: in &lt;module&gt;
+    from erk.cli.ensure import UserFacingCliError
+src/erk/__init__.py:7: in &lt;module&gt;
+    from erk.cli.cli import cli
+src/erk/cli/cli.py:10: in &lt;module&gt;
+    from erk.cli.commands.admin import admin_group
+src/erk/cli/commands/admin.py:10: in &lt;module&gt;
+    from erk.cli.core import discover_repo_context
+src/erk/cli/core.py:3: in &lt;module&gt;
+    from erk.cli.ensure import Ensure
+src/erk/cli/ensure.py:15: in &lt;module&gt;
+    from erk.cli.output import user_output
+E   ImportError: cannot import name 'user_output' from 'erk.cli.output' (/home/runner/work/erk/erk/src/erk/cli/output.py)
+
+... [4 lines omitted] ...
+
+ERROR tests/unit/cli/test_json_output.py
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+=============================== 1 error in 0.11s ===============================
+  </tool_result>
+  <assistant>The tests are failing due to an import error. The `ensure.py` module is trying to import `user_output` from `erk.cli.output`, but this function doesn't exist. Let me check what's actually in the output module and what ensure.py is trying to do:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="784" cache_read_input_tokens="12342" cache_creation="{'ephemeral_5m_input_tokens': 784, 'ephemeral_1h_input_tokens': 0}" output_tokens="7" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01SPo5Y3zT9UiLpbQnKvDUtQ">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/output.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="784" cache_read_input_tokens="12342" cache_creation="{'ephemeral_5m_input_tokens': 784, 'ephemeral_1h_input_tokens': 0}" output_tokens="7" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Ev3KtwYho4LA2UaxBrWTx9">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/ensure.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="784" cache_read_input_tokens="12342" cache_creation="{'ephemeral_5m_input_tokens': 784, 'ephemeral_1h_input_tokens': 0}" output_tokens="7" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01SPo5Y3zT9UiLpbQnKvDUtQ">
+     1→"""Output utilities for CLI commands with clear intent.
+     2→
+     3→For user_output, machine_output, format_duration - import from erk_shared.output.
+     4→This module provides format_implement_summary and stream_command_with_feedback.
+     5→"""
+     6→
+     7→from __future__ import annotations
+     8→
+     9→import sys
+    10→import time
+    11→from dataclasses import dataclass
+    12→from pathlib import Path
+    13→from typing import TYPE_CHECKING
+    14→
+    15→import click
+    16→from rich.panel import Panel
+    17→from rich.text import Text
+    18→
+    19→if TYPE_CHECKING:
+    20→    from erk_shared.context.types import PermissionMode
+    21→
+    22→from erk.core.prompt_executor import (
+    23→    CommandResult,
+    24→    ErrorEvent,
+    25→    NoOutputEvent,
+    26→    NoTurnsEvent,
+    27→    PlanNumberEvent,
+    28→    PrNumberEvent,
+    29→    ProcessErrorEvent,
+    30→    PromptExecutor,
+
+... [475 lines omitted] ...
+
+    41→    """Format final summary box with status, PR link, timing, errors.
+    65→        lines.append(Text("❌ Status: Failed", style="red"))
+   108→    # Error details (if failed)
+   112→                if result.error_message:
+   114→                    lines.append(Text(f"Error in command {i + 1}:", style="red bold"))
+   115→                    lines.append(Text(result.error_message, style="red"))
+   121→    title = "Implementation Complete" if overall_success else "Implementation Failed"
+   148→    - Error events: `  ! error message` (red)
+   150→    - End (failure): `--- Failed (1m 23s) ---` (red)
+   179→    error_message: str | None = None
+   224→            case ErrorEvent(message=msg):
+   226→                error_message = msg
+   230→                error_message = diag
+   234→                error_message = diag
+   236→            case ProcessErrorEvent(message=msg):
+   238→                error_message = msg
+   252→        click.echo(click.style(f"--- Failed ({duration_str}) ---", fg="red", bold=True), err=True)
+   261→        error_message=error_message,
+   271→    error_message: str | None = None
+   292→        RebaseResult with success status and error details
+   294→    error_message: str | None = None
+   342→            case ErrorEvent(message=msg):
+   344→                error_message = msg
+   348→                error_message = diag
+   352→                error_message = diag
+   354→            case ProcessErrorEvent(message=msg):
+   356→                error_message = msg
+   361→    # Check for no-work-events failure mode
+   364→        error_message = (
+   368→        click.echo(click.style(f"   {error_message}", fg="yellow"))
+   378→        click.echo(click.style(f"--- Failed ({duration_str}) ---", fg="red", bold=True))
+   380→    return RebaseResult(success=success, error_message=error_message)
+   388→    error_message: str | None = None
+   411→        DivergenceFixResult with success status and error details
+   413→    error_message: str | None = None
+   461→            case ErrorEvent(message=msg):
+   463→                error_message = msg
+   467→                error_message = diag
+   471→                error_message = diag
+   473→            case ProcessErrorEvent(message=msg):
+   475→                error_message = msg
+   480→    # Check for no-work-events failure mode
+   483→        error_message = (
+   487→        click.echo(click.style(f"   {error_message}", fg="yellow"))
+   497→        click.echo(click.style(f"--- Failed ({duration_str}) ---", fg="red", bold=True))
+   499→    return DivergenceFixResult(success=success, error_message=error_message)
+  </tool_result>
+  <tool_result tool="toolu_01Ev3KtwYho4LA2UaxBrWTx9">
+     1→"""CLI assertion utilities with styled error output.
+     2→
+     3→Provides the Ensure class with static methods for checking common invariants
+     4→in CLI commands, raising UserFacingCliError with helpful messages when
+     5→assertions fail.
+     6→"""
+     7→
+     8→import os
+     9→import shutil
+    10→from pathlib import Path
+    11→from typing import Any, TypeVar
+    12→
+    13→import click
+    14→
+    15→from erk.cli.output import user_output
+    16→from erk.cli.repo_context import ErkContext
+    17→from erk.core.config.repo_config import ErkRepoConfig
+    18→from erk.core.exceptions import GraphiteDisabledError
+    19→from erk.gateway.graphite_impl import GraphiteDisabled
+    20→
+    21→T = TypeVar("T")
+    22→
+    23→
+    24→def _get_config_path(ctx: ErkContext) -&gt; Path | None:
+    25→    """Get the repo config path if available."""
+    26→    if not isinstance(ctx.repo, ErkRepoConfig):
+    27→        return None
+    28→    return ctx.repo.erk_dir / "config.yml"
+    29→
+    30→
+
+... [510 lines omitted] ...
+
+    31→class UserFacingCliError(click.ClickException):
+    32→    """Exception for user-facing CLI errors with styled output.
+    34→    Extends click.ClickException so Click catches it automatically at every
+    35→    level (groups, subgroups, commands) and converts it to a styled error
+    40→        raise UserFacingCliError("Not a GitHub repository", error_type="cli_error")
+    41→        raise UserFacingCliError(push_result.message, error_type="cli_error")
+    44→    def __init__(self, message: str, *, error_type: str) -&gt; None:
+    47→        self.error_type = error_type
+    50→        """Display styled error message to stderr."""
+    51→        user_output(click.style("Error: ", fg="red") + self.format_message())
+    55→    """Helper class for asserting invariants with consistent error handling."""
+    58→    def invariant(condition: bool, error_message: str) -&gt; None:
+    59→        """Ensure condition is true, otherwise output styled error and exit.
+    63→            error_message: Message to display if condition is false
+    66→            UserFacingCliError: If condition is false
+    69→            raise UserFacingCliError(error_message, error_type="cli_error")
+    72→    def truthy(value: T, error_message: str) -&gt; T:
+    73→        """Ensure value is truthy, otherwise output styled error and exit.
+    77→            error_message: Message to display if value is falsy
+    83→            UserFacingCliError: If value is falsy
+    86→            raise UserFacingCliError(error_message, error_type="cli_error")
+    90→    def not_none(value: T | None, error_message: str) -&gt; T:
+    91→        """Ensure value is not None, otherwise output styled error and exit.
+    94→        returned value as non-None without type checker warnings.
+    98→            error_message: Message to display if value is None
+   104→            UserFacingCliError: If value is None
+   112→            raise UserFacingCliError(error_message, error_type="cli_error")
+   123→            UserFacingCliError: If repo is a GitHub repository
+   131→        raise UserFacingCliError(
+   135→            error_type="cli_error",
+   146→            UserFacingCliError: If not in a GitHub repository
+   153→            raise UserFacingCliError(
+   157→                error_type="cli_error",
+   159→        raise UserFacingCliError(
+   162→            error_type="cli_error",
+   167→        ctx: ErkContext, path: Path, error_message: str | None = None
+   169→        """Ensure worktree path exists, otherwise output styled error and exit.
+   174→            error_message: Custom message to display if path doesn't exist.
+   178→            UserFacingCliError: If path doesn't exist
+   181→            if error_message is None:
+   182→                error_message = f"Path not found: {path}"
+   183→            raise UserFacingCliError(error_message, error_type="cli_error")
+   186→    def not_empty(value: str | list | dict | None, error_message: str) -&gt; None:
+   187→        """Ensure value is non-empty and non-None, otherwise output styled error and exit.
+   191→            error_message: Message to display if value is empty or None
+   194→            UserFacingCliError: If value is empty or None
+   201→            raise UserFacingCliError(error_message, error_type="cli_error")
+   210→            name: Optional human-readable name for error messages
+   213→            UserFacingCliError: If worktree doesn't exist at path
+   218→                error = f"Worktree '{name}' not found"
+   220→                error = f"Worktree not found at {wt_path}"
+   221→            raise UserFacingCliError(error, error_type="cli_error")
+   225→                error = f"Worktree '{name}' does not exist"
+   227→                error = f"No worktree found at {wt_path}"
+   228→            raise UserFacingCliError(error, error_type="cli_error")
+   240→            UserFacingCliError: If branch doesn't exist
+   244→            raise UserFacingCliError(
+   246→                error_type="cli_error",
+   257→            UserFacingCliError: If not in a worktree
+   260→            raise UserFacingCliError(
+   262→                error_type="cli_error",
+   266→    def exact_args(args: tuple[str, ...], expected: int, error_message: str | None = None) -&gt; None:
+   272→            error_message: Custom error message. If None, generates default message.
+   275→            UserFacingCliError: If argument count doesn't match expected
+   278→            if error_message is None:
+   280→                    error_message = f"No arguments expected, got {len(args)}"
+   282→                    error_message = f"Expected 1 argument, got {len(args)}"
+   284→                    error_message = f"Expected {expected} arguments, got {len(args)}"
+   285→            raise UserFacingCliError(error_message, error_type="cli_error")
+   292→        error_message: str | None = None,
+   299→            field_name: Name of the field (for error messages)
+   300→            error_message: Custom error message. If None, generates default message
+   304→            UserFacingCliError: If field is not set
+   309→        if error_message is None:
+   312→                error_message = (
+   318→                error_message = (
+   322→            raise UserFacingCliError(error_message, error_type="cli_error")
+   325→    def path_is_directory(path: Path, error_message: str | None = None) -&gt; None:
+   330→            error_message: Custom error message. Defaults to "Path is not a directory: {path}"
+   333→            UserFacingCliError: If path doesn't exist or isn't a directory
+   337→        if error_message is None:
+   338→            error_message = f"Path is not a directory: {path}"
+   339→            raise UserFacingCliError(error_message, error_type="cli_error")
+   342→    def worktree_path_available(ctx: ErkContext, path: Path, error_message: str) -&gt; None:
+   348→            error_message: Message to display if worktree exists
+   351→            UserFacingCliError: If worktree already exists at path
+   354→            raise UserFacingCliError(error_message, error_type="cli_error")
+   361→            UserFacingCliError: If gh is not installed
+   364→            raise UserFacingCliError(
+   368→                error_type="cli_error",
+   376→            UserFacingCliError: If gh is not authenticated
+   387→            raise UserFacingCliError(
+   391→                error_type="cli_error",
+   399→            UserFacingCliError: If gt is not installed
+   402→            raise UserFacingCliError(
+   406→                error_type="cli_error",
+   417→            UserFacingCliError: If Graphite is disabled
+   420→            error = GraphiteDisabledError(ctx.graphite.reason)
+   421→            raise UserFacingCliError(str(error), error_type="cli_error")
+   428→            UserFacingCliError: If Claude CLI is not installed
+   433→            raise UserFacingCliError(
+   437→                error_type="cli_error",
+   447→            UserFacingCliError: If gt is not authenticated
+   459→            raise UserFacingCliError(
+   463→                error_type="cli_error",
+   473→            UserFacingCliError: If gh is not authenticated
+   484→            raise UserFacingCliError(
+   488→                error_type="cli_error",
+   508→            UserFacingCliError: If branch is managed by Graphite (has gt metadata)
+   523→            raise UserFacingCliError(
+   533→                error_type="cli_error",
+  </tool_result>
+  <assistant>The issue is clear: `ensure.py` on line 15 is trying to import `user_output` from `erk.cli.output`, but that function doesn't exist in the output module. According to the output.py header comment (line 3), `user_output` should be imported from `erk_shared.output` instead.
+
+Let me check what functions are actually being used in ensure.py:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="13470" cache_read_input_tokens="13126" cache_creation="{'ephemeral_5m_input_tokens': 13470, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_017P1jcKwcsRxH7hDA8ybNQp">
+    <param name="pattern">user_output</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli/ensure.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="13470" cache_read_input_tokens="13126" cache_creation="{'ephemeral_5m_input_tokens': 13470, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017P1jcKwcsRxH7hDA8ybNQp">
+15:from erk.cli.output import user_output
+51:        user_output(click.style("Error: ", fg="red") + self.format_message())
+  </tool_result>
+  <assistant>**pytest failed: Import error in test module**
+
+The tests cannot run because of a broken import in `/home/runner/work/erk/erk/src/erk/cli/ensure.py` at line 15:
+
+```python
+from erk.cli.output import user_output
+```
+
+The `user_output` function does not exist in `/home/runner/work/erk/erk/src/erk/cli/output.py`. According to the module's own documentation (line 3 of output.py), `user_output` should be imported from `erk_shared.output`.
+
+**Location:** `/home/runner/work/erk/erk/src/erk/cli/ensure.py:15` and line 51 where it's used in the `UserFacingCliError.show()` method.
+
+The error occurs during import collection before any tests can run.</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="360" cache_read_input_tokens="26596" cache_creation="{'ephemeral_5m_input_tokens': 360, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>
