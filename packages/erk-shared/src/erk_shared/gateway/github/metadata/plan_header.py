@@ -471,6 +471,40 @@ def extract_plan_header_comment_id(issue_body: str) -> int | None:
     return block.data.get(PLAN_COMMENT_ID)
 
 
+def update_plan_header_objective_issue(
+    issue_body: str,
+    objective_issue: int,
+) -> str:
+    """Update objective_issue field in plan-header metadata block.
+
+    Used to set or update the backlink from a plan PR to its parent objective.
+
+    Args:
+        issue_body: Current issue body containing plan-header block
+        objective_issue: Parent objective issue number
+
+    Returns:
+        Updated issue body with new objective_issue field
+
+    Raises:
+        ValueError: If plan-header block not found or invalid
+    """
+    block = find_metadata_block(issue_body, BlockKeys.PLAN_HEADER)
+    if block is None:
+        raise ValueError("plan-header block not found in issue body")
+
+    updated_data = dict(block.data)
+    updated_data[OBJECTIVE_ISSUE] = objective_issue
+
+    schema = PlanHeaderSchema()
+    schema.validate(updated_data)
+
+    new_block = MetadataBlock(key=BlockKeys.PLAN_HEADER, data=updated_data)
+    new_block_content = render_metadata_block(new_block)
+
+    return replace_metadata_block_in_body(issue_body, BlockKeys.PLAN_HEADER, new_block_content)
+
+
 def update_plan_header_comment_id(
     issue_body: str,
     comment_id: int,

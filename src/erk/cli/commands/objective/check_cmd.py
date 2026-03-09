@@ -21,6 +21,9 @@ from erk_shared.gateway.github.metadata.dependency_graph import (
     find_graph_next_node,
     phases_from_graph,
 )
+from erk_shared.gateway.github.metadata.plan_header import (
+    extract_plan_header_objective_issue,
+)
 from erk_shared.gateway.github.metadata.roadmap import (
     parse_roadmap,
     rerender_comment_roadmap,
@@ -102,6 +105,51 @@ def _check_roadmap_table_sync(
     return (False, "Roadmap table out of sync with YAML source of truth")
 
 
+def _check_pr_backlinks(
+    remote: RemoteGitHub,
+    *,
+    owner: str,
+    repo: str,
+    issue_number: int,
+    graph: DependencyGraph,
+) -> tuple[bool, str] | None:
+    """Check that plan PRs have objective_issue backlinks to this objective.
+
+    For each node with a PR reference (pr: "#NNN"), fetch the PR and verify
+    its plan-header metadata has objective_issue matching this objective.
+    PRs without a plan-header block are skipped (not all PRs are erk plans).
+
+    Returns a (passed, description) check tuple, or None if no PR references found.
+    """
+    pr_nodes = [node for node in graph.nodes if node.pr and node.pr.startswith("#")]
+    if not pr_nodes:
+        return None
+
+    backlink_issues: list[str] = []
+    for node in pr_nodes:
+        assert node.pr is not None
+        pr_number = int(node.pr.lstrip("#"))
+        pr_issue = remote.get_issue(owner=owner, repo=repo, number=pr_number)
+        if isinstance(pr_issue, IssueNotFound):
+            continue
+
+        objective_ref = extract_plan_header_objective_issue(pr_issue.body)
+        if objective_ref is None:
+            # Check if it even has a plan-header block — if not, skip (not an erk plan)
+            if has_metadata_block(pr_issue.body, BlockKeys.PLAN_HEADER):
+                backlink_issues.append(
+                    f"Step {node.id} PR {node.pr} missing objective_issue backlink"
+                )
+        elif objective_ref != issue_number:
+            backlink_issues.append(
+                f"Step {node.id} PR {node.pr} has mismatched objective_issue: {objective_ref}"
+            )
+
+    if not backlink_issues:
+        return (True, "PR backlinks: all PR references have matching objective_issue backlinks")
+    return (False, f"PR backlinks: {backlink_issues[0]}")
+
+
 def validate_objective(
     remote: RemoteGitHub,
     *,
@@ -120,6 +168,7 @@ def validate_objective(
     6. v2 format integrity (objective-header has objective_comment_id)
     7. Plan/PR references use # prefix
     8. Roadmap table sync (rendered table matches YAML source)
+    9. PR backlink consistency (plan PRs have objective_issue backlinks)
 
     This function does not produce output or raise SystemExit.
 
@@ -245,6 +294,13 @@ def validate_objective(
     )
     if check8 is not None:
         checks.append(check8)
+
+    # Check 9: PR backlink consistency — plan PRs should have objective_issue backlinks
+    check9 = _check_pr_backlinks(
+        remote, owner=owner, repo=repo, issue_number=issue_number, graph=graph
+    )
+    if check9 is not None:
+        checks.append(check9)
 
     summary = compute_graph_summary(graph)
     next_node = find_graph_next_node(graph, phases)

@@ -10,6 +10,8 @@ from erk_shared.context.context import ErkContext
 from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueComment, IssueInfo
+from erk_shared.gateway.github.metadata.core import find_metadata_block
+from tests.test_utils.plan_helpers import format_plan_header_body_for_test
 
 ROADMAP_BODY_V2 = """\
 # Objective: Build Feature X
@@ -916,3 +918,148 @@ def test_description_combined_with_status() -> None:
     updated_body = fake_gh.updated_bodies[0][1]
     assert "Implement main feature v2" in updated_body
     assert "status: planning" in updated_body
+
+
+# --- Backlink tests: --pr sets objective_issue on plan PR ---
+
+
+def _make_plan_pr(number: int, *, objective_issue: int | None) -> IssueInfo:
+    """Create a plan PR (as IssueInfo) with a plan-header metadata block."""
+    now = datetime.now(UTC)
+    body = format_plan_header_body_for_test(objective_issue=objective_issue)
+    return IssueInfo(
+        number=number,
+        title=f"[erk-plan] Test Plan #{number}",
+        body=body,
+        state="OPEN",
+        url=f"https://github.com/test/repo/pull/{number}",
+        labels=["erk-plan"],
+        assignees=[],
+        created_at=now,
+        updated_at=now,
+        author="testuser",
+    )
+
+
+def test_backlink_set_when_pr_has_no_objective_issue() -> None:
+    """Setting --pr on a node also sets objective_issue on the plan PR."""
+    objective = _make_issue(6423, ROADMAP_BODY_V2)
+    plan_pr = _make_plan_pr(500, objective_issue=None)
+    fake_gh = FakeGitHubIssues(issues={6423: objective, 500: plan_pr})
+    runner = CliRunner()
+
+    result = runner.invoke(
+        update_objective_node,
+        ["6423", "--node", "1.3", "--pr", "#500"],
+        obj=ErkContext.for_test(github=FakeLocalGitHub(issues_gateway=fake_gh)),
+    )
+
+    assert result.exit_code == 0, f"Failed: {result.output}"
+    output = json.loads(result.output)
+    assert output["success"] is True
+    assert output["backlink_set"] is True
+
+    # Verify objective body was updated (first call) and plan PR body was updated (second call)
+    assert len(fake_gh.updated_bodies) == 2
+    plan_pr_body = fake_gh.updated_bodies[1][1]
+    block = find_metadata_block(plan_pr_body, "plan-header")
+    assert block is not None
+    assert block.data["objective_issue"] == 6423
+
+
+def test_backlink_already_matching_no_extra_write() -> None:
+    """If plan PR already has matching objective_issue, no extra write."""
+    objective = _make_issue(6423, ROADMAP_BODY_V2)
+    plan_pr = _make_plan_pr(500, objective_issue=6423)
+    fake_gh = FakeGitHubIssues(issues={6423: objective, 500: plan_pr})
+    runner = CliRunner()
+
+    result = runner.invoke(
+        update_objective_node,
+        ["6423", "--node", "1.3", "--pr", "#500"],
+        obj=ErkContext.for_test(github=FakeLocalGitHub(issues_gateway=fake_gh)),
+    )
+
+    assert result.exit_code == 0, f"Failed: {result.output}"
+    output = json.loads(result.output)
+    assert output["success"] is True
+    assert output["backlink_set"] is True
+
+    # Only the objective body should be updated, not the plan PR
+    assert len(fake_gh.updated_bodies) == 1
+
+
+def test_backlink_different_objective_emits_warning() -> None:
+    """If plan PR has a different objective_issue, warning emitted, no overwrite."""
+    objective = _make_issue(6423, ROADMAP_BODY_V2)
+    plan_pr = _make_plan_pr(500, objective_issue=9999)
+    fake_gh = FakeGitHubIssues(issues={6423: objective, 500: plan_pr})
+    runner = CliRunner()
+
+    result = runner.invoke(
+        update_objective_node,
+        ["6423", "--node", "1.3", "--pr", "#500"],
+        obj=ErkContext.for_test(github=FakeLocalGitHub(issues_gateway=fake_gh)),
+    )
+
+    assert result.exit_code == 0, f"Failed: {result.output}"
+    output = json.loads(result.output)
+    assert output["success"] is True
+    assert output["backlink_set"] is False
+    assert "9999" in output["backlink_warning"]
+
+    # Only the objective body should be updated, not the plan PR
+    assert len(fake_gh.updated_bodies) == 1
+
+
+def test_backlink_skipped_when_no_plan_header() -> None:
+    """If the PR has no plan-header block, backlink is silently skipped."""
+    objective = _make_issue(6423, ROADMAP_BODY_V2)
+    now = datetime.now(UTC)
+    plain_pr = IssueInfo(
+        number=500,
+        title="Regular PR #500",
+        body="Just a regular PR body without plan-header",
+        state="OPEN",
+        url="https://github.com/test/repo/pull/500",
+        labels=[],
+        assignees=[],
+        created_at=now,
+        updated_at=now,
+        author="testuser",
+    )
+    fake_gh = FakeGitHubIssues(issues={6423: objective, 500: plain_pr})
+    runner = CliRunner()
+
+    result = runner.invoke(
+        update_objective_node,
+        ["6423", "--node", "1.3", "--pr", "#500"],
+        obj=ErkContext.for_test(github=FakeLocalGitHub(issues_gateway=fake_gh)),
+    )
+
+    assert result.exit_code == 0, f"Failed: {result.output}"
+    output = json.loads(result.output)
+    assert output["success"] is True
+    assert output["backlink_set"] is False
+    assert output["backlink_skip"] == "no plan-header block"
+
+    # Only the objective body should be updated
+    assert len(fake_gh.updated_bodies) == 1
+
+
+def test_backlink_not_attempted_when_no_pr() -> None:
+    """When no --pr is provided, no backlink attempt is made."""
+    objective = _make_issue(6423, ROADMAP_BODY_V2)
+    fake_gh = FakeGitHubIssues(issues={6423: objective})
+    runner = CliRunner()
+
+    result = runner.invoke(
+        update_objective_node,
+        ["6423", "--node", "1.1", "--status", "planning"],
+        obj=ErkContext.for_test(github=FakeLocalGitHub(issues_gateway=fake_gh)),
+    )
+
+    assert result.exit_code == 0, f"Failed: {result.output}"
+    output = json.loads(result.output)
+    assert output["success"] is True
+    assert "backlink_set" not in output

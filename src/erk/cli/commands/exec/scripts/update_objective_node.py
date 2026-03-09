@@ -45,16 +45,23 @@ Exit Codes:
 """
 
 import json
+from pathlib import Path
 from typing import cast, get_args
 
 import click
 
 from erk_shared.context.helpers import require_issues, require_repo_root
+from erk_shared.gateway.github.issues.abc import GitHubIssues
 from erk_shared.gateway.github.issues.types import IssueNotFound
 from erk_shared.gateway.github.metadata.core import (
     extract_metadata_value,
     extract_raw_metadata_blocks,
+    find_metadata_block,
     replace_metadata_block_in_body,
+)
+from erk_shared.gateway.github.metadata.plan_header import (
+    extract_plan_header_objective_issue,
+    update_plan_header_objective_issue,
 )
 from erk_shared.gateway.github.metadata.roadmap import (
     RoadmapNodeStatus,
@@ -193,6 +200,51 @@ def _replace_node_refs_in_body(
         return None
 
     return body
+
+
+def _set_plan_backlink(
+    *,
+    github: GitHubIssues,
+    repo_root: Path,
+    pr_ref: str | None,
+    objective_issue_number: int,
+) -> dict[str, object] | None:
+    """Set objective_issue backlink on the plan PR if not already set.
+
+    Fail-open: returns a dict with backlink status info, or None if
+    no backlink attempt was needed (no --pr provided or empty value).
+    Never raises — backlink failure doesn't block the node update.
+    """
+    if not pr_ref or not pr_ref.startswith("#"):
+        return None
+
+    pr_number = int(pr_ref.lstrip("#"))
+
+    plan_issue = github.get_issue(repo_root, pr_number)
+    if isinstance(plan_issue, IssueNotFound):
+        return {"backlink_set": False, "backlink_warning": f"PR {pr_ref} not found"}
+
+    existing_objective = extract_plan_header_objective_issue(plan_issue.body)
+
+    if existing_objective == objective_issue_number:
+        return {"backlink_set": True}
+
+    if existing_objective is not None:
+        return {
+            "backlink_set": False,
+            "backlink_warning": (
+                f"PR {pr_ref} already has objective_issue={existing_objective}, "
+                f"not overwriting with {objective_issue_number}"
+            ),
+        }
+
+    # No plan-header block means this isn't an erk plan PR — skip silently
+    if find_metadata_block(plan_issue.body, BlockKeys.PLAN_HEADER) is None:
+        return {"backlink_set": False, "backlink_skip": "no plan-header block"}
+
+    updated_body = update_plan_header_objective_issue(plan_issue.body, objective_issue_number)
+    github.update_issue_body(repo_root, pr_number, BodyText(content=updated_body))
+    return {"backlink_set": True}
 
 
 @click.command(name="update-objective-node")
@@ -398,6 +450,16 @@ def update_objective_node(
         if updated_comment is not None and updated_comment != comment_body:
             github.update_comment(repo_root, objective_comment_id, updated_comment)
 
+    # Backlink: if --pr was provided with a value, ensure the plan PR has
+    # objective_issue pointing back to this objective. Fail-open: backlink
+    # failure doesn't prevent the node update from succeeding.
+    backlink_result = _set_plan_backlink(
+        github=github,
+        repo_root=repo_root,
+        pr_ref=pr_ref,
+        objective_issue_number=issue_number,
+    )
+
     # Build and emit output
     output = _build_output(
         issue_number=issue_number,
@@ -408,4 +470,6 @@ def update_objective_node(
         include_body=include_body,
         updated_body=updated_body,
     )
+    if backlink_result is not None:
+        output.update(backlink_result)
     click.echo(json.dumps(output))

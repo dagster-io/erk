@@ -27,6 +27,7 @@ from erk_shared.gateway.github.metadata.plan_header import (
     update_plan_header_learn_plan_completed,
     update_plan_header_learn_result,
     update_plan_header_learn_status,
+    update_plan_header_objective_issue,
     update_plan_header_remote_impl_event,
     update_plan_header_worktree_and_branch,
 )
@@ -1777,3 +1778,39 @@ def test_update_plan_header_ci_summary_comment_id_raises_for_missing_block() -> 
 
     with pytest.raises(ValueError, match="plan-header block not found"):
         update_plan_header_ci_summary_comment_id(body, 12345)
+
+
+# === Objective Issue Update Tests ===
+
+
+def test_update_plan_header_objective_issue_sets_field() -> None:
+    """update_plan_header_objective_issue sets the objective_issue field."""
+    body = format_plan_header_body_for_test()
+
+    updated_body = update_plan_header_objective_issue(body, 9009)
+
+    result = extract_plan_header_objective_issue(updated_body)
+    assert result == 9009
+
+    block = find_metadata_block(updated_body, "plan-header")
+    assert block is not None
+    assert block.data["created_at"] == "2024-01-15T10:30:00Z"
+    assert block.data["created_by"] == "test-user"
+
+
+def test_update_plan_header_objective_issue_overwrites_existing() -> None:
+    """update_plan_header_objective_issue overwrites an existing value."""
+    body = format_plan_header_body_for_test(objective_issue=100)
+
+    updated_body = update_plan_header_objective_issue(body, 200)
+
+    result = extract_plan_header_objective_issue(updated_body)
+    assert result == 200
+
+
+def test_update_plan_header_objective_issue_raises_for_missing_block() -> None:
+    """update_plan_header_objective_issue raises ValueError if no plan-header."""
+    body = "Some content without plan-header"
+
+    with pytest.raises(ValueError, match="plan-header block not found"):
+        update_plan_header_objective_issue(body, 9009)
