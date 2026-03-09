@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "plan_id": 9114,
+  "sessions": [
+    {
+      "session_id": "2bcdd095-41db-4bc5-9818-6619502bacc0",
+      "stage": "impl",
+      "source": "local",
+      "uploaded_at": "2026-03-09T23:23:07.001409+00:00",
+      "files": [
+        "impl-2bcdd095-41db-4bc5-9818-6619502bacc0-2bcdd095-41db-4bc5-9818-6619502bacc0-part1.xml",
+        "impl-2bcdd095-41db-4bc5-9818-6619502bacc0-2bcdd095-41db-4bc5-9818-6619502bacc0-part2.xml",
+        "impl-2bcdd095-41db-4bc5-9818-6619502bacc0-2bcdd095-41db-4bc5-9818-6619502bacc0-part3.xml",
+        "impl-2bcdd095-41db-4bc5-9818-6619502bacc0-2bcdd095-41db-4bc5-9818-6619502bacc0-part4.xml"
+      ],
+      "user_turns": 4,
+      "duration_minutes": 5,
+      "raw_size_kb": 418,
+      "xml_size_kb": 73,
+      "git_branch": "plnd/fix-pr-list-exclude-learn-03-09-1854"
+    }
+  ]
+}

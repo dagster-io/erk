@@ -1,0 +1,1223 @@
+<session>
+  <meta branch="plnd/fix-pr-list-exclude-learn-03-09-1854" />
+  <meta model="claude-opus-4-6" />
+  <user>&lt;command-message&gt;erk:plan-implement is running…&lt;/command-message&gt;
+&lt;command-name&gt;/erk:plan-implement&lt;/command-name&gt;
+&lt;command-args&gt;9114&lt;/command-args&gt;</user>
+  <user># /erk:plan-implement
+
+Implement a plan - either from GitHub, a markdown file, an existing impl directory under `.erk/impl-context/`, or by saving the current plan first.
+
+This is the primary implementation workflow - it orchestrates:
+
+1. Setting up the impl directory under `.erk/impl-context/&lt;branch&gt;/` (from issue, file, existing folder, or fresh plan)
+2. Executing the implementation
+3. Running CI and submitting the PR
+
+## Prerequisites
+
+- Must be in a git repository managed by erk
+- GitHub CLI (`gh`) must be authenticated
+- One of:
+  - A plan number, URL, or file path argument
+  - An existing impl directory under `.erk/impl-context/`
+  - A plan branch checked out (e.g., `plnd/...` or `P{number}-...`)
+  - A plan in `~/.claude/plans/` (from plan mode)
+
+## Usage
+
+```bash
+/erk:plan-implement                    # Use impl directory, detect from branch, or save current plan
+/erk:plan-implement 2521               # Fetch and implement plan #2521
+/erk:plan-implement https://github.com/owner/repo/pull/2521   # URL form
+/erk:plan-implement ./my-plan.md       # Implement from local markdown file
+```
+
+---
+
+## CRITICAL: PR Operations
+
+**NEVER** run direct GitHub CLI commands for PR operations during implementation:
+
+- `gh pr edit` — destroys plan-header metadata block
+- `gh pr ready` — bypasses lifecycle tracking
+- `gh pr close` / `gh pr merge`
+
+All PR operations are handled by `erk pr submit` in Step 13. It automatically:
+
+- Generates the PR title and body
+- Preserves the plan-header metadata block
+- Marks draft PRs as ready for review
+- Updates lifecycle stage
+
+## Agent Instructions
+
+### Step 1: Set Up Implementation
+
+Parse `9114` and run the consolidated setup command:
+
+- **If numeric** (e.g., `2521`): `erk exec setup-impl --issue 2521`
+- **If GitHub URL** (e.g., `https://github.com/.../issues/2521`): Extract number, `erk exec setup-impl --issue 2521`
+- **If path to file** (anything else non-empty): `erk exec setup-impl --file &lt;path&gt;`
+- **If empty**: `erk exec setup-impl` (auto-detects from `.erk/impl-context/`, branch, or fails)
+
+```bash
+erk exec setup-impl [--issue &lt;N&gt; | --file &lt;path&gt;]
+```
+
+This single command handles:
+
+- Fetching plan from GitHub (draft PR)
+- Setting up from a local markdown file
+- Auto-detecting from existing impl directory under `.erk/impl-context/`
+- Auto-detecting plan number from branch name (P{number}-... or PR lookup)
+- Creating/checking out the feature branch
+- Creating impl directory under `.erk/impl-context/&lt;branch&gt;/` with plan content
+- Running impl-init validation
+- Cleaning up `.erk/impl-context/` staging directory (git rm + commit + push)
+
+Otherwise, generate a branch slug and set up from the specified issue:
+
+1. Fetch the title: `gh pr view &lt;ISSUE_ARG&gt; --json title -q .title`
+2. Generate a branch slug from the title:
+   - 2-4 hyphenated lowercase words, max 30 characters
+   - Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+   - Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+   - Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+3. Store as `BRANCH_SLUG`.
+
+```bash
+erk exec setup-impl --issue &lt;ISSUE_ARG&gt; --branch-slug="${BRANCH_SLUG}"
+```
+
+If `setup-impl` exits with code 1 and `error: "no_plan_found"`, fall back to saving the current plan:
+
+Generate a branch slug from the plan title (the first `# ` heading in the plan file):
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Store as `BRANCH_SLUG`
+
+Save the current plan to GitHub and capture the plan number:
+
+```bash
+erk exec plan-save --format json --session-id="${CLAUDE_SESSION_ID}" --branch-slug="${BRANCH_SLUG}"
+```
+
+Parse the JSON output to get `plan_number`, then:
+
+```bash
+erk exec setup-impl --issue &lt;plan_number&gt;
+```
+
+The `setup-impl` output includes `related_docs` (skills and docs to load) and `has_plan_tracking` (whether GitHub issue tracking is active).
+
+If this fails, display the error and stop.
+
+### Step 2: Read Plan and Load Context
+
+Read `plan.md` from the impl directory set up in Step 1 to understand:
+
+- Overall goal and context
+- Context &amp; Understanding sections (API quirks, architectural insights, pitfalls)
+- Implementation phases and dependencies
+- Success criteria
+
+**Context Consumption**: Plans contain expensive discoveries. Ignoring `[CRITICAL:]` tags, "Related Context:" subsections, or "DO NOT" items causes repeated mistakes.
+
+### Step 3: Load Related Documentation
+
+If plan contains "Related Documentation" section, load listed skills via Skill tool and read listed docs.
+
+### Step 4: Create TodoWrite Entries
+
+Create todo entries for each phase from the plan.
+
+### Step 5: Signal GitHub Started
+
+```bash
+erk exec impl-signal started --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This also deletes the Claude plan file (from `~/.claude/plans/`) since:
+
+- The content has been saved to GitHub
+- The content has been snapshotted to `.erk/scratch/`
+- Keeping it could cause confusion if the user tries to re-save
+
+### Step 6: Execute Each Phase Sequentially
+
+For each phase:
+
+1. **Mark phase as in_progress** (in TodoWrite)
+2. **Read task requirements** carefully
+3. **Implement code AND tests together**:
+   - Load `dignified-python-313` skill for coding standards
+   - Load `fake-driven-testing` skill for test patterns
+   - Follow project AGENTS.md standards
+4. **Mark phase as completed** (in TodoWrite)
+5. **Report progress**: changes made, what's next
+
+**Important:** `plan.md` is immutable - NEVER edit during implementation
+
+### Step 7: Report Progress
+
+After each phase: report changes made and what's next.
+
+### Step 8: Final Verification
+
+Confirm all tasks executed, success criteria met, note deviations, summarize changes.
+
+### Step 9: Signal GitHub Ended
+
+```bash
+erk exec impl-signal ended --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+### Step 10: Upload Session for Async Learn
+
+```bash
+erk exec upload-impl-session --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This reads plan reference from the impl directory, captures session info, and uploads for async learn processing.
+
+### Step 11: Clean Up Impl Context
+
+Remove the `.erk/impl-context/` directory from the repo:
+
+```bash
+erk exec cleanup-impl-context
+```
+
+This removes `.erk/impl-context/`, stages the deletion, commits, and pushes — all idempotent.
+
+### Step 12: Run CI Iteratively
+
+1. If `.erk/prompt-hooks/post-plan-implement-ci.md` exists: follow its instructions
+2. Otherwise: check CLAUDE.md/AGENTS.md for CI commands
+
+### Step 13: Submit PR
+
+Push the branch and create or update the PR using the Graphite-aware submit pipeline:
+
+```bash
+erk pr submit
+```
+
+This handles pushing commits, creating/updating the PR, generating the PR description, and enhancing with Graphite stack metadata when available.
+
+After successful submission, signal lifecycle transition:
+
+```bash
+erk exec impl-signal submitted 2&gt;/dev/null || true
+```
+
+Then validate PR completion invariants:
+
+```bash
+erk pr check --stage=impl
+```
+
+This validates PR submission readiness including implementation-specific checks
+(e.g., `.erk/impl-context/` must be cleaned up). If checks fail, display output and warn user.
+
+### Step 14: Output Format
+
+- **Start**: "Setting up implementation..." or "Fetching plan #X..."
+- **After setup**: "Implementation environment ready, reading plan..."
+- **Each phase**: "Phase X: [brief description]" with code changes
+- **End**: "Plan execution complete. [Summary]"
+
+---
+
+## Related Commands
+
+- `/erk:plan-save` - Save plan only, don't implement (for defer-to-later workflow)
+- `/erk:replan` - Re-plan an existing plan with current codebase state
+</user>
+  <assistant>
+
+I'll implement plan #9114. Let me start by setting up the implementation environment.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="28626" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 28626, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01TURnHGr1VnPoULvCwUfQ93">
+    <param name="command">erk exec setup-impl --issue 9114</param>
+    <param name="description">Set up implementation for plan #9114</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="28626" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 28626, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01TURnHGr1VnPoULvCwUfQ93">
+{"success": true, "impl_path": "/home/runner/work/erk/erk/.erk/impl-context/plnd--fix-pr-list-exclude-learn-03-09-1854", "plan_number": 9114, "plan_url": "https://github.com/dagster-io/erk/pull/9114", "branch": "plnd/fix-pr-list-exclude-learn-03-09-1854", "plan_title": "[erk-plan] Fix: `erk pr list` and `erk dash` should show same PR list", "no_impl": false}
+{"success": true, "source": "issue", "plan_number": 9114, "has_plan_tracking": true, "valid": true, "related_docs": {"skills": [], "docs": []}}
+Already on plan branch 'plnd/fix-pr-list-exclude-learn-03-09-1854', teleporting from remote...
+  </tool_result>
+  <assistant>Implementation environment is ready. Let me read the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="364" cache_read_input_tokens="28626" cache_creation="{'ephemeral_5m_input_tokens': 364, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_0139GLoKQ78xsajHk4vbYrzJ">
+    <param name="file_path">/home/runner/work/erk/erk/.erk/impl-context/plnd--fix-pr-list-exclude-learn-03-09-1854/plan.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="364" cache_read_input_tokens="28626" cache_creation="{'ephemeral_5m_input_tokens': 364, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_0139GLoKQ78xsajHk4vbYrzJ">
+     1→# Fix: `erk pr list` and `erk dash` should show same PR list
+     2→
+     3→## Context
+     4→
+     5→`erk pr list` shows 30 items (including learn plans), while `erk dash` PRs tab shows only 10 (excludes learn plans via `exclude_labels=("erk-learn",)`). The CLI should exclude learn plans by default to match the TUI, with a flag to include them.
+     6→
+     7→## Root Cause
+     8→
+     9→- **TUI** (`src/erk/tui/views/types.py:43`): PLANS_VIEW has `exclude_labels=("erk-learn",)` — filters out learn plans from PRs tab
+    10→- **CLI** (`src/erk/cli/commands/pr/list_cmd.py:302-312`): Uses `exclude_labels=()` — shows everything including learn plans
+    11→
+    12→## Changes
+    13→
+    14→### 1. Add `--include-learn` flag to `pr_filter_options`
+    15→
+    16→**File**: `src/erk/cli/commands/pr/list_cmd.py`
+    17→
+    18→Add a new option in `pr_filter_options()` (around line 85-130):
+    19→```python
+    20→f = click.option(
+    21→    "--include-learn",
+    22→    is_flag=True,
+    23→    default=False,
+    24→    help="Include learn plans in results (excluded by default)",
+    25→)(f)
+    26→```
+    27→
+    28→### 2. Pass `exclude_labels` in `_pr_list_impl`
+    29→
+    30→**File**: `src/erk/cli/commands/pr/list_cmd.py` — `_pr_list_impl()` (line 255)
+
+... [32 lines omitted] ...
+  </tool_result>
+  <assistant>Good, I understand the plan. Let me create todo entries and start implementing.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1109" cache_read_input_tokens="28990" cache_creation="{'ephemeral_5m_input_tokens': 1109, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_019NgGdbZakNmuHz8FWehKA9">
+    <param name="todos">[{'content': 'Add --include-learn flag to pr_filter_options', 'status': 'pending', 'active...[truncated 636 chars]...CI checks'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1109" cache_read_input_tokens="28990" cache_creation="{'ephemeral_5m_input_tokens': 1109, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_019NgGdbZakNmuHz8FWehKA9">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_016LCbsRr4uPGhazNFgtouC5">
+    <param name="todos">[{'content': 'Add --include-learn flag to pr_filter_options', 'status': 'pending', 'active...[truncated 640 chars]...CI checks'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="347" cache_read_input_tokens="30099" cache_creation="{'ephemeral_5m_input_tokens': 347, 'ephemeral_1h_input_tokens': 0}" output_tokens="290" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_016LCbsRr4uPGhazNFgtouC5">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01FoVdyBwtMhcASXrCMhwb9N">
+    <param name="command">erk exec impl-signal started --session-id="2bcdd095-41db-4bc5-9818-6619502bacc0" 2&gt;/dev/null || true</param>
+    <param name="description">Signal GitHub implementation started</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="332" cache_read_input_tokens="30446" cache_creation="{'ephemeral_5m_input_tokens': 332, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01FoVdyBwtMhcASXrCMhwb9N">
+{
+  "success": true,
+  "event": "started",
+  "plan_number": 9114
+}
+  </tool_result>
+  <assistant>Now let me read the target file to understand the current code:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="151" cache_read_input_tokens="30778" cache_creation="{'ephemeral_5m_input_tokens': 151, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01KVvdjoBSX5vEY296xqxcNc">
+    <param name="todos">[{'content': 'Add --include-learn flag to pr_filter_options', 'status': 'in_progress', 'ac...[truncated 642 chars]...CI checks'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="151" cache_read_input_tokens="30778" cache_creation="{'ephemeral_5m_input_tokens': 151, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01KVvdjoBSX5vEY296xqxcNc">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="Read" id="toolu_01EaRtFG4D5ryH2WaYp8LNLN">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/list_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="346" cache_read_input_tokens="30929" cache_creation="{'ephemeral_5m_input_tokens': 346, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01EaRtFG4D5ryH2WaYp8LNLN">
+     1→"""Command to list plans with filtering."""
+     2→
+     3→import tempfile
+     4→from collections.abc import Callable
+     5→from dataclasses import dataclass
+     6→from pathlib import Path
+     7→from typing import Any, ParamSpec, TypeVar
+     8→
+     9→import click
+    10→from rich.console import Console
+    11→from rich.table import Table
+    12→from rich.text import Text
+    13→
+    14→from erk.cli.core import discover_repo_context
+    15→from erk.cli.repo_resolution import get_remote_github, resolved_repo_option
+    16→from erk.core.context import ErkContext
+    17→from erk.core.display_utils import strip_rich_markup
+    18→from erk.core.repo_discovery import ensure_erk_metadata_dir
+    19→from erk.tui.app import ErkDashApp
+    20→from erk.tui.data.real_provider import RealPlanDataProvider
+    21→from erk.tui.data.types import PlanFilters, PlanRowData, serialize_plan_row
+    22→from erk.tui.sorting.logic import sort_plans
+    23→from erk.tui.sorting.types import SortKey, SortState
+    24→from erk_shared.agentclick.json_command import json_command
+    25→from erk_shared.agentclick.mcp_exposed import mcp_exposed
+    26→from erk_shared.context.types import NoRepoSentinel
+    27→from erk_shared.gateway.browser.real import RealBrowserLauncher
+    28→from erk_shared.gateway.clipboard.real import RealClipboard
+    29→from erk_shared.gateway.github.emoji import get_pr_status_emoji
+    30→from erk_shared.gateway.github.types import (
+
+... [544 lines omitted] ...
+
+   100→            ["queued", "in_progress", "success", "failure", "cancelled"], case_sensitive=False
+   270→        user_output(click.style("Error: ", fg="red") + "GitHub authentication not available")
+   317→    if timings is not None and timings.warnings:
+   318→        for warning in timings.warnings:
+   319→            user_output(click.style("Warning: ", fg="yellow") + warning)
+   387→        user_output(click.style("Error: ", fg="red") + "Could not determine repository owner/name")
+   409→        user_output(click.style("Error: ", fg="red") + "GitHub authentication not available")
+  </tool_result>
+  <assistant>Now I have a clear picture of the code. Let me also check the TUI types to confirm the `PlanFilters` `exclude_labels` field:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="7372" cache_read_input_tokens="31275" cache_creation="{'ephemeral_5m_input_tokens': 7372, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_016UVxoxUFcbdzpyX53gTjKg">
+    <param name="pattern">exclude_labels</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/tui</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="7372" cache_read_input_tokens="31275" cache_creation="{'ephemeral_5m_input_tokens': 7372, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_016UVxoxUFcbdzpyX53gTjKg">
+src/erk/tui/data/types.py:259:    exclude_labels: tuple[str, ...]
+src/erk/tui/data/types.py:274:            exclude_labels=(),
+src/erk/tui/data/real_provider.py:113:                exclude_labels=list(filters.exclude_labels) if filters.exclude_labels else None,
+src/erk/tui/data/real_provider.py:124:                exclude_labels=list(filters.exclude_labels) if filters.exclude_labels else None,
+src/erk/tui/data/real_provider.py:446:                exclude_labels=(),
+src/erk/tui/app.py:232:            exclude_labels=view_config.exclude_labels,
+src/erk/tui/views/types.py:27:        exclude_labels: Labels to exclude from results (client-side filtering
+src/erk/tui/views/types.py:35:    exclude_labels: tuple[str, ...]
+src/erk/tui/views/types.py:43:    exclude_labels=("erk-learn",),
+src/erk/tui/views/types.py:51:    exclude_labels=(),
+src/erk/tui/views/types.py:59:    exclude_labels=(),
+src/erk/tui/views/types.py:67:    exclude_labels=(),
+  </tool_result>
+  <assistant>Good. The TUI's `PLANS_VIEW` has `exclude_labels=("erk-learn",)` at line 43. Now I'll implement all the changes. Let me load the dignified-python skill first as required, then make all the edits:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="517" cache_read_input_tokens="38647" cache_creation="{'ephemeral_5m_input_tokens': 517, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Skill" id="toolu_01KcHy5Ucxug2bTt5Sfa6iPW">
+    <param name="skill">dignified-python</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="517" cache_read_input_tokens="38647" cache_creation="{'ephemeral_5m_input_tokens': 517, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01KcHy5Ucxug2bTt5Sfa6iPW">
+Launching skill: dignified-python
+  </tool_result>
+  <user>Base directory for this skill: /home/runner/work/erk/erk/.claude/skills/dignified-python
+
+# Dignified Python Coding Standards
+
+## Core Knowledge (ALWAYS Loaded)
+
+@dignified-python-core.md
+
+## Version Detection
+
+**Identify the project's minimum Python version** by checking (in order):
+
+1. `pyproject.toml` - Look for `requires-python` field (e.g., `requires-python = "&gt;=3.12"`)
+2. `setup.py` or `setup.cfg` - Look for `python_requires`
+3. `.python-version` file - Contains version like `3.12` or `3.12.0`
+4. Default to Python 3.12 if no version specifier found
+
+**Once identified, load the appropriate version-specific file:**
+
+- Python 3.10: Load `versions/python-3.10.md`
+- Python 3.11: Load `versions/python-3.11.md`
+- Python 3.12: Load `versions/python-3.12.md`
+- Python 3.13: Load `versions/python-3.13.md`
+
+## Conditional Loading (Load Based on Task Patterns)
+
+Core files above cover 80%+ of Python code patterns. Only load these additional files when you detect specific patterns:
+
+Pattern detection examples:
+
+- If task mentions "click" or "CLI" -&gt; Load `cli-patterns.md`
+- If task mentions "subprocess" -&gt; Load `subprocess.md`
+
+## When to Read Each Reference Document
+
+The `references/` directory contains detailed guidance for specialized topics. Load these on-demand when you encounter relevant patterns:
+
+### `references/exception-handling.md`
+
+**Read when**:
+
+- Writing try/except blocks
+- Wrapping third-party APIs that may raise
+- Seeing or writing `from e` or `from None`
+- Unsure if LBYL alternative exists
+
+### `references/interfaces.md`
+
+**Read when**:
+
+- Creating ABC or Protocol classes
+- Writing @abstractmethod decorators
+- Designing gateway layer interfaces
+- Choosing between ABC and Protocol
+
+### `references/typing-advanced.md`
+
+**Read when**:
+
+- Using typing.cast()
+- Creating Literal type aliases
+- Narrowing types in conditional blocks
+
+### `references/module-design.md`
+
+**Read when**:
+
+- Creating new Python modules
+- Adding module-level code (beyond simple constants)
+- Using @cache decorator at module level
+- Seeing Path() or computation at module level
+- Considering inline imports
+
+### `references/api-design.md`
+
+**Read when**:
+
+- Adding default parameter values to functions
+- Defining functions with 5 or more parameters
+- Using ThreadPoolExecutor.submit()
+- Reviewing function signatures
+
+### `references/checklists.md`
+
+**Read when**:
+
+- Final review before committing Python code
+- Unsure if you've followed all rules
+- Need a quick lookup of requirements
+
+## How to Use This Skill
+
+1. **Core knowledge** is loaded automatically (LBYL, pathlib, basic imports, anti-patterns)
+2. **Version detection** happens once - identify the minimum Python version and load the appropriate version file
+3. **Reference documents** are loaded on-demand based on the triggers above
+4. **Additional patterns** may require extra loading (CLI patterns, subprocess)
+5. **Each file is self-contained** with complete guidance for its domain
+</user>
+  <assistant>
+
+Now let me read the core dignified-python standards:</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="935" cache_read_input_tokens="39164" cache_creation="{'ephemeral_5m_input_tokens': 935, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_019tgGzpUws6GNHmpFJmytQb">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/skills/dignified-python/dignified-python-core.md</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="935" cache_read_input_tokens="39164" cache_creation="{'ephemeral_5m_input_tokens': 935, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_019tgGzpUws6GNHmpFJmytQb">
+     1→---
+     2→---
+     3→
+     4→# Dignified Python - Core Standards
+     5→
+     6→This document contains the core Python coding standards that apply to 80%+ of Python code. These principles are loaded with every skill invocation.
+     7→
+     8→For conditional loading of specialized patterns:
+     9→
+    10→- CLI development -&gt; Load `cli-patterns.md`
+    11→- Subprocess operations -&gt; Load `subprocess.md`
+    12→
+    13→For detailed reference material, see the "When to Read Each Reference" section in SKILL.md.
+    14→
+    15→---
+    16→
+    17→## The Cornerstone: LBYL Over EAFP
+    18→
+    19→**Look Before You Leap: Check conditions proactively, NEVER use exceptions for control flow.**
+    20→
+    21→This is the single most important rule in dignified Python. Every pattern below flows from this principle.
+    22→
+    23→```python
+    24→# CORRECT: Check first
+    25→if key in mapping:
+    26→    value = mapping[key]
+    27→    process(value)
+    28→
+    29→# WRONG: Exception as control flow
+    30→try:
+
+... [502 lines omitted] ...
+
+    33→except KeyError:
+    39→## Exception Handling Basics
+    45→LBYL means checking conditions before acting. EAFP (Easier to Ask for Forgiveness than Permission) means trying operations and catching exceptions. In dignified Python, we strongly prefer LBYL.
+    65→# WRONG: KeyError as control flow
+    68→except KeyError:
+    72→### When Exceptions ARE Acceptable
+    74→Exceptions are ONLY acceptable at:
+    76→1. **Error boundaries** (CLI/API level)
+    80→**Default: Let exceptions bubble up**
+    82→**When you must use try-except: scope the try block to the single operation that raises.** Don't wrap multiple operations in one try block — each handler should know exactly what failed. Use early returns to keep subsequent code flat.
+    84→For detailed exception handling patterns including minimal exception scope, B904 chaining, third-party API examples, and anti-patterns, see `references/exception-handling.md`.
+   118→- `.resolve()` raises `OSError` for non-existent paths
+   119→- `.is_relative_to()` raises `ValueError` for invalid comparisons
+   120→- Checking `.exists()` first avoids exceptions entirely (LBYL!)
+   135→# WRONG: Using exceptions for path validation
+   140→except (OSError, ValueError):
+   180→3. **Inline imports only for specific exceptions** (circular deps, TYPE_CHECKING, conditional features)
+   211→**Acceptable exceptions:**
+   480→    log.warning("Non-numeric plan_id")
+   494→- **Raise exception**: When invalid data indicates a programming error or corrupt state
+   521→- **Exception chaining (B904), minimal exception scope**: `references/exception-handling.md`
+  </tool_result>
+  <assistant>Good. Now I have all the context I need. Let me implement the changes. Since the plan is straightforward, I'll make all edits to the single file:
+
+### Step 1: Add `--include-learn` flag to `pr_filter_options`</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="6328" cache_read_input_tokens="40099" cache_creation="{'ephemeral_5m_input_tokens': 6328, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_018QPNQq1MEXRAThxgqMRjQw">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/list_cmd.py</param>
+    <param name="old_string">    f = click.option(
+        "--sort",
+        type=click.Choice(["plan", "activity"], ca...[truncated 35 chars]...lp="Sort order: by plan number (default) or recent branch activity",
+    )(f)
+    return f</param>
+    <param name="new_string">    f = click.option(
+        "--sort",
+        type=click.Choice(["plan", "activity"], ca...[truncated 207 chars]...        help="Include learn plans in results (excluded by default)",
+    )(f)
+    return f</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6328" cache_read_input_tokens="40099" cache_creation="{'ephemeral_5m_input_tokens': 6328, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_018QPNQq1MEXRAThxgqMRjQw">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/pr/list_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01G22jeN1Zm33wAaM32ubPW9">
+    <param name="todos">[{'content': 'Add --include-learn flag to pr_filter_options', 'status': 'completed', 'acti...[truncated 644 chars]...CI checks'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="403" cache_read_input_tokens="46427" cache_creation="{'ephemeral_5m_input_tokens': 403, 'ephemeral_1h_input_tokens': 0}" output_tokens="26" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01G22jeN1Zm33wAaM32ubPW9">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>### Step 2: Add `include_learn` parameter to `_pr_list_impl` and compute `exclude_labels`</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="332" cache_read_input_tokens="46830" cache_creation="{'ephemeral_5m_input_tokens': 332, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01UpDQ9QSd2wzEVbtPMvy6Ge">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/list_cmd.py</param>
+    <param name="old_string">def _pr_list_impl(
+    ctx: ErkContext,
+    *,
+    label: tuple[str, ...],
+    state: str ...[truncated 80 chars]...,
+    sort: str,
+    repo_id: GitHubRepoId,
+    json_mode: bool,
+) -&gt; PrListResult | None:</param>
+    <param name="new_string">def _pr_list_impl(
+    ctx: ErkContext,
+    *,
+    label: tuple[str, ...],
+    state: str ...[truncated 105 chars]..._id: GitHubRepoId,
+    json_mode: bool,
+    include_learn: bool,
+) -&gt; PrListResult | None:</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="332" cache_read_input_tokens="46830" cache_creation="{'ephemeral_5m_input_tokens': 332, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01UpDQ9QSd2wzEVbtPMvy6Ge">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/pr/list_cmd.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update the `exclude_labels=()` in `_pr_list_impl` to use the computed value:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="417" cache_read_input_tokens="47162" cache_creation="{'ephemeral_5m_input_tokens': 417, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01EJdM5ef1YgYeakmocjMwLF">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/list_cmd.py</param>
+    <param name="old_string">    filters = PlanFilters(
+        labels=labels,
+        state=effective_state,
+        r...[truncated 147 chars]...e,
+        lifecycle_stage=stage,
+    )
+
+    rows, timings = provider.fetch_plans(filters)</param>
+    <param name="new_string">    exclude_labels = () if include_learn else ("erk-learn",)
+
+    filters = PlanFilters(
+ ...[truncated 221 chars]...e,
+        lifecycle_stage=stage,
+    )
+
+    rows, timings = provider.fetch_plans(filters)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="417" cache_read_input_tokens="47162" cache_creation="{'ephemeral_5m_input_tokens': 417, 'ephemeral_1h_input_tokens': 0}" output_tokens="371" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01EJdM5ef1YgYeakmocjMwLF">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/pr/list_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01UL7Xyws6UmAVjhQQ4zyzgH">
+    <param name="todos">[{'content': 'Add --include-learn flag to pr_filter_options', 'status': 'completed', 'acti...[truncated 646 chars]...CI checks'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="418" cache_read_input_tokens="47579" cache_creation="{'ephemeral_5m_input_tokens': 418, 'ephemeral_1h_input_tokens': 0}" output_tokens="290" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01UL7Xyws6UmAVjhQQ4zyzgH">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>### Step 3: Add `include_learn` parameter to `_run_interactive_mode` and compute `exclude_labels`</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="332" cache_read_input_tokens="47997" cache_creation="{'ephemeral_5m_input_tokens': 332, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01VWTB8vPUTriuwgaR2pX1zW">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/list_cmd.py</param>
+    <param name="old_string">def _run_interactive_mode(
+    ctx: ErkContext,
+    *,
+    label: tuple[str, ...],
+    sta...[truncated 686 chars]...alse, filter to authenticated user
+        sort: Sort order ("plan" or "activity")
+    """</param>
+    <param name="new_string">def _run_interactive_mode(
+    ctx: ErkContext,
+    *,
+    label: tuple[str, ...],
+    sta...[truncated 787 chars]...vity")
+        include_learn: If True, include learn plans; if False, exclude them
+    """</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="332" cache_read_input_tokens="47997" cache_creation="{'ephemeral_5m_input_tokens': 332, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01VWTB8vPUTriuwgaR2pX1zW">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/pr/list_cmd.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update the `exclude_labels=()` in `_run_interactive_mode`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="723" cache_read_input_tokens="48329" cache_creation="{'ephemeral_5m_input_tokens': 723, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_019gTGqz2F1xZ92dpXPLdxxP">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/list_cmd.py</param>
+    <param name="old_string">    effective_state: IssueFilterState = "closed" if state == "closed" else "open"
+
+    fil...[truncated 218 chars]...column=False,
+        lifecycle_stage=stage,
+    )
+
+    # Convert sort string to SortState</param>
+    <param name="new_string">    effective_state: IssueFilterState = "closed" if state == "closed" else "open"
+    excl...[truncated 291 chars]...column=False,
+        lifecycle_stage=stage,
+    )
+
+    # Convert sort string to SortState</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="723" cache_read_input_tokens="48329" cache_creation="{'ephemeral_5m_input_tokens': 723, 'ephemeral_1h_input_tokens': 0}" output_tokens="409" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_019gTGqz2F1xZ92dpXPLdxxP">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/pr/list_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01FSWnEPaiAHyZnhun18SuZ5">
+    <param name="todos">[{'content': 'Add --include-learn flag to pr_filter_options', 'status': 'completed', 'acti...[truncated 648 chars]...CI checks'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="456" cache_read_input_tokens="49052" cache_creation="{'ephemeral_5m_input_tokens': 456, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01FSWnEPaiAHyZnhun18SuZ5">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>### Step 4: Wire `include_learn` through `pr_list` and `dash` commands</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="332" cache_read_input_tokens="49508" cache_creation="{'ephemeral_5m_input_tokens': 332, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01LaPXDSvqY87r2UmjHAR6Z9">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/list_cmd.py</param>
+    <param name="old_string">def pr_list(
+    ctx: ErkContext,
+    *,
+    label: tuple[str, ...],
+    state: str | None...[truncated 74 chars]...,
+    sort: str,
+    repo_id: GitHubRepoId,
+    json_mode: bool,
+) -&gt; PrListResult | None:</param>
+    <param name="new_string">def pr_list(
+    ctx: ErkContext,
+    *,
+    label: tuple[str, ...],
+    state: str | None...[truncated 99 chars]...ude_learn: bool,
+    repo_id: GitHubRepoId,
+    json_mode: bool,
+) -&gt; PrListResult | None:</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="332" cache_read_input_tokens="49508" cache_creation="{'ephemeral_5m_input_tokens': 332, 'ephemeral_1h_input_tokens': 0}" output_tokens="358" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01LaPXDSvqY87r2UmjHAR6Z9">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/pr/list_cmd.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update the call to `_pr_list_impl` from `pr_list`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="405" cache_read_input_tokens="49840" cache_creation="{'ephemeral_5m_input_tokens': 405, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_019d9T6kGYTKYoreVjFUDLm5">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/list_cmd.py</param>
+    <param name="old_string">    return _pr_list_impl(
+        ctx,
+        label=label,
+        state=state,
+        r...[truncated 59 chars]...=all_users,
+        sort=sort,
+        repo_id=repo_id,
+        json_mode=json_mode,
+    )</param>
+    <param name="new_string">    return _pr_list_impl(
+        ctx,
+        label=label,
+        state=state,
+        r...[truncated 96 chars]...  include_learn=include_learn,
+        repo_id=repo_id,
+        json_mode=json_mode,
+    )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="405" cache_read_input_tokens="49840" cache_creation="{'ephemeral_5m_input_tokens': 405, 'ephemeral_1h_input_tokens': 0}" output_tokens="319" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_019d9T6kGYTKYoreVjFUDLm5">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/pr/list_cmd.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update the `dash` command signature:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="366" cache_read_input_tokens="50245" cache_creation="{'ephemeral_5m_input_tokens': 366, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01AuyxTmp23sQzbb8azr8GNW">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/list_cmd.py</param>
+    <param name="old_string">def dash(
+    ctx: ErkContext,
+    *,
+    label: tuple[str, ...],
+    state: str | None,
+ ...[truncated 29 chars]...    limit: int | None,
+    all_users: bool,
+    sort: str,
+    interval: float,
+) -&gt; None:</param>
+    <param name="new_string">def dash(
+    ctx: ErkContext,
+    *,
+    label: tuple[str, ...],
+    state: str | None,
+ ...[truncated 54 chars]...  all_users: bool,
+    sort: str,
+    include_learn: bool,
+    interval: float,
+) -&gt; None:</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="366" cache_read_input_tokens="50245" cache_creation="{'ephemeral_5m_input_tokens': 366, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01AuyxTmp23sQzbb8azr8GNW">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/pr/list_cmd.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update the `_run_interactive_mode` call in `dash`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="560" cache_read_input_tokens="50611" cache_creation="{'ephemeral_5m_input_tokens': 560, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01AkohJ7JGzKiXXV3H8saaLP">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/list_cmd.py</param>
+    <param name="old_string">    _run_interactive_mode(
+        ctx,
+        label=label,
+        state=state,
+        ...[truncated 69 chars]...it=limit,
+        interval=interval,
+        all_users=all_users,
+        sort=sort,
+    )</param>
+    <param name="new_string">    _run_interactive_mode(
+        ctx,
+        label=label,
+        state=state,
+        ...[truncated 106 chars]...        all_users=all_users,
+        sort=sort,
+        include_learn=include_learn,
+    )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="560" cache_read_input_tokens="50611" cache_creation="{'ephemeral_5m_input_tokens': 560, 'ephemeral_1h_input_tokens': 0}" output_tokens="314" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01AkohJ7JGzKiXXV3H8saaLP">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/pr/list_cmd.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me also add `--include-learn` to the `pr_list` examples docstring:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="361" cache_read_input_tokens="51171" cache_creation="{'ephemeral_5m_input_tokens': 361, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_013FA5KV9CotX9TtvGdnxX48">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/list_cmd.py</param>
+    <param name="old_string">    Examples:
+        erk pr list                      # Your plans only
+        erk pr li...[truncated 384 chars]...ch activity
+        erk pr list --repo owner/repo    # Remote mode (no local git required)</param>
+    <param name="new_string">    Examples:
+        erk pr list                      # Your plans only
+        erk pr li...[truncated 447 chars]...learn plans
+        erk pr list --repo owner/repo    # Remote mode (no local git required)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="361" cache_read_input_tokens="51171" cache_creation="{'ephemeral_5m_input_tokens': 361, 'ephemeral_1h_input_tokens': 0}" output_tokens="451" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_013FA5KV9CotX9TtvGdnxX48">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/pr/list_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_013xJ8mzrPb6WpwQPUoYjYMm">
+    <param name="todos">[{'content': 'Add --include-learn flag to pr_filter_options', 'status': 'completed', 'acti...[truncated 650 chars]...CI checks'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="710" cache_read_input_tokens="51532" cache_creation="{'ephemeral_5m_input_tokens': 710, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_013xJ8mzrPb6WpwQPUoYjYMm">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>All code changes are done. Let me verify the final state of the file, then run CI:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="332" cache_read_input_tokens="52242" cache_creation="{'ephemeral_5m_input_tokens': 332, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_016Y1c6vL9hpSX7L5VVS81Jb">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/list_cmd.py</param>
+    <param name="offset">85</param>
+    <param name="limit">55</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="332" cache_read_input_tokens="52242" cache_creation="{'ephemeral_5m_input_tokens': 332, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Glob" id="toolu_011yRXrr9KdVpcuJmC6ospRG">
+    <param name="pattern">/home/runner/work/erk/erk/.erk/prompt-hooks/post-plan-implement-ci.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="332" cache_read_input_tokens="52242" cache_creation="{'ephemeral_5m_input_tokens': 332, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_016Y1c6vL9hpSX7L5VVS81Jb">
+    85→def pr_filter_options(f: Callable[P, T]) -&gt; Callable[P, T]:
+    86→    """Shared filter options for pr list commands."""
+    87→    f = click.option(
+    88→        "--label",
+    89→        multiple=True,
+    90→        help="Filter by label (can be specified multiple times for AND logic)",
+    91→    )(f)
+    92→    f = click.option(
+    93→        "--state",
+    94→        type=click.Choice(["open", "closed"], case_sensitive=False),
+    95→        help="Filter by state",
+    96→    )(f)
+    97→    f = click.option(
+    98→        "--run-state",
+    99→        type=click.Choice(
+   100→            ["queued", "in_progress", "success", "failure", "cancelled"], case_sensitive=False
+   101→        ),
+   102→        help="Filter by workflow run state",
+   103→    )(f)
+   104→    f = click.option(
+   105→        "--stage",
+   106→        type=click.Choice(
+   107→            ["prompted", "planning", "planned", "impl", "merged", "closed"],
+   108→            case_sensitive=False,
+   109→        ),
+   110→        help="Filter by lifecycle stage",
+   111→    )(f)
+   112→    f = click.option(
+   113→        "--limit",
+   114→        type=int,
+
+... [30 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_011yRXrr9KdVpcuJmC6ospRG">
+/home/runner/work/erk/erk/.erk/prompt-hooks/post-plan-implement-ci.md
+  </tool_result>
+  <assistant>The CI hook exists. Let me read it:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1025" cache_read_input_tokens="52574" cache_creation="{'ephemeral_5m_input_tokens': 1025, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01VVXcrdanFL6tS1FTjUsBg8">
+    <param name="file_path">/home/runner/work/erk/erk/.erk/prompt-hooks/post-plan-implement-ci.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1025" cache_read_input_tokens="52574" cache_creation="{'ephemeral_5m_input_tokens': 1025, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01VVXcrdanFL6tS1FTjUsBg8">
+     1→# Post-Implementation CI
+     2→
+     3→Run CI validation after plan implementation using `make fast-ci`.
+     4→
+     5→Load the `ci-iteration` skill for the iterative fix workflow.
+     6→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_use name="Skill" id="toolu_01CgEEpthBkYgGXJ7YDJcs54">
+    <param name="skill">ci-iteration</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="240" cache_read_input_tokens="53599" cache_creation="{'ephemeral_5m_input_tokens': 240, 'ephemeral_1h_input_tokens': 0}" output_tokens="26" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01CgEEpthBkYgGXJ7YDJcs54">
+Launching skill: ci-iteration
+  </tool_result>
+  <user>Base directory for this skill: /home/runner/work/erk/erk/.claude/skills/ci-iteration
+
+# CI Iteration
+
+## Overview
+
+Run the specified CI target and automatically fix any failures. Keep iterating until all checks pass or you get stuck on an issue that requires human intervention.
+
+**IMPORTANT**: All `make` commands must be run from the repository root directory. The Makefile is located at the root of the repository, not in subdirectories.
+
+## Sub-Agent Policy
+
+**CRITICAL**: When spawning sub-agents to run `make`, `pytest`, `ty`, `ruff`, `prettier`, or `gt` commands, you MUST use `devrun`:
+
+```
+Task tool with:
+- subagent_type: devrun  &lt;- MUST be devrun, NEVER general-purpose
+```
+
+**Why**: devrun has hard tool constraints (no Edit/Write) preventing destructive changes. The parent agent (you) processes reports and applies fixes - sub-agents only report.
+
+**FORBIDDEN**:
+
+- Spawning general-purpose or other sub-agents for make/pytest/ty/ruff/prettier/gt
+- Giving sub-agents prompts like "fix issues" or "iterate until passing"
+
+**REQUIRED**:
+
+- Sub-agents run ONE command and report results
+- Parent agent decides what to fix based on reports
+
+## Core Workflow
+
+### 1. Initial Run
+
+Use the devrun agent to run the specified make target from the repository root:
+
+```
+Task tool with:
+- subagent_type: devrun
+- description: "Run [make target] from repo root"
+- prompt: "Change to repository root and execute: [make target]"
+```
+
+### 2. Parse Failures
+
+Analyze the output to identify which check(s) failed:
+
+- **Ruff lint failures**: "ruff check" errors
+- **Format failures**: "ruff format --check" or files needing reformatting
+- **Prettier failures**: Markdown files needing formatting
+- **MD-check failures**: CLAUDE.md files not properly referencing AGENTS.md
+- **ty failures**: Type errors with file paths and line numbers
+- **Test failures**: pytest failures with test names and assertion errors
+
+### 3. Apply Targeted Fixes
+
+Based on failure type, apply appropriate fixes:
+
+| Failure Type | Fix Command                                 |
+| ------------ | ------------------------------------------- |
+| Ruff lint    | `make fix` via devrun                       |
+| Ruff format  | `make format` via devrun                    |
+| Prettier     | `make prettier` via devrun                  |
+| Sync-Kit     | `erk sync` directly                         |
+| MD-check     | Edit CLAUDE.md to contain only `@AGENTS.md` |
+| ty           | Edit files to fix type annotations          |
+| Tests        | Read and edit source/test files             |
+
+### 4. Verify and Repeat
+
+After applying fixes, run the make target again via devrun. Continue the cycle: run -&gt; identify failures -&gt; fix -&gt; verify.
+
+## Iteration Control
+
+**Safety Limits:**
+
+- **Maximum iterations**: 10 attempts
+- **Stuck detection**: If the same error appears 3 times in a row, stop
+- **Progress tracking**: Use TodoWrite to show iteration progress
+
+## Progress Reporting
+
+Use TodoWrite to track progress:
+
+```
+Iteration 1: Fixing lint errors
+Iteration 2: Fixing format errors
+Iteration 3: Fixing type errors in src/erk/cli/commands/switch.py
+Iteration 4: All checks passed
+```
+
+## When to Stop
+
+**SUCCESS**: Stop when the make target exits with code 0 (all checks passed)
+
+**STUCK**: Stop and report to user if:
+
+1. You've completed 10 iterations without success
+2. The same error persists after 3 fix attempts
+3. You encounter an error you cannot automatically fix
+
+## Reporting Formats
+
+### Success Format
+
+```markdown
+## Finalization Status: SUCCESS
+
+All CI checks passed after N iteration(s):
+
+(check) **Lint (ruff check)**: PASSED
+
+(check) **Format (ruff format --check)**: PASSED
+
+(check) **Prettier**: PASSED
+
+(check) **AGENTS.md Standard (md-check)**: PASSED
+
+(check) **ty**: PASSED
+
+(check) **Tests**: PASSED
+
+(check) **Sync-Kit (erk check)**: PASSED
+
+The code is ready for commit/PR.
+```
+
+**IMPORTANT**: Each check line MUST be separated by a blank line in the markdown output to render properly in the CLI.
+
+### Stuck Format
+
+```markdown
+## Finalization Status: STUCK
+
+I was unable to resolve the following issue after N attempts:
+
+**Check**: [lint/format/prettier/md-check/ty/test]
+
+**Error**:
+[Exact error message]
+
+**File**: [file path if applicable]
+
+**Attempted Fixes**:
+
+1. [What you tried first]
+2. [What you tried second]
+3. [What you tried third]
+
+**Next Steps**:
+[Suggest what needs to be done manually]
+```
+
+## Guidelines
+
+1. **Be systematic**: Fix one type of error at a time
+2. **Run full CI**: Always run the full make target, not individual checks
+3. **Use devrun agent**: Always use the Task tool with devrun agent for ALL make commands
+4. **Run from repo root**: Always ensure make commands execute from repository root
+5. **Track progress**: Use TodoWrite for every iteration
+6. **Don't guess**: Read files before making changes
+7. **Follow standards**: Adhere to AGENTS.md coding standards
+8. **Fail gracefully**: Report clearly when stuck
+9. **Be efficient**: Use targeted fixes (don't reformat everything for one lint error)
+
+## Example Flow
+
+```
+Iteration 1:
+- Use Task tool with devrun agent to run make target from repo root
+- Found: 5 lint errors, 2 files need formatting
+- Fix: Use Task tool with devrun agent to run make fix, then make format from repo root
+- Result: 3 lint errors remain
+
+Iteration 2:
+- Use Task tool with devrun agent to run make target from repo root
+- Found: 3 lint errors (imports)
+- Fix: Edit files to fix import issues
+- Result: All lint/format pass, 2 type errors
+
+Iteration 3:
+- Use Task tool with devrun agent to run make target from repo root
+- Found: 2 ty errors in switch.py:45 and switch.py:67
+- Fix: Add type annotations
+- Result: All checks pass
+
+SUCCESS
+```
+
+## Important Reminders
+
+- NEVER run pytest/ty/ruff/prettier/make/gt directly via Bash
+- Always use the Task tool with subagent_type: devrun
+- Covered tools: pytest, ty, ruff, prettier, make, gt
+- Always ensure make commands execute from the repository root directory
+</user>
+  <assistant>
+
+Now let me run CI using the devrun agent:</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="1896" cache_read_input_tokens="53839" cache_creation="{'ephemeral_5m_input_tokens': 1896, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_0171tfC6S3WpVCWqReBvw4cX">
+    <param name="description">Run make fast-ci</param>
+    <param name="subagent_type">devrun</param>
+    <param name="prompt">Run `make fast-ci` from the repository root /home/runner/work/erk/erk and report all results. Do not fix anything, just report.</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="1896" cache_read_input_tokens="53839" cache_creation="{'ephemeral_5m_input_tokens': 1896, 'ephemeral_1h_input_tokens': 0}" output_tokens="141" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_0171tfC6S3WpVCWqReBvw4cX">
+## Summary
+
+The `make fast-ci` command **failed** with exit code 2. Here are the results:
+
+### Failure Point
+**Prettier formatting check failed** - 2 files have code style issues:
+1. `docs/learned/integrations/github-review-decision.md`
+2. `docs/learned/tui/status-indicators.md`
+
+### What Passed
+- **Lint (ruff)**: All checks passed
+- **Format Check (ruff format)**: 1689 files already formatted
+- **Markdown Check**: Passed (no output means no issues)
+- **Exec Reference Check**: `.claude/skills/erk-exec/reference.md` is up to date
+- **Type Check (ty)**: All checks passed
+- **AGENTS.md standard**: Passed
+- **CLAUDE.md/AGENTS.md pairing**: All 19 files properly paired with no violations
+- **Unit Tests (erk)**: 5978 passed, 2 warnings
+- **Tests (erk-dev)**: 136 passed
+- **Tests (erk-statusline)**: 115 passed
+- **Tests (erk-mcp)**: 31 passed (completed before error)
+
+### Files Needing Prettier Fixes
+- `/home/runner/work/erk/erk/docs/learned/integrations/github-review-decision.md`
+- `/home/runner/work/erk/erk/docs/learned/tui/status-indicators.md`
+agentId: a69bd5c (for resuming to continue this agent's work if needed)
+  </tool_result>
+  <assistant>All tests pass. The only failure is a pre-existing prettier formatting issue on 2 docs files unrelated to my changes. Let me fix that:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="526" cache_read_input_tokens="55735" cache_creation="{'ephemeral_5m_input_tokens': 526, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01AEJmXM7msKMb7TKjnVMnFW">
+    <param name="description">Run make prettier to fix</param>
+    <param name="subagent_type">devrun</param>
+    <param name="prompt">Run `make prettier` from the repository root /home/runner/work/erk/erk to fix prettier formatting issues. Report the results.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="526" cache_read_input_tokens="55735" cache_creation="{'ephemeral_5m_input_tokens': 526, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01AEJmXM7msKMb7TKjnVMnFW">
+prettier: passed - all matched files use Prettier code style
+
+All markdown files in the repository have been checked with Prettier and are already properly formatted. No files needed reformatting.
+agentId: ae59eb0 (for resuming to continue this agent's work if needed)
+  </tool_result>
+  <assistant>
+
+Prettier already formatted them. Let me re-run fast-ci to confirm everything passes:</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="441" cache_read_input_tokens="56261" cache_creation="{'ephemeral_5m_input_tokens': 441, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01RC9iMZL8H9UcTDrKLNw1zH">
+    <param name="description">Re-run make fast-ci</param>
+    <param name="subagent_type">devrun</param>
+    <param name="prompt">Run `make fast-ci` from the repository root /home/runner/work/erk/erk and report all results. Do not fix anything, just report.</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="441" cache_read_input_tokens="56261" cache_creation="{'ephemeral_5m_input_tokens': 441, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01RC9iMZL8H9UcTDrKLNw1zH">
+## Summary: make fast-ci passed
+
+All checks in the fast-ci target completed successfully:
+
+- **Lint**: All checks passed
+- **Format Check**: 1689 files already formatted
+- **Prettier Check**: All matched files use Prettier code style
+- **Markdown Check**: Passed
+- **Exec Reference Check**: .claude/skills/erk-exec/reference.md is up to date
+- **Type Check (ty)**: All checks passed
+- **Unit Tests (erk)**: 5978 passed, 2 warnings in 13.97s
+- **Unit Tests (erk-dev)**: 136 passed in 5.60s
+- **Unit Tests (erk-statusline)**: 115 passed in 0.76s
+- **Unit Tests (erk-mcp)**: 31 passed
+- **CLAUDE.md/AGENTS.md Verification**: All files properly paired, 0 violations
+
+The 2 warnings are deprecation warnings about BaseCommand in Click 9.0, not errors.
+agentId: a809267 (for resuming to continue this agent's work if needed)
+  </tool_result>
+  <assistant>All CI checks pass. Let me mark CI as completed and proceed to submission.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="424" cache_read_input_tokens="56702" cache_creation="{'ephemeral_5m_input_tokens': 424, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01AqGWkXnAdL5QW5CiW7L4jC">
+    <param name="todos">[{'content': 'Add --include-learn flag to pr_filter_options', 'status': 'completed', 'acti...[truncated 652 chars]...hecks'}, {'content': 'Submit PR', 'status': 'in_progress', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="424" cache_read_input_tokens="56702" cache_creation="{'ephemeral_5m_input_tokens': 424, 'ephemeral_1h_input_tokens': 0}" output_tokens="307" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01AqGWkXnAdL5QW5CiW7L4jC">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Now let me signal GitHub ended, upload session, clean up impl context, and submit:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="349" cache_read_input_tokens="57126" cache_creation="{'ephemeral_5m_input_tokens': 349, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01LtDrFR4zN5PmeHG4fK5ap9">
+    <param name="command">erk exec impl-signal ended --session-id="2bcdd095-41db-4bc5-9818-6619502bacc0" 2&gt;/dev/null || true</param>
+    <param name="description">Signal GitHub implementation ended</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="349" cache_read_input_tokens="57126" cache_creation="{'ephemeral_5m_input_tokens': 349, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01SoK6X7CdhwX5Ew7eXRiaLZ">
+    <param name="command">erk exec upload-impl-session --session-id="2bcdd095-41db-4bc5-9818-6619502bacc0" 2&gt;/dev/null || true</param>
+    <param name="description">Upload session for async learn</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="349" cache_read_input_tokens="57126" cache_creation="{'ephemeral_5m_input_tokens': 349, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01LtDrFR4zN5PmeHG4fK5ap9">
+{
+  "success": true,
+  "event": "ended",
+  "plan_number": 9114
+}
+  </tool_result>
+</session>
