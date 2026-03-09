@@ -1,0 +1,509 @@
+<session>
+  <meta branch="plnd/consolidate-learn-plans-wo-03-08-1904" />
+  <meta model="claude-opus-4-6" />
+  <tool_result tool="toolu_0171Bz2vGxQzJ43L8c9cR64y">
+The file /home/runner/work/erk/erk/tests/commands/consolidate_learn_plans/test_dispatch.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Task" id="toolu_01K7epyJWfsHA8zW7dWG56cB">
+    <param name="description">Rerun dispatch tests</param>
+    <param name="prompt">Run pytest on the consolidate_learn_plans dispatch tests and report results:
+uv run pytest tests/commands/consolidate_learn_plans/test_dispatch.py -v
+Report all pass/fail results.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="661" cache_read_input_tokens="92641" cache_creation="{'ephemeral_5m_input_tokens': 661, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01K7epyJWfsHA8zW7dWG56cB">
+pytest passed: All 6 tests in the consolidate_learn_plans dispatch test suite passed successfully in 0.73 seconds.
+
+**Test Results:**
+- **Total tests:** 6
+- **Passed:** 6
+- **Failed:** 0
+- **Execution time:** 0.73s
+
+All tests in `/home/runner/work/erk/erk/tests/commands/consolidate_learn_plans/test_dispatch.py` are passing.
+agentId: a7bf618 (for resuming to continue this agent's work if needed)
+  </tool_result>
+  <assistant>All 6 tests pass. Now let me work on the skill files and workflow.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="278" cache_read_input_tokens="93302" cache_creation="{'ephemeral_5m_input_tokens': 278, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01Jzsb9a7Vb6f75pozSCDJD6">
+    <param name="todos">[{'content': 'Add workflow constant and map entry to constants.py', 'status': 'completed',...[truncated 988 chars]...l'}, {'content': 'Run CI checks', 'status': 'pending', 'activeForm': 'Running CI checks'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="278" cache_read_input_tokens="93302" cache_creation="{'ephemeral_5m_input_tokens': 278, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Jzsb9a7Vb6f75pozSCDJD6">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Now let me create the renamed interactive skill. I'll read the existing one again for reference and adapt it:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="434" cache_read_input_tokens="93580" cache_creation="{'ephemeral_5m_input_tokens': 434, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Write" id="toolu_012EeNUMhTtmYkyjejKwqAwB">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/commands/erk/consolidate-learn-plans.md</param>
+    <param name="content">---
+description: Consolidate all open erk-learn plans into a single unified documentation ...[truncated 5356 chars]...plans` - Audit all open plans
+- `/erk:learn` - Generate documentation plans from sessions
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="434" cache_read_input_tokens="93580" cache_creation="{'ephemeral_5m_input_tokens': 434, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_012EeNUMhTtmYkyjejKwqAwB">
+File created successfully at: /home/runner/work/erk/erk/.claude/commands/erk/consolidate-learn-plans.md
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01FV9fV9BfYGmceYYvmRxfKa">
+    <param name="todos">[{'content': 'Add workflow constant and map entry to constants.py', 'status': 'completed',...[truncated 990 chars]...l'}, {'content': 'Run CI checks', 'status': 'pending', 'activeForm': 'Running CI checks'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1660" cache_read_input_tokens="94014" cache_creation="{'ephemeral_5m_input_tokens': 1660, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01FV9fV9BfYGmceYYvmRxfKa">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Now let me create the CI-only consolidation skill. Let me check how the one-shot-plan command works in CI for reference:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="415" cache_read_input_tokens="95674" cache_creation="{'ephemeral_5m_input_tokens': 415, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_019ocKJX7PSyQiwxbuoF48H4">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/commands/erk/one-shot-plan.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="415" cache_read_input_tokens="95674" cache_creation="{'ephemeral_5m_input_tokens': 415, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_019ocKJX7PSyQiwxbuoF48H4">
+     1→---
+     2→description: Create a plan from a one-shot prompt, save it as a draft PR, and write results to .erk/impl-context/ (used by CI workflow)
+     3→---
+     4→
+     5→# One-Shot Plan
+     6→
+     7→You are running autonomously in a CI workflow. Your job is to read a prompt, explore the codebase, create a detailed implementation plan, and save it as a draft PR.
+     8→
+     9→**Important:** You are ONLY planning, not implementing. The plan must be self-contained — a separate Claude session will implement it with no access to your exploration context.
+    10→
+    11→## Step 1: Read the Prompt
+    12→
+    13→Read `.erk/impl-context/prompt.md` to understand what you need to do.
+    14→
+    15→## Step 2: Read Objective Context (if present)
+    16→
+    17→If the `$OBJECTIVE_ISSUE` environment variable is set (non-empty), this plan is for a specific node of an objective. Use `erk exec check-objective $OBJECTIVE_ISSUE` to fetch the full objective context (title, roadmap, progress). The `$NODE_ID` environment variable contains the specific roadmap node ID being planned. Incorporate the objective context into your planning — understand the broader goal and how this node fits into it.
+    18→
+    19→## Step 3: Load Context
+    20→
+    21→Read `AGENTS.md` to understand the project conventions. Follow its documentation-first discovery process: scan `docs/learned/index.md`, grep `docs/learned/` for relevant docs, and load skills as directed by AGENTS.md routing rules.
+    22→
+    23→## Step 4: Explore the Codebase
+    24→
+    25→Use Explore agents and Grep/Glob to understand the relevant areas of the codebase:
+    26→
+    27→- Search for files, patterns, and existing implementations related to the prompt
+    28→- Identify which files need to be created or modified
+    29→- Understand existing architecture and patterns
+    30→- Find relevant tests and test patterns
+
+... [72 lines omitted] ...
+
+    60→Parse the JSON output. If `success` is not `true`, stop and report the error. Otherwise, use `$PLAN_ISSUE_NUMBER` as the `plan_number`. To get the `title`, extract the first `# ` heading from `.erk/impl-context/plan.md`.
+    78→Parse the JSON output. If `success` is not `true`, stop and report the error. Otherwise, extract `plan_number` and `title` from the output.
+  </tool_result>
+  <assistant>Now let me also look at the replan command to understand how it works:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1731" cache_read_input_tokens="96089" cache_creation="{'ephemeral_5m_input_tokens': 1731, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01P6x7tVGwsnWYDUP7pynew1">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/commands/erk/replan.md</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1731" cache_read_input_tokens="96089" cache_creation="{'ephemeral_5m_input_tokens': 1731, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01P6x7tVGwsnWYDUP7pynew1">
+     1→---
+     2→description: Replan an existing plan against current codebase state
+     3→argument-hint: &lt;plan-number-or-url&gt;
+     4→---
+     5→
+     6→# /erk:replan
+     7→
+     8→Recomputes existing plan(s) against the current codebase state, creating a new plan and closing the original(s).
+     9→
+    10→Supports consolidating multiple plans into a single unified plan.
+    11→
+    12→## Usage
+    13→
+    14→```bash
+    15→/erk:replan 2521                          # Single plan replan
+    16→/erk:replan https://github.com/owner/repo/pull/2521
+    17→/erk:replan 123 456 789                   # Consolidate multiple plans
+    18→```
+    19→
+    20→---
+    21→
+    22→## Agent Instructions
+    23→
+    24→### Step 1: Parse Plan References
+    25→
+    26→Split `$ARGUMENTS` on whitespace. For each argument:
+    27→
+    28→- If numeric (e.g., `2521`), use directly as plan number
+    29→- If URL (e.g., `https://github.com/owner/repo/pull/2521`), extract the number from the path
+    30→
+
+... [25 lines omitted] ...
+  </tool_result>
+  <assistant>Now I have enough context. Let me create the CI consolidation skill:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="822" cache_read_input_tokens="97820" cache_creation="{'ephemeral_5m_input_tokens': 822, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Write" id="toolu_01LS99c7fd1qxoabvMP1rxdg">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/commands/erk/consolidate-learn-plans-plan.md</param>
+    <param name="content">---
+description: CI-only skill for autonomous learn plan consolidation (used by consolidat...[truncated 4342 chars]...on
+- Never modify CHANGELOG.md
+- Focus on `docs/learned/` documentation, not code changes
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="822" cache_read_input_tokens="97820" cache_creation="{'ephemeral_5m_input_tokens': 822, 'ephemeral_1h_input_tokens': 0}" output_tokens="1360" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01LS99c7fd1qxoabvMP1rxdg">
+File created successfully at: /home/runner/work/erk/erk/.claude/commands/erk/consolidate-learn-plans-plan.md
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_0141udRmfAmPK3aYFuHVPNC8">
+    <param name="todos">[{'content': 'Add workflow constant and map entry to constants.py', 'status': 'completed',...[truncated 992 chars]...l'}, {'content': 'Run CI checks', 'status': 'pending', 'activeForm': 'Running CI checks'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1692" cache_read_input_tokens="98642" cache_creation="{'ephemeral_5m_input_tokens': 1692, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_0141udRmfAmPK3aYFuHVPNC8">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Now let me create the GitHub Actions workflow. I need to reference the existing workflow patterns:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="415" cache_read_input_tokens="100334" cache_creation="{'ephemeral_5m_input_tokens': 415, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="Write" id="toolu_01D1ph9jcVZdr2GJiqfeiXBj">
+    <param name="file_path">/home/runner/work/erk/erk/.github/workflows/consolidate-learn-plans.yml</param>
+    <param name="content">name: consolidate-learn-plans
+run-name: "consolidate-learn-plans:#${{ inputs.pr_number }}:...[truncated 11690 chars]...            --branch-name "$BRANCH_NAME" \
+            --model "${{ inputs.model_name }}"
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="415" cache_read_input_tokens="100334" cache_creation="{'ephemeral_5m_input_tokens': 415, 'ephemeral_1h_input_tokens': 0}" output_tokens="3786" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01D1ph9jcVZdr2GJiqfeiXBj">
+File created successfully at: /home/runner/work/erk/erk/.github/workflows/consolidate-learn-plans.yml
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01G1VWPfEBuLneZMa9JdPDZy">
+    <param name="todos">[{'content': 'Add workflow constant and map entry to constants.py', 'status': 'completed',...[truncated 994 chars]...l'}, {'content': 'Run CI checks', 'status': 'pending', 'activeForm': 'Running CI checks'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3828" cache_read_input_tokens="100749" cache_creation="{'ephemeral_5m_input_tokens': 3828, 'ephemeral_1h_input_tokens': 0}" output_tokens="26" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01G1VWPfEBuLneZMa9JdPDZy">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="Bash" id="toolu_0114t8kCAbz3mCuNZPczCW6t">
+    <param name="command">rm /home/runner/work/erk/erk/.claude/commands/local/replan-learn-plans.md</param>
+    <param name="description">Delete old local replan-learn-plans skill</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="415" cache_read_input_tokens="104577" cache_creation="{'ephemeral_5m_input_tokens': 415, 'ephemeral_1h_input_tokens': 0}" output_tokens="26" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_0114t8kCAbz3mCuNZPczCW6t">
+
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_011Jy6T7xzD4tfWmVaPcT3L9">
+    <param name="todos">[{'content': 'Add workflow constant and map entry to constants.py', 'status': 'completed',...[truncated 996 chars]... {'content': 'Run CI checks', 'status': 'in_progress', 'activeForm': 'Running CI checks'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="131" cache_read_input_tokens="104992" cache_creation="{'ephemeral_5m_input_tokens': 131, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_011Jy6T7xzD4tfWmVaPcT3L9">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Now let me run the CI checks:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="415" cache_read_input_tokens="105123" cache_creation="{'ephemeral_5m_input_tokens': 415, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_0152Z4QwLan3qnih6y5H5Ps4">
+    <param name="description">Run fast CI checks</param>
+    <param name="prompt">Run the following CI checks and report all results:
+
+1. uv run ruff check src/erk/cli/comm...[truncated 345 chars]...run pytest tests/commands/consolidate_learn_plans/ -v
+
+Report all results with any errors.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="415" cache_read_input_tokens="105123" cache_creation="{'ephemeral_5m_input_tokens': 415, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_0152Z4QwLan3qnih6y5H5Ps4">
+## CI Check Results
+
+Here's a summary of all checks:
+
+**1. Ruff Linting - PASSED**
+- All checks passed with no linting violations
+
+**2. Ruff Formatting - FAILED**
+- 1 file needs formatting: `src/erk/cli/commands/consolidate_learn_plans_dispatch.py`
+- 2 files already formatted correctly
+
+**3. Type Checking (ty) - PASSED**
+- All type checks passed for both CLI command files
+
+**4. Pytest Tests - PASSED**
+- All 6 tests in `tests/commands/consolidate_learn_plans/` passed in 0.70 seconds
+
+### Summary
+
+One file has formatting issues:
+- **src/erk/cli/commands/consolidate_learn_plans_dispatch.py** - needs reformatting with `ruff format`
+
+The linting, type checking, and tests all pass successfully.
+agentId: ae7c5c6 (for resuming to continue this agent's work if needed)
+  </tool_result>
+  <assistant>Let me fix the formatting:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="532" cache_read_input_tokens="105538" cache_creation="{'ephemeral_5m_input_tokens': 532, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_011ssSM5fvEXvo8KHJGatXcy">
+    <param name="command">uv run ruff format src/erk/cli/commands/consolidate_learn_plans_dispatch.py</param>
+    <param name="description">Format dispatch module with ruff</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="532" cache_read_input_tokens="105538" cache_creation="{'ephemeral_5m_input_tokens': 532, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_011ssSM5fvEXvo8KHJGatXcy">
+1 file reformatted
+  </tool_result>
+  <assistant>Let me also check the workflow YAML with prettier and run the full test suite for launch_cmd:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="123" cache_read_input_tokens="106070" cache_creation="{'ephemeral_5m_input_tokens': 123, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01GZNgvPuR82tvLmipK6JM8k">
+    <param name="description">Run broader CI checks</param>
+    <param name="prompt">Run these checks and report results:
+
+1. prettier --check .github/workflows/consolidate-le...[truncated 107 chars]...mands/consolidate_learn_plans/ tests/commands/launch/ -v --timeout=30
+
+Report all results.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="123" cache_read_input_tokens="106070" cache_creation="{'ephemeral_5m_input_tokens': 123, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01GZNgvPuR82tvLmipK6JM8k">
+## Results Summary
+
+**All checks passed:**
+
+1. **prettier** passed: `.github/workflows/consolidate-learn-plans.yml` - All matched files use Prettier code style!
+
+2. **ruff format** passed: `src/erk/cli/commands/consolidate_learn_plans_dispatch.py` - 1 file already formatted
+
+3. **pytest** passed: 25 tests passed in 0.93s
+   - `tests/commands/consolidate_learn_plans/test_dispatch.py` - 6 passed
+   - `tests/commands/launch/test_launch_cmd.py` - 19 passed
+
+All code formatting and tests are in good shape.
+agentId: a458ef5 (for resuming to continue this agent's work if needed)
+  </tool_result>
+  <assistant>All checks pass. Let me now run the full fast-ci to make sure nothing else is broken:</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="683" cache_read_input_tokens="106193" cache_creation="{'ephemeral_5m_input_tokens': 683, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_012B7hsQW5RQCZEAfaiYGKaA">
+    <param name="description">Run full fast CI</param>
+    <param name="prompt">Run the full fast CI suite and report results:
+
+make fast-ci
+
+This runs linting, formatting, type checking, and unit tests. Report any failures with details.</param>
+    <param name="subagent_type">devrun</param>
+    <param name="run_in_background">True</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="683" cache_read_input_tokens="106193" cache_creation="{'ephemeral_5m_input_tokens': 683, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_012B7hsQW5RQCZEAfaiYGKaA">
+Async agent launched successfully.
+agentId: af740ae (This is an internal ID for your use, do not mention it to the user. Use this ID to retrieve results with TaskOutput when the agent finishes).
+The agent is currently working in the background. If you have other tasks you you should continue working on them now. Wait to call TaskOutput until either:
+- If you want to check on the agent's progress - call TaskOutput with block=false to get an immediate update on the agent's status
+- If you run out of things to do and the agent is still running - call TaskOutput with block=true to idle and wait for the agent's result (do not use block=true unless you completely run out of things to do as it will waste time).
+  </tool_result>
+  <assistant>While CI runs, let me verify all the changes are consistent. Let me review the final state of the modified files:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="348" cache_read_input_tokens="106876" cache_creation="{'ephemeral_5m_input_tokens': 348, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01SCtJPLaxuz12eepa8KiHGu">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/consolidate_learn_plans_dispatch.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="348" cache_read_input_tokens="106876" cache_creation="{'ephemeral_5m_input_tokens': 348, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_0178F6rwqdSbLJyyf6wySkcW">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/launch_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="348" cache_read_input_tokens="106876" cache_creation="{'ephemeral_5m_input_tokens': 348, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01SCtJPLaxuz12eepa8KiHGu">
+     1→"""Dispatch logic for consolidate-learn-plans workflow via RemoteGitHub REST API.
+     2→
+     3→Creates a branch, draft PR, and dispatches the consolidate-learn-plans workflow
+     4→entirely via the GitHub REST API. Follows the one-shot dispatch pattern.
+     5→"""
+     6→
+     7→import time
+     8→from dataclasses import dataclass
+     9→from datetime import UTC
+    10→
+    11→import click
+    12→
+    13→from erk_shared.gateway.github.metadata.core import (
+    14→    create_submission_queued_block,
+    15→    render_erk_issue_event,
+    16→)
+    17→from erk_shared.gateway.github.metadata.plan_header import format_plan_header_body
+    18→from erk_shared.gateway.github.parsing import construct_workflow_run_url
+    19→from erk_shared.gateway.github.pr_footer import build_pr_body_footer
+    20→from erk_shared.gateway.http.abc import HttpError
+    21→from erk_shared.gateway.remote_github.abc import RemoteGitHub
+    22→from erk_shared.gateway.time.abc import Time
+    23→from erk_shared.naming import format_branch_timestamp_suffix
+    24→from erk_shared.output.output import format_duration, user_output
+    25→from erk_shared.plan_store.planned_pr_lifecycle import build_plan_stage_body
+    26→
+    27→CONSOLIDATE_LEARN_PLANS_WORKFLOW = "consolidate-learn-plans.yml"
+    28→
+    29→BRANCH_PREFIX = "consolidate-learn-plans"
+    30→
+
+... [249 lines omitted] ...
+
+   249→        except HttpError as e:
+   251→                click.style("Warning: ", fg="yellow") + f"Failed to post queued comment: {e}"
+   256→    except Exception as exc:
+   257→        user_output(click.style(f"Failed during: {current_step}", fg="red"))
+  </tool_result>
+  <tool_result tool="toolu_0178F6rwqdSbLJyyf6wySkcW">
+     1→"""Dispatch GitHub Actions workflows via unified interface.
+     2→
+     3→Usage examples:
+     4→    erk launch pr-address --pr 456
+     5→    erk launch pr-rebase --pr 456
+     6→    erk launch pr-rebase --pr 456 --no-squash
+     7→    erk launch plan-implement --issue 789
+     8→    erk launch learn --issue 789
+     9→    erk launch one-shot --pr 456 --prompt "fix the auth bug"
+    10→    erk launch one-shot --pr 456 -f prompt.md
+    11→    erk launch consolidate-learn-plans
+    12→"""
+    13→
+    14→from pathlib import Path
+    15→
+    16→import click
+    17→
+    18→from erk.cli.commands.consolidate_learn_plans_dispatch import (
+    19→    dispatch_consolidate_learn_plans,
+    20→)
+    21→from erk.cli.commands.pr.metadata_helpers import maybe_update_plan_dispatch_metadata
+    22→from erk.cli.commands.ref_resolution import resolve_dispatch_ref
+    23→from erk.cli.constants import WORKFLOW_COMMAND_MAP
+    24→from erk.cli.ensure import Ensure, UserFacingCliError
+    25→from erk.core.context import ErkContext
+    26→from erk.core.repo_discovery import NoRepoSentinel, RepoContext
+    27→from erk_shared.gateway.github.types import PRNotFound
+    28→from erk_shared.gateway.remote_github.abc import RemoteGitHub
+    29→from erk_shared.gateway.remote_github.real import RealRemoteGitHub
+    30→from erk_shared.output.output import user_output
+
+... [559 lines omitted] ...
+
+    71→        click.UsageError: If workflow name is not recognized
+    75→        raise click.UsageError(
+   296→    raise click.UsageError(
+   313→        raise UserFacingCliError(
+   522→    _ = _get_workflow_file(workflow_name)  # Raises UsageError if invalid
+   583→        raise click.UsageError(f"Unknown workflow: {workflow_name}")
+  </tool_result>
+  <assistant>Everything looks good. Let me check on the full CI run:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="11636" cache_read_input_tokens="107224" cache_creation="{'ephemeral_5m_input_tokens': 11636, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TaskOutput" id="toolu_01TVrPQEasqJsUez3DmgPAS8">
+    <param name="task_id">af740ae</param>
+    <param name="block">True</param>
+    <param name="timeout">300000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="11636" cache_read_input_tokens="107224" cache_creation="{'ephemeral_5m_input_tokens': 11636, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01TVrPQEasqJsUez3DmgPAS8">
+&lt;retrieval_status&gt;success&lt;/retrieval_status&gt;
+
+&lt;task_id&gt;af740ae&lt;/task_id&gt;
+
+&lt;task_type&gt;local_agent&lt;/task_type&gt;
+
+&lt;status&gt;completed&lt;/status&gt;
+
+&lt;output&gt;
+[Tool: Bash] {"command":"make fast-ci","description":"Run fast CI suite (linting, formatting, type checking, tests)"}
+[Tool: Bash] {"command":"make fast-ci","description":"Run fast CI suite (linting, formatting, type checking, tests)"}
+
+--- RESULT ---
+The fast CI suite has **failed** due to formatting issues. Here are the details:
+
+**Summary:**
+- Lint: PASSED
+- Type checking (ty): PASSED  
+- Unit tests: PASSED (6157 tests across all packages)
+- Prettier check: **FAILED** - 2 files need formatting
+- Format check: **FAILED** - 1 file would be reformatted
+
+**Failures:**
+
+1. **Prettier formatting issues (2 files):**
+   - `/home/runner/work/erk/erk/docs/learned/integrations/github-review-decision.md`
+   - `/home/runner/work/erk/erk/docs/learned/tui/status-indicators.md`
+
+2. **Ruff formatting issue (1 file):**
+   - `/home/runner/work/erk/erk/tests/commands/consolidate_learn_plans/test_dispatch.py`
+
+... [10 lines omitted] ...
+
+The failures are all formatting-related (Prettier and Ruff). The actual linting and type checking passed, and all tests passed successfully.
+  </tool_result>
+  <assistant>Good - all tests pass. The only issues are formatting. Let me fix the formatting on my test file (the other 2 prettier files are pre-existing and not related to my changes):</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="555" cache_read_input_tokens="118860" cache_creation="{'ephemeral_5m_input_tokens': 555, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_017sEdsxi7wr2XbXYmnrgSKC">
+    <param name="command">uv run ruff format tests/commands/consolidate_learn_plans/test_dispatch.py</param>
+    <param name="description">Format test file with ruff</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="555" cache_read_input_tokens="118860" cache_creation="{'ephemeral_5m_input_tokens': 555, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_017sEdsxi7wr2XbXYmnrgSKC">
+1 file reformatted
+  </tool_result>
+  <assistant>Let me verify the 2 prettier failures are pre-existing (not from my changes) and fix them too:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="439" cache_read_input_tokens="119415" cache_creation="{'ephemeral_5m_input_tokens': 439, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01657ixtSgak4h4TcQ4MszSg">
+    <param name="command">prettier --write docs/learned/integrations/github-review-decision.md docs/learned/tui/status-indicators.md</param>
+    <param name="description">Fix prettier formatting on pre-existing files</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="439" cache_read_input_tokens="119415" cache_creation="{'ephemeral_5m_input_tokens': 439, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01657ixtSgak4h4TcQ4MszSg">
+docs/learned/integrations/github-review-decision.md 72ms
+docs/learned/tui/status-indicators.md 23ms
+  </tool_result>
+  <assistant>Now let me verify CI passes cleanly with one more targeted check:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="174" cache_read_input_tokens="119854" cache_creation="{'ephemeral_5m_input_tokens': 174, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01WyVwgUYmxxJy8pjmWEv47W">
+    <param name="description">Run format checks</param>
+    <param name="prompt">Run these format checks and report results:
+1. uv run ruff format --check src/erk/cli/comm...[truncated 391 chars].../commands/consolidate_learn_plans/ tests/commands/launch/ -v --timeout=30
+
+Report results.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="174" cache_read_input_tokens="119854" cache_creation="{'ephemeral_5m_input_tokens': 174, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01WyVwgUYmxxJy8pjmWEv47W">
+## Format Check Results
+
+All checks passed successfully:
+
+1. **Ruff Format Check**: PASSED
+   - 3 files already formatted correctly:
+     - src/erk/cli/commands/consolidate_learn_plans_dispatch.py
+     - src/erk/cli/commands/launch_cmd.py
+     - tests/commands/consolidate_learn_plans/test_dispatch.py
+
+2. **Prettier Format Check**: PASSED
+   - All 5 matched files use correct code style:
+     - docs/learned/integrations/github-review-decision.md
+     - docs/learned/tui/status-indicators.md
+     - .github/workflows/consolidate-learn-plans.yml
+     - .claude/commands/erk/consolidate-learn-plans.md
+     - .claude/commands/erk/consolidate-learn-plans-plan.md
+
+3. **Pytest**: PASSED
+   - 25 tests passed in 0.91s
+   - tests/commands/consolidate_learn_plans/test_dispatch.py: 6 passed
+   - tests/commands/launch/test_launch_cmd.py: 19 passed
+agentId: a182a41 (for resuming to continue this agent's work if needed)
+  </tool_result>
+  <assistant>All checks pass. Let me mark CI as complete and proceed to cleanup and submission.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="880" cache_read_input_tokens="120028" cache_creation="{'ephemeral_5m_input_tokens': 880, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01CArEJArD8Z72UbB1q2qog4">
+    <param name="todos">[{'content': 'Add workflow constant and map entry to constants.py', 'status': 'completed',...[truncated 1201 chars]...eaning up'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="880" cache_read_input_tokens="120028" cache_creation="{'ephemeral_5m_input_tokens': 880, 'ephemeral_1h_input_tokens': 0}" output_tokens="447" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01CArEJArD8Z72UbB1q2qog4">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="Bash" id="toolu_012ipySKNeMwxV7Y5hNhP2uA">
+    <param name="command">erk exec impl-signal ended --session-id "${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true</param>
+    <param name="description">Signal implementation ended</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="491" cache_read_input_tokens="120908" cache_creation="{'ephemeral_5m_input_tokens': 491, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01DgtudZfLkcXFWkxkJfj5ww">
+    <param name="command">erk exec upload-impl-session --session-id "${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true</param>
+    <param name="description">Upload session for async learn</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="491" cache_read_input_tokens="120908" cache_creation="{'ephemeral_5m_input_tokens': 491, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_012ipySKNeMwxV7Y5hNhP2uA">
+{
+  "success": true,
+  "event": "ended",
+  "plan_number": 9030
+}
+  </tool_result>
+</session>

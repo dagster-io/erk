@@ -1,0 +1,355 @@
+<session>
+  <meta source="agent-a4b2df6" />
+  <meta branch="plnd/consolidate-learn-plans-wo-03-08-1904" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>Read these two workflow files and return their key structure (inputs, jobs, how CI address and rebase work):
+1. .github/workflows/pr-address.yml
+2. .github/workflows/pr-rebase.yml
+
+FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant docs before exploring raw files. Then explore codebase as necessary.</user>
+  <assistant>I'll help you understand these CI workflows. Let me start by checking the documentation index for existing guidance, then explore the workflow files.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="18887" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 18887, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_015vgDEWTNbCKUFSzCjq18rU">
+    <param name="pattern">pr-address|pr-rebase</param>
+    <param name="path">/home/runner/work/erk/erk/docs/learned</param>
+    <param name="glob">*.md</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="18887" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 18887, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01H9mE9XEYXHQEkMq15fLs8L">
+    <param name="file_path">/home/runner/work/erk/erk/.github/workflows/pr-address.yml</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="18887" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 18887, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_019xVDrYeSJh2DQaE7bF9TbR">
+    <param name="file_path">/home/runner/work/erk/erk/.github/workflows/pr-rebase.yml</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="18887" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 18887, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01H9mE9XEYXHQEkMq15fLs8L">
+     1→name: pr-address
+     2→run-name: "pr-address:#${{ inputs.pr_number }}:${{ inputs.distinct_id }}"
+     3→
+     4→on:
+     5→  workflow_dispatch:
+     6→    inputs:
+     7→      pr_number:
+     8→        description: "PR number to address review comments"
+     9→        required: true
+    10→        type: string
+    11→      distinct_id:
+    12→        description: "Unique identifier for run discovery (base36)"
+    13→        required: true
+    14→        type: string
+    15→      model_name:
+    16→        description: "Claude model to use"
+    17→        required: false
+    18→        type: string
+    19→        default: "claude-opus-4-6"
+    20→      plan_number:
+    21→        description: "Plan issue/PR number for dispatch metadata (empty to skip)"
+    22→        required: false
+    23→        type: string
+    24→        default: ""
+    25→
+    26→concurrency:
+    27→  group: pr-address-${{ github.event.inputs.pr_number }}
+    28→  cancel-in-progress: true
+    29→
+    30→jobs:
+
+... [173 lines omitted] ...
+
+    52→        continue-on-error: true
+   103→          if git ls-files --error-unmatch .erk/impl-context/plan.md &gt;/dev/null 2&gt;&amp;1; then
+   105→          elif [ -d .erk/impl-context/ ] &amp;&amp; git ls-files --error-unmatch .erk/impl-context/ &gt;/dev/null 2&gt;&amp;1; then
+   137→        continue-on-error: true
+   153→        continue-on-error: true
+  </tool_result>
+  <tool_result tool="toolu_019xVDrYeSJh2DQaE7bF9TbR">
+     1→name: pr-rebase
+     2→run-name: "rebase:#${{ inputs.pr_number }}:${{ inputs.distinct_id }}"
+     3→
+     4→on:
+     5→  workflow_dispatch:
+     6→    inputs:
+     7→      branch_name:
+     8→        description: "Branch to rebase"
+     9→        required: true
+    10→        type: string
+    11→      base_branch:
+    12→        description: "Base branch to rebase onto"
+    13→        required: true
+    14→        type: string
+    15→      pr_number:
+    16→        description: "PR number for status updates"
+    17→        required: true
+    18→        type: string
+    19→      distinct_id:
+    20→        description: "Unique identifier for run discovery (base36)"
+    21→        required: true
+    22→        type: string
+    23→      squash:
+    24→        description: "Whether to squash commits before rebase"
+    25→        required: false
+    26→        type: boolean
+    27→        default: true
+    28→      model_name:
+    29→        description: "Claude model to use for conflict resolution"
+    30→        required: false
+
+... [151 lines omitted] ...
+
+    65→        continue-on-error: true
+   151→              BODY="❌ Remote rebase failed\n\n$REBASE_OUTPUT\n\n[View workflow run]($RUN_URL)"
+   153→              BODY="❌ Remote rebase failed\n\n[View workflow run]($RUN_URL)"
+   163→        continue-on-error: true
+  </tool_result>
+  <tool_result tool="toolu_015vgDEWTNbCKUFSzCjq18rU">
+Found 41 files
+docs/learned/testing/rebase-conflicts.md
+docs/learned/sessions/session-accumulation.md
+docs/learned/reference/github-actions-api.md
+docs/learned/reference/changelog-standards.md
+docs/learned/pr-operations/feedback-classification.md
+docs/learned/pr-operations/index.md
+docs/learned/pr-operations/pre-existing-detection.md
+docs/learned/planning/worktree-cleanup.md
+docs/learned/erk/dispatch-ref-config.md
+docs/learned/erk/index.md
+docs/learned/erk/pr-address-workflows.md
+docs/learned/erk/pr-feedback-classifier-schema.md
+docs/learned/erk/remote-workflow-template.md
+docs/learned/erk/tripwires.md
+docs/learned/commands/preview-command-pattern.md
+docs/learned/commands/skill-patterns.md
+docs/learned/commands/step-renumbering-checklist.md
+docs/learned/commands/tripwires.md
+docs/learned/cli/tripwires.md
+docs/learned/cli/workflow-commands.md
+docs/learned/cli/workflow-run-list.md
+docs/learned/cli/local-remote-command-groups.md
+docs/learned/ci/workflow-model-policy.md
+docs/learned/ci/workflow-naming-conventions.md
+docs/learned/claude-code/agent-commands.md
+docs/learned/ci/github-cli-comment-patterns.md
+docs/learned/ci/gitignored-directory-commit-patterns.md
+docs/learned/ci/label-rename-checklist.md
+docs/learned/ci/automated-review-system.md
+
+... [12 lines omitted] ...
+  </tool_result>
+  <assistant>Great! Now let me check the documentation on pr-address workflows to provide complete context:</assistant>
+  <usage input_tokens="5578" cache_creation_input_tokens="932" cache_read_input_tokens="18887" cache_creation="{'ephemeral_5m_input_tokens': 932, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_0151dH9Sd87jSErQJ7dqfe3y">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/erk/pr-address-workflows.md</param>
+  </tool_use>
+  <usage input_tokens="5578" cache_creation_input_tokens="932" cache_read_input_tokens="18887" cache_creation="{'ephemeral_5m_input_tokens': 932, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Adt3ie9jtpLmxYfyVrt37w">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/testing/rebase-conflicts.md</param>
+  </tool_use>
+  <usage input_tokens="5578" cache_creation_input_tokens="932" cache_read_input_tokens="18887" cache_creation="{'ephemeral_5m_input_tokens': 932, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0151dH9Sd87jSErQJ7dqfe3y">
+     1→---
+     2→title: PR Address Workflows
+     3→read_when:
+     4→  - "addressing PR review comments"
+     5→  - "choosing between local and remote PR addressing"
+     6→  - "understanding erk launch pr-address"
+     7→  - "understanding /erk:pr-address command"
+     8→tripwires:
+     9→  - action: "resolving a review thread when the comment is a discussion comment (not a review thread)"
+    10→    warning: "Review threads and discussion comments use different GitHub APIs. resolve-review-threads only handles review threads. Discussion comments are resolved differently (or not at all)."
+    11→last_audited: "2026-03-05 00:00 PT"
+    12→audit_result: clean
+    13→---
+    14→
+    15→# PR Address Workflows
+    16→
+    17→Erk provides two workflows for addressing PR review comments using Claude:
+    18→
+    19→1. **Local** (`/erk:pr-address`) - Claude Code slash command, runs in your terminal
+    20→2. **Remote** (`erk launch pr-address --pr &lt;number&gt;`) - GitHub Actions workflow, runs in CI
+    21→
+    22→## Decision Matrix
+    23→
+    24→| Factor                       | Local                        | Remote                         |
+    25→| ---------------------------- | ---------------------------- | ------------------------------ |
+    26→| **Branch checkout**          | Required (must be on branch) | Not required                   |
+    27→| **Interactive confirmation** | Yes (via Claude Code)        | No                             |
+    28→| **Error recovery**           | Immediate (fix and retry)    | Check workflow logs            |
+    29→| **Plan metadata tracking**   | Manual                       | Automatic for `plnd/` branches |
+    30→| **Best for**                 | Active development           | Queued/async work              |
+
+... [199 lines omitted] ...
+
+   180→- Job status (success/failure)
+  </tool_result>
+  <tool_result tool="toolu_01Adt3ie9jtpLmxYfyVrt37w">
+     1→---
+     2→title: Erk Test Rebase Conflicts
+     3→last_audited: "2026-02-16 00:00 PT"
+     4→audit_result: clean
+     5→read_when:
+     6→  - "fixing merge conflicts in erk tests"
+     7→  - "ErkContext API changes during rebase"
+     8→  - "env_helpers conflicts"
+     9→---
+    10→
+    11→# Erk Test Rebase Conflicts
+    12→
+    13→**For generic merge conflict resolution**: Use the `/erk:pr-rebase` command.
+    14→
+    15→This document covers **erk-specific test patterns** you'll encounter during rebases: ErkContext API evolution, env_helpers, parameter renames.
+    16→
+    17→## Quick Start
+    18→
+    19→When you encounter merge conflicts in **erk test files** during a rebase, check this guide. Test infrastructure conflicts are usually **mechanical** (both branches fixing the same issue with different timing) rather than semantic.
+    20→
+    21→### Pre-Flight Check
+    22→
+    23→```bash
+    24→# 1. Identify the conflict
+    25→git status
+    26→
+    27→# 2. Check if it's test infrastructure
+    28→git diff HEAD &lt;incoming_commit&gt; tests/
+    29→
+    30→# 3. Check for missing dependencies
+
+... [389 lines omitted] ...
+
+    44→# If you see ImportError for missing module:
+   199→### ImportError: cannot import name 'erk_isolated_fs_env'
+   214→### TypeError: ErkContext.**init**() missing required positional arguments
+   222→### TypeError: got an unexpected keyword argument 'global_config_ops'
+   235→### FileNotFoundError: '/test/default/cwd'
+   266→### AssertionError: assert 'Expected Message' in result.output
+  </tool_result>
+  <assistant>Perfect! Now I have comprehensive information. Let me provide you with a complete overview of both workflows:
+
+## Workflow Structure Overview
+
+### 1. **pr-address.yml** - Remote PR Comment Addressing
+**Location**: `.github/workflows/pr-address.yml`
+
+#### Inputs:
+- `pr_number` (required, string): PR number to address review comments
+- `distinct_id` (required, string): Unique identifier for run discovery (base36)
+- `model_name` (optional, string): Claude model to use (default: "claude-opus-4-6")
+- `plan_number` (optional, string): Plan issue/PR number for dispatch metadata (empty to skip)
+
+#### Concurrency:
+- Group: `pr-address-${{ github.event.inputs.pr_number }}`
+- Cancels in-progress runs (latest run wins)
+
+#### Job Flow (`address` job):
+1. **Setup Phase**:
+   - Checkout repository with full fetch history
+   - Run `erk-remote-setup` action (sets up credentials and environment)
+
+2. **Plan Metadata** (if `plan_number` provided):
+   - Write dispatch metadata to plan: `last_dispatched_run_id`, `last_dispatched_node_id`, `last_dispatched_at`
+
+3. **Branch Checkout**:
+   - Uses `gh pr checkout` to automatically checkout the PR branch
+
+4. **Implementation Phase**:
+   - Save pre-implementation HEAD commit (for diff tracking)
+   - Call `/erk:pr-address --pr &lt;number&gt;` via Claude CLI in remote mode
+   - Claude addresses review comments on the branch
+
+5. **Cleanup**:
+   - If plan staging dirs (`.erk/impl-context/`) are present AND not a plan-only PR, remove them
+   - Plan-only PRs (where `.erk/impl-context/plan.md` is git-tracked) are skipped
+
+6. **Push &amp; Session Tracking**:
+   - Git push changes (if any)
+   - Capture session ID from Claude execution
+   - Push preprocessed session to `planned-pr-context` branch
+
+7. **Plan Header Updates** (always runs):
+   - Update plan with: `last_remote_impl_at`, `last_remote_impl_run_id`, `last_remote_impl_session_id`, `branch_name`, dispatch metadata
+
+8. **Summary Comment**:
+   - Generate summary using diff from pre-HEAD to current HEAD
+   - Post/update comment on PR with marker `&lt;!-- erk:pr-address-run --&gt;`
+   - Includes: model, status, run URL, changes summary
+
+---
+
+### 2. **pr-rebase.yml** - Remote Rebase with Conflict Resolution
+**Location**: `.github/workflows/pr-rebase.yml`
+
+#### Inputs:
+- `branch_name` (required, string): Branch to rebase
+- `base_branch` (required, string): Base branch to rebase onto
+- `pr_number` (required, string): PR number for status updates
+- `distinct_id` (required, string): Unique identifier for run discovery (base36)
+- `squash` (optional, boolean): Squash commits before rebase (default: true)
+- `model_name` (optional, string): Claude model for conflict resolution (default: "claude-opus-4-6")
+- `plan_number` (optional, string): Plan issue/PR number for dispatch metadata (empty to skip)
+
+#### Concurrency:
+- Group: `rebase-${{ github.event.inputs.branch_name }}`
+- Cancels in-progress runs (latest run wins)
+
+#### Job Flow (`rebase` job):
+1. **Setup Phase**:
+   - Checkout repository with full fetch history
+   - Run `erk-remote-setup` action
+
+2. **Plan Metadata** (if `plan_number` provided):
+   - Write dispatch metadata to plan
+
+3. **Branch Checkout**:
+   - Fetch target branch from origin
+   - Checkout the branch to be rebased
+
+4. **Optional Squash** (if `squash=true`):
+   - Fetch the base branch for reference
+   - Find merge base (where branch diverged from base)
+   - Count commits between merge base and HEAD
+   - If &gt;1 commit: soft reset to merge base, create new squashed commit with PR title
+   - If 1 commit: skip (no squash needed)
+
+5. **Rebase with Conflict Resolution**:
+   - Call `erk exec rebase-with-conflict-resolution`:
+     - Takes `target_branch`, `branch_name`, `model` as args
+     - Returns natural language summary of rebase results
+   - Captures output for PR comment
+
+6. **Status Comment** (always runs):
+   - Posts comment to PR with:
+     - Success emoji (✅) or failure (❌)
+     - Rebase output summary
+     - Link to workflow run
+     - Uses `gh pr comment` (not summary marker like pr-address)
+
+7. **Plan Header Update** (always runs, if plan_number provided):
+   - Updates plan with dispatch metadata only (not impl metadata like pr-address)
+
+---
+
+## Key Differences Between Workflows
+
+| Aspect | pr-address | pr-rebase |
+|--------|-----------|-----------|
+| **Purpose** | Address review comments | Rebase onto new base branch |
+| **Branch State** | Keeps existing commits | May squash/modify commits |
+| **Conflict Handling** | N/A | Claude resolves conflicts |
+| **Comment Type** | Marker-based updates (`&lt;!-- erk:pr-address-run --&gt;`) | Fresh comment per run |
+| **Session Tracking** | Captures and pushes session | Not explicitly tracked |
+| **Plan Cleanup** | Removes `.erk/impl-context/` staging dirs | N/A |
+| **Execution** | `/erk:pr-address` CLI command | `erk exec rebase-with-conflict-resolution` |
+
+---
+
+## Related Documentation
+
+The documentation I found highlights:
+- **pr-address-workflows.md**: Details on local vs remote PR addressing, plan review modes, and operational procedures
+- **rebase-conflicts.md**: Specific patterns for handling merge conflicts during rebasing (test infrastructure, parameter renames, etc.)
+
+Both workflows are gated by the `CLAUDE_ENABLED` environment variable and use `ERK_QUEUE_GH_PAT` for GitHub API access, with timeouts set to 30 minutes.</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="14028" cache_read_input_tokens="19819" cache_creation="{'ephemeral_5m_input_tokens': 14028, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>
