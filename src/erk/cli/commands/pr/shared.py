@@ -268,8 +268,7 @@ def _insert_objective_link(body: str, objective_summary: str) -> str:
     else:
         objective_line = f"**Objective:** {objective_summary}"
 
-    key_changes = "## Key Changes"
-    idx = body.find(key_changes)
+    idx = body.find("## Key Changes")
     if idx != -1:
         return body[:idx] + objective_line + "\n\n" + body[idx:]
     return body + "\n\n" + objective_line
