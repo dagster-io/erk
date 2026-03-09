@@ -62,7 +62,7 @@ def _run_impl_init(ctx: click.Context) -> dict[str, object]:
     plan_ref = read_plan_ref(impl_dir)
     has_plan_tracking = plan_ref is not None
     if plan_ref is not None:
-        plan_number: int | None = int(plan_ref.plan_id)
+        plan_number: int | None = int(plan_ref.pr_id)
     else:
         plan_number = None
     plan_content = (impl_dir / "plan.md").read_text(encoding="utf-8")
@@ -201,8 +201,8 @@ def setup_impl(ctx: click.Context, plan_number: int | None, file_path: Path | No
         plan_ref = read_plan_ref(impl_dir)
         if plan_ref is not None:
             # Has plan tracking - sync with remote
-            if plan_ref.plan_id.isdigit():
-                plan_id: int | None = int(plan_ref.plan_id)
+            if plan_ref.pr_id.isdigit():
+                plan_id: int | None = int(plan_ref.pr_id)
             else:
                 plan_id = None
             if plan_id is not None:

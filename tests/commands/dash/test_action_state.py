@@ -23,7 +23,7 @@ def test_plan_list_shows_action_state_with_no_queue_label() -> None:
     """Test that plans without erk-queue label show '-' for action state."""
     # Arrange
     plan1 = Plan(
-        plan_identifier="1001",
+        pr_identifier="1001",
         title="Regular Plan",
         body="",
         state=PlanState.OPEN,
@@ -57,7 +57,7 @@ def test_plan_list_shows_pending_action_state() -> None:
     """Test that plans with erk-queue label but no metadata show 'Pending'."""
     # Arrange
     plan1 = Plan(
-        plan_identifier="1002",
+        pr_identifier="1002",
         title="Pending Plan",
         body="",
         state=PlanState.OPEN,
@@ -91,7 +91,7 @@ def test_plan_list_shows_running_action_state_with_workflow_started() -> None:
     """Test that plans with workflow-started metadata show 'Running'."""
     # Arrange
     plan1 = Plan(
-        plan_identifier="1003",
+        pr_identifier="1003",
         title="Running Plan",
         body="",
         state=PlanState.OPEN,
@@ -142,7 +142,7 @@ def test_plan_list_shows_complete_action_state() -> None:
     """Test that plans with complete implementation status show 'Complete'."""
     # Arrange
     plan1 = Plan(
-        plan_identifier="1004",
+        pr_identifier="1004",
         title="Complete Plan",
         body="",
         state=PlanState.OPEN,
@@ -192,7 +192,7 @@ def test_plan_list_shows_failed_action_state() -> None:
     """Test that plans with failed implementation status show 'Failed'."""
     # Arrange
     plan1 = Plan(
-        plan_identifier="1005",
+        pr_identifier="1005",
         title="Failed Plan",
         body="",
         state=PlanState.OPEN,

@@ -176,7 +176,7 @@ def list_objectives(ctx: ErkContext, *, repo_id: GitHubRepoId) -> None:
         author = str(plan.metadata.get("author", ""))
 
         table.add_row(
-            f"[link={plan.url}]#{plan.plan_identifier}[/link]",
+            f"[link={plan.url}]#{plan.pr_identifier}[/link]",
             escape(slug),
             f"{_rich_sparkline(fields['state'])}  {fields['progress']}",
             fields["deps_state"],

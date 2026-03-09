@@ -70,7 +70,7 @@ def pr_prepare(ctx: click.Context, plan_number: int | None) -> None:
     impl_dir = resolve_impl_dir(erk_ctx.cwd, branch_name=branch)
     if impl_dir is not None:
         existing_ref = read_plan_ref(impl_dir)
-        if existing_ref is not None and existing_ref.plan_id == str(plan_number):
+        if existing_ref is not None and existing_ref.pr_id == str(plan_number):
             user_output(f"Impl-context already set up for plan #{plan_number}")
             return
 

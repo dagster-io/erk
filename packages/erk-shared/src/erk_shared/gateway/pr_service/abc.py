@@ -1,4 +1,4 @@
-"""Domain service ABC for plan operations (no TUI type dependencies)."""
+"""Domain service ABC for PR operations (no TUI type dependencies)."""
 
 from abc import ABC, abstractmethod
 from pathlib import Path
@@ -8,11 +8,11 @@ from erk_shared.gateway.clipboard.abc import Clipboard
 from erk_shared.gateway.github.types import PRCheckRun, PRReviewThread
 
 
-class PlanService(ABC):
-    """Abstract base class for plan domain operations.
+class PrService(ABC):
+    """Abstract base class for PR domain operations.
 
     Contains operations that are independent of TUI display concerns:
-    closing plans, dispatching, fetching content, and GitHub PR data.
+    closing PRs, dispatching, fetching content, and GitHub PR data.
     No TUI type imports (PlanRowData, FetchTimings, PlanFilters, BranchActivity).
     """
 
@@ -35,12 +35,12 @@ class PlanService(ABC):
         ...
 
     @abstractmethod
-    def close_plan(self, plan_id: int, plan_url: str) -> list[int]:
-        """Close a plan and its linked PRs.
+    def close_pr(self, pr_number: int, pr_url: str) -> list[int]:
+        """Close a PR and its linked PRs.
 
         Args:
-            plan_id: The plan ID to close
-            plan_url: The plan URL for PR linkage lookup
+            pr_number: The PR number to close
+            pr_url: The PR URL for PR linkage lookup
 
         Returns:
             List of PR numbers that were also closed
@@ -48,35 +48,35 @@ class PlanService(ABC):
         ...
 
     @abstractmethod
-    def dispatch_to_queue(self, plan_id: int, plan_url: str) -> None:
-        """Dispatch a plan to the implementation queue.
+    def dispatch_to_queue(self, pr_number: int, pr_url: str) -> None:
+        """Dispatch a PR to the implementation queue.
 
         Args:
-            plan_id: The plan ID to dispatch
-            plan_url: The plan URL for repository context
+            pr_number: The PR number to dispatch
+            pr_url: The PR URL for repository context
         """
         ...
 
     @abstractmethod
-    def fetch_plan_content(self, plan_id: int, plan_body: str) -> str | None:
-        """Return plan content from the PR body.
+    def fetch_pr_content(self, pr_number: int, pr_body: str) -> str | None:
+        """Return PR content from the PR body.
 
         Args:
-            plan_id: The GitHub PR number
-            plan_body: The extracted plan content from the PR body
+            pr_number: The GitHub PR number
+            pr_body: The extracted PR content from the PR body
 
         Returns:
-            The plan content, or None if empty
+            The PR content, or None if empty
         """
         ...
 
     @abstractmethod
-    def fetch_objective_content(self, plan_id: int, plan_body: str) -> str | None:
+    def fetch_objective_content(self, pr_number: int, pr_body: str) -> str | None:
         """Fetch objective content from the first comment of an issue.
 
         Args:
-            plan_id: The GitHub issue number
-            plan_body: The issue body (to extract objective_comment_id from metadata)
+            pr_number: The GitHub issue number
+            pr_body: The issue body (to extract objective_comment_id from metadata)
 
         Returns:
             The extracted objective content, or None if not found

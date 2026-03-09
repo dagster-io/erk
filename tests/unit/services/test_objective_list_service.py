@@ -39,7 +39,7 @@ class TestObjectiveListService:
         )
 
         assert len(result.plans) == 1
-        assert result.plans[0].plan_identifier == "10"
+        assert result.plans[0].pr_identifier == "10"
         assert result.plans[0].title == "Test Objective"
 
     def test_forwards_state_parameter(self) -> None:

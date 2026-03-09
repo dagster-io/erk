@@ -35,7 +35,7 @@ def create_plan(
     """Create a Plan with common defaults for testing."""
     now = datetime.now(UTC)
     return Plan(
-        plan_identifier=plan_identifier,
+        pr_identifier=plan_identifier,
         title=title,
         body=body if body is not None else make_plan_body(),
         state=state,

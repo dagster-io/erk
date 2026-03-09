@@ -72,11 +72,11 @@ def upload_impl_session(ctx: click.Context, session_id: str) -> None:
         _output_not_uploaded("no_plan_tracking")
         return
 
-    if not plan_ref.plan_id.isdigit():
+    if not plan_ref.pr_id.isdigit():
         _output_not_uploaded("non_numeric_plan_id")
         return
 
-    plan_id = int(plan_ref.plan_id)
+    plan_id = int(plan_ref.pr_id)
 
     # Capture session info
     installation = require_claude_installation(ctx)

@@ -114,7 +114,7 @@ def test_issue_setup_invokes_setup_impl_from_issue(tmp_path: Path) -> None:
         metadata={"branch_name": plan_branch},
         summary=None,
     )
-    pr_number = int(plan_result.plan_id)
+    pr_number = int(plan_result.pr_id)
 
     fake_git = FakeGit(
         current_branches={tmp_path: plan_branch},

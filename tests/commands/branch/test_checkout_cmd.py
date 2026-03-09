@@ -693,7 +693,7 @@ def test_checkout_for_plan_creates_impl_folder() -> None:
         env.setup_repo_structure()
 
         plan = Plan(
-            plan_identifier="500",
+            pr_identifier="500",
             title="Add feature",
             body="# Plan\nImplementation details",
             state=PlanState.OPEN,
@@ -749,7 +749,7 @@ def test_checkout_for_plan_prints_activation_when_sync_status_fails() -> None:
         env.setup_repo_structure()
 
         plan = Plan(
-            plan_identifier="600",
+            pr_identifier="600",
             title="Test activation output",
             body="# Plan\nTest plan content",
             state=PlanState.OPEN,
@@ -808,7 +808,7 @@ def test_checkout_stacks_in_place_for_plan_outputs_activation_script() -> None:
         env.setup_repo_structure()
 
         plan = Plan(
-            plan_identifier="700",
+            pr_identifier="700",
             title="Stack in place activation",
             body="# Plan\nStack-in-place plan",
             state=PlanState.OPEN,
@@ -1109,7 +1109,7 @@ def test_checkout_stacks_in_place_for_plan_with_script() -> None:
         env.setup_repo_structure()
 
         plan = Plan(
-            plan_identifier="500",
+            pr_identifier="500",
             title="Add feature",
             body="# Plan\nImplementation details",
             state=PlanState.OPEN,
@@ -1174,7 +1174,7 @@ def test_checkout_for_plan_planned_pr_stacks_on_base_ref() -> None:
         env.setup_repo_structure()
 
         plan = Plan(
-            plan_identifier="600",
+            pr_identifier="600",
             title="Stack feature",
             body="# Plan\nStacking test",
             state=PlanState.OPEN,
@@ -1332,7 +1332,7 @@ def test_checkout_for_plan_planned_pr_falls_back_to_trunk_without_base_ref() -> 
         env.setup_repo_structure()
 
         plan = Plan(
-            plan_identifier="601",
+            pr_identifier="601",
             title="Trunk feature",
             body="# Plan\nTrunk parent test",
             state=PlanState.OPEN,
@@ -1385,7 +1385,7 @@ def test_checkout_for_plan_rebases_onto_stale_parent() -> None:
         env.setup_repo_structure()
 
         plan = Plan(
-            plan_identifier="602",
+            pr_identifier="602",
             title="Stacked plan rebase",
             body="# Plan\nRebase test",
             state=PlanState.OPEN,
@@ -1442,7 +1442,7 @@ def test_checkout_for_plan_skips_rebase_for_trunk_parent() -> None:
         env.setup_repo_structure()
 
         plan = Plan(
-            plan_identifier="603",
+            pr_identifier="603",
             title="Trunk parent plan",
             body="# Plan\nNo rebase needed",
             state=PlanState.OPEN,
@@ -1498,7 +1498,7 @@ def test_checkout_for_plan_updates_stale_local_parent() -> None:
         env.setup_repo_structure()
 
         plan = Plan(
-            plan_identifier="604",
+            pr_identifier="604",
             title="Stale parent sync",
             body="# Plan\nStale parent test",
             state=PlanState.OPEN,

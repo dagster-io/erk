@@ -772,7 +772,7 @@ def _gather_inputs(
         impl_dir = resolve_impl_dir(repo_root, branch_name=current_branch)
         plan_ref = read_plan_ref(impl_dir) if impl_dir is not None else None
         plan_number = (
-            int(plan_ref.plan_id) if plan_ref is not None and plan_ref.plan_id.isdigit() else None
+            int(plan_ref.pr_id) if plan_ref is not None and plan_ref.pr_id.isdigit() else None
         )
         editor = os.environ.get("EDITOR")
         # Detect if branch has commits ahead of its parent

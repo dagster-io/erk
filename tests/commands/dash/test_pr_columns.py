@@ -23,7 +23,7 @@ def test_plan_list_pr_column_no_pr_linked() -> None:
     """Test PR column shows '-' when no PR is linked to issue."""
     # Arrange
     plan = Plan(
-        plan_identifier="106",
+        pr_identifier="106",
         title="Plan without PR",
         body="",
         state=PlanState.OPEN,

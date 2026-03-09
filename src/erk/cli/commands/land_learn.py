@@ -283,10 +283,10 @@ def _create_learn_pr_core(
     if pr_result.success:
         user_output(
             click.style("\u2713", fg="green")
-            + f" Created learn plan #{pr_result.plan_number} for plan #{plan_id}"
+            + f" Created learn plan #{pr_result.pr_number} for plan #{plan_id}"
         )
-        if pr_result.plan_url:
-            user_output(f"  {pr_result.plan_url}")
+        if pr_result.pr_url:
+            user_output(f"  {pr_result.pr_url}")
         else:
             user_output("  (no plan URL available)")
         _log_learn_pr_files(plan_content=plan_content, xml_files=xml_files)

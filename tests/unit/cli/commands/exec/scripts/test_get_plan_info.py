@@ -34,7 +34,7 @@ def _create_backend_with_plan(
         metadata={"branch_name": "test-branch-info"},
         summary=None,
     )
-    return backend, fake_github, result.plan_id
+    return backend, fake_github, result.pr_id
 
 
 # ============================================================================

@@ -13,7 +13,7 @@ def test_build_plan_ref_json_structure() -> None:
 
     result = build_plan_ref_json(
         provider="github",
-        plan_id="42",
+        pr_id="42",
         url="https://github.com/owner/repo/issues/42",
         labels=("erk-plan", "bug"),
         objective_id=100,
@@ -23,7 +23,7 @@ def test_build_plan_ref_json_structure() -> None:
     data = json.loads(result)
 
     assert data["provider"] == "github"
-    assert data["plan_id"] == "42"
+    assert data["pr_id"] == "42"
     assert data["url"] == "https://github.com/owner/repo/issues/42"
     assert data["labels"] == ["erk-plan", "bug"]
     assert data["objective_id"] == 100
@@ -39,7 +39,7 @@ def test_build_plan_ref_json_none_objective() -> None:
 
     result = build_plan_ref_json(
         provider="github-draft-pr",
-        plan_id="789",
+        pr_id="789",
         url="https://github.com/owner/repo/pull/789",
         labels=(),
         objective_id=None,

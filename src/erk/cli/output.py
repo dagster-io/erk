@@ -24,7 +24,6 @@ from erk.core.prompt_executor import (
     ErrorEvent,
     NoOutputEvent,
     NoTurnsEvent,
-    PlanNumberEvent,
     PrNumberEvent,
     ProcessErrorEvent,
     PromptExecutor,
@@ -72,13 +71,11 @@ def format_implement_summary(results: list[CommandResult], total_duration: float
     pr_url: str | None = None
     pr_number: int | None = None
     pr_title: str | None = None
-    plan_number: int | None = None
     for result in results:
         if result.pr_url:
             pr_url = result.pr_url
             pr_number = result.pr_number
             pr_title = result.pr_title
-            plan_number = result.plan_number
             break
 
     if pr_url:
@@ -97,13 +94,6 @@ def format_implement_summary(results: list[CommandResult], total_duration: float
 
         # Show PR URL
         lines.append(Text(f"   {pr_url}", style="dim"))
-
-        # Show linked plan (if any)
-        if plan_number:
-            lines.append(Text(""))
-            lines.append(
-                Text(f"📋 Linked Plan: #{plan_number} (will auto-close on merge)", style="yellow")
-            )
 
     # Error details (if failed)
     if not overall_success:
@@ -175,7 +165,6 @@ def stream_command_with_feedback(
     pr_url: str | None = None
     pr_number: int | None = None
     pr_title: str | None = None
-    plan_number: int | None = None
     error_message: str | None = None
     success = True
     last_spinner_update: str | None = None
@@ -219,8 +208,6 @@ def stream_command_with_feedback(
                 pr_number = num  # Already int, no conversion needed
             case PrTitleEvent(title=title):
                 pr_title = title
-            case PlanNumberEvent(number=num):
-                plan_number = num  # Already int, no conversion needed
             case ErrorEvent(message=msg):
                 click.echo(click.style(f"  ! {msg}", fg="red"), err=True)
                 error_message = msg
@@ -256,7 +243,6 @@ def stream_command_with_feedback(
         pr_url=pr_url,
         pr_number=pr_number,
         pr_title=pr_title,
-        plan_number=plan_number,
         duration_seconds=duration,
         error_message=error_message,
         filtered_messages=filtered_messages,
@@ -355,7 +341,7 @@ def stream_rebase(
                 click.echo(click.style(f"   {msg}", fg="red"))
                 error_message = msg
                 success = False
-            case PrUrlEvent() | PrNumberEvent() | PrTitleEvent() | PlanNumberEvent():
+            case PrUrlEvent() | PrNumberEvent() | PrTitleEvent():
                 pass  # PR metadata not relevant for rebase
 
     # Check for no-work-events failure mode
@@ -474,7 +460,7 @@ def stream_diverge_fix(
                 click.echo(click.style(f"   {msg}", fg="red"))
                 error_message = msg
                 success = False
-            case PrUrlEvent() | PrNumberEvent() | PrTitleEvent() | PlanNumberEvent():
+            case PrUrlEvent() | PrNumberEvent() | PrTitleEvent():
                 pass  # PR metadata not relevant for diverge-fix
 
     # Check for no-work-events failure mode

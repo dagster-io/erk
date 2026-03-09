@@ -23,7 +23,7 @@ def _make_plan(
     body: str = "",
 ) -> Plan:
     return Plan(
-        plan_identifier="1",
+        pr_identifier="1",
         title=title,
         body=body,
         state=PlanState.OPEN,

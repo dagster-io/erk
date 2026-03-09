@@ -67,7 +67,7 @@ class RealPlanDataProvider(PlanDataProvider):
     """Production implementation that assembles TUI display data.
 
     Transforms PlanListData into PlanRowData for TUI display.
-    Domain operations (close_plan, dispatch, etc.) are on PlanService.
+    Domain operations (close_pr, dispatch, etc.) are on PrService.
     """
 
     def __init__(
@@ -139,7 +139,7 @@ class RealPlanDataProvider(PlanDataProvider):
         use_graphite = global_config.use_graphite if global_config is not None else False
 
         for plan in plans:
-            plan_id = int(plan.plan_identifier)
+            plan_id = int(plan.pr_identifier)
 
             workflow_run = plan_data.workflow_runs.get(plan_id)
 
@@ -411,7 +411,7 @@ class RealPlanDataProvider(PlanDataProvider):
         use_graphite = global_config.use_graphite if global_config is not None else False
         rows: list[PlanRowData] = []
         for plan in plans:
-            plan_id = int(plan.plan_identifier)
+            plan_id = int(plan.pr_identifier)
             row = self._build_row_data(
                 plan=plan,
                 plan_id=plan_id,
@@ -483,9 +483,9 @@ class RealPlanDataProvider(PlanDataProvider):
             if impl_dir is None:
                 continue
             plan_ref = read_plan_ref(impl_dir)
-            if plan_ref is None or not plan_ref.plan_id.isdigit():
+            if plan_ref is None or not plan_ref.pr_id.isdigit():
                 continue
-            plan_number = int(plan_ref.plan_id)
+            plan_number = int(plan_ref.pr_id)
             if plan_number not in worktree_by_plan_id:
                 worktree_by_plan_id[plan_number] = (
                     worktree.path.name,

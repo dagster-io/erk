@@ -265,7 +265,7 @@ def _signal_started(ctx: click.Context, session_id: str | None) -> None:
     try:
         backend.post_event(
             repo_root,
-            plan_ref.plan_id,
+            plan_ref.pr_id,
             metadata=metadata,
             comment=comment_body,
         )
@@ -276,7 +276,7 @@ def _signal_started(ctx: click.Context, session_id: str | None) -> None:
     result = SignalSuccess(
         success=True,
         event=event,
-        plan_number=int(plan_ref.plan_id),
+        plan_number=int(plan_ref.pr_id),
     )
     click.echo(json.dumps(asdict(result), indent=2))
     raise SystemExit(0)
@@ -347,7 +347,7 @@ def _signal_ended(ctx: click.Context, session_id: str | None) -> None:
 
     # Update metadata via PlanBackend (no comment for ended)
     try:
-        backend.update_metadata(repo_root, plan_ref.plan_id, metadata)
+        backend.update_metadata(repo_root, plan_ref.pr_id, metadata)
     except RuntimeError as e:
         _output_error(event, "github-api-failed", f"Failed to update metadata: {e}")
         return
@@ -355,7 +355,7 @@ def _signal_ended(ctx: click.Context, session_id: str | None) -> None:
     result = SignalSuccess(
         success=True,
         event=event,
-        plan_number=int(plan_ref.plan_id),
+        plan_number=int(plan_ref.pr_id),
     )
     click.echo(json.dumps(asdict(result), indent=2))
     raise SystemExit(0)
@@ -403,14 +403,14 @@ def _signal_submitted(ctx: click.Context, session_id: str | None) -> None:
     }
 
     # LBYL: Check plan exists before updating
-    plan_result = backend.get_plan(repo_root, plan_ref.plan_id)
+    plan_result = backend.get_plan(repo_root, plan_ref.pr_id)
     if isinstance(plan_result, PlanNotFound):
-        _output_error(event, "plan-not-found", f"Plan #{plan_ref.plan_id} not found")
+        _output_error(event, "plan-not-found", f"Plan #{plan_ref.pr_id} not found")
         return
 
     # Update metadata via PlanBackend (no comment needed — the PR is already visible)
     try:
-        backend.update_metadata(repo_root, plan_ref.plan_id, metadata)
+        backend.update_metadata(repo_root, plan_ref.pr_id, metadata)
     except RuntimeError as e:
         _output_error(event, "github-api-failed", f"Failed to update metadata: {e}")
         return
@@ -418,7 +418,7 @@ def _signal_submitted(ctx: click.Context, session_id: str | None) -> None:
     result = SignalSuccess(
         success=True,
         event=event,
-        plan_number=int(plan_ref.plan_id),
+        plan_number=int(plan_ref.pr_id),
     )
     click.echo(json.dumps(asdict(result), indent=2))
     raise SystemExit(0)

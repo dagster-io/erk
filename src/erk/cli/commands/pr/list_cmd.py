@@ -33,7 +33,7 @@ from erk_shared.gateway.github.types import (
     IssueFilterState,
     PullRequestInfo,
 )
-from erk_shared.gateway.plan_service.real import RealPlanService
+from erk_shared.gateway.pr_service.real import RealPrService
 from erk_shared.output.output import user_output
 
 P = ParamSpec("P")
@@ -414,7 +414,7 @@ def _run_interactive_mode(
         location=location,
         http_client=http_client,
     )
-    service = RealPlanService(
+    service = RealPrService(
         ctx,
         location=location,
         clipboard=clipboard,

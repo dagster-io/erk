@@ -348,7 +348,7 @@ def require_local_config(ctx: click.Context) -> LoadedConfig:
         >>> @click.pass_context
         >>> def my_command(ctx: click.Context) -> None:
         ...     config = require_local_config(ctx)
-        ...     plans_repo = config.plans_repo
+        ...     github_repo = config.github_repo
     """
     if ctx.obj is None:
         click.echo("Error: Context not initialized", err=True)

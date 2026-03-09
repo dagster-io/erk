@@ -303,7 +303,7 @@ def _check_pr_body(ctx: ErkContext, stage: str | None) -> None:
     plan_ref = read_plan_ref(impl_dir) if impl_dir is not None else None
 
     if plan_ref is not None:
-        expected_plan_number = int(plan_ref.plan_id)
+        expected_plan_number = int(plan_ref.pr_id)
         checks.append(
             PrCheck(
                 passed=True,

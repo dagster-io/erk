@@ -11,7 +11,7 @@ from erk.tui.data.types import PlanFilters
 from erk.tui.views.types import ViewMode
 from erk.tui.widgets.run_table import RunDataTable
 from erk_shared.gateway.browser.fake import FakeBrowserLauncher
-from erk_shared.gateway.plan_service.fake import FakePlanService
+from erk_shared.gateway.pr_service.fake import FakePrService
 
 
 class TestLoadRunData:
@@ -28,7 +28,7 @@ class TestLoadRunData:
         provider.set_runs(run_rows)
         filters = PlanFilters.default()
         app = ErkDashApp(
-            provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0
+            provider=provider, service=FakePrService(), filters=filters, refresh_interval=0
         )
 
         async with app.run_test() as pilot:
@@ -51,7 +51,7 @@ class TestLoadRunData:
         provider.set_runs([make_run_row("1001")])
         filters = PlanFilters.default()
         app = ErkDashApp(
-            provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0
+            provider=provider, service=FakePrService(), filters=filters, refresh_interval=0
         )
 
         async with app.run_test() as pilot:
@@ -72,7 +72,7 @@ class TestLoadRunData:
         provider = FakePlanDataProvider(plans=[make_plan_row(1, "Plan A")])
         filters = PlanFilters.default()
         app = ErkDashApp(
-            provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0
+            provider=provider, service=FakePrService(), filters=filters, refresh_interval=0
         )
 
         async with app.run_test() as pilot:
@@ -93,7 +93,7 @@ class TestLoadRunData:
         provider.set_runs(run_rows)
         filters = PlanFilters.default()
         app = ErkDashApp(
-            provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0
+            provider=provider, service=FakePrService(), filters=filters, refresh_interval=0
         )
 
         async with app.run_test() as pilot:
@@ -126,7 +126,7 @@ class TestLoadRunData:
         provider.set_runs(run_rows)
         filters = PlanFilters.default()
         app = ErkDashApp(
-            provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0
+            provider=provider, service=FakePrService(), filters=filters, refresh_interval=0
         )
 
         async with app.run_test() as pilot:
@@ -148,7 +148,7 @@ class TestOnRunClicked:
     async def test_run_click_opens_run_url(self) -> None:
         """Clicking a run-id cell opens the run URL in browser."""
         browser = FakeBrowserLauncher()
-        service = FakePlanService(browser=browser)
+        service = FakePrService(browser=browser)
         run_rows = [
             make_run_row(
                 "1001",
@@ -180,7 +180,7 @@ class TestOnRunClicked:
     async def test_run_click_out_of_range_is_noop(self) -> None:
         """Clicking out-of-range row index does nothing."""
         browser = FakeBrowserLauncher()
-        service = FakePlanService(browser=browser)
+        service = FakePrService(browser=browser)
         run_rows = [make_run_row("1001")]
         provider = FakePlanDataProvider(plans=[make_plan_row(1, "Plan A")])
         provider.set_runs(run_rows)
@@ -207,7 +207,7 @@ class TestOnRunClicked:
         from erk.tui.data.types import RunRowData
 
         browser = FakeBrowserLauncher()
-        service = FakePlanService(browser=browser)
+        service = FakePrService(browser=browser)
         run_no_url = RunRowData(
             run_id="1001",
             run_url=None,
@@ -254,7 +254,7 @@ class TestOnRunPrClicked:
     async def test_pr_click_opens_pr_url(self) -> None:
         """Clicking a PR cell in runs table opens PR URL in browser."""
         browser = FakeBrowserLauncher()
-        service = FakePlanService(browser=browser)
+        service = FakePrService(browser=browser)
         run_rows = [
             make_run_row(
                 "1001",
@@ -286,7 +286,7 @@ class TestOnRunPrClicked:
     async def test_pr_click_out_of_range_is_noop(self) -> None:
         """Clicking PR cell with out-of-range index does nothing."""
         browser = FakeBrowserLauncher()
-        service = FakePlanService(browser=browser)
+        service = FakePrService(browser=browser)
         run_rows = [make_run_row("1001", pr_number=42, pr_url="https://example.com")]
         provider = FakePlanDataProvider(plans=[make_plan_row(1, "Plan A")])
         provider.set_runs(run_rows)
@@ -310,7 +310,7 @@ class TestOnRunPrClicked:
     async def test_pr_click_no_url_is_noop(self) -> None:
         """Clicking PR cell when run has no PR URL does nothing."""
         browser = FakeBrowserLauncher()
-        service = FakePlanService(browser=browser)
+        service = FakePrService(browser=browser)
         run_rows = [make_run_row("1001")]  # No PR
         provider = FakePlanDataProvider(plans=[make_plan_row(1, "Plan A")])
         provider.set_runs(run_rows)
@@ -334,7 +334,7 @@ class TestOnRunPrClicked:
     async def test_status_bar_message_on_run_click(self) -> None:
         """Status bar shows message after clicking a run."""
         browser = FakeBrowserLauncher()
-        service = FakePlanService(browser=browser)
+        service = FakePrService(browser=browser)
         run_rows = [
             make_run_row(
                 "1001",
@@ -365,7 +365,7 @@ class TestOnRunPrClicked:
     async def test_status_bar_message_on_pr_click(self) -> None:
         """Status bar shows message after clicking a PR in runs table."""
         browser = FakeBrowserLauncher()
-        service = FakePlanService(browser=browser)
+        service = FakePrService(browser=browser)
         run_rows = [
             make_run_row(
                 "1001",
@@ -404,7 +404,7 @@ class TestRunPrFilter:
         provider.set_runs(run_rows)
         filters = PlanFilters.default()
         app = ErkDashApp(
-            provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0
+            provider=provider, service=FakePrService(), filters=filters, refresh_interval=0
         )
 
         async with app.run_test() as pilot:
@@ -436,7 +436,7 @@ class TestRunPrFilter:
         provider.set_runs(run_rows)
         filters = PlanFilters.default()
         app = ErkDashApp(
-            provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0
+            provider=provider, service=FakePrService(), filters=filters, refresh_interval=0
         )
 
         async with app.run_test() as pilot:
@@ -464,7 +464,7 @@ class TestRunPrFilter:
         provider.set_runs(run_rows)
         filters = PlanFilters.default()
         app = ErkDashApp(
-            provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0
+            provider=provider, service=FakePrService(), filters=filters, refresh_interval=0
         )
 
         async with app.run_test() as pilot:
@@ -489,7 +489,7 @@ class TestRunPrFilter:
         provider.set_runs(run_rows)
         filters = PlanFilters.default()
         app = ErkDashApp(
-            provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0
+            provider=provider, service=FakePrService(), filters=filters, refresh_interval=0
         )
 
         async with app.run_test() as pilot:
@@ -515,7 +515,7 @@ class TestRunPrFilter:
         provider = FakePlanDataProvider(plans=[make_plan_row(1, "Plan A")])
         filters = PlanFilters.default()
         app = ErkDashApp(
-            provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0
+            provider=provider, service=FakePrService(), filters=filters, refresh_interval=0
         )
 
         async with app.run_test() as pilot:
@@ -542,7 +542,7 @@ class TestRunsNavigation:
         provider.set_runs(run_rows)
         filters = PlanFilters.default()
         app = ErkDashApp(
-            provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0
+            provider=provider, service=FakePrService(), filters=filters, refresh_interval=0
         )
 
         async with app.run_test() as pilot:
@@ -571,7 +571,7 @@ class TestRunsNavigation:
         provider.set_runs(run_rows)
         filters = PlanFilters.default()
         app = ErkDashApp(
-            provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0
+            provider=provider, service=FakePrService(), filters=filters, refresh_interval=0
         )
 
         async with app.run_test() as pilot:
@@ -591,7 +591,7 @@ class TestRunsNavigation:
     async def test_p_opens_pr_on_runs_tab(self) -> None:
         """Pressing 'p' on Runs tab opens the selected run's PR."""
         browser = FakeBrowserLauncher()
-        service = FakePlanService(browser=browser)
+        service = FakePrService(browser=browser)
         run_rows = [
             make_run_row(
                 "1001",
@@ -622,7 +622,7 @@ class TestRunsNavigation:
     async def test_p_no_pr_on_runs_tab_is_noop(self) -> None:
         """Pressing 'p' on Runs tab with no PR shows status message."""
         browser = FakeBrowserLauncher()
-        service = FakePlanService(browser=browser)
+        service = FakePrService(browser=browser)
         run_rows = [make_run_row("1001")]  # No PR
         provider = FakePlanDataProvider(plans=[make_plan_row(1, "Plan A")])
         provider.set_runs(run_rows)
@@ -645,7 +645,7 @@ class TestRunsNavigation:
     async def test_n_opens_run_on_runs_tab(self) -> None:
         """Pressing 'n' on Runs tab opens the selected run URL."""
         browser = FakeBrowserLauncher()
-        service = FakePlanService(browser=browser)
+        service = FakePrService(browser=browser)
         run_rows = [
             make_run_row(
                 "1001",

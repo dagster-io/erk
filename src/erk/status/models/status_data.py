@@ -301,8 +301,8 @@ class PlanStatus:
     line_count: int
     first_lines: list[str]
     format: str  # "folder" or "none"
-    plan_number: int | None = None  # GitHub plan number if linked
-    plan_url: str | None = None  # GitHub plan URL if linked
+    pr_number: int | None = None  # GitHub PR number if linked
+    pr_url: str | None = None  # GitHub PR URL if linked
 
 
 @dataclass(frozen=True)

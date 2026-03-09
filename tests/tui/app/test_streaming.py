@@ -8,7 +8,7 @@ from erk.tui.app import ErkDashApp
 from erk.tui.data.types import PlanFilters
 from erk.tui.screens.plan_detail_screen import PlanDetailScreen
 from erk_shared.gateway.plan_data_provider.fake import FakePlanDataProvider, make_plan_row
-from erk_shared.gateway.plan_service.fake import FakePlanService
+from erk_shared.gateway.pr_service.fake import FakePrService
 
 
 class TestStreamingCommandTimeout:
@@ -31,7 +31,7 @@ class TestStreamingCommandTimeout:
         filters = PlanFilters.default()
         app = ErkDashApp(
             provider=provider,
-            service=FakePlanService(repo_root=tmp_path),
+            service=FakePrService(repo_root=tmp_path),
             filters=filters,
             refresh_interval=0,
         )
@@ -76,7 +76,7 @@ class TestStreamingCommandTimeout:
         filters = PlanFilters.default()
         app = ErkDashApp(
             provider=provider,
-            service=FakePlanService(repo_root=tmp_path),
+            service=FakePrService(repo_root=tmp_path),
             filters=filters,
             refresh_interval=0,
         )
@@ -122,7 +122,7 @@ class TestStreamingCommandTimeout:
         filters = PlanFilters.default()
         app = ErkDashApp(
             provider=provider,
-            service=FakePlanService(repo_root=tmp_path),
+            service=FakePrService(repo_root=tmp_path),
             filters=filters,
             refresh_interval=0,
         )
@@ -170,7 +170,7 @@ class TestStreamingCommandTimeout:
         filters = PlanFilters.default()
         app = ErkDashApp(
             provider=provider,
-            service=FakePlanService(repo_root=tmp_path),
+            service=FakePrService(repo_root=tmp_path),
             filters=filters,
             refresh_interval=0,
         )
@@ -227,7 +227,7 @@ class TestClosePlanInProcess:
         )
         filters = PlanFilters.default()
         app = ErkDashApp(
-            provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0
+            provider=provider, service=FakePrService(), filters=filters, refresh_interval=0
         )
 
         async with app.run_test() as pilot:
@@ -266,7 +266,7 @@ class TestClosePlanInProcess:
         )
         filters = PlanFilters.default()
         app = ErkDashApp(
-            provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0
+            provider=provider, service=FakePrService(), filters=filters, refresh_interval=0
         )
 
         async with app.run_test() as pilot:

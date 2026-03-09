@@ -423,7 +423,7 @@ def test_delete_all_closes_pr_and_plan() -> None:
         # Create plan with worktree_name in metadata
         now = datetime.now(UTC)
         plan = Plan(
-            plan_identifier="123",
+            pr_identifier="123",
             title="Implement feature",
             body=_make_plan_body_with_worktree("test-feature"),
             state=PlanState.OPEN,
@@ -605,7 +605,7 @@ def test_delete_all_shows_closed_plan_status() -> None:
         # Create a CLOSED plan with worktree_name in metadata
         now = datetime.now(UTC)
         plan = Plan(
-            plan_identifier="456",
+            pr_identifier="456",
             title="Implement feature",
             body=_make_plan_body_with_worktree("test-feature"),
             state=PlanState.CLOSED,  # Already closed
@@ -653,7 +653,7 @@ def test_delete_all_shows_actual_pr_and_plan_numbers_in_confirmation() -> None:
         # Create OPEN plan with worktree_name in metadata
         now = datetime.now(UTC)
         plan = Plan(
-            plan_identifier="789",
+            pr_identifier="789",
             title="Implement feature",
             body=_make_plan_body_with_worktree("test-feature"),
             state=PlanState.OPEN,

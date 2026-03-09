@@ -19,16 +19,16 @@ from tests.test_utils.plan_helpers import create_plan_store_with_plans
 
 def _make_plan(
     *,
-    plan_identifier: str,
+    pr_identifier: str,
     title: str,
     body: str,
 ) -> Plan:
     return Plan(
-        plan_identifier=plan_identifier,
+        pr_identifier=pr_identifier,
         title=title,
         body=body,
         state=PlanState.OPEN,
-        url=f"https://github.com/owner/repo/issues/{plan_identifier}",
+        url=f"https://github.com/owner/repo/issues/{pr_identifier}",
         labels=["erk-pr", "erk-plan"],
         assignees=[],
         created_at=datetime(2025, 1, 1),
@@ -59,9 +59,7 @@ def test_no_duplicates_found() -> None:
     executor = FakePromptExecutor(
         simulated_prompt_output='{"duplicates": []}',
     )
-    existing = _make_plan(
-        plan_identifier="100", title="Refactor auth", body="Restructure auth flow"
-    )
+    existing = _make_plan(pr_identifier="100", title="Refactor auth", body="Restructure auth flow")
     plan_store, _ = create_plan_store_with_plans({"100": existing})
 
     runner = CliRunner()
@@ -92,7 +90,7 @@ def test_duplicate_detected() -> None:
         simulated_prompt_output=llm_output,
     )
     existing = _make_plan(
-        plan_identifier="100", title="Dark mode support", body="Add dark mode to app"
+        pr_identifier="100", title="Dark mode support", body="Add dark mode to app"
     )
     plan_store, _ = create_plan_store_with_plans({"100": existing})
 
@@ -152,7 +150,7 @@ def test_llm_error_graceful_degradation() -> None:
     executor = FakePromptExecutor(
         simulated_prompt_error="LLM unavailable",
     )
-    existing = _make_plan(plan_identifier="100", title="Existing plan", body="body")
+    existing = _make_plan(pr_identifier="100", title="Existing plan", body="body")
     plan_store, _ = create_plan_store_with_plans({"100": existing})
 
     runner = CliRunner()
@@ -198,8 +196,8 @@ def test_plan_flag_fetches_and_excludes_self() -> None:
     executor = FakePromptExecutor(
         simulated_prompt_output=llm_output,
     )
-    plan_100 = _make_plan(plan_identifier="100", title="Plan A", body="body A")
-    plan_200 = _make_plan(plan_identifier="200", title="Plan B", body="body B for checking")
+    plan_100 = _make_plan(pr_identifier="100", title="Plan A", body="body A")
+    plan_200 = _make_plan(pr_identifier="200", title="Plan B", body="body B for checking")
     plan_store, _ = create_plan_store_with_plans({"100": plan_100, "200": plan_200})
 
     issue_200 = IssueInfo(
@@ -260,8 +258,8 @@ def test_progress_reporting_lists_plans() -> None:
     executor = FakePromptExecutor(
         simulated_prompt_output='{"duplicates": []}',
     )
-    plan_100 = _make_plan(plan_identifier="100", title="Refactor auth", body="body A")
-    plan_200 = _make_plan(plan_identifier="200", title="Add dark mode", body="body B")
+    plan_100 = _make_plan(pr_identifier="100", title="Refactor auth", body="body A")
+    plan_200 = _make_plan(pr_identifier="200", title="Add dark mode", body="body B")
     plan_store, _ = create_plan_store_with_plans({"100": plan_100, "200": plan_200})
 
     runner = CliRunner()

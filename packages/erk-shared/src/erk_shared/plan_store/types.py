@@ -17,7 +17,7 @@ class Plan:
     """Provider-agnostic representation of a plan.
 
     Fields:
-        plan_identifier: Provider-specific ID as string
+        pr_identifier: Provider-specific ID as string
             (GitHub: "42", Jira: "PROJ-123", Linear: UUID)
         title: Plan title
         body: Plan body/description
@@ -34,7 +34,7 @@ class Plan:
             Keys are schema constants from schemas.py (e.g., WORKTREE_NAME, SOURCE_REPO).
     """
 
-    plan_identifier: str
+    pr_identifier: str
     title: str
     body: str
     state: PlanState
@@ -68,11 +68,11 @@ class CreatePlanResult:
     """Result of creating a plan.
 
     Fields:
-        plan_id: Provider-specific plan identifier as string
+        pr_id: Provider-specific plan identifier as string
         url: Web URL to view the created plan
     """
 
-    plan_id: str
+    pr_id: str
     url: str
 
 
@@ -84,4 +84,4 @@ class PlanHeaderNotFoundError(RuntimeError):
 class PlanNotFound:
     """Result when a plan cannot be found by identifier."""
 
-    plan_id: str
+    pr_id: str

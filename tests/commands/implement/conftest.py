@@ -8,7 +8,7 @@ from erk_shared.plan_store.types import Plan, PlanState
 def create_sample_plan_issue(issue_number: str = "42") -> Plan:
     """Create a sample plan issue for testing."""
     return Plan(
-        plan_identifier=issue_number,
+        pr_identifier=issue_number,
         title="Add Authentication Feature",
         body="# Implementation Plan\n\nAdd user authentication to the application.",
         state=PlanState.OPEN,

@@ -65,7 +65,7 @@ def test_build_comment_contains_all_fields() -> None:
 
     assert "GitHub Action Started" in comment
     assert "branch_name: my-feature" in comment
-    assert "plan_number: 123" in comment
+    assert "pr_number: 123" in comment
     assert "workflow_run_id: '99999'" in comment
     assert "https://github.com/owner/repo/actions/runs/99999" in comment
 
@@ -103,7 +103,7 @@ def test_build_comment_metadata_block_is_parseable() -> None:
     assert len(result.blocks) == 1
     block = result.blocks[0]
     assert block.key == "workflow-started"
-    assert block.data["plan_number"] == 123
+    assert block.data["pr_number"] == 123
     assert block.data["status"] == "started"
     assert block.data["workflow_run_id"] == "12345"
     assert block.data["branch_name"] == "feat-auth"

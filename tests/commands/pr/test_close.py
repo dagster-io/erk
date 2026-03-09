@@ -26,7 +26,7 @@ def test_close_plan_with_plan_number() -> None:
     """Test closing a plan with plan number."""
     # Arrange
     plan_issue = Plan(
-        plan_identifier="42",
+        pr_identifier="42",
         title="Test Issue",
         body="This is a test issue",
         state=PlanState.OPEN,
@@ -111,7 +111,7 @@ def _make_issue_info(plan: Plan) -> IssueInfo:
     """Helper to convert Plan to IssueInfo for tests needing custom FakeGitHubIssues config."""
     state = "OPEN" if plan.state == PlanState.OPEN else "CLOSED"
     return IssueInfo(
-        number=int(plan.plan_identifier),
+        number=int(plan.pr_identifier),
         title=plan.title,
         body=plan.body,
         state=state,
@@ -128,7 +128,7 @@ def test_close_plan_closes_linked_open_prs() -> None:
     """Test closing a plan closes all OPEN PRs linked to the issue."""
     # Arrange
     plan_issue = Plan(
-        plan_identifier="42",
+        pr_identifier="42",
         title="Test Issue",
         body="This is a test issue",
         state=PlanState.OPEN,
@@ -188,7 +188,7 @@ def test_close_plan_skips_closed_and_merged_prs() -> None:
     """Test closing a plan skips CLOSED and MERGED PRs, only closes OPEN."""
     # Arrange
     plan_issue = Plan(
-        plan_identifier="42",
+        pr_identifier="42",
         title="Test Issue",
         body="This is a test issue",
         state=PlanState.OPEN,
@@ -249,7 +249,7 @@ def test_close_plan_no_linked_prs() -> None:
     """Test closing a plan with no linked PRs works without error."""
     # Arrange
     plan_issue = Plan(
-        plan_identifier="42",
+        pr_identifier="42",
         title="Test Issue",
         body="This is a test issue",
         state=PlanState.OPEN,
@@ -358,7 +358,7 @@ def test_close_plan_reports_closed_prs() -> None:
     """Test closing a plan reports the closed PRs in output."""
     # Arrange
     plan_issue = Plan(
-        plan_identifier="42",
+        pr_identifier="42",
         title="Test Issue",
         body="This is a test issue",
         state=PlanState.OPEN,
@@ -416,7 +416,7 @@ def test_close_plan_with_objective_invokes_update() -> None:
     # PlannedPRBackend._convert_to_plan() extracts objective_id correctly
     body_with_header = format_plan_header_body_for_test(objective_issue=99) + "\nPlan content"
     plan_issue = Plan(
-        plan_identifier="42",
+        pr_identifier="42",
         title="Test Issue",
         body=body_with_header,
         state=PlanState.OPEN,
@@ -482,7 +482,7 @@ def test_close_plan_without_objective_skips_update() -> None:
     """Test closing a plan without an objective does not invoke objective update."""
     # Arrange
     plan_issue = Plan(
-        plan_identifier="42",
+        pr_identifier="42",
         title="Test Issue",
         body="This is a test issue",
         state=PlanState.OPEN,
@@ -546,7 +546,7 @@ def test_close_plan_objective_update_failure_does_not_break_close() -> None:
     # PlannedPRBackend._convert_to_plan() extracts objective_id correctly
     body_with_header = format_plan_header_body_for_test(objective_issue=99) + "\nPlan content"
     plan_issue = Plan(
-        plan_identifier="42",
+        pr_identifier="42",
         title="Test Issue",
         body=body_with_header,
         state=PlanState.OPEN,

@@ -40,7 +40,7 @@ def _make_plan(
 ) -> Plan:
     """Create a Plan for testing with minimal required fields."""
     return Plan(
-        plan_identifier="42",
+        pr_identifier="42",
         title="Test plan",
         body="",
         state=PlanState.OPEN,

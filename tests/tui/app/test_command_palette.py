@@ -9,7 +9,7 @@ from erk.tui.data.types import PlanFilters
 from erk.tui.screens.plan_detail_screen import PlanDetailScreen
 from erk_shared.gateway.clipboard.fake import FakeClipboard
 from erk_shared.gateway.plan_data_provider.fake import FakePlanDataProvider, make_plan_row
-from erk_shared.gateway.plan_service.fake import FakePlanService
+from erk_shared.gateway.pr_service.fake import FakePrService
 
 
 class TestClosePlanViaCommandPalette:
@@ -32,7 +32,7 @@ class TestClosePlanViaCommandPalette:
         )
         filters = PlanFilters.default()
         app = ErkDashApp(
-            provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0
+            provider=provider, service=FakePrService(), filters=filters, refresh_interval=0
         )
 
         async with app.run_test() as pilot:
@@ -75,7 +75,7 @@ class TestCommandPaletteFromMain:
         filters = PlanFilters.default()
         app = ErkDashApp(
             provider=provider,
-            service=FakePlanService(browser=browser),
+            service=FakePrService(browser=browser),
             filters=filters,
             refresh_interval=0,
         )
@@ -97,7 +97,7 @@ class TestCommandPaletteFromMain:
         filters = PlanFilters.default()
         app = ErkDashApp(
             provider=provider,
-            service=FakePlanService(clipboard=clipboard),
+            service=FakePrService(clipboard=clipboard),
             filters=filters,
             refresh_interval=0,
         )
@@ -118,7 +118,7 @@ class TestCommandPaletteFromMain:
         provider = FakePlanDataProvider(plans=[make_plan_row(123, "Test Plan")])
         filters = PlanFilters.default()
         app = ErkDashApp(
-            provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0
+            provider=provider, service=FakePrService(), filters=filters, refresh_interval=0
         )
 
         async with app.run_test() as pilot:
@@ -149,7 +149,7 @@ class TestCommandPaletteFromMainCopyVariants:
         filters = PlanFilters.default()
         app = ErkDashApp(
             provider=provider,
-            service=FakePlanService(clipboard=clipboard),
+            service=FakePrService(clipboard=clipboard),
             filters=filters,
             refresh_interval=0,
         )
@@ -172,7 +172,7 @@ class TestCommandPaletteFromMainCopyVariants:
         filters = PlanFilters.default()
         app = ErkDashApp(
             provider=provider,
-            service=FakePlanService(clipboard=clipboard),
+            service=FakePrService(clipboard=clipboard),
             filters=filters,
             refresh_interval=0,
         )
@@ -195,7 +195,7 @@ class TestCommandPaletteFromMainCopyVariants:
         filters = PlanFilters.default()
         app = ErkDashApp(
             provider=provider,
-            service=FakePlanService(clipboard=clipboard),
+            service=FakePrService(clipboard=clipboard),
             filters=filters,
             refresh_interval=0,
         )
@@ -223,7 +223,7 @@ class TestExecutePaletteCommandLandPR:
         )
         filters = PlanFilters.default()
         app = ErkDashApp(
-            provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0
+            provider=provider, service=FakePrService(), filters=filters, refresh_interval=0
         )
 
         async with app.run_test() as pilot:
@@ -247,7 +247,7 @@ class TestExecutePaletteCommandLandPR:
         )
         filters = PlanFilters.default()
         app = ErkDashApp(
-            provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0
+            provider=provider, service=FakePrService(), filters=filters, refresh_interval=0
         )
 
         async with app.run_test() as pilot:
@@ -278,7 +278,7 @@ class TestExecutePaletteCommandRebaseRemote:
         )
         filters = PlanFilters.default()
         app = ErkDashApp(
-            provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0
+            provider=provider, service=FakePrService(), filters=filters, refresh_interval=0
         )
 
         async with app.run_test() as pilot:
@@ -305,7 +305,7 @@ class TestExecutePaletteCommandRebaseRemote:
         filters = PlanFilters.default()
         app = ErkDashApp(
             provider=provider,
-            service=FakePlanService(repo_root=tmp_path),
+            service=FakePrService(repo_root=tmp_path),
             filters=filters,
             refresh_interval=0,
         )
@@ -353,7 +353,7 @@ class TestExecutePaletteCommandCodespaceRunPlan:
         filters = PlanFilters.default()
         app = ErkDashApp(
             provider=provider,
-            service=FakePlanService(clipboard=clipboard),
+            service=FakePrService(clipboard=clipboard),
             filters=filters,
             refresh_interval=0,
         )

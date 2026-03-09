@@ -1,7 +1,7 @@
-"""Plan service interface for domain operations.
+"""PR service interface for domain operations.
 
 Import from submodules:
-- abc: PlanService
-- real: RealPlanService
-- fake: FakePlanService
+- abc: PrService
+- real: RealPrService
+- fake: FakePrService
 """

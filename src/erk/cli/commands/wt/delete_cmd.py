@@ -71,7 +71,7 @@ def _get_plan_info_for_worktree(
     for plan in plans:
         plan_worktree_name = header_str(plan.header_fields, WORKTREE_NAME)
         if plan_worktree_name == worktree_name:
-            return (int(plan.plan_identifier), plan.state)
+            return (int(plan.pr_identifier), plan.state)
 
     return None
 

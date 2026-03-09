@@ -274,7 +274,7 @@ def _save_as_planned_pr(
     # Build metadata — base_ref_name sets the PR base ref
     metadata: dict[str, object] = {"branch_name": branch_name, "base_ref_name": base_branch}
 
-    if config.plans_repo is not None:
+    if config.github_repo is not None:
         metadata["source_repo"] = get_repo_identifier(ctx)
 
     if objective_issue is not None:
@@ -311,10 +311,10 @@ def _save_as_planned_pr(
         summary=summary or "",
     )
 
-    if not result.plan_id.isdigit():
-        msg = f"Expected numeric plan_id from planned PR creation, got: {result.plan_id!r}"
+    if not result.pr_id.isdigit():
+        msg = f"Expected numeric pr_id from planned PR creation, got: {result.pr_id!r}"
         raise RuntimeError(msg)
-    plan_number = int(result.plan_id)
+    plan_number = int(result.pr_id)
 
     # Create markers and snapshot
     snapshot_result: PlanSnapshot | None = None

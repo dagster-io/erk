@@ -46,7 +46,7 @@ def test_save_and_read_plan_ref(tmp_path: Path) -> None:
     # Read back and verify
     ref = read_plan_ref(impl_folder)
     assert ref is not None
-    assert ref.plan_id == "42"
+    assert ref.pr_id == "42"
     assert ref.url == "https://github.com/owner/repo/issues/42"
     assert ref.created_at is not None
     assert ref.synced_at is not None
@@ -145,7 +145,7 @@ Test the workflow.
     # Step 5: Read back and verify
     ref = read_plan_ref(impl_folder)
     assert ref is not None
-    assert ref.plan_id == "123"
+    assert ref.pr_id == "123"
     assert ref.url == result.url
 
 

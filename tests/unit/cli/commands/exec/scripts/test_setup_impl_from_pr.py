@@ -125,7 +125,7 @@ def _make_planned_pr_backend(
         metadata={"branch_name": plan_branch},
         summary=None,
     )
-    pr_number = int(plan_result.plan_id)
+    pr_number = int(plan_result.pr_id)
     return backend, pr_number
 
 
@@ -153,7 +153,7 @@ def _make_planned_pr_context(
         metadata={"branch_name": plan_branch},
         summary=None,
     )
-    pr_number = int(plan_result.plan_id)
+    pr_number = int(plan_result.pr_id)
 
     if fake_git is None:
         fake_git = FakeGit(current_branches={tmp_path: "master"})
@@ -463,7 +463,7 @@ def _invoke_create_impl_context(
         metadata={"branch_name": plan_branch},
         summary=None,
     )
-    pr_number = int(plan_result.plan_id)
+    pr_number = int(plan_result.pr_id)
 
     fake_git = FakeGit(current_branches={tmp_path: plan_branch})
     ctx = context_for_test(

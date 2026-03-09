@@ -293,16 +293,16 @@ def test_invalid_repo_format() -> None:
 
 def _make_plan(
     *,
-    plan_identifier: str,
+    pr_identifier: str,
     title: str,
     body: str,
 ) -> Plan:
     return Plan(
-        plan_identifier=plan_identifier,
+        pr_identifier=pr_identifier,
         title=title,
         body=body,
         state=PlanState.OPEN,
-        url=f"https://github.com/owner/repo/issues/{plan_identifier}",
+        url=f"https://github.com/owner/repo/issues/{pr_identifier}",
         labels=["erk-pr", "erk-plan"],
         assignees=[],
         created_at=datetime(2025, 1, 1, tzinfo=UTC),
@@ -332,9 +332,7 @@ def test_duplicate_check_remote_no_duplicates() -> None:
     executor = FakePromptExecutor(
         simulated_prompt_output='{"duplicates": []}',
     )
-    existing = _make_plan(
-        plan_identifier="100", title="Refactor auth", body="Restructure auth flow"
-    )
+    existing = _make_plan(pr_identifier="100", title="Refactor auth", body="Restructure auth flow")
 
     issue = _make_issue(200, title="New Plan")
     fake_remote = _make_fake_remote(issues={200: issue})
@@ -364,9 +362,7 @@ def test_duplicate_check_remote_finds_duplicate() -> None:
     executor = FakePromptExecutor(
         simulated_prompt_output=llm_output,
     )
-    existing = _make_plan(
-        plan_identifier="100", title="Refactor auth", body="Restructure auth flow"
-    )
+    existing = _make_plan(pr_identifier="100", title="Refactor auth", body="Restructure auth flow")
 
     issue = _make_issue(200, title="New Plan")
     fake_remote = _make_fake_remote(issues={200: issue})
@@ -396,8 +392,8 @@ def test_duplicate_check_remote_finds_duplicate() -> None:
 
 def test_list_remote_shows_plans() -> None:
     """Test pr list --repo displays plans."""
-    plan1 = _make_plan(plan_identifier="1", title="Plan One", body="body")
-    plan2 = _make_plan(plan_identifier="2", title="Plan Two", body="body")
+    plan1 = _make_plan(pr_identifier="1", title="Plan One", body="body")
+    plan2 = _make_plan(pr_identifier="2", title="Plan Two", body="body")
 
     fake_remote = _make_fake_remote()
 

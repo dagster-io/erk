@@ -19,7 +19,7 @@ from tests.test_utils.env_helpers import erk_inmem_env
 def plan_to_issue(plan: Plan) -> IssueInfo:
     """Convert Plan to IssueInfo for test setup."""
     return IssueInfo(
-        number=int(plan.plan_identifier),
+        number=int(plan.pr_identifier),
         title=plan.title,
         body=plan.body,
         state="OPEN" if plan.state == PlanState.OPEN else "CLOSED",
@@ -35,7 +35,7 @@ def plan_to_issue(plan: Plan) -> IssueInfo:
 def test_plan_list_no_filters() -> None:
     """Test listing all plan issues with no filters."""
     plan1 = Plan(
-        plan_identifier="1",
+        pr_identifier="1",
         title="Issue 1",
         body="",
         state=PlanState.OPEN,
@@ -48,7 +48,7 @@ def test_plan_list_no_filters() -> None:
         objective_id=None,
     )
     plan2 = Plan(
-        plan_identifier="2",
+        pr_identifier="2",
         title="Issue 2",
         body="",
         state=PlanState.OPEN,
@@ -81,7 +81,7 @@ def test_plan_list_no_filters() -> None:
 def test_plan_list_filter_by_state() -> None:
     """Test filtering plan issues by state."""
     open_plan = Plan(
-        plan_identifier="1",
+        pr_identifier="1",
         title="Open Issue",
         body="",
         state=PlanState.OPEN,
@@ -94,7 +94,7 @@ def test_plan_list_filter_by_state() -> None:
         objective_id=None,
     )
     closed_plan = Plan(
-        plan_identifier="2",
+        pr_identifier="2",
         title="Closed Issue",
         body="",
         state=PlanState.CLOSED,
@@ -129,7 +129,7 @@ def test_plan_list_filter_by_state() -> None:
 def test_plan_list_filter_by_labels() -> None:
     """Test filtering plan issues by labels with AND logic."""
     plan_with_both = Plan(
-        plan_identifier="1",
+        pr_identifier="1",
         title="Issue with both labels",
         body="",
         state=PlanState.OPEN,
@@ -142,7 +142,7 @@ def test_plan_list_filter_by_labels() -> None:
         objective_id=None,
     )
     plan_with_one = Plan(
-        plan_identifier="2",
+        pr_identifier="2",
         title="Issue with one label",
         body="",
         state=PlanState.OPEN,
@@ -187,7 +187,7 @@ def test_plan_list_with_limit() -> None:
     all_plans: list[Plan] = []
     for i in range(1, 6):
         plan = Plan(
-            plan_identifier=str(i),
+            pr_identifier=str(i),
             title=f"Issue {i}",
             body="",
             state=PlanState.OPEN,
@@ -222,7 +222,7 @@ def test_plan_list_with_limit() -> None:
 def test_plan_list_empty_results() -> None:
     """Test querying with filters that match no issues."""
     plan = Plan(
-        plan_identifier="1",
+        pr_identifier="1",
         title="Issue",
         body="",
         state=PlanState.OPEN,
@@ -267,7 +267,7 @@ last_dispatched_node_id: 'WFR_all_flag'
 <!-- /erk:metadata-block:plan-header -->"""
 
     plan = Plan(
-        plan_identifier="200",
+        pr_identifier="200",
         title="Plan with Run",
         body=plan_body,
         state=PlanState.OPEN,
@@ -313,7 +313,7 @@ last_dispatched_node_id: 'WFR_all_flag'
 def test_plan_list_sort_issue_default() -> None:
     """Test that --sort issue (default) returns plans sorted by issue number descending."""
     plan1 = Plan(
-        plan_identifier="1",
+        pr_identifier="1",
         title="First Issue",
         body="",
         state=PlanState.OPEN,
@@ -326,7 +326,7 @@ def test_plan_list_sort_issue_default() -> None:
         objective_id=None,
     )
     plan2 = Plan(
-        plan_identifier="2",
+        pr_identifier="2",
         title="Second Issue",
         body="",
         state=PlanState.OPEN,
@@ -365,7 +365,7 @@ def test_plan_list_sort_activity_with_local_branch() -> None:
 
     # Plan 1: older issue, but has local branch with recent activity
     plan1 = Plan(
-        plan_identifier="1",
+        pr_identifier="1",
         title="Older Issue with Activity",
         body="",
         state=PlanState.OPEN,
@@ -379,7 +379,7 @@ def test_plan_list_sort_activity_with_local_branch() -> None:
     )
     # Plan 2: newer issue, no local branch
     plan2 = Plan(
-        plan_identifier="2",
+        pr_identifier="2",
         title="Newer Issue no Activity",
         body="",
         state=PlanState.OPEN,
@@ -472,7 +472,7 @@ def test_plan_list_sort_activity_orders_by_recency() -> None:
 
     # Plan 1: has local branch with older commit
     plan1 = Plan(
-        plan_identifier="1",
+        pr_identifier="1",
         title="Issue with Older Commit",
         body="",
         state=PlanState.OPEN,
@@ -486,7 +486,7 @@ def test_plan_list_sort_activity_orders_by_recency() -> None:
     )
     # Plan 2: has local branch with newer commit
     plan2 = Plan(
-        plan_identifier="2",
+        pr_identifier="2",
         title="Issue with Newer Commit",
         body="",
         state=PlanState.OPEN,
@@ -615,7 +615,7 @@ def test_pr_list_stage_filter() -> None:
     """Test that --stage filters plans by lifecycle stage."""
     # Plan 1: lifecycle_stage=planned via plan-header metadata
     planned_plan = Plan(
-        plan_identifier="1",
+        pr_identifier="1",
         title="Planned Issue",
         body=_make_plan_body_with_stage("planned"),
         state=PlanState.OPEN,
@@ -630,7 +630,7 @@ def test_pr_list_stage_filter() -> None:
     )
     # Plan 2: lifecycle_stage=impl via plan-header metadata → lifecycle_display resolves to "impl"
     impl_plan = Plan(
-        plan_identifier="2",
+        pr_identifier="2",
         title="Impl Issue",
         body=_make_plan_body_with_stage("impl"),
         state=PlanState.OPEN,
@@ -669,7 +669,7 @@ def test_pr_list_stage_filter() -> None:
 def test_pr_list_displays_enrichment_warnings() -> None:
     """Test that enrichment warnings from PlanListData are displayed to the user."""
     plan = Plan(
-        plan_identifier="1",
+        pr_identifier="1",
         title="Issue 1",
         body="",
         state=PlanState.OPEN,
@@ -707,7 +707,7 @@ def test_pr_list_displays_enrichment_warnings() -> None:
 def test_pr_list_no_warnings_when_enrichment_succeeds() -> None:
     """Test that no warnings are displayed when enrichment succeeds fully."""
     plan = Plan(
-        plan_identifier="1",
+        pr_identifier="1",
         title="Issue 1",
         body="",
         state=PlanState.OPEN,

@@ -140,12 +140,12 @@ def run_all_checks(ctx: ErkContext, *, check_hooks: bool) -> list[CheckResult]:
         from erk_shared.gateway.github.issues.real import RealGitHubIssues
 
         repo_config = load_config(repo_root)
-        if repo_config.plans_repo is not None:
+        if repo_config.github_repo is not None:
             from erk_shared.gateway.time.real import RealTime
 
-            github_issues = RealGitHubIssues(target_repo=repo_config.plans_repo, time=RealTime())
+            github_issues = RealGitHubIssues(target_repo=repo_config.github_repo, time=RealTime())
             results.append(
-                check_plans_repo_labels(repo_root, repo_config.plans_repo, github_issues)
+                check_plans_repo_labels(repo_root, repo_config.github_repo, github_issues)
             )
 
         from erk.core.health_checks_dogfooder import run_early_dogfooder_checks

@@ -220,7 +220,7 @@ def objective_apply_landed_update(
         click.echo(_error_json(f"Plan #{pr_number} not found"))
         raise SystemExit(1)
 
-    plan_id = plan_result.plan_identifier
+    plan_id = plan_result.pr_identifier
 
     # --- Discovery: auto-fill objective from plan metadata ---
     if objective_number is None:

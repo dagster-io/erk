@@ -7,15 +7,17 @@ from typing import Any, Literal
 from erk_shared.gateway.github.metadata.types import BlockKeys, MetadataBlockSchema
 
 
-def _migrate_issue_number_to_plan_number(data: dict[str, Any]) -> None:
-    """Migrate legacy ``issue_number`` key to ``plan_number`` in-place.
+def _migrate_to_pr_number(data: dict[str, Any]) -> None:
+    """Migrate legacy issue_number or plan_number to pr_number in-place.
 
-    Several metadata schemas originally used ``issue_number``.  This helper
-    centralises the backward-compatibility migration so each schema's
+    Several metadata schemas originally used ``issue_number`` or ``plan_number``.
+    This helper centralises the backward-compatibility migration so each schema's
     ``validate`` method can call it instead of duplicating the logic.
     """
-    if "issue_number" in data and "plan_number" not in data:
-        data["plan_number"] = data.pop("issue_number")
+    if "issue_number" in data and "pr_number" not in data:
+        data["pr_number"] = data.pop("issue_number")
+    if "plan_number" in data and "pr_number" not in data:
+        data["pr_number"] = data.pop("plan_number")
 
 
 @dataclass(frozen=True)
@@ -52,10 +54,10 @@ class WorktreeCreationSchema(MetadataBlockSchema):
 
     def validate(self, data: dict[str, Any]) -> None:
         """Validate erk-worktree-creation data structure."""
-        _migrate_issue_number_to_plan_number(data)
+        _migrate_to_pr_number(data)
 
         required_fields = {"worktree_name", "branch_name", "timestamp"}
-        optional_fields = {"plan_number", "plan_file"}
+        optional_fields = {"pr_number", "plan_file"}
 
         # Check required fields exist
         missing = required_fields - set(data.keys())
@@ -69,12 +71,12 @@ class WorktreeCreationSchema(MetadataBlockSchema):
             if len(data[field]) == 0:
                 raise ValueError(f"{field} must not be empty")
 
-        # Validate optional plan_number field
-        if "plan_number" in data:
-            if not isinstance(data["plan_number"], int):
-                raise ValueError("plan_number must be an integer")
-            if data["plan_number"] <= 0:
-                raise ValueError("plan_number must be positive")
+        # Validate optional pr_number field
+        if "pr_number" in data:
+            if not isinstance(data["pr_number"], int):
+                raise ValueError("pr_number must be an integer")
+            if data["pr_number"] <= 0:
+                raise ValueError("pr_number must be positive")
 
         # Validate optional plan_file field
         if "plan_file" in data:
@@ -99,9 +101,9 @@ class PlanSchema(MetadataBlockSchema):
 
     def validate(self, data: dict[str, Any]) -> None:
         """Validate erk-plan data structure."""
-        _migrate_issue_number_to_plan_number(data)
+        _migrate_to_pr_number(data)
 
-        required_fields = {"plan_number", "worktree_name", "timestamp"}
+        required_fields = {"pr_number", "worktree_name", "timestamp"}
         optional_fields = {"plan_file"}
 
         # Check required fields exist
@@ -110,10 +112,10 @@ class PlanSchema(MetadataBlockSchema):
             raise ValueError(f"Missing required fields: {', '.join(sorted(missing))}")
 
         # Validate required fields
-        if not isinstance(data["plan_number"], int):
-            raise ValueError("plan_number must be an integer")
-        if data["plan_number"] <= 0:
-            raise ValueError("plan_number must be positive")
+        if not isinstance(data["pr_number"], int):
+            raise ValueError("pr_number must be an integer")
+        if data["pr_number"] <= 0:
+            raise ValueError("pr_number must be positive")
 
         if not isinstance(data["worktree_name"], str):
             raise ValueError("worktree_name must be a string")
@@ -148,13 +150,13 @@ class SubmissionQueuedSchema(MetadataBlockSchema):
 
     def validate(self, data: dict[str, Any]) -> None:
         """Validate submission-queued data structure."""
-        _migrate_issue_number_to_plan_number(data)
+        _migrate_to_pr_number(data)
 
         required_fields = {
             "status",
             "queued_at",
             "submitted_by",
-            "plan_number",
+            "pr_number",
             "validation_results",
             "expected_workflow",
             "trigger_mechanism",
@@ -190,11 +192,11 @@ class SubmissionQueuedSchema(MetadataBlockSchema):
         if len(data["trigger_mechanism"]) == 0:
             raise ValueError("trigger_mechanism must not be empty")
 
-        # Validate plan_number
-        if not isinstance(data["plan_number"], int):
-            raise ValueError("plan_number must be an integer")
-        if data["plan_number"] <= 0:
-            raise ValueError("plan_number must be positive")
+        # Validate pr_number
+        if not isinstance(data["pr_number"], int):
+            raise ValueError("pr_number must be an integer")
+        if data["pr_number"] <= 0:
+            raise ValueError("pr_number must be positive")
 
         # Validate validation_results is a dict
         if not isinstance(data["validation_results"], dict):
@@ -210,14 +212,14 @@ class WorkflowStartedSchema(MetadataBlockSchema):
 
     def validate(self, data: dict[str, Any]) -> None:
         """Validate workflow-started data structure."""
-        _migrate_issue_number_to_plan_number(data)
+        _migrate_to_pr_number(data)
 
         required_fields = {
             "status",
             "started_at",
             "workflow_run_id",
             "workflow_run_url",
-            "plan_number",
+            "pr_number",
         }
         optional_fields = {"branch_name", "worktree_path"}
 
@@ -246,11 +248,11 @@ class WorkflowStartedSchema(MetadataBlockSchema):
         if len(data["workflow_run_url"]) == 0:
             raise ValueError("workflow_run_url must not be empty")
 
-        # Validate plan_number
-        if not isinstance(data["plan_number"], int):
-            raise ValueError("plan_number must be an integer")
-        if data["plan_number"] <= 0:
-            raise ValueError("plan_number must be positive")
+        # Validate pr_number
+        if not isinstance(data["pr_number"], int):
+            raise ValueError("pr_number must be an integer")
+        if data["pr_number"] <= 0:
+            raise ValueError("pr_number must be positive")
 
         # Validate optional fields if present
         if "branch_name" in data:

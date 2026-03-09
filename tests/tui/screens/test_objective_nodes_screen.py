@@ -10,7 +10,7 @@ from erk.tui.screens.objective_nodes_screen import ObjectiveNodesScreen, _build_
 from erk_shared.gateway.github.metadata.dependency_graph import ObjectiveNode
 from erk_shared.gateway.github.metadata.roadmap import RoadmapNode, RoadmapPhase
 from erk_shared.gateway.plan_data_provider.fake import make_plan_row
-from erk_shared.gateway.plan_service.fake import FakePlanService
+from erk_shared.gateway.pr_service.fake import FakePrService
 
 
 def _rows_from(
@@ -418,7 +418,7 @@ def _make_screen() -> ObjectiveNodesScreen:
     """Create an ObjectiveNodesScreen for testing action methods."""
     return ObjectiveNodesScreen(
         provider=FakePlanDataProvider(),
-        service=FakePlanService(),
+        service=FakePrService(),
         plan_id=123,
         plan_body="",
         full_title="Test Objective",

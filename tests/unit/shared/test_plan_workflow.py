@@ -15,7 +15,7 @@ from erk_shared.plan_workflow import (
 
 def _make_plan(
     *,
-    plan_identifier: str = "123",
+    pr_identifier: str = "123",
     title: str = "Test Issue",
     body: str = "Plan content",
     state: PlanState = PlanState.OPEN,
@@ -25,7 +25,7 @@ def _make_plan(
 ) -> Plan:
     """Create a minimal Plan for testing."""
     return Plan(
-        plan_identifier=plan_identifier,
+        pr_identifier=pr_identifier,
         title=title,
         body=body,
         state=state,
@@ -87,7 +87,7 @@ def test_prepare_plan_non_open_generates_warning() -> None:
 def test_prepare_plan_converts_identifier_to_int() -> None:
     """Plan identifier string is converted to plan number int."""
     plan = _make_plan(
-        plan_identifier="789",
+        pr_identifier="789",
         header_fields={"branch_name": "plan-test-01-01-0000"},
     )
     timestamp = datetime(2024, 1, 1, 0, 0)
@@ -101,7 +101,7 @@ def test_prepare_plan_converts_identifier_to_int() -> None:
 
 def test_prepare_plan_invalid_identifier_returns_failure() -> None:
     """Non-numeric plan identifier returns PlanValidationFailed."""
-    plan = _make_plan(plan_identifier="not-a-number")
+    plan = _make_plan(pr_identifier="not-a-number")
     timestamp = datetime(2024, 1, 1, 0, 0)
 
     result = prepare_plan_for_worktree(plan, timestamp, warn_non_open=True)
@@ -114,7 +114,7 @@ def test_prepare_plan_invalid_identifier_returns_failure() -> None:
 def test_prepare_plan_with_objective_id_populates_objective_issue() -> None:
     """Plan with objective_id populates PlanBranchSetup.objective_issue field."""
     plan = Plan(
-        plan_identifier="123",
+        pr_identifier="123",
         title="Test Issue",
         body="Plan content",
         state=PlanState.OPEN,
@@ -149,7 +149,7 @@ def test_prepare_plan_without_objective_id_has_none() -> None:
 def test_uses_existing_branch_from_header() -> None:
     """Plan with branch_name in header_fields uses it directly."""
     plan = _make_plan(
-        plan_identifier="456",
+        pr_identifier="456",
         title="Add New Feature",
         header_fields={"branch_name": "plan-add-new-feature-01-15-1430"},
     )
@@ -165,7 +165,7 @@ def test_uses_existing_branch_from_header() -> None:
 def test_missing_branch_returns_failure() -> None:
     """Plan without branch_name in header_fields returns failure."""
     plan = _make_plan(
-        plan_identifier="456",
+        pr_identifier="456",
         title="Add New Feature",
         header_fields={},
     )
@@ -180,7 +180,7 @@ def test_missing_branch_returns_failure() -> None:
 def test_empty_branch_returns_failure() -> None:
     """Plan with empty branch_name in header_fields returns failure."""
     plan = _make_plan(
-        plan_identifier="456",
+        pr_identifier="456",
         title="Add New Feature",
         header_fields={"branch_name": ""},
     )

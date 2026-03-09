@@ -105,7 +105,7 @@ def _parse_config_file(cfg_path: Path) -> LoadedConfig:
         env=env,
         post_create_commands=commands,
         post_create_shell=shell,
-        plans_repo=plans_repo,
+        github_repo=plans_repo,
         pool_size=pool_size,
         pool_checkout_commands=pool_checkout_commands,
         pool_checkout_shell=pool_checkout_shell,
@@ -193,7 +193,7 @@ def load_config(repo_root: Path) -> LoadedConfig:
         env={},
         post_create_commands=[],
         post_create_shell=None,
-        plans_repo=None,
+        github_repo=None,
         pool_size=None,
         pool_checkout_commands=[],
         pool_checkout_shell=None,
@@ -227,7 +227,7 @@ def load_local_config(repo_root: Path) -> LoadedConfig:
         env={},
         post_create_commands=[],
         post_create_shell=None,
-        plans_repo=None,
+        github_repo=None,
         pool_size=None,
         pool_checkout_commands=[],
         pool_checkout_shell=None,
@@ -304,7 +304,7 @@ def merge_configs(repo_config: LoadedConfig, project_config: ProjectConfig) -> L
         env=merged_env,
         post_create_commands=merged_commands,
         post_create_shell=merged_shell,
-        plans_repo=repo_config.plans_repo,
+        github_repo=repo_config.github_repo,
         pool_size=repo_config.pool_size,  # Pool is repo-level only, no project override
         pool_checkout_commands=repo_config.pool_checkout_commands,
         pool_checkout_shell=repo_config.pool_checkout_shell,
@@ -349,10 +349,10 @@ def merge_configs_with_local(
             if local_config.post_create_shell is not None
             else base_config.post_create_shell
         ),
-        plans_repo=(
-            local_config.plans_repo
-            if local_config.plans_repo is not None
-            else base_config.plans_repo
+        github_repo=(
+            local_config.github_repo
+            if local_config.github_repo is not None
+            else base_config.github_repo
         ),
         pool_size=(
             local_config.pool_size if local_config.pool_size is not None else base_config.pool_size

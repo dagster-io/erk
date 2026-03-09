@@ -79,29 +79,29 @@ def prepare_plan_for_worktree(
     # Validate erk-plan label
     if "erk-plan" not in plan.labels:
         return PlanValidationFailed(
-            f"Plan #{plan.plan_identifier} must have 'erk-plan' label.\n"
+            f"Plan #{plan.pr_identifier} must have 'erk-plan' label.\n"
             f"To add the label:\n"
-            f"  gh issue edit {plan.plan_identifier} --add-label erk-plan"
+            f"  gh issue edit {plan.pr_identifier} --add-label erk-plan"
         )
 
     # Validate plan_identifier can be converted to int (LBYL)
-    if not plan.plan_identifier.isdigit():
+    if not plan.pr_identifier.isdigit():
         return PlanValidationFailed(
-            f"Plan identifier '{plan.plan_identifier}' is not a valid plan number. "
+            f"Plan identifier '{plan.pr_identifier}' is not a valid plan number. "
             "Expected a numeric GitHub issue number."
         )
-    plan_number = int(plan.plan_identifier)
+    plan_number = int(plan.pr_identifier)
 
     # Collect warnings
     warnings: list[str] = []
     if warn_non_open and plan.state != PlanState.OPEN:
-        warnings.append(f"Plan #{plan.plan_identifier} is {plan.state.value}. Proceeding anyway...")
+        warnings.append(f"Plan #{plan.pr_identifier} is {plan.state.value}. Proceeding anyway...")
 
     # Branch name comes from plan-header metadata (set by plan_save)
     existing_branch = plan.header_fields.get(BRANCH_NAME)
     if not isinstance(existing_branch, str) or len(existing_branch) == 0:
         return PlanValidationFailed(
-            f"Draft PR plan #{plan.plan_identifier} is missing required "
+            f"Draft PR plan #{plan.pr_identifier} is missing required "
             f"branch_name in plan-header metadata. "
             f"This indicates the plan was not saved correctly."
         )

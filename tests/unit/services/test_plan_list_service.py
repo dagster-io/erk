@@ -45,7 +45,7 @@ class TestPlanListData:
         now = datetime.now(UTC)
         plans = [
             Plan(
-                plan_identifier="1",
+                pr_identifier="1",
                 title="Plan",
                 body="",
                 state=PlanState.OPEN,
@@ -196,7 +196,7 @@ class TestPlannedPRPlanListService:
         )
 
         assert len(result.plans) == 1
-        assert result.plans[0].plan_identifier == "42"
+        assert result.plans[0].pr_identifier == "42"
         assert result.plans[0].title == "My Plan"
 
     def test_empty_prs_returns_empty_data(self) -> None:
@@ -485,7 +485,7 @@ last_dispatched_node_id: 'WFR_draft456'
         )
 
         assert len(result.plans) == 1
-        assert result.plans[0].plan_identifier == "102"
+        assert result.plans[0].pr_identifier == "102"
         assert result.workflow_runs == {}
 
 
@@ -600,9 +600,9 @@ def test_real_plan_list_service_fetches_issues_and_converts_to_plans() -> None:
     )
 
     assert len(result.plans) == 2
-    assert result.plans[0].plan_identifier == "10"
+    assert result.plans[0].pr_identifier == "10"
     assert result.plans[0].title == "Plan A"
-    assert result.plans[1].plan_identifier == "20"
+    assert result.plans[1].pr_identifier == "20"
     assert result.plans[1].title == "Plan B"
 
 

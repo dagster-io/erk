@@ -36,7 +36,7 @@ def test_add_plan_label_success() -> None:
     runner = CliRunner()
     result = runner.invoke(
         add_plan_label,
-        [create_result.plan_id, "--label", "erk-consolidated"],
+        [create_result.pr_id, "--label", "erk-consolidated"],
         obj=context_for_test(
             github=fake_github,
             plan_store=backend,
@@ -46,11 +46,11 @@ def test_add_plan_label_success() -> None:
     assert result.exit_code == 0
     output = json.loads(result.output)
     assert output["success"] is True
-    assert output["plan_number"] == int(create_result.plan_id)
+    assert output["plan_number"] == int(create_result.pr_id)
     assert output["label"] == "erk-consolidated"
 
     # Verify label was added via the fake GitHub PR label tracking
-    assert (int(create_result.plan_id), "erk-consolidated") in fake_github._added_labels
+    assert (int(create_result.pr_id), "erk-consolidated") in fake_github._added_labels
 
 
 # ============================================================================

@@ -19,7 +19,6 @@ from erk_shared.core.prompt_executor import (
     ExecutorEvent,
     NoOutputEvent,
     NoTurnsEvent,
-    PlanNumberEvent,
     PrNumberEvent,
     ProcessErrorEvent,
     PromptExecutor,
@@ -75,7 +74,6 @@ class FakePromptExecutor(PromptExecutor):
         simulated_pr_url: str | None = None,
         simulated_pr_number: int | None = None,
         simulated_pr_title: str | None = None,
-        simulated_plan_number: int | None = None,
         simulated_tool_events: list[str] | None = None,
         simulated_no_output: bool = False,
         simulated_zero_turns: bool = False,
@@ -94,7 +92,6 @@ class FakePromptExecutor(PromptExecutor):
             simulated_pr_url: PR URL to return in CommandResult (simulates successful PR creation)
             simulated_pr_number: PR number to return (simulates PR metadata)
             simulated_pr_title: PR title to return (simulates PR metadata)
-            simulated_plan_number: Plan number to return (simulates linked plan)
             simulated_tool_events: Tool event contents to emit (e.g., "Using...")
             simulated_no_output: Whether to simulate Claude CLI producing no output
             simulated_zero_turns: Whether to simulate Claude completing with num_turns=0
@@ -120,7 +117,6 @@ class FakePromptExecutor(PromptExecutor):
         self._simulated_pr_url = simulated_pr_url
         self._simulated_pr_number = simulated_pr_number
         self._simulated_pr_title = simulated_pr_title
-        self._simulated_plan_number = simulated_plan_number
         self._simulated_tool_events = simulated_tool_events or []
         self._simulated_no_output = simulated_no_output
         self._simulated_zero_turns = simulated_zero_turns
@@ -227,8 +223,6 @@ class FakePromptExecutor(PromptExecutor):
             yield PrNumberEvent(number=self._simulated_pr_number)
         if self._simulated_pr_title is not None:
             yield PrTitleEvent(title=self._simulated_pr_title)
-        if self._simulated_plan_number is not None:
-            yield PlanNumberEvent(number=self._simulated_plan_number)
 
     def execute_command(
         self,
@@ -267,7 +261,6 @@ class FakePromptExecutor(PromptExecutor):
                 pr_url=None,
                 pr_number=None,
                 pr_title=None,
-                plan_number=None,
                 duration_seconds=0.0,
                 error_message=f"Claude command {command} failed (simulated failure)",
                 filtered_messages=[],
@@ -278,7 +271,6 @@ class FakePromptExecutor(PromptExecutor):
             pr_url=self._simulated_pr_url,
             pr_number=self._simulated_pr_number,
             pr_title=self._simulated_pr_title,
-            plan_number=self._simulated_plan_number,
             duration_seconds=0.0,
             error_message=None,
             filtered_messages=[],

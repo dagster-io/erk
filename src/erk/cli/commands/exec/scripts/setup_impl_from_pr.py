@@ -244,7 +244,7 @@ def _setup_planned_pr_plan(
     impl_dir = resolve_impl_dir(cwd, branch_name=current_branch)
     if impl_dir is not None:
         existing_ref = read_plan_ref(impl_dir)
-        if existing_ref is not None and existing_ref.plan_id == str(plan_number):
+        if existing_ref is not None and existing_ref.pr_id == str(plan_number):
             click.echo(
                 f"Found existing impl dir for plan #{plan_number}, skipping branch setup",
                 err=True,
