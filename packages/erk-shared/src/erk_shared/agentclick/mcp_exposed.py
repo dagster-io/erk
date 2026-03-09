@@ -17,7 +17,6 @@ class McpMeta:
 _MCP_REGISTRY: dict[click.Command, McpMeta] = {}
 
 
-
 def mcp_exposed(*, name: str, description: str) -> Callable[[click.Command], click.Command]:
     """Mark a @json_command for automatic MCP exposure.
 
