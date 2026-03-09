@@ -1,4 +1,0 @@
-{
-  "provider": "github-draft-pr",
-  "title": "Fix: erk-dev audit-collect crashes with `repo_info required for list_prs`"
-}
