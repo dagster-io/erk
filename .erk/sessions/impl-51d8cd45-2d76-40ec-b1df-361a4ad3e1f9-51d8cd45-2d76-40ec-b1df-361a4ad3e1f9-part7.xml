@@ -1,0 +1,352 @@
+<session>
+  <meta source="agent-a64c112" />
+  <meta branch="plnd/add-stack-sync-cmd-03-09-1343" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <tool_result tool="toolu_01BxivmGMn6pBAbvCWpYeEJv">
+   150→
+   151→    @abstractmethod
+   152→    def get_parent_branch(self, repo_root: Path, branch: str) -&gt; str | None:
+   153→        """Get parent branch name for a given branch.
+   154→
+   155→        For Graphite: Returns the parent branch from Graphite's cache.
+   156→        For Git: Returns None (plain Git doesn't track parent relationships).
+   157→
+   158→        Args:
+   159→            repo_root: Repository root directory
+   160→            branch: Name of the branch to get the parent for
+   161→
+   162→        Returns:
+   163→            Parent branch name, or None if:
+   164→            - Branch is not tracked (Graphite mode)
+   165→            - Branch has no parent (is trunk)
+   166→            - Parent relationships not tracked (Git mode)
+   167→        """
+   168→        ...
+   169→
+   170→    @abstractmethod
+   171→    def get_child_branches(self, repo_root: Path, branch: str) -&gt; list[str]:
+   172→        """Get child branch names for a given branch.
+   173→
+   174→        For Graphite: Returns children from Graphite's cache.
+   175→        For Git: Returns empty list (plain Git doesn't track children).
+   176→
+   177→        Args:
+   178→            repo_root: Repository root directory
+   179→            branch: Name of the branch to get children for
+
+... [57 lines omitted] ...
+
+   198→            RuntimeError: If the branch is already checked out in another worktree
+  </tool_result>
+  <tool_result tool="toolu_01BgeyBYiboDiHKGHuF6vZSH">
+    def checkout_branch(self, repo_root: Path, branch: str) -&gt; None:
+        """Checkout a branch in the given directory.
+
+        Args:
+            repo_root: Repository root directory
+            branch: Branch name to checkout
+  </tool_result>
+  <assistant>Now let me look at the stack __init__.py to see what exists:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="3395" cache_read_input_tokens="66259" cache_creation="{'ephemeral_5m_input_tokens': 3395, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01M5RHu4gRQEPb1j58TtXEd7">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/stack/__init__.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="3395" cache_read_input_tokens="66259" cache_creation="{'ephemeral_5m_input_tokens': 3395, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01M5RHu4gRQEPb1j58TtXEd7">
+     1→"""Stack operation commands for managing worktree stacks."""
+     2→
+     3→import click
+     4→
+     5→from erk.cli.alias import register_with_aliases
+     6→from erk.cli.commands.stack.consolidate_cmd import consolidate_stack
+     7→from erk.cli.commands.stack.list_cmd import list_stack
+     8→from erk.cli.commands.stack.move_cmd import move_stack
+     9→from erk.cli.commands.stack.split_old.command import split_cmd as split_stack
+    10→from erk.cli.graphite_command import GraphiteGroup
+    11→
+    12→
+    13→@click.group("stack", cls=GraphiteGroup)
+    14→def stack_group() -&gt; None:
+    15→    """Manage worktree stack operations."""
+    16→    pass
+    17→
+    18→
+    19→# Register subcommands
+    20→stack_group.add_command(consolidate_stack, name="consolidate")
+    21→register_with_aliases(stack_group, list_stack, name="list")
+    22→stack_group.add_command(move_stack, name="move")
+    23→stack_group.add_command(split_stack, name="split")
+    24→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>Perfect! Now I have enough information. Let me compile my findings into a comprehensive report.
+
+## Summary
+
+I've successfully explored the erk codebase and identified the key patterns, APIs, and types you'll need to implement `erk stack sync`. Here's a comprehensive report:
+
+## Key File Locations and API Signatures
+
+### 1. **Git Branch Operations (GitBranchOps ABC)**
+**File:** `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/abc.py`
+
+Key signatures for stack sync:
+```python
+def is_branch_diverged_from_remote(
+    self, cwd: Path, branch: str, remote: str
+) -&gt; BranchDivergence
+
+def branch_exists_on_remote(
+    self, repo_root: Path, remote: str, branch: str
+) -&gt; bool
+
+def update_local_ref(
+    self, repo_root: Path, branch: str, target_sha: str
+) -&gt; None
+
+def get_branch_head(
+    self, repo_root: Path, branch: str
+) -&gt; str | None
+
+def checkout_branch(self, cwd: Path, branch: str) -&gt; None
+
+def get_all_branch_sync_info(
+    self, repo_root: Path
+) -&gt; dict[str, BranchSyncInfo]
+```
+
+### 2. **Git Remote Operations (GitRemoteOps ABC)**
+**File:** `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/remote_ops/abc.py`
+
+Key signatures:
+```python
+def fetch_prune(self, repo_root: Path, remote: str) -&gt; None
+
+def pull_rebase(
+    self, cwd: Path, remote: str, branch: str
+) -&gt; PullRebaseResult | PullRebaseError
+```
+
+### 3. **Git Rebase Operations (GitRebaseOps ABC)**
+**File:** `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/rebase_ops/abc.py`
+
+Key signatures:
+```python
+def is_rebase_in_progress(self, cwd: Path) -&gt; bool
+
+def rebase_abort(self, cwd: Path) -&gt; None
+```
+
+### 4. **Git Worktree Operations (Worktree ABC)**
+**File:** `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/worktree/abc.py`
+
+Key signature:
+```python
+def is_branch_checked_out(
+    self, repo_root: Path, branch: str
+) -&gt; Path | None
+```
+
+### 5. **Graphite Branch Operations (GraphiteBranchOps ABC)**
+**File:** `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/graphite/branch_ops/abc.py`
+
+Key signature:
+```python
+def retrack_branch(self, cwd: Path, branch_name: str) -&gt; None
+```
+
+### 6. **Type Definitions**
+
+**BranchDivergence** (from `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/abc.py`):
+```python
+class BranchDivergence(NamedTuple):
+    is_diverged: bool
+    ahead: int
+    behind: int
+```
+
+**PullRebaseResult / PullRebaseError** (from `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/remote_ops/types.py`):
+```python
+@dataclass(frozen=True)
+class PullRebaseResult:
+    """Success result from pull --rebase."""
+
+@dataclass(frozen=True)
+class PullRebaseError:
+    """Error result from pull --rebase."""
+    message: str
+    
+    @property
+    def error_type(self) -&gt; str:
+        return "pull-rebase-failed"
+```
+
+**BranchSyncInfo** (from `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/abc.py`):
+```python
+@dataclass(frozen=True)
+class BranchSyncInfo:
+    branch: str
+    upstream: str | None
+    ahead: int
+    behind: int
+    gone: bool = False
+```
+
+**WorktreeInfo** (from `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/abc.py`):
+```python
+@dataclass(frozen=True)
+class WorktreeInfo:
+    path: Path
+    branch: str | None
+    is_root: bool = False
+```
+
+### 7. **BranchManager ABC (High-level abstraction)**
+**File:** `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/branch_manager/abc.py`
+
+Key signatures you'll use:
+```python
+def get_branch_stack(
+    self, repo_root: Path, branch: str
+) -&gt; list[str] | None
+
+def checkout_branch(self, repo_root: Path, branch: str) -&gt; None
+
+def retrack_branch(self, repo_root: Path, branch_name: str) -&gt; None
+
+def is_graphite_managed(self) -&gt; bool
+```
+
+**Access via ErkContext:**
+```python
+ctx.branch_manager.get_branch_stack(repo.root, branch)
+ctx.branch_manager.checkout_branch(repo.root, branch)
+```
+
+### 8. **ErkContext Attributes for Stack Sync**
+**File:** `/home/runner/work/erk/erk/src/erk/core/context.py` (re-exported from erk_shared)
+
+Key attributes:
+```python
+ctx.git.branch  # GitBranchOps subgateway
+ctx.git.remote  # GitRemoteOps subgateway  
+ctx.git.rebase  # GitRebaseOps subgateway
+ctx.git.worktree  # Worktree subgateway
+ctx.branch_manager  # BranchManager (Graphite-aware wrapper)
+ctx.cwd  # Current working directory
+ctx.dry_run  # Boolean for dry-run mode
+ctx.console  # Console for user output
+```
+
+### 9. **Stack Command Pattern**
+**File:** `/home/runner/work/erk/erk/src/erk/cli/commands/stack/list_cmd.py`
+
+Key pattern:
+```python
+@click.command("list", cls=GraphiteCommand)
+@click.pass_obj
+def list_stack(ctx: ErkContext) -&gt; None:
+    repo = discover_repo_context(ctx, ctx.cwd)
+    current_branch = ctx.git.branch.get_current_branch(repo.root)
+    
+    # Get branch stack for current branch
+    stack_branches = ctx.branch_manager.get_branch_stack(repo.root, current_branch)
+    
+    # Get worktrees
+    worktrees = ctx.git.worktree.list_worktrees(repo.root)
+```
+
+### 10. **Register Stack Subcommand**
+**File:** `/home/runner/work/erk/erk/src/erk/cli/commands/stack/__init__.py`
+
+Pattern for adding sync_cmd:
+```python
+from erk.cli.commands.stack.sync_cmd import sync_stack  # (to create)
+
+# Register in stack_group:
+stack_group.add_command(sync_stack, name="sync")
+# Or with alias:
+register_with_aliases(stack_group, sync_stack, name="sync")
+```
+
+### 11. **Test Pattern for Stack Commands**
+**File:** `/home/runner/work/erk/erk/tests/commands/stack/test_list_cmd.py`
+
+Test structure:
+```python
+from click.testing import CliRunner
+from erk.cli.cli import cli
+from erk_shared.gateway.git.fake import FakeGit
+from tests.test_utils.env_helpers import erk_inmem_env
+
+def test_stack_sync_basic() -&gt; None:
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        git_ops = FakeGit(
+            worktrees=env.build_worktrees("main"),
+            current_branches={env.cwd: "main"},
+            git_common_dirs={env.cwd: env.git_dir},
+        )
+        
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
+        )
+        
+        test_ctx = env.build_context(git=git_ops)
+        result = runner.invoke(cli, ["stack", "sync"], obj=test_ctx)
+        
+        assert result.exit_code == 0
+```
+
+### 12. **Test Pattern for Divergence (Reference)**
+**File:** `/home/runner/work/erk/erk/tests/commands/pr/test_diverge_fix.py`
+
+Shows how to test divergence scenarios:
+```python
+git = FakeGit(
+    branch_divergence={
+        (env.cwd, "feature-branch", "origin"): BranchDivergence(
+            is_diverged=True, ahead=2, behind=3
+        )
+    },
+)
+```
+
+---
+
+## Key Implementation Patterns to Follow
+
+1. **Use GraphiteCommand** - Your command class should use `@click.command("sync", cls=GraphiteCommand)` to ensure Graphite is available
+2. **LBYL pattern** - Check conditions first (no try/except for control flow) per erk standards
+3. **Frozen dataclasses only** - Any types you define must use `@dataclass(frozen=True)`
+4. **Discriminated unions** - Use `Result | Error` pattern like `PullRebaseResult | PullRebaseError` for operations
+5. **Access git via ctx.git subgateways** - Never access git directly, always use `ctx.git.branch`, `ctx.git.remote`, etc.
+6. **BranchManager for high-level ops** - Use `ctx.branch_manager` for Graphite-aware operations like `get_branch_stack()`, `checkout_branch()`, `retrack_branch()`
+7. **Dry-run awareness** - Check `ctx.dry_run` and adjust behavior accordingly
+8. **Stack command registration** - Add to `/home/runner/work/erk/erk/src/erk/cli/commands/stack/__init__.py`
+
+---
+
+## Absolute File Paths for Reference
+
+- Stack list command: `/home/runner/work/erk/erk/src/erk/cli/commands/stack/list_cmd.py`
+- Stack consolidate: `/home/runner/work/erk/erk/src/erk/cli/commands/stack/consolidate_cmd.py`
+- Stack init: `/home/runner/work/erk/erk/src/erk/cli/commands/stack/__init__.py`
+- GitBranchOps: `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/abc.py`
+- GitRemoteOps: `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/remote_ops/abc.py`
+- GitRebaseOps: `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/rebase_ops/abc.py`
+- Worktree ABC: `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/worktree/abc.py`
+- GraphiteBranchOps: `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/graphite/branch_ops/abc.py`
+- BranchManager: `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/branch_manager/abc.py`
+- Test helper: `/home/runner/work/erk/erk/tests/commands/stack/test_list_cmd.py`
+- Diverge-fix reference: `/home/runner/work/erk/erk/tests/commands/pr/test_diverge_fix.py`</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="541" cache_read_input_tokens="69654" cache_creation="{'ephemeral_5m_input_tokens': 541, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>
