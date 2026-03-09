@@ -1,0 +1,1328 @@
+<session>
+  <meta branch="plnd/fix-objective-nodes-pr-dat-03-09-0931" />
+  <meta model="claude-opus-4-6" />
+  <user>&lt;command-message&gt;erk:plan-implement is running…&lt;/command-message&gt;
+&lt;command-name&gt;/erk:plan-implement&lt;/command-name&gt;
+&lt;command-args&gt;9061&lt;/command-args&gt;</user>
+  <user># /erk:plan-implement
+
+Implement a plan - either from GitHub, a markdown file, an existing impl directory under `.erk/impl-context/`, or by saving the current plan first.
+
+This is the primary implementation workflow - it orchestrates:
+
+1. Setting up the impl directory under `.erk/impl-context/&lt;branch&gt;/` (from issue, file, existing folder, or fresh plan)
+2. Executing the implementation
+3. Running CI and submitting the PR
+
+## Prerequisites
+
+- Must be in a git repository managed by erk
+- GitHub CLI (`gh`) must be authenticated
+- One of:
+  - A plan number, URL, or file path argument
+  - An existing impl directory under `.erk/impl-context/`
+  - A plan branch checked out (e.g., `plnd/...` or `P{number}-...`)
+  - A plan in `~/.claude/plans/` (from plan mode)
+
+## Usage
+
+```bash
+/erk:plan-implement                    # Use impl directory, detect from branch, or save current plan
+/erk:plan-implement 2521               # Fetch and implement plan #2521
+/erk:plan-implement https://github.com/owner/repo/pull/2521   # URL form
+/erk:plan-implement ./my-plan.md       # Implement from local markdown file
+```
+
+---
+
+## CRITICAL: PR Operations
+
+**NEVER** run direct GitHub CLI commands for PR operations during implementation:
+
+- `gh pr edit` — destroys plan-header metadata block
+- `gh pr ready` — bypasses lifecycle tracking
+- `gh pr close` / `gh pr merge`
+
+All PR operations are handled by `erk pr submit` in Step 13. It automatically:
+
+- Generates the PR title and body
+- Preserves the plan-header metadata block
+- Marks draft PRs as ready for review
+- Updates lifecycle stage
+
+## Agent Instructions
+
+### Step 1: Set Up Implementation
+
+Parse `9061` and run the consolidated setup command:
+
+- **If numeric** (e.g., `2521`): `erk exec setup-impl --issue 2521`
+- **If GitHub URL** (e.g., `https://github.com/.../issues/2521`): Extract number, `erk exec setup-impl --issue 2521`
+- **If path to file** (anything else non-empty): `erk exec setup-impl --file &lt;path&gt;`
+- **If empty**: `erk exec setup-impl` (auto-detects from `.erk/impl-context/`, branch, or fails)
+
+```bash
+erk exec setup-impl [--issue &lt;N&gt; | --file &lt;path&gt;]
+```
+
+This single command handles:
+
+- Fetching plan from GitHub (draft PR)
+- Setting up from a local markdown file
+- Auto-detecting from existing impl directory under `.erk/impl-context/`
+- Auto-detecting plan number from branch name (P{number}-... or PR lookup)
+- Creating/checking out the feature branch
+- Creating impl directory under `.erk/impl-context/&lt;branch&gt;/` with plan content
+- Running impl-init validation
+- Cleaning up `.erk/impl-context/` staging directory (git rm + commit + push)
+
+Otherwise, generate a branch slug and set up from the specified issue:
+
+1. Fetch the title: `gh pr view &lt;ISSUE_ARG&gt; --json title -q .title`
+2. Generate a branch slug from the title:
+   - 2-4 hyphenated lowercase words, max 30 characters
+   - Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+   - Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+   - Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+3. Store as `BRANCH_SLUG`.
+
+```bash
+erk exec setup-impl --issue &lt;ISSUE_ARG&gt; --branch-slug="${BRANCH_SLUG}"
+```
+
+If `setup-impl` exits with code 1 and `error: "no_plan_found"`, fall back to saving the current plan:
+
+Generate a branch slug from the plan title (the first `# ` heading in the plan file):
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Store as `BRANCH_SLUG`
+
+Save the current plan to GitHub and capture the plan number:
+
+```bash
+erk exec plan-save --format json --session-id="${CLAUDE_SESSION_ID}" --branch-slug="${BRANCH_SLUG}"
+```
+
+Parse the JSON output to get `plan_number`, then:
+
+```bash
+erk exec setup-impl --issue &lt;plan_number&gt;
+```
+
+The `setup-impl` output includes `related_docs` (skills and docs to load) and `has_plan_tracking` (whether GitHub issue tracking is active).
+
+If this fails, display the error and stop.
+
+### Step 2: Read Plan and Load Context
+
+Read `plan.md` from the impl directory set up in Step 1 to understand:
+
+- Overall goal and context
+- Context &amp; Understanding sections (API quirks, architectural insights, pitfalls)
+- Implementation phases and dependencies
+- Success criteria
+
+**Context Consumption**: Plans contain expensive discoveries. Ignoring `[CRITICAL:]` tags, "Related Context:" subsections, or "DO NOT" items causes repeated mistakes.
+
+### Step 3: Load Related Documentation
+
+If plan contains "Related Documentation" section, load listed skills via Skill tool and read listed docs.
+
+### Step 4: Create TodoWrite Entries
+
+Create todo entries for each phase from the plan.
+
+### Step 5: Signal GitHub Started
+
+```bash
+erk exec impl-signal started --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This also deletes the Claude plan file (from `~/.claude/plans/`) since:
+
+- The content has been saved to GitHub
+- The content has been snapshotted to `.erk/scratch/`
+- Keeping it could cause confusion if the user tries to re-save
+
+### Step 6: Execute Each Phase Sequentially
+
+For each phase:
+
+1. **Mark phase as in_progress** (in TodoWrite)
+2. **Read task requirements** carefully
+3. **Implement code AND tests together**:
+   - Load `dignified-python-313` skill for coding standards
+   - Load `fake-driven-testing` skill for test patterns
+   - Follow project AGENTS.md standards
+4. **Mark phase as completed** (in TodoWrite)
+5. **Report progress**: changes made, what's next
+
+**Important:** `plan.md` is immutable - NEVER edit during implementation
+
+### Step 7: Report Progress
+
+After each phase: report changes made and what's next.
+
+### Step 8: Final Verification
+
+Confirm all tasks executed, success criteria met, note deviations, summarize changes.
+
+### Step 9: Signal GitHub Ended
+
+```bash
+erk exec impl-signal ended --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+### Step 10: Upload Session for Async Learn
+
+```bash
+erk exec upload-impl-session --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This reads plan reference from the impl directory, captures session info, and uploads for async learn processing.
+
+### Step 11: Clean Up Impl Context
+
+Remove the `.erk/impl-context/` directory from the repo:
+
+```bash
+erk exec cleanup-impl-context
+```
+
+This removes `.erk/impl-context/`, stages the deletion, commits, and pushes — all idempotent.
+
+### Step 12: Run CI Iteratively
+
+1. If `.erk/prompt-hooks/post-plan-implement-ci.md` exists: follow its instructions
+2. Otherwise: check CLAUDE.md/AGENTS.md for CI commands
+
+### Step 13: Submit PR
+
+Push the branch and create or update the PR using the Graphite-aware submit pipeline:
+
+```bash
+erk pr submit
+```
+
+This handles pushing commits, creating/updating the PR, generating the PR description, and enhancing with Graphite stack metadata when available.
+
+After successful submission, signal lifecycle transition:
+
+```bash
+erk exec impl-signal submitted 2&gt;/dev/null || true
+```
+
+Then validate PR completion invariants:
+
+```bash
+erk pr check --stage=impl
+```
+
+This validates PR submission readiness including implementation-specific checks
+(e.g., `.erk/impl-context/` must be cleaned up). If checks fail, display output and warn user.
+
+### Step 14: Output Format
+
+- **Start**: "Setting up implementation..." or "Fetching plan #X..."
+- **After setup**: "Implementation environment ready, reading plan..."
+- **Each phase**: "Phase X: [brief description]" with code changes
+- **End**: "Plan execution complete. [Summary]"
+
+---
+
+## Related Commands
+
+- `/erk:plan-save` - Save plan only, don't implement (for defer-to-later workflow)
+- `/erk:replan` - Re-plan an existing plan with current codebase state
+</user>
+  <assistant>
+
+I'll start by setting up the implementation for plan #9061.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="28583" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 28583, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01P5qegXxZ12f9BrubxqY4NR">
+    <param name="command">erk exec setup-impl --issue 9061</param>
+    <param name="description">Set up implementation for plan #9061</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="28583" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 28583, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01P5qegXxZ12f9BrubxqY4NR">
+{"success": true, "impl_path": "/home/runner/work/erk/erk/.erk/impl-context/plnd--fix-objective-nodes-pr-dat-03-09-0931", "plan_number": 9061, "plan_url": "https://github.com/dagster-io/erk/pull/9061", "branch": "plnd/fix-objective-nodes-pr-dat-03-09-0931", "plan_title": "[erk-plan] Fix: Objective Nodes Screen Missing PR Data", "no_impl": false}
+{"success": true, "source": "issue", "plan_number": 9061, "has_plan_tracking": true, "valid": true, "related_docs": {"skills": [], "docs": []}}
+Already on plan branch 'plnd/fix-objective-nodes-pr-dat-03-09-0931', teleporting from remote...
+  </tool_result>
+  <assistant>Implementation environment ready. Let me read the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="351" cache_read_input_tokens="28583" cache_creation="{'ephemeral_5m_input_tokens': 351, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01GZuo8hHpFh94BSgAXHehJA">
+    <param name="file_path">/home/runner/work/erk/erk/.erk/impl-context/plnd--fix-objective-nodes-pr-dat-03-09-0931/plan.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="351" cache_read_input_tokens="28583" cache_creation="{'ephemeral_5m_input_tokens': 351, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01GZuo8hHpFh94BSgAXHehJA">
+     1→# Fix: Objective Nodes Screen Missing PR Data
+     2→
+     3→## Context
+     4→
+     5→The objective nodes screen (`erk dash` → select objective → view nodes) is missing branch, checks, status indicators, and run info for most nodes, even though the same PRs display full data on the main PRs screen. Root causes:
+     6→
+     7→1. **Plans are PRs now, but query still uses `issueOrPullRequest` with Issue/PR union** — The `... on PullRequest` fragment lacks rich fields, and PR linkage parsing only works for Issue-type nodes via `timelineItems`. Since plans ARE PRs, this whole approach should be simplified to query PRs directly.
+     8→
+     9→2. **No workflow runs fetched** — `fetch_plans_by_ids()` always passes `workflow_run=None`.
+    10→
+    11→## Changes
+    12→
+    13→### 1. Rewrite GraphQL query as PR-only
+    14→
+    15→**File:** `packages/erk-shared/src/erk_shared/gateway/github/real.py`
+    16→
+    17→Rename `_build_issues_by_numbers_query` → `_build_prs_by_numbers_query`.
+    18→
+    19→Replace `issueOrPullRequest(number: N)` with `pullRequest(number: N)` and include all rich fields directly. Drop the `... on Issue` fragment entirely. Drop the `ISSUE_PR_LINKAGE_FRAGMENT` import (no longer needed in this query). Change alias prefix from `issue_N` to `pr_N`.
+    20→
+    21→```graphql
+    22→pr_{num}: pullRequest(number: {num}) {
+    23→  number
+    24→  title
+    25→  body
+    26→  state
+    27→  url
+    28→  author { login }
+    29→  labels(first: 100) { nodes { name } }
+    30→  assignees(first: 100) { nodes { login } }
+
+... [80 lines omitted] ...
+  </tool_result>
+  <assistant>Good. Now let me signal GitHub that implementation has started and load the relevant source files to understand the current code.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1878" cache_read_input_tokens="28934" cache_creation="{'ephemeral_5m_input_tokens': 1878, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01B96ev82o3ZjzpkcGMF7Q4r">
+    <param name="command">erk exec impl-signal started --session-id="2114591b-fca3-4595-84c0-bee9add450b2" 2&gt;/dev/null || true</param>
+    <param name="description">Signal GitHub impl started</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1878" cache_read_input_tokens="28934" cache_creation="{'ephemeral_5m_input_tokens': 1878, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01B96ev82o3ZjzpkcGMF7Q4r">
+{
+  "success": true,
+  "event": "started",
+  "plan_number": 9061
+}
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01SxACyrv67YyVPUq4i8Cqgi">
+    <param name="todos">[{'content': 'Rewrite GraphQL query as PR-only (_build_prs_by_numbers_query)', 'status': '...[truncated 621 chars]...nt': 'Run CI verification', 'status': 'pending', 'activeForm': 'Running CI verification'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="176" cache_read_input_tokens="30812" cache_creation="{'ephemeral_5m_input_tokens': 176, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01SxACyrv67YyVPUq4i8Cqgi">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Let me load the relevant source files and documentation in parallel.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="332" cache_read_input_tokens="30988" cache_creation="{'ephemeral_5m_input_tokens': 332, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Skill" id="toolu_01QjUz1ifomUMMcNxuihq11J">
+    <param name="skill">dignified-python</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="332" cache_read_input_tokens="30988" cache_creation="{'ephemeral_5m_input_tokens': 332, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01QjUz1ifomUMMcNxuihq11J">
+Launching skill: dignified-python
+  </tool_result>
+  <user>Base directory for this skill: /home/runner/work/erk/erk/.claude/skills/dignified-python
+
+# Dignified Python Coding Standards
+
+## Core Knowledge (ALWAYS Loaded)
+
+@dignified-python-core.md
+
+## Version Detection
+
+**Identify the project's minimum Python version** by checking (in order):
+
+1. `pyproject.toml` - Look for `requires-python` field (e.g., `requires-python = "&gt;=3.12"`)
+2. `setup.py` or `setup.cfg` - Look for `python_requires`
+3. `.python-version` file - Contains version like `3.12` or `3.12.0`
+4. Default to Python 3.12 if no version specifier found
+
+**Once identified, load the appropriate version-specific file:**
+
+- Python 3.10: Load `versions/python-3.10.md`
+- Python 3.11: Load `versions/python-3.11.md`
+- Python 3.12: Load `versions/python-3.12.md`
+- Python 3.13: Load `versions/python-3.13.md`
+
+## Conditional Loading (Load Based on Task Patterns)
+
+Core files above cover 80%+ of Python code patterns. Only load these additional files when you detect specific patterns:
+
+Pattern detection examples:
+
+- If task mentions "click" or "CLI" -&gt; Load `cli-patterns.md`
+- If task mentions "subprocess" -&gt; Load `subprocess.md`
+
+## When to Read Each Reference Document
+
+The `references/` directory contains detailed guidance for specialized topics. Load these on-demand when you encounter relevant patterns:
+
+### `references/exception-handling.md`
+
+**Read when**:
+
+- Writing try/except blocks
+- Wrapping third-party APIs that may raise
+- Seeing or writing `from e` or `from None`
+- Unsure if LBYL alternative exists
+
+### `references/interfaces.md`
+
+**Read when**:
+
+- Creating ABC or Protocol classes
+- Writing @abstractmethod decorators
+- Designing gateway layer interfaces
+- Choosing between ABC and Protocol
+
+### `references/typing-advanced.md`
+
+**Read when**:
+
+- Using typing.cast()
+- Creating Literal type aliases
+- Narrowing types in conditional blocks
+
+### `references/module-design.md`
+
+**Read when**:
+
+- Creating new Python modules
+- Adding module-level code (beyond simple constants)
+- Using @cache decorator at module level
+- Seeing Path() or computation at module level
+- Considering inline imports
+
+### `references/api-design.md`
+
+**Read when**:
+
+- Adding default parameter values to functions
+- Defining functions with 5 or more parameters
+- Using ThreadPoolExecutor.submit()
+- Reviewing function signatures
+
+### `references/checklists.md`
+
+**Read when**:
+
+- Final review before committing Python code
+- Unsure if you've followed all rules
+- Need a quick lookup of requirements
+
+## How to Use This Skill
+
+1. **Core knowledge** is loaded automatically (LBYL, pathlib, basic imports, anti-patterns)
+2. **Version detection** happens once - identify the minimum Python version and load the appropriate version file
+3. **Reference documents** are loaded on-demand based on the triggers above
+4. **Additional patterns** may require extra loading (CLI patterns, subprocess)
+5. **Each file is self-contained** with complete guidance for its domain
+</user>
+  <assistant>
+
+Now let me read the core dignified-python standards and detect the Python version, along with the key source files I need to modify.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="888" cache_read_input_tokens="31320" cache_creation="{'ephemeral_5m_input_tokens': 888, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_015Wj71bzYu6ym5d5u2mqxsD">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/skills/dignified-python/dignified-python-core.md</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="888" cache_read_input_tokens="31320" cache_creation="{'ephemeral_5m_input_tokens': 888, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_011cXhbPdcUnkKFFUHycHvPv">
+    <param name="file_path">/home/runner/work/erk/erk/pyproject.toml</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="888" cache_read_input_tokens="31320" cache_creation="{'ephemeral_5m_input_tokens': 888, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_011TZYbdDHXzzy8HbBhexLkd">
+    <param name="subagent_type">Explore</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 891 chars]...y_numbers` and `fetch_plans_by_ids`
+
+Return the full content of each method/section found.</param>
+    <param name="description">Explore source files for plan</param>
+    <param name="run_in_background">True</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="888" cache_read_input_tokens="31320" cache_creation="{'ephemeral_5m_input_tokens': 888, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_015Wj71bzYu6ym5d5u2mqxsD">
+     1→---
+     2→---
+     3→
+     4→# Dignified Python - Core Standards
+     5→
+     6→This document contains the core Python coding standards that apply to 80%+ of Python code. These principles are loaded with every skill invocation.
+     7→
+     8→For conditional loading of specialized patterns:
+     9→
+    10→- CLI development -&gt; Load `cli-patterns.md`
+    11→- Subprocess operations -&gt; Load `subprocess.md`
+    12→
+    13→For detailed reference material, see the "When to Read Each Reference" section in SKILL.md.
+    14→
+    15→---
+    16→
+    17→## The Cornerstone: LBYL Over EAFP
+    18→
+    19→**Look Before You Leap: Check conditions proactively, NEVER use exceptions for control flow.**
+    20→
+    21→This is the single most important rule in dignified Python. Every pattern below flows from this principle.
+    22→
+    23→```python
+    24→# CORRECT: Check first
+    25→if key in mapping:
+    26→    value = mapping[key]
+    27→    process(value)
+    28→
+    29→# WRONG: Exception as control flow
+    30→try:
+
+... [502 lines omitted] ...
+
+    33→except KeyError:
+    39→## Exception Handling Basics
+    45→LBYL means checking conditions before acting. EAFP (Easier to Ask for Forgiveness than Permission) means trying operations and catching exceptions. In dignified Python, we strongly prefer LBYL.
+    65→# WRONG: KeyError as control flow
+    68→except KeyError:
+    72→### When Exceptions ARE Acceptable
+    74→Exceptions are ONLY acceptable at:
+    76→1. **Error boundaries** (CLI/API level)
+    80→**Default: Let exceptions bubble up**
+    82→**When you must use try-except: scope the try block to the single operation that raises.** Don't wrap multiple operations in one try block — each handler should know exactly what failed. Use early returns to keep subsequent code flat.
+    84→For detailed exception handling patterns including minimal exception scope, B904 chaining, third-party API examples, and anti-patterns, see `references/exception-handling.md`.
+   118→- `.resolve()` raises `OSError` for non-existent paths
+   119→- `.is_relative_to()` raises `ValueError` for invalid comparisons
+   120→- Checking `.exists()` first avoids exceptions entirely (LBYL!)
+   135→# WRONG: Using exceptions for path validation
+   140→except (OSError, ValueError):
+   180→3. **Inline imports only for specific exceptions** (circular deps, TYPE_CHECKING, conditional features)
+   211→**Acceptable exceptions:**
+   480→    log.warning("Non-numeric plan_id")
+   494→- **Raise exception**: When invalid data indicates a programming error or corrupt state
+   521→- **Exception chaining (B904), minimal exception scope**: `references/exception-handling.md`
+  </tool_result>
+  <tool_result tool="toolu_011cXhbPdcUnkKFFUHycHvPv">
+     1→[tool.uv.workspace]
+     2→members = ["packages/*"]
+     3→
+     4→[tool.uv.sources]
+     5→erk-dev = { workspace = true }
+     6→erk-mcp = { workspace = true }
+     7→erk-shared = { workspace = true }
+     8→erk-statusline = { workspace = true }
+     9→
+    10→[project]
+    11→name = "erk"
+    12→version = "0.9.9"
+    13→description = "Add your description here"
+    14→readme = "README.md"
+    15→authors = [
+    16→    { name = "Dagster Labs", email = "hello@dagsterlabs.com" }
+    17→]
+    18→requires-python = "&gt;=3.11"
+    19→dependencies = [
+    20→    "anthropic&gt;=0.40.0",
+    21→    "click&gt;=8.1.7",
+    22→    "erk-shared",
+    23→    "erk-statusline",
+    24→    "packaging&gt;=21.0",
+    25→    "pathspec&gt;=0.12.0",
+    26→    "pydantic&gt;=2.0",
+    27→    "pyyaml&gt;=6.0",
+    28→    "python-frontmatter&gt;=1.0.0",
+    29→    "rich&gt;=13.0",
+    30→    "tomlkit&gt;=0.12.0",
+
+... [5 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_011TZYbdDHXzzy8HbBhexLkd">
+Async agent launched successfully.
+agentId: a6778aa (This is an internal ID for your use, do not mention it to the user. Use this ID to retrieve results with TaskOutput when the agent finishes).
+The agent is currently working in the background. If you have other tasks you you should continue working on them now. Wait to call TaskOutput until either:
+- If you want to check on the agent's progress - call TaskOutput with block=false to get an immediate update on the agent's status
+- If you run out of things to do and the agent is still running - call TaskOutput with block=true to idle and wait for the agent's result (do not use block=true unless you completely run out of things to do as it will waste time).
+  </tool_result>
+  <assistant>
+
+Python version is `&gt;=3.11`. Let me load the version-specific file and wait for the explore agent to finish.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="7561" cache_read_input_tokens="32208" cache_creation="{'ephemeral_5m_input_tokens': 7561, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01ULwmLEkzo6xXnQ2YGhhe8G">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/skills/dignified-python/versions/python-3.11.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="7561" cache_read_input_tokens="32208" cache_creation="{'ephemeral_5m_input_tokens': 7561, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="TaskOutput" id="toolu_01B9VpYqBgdHKCDuz5UPNsh3">
+    <param name="task_id">a6778aa</param>
+    <param name="block">True</param>
+    <param name="timeout">120000</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="7561" cache_read_input_tokens="32208" cache_creation="{'ephemeral_5m_input_tokens': 7561, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01ULwmLEkzo6xXnQ2YGhhe8G">
+     1→---
+     2→---
+     3→
+     4→# Type Annotations - Python 3.11
+     5→
+     6→This document provides complete, canonical type annotation guidance for Python 3.11.
+     7→
+     8→## Overview
+     9→
+    10→Python 3.11 builds on 3.10's type syntax with the addition of the `Self` type (PEP 673), making method chaining and builder patterns significantly cleaner. All modern syntax from 3.10 continues to work.
+    11→
+    12→**What's new in 3.11:**
+    13→
+    14→- `Self` type for self-returning methods (PEP 673)
+    15→- Variadic generics with TypeVarTuple (PEP 646)
+    16→- Significantly improved error messages
+    17→
+    18→**Available from 3.10:**
+    19→
+    20→- Built-in generic types: `list[T]`, `dict[K, V]`, etc. (PEP 585)
+    21→- Union types with `|` operator (PEP 604)
+    22→- Optional with `X | None`
+    23→
+    24→**What you need from typing module:**
+    25→
+    26→- `Self` for self-returning methods (NEW)
+    27→- `TypeVar` for generic functions/classes
+    28→- `Generic` for generic classes
+    29→- `Protocol` for structural typing (rare - prefer ABC)
+    30→- `TYPE_CHECKING` for conditional imports
+
+... [512 lines omitted] ...
+
+   370→            raise ValueError("FROM table not specified")
+   412→            raise FileNotFoundError(f"Config not found: {path}")
+   473→All code should pass type checking without errors.
+   528→2. **Enjoy improved error messages** (no code changes needed)
+  </tool_result>
+  <tool_result tool="toolu_01B9VpYqBgdHKCDuz5UPNsh3">
+&lt;retrieval_status&gt;success&lt;/retrieval_status&gt;
+
+&lt;task_id&gt;a6778aa&lt;/task_id&gt;
+
+&lt;task_type&gt;local_agent&lt;/task_type&gt;
+
+&lt;status&gt;completed&lt;/status&gt;
+
+&lt;output&gt;
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/index.md"}
+[Tool: Bash] {"command":"find /home/runner/work/erk/erk -type f -name \"real.py\" | grep gateway/github"}
+[Tool: Bash] {"command":"find /home/runner/work/erk/erk -type f -name \"real.py\" | grep gateway/github"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/real.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/abc.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/src/erk/tui/data/real_provider.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/src/erk/tui/data/real_provider.py"}
+[Tool: Grep] {"pattern":"_build_issues_by_numbers_query|_parse_issues_by_numbers_response","path":"/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github"}
+[Tool: Grep] {"pattern":"parse_status_rollup|parse_mergeable_status|parse_review_thread_counts|ISSUE_PR_LINKAGE_FRAGMENT","path":"/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/real.py"}
+[Tool: Glob] {"pattern":"**/test_real.py"}
+[Tool: Glob] {"pattern":"**/test_provider.py"}
+[Tool: Glob] {"pattern":"**/test_provider.py"}
+[Tool: Bash] {"command":"wc -l /home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/real.py"}
+[Tool: Bash] {"command":"wc -l /home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/real.py"}
+[Tool: Grep] {"pattern":"def _build_issues_by_numbers_query|def _parse_issues_by_numbers_response|def get_issues_by_numbers_with_pr_linkages","path":"/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/real.py","output_mode":"content","-B":2,"-A":50}
+[Tool: Grep] {"pattern":"def _build_issues_by_numbers_query|def _parse_issues_by_numbers_response|def get_issues_by_numbers_with_pr_linkages","path":"/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/real.py","output_mode":"content","-B":2,"-A":50}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/real.py","offset":1,"limit":100}
+[Tool: Grep] {"pattern":"ISSUE_PR_LINKAGE_FRAGMENT|parse_status_rollup|parse_mergeable_status|parse_review_thread_counts","path":"/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/real.py","output_mode":"content","-B":1,"-A":15}
+[Tool: Grep] {"pattern":"ISSUE_PR_LINKAGE_FRAGMENT|parse_status_rollup|parse_mergeable_status|parse_review_thread_counts","path":"/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/real.py","output_mode":"content","-B":1,"-A":15}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/real.py","offset":2500,"limit":70}
+[Tool: Bash] {"command":"find /home/runner/work/erk/erk -type f -name \"graphql_queries.py\" | head -1"}
+
+... [648 lines omitted] ...
+
+    elif rollup_state in ("FAILURE", "ERROR"):
+  </tool_result>
+  <assistant>Excellent. I now have full context on all the files. Let me read the exact sections I need to modify to make precise edits.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="14026" cache_read_input_tokens="39769" cache_creation="{'ephemeral_5m_input_tokens': 14026, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_015vzVWCUHMto8GEmtDsTNSC">
+    <param name="todos">[{'content': 'Rewrite GraphQL query as PR-only (_build_prs_by_numbers_query)', 'status': '...[truncated 625 chars]...nt': 'Run CI verification', 'status': 'pending', 'activeForm': 'Running CI verification'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="14026" cache_read_input_tokens="39769" cache_creation="{'ephemeral_5m_input_tokens': 14026, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_015vzVWCUHMto8GEmtDsTNSC">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Let me read the exact lines I need to modify in real.py, the abc, and the provider.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="364" cache_read_input_tokens="53795" cache_creation="{'ephemeral_5m_input_tokens': 364, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01SQbH85ZGGe8EhpBGsxRf6j">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/real.py</param>
+    <param name="offset">2430</param>
+    <param name="limit">135</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="364" cache_read_input_tokens="53795" cache_creation="{'ephemeral_5m_input_tokens': 364, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_0175kRuSBXjwC4We7uZ7T1xU">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/abc.py</param>
+    <param name="offset">795</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="364" cache_read_input_tokens="53795" cache_creation="{'ephemeral_5m_input_tokens': 364, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01FcSodtPyGkQSyabcCnNunE">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/data/real_provider.py</param>
+    <param name="offset">205</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="364" cache_read_input_tokens="53795" cache_creation="{'ephemeral_5m_input_tokens': 364, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_011KyE4ZcqsSxZdEFDWDFGHK">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/real.py</param>
+    <param name="offset">1</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="364" cache_read_input_tokens="53795" cache_creation="{'ephemeral_5m_input_tokens': 364, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01SQbH85ZGGe8EhpBGsxRf6j">
+  2430→            return True
+  2431→        except RuntimeError:
+  2432→            return False
+  2433→
+  2434→    def get_issues_by_numbers_with_pr_linkages(
+  2435→        self,
+  2436→        *,
+  2437→        location: GitHubRepoLocation,
+  2438→        plan_numbers: list[int],
+  2439→    ) -&gt; tuple[list[IssueInfo], dict[int, list[PullRequestInfo]]]:
+  2440→        """Fetch specific issues by number with full PR linkage data.
+  2441→
+  2442→        Uses issueOrPullRequest to handle both issues and merged PRs.
+  2443→        """
+  2444→        if not plan_numbers:
+  2445→            return ([], {})
+  2446→
+  2447→        repo_id = location.repo_id
+  2448→        query = self._build_issues_by_numbers_query(plan_numbers, repo_id)
+  2449→        response = self._execute_batch_pr_query(query, location.root)
+  2450→        return self._parse_issues_by_numbers_response(response, repo_id)
+  2451→
+  2452→    def _build_issues_by_numbers_query(self, plan_numbers: list[int], repo_id: GitHubRepoId) -&gt; str:
+  2453→        """Build GraphQL query to fetch specific issues by number.
+  2454→
+  2455→        Uses issueOrPullRequest(number: N) aliases to handle both issues
+  2456→        and merged PRs. Includes full issue fields and PR linkage timeline.
+  2457→
+  2458→        Args:
+  2459→            plan_numbers: List of plan/PR numbers to query
+
+... [110 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_0175kRuSBXjwC4We7uZ7T1xU">
+   795→            True if the artifact was downloaded successfully, False otherwise
+   796→        """
+   797→        ...
+   798→
+   799→    @abstractmethod
+   800→    def get_issues_by_numbers_with_pr_linkages(
+   801→        self,
+   802→        *,
+   803→        location: GitHubRepoLocation,
+   804→        plan_numbers: list[int],
+   805→    ) -&gt; tuple[list[IssueInfo], dict[int, list[PullRequestInfo]]]:
+   806→        """Fetch specific issues by number with full PR linkage data.
+   807→
+   808→        Uses issueOrPullRequest(number: N) to handle both issues and merged PRs.
+   809→        Returns issue data and PR linkages in the same format as
+   810→        get_issues_with_pr_linkages for compatibility.
+   811→
+   812→        Args:
+   813→            location: GitHub repository location (local root + repo identity)
+   814→            plan_numbers: List of plan/PR numbers to fetch
+   815→
+   816→        Returns:
+   817→            Tuple of (issues, pr_linkages) where:
+   818→            - issues: List of IssueInfo objects for found issues
+   819→            - pr_linkages: Mapping of plan_number -&gt; list of linked PRs
+   820→        """
+   821→        ...
+   822→
+   823→    @abstractmethod
+   824→    def create_commit_status(
+
+... [5 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01FcSodtPyGkQSyabcCnNunE">
+   205→                )
+   206→            else:
+   207→                result[row.plan_id] = BranchActivity.empty()
+   208→
+   209→        return result
+   210→
+   211→    def fetch_plans_by_ids(self, plan_ids: set[int]) -&gt; list[PlanRowData]:
+   212→        """Fetch specific plans by their GitHub numbers.
+   213→
+   214→        Args:
+   215→            plan_ids: Set of plan numbers to fetch (issue or PR numbers)
+   216→
+   217→        Returns:
+   218→            List of PlanRowData objects sorted by plan_id
+   219→        """
+   220→        if not plan_ids:
+   221→            return []
+   222→
+   223→        issues, pr_linkages = self._ctx.github.get_issues_by_numbers_with_pr_linkages(
+   224→            location=self._location,
+   225→            plan_numbers=list(plan_ids),
+   226→        )
+   227→
+   228→        plans = [github_issue_to_plan(issue) for issue in issues]
+   229→        worktree_by_plan_id = self._build_worktree_mapping()
+   230→
+   231→        global_config = self._ctx.global_config
+   232→        use_graphite = global_config.use_graphite if global_config is not None else False
+   233→        rows: list[PlanRowData] = []
+   234→        for plan in plans:
+
+... [25 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_011KyE4ZcqsSxZdEFDWDFGHK">
+     1→"""Production implementation of GitHub operations.
+     2→
+     3→Error Handling Philosophy:
+     4→    gh CLI invocations should let exceptions bubble by default. Callers are
+     5→    responsible for handling failures appropriately. Don't swallow exceptions
+     6→    and return None/False/default values - this masks real errors and makes
+     7→    debugging difficult.
+     8→
+     9→    Legitimate "not found" cases (e.g., no PR exists for a branch) are handled
+    10→    by checking the response data, not by catching exceptions.
+    11→"""
+    12→
+    13→import json
+    14→import logging
+    15→import secrets
+    16→import string
+    17→from datetime import UTC, datetime, timedelta
+    18→from pathlib import Path
+    19→from typing import Any
+    20→
+    21→from erk_shared.debug import debug_log
+    22→from erk_shared.gateway.github.abc import LocalGitHub
+    23→from erk_shared.gateway.github.graphql_queries import (
+    24→    ADD_REVIEW_THREAD_REPLY_MUTATION,
+    25→    GET_ISSUES_WITH_PR_LINKAGES_QUERY,
+    26→    GET_PR_CHECK_RUNS_QUERY,
+    27→    GET_PR_REVIEW_THREADS_QUERY,
+    28→    GET_WORKFLOW_RUNS_BY_NODE_IDS_QUERY,
+    29→    ISSUE_PR_LINKAGE_FRAGMENT,
+    30→    RESOLVE_REVIEW_THREAD_MUTATION,
+
+... [25 lines omitted] ...
+  </tool_result>
+  <assistant>Now I need to see the PullRequestInfo constructor to understand how to create PR objects directly. Let me also check the `_parse_issue_node` method and see how `_build_row_data` handles `pr_linkages`.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="4285" cache_read_input_tokens="54159" cache_creation="{'ephemeral_5m_input_tokens': 4285, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01V25HrVXNLS9cFVaYjMtF7G">
+    <param name="pattern">class PullRequestInfo</param>
+    <param name="path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github</param>
+    <param name="output_mode">content</param>
+    <param name="-A">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4285" cache_read_input_tokens="54159" cache_creation="{'ephemeral_5m_input_tokens': 4285, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01B6t8hTZaYLedkVhJo3Hrza">
+    <param name="pattern">def _parse_issue_node</param>
+    <param name="path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/real.py</param>
+    <param name="output_mode">content</param>
+    <param name="-A">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4285" cache_read_input_tokens="54159" cache_creation="{'ephemeral_5m_input_tokens': 4285, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01NyDye6Eb43oJrCgYEBAYTb">
+    <param name="pattern">def _build_row_data</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/tui/data/real_provider.py</param>
+    <param name="output_mode">content</param>
+    <param name="-A">60</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4285" cache_read_input_tokens="54159" cache_creation="{'ephemeral_5m_input_tokens': 4285, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01B6t8hTZaYLedkVhJo3Hrza">
+1216:    def _parse_issue_node(self, node: dict[str, Any]) -&gt; IssueInfo | None:
+1217-        """Parse a single issue node from GraphQL response.
+1218-
+1219-        Returns None if node is invalid or missing required fields.
+1220-        """
+1221-        issue_number = node.get("number")
+1222-        if issue_number is None:
+1223-            return None
+1224-
+1225-        created_at_str = node.get("createdAt", "")
+1226-        updated_at_str = node.get("updatedAt", "")
+1227-        created_at = datetime.fromisoformat(created_at_str.replace("Z", "+00:00"))
+1228-        updated_at = datetime.fromisoformat(updated_at_str.replace("Z", "+00:00"))
+1229-
+1230-        labels_data = node.get("labels", {}).get("nodes", [])
+1231-        labels = [label.get("name", "") for label in labels_data if label]
+1232-
+1233-        assignees_data = node.get("assignees", {}).get("nodes", [])
+1234-        assignees = [assignee.get("login", "") for assignee in assignees_data if assignee]
+1235-
+1236-        # Extract author login
+1237-        author_data = node.get("author")
+1238-        author = author_data.get("login", "") if author_data else ""
+1239-
+1240-        return IssueInfo(
+1241-            number=issue_number,
+1242-            title=node.get("title", ""),
+1243-            body=node.get("body", ""),
+1244-            state=node.get("state", "OPEN"),
+1245-            url=node.get("url", ""),
+
+... [1 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01NyDye6Eb43oJrCgYEBAYTb">
+317:    def _build_row_data(
+318-        self,
+319-        *,
+320-        plan: Plan,
+321-        plan_id: int,
+322-        pr_linkages: dict[int, list[PullRequestInfo]],
+323-        workflow_run: WorkflowRun | None,
+324-        worktree_by_plan_id: dict[int, tuple[str, str | None]],
+325-        use_graphite: bool,
+326-    ) -&gt; PlanRowData:
+327-        """Build a single PlanRowData from plan and related data."""
+328-        full_title = plan.title
+329-
+330-        # Worktree info
+331-        worktree_name = ""
+332-        worktree_branch: str | None = None
+333-        exists_locally = False
+334-
+335-        if plan_id in worktree_by_plan_id:
+336-            worktree_name, worktree_branch = worktree_by_plan_id[plan_id]
+337-            exists_locally = True
+338-
+339-        # Extract from pre-parsed header fields
+340-        local_impl_str: str | None = None
+341-        remote_impl_str: str | None = None
+342-        learn_status: str | None = None
+343-        learn_plan_issue: int | None = None
+344-        learn_plan_pr: int | None = None
+345-        learn_run_id: str | None = None
+346-        if plan.header_fields:
+
+... [31 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01V25HrVXNLS9cFVaYjMtF7G">
+packages/erk-shared/src/erk_shared/gateway/github/types.py:210:class PullRequestInfo:
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/types.py-211-    """Information about a GitHub pull request."""
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/types.py-212-
+packages/erk-shared/src/erk_shared/gateway/github/types.py-213-    number: int
+packages/erk-shared/src/erk_shared/gateway/github/types.py-214-    state: str  # "OPEN", "MERGED", "CLOSED"
+packages/erk-shared/src/erk_shared/gateway/github/types.py-215-    url: str
+packages/erk-shared/src/erk_shared/gateway/github/types.py-216-    is_draft: bool
+packages/erk-shared/src/erk_shared/gateway/github/types.py-217-    title: str | None
+packages/erk-shared/src/erk_shared/gateway/github/types.py-218-    checks_passing: bool | None  # None if no checks, True if all pass, False if any fail
+packages/erk-shared/src/erk_shared/gateway/github/types.py-219-    owner: str  # GitHub repo owner (e.g., "schrockn")
+packages/erk-shared/src/erk_shared/gateway/github/types.py-220-    repo: str  # GitHub repo name (e.g., "erk")
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/types.py-221-    # True if CONFLICTING, False if MERGEABLE, None if UNKNOWN or not fetched
+packages/erk-shared/src/erk_shared/gateway/github/types.py-222-    has_conflicts: bool | None = None
+packages/erk-shared/src/erk_shared/gateway/github/types.py-223-    checks_counts: tuple[int, int] | None = None  # (passing, total) or None if no checks
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/types.py-224-    # True if PR will close the linked issue when merged (via "Closes #N" keywords)
+packages/erk-shared/src/erk_shared/gateway/github/types.py-225-    will_close_target: bool = False
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/types.py-226-    # Head branch name (the source branch) - optional, populated by some API calls
+packages/erk-shared/src/erk_shared/gateway/github/types.py-227-    head_branch: str | None = None
+packages/erk-shared/src/erk_shared/gateway/github/types.py-228-    # Review thread counts: (resolved_count, total_count) or None if not fetched
+packages/erk-shared/src/erk_shared/gateway/github/types.py-229-    review_thread_counts: tuple[int, int] | None = None
+packages/erk-shared/src/erk_shared/gateway/github/types.py-230-    # Review decision: "APPROVED", "CHANGES_REQUESTED", "REVIEW_REQUIRED", or None
+packages/erk-shared/src/erk_shared/gateway/github/types.py-231-    review_decision: str | None = None
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/types.py-232-    # Base branch name (the target branch) - optional, populated by some API calls
+packages/erk-shared/src/erk_shared/gateway/github/types.py-233-    base_ref_name: str | None = None
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/types.py-234-
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/types.py-235-
+packages/erk-shared/src/erk_shared/gateway/github/types.py-236-class _NotAvailable:
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/types.py-237-    """Sentinel for fields not available from certain API queries.
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/types.py-238-
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/types.py-239-    Raises AttributeError when accessed as a string, preventing silent bugs
+
+... [1 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01KCdSG6Yvr7tHwzbYyxk1Sn">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/data/real_provider.py</param>
+    <param name="offset">377</param>
+    <param name="limit">80</param>
+  </tool_use>
+  <usage input_tokens="1399" cache_creation_input_tokens="2029" cache_read_input_tokens="58444" cache_creation="{'ephemeral_5m_input_tokens': 2029, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01KCdSG6Yvr7tHwzbYyxk1Sn">
+   377→        last_local_impl_at = header_datetime(plan.header_fields, LAST_LOCAL_IMPL_AT)
+   378→        last_remote_impl_at = header_datetime(plan.header_fields, LAST_REMOTE_IMPL_AT)
+   379→
+   380→        local_impl = format_relative_time(local_impl_str)
+   381→        local_impl_display = local_impl if local_impl else "-"
+   382→        remote_impl = format_relative_time(remote_impl_str)
+   383→        remote_impl_display = remote_impl if remote_impl else "-"
+   384→
+   385→        # PR info
+   386→        pr_number: int | None = None
+   387→        pr_url: str | None = None
+   388→        pr_title: str | None = None
+   389→        pr_state: str | None = None
+   390→        pr_head_branch: str | None = None
+   391→        pr_display = "-"
+   392→        checks_display = "-"
+   393→
+   394→        resolved_comment_count = 0
+   395→        total_comment_count = 0
+   396→        comments_display = "-"
+   397→
+   398→        pr_is_draft: bool | None = None
+   399→        pr_has_conflicts: bool | None = None
+   400→        pr_review_decision: str | None = None
+   401→        pr_checks_passing: bool | None = None
+   402→        pr_checks_counts: tuple[int, int] | None = None
+   403→        pr_has_unresolved_comments: bool | None = None
+   404→        pr_is_stacked: bool | None = None
+   405→
+   406→        if plan_id in pr_linkages:
+
+... [55 lines omitted] ...
+  </tool_result>
+  <assistant>Now I have a complete understanding. Let me also check the imports in real_provider.py for what's already available and what I need to add.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2870" cache_read_input_tokens="60473" cache_creation="{'ephemeral_5m_input_tokens': 2870, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_015PPZN8Ci8kSVDFgqGw4pNk">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/data/real_provider.py</param>
+    <param name="offset">1</param>
+    <param name="limit">55</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2870" cache_read_input_tokens="60473" cache_creation="{'ephemeral_5m_input_tokens': 2870, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01Qiv1kYqAn5X7ZwbduULaEs">
+    <param name="pattern">extract_plan_header_dispatch_info</param>
+    <param name="path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata</param>
+    <param name="output_mode">content</param>
+    <param name="-A">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2870" cache_read_input_tokens="60473" cache_creation="{'ephemeral_5m_input_tokens': 2870, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01P9jxszbC3jw17MTPjNXFMD">
+    <param name="pattern">GET_WORKFLOW_RUNS_BY_NODE_IDS_QUERY</param>
+    <param name="path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/graphql_queries.py</param>
+    <param name="output_mode">content</param>
+    <param name="-A">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2870" cache_read_input_tokens="60473" cache_creation="{'ephemeral_5m_input_tokens': 2870, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_015PPZN8Ci8kSVDFgqGw4pNk">
+     1→"""Real implementation of PlanDataProvider for TUI data assembly."""
+     2→
+     3→import logging
+     4→from datetime import datetime
+     5→
+     6→from erk.core.context import ErkContext
+     7→from erk.core.display_utils import (
+     8→    format_relative_time,
+     9→    format_workflow_outcome,
+    10→    format_workflow_run_id,
+    11→    get_workflow_run_state,
+    12→)
+    13→from erk.core.pr_utils import select_display_pr
+    14→from erk.core.repo_discovery import NoRepoSentinel, RepoContext, ensure_erk_metadata_dir
+    15→from erk.tui.data.provider_abc import PlanDataProvider
+    16→from erk.tui.data.types import FetchTimings, PlanFilters, PlanRowData
+    17→from erk.tui.sorting.types import BranchActivity
+    18→from erk_shared.gateway.github.emoji import format_checks_cell, get_pr_status_emoji
+    19→from erk_shared.gateway.github.metadata.core import (
+    20→    extract_objective_slug,
+    21→)
+    22→from erk_shared.gateway.github.metadata.dependency_graph import (
+    23→    _TERMINAL_STATUSES,
+    24→    build_graph,
+    25→    build_state_sparkline,
+    26→    compute_graph_summary,
+    27→    find_graph_next_node,
+    28→)
+    29→from erk_shared.gateway.github.metadata.roadmap import (
+    30→    parse_roadmap,
+
+... [30 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01P9jxszbC3jw17MTPjNXFMD">
+83:GET_WORKFLOW_RUNS_BY_NODE_IDS_QUERY = """query($nodeIds: [ID!]!) {
+84-  nodes(ids: $nodeIds) {
+85-    ... on WorkflowRun {
+86-      id
+87-      databaseId
+88-      url
+89-      createdAt
+90-      checkSuite {
+91-        status
+92-        conclusion
+93-        commit { oid }
+94-      }
+95-    }
+96-  }
+97-}"""
+98-
+99-# Parameterized query for issues with PR linkages
+100-# Note: filterBy is optional - pass null if not filtering by creator
+101-GET_ISSUES_WITH_PR_LINKAGES_QUERY = """query(
+102-  $owner: String!
+103-  $repo: String!
+  </tool_result>
+  <tool_result tool="toolu_01Qiv1kYqAn5X7ZwbduULaEs">
+packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py:403:def extract_plan_header_dispatch_info(
+packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py-404-    issue_body: str,
+packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py-405-) -&gt; tuple[str | None, str | None, str | None]:
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py-406-    """Extract dispatch info from plan-header block.
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py-407-
+packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py-408-    Args:
+packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py-409-        issue_body: Issue body containing plan-header block
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py-410-
+packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py-411-    Returns:
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py-412-        Tuple of (last_dispatched_run_id, last_dispatched_node_id, last_dispatched_at)
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py-413-        All are None if block not found or fields not present
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py-414-    """
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py-415-    block = find_metadata_block(issue_body, BlockKeys.PLAN_HEADER)
+packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py-416-    if block is None:
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py-417-        return (None, None, None)
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py-418-
+  </tool_result>
+  <assistant>Now let me also check how `parse_workflow_runs_nodes_response` works and how `_build_row_data` already uses `workflow_run`:</assistant>
+  <usage input_tokens="234" cache_creation_input_tokens="2268" cache_read_input_tokens="63343" cache_creation="{'ephemeral_5m_input_tokens': 2268, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_018x3tnVbGe4Y7J3ftLfEdpW">
+    <param name="pattern">def parse_workflow_runs_nodes_response</param>
+    <param name="path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/pr_data_parsing.py</param>
+    <param name="output_mode">content</param>
+    <param name="-A">40</param>
+  </tool_use>
+  <usage input_tokens="234" cache_creation_input_tokens="2268" cache_read_input_tokens="63343" cache_creation="{'ephemeral_5m_input_tokens': 2268, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01QhNKygmGu71d8MSwmVuXHa">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/data/real_provider.py</param>
+    <param name="offset">55</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="234" cache_creation_input_tokens="2268" cache_read_input_tokens="63343" cache_creation="{'ephemeral_5m_input_tokens': 2268, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01QhNKygmGu71d8MSwmVuXHa">
+    55→    header_int,
+    56→    header_str,
+    57→)
+    58→from erk_shared.plan_store.types import Plan
+    59→
+    60→logger = logging.getLogger(__name__)
+    61→
+    62→
+    63→class RealPlanDataProvider(PlanDataProvider):
+    64→    """Production implementation that assembles TUI display data.
+    65→
+    66→    Transforms PlanListData into PlanRowData for TUI display.
+    67→    Domain operations (close_plan, dispatch, etc.) are on PlanService.
+    68→    """
+    69→
+    70→    def __init__(
+    71→        self,
+    72→        ctx: ErkContext,
+    73→        *,
+    74→        location: GitHubRepoLocation,
+    75→        http_client: HttpClient,
+    76→    ) -&gt; None:
+    77→        """Initialize with context and repository info.
+    78→
+    79→        Args:
+    80→            ctx: ErkContext with all dependencies
+    81→            location: GitHub repository location (local root + repo identity)
+    82→            http_client: HTTP client for direct API calls (faster than subprocess)
+    83→        """
+    84→        self._ctx = ctx
+
+... [5 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_018x3tnVbGe4Y7J3ftLfEdpW">
+173:def parse_workflow_runs_nodes_response(
+174-    response: dict[str, Any],
+175-    node_ids: list[str],
+176-) -&gt; dict[str, WorkflowRun | None]:
+177-    """Parse GraphQL nodes response into WorkflowRun objects.
+178-
+179-    Maps the GraphQL checkSuite status/conclusion to WorkflowRun fields.
+180-
+181-    Args:
+182-        response: GraphQL response data
+183-        node_ids: Original list of node IDs (for result ordering)
+184-
+185-    Returns:
+186-        Mapping of node_id -&gt; WorkflowRun or None
+187-    """
+188-    status_map: dict[str | None, WorkflowRunStatus] = {
+189-        "COMPLETED": "completed",
+190-        "IN_PROGRESS": "in_progress",
+191-        "QUEUED": "queued",
+192-    }
+193-    conclusion_map: dict[str | None, WorkflowRunConclusion] = {
+194-        "SUCCESS": "success",
+195-        "FAILURE": "failure",
+196-        "SKIPPED": "skipped",
+197-        "CANCELLED": "cancelled",
+198-    }
+199-
+200-    result: dict[str, WorkflowRun | None] = {}
+201-    nodes = response.get("data", {}).get("nodes", [])
+202-
+
+... [11 lines omitted] ...
+  </tool_result>
+  <assistant>Now let me also see how the existing `fetch_plans_list_data` method does the workflow run fetching to follow the same pattern:</assistant>
+  <usage input_tokens="423" cache_creation_input_tokens="1252" cache_read_input_tokens="65611" cache_creation="{'ephemeral_5m_input_tokens': 1252, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01GiQo3bgmKSjaj4jmbCU2q2">
+    <param name="pattern">workflow_run|GET_WORKFLOW_RUNS|extract_plan_header_dispatch</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/tui/data/real_provider.py</param>
+    <param name="output_mode">content</param>
+    <param name="-B">2</param>
+    <param name="-A">5</param>
+  </tool_use>
+  <usage input_tokens="423" cache_creation_input_tokens="1252" cache_read_input_tokens="65611" cache_creation="{'ephemeral_5m_input_tokens': 1252, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01GiQo3bgmKSjaj4jmbCU2q2">
+8-    format_relative_time,
+9-    format_workflow_outcome,
+10:    format_workflow_run_id,
+11:    get_workflow_run_state,
+12-)
+13-from erk.core.pr_utils import select_display_pr
+14-from erk.core.repo_discovery import NoRepoSentinel, RepoContext, ensure_erk_metadata_dir
+15-from erk.tui.data.provider_abc import PlanDataProvider
+16-from erk.tui.data.types import FetchTimings, PlanFilters, PlanRowData
+--
+98-
+99-        # Determine if we need workflow runs
+100:        needs_workflow_runs = filters.show_runs or filters.run_state is not None
+101-
+102-        # Route to the appropriate service based on the view's labels
+103-        if "erk-objective" in filters.labels:
+104-            plan_data = self._ctx.objective_list_service.get_objective_list_data(
+105-                location=self._location,
+106-                state=filters.state,
+107-                limit=filters.limit,
+108:                skip_workflow_runs=not needs_workflow_runs,
+109-                creator=filters.creator,
+110-                exclude_labels=list(filters.exclude_labels) if filters.exclude_labels else None,
+111-                http_client=self._http_client,
+112-            )
+113-        else:
+--
+117-                state=filters.state,
+118-                limit=filters.limit,
+119:                skip_workflow_runs=not needs_workflow_runs,
+
+... [99 lines omitted] ...
+
+168-            warnings=plan_data.warnings,
+  </tool_result>
+  <assistant>Now I need to understand how the workflow runs are fetched in the existing code path. Let me look at how `plan_data.workflow_runs` is populated:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2285" cache_read_input_tokens="66863" cache_creation="{'ephemeral_5m_input_tokens': 2285, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01YXr71gBfHu4bSyCZwH9ADP">
+    <param name="pattern">extract_plan_header_dispatch_info</param>
+    <param name="path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway</param>
+    <param name="output_mode">content</param>
+    <param name="-B">3</param>
+    <param name="-A">15</param>
+    <param name="head_limit">60</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2285" cache_read_input_tokens="66863" cache_creation="{'ephemeral_5m_input_tokens': 2285, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01YXr71gBfHu4bSyCZwH9ADP">
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py-400-    return replace_metadata_block_in_body(issue_body, BlockKeys.PLAN_HEADER, new_block_content)
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py-401-
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py-402-
+packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py:403:def extract_plan_header_dispatch_info(
+packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py-404-    issue_body: str,
+packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py-405-) -&gt; tuple[str | None, str | None, str | None]:
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py-406-    """Extract dispatch info from plan-header block.
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py-407-
+packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py-408-    Args:
+packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py-409-        issue_body: Issue body containing plan-header block
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py-410-
+packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py-411-    Returns:
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py-412-        Tuple of (last_dispatched_run_id, last_dispatched_node_id, last_dispatched_at)
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py-413-        All are None if block not found or fields not present
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py-414-    """
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py-415-    block = find_metadata_block(issue_body, BlockKeys.PLAN_HEADER)
+packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py-416-    if block is None:
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py-417-        return (None, None, None)
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py-418-
+
+[Showing results with pagination = limit: 60, offset: 0]
+  </tool_result>
+  <assistant>Now let me look at how the existing plan list fetcher does workflow runs to follow the same pattern:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1367" cache_read_input_tokens="69148" cache_creation="{'ephemeral_5m_input_tokens': 1367, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01KNv1fKQr7oDNqy119zFExt">
+    <param name="pattern">extract_plan_header_dispatch_info|GET_WORKFLOW_RUNS_BY_NODE_IDS</param>
+    <param name="path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/plan_data_provider</param>
+    <param name="output_mode">content</param>
+    <param name="-B">2</param>
+    <param name="-A">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1367" cache_read_input_tokens="69148" cache_creation="{'ephemeral_5m_input_tokens': 1367, 'ephemeral_1h_input_tokens': 0}" output_tokens="202" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01KNv1fKQr7oDNqy119zFExt">
+No matches found
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01KuewjbTuvg6uKWAbVuaem8">
+    <param name="pattern">extract_plan_header_dispatch_info|GET_WORKFLOW_RUNS_BY_NODE_IDS</param>
+    <param name="path">/home/runner/work/erk/erk</param>
+    <param name="type">py</param>
+    <param name="output_mode">content</param>
+    <param name="-B">2</param>
+    <param name="-A">15</param>
+    <param name="head_limit">100</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="217" cache_read_input_tokens="70515" cache_creation="{'ephemeral_5m_input_tokens': 217, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01KuewjbTuvg6uKWAbVuaem8">
+/home/runner/work/erk/erk/tests/shared/github/test_metadata_extraction.py-9-from erk_shared.gateway.github.metadata.plan_header import (
+/home/runner/work/erk/erk/tests/shared/github/test_metadata_extraction.py-10-    extract_plan_header_comment_id,
+tests/shared/github/test_metadata_extraction.py:11:    extract_plan_header_dispatch_info,
+/home/runner/work/erk/erk/tests/shared/github/test_metadata_extraction.py-12-    extract_plan_header_local_impl_at,
+/home/runner/work/erk/erk/tests/shared/github/test_metadata_extraction.py-13-    extract_plan_header_remote_impl_at,
+/home/runner/work/erk/erk/tests/shared/github/test_metadata_extraction.py-14-    extract_plan_header_worktree_name,
+/home/runner/work/erk/erk/tests/shared/github/test_metadata_extraction.py-15-    update_plan_header_comment_id,
+/home/runner/work/erk/erk/tests/shared/github/test_metadata_extraction.py-16-    update_plan_header_remote_impl,
+/home/runner/work/erk/erk/tests/shared/github/test_metadata_extraction.py-17-    update_plan_header_worktree_name,
+/home/runner/work/erk/erk/tests/shared/github/test_metadata_extraction.py-18-)
+/home/runner/work/erk/erk/tests/shared/github/test_metadata_extraction.py-19-
+/home/runner/work/erk/erk/tests/shared/github/test_metadata_extraction.py-20-
+tests/shared/github/test_metadata_extraction.py-21-def test_extract_plan_header_worktree_name_found() -&gt; None:
+/home/runner/work/erk/erk/tests/shared/github/test_metadata_extraction.py-22-    """Extract worktree_name from plan-header block when present."""
+tests/shared/github/test_metadata_extraction.py-23-    issue_body = """&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+tests/shared/github/test_metadata_extraction.py-24-&lt;!-- erk:metadata-block:plan-header --&gt;
+/home/runner/work/erk/erk/tests/shared/github/test_metadata_extraction.py-25-&lt;details&gt;
+/home/runner/work/erk/erk/tests/shared/github/test_metadata_extraction.py-26-&lt;summary&gt;&lt;code&gt;plan-header&lt;/code&gt;&lt;/summary&gt;
+--
+/home/runner/work/erk/erk/tests/shared/github/test_metadata_extraction.py-88-
+/home/runner/work/erk/erk/tests/shared/github/test_metadata_extraction.py-89-    worktree = extract_plan_header_worktree_name(issue_body)
+tests/shared/github/test_metadata_extraction.py:90:    run_id, node_id, dispatched_at = extract_plan_header_dispatch_info(issue_body)
+/home/runner/work/erk/erk/tests/shared/github/test_metadata_extraction.py-91-
+/home/runner/work/erk/erk/tests/shared/github/test_metadata_extraction.py-92-    assert worktree == "feature-branch-b-24-01-15"
+/home/runner/work/erk/erk/tests/shared/github/test_metadata_extraction.py-93-    assert run_id == "1234567890"
+/home/runner/work/erk/erk/tests/shared/github/test_metadata_extraction.py-94-    assert node_id is None  # Not present in this test fixture
+tests/shared/github/test_metadata_extraction.py-95-    assert dispatched_at == "2024-01-15T11:00:00Z"
+/home/runner/work/erk/erk/tests/shared/github/test_metadata_extraction.py-96-
+/home/runner/work/erk/erk/tests/shared/github/test_metadata_extraction.py-97-
+tests/shared/github/test_metadata_extraction.py-98-def test_extract_plan_header_local_impl_at_found() -&gt; None:
+
+... [72 lines omitted] ...
+  </tool_result>
+  <assistant>I now have all the context needed. Let me also check how the `_parse_pr_from_timeline_event` method constructs `PullRequestInfo` — I need the same field names:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="4147" cache_read_input_tokens="70732" cache_creation="{'ephemeral_5m_input_tokens': 4147, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01BymJxqQaD5j2DiZnTqHYFr">
+    <param name="pattern">def _parse_pr_from_timeline_event</param>
+    <param name="path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/real.py</param>
+    <param name="output_mode">content</param>
+    <param name="-A">50</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4147" cache_read_input_tokens="70732" cache_creation="{'ephemeral_5m_input_tokens': 4147, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01BymJxqQaD5j2DiZnTqHYFr">
+1253:    def _parse_pr_from_timeline_event(
+1254-        self, event: dict[str, Any], repo_id: GitHubRepoId
+1255-    ) -&gt; tuple[PullRequestInfo, str] | None:
+1256-        """Parse PR info from a timeline CrossReferencedEvent.
+1257-
+1258-        Returns tuple of (PullRequestInfo, created_at_timestamp) or None if invalid.
+1259-        The willCloseTarget field from the event indicates whether the PR will
+1260-        close this issue when merged. PRs with willCloseTarget=False are still
+1261-        included (they reference the issue but won't close it on merge).
+1262-        """
+1263-        source = event.get("source")
+1264-        if source is None:
+1265-            return None
+1266-
+1267-        pr_number = source.get("number")
+1268-        pr_state = source.get("state")
+1269-        pr_url = source.get("url")
+1270-        created_at_pr = source.get("createdAt")
+1271-
+1272-        # Skip if essential fields are missing (source may be Issue, not PR)
+1273-        if pr_number is None or pr_state is None or pr_url is None or created_at_pr is None:
+1274-            return None
+1275-
+1276-        checks_passing, checks_counts = parse_status_rollup(source.get("statusCheckRollup"))
+1277-        has_conflicts = parse_mergeable_status(source.get("mergeable"))
+1278-        will_close_target = event.get("willCloseTarget", False)
+1279-        review_thread_counts = parse_review_thread_counts(source.get("reviewThreads"))
+1280-        head_ref_name = source.get("headRefName")
+1281-        review_decision = source.get("reviewDecision")
+1282-
+
+... [21 lines omitted] ...
+  </tool_result>
+</session>

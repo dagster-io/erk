@@ -1,0 +1,892 @@
+<session>
+  <meta branch="plnd/fix-objective-nodes-pr-dat-03-09-0931" />
+  <meta model="claude-opus-4-6" />
+  <assistant>Now I have everything I need. Let me also check the FakeLocalGitHub to understand how the test fake handles `get_issues_by_numbers_with_pr_linkages`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="958" cache_read_input_tokens="74879" cache_creation="{'ephemeral_5m_input_tokens': 958, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01RcY2XNhD6nQqaMCj8dU1U7">
+    <param name="pattern">get_issues_by_numbers_with_pr_linkages</param>
+    <param name="path">/home/runner/work/erk/erk/tests</param>
+    <param name="output_mode">content</param>
+    <param name="-B">2</param>
+    <param name="-A">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="958" cache_read_input_tokens="74879" cache_creation="{'ephemeral_5m_input_tokens': 958, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01RcY2XNhD6nQqaMCj8dU1U7">
+No matches found
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01LqbHymggNnGFYVejBu5QKx">
+    <param name="pattern">get_issues_by_numbers_with_pr_linkages</param>
+    <param name="path">/home/runner/work/erk/erk</param>
+    <param name="type">py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="450" cache_read_input_tokens="75837" cache_creation="{'ephemeral_5m_input_tokens': 450, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01LqbHymggNnGFYVejBu5QKx">
+Found 5 files
+src/erk/tui/data/real_provider.py
+packages/erk-shared/src/erk_shared/gateway/github/real.py
+packages/erk-shared/src/erk_shared/gateway/github/abc.py
+packages/erk-shared/src/erk_shared/gateway/github/dry_run.py
+packages/erk-shared/src/erk_shared/gateway/github/fake.py
+  </tool_result>
+  <tool_use name="Grep" id="toolu_015fGsFAZQFxxSZX2ZTRrpqX">
+    <param name="pattern">get_issues_by_numbers_with_pr_linkages</param>
+    <param name="path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/fake.py</param>
+    <param name="output_mode">content</param>
+    <param name="-B">2</param>
+    <param name="-A">25</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="233" cache_read_input_tokens="76287" cache_creation="{'ephemeral_5m_input_tokens': 233, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01FBYfUsoTP7puuDpdgKXSbN">
+    <param name="pattern">get_issues_by_numbers_with_pr_linkages</param>
+    <param name="path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/dry_run.py</param>
+    <param name="output_mode">content</param>
+    <param name="-B">2</param>
+    <param name="-A">25</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="233" cache_read_input_tokens="76287" cache_creation="{'ephemeral_5m_input_tokens': 233, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01FBYfUsoTP7puuDpdgKXSbN">
+362-        return self._wrapped.download_run_artifact(repo_root, run_id, artifact_name, destination)
+363-
+364:    def get_issues_by_numbers_with_pr_linkages(
+365-        self,
+366-        *,
+367-        location: GitHubRepoLocation,
+368-        plan_numbers: list[int],
+369-    ) -&gt; tuple[list[IssueInfo], dict[int, list[PullRequestInfo]]]:
+370-        """Delegate read operation to wrapped implementation."""
+371:        return self._wrapped.get_issues_by_numbers_with_pr_linkages(
+372-            location=location, plan_numbers=plan_numbers
+373-        )
+374-
+375-    def create_commit_status(
+376-        self,
+377-        *,
+378-        repo: str,
+379-        sha: str,
+380-        state: str,
+381-        context: str,
+382-        description: str,
+383-    ) -&gt; bool:
+384-        """No-op for creating commit status in dry-run mode.
+385-
+386-        Returns True to indicate success without actually creating status.
+387-        """
+388-        return True
+  </tool_result>
+  <tool_result tool="toolu_015fGsFAZQFxxSZX2ZTRrpqX">
+1174-        return self._downloaded_artifacts
+1175-
+1176:    def get_issues_by_numbers_with_pr_linkages(
+1177-        self,
+1178-        *,
+1179-        location: GitHubRepoLocation,
+1180-        plan_numbers: list[int],
+1181-    ) -&gt; tuple[list[IssueInfo], dict[int, list[PullRequestInfo]]]:
+1182-        """Filter pre-configured issues by number, returning matching PR linkages.
+1183-
+1184-        Args:
+1185-            location: GitHub repository location (ignored in fake)
+1186-            plan_numbers: List of plan numbers to fetch
+1187-
+1188-        Returns:
+1189-            Tuple of (filtered_issues, pr_linkages for those plans)
+1190-        """
+1191-        if not plan_numbers:
+1192-            return ([], {})
+1193-
+1194-        number_set = set(plan_numbers)
+1195-        filtered_issues = [issue for issue in self._issues_data if issue.number in number_set]
+1196-
+1197-        pr_linkages: dict[int, list[PullRequestInfo]] = {}
+1198-        for issue in filtered_issues:
+1199-            if issue.number in self._pr_plan_linkages:
+1200-                pr_linkages[issue.number] = self._pr_plan_linkages[issue.number]
+1201-
+  </tool_result>
+  <assistant>Now I have complete context. Let me also check `FakeHttpClient` for the test infrastructure:</assistant>
+  <usage input_tokens="323" cache_creation_input_tokens="960" cache_read_input_tokens="76520" cache_creation="{'ephemeral_5m_input_tokens': 960, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01JuZbYERAeCvR2WoDT8svtV">
+    <param name="pattern">class FakeHttpClient</param>
+    <param name="path">/home/runner/work/erk/erk</param>
+    <param name="type">py</param>
+    <param name="output_mode">content</param>
+    <param name="-A">30</param>
+  </tool_use>
+  <usage input_tokens="323" cache_creation_input_tokens="960" cache_read_input_tokens="76520" cache_creation="{'ephemeral_5m_input_tokens': 960, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01JuZbYERAeCvR2WoDT8svtV">
+packages/erk-shared/src/erk_shared/gateway/http/fake.py:22:class FakeHttpClient(HttpClient):
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/http/fake.py-23-    """In-memory fake implementation that tracks HTTP requests.
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/http/fake.py-24-
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/http/fake.py-25-    This class has NO public setup methods except via constructor.
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/http/fake.py-26-    All state is configured at construction or captured during execution.
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/http/fake.py-27-    """
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/http/fake.py-28-
+packages/erk-shared/src/erk_shared/gateway/http/fake.py-29-    def __init__(self) -&gt; None:
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/http/fake.py-30-        """Create FakeHttpClient with empty state."""
+packages/erk-shared/src/erk_shared/gateway/http/fake.py-31-        self._requests: list[RecordedRequest] = []
+packages/erk-shared/src/erk_shared/gateway/http/fake.py-32-        self._responses: dict[str, dict[str, Any]] = {}
+packages/erk-shared/src/erk_shared/gateway/http/fake.py-33-        self._list_responses: dict[str, list[dict[str, Any]]] = {}
+packages/erk-shared/src/erk_shared/gateway/http/fake.py-34-        self._errors: dict[str, HttpError] = {}
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/http/fake.py-35-
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/http/fake.py-36-    @property
+packages/erk-shared/src/erk_shared/gateway/http/fake.py-37-    def requests(self) -&gt; list[RecordedRequest]:
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/http/fake.py-38-        """Get the list of recorded requests.
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/http/fake.py-39-
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/http/fake.py-40-        Returns a copy of the list to prevent external mutation.
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/http/fake.py-41-
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/http/fake.py-42-        This property is for test assertions only.
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/http/fake.py-43-        """
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/http/fake.py-44-        return list(self._requests)
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/http/fake.py-45-
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/http/fake.py-46-    def set_response(
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/http/fake.py-47-        self,
+packages/erk-shared/src/erk_shared/gateway/http/fake.py-48-        endpoint: str,
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/http/fake.py-49-        *,
+packages/erk-shared/src/erk_shared/gateway/http/fake.py-50-        response: dict[str, Any],
+packages/erk-shared/src/erk_shared/gateway/http/fake.py-51-    ) -&gt; None:
+
+... [1 lines omitted] ...
+  </tool_result>
+  <assistant>Now let me check the `graphql` method on the FakeHttpClient:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1772" cache_read_input_tokens="77480" cache_creation="{'ephemeral_5m_input_tokens': 1772, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01HcUCQHf2c4uXS4xRPkKVML">
+    <param name="pattern">def graphql</param>
+    <param name="path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/http/fake.py</param>
+    <param name="output_mode">content</param>
+    <param name="-A">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1772" cache_read_input_tokens="77480" cache_creation="{'ephemeral_5m_input_tokens': 1772, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01HcUCQHf2c4uXS4xRPkKVML">
+200:    def graphql(
+201-        self,
+202-        *,
+203-        query: str,
+204-        variables: dict[str, Any],
+205-    ) -&gt; dict[str, Any]:
+206-        """Record GraphQL request and return configured response.
+207-
+208-        Args:
+209-            query: GraphQL query string
+210-            variables: Query variables
+211-
+212-        Returns:
+213-            Configured response dictionary
+214-        """
+215-        return self._get_response("POST", "graphql", {"query": query, "variables": variables})
+  </tool_result>
+  <assistant>Now I have complete context. Time to implement all the changes. Let me start with Phase 1: Rewrite the GraphQL query in `real.py`.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="555" cache_read_input_tokens="79252" cache_creation="{'ephemeral_5m_input_tokens': 555, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_018eMpTrxx9VaQwS7rZtEMN8">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/real.py</param>
+    <param name="old_string">    def _build_issues_by_numbers_query(self, plan_numbers: list[int], repo_id: GitHubRepoI...[truncated 1491 chars]...po_id.owner}", name: "{repo_id.repo}") {{
+{joined_queries}
+  }}
+}}"""
+        return query</param>
+    <param name="new_string">    def _build_prs_by_numbers_query(self, plan_numbers: list[int], repo_id: GitHubRepoId) ...[truncated 1327 chars]...po_id.owner}", name: "{repo_id.repo}") {{
+{joined_queries}
+  }}
+}}"""
+        return query</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="555" cache_read_input_tokens="79252" cache_creation="{'ephemeral_5m_input_tokens': 555, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_018eMpTrxx9VaQwS7rZtEMN8">
+The file /home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/real.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01RncApjo4UQc8sPbXnXCrUP">
+    <param name="todos">[{'content': 'Rewrite GraphQL query as PR-only (_build_prs_by_numbers_query)', 'status': '...[truncated 627 chars]...nt': 'Run CI verification', 'status': 'pending', 'activeForm': 'Running CI verification'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1105" cache_read_input_tokens="79807" cache_creation="{'ephemeral_5m_input_tokens': 1105, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01RncApjo4UQc8sPbXnXCrUP">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Now Phase 2: Rewrite the response parsing method.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="334" cache_read_input_tokens="80912" cache_creation="{'ephemeral_5m_input_tokens': 334, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_015tZYeauJjRLR4YX8emFCHS">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/real.py</param>
+    <param name="old_string">    def _parse_issues_by_numbers_response(
+        self,
+        response: dict[str, Any],...[truncated 1605 chars]...ssue.number] = [pr for pr, _ in prs_with_timestamps]
+
+        return (issues, pr_linkages)</param>
+    <param name="new_string">    def _parse_prs_by_numbers_response(
+        self,
+        response: dict[str, Any],
+  ...[truncated 2047 chars]... )
+            pr_linkages[issue.number] = [pr_info]
+
+        return (issues, pr_linkages)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="334" cache_read_input_tokens="80912" cache_creation="{'ephemeral_5m_input_tokens': 334, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_015tZYeauJjRLR4YX8emFCHS">
+The file /home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/real.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01GYAi7UxyQLyyoTpNxMhcNg">
+    <param name="todos">[{'content': 'Rewrite GraphQL query as PR-only (_build_prs_by_numbers_query)', 'status': '...[truncated 629 chars]...nt': 'Run CI verification', 'status': 'pending', 'activeForm': 'Running CI verification'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1265" cache_read_input_tokens="81246" cache_creation="{'ephemeral_5m_input_tokens': 1265, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01GYAi7UxyQLyyoTpNxMhcNg">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Phase 3: Update the public method to call renamed private methods, and update the abc docstring.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="334" cache_read_input_tokens="82511" cache_creation="{'ephemeral_5m_input_tokens': 334, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01MpV2PHJsSiefNB71WakYBg">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/real.py</param>
+    <param name="old_string">    def get_issues_by_numbers_with_pr_linkages(
+        self,
+        *,
+        location:...[truncated 474 chars]...y, location.root)
+        return self._parse_issues_by_numbers_response(response, repo_id)</param>
+    <param name="new_string">    def get_issues_by_numbers_with_pr_linkages(
+        self,
+        *,
+        location:...[truncated 537 chars]...uery, location.root)
+        return self._parse_prs_by_numbers_response(response, repo_id)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="334" cache_read_input_tokens="82511" cache_creation="{'ephemeral_5m_input_tokens': 334, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01MpV2PHJsSiefNB71WakYBg">
+The file /home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/real.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update the abc docstring:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="610" cache_read_input_tokens="82845" cache_creation="{'ephemeral_5m_input_tokens': 610, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01U6LNcz1RVRZ82yYZ8yJP4g">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/abc.py</param>
+    <param name="old_string">        """Fetch specific issues by number with full PR linkage data.
+
+        Uses issueO...[truncated 440 chars]...issues
+            - pr_linkages: Mapping of plan_number -&gt; list of linked PRs
+        """</param>
+    <param name="new_string">        """Fetch plans as PRs with rich fields for TUI display.
+
+        Queries pullReque...[truncated 403 chars]...r_linkages: Mapping of plan_number -&gt; list of PullRequestInfo with rich fields
+        """</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="610" cache_read_input_tokens="82845" cache_creation="{'ephemeral_5m_input_tokens': 610, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01U6LNcz1RVRZ82yYZ8yJP4g">
+The file /home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/abc.py has been updated successfully.
+  </tool_result>
+  <assistant>Now check if `ISSUE_PR_LINKAGE_FRAGMENT` is still used elsewhere in `real.py` — we removed it from the query but it may be imported for other methods:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="480" cache_read_input_tokens="83455" cache_creation="{'ephemeral_5m_input_tokens': 480, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_017QdmgfUR1Bkq1HqfjthXkq">
+    <param name="pattern">ISSUE_PR_LINKAGE_FRAGMENT</param>
+    <param name="path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/real.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="480" cache_read_input_tokens="83455" cache_creation="{'ephemeral_5m_input_tokens': 480, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_017QdmgfUR1Bkq1HqfjthXkq">
+29:    ISSUE_PR_LINKAGE_FRAGMENT,
+810:        query = f"""{ISSUE_PR_LINKAGE_FRAGMENT}
+  </tool_result>
+  <assistant>Good — `ISSUE_PR_LINKAGE_FRAGMENT` is still used at line 810 in another method. The import must stay.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="465" cache_read_input_tokens="83935" cache_creation="{'ephemeral_5m_input_tokens': 465, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_013ER5hNGWBiQVhQ6uQVV8g6">
+    <param name="todos">[{'content': 'Rewrite GraphQL query as PR-only (_build_prs_by_numbers_query)', 'status': '...[truncated 631 chars]...nt': 'Run CI verification', 'status': 'pending', 'activeForm': 'Running CI verification'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="465" cache_read_input_tokens="83935" cache_creation="{'ephemeral_5m_input_tokens': 465, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_013ER5hNGWBiQVhQ6uQVV8g6">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Phase 4: Add workflow run fetching to `fetch_plans_by_ids`. I need to:
+1. Extract dispatch node IDs from issue bodies
+2. Batch fetch workflow runs
+3. Pass actual workflow_run to `_build_row_data`</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="367" cache_read_input_tokens="84400" cache_creation="{'ephemeral_5m_input_tokens': 367, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_017ieEeJgRynmaCRUQ6bkuMU">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/data/real_provider.py</param>
+    <param name="old_string">from erk_shared.gateway.github.metadata.core import (
+    extract_objective_slug,
+)</param>
+    <param name="new_string">from erk_shared.gateway.github.graphql_queries import GET_WORKFLOW_RUNS_BY_NODE_IDS_QUERY
+...[truncated 155 chars]...o
+from erk_shared.gateway.github.pr_data_parsing import parse_workflow_runs_nodes_response</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="367" cache_read_input_tokens="84400" cache_creation="{'ephemeral_5m_input_tokens': 367, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_017ieEeJgRynmaCRUQ6bkuMU">
+The file /home/runner/work/erk/erk/src/erk/tui/data/real_provider.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update the `fetch_plans_by_ids` method to fetch workflow runs:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="356" cache_read_input_tokens="84767" cache_creation="{'ephemeral_5m_input_tokens': 356, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01Px6xqazt5eB1EABKZmFYQT">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/data/real_provider.py</param>
+    <param name="old_string">        plans = [github_issue_to_plan(issue) for issue in issues]
+        worktree_by_plan...[truncated 560 chars]...          rows.append(row)
+
+        rows.sort(key=lambda r: r.plan_id)
+        return rows</param>
+    <param name="new_string">        plans = [github_issue_to_plan(issue) for issue in issues]
+
+        # Extract dispa...[truncated 1543 chars]...          rows.append(row)
+
+        rows.sort(key=lambda r: r.plan_id)
+        return rows</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="356" cache_read_input_tokens="84767" cache_creation="{'ephemeral_5m_input_tokens': 356, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Px6xqazt5eB1EABKZmFYQT">
+The file /home/runner/work/erk/erk/src/erk/tui/data/real_provider.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_011mMLHjpRPDk7MQuStpJS2o">
+    <param name="todos">[{'content': 'Rewrite GraphQL query as PR-only (_build_prs_by_numbers_query)', 'status': '...[truncated 633 chars]...nt': 'Run CI verification', 'status': 'pending', 'activeForm': 'Running CI verification'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="938" cache_read_input_tokens="85123" cache_creation="{'ephemeral_5m_input_tokens': 938, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_011mMLHjpRPDk7MQuStpJS2o">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Phase 5: Update the tests. Let me read the full test files for both test_real.py and test_provider.py:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="334" cache_read_input_tokens="86061" cache_creation="{'ephemeral_5m_input_tokens': 334, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01NEMGDbHhpdaf9iUDbVo9AA">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/gateways/github/test_real.py</param>
+    <param name="offset">310</param>
+    <param name="limit">135</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="334" cache_read_input_tokens="86061" cache_creation="{'ephemeral_5m_input_tokens': 334, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01M6bEuXWoCw96VPFL2cH2Sj">
+    <param name="file_path">/home/runner/work/erk/erk/tests/tui/data/test_provider.py</param>
+    <param name="offset">1770</param>
+    <param name="limit">135</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="334" cache_read_input_tokens="86061" cache_creation="{'ephemeral_5m_input_tokens': 334, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01NEMGDbHhpdaf9iUDbVo9AA">
+   310→    with pytest.raises(RuntimeError, match="network error"):
+   311→        github._get_default_branch(repo_root)
+   312→
+   313→    # Error should NOT be cached — next call should retry
+   314→    assert repo_root not in github._default_branch_cache
+   315→
+   316→
+   317→# --- Tests for _build_issues_by_numbers_query ---
+   318→
+   319→
+   320→def test_build_issues_by_numbers_query_single_issue() -&gt; None:
+   321→    """Query contains one aliased issueOrPullRequest for a single issue."""
+   322→    github = RealLocalGitHub.for_test()
+   323→    repo_id = GitHubRepoId(owner="acme", repo="widgets")
+   324→
+   325→    query = github._build_issues_by_numbers_query([100], repo_id)
+   326→
+   327→    assert "issue_100: issueOrPullRequest(number: 100)" in query
+   328→    assert 'repository(owner: "acme", name: "widgets")' in query
+   329→
+   330→
+   331→def test_build_issues_by_numbers_query_multiple_issues() -&gt; None:
+   332→    """Query contains one alias per issue number."""
+   333→    github = RealLocalGitHub.for_test()
+   334→    repo_id = GitHubRepoId(owner="acme", repo="widgets")
+   335→
+   336→    query = github._build_issues_by_numbers_query([100, 200, 300], repo_id)
+   337→
+   338→    assert "issue_100: issueOrPullRequest(number: 100)" in query
+   339→    assert "issue_200: issueOrPullRequest(number: 200)" in query
+
+... [106 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01M6bEuXWoCw96VPFL2cH2Sj">
+  1770→        displays = [d for d, _url in row.objective_deps_plans]
+  1771→        assert displays.count("#400") == 1
+  1772→
+  1773→
+  1774→class TestFetchPlansByIds:
+  1775→    """Tests for fetch_plans_by_ids method."""
+  1776→
+  1777→    @staticmethod
+  1778→    def _make_provider(
+  1779→        tmp_path: Path,
+  1780→        *,
+  1781→        issues_data: list[IssueInfo] | None = None,
+  1782→        pr_linkages: dict[int, list[PullRequestInfo]] | None = None,
+  1783→    ) -&gt; RealPlanDataProvider:
+  1784→        repo_root = tmp_path / "repo"
+  1785→        repo_root.mkdir(exist_ok=True)
+  1786→        erk_dir = repo_root / ".erk"
+  1787→        erk_dir.mkdir(exist_ok=True)
+  1788→
+  1789→        git = FakeGit(
+  1790→            worktrees={
+  1791→                repo_root: [
+  1792→                    WorktreeInfo(path=repo_root, branch="main", is_root=True),
+  1793→                ]
+  1794→            },
+  1795→            git_common_dirs={repo_root: repo_root / ".git"},
+  1796→        )
+  1797→        github = FakeLocalGitHub(
+  1798→            pr_plan_linkages=pr_linkages or {},
+  1799→            issues_data=issues_data or [],
+
+... [110 lines omitted] ...
+  </tool_result>
+  <assistant>Now let me update the test_real.py tests. I need to update both query tests and parse tests:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="4122" cache_read_input_tokens="86395" cache_creation="{'ephemeral_5m_input_tokens': 4122, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01XLTa591Ru3tosbrMdgWzuk">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/gateways/github/test_real.py</param>
+    <param name="old_string"># --- Tests for _build_issues_by_numbers_query ---
+
+
+def test_build_issues_by_numbers_quer...[truncated 3631 chars]..._numbers_response(response, repo_id)
+
+    assert issues == []
+    assert pr_linkages == {}</param>
+    <param name="new_string"># --- Tests for _build_prs_by_numbers_query ---
+
+
+def test_build_prs_by_numbers_query_sing...[truncated 5700 chars]...o.review_decision == "CHANGES_REQUESTED"
+    assert pr_info.review_thread_counts == (1, 3)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4122" cache_read_input_tokens="86395" cache_creation="{'ephemeral_5m_input_tokens': 4122, 'ephemeral_1h_input_tokens': 0}" output_tokens="3305" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01XLTa591Ru3tosbrMdgWzuk">
+The file /home/runner/work/erk/erk/tests/unit/gateways/github/test_real.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me add new tests to test_provider.py for the PR linkages and workflow runs:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3351" cache_read_input_tokens="90517" cache_creation="{'ephemeral_5m_input_tokens': 3351, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_0127fgroXtsu781G1wthpoKW">
+    <param name="file_path">/home/runner/work/erk/erk/tests/tui/data/test_provider.py</param>
+    <param name="offset">1</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3351" cache_read_input_tokens="90517" cache_creation="{'ephemeral_5m_input_tokens': 3351, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_0127fgroXtsu781G1wthpoKW">
+     1→"""Tests for plan data provider."""
+     2→
+     3→import json
+     4→from datetime import UTC, datetime
+     5→from pathlib import Path
+     6→
+     7→from erk.core.context import GlobalConfig
+     8→from erk.core.repo_discovery import RepoContext
+     9→from erk.tui.data.types import FetchTimings
+    10→from erk_shared.gateway.browser.fake import FakeBrowserLauncher
+    11→from erk_shared.gateway.clipboard.fake import FakeClipboard
+    12→from erk_shared.gateway.git.abc import WorktreeInfo
+    13→from erk_shared.gateway.git.fake import FakeGit
+    14→from erk_shared.gateway.github.fake import FakeLocalGitHub
+    15→from erk_shared.gateway.github.issues.types import IssueInfo
+    16→from erk_shared.gateway.github.metadata.core import find_metadata_block
+    17→from erk_shared.gateway.github.types import (
+    18→    GitHubRepoId,
+    19→    GitHubRepoLocation,
+    20→    PullRequestInfo,
+    21→)
+    22→from erk_shared.gateway.graphite.fake import FakeGraphite
+    23→from erk_shared.gateway.http.fake import FakeHttpClient
+    24→from erk_shared.gateway.plan_data_provider.real import RealPlanDataProvider
+    25→from erk_shared.gateway.plan_service.real import RealPlanService
+    26→from erk_shared.plan_store.types import Plan, PlanState
+    27→from tests.fakes.context import create_test_context
+    28→from tests.test_utils.plan_helpers import format_plan_header_body_for_test
+    29→
+    30→
+
+... [5 lines omitted] ...
+  </tool_result>
+  <assistant>Now let me add the new test for PR linkages populating display fields in `TestFetchPlansByIds`. Let me first check `format_plan_header_body_for_test` to see what it returns, and understand how to construct a body with dispatch info:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="928" cache_read_input_tokens="93868" cache_creation="{'ephemeral_5m_input_tokens': 928, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01S1JR1CkantoAeSmzmUZk6q">
+    <param name="pattern">def format_plan_header_body_for_test</param>
+    <param name="path">/home/runner/work/erk/erk/tests</param>
+    <param name="output_mode">content</param>
+    <param name="-A">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="928" cache_read_input_tokens="93868" cache_creation="{'ephemeral_5m_input_tokens': 928, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01S1JR1CkantoAeSmzmUZk6q">
+tests/test_utils/plan_helpers.py:134:def format_plan_header_body_for_test(
+/home/runner/work/erk/erk/tests/test_utils/plan_helpers.py-135-    *,
+tests/test_utils/plan_helpers.py-136-    created_at: str = "2024-01-15T10:30:00Z",
+tests/test_utils/plan_helpers.py-137-    created_by: str = "test-user",
+tests/test_utils/plan_helpers.py-138-    worktree_name: str | None = None,
+tests/test_utils/plan_helpers.py-139-    branch_name: str | None = None,
+tests/test_utils/plan_helpers.py-140-    plan_comment_id: int | None = None,
+tests/test_utils/plan_helpers.py-141-    last_dispatched_run_id: str | None = None,
+tests/test_utils/plan_helpers.py-142-    last_dispatched_node_id: str | None = None,
+tests/test_utils/plan_helpers.py-143-    last_dispatched_at: str | None = None,
+tests/test_utils/plan_helpers.py-144-    last_local_impl_at: str | None = None,
+tests/test_utils/plan_helpers.py-145-    last_local_impl_event: str | None = None,
+tests/test_utils/plan_helpers.py-146-    last_local_impl_session: str | None = None,
+tests/test_utils/plan_helpers.py-147-    last_local_impl_user: str | None = None,
+tests/test_utils/plan_helpers.py-148-    last_remote_impl_at: str | None = None,
+tests/test_utils/plan_helpers.py-149-    last_remote_impl_run_id: str | None = None,
+tests/test_utils/plan_helpers.py-150-    last_remote_impl_session_id: str | None = None,
+tests/test_utils/plan_helpers.py-151-    source_repo: str | None = None,
+tests/test_utils/plan_helpers.py-152-    objective_issue: int | None = None,
+tests/test_utils/plan_helpers.py-153-    created_from_session: str | None = None,
+tests/test_utils/plan_helpers.py-154-    created_from_workflow_run_url: str | None = None,
+tests/test_utils/plan_helpers.py-155-    last_learn_session: str | None = None,
+tests/test_utils/plan_helpers.py-156-    last_learn_at: str | None = None,
+tests/test_utils/plan_helpers.py-157-    learn_status: str | None = None,
+tests/test_utils/plan_helpers.py-158-    learn_plan_issue: int | None = None,
+tests/test_utils/plan_helpers.py-159-    learn_plan_pr: int | None = None,
+tests/test_utils/plan_helpers.py-160-    learned_from_issue: int | None = None,
+tests/test_utils/plan_helpers.py-161-    lifecycle_stage: str | None = None,
+tests/test_utils/plan_helpers.py-162-) -&gt; str:
+/home/runner/work/erk/erk/tests/test_utils/plan_helpers.py-163-    """Create plan header body for testing with sensible defaults."""
+
+... [1 lines omitted] ...
+  </tool_result>
+  <assistant>Now I can add the tests. Let me add two new test methods to `TestFetchPlansByIds`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1113" cache_read_input_tokens="94796" cache_creation="{'ephemeral_5m_input_tokens': 1113, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01VLcTjEjf5W2VyAVmisJfsd">
+    <param name="file_path">/home/runner/work/erk/erk/tests/tui/data/test_provider.py</param>
+    <param name="old_string">    def test_results_sorted_by_plan_id(self, tmp_path: Path) -&gt; None:
+        """Results a...[truncated 1130 chars]...0})
+
+        assert [r.plan_id for r in result] == [100, 300]
+
+
+class TestAppendTimingLog:</param>
+    <param name="new_string">    def test_results_sorted_by_plan_id(self, tmp_path: Path) -&gt; None:
+        """Results a...[truncated 5584 chars]...== "completed"
+        assert row.run_conclusion == "success"
+
+
+class TestAppendTimingLog:</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1113" cache_read_input_tokens="94796" cache_creation="{'ephemeral_5m_input_tokens': 1113, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01VLcTjEjf5W2VyAVmisJfsd">
+The file /home/runner/work/erk/erk/tests/tui/data/test_provider.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01NAYFdzMJVrG5DVEqA6xDYv">
+    <param name="todos">[{'content': 'Rewrite GraphQL query as PR-only (_build_prs_by_numbers_query)', 'status': '...[truncated 635 chars]... 'Run CI verification', 'status': 'in_progress', 'activeForm': 'Running CI verification'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2460" cache_read_input_tokens="95909" cache_creation="{'ephemeral_5m_input_tokens': 2460, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01NAYFdzMJVrG5DVEqA6xDYv">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Phase 6: Run CI verification. Let me run the tests for the modified files:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="334" cache_read_input_tokens="98369" cache_creation="{'ephemeral_5m_input_tokens': 334, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_016Cc28PBR3stCKgCUd87SZa">
+    <param name="subagent_type">devrun</param>
+    <param name="prompt">Run pytest on the following test files and report results:
+1. tests/unit/gateways/github/t...[truncated 99 chars]...s/tui/data/test_provider.py -x -v
+
+Report all failures, errors, and their full tracebacks.</param>
+    <param name="description">Run tests for modified files</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="334" cache_read_input_tokens="98369" cache_creation="{'ephemeral_5m_input_tokens': 334, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_016Cc28PBR3stCKgCUd87SZa">
+## Test Results
+
+**Summary:** 52 passed, 1 failed
+
+### Failed Test
+
+**File:** `tests/tui/data/test_provider.py`
+
+**Test:** `TestFetchPlansByIds::test_pr_linkages_populate_display_fields`
+
+**Error Type:** `AttributeError`
+
+**Location:** Line 1936
+
+**Message:** `'PlanRowData' object has no attribute 'pr_checks_passing'. Did you mean: 'checks_passing'?`
+
+**Full Traceback:**
+
+```
+&gt;       assert row.pr_checks_passing is True
+               ^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'PlanRowData' object has no attribute 'pr_checks_passing'. Did you mean: 'checks_passing'?
+
+tests/tui/data/test_provider.py:1936: AttributeError
+```
+
+The test is attempting to access `row.pr_checks_passing` but the `PlanRowData` object only has a `checks_passing` attribute. The test needs to be corrected to use the correct attribute name.
+agentId: ae33d31 (for resuming to continue this agent's work if needed)
+  </tool_result>
+  <assistant>Quick fix — the attribute is `checks_passing`, not `pr_checks_passing`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="495" cache_read_input_tokens="98703" cache_creation="{'ephemeral_5m_input_tokens': 495, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01Fqs4p7JsbSCzF4wearwj7M">
+    <param name="file_path">/home/runner/work/erk/erk/tests/tui/data/test_provider.py</param>
+    <param name="old_string">        assert row.pr_checks_passing is True</param>
+    <param name="new_string">        assert row.checks_passing is True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="495" cache_read_input_tokens="98703" cache_creation="{'ephemeral_5m_input_tokens': 495, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Fqs4p7JsbSCzF4wearwj7M">
+The file /home/runner/work/erk/erk/tests/tui/data/test_provider.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Task" id="toolu_01RKuAUVvFYRUuXkaJgHkA6e">
+    <param name="subagent_type">devrun</param>
+    <param name="prompt">Run pytest on the following test files and report results:
+1. tests/unit/gateways/github/t...[truncated 99 chars]...s/tui/data/test_provider.py -x -v
+
+Report all failures, errors, and their full tracebacks.</param>
+    <param name="description">Re-run tests after fix</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="196" cache_read_input_tokens="99198" cache_creation="{'ephemeral_5m_input_tokens': 196, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01RKuAUVvFYRUuXkaJgHkA6e">
+pytest passed: 57 tests passed in 0.85s
+
+All tests executed successfully:
+- **tests/unit/gateways/github/test_real.py** - 23 tests passed
+- **tests/tui/data/test_provider.py** - 34 tests passed
+
+No failures, errors, or skipped tests.
+agentId: a4be1dd (for resuming to continue this agent's work if needed)
+  </tool_result>
+  <assistant>All 57 tests pass. Now let me run the broader CI checks:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="302" cache_read_input_tokens="99394" cache_creation="{'ephemeral_5m_input_tokens': 302, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_017QwDrQFL1GR7CRerDPviAi">
+    <param name="subagent_type">devrun</param>
+    <param name="prompt">Run the fast CI checks for Python:
+1. Run ruff check: uv run ruff check src/erk/tui/data/r...[truncated 568 chars]...ithub/real.py packages/erk-shared/src/erk_shared/gateway/github/abc.py
+
+Report all output.</param>
+    <param name="description">Run lint and type checks</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="302" cache_read_input_tokens="99394" cache_creation="{'ephemeral_5m_input_tokens': 302, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_017QwDrQFL1GR7CRerDPviAi">
+## CI Check Results
+
+**ruff check: FAILED**
+
+Found 1 error:
+
+- **src/erk/tui/data/real_provider.py:3:1** - I001 [Import block is un-sorted or un-formatted]
+  - Fixable with `--fix`
+
+**ruff format check: FAILED**
+
+2 files would be reformatted:
+- `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/real.py`
+- `/home/runner/work/erk/erk/tests/tui/data/test_provider.py`
+
+3 files already formatted:
+- `src/erk/tui/data/real_provider.py`
+- `packages/erk-shared/src/erk_shared/gateway/github/abc.py`
+- `tests/unit/gateways/github/test_real.py`
+
+**ty check: PASSED**
+
+All type checks passed with no diagnostics.
+agentId: ad1086d (for resuming to continue this agent's work if needed)
+  </tool_result>
+  <assistant>Let me fix the import sorting and formatting issues:</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="911" cache_read_input_tokens="99696" cache_creation="{'ephemeral_5m_input_tokens': 911, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_012Kw4nNpZqiXvAKis97pSo8">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/data/real_provider.py</param>
+    <param name="offset">1</param>
+    <param name="limit">60</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="911" cache_read_input_tokens="99696" cache_creation="{'ephemeral_5m_input_tokens': 911, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_012Kw4nNpZqiXvAKis97pSo8">
+     1→"""Real implementation of PlanDataProvider for TUI data assembly."""
+     2→
+     3→import logging
+     4→from datetime import datetime
+     5→
+     6→from erk.core.context import ErkContext
+     7→from erk.core.display_utils import (
+     8→    format_relative_time,
+     9→    format_workflow_outcome,
+    10→    format_workflow_run_id,
+    11→    get_workflow_run_state,
+    12→)
+    13→from erk.core.pr_utils import select_display_pr
+    14→from erk.core.repo_discovery import NoRepoSentinel, RepoContext, ensure_erk_metadata_dir
+    15→from erk.tui.data.provider_abc import PlanDataProvider
+    16→from erk.tui.data.types import FetchTimings, PlanFilters, PlanRowData
+    17→from erk.tui.sorting.types import BranchActivity
+    18→from erk_shared.gateway.github.emoji import format_checks_cell, get_pr_status_emoji
+    19→from erk_shared.gateway.github.graphql_queries import GET_WORKFLOW_RUNS_BY_NODE_IDS_QUERY
+    20→from erk_shared.gateway.github.metadata.core import (
+    21→    extract_objective_slug,
+    22→)
+    23→from erk_shared.gateway.github.metadata.plan_header import extract_plan_header_dispatch_info
+    24→from erk_shared.gateway.github.pr_data_parsing import parse_workflow_runs_nodes_response
+    25→from erk_shared.gateway.github.metadata.dependency_graph import (
+    26→    _TERMINAL_STATUSES,
+    27→    build_graph,
+    28→    build_state_sparkline,
+    29→    compute_graph_summary,
+    30→    find_graph_next_node,
+
+... [35 lines omitted] ...
+  </tool_result>
+  <assistant>The imports are out of order — `erk_shared.gateway.github.graphql_queries` and `erk_shared.gateway.github.metadata.plan_header` and `erk_shared.gateway.github.pr_data_parsing` need to be sorted properly within the `erk_shared` block. Let me fix the ordering:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1079" cache_read_input_tokens="100607" cache_creation="{'ephemeral_5m_input_tokens': 1079, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_014esm1VeGSVTAbMrgUcACC9">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/data/real_provider.py</param>
+    <param name="old_string">from erk_shared.gateway.github.emoji import format_checks_cell, get_pr_status_emoji
+from e...[truncated 563 chars]...map import (
+    parse_roadmap,
+)
+from erk_shared.gateway.github.metadata.schemas import (</param>
+    <param name="new_string">from erk_shared.gateway.github.emoji import format_checks_cell, get_pr_status_emoji
+from e...[truncated 474 chars]...map import (
+    parse_roadmap,
+)
+from erk_shared.gateway.github.metadata.schemas import (</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1079" cache_read_input_tokens="100607" cache_creation="{'ephemeral_5m_input_tokens': 1079, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_014esm1VeGSVTAbMrgUcACC9">
+The file /home/runner/work/erk/erk/src/erk/tui/data/real_provider.py has been updated successfully.
+  </tool_result>
+  <assistant>Now I also need to move `parse_workflow_runs_nodes_response` to the right position. Let me check where it ended up:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="940" cache_read_input_tokens="101686" cache_creation="{'ephemeral_5m_input_tokens': 940, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_015FcPbQmzoEv9Bmy3516Wov">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/data/real_provider.py</param>
+    <param name="offset">18</param>
+    <param name="limit">40</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="940" cache_read_input_tokens="101686" cache_creation="{'ephemeral_5m_input_tokens': 940, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_015FcPbQmzoEv9Bmy3516Wov">
+    18→from erk_shared.gateway.github.emoji import format_checks_cell, get_pr_status_emoji
+    19→from erk_shared.gateway.github.graphql_queries import GET_WORKFLOW_RUNS_BY_NODE_IDS_QUERY
+    20→from erk_shared.gateway.github.metadata.core import (
+    21→    extract_objective_slug,
+    22→)
+    23→from erk_shared.gateway.github.metadata.dependency_graph import (
+    24→    _TERMINAL_STATUSES,
+    25→    build_graph,
+    26→    build_state_sparkline,
+    27→    compute_graph_summary,
+    28→    find_graph_next_node,
+    29→)
+    30→from erk_shared.gateway.github.metadata.plan_header import extract_plan_header_dispatch_info
+    31→from erk_shared.gateway.github.metadata.roadmap import (
+    32→    parse_roadmap,
+    33→)
+    34→from erk_shared.gateway.github.metadata.schemas import (
+    35→    CI_SUMMARY_COMMENT_ID,
+    36→    LAST_LOCAL_IMPL_AT,
+    37→    LAST_REMOTE_IMPL_AT,
+    38→    LEARN_PLAN_ISSUE,
+    39→    LEARN_PLAN_PR,
+    40→    LEARN_RUN_ID,
+    41→    LEARN_STATUS,
+    42→    OBJECTIVE_ISSUE,
+    43→    WORKTREE_NAME,
+    44→)
+    45→from erk_shared.gateway.github.types import (
+    46→    GitHubRepoId,
+    47→    GitHubRepoLocation,
+
+... [15 lines omitted] ...
+  </tool_result>
+  <assistant>I see `parse_workflow_runs_nodes_response` import is missing - it was between the metadata imports before. Let me check:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="810" cache_read_input_tokens="102626" cache_creation="{'ephemeral_5m_input_tokens': 810, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01KNGmvBFmsfDpSLPjMWfmWc">
+    <param name="pattern">parse_workflow_runs_nodes_response</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/tui/data/real_provider.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="810" cache_read_input_tokens="102626" cache_creation="{'ephemeral_5m_input_tokens': 810, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01KNGmvBFmsfDpSLPjMWfmWc">
+247:            runs_by_node_id = parse_workflow_runs_nodes_response(response, node_ids)
+  </tool_result>
+  <assistant>The import got lost during my edit. It should go after `metadata.schemas` and before `types` (alphabetical order for `pr_data_parsing`):</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="435" cache_read_input_tokens="103436" cache_creation="{'ephemeral_5m_input_tokens': 435, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01XSbJxgY5PVsqVw8Gm2AEsb">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/data/real_provider.py</param>
+    <param name="old_string">from erk_shared.gateway.github.metadata.schemas import (
+    CI_SUMMARY_COMMENT_ID,
+    LA...[truncated 97 chars]...S,
+    OBJECTIVE_ISSUE,
+    WORKTREE_NAME,
+)
+from erk_shared.gateway.github.types import (</param>
+    <param name="new_string">from erk_shared.gateway.github.metadata.schemas import (
+    CI_SUMMARY_COMMENT_ID,
+    LA...[truncated 186 chars]...ng import parse_workflow_runs_nodes_response
+from erk_shared.gateway.github.types import (</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="435" cache_read_input_tokens="103436" cache_creation="{'ephemeral_5m_input_tokens': 435, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01XSbJxgY5PVsqVw8Gm2AEsb">
+The file /home/runner/work/erk/erk/src/erk/tui/data/real_provider.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me fix the formatting issues. Let me run ruff format:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="470" cache_read_input_tokens="103871" cache_creation="{'ephemeral_5m_input_tokens': 470, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01MnvHyG2nApoLGJ7V3siqMq">
+    <param name="subagent_type">devrun</param>
+    <param name="prompt">Run these commands in sequence and report the output of each:
+
+1. uv run ruff check --fix ...[truncated 752 chars]...ests/tui/data/test_provider.py tests/unit/gateways/github/test_real.py
+
+Report all output.</param>
+    <param name="description">Fix lint and format issues</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="470" cache_read_input_tokens="103871" cache_creation="{'ephemeral_5m_input_tokens': 470, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01MnvHyG2nApoLGJ7V3siqMq">
+Command 4 passed: ruff format --check completed with 5 files already formatted.
+
+## Summary
+
+All four commands executed successfully:
+
+1. **ruff check --fix** - All checks passed
+2. **ruff format** - 2 files reformatted, 2 files left unchanged
+3. **ruff check** (with abc.py included) - All checks passed
+4. **ruff format --check** - 5 files already formatted
+
+Files checked:
+- /home/runner/work/erk/erk/src/erk/tui/data/real_provider.py
+- /home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/real.py
+- /home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/abc.py (commands 3-4 only)
+- /home/runner/work/erk/erk/tests/tui/data/test_provider.py
+- /home/runner/work/erk/erk/tests/unit/gateways/github/test_real.py
+agentId: a20dd4b (for resuming to continue this agent's work if needed)
+  </tool_result>
+  <assistant>Good, lint and format are clean. Let me run the full test suite one more time to confirm everything passes:</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="1378" cache_read_input_tokens="104341" cache_creation="{'ephemeral_5m_input_tokens': 1378, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01Q97VFCgdCgWfR9fZwpXFVA">
+    <param name="subagent_type">devrun</param>
+    <param name="prompt">Run pytest on these test files and report results:
+uv run pytest tests/unit/gateways/github/test_real.py tests/tui/data/test_provider.py -x -v
+
+Report all failures, errors, and their full tracebacks.</param>
+    <param name="description">Final test verification</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1378" cache_read_input_tokens="104341" cache_creation="{'ephemeral_5m_input_tokens': 1378, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Q97VFCgdCgWfR9fZwpXFVA">
+**pytest passed: 57 tests executed**
+
+All tests passed successfully:
+- `tests/unit/gateways/github/test_real.py`: 28 tests passed
+- `tests/tui/data/test_provider.py`: 29 tests passed
+
+No failures, errors, or warnings detected. Execution time: 0.84 seconds.
+agentId: a878145 (for resuming to continue this agent's work if needed)
+  </tool_result>
+  <assistant>All 57 tests pass. Let me also run the type checker to confirm:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="290" cache_read_input_tokens="105719" cache_creation="{'ephemeral_5m_input_tokens': 290, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_017UGywxz4oemLLyWorg1FLq">
+    <param name="subagent_type">devrun</param>
+    <param name="prompt">Run ty check on the modified source files:
+uv run ty check src/erk/tui/data/real_provider....[truncated 27 chars]...ithub/real.py packages/erk-shared/src/erk_shared/gateway/github/abc.py
+
+Report all output.</param>
+    <param name="description">Run type checker</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="290" cache_read_input_tokens="105719" cache_creation="{'ephemeral_5m_input_tokens': 290, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_017UGywxz4oemLLyWorg1FLq">
+ty passed: All checks passed!
+
+All type checks on the modified source files passed successfully:
+- `src/erk/tui/data/real_provider.py`
+- `packages/erk-shared/src/erk_shared/gateway/github/real.py`
+- `packages/erk-shared/src/erk_shared/gateway/github/abc.py`
+agentId: a6ccdac (for resuming to continue this agent's work if needed)
+  </tool_result>
+  <assistant>All checks pass. Let me complete the CI verification and proceed with submission.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="552" cache_read_input_tokens="106009" cache_creation="{'ephemeral_5m_input_tokens': 552, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01Qao7dAJfk8YtFQjKHcv3pG">
+    <param name="todos">[{'content': 'Rewrite GraphQL query as PR-only (_build_prs_by_numbers_query)', 'status': '...[truncated 774 chars]..., submit PR', 'status': 'in_progress', 'activeForm': 'Signaling ended and submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="552" cache_read_input_tokens="106009" cache_creation="{'ephemeral_5m_input_tokens': 552, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Qao7dAJfk8YtFQjKHcv3pG">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01BWGxgHVTN2nnDDwmUDzVPH">
+    <param name="command">erk exec impl-signal ended --session-id="2114591b-fca3-4595-84c0-bee9add450b2" 2&gt;/dev/null || true</param>
+    <param name="description">Signal GitHub impl ended</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="388" cache_read_input_tokens="106561" cache_creation="{'ephemeral_5m_input_tokens': 388, 'ephemeral_1h_input_tokens': 0}" output_tokens="26" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01BWGxgHVTN2nnDDwmUDzVPH">
+{
+  "success": true,
+  "event": "ended",
+  "plan_number": 9061
+}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01G4DZoXe6Dazz8HNbSivzJY">
+    <param name="command">erk exec upload-impl-session --session-id="2114591b-fca3-4595-84c0-bee9add450b2" 2&gt;/dev/null || true</param>
+    <param name="description">Upload session for async learn</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="152" cache_read_input_tokens="106949" cache_creation="{'ephemeral_5m_input_tokens': 152, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+</session>

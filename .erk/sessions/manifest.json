@@ -1,0 +1,28 @@
+{
+  "version": 1,
+  "plan_id": 9061,
+  "sessions": [
+    {
+      "session_id": "2114591b-fca3-4595-84c0-bee9add450b2",
+      "stage": "impl",
+      "source": "local",
+      "uploaded_at": "2026-03-09T13:58:19.768192+00:00",
+      "files": [
+        "impl-2114591b-fca3-4595-84c0-bee9add450b2-2114591b-fca3-4595-84c0-bee9add450b2-part1.xml",
+        "impl-2114591b-fca3-4595-84c0-bee9add450b2-2114591b-fca3-4595-84c0-bee9add450b2-part2.xml",
+        "impl-2114591b-fca3-4595-84c0-bee9add450b2-2114591b-fca3-4595-84c0-bee9add450b2-part3.xml",
+        "impl-2114591b-fca3-4595-84c0-bee9add450b2-2114591b-fca3-4595-84c0-bee9add450b2-part4.xml",
+        "impl-2114591b-fca3-4595-84c0-bee9add450b2-2114591b-fca3-4595-84c0-bee9add450b2-part5.xml",
+        "impl-2114591b-fca3-4595-84c0-bee9add450b2-2114591b-fca3-4595-84c0-bee9add450b2-part6.xml",
+        "impl-2114591b-fca3-4595-84c0-bee9add450b2-2114591b-fca3-4595-84c0-bee9add450b2-part7.xml",
+        "impl-2114591b-fca3-4595-84c0-bee9add450b2-2114591b-fca3-4595-84c0-bee9add450b2-part8.xml",
+        "impl-2114591b-fca3-4595-84c0-bee9add450b2-2114591b-fca3-4595-84c0-bee9add450b2-part9.xml"
+      ],
+      "user_turns": 3,
+      "duration_minutes": 9,
+      "raw_size_kb": 1190,
+      "xml_size_kb": 214,
+      "git_branch": "plnd/fix-objective-nodes-pr-dat-03-09-0931"
+    }
+  ]
+}

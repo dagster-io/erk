@@ -1,0 +1,1346 @@
+<session>
+  <meta source="agent-a6778aa" />
+  <meta branch="plnd/fix-objective-nodes-pr-dat-03-09-0931" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant docs before exploring raw files. Then explore codebase as necessary.
+
+I need to understand the current implementation of these files for a PR data fix:
+1. `packages/erk-shared/src/erk_shared/gateway/github/real.py` - Find the `_build_issues_by_numbers_query` and `_parse_issues_by_numbers_response` methods. Show me their full implementation.
+2. `packages/erk-shared/src/erk_shared/gateway/github/abc.py` - Find `get_issues_by_numbers_with_pr_linkages` method signature and docstring.
+3. `src/erk/tui/data/real_provider.py` - Find the `fetch_plans_by_ids` method (~line 211). Show its full implementation.
+4. Find the imports used in real.py related to: `parse_status_rollup`, `parse_mergeable_status`, `parse_review_thread_counts`, `ISSUE_PR_LINKAGE_FRAGMENT`
+5. Find the test files: `tests/unit/gateways/github/test_real.py` and `tests/tui/data/test_provider.py` - show the existing tests related to `issues_by_numbers` and `fetch_plans_by_ids`
+
+Return the full content of each method/section found.</user>
+  <assistant>I'll start by checking the documentation to understand the structure, then explore the codebase systematically.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="15325" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15325, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_017b1RpC9ecscLBa5APkGZdU">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/index.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15325" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15325, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_014vWbmds66bUFP1oiuDGUmz">
+    <param name="command">find /home/runner/work/erk/erk -type f -name "real.py" | grep gateway/github</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15325" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15325, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017b1RpC9ecscLBa5APkGZdU">
+     1→&lt;!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY --&gt;
+     2→&lt;!-- Edit source frontmatter, then run 'erk docs sync' to regenerate. --&gt;
+     3→
+     4→# Agent Documentation
+     5→
+     6→Before starting work, scan the read-when conditions below.
+     7→If your current task matches, read the linked document **before writing code**.
+     8→
+     9→## Categories
+    10→
+    11→- [architecture/](architecture/) — Explore when working on core patterns (dry-run, gateways, subprocess, shell integration). Add docs here for cross-cutting technical patterns.
+    12→- [capabilities/](capabilities/)
+    13→- [changelog/](changelog/)
+    14→- [checklists/](checklists/)
+    15→- [ci/](ci/)
+    16→- [claude-code/](claude-code/)
+    17→- [cli/](cli/) — Explore when building CLI commands or output formatting. Add docs here for Click patterns and terminal UX.
+    18→- [commands/](commands/) — Explore when creating or optimizing slash commands. Add docs here for command authoring patterns.
+    19→- [config/](config/)
+    20→- [configuration/](configuration/)
+    21→- [documentation/](documentation/) — Explore when structuring or writing documentation. Add docs here for documentation methodology and best practices.
+    22→- [erk/](erk/) — Explore when working with erk-specific workflows (worktrees, PR sync, Graphite). Add docs here for erk user-facing features.
+    23→- [erk-dev/](erk-dev/)
+    24→- [gateway/](gateway/)
+    25→- [hooks/](hooks/) — Explore when creating or debugging hooks. Add docs here for hook development patterns.
+    26→- [integrations/](integrations/)
+    27→- [objectives/](objectives/)
+    28→- [planning/](planning/) — Explore when working with plans, .erk/impl-context/ folders, or agent delegation. Add docs here for planning workflow patterns.
+    29→- [pr-operations/](pr-operations/)
+    30→- [refactoring/](refactoring/)
+
+... [22 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_014vWbmds66bUFP1oiuDGUmz">
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/real.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/issues/real.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github_admin/real.py
+  </tool_result>
+  <assistant>Now let me read the specific files requested:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="1407" cache_read_input_tokens="15325" cache_creation="{'ephemeral_5m_input_tokens': 1407, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01KcRFqp7oR5HWm1YqAoNY2s">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/real.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1407" cache_read_input_tokens="15325" cache_creation="{'ephemeral_5m_input_tokens': 1407, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_013M9RVxgx8kLKJ45EPTgApG">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/abc.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1407" cache_read_input_tokens="15325" cache_creation="{'ephemeral_5m_input_tokens': 1407, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_013mydTeZrWeHPv42Gn5qcPX">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/data/real_provider.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1407" cache_read_input_tokens="15325" cache_creation="{'ephemeral_5m_input_tokens': 1407, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01KcRFqp7oR5HWm1YqAoNY2s">
+File content (25382 tokens) exceeds maximum allowed tokens (25000). Please use offset and limit parameters to read specific portions of the file, or use the GrepTool to search for specific content.
+  </tool_result>
+  <tool_result tool="toolu_013M9RVxgx8kLKJ45EPTgApG">
+     1→"""Abstract base class for GitHub operations."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→from abc import ABC, abstractmethod
+     6→from pathlib import Path
+     7→from typing import TYPE_CHECKING
+     8→
+     9→from erk_shared.gateway.github.issues.types import IssueInfo
+    10→from erk_shared.gateway.github.types import (
+    11→    BodyContent,
+    12→    GitHubRepoLocation,
+    13→    IssueFilterState,
+    14→    MergeError,
+    15→    MergeResult,
+    16→    PRCheckRun,
+    17→    PRDetails,
+    18→    PRListState,
+    19→    PRNotFound,
+    20→    PRReviewThread,
+    21→    PullRequestInfo,
+    22→    WorkflowRun,
+    23→)
+    24→
+    25→if TYPE_CHECKING:
+    26→    from erk_shared.gateway.github.issues.abc import GitHubIssues
+    27→
+    28→
+    29→class LocalGitHub(ABC):
+    30→    """Abstract interface for GitHub operations.
+
+... [823 lines omitted] ...
+
+    77→    ) -&gt; MergeResult | MergeError:
+    91→            MergeResult on success, MergeError on failure
+   190→            RuntimeError: If gh CLI command fails
+   257→        2. Failed completed runs (failures are more actionable than successes)
+   442→            Empty dict if no PRs match or on API failure.
+   494→            RuntimeError: If gh command fails
+   507→            RuntimeError: If gh command fails
+   523→            RuntimeError: If gh command fails
+   542→            RuntimeError: If gh command fails
+   556→            RuntimeError: If gh command fails
+   712→            RuntimeError: If update fails
+   752→            False if deletion failed (e.g., protected branch)
+   771→            Empty list if no PRs match or on API failure.
+   840→            state: Status state - one of "success", "failure", "pending", "error"
+   845→            True on success, False on failure
+  </tool_result>
+  <tool_result tool="toolu_013mydTeZrWeHPv42Gn5qcPX">
+     1→"""Real implementation of PlanDataProvider for TUI data assembly."""
+     2→
+     3→import logging
+     4→from datetime import datetime
+     5→
+     6→from erk.core.context import ErkContext
+     7→from erk.core.display_utils import (
+     8→    format_relative_time,
+     9→    format_workflow_outcome,
+    10→    format_workflow_run_id,
+    11→    get_workflow_run_state,
+    12→)
+    13→from erk.core.pr_utils import select_display_pr
+    14→from erk.core.repo_discovery import NoRepoSentinel, RepoContext, ensure_erk_metadata_dir
+    15→from erk.tui.data.provider_abc import PlanDataProvider
+    16→from erk.tui.data.types import FetchTimings, PlanFilters, PlanRowData
+    17→from erk.tui.sorting.types import BranchActivity
+    18→from erk_shared.gateway.github.emoji import format_checks_cell, get_pr_status_emoji
+    19→from erk_shared.gateway.github.metadata.core import (
+    20→    extract_objective_slug,
+    21→)
+    22→from erk_shared.gateway.github.metadata.dependency_graph import (
+    23→    _TERMINAL_STATUSES,
+    24→    build_graph,
+    25→    build_state_sparkline,
+    26→    compute_graph_summary,
+    27→    find_graph_next_node,
+    28→)
+    29→from erk_shared.gateway.github.metadata.roadmap import (
+    30→    parse_roadmap,
+
+... [666 lines omitted] ...
+
+   168→            warnings=plan_data.warnings,
+   290→        except Exception:
+   291→            logger.debug("Failed to write timing log", exc_info=True)
+   506→            phases, _errors = parse_roadmap(plan.body)
+  </tool_result>
+  <assistant>Now let me search for the specific methods and imports in the real.py file and test files:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="21971" cache_read_input_tokens="16732" cache_creation="{'ephemeral_5m_input_tokens': 21971, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01EPy9SbzmgpuuHCfwxYJ4JD">
+    <param name="pattern">_build_issues_by_numbers_query|_parse_issues_by_numbers_response</param>
+    <param name="path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="21971" cache_read_input_tokens="16732" cache_creation="{'ephemeral_5m_input_tokens': 21971, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01ESvBRdbGqUQmvHH9zyRZXt">
+    <param name="pattern">parse_status_rollup|parse_mergeable_status|parse_review_thread_counts|ISSUE_PR_LINKAGE_FRAGMENT</param>
+    <param name="path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/real.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="21971" cache_read_input_tokens="16732" cache_creation="{'ephemeral_5m_input_tokens': 21971, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01FcATZZPLhorDrKvHugKRgT">
+    <param name="pattern">**/test_real.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="21971" cache_read_input_tokens="16732" cache_creation="{'ephemeral_5m_input_tokens': 21971, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01M2tTLrS5Gh5n3vofebULLJ">
+    <param name="pattern">**/test_provider.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="21971" cache_read_input_tokens="16732" cache_creation="{'ephemeral_5m_input_tokens': 21971, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01ESvBRdbGqUQmvHH9zyRZXt">
+Found 1 file
+packages/erk-shared/src/erk_shared/gateway/github/real.py
+  </tool_result>
+  <tool_result tool="toolu_01EPy9SbzmgpuuHCfwxYJ4JD">
+Found 1 file
+packages/erk-shared/src/erk_shared/gateway/github/real.py
+  </tool_result>
+  <tool_result tool="toolu_01FcATZZPLhorDrKvHugKRgT">
+/home/runner/work/erk/erk/tests/unit/gateways/github/test_real.py
+  </tool_result>
+  <tool_result tool="toolu_01M2tTLrS5Gh5n3vofebULLJ">
+/home/runner/work/erk/erk/tests/tui/data/test_provider.py
+  </tool_result>
+  <assistant>Let me read the real.py file in sections to find the specific methods:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="691" cache_read_input_tokens="38703" cache_creation="{'ephemeral_5m_input_tokens': 691, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_0136M7MpY8R7B3KnecjLvzn1">
+    <param name="command">wc -l /home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/real.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="691" cache_read_input_tokens="38703" cache_creation="{'ephemeral_5m_input_tokens': 691, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0136M7MpY8R7B3KnecjLvzn1">
+2594 /home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/real.py
+  </tool_result>
+  <assistant>Let me search for the specific method with more context:</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="192" cache_read_input_tokens="39394" cache_creation="{'ephemeral_5m_input_tokens': 192, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01BGw829RW2tUPDzGNnCNdpY">
+    <param name="pattern">def _build_issues_by_numbers_query|def _parse_issues_by_numbers_response|def get_issues_by_numbers_with_pr_linkages</param>
+    <param name="path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/real.py</param>
+    <param name="output_mode">content</param>
+    <param name="-B">2</param>
+    <param name="-A">50</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="192" cache_read_input_tokens="39394" cache_creation="{'ephemeral_5m_input_tokens': 192, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01BGw829RW2tUPDzGNnCNdpY">
+2432-            return False
+2433-
+2434:    def get_issues_by_numbers_with_pr_linkages(
+2435-        self,
+2436-        *,
+2437-        location: GitHubRepoLocation,
+2438-        plan_numbers: list[int],
+2439-    ) -&gt; tuple[list[IssueInfo], dict[int, list[PullRequestInfo]]]:
+2440-        """Fetch specific issues by number with full PR linkage data.
+2441-
+2442-        Uses issueOrPullRequest to handle both issues and merged PRs.
+2443-        """
+2444-        if not plan_numbers:
+2445-            return ([], {})
+2446-
+2447-        repo_id = location.repo_id
+2448-        query = self._build_issues_by_numbers_query(plan_numbers, repo_id)
+2449-        response = self._execute_batch_pr_query(query, location.root)
+2450-        return self._parse_issues_by_numbers_response(response, repo_id)
+2451-
+2452:    def _build_issues_by_numbers_query(self, plan_numbers: list[int], repo_id: GitHubRepoId) -&gt; str:
+2453-        """Build GraphQL query to fetch specific issues by number.
+2454-
+2455-        Uses issueOrPullRequest(number: N) aliases to handle both issues
+2456-        and merged PRs. Includes full issue fields and PR linkage timeline.
+2457-
+2458-        Args:
+2459-            plan_numbers: List of plan/PR numbers to query
+2460-            repo_id: GitHub repository identity
+2461-
+
+... [95 lines omitted] ...
+  </tool_result>
+  <assistant>Now let me search for the imports and fragment definitions:</assistant>
+  <usage input_tokens="4" cache_creation_input_tokens="1866" cache_read_input_tokens="39586" cache_creation="{'ephemeral_5m_input_tokens': 1866, 'ephemeral_1h_input_tokens': 0}" output_tokens="7" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01GH51LHexTX8wrMVYDAGd1A">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/real.py</param>
+    <param name="offset">1</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="4" cache_creation_input_tokens="1866" cache_read_input_tokens="39586" cache_creation="{'ephemeral_5m_input_tokens': 1866, 'ephemeral_1h_input_tokens': 0}" output_tokens="7" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_0116eYoQER9tvufHHW9T52iz">
+    <param name="pattern">ISSUE_PR_LINKAGE_FRAGMENT|parse_status_rollup|parse_mergeable_status|parse_review_thread_counts</param>
+    <param name="path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/real.py</param>
+    <param name="output_mode">content</param>
+    <param name="-B">1</param>
+    <param name="-A">15</param>
+  </tool_use>
+  <usage input_tokens="4" cache_creation_input_tokens="1866" cache_read_input_tokens="39586" cache_creation="{'ephemeral_5m_input_tokens': 1866, 'ephemeral_1h_input_tokens': 0}" output_tokens="7" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01GH51LHexTX8wrMVYDAGd1A">
+     1→"""Production implementation of GitHub operations.
+     2→
+     3→Error Handling Philosophy:
+     4→    gh CLI invocations should let exceptions bubble by default. Callers are
+     5→    responsible for handling failures appropriately. Don't swallow exceptions
+     6→    and return None/False/default values - this masks real errors and makes
+     7→    debugging difficult.
+     8→
+     9→    Legitimate "not found" cases (e.g., no PR exists for a branch) are handled
+    10→    by checking the response data, not by catching exceptions.
+    11→"""
+    12→
+    13→import json
+    14→import logging
+    15→import secrets
+    16→import string
+    17→from datetime import UTC, datetime, timedelta
+    18→from pathlib import Path
+    19→from typing import Any
+    20→
+    21→from erk_shared.debug import debug_log
+    22→from erk_shared.gateway.github.abc import LocalGitHub
+    23→from erk_shared.gateway.github.graphql_queries import (
+    24→    ADD_REVIEW_THREAD_REPLY_MUTATION,
+    25→    GET_ISSUES_WITH_PR_LINKAGES_QUERY,
+    26→    GET_PR_CHECK_RUNS_QUERY,
+    27→    GET_PR_REVIEW_THREADS_QUERY,
+    28→    GET_WORKFLOW_RUNS_BY_NODE_IDS_QUERY,
+    29→    ISSUE_PR_LINKAGE_FRAGMENT,
+    30→    RESOLVE_REVIEW_THREAD_MUTATION,
+
+... [75 lines omitted] ...
+
+    54→    MergeError,
+    90→# (error: "master already used by worktree"). Instead, we delete the remote
+  </tool_result>
+  <tool_result tool="toolu_0116eYoQER9tvufHHW9T52iz">
+28-    GET_WORKFLOW_RUNS_BY_NODE_IDS_QUERY,
+29:    ISSUE_PR_LINKAGE_FRAGMENT,
+30-    RESOLVE_REVIEW_THREAD_MUTATION,
+31-)
+32-from erk_shared.gateway.github.issues.abc import GitHubIssues
+33-from erk_shared.gateway.github.issues.types import IssueInfo
+34-from erk_shared.gateway.github.parsing import (
+35-    execute_gh_command_with_retry,
+36-    parse_aggregated_check_counts,
+37-    parse_gh_auth_status_output,
+38-)
+39-from erk_shared.gateway.github.pr_data_parsing import (
+40-    merge_rest_graphql_pr_data,
+41:    parse_mergeable_status,
+42:    parse_review_thread_counts,
+43:    parse_status_rollup,
+44-    parse_workflow_runs_nodes_response,
+45-)
+46-from erk_shared.gateway.github.retry import RetriesExhausted, RetryRequested, with_retries
+47-from erk_shared.gateway.github.types import (
+48-    BodyContent,
+49-    BodyFile,
+50-    BodyText,
+51-    GitHubRepoId,
+52-    GitHubRepoLocation,
+53-    IssueFilterState,
+54-    MergeError,
+55-    MergeResult,
+56-    PRCheckRun,
+57-    PRDetails,
+
+... [78 lines omitted] ...
+  </tool_result>
+  <assistant>Now let me get the complete query format and find the graphql_queries file:</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="3308" cache_read_input_tokens="41452" cache_creation="{'ephemeral_5m_input_tokens': 3308, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_014rqFz71DoUc3XvgNKoyFyg">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/real.py</param>
+    <param name="offset">2500</param>
+    <param name="limit">70</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="3308" cache_read_input_tokens="41452" cache_creation="{'ephemeral_5m_input_tokens': 3308, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_014J4L3ewpHtU3LeiikkCepq">
+    <param name="command">find /home/runner/work/erk/erk -type f -name "graphql_queries.py" | head -1</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="3308" cache_read_input_tokens="41452" cache_creation="{'ephemeral_5m_input_tokens': 3308, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014rqFz71DoUc3XvgNKoyFyg">
+  2500→            issue_queries.append(issue_query)
+  2501→
+  2502→        joined_queries = "\n".join(issue_queries)
+  2503→        query = f"""{ISSUE_PR_LINKAGE_FRAGMENT}
+  2504→
+  2505→query {{
+  2506→  repository(owner: "{repo_id.owner}", name: "{repo_id.repo}") {{
+  2507→{joined_queries}
+  2508→  }}
+  2509→}}"""
+  2510→        return query
+  2511→
+  2512→    def _parse_issues_by_numbers_response(
+  2513→        self,
+  2514→        response: dict[str, Any],
+  2515→        repo_id: GitHubRepoId,
+  2516→    ) -&gt; tuple[list[IssueInfo], dict[int, list[PullRequestInfo]]]:
+  2517→        """Parse GraphQL response from issues-by-numbers query.
+  2518→
+  2519→        Iterates over aliased keys (issue_8070, etc.) and parses each node.
+  2520→
+  2521→        Args:
+  2522→            response: GraphQL response data
+  2523→            repo_id: GitHub repository identity
+  2524→
+  2525→        Returns:
+  2526→            Tuple of (issues, pr_linkages)
+  2527→        """
+  2528→        issues: list[IssueInfo] = []
+  2529→        pr_linkages: dict[int, list[PullRequestInfo]] = {}
+
+... [45 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_014J4L3ewpHtU3LeiikkCepq">
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/graphql_queries.py
+  </tool_result>
+  <assistant>Now let me find the ISSUE_PR_LINKAGE_FRAGMENT and check graphql_queries:</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="1436" cache_read_input_tokens="44760" cache_creation="{'ephemeral_5m_input_tokens': 1436, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_013hmDqi1XxFPGhEVGAoPVfk">
+    <param name="pattern">ISSUE_PR_LINKAGE_FRAGMENT</param>
+    <param name="path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/graphql_queries.py</param>
+    <param name="output_mode">content</param>
+    <param name="-B">5</param>
+    <param name="-A">40</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="1436" cache_read_input_tokens="44760" cache_creation="{'ephemeral_5m_input_tokens': 1436, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01EkZnRBdMH7FAY6y4Z5YpqJ">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/pr_data_parsing.py</param>
+    <param name="limit">150</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="1436" cache_read_input_tokens="44760" cache_creation="{'ephemeral_5m_input_tokens': 1436, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01EkZnRBdMH7FAY6y4Z5YpqJ">
+     1→"""Pure parsing functions for GitHub PR and workflow data.
+     2→
+     3→Extracted from RealLocalGitHub to enable reuse by both the subprocess path
+     4→(via RealLocalGitHub methods) and the direct HTTP path (via PlannedPRPlanListService).
+     5→
+     6→All functions are stateless — they transform data without side effects.
+     7→"""
+     8→
+     9→from datetime import datetime
+    10→from typing import Any
+    11→
+    12→from erk_shared.gateway.github.parsing import parse_aggregated_check_counts
+    13→from erk_shared.gateway.github.types import (
+    14→    BRANCH_NOT_AVAILABLE,
+    15→    DISPLAY_TITLE_NOT_AVAILABLE,
+    16→    GitHubRepoId,
+    17→    MergeableStatus,
+    18→    PRDetails,
+    19→    PullRequestInfo,
+    20→    StatusCheckRollupData,
+    21→    WorkflowRun,
+    22→    WorkflowRunConclusion,
+    23→    WorkflowRunStatus,
+    24→)
+    25→
+    26→
+    27→def parse_status_rollup(
+    28→    status_rollup: StatusCheckRollupData | None,
+    29→) -&gt; tuple[bool | None, tuple[int, int] | None]:
+    30→    """Parse checks status and counts from statusCheckRollup.
+
+... [125 lines omitted] ...
+
+    41→    elif rollup_state in ("FAILURE", "ERROR"):
+  </tool_result>
+  <tool_result tool="toolu_013hmDqi1XxFPGhEVGAoPVfk">
+51-  }
+52-}"""
+53-
+54-# Fragment for PR linkage data on CrossReferencedEvent
+55-# Used by _build_issue_pr_linkage_query for batch issue queries
+56:ISSUE_PR_LINKAGE_FRAGMENT = """fragment IssuePRLinkageFields on CrossReferencedEvent {
+57-  willCloseTarget
+58-  source {
+59-    ... on PullRequest {
+60-      number
+61-      state
+62-      url
+63-      isDraft
+64-      createdAt
+65-      headRefName
+66-      baseRefName
+67-      statusCheckRollup {
+68-        state
+69-        contexts(last: 1) {
+70-          totalCount
+71-          checkRunCountsByState { state count }
+72-          statusContextCountsByState { state count }
+73-        }
+74-      }
+75-      mergeable
+76-      reviewDecision
+77-    }
+78-  }
+79-}"""
+80-
+
+... [16 lines omitted] ...
+  </tool_result>
+  <assistant>Now let me check the test files:</assistant>
+  <usage input_tokens="2185" cache_creation_input_tokens="865" cache_read_input_tokens="46196" cache_creation="{'ephemeral_5m_input_tokens': 865, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01GhtxqWYjcrmj5APVdEZNvj">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/gateways/github/test_real.py</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="2185" cache_creation_input_tokens="865" cache_read_input_tokens="46196" cache_creation="{'ephemeral_5m_input_tokens': 865, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_016L55tZyHG4NY748Hig7MWf">
+    <param name="command">grep -n "get_issues_by_numbers_with_pr_linkages\|issues_by_numbers" /home/runner/work/erk/erk/tests/unit/gateways/github/test_real.py</param>
+  </tool_use>
+  <usage input_tokens="2185" cache_creation_input_tokens="865" cache_read_input_tokens="46196" cache_creation="{'ephemeral_5m_input_tokens': 865, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01GhtxqWYjcrmj5APVdEZNvj">
+     1→"""Unit tests for RealLocalGitHub parsing and caching methods."""
+     2→
+     3→from datetime import UTC, datetime
+     4→from pathlib import Path
+     5→from unittest.mock import patch
+     6→
+     7→import pytest
+     8→
+     9→from erk_shared.gateway.github.real import RealLocalGitHub
+    10→from erk_shared.gateway.github.types import GitHubRepoId, RepoInfo
+    11→
+    12→
+    13→def _make_pr_data(
+    14→    *,
+    15→    number: int = 42,
+    16→    title: str = "Test PR",
+    17→    body: str = "PR body",
+    18→    state: str = "open",
+    19→    merged: bool = False,
+    20→    created_at: str = "2024-03-15T10:00:00Z",
+    21→    updated_at: str = "2024-03-16T12:00:00Z",
+    22→    user_login: str | None = "octocat",
+    23→    draft: bool = False,
+    24→) -&gt; dict:
+    25→    """Create minimal PR data dict matching GitHub REST API response shape."""
+    26→    user: dict | None = {"login": user_login} if user_login is not None else None
+    27→    return {
+    28→        "number": number,
+    29→        "html_url": f"https://github.com/owner/repo/pull/{number}",
+    30→        "title": title,
+
+... [75 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_016L55tZyHG4NY748Hig7MWf">
+317:# --- Tests for _build_issues_by_numbers_query ---
+320:def test_build_issues_by_numbers_query_single_issue() -&gt; None:
+325:    query = github._build_issues_by_numbers_query([100], repo_id)
+331:def test_build_issues_by_numbers_query_multiple_issues() -&gt; None:
+336:    query = github._build_issues_by_numbers_query([100, 200, 300], repo_id)
+343:# --- Tests for _parse_issues_by_numbers_response ---
+368:def test_parse_issues_by_numbers_response_single_issue() -&gt; None:
+381:    issues, pr_linkages = github._parse_issues_by_numbers_response(response, repo_id)
+389:def test_parse_issues_by_numbers_response_multiple_issues() -&gt; None:
+403:    issues, _ = github._parse_issues_by_numbers_response(response, repo_id)
+409:def test_parse_issues_by_numbers_response_skips_null_nodes() -&gt; None:
+423:    issues, _ = github._parse_issues_by_numbers_response(response, repo_id)
+429:def test_parse_issues_by_numbers_response_empty_repository() -&gt; None:
+436:    issues, pr_linkages = github._parse_issues_by_numbers_response(response, repo_id)
+  </tool_result>
+  <assistant>Now let me read the actual test implementations:</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="8508" cache_read_input_tokens="47061" cache_creation="{'ephemeral_5m_input_tokens': 8508, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01RNoyVm4NUfq462jybRb68T">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/gateways/github/test_real.py</param>
+    <param name="offset">315</param>
+    <param name="limit">150</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="8508" cache_read_input_tokens="47061" cache_creation="{'ephemeral_5m_input_tokens': 8508, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01XzsKn3v28SV6cYCHUiA44S">
+    <param name="file_path">/home/runner/work/erk/erk/tests/tui/data/test_provider.py</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="8508" cache_read_input_tokens="47061" cache_creation="{'ephemeral_5m_input_tokens': 8508, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01RNoyVm4NUfq462jybRb68T">
+   315→
+   316→
+   317→# --- Tests for _build_issues_by_numbers_query ---
+   318→
+   319→
+   320→def test_build_issues_by_numbers_query_single_issue() -&gt; None:
+   321→    """Query contains one aliased issueOrPullRequest for a single issue."""
+   322→    github = RealLocalGitHub.for_test()
+   323→    repo_id = GitHubRepoId(owner="acme", repo="widgets")
+   324→
+   325→    query = github._build_issues_by_numbers_query([100], repo_id)
+   326→
+   327→    assert "issue_100: issueOrPullRequest(number: 100)" in query
+   328→    assert 'repository(owner: "acme", name: "widgets")' in query
+   329→
+   330→
+   331→def test_build_issues_by_numbers_query_multiple_issues() -&gt; None:
+   332→    """Query contains one alias per issue number."""
+   333→    github = RealLocalGitHub.for_test()
+   334→    repo_id = GitHubRepoId(owner="acme", repo="widgets")
+   335→
+   336→    query = github._build_issues_by_numbers_query([100, 200, 300], repo_id)
+   337→
+   338→    assert "issue_100: issueOrPullRequest(number: 100)" in query
+   339→    assert "issue_200: issueOrPullRequest(number: 200)" in query
+   340→    assert "issue_300: issueOrPullRequest(number: 300)" in query
+   341→
+   342→
+   343→# --- Tests for _parse_issues_by_numbers_response ---
+   344→
+
+... [101 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01XzsKn3v28SV6cYCHUiA44S">
+     1→"""Tests for plan data provider."""
+     2→
+     3→import json
+     4→from datetime import UTC, datetime
+     5→from pathlib import Path
+     6→
+     7→from erk.core.context import GlobalConfig
+     8→from erk.core.repo_discovery import RepoContext
+     9→from erk.tui.data.types import FetchTimings
+    10→from erk_shared.gateway.browser.fake import FakeBrowserLauncher
+    11→from erk_shared.gateway.clipboard.fake import FakeClipboard
+    12→from erk_shared.gateway.git.abc import WorktreeInfo
+    13→from erk_shared.gateway.git.fake import FakeGit
+    14→from erk_shared.gateway.github.fake import FakeLocalGitHub
+    15→from erk_shared.gateway.github.issues.types import IssueInfo
+    16→from erk_shared.gateway.github.metadata.core import find_metadata_block
+    17→from erk_shared.gateway.github.types import (
+    18→    GitHubRepoId,
+    19→    GitHubRepoLocation,
+    20→    PullRequestInfo,
+    21→)
+    22→from erk_shared.gateway.graphite.fake import FakeGraphite
+    23→from erk_shared.gateway.http.fake import FakeHttpClient
+    24→from erk_shared.gateway.plan_data_provider.real import RealPlanDataProvider
+    25→from erk_shared.gateway.plan_service.real import RealPlanService
+    26→from erk_shared.plan_store.types import Plan, PlanState
+    27→from tests.fakes.context import create_test_context
+    28→from tests.test_utils.plan_helpers import format_plan_header_body_for_test
+    29→
+    30→
+
+... [75 lines omitted] ...
+  </tool_result>
+  <assistant>Let me search for tests related to fetch_plans_by_ids:</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="3624" cache_read_input_tokens="55569" cache_creation="{'ephemeral_5m_input_tokens': 3624, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_015ey5yhFGXiiZdVpqThZygc">
+    <param name="command">grep -n "fetch_plans_by_ids" /home/runner/work/erk/erk/tests/tui/data/test_provider.py</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="3624" cache_read_input_tokens="55569" cache_creation="{'ephemeral_5m_input_tokens': 3624, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_013FtbagwMezfhtgcq4Gney2">
+    <param name="file_path">/home/runner/work/erk/erk/tests/tui/data/test_provider.py</param>
+    <param name="offset">100</param>
+    <param name="limit">250</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="3624" cache_read_input_tokens="55569" cache_creation="{'ephemeral_5m_input_tokens': 3624, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013FtbagwMezfhtgcq4Gney2">
+   100→        # Issue extraction from P-prefix branches no longer works
+   101→        assert 4280 not in mapping
+   102→        assert len(mapping) == 0
+   103→
+   104→    def test_issue_named_worktree_extracts_from_branch_name(self, tmp_path: Path) -&gt; None:
+   105→        """Issue-named worktree with P-prefix branch no longer extracts issue number.
+   106→
+   107→        The directory name is 'P1234-feature-01-01-1200' (has issue prefix), and the
+   108→        branch name matches. P-prefix branches cannot be resolved to plan IDs, so
+   109→        the worktree is not added to the mapping.
+   110→        """
+   111→        repo_root = tmp_path / "repo"
+   112→        repo_root.mkdir()
+   113→
+   114→        erk_dir = repo_root / ".erk"
+   115→        erk_dir.mkdir()
+   116→
+   117→        worktree_path = tmp_path / "worktrees" / "P1234-feature-01-01-1200"
+   118→        branch_name = "P1234-feature-01-01-1200"
+   119→
+   120→        git = FakeGit(
+   121→            worktrees={
+   122→                repo_root: [
+   123→                    WorktreeInfo(path=repo_root, branch="main", is_root=True),
+   124→                    WorktreeInfo(path=worktree_path, branch=branch_name, is_root=False),
+   125→                ]
+   126→            },
+   127→            git_common_dirs={repo_root: repo_root / ".git"},
+   128→        )
+   129→
+
+... [225 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_015ey5yhFGXiiZdVpqThZygc">
+1775:    """Tests for fetch_plans_by_ids method."""
+1820:        result = provider.fetch_plans_by_ids(set())
+1853:        result = provider.fetch_plans_by_ids({100, 200})
+1889:        result = provider.fetch_plans_by_ids({100, 300})
+  </tool_result>
+  <assistant>Now let me get the fetch_plans_by_ids test section:</assistant>
+  <usage input_tokens="3652" cache_creation_input_tokens="453" cache_read_input_tokens="59193" cache_creation="{'ephemeral_5m_input_tokens': 453, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_019yR7nwpWF32dpk1Fdajh87">
+    <param name="file_path">/home/runner/work/erk/erk/tests/tui/data/test_provider.py</param>
+    <param name="offset">1770</param>
+    <param name="limit">200</param>
+  </tool_use>
+  <usage input_tokens="3652" cache_creation_input_tokens="453" cache_read_input_tokens="59193" cache_creation="{'ephemeral_5m_input_tokens': 453, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019yR7nwpWF32dpk1Fdajh87">
+  1770→        displays = [d for d, _url in row.objective_deps_plans]
+  1771→        assert displays.count("#400") == 1
+  1772→
+  1773→
+  1774→class TestFetchPlansByIds:
+  1775→    """Tests for fetch_plans_by_ids method."""
+  1776→
+  1777→    @staticmethod
+  1778→    def _make_provider(
+  1779→        tmp_path: Path,
+  1780→        *,
+  1781→        issues_data: list[IssueInfo] | None = None,
+  1782→        pr_linkages: dict[int, list[PullRequestInfo]] | None = None,
+  1783→    ) -&gt; RealPlanDataProvider:
+  1784→        repo_root = tmp_path / "repo"
+  1785→        repo_root.mkdir(exist_ok=True)
+  1786→        erk_dir = repo_root / ".erk"
+  1787→        erk_dir.mkdir(exist_ok=True)
+  1788→
+  1789→        git = FakeGit(
+  1790→            worktrees={
+  1791→                repo_root: [
+  1792→                    WorktreeInfo(path=repo_root, branch="main", is_root=True),
+  1793→                ]
+  1794→            },
+  1795→            git_common_dirs={repo_root: repo_root / ".git"},
+  1796→        )
+  1797→        github = FakeLocalGitHub(
+  1798→            pr_plan_linkages=pr_linkages or {},
+  1799→            issues_data=issues_data or [],
+
+... [175 lines omitted] ...
+  </tool_result>
+  <assistant>Perfect! Now let me create a comprehensive summary of all the findings:
+
+## Summary
+
+I have successfully explored and analyzed the codebase for the PR data fix. Here are the complete findings:
+
+---
+
+## 1. ABC Method Signature and Docstring
+**File:** `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/abc.py` (lines 800-821)
+
+```python
+@abstractmethod
+def get_issues_by_numbers_with_pr_linkages(
+    self,
+    *,
+    location: GitHubRepoLocation,
+    plan_numbers: list[int],
+) -&gt; tuple[list[IssueInfo], dict[int, list[PullRequestInfo]]]:
+    """Fetch specific issues by number with full PR linkage data.
+
+    Uses issueOrPullRequest(number: N) to handle both issues and merged PRs.
+    Returns issue data and PR linkages in the same format as
+    get_issues_with_pr_linkages for compatibility.
+
+    Args:
+        location: GitHub repository location (local root + repo identity)
+        plan_numbers: List of plan/PR numbers to fetch
+
+    Returns:
+        Tuple of (issues, pr_linkages) where:
+        - issues: List of IssueInfo objects for found issues
+        - pr_linkages: Mapping of plan_number -&gt; list of linked PRs
+    """
+    ...
+```
+
+---
+
+## 2. Real Implementation Methods
+**File:** `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/real.py` (lines 2434-2559)
+
+### `get_issues_by_numbers_with_pr_linkages` (lines 2434-2450)
+```python
+def get_issues_by_numbers_with_pr_linkages(
+    self,
+    *,
+    location: GitHubRepoLocation,
+    plan_numbers: list[int],
+) -&gt; tuple[list[IssueInfo], dict[int, list[PullRequestInfo]]]:
+    """Fetch specific issues by number with full PR linkage data.
+
+    Uses issueOrPullRequest to handle both issues and merged PRs.
+    """
+    if not plan_numbers:
+        return ([], {})
+
+    repo_id = location.repo_id
+    query = self._build_issues_by_numbers_query(plan_numbers, repo_id)
+    response = self._execute_batch_pr_query(query, location.root)
+    return self._parse_issues_by_numbers_response(response, repo_id)
+```
+
+### `_build_issues_by_numbers_query` (lines 2452-2510)
+```python
+def _build_issues_by_numbers_query(self, plan_numbers: list[int], repo_id: GitHubRepoId) -&gt; str:
+    """Build GraphQL query to fetch specific issues by number.
+
+    Uses issueOrPullRequest(number: N) aliases to handle both issues
+    and merged PRs. Includes full issue fields and PR linkage timeline.
+
+    Args:
+        plan_numbers: List of plan/PR numbers to query
+        repo_id: GitHub repository identity
+
+    Returns:
+        GraphQL query string
+    """
+    issue_queries = []
+    for plan_num in plan_numbers:
+        issue_query = f"""    issue_{plan_num}: issueOrPullRequest(number: {plan_num}) {{
+      ... on Issue {{
+        number
+        title
+        body
+        state
+        url
+        author {{ login }}
+        labels(first: 100) {{ nodes {{ name }} }}
+        assignees(first: 100) {{ nodes {{ login }} }}
+        createdAt
+        updatedAt
+        timelineItems(itemTypes: [CROSS_REFERENCED_EVENT], first: 20) {{
+          nodes {{
+            ... on CrossReferencedEvent {{
+              ...IssuePRLinkageFields
+            }}
+          }}
+        }}
+      }}
+      ... on PullRequest {{
+        number
+        title
+        body
+        state
+        url
+        author {{ login }}
+        labels(first: 100) {{ nodes {{ name }} }}
+        assignees(first: 100) {{ nodes {{ login }} }}
+        createdAt
+        updatedAt
+      }}
+    }}"""
+        issue_queries.append(issue_query)
+
+    joined_queries = "\n".join(issue_queries)
+    query = f"""{ISSUE_PR_LINKAGE_FRAGMENT}
+
+query {{
+  repository(owner: "{repo_id.owner}", name: "{repo_id.repo}") {{
+{joined_queries}
+  }}
+}}"""
+    return query
+```
+
+### `_parse_issues_by_numbers_response` (lines 2512-2559)
+```python
+def _parse_issues_by_numbers_response(
+    self,
+    response: dict[str, Any],
+    repo_id: GitHubRepoId,
+) -&gt; tuple[list[IssueInfo], dict[int, list[PullRequestInfo]]]:
+    """Parse GraphQL response from issues-by-numbers query.
+
+    Iterates over aliased keys (issue_8070, etc.) and parses each node.
+
+    Args:
+        response: GraphQL response data
+        repo_id: GitHub repository identity
+
+    Returns:
+        Tuple of (issues, pr_linkages)
+    """
+    issues: list[IssueInfo] = []
+    pr_linkages: dict[int, list[PullRequestInfo]] = {}
+
+    repo_data = response.get("data", {}).get("repository", {})
+
+    for key, node in repo_data.items():
+        if not key.startswith("issue_") or node is None:
+            continue
+
+        issue = self._parse_issue_node(node)
+        if issue is None:
+            continue
+        issues.append(issue)
+
+        # Parse PR linkages from timelineItems (only present on Issue type)
+        timeline_items = node.get("timelineItems")
+        if timeline_items is not None:
+            timeline_nodes = timeline_items.get("nodes", [])
+            prs_with_timestamps: list[tuple[PullRequestInfo, str]] = []
+
+            for event in timeline_nodes:
+                if event is None:
+                    continue
+                result = self._parse_pr_from_timeline_event(event, repo_id)
+                if result is not None:
+                    prs_with_timestamps.append(result)
+
+            if prs_with_timestamps:
+                prs_with_timestamps.sort(key=lambda x: x[1], reverse=True)
+                pr_linkages[issue.number] = [pr for pr, _ in prs_with_timestamps]
+
+    return (issues, pr_linkages)
+```
+
+---
+
+## 3. Imports in real.py
+**File:** `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/real.py` (lines 23-45)
+
+```python
+from erk_shared.gateway.github.graphql_queries import (
+    ADD_REVIEW_THREAD_REPLY_MUTATION,
+    GET_ISSUES_WITH_PR_LINKAGES_QUERY,
+    GET_PR_CHECK_RUNS_QUERY,
+    GET_PR_REVIEW_THREADS_QUERY,
+    GET_WORKFLOW_RUNS_BY_NODE_IDS_QUERY,
+    ISSUE_PR_LINKAGE_FRAGMENT,
+    RESOLVE_REVIEW_THREAD_MUTATION,
+)
+from erk_shared.gateway.github.issues.abc import GitHubIssues
+from erk_shared.gateway.github.issues.types import IssueInfo
+from erk_shared.gateway.github.parsing import (
+    execute_gh_command_with_retry,
+    parse_aggregated_check_counts,
+    parse_gh_auth_status_output,
+)
+from erk_shared.gateway.github.pr_data_parsing import (
+    merge_rest_graphql_pr_data,
+    parse_mergeable_status,
+    parse_review_thread_counts,
+    parse_status_rollup,
+    parse_workflow_runs_nodes_response,
+)
+```
+
+---
+
+## 4. GraphQL Fragment Definition
+**File:** `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/graphql_queries.py` (lines 56-79)
+
+```python
+ISSUE_PR_LINKAGE_FRAGMENT = """fragment IssuePRLinkageFields on CrossReferencedEvent {
+  willCloseTarget
+  source {
+    ... on PullRequest {
+      number
+      state
+      url
+      isDraft
+      createdAt
+      headRefName
+      baseRefName
+      statusCheckRollup {
+        state
+        contexts(last: 1) {
+          totalCount
+          checkRunCountsByState { state count }
+          statusContextCountsByState { state count }
+        }
+      }
+      mergeable
+      reviewDecision
+    }
+  }
+}"""
+```
+
+---
+
+## 5. PR Data Parsing Functions
+**File:** `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/pr_data_parsing.py` (lines 27-84)
+
+### `parse_status_rollup` (lines 27-55)
+```python
+def parse_status_rollup(
+    status_rollup: StatusCheckRollupData | None,
+) -&gt; tuple[bool | None, tuple[int, int] | None]:
+    """Parse checks status and counts from statusCheckRollup.
+
+    Returns (checks_passing, checks_counts).
+    """
+    if status_rollup is None:
+        return (None, None)
+
+    rollup_state = status_rollup.get("state")
+    checks_passing = None
+    if rollup_state == "SUCCESS":
+        checks_passing = True
+    elif rollup_state in ("FAILURE", "ERROR"):
+        checks_passing = False
+
+    checks_counts = None
+    contexts = status_rollup.get("contexts")
+    if contexts is not None and isinstance(contexts, dict):
+        total = contexts.get("totalCount", 0)
+        if total &gt; 0:
+            checks_counts = parse_aggregated_check_counts(
+                contexts.get("checkRunCountsByState", []),
+                contexts.get("statusContextCountsByState", []),
+                total,
+            )
+
+    return (checks_passing, checks_counts)
+```
+
+### `parse_mergeable_status` (lines 58-64)
+```python
+def parse_mergeable_status(mergeable: MergeableStatus | None) -&gt; bool | None:
+    """Parse has_conflicts from mergeable field."""
+    if mergeable == "CONFLICTING":
+        return True
+    if mergeable == "MERGEABLE":
+        return False
+    return None
+```
+
+### `parse_review_thread_counts` (lines 67-84)
+```python
+def parse_review_thread_counts(
+    review_threads: dict[str, Any] | None,
+) -&gt; tuple[int, int] | None:
+    """Parse review thread counts from reviewThreads field.
+
+    Returns (resolved_count, total_count) or None if not available.
+    """
+    if review_threads is None:
+        return None
+
+    total_count = review_threads.get("totalCount", 0)
+    if total_count == 0:
+        return (0, 0)
+
+    nodes = review_threads.get("nodes", [])
+    resolved_count = sum(1 for node in nodes if node and node.get("isResolved", False))
+
+    return (resolved_count, total_count)
+```
+
+---
+
+## 6. TUI Provider `fetch_plans_by_ids` Method
+**File:** `/home/runner/work/erk/erk/src/erk/tui/data/real_provider.py` (lines 211-247)
+
+```python
+def fetch_plans_by_ids(self, plan_ids: set[int]) -&gt; list[PlanRowData]:
+    """Fetch specific plans by their GitHub numbers.
+
+    Args:
+        plan_ids: Set of plan numbers to fetch (issue or PR numbers)
+
+    Returns:
+        List of PlanRowData objects sorted by plan_id
+    """
+    if not plan_ids:
+        return []
+
+    issues, pr_linkages = self._ctx.github.get_issues_by_numbers_with_pr_linkages(
+        location=self._location,
+        plan_numbers=list(plan_ids),
+    )
+
+    plans = [github_issue_to_plan(issue) for issue in issues]
+    worktree_by_plan_id = self._build_worktree_mapping()
+
+    global_config = self._ctx.global_config
+    use_graphite = global_config.use_graphite if global_config is not None else False
+    rows: list[PlanRowData] = []
+    for plan in plans:
+        plan_id = int(plan.plan_identifier)
+        row = self._build_row_data(
+            plan=plan,
+            plan_id=plan_id,
+            pr_linkages=pr_linkages,
+            workflow_run=None,
+            worktree_by_plan_id=worktree_by_plan_id,
+            use_graphite=use_graphite,
+        )
+        rows.append(row)
+
+    rows.sort(key=lambda r: r.plan_id)
+    return rows
+```
+
+---
+
+## 7. Unit Tests for `_build_issues_by_numbers_query`
+**File:** `/home/runner/work/erk/erk/tests/unit/gateways/github/test_real.py` (lines 317-340)
+
+```python
+# --- Tests for _build_issues_by_numbers_query ---
+
+def test_build_issues_by_numbers_query_single_issue() -&gt; None:
+    """Query contains one aliased issueOrPullRequest for a single issue."""
+    github = RealLocalGitHub.for_test()
+    repo_id = GitHubRepoId(owner="acme", repo="widgets")
+
+    query = github._build_issues_by_numbers_query([100], repo_id)
+
+    assert "issue_100: issueOrPullRequest(number: 100)" in query
+    assert 'repository(owner: "acme", name: "widgets")' in query
+
+
+def test_build_issues_by_numbers_query_multiple_issues() -&gt; None:
+    """Query contains one alias per issue number."""
+    github = RealLocalGitHub.for_test()
+    repo_id = GitHubRepoId(owner="acme", repo="widgets")
+
+    query = github._build_issues_by_numbers_query([100, 200, 300], repo_id)
+
+    assert "issue_100: issueOrPullRequest(number: 100)" in query
+    assert "issue_200: issueOrPullRequest(number: 200)" in query
+    assert "issue_300: issueOrPullRequest(number: 300)" in query
+```
+
+---
+
+## 8. Unit Tests for `_parse_issues_by_numbers_response`
+**File:** `/home/runner/work/erk/erk/tests/unit/gateways/github/test_real.py` (lines 343-439)
+
+```python
+# --- Tests for _parse_issues_by_numbers_response ---
+
+def _make_issue_node(
+    *,
+    number: int = 100,
+    title: str = "Test issue",
+    state: str = "OPEN",
+) -&gt; dict:
+    """Create a minimal issue node matching the GraphQL response shape."""
+    return {
+        "number": number,
+        "title": title,
+        "body": "",
+        "state": state,
+        "url": f"https://github.com/acme/widgets/issues/{number}",
+        "author": {"login": "testuser"},
+        "labels": {"nodes": [{"name": "erk-plan"}]},
+        "assignees": {"nodes": []},
+        "createdAt": "2025-01-01T00:00:00Z",
+        "updatedAt": "2025-01-02T00:00:00Z",
+        "timelineItems": {"nodes": []},
+    }
+
+
+def test_parse_issues_by_numbers_response_single_issue() -&gt; None:
+    """Single issue node is parsed into one IssueInfo."""
+    github = RealLocalGitHub.for_test()
+    repo_id = GitHubRepoId(owner="acme", repo="widgets")
+
+    response = {
+        "data": {
+            "repository": {
+                "issue_100": _make_issue_node(number=100, title="Plan A"),
+            }
+        }
+    }
+
+    issues, pr_linkages = github._parse_issues_by_numbers_response(response, repo_id)
+
+    assert len(issues) == 1
+    assert issues[0].number == 100
+    assert issues[0].title == "Plan A"
+    assert pr_linkages == {}
+
+
+def test_parse_issues_by_numbers_response_multiple_issues() -&gt; None:
+    """Multiple issue nodes are all parsed."""
+    github = RealLocalGitHub.for_test()
+    repo_id = GitHubRepoId(owner="acme", repo="widgets")
+
+    response = {
+        "data": {
+            "repository": {
+                "issue_100": _make_issue_node(number=100),
+                "issue_200": _make_issue_node(number=200),
+            }
+        }
+    }
+
+    issues, _ = github._parse_issues_by_numbers_response(response, repo_id)
+
+    numbers = {i.number for i in issues}
+    assert numbers == {100, 200}
+
+
+def test_parse_issues_by_numbers_response_skips_null_nodes() -&gt; None:
+    """Null nodes (deleted/inaccessible issues) are skipped."""
+    github = RealLocalGitHub.for_test()
+    repo_id = GitHubRepoId(owner="acme", repo="widgets")
+
+    response = {
+        "data": {
+            "repository": {
+                "issue_100": _make_issue_node(number=100),
+                "issue_999": None,
+            }
+        }
+    }
+
+    issues, _ = github._parse_issues_by_numbers_response(response, repo_id)
+
+    assert len(issues) == 1
+    assert issues[0].number == 100
+
+
+def test_parse_issues_by_numbers_response_empty_repository() -&gt; None:
+    """Empty repository data returns empty results."""
+    github = RealLocalGitHub.for_test()
+    repo_id = GitHubRepoId(owner="acme", repo="widgets")
+
+    response = {"data": {"repository": {}}}
+
+    issues, pr_linkages = github._parse_issues_by_numbers_response(response, repo_id)
+
+    assert issues == []
+    assert pr_linkages == {}
+```
+
+---
+
+## 9. Tests for `fetch_plans_by_ids`
+**File:** `/home/runner/work/erk/erk/tests/tui/data/test_provider.py` (lines 1774-1891)
+
+```python
+class TestFetchPlansByIds:
+    """Tests for fetch_plans_by_ids method."""
+
+    @staticmethod
+    def _make_provider(
+        tmp_path: Path,
+        *,
+        issues_data: list[IssueInfo] | None = None,
+        pr_linkages: dict[int, list[PullRequestInfo]] | None = None,
+    ) -&gt; RealPlanDataProvider:
+        repo_root = tmp_path / "repo"
+        repo_root.mkdir(exist_ok=True)
+        erk_dir = repo_root / ".erk"
+        erk_dir.mkdir(exist_ok=True)
+
+        git = FakeGit(
+            worktrees={
+                repo_root: [
+                    WorktreeInfo(path=repo_root, branch="main", is_root=True),
+                ]
+            },
+            git_common_dirs={repo_root: repo_root / ".git"},
+        )
+        github = FakeLocalGitHub(
+            pr_plan_linkages=pr_linkages or {},
+            issues_data=issues_data or [],
+        )
+        ctx = create_test_context(
+            git=git,
+            github=github,
+            cwd=repo_root,
+            repo=_make_repo_context(repo_root, tmp_path),
+        )
+        location = GitHubRepoLocation(
+            root=repo_root,
+            repo_id=GitHubRepoId(owner="test", repo="repo"),
+        )
+        return RealPlanDataProvider(
+            ctx=ctx,
+            location=location,
+            http_client=FakeHttpClient(),
+        )
+
+    def test_empty_plan_ids_returns_empty(self, tmp_path: Path) -&gt; None:
+        """Empty plan_ids set returns empty list without API calls."""
+        provider = self._make_provider(tmp_path)
+        result = provider.fetch_plans_by_ids(set())
+        assert result == []
+
+    def test_fetches_matching_issues(self, tmp_path: Path) -&gt; None:
+        """Returns PlanRowData for each matching issue."""
+        body = format_plan_header_body_for_test()
+        issues = [
+            IssueInfo(
+                number=100,
+                title="Plan: First",
+                body=body,
+                state="OPEN",
+                url="https://github.com/test/repo/issues/100",
+                labels=["erk-pr", "erk-plan"],
+                assignees=[],
+                created_at=datetime(2025, 1, 1, tzinfo=UTC),
+                updated_at=datetime(2025, 1, 2, tzinfo=UTC),
+                author="testuser",
+            ),
+            IssueInfo(
+                number=200,
+                title="Plan: Second",
+                body=body,
+                state="CLOSED",
+                url="https://github.com/test/repo/issues/200",
+                labels=["erk-pr", "erk-plan"],
+                assignees=[],
+                created_at=datetime(2025, 1, 1, tzinfo=UTC),
+                updated_at=datetime(2025, 1, 2, tzinfo=UTC),
+                author="testuser",
+            ),
+        ]
+        provider = self._make_provider(tmp_path, issues_data=issues)
+        result = provider.fetch_plans_by_ids({100, 200})
+
+        assert len(result) == 2
+        plan_ids = {r.plan_id for r in result}
+        assert plan_ids == {100, 200}
+
+    def test_results_sorted_by_plan_id(self, tmp_path: Path) -&gt; None:
+        """Results are sorted by plan_id ascending."""
+        body = format_plan_header_body_for_test()
+        issues = [
+            IssueInfo(
+                number=300,
+                title="Plan: Third",
+                body=body,
+                state="OPEN",
+                url="https://github.com/test/repo/issues/300",
+                labels=["erk-pr", "erk-plan"],
+                assignees=[],
+                created_at=datetime(2025, 1, 1, tzinfo=UTC),
+                updated_at=datetime(2025, 1, 2, tzinfo=UTC),
+                author="testuser",
+            ),
+            IssueInfo(
+                number=100,
+                title="Plan: First",
+                body=body,
+                state="OPEN",
+                url="https://github.com/test/repo/issues/100",
+                labels=["erk-pr", "erk-plan"],
+                assignees=[],
+                created_at=datetime(2025, 1, 1, tzinfo=UTC),
+                updated_at=datetime(2025, 1, 2, tzinfo=UTC),
+                author="testuser",
+            ),
+        ]
+        provider = self._make_provider(tmp_path, issues_data=issues)
+        result = provider.fetch_plans_by_ids({100, 300})
+
+        assert [r.plan_id for r in result] == [100, 300]
+```
+
+---
+
+## Key Implementation Details
+
+**Path Summary:**
+- ABC: `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/abc.py`
+- Real: `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/real.py`
+- TUI Provider: `/home/runner/work/erk/erk/src/erk/tui/data/real_provider.py`
+- GraphQL Queries: `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/graphql_queries.py`
+- PR Data Parsing: `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/pr_data_parsing.py`
+- Real Tests: `/home/runner/work/erk/erk/tests/unit/gateways/github/test_real.py`
+- Provider Tests: `/home/runner/work/erk/erk/tests/tui/data/test_provider.py`</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="6850" cache_read_input_tokens="59646" cache_creation="{'ephemeral_5m_input_tokens': 6850, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>
