@@ -349,11 +349,14 @@ def test_build_output_multi_step_and_semantics() -> None:
     _replace_node_refs_in_body use the same underlying parsing), so we
     verify AND semantics through _build_output with mixed results.
     """
-    from erk.cli.commands.exec.scripts.update_objective_node import _build_output
+    from erk.cli.commands.exec.scripts.update_objective_node import (
+        UpdateObjectiveNodeResult,
+        _build_output,
+    )
 
-    results: list[dict[str, object]] = [
-        {"node_id": "1.2", "success": True, "previous_pr": None},
-        {"node_id": "1.3", "success": False, "error": "replacement_failed"},
+    results = [
+        UpdateObjectiveNodeResult.ok(node_id="1.2", previous_pr=None),
+        UpdateObjectiveNodeResult.fail(node_id="1.3", error="replacement_failed"),
     ]
     output = _build_output(
         issue_number=6697,
@@ -363,12 +366,14 @@ def test_build_output_multi_step_and_semantics() -> None:
         results=results,
         include_body=False,
         updated_body=None,
+        backlink=None,
     )
 
     # AND semantics: success=false because step 1.3 failed
-    assert output["success"] is False
-    assert output["issue_number"] == 6697
-    nodes = output["nodes"]
+    output_dict = output.to_dict()
+    assert output_dict["success"] is False
+    assert output_dict["issue_number"] == 6697
+    nodes = output_dict["nodes"]
     assert isinstance(nodes, list)
     assert len(nodes) == 2
 
