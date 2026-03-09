@@ -1,0 +1,1005 @@
+<session>
+  <meta branch="master" />
+  <meta model="claude-opus-4-6" />
+  <user>https://github.com/dagster-io/erk/pull/9013
+
+when we create a PR associated with an objective i want a link to the objective added in between the summary and ""Key Changes" section</user>
+  <usage input_tokens="3" cache_creation_input_tokens="10702" cache_read_input_tokens="13324" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 10702}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me explore the PR and understand the current PR body format and objective-linking workflow.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="10702" cache_read_input_tokens="13324" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 10702}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01M7k6YyjNRDoATpiwM5fV7T">
+    <param name="description">Explore PR #9013 and PR body generation</param>
+    <param name="subagent_type">Explore</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 629 chars]...k docs/learned/pr-operations/, docs/learned/objectives/, and docs/learned/planning/ first.</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="10702" cache_read_input_tokens="13324" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 10702}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01MDrBDWNJqsH8yhdD31JB5g">
+    <param name="description">Explore objective metadata and linking</param>
+    <param name="subagent_type">Explore</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 514 chars]... to objectives and their association with plans/PRs. Check docs/learned/objectives/ first.</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="10702" cache_read_input_tokens="13324" output_tokens="636" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 10702, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01M7k6YyjNRDoATpiwM5fV7T">
+Perfect! Now I have all the information I need. Let me compile a comprehensive report:
+
+## Summary of Findings
+
+Based on my thorough exploration of the erk codebase, here's what I found regarding PR body generation and objective linking:
+
+### 1. **PR #9013 Body Format (Current Implementation)**
+
+The PR body in #9013 follows this structure:
+
+```
+[AI-generated summary - 2-3 sentences]
+
+## Key Changes
+
+- [3-5 major changes at component level]
+- [Strategic changes focusing on impact]
+- etc.
+
+&lt;details&gt;
+&lt;summary&gt;Files Changed&lt;/summary&gt;
+
+### Added (N files)
+- file path - brief purpose
+
+### Modified (N files)
+- file path - what changed
+
+### Deleted (N files)
+- file path - why removed
+
+... [106 lines omitted] ...
+
+[Optional section with breaking changes/warnings]
+- **Critical Notes section**: Optional, only for breaking changes or warnings
+  </tool_result>
+  <tool_result tool="toolu_01MDrBDWNJqsH8yhdD31JB5g">
+Perfect! Now I have a comprehensive understanding. Let me create a final summary document for you:
+
+## Summary: How Objectives are Tracked and Linked to PRs in Erk
+
+Based on my exploration of the erk codebase, here's a comprehensive explanation of the objective tracking and PR linking system:
+
+### 1. **Objective Metadata Storage**
+
+Objectives are GitHub issues with the `erk-objective` label, storing metadata in two locations:
+
+**In the issue body (metadata blocks only):**
+- **`objective-header`** block: Contains `created_at`, `created_by`, `objective_comment_id` (pointer to content comment)
+- **`objective-roadmap`** block: YAML frontmatter with step list, source of truth for roadmap data
+
+**In the first comment (content):**
+- **`objective-body`** block: The full objective description, design decisions, implementation context, exploration notes
+
+The two-part structure exists because the issue body is frequently mutated (roadmap updates, status changes) while the original content should be immutable.
+
+### 2. **Objective Context Marker System**
+
+The **primary mechanism** for linking objectives to plans/PRs is the **session-scoped marker**:
+
+**File location:** `~/.claude/.scratch/&lt;SESSION_ID&gt;/objective-context.marker`
+
+**Content:** Plain text integer (the objective issue number)
+
+**Lifecycle:**
+- Created by `/erk:objective-plan` command during Step 2 via `objective_plan_setup.py` (line 80-82)
+- Also created by `/erk:system:objective-plan-node` inner skill during marker creation
+
+... [120 lines omitted] ...
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="4284" cache_read_input_tokens="24026" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4284}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now let me read the key files to understand exactly where to insert the objective link.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="4284" cache_read_input_tokens="24026" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4284}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01491EcRjCDFzg4sDqowQDE9">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/pr/shared.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4284" cache_read_input_tokens="24026" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4284}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01491EcRjCDFzg4sDqowQDE9">
+     1→"""Shared utilities for PR commands.
+     2→
+     3→This module contains common functionality used by multiple PR commands
+     4→(rewrite, submit) to avoid code duplication.
+     5→"""
+     6→
+     7→from __future__ import annotations
+     8→
+     9→import queue
+    10→import threading
+    11→from dataclasses import dataclass
+    12→from pathlib import Path
+    13→
+    14→import click
+    15→
+    16→from erk.core.commit_message_generator import (
+    17→    CommitMessageGenerator,
+    18→    CommitMessageRequest,
+    19→    CommitMessageResult,
+    20→)
+    21→from erk.core.context import ErkContext
+    22→from erk.core.plan_context_provider import PlanContext
+    23→from erk_shared.gateway.github.metadata.core import find_metadata_block, render_metadata_block
+    24→from erk_shared.gateway.github.metadata.schemas import (
+    25→    CREATED_AT,
+    26→    CREATED_BY,
+    27→    LIFECYCLE_STAGE,
+    28→    SCHEMA_VERSION,
+    29→)
+    30→from erk_shared.gateway.github.metadata.types import BlockKeys, MetadataBlock
+
+... [394 lines omitted] ...
+
+    58→        click.ClickException: If in detached HEAD state
+    62→        raise click.ClickException("Not on a branch (detached HEAD state)")
+   101→        Path to diff file, or None if extraction failed
+   158→    Silently returns on any failure — lifecycle updates must never block submission.
+   170→    except RuntimeError as e:
+   172→            msg = f"   Warning: failed to update lifecycle stage: {e}"
+   236→        except OSError:
+   319→    elif event.style == "warning":
+   321→    elif event.style == "error":
+   328→    """Verify Claude CLI is available, raising ClickException if not.
+   334→        click.ClickException: If Claude CLI is not available
+   337→        raise click.ClickException(
+   374→        CommitMessageResult with the generated title/body or error info
+   420→            error_message="Commit message generation did not complete",
+  </tool_result>
+  <tool_use name="Read" id="toolu_018kADWhEVp6DCQkSDL8dKrp">
+    <param name="file_path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/plan_store/planned_pr_lifecycle.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4284" cache_read_input_tokens="24026" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4284}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_018kADWhEVp6DCQkSDL8dKrp">
+     1→"""Draft PR Lifecycle.
+     2→
+     3→Draft PRs serve as the backing store for plans. Plans evolve through
+     4→lifecycle stages within a single PR.
+     5→
+     6→Branch Files
+     7→------------
+     8→Draft PR branches contain ``{IMPL_CONTEXT_DIR}/plan.md`` and
+     9→``{IMPL_CONTEXT_DIR}/ref.json``, committed before PR creation to avoid
+    10→GitHub's "empty branch" rejection. ``plan.md`` enables inline review
+    11→comments on the plan via the PR's "Files Changed" tab and gets replaced
+    12→when implementation begins. ``ref.json`` carries plan reference metadata
+    13→(provider, objective_id).
+    14→
+    15→Stages
+    16→------
+    17→
+    18→0. One-Shot Dispatch (optional)
+    19→   One-shot creates a draft PR plan and dispatches to GitHub Actions
+    20→   for remote planning + implementation. The workflow updates the
+    21→   PR body through stages 1-3 below.
+    22→
+    23→1. Plan Creation
+    24→   ``plan_save`` / ``PlannedPRBackend.create_plan()`` creates a draft PR.
+    25→   The body contains an optional AI-generated summary followed by the plan
+    26→   content collapsed in a &lt;details&gt; tag, then the plan-header metadata block
+    27→   and a checkout footer. The metadata block is self-delimiting via HTML
+    28→   comment markers, so no separator is needed.
+    29→
+    30→   Body format::
+
+... [141 lines omitted] ...
+  </tool_result>
+  <tool_use name="Bash" id="toolu_015yCnhyHV4xfr4H2mv4maS6">
+    <param name="command">gh pr view 9013 --json body | head -200</param>
+    <param name="description">Get PR #9013 body format</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4284" cache_read_input_tokens="24026" output_tokens="379" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 4284, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_015yCnhyHV4xfr4H2mv4maS6">
+{"body":"This PR adds agent-friendly JSON output infrastructure to the CLI, enabling structured machine-readable results alongside human-readable output. The `@json_output` decorator provides uniform error serialization across commands, while `erk one-shot --json` emits detailed dispatch results or dry-run previews.\n\n## Key Changes\n\n- Add `@json_output` decorator (`src/erk/cli/json_output.py`) that appends `--json` flag to commands and catches `UserFacingCliError` exceptions, serializing them as JSON when the flag is active\n- Extend `UserFacingCliError` with required `error_type` kwarg for classification of error conditions (auth_required, invalid_input, invalid_repo, cli_error)\n- Replace dry-run `None` return with `OneShotDryRunResult` dataclass in `dispatch_one_shot_remote`, enabling JSON serialization of preview data\n- Wire `@json_output` onto `one_shot` command with JSON output branches for both dispatch success and dry-run scenarios, including PR/run URLs\n- Update ~49 existing `UserFacingCliError` call sites to include explicit `error_type` parameter\n\n&lt;details&gt;\n&lt;summary&gt;Files Changed&lt;/summary&gt;\n\n### Added (3 files)\n- `src/erk/cli/json_output.py` - Decorator implementation and `emit_json()` helper for success results\n- `tests/unit/cli/test_json_output.py` - Unit tests for decorator flag handling, error serialization, and exception passthrough\n- `tests/commands/one_shot/test_one_shot_json.py` - Integration tests for one-shot JSON output (success, dry-run, error cases)\n\n### Modified (9 files)\n- `src/erk/cli/ensure.py` - Make `error_type` kwarg required in `UserFacingCliError.__init__`\n- `src/erk/cli/commands/one_shot.py` - Add `@json_output`, JSON output branches, error type annotations\n- `src/erk/cli/commands/one_shot_remote_dispatch.py` - Add `OneShotDryRunResult` dataclass, return from dry-run path\n- `src/erk/cli/commands/admin.py` - Add `error_type=\"cli_error\"` to 8 call sites\n- `src/erk/cli/commands/objective/plan_cmd.py` - Update dry-run checks to use `isinstance(result, OneShotDispatchResult)`\n- `src/erk/cli/commands/objective/view_cmd.py` - Add `error_type` to 5 call sites\n- `src/erk/cli/commands/pr/dispatch_cmd.py` - Add `error_type` to 1 call site\n- `src/erk/cli/commands/pr/submit_pipeline.py` - Add `error_type` to 1 call site\n- `src/erk/cli/commands/wt/create_cmd.py` - Add `error_type` to 4 call sites\n- `src/erk/cli/repo_resolution.py` - Add `error_type` to 3 call sites\n- `src/erk/core/workflow_smoke_test.py` - Update dry-run validation to check result type\n- `tests/commands/one_shot/test_one_shot_dispatch.py` - Update dry-run assertion to check `OneShotDryRunResult`\n- `tests/commands/one_shot/test_one_shot_remote_dispatch.py` - Update dry-run validation and add assertions on result fields\n\n&lt;/details&gt;\n\n## User Experience\n\n**Before:**\n```bash\n$ erk one-shot \"fix import bug\" --dry-run\nValidating one-shot...\n[human-readable output to stderr]\n```\n\n**After:**\n```bash\n$ erk one-shot \"fix import bug\" --dry-run --json\n[human-readable output to stderr]\n{\"success\": true, \"dry_run\": true, \"branch_name\": \"...\", \"prompt\": \"fix import bug\", ...}\n\n$ erk one-shot \"fix import bug\" --json\n[human-readable output to stderr]\n{\"success\": true, \"dry_run\": false, \"pr_number\": 123, \"pr_url\": \"https://...\", ...}\n\n$ erk one-shot \"\" --json\n{\"success\": false, \"error_type\": \"invalid_input\", \"message\": \"Prompt must not be empty\"}\n```\n\nAgents can now parse structured JSON results while human users continue to see formatted console output. Error conditions include `error_type` for programmatic routing.\n\n## Critical Notes\n\n- The `error_type` parameter is now required; all ~49 existing `UserFacingCliError` call sites updated with explicit types\n- Dry-run now returns `OneShotDryRunResult` instead of `None`; code checking `dispatch_result is not None` must update to `isinstance(dispatch_result, OneShotDispatchResult)` (2 locations updated)\n\n&lt;details&gt;\n&lt;summary&gt;original-plan&lt;/summary&gt;\n\n# Plan: @json_output Decorator + Structured Errors + One-Shot JSON\n\n**Objective:** #9009 (Agent-Friendly CLI)\n**Nodes:** 1.1 (json-output-decorator), 1.2 (structured-cli-errors), 1.3 (one-shot-json)\n\n## Context\n\nErk CLI commands output human-readable styled text to stderr via `user_output()`. Agents (MCP tools, exec scripts, hooks) need structured JSON on stdout to parse results reliably. This plan creates the `@json_output` decorator infrastructure and wires it into `erk one-shot` as the steelthread.\n\n## Step 1: Create `@json_output` decorator — `src/erk/cli/json_output.py` (NEW)\n\nA decorator applied **above** `@click.command()` that operates on the `click.Command` object (same pattern as `@alias` in `src/erk/cli/alias.py`):\n\n```python\ndef json_output(cmd: click.Command) -&gt; click.Command:\n    \"\"\"Add --json flag and JSON error handling to a Click command.\"\"\"\n```\n\n**What it does:**\n- Appends `click.Option([\"--json\"], \"json_mode\", is_flag=True)` to `cmd.params`\n- Wraps `cmd.callback` to catch `UserFacingCliError` when `json_mode=True`\n- On caught error: `click.echo(json.dumps({\"success\": false, \"error_type\": ..., \"message\": ...}))` then `raise SystemExit(1)`\n- Passes `SystemExit` and other exceptions through unchanged\n- When `json_mode=False`: delegates to original callback unchanged\n\n**No `CliJsonResult` protocol** — commands handle success JSON inline (matching existing patterns in `objective view`, `objective check`). The decorator only handles the error path uniformly.\n\n**Helper function** for commands to emit success JSON:\n```python\ndef emit_json(data: dict[str, Any]) -&gt; None:\n    \"\"\"Emit a JSON success result to stdout. Adds success=True automatically.\"\"\"\n    data[\"success\"] = True\n    click.echo(json.dumps(data))\n```\n\n### Tests — `tests/unit/cli/test_json_output.py` (NEW)\n\nCreate a minimal Click command decorated with `@json_output`, test via `CliRunner`:\n- `test_adds_json_flag` — `--json` appears in command params\n- `test_no_flag_passes_through` — normal behavior without `--json`\n- `test_catches_user_facing_error` — error serialized as JSON\n- `test_preserves_error_type` — custom `error_type` in JSON output\n- `test_system_exit_passes_through` — `SystemExit` not caught\n\n## Step 2: Add `error_type` to `UserFacingCliError` — `src/erk/cli/ensure.py`\n\n```python\nclass UserFacingCliError(click.ClickException):\n    def __init__(self, message: str, *, error_type: str = \"cli_error\") -&gt; None:\n        super().__init__(message)\n        self.message = message\n        self.error_type = error_type\n```\n\n**Default parameter exception:** `UserFacingCliError` extends `click.ClickException` (third-party) and has ~49 existing call sites. Default avoids a 49-file migration for no benefit. New call sites that need classification use the keyword: `raise UserFacingCliError(\"msg\", error_type=\"auth_required\")`.\n\nNo changes to `show()` — it's only called in non-JSON mode.\n\n## Step 3: Wire `erk one-shot --json` — Nodes 1.3\n\n### 3a. Add `OneShotDryRunResult` — `one_shot_remote_dispatch.py`\n\nCurrently `dispatch_one_shot_remote` returns `None` for dry-run. Add a result type:\n\n```python\n@dataclass(frozen=True)\nclass OneShotDryRunResult:\n    branch_name: str\n    prompt: str\n    target: str\n    pr_title: str\n    base_branch: str\n    submitted_by: str\n    model: str | None\n    workflow: str\n```\n\nChanges to `dispatch_one_shot_remote`:\n- Return type: `OneShotDispatchResult | OneShotDryRunResult` (was `| None`)\n- Dry-run path: return `OneShotDryRunResult(...)` instead of `None`\n- No `quiet` param needed — `user_output()` already writes to stderr, separate from JSON on stdout\n\n### 3b. Wire `@json_output` on `one_shot` — `one_shot.py`\n\n```python\n@json_output                    # adds --json, catches errors as JSON\n@click.command(\"one-shot\")\n# ... existing options ...\n@click.pass_obj\ndef one_shot(ctx: ErkContext, *, json_mode: bool, ...):\n```\n\nAfter dispatch result, add JSON branch:\n```python\nif json_mode:\n    if isinstance(result, OneShotDryRunResult):\n        emit_json({\"dry_run\": True, \"branch_name\": result.branch_name, ...})\n    elif isinstance(result, OneShotDispatchResult):\n        emit_json({\"dry_run\": False, \"pr_number\": result.pr_number,\n                    \"pr_url\": f\"https://github.com/{owner}/{repo_name}/pull/{result.pr_number}\",\n                    \"run_id\": result.run_id, \"run_url\": ..., \"branch_name\": result.branch_name})\n    return\n```\n\nAdd `error_type` to key error raises:\n- `_get_remote_github`: `error_type=\"auth_required\"`\n- Empty prompt: `error_type=\"invalid_input\"`\n- Invalid `--repo` format: `error_type=\"invalid_repo\"`\n\n### JSON output shapes\n\n**Success:**\n```json\n{\"success\": true, \"dry_run\": false, \"pr_number\": 123, \"pr_url\": \"...\", \"run_id\": \"...\", \"run_url\": \"...\", \"branch_name\": \"...\"}\n```\n\n**Dry-run:**\n```json\n{\"success\": true, \"dry_run\": true, \"branch_name\": \"...\", \"prompt\": \"...\", \"target\": \"owner/repo\", \"pr_title\": \"...\", \"base_branch\": \"main\", \"model\": null, \"workflow\": \"one-shot.yml\"}\n```\n\n**Error (automatic via decorator):**\n```json\n{\"success\": false, \"error_type\": \"auth_required\", \"message\": \"GitHub authentication required.\"}\n```\n\n### Tests — `tests/commands/one_shot/test_one_shot_json.py` (NEW)\n\nUsing existing `FakeRemoteGitHub` pattern from `test_one_shot.py`:\n- `test_json_success` — parse JSON, verify `success`, `pr_number`, `pr_url`, `run_id`, `run_url`\n- `test_json_dry_run` — verify `dry_run: true` with preview fields\n- `test_json_error_empty_prompt` — verify JSON error with `error_type`\n- `test_json_error_auth` — verify auth error as JSON\n- `test_json_no_human_on_stdout` — verify stdout is pure JSON (use `CliRunner(mix_stderr=False)`)\n\n### Existing test updates\n\n- `tests/commands/one_shot/test_one_shot.py` — dry-run test asserts `result is None`; update to assert `isinstance(result, OneShotDryRunResult)` if test calls dispatch directly (check actual test)\n- `tests/commands/one_shot/test_one_shot_remote_dispatch.py` — same\n\n## Files Summary\n\n| File | Change |\n|------|--------|\n| `src/erk/cli/json_output.py` | **NEW** — `json_output` decorator + `emit_json` helper |\n| `src/erk/cli/ensure.py` | Add `error_type` kwarg to `UserFacingCliError.__init__` |\n| `src/erk/cli/commands/one_shot.py` | Add `@json_output`, JSON output branches, error types |\n| `src/erk/cli/commands/one_shot_remote_dispatch.py` | Add `OneShotDryRunResult`, return type change |\n| `tests/unit/cli/test_json_output.py` | **NEW** — decorator unit tests |\n| `tests/commands/one_shot/test_one_shot_json.py` | **NEW** — one-shot JSON tests |\n\n## Verification\n\n1. `uv run pytest tests/unit/cli/test_json_output.py` — decorator tests\n2. `uv run pytest tests/commands/one_shot/` — all one-shot tests (new + existing)\n3. Type check and lint via devrun agent\n4. `erk one-shot \"test\" --dry-run --json` — manual smoke test\n\n## Key files reference\n\n| File | Role |\n|------|------|\n| `src/erk/cli/alias.py` | Reference: decorator operating on `click.Command` |\n| `src/erk/cli/ensure.py:33` | `UserFacingCliError` class |\n| `src/erk/cli/commands/one_shot.py` | CLI entry point |\n| `src/erk/cli/commands/one_shot_remote_dispatch.py:37-53` | `OneShotDispatchParams`, `OneShotDispatchResult` |\n| `src/erk/cli/commands/objective/check_cmd.py:306` | Reference: existing JSON output pattern |\n| `packages/erk-shared/src/erk_shared/output/output.py` | `user_output()` (stderr), `machine_output()` (stdout) |\n| `tests/commands/one_shot/test_one_shot.py` | Reference: existing test pattern with `FakeRemoteGitHub` |\n\n\n&lt;/details&gt;\n\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- erk:metadata-block:plan-header --&gt;\n&lt;details&gt;\n&lt;summary&gt;plan-header&lt;/summary&gt;\n\n```yaml\n\nschema_version: '2'\ncreated_at: '2026-03-08T14:02:42.017545+00:00'\ncreated_by: schrockn\nplan_comment_id: null\nlast_dispatched_run_id: '22823187039'\nlast_dispatched_node_id: WFR_kwLOPxC3hc8AAAAFUF4yXw\nlast_dispatched_at: '2026-03-08T14:49:51+00:00'\nlast_local_impl_at: null\nlast_local_impl_event: null\nlast_local_impl_session: null\nlast_local_impl_user: null\nlast_remote_impl_at: '2026-03-08T14:49:51+00:00'\nlast_remote_impl_run_id: '22823187039'\nlast_remote_impl_session_id: 8e036eef-9eea-4768-a76e-65df4acf122c\nbranch_name: plnd/O9009-json-output-decorato-03-08-1402\nobjective_issue: 9009\ncreated_from_session: 4c3d054a-19de-4d5b-96f4-f38a1224ef64\nlifecycle_stage: impl\nlast_session_branch: planned-pr-context/9013\nlast_session_id: 8e036eef-9eea-4768-a76e-65df4acf122c\nlast_session_at: '2026-03-08T14:49:47.299053+00:00'\nlast_session_source: remote\n\n```\n\n&lt;/details&gt;\n&lt;!-- /erk:metadata-block:plan-header --&gt;\n---\n\n\nTo replicate this PR locally, run:\n\n```\nerk pr teleport 9013\n```\n"}
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="12173" cache_read_input_tokens="28310" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 12173}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me look at the `PlanContext` class and the commit message prompt to understand what objective info is available.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="12173" cache_read_input_tokens="28310" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 12173}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_013PYJMMcBtC3HzZRjA2DAkf">
+    <param name="pattern">class PlanContext</param>
+    <param name="output_mode">content</param>
+    <param name="-A">25</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="12173" cache_read_input_tokens="28310" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 12173}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013PYJMMcBtC3HzZRjA2DAkf">
+src/erk/core/plan_context_provider.py:17:class PlanContext:
+/Users/schrockn/code/erk/src/erk/core/plan_context_provider.py-18-    """Context from an erk plan for PR generation.
+/Users/schrockn/code/erk/src/erk/core/plan_context_provider.py-19-
+src/erk/core/plan_context_provider.py-20-    Attributes:
+src/erk/core/plan_context_provider.py-21-        plan_id: The plan identifier (e.g., "123" for plan numbers)
+src/erk/core/plan_context_provider.py-22-        plan_content: The full plan markdown content
+src/erk/core/plan_context_provider.py-23-        objective_summary: Optional summary of the parent objective (e.g., "Objective #123: Title")
+/Users/schrockn/code/erk/src/erk/core/plan_context_provider.py-24-    """
+/Users/schrockn/code/erk/src/erk/core/plan_context_provider.py-25-
+src/erk/core/plan_context_provider.py-26-    plan_id: str
+src/erk/core/plan_context_provider.py-27-    plan_content: str
+src/erk/core/plan_context_provider.py-28-    objective_summary: str | None
+/Users/schrockn/code/erk/src/erk/core/plan_context_provider.py-29-
+/Users/schrockn/code/erk/src/erk/core/plan_context_provider.py-30-
+src/erk/core/plan_context_provider.py:31:class PlanContextProvider:
+/Users/schrockn/code/erk/src/erk/core/plan_context_provider.py-32-    """Provides plan context for branches linked to erk plans.
+/Users/schrockn/code/erk/src/erk/core/plan_context_provider.py-33-
+/Users/schrockn/code/erk/src/erk/core/plan_context_provider.py-34-    This provider extracts plan content from the plan backend when a branch
+/Users/schrockn/code/erk/src/erk/core/plan_context_provider.py-35-    is associated with a plan. Uses PlanBackend.get_plan_for_branch() to
+/Users/schrockn/code/erk/src/erk/core/plan_context_provider.py-36-    encapsulate the branch→plan resolution strategy.
+/Users/schrockn/code/erk/src/erk/core/plan_context_provider.py-37-
+/Users/schrockn/code/erk/src/erk/core/plan_context_provider.py-38-    Uses RemoteGitHub for objective title lookup (objectives are issues, not plans).
+/Users/schrockn/code/erk/src/erk/core/plan_context_provider.py-39-    """
+/Users/schrockn/code/erk/src/erk/core/plan_context_provider.py-40-
+src/erk/core/plan_context_provider.py-41-    def __init__(self, *, plan_backend: PlanBackend, remote_github: RemoteGitHub) -&gt; None:
+/Users/schrockn/code/erk/src/erk/core/plan_context_provider.py-42-        self._plan_backend = plan_backend
+/Users/schrockn/code/erk/src/erk/core/plan_context_provider.py-43-        self._remote_github = remote_github
+/Users/schrockn/code/erk/src/erk/core/plan_context_provider.py-44-
+/Users/schrockn/code/erk/src/erk/core/plan_context_provider.py-45-    def get_plan_context(
+/Users/schrockn/code/erk/src/erk/core/plan_context_provider.py-46-        self,
+
+... [10 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Uk19nFrBJqrbdEvTcYvCnj">
+    <param name="file_path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/gt/commit_message_prompt.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="12173" cache_read_input_tokens="28310" output_tokens="624" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 12173, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Uk19nFrBJqrbdEvTcYvCnj">
+     1→You are a commit message generator. Analyze the provided git diff and return ONLY a commit message.
+     2→
+     3→## Analysis Principles
+     4→
+     5→Analyze the diff following these principles:
+     6→
+     7→- **Be concise and strategic** - focus on significant changes
+     8→- **Use component-level descriptions** - reference modules/components, not individual functions
+     9→- **Highlight breaking changes prominently**
+    10→- **Note test coverage patterns**
+    11→- **Use relative paths from repository root**
+    12→
+    13→## Level of Detail
+    14→
+    15→- Focus on architectural and component-level impact
+    16→- Keep "Key Changes" to 3-5 major items
+    17→- Group related changes together
+    18→- Skip minor refactoring, formatting, or trivial updates
+    19→
+    20→## Output Format
+    21→
+    22→```
+    23→[Clear one-line PR title describing the change]
+    24→
+    25→[2-3 sentence summary explaining what changed and why. State what the branch does (feature/fix/refactor) and highlight key changes briefly.]
+    26→
+    27→## Key Changes
+    28→
+    29→- [3-5 high-level component/architectural changes]
+    30→- Strategic change description focusing on purpose and impact
+
+... [52 lines omitted] ...
+
+    67→[Only if there are breaking changes, security concerns, or important warnings - 1-2 bullets max]
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="3020" cache_read_input_tokens="40483" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3020}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me check how `objective_summary` is populated and what data is available.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3020" cache_read_input_tokens="40483" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3020}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01H1Rid6wSXdu7NSBNggU7mm">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/core/plan_context_provider.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3020" cache_read_input_tokens="40483" output_tokens="544" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3020, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01H1Rid6wSXdu7NSBNggU7mm">
+     1→"""Plan context provider for PR description generation.
+     2→
+     3→This module provides plan context for branches linked to plans,
+     4→enabling more accurate PR descriptions that understand the "why" behind changes.
+     5→"""
+     6→
+     7→from dataclasses import dataclass
+     8→from pathlib import Path
+     9→
+    10→from erk_shared.gateway.github.issues.types import IssueNotFound
+    11→from erk_shared.gateway.remote_github.abc import RemoteGitHub
+    12→from erk_shared.plan_store.backend import PlanBackend
+    13→from erk_shared.plan_store.types import PlanNotFound
+    14→
+    15→
+    16→@dataclass(frozen=True)
+    17→class PlanContext:
+    18→    """Context from an erk plan for PR generation.
+    19→
+    20→    Attributes:
+    21→        plan_id: The plan identifier (e.g., "123" for plan numbers)
+    22→        plan_content: The full plan markdown content
+    23→        objective_summary: Optional summary of the parent objective (e.g., "Objective #123: Title")
+    24→    """
+    25→
+    26→    plan_id: str
+    27→    plan_content: str
+    28→    objective_summary: str | None
+    29→
+    30→
+
+... [63 lines omitted] ...
+
+    59→        Returns None on any failure, allowing graceful degradation for
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="1748" cache_read_input_tokens="43503" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1748}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me check where `build_plan_stage_body` is called from and how plan_save constructs the body.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1748" cache_read_input_tokens="43503" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1748}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_016ueFDcjZy2M2wzJgYMyXvf">
+    <param name="pattern">build_plan_stage_body</param>
+    <param name="output_mode">content</param>
+    <param name="-B">3</param>
+    <param name="-A">5</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1748" cache_read_input_tokens="43503" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1748}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016ueFDcjZy2M2wzJgYMyXvf">
+&lt;persisted-output&gt;
+Output too large (46.6KB). Full output saved to: /Users/schrockn/.claude/projects/-Users-schrockn-code-erk/b37cf022-9422-4d90-992e-e04e54bbc663/tool-results/toolu_016ueFDcjZy2M2wzJgYMyXvf.txt
+
+Preview (first 2KB):
+/Users/schrockn/code/erk/src/erk/cli/commands/one_shot_remote_dispatch.py-29-    sanitize_worktree_name,
+/Users/schrockn/code/erk/src/erk/cli/commands/one_shot_remote_dispatch.py-30-)
+/Users/schrockn/code/erk/src/erk/cli/commands/one_shot_remote_dispatch.py-31-from erk_shared.output.output import format_duration, user_output
+src/erk/cli/commands/one_shot_remote_dispatch.py:32:from erk_shared.plan_store.planned_pr_lifecycle import build_plan_stage_body
+/Users/schrockn/code/erk/src/erk/cli/commands/one_shot_remote_dispatch.py-33-
+/Users/schrockn/code/erk/src/erk/cli/commands/one_shot_remote_dispatch.py-34-ONE_SHOT_WORKFLOW = "one-shot.yml"
+/Users/schrockn/code/erk/src/erk/cli/commands/one_shot_remote_dispatch.py-35-
+/Users/schrockn/code/erk/src/erk/cli/commands/one_shot_remote_dispatch.py-36-
+/Users/schrockn/code/erk/src/erk/cli/commands/one_shot_remote_dispatch.py-37-@dataclass(frozen=True)
+--
+src/erk/cli/commands/one_shot_remote_dispatch.py-264-            f"_One-shot: plan content will be populated by one-shot workflow._\n\n"
+src/erk/cli/commands/one_shot_remote_dispatch.py-265-            f"**Prompt:** {params.prompt}"
+/Users/schrockn/code/erk/src/erk/cli/commands/one_shot_remote_dispatch.py-266-        )
+src/erk/cli/commands/one_shot_remote_dispatch.py:267:        pr_body_initial = build_plan_stage_body(metadata_body, placeholder_content, summary="")
+/Users/schrockn/code/erk/src/erk/cli/commands/one_shot_remote_dispatch.py-268-        pr_number = remote.create_pull_request(
+/Users/schrockn/code/erk/src/erk/cli/commands/one_shot_remote_dispatch.py-269-            owner=owner,
+/Users/schrockn/code/erk/src/erk/cli/commands/one_shot_remote_dispatch.py-270-            repo=repo,
+/Users/schrockn/code/erk/src/erk/cli/commands/one_shot_remote_dispatch.py-271-            head=branch_name,
+/Users/schrockn/code/erk/src/erk/cli/commands/one_shot_remote_dispatch.py-272-            base=trunk,
+--
+/Users/schrockn/code/erk/docs/learned/planning/planned-pr-lifecycle.md-86-
+...
+&lt;/persisted-output&gt;
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01SoeoRV2s2jP9rV86cNm8BN">
+    <param name="pattern">objective_summary</param>
+    <param name="output_mode">content</param>
+    <param name="-B">2</param>
+    <param name="-A">2</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1748" cache_read_input_tokens="43503" output_tokens="327" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1748, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01SoeoRV2s2jP9rV86cNm8BN">
+/Users/schrockn/code/erk/tests/core/test_commit_message_generator.py-427-        plan_id="123",
+tests/core/test_commit_message_generator.py-428-        plan_content="# Plan: Fix Authentication Bug\n\nFix session expiration.",
+tests/core/test_commit_message_generator.py:429:        objective_summary=None,
+/Users/schrockn/code/erk/tests/core/test_commit_message_generator.py-430-    )
+/Users/schrockn/code/erk/tests/core/test_commit_message_generator.py-431-
+--
+/Users/schrockn/code/erk/tests/core/test_commit_message_generator.py-461-
+/Users/schrockn/code/erk/tests/core/test_commit_message_generator.py-462-
+tests/core/test_commit_message_generator.py:463:def test_generate_includes_plan_context_with_objective_summary(tmp_path: Path) -&gt; None:
+/Users/schrockn/code/erk/tests/core/test_commit_message_generator.py-464-    """Test that objective summary is included when present in plan context."""
+/Users/schrockn/code/erk/tests/core/test_commit_message_generator.py-465-    diff_file = tmp_path / "test.diff"
+--
+/Users/schrockn/code/erk/tests/core/test_commit_message_generator.py-469-        plan_id="456",
+tests/core/test_commit_message_generator.py-470-        plan_content="# Plan: Add Metrics\n\nAdd usage metrics tracking.",
+tests/core/test_commit_message_generator.py:471:        objective_summary="Objective #100: Improve Observability",
+/Users/schrockn/code/erk/tests/core/test_commit_message_generator.py-472-    )
+/Users/schrockn/code/erk/tests/core/test_commit_message_generator.py-473-
+--
+/Users/schrockn/code/erk/tests/core/test_commit_message_generator.py-509-        plan_id="789",
+tests/core/test_commit_message_generator.py-510-        plan_content="# Plan: Refactor API\n\nSimplify the API layer.",
+tests/core/test_commit_message_generator.py:511:        objective_summary=None,
+/Users/schrockn/code/erk/tests/core/test_commit_message_generator.py-512-    )
+/Users/schrockn/code/erk/tests/core/test_commit_message_generator.py-513-
+--
+/Users/schrockn/code/erk/tests/core/test_plan_context_provider.py-233-
+/Users/schrockn/code/erk/tests/core/test_plan_context_provider.py-234-
+tests/core/test_plan_context_provider.py:235:def test_get_plan_context_includes_objective_summary(tmp_path: Path) -&gt; None:
+/Users/schrockn/code/erk/tests/core/test_plan_context_provider.py-236-    """Test that branch-based resolution returns None since it's no longer supported.
+/Users/schrockn/code/erk/tests/core/test_plan_context_provider.py-237-
+--
+
+... [90 lines omitted] ...
+
+/Users/schrockn/code/erk/.claude/commands/erk/pr-submit.md-62-Parse the JSON output. If this fails, display the error and stop.
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="4982" cache_read_input_tokens="45251" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4982}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me check the existing tests for `assemble_pr_body`.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="4982" cache_read_input_tokens="45251" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4982}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01YK325YDqVPp3uquoPkMfre">
+    <param name="file_path">/Users/schrockn/code/erk/tests/unit/cli/commands/pr/submit_pipeline/test_finalize_pr.py</param>
+    <param name="offset">220</param>
+    <param name="limit">80</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4982" cache_read_input_tokens="45251" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4982}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01YK325YDqVPp3uquoPkMfre">
+   220→
+   221→    result = finalize_pr(ctx, state)
+   222→
+   223→    assert isinstance(result, SubmitState)
+   224→    assert not diff_file.exists()
+   225→
+   226→
+   227→def test_embeds_plan_in_pr_body(tmp_path: Path) -&gt; None:
+   228→    """Plan context embedded in PR body but NOT in commit message."""
+   229→    plan_content = "# My Plan\n\nSome implementation details"
+   230→    plan_ctx = PlanContext(
+   231→        plan_id="1234",
+   232→        plan_content=plan_content,
+   233→        objective_summary=None,
+   234→    )
+   235→
+   236→    pr = _pr_details(number=42)
+   237→    fake_git = FakeGit(
+   238→        repository_roots={tmp_path: tmp_path},
+   239→        remote_urls={(tmp_path, "origin"): "git@github.com:owner/repo.git"},
+   240→    )
+   241→    fake_github = FakeLocalGitHub(
+   242→        prs_by_branch={"feature": pr},
+   243→        pr_details={42: pr},
+   244→    )
+   245→    ctx = context_for_test(git=fake_git, github=fake_github, cwd=tmp_path)
+   246→    state = _make_state(
+   247→        cwd=tmp_path,
+   248→        title="Add feature",
+   249→        body="Summary of changes",
+
+... [50 lines omitted] ...
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01H9HXKA37NsFTRaxVeeyXSJ">
+    <param name="pattern">def test.*assemble_pr_body</param>
+    <param name="output_mode">content</param>
+    <param name="-A">3</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4982" cache_read_input_tokens="45251" output_tokens="3312" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 4982, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01H9HXKA37NsFTRaxVeeyXSJ">
+No matches found
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="8661" cache_read_input_tokens="50233" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 8661}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I have a clear picture. Let me design the implementation.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="8661" cache_read_input_tokens="50233" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 8661}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01JNP5DGNT63vLm4tANoMCrA">
+    <param name="description">Design objective link insertion</param>
+    <param name="subagent_type">Plan</param>
+    <param name="prompt">Design an implementation for inserting an objective link into PR bodies between the Summar...[truncated 1989 chars]...id: int | None` field for cleaner formatting?
+
+Please propose the simplest implementation.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="8661" cache_read_input_tokens="50233" output_tokens="1360" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 8661, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01JNP5DGNT63vLm4tANoMCrA">
+Now I have everything I need. Let me design the implementation plan.
+
+---
+
+## Implementation Plan: Objective Link in PR Body
+
+### Summary
+
+The goal is to insert a formatted objective link line (`**Objective:** #9009 — Agent-Friendly CLI`) into the PR body between the summary paragraph and `## Key Changes`, when a `PlanContext` with a non-null `objective_summary` is available.
+
+### Design Decisions
+
+**Question 1: Parse `objective_summary` or display as-is?**
+
+Parse it. The `objective_summary` format is `f"Objective #{objective_id}: {objective_info.title}"` (line 92 of `plan_context_provider.py`). The desired output format is `**Objective:** #9009 — Agent-Friendly CLI`. These differ in structure: the source uses `Objective #N: Title` while the target uses `**Objective:** #N — Title`. Parsing the known format to reformat is straightforward and keeps the formatting logic in one place (the insertion function).
+
+**Question 2: Should `PlanContext` gain an `objective_id` field?**
+
+No. Adding a field to `PlanContext` would require changes to every constructor call site (at least 7-8 locations in tests and production code). Since we can reliably parse `objective_summary` with a simple regex or string split (the format is controlled by us at line 92 of `plan_context_provider.py`), there is no need to change the data model. This keeps the change minimal.
+
+### Approach: String Insertion in `assemble_pr_body`
+
+The simplest approach is a small helper function that inserts the objective line into the `body` string before it gets combined with plan details, metadata, and footer.
+
+#### Step 1: Add a helper function `_insert_objective_link` in `shared.py`
+
+This function:
+1. Takes the LLM-generated `body` and `objective_summary` (which may be `None`).
+2. If `objective_summary` is `None`, returns `body` unchanged.
+3. Parses `objective_summary` via the known format `"Objective #(\d+): (.+)"` to extract `number` and `title`.
+
+... [107 lines omitted] ...
+  </tool_result>
+  <usage input_tokens="3" cache_creation_input_tokens="3541" cache_read_input_tokens="58894" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3541}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me check if there's an existing test file for `shared.py` and verify the exact format desired.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="3541" cache_read_input_tokens="58894" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3541}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_011ThbmqRiDspuq2X4HU4Ao6">
+    <param name="pattern">tests/**/test_shared*.py</param>
+    <param name="path">/Users/schrockn/code/erk/tests/unit/cli/commands/pr</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="3541" cache_read_input_tokens="58894" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3541}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011ThbmqRiDspuq2X4HU4Ao6">
+/Users/schrockn/code/erk/tests/unit/cli/commands/pr/test_shared.py
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01Lg45DS4hZtSidgCqG32igk">
+    <param name="command">ls /Users/schrockn/code/erk/tests/unit/cli/commands/pr/</param>
+    <param name="description">List PR test directory</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="3541" cache_read_input_tokens="58894" output_tokens="249" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3541, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Lg45DS4hZtSidgCqG32igk">
+__init__.py
+__pycache__
+submit_pipeline
+test_dispatch_cmd.py
+test_dispatch_helpers.py
+test_lifecycle_update.py
+test_metadata_helpers.py
+test_shared.py
+  </tool_result>
+  <tool_use name="Read" id="toolu_01PNVRoio6Mgpfr3vTBGvAnD">
+    <param name="file_path">/Users/schrockn/code/erk/tests/unit/cli/commands/pr/test_shared.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="489" cache_read_input_tokens="62435" output_tokens="80" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 489, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01PNVRoio6Mgpfr3vTBGvAnD">
+     1→"""Unit tests for shared PR command helpers: recover_plan_header and assemble_pr_body."""
+     2→
+     3→from datetime import UTC, datetime
+     4→from pathlib import Path
+     5→
+     6→from erk.cli.commands.pr.shared import assemble_pr_body, recover_plan_header
+     7→from erk_shared.context.testing import context_for_test
+     8→from erk_shared.gateway.github.fake import FakeLocalGitHub
+     9→from erk_shared.gateway.github.metadata.core import find_metadata_block, render_metadata_block
+    10→from erk_shared.gateway.github.metadata.types import MetadataBlock
+    11→from erk_shared.gateway.github.types import PRDetails
+    12→from erk_shared.gateway.time.fake import FakeTime
+    13→from erk_shared.plan_store.planned_pr import PlannedPRBackend
+    14→from erk_shared.plan_store.planned_pr_lifecycle import build_plan_stage_body
+    15→from tests.test_utils.plan_helpers import format_plan_header_body_for_test
+    16→
+    17→# ---------------------------------------------------------------------------
+    18→# Helpers
+    19→# ---------------------------------------------------------------------------
+    20→
+    21→
+    22→def _pr_with_plan_header(
+    23→    *,
+    24→    number: int = 100,
+    25→    author: str = "alice",
+    26→    lifecycle_stage: str | None = None,
+    27→) -&gt; PRDetails:
+    28→    """Create a PRDetails with a valid plan-header metadata block."""
+    29→    metadata_body = format_plan_header_body_for_test(
+    30→        created_by=author,
+
+... [190 lines omitted] ...
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="3043" cache_read_input_tokens="62924" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3043}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I have everything I need. Let me write the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3043" cache_read_input_tokens="62924" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3043}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01M8k5hcHhvmxX9ytCWkKrNa">
+    <param name="file_path">/Users/schrockn/.claude/plans/splendid-churning-mango.md</param>
+    <param name="content"># Plan: Add Objective Link to PR Body
+
+## Context
+
+When a PR is associated with an objecti...[truncated 3154 chars].../test_finalize_pr.py` — existing finalize tests still pass
+3. Type check via devrun agent
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3043" cache_read_input_tokens="62924" output_tokens="1408" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3043, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01M8k5hcHhvmxX9ytCWkKrNa">
+File created successfully at: /Users/schrockn/.claude/plans/splendid-churning-mango.md
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_01UhsY9TtkhUxg5bLnywtXTQ">
+    <param name="query">select:AskUserQuestion</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1440" cache_read_input_tokens="65967" output_tokens="77" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1440, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01UhsY9TtkhUxg5bLnywtXTQ">
+
+  </tool_result>
+  <tool_use name="AskUserQuestion" id="toolu_01NuP6UV1a6P1LqyX1p4TyUq">
+    <param name="questions">[{'question': 'What format do you want for the objective link line?', 'header': 'Format', ...[truncated 742 chars]...iendly CLI\n\n## Key Changes\n- Add `@json_output` decorator...'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1333" cache_read_input_tokens="67407" output_tokens="327" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1333, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01NuP6UV1a6P1LqyX1p4TyUq">
+User has answered your questions: "What format do you want for the objective link line?"="**Objective #9009:** Title" selected preview:
+This PR adds agent-friendly JSON output infrastructure...
+
+**Objective #9009:** Agent-Friendly CLI
+
+## Key Changes
+- Add `@json_output` decorator.... You can now continue with the user's answers in mind.
+  </tool_result>
+  <assistant>Let me update the plan with the chosen format.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1640" cache_read_input_tokens="68740" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1640}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_015esr4816tBH54oeice82Re">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.claude/plans/splendid-churning-mango.md</param>
+    <param name="old_string">Example desired output:
+```
+This PR adds agent-friendly JSON output infrastructure...
+
+**Objective:** #9009 — Agent-Friendly CLI
+
+## Key Changes
+- ...
+```</param>
+    <param name="new_string">Example desired output:
+```
+This PR adds agent-friendly JSON output infrastructure...
+
+**Objective #9009:** Agent-Friendly CLI
+
+## Key Changes
+- ...
+```</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1640" cache_read_input_tokens="68740" output_tokens="202" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1640, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_015esr4816tBH54oeice82Re">
+The file /Users/schrockn/.claude/plans/splendid-churning-mango.md has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01JYWiawao1J6amwN339L1kC">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.claude/plans/splendid-churning-mango.md</param>
+    <param name="old_string">def _insert_objective_link(body: str, objective_summary: str) -&gt; str:
+    """Insert an obj...[truncated 453 chars]...ody[:idx] + objective_line + "\n\n" + body[idx:]
+    return body + "\n\n" + objective_line</param>
+    <param name="new_string">def _insert_objective_link(body: str, objective_summary: str) -&gt; str:
+    """Insert an obj...[truncated 451 chars]...ody[:idx] + objective_line + "\n\n" + body[idx:]
+    return body + "\n\n" + objective_line</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="373" cache_read_input_tokens="70380" output_tokens="537" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 373, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01JYWiawao1J6amwN339L1kC">
+The file /Users/schrockn/.claude/plans/splendid-churning-mango.md has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01YNNn5s7NhcYBXuSLAbZR1R">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.claude/plans/splendid-churning-mango.md</param>
+    <param name="old_string">1. **`test_objective_link_inserted_before_key_changes`** — body with `## Key Changes`, pla...[truncated 47 chars]...CLI"` → assert `**Objective:** #9009 — Agent-Friendly CLI` appears before `## Key Changes`</param>
+    <param name="new_string">1. **`test_objective_link_inserted_before_key_changes`** — body with `## Key Changes`, pla...[truncated 45 chars]...y CLI"` → assert `**Objective #9009:** Agent-Friendly CLI` appears before `## Key Changes`</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="578" cache_read_input_tokens="70753" output_tokens="276" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 578, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01YNNn5s7NhcYBXuSLAbZR1R">
+The file /Users/schrockn/.claude/plans/splendid-churning-mango.md has been updated successfully.
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_01LjoLP3odPBKusr1P4PFGtH">
+    <param name="query">select:ExitPlanMode</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="317" cache_read_input_tokens="71331" output_tokens="78" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 317, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01LjoLP3odPBKusr1P4PFGtH">
+
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_014DtNTbwBKDvQFhDxAVnBBP">
+    <param name="plan"># Plan: Add Objective Link to PR Body
+
+## Context
+
+When a PR is associated with an objecti...[truncated 3148 chars].../test_finalize_pr.py` — existing finalize tests still pass
+3. Type check via devrun agent
+</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="835" cache_read_input_tokens="71648" output_tokens="39" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 835, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_014DtNTbwBKDvQFhDxAVnBBP">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/splendid-churning-mango.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Plan: Add Objective Link to PR Body
+Current context: (wt:erk) (br:master)\n\nWhat would you like to do with this plan?"
+  header: "br:master"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create new branch and planned PR. Stays on current branch." - Create a new branch, save plan as draft PR.
+  2. "Implement without saving" - Implement directly on the current branch without saving a plan PR.
+  3. "View/Edit the Plan" - Open plan in editor to review or modify before deciding.
+
+⚠️  WARNING: Currently on 'master'. We strongly discourage implementing directly on the trunk branch. Consider saving the plan and implementing in a dedicated worktree instead.
+
+If user chooses 'Create new branch and planned PR':
+  1. Run /erk:plan-save
+  2. Call ExitPlanMode to end the planning session.
+
+If user chooses 'Implement without saving':
+  1. Create implement-now marker:
+     erk exec marker create --session-id b37cf022-9422-4d90-992e-e04e54bbc663 \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly on the current branch.
+     Do NOT run 'erk exec setup-impl' or create a new branch.
+
+... [8 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01XgffXcpi25F7rQdCW7UJid">
+    <param name="file_path">/Users/schrockn/.claude/plans/splendid-churning-mango.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="682" cache_read_input_tokens="72483" output_tokens="75" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 682, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01XgffXcpi25F7rQdCW7UJid">
+     1→# Plan: Add Objective Link to PR Body
+     2→
+     3→## Context
+     4→
+     5→When a PR is associated with an objective (via plan metadata), the PR body should include a visible link to the objective issue between the summary paragraph and `## Key Changes` heading. Currently, objective info only appears in the plan-header metadata block (hidden in a collapsed section) and is not visible at a glance.
+     6→
+     7→Example desired output:
+     8→```
+     9→This PR adds agent-friendly JSON output infrastructure...
+    10→
+    11→**Objective #9009:** Agent-Friendly CLI
+    12→
+    13→## Key Changes
+    14→- ...
+    15→```
+    16→
+    17→## Implementation
+    18→
+    19→### 1. Add `_insert_objective_link()` helper — `src/erk/cli/commands/pr/shared.py`
+    20→
+    21→```python
+    22→import re
+    23→
+    24→def _insert_objective_link(body: str, objective_summary: str) -&gt; str:
+    25→    """Insert an objective link between summary and Key Changes sections."""
+    26→    # Parse "Objective #9009: Agent-Friendly CLI" → number + title
+    27→    match = re.match(r"Objective #(\d+): (.+)", objective_summary)
+    28→    if match is not None:
+    29→        objective_line = f"**Objective #{match.group(1)}:** {match.group(2)}"
+    30→    else:
+
+... [51 lines omitted] ...
+  </tool_result>
+  <tool_use name="AskUserQuestion" id="toolu_017Ls4y4szAw1S17nph8skvQ">
+    <param name="questions">[{'question': '📋 Plan: Add Objective Link to PR Body\nCurrent context: (wt:erk) (br:master...[truncated 363 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1359" cache_read_input_tokens="73165" output_tokens="212" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1359, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_017Ls4y4szAw1S17nph8skvQ">
+User has answered your questions: "📋 Plan: Add Objective Link to PR Body
+Current context: (wt:erk) (br:master)
+
+What would you like to do with this plan?"="Create new branch and planned PR". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="Skill" id="toolu_016TVs8qLKwFHt89nWfDXWaP">
+    <param name="skill">erk:plan-save</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="289" cache_read_input_tokens="74524" output_tokens="57" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 289, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_016TVs8qLKwFHt89nWfDXWaP">
+Launching skill: erk:plan-save
+  </tool_result>
+  <user># /erk:plan-save
+
+Save the current session's plan to GitHub with session context.
+
+## Usage
+
+```bash
+/erk:plan-save                           # Standalone plan
+/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+/erk:plan-save --objective=123           # Explicit objective link (overrides marker)
+/erk:plan-save --current-branch          # Use current branch instead of creating new plnd/ branch
+```
+
+Objective linking: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command. Use `--objective=&lt;number&gt;` to override the marker or provide the link when no marker exists (e.g., during replan).
+
+## Plan Storage
+
+The plan is saved using the configured backend:
+
+- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+  The JSON output contract includes `plan_number`, `plan_url`, `title`, `branch_name`, `plan_backend`.
+
+## Agent Instructions
+
+### Step 1: Parse Arguments
+
+Check `` for the `--plan-type`, `--objective`, and `--current-branch` flags:
+
+```
+If  contains "--plan-type=&lt;type&gt;":
+  - Extract the type (standard or learn)
+  - Store as PLAN_TYPE variable
+  - Set PLAN_TYPE_FLAG to "--plan-type=&lt;type&gt;"
+Else:
+  - Set PLAN_TYPE_FLAG to empty string
+
+If  contains "--objective=&lt;number&gt;":
+  - Extract the number
+  - Set OBJECTIVE_FLAG to "--objective=&lt;number&gt;"
+Else:
+  - Set OBJECTIVE_FLAG to empty string
+
+If  contains "--current-branch":
+  - Set CURRENT_BRANCH_FLAG to "--current-branch"
+Else:
+  - Set CURRENT_BRANCH_FLAG to empty string
+```
+
+### Step 2: Generate Branch Slug
+
+**Skip this step if `--current-branch` was passed.** The current branch is used directly.
+
+Before saving, generate a branch slug from the plan title. Read the plan title from the plan file you wrote in plan mode (the first `# ` heading).
+
+Generate a branch slug from the title:
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+
+Store the result as `BRANCH_SLUG`.
+
+### Step 3: Generate Plan Summary
+
+Write a concise 2-3 sentence summary of the plan. This summary will be visible
+at the top of the PR description (above the collapsed full plan).
+
+Guidelines:
+
+- Focus on WHAT the plan does and WHY
+- Do not repeat the title
+- Plain text, no markdown headers or formatting
+- Avoid special shell characters (backticks, dollar signs)
+- Store as PLAN_SUMMARY
+
+### Step 4: Run Save Command
+
+Run this command with the session ID, summary, and optional flags.
+
+If CURRENT_BRANCH_FLAG is set, pass `--current-branch` (no branch slug needed):
+
+```bash
+erk exec plan-save --format json --session-id="b37cf022-9422-4d90-992e-e04e54bbc663" --current-branch --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Otherwise, pass the branch slug:
+
+```bash
+erk exec plan-save --format json --session-id="b37cf022-9422-4d90-992e-e04e54bbc663" --branch-slug="${BRANCH_SLUG}" --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Parse the JSON output to extract `plan_number` for verification in Step 5.
+
+If the command fails, display the error and stop.
+
+### Step 5: Verify Objective Link (if applicable)
+
+**Only run this step if `objective_issue` is non-null in the JSON output from Step 4.**
+
+Verify the objective link was saved correctly:
+
+```bash
+erk exec get-plan-metadata &lt;plan_number&gt; objective_issue
+```
+
+Parse the JSON response:
+
+- If `success: true` and `value` matches the expected objective number: verification passed
+- If `success: false` or value doesn't match: verification failed
+
+**On verification success:**
+
+Display: `Verified objective link: #&lt;objective-number&gt;`
+
+**On verification failure:**
+
+Display error and remediation steps:
+
+```
+ERROR: Objective link verification failed
+Expected objective: #&lt;expected&gt;
+Actual: &lt;actual-or-null&gt;
+
+The plan was saved but without the correct objective link.
+Fix: Close draft PR #&lt;plan_number&gt;,
+ensure the objective-context marker exists, and re-run /erk:plan-save.
+```
+
+Exit without creating the plan-saved marker. The session continues so the user can retry.
+
+### Step 6: Update Objective Roadmap (if objective linked)
+
+**Only run this step if `objective_issue` was non-null in JSON output and verification passed.**
+
+Update the objective's roadmap table to show that a plan has been created for this node:
+
+1. **Read the roadmap node marker** to get the node ID:
+
+```bash
+step_id=$(erk exec marker read --session-id "b37cf022-9422-4d90-992e-e04e54bbc663" roadmap-step)
+```
+
+If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-plan`.
+
+2. **Update the roadmap table** using the dedicated command:
+
+```bash
+erk exec update-objective-node &lt;objective-issue&gt; --node "$step_id" --pr "#&lt;plan_number&gt;" --status in_progress
+```
+
+This atomically fetches the objective body, finds the matching node row, sets the Status cell to `in-progress`, and writes the updated body back.
+
+3. **Report the update:**
+
+Display: `Updated objective #&lt;objective-issue&gt; roadmap: node &lt;step_id&gt; → plan #&lt;plan_number&gt;`
+
+**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+
+### Step 7: Display Results
+
+**If JSON contains `skipped_duplicate: true`:**
+
+Display: `Plan already saved as #&lt;plan_number&gt; (duplicate skipped)`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options.
+
+**Otherwise, on success**, display:
+
+```
+Plan "&lt;title&gt;" saved as draft PR #&lt;plan_number&gt;
+URL: &lt;issue_url&gt;
+```
+
+If objective was verified, also display: `Verified objective link: #&lt;objective-number&gt;`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options
+(implement in current worktree, implement in new worktree, or done).
+
+On failure, display the error message and suggest:
+
+- Checking that a plan exists (enter Plan mode and exit it first)
+- Verifying GitHub CLI authentication (`gh auth status`)
+- Checking network connectivity
+
+### Step 5: Push Planning Session
+
+After saving successfully, push the planning session for cross-machine learning.
+This captures the in-progress session state so it's available even if implementation
+happens on a different machine.
+
+Run `erk exec capture-session-info` to get the session file path, then push it:
+
+```bash
+erk exec upload-impl-session --session-id "b37cf022-9422-4d90-992e-e04e54bbc663" 2&gt;/dev/null || true
+```
+
+If the plan was saved successfully and `plan_number` is known, use push-session directly
+for better stage tracking:
+
+```bash
+erk exec push-session \
+    --session-file "&lt;session_file_path&gt;" \
+    --session-id "b37cf022-9422-4d90-992e-e04e54bbc663" \
+    --stage planning \
+    --source local \
+    --plan-id &lt;plan_number&gt; \
+    2&gt;/dev/null || true
+```
+
+Where `&lt;session_file_path&gt;` is obtained from `erk exec capture-session-info` output
+and `&lt;plan_number&gt;` is from Step 2's JSON output.
+
+**Note:** This is non-critical. If it fails, the plan was still saved successfully.
+The `2&gt;/dev/null || true` ensures graceful degradation.
+
+## Session Tracking
+
+After successfully saving a plan, the plan number is stored in a marker file that enables automatic plan updates in the same session.
+
+**To read the saved plan number:**
+
+```bash
+erk exec marker read --session-id "b37cf022-9422-4d90-992e-e04e54bbc663" plan-saved-issue
+```
+
+This returns the plan number (exit code 0) or exits with code 1 if no plan was saved in this session.
+</user>
+  <assistant>
+
+Let me execute the plan save steps.
+
+**Branch slug:** `add-objective-link-pr-body`
+
+**Plan summary:** Inserts a visible objective link line between the summary and Key Changes sections in PR bodies when the PR is associated with an objective, making the objective relationship immediately visible rather than buried in metadata.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="2271" cache_read_input_tokens="74813" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2271}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_017iERfaC3A9poHaF4GT6Td1">
+    <param name="command">erk exec plan-save --format json --session-id="b37cf022-9422-4d90-992e-e04e54bbc663" --bra...[truncated 166 chars]...ve, making the objective relationship immediately visible rather than buried in metadata."</param>
+    <param name="description">Save plan as draft PR</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2271" cache_read_input_tokens="74813" output_tokens="268" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2271, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+</session>
