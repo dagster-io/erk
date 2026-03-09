@@ -78,7 +78,7 @@ The `.github/workflows/one-shot.yml` workflow has two jobs:
 1. Validates secrets (ERK_QUEUE_GH_PAT)
 2. Checks out the branch and sets up tools
 3. Writes prompt to `.erk/impl-context/prompt.md`
-4. Runs `/erk:one-shot-plan` Claude command with environment variables:
+4. Runs `@.claude/commands/erk/system/one-shot-plan.md` Claude command with environment variables:
    - `WORKFLOW_RUN_URL` -- current workflow run URL
    - `OBJECTIVE_ISSUE` -- objective issue number (if from roadmap)
    - `NODE_ID` -- specific roadmap node ID
@@ -129,7 +129,7 @@ One-shot dispatch and `erk pr submit` both push branches and create PRs, but one
 
 ## Claude Planning Command
 
-`.claude/commands/erk/one-shot-plan.md` defines what Claude does during the plan job:
+`.claude/commands/erk/system/one-shot-plan.md` defines what Claude does during the plan job:
 
 1. Reads prompt from `.erk/impl-context/prompt.md`
 2. Fetches objective context if `$OBJECTIVE_ISSUE` is set
@@ -178,7 +178,7 @@ When the API key is missing or the LLM call fails, the dispatch code falls back 
 | `src/erk/cli/commands/exec/scripts/register_one_shot_plan.py` | Best-effort registration of metadata, comment, closing ref                                        |
 | `src/erk/cli/commands/pr/metadata_helpers.py`                 | `write_dispatch_metadata()`, `maybe_update_plan_dispatch_metadata()`                              |
 | `.github/workflows/one-shot.yml`                              | Two-job pipeline (plan + implement)                                                               |
-| `.claude/commands/erk/one-shot-plan.md`                       | Claude planning command with skeleton update logic                                                |
+| `.claude/commands/erk/system/one-shot-plan.md`                | Claude planning command with skeleton update logic                                                |
 
 ## Related Topics
 
