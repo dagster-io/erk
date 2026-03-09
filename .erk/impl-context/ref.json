@@ -1,4 +1,10 @@
 {
   "provider": "github-draft-pr",
-  "title": "Speculative Test Execution in CI"
+  "plan_id": "9035",
+  "url": "https://github.com/dagster-io/erk/pull/9035",
+  "created_at": "2026-03-09T06:00:37.193177",
+  "synced_at": "2026-03-09T06:00:37.193177",
+  "labels": [],
+  "objective_id": null,
+  "node_ids": null
 }
