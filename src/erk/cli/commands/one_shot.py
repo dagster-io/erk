@@ -26,6 +26,7 @@ from erk.cli.commands.one_shot_remote_dispatch import (
 from erk.cli.commands.ref_resolution import resolve_dispatch_ref
 from erk.cli.ensure import Ensure, UserFacingCliError
 from erk.cli.json_command import json_command
+from erk.cli.mcp_exposed import mcp_exposed
 from erk.core.context import ErkContext, NoRepoSentinel
 from erk_shared.gateway.remote_github.abc import RemoteGitHub
 from erk_shared.gateway.remote_github.real import RealRemoteGitHub
@@ -59,6 +60,15 @@ def _get_remote_github(ctx: ErkContext) -> RemoteGitHub:
     return RealRemoteGitHub(http_client=ctx.http_client, time=ctx.time)
 
 
+@mcp_exposed(
+    name="one_shot",
+    description=(
+        "Submit a task for fully autonomous remote execution.\n\n"
+        "Returns JSON with 'success' field. On success: pr_number, pr_url, "
+        "run_url, branch_name. With dry_run: preview without executing. "
+        "On error: error_type and message."
+    ),
+)
 @json_command(
     exclude_json_input=frozenset({"file_path"}),
     required_json_input=frozenset({"prompt"}),
