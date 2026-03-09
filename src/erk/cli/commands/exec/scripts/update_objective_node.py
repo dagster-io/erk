@@ -44,17 +44,27 @@ Exit Codes:
     0: Always. Check JSON "success" field for pass/fail.
 """
 
+from __future__ import annotations
+
 import json
+from dataclasses import asdict, dataclass
+from pathlib import Path
 from typing import cast, get_args
 
 import click
 
 from erk_shared.context.helpers import require_issues, require_repo_root
+from erk_shared.gateway.github.issues.abc import GitHubIssues
 from erk_shared.gateway.github.issues.types import IssueNotFound
 from erk_shared.gateway.github.metadata.core import (
     extract_metadata_value,
     extract_raw_metadata_blocks,
+    find_metadata_block,
     replace_metadata_block_in_body,
+)
+from erk_shared.gateway.github.metadata.plan_header import (
+    extract_plan_header_objective_issue,
+    update_plan_header_objective_issue,
 )
 from erk_shared.gateway.github.metadata.roadmap import (
     RoadmapNodeStatus,
@@ -73,49 +83,152 @@ def _node_error_message(node_id: str, issue_number: int, error: object) -> str:
     return f"Failed to replace cells for node '{node_id}'"
 
 
+# ---------------------------------------------------------------------------
+# Typed output dataclasses
+# ---------------------------------------------------------------------------
+
+
+@dataclass(frozen=True)
+class BacklinkResult:
+    backlink_set: bool
+    backlink_warning: str | None
+    backlink_skip: str | None
+
+    @classmethod
+    def success(cls) -> BacklinkResult:
+        return cls(backlink_set=True, backlink_warning=None, backlink_skip=None)
+
+    @classmethod
+    def warning(cls, *, message: str) -> BacklinkResult:
+        return cls(backlink_set=False, backlink_warning=message, backlink_skip=None)
+
+    @classmethod
+    def skipped(cls, *, reason: str) -> BacklinkResult:
+        return cls(backlink_set=False, backlink_warning=None, backlink_skip=reason)
+
+
+@dataclass(frozen=True)
+class UpdateObjectiveNodeResult:
+    node_id: str
+    success: bool
+    previous_pr: str | None
+    error: str | None
+
+    @classmethod
+    def ok(cls, *, node_id: str, previous_pr: str | None) -> UpdateObjectiveNodeResult:
+        return cls(node_id=node_id, success=True, previous_pr=previous_pr, error=None)
+
+    @classmethod
+    def fail(cls, *, node_id: str, error: str) -> UpdateObjectiveNodeResult:
+        return cls(node_id=node_id, success=False, previous_pr=None, error=error)
+
+
+@dataclass(frozen=True)
+class UpdateObjectiveNodeError:
+    error: str
+    message: str
+
+    def to_dict(self) -> dict[str, object]:
+        return {"success": False, "error": self.error, "message": self.message}
+
+
+@dataclass(frozen=True)
+class UpdateObjectiveNodeSuccess:
+    issue_number: int
+    node_id: str
+    previous_pr: str | None
+    new_pr: str | None
+    url: str
+    updated_body: str | None
+    backlink: BacklinkResult | None
+
+    def to_dict(self) -> dict[str, object]:
+        d: dict[str, object] = {
+            "success": True,
+            "issue_number": self.issue_number,
+            "node_id": self.node_id,
+            "previous_pr": self.previous_pr,
+            "new_pr": self.new_pr,
+            "url": self.url,
+        }
+        if self.updated_body is not None:
+            d["updated_body"] = self.updated_body
+        if self.backlink is not None:
+            d.update({k: v for k, v in asdict(self.backlink).items() if v is not None})
+        return d
+
+
+@dataclass(frozen=True)
+class UpdateObjectiveNodeMultiOutput:
+    success: bool
+    issue_number: int
+    new_pr: str | None
+    url: str
+    nodes: list[UpdateObjectiveNodeResult]
+    updated_body: str | None
+    backlink: BacklinkResult | None
+
+    def to_dict(self) -> dict[str, object]:
+        d: dict[str, object] = {
+            "success": self.success,
+            "issue_number": self.issue_number,
+            "new_pr": self.new_pr,
+            "url": self.url,
+            "nodes": [asdict(n) for n in self.nodes],
+        }
+        if self.updated_body is not None:
+            d["updated_body"] = self.updated_body
+        if self.backlink is not None:
+            d.update({k: v for k, v in asdict(self.backlink).items() if v is not None})
+        return d
+
+
+UpdateObjectiveNodeOutput = (
+    UpdateObjectiveNodeMultiOutput | UpdateObjectiveNodeError | UpdateObjectiveNodeSuccess
+)
+
+
 def _build_output(
     *,
     issue_number: int,
     node: tuple[str, ...],
     pr_value: str | None,
     url: str,
-    results: list[dict[str, object]],
+    results: list[UpdateObjectiveNodeResult],
     include_body: bool,
     updated_body: str | None,
-) -> dict[str, object]:
-    """Build JSON output dict, using legacy format for single node."""
+    backlink: BacklinkResult | None,
+) -> UpdateObjectiveNodeOutput:
+    """Build typed output, using legacy format for single node."""
     # Normalize empty strings to None for JSON output
     pr_out = pr_value if pr_value else None
 
     if len(node) != 1:
-        output: dict[str, object] = {
-            "success": all(r["success"] for r in results),
-            "issue_number": issue_number,
-            "new_pr": pr_out,
-            "url": url,
-            "nodes": results,
-        }
-        if include_body and all(r["success"] for r in results) and updated_body is not None:
-            output["updated_body"] = updated_body
-        return output
-    single_result = results[0]
-    if not single_result["success"]:
-        return {
-            "success": False,
-            "error": single_result["error"],
-            "message": _node_error_message(node[0], issue_number, single_result["error"]),
-        }
-    output = {
-        "success": True,
-        "issue_number": issue_number,
-        "node_id": node[0],
-        "previous_pr": single_result.get("previous_pr"),
-        "new_pr": pr_out,
-        "url": url,
-    }
-    if include_body and updated_body is not None:
-        output["updated_body"] = updated_body
-    return output
+        all_success = all(r.success for r in results)
+        return UpdateObjectiveNodeMultiOutput(
+            success=all_success,
+            issue_number=issue_number,
+            new_pr=pr_out,
+            url=url,
+            nodes=results,
+            updated_body=updated_body if include_body and all_success else None,
+            backlink=backlink,
+        )
+    single = results[0]
+    if not single.success:
+        return UpdateObjectiveNodeError(
+            error=single.error or "unknown",
+            message=_node_error_message(node[0], issue_number, single.error),
+        )
+    return UpdateObjectiveNodeSuccess(
+        issue_number=issue_number,
+        node_id=node[0],
+        previous_pr=single.previous_pr,
+        new_pr=pr_out,
+        url=url,
+        updated_body=updated_body if include_body else None,
+        backlink=backlink,
+    )
 
 
 def _find_node_refs(body: str, node_id: str) -> tuple[str | None, bool]:
@@ -195,6 +308,50 @@ def _replace_node_refs_in_body(
     return body
 
 
+def _set_plan_backlink(
+    *,
+    github: GitHubIssues,
+    repo_root: Path,
+    pr_ref: str | None,
+    objective_issue_number: int,
+) -> BacklinkResult | None:
+    """Set objective_issue backlink on the plan PR if not already set.
+
+    Fail-open: returns a BacklinkResult with status info, or None if
+    no backlink attempt was needed (no --pr provided or empty value).
+    Never raises — backlink failure doesn't block the node update.
+    """
+    if not pr_ref or not pr_ref.startswith("#"):
+        return None
+
+    pr_number = int(pr_ref.lstrip("#"))
+
+    plan_issue = github.get_issue(repo_root, pr_number)
+    if isinstance(plan_issue, IssueNotFound):
+        return BacklinkResult.warning(message=f"PR {pr_ref} not found")
+
+    existing_objective = extract_plan_header_objective_issue(plan_issue.body)
+
+    if existing_objective == objective_issue_number:
+        return BacklinkResult.success()
+
+    if existing_objective is not None:
+        return BacklinkResult.warning(
+            message=(
+                f"PR {pr_ref} already has objective_issue={existing_objective}, "
+                f"not overwriting with {objective_issue_number}"
+            ),
+        )
+
+    # No plan-header block means this isn't an erk plan PR — skip silently
+    if find_metadata_block(plan_issue.body, BlockKeys.PLAN_HEADER) is None:
+        return BacklinkResult.skipped(reason="no plan-header block")
+
+    updated_body = update_plan_header_objective_issue(plan_issue.body, objective_issue_number)
+    github.update_issue_body(repo_root, pr_number, BodyText(content=updated_body))
+    return BacklinkResult.success()
+
+
 @click.command(name="update-objective-node")
 @click.argument("issue_number", type=int)
 @click.option("--node", required=True, multiple=True, help="Node ID(s) to update (e.g., '1.3')")
@@ -262,16 +419,12 @@ def update_objective_node(
         and new_slug is None
         and new_reason is None
     ):
-        click.echo(
-            json.dumps(
-                {
-                    "success": False,
-                    "error": "no_update",
-                    "message": "At least one of --pr, --status, --description, "
-                    "--slug, or --reason must be provided",
-                }
-            )
+        err = UpdateObjectiveNodeError(
+            error="no_update",
+            message="At least one of --pr, --status, --description, "
+            "--slug, or --reason must be provided",
         )
+        click.echo(json.dumps(err.to_dict()))
         raise SystemExit(0)
 
     github = require_issues(ctx)
@@ -280,29 +433,21 @@ def update_objective_node(
     # Fetch the issue
     issue = github.get_issue(repo_root, issue_number)
     if isinstance(issue, IssueNotFound):
-        click.echo(
-            json.dumps(
-                {
-                    "success": False,
-                    "error": "issue_not_found",
-                    "message": f"Issue #{issue_number} not found",
-                }
-            )
+        err = UpdateObjectiveNodeError(
+            error="issue_not_found",
+            message=f"Issue #{issue_number} not found",
         )
+        click.echo(json.dumps(err.to_dict()))
         raise SystemExit(0)
 
     # Parse roadmap to validate it exists
     phases, _ = parse_roadmap(issue.body)
     if not phases:
-        click.echo(
-            json.dumps(
-                {
-                    "success": False,
-                    "error": "no_roadmap",
-                    "message": f"Issue #{issue_number} has no roadmap table",
-                }
-            )
+        err = UpdateObjectiveNodeError(
+            error="no_roadmap",
+            message=f"Issue #{issue_number} has no roadmap table",
         )
+        click.echo(json.dumps(err.to_dict()))
         raise SystemExit(0)
 
     # Validate all nodes exist before processing any
@@ -310,7 +455,7 @@ def update_objective_node(
     missing_nodes = [n for n in node if n not in all_node_ids]
     if missing_nodes:
         results = [
-            {"node_id": n, "success": False, "error": "node_not_found"} for n in missing_nodes
+            UpdateObjectiveNodeResult.fail(node_id=n, error="node_not_found") for n in missing_nodes
         ]
         output = _build_output(
             issue_number=issue_number,
@@ -320,25 +465,20 @@ def update_objective_node(
             results=results,
             include_body=False,
             updated_body=None,
+            backlink=None,
         )
-        click.echo(json.dumps(output))
+        click.echo(json.dumps(output.to_dict()))
         raise SystemExit(0)
 
     # Process multiple nodes with single API call
-    results: list[dict[str, object]] = []
+    results: list[UpdateObjectiveNodeResult] = []
     updated_body = issue.body
     any_failure = False
 
     for node_id in node:
         previous_pr, found = _find_node_refs(updated_body, node_id)
         if not found:
-            results.append(
-                {
-                    "node_id": node_id,
-                    "success": False,
-                    "error": "node_not_found",
-                }
-            )
+            results.append(UpdateObjectiveNodeResult.fail(node_id=node_id, error="node_not_found"))
             any_failure = True
             continue
 
@@ -353,26 +493,16 @@ def update_objective_node(
         )
         if new_body is None:
             results.append(
-                {
-                    "node_id": node_id,
-                    "success": False,
-                    "error": "replacement_failed",
-                }
+                UpdateObjectiveNodeResult.fail(node_id=node_id, error="replacement_failed")
             )
             any_failure = True
             continue
 
         updated_body = new_body
-        results.append(
-            {
-                "node_id": node_id,
-                "success": True,
-                "previous_pr": previous_pr,
-            }
-        )
+        results.append(UpdateObjectiveNodeResult.ok(node_id=node_id, previous_pr=previous_pr))
 
     # Exit early if all nodes failed
-    if any_failure and not any(r["success"] for r in results):
+    if any_failure and not any(r.success for r in results):
         output = _build_output(
             issue_number=issue_number,
             node=node,
@@ -381,8 +511,9 @@ def update_objective_node(
             results=results,
             include_body=False,
             updated_body=None,
+            backlink=None,
         )
-        click.echo(json.dumps(output))
+        click.echo(json.dumps(output.to_dict()))
         raise SystemExit(0)
 
     # Single API call to write all updates
@@ -398,6 +529,16 @@ def update_objective_node(
         if updated_comment is not None and updated_comment != comment_body:
             github.update_comment(repo_root, objective_comment_id, updated_comment)
 
+    # Backlink: if --pr was provided with a value, ensure the plan PR has
+    # objective_issue pointing back to this objective. Fail-open: backlink
+    # failure doesn't prevent the node update from succeeding.
+    backlink_result = _set_plan_backlink(
+        github=github,
+        repo_root=repo_root,
+        pr_ref=pr_ref,
+        objective_issue_number=issue_number,
+    )
+
     # Build and emit output
     output = _build_output(
         issue_number=issue_number,
@@ -407,5 +548,6 @@ def update_objective_node(
         results=results,
         include_body=include_body,
         updated_body=updated_body,
+        backlink=backlink_result,
     )
-    click.echo(json.dumps(output))
+    click.echo(json.dumps(output.to_dict()))

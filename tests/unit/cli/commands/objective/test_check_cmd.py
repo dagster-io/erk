@@ -17,6 +17,7 @@ from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.types import RepoInfo
 from erk_shared.gateway.remote_github.fake import FakeRemoteGitHub
+from tests.test_utils.plan_helpers import format_plan_header_body_for_test
 
 _TEST_REPO_INFO = RepoInfo(owner="test", name="repo")
 
@@ -990,3 +991,176 @@ def test_roadmap_table_check_skipped_without_comment_id() -> None:
 
     assert result.exit_code == 0
     assert "Roadmap table" not in result.output
+
+
+# --- Check 9: PR backlink consistency tests ---
+
+
+def _make_plan_pr_issue(
+    number: int,
+    *,
+    objective_issue: int | None,
+) -> IssueInfo:
+    """Create a plan PR (as IssueInfo) with plan-header metadata."""
+    now = datetime.now(UTC)
+    body = format_plan_header_body_for_test(objective_issue=objective_issue)
+    return IssueInfo(
+        number=number,
+        title=f"[erk-plan] Plan #{number}",
+        body=body,
+        state="OPEN",
+        url=f"https://github.com/test/repo/pull/{number}",
+        labels=["erk-plan"],
+        assignees=[],
+        created_at=now,
+        updated_at=now,
+        author="testuser",
+    )
+
+
+def test_check9_backlinks_pass_when_all_prs_have_matching_objective() -> None:
+    """Check 9: passes when all PR references have matching objective_issue backlinks."""
+    objective_issue = _make_issue(100, "Objective: Test", VALID_OBJECTIVE_BODY)
+    plan_pr_123 = _make_plan_pr_issue(123, objective_issue=100)
+    plan_pr_125 = _make_plan_pr_issue(125, objective_issue=100)
+
+    all_issues = {100: objective_issue, 123: plan_pr_123, 125: plan_pr_125}
+
+    result = validate_objective(
+        _make_remote(all_issues),
+        owner="test",
+        repo="repo",
+        issue_number=100,
+    )
+
+    assert isinstance(result, ObjectiveValidationSuccess)
+    assert result.passed is True
+    backlink_checks = [desc for passed, desc in result.checks if "PR backlinks" in desc]
+    assert len(backlink_checks) == 1
+    assert "all PR references have matching" in backlink_checks[0]
+
+
+def test_check9_backlinks_fail_when_pr_missing_backlink() -> None:
+    """Check 9: fails when a plan PR is missing objective_issue backlink."""
+    objective_issue = _make_issue(100, "Objective: Test", VALID_OBJECTIVE_BODY)
+    plan_pr_123 = _make_plan_pr_issue(123, objective_issue=100)
+    # PR #125 has plan-header but no objective_issue
+    plan_pr_125 = _make_plan_pr_issue(125, objective_issue=None)
+
+    all_issues = {100: objective_issue, 123: plan_pr_123, 125: plan_pr_125}
+
+    result = validate_objective(
+        _make_remote(all_issues),
+        owner="test",
+        repo="repo",
+        issue_number=100,
+    )
+
+    assert isinstance(result, ObjectiveValidationSuccess)
+    assert result.passed is False
+    backlink_checks = [desc for passed, desc in result.checks if "PR backlinks" in desc]
+    assert len(backlink_checks) == 1
+    assert "missing objective_issue backlink" in backlink_checks[0]
+    assert "#125" in backlink_checks[0]
+
+
+def test_check9_backlinks_fail_when_pr_has_mismatched_objective() -> None:
+    """Check 9: fails when plan PR has objective_issue pointing to different objective."""
+    objective_issue = _make_issue(100, "Objective: Test", VALID_OBJECTIVE_BODY)
+    plan_pr_123 = _make_plan_pr_issue(123, objective_issue=100)
+    plan_pr_125 = _make_plan_pr_issue(125, objective_issue=9999)
+
+    all_issues = {100: objective_issue, 123: plan_pr_123, 125: plan_pr_125}
+
+    result = validate_objective(
+        _make_remote(all_issues),
+        owner="test",
+        repo="repo",
+        issue_number=100,
+    )
+
+    assert isinstance(result, ObjectiveValidationSuccess)
+    assert result.passed is False
+    backlink_checks = [desc for passed, desc in result.checks if "PR backlinks" in desc]
+    assert len(backlink_checks) == 1
+    assert "mismatched" in backlink_checks[0]
+    assert "9999" in backlink_checks[0]
+
+
+def test_check9_skipped_when_pr_has_no_plan_header() -> None:
+    """Check 9: PRs without plan-header block are silently skipped."""
+    objective_issue = _make_issue(100, "Objective: Test", VALID_OBJECTIVE_BODY)
+    now = datetime.now(UTC)
+    # PR #123 with matching backlink
+    plan_pr_123 = _make_plan_pr_issue(123, objective_issue=100)
+    # PR #125 is a regular PR (no plan-header at all)
+    regular_pr_125 = IssueInfo(
+        number=125,
+        title="Regular PR",
+        body="Just a regular PR body",
+        state="MERGED",
+        url="https://github.com/test/repo/pull/125",
+        labels=[],
+        assignees=[],
+        created_at=now,
+        updated_at=now,
+        author="testuser",
+    )
+
+    all_issues = {100: objective_issue, 123: plan_pr_123, 125: regular_pr_125}
+
+    result = validate_objective(
+        _make_remote(all_issues),
+        owner="test",
+        repo="repo",
+        issue_number=100,
+    )
+
+    assert isinstance(result, ObjectiveValidationSuccess)
+    assert result.passed is True
+    backlink_checks = [desc for passed, desc in result.checks if "PR backlinks" in desc]
+    assert len(backlink_checks) == 1
+    assert "all PR references have matching" in backlink_checks[0]
+
+
+def test_check9_skipped_when_no_pr_references() -> None:
+    """Check 9: skipped entirely when no nodes have PR references."""
+    body_no_prs = """\
+# Objective: Test Feature
+
+<!-- erk:metadata-block:objective-roadmap -->
+<details>
+<summary><code>objective-roadmap</code></summary>
+
+```yaml
+schema_version: '2'
+steps:
+- id: '1.1'
+  description: Setup
+  status: pending
+  plan: null
+  pr: null
+- id: '1.2'
+  description: Build
+  status: pending
+  plan: null
+  pr: null
+```
+
+</details>
+<!-- /erk:metadata-block:objective-roadmap -->
+"""
+    issue = _make_issue(100, "Objective: No PRs", body_no_prs)
+    all_issues = {100: issue}
+
+    result = validate_objective(
+        _make_remote(all_issues),
+        owner="test",
+        repo="repo",
+        issue_number=100,
+    )
+
+    assert isinstance(result, ObjectiveValidationSuccess)
+    # Check 9 should not appear at all
+    backlink_checks = [desc for passed, desc in result.checks if "PR backlinks" in desc]
+    assert len(backlink_checks) == 0
