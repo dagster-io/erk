@@ -9,18 +9,18 @@ from pathlib import Path
 from click.testing import CliRunner
 
 from erk.cli.cli import cli
+from erk_shared.fakes.git import FakeGit
+from erk_shared.fakes.github import FakeLocalGitHub
+from erk_shared.fakes.graphite import FakeGraphite
+from erk_shared.fakes.shell import FakeShell
 from erk_shared.gateway.git.abc import WorktreeInfo
 from erk_shared.gateway.git.dry_run import DryRunGit
-from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.metadata.core import render_metadata_block
 from erk_shared.gateway.github.metadata.types import MetadataBlock
 from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
-from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.gateway.graphite.types import BranchMetadata
 from erk_shared.plan_store.types import Plan, PlanState
 from erk_shared.scratch.markers import PENDING_LEARN_MARKER, create_marker
-from tests.fakes.shell import FakeShell
 from tests.test_utils.cli_helpers import assert_cli_error, assert_cli_success
 from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_inmem_env

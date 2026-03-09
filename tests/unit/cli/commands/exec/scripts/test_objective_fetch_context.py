@@ -9,13 +9,13 @@ from click.testing import CliRunner
 
 from erk.cli.commands.exec.scripts.objective_fetch_context import objective_fetch_context
 from erk_shared.context.testing import context_for_test
-from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeLocalGitHub
-from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+from erk_shared.fakes.git import FakeGit
+from erk_shared.fakes.github import FakeLocalGitHub
+from erk_shared.fakes.github_issues import FakeGitHubIssues
+from erk_shared.fakes.remote_github import FakeRemoteGitHub
+from erk_shared.fakes.time import FakeTime
 from erk_shared.gateway.github.issues.types import IssueComment, IssueInfo
 from erk_shared.gateway.github.types import PRDetails, PRNotFound, RepoInfo
-from erk_shared.gateway.remote_github.fake import FakeRemoteGitHub
-from erk_shared.gateway.time.fake import FakeTime
 from erk_shared.plan_store.planned_pr import PlannedPRBackend
 from tests.test_utils.plan_helpers import issue_info_to_pr_details
 

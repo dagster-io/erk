@@ -3,12 +3,12 @@
 from click.testing import CliRunner
 
 from erk.cli.commands.exec.scripts.set_pr_description import set_pr_description
-from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeLocalGitHub
+from erk_shared.fakes.git import FakeGit
+from erk_shared.fakes.github import FakeLocalGitHub
+from erk_shared.fakes.graphite import FakeGraphite
+from erk_shared.fakes.time import FakeTime
 from erk_shared.gateway.github.types import PRDetails
-from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.gateway.graphite.types import BranchMetadata
-from erk_shared.gateway.time.fake import FakeTime
 from erk_shared.plan_store.planned_pr import PlannedPRBackend
 from erk_shared.plan_store.planned_pr_lifecycle import build_plan_stage_body
 from tests.test_utils.context_builders import build_workspace_test_context

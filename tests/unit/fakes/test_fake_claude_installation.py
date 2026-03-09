@@ -6,12 +6,12 @@ providing reliable test doubles for tests that use session functionality.
 
 from pathlib import Path
 
-from erk_shared.gateway.claude_installation.abc import FoundSession
-from erk_shared.gateway.claude_installation.fake import (
+from erk_shared.fakes.claude_installation import (
     FakeClaudeInstallation,
     FakeProject,
     FakeSessionData,
 )
+from erk_shared.gateway.claude_installation.abc import FoundSession
 from erk_shared.non_ideal_state import SessionNotFound
 
 

@@ -9,10 +9,10 @@ from erk.cli.cli import cli
 from erk.core.context import context_for_test
 from erk.core.repo_discovery import RepoContext
 from erk_shared.context.types import LoadedConfig
-from erk_shared.gateway.codespace.fake import FakeCodespace
+from erk_shared.fakes.codespace import FakeCodespace
+from erk_shared.fakes.codespace_registry import FakeCodespaceRegistry
+from erk_shared.fakes.git import FakeGit
 from erk_shared.gateway.codespace_registry.abc import RegisteredCodespace
-from erk_shared.gateway.codespace_registry.fake import FakeCodespaceRegistry
-from erk_shared.gateway.git.fake import FakeGit
 
 
 def test_connect_shows_error_when_no_codespaces() -> None:

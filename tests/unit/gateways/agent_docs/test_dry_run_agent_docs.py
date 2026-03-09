@@ -5,8 +5,8 @@ Verify that read methods delegate to wrapped and write_file is a no-op.
 
 from pathlib import Path
 
+from erk_shared.fakes.agent_docs import FakeAgentDocs
 from erk_shared.gateway.agent_docs.dry_run import DryRunAgentDocs
-from erk_shared.gateway.agent_docs.fake import FakeAgentDocs
 
 PROJECT_ROOT = Path("/fake/repo")
 

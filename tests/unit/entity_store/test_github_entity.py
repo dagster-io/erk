@@ -9,8 +9,8 @@ from erk_shared.entity_store.entity import GitHubEntity
 from erk_shared.entity_store.log import EntityLog, entity_log_append
 from erk_shared.entity_store.state import EntityState, entity_state_set_field
 from erk_shared.entity_store.types import EntityKind
-from erk_shared.gateway.github.fake import FakeLocalGitHub
-from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+from erk_shared.fakes.github import FakeLocalGitHub
+from erk_shared.fakes.github_issues import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.metadata.core import (
     create_metadata_block,

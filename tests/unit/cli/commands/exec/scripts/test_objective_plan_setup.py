@@ -8,11 +8,11 @@ from click.testing import CliRunner
 
 from erk.cli.commands.exec.scripts.objective_plan_setup import objective_plan_setup
 from erk_shared.context.context import ErkContext
-from erk_shared.gateway.github.fake import FakeLocalGitHub
-from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+from erk_shared.fakes.github import FakeLocalGitHub
+from erk_shared.fakes.github_issues import FakeGitHubIssues
+from erk_shared.fakes.remote_github import FakeRemoteGitHub
 from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.types import RepoInfo
-from erk_shared.gateway.remote_github.fake import FakeRemoteGitHub
 
 _TEST_REPO_INFO = RepoInfo(owner="test-owner", name="test-repo")
 

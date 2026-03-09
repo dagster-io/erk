@@ -4,7 +4,7 @@ import json
 from datetime import UTC, datetime
 
 from erk.tui.data.types import PlanRowData, serialize_plan_row
-from erk_shared.gateway.plan_data_provider.fake import make_plan_row
+from erk_shared.fakes.plan_data_provider import make_plan_row
 
 
 def test_serialize_plan_row_basic() -> None:

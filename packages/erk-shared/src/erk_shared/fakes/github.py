@@ -10,6 +10,7 @@ from datetime import UTC
 from pathlib import Path
 from typing import Any
 
+from erk_shared.fakes.time import FakeTime
 from erk_shared.gateway.github.abc import LocalGitHub
 from erk_shared.gateway.github.issues.abc import GitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
@@ -31,7 +32,6 @@ from erk_shared.gateway.github.types import (
     WorkflowRun,
 )
 from erk_shared.gateway.time.abc import Time
-from erk_shared.gateway.time.fake import FakeTime
 
 
 class FakeLocalGitHub(LocalGitHub):
@@ -146,7 +146,7 @@ class FakeLocalGitHub(LocalGitHub):
         if issues_gateway is not None:
             self._issues_gateway = issues_gateway
         else:
-            from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+            from erk_shared.fakes.github_issues import FakeGitHubIssues
 
             self._issues_gateway = FakeGitHubIssues()
         self._issues_data = issues_data or []

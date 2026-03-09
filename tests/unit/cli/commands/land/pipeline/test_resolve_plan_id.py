@@ -9,10 +9,10 @@ from erk.cli.commands.land_pipeline import (
     resolve_plan_id,
 )
 from erk.core.context import context_for_test
-from erk_shared.gateway.github.fake import FakeLocalGitHub
-from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+from erk_shared.fakes.github import FakeLocalGitHub
+from erk_shared.fakes.github_issues import FakeGitHubIssues
+from erk_shared.fakes.time import FakeTime
 from erk_shared.gateway.github.types import PRDetails
-from erk_shared.gateway.time.fake import FakeTime
 from erk_shared.plan_store.planned_pr import PlannedPRBackend
 
 

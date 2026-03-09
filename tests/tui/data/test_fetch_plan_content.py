@@ -3,12 +3,12 @@
 from pathlib import Path
 
 from erk.core.repo_discovery import RepoContext
-from erk_shared.gateway.browser.fake import FakeBrowserLauncher
-from erk_shared.gateway.clipboard.fake import FakeClipboard
+from erk_shared.fakes.browser import FakeBrowserLauncher
+from erk_shared.fakes.clipboard import FakeClipboard
+from erk_shared.fakes.git import FakeGit
+from erk_shared.fakes.http import FakeHttpClient
 from erk_shared.gateway.git.abc import WorktreeInfo
-from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.gateway.github.types import GitHubRepoId, GitHubRepoLocation
-from erk_shared.gateway.http.fake import FakeHttpClient
 from erk_shared.gateway.plan_service.real import RealPlanService
 from tests.fakes.context import create_test_context
 

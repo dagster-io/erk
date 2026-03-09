@@ -9,11 +9,11 @@ from erk.cli.ensure import UserFacingCliError
 from erk.core.context import ErkContext, context_for_test
 from erk.core.repo_discovery import RepoContext
 from erk_shared.context.types import GlobalConfig
+from erk_shared.fakes.git import FakeGit
+from erk_shared.fakes.github import FakeLocalGitHub
+from erk_shared.fakes.graphite import FakeGraphite
 from erk_shared.gateway.git.abc import RebaseResult, WorktreeInfo
-from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
-from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.gateway.graphite.types import BranchMetadata
 
 

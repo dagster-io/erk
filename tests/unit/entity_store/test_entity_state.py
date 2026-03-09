@@ -15,8 +15,8 @@ from erk_shared.entity_store.state import (
     fetch_entity_body,
 )
 from erk_shared.entity_store.types import EntityKind
-from erk_shared.gateway.github.fake import FakeLocalGitHub
-from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+from erk_shared.fakes.github import FakeLocalGitHub
+from erk_shared.fakes.github_issues import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.metadata.core import (
     create_metadata_block,

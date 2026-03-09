@@ -7,9 +7,9 @@ from click.testing import CliRunner
 from erk.cli.cli import cli
 from erk.core.context import context_for_test
 from erk_shared.context.types import LoadedConfig
-from erk_shared.gateway.codespace.fake import FakeCodespace
+from erk_shared.fakes.codespace import FakeCodespace
+from erk_shared.fakes.codespace_registry import FakeCodespaceRegistry
 from erk_shared.gateway.codespace_registry.abc import RegisteredCodespace
-from erk_shared.gateway.codespace_registry.fake import FakeCodespaceRegistry
 
 
 def _make_codespace(name: str) -> RegisteredCodespace:

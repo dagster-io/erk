@@ -21,10 +21,10 @@ from erk.cli.commands.exec.scripts.ci_update_pr_body import (
     ci_update_pr_body as ci_update_pr_body_command,
 )
 from erk_shared.context.context import ErkContext
-from erk_shared.core.fakes import FakePromptExecutor
 from erk_shared.core.prompt_executor import PromptResult
-from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeLocalGitHub
+from erk_shared.fakes.core import FakePromptExecutor
+from erk_shared.fakes.git import FakeGit
+from erk_shared.fakes.github import FakeLocalGitHub
 from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
 from erk_shared.plan_store.planned_pr_lifecycle import build_plan_stage_body
 from tests.test_utils.plan_helpers import format_plan_header_body_for_test

@@ -15,7 +15,7 @@ from erk_shared.gateway.git.remote_ops.types import (
 
 if TYPE_CHECKING:
     # Import PushedBranch type from parent module to avoid circular import
-    from erk_shared.gateway.git.fake import PushedBranch
+    from erk_shared.fakes.git import PushedBranch
 
 
 class FakeGitRemoteOps(GitRemoteOps):
@@ -120,7 +120,7 @@ class FakeGitRemoteOps(GitRemoteOps):
     ) -> PushResult | PushError:
         """Record push to remote, or return error if failure configured."""
         # Import at runtime to avoid circular dependency
-        from erk_shared.gateway.git.fake import PushedBranch
+        from erk_shared.fakes.git import PushedBranch
 
         if self._push_to_remote_error is not None:
             return self._push_to_remote_error

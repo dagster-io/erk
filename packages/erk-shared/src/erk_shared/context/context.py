@@ -248,8 +248,8 @@ class ErkContext:
             ErkContext configured with provided values and test defaults
 
         Example:
-            >>> from erk_shared.gateway.github.issues import FakeGitHubIssues
-            >>> from erk_shared.gateway.git.fake import FakeGit
+            >>> from erk_shared.fakes.github_issues import FakeGitHubIssues
+            >>> from erk_shared.fakes.git import FakeGit
             >>> github = FakeGitHubIssues()
             >>> git_ops = FakeGit()
             >>> ctx = ErkContext.for_test(github_issues=github, git=git_ops, debug=True)

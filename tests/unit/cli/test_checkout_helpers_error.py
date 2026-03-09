@@ -11,7 +11,7 @@ import pytest
 from erk.cli.commands.checkout_helpers import ensure_branch_has_worktree
 from erk.core.context import ErkContext
 from erk_shared.context.types import RepoContext
-from erk_shared.gateway.git.fake import FakeGit
+from erk_shared.fakes.git import FakeGit
 
 
 def test_ensure_branch_has_worktree_raises_on_add_error(tmp_path: Path) -> None:

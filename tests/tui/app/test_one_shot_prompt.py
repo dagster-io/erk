@@ -5,8 +5,8 @@ import pytest
 from erk.tui.app import ErkDashApp
 from erk.tui.data.types import PlanFilters
 from erk.tui.screens.one_shot_prompt_screen import OneShotPromptScreen
-from erk_shared.gateway.plan_data_provider.fake import FakePlanDataProvider, make_plan_row
-from erk_shared.gateway.plan_service.fake import FakePlanService
+from erk_shared.fakes.plan_data_provider import FakePlanDataProvider, make_plan_row
+from erk_shared.fakes.plan_service import FakePlanService
 
 
 class TestActionOneShotPrompt:

@@ -7,9 +7,9 @@ import pytest
 from erk.tui.app import ErkDashApp
 from erk.tui.data.types import PlanFilters
 from erk.tui.screens.plan_detail_screen import PlanDetailScreen
-from erk_shared.gateway.clipboard.fake import FakeClipboard
-from erk_shared.gateway.plan_data_provider.fake import FakePlanDataProvider, make_plan_row
-from erk_shared.gateway.plan_service.fake import FakePlanService
+from erk_shared.fakes.clipboard import FakeClipboard
+from erk_shared.fakes.plan_data_provider import FakePlanDataProvider, make_plan_row
+from erk_shared.fakes.plan_service import FakePlanService
 
 
 class TestClosePlanViaCommandPalette:
@@ -62,7 +62,7 @@ class TestCommandPaletteFromMain:
     @pytest.mark.asyncio
     async def test_execute_palette_command_open_pr(self) -> None:
         """Execute palette command opens PR in browser."""
-        from erk_shared.gateway.browser.fake import FakeBrowserLauncher
+        from erk_shared.fakes.browser import FakeBrowserLauncher
 
         browser = FakeBrowserLauncher()
         provider = FakePlanDataProvider(

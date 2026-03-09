@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from erk_shared.gateway.branch_manager.fake import FakeBranchManager
+from erk_shared.fakes.branch_manager import FakeBranchManager
 from erk_shared.gateway.branch_manager.types import PrInfo
 
 

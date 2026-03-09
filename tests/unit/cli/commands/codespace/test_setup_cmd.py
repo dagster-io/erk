@@ -9,10 +9,10 @@ from erk.cli.cli import cli
 from erk.cli.commands.codespace.setup_cmd import DEFAULT_MACHINE_TYPE
 from erk.core.context import context_for_test
 from erk_shared.context.types import RepoContext
-from erk_shared.gateway.codespace.fake import FakeCodespace
+from erk_shared.fakes.codespace import FakeCodespace
+from erk_shared.fakes.codespace_registry import FakeCodespaceRegistry
+from erk_shared.fakes.erk_installation import FakeErkInstallation
 from erk_shared.gateway.codespace_registry.abc import RegisteredCodespace
-from erk_shared.gateway.codespace_registry.fake import FakeCodespaceRegistry
-from erk_shared.gateway.erk_installation.fake import FakeErkInstallation
 from erk_shared.gateway.github.types import GitHubRepoId, RepoInfo
 
 TEST_REPO_INFO = RepoInfo(owner="testorg", name="testrepo")

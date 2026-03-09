@@ -1,6 +1,6 @@
 """Tests for FakeRemoteGitHub gateway."""
 
-from erk_shared.gateway.remote_github.fake import FakeRemoteGitHub
+from erk_shared.fakes.remote_github import FakeRemoteGitHub
 from erk_shared.gateway.remote_github.types import RemotePRInfo, RemotePRNotFound
 
 

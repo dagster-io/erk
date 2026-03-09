@@ -5,8 +5,8 @@ from erk.cli.commands.one_shot_remote_dispatch import (
     OneShotDryRunResult,
     dispatch_one_shot_remote,
 )
-from erk_shared.gateway.remote_github.fake import FakeRemoteGitHub
-from erk_shared.gateway.time.fake import FakeTime
+from erk_shared.fakes.remote_github import FakeRemoteGitHub
+from erk_shared.fakes.time import FakeTime
 
 
 def test_dispatch_happy_path() -> None:

@@ -6,9 +6,9 @@ from datetime import UTC, datetime
 from click.testing import CliRunner
 
 from erk.cli.commands.objective.view_cmd import view_objective
-from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+from erk_shared.fakes.github_issues import FakeGitHubIssues
+from erk_shared.fakes.remote_github import FakeRemoteGitHub
 from erk_shared.gateway.github.issues.types import IssueInfo
-from erk_shared.gateway.remote_github.fake import FakeRemoteGitHub
 from tests.test_utils.env_helpers import erk_inmem_env
 from tests.test_utils.output_helpers import strip_ansi
 

@@ -6,12 +6,12 @@ from erk.cli.commands.objective.list_cmd import (
     _compute_slug,
     _rich_sparkline,
 )
+from erk_shared.fakes.time import DEFAULT_FAKE_TIME
 from erk_shared.gateway.github.metadata.dependency_graph import (
     DependencyGraph,
     ObjectiveNode,
 )
 from erk_shared.gateway.github.metadata.roadmap import RoadmapNode, RoadmapPhase
-from erk_shared.gateway.time.fake import DEFAULT_FAKE_TIME
 from erk_shared.plan_store.types import Plan, PlanState
 
 NOW = DEFAULT_FAKE_TIME

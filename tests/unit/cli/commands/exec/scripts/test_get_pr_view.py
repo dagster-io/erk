@@ -8,8 +8,8 @@ from click.testing import CliRunner
 
 from erk.cli.commands.exec.scripts.get_pr_view import get_pr_view
 from erk_shared.context.context import ErkContext
-from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeLocalGitHub
+from erk_shared.fakes.git import FakeGit
+from erk_shared.fakes.github import FakeLocalGitHub
 from erk_shared.gateway.github.types import PRDetails
 
 

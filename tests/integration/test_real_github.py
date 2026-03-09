@@ -12,9 +12,9 @@ from pathlib import Path
 import pytest
 from pytest import MonkeyPatch
 
+from erk_shared.fakes.time import FakeTime
 from erk_shared.gateway.github.real import RealLocalGitHub
 from erk_shared.gateway.github.types import MergeError, MergeResult
-from erk_shared.gateway.time.fake import FakeTime
 from tests.integration.test_helpers import mock_subprocess_run
 
 # ============================================================================

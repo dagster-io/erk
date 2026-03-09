@@ -5,11 +5,11 @@ from datetime import UTC, datetime
 from click.testing import CliRunner
 
 from erk.cli.cli import cli
-from erk_shared.gateway.github.fake import FakeLocalGitHub
-from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+from erk_shared.fakes.github import FakeLocalGitHub
+from erk_shared.fakes.github_issues import FakeGitHubIssues
+from erk_shared.fakes.remote_github import FakeRemoteGitHub
+from erk_shared.fakes.time import FakeTime
 from erk_shared.gateway.github.issues.types import IssueInfo, PRReference
-from erk_shared.gateway.remote_github.fake import FakeRemoteGitHub
-from erk_shared.gateway.time.fake import FakeTime
 from erk_shared.plan_store.planned_pr import PlannedPRBackend
 from erk_shared.plan_store.types import Plan, PlanState
 from tests.fakes.prompt_executor import FakePromptExecutor

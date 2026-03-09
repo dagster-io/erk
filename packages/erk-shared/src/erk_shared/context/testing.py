@@ -14,14 +14,14 @@ from erk_shared.context.types import GlobalConfig, LoadedConfig, RepoContext
 
 if TYPE_CHECKING:
     from erk.artifacts.paths import ErkPackageInfo
-from erk_shared.core.fakes import (
+from erk_shared.core.prompt_executor import PromptExecutor
+from erk_shared.fakes.core import (
     FakeCodespaceRegistry,
     FakeObjectiveListService,
     FakePlanListService,
     FakePromptExecutor,
     FakeScriptWriter,
 )
-from erk_shared.core.prompt_executor import PromptExecutor
 from erk_shared.gateway.agent_docs.abc import AgentDocs
 from erk_shared.gateway.agent_launcher.abc import AgentLauncher
 from erk_shared.gateway.claude_installation.abc import ClaudeInstallation
@@ -93,29 +93,29 @@ def context_for_test(
         ErkContext configured with provided values and test defaults
 
     Example:
-        >>> from erk_shared.gateway.github.issues import FakeGitHubIssues
-        >>> from erk_shared.gateway.git.fake import FakeGit
+        >>> from erk_shared.fakes.github_issues import FakeGitHubIssues
+        >>> from erk_shared.fakes.git import FakeGit
         >>> github = FakeGitHubIssues()
         >>> git_ops = FakeGit()
         >>> ctx = context_for_test(github_issues=github, git=git_ops, debug=True)
     """
-    from erk_shared.gateway.agent_docs.fake import FakeAgentDocs
-    from erk_shared.gateway.agent_launcher.fake import FakeAgentLauncher
-    from erk_shared.gateway.claude_installation.fake import FakeClaudeInstallation
-    from erk_shared.gateway.cmux.fake import FakeCmux
-    from erk_shared.gateway.codespace.fake import FakeCodespace
-    from erk_shared.gateway.completion.fake import FakeCompletion
-    from erk_shared.gateway.console.fake import FakeConsole
-    from erk_shared.gateway.erk_installation.fake import FakeErkInstallation
-    from erk_shared.gateway.git.fake import FakeGit
-    from erk_shared.gateway.github.fake import FakeLocalGitHub
-    from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
-    from erk_shared.gateway.github_admin.fake import FakeGitHubAdmin
-    from erk_shared.gateway.graphite.branch_ops.fake import FakeGraphiteBranchOps
-    from erk_shared.gateway.graphite.fake import FakeGraphite
-    from erk_shared.gateway.http.fake import FakeHttpClient
-    from erk_shared.gateway.shell.fake import FakeShell
-    from erk_shared.gateway.time.fake import FakeTime
+    from erk_shared.fakes.agent_docs import FakeAgentDocs
+    from erk_shared.fakes.agent_launcher import FakeAgentLauncher
+    from erk_shared.fakes.claude_installation import FakeClaudeInstallation
+    from erk_shared.fakes.cmux import FakeCmux
+    from erk_shared.fakes.codespace import FakeCodespace
+    from erk_shared.fakes.completion import FakeCompletion
+    from erk_shared.fakes.console import FakeConsole
+    from erk_shared.fakes.erk_installation import FakeErkInstallation
+    from erk_shared.fakes.git import FakeGit
+    from erk_shared.fakes.github import FakeLocalGitHub
+    from erk_shared.fakes.github_admin import FakeGitHubAdmin
+    from erk_shared.fakes.github_issues import FakeGitHubIssues
+    from erk_shared.fakes.graphite import FakeGraphite
+    from erk_shared.fakes.graphite_branch_ops import FakeGraphiteBranchOps
+    from erk_shared.fakes.http import FakeHttpClient
+    from erk_shared.fakes.shell import FakeShell
+    from erk_shared.fakes.time import FakeTime
 
     # Resolve defaults - create issues first since it's composed into github
     resolved_issues: GitHubIssues = (

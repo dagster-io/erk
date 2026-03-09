@@ -4,7 +4,7 @@ from erk.tui.commands.registry import get_all_commands
 from erk.tui.commands.types import CommandCategory, CommandContext
 from erk.tui.screens.launch_screen import LaunchScreen
 from erk.tui.views.types import ViewMode
-from erk_shared.gateway.plan_data_provider.fake import make_plan_row
+from erk_shared.fakes.plan_data_provider import make_plan_row
 
 
 def test_launch_key_only_set_on_action_commands() -> None:

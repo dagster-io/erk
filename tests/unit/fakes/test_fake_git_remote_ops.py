@@ -2,8 +2,8 @@
 
 from pathlib import Path
 
-from erk_shared.gateway.git.fake import PushedBranch
-from erk_shared.gateway.git.remote_ops.fake import FakeGitRemoteOps
+from erk_shared.fakes.git import PushedBranch
+from erk_shared.fakes.git_remote_ops import FakeGitRemoteOps
 from erk_shared.gateway.git.remote_ops.types import (
     PullRebaseError,
     PullRebaseResult,

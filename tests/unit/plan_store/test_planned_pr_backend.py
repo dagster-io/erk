@@ -8,10 +8,10 @@ from pathlib import Path
 
 import pytest
 
-from erk_shared.gateway.github.fake import FakeLocalGitHub
-from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+from erk_shared.fakes.github import FakeLocalGitHub
+from erk_shared.fakes.github_issues import FakeGitHubIssues
+from erk_shared.fakes.time import FakeTime
 from erk_shared.gateway.github.types import PRNotFound
-from erk_shared.gateway.time.fake import FakeTime
 from erk_shared.plan_store.planned_pr import PlannedPRBackend
 from erk_shared.plan_store.planned_pr_lifecycle import (
     DETAILS_OPEN,

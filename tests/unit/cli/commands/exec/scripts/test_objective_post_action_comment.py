@@ -11,8 +11,8 @@ from erk.cli.commands.exec.scripts.objective_post_action_comment import (
     objective_post_action_comment,
 )
 from erk_shared.context.context import ErkContext
-from erk_shared.gateway.github.fake import FakeLocalGitHub
-from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+from erk_shared.fakes.github import FakeLocalGitHub
+from erk_shared.fakes.github_issues import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
 
 

@@ -9,10 +9,10 @@ from click.testing import CliRunner
 from erk.cli.commands.exec.scripts.plan_save import plan_save
 from erk_shared.context.context import ErkContext
 from erk_shared.context.testing import context_for_test
-from erk_shared.gateway.claude_installation.fake import FakeClaudeInstallation
-from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeLocalGitHub
-from erk_shared.gateway.graphite.fake import FakeGraphite
+from erk_shared.fakes.claude_installation import FakeClaudeInstallation
+from erk_shared.fakes.git import FakeGit
+from erk_shared.fakes.github import FakeLocalGitHub
+from erk_shared.fakes.graphite import FakeGraphite
 from erk_shared.plan_store.planned_pr_lifecycle import IMPL_CONTEXT_DIR
 
 # Valid plan content that passes validation (100+ chars with structure)

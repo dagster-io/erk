@@ -11,14 +11,14 @@ from erk.cli.commands.learn.learn_cmd import LearnResult, _display_human_readabl
 from erk.core.context import context_for_test
 from erk.core.repo_discovery import RepoContext
 from erk_shared.context.types import GlobalConfig
-from erk_shared.gateway.claude_installation.fake import (
+from erk_shared.fakes.claude_installation import (
     FakeClaudeInstallation,
     FakeProject,
     FakeSessionData,
 )
-from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeLocalGitHub
-from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+from erk_shared.fakes.git import FakeGit
+from erk_shared.fakes.github import FakeLocalGitHub
+from erk_shared.fakes.github_issues import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.metadata.core import render_metadata_block
 from erk_shared.gateway.github.metadata.types import MetadataBlock

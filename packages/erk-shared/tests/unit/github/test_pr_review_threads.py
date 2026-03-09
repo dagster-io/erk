@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from erk_shared.gateway.github.fake import FakeLocalGitHub
+from erk_shared.fakes.github import FakeLocalGitHub
 from erk_shared.gateway.github.types import PRReviewComment, PRReviewThread
 
 

@@ -20,8 +20,8 @@ from erk.cli.help_formatter import (
 )
 from erk.core.context import context_for_test
 from erk_shared.context.types import GlobalConfig
+from erk_shared.fakes.graphite import FakeGraphite
 from erk_shared.gateway.graphite.disabled import GraphiteDisabled, GraphiteDisabledReason
-from erk_shared.gateway.graphite.fake import FakeGraphite
 
 # --- Helper function tests ---
 

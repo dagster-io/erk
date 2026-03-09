@@ -10,8 +10,8 @@ from click.testing import CliRunner
 
 from erk.cli.commands.exec.scripts.get_plan_info import get_plan_info
 from erk_shared.context.testing import context_for_test
-from erk_shared.gateway.github.fake import FakeLocalGitHub
-from erk_shared.gateway.time.fake import FakeTime
+from erk_shared.fakes.github import FakeLocalGitHub
+from erk_shared.fakes.time import FakeTime
 from erk_shared.plan_store.planned_pr import PlannedPRBackend
 
 

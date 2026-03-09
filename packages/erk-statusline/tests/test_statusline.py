@@ -9,12 +9,12 @@ import time
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-from erk_shared.gateway.branch_manager.fake import FakeBranchManager
+from erk_shared.fakes.branch_manager import FakeBranchManager
+from erk_shared.fakes.git import FakeGit
+from erk_shared.fakes.github import FakeLocalGitHub
+from erk_shared.fakes.graphite import FakeGraphite
 from erk_shared.gateway.branch_manager.types import PrInfo
 from erk_shared.gateway.git.abc import WorktreeInfo
-from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeLocalGitHub
-from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_statusline.context import StatuslineContext
 from erk_statusline.statusline import (
     CACHE_TTL_SECONDS,

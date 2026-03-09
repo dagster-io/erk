@@ -29,7 +29,7 @@ class BranchDivergence(NamedTuple):
 Constructor injection via dict with `(repo_path, branch_name, remote_name)` keys:
 
 ```python
-from erk_shared.gateway.git.fake import FakeGit
+from erk_shared.fakes.git import FakeGit
 from erk_shared.gateway.git.abc import BranchDivergence
 
 fake_git = FakeGit(

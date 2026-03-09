@@ -9,8 +9,8 @@ from erk.cli.commands.pr.submit_pipeline import (
 )
 from erk.core.context import context_for_test
 from erk_shared.context.types import GlobalConfig
-from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.graphite.fake import FakeGraphite
+from erk_shared.fakes.git import FakeGit
+from erk_shared.fakes.graphite import FakeGraphite
 from erk_shared.gateway.graphite.types import BranchMetadata
 
 

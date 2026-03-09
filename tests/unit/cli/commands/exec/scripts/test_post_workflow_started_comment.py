@@ -18,11 +18,11 @@ from erk.cli.commands.exec.scripts.post_workflow_started_comment import (
     post_workflow_started_comment as post_workflow_started_comment_command,
 )
 from erk_shared.context.context import ErkContext
-from erk_shared.gateway.github.fake import FakeLocalGitHub
-from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+from erk_shared.fakes.github import FakeLocalGitHub
+from erk_shared.fakes.github_issues import FakeGitHubIssues
+from erk_shared.fakes.time import FakeTime
 from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.metadata.core import parse_metadata_blocks
-from erk_shared.gateway.time.fake import FakeTime
 from erk_shared.plan_store.planned_pr import PlannedPRBackend
 from tests.test_utils.plan_helpers import issue_info_to_pr_details
 

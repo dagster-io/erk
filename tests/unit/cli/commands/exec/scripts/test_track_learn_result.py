@@ -11,11 +11,11 @@ from click.testing import CliRunner
 
 from erk.cli.commands.exec.scripts.track_learn_result import track_learn_result
 from erk_shared.context.context import ErkContext
-from erk_shared.gateway.github.fake import FakeLocalGitHub
-from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+from erk_shared.fakes.github import FakeLocalGitHub
+from erk_shared.fakes.github_issues import FakeGitHubIssues
+from erk_shared.fakes.time import FakeTime
 from erk_shared.gateway.github.metadata.core import find_metadata_block
 from erk_shared.gateway.github.types import PRNotFound
-from erk_shared.gateway.time.fake import FakeTime
 from erk_shared.plan_store.planned_pr import PlannedPRBackend
 from tests.test_utils.github_helpers import create_test_issue
 from tests.test_utils.plan_helpers import (

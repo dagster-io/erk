@@ -7,10 +7,10 @@ from click.testing import CliRunner
 
 from erk.cli.cli import cli
 from erk.core.context import context_for_test
+from erk_shared.fakes.codespace_registry import FakeCodespaceRegistry
+from erk_shared.fakes.erk_installation import FakeErkInstallation
 from erk_shared.gateway.codespace_registry.abc import RegisteredCodespace
-from erk_shared.gateway.codespace_registry.fake import FakeCodespaceRegistry
 from erk_shared.gateway.codespace_registry.real import RealCodespaceRegistry
-from erk_shared.gateway.erk_installation.fake import FakeErkInstallation
 
 
 def test_remove_shows_error_when_not_found() -> None:

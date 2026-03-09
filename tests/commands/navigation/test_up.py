@@ -8,10 +8,10 @@ from click.testing import CliRunner
 from erk.cli.cli import cli
 from erk.core.repo_discovery import RepoContext
 from erk.core.worktree_pool import PoolState, SlotAssignment, load_pool_state, save_pool_state
+from erk_shared.fakes.git import FakeGit
+from erk_shared.fakes.graphite import FakeGraphite
 from erk_shared.gateway.git.abc import WorktreeInfo
-from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.gateway.graphite.disabled import GraphiteDisabled, GraphiteDisabledReason
-from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.gateway.graphite.types import BranchMetadata
 from tests.test_utils.cli_helpers import assert_cli_error
 from tests.test_utils.env_helpers import erk_inmem_env, erk_isolated_fs_env
@@ -635,7 +635,7 @@ def test_up_delete_current_pr_open() -> None:
         )
 
         # PR for feature-1 is OPEN (active work in progress)
-        from erk_shared.gateway.github.fake import FakeLocalGitHub
+        from erk_shared.fakes.github import FakeLocalGitHub
         from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
 
         github_ops = FakeLocalGitHub(
@@ -727,7 +727,7 @@ def test_up_delete_current_force_with_open_pr() -> None:
         )
 
         # PR for feature-1 is OPEN
-        from erk_shared.gateway.github.fake import FakeLocalGitHub
+        from erk_shared.fakes.github import FakeLocalGitHub
         from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
 
         github_ops = FakeLocalGitHub(
@@ -840,7 +840,7 @@ def test_up_delete_current_pr_closed() -> None:
         )
 
         # PR for feature-1 is CLOSED (abandoned/rejected work)
-        from erk_shared.gateway.github.fake import FakeLocalGitHub
+        from erk_shared.fakes.github import FakeLocalGitHub
         from erk_shared.gateway.github.types import PullRequestInfo
 
         github_ops = FakeLocalGitHub(
@@ -921,7 +921,7 @@ def test_up_delete_current_no_pr() -> None:
         )
 
         # No PR for feature-1
-        from erk_shared.gateway.github.fake import FakeLocalGitHub
+        from erk_shared.fakes.github import FakeLocalGitHub
 
         github_ops = FakeLocalGitHub(prs={})
 
@@ -993,7 +993,7 @@ def test_up_delete_current_success() -> None:
         )
 
         # PR for feature-1 is merged
-        from erk_shared.gateway.github.fake import FakeLocalGitHub
+        from erk_shared.fakes.github import FakeLocalGitHub
         from erk_shared.gateway.github.types import PullRequestInfo
 
         github_ops = FakeLocalGitHub(
@@ -1312,7 +1312,7 @@ def test_up_delete_current_slot_aware_unassigns_slot() -> None:
         )
 
         # PR for feature-1 is merged
-        from erk_shared.gateway.github.fake import FakeLocalGitHub
+        from erk_shared.fakes.github import FakeLocalGitHub
         from erk_shared.gateway.github.types import PullRequestInfo
 
         github_ops = FakeLocalGitHub(

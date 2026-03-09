@@ -5,9 +5,9 @@ from unittest.mock import patch
 
 import pytest
 
+from erk_shared.fakes.time import FakeTime
 from erk_shared.gateway.github.parsing import execute_gh_command_with_retry
 from erk_shared.gateway.github.retry import RETRY_DELAYS
-from erk_shared.gateway.time.fake import FakeTime
 
 
 def test_success_on_first_attempt() -> None:

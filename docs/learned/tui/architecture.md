@@ -125,7 +125,7 @@ Shows plan count, sort mode, last update time with fetch duration, countdown to 
 
 ### Unit Testing TUI Components
 
-Use fake providers instead of mocking. `FakePlanDataProvider` lives in `erk_shared.gateway.plan_data_provider.fake` and accepts keyword-only arguments (`plans`, `clipboard`, `browser`, `repo_root`, `fetch_error`). The `make_plan_row()` helper in the same module creates test `PlanRowData` instances with sensible defaults.
+Use fake providers instead of mocking. `FakePlanDataProvider` lives in `erk_shared.fakes.plan_data_provider` and accepts keyword-only arguments (`plans`, `clipboard`, `browser`, `repo_root`, `fetch_error`). The `make_plan_row()` helper in the same module creates test `PlanRowData` instances with sensible defaults.
 
 ### Testing Async Operations
 

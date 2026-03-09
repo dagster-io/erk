@@ -12,11 +12,11 @@ from erk.cli.commands.objective.check_cmd import (
     validate_objective,
 )
 from erk_shared.context.context import ErkContext
-from erk_shared.gateway.github.fake import FakeLocalGitHub
-from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+from erk_shared.fakes.github import FakeLocalGitHub
+from erk_shared.fakes.github_issues import FakeGitHubIssues
+from erk_shared.fakes.remote_github import FakeRemoteGitHub
 from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.types import RepoInfo
-from erk_shared.gateway.remote_github.fake import FakeRemoteGitHub
 from tests.test_utils.plan_helpers import format_plan_header_body_for_test
 
 _TEST_REPO_INFO = RepoInfo(owner="test", name="repo")

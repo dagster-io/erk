@@ -12,8 +12,8 @@ from erk.cli.commands.land_pipeline import (
 )
 from erk.cli.ensure import UserFacingCliError
 from erk.core.context import context_for_test
-from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeLocalGitHub
+from erk_shared.fakes.git import FakeGit
+from erk_shared.fakes.github import FakeLocalGitHub
 from erk_shared.gateway.github.types import PRDetails
 from erk_shared.gateway.graphite.disabled import GraphiteDisabled, GraphiteDisabledReason
 

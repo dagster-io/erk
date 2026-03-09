@@ -8,7 +8,7 @@ from erk.cli.commands.pr.submit_pipeline import (
     extract_diff,
 )
 from erk.core.context import context_for_test
-from erk_shared.gateway.git.fake import FakeGit
+from erk_shared.fakes.git import FakeGit
 
 
 def _make_state(

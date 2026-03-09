@@ -8,7 +8,7 @@ from erk.cli.commands.pr.submit_pipeline import (
     link_pr_to_objective_nodes,
 )
 from erk.core.context import context_for_test
-from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+from erk_shared.fakes.github_issues import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.impl_folder import get_impl_dir, save_plan_ref
 

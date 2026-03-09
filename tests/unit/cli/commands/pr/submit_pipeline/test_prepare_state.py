@@ -9,7 +9,7 @@ from erk.cli.commands.pr.submit_pipeline import (
     prepare_state,
 )
 from erk.core.context import context_for_test
-from erk_shared.gateway.git.fake import FakeGit
+from erk_shared.fakes.git import FakeGit
 from erk_shared.impl_folder import get_impl_dir
 
 BRANCH = "test/branch"

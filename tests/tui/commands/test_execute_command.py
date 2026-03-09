@@ -5,8 +5,8 @@ from datetime import UTC, datetime
 from erk.tui.data.types import PlanRowData
 from erk.tui.screens.plan_detail_screen import PlanDetailScreen
 from erk.tui.views.types import ViewMode
-from erk_shared.gateway.command_executor.fake import FakeCommandExecutor
-from erk_shared.gateway.plan_data_provider.fake import make_plan_row
+from erk_shared.fakes.command_executor import FakeCommandExecutor
+from erk_shared.fakes.plan_data_provider import make_plan_row
 
 
 class TestExecuteCommandBrowserCommands:

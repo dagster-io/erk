@@ -205,14 +205,14 @@ When testing exec scripts that create and checkout branches, use `FakeBranchMana
 
 ### Pattern: Verify create_branch + checkout_branch Sequence
 
-`FakeBranchManager` is located at `erk_shared.gateway.branch_manager.fake`. It tracks branch operations via internal lists exposed as read-only properties:
+`FakeBranchManager` is located at `erk_shared.fakes.branch_manager`. It tracks branch operations via internal lists exposed as read-only properties:
 
 - `created_branches` - list of `(branch_name, base_branch)` tuples
 - `checked_out_branches` - list of branch names
 - `tracked_branches` - list of `(branch_name, parent_branch)` tuples
 
 ```python
-from erk_shared.gateway.branch_manager.fake import FakeBranchManager
+from erk_shared.fakes.branch_manager import FakeBranchManager
 
 # Create a FakeBranchManager
 fake_branch_manager = FakeBranchManager()

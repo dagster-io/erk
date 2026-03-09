@@ -74,10 +74,10 @@ def setup_submit_context(
         where fake_backing is FakeLocalGitHub.
     """
     from erk_shared.context.types import GlobalConfig
-    from erk_shared.gateway.console.fake import FakeConsole
-    from erk_shared.gateway.git.fake import FakeGit
-    from erk_shared.gateway.github.fake import FakeLocalGitHub
-    from erk_shared.gateway.graphite.fake import FakeGraphite
+    from erk_shared.fakes.console import FakeConsole
+    from erk_shared.fakes.git import FakeGit
+    from erk_shared.fakes.github import FakeLocalGitHub
+    from erk_shared.fakes.graphite import FakeGraphite
     from tests.test_utils.plan_helpers import create_plan_store_with_plans
 
     repo_root = tmp_path / "repo"

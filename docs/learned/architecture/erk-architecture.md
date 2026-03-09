@@ -238,7 +238,7 @@ time.sleep(2.0)  # Actually sleeps for 2 seconds
 Usage example:
 
 ```python
-from erk_shared.gateway.time.fake import FakeTime
+from erk_shared.fakes.time import FakeTime
 
 fake_time = FakeTime()
 fake_time.sleep(2.0)  # Returns immediately, tracks call
@@ -533,7 +533,7 @@ All gateways live under `packages/erk-shared/src/erk_shared/gateway/`:
 # Import ABC from abc.py, implementations from their respective files
 from erk_shared.gateway.git.abc import Git, WorktreeInfo
 from erk_shared.gateway.git.real import RealGit
-from erk_shared.gateway.git.fake import FakeGit
+from erk_shared.fakes.git import FakeGit
 from erk_shared.gateway.github.abc import LocalGitHub
 ```
 

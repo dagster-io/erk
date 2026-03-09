@@ -5,8 +5,8 @@ audit_result: edited
 tripwires:
   - action: "using output=, should_fail=, or transient_failures= parameters in FakePromptExecutor"
     warning: "These are the deleted gateway API. Use simulated_* parameters (tests/fakes/) or prompt_results/streaming_events (erk_shared/core/fakes.py). See migration table."
-  - action: "importing FakePromptExecutor from erk_shared.gateway.prompt_executor.fake"
-    warning: "This module was deleted in the consolidation. Import from tests.fakes.prompt_executor or erk_shared.core.fakes instead."
+  - action: "importing FakePromptExecutor from erk_shared.fakes.prompt_executor"
+    warning: "This module was deleted in the consolidation. Import from tests.fakes.prompt_executor or erk_shared.fakes.core instead."
 read_when:
   - "writing tests that use FakePromptExecutor"
   - "choosing between the two FakePromptExecutor implementations"

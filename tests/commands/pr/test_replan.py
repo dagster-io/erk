@@ -4,7 +4,7 @@ from click.testing import CliRunner
 
 from erk.cli.cli import cli
 from erk.core.context import context_for_test
-from erk_shared.gateway.agent_launcher.fake import FakeAgentLauncher
+from erk_shared.fakes.agent_launcher import FakeAgentLauncher
 
 
 def test_replan_launches_agent_with_plan_mode() -> None:

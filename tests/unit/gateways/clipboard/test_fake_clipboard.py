@@ -1,6 +1,6 @@
 """Tests for FakeClipboard implementation."""
 
-from erk_shared.gateway.clipboard.fake import FakeClipboard
+from erk_shared.fakes.clipboard import FakeClipboard
 
 
 class TestFakeClipboardCopyTracking:

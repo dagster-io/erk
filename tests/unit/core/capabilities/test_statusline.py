@@ -5,7 +5,7 @@ Tests install, is_installed, and artifact declarations for statusline.
 
 from erk.capabilities.statusline import StatuslineCapability
 from erk.core.capabilities.registry import get_capability
-from erk_shared.gateway.claude_installation.fake import FakeClaudeInstallation
+from erk_shared.fakes.claude_installation import FakeClaudeInstallation
 
 # =============================================================================
 # Tests for StatuslineCapability

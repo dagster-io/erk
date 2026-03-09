@@ -6,7 +6,7 @@ These tests verify that get_readable_sessions correctly uses global session look
 import json
 from pathlib import Path
 
-from erk_shared.gateway.claude_installation.fake import (
+from erk_shared.fakes.claude_installation import (
     FakeClaudeInstallation,
     FakeProject,
     FakeSessionData,

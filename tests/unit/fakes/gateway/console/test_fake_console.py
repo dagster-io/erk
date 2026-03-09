@@ -2,7 +2,7 @@
 
 import pytest
 
-from erk_shared.gateway.console.fake import FakeConsole
+from erk_shared.fakes.console import FakeConsole
 
 
 class TestFakeConsoleTTYState:

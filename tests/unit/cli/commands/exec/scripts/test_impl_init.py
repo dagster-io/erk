@@ -13,7 +13,7 @@ from erk.cli.commands.exec.scripts.impl_init import (
     impl_init,
 )
 from erk_shared.context.context import ErkContext
-from erk_shared.gateway.git.fake import FakeGit
+from erk_shared.fakes.git import FakeGit
 from erk_shared.impl_folder import create_impl_folder, get_impl_dir
 
 BRANCH = "feature/test-branch"

@@ -24,8 +24,8 @@ from erk.core.worktree_pool import (
     load_pool_state,
     save_pool_state,
 )
+from erk_shared.fakes.git import FakeGit
 from erk_shared.gateway.git.abc import WorktreeInfo
-from erk_shared.gateway.git.fake import FakeGit
 
 
 class TestGetPoolSize:

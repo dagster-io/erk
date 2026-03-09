@@ -17,9 +17,9 @@ from erk_dev.commands.audit_collect.command import (
     _run_audit_collect,
 )
 from erk_dev.context import ErkDevContext
+from erk_shared.fakes.git import FakeGit
+from erk_shared.fakes.github import FakeLocalGitHub
 from erk_shared.gateway.git.abc import BranchSyncInfo, WorktreeInfo
-from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.types import PullRequestInfo
 
 _REPO = Path("/fake/repo")

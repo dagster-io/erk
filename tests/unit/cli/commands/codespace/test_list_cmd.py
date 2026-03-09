@@ -6,8 +6,8 @@ from click.testing import CliRunner
 
 from erk.cli.cli import cli
 from erk.core.context import context_for_test
+from erk_shared.fakes.codespace_registry import FakeCodespaceRegistry
 from erk_shared.gateway.codespace_registry.abc import RegisteredCodespace
-from erk_shared.gateway.codespace_registry.fake import FakeCodespaceRegistry
 
 
 def test_list_shows_empty_message_when_no_codespaces() -> None:

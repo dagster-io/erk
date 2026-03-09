@@ -14,10 +14,10 @@ from erk.core.workflow_smoke_test import (
 )
 from erk_shared.context.context import ErkContext
 from erk_shared.context.types import NoRepoSentinel
-from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeLocalGitHub
+from erk_shared.fakes.git import FakeGit
+from erk_shared.fakes.github import FakeLocalGitHub
+from erk_shared.fakes.remote_github import FakeRemoteGitHub
 from erk_shared.gateway.github.types import PullRequestInfo, RepoInfo
-from erk_shared.gateway.remote_github.fake import FakeRemoteGitHub
 
 
 class TestRunSmokeTest:

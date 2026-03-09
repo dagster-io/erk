@@ -1,7 +1,7 @@
 """Unit tests for detect_installed_backends."""
 
 from erk.cli.commands.init.main import detect_installed_backends
-from tests.fakes.shell import FakeShell
+from erk_shared.fakes.shell import FakeShell
 
 
 def test_detect_both_backends() -> None:

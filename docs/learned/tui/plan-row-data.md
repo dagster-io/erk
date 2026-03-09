@@ -196,7 +196,7 @@ Many pieces of data have both a raw value and a display value:
 The test helper `make_plan_row()` in `packages/erk-shared/src/erk_shared/gateway/plan_data_provider/fake.py` creates `PlanRowData` instances with sensible defaults. Override only the fields you need:
 
 ```python
-from erk_shared.gateway.plan_data_provider.fake import make_plan_row
+from erk_shared.fakes.plan_data_provider import make_plan_row
 
 # Minimal row
 row = make_plan_row(123, "Test Plan")

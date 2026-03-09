@@ -2,8 +2,8 @@
 
 import pytest
 
+from erk_shared.fakes.http import FakeHttpClient
 from erk_shared.gateway.http.abc import HttpError
-from erk_shared.gateway.http.fake import FakeHttpClient
 
 
 def test_get_list_returns_configured_response() -> None:

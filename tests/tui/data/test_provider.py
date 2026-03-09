@@ -7,11 +7,13 @@ from pathlib import Path
 from erk.core.context import GlobalConfig
 from erk.core.repo_discovery import RepoContext
 from erk.tui.data.types import FetchTimings
-from erk_shared.gateway.browser.fake import FakeBrowserLauncher
-from erk_shared.gateway.clipboard.fake import FakeClipboard
+from erk_shared.fakes.browser import FakeBrowserLauncher
+from erk_shared.fakes.clipboard import FakeClipboard
+from erk_shared.fakes.git import FakeGit
+from erk_shared.fakes.github import FakeLocalGitHub
+from erk_shared.fakes.graphite import FakeGraphite
+from erk_shared.fakes.http import FakeHttpClient
 from erk_shared.gateway.git.abc import WorktreeInfo
-from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.metadata.core import find_metadata_block
 from erk_shared.gateway.github.types import (
@@ -19,8 +21,6 @@ from erk_shared.gateway.github.types import (
     GitHubRepoLocation,
     PullRequestInfo,
 )
-from erk_shared.gateway.graphite.fake import FakeGraphite
-from erk_shared.gateway.http.fake import FakeHttpClient
 from erk_shared.gateway.plan_data_provider.real import RealPlanDataProvider
 from erk_shared.gateway.plan_service.real import RealPlanService
 from erk_shared.plan_store.types import Plan, PlanState
@@ -502,7 +502,7 @@ class TestClosePlan:
         )
 
         # Configure fake GitHub to return empty PR linkages
-        from erk_shared.gateway.github.fake import FakeLocalGitHub
+        from erk_shared.fakes.github import FakeLocalGitHub
 
         github = FakeLocalGitHub(pr_plan_linkages={})
 
@@ -558,7 +558,7 @@ class TestClosePlan:
         )
 
         # Configure fake GitHub to return linked PRs
-        from erk_shared.gateway.github.fake import FakeLocalGitHub
+        from erk_shared.fakes.github import FakeLocalGitHub
         from erk_shared.gateway.github.types import PullRequestInfo
 
         github = FakeLocalGitHub(

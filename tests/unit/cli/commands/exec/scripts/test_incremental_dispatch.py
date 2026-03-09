@@ -8,12 +8,12 @@ from click.testing import CliRunner
 from erk.cli.commands.exec.scripts.incremental_dispatch import incremental_dispatch
 from erk_shared.context.context import ErkContext
 from erk_shared.context.testing import context_for_test
+from erk_shared.fakes.git import FakeGit
+from erk_shared.fakes.github import FakeLocalGitHub
+from erk_shared.fakes.graphite import FakeGraphite
+from erk_shared.fakes.time import FakeTime
 from erk_shared.gateway.git.abc import WorktreeInfo
-from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
-from erk_shared.gateway.graphite.fake import FakeGraphite
-from erk_shared.gateway.time.fake import FakeTime
 from erk_shared.plan_store.planned_pr import PlannedPRBackend
 from tests.test_utils.plan_helpers import format_plan_header_body_for_test
 

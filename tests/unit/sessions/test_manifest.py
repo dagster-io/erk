@@ -3,7 +3,7 @@
 import json
 from pathlib import Path
 
-from erk_shared.gateway.git.fake import FakeGit
+from erk_shared.fakes.git import FakeGit
 from erk_shared.sessions.manifest import read_session_manifest
 
 

@@ -20,7 +20,7 @@ from unittest.mock import patch
 import pytest
 
 from erk.cli.commands.init.main import perform_statusline_setup
-from erk_shared.gateway.console.fake import FakeConsole
+from erk_shared.fakes.console import FakeConsole
 
 
 def test_statusline_setup_configures_empty_settings(

@@ -2,7 +2,7 @@
 
 import pytest
 
-from erk_shared.gateway.cmux.fake import FakeCmux
+from erk_shared.fakes.cmux import FakeCmux
 
 
 def test_create_workspace_returns_configured_ref() -> None:

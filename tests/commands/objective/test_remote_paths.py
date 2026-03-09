@@ -7,9 +7,9 @@ from click.testing import CliRunner
 from erk.cli.cli import cli
 from erk.core.context import context_for_test
 from erk_shared.context.types import NoRepoSentinel
-from erk_shared.gateway.console.fake import FakeConsole
+from erk_shared.fakes.console import FakeConsole
+from erk_shared.fakes.remote_github import FakeRemoteGitHub
 from erk_shared.gateway.github.issues.types import IssueInfo
-from erk_shared.gateway.remote_github.fake import FakeRemoteGitHub
 
 
 def _make_fake_remote(

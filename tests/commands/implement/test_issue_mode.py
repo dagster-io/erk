@@ -3,7 +3,7 @@
 from click.testing import CliRunner
 
 from erk.cli.commands.implement import implement
-from erk_shared.gateway.git.fake import FakeGit
+from erk_shared.fakes.git import FakeGit
 from erk_shared.impl_folder import create_impl_folder
 from tests.commands.implement.conftest import create_sample_plan_issue
 from tests.fakes.prompt_executor import FakePromptExecutor

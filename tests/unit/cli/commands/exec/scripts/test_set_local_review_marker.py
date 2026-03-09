@@ -15,9 +15,9 @@ from erk.cli.commands.exec.scripts.set_local_review_marker import (
     set_local_review_marker,
 )
 from erk_shared.context.context import ErkContext
-from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeLocalGitHub
-from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+from erk_shared.fakes.git import FakeGit
+from erk_shared.fakes.github import FakeLocalGitHub
+from erk_shared.fakes.github_issues import FakeGitHubIssues
 from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
 
 

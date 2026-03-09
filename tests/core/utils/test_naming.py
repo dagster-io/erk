@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from erk_shared.gateway.time.fake import DEFAULT_FAKE_TIME
+from erk_shared.fakes.time import DEFAULT_FAKE_TIME
 from erk_shared.naming import (
     WORKTREE_DATE_SUFFIX_FORMAT,
     InvalidObjectiveSlug,

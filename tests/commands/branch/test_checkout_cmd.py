@@ -18,10 +18,10 @@ from erk.core.worktree_pool import (
     load_pool_state,
     save_pool_state,
 )
+from erk_shared.fakes.git import FakeGit
+from erk_shared.fakes.graphite import FakeGraphite
 from erk_shared.gateway.git.abc import WorktreeInfo
-from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.gateway.graphite.disabled import GraphiteDisabled, GraphiteDisabledReason
-from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.plan_store.types import Plan, PlanState
 from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_inmem_env, erk_isolated_fs_env

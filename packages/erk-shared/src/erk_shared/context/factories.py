@@ -10,7 +10,7 @@ import subprocess
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from erk_shared.core.fakes import (
+from erk_shared.fakes.core import (
     FakeCodespaceRegistry,
     FakeObjectiveListService,
     FakePlanListService,
@@ -72,23 +72,23 @@ def create_minimal_context(*, debug: bool, cwd: Path | None = None) -> ErkContex
     """
     from erk_shared.context.context import ErkContext
     from erk_shared.context.types import LoadedConfig, NoRepoSentinel, RepoContext
-    from erk_shared.gateway.agent_launcher.fake import FakeAgentLauncher
+    from erk_shared.fakes.agent_launcher import FakeAgentLauncher
+    from erk_shared.fakes.cmux import FakeCmux
+    from erk_shared.fakes.codespace import FakeCodespace
+    from erk_shared.fakes.completion import FakeCompletion
+    from erk_shared.fakes.github_admin import FakeGitHubAdmin
+    from erk_shared.fakes.graphite import FakeGraphite
+
+    # Note: For minimal contexts, use FakePromptExecutor since the real
+    # ClaudeCliPromptExecutor lives in erk (not erk-shared)
+    from erk_shared.fakes.shell import FakeShell
+    from erk_shared.fakes.time import FakeTime
     from erk_shared.gateway.claude_installation.real import RealClaudeInstallation
-    from erk_shared.gateway.cmux.fake import FakeCmux
-    from erk_shared.gateway.codespace.fake import FakeCodespace
-    from erk_shared.gateway.completion.fake import FakeCompletion
     from erk_shared.gateway.console.real import ScriptConsole
     from erk_shared.gateway.erk_installation.real import RealErkInstallation
     from erk_shared.gateway.git.real import RealGit
     from erk_shared.gateway.github.issues.real import RealGitHubIssues
     from erk_shared.gateway.github.real import RealLocalGitHub
-    from erk_shared.gateway.github_admin.fake import FakeGitHubAdmin
-    from erk_shared.gateway.graphite.fake import FakeGraphite
-
-    # Note: For minimal contexts, use FakePromptExecutor since the real
-    # ClaudeCliPromptExecutor lives in erk (not erk-shared)
-    from erk_shared.gateway.shell.fake import FakeShell
-    from erk_shared.gateway.time.fake import FakeTime
     from erk_shared.gateway.time.real import RealTime
     from erk_shared.plan_store.planned_pr import PlannedPRBackend
 

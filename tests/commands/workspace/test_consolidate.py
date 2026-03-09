@@ -8,11 +8,11 @@ import pytest
 from click.testing import CliRunner
 
 from erk.cli.cli import cli
+from erk_shared.fakes.git import FakeGit
+from erk_shared.fakes.github import FakeLocalGitHub
+from erk_shared.fakes.graphite import FakeGraphite
+from erk_shared.fakes.shell import FakeShell
 from erk_shared.gateway.git.abc import WorktreeInfo
-from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeLocalGitHub
-from erk_shared.gateway.graphite.fake import FakeGraphite
-from tests.fakes.shell import FakeShell
 from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_inmem_env
 
@@ -228,7 +228,7 @@ def test_consolidate_dry_run_shows_preview() -> None:
 
 def test_consolidate_confirmation_prompt() -> None:
     """Test consolidate prompts for confirmation without --force."""
-    from erk_shared.gateway.console.fake import FakeConsole
+    from erk_shared.fakes.console import FakeConsole
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:

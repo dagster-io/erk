@@ -6,7 +6,7 @@ providing reliable test doubles for CLI tests.
 
 from pathlib import Path
 
-from tests.fakes.shell import FakeShell
+from erk_shared.fakes.shell import FakeShell
 
 
 def test_fake_shell_ops_initialization() -> None:

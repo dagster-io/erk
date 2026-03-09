@@ -7,10 +7,10 @@ import pytest
 from erk.core.context import context_for_test, minimal_context
 from erk.core.repo_discovery import RepoContext
 from erk_shared.context.types import GlobalConfig
-from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeLocalGitHub
-from erk_shared.gateway.graphite.fake import FakeGraphite
-from tests.fakes.shell import FakeShell
+from erk_shared.fakes.git import FakeGit
+from erk_shared.fakes.github import FakeLocalGitHub
+from erk_shared.fakes.graphite import FakeGraphite
+from erk_shared.fakes.shell import FakeShell
 from tests.test_utils.paths import sentinel_path
 
 

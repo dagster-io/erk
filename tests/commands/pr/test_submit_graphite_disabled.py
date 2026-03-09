@@ -7,8 +7,8 @@ is disabled (use_graphite=False), using the core path (git push + gh pr create).
 from click.testing import CliRunner
 
 from erk.cli.commands.pr import pr_group
-from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeLocalGitHub
+from erk_shared.fakes.git import FakeGit
+from erk_shared.fakes.github import FakeLocalGitHub
 from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
 from tests.fakes.prompt_executor import FakePromptExecutor
 from tests.test_utils.context_builders import build_workspace_test_context

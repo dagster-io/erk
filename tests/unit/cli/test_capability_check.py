@@ -3,7 +3,7 @@
 from pathlib import Path
 
 from erk.cli.capability_check import is_learned_docs_available
-from erk_shared.gateway.git.repo_ops.fake import FakeGitRepoOps
+from erk_shared.fakes.git_repo_ops import FakeGitRepoOps
 
 
 class TestIsLearnedDocsAvailable:

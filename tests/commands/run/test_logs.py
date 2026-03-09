@@ -8,9 +8,9 @@ from pathlib import Path
 from click.testing import CliRunner
 
 from erk.cli.commands.run.logs_cmd import logs_run
+from erk_shared.fakes.git import FakeGit
+from erk_shared.fakes.github import FakeLocalGitHub
 from erk_shared.gateway.git.abc import WorktreeInfo
-from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.types import WorkflowRun
 from tests.fakes.context import create_test_context
 

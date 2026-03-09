@@ -6,14 +6,14 @@ ErkContext with appropriate fake implementations.
 """
 
 from erk.core.context import ErkContext
-from erk_shared.core.fakes import FakePlanListService
 from erk_shared.core.plan_list_service import PlanListData
+from erk_shared.fakes.core import FakePlanListService
+from erk_shared.fakes.git import FakeGit
+from erk_shared.fakes.github import FakeLocalGitHub
+from erk_shared.fakes.shell import FakeShell
 from erk_shared.gateway.git.dry_run import DryRunGit
-from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.types import PullRequestInfo, WorkflowRun
 from erk_shared.plan_store.types import Plan
-from tests.fakes.shell import FakeShell
 from tests.test_utils.env_helpers import ErkInMemEnv, ErkIsolatedFsEnv
 
 

@@ -8,10 +8,10 @@ from pathlib import Path
 
 import pytest
 
-from erk_shared.gateway.git.fake import FakeGit
+from erk_shared.fakes.git import FakeGit
+from erk_shared.fakes.graphite import FakeGraphite
+from erk_shared.fakes.graphite_branch_ops import FakeGraphiteBranchOps
 from erk_shared.gateway.github.types import GitHubRepoId, PullRequestInfo
-from erk_shared.gateway.graphite.branch_ops.fake import FakeGraphiteBranchOps
-from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.gateway.graphite.types import BranchMetadata
 
 

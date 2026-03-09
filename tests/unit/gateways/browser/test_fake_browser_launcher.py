@@ -1,6 +1,6 @@
 """Tests for FakeBrowserLauncher implementation."""
 
-from erk_shared.gateway.browser.fake import FakeBrowserLauncher
+from erk_shared.fakes.browser import FakeBrowserLauncher
 
 
 class TestFakeBrowserLauncherLaunchTracking:

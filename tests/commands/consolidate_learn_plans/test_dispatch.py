@@ -3,8 +3,8 @@
 from erk.cli.commands.consolidate_learn_plans_dispatch import (
     dispatch_consolidate_learn_plans,
 )
-from erk_shared.gateway.remote_github.fake import FakeRemoteGitHub
-from erk_shared.gateway.time.fake import FakeTime
+from erk_shared.fakes.remote_github import FakeRemoteGitHub
+from erk_shared.fakes.time import FakeTime
 
 
 def _make_remote(

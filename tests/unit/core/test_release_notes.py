@@ -9,7 +9,7 @@ from erk.core.release_notes import (
     check_for_version_change,
     parse_changelog,
 )
-from erk_shared.gateway.erk_installation.fake import FakeErkInstallation
+from erk_shared.fakes.erk_installation import FakeErkInstallation
 
 SAMPLE_CHANGELOG = """\
 # Changelog

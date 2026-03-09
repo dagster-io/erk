@@ -34,7 +34,7 @@ Erk CLI commands use Click's context system (`@click.pass_context`) to receive d
 ```python
 from click.testing import CliRunner
 from erk_shared.context.context import ErkContext
-from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+from erk_shared.fakes.github_issues import FakeGitHubIssues
 
 def test_my_command() -> None:
     """Test command with fake dependencies."""
@@ -203,8 +203,8 @@ def test_command_with_multiple_dependencies() -> None:
 
 ```python
 from erk_shared.context.context import ErkContext
-from erk_shared.gateway.claude_installation.fake import FakeClaudeInstallation
-from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+from erk_shared.fakes.claude_installation import FakeClaudeInstallation
+from erk_shared.fakes.github_issues import FakeGitHubIssues
 
 def test_plan_save_success() -> None:
     """Test successful plan extraction and issue creation."""
@@ -244,7 +244,7 @@ This is a comprehensive feature plan that includes all the necessary details.
 ### Example 2: Testing with Claude Installation Fake
 
 ```python
-from erk_shared.gateway.claude_installation.fake import (
+from erk_shared.fakes.claude_installation import (
     FakeClaudeInstallation,
     FakeProject,
     FakeSessionData,

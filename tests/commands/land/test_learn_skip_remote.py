@@ -12,11 +12,11 @@ from click.testing import CliRunner
 
 from erk.cli.cli import cli
 from erk.core.repo_discovery import RepoContext
-from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeLocalGitHub
-from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+from erk_shared.fakes.git import FakeGit
+from erk_shared.fakes.github import FakeLocalGitHub
+from erk_shared.fakes.github_issues import FakeGitHubIssues
+from erk_shared.fakes.graphite import FakeGraphite
 from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
-from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.gateway.graphite.types import BranchMetadata
 from tests.test_utils.env_helpers import erk_inmem_env
 
@@ -35,7 +35,7 @@ def test_land_skips_learn_prompt_for_remote_pr(
 
     With deferred execution, this test verifies the execute phase behavior.
     """
-    from erk_shared.gateway.console.fake import FakeConsole
+    from erk_shared.fakes.console import FakeConsole
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
@@ -177,7 +177,7 @@ def test_land_shows_learn_prompt_for_local_plan_branch() -> None:
 
     This test verifies that the command succeeds without triggering session discovery.
     """
-    from erk_shared.gateway.console.fake import FakeConsole
+    from erk_shared.fakes.console import FakeConsole
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:

@@ -7,11 +7,11 @@ from click.testing import CliRunner
 
 from erk.cli.cli import cli
 from erk.core.repo_discovery import RepoContext
+from erk_shared.fakes.git import FakeGit
+from erk_shared.fakes.github import FakeLocalGitHub
+from erk_shared.fakes.graphite import FakeGraphite
+from erk_shared.fakes.shell import FakeShell
 from erk_shared.gateway.git.dry_run import DryRunGit
-from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeLocalGitHub
-from erk_shared.gateway.graphite.fake import FakeGraphite
-from tests.fakes.shell import FakeShell
 from tests.test_utils.env_helpers import erk_inmem_env
 
 

@@ -5,8 +5,8 @@ from datetime import datetime
 import pytest
 
 from erk.cli.commands.codespace.resolve import resolve_codespace
+from erk_shared.fakes.codespace_registry import FakeCodespaceRegistry
 from erk_shared.gateway.codespace_registry.abc import RegisteredCodespace
-from erk_shared.gateway.codespace_registry.fake import FakeCodespaceRegistry
 
 
 def _make_codespace(name: str) -> RegisteredCodespace:

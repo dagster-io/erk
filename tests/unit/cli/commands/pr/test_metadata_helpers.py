@@ -9,10 +9,10 @@ from erk.cli.commands.pr.metadata_helpers import (
 )
 from erk.core.context import context_for_test
 from erk.core.repo_discovery import RepoContext
-from erk_shared.gateway.github.fake import FakeLocalGitHub
+from erk_shared.fakes.github import FakeLocalGitHub
+from erk_shared.fakes.time import FakeTime
 from erk_shared.gateway.github.metadata.core import find_metadata_block
 from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
-from erk_shared.gateway.time.fake import FakeTime
 from erk_shared.plan_store.planned_pr import PlannedPRBackend
 from tests.commands.dispatch.conftest import create_plan, make_plan_body
 from tests.test_utils.plan_helpers import create_plan_store_with_plans

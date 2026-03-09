@@ -7,8 +7,8 @@ from erk.tui.data.types import PlanFilters
 from erk.tui.screens.help_screen import HelpScreen
 from erk.tui.widgets.plan_table import PlanDataTable
 from erk.tui.widgets.status_bar import StatusBar
-from erk_shared.gateway.plan_data_provider.fake import FakePlanDataProvider, make_plan_row
-from erk_shared.gateway.plan_service.fake import FakePlanService
+from erk_shared.fakes.plan_data_provider import FakePlanDataProvider, make_plan_row
+from erk_shared.fakes.plan_service import FakePlanService
 
 
 class TestErkDashAppCompose:

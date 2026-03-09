@@ -7,8 +7,8 @@ from erk.tui.app import ErkDashApp
 from erk.tui.data.types import PlanFilters
 from erk.tui.screens.plan_body_screen import PlanBodyScreen
 from erk.tui.views.types import ViewMode
-from erk_shared.gateway.plan_data_provider.fake import FakePlanDataProvider, make_plan_row
-from erk_shared.gateway.plan_service.fake import FakePlanService
+from erk_shared.fakes.plan_data_provider import FakePlanDataProvider, make_plan_row
+from erk_shared.fakes.plan_service import FakePlanService
 
 
 class TestPlanBodyScreen:

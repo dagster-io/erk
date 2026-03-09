@@ -10,7 +10,7 @@ from pathlib import Path
 
 import pytest
 
-from erk_shared.gateway.git.fake import FakeGit
+from erk_shared.fakes.git import FakeGit
 from erk_shared.gateway.github.types import GitHubRepoId
 from erk_shared.gateway.graphite.real import RealGraphite
 from tests.conftest import load_fixture

@@ -7,6 +7,5 @@ while keeping query operations on the main Git gateway.
 Import from submodules:
 - abc: GitBranchOps
 - real: RealGitBranchOps
-- fake: FakeGitBranchOps
 - dry_run: DryRunGitBranchOps
 """

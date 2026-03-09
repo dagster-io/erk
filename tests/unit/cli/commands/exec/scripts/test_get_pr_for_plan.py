@@ -10,10 +10,10 @@ from click.testing import CliRunner
 
 from erk.cli.commands.exec.scripts.get_pr_for_plan import get_pr_for_plan
 from erk_shared.context.testing import context_for_test
-from erk_shared.gateway.github.fake import FakeLocalGitHub
-from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+from erk_shared.fakes.github import FakeLocalGitHub
+from erk_shared.fakes.github_issues import FakeGitHubIssues
+from erk_shared.fakes.time import FakeTime
 from erk_shared.gateway.github.types import PRDetails
-from erk_shared.gateway.time.fake import FakeTime
 from erk_shared.plan_store.planned_pr import PlannedPRBackend
 
 

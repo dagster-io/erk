@@ -5,8 +5,8 @@ from io import StringIO
 from pathlib import Path
 from unittest.mock import patch
 
+from erk_shared.fakes.time import FakeTime
 from erk_shared.gateway.git.lock import get_lock_path, wait_for_index_lock
-from erk_shared.gateway.time.fake import FakeTime
 
 
 def create_git_repo(path: Path) -> None:

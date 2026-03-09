@@ -2,8 +2,8 @@
 
 from pathlib import Path
 
+from erk_shared.fakes.github_issues import FakeGitHubIssues
 from erk_shared.gateway.github.checks import GitHubChecks
-from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueComment, IssueComments
 from erk_shared.non_ideal_state import GitHubAPIFailed
 

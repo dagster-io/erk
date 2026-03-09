@@ -135,8 +135,8 @@ class RealLocalGitHub(LocalGitHub):
         Returns:
             RealLocalGitHub configured with FakeGitHubIssues
         """
-        from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
-        from erk_shared.gateway.time.fake import FakeTime
+        from erk_shared.fakes.github_issues import FakeGitHubIssues
+        from erk_shared.fakes.time import FakeTime
 
         return cls(
             time=time if time is not None else FakeTime(),

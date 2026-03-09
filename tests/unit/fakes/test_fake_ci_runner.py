@@ -9,7 +9,7 @@ from pathlib import Path
 
 import pytest
 
-from erk_shared.gateway.ci_runner.fake import FakeCIRunner
+from erk_shared.fakes.ci_runner import FakeCIRunner
 
 
 class TestFakeCIRunner:

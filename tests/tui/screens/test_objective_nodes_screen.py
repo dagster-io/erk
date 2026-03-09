@@ -4,13 +4,13 @@ from datetime import UTC, datetime
 
 from rich.text import Text
 
-from erk.tui.data.fake_provider import FakePlanDataProvider
 from erk.tui.data.types import PlanRowData
 from erk.tui.screens.objective_nodes_screen import ObjectiveNodesScreen, _build_table_rows
+from erk_shared.fakes.plan_data_provider import make_plan_row
+from erk_shared.fakes.plan_service import FakePlanService
 from erk_shared.gateway.github.metadata.dependency_graph import ObjectiveNode
 from erk_shared.gateway.github.metadata.roadmap import RoadmapNode, RoadmapPhase
-from erk_shared.gateway.plan_data_provider.fake import make_plan_row
-from erk_shared.gateway.plan_service.fake import FakePlanService
+from tests.fakes.tui_plan_data_provider import FakePlanDataProvider
 
 
 def _rows_from(

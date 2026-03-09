@@ -7,10 +7,10 @@ from click.testing import CliRunner
 
 from erk.cli.cli import cli
 from erk.cli.github_parsing import parse_issue_identifier
+from erk_shared.fakes.git import FakeGit
+from erk_shared.fakes.github import FakeLocalGitHub
+from erk_shared.fakes.github_issues import FakeGitHubIssues
 from erk_shared.gateway.git.abc import WorktreeInfo
-from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeLocalGitHub
-from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import PRReference
 from erk_shared.gateway.github.types import PRDetails
 from tests.test_utils.context_builders import build_workspace_test_context

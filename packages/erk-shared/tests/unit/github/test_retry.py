@@ -4,13 +4,13 @@ from __future__ import annotations
 
 import pytest
 
+from erk_shared.fakes.time import FakeTime
 from erk_shared.gateway.github.retry import (
     RETRY_DELAYS,
     RetriesExhausted,
     RetryRequested,
     with_retries,
 )
-from erk_shared.gateway.time.fake import FakeTime
 
 
 def test_success_on_first_attempt():

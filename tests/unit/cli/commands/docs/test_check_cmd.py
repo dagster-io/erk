@@ -9,7 +9,7 @@ from click.testing import CliRunner
 
 from erk.cli.cli import cli
 from erk_shared.context.testing import context_for_test
-from erk_shared.gateway.agent_docs.fake import FakeAgentDocs
+from erk_shared.fakes.agent_docs import FakeAgentDocs
 
 VALID_DOC = """\
 ---

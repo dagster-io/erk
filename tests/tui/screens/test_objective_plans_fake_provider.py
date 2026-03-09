@@ -1,6 +1,6 @@
 """Tests for FakePlanDataProvider.fetch_plans_for_objective()."""
 
-from erk_shared.gateway.plan_data_provider.fake import FakePlanDataProvider, make_plan_row
+from erk_shared.fakes.plan_data_provider import FakePlanDataProvider, make_plan_row
 
 
 def test_fetch_plans_for_objective_filters_by_objective_issue() -> None:

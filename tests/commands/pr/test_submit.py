@@ -10,12 +10,12 @@ from pathlib import Path
 from click.testing import CliRunner
 
 from erk.cli.commands.pr import pr_group
+from erk_shared.fakes.git import FakeGit
+from erk_shared.fakes.github import FakeLocalGitHub
+from erk_shared.fakes.github_issues import FakeGitHubIssues
+from erk_shared.fakes.graphite import FakeGraphite
 from erk_shared.gateway.git.abc import BranchDivergence
-from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeLocalGitHub
-from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
-from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.gateway.graphite.types import BranchMetadata
 from tests.fakes.prompt_executor import FakePromptExecutor
 from tests.test_utils.context_builders import build_workspace_test_context
@@ -1281,7 +1281,7 @@ def test_pr_submit_shows_plan_context_phase() -> None:
     """
     from datetime import UTC, datetime
 
-    from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+    from erk_shared.fakes.github_issues import FakeGitHubIssues
     from erk_shared.gateway.github.issues.types import IssueComment, IssueInfo
 
     runner = CliRunner()
@@ -1430,7 +1430,7 @@ def test_pr_submit_shows_plan_context_with_objective() -> None:
     """
     from datetime import UTC, datetime
 
-    from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+    from erk_shared.fakes.github_issues import FakeGitHubIssues
     from erk_shared.gateway.github.issues.types import IssueComment, IssueInfo
 
     runner = CliRunner()

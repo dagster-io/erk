@@ -13,11 +13,11 @@ from erk.cli.ensure import UserFacingCliError
 from erk.core.context import context_for_test
 from erk.core.repo_discovery import RepoContext
 from erk.core.worktree_pool import PoolState, SlotAssignment, load_pool_state, save_pool_state
+from erk_shared.fakes.git import FakeGit
+from erk_shared.fakes.graphite import FakeGraphite
 from erk_shared.gateway.git.abc import WorktreeInfo
-from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.gateway.github.types import GitHubRepoId
 from erk_shared.gateway.graphite.disabled import GraphiteDisabled, GraphiteDisabledReason
-from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.gateway.graphite.types import BranchMetadata
 from tests.fakes.script_writer import FakeScriptWriter
 

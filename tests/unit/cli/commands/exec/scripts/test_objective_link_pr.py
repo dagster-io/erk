@@ -8,8 +8,8 @@ from click.testing import CliRunner
 
 from erk.cli.commands.exec.scripts.objective_link_pr import objective_link_pr
 from erk_shared.context.context import ErkContext
-from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+from erk_shared.fakes.git import FakeGit
+from erk_shared.fakes.github_issues import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueComment, IssueInfo
 from erk_shared.impl_folder import get_impl_dir
 

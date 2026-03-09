@@ -36,13 +36,13 @@ from erk_shared.context.types import GlobalConfig as GlobalConfig
 from erk_shared.context.types import LoadedConfig as LoadedConfig
 from erk_shared.context.types import NoRepoSentinel as NoRepoSentinel
 from erk_shared.context.types import RepoContext as RepoContext
-
-# Import ABCs and fakes from erk_shared.core
-from erk_shared.core.fakes import FakeObjectiveListService, FakePlanListService
 from erk_shared.core.objective_list_service import ObjectiveListService
 from erk_shared.core.plan_list_service import PlanListService
 from erk_shared.core.prompt_executor import PromptExecutor
 from erk_shared.core.script_writer import ScriptWriter
+
+# Import ABCs and fakes from erk_shared.core
+from erk_shared.fakes.core import FakeObjectiveListService, FakePlanListService
 from erk_shared.gateway.agent_docs.abc import AgentDocs
 from erk_shared.gateway.agent_docs.real import RealAgentDocs
 from erk_shared.gateway.agent_launcher.abc import AgentLauncher
@@ -152,21 +152,21 @@ def minimal_context(git: Git, cwd: Path, dry_run: bool = False) -> ErkContext:
     from tests.fakes.prompt_executor import FakePromptExecutor
     from tests.fakes.script_writer import FakeScriptWriter
 
-    from erk_shared.gateway.agent_launcher.fake import FakeAgentLauncher
-    from erk_shared.gateway.claude_installation.fake import FakeClaudeInstallation
-    from erk_shared.gateway.cmux.fake import FakeCmux
-    from erk_shared.gateway.codespace.fake import FakeCodespace
-    from erk_shared.gateway.codespace_registry.fake import FakeCodespaceRegistry
-    from erk_shared.gateway.completion.fake import FakeCompletion
-    from erk_shared.gateway.console.fake import FakeConsole
-    from erk_shared.gateway.erk_installation.fake import FakeErkInstallation
-    from erk_shared.gateway.github.fake import FakeLocalGitHub
-    from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
-    from erk_shared.gateway.github_admin.fake import FakeGitHubAdmin
-    from erk_shared.gateway.graphite.branch_ops.fake import FakeGraphiteBranchOps
-    from erk_shared.gateway.graphite.fake import FakeGraphite
-    from erk_shared.gateway.shell.fake import FakeShell
-    from erk_shared.gateway.time.fake import FakeTime
+    from erk_shared.fakes.agent_launcher import FakeAgentLauncher
+    from erk_shared.fakes.claude_installation import FakeClaudeInstallation
+    from erk_shared.fakes.cmux import FakeCmux
+    from erk_shared.fakes.codespace import FakeCodespace
+    from erk_shared.fakes.codespace_registry import FakeCodespaceRegistry
+    from erk_shared.fakes.completion import FakeCompletion
+    from erk_shared.fakes.console import FakeConsole
+    from erk_shared.fakes.erk_installation import FakeErkInstallation
+    from erk_shared.fakes.github import FakeLocalGitHub
+    from erk_shared.fakes.github_admin import FakeGitHubAdmin
+    from erk_shared.fakes.github_issues import FakeGitHubIssues
+    from erk_shared.fakes.graphite import FakeGraphite
+    from erk_shared.fakes.graphite_branch_ops import FakeGraphiteBranchOps
+    from erk_shared.fakes.shell import FakeShell
+    from erk_shared.fakes.time import FakeTime
 
     fake_issues = FakeGitHubIssues()
     fake_github = FakeLocalGitHub(issues_gateway=fake_issues)
@@ -184,8 +184,8 @@ def minimal_context(git: Git, cwd: Path, dry_run: bool = False) -> ErkContext:
     fake_time = FakeTime()
 
     # Import here to avoid issues during module initialization
-    from erk_shared.gateway.agent_docs.fake import FakeAgentDocs
-    from erk_shared.gateway.http.fake import FakeHttpClient
+    from erk_shared.fakes.agent_docs import FakeAgentDocs
+    from erk_shared.fakes.http import FakeHttpClient
 
     return ErkContext(
         git=git,
@@ -291,25 +291,25 @@ def context_for_test(
     from tests.fakes.script_writer import FakeScriptWriter
     from tests.test_utils.paths import sentinel_path
 
-    from erk_shared.gateway.agent_launcher.fake import FakeAgentLauncher
-    from erk_shared.gateway.claude_installation.fake import FakeClaudeInstallation
-    from erk_shared.gateway.cmux.fake import FakeCmux
-    from erk_shared.gateway.codespace.fake import FakeCodespace
-    from erk_shared.gateway.codespace_registry.fake import FakeCodespaceRegistry
-    from erk_shared.gateway.completion.fake import FakeCompletion
-    from erk_shared.gateway.console.fake import FakeConsole
-    from erk_shared.gateway.erk_installation.fake import FakeErkInstallation
-    from erk_shared.gateway.git.fake import FakeGit
-    from erk_shared.gateway.github.fake import FakeLocalGitHub
-    from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
-    from erk_shared.gateway.github_admin.fake import FakeGitHubAdmin
+    from erk_shared.fakes.agent_launcher import FakeAgentLauncher
+    from erk_shared.fakes.claude_installation import FakeClaudeInstallation
+    from erk_shared.fakes.cmux import FakeCmux
+    from erk_shared.fakes.codespace import FakeCodespace
+    from erk_shared.fakes.codespace_registry import FakeCodespaceRegistry
+    from erk_shared.fakes.completion import FakeCompletion
+    from erk_shared.fakes.console import FakeConsole
+    from erk_shared.fakes.erk_installation import FakeErkInstallation
+    from erk_shared.fakes.git import FakeGit
+    from erk_shared.fakes.github import FakeLocalGitHub
+    from erk_shared.fakes.github_admin import FakeGitHubAdmin
+    from erk_shared.fakes.github_issues import FakeGitHubIssues
+    from erk_shared.fakes.graphite import FakeGraphite
+    from erk_shared.fakes.graphite_branch_ops import FakeGraphiteBranchOps
+    from erk_shared.fakes.http import FakeHttpClient
+    from erk_shared.fakes.shell import FakeShell
+    from erk_shared.fakes.time import FakeTime
     from erk_shared.gateway.graphite.branch_ops.dry_run import DryRunGraphiteBranchOps
-    from erk_shared.gateway.graphite.branch_ops.fake import FakeGraphiteBranchOps
     from erk_shared.gateway.graphite.dry_run import DryRunGraphite
-    from erk_shared.gateway.graphite.fake import FakeGraphite
-    from erk_shared.gateway.http.fake import FakeHttpClient
-    from erk_shared.gateway.shell.fake import FakeShell
-    from erk_shared.gateway.time.fake import FakeTime
 
     if git is None:
         git = FakeGit()
@@ -335,7 +335,7 @@ def context_for_test(
         github_admin = FakeGitHubAdmin()
 
     if plan_store is None:
-        from erk_shared.gateway.time.fake import FakeTime
+        from erk_shared.fakes.time import FakeTime
 
         plan_store = PlannedPRBackend(github, issues, time=FakeTime())
 
@@ -384,7 +384,7 @@ def context_for_test(
         agent_launcher = FakeAgentLauncher()
 
     if agent_docs is None:
-        from erk_shared.gateway.agent_docs.fake import FakeAgentDocs
+        from erk_shared.fakes.agent_docs import FakeAgentDocs
 
         agent_docs = FakeAgentDocs(files={}, has_docs_dir=True)
 

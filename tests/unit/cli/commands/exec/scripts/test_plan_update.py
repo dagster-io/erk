@@ -7,14 +7,14 @@ from click.testing import CliRunner
 
 from erk.cli.commands.exec.scripts.plan_update import plan_update
 from erk_shared.context.context import ErkContext
-from erk_shared.gateway.claude_installation.fake import FakeClaudeInstallation
-from erk_shared.gateway.git.fake import FakeGit
+from erk_shared.fakes.claude_installation import FakeClaudeInstallation
+from erk_shared.fakes.git import FakeGit
+from erk_shared.fakes.github import FakeLocalGitHub
+from erk_shared.fakes.github_issues import FakeGitHubIssues
+from erk_shared.fakes.time import FakeTime
 from erk_shared.gateway.git.remote_ops.types import PushError
-from erk_shared.gateway.github.fake import FakeLocalGitHub
-from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueComment, IssueInfo
 from erk_shared.gateway.github.types import PRDetails
-from erk_shared.gateway.time.fake import FakeTime
 from erk_shared.plan_store.planned_pr import PlannedPRBackend
 from erk_shared.plan_store.planned_pr_lifecycle import IMPL_CONTEXT_DIR
 from tests.test_utils.plan_helpers import (

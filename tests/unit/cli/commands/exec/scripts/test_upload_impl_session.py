@@ -10,7 +10,7 @@ from click.testing import CliRunner
 
 from erk.cli.commands.exec.scripts.upload_impl_session import upload_impl_session
 from erk_shared.context.context import ErkContext
-from erk_shared.gateway.git.fake import FakeGit
+from erk_shared.fakes.git import FakeGit
 from erk_shared.impl_folder import get_impl_dir, save_plan_ref
 
 BRANCH = "feature/test-branch"

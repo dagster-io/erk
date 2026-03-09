@@ -8,7 +8,7 @@ discovers and provides available commands.
 from erk.tui.commands.registry import get_available_commands
 from erk.tui.commands.types import CommandContext
 from erk.tui.views.types import ViewMode
-from erk_shared.gateway.plan_data_provider.fake import make_plan_row
+from erk_shared.fakes.plan_data_provider import make_plan_row
 
 
 def test_provider_includes_action_commands() -> None:

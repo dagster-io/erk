@@ -5,10 +5,10 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from pathlib import Path
 
-from erk_shared.gateway.github.fake import FakeLocalGitHub
+from erk_shared.fakes.github import FakeLocalGitHub
+from erk_shared.fakes.time import FakeTime
 from erk_shared.gateway.github.label_ops import AddLabelsResult, add_labels_resilient
 from erk_shared.gateway.github.types import PRDetails
-from erk_shared.gateway.time.fake import FakeTime
 
 
 def _make_pr_details(*, number: int = 42) -> PRDetails:

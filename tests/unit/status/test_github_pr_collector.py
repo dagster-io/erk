@@ -7,10 +7,10 @@ import pytest
 
 from erk.status.collectors.github import GitHubPRCollector
 from erk_shared.context.types import GlobalConfig
-from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeLocalGitHub
+from erk_shared.fakes.git import FakeGit
+from erk_shared.fakes.github import FakeLocalGitHub
+from erk_shared.fakes.graphite import FakeGraphite
 from erk_shared.gateway.github.types import PullRequestInfo
-from erk_shared.gateway.graphite.fake import FakeGraphite
 from tests.fakes.context import create_test_context
 
 

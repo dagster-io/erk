@@ -5,8 +5,8 @@ from datetime import UTC, datetime
 from click.testing import CliRunner
 
 from erk.cli.cli import cli
-from erk_shared.gateway.github.fake import FakeLocalGitHub
-from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+from erk_shared.fakes.github import FakeLocalGitHub
+from erk_shared.fakes.github_issues import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.plan_store.types import Plan, PlanState
 from tests.test_utils.context_builders import (
@@ -417,7 +417,7 @@ def test_plan_list_sort_activity_with_local_branch() -> None:
         )
 
         # Build FakeGit with worktree and branch commit times
-        from erk_shared.gateway.git.fake import FakeGit
+        from erk_shared.fakes.git import FakeGit
 
         git = FakeGit(
             worktrees={
@@ -539,7 +539,7 @@ def test_plan_list_sort_activity_orders_by_recency() -> None:
         )
 
         # Build FakeGit - issue 2's branch has MORE RECENT commit
-        from erk_shared.gateway.git.fake import FakeGit
+        from erk_shared.fakes.git import FakeGit
 
         git = FakeGit(
             worktrees={

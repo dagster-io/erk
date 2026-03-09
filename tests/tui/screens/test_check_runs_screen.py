@@ -7,9 +7,9 @@ from erk.tui.app import ErkDashApp
 from erk.tui.data.types import PlanFilters
 from erk.tui.formatting.ci_checks import format_check_runs
 from erk.tui.screens.check_runs_screen import CheckRunsScreen
+from erk_shared.fakes.plan_data_provider import FakePlanDataProvider, make_plan_row
+from erk_shared.fakes.plan_service import FakePlanService
 from erk_shared.gateway.github.types import PRCheckRun
-from erk_shared.gateway.plan_data_provider.fake import FakePlanDataProvider, make_plan_row
-from erk_shared.gateway.plan_service.fake import FakePlanService
 
 
 def _make_check_run(

@@ -10,7 +10,7 @@ from erk_shared.entity_store.log import (
     entity_log_append,
     entity_log_append_content,
 )
-from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+from erk_shared.fakes.github_issues import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.metadata.core import (
     create_metadata_block,

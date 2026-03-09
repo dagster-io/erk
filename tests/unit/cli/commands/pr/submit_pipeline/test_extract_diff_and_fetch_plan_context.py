@@ -9,7 +9,7 @@ from erk.cli.commands.pr.submit_pipeline import (
 )
 from erk.core.context import RepoContext, context_for_test
 from erk.core.plan_context_provider import PlanContext
-from erk_shared.gateway.git.fake import FakeGit
+from erk_shared.fakes.git import FakeGit
 from erk_shared.gateway.github.types import GitHubRepoId
 
 

@@ -7,7 +7,7 @@ from erk.cli.commands.pr.submit_pipeline import (
     commit_wip,
 )
 from erk.core.context import context_for_test
-from erk_shared.gateway.git.fake import FakeGit
+from erk_shared.fakes.git import FakeGit
 
 
 def _make_state(

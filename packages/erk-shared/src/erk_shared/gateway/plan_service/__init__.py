@@ -3,5 +3,4 @@
 Import from submodules:
 - abc: PlanService
 - real: RealPlanService
-- fake: FakePlanService
 """

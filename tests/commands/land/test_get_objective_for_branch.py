@@ -9,7 +9,7 @@ from pathlib import Path
 
 from erk.cli.commands.objective_helpers import get_objective_for_branch
 from erk.core.context import context_for_test
-from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+from erk_shared.fakes.github_issues import FakeGitHubIssues
 
 
 def test_extracts_objective_from_plnd_branch(tmp_path: Path) -> None:

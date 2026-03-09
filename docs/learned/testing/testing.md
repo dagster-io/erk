@@ -158,7 +158,7 @@ On macOS, `/tmp` and `/var` are symlinks to `/private/tmp` and `/private/var`. W
 FakeWorktree (in `packages/erk-shared/src/erk_shared/gateway/git/worktree/fake.py`) uses string-based error injection via constructor parameters. Errors raise `RuntimeError`:
 
 ```python
-from erk_shared.gateway.git.worktree.fake import FakeWorktree
+from erk_shared.fakes.git_worktree import FakeWorktree
 
 # Inject error for add_worktree
 fake_worktree = FakeWorktree(
@@ -199,7 +199,7 @@ See `FakeGitBranchOps` class in `packages/erk-shared/src/erk_shared/gateway/git/
 This fake supports error injection via the `create_branch_error` constructor parameter, which accepts a `BranchAlreadyExists` instance:
 
 ```python
-from erk_shared.gateway.git.branch_ops.fake import FakeGitBranchOps
+from erk_shared.fakes.git_branch_ops import FakeGitBranchOps
 from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists
 
 fake = FakeGitBranchOps(
@@ -419,7 +419,7 @@ Source: `packages/erk-shared/src/erk_shared/gateway/console/fake.py`
 All parameters are required keyword-only arguments:
 
 ```python
-from erk_shared.gateway.console.fake import FakeConsole
+from erk_shared.fakes.console import FakeConsole
 
 FakeConsole(
     is_interactive=True,        # Whether stdin is TTY
@@ -483,10 +483,10 @@ class GraphiteBranchManager(BranchManager):
 ### Test Setup Pattern
 
 ```python
-from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.graphite.fake import FakeGraphite
-from erk_shared.gateway.graphite.branch_ops.fake import FakeGraphiteBranchOps
-from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.fakes.git import FakeGit
+from erk_shared.fakes.graphite import FakeGraphite
+from erk_shared.fakes.graphite_branch_ops import FakeGraphiteBranchOps
+from erk_shared.fakes.github import FakeGitHub
 from erk_shared.gateway.branch_manager.graphite import GraphiteBranchManager
 
 branch_manager = GraphiteBranchManager(

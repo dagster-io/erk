@@ -5,7 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from erk_shared.context.types import GlobalConfig
-from erk_shared.gateway.erk_installation.fake import FakeErkInstallation
+from erk_shared.fakes.erk_installation import FakeErkInstallation
 from erk_shared.gateway.graphite.disabled import GraphiteDisabled, GraphiteDisabledReason
 from erk_shared.gateway.graphite.real import RealGraphite
 from erk_statusline.context import resolve_graphite

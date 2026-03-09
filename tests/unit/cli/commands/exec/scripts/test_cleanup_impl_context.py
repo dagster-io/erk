@@ -10,7 +10,7 @@ from click.testing import CliRunner
 
 from erk.cli.commands.exec.scripts.cleanup_impl_context import cleanup_impl_context
 from erk_shared.context.context import ErkContext
-from erk_shared.gateway.git.fake import FakeGit
+from erk_shared.fakes.git import FakeGit
 from erk_shared.plan_store.planned_pr_lifecycle import IMPL_CONTEXT_DIR
 
 

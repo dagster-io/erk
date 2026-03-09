@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+from erk_shared.fakes.github_issues import FakeGitHubIssues
 from erk_shared.impl_folder import (
     create_impl_folder,
     get_impl_dir,

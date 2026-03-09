@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from erk_shared.gateway.git.commit_ops.fake import FakeGitCommitOps
+from erk_shared.fakes.git_commit_ops import FakeGitCommitOps
 
 
 def test_read_file_from_ref_returns_configured_content() -> None:

@@ -8,10 +8,10 @@ from erk.core.commit_message_generator import (
     CommitMessageResult,
 )
 from erk.core.plan_context_provider import PlanContext
-from erk_shared.core.fakes import FakePromptExecutor
 from erk_shared.core.prompt_executor import PromptResult
+from erk_shared.fakes.core import FakePromptExecutor
+from erk_shared.fakes.time import FakeTime
 from erk_shared.gateway.gt.events import CompletionEvent, ProgressEvent
-from erk_shared.gateway.time.fake import FakeTime
 
 
 def _consume_generator(

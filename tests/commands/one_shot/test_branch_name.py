@@ -3,7 +3,7 @@
 import re
 
 from erk.cli.commands.one_shot_remote_dispatch import generate_branch_name
-from erk_shared.gateway.time.fake import FakeTime
+from erk_shared.fakes.time import FakeTime
 
 
 def test_generate_branch_name_basic() -> None:

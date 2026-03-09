@@ -3,5 +3,4 @@
 Import from submodules:
 - abc: PlanDataProvider
 - real: RealPlanDataProvider
-- fake: FakePlanDataProvider, make_plan_row
 """

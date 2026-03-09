@@ -18,9 +18,9 @@ from erk.cli.commands.exec.scripts.generate_pr_address_summary import (
     generate_pr_address_summary,
 )
 from erk_shared.context.context import ErkContext
-from erk_shared.core.fakes import FakePromptExecutor
 from erk_shared.core.prompt_executor import PromptResult
-from erk_shared.gateway.git.fake import FakeGit
+from erk_shared.fakes.core import FakePromptExecutor
+from erk_shared.fakes.git import FakeGit
 
 
 def test_build_summary_prompt_contains_diff() -> None:

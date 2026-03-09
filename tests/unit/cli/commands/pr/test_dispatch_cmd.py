@@ -5,7 +5,7 @@ from pathlib import Path
 from erk.cli.commands.pr.dispatch_cmd import _detect_plan_number_from_context
 from erk_shared.context.testing import context_for_test
 from erk_shared.context.types import RepoContext
-from erk_shared.gateway.github.fake import FakeLocalGitHub
+from erk_shared.fakes.github import FakeLocalGitHub
 from erk_shared.gateway.github.types import PRDetails
 
 

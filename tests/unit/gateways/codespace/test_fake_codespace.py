@@ -2,7 +2,7 @@
 
 import pytest
 
-from erk_shared.gateway.codespace.fake import FakeCodespace, SSHCall
+from erk_shared.fakes.codespace import FakeCodespace, SSHCall
 
 
 class TestFakeCodespaceRunSSHCommand:

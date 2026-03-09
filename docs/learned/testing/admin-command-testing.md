@@ -22,7 +22,7 @@ Testing patterns for `erk admin` subcommands using the fake-driven architecture.
 `FakeGitHubAdmin` accepts keyword arguments to configure initial state:
 
 ```python
-from erk_shared.gateway.github_admin.fake import FakeGitHubAdmin
+from erk_shared.fakes.github_admin import FakeGitHubAdmin
 
 admin = FakeGitHubAdmin(
     workflow_permissions={"can_approve_pull_request_reviews": True},

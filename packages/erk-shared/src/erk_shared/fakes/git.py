@@ -10,6 +10,20 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import NamedTuple
 
+from erk_shared.fakes.git_analysis_ops import FakeGitAnalysisOps
+from erk_shared.fakes.git_branch_ops import FakeGitBranchOps
+from erk_shared.fakes.git_commit_ops import (
+    BranchCommitRecord,
+    CommitRecord,
+    FakeGitCommitOps,
+)
+from erk_shared.fakes.git_config_ops import ConfigSetRecord, FakeGitConfigOps
+from erk_shared.fakes.git_rebase_ops import FakeGitRebaseOps
+from erk_shared.fakes.git_remote_ops import FakeGitRemoteOps
+from erk_shared.fakes.git_repo_ops import FakeGitRepoOps
+from erk_shared.fakes.git_status_ops import FakeGitStatusOps
+from erk_shared.fakes.git_tag_ops import FakeGitTagOps
+from erk_shared.fakes.git_worktree import FakeWorktree
 from erk_shared.gateway.git.abc import (
     BranchDivergence,
     BranchSyncInfo,
@@ -18,31 +32,17 @@ from erk_shared.gateway.git.abc import (
     WorktreeInfo,
 )
 from erk_shared.gateway.git.analysis_ops.abc import GitAnalysisOps
-from erk_shared.gateway.git.analysis_ops.fake import FakeGitAnalysisOps
 from erk_shared.gateway.git.branch_ops.abc import GitBranchOps
-from erk_shared.gateway.git.branch_ops.fake import FakeGitBranchOps
 from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists
 from erk_shared.gateway.git.commit_ops.abc import GitCommitOps
-from erk_shared.gateway.git.commit_ops.fake import (
-    BranchCommitRecord,
-    CommitRecord,
-    FakeGitCommitOps,
-)
 from erk_shared.gateway.git.config_ops.abc import GitConfigOps
-from erk_shared.gateway.git.config_ops.fake import ConfigSetRecord, FakeGitConfigOps
 from erk_shared.gateway.git.rebase_ops.abc import GitRebaseOps
-from erk_shared.gateway.git.rebase_ops.fake import FakeGitRebaseOps
 from erk_shared.gateway.git.remote_ops.abc import GitRemoteOps
-from erk_shared.gateway.git.remote_ops.fake import FakeGitRemoteOps
 from erk_shared.gateway.git.remote_ops.types import PullRebaseError, PushError
 from erk_shared.gateway.git.repo_ops.abc import GitRepoOps
-from erk_shared.gateway.git.repo_ops.fake import FakeGitRepoOps
 from erk_shared.gateway.git.status_ops.abc import GitStatusOps
-from erk_shared.gateway.git.status_ops.fake import FakeGitStatusOps
 from erk_shared.gateway.git.tag_ops.abc import GitTagOps
-from erk_shared.gateway.git.tag_ops.fake import FakeGitTagOps
 from erk_shared.gateway.git.worktree.abc import Worktree
-from erk_shared.gateway.git.worktree.fake import FakeWorktree
 
 
 class PushedBranch(NamedTuple):

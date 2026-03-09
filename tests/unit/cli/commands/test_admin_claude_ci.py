@@ -3,7 +3,7 @@
 from click.testing import CliRunner
 
 from erk.cli.cli import cli
-from erk_shared.gateway.github_admin.fake import FakeGitHubAdmin
+from erk_shared.fakes.github_admin import FakeGitHubAdmin
 from tests.test_utils.env_helpers import erk_isolated_fs_env
 
 # --- Status display tests ---

@@ -5,11 +5,11 @@ from datetime import datetime
 from click.testing import CliRunner
 
 from erk.cli.cli import cli
-from erk_shared.core.fakes import FakePlanListService
 from erk_shared.core.plan_list_service import PlanListData
-from erk_shared.gateway.console.fake import FakeConsole
+from erk_shared.fakes.console import FakeConsole
+from erk_shared.fakes.core import FakePlanListService
+from erk_shared.fakes.remote_github import FakeRemoteGitHub
 from erk_shared.gateway.github.issues.types import IssueInfo
-from erk_shared.gateway.remote_github.fake import FakeRemoteGitHub
 from erk_shared.plan_store.types import Plan, PlanState
 from tests.fakes.prompt_executor import FakePromptExecutor
 from tests.test_utils.context_builders import build_workspace_test_context

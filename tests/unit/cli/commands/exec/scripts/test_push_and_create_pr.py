@@ -7,9 +7,9 @@ from click.testing import CliRunner
 
 from erk.cli.commands.exec.scripts.push_and_create_pr import push_and_create_pr
 from erk.core.context import context_for_test
+from erk_shared.fakes.git import FakeGit
+from erk_shared.fakes.github import FakeLocalGitHub
 from erk_shared.gateway.git.abc import BranchDivergence
-from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.types import PRDetails
 
 

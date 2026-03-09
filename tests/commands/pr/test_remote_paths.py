@@ -7,12 +7,12 @@ from click.testing import CliRunner
 from erk.cli.cli import cli
 from erk.core.context import context_for_test
 from erk_shared.context.types import NoRepoSentinel
-from erk_shared.core.fakes import FakePlanListService
 from erk_shared.core.plan_list_service import PlanListData
-from erk_shared.gateway.console.fake import FakeConsole
+from erk_shared.fakes.console import FakeConsole
+from erk_shared.fakes.core import FakePlanListService
+from erk_shared.fakes.remote_github import FakeRemoteGitHub
 from erk_shared.gateway.github.issues.types import IssueInfo, PRReference
 from erk_shared.gateway.github.metadata.core import MetadataBlock, render_metadata_block
-from erk_shared.gateway.remote_github.fake import FakeRemoteGitHub
 from erk_shared.plan_store.planned_pr_lifecycle import build_plan_stage_body
 from erk_shared.plan_store.types import Plan, PlanState
 from tests.fakes.prompt_executor import FakePromptExecutor

@@ -4,12 +4,12 @@ This module provides utilities for tests that need to set up plan state.
 It converts Plan objects to PlannedPRBackend backed by FakeLocalGitHub.
 """
 
-from erk_shared.gateway.github.fake import FakeLocalGitHub
-from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+from erk_shared.fakes.github import FakeLocalGitHub
+from erk_shared.fakes.github_issues import FakeGitHubIssues
+from erk_shared.fakes.time import FakeTime
 from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.metadata.plan_header import format_plan_header_body
 from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
-from erk_shared.gateway.time.fake import FakeTime
 from erk_shared.plan_store.planned_pr import PlannedPRBackend
 from erk_shared.plan_store.planned_pr_lifecycle import (
     DETAILS_CLOSE,

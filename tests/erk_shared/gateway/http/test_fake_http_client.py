@@ -2,8 +2,8 @@
 
 import pytest
 
+from erk_shared.fakes.http import FakeHttpClient, RecordedRequest
 from erk_shared.gateway.http.abc import HttpError
-from erk_shared.gateway.http.fake import FakeHttpClient, RecordedRequest
 
 
 def test_patch_records_request() -> None:

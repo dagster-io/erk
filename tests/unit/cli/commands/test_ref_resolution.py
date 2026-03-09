@@ -7,7 +7,7 @@ import pytest
 
 from erk.cli.commands.ref_resolution import resolve_dispatch_ref
 from erk_shared.context.types import LoadedConfig
-from erk_shared.gateway.git.fake import FakeGit
+from erk_shared.fakes.git import FakeGit
 from tests.fakes.context import create_test_context
 
 

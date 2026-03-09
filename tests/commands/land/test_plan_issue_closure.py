@@ -11,7 +11,7 @@ from unittest.mock import patch
 
 from erk.cli.commands.objective_helpers import check_and_display_plan_issue_closure
 from erk.core.context import context_for_test
-from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+from erk_shared.fakes.github_issues import FakeGitHubIssues
 
 
 def test_returns_none_for_plnd_branch(tmp_path: Path) -> None:

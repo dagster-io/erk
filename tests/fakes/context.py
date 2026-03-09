@@ -12,12 +12,12 @@ from erk.core.context import (
 )
 from erk.core.prompt_executor import PromptExecutor
 from erk.core.script_writer import ScriptWriter
-from erk_shared.gateway.completion.fake import FakeCompletion
-from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeLocalGitHub
+from erk_shared.fakes.completion import FakeCompletion
+from erk_shared.fakes.git import FakeGit
+from erk_shared.fakes.github import FakeLocalGitHub
+from erk_shared.fakes.graphite import FakeGraphite
+from erk_shared.fakes.shell import FakeShell
 from erk_shared.gateway.github.issues.abc import GitHubIssues
-from erk_shared.gateway.graphite.fake import FakeGraphite
-from erk_shared.gateway.shell.fake import FakeShell
 
 
 def create_test_context(

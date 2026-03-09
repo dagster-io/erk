@@ -2,8 +2,8 @@
 
 from click.testing import CliRunner
 
+from erk_shared.fakes.github_admin import FakeGitHubAdmin
 from erk_shared.gateway.github.types import GitHubRepoId, GitHubRepoLocation
-from tests.fakes.github_admin import FakeGitHubAdmin
 from tests.test_utils.env_helpers import erk_inmem_env
 
 

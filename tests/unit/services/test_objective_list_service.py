@@ -4,11 +4,11 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from erk.core.services.objective_list_service import RealObjectiveListService
-from erk_shared.gateway.github.fake import FakeLocalGitHub
+from erk_shared.fakes.github import FakeLocalGitHub
+from erk_shared.fakes.http import FakeHttpClient
+from erk_shared.fakes.time import FakeTime
 from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.types import GitHubRepoId, GitHubRepoLocation, WorkflowRun
-from erk_shared.gateway.http.fake import FakeHttpClient
-from erk_shared.gateway.time.fake import FakeTime
 
 TEST_LOCATION = GitHubRepoLocation(root=Path("/test/repo"), repo_id=GitHubRepoId("owner", "repo"))
 

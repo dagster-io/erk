@@ -4,8 +4,8 @@ from pathlib import Path
 
 import pytest
 
-from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.graphite.fake import FakeGraphite
+from erk_shared.fakes.git import FakeGit
+from erk_shared.fakes.graphite import FakeGraphite
 from erk_shared.gateway.gt.cli import render_events
 from erk_shared.gateway.gt.operations.quick_submit import execute_quick_submit
 from erk_shared.gateway.gt.types import QuickSubmitError, QuickSubmitSuccess
