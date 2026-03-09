@@ -196,7 +196,7 @@ class TestResolveAllUnblocked:
             )
             ctx = build_workspace_test_context(env, git=git, issues=issues, remote_github=remote)
 
-            resolved = _resolve_all_unblocked(ctx, issue_ref="42")
+            resolved = _resolve_all_unblocked(ctx, issue_ref="42", target_repo=None)
 
             assert isinstance(resolved, ResolvedAllUnblocked)
             assert resolved.issue_number == 42
@@ -231,7 +231,7 @@ class TestResolveAllUnblocked:
             ctx = build_workspace_test_context(env, git=git, issues=issues, remote_github=remote)
 
             with pytest.raises(click.ClickException, match="no pending unblocked nodes"):
-                _resolve_all_unblocked(ctx, issue_ref="42")
+                _resolve_all_unblocked(ctx, issue_ref="42", target_repo=None)
 
 
 # ---------------------------------------------------------------------------
