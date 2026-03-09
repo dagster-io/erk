@@ -90,3 +90,9 @@ def test_execute_prompt_passthrough_raises() -> None:
             cwd=Path("/tmp"),
             dangerous=False,
         )
+
+
+def test_prompt_label_returns_anthropic_api() -> None:
+    """prompt_label property returns 'Anthropic API'."""
+    executor = AnthropicApiPromptExecutor()
+    assert executor.prompt_label == "Anthropic API"
