@@ -948,8 +948,10 @@ def test_list_prs_success(monkeypatch: MonkeyPatch) -> None:
         assert result["feature-a"].number == 123
         assert result["feature-a"].state == "OPEN"
         assert result["feature-a"].is_draft is False
+        assert result["feature-a"].head_branch == "feature-a"
         assert result["feature-b"].number == 456
         assert result["feature-b"].is_draft is True
+        assert result["feature-b"].head_branch == "feature-b"
 
 
 def test_list_prs_with_closed_state(monkeypatch: MonkeyPatch) -> None:
