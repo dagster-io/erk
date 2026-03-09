@@ -7,7 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-<!-- As of: ebba4e54f -->
+<!-- As of: bae59f09f -->
+
+### Major Changes
+
+- Add `--repo` flag to `erk launch` and `erk objective plan`, enabling remote workflow dispatch and planning without requiring a local git checkout (bae59f09f, c17f25a5f)
 
 ### Added
 
@@ -21,6 +25,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add "l" keyboard shortcut to launch launchpad from the objective nodes screen in TUI (24981a3ef)
 - Add `--branch/-b` option to `erk codespace connect` to specify which branch to checkout on the codespace (21e2ed535)
 - Add remote dispatch support to `erk pr dispatch` for dispatching implementation to remote repositories (4b7d7a400)
+- Add objective link insertion to PR body for better visibility of objective associations (c56e0626a)
+- Add progress output to `erk land` pipeline and stack commands showing real-time status (3aff883f4)
+- Add `erk launch consolidate-learn-plans` workflow for autonomous consolidation of outstanding learn plans (4eea8f29a)
 
 ### Changed
 
@@ -36,6 +43,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Simplify current-worktree commands by removing unnecessary shell activation (76d44ec28)
 - Harden `erk land` with stack landing support (`--stack`), child reparenting verification, and read-after-write checks for resilient PR landing (a8f5f010f)
 - Show per-file metadata in manifest summary output during `erk land` learn pipeline (9db8a24dd)
+- Rename dashboard "Planned PRs" to "PRs" and apply `erk-pr` label to all erk-submitted PRs, showing plan and code PRs in unified view (63134a17f)
+- Improve `erk pr rebase` to skip tracking check when Graphite restack is in progress, preventing stuck state during conflicts (166d63639)
 
 ### Fixed
 
@@ -44,6 +53,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix objective auto-close to reliably close objectives when all roadmap nodes are complete (cc3db5b69)
 - Fix `erk pr teleport --new-slot` to navigate to existing worktree instead of erroring when branch is already checked out (9d78e043d)
 - Fix file list indentation in manifest summary table for learn landing output (9d0149ad0)
+- Fix incremental dispatch not writing workflow dispatch metadata to plan-header, causing empty run columns in dashboard (aed52e300)
+- Fix `update_local_ref` desyncing checked-out worktrees, causing phantom modifications in `git status` after dispatch operations (1724e572e)
 
 ### Removed
 
