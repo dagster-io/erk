@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Fix: Add `anthropic_api_fast_path` to GlobalConfigSchema"
+}
