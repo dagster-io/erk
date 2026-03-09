@@ -77,13 +77,27 @@ erk exec update-objective-node <objective_number> --node <node_id> --status done
 
 This keeps the YAML accurate and ensures `all_complete` reflects the true state for Step 3.
 
-| Contradiction Type          | Example                                                      | Section to Update                             |
-| --------------------------- | ------------------------------------------------------------ | --------------------------------------------- |
-| **Decision override**       | Objective says "Use polling", PR implemented WebSockets      | Design Decisions                              |
-| **Scope change**            | Node says "Add 3 methods", PR only needed 2                  | Node description in roadmap                   |
-| **Architecture drift**      | Context says "config in config.py", PR moved it to settings/ | Implementation Context                        |
-| **Constraint invalidation** | Requirement listed is no longer valid                        | Implementation Context                        |
-| **New discovery**           | PR revealed a caching bug affecting future nodes             | Implementation Context or new Design Decision |
+| Contradiction Type          | Example                                                      | Section to Update                                            |
+| --------------------------- | ------------------------------------------------------------ | ------------------------------------------------------------ |
+| **Decision override**       | Objective says "Use polling", PR implemented WebSockets      | Design Decisions                                             |
+| **Scope change**            | Node says "Add 3 methods", PR only needed 2                  | Node description (via `update-objective-node --description`) |
+| **Naming divergence**       | Node says `@json_output`, PR implemented `@json_command`     | Node description (via `update-objective-node --description`) |
+| **Architecture drift**      | Context says "config in config.py", PR moved it to settings/ | Implementation Context                                       |
+| **Constraint invalidation** | Requirement listed is no longer valid                        | Implementation Context                                       |
+| **New discovery**           | PR revealed a caching bug affecting future nodes             | Implementation Context or new Design Decision                |
+
+**Node description reconciliation:** For each node in `roadmap.phases[].nodes[]`, compare the `description` against what the PR actually implemented:
+
+- **Done nodes** (from `node_updates` in Step 1): Did the implementation rename, reshape, or change scope? Update if the description no longer accurately describes what was built.
+- **Pending/in_progress nodes**: Did this PR change APIs, types, or patterns that make a future node's description inaccurate?
+
+For each stale description:
+
+```bash
+erk exec update-objective-node <objective_number> --node <node_id> --description "<corrected description>"
+```
+
+Keep descriptions concise (same style/length as existing nodes). Do node description updates _before_ prose updates, since `update-objective-node` re-renders the comment table.
 
 **If prose reconciliation found stale sections**, update the objective's first comment. Parse `objective_comment_id` from `objective.body`'s `objective-header` metadata block, then update:
 
