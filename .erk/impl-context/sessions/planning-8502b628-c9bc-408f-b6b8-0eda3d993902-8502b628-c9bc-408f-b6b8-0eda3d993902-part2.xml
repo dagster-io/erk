@@ -1,0 +1,14 @@
+<session>
+  <meta branch="plnd/O8832-launch-no-repo-remot-03-08-1454" />
+  <meta model="claude-opus-4-6" />
+  <tool_result tool="toolu_01SNrekig1WRqQxYEzPbBVXL">
+SESSION_ID=8502b628-c9bc-408f-b6b8-0eda3d993902
+SESSION_FILE=/Users/schrockn/.claude/projects/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-07/8502b628-c9bc-408f-b6b8-0eda3d993902.jsonl
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01QtqjTe2g3nAPYnL9BjF6Uy">
+    <param name="command">erk exec push-session --session-file "/Users/schrockn/.claude/projects/-Users-schrockn--er...[truncated 86 chars]...408f-b6b8-0eda3d993902" --stage planning --source local --plan-id 9021 2&gt;/dev/null || true</param>
+    <param name="description">Push planning session</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="303" cache_read_input_tokens="96245" output_tokens="215" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 303, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+</session>

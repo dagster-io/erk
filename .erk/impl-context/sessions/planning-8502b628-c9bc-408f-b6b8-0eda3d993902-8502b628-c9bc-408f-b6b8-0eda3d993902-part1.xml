@@ -1,0 +1,1065 @@
+<session>
+  <meta branch="plnd/O8832-launch-no-repo-remot-03-08-1454" />
+  <meta model="claude-opus-4-6" />
+  <user>i do not want a remote "mode" in this pr. i want a single code path. only different when there is a local repo is that we can infer target repo</user>
+  <usage input_tokens="3" cache_creation_input_tokens="14377" cache_read_input_tokens="9738" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 14377}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me understand the current state of the PR to see what needs to change.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="14377" cache_read_input_tokens="9738" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 14377}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01MXkrtNPR36u5DCikERLTCG">
+    <param name="command">git log --oneline master..HEAD</param>
+    <param name="description">Show commits on this branch vs master</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="14377" cache_read_input_tokens="9738" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 14377}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01MXkrtNPR36u5DCikERLTCG">
+02e941fbe Address PR #9019 review comments: LBYL patterns, code clarity, and test coverage
+70c1523b5 Auto-fix formatting (docs-sync + ruff + Prettier)
+e5b19c2b3 Trigger CI workflows
+d27d7956f Convert `erk launch` to @no_repo_required with --repo flag
+22ef8fccb Remove plan staging dirs before implementation
+4cb861bfb Add plan for PR #9019
+9c30ed600 Add plan: Plan: Convert `erk launch` to @no_repo_required with --repo flag
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01F4JjzpjiaipzLD58yUwoYA">
+    <param name="command">git diff master..HEAD --stat</param>
+    <param name="description">Show files changed vs master</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="14377" cache_read_input_tokens="9738" output_tokens="326" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 14377, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01F4JjzpjiaipzLD58yUwoYA">
+ .erk/impl-context/plan.md                          |  64 ---
+ .erk/impl-context/ref.json                         |  10 -
+ .../src/erk_shared/gateway/remote_github/abc.py    |  24 ++
+ .../src/erk_shared/gateway/remote_github/fake.py   |  15 +
+ .../src/erk_shared/gateway/remote_github/real.py   |  60 +++
+ .../src/erk_shared/gateway/remote_github/types.py  |  29 ++
+ src/erk/cli/commands/launch_cmd.py                 | 393 +++++++++++++++++-
+ tests/commands/launch/test_launch_remote_paths.py  | 442 +++++++++++++++++++++
+ .../remote_github/test_fake_remote_github.py       |  52 +++
+ .../remote_github/test_real_remote_github.py       | 132 +++++-
+ 10 files changed, 1142 insertions(+), 79 deletions(-)
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Pu5Zig6vsxn9WBGjSasAdG">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-07/src/erk/cli/commands/launch_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="745" cache_read_input_tokens="24115" output_tokens="93" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 745, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Pu5Zig6vsxn9WBGjSasAdG">
+     1→"""Dispatch GitHub Actions workflows via unified interface.
+     2→
+     3→Usage examples:
+     4→    erk launch pr-address --pr 456
+     5→    erk launch pr-rebase --pr 456
+     6→    erk launch pr-rebase --pr 456 --no-squash
+     7→    erk launch plan-implement --issue 789
+     8→    erk launch learn --issue 789
+     9→    erk launch one-shot --pr 456 --prompt "fix the auth bug"
+    10→    erk launch one-shot --pr 456 -f prompt.md
+    11→    erk launch pr-rebase --pr 456 --repo owner/repo   # remote mode
+    12→"""
+    13→
+    14→from pathlib import Path
+    15→
+    16→import click
+    17→
+    18→from erk.cli.commands.pr.metadata_helpers import maybe_update_plan_dispatch_metadata
+    19→from erk.cli.commands.ref_resolution import resolve_dispatch_ref
+    20→from erk.cli.constants import WORKFLOW_COMMAND_MAP
+    21→from erk.cli.ensure import Ensure
+    22→from erk.cli.repo_resolution import get_remote_github, repo_option, resolve_owner_repo
+    23→from erk.core.context import ErkContext
+    24→from erk.core.repo_discovery import NoRepoSentinel, RepoContext
+    25→from erk_shared.gateway.github.types import PRNotFound
+    26→from erk_shared.gateway.remote_github.abc import RemoteGitHub
+    27→from erk_shared.gateway.remote_github.types import RemotePRNotFound
+    28→from erk_shared.output.output import user_output
+    29→
+    30→
+
+... [887 lines omitted] ...
+
+    69→        click.UsageError: If workflow name is not recognized
+    73→        raise click.UsageError(
+   294→    raise click.UsageError(
+   708→        raise click.UsageError(
+   714→        raise click.UsageError(f"Unknown workflow: {workflow_name}")
+   836→            raise click.UsageError("--ref-current cannot be used in remote mode (no local repo)")
+   857→    _ = _get_workflow_file(workflow_name)  # Raises UsageError if invalid
+   916→        raise click.UsageError(f"Unknown workflow: {workflow_name}")
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="11239" cache_read_input_tokens="24860" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 11239}" output_tokens="13" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me explore the key supporting files to understand the full picture.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="11239" cache_read_input_tokens="24860" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 11239}" output_tokens="13" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_014B7PJvtcmmnjTZ3eRtdPEx">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-07/src/erk/cli/repo_resolution.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="11239" cache_read_input_tokens="24860" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 11239}" output_tokens="13" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014B7PJvtcmmnjTZ3eRtdPEx">
+     1→"""Shared --repo infrastructure for CLI commands.
+     2→
+     3→Provides helpers for resolving owner/repo from either a --repo flag
+     4→or local git context, and constructing RemoteGitHub instances.
+     5→"""
+     6→
+     7→import click
+     8→
+     9→from erk.cli.ensure import UserFacingCliError
+    10→from erk.core.context import ErkContext, NoRepoSentinel
+    11→from erk_shared.gateway.remote_github.abc import RemoteGitHub
+    12→from erk_shared.gateway.remote_github.real import RealRemoteGitHub
+    13→
+    14→
+    15→def resolve_owner_repo(
+    16→    ctx: ErkContext,
+    17→    *,
+    18→    target_repo: str | None,
+    19→) -&gt; tuple[str, str]:
+    20→    """Resolve owner/repo from --repo flag or local git context.
+    21→
+    22→    Args:
+    23→        ctx: ErkContext
+    24→        target_repo: Optional "owner/repo" string from --repo flag
+    25→
+    26→    Returns:
+    27→        Tuple of (owner, repo_name)
+    28→
+    29→    Raises:
+    30→        UserFacingCliError: If owner/repo cannot be determined
+
+... [52 lines omitted] ...
+
+    34→            raise UserFacingCliError(
+    42→        raise UserFacingCliError(
+    62→        UserFacingCliError: If no http_client is available
+    68→        raise UserFacingCliError(
+  </tool_result>
+  <tool_use name="Read" id="toolu_015mvpBHu3ndc7qmjGqMY4c8">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-07/packages/erk-shared/src/erk_shared/gateway/remote_github/abc.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="11239" cache_read_input_tokens="24860" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 11239}" output_tokens="13" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_015mvpBHu3ndc7qmjGqMY4c8">
+     1→"""Abstract interface for remote GitHub operations without a local git clone.
+     2→
+     3→This gateway enables GitHub operations (branch creation, file commits, PR management,
+     4→workflow dispatch) using the GitHub REST API directly, without requiring a local
+     5→git repository. All methods take explicit owner/repo parameters.
+     6→"""
+     7→
+     8→from abc import ABC, abstractmethod
+     9→
+    10→from erk_shared.gateway.github.issues.types import IssueInfo, IssueNotFound, PRReference
+    11→from erk_shared.gateway.remote_github.types import RemotePRInfo, RemotePRNotFound
+    12→
+    13→
+    14→class RemoteGitHub(ABC):
+    15→    """GitHub operations that don't require a local git clone.
+    16→
+    17→    Every method takes explicit owner/repo parameters instead of repo_root: Path.
+    18→    Uses the GitHub REST API via HttpClient.
+    19→    """
+    20→
+    21→    @abstractmethod
+    22→    def get_authenticated_user(self) -&gt; str:
+    23→        """Get the username of the authenticated GitHub user.
+    24→
+    25→        Returns:
+    26→            GitHub username string
+    27→        """
+    28→        ...
+    29→
+    30→    @abstractmethod
+
+... [387 lines omitted] ...
+
+   414→            Tuple of (is_authenticated, username, error_message)
+  </tool_result>
+  <tool_use name="Read" id="toolu_01QCkFmTnodxAF1JoB1HMitE">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-07/packages/erk-shared/src/erk_shared/gateway/remote_github/types.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="11239" cache_read_input_tokens="24860" output_tokens="646" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 11239, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01QCkFmTnodxAF1JoB1HMitE">
+     1→"""Types for remote GitHub PR operations."""
+     2→
+     3→from dataclasses import dataclass
+     4→
+     5→
+     6→@dataclass(frozen=True)
+     7→class RemotePRInfo:
+     8→    """PR-specific fields from the GitHub REST API pulls endpoint.
+     9→
+    10→    Contains head_ref_name and base_ref_name that the issues endpoint
+    11→    does not provide.
+    12→    """
+    13→
+    14→    number: int
+    15→    title: str
+    16→    state: str
+    17→    url: str
+    18→    head_ref_name: str
+    19→    base_ref_name: str
+    20→    owner: str
+    21→    repo: str
+    22→    labels: list[str]
+    23→
+    24→
+    25→@dataclass(frozen=True)
+    26→class RemotePRNotFound:
+    27→    """Sentinel indicating a PR was not found."""
+    28→
+    29→    pr_number: int
+    30→
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="5815" cache_read_input_tokens="36099" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5815}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now let me look at the local GitHub gateway and how the existing local dispatch functions use it.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="5815" cache_read_input_tokens="36099" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5815}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01QoExJLJUkhLfn3gG8YmwJQ">
+    <param name="description">Explore GitHub gateway and dispatch</param>
+    <param name="subagent_type">Explore</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic. Read relevant ...[truncated 803 chars]... whether there's a way to unify into a single code path using RemoteGitHub for everything.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5815" cache_read_input_tokens="36099" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5815}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01P95SYhPLgZEVhw34vLCt4P">
+    <param name="description">Explore test file structure</param>
+    <param name="subagent_type">Explore</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic. Read relevant ...[truncated 516 chars]...RepoSentinel is and how no_repo_required works - search for the decorator in the codebase.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5815" cache_read_input_tokens="36099" output_tokens="670" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 5815, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01QoExJLJUkhLfn3gG8YmwJQ">
+Excellent. Now I have all the information I need. Let me compile my comprehensive findings:
+
+## Summary: Local GitHub Gateway vs RemoteGitHub Relationship
+
+Based on my analysis of the erk codebase, here is a detailed understanding of the relationship between the local GitHub gateway (`ctx.github`, which is `LocalGitHub` ABC) and `RemoteGitHub`, specifically for the `launch` command refactoring:
+
+### 1. **Local GitHub Gateway (`ctx.github` / `LocalGitHub` ABC)**
+
+**Location:** `/packages/erk-shared/src/erk_shared/gateway/github/abc.py`
+
+**Type:** Abstract base class (`LocalGitHub`)
+
+**Key PR Methods:**
+- `get_pr(repo_root: Path, pr_number: int) -&gt; PRDetails | PRNotFound`
+- `get_pr_for_branch(repo_root: Path, branch: str) -&gt; PRDetails | PRNotFound`
+- `trigger_workflow(repo_root: Path, workflow: str, inputs: dict[str, str], ref: str | None) -&gt; str`
+- `check_auth_status() -&gt; tuple[bool, str | None, str | None]`
+- `get_workflow_run_node_id(repo_root: Path, run_id: str) -&gt; str | None`
+
+**Additional Features:**
+- Works with local `repo_root: Path` parameter (requires local git repo)
+- Uses `gh` CLI for operations (via subprocess)
+- Returns `PRDetails` dataclass with comprehensive PR information
+- Composable gateway pattern (has `issues` sub-gateway property)
+- Part of 4-file pattern (abc.py, real.py, fake.py, dry_run.py)
+
+---
+
+### 2. **RemoteGitHub ABC**
+
+
+... [241 lines omitted] ...
+
+- Keep dispatch separated but use a unified error handling pattern
+  </tool_result>
+  <tool_result tool="toolu_01P95SYhPLgZEVhw34vLCt4P">
+Excellent! Now I have comprehensive understanding. Let me create a summary document:
+
+## Summary of Test Infrastructure for Launch Testing
+
+Based on my exploration, here's what I found:
+
+### 1. **Test Infrastructure Overview**
+
+**Two main test files:**
+- `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-07/tests/commands/launch/test_launch_cmd.py` - Local launch tests
+- `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-07/tests/commands/launch/test_launch_remote_paths.py` - Remote launch tests (with `--repo` flag)
+
+### 2. **NoRepoSentinel Pattern**
+
+**Definition** (in `/packages/erk-shared/src/erk_shared/context/types.py`):
+```python
+@dataclass(frozen=True)
+class NoRepoSentinel:
+    """Sentinel value indicating execution outside a git repository.
+    
+    Used when commands run outside git repositories (e.g., before init,
+    in non-git directories). Commands that require repo context can check
+    for this sentinel and fail fast.
+    """
+    message: str = "Not inside a git repository"
+```
+
+**Usage**: When a command needs to work both locally and remotely, the context can have `isinstance(ctx.repo, NoRepoSentinel)` check whether it's in remote mode.
+
+### 3. **How Tests Build Context**
+
+... [147 lines omitted] ...
+
+- Error handling for no-repo scenarios
+  </tool_result>
+  <usage input_tokens="3" cache_creation_input_tokens="6070" cache_read_input_tokens="41914" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6070}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me read a few more files to nail down the details.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="6070" cache_read_input_tokens="41914" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6070}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01TBYqo3v6FEq6gMcgdHaMQA">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-07/src/erk/cli/commands/ref_resolution.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6070" cache_read_input_tokens="41914" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6070}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01TBYqo3v6FEq6gMcgdHaMQA">
+     1→"""Shared helper for resolving dispatch ref across multiple commands.
+     2→
+     3→This module provides a single point for handling --ref and --ref-current flag
+     4→resolution, ensuring consistent validation and error handling across all
+     5→dispatch commands (launch, one-shot, pr dispatch, workflow smoke-test, objective plan).
+     6→"""
+     7→
+     8→import click
+     9→
+    10→from erk.core.context import ErkContext
+    11→
+    12→
+    13→def resolve_dispatch_ref(
+    14→    ctx: ErkContext, *, dispatch_ref: str | None, ref_current: bool
+    15→) -&gt; str | None:
+    16→    """Resolve dispatch ref from flags and config.
+    17→
+    18→    Handles mutual exclusivity check and falls back to config default.
+    19→
+    20→    Args:
+    21→        ctx: ErkContext with git and local_config
+    22→        dispatch_ref: Value from --ref flag (None if not provided)
+    23→        ref_current: Value from --ref-current flag
+    24→
+    25→    Returns:
+    26→        The resolved ref (branch name) or None if using default
+    27→
+    28→    Raises:
+    29→        click.UsageError: If both --ref and --ref-current are provided,
+    30→            or if --ref-current is used with detached HEAD
+
+... [12 lines omitted] ...
+
+    33→        raise click.UsageError("--ref and --ref-current are mutually exclusive")
+    38→            raise click.UsageError("--ref-current requires being on a branch (not detached HEAD)")
+  </tool_result>
+  <tool_use name="Read" id="toolu_01KGvwCPUAKcJ1sP5Tyd6TCE">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-07/src/erk/cli/commands/pr/metadata_helpers.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6070" cache_read_input_tokens="41914" output_tokens="1125" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 6070, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01KGvwCPUAKcJ1sP5Tyd6TCE">
+     1→"""Helpers for plan dispatch metadata updates.
+     2→
+     3→This module extracts shared logic for updating plan dispatch metadata
+     4→when triggering remote workflows on branches that follow the P{plan}-pattern.
+     5→"""
+     6→
+     7→from __future__ import annotations
+     8→
+     9→from pathlib import Path
+    10→from typing import TYPE_CHECKING
+    11→
+    12→import click
+    13→
+    14→from erk_shared.output.output import user_output
+    15→from erk_shared.plan_store.backend import PlanBackend
+    16→from erk_shared.plan_store.types import PlanNotFound
+    17→
+    18→if TYPE_CHECKING:
+    19→    from erk.core.context import ErkContext
+    20→    from erk.core.repo_discovery import RepoContext
+    21→    from erk_shared.gateway.github.abc import LocalGitHub
+    22→
+    23→
+    24→def write_dispatch_metadata(
+    25→    *,
+    26→    plan_backend: PlanBackend,
+    27→    github: LocalGitHub,
+    28→    repo_root: Path,
+    29→    plan_number: int,
+    30→    run_id: str,
+
+... [76 lines omitted] ...
+
+    36→        RuntimeError: If plan not found or node_id unavailable.
+    40→        raise RuntimeError(f"Could not get node_id for run {run_id}")
+    46→        raise RuntimeError(f"Plan #{plan_number} not found")
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="3081" cache_read_input_tokens="47984" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3081}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now let me look at the existing local launch tests to understand the full test picture.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3081" cache_read_input_tokens="47984" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3081}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_019Wi81t25PL6tFDoV7SvqvW">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-07/tests/commands/launch/test_launch_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3081" cache_read_input_tokens="47984" output_tokens="148" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3081, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_019Wi81t25PL6tFDoV7SvqvW">
+     1→"""Tests for erk launch command."""
+     2→
+     3→from pathlib import Path
+     4→
+     5→from click.testing import CliRunner
+     6→from tests.test_utils.context_builders import build_workspace_test_context
+     7→from tests.test_utils.env_helpers import erk_isolated_fs_env
+     8→
+     9→from erk.cli.cli import cli
+    10→from erk.cli.constants import WORKFLOW_COMMAND_MAP
+    11→from erk_shared.gateway.git.fake import FakeGit
+    12→from erk_shared.gateway.github.fake import FakeLocalGitHub
+    13→from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
+    14→
+    15→
+    16→def _make_pr_info(
+    17→    number: int,
+    18→    branch: str,
+    19→    state: str,
+    20→    title: str | None,
+    21→) -&gt; PullRequestInfo:
+    22→    """Create a PullRequestInfo for testing."""
+    23→    return PullRequestInfo(
+    24→        number=number,
+    25→        state=state,
+    26→        url=f"https://github.com/owner/repo/pull/{number}",
+    27→        is_draft=False,
+    28→        title=title or f"PR #{number}",
+    29→        checks_passing=True,
+    30→        owner="owner",
+
+... [629 lines omitted] ...
+
+    62→    """Test error when workflow name is not recognized."""
+   301→def test_workflow_launch_plan_implement_shows_usage_error(tmp_path: Path) -&gt; None:
+   630→    """Test error when PR is closed."""
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="13678" cache_read_input_tokens="51065" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 13678}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I have a complete understanding. Let me design the unified approach.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="13678" cache_read_input_tokens="51065" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 13678}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01EpQMK5K9KUz1WfWXgHt5N1">
+    <param name="description">Design unified launch code path</param>
+    <param name="subagent_type">Plan</param>
+    <param name="prompt">Design a refactoring plan for `src/erk/cli/commands/launch_cmd.py` based on this requireme...[truncated 3968 chars]...chments happen
+5. How to handle pr-rebase without --pr (branch inference)
+6. Test strategy</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="13678" cache_read_input_tokens="51065" output_tokens="3976" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 13678, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01EpQMK5K9KUz1WfWXgHt5N1">
+Now I have a thorough understanding of the entire codebase relevant to this refactoring. Let me design the plan.
+
+---
+
+## Refactoring Plan: Unify `launch_cmd.py` to a Single Code Path via RemoteGitHub
+
+### Problem Statement
+
+The current `launch_cmd.py` has 917 lines with two completely parallel code paths -- one for "local mode" (using `ctx.github` / `LocalGitHub`) and one for "remote mode" (using `RemoteGitHub`). Every workflow handler is duplicated. The user wants a single code path that always uses `RemoteGitHub` for PR lookup and workflow dispatch. The local repo, when present, should only add enrichments (branch inference, plan metadata, ref config).
+
+### Architecture Analysis
+
+**What the unified code path ALWAYS needs (via RemoteGitHub):**
+1. `remote.get_pr(owner=, repo=, number=)` -- PR lookup by number
+2. `remote.dispatch_workflow(owner=, repo=, workflow=, ref=, inputs=)` -- workflow dispatch
+3. `remote.get_authenticated_user()` -- for one-shot submitter identity
+4. `remote.get_default_branch_name(owner=, repo=)` -- for ref fallback when no --ref and no local config
+5. `remote.check_auth_status()` -- auth validation
+
+**What local repo adds (conditional enrichments):**
+1. **Owner/repo inference**: `resolve_owner_repo()` can read from `ctx.repo.github` when no `--repo` flag
+2. **Branch inference for pr-rebase**: When `--pr` not given, get current branch and find associated PR. This currently uses `ctx.github.get_pr_for_branch()` which has no RemoteGitHub equivalent. Options:
+   - Add `get_pr_for_branch` to RemoteGitHub (via REST API: `GET /repos/{owner}/{repo}/pulls?head={owner}:{branch}`)
+   - Keep using `ctx.github.get_pr_for_branch()` for this one case (breaks single code path)
+   - Require `--pr` always; remove branch inference (user unfriendly)
+3. **Plan ID resolution**: `ctx.plan_backend.resolve_plan_id_for_branch(repo.root, branch_name)` -- for PR-based backend this calls `ctx.github.get_pr_for_branch()`, for GitHub issue backend it's regex on branch name. Either way it takes `repo_root`.
+4. **Plan metadata update**: `maybe_update_plan_dispatch_metadata()` -- uses `ctx.github.get_workflow_run_node_id()` (LocalGitHub-only method)
+5. **Dispatch ref from config**: `ctx.local_config.dispatch_ref` -- only available with local config
+6. **--ref-current**: Uses `ctx.git.branch.get_current_branch()` -- requires local repo
+
+
+... [256 lines omitted] ...
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="8775" cache_read_input_tokens="64743" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 8775}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me check a few more details before finalizing the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="8775" cache_read_input_tokens="64743" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 8775}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_014vmTG2cdrhQnKpPppokrwf">
+    <param name="pattern">gh_authenticated</param>
+    <param name="output_mode">content</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-07/src/erk/cli/ensure.py</param>
+    <param name="context">5</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="8775" cache_read_input_tokens="64743" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 8775}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014vmTG2cdrhQnKpPppokrwf">
+495-                + "Authenticate with: gt auth\n\n"
+496-                + "This is required before submitting branches or creating PRs."
+497-            )
+498-
+499-    @staticmethod
+500:    def gh_authenticated(ctx: ErkContext) -&gt; None:
+501-        """Ensure GitHub CLI (gh) is installed and authenticated.
+502-
+503-        Uses LBYL pattern to check gh installation and authentication status
+504-        before operations that require it. This is the canonical check for
+505-        GitHub CLI readiness - callers should use this single method rather
+--
+510-
+511-        Raises:
+512-            UserFacingCliError: If gh is not installed or not authenticated
+513-
+514-        Example:
+515:            &gt;&gt;&gt; Ensure.gh_authenticated(ctx)
+516-            &gt;&gt;&gt; # Now safe to call gh commands
+517-            &gt;&gt;&gt; pr_info = ctx.github.get_pr_status(repo.root, branch)
+518-        """
+519-        Ensure.gh_installed()
+520-        is_authenticated, username, _ = ctx.github.check_auth_status()
+  </tool_result>
+  <tool_use name="Read" id="toolu_01PLpy1Z1brjLV4KLHXLGXKj">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-07/packages/erk-shared/src/erk_shared/gateway/remote_github/fake.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="8775" cache_read_input_tokens="64743" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 8775}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01PLpy1Z1brjLV4KLHXLGXKj">
+     1→"""Fake implementation of RemoteGitHub for testing.
+     2→
+     3→Constructor-injected responses for reads, mutation tracking lists for write assertions.
+     4→"""
+     5→
+     6→from dataclasses import dataclass, replace
+     7→
+     8→from erk_shared.gateway.github.issues.types import IssueInfo, IssueNotFound, PRReference
+     9→from erk_shared.gateway.remote_github.abc import RemoteGitHub
+    10→from erk_shared.gateway.remote_github.types import RemotePRInfo, RemotePRNotFound
+    11→
+    12→
+    13→@dataclass(frozen=True)
+    14→class CreatedRef:
+    15→    """Recorded create_ref call."""
+    16→
+    17→    owner: str
+    18→    repo: str
+    19→    ref: str
+    20→    sha: str
+    21→
+    22→
+    23→@dataclass(frozen=True)
+    24→class CreatedFileCommit:
+    25→    """Recorded create_file_commit call."""
+    26→
+    27→    owner: str
+    28→    repo: str
+    29→    path: str
+    30→    content: str
+
+... [455 lines omitted] ...
+  </tool_result>
+  <tool_use name="Grep" id="toolu_017TMCs1RFPKoBGm5EXahiq2">
+    <param name="pattern">remote_github</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-07/tests/test_utils/context_builders.py</param>
+    <param name="output_mode">content</param>
+    <param name="context">3</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="8775" cache_read_input_tokens="64743" output_tokens="453" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 8775, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_017TMCs1RFPKoBGm5EXahiq2">
+No matches found
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="6430" cache_read_input_tokens="73518" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6430}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01CemN4g9m4AQ9sWLwUNASwe">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-07/tests/test_utils/context_builders.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6430" cache_read_input_tokens="73518" output_tokens="129" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 6430, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01CemN4g9m4AQ9sWLwUNASwe">
+     1→"""Shared context builders for test scenarios.
+     2→
+     3→This module provides reusable context builder functions to eliminate duplication
+     4→across test files. These builders encapsulate common patterns for setting up
+     5→ErkContext with appropriate fake implementations.
+     6→"""
+     7→
+     8→from erk.core.context import ErkContext
+     9→from erk_shared.core.fakes import FakePlanListService
+    10→from erk_shared.core.plan_list_service import PlanListData
+    11→from erk_shared.gateway.git.dry_run import DryRunGit
+    12→from erk_shared.gateway.git.fake import FakeGit
+    13→from erk_shared.gateway.github.fake import FakeLocalGitHub
+    14→from erk_shared.gateway.github.types import PullRequestInfo, WorkflowRun
+    15→from erk_shared.plan_store.types import Plan
+    16→from tests.fakes.shell import FakeShell
+    17→from tests.test_utils.env_helpers import ErkInMemEnv, ErkIsolatedFsEnv
+    18→
+    19→
+    20→def build_workspace_test_context(
+    21→    env: ErkInMemEnv | ErkIsolatedFsEnv,
+    22→    *,
+    23→    dry_run: bool = False,
+    24→    use_graphite: bool = False,
+    25→    current_branch: str | None = None,
+    26→    **kwargs,
+    27→) -&gt; ErkContext:
+    28→    """Build ErkContext for workspace command tests (create, split, consolidate, delete).
+    29→
+    30→    This builder provides a standard context configuration for workspace manipulation
+
+... [118 lines omitted] ...
+
+   137→    warnings: tuple[str, ...] = (),
+   145→            warnings=warnings,
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="2272" cache_read_input_tokens="79948" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2272}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01FBsjFQV8EVs95JJw3zmq3H">
+    <param name="pattern">def build_context</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-07/tests/test_utils/env_helpers.py</param>
+    <param name="output_mode">content</param>
+    <param name="context">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2272" cache_read_input_tokens="79948" output_tokens="214" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2272, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01FBsjFQV8EVs95JJw3zmq3H">
+350-        for wt in worktrees_list:
+351-            if wt.path == current_worktree:
+352-                # This worktree has the current branch
+353-                current_branches_map[wt.path] = current_branch if current_branch else wt.branch
+354-            else:
+355-                # Other worktrees stay on their own branch
+356-                current_branches_map[wt.path] = wt.branch
+357-
+358-        # Build git_common_dirs mapping (all point to root's .git)
+359-        git_common_dirs_map = {wt.path: self.root_worktree / ".git" for wt in worktrees_list}
+360-
+361-        # Build stacks from branches (auto-compute from parent/child)
+362-        stacks = {}
+363-        for branch_name in branches:
+364-            if not branches[branch_name].is_trunk:
+365-                stacks[branch_name] = self._build_stack_path(branches, branch_name)
+366-
+367-        git = FakeGit(
+368-            worktrees={self.root_worktree: worktrees_list},
+369-            current_branches=current_branches_map,
+370-            git_common_dirs=git_common_dirs_map,
+371-        )
+372-
+373-        graphite = FakeGraphite(
+374-            branches=branches,
+375-            stacks=stacks,
+376-        )
+377-
+378-        return git, graphite
+379-
+
+... [93 lines omitted] ...
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="1805" cache_read_input_tokens="82220" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1805}" output_tokens="11" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_018qEC84EhA1cksaZyE6oJFk">
+    <param name="pattern">def context_for_test</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-07/src/erk/core/context.py</param>
+    <param name="output_mode">content</param>
+    <param name="context">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1805" cache_read_input_tokens="82220" output_tokens="204" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1805, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_018qEC84EhA1cksaZyE6oJFk">
+177-        github_admin=FakeGitHubAdmin(),
+178-        plan_store=PlannedPRBackend(fake_github, fake_issues, time=fake_time),
+179-        graphite=fake_graphite,
+180-        graphite_branch_ops=fake_graphite_branch_ops,
+181-        console=fake_console,
+182-        shell=FakeShell(),
+183-        codespace=fake_codespace,
+184-        cmux=FakeCmux(workspace_ref="fake-ws"),
+185-        agent_launcher=FakeAgentLauncher(),
+186-        agent_docs=FakeAgentDocs(files={}, has_docs_dir=True),
+187-        completion=FakeCompletion(),
+188-        time=fake_time,
+189-        erk_installation=FakeErkInstallation(),
+190-        script_writer=FakeScriptWriter(),
+191-        plan_list_service=FakePlanListService(),
+192-        objective_list_service=FakeObjectiveListService(data=None),
+193-        codespace_registry=FakeCodespaceRegistry(),
+194-        claude_installation=FakeClaudeInstallation.for_test(),
+195-        prompt_executor=FakePromptExecutor(),
+196-        cwd=cwd,
+197-        global_config=None,
+198-        local_config=LoadedConfig.test(),
+199-        repo=NoRepoSentinel(),
+200-        repo_info=None,
+201-        http_client=FakeHttpClient(),
+202-        dry_run=dry_run,
+203-        debug=False,
+204-    )
+205-
+206-
+
+... [31 lines omitted] ...
+  </tool_result>
+  <assistant>Good - `context_for_test` already accepts `remote_github`. And since `build_context` passes `**kwargs` through, we can pass `remote_github=fake_remote` through the helpers.
+
+Now I have everything I need. Let me write the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1120" cache_read_input_tokens="84025" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1120}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01LZcy1qN1MySCxUTbaM59J1">
+    <param name="file_path">/Users/schrockn/.claude/plans/reflective-pondering-babbage.md</param>
+    <param name="content"># Plan: Eliminate dual code paths in `erk launch` — single path via RemoteGitHub
+
+## Conte...[truncated 4846 chars]...-rebase --pr 123 --repo owner/repo` (without local repo) should follow the same code path
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1120" cache_read_input_tokens="84025" output_tokens="1687" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1120, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01LZcy1qN1MySCxUTbaM59J1">
+File created successfully at: /Users/schrockn/.claude/plans/reflective-pondering-babbage.md
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_01PPxwi9DgknJUaGL29XQvtK">
+    <param name="query">select:ExitPlanMode</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1823" cache_read_input_tokens="85145" output_tokens="78" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1823, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01PPxwi9DgknJUaGL29XQvtK">
+
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_012B8n6TrNhAk6YqyiEXAnBj">
+    <param name="allowedPrompts">[{'tool': 'Bash', 'prompt': 'run tests with pytest'}, {'tool': 'Bash', 'prompt': 'run ruff linter'}, {'tool': 'Bash', 'prompt': 'run ty type checker'}]</param>
+    <param name="plan"># Plan: Eliminate dual code paths in `erk launch` — single path via RemoteGitHub
+
+## Conte...[truncated 4846 chars]...-rebase --pr 123 --repo owner/repo` (without local repo) should follow the same code path
+</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="738" cache_read_input_tokens="86968" output_tokens="110" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 738, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_012B8n6TrNhAk6YqyiEXAnBj">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/reflective-pondering-babbage.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Plan: Eliminate dual code paths in `erk launch` — single path via RemoteGitHub
+Current context: (wt:erk-slot-07) (br:plnd/O8832-launch-no-repo-remot-03-08-1454) (pr:#9019)\n\nWhat would you like to do with this plan?"
+  header: "br:plnd/O883"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create new branch and planned PR. Stays on current branch." - Create a new branch, save plan as draft PR.
+  2. "Implement without saving" - Implement directly on the current branch without saving a plan PR.
+  3. "View/Edit the Plan" - Open plan in editor to review or modify before deciding.
+
+If user chooses 'Create new branch and planned PR':
+  1. Run /erk:plan-save
+  2. Call ExitPlanMode to end the planning session.
+
+If user chooses 'Implement without saving':
+  1. Create implement-now marker:
+     erk exec marker create --session-id 8502b628-c9bc-408f-b6b8-0eda3d993902 \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly on the current branch.
+     Do NOT run 'erk exec setup-impl' or create a new branch.
+     Read the plan from: /Users/schrockn/.claude/plans/reflective-pondering-babbage.md
+     Implement changes, run CI, and optionally 'erk pr submit' when done.
+
+... [6 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01EDBCLmUv2oqrocSHNAMkvy">
+    <param name="file_path">/Users/schrockn/.claude/plans/reflective-pondering-babbage.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="763" cache_read_input_tokens="87706" output_tokens="74" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 763, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01EDBCLmUv2oqrocSHNAMkvy">
+     1→# Plan: Eliminate dual code paths in `erk launch` — single path via RemoteGitHub
+     2→
+     3→## Context
+     4→
+     5→PR #9019 introduced `--repo` support for `erk launch` by adding a separate "remote mode" code path. This duplicated every workflow handler (5 local + 5 remote = 10 functions) and a separate dispatch function, resulting in ~900 lines with significant duplication. The user wants a single code path where the only difference with a local repo is that owner/repo can be inferred.
+     6→
+     7→## Design
+     8→
+     9→**Always use `RemoteGitHub`** for PR lookup and workflow dispatch. Local repo presence only provides enrichments:
+    10→- Infer owner/repo from git remote (skip `--repo`)
+    11→- Infer PR from current branch for pr-rebase (skip `--pr`)
+    12→- Resolve `--ref-current` and config-based dispatch ref
+    13→- Plan ID resolution and plan metadata updates post-dispatch
+    14→
+    15→## Implementation
+    16→
+    17→### Step 1: Rewrite `_dispatch_workflow` to use RemoteGitHub
+    18→
+    19→Replace the two dispatch functions (local + remote) with one:
+    20→
+    21→```python
+    22→def _dispatch_workflow(
+    23→    remote: RemoteGitHub,
+    24→    *,
+    25→    owner: str,
+    26→    repo_name: str,
+    27→    workflow_name: str,
+    28→    inputs: dict[str, str],
+    29→    ref: str,  # Always resolved before calling
+    30→) -&gt; str:  # Returns run_id
+
+... [68 lines omitted] ...
+
+    69→- `--ref-current` errors if no local repo
+    95→2. Run `uv run ruff check src/erk/cli/commands/launch_cmd.py` — no lint errors
+    96→3. Run `uv run ty check src/erk/cli/commands/launch_cmd.py` — no type errors
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_01GyaPJToFPkuzD1PbMiLQDV">
+    <param name="query">select:AskUserQuestion</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1943" cache_read_input_tokens="88469" output_tokens="77" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1943, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01GyaPJToFPkuzD1PbMiLQDV">
+
+  </tool_result>
+  <tool_use name="AskUserQuestion" id="toolu_017FidC67Y1XdUfr4yc24Ldb">
+    <param name="questions">[{'question': '📋 Plan: Eliminate dual code paths in `erk launch` — single path via RemoteG...[truncated 462 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1333" cache_read_input_tokens="90412" output_tokens="266" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1333, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_017FidC67Y1XdUfr4yc24Ldb">
+User has answered your questions: "📋 Plan: Eliminate dual code paths in `erk launch` — single path via RemoteGitHub
+Current context: (wt:erk-slot-07) (br:plnd/O8832-launch-no-repo-remot-03-08-1454) (pr:#9019)
+
+What would you like to do with this plan?"="Create new branch and planned PR". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="Skill" id="toolu_014vAYpFCgYg6JbUmN28Mb7Q">
+    <param name="skill">erk:plan-save</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1700" cache_read_input_tokens="91745" output_tokens="57" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1700, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_014vAYpFCgYg6JbUmN28Mb7Q">
+Launching skill: erk:plan-save
+  </tool_result>
+  <user># /erk:plan-save
+
+Save the current session's plan to GitHub with session context.
+
+## Usage
+
+```bash
+/erk:plan-save                           # Standalone plan
+/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+/erk:plan-save --objective=123           # Explicit objective link (overrides marker)
+/erk:plan-save --current-branch          # Use current branch instead of creating new plnd/ branch
+```
+
+Objective linking: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command. Use `--objective=&lt;number&gt;` to override the marker or provide the link when no marker exists (e.g., during replan).
+
+## Plan Storage
+
+The plan is saved using the configured backend:
+
+- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+  The JSON output contract includes `plan_number`, `plan_url`, `title`, `branch_name`, `plan_backend`.
+
+## Agent Instructions
+
+### Step 1: Parse Arguments
+
+Check `` for the `--plan-type`, `--objective`, and `--current-branch` flags:
+
+```
+If  contains "--plan-type=&lt;type&gt;":
+  - Extract the type (standard or learn)
+  - Store as PLAN_TYPE variable
+  - Set PLAN_TYPE_FLAG to "--plan-type=&lt;type&gt;"
+Else:
+  - Set PLAN_TYPE_FLAG to empty string
+
+If  contains "--objective=&lt;number&gt;":
+  - Extract the number
+  - Set OBJECTIVE_FLAG to "--objective=&lt;number&gt;"
+Else:
+  - Set OBJECTIVE_FLAG to empty string
+
+If  contains "--current-branch":
+  - Set CURRENT_BRANCH_FLAG to "--current-branch"
+Else:
+  - Set CURRENT_BRANCH_FLAG to empty string
+```
+
+### Step 2: Generate Branch Slug
+
+**Skip this step if `--current-branch` was passed.** The current branch is used directly.
+
+Before saving, generate a branch slug from the plan title. Read the plan title from the plan file you wrote in plan mode (the first `# ` heading).
+
+Generate a branch slug from the title:
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+
+Store the result as `BRANCH_SLUG`.
+
+### Step 3: Generate Plan Summary
+
+Write a concise 2-3 sentence summary of the plan. This summary will be visible
+at the top of the PR description (above the collapsed full plan).
+
+Guidelines:
+
+- Focus on WHAT the plan does and WHY
+- Do not repeat the title
+- Plain text, no markdown headers or formatting
+- Avoid special shell characters (backticks, dollar signs)
+- Store as PLAN_SUMMARY
+
+### Step 4: Run Save Command
+
+Run this command with the session ID, summary, and optional flags.
+
+If CURRENT_BRANCH_FLAG is set, pass `--current-branch` (no branch slug needed):
+
+```bash
+erk exec plan-save --format json --session-id="8502b628-c9bc-408f-b6b8-0eda3d993902" --current-branch --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Otherwise, pass the branch slug:
+
+```bash
+erk exec plan-save --format json --session-id="8502b628-c9bc-408f-b6b8-0eda3d993902" --branch-slug="${BRANCH_SLUG}" --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Parse the JSON output to extract `plan_number` for verification in Step 5.
+
+If the command fails, display the error and stop.
+
+### Step 5: Verify Objective Link (if applicable)
+
+**Only run this step if `objective_issue` is non-null in the JSON output from Step 4.**
+
+Verify the objective link was saved correctly:
+
+```bash
+erk exec get-plan-metadata &lt;plan_number&gt; objective_issue
+```
+
+Parse the JSON response:
+
+- If `success: true` and `value` matches the expected objective number: verification passed
+- If `success: false` or value doesn't match: verification failed
+
+**On verification success:**
+
+Display: `Verified objective link: #&lt;objective-number&gt;`
+
+**On verification failure:**
+
+Display error and remediation steps:
+
+```
+ERROR: Objective link verification failed
+Expected objective: #&lt;expected&gt;
+Actual: &lt;actual-or-null&gt;
+
+The plan was saved but without the correct objective link.
+Fix: Close draft PR #&lt;plan_number&gt;,
+ensure the objective-context marker exists, and re-run /erk:plan-save.
+```
+
+Exit without creating the plan-saved marker. The session continues so the user can retry.
+
+### Step 6: Update Objective Roadmap (if objective linked)
+
+**Only run this step if `objective_issue` was non-null in JSON output and verification passed.**
+
+Update the objective's roadmap table to show that a plan has been created for this node:
+
+1. **Read the roadmap node marker** to get the node ID:
+
+```bash
+step_id=$(erk exec marker read --session-id "8502b628-c9bc-408f-b6b8-0eda3d993902" roadmap-step)
+```
+
+If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-plan`.
+
+2. **Update the roadmap table** using the dedicated command:
+
+```bash
+erk exec update-objective-node &lt;objective-issue&gt; --node "$step_id" --pr "#&lt;plan_number&gt;" --status in_progress
+```
+
+This atomically fetches the objective body, finds the matching node row, sets the Status cell to `in-progress`, and writes the updated body back.
+
+3. **Report the update:**
+
+Display: `Updated objective #&lt;objective-issue&gt; roadmap: node &lt;step_id&gt; → plan #&lt;plan_number&gt;`
+
+**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+
+### Step 7: Display Results
+
+**If JSON contains `skipped_duplicate: true`:**
+
+Display: `Plan already saved as #&lt;plan_number&gt; (duplicate skipped)`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options.
+
+**Otherwise, on success**, display:
+
+```
+Plan "&lt;title&gt;" saved as draft PR #&lt;plan_number&gt;
+URL: &lt;issue_url&gt;
+```
+
+If objective was verified, also display: `Verified objective link: #&lt;objective-number&gt;`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options
+(implement in current worktree, implement in new worktree, or done).
+
+On failure, display the error message and suggest:
+
+- Checking that a plan exists (enter Plan mode and exit it first)
+- Verifying GitHub CLI authentication (`gh auth status`)
+- Checking network connectivity
+
+### Step 5: Push Planning Session
+
+After saving successfully, push the planning session for cross-machine learning.
+This captures the in-progress session state so it's available even if implementation
+happens on a different machine.
+
+Run `erk exec capture-session-info` to get the session file path, then push it:
+
+```bash
+erk exec upload-impl-session --session-id "8502b628-c9bc-408f-b6b8-0eda3d993902" 2&gt;/dev/null || true
+```
+
+If the plan was saved successfully and `plan_number` is known, use push-session directly
+for better stage tracking:
+
+```bash
+erk exec push-session \
+    --session-file "&lt;session_file_path&gt;" \
+    --session-id "8502b628-c9bc-408f-b6b8-0eda3d993902" \
+    --stage planning \
+    --source local \
+    --plan-id &lt;plan_number&gt; \
+    2&gt;/dev/null || true
+```
+
+Where `&lt;session_file_path&gt;` is obtained from `erk exec capture-session-info` output
+and `&lt;plan_number&gt;` is from Step 2's JSON output.
+
+**Note:** This is non-critical. If it fails, the plan was still saved successfully.
+The `2&gt;/dev/null || true` ensures graceful degradation.
+
+## Session Tracking
+
+After successfully saving a plan, the plan number is stored in a marker file that enables automatic plan updates in the same session.
+
+**To read the saved plan number:**
+
+```bash
+erk exec marker read --session-id "8502b628-c9bc-408f-b6b8-0eda3d993902" plan-saved-issue
+```
+
+This returns the plan number (exit code 0) or exits with code 1 if no plan was saved in this session.
+</user>
+  <assistant>
+
+Let me save this plan as a draft PR.
+
+**Branch slug:** `unify-launch-remotegithub`
+
+**Plan summary:** Eliminates the dual local/remote code paths in erk launch by using RemoteGitHub for all PR lookups and workflow dispatch. The only difference when a local repo exists is that owner/repo can be inferred, branch-based PR lookup works, and plan metadata gets updated post-dispatch.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="2283" cache_read_input_tokens="93445" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2283}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01LXgkeQmJLxDfdrzs7XRECs">
+    <param name="command">erk exec plan-save --format json --session-id="8502b628-c9bc-408f-b6b8-0eda3d993902" --bra...[truncated 217 chars]... be inferred, branch-based PR lookup works, and plan metadata gets updated post-dispatch."</param>
+    <param name="description">Save plan as draft PR</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2283" cache_read_input_tokens="93445" output_tokens="308" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2283, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01LXgkeQmJLxDfdrzs7XRECs">
+{"success": true, "plan_number": 9021, "plan_url": "https://github.com/dagster-io/erk/pull/9021", "title": "[erk-plan] Plan: Eliminate dual code paths in `erk launch` \u2014 single path via RemoteGitHub", "branch_name": "plnd/unify-launch-remotegithub-03-08-1420", "plan_backend": "planned_pr", "objective_issue": null, "archived_to": "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-07/.erk/scratch/sessions/8502b628-c9bc-408f-b6b8-0eda3d993902/plan_snapshots/000001-24322c06"}
+  </tool_result>
+  <assistant>Plan saved. Now let me push the planning session.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="517" cache_read_input_tokens="95728" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 517}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01SNrekig1WRqQxYEzPbBVXL">
+    <param name="command">erk exec capture-session-info 2&gt;/dev/null</param>
+    <param name="description">Get session file path</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="517" cache_read_input_tokens="95728" output_tokens="97" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 517, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+</session>
