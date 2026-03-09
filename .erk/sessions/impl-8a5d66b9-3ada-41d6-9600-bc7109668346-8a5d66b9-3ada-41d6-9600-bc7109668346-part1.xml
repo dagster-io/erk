@@ -585,4 +585,194 @@ Todos have been modified successfully. Ensure that you continue to use the todo 
   "plan_number": 9099
 }
   </tool_result>
+  <tool_result tool="toolu_01BXTTKPQzj3arqBWgLcHrvk">
+{"uploaded": true, "plan_id": 9099}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01JNnPkJapYyhzhuFcZTRd6o">
+    <param name="command">erk exec cleanup-impl-context</param>
+    <param name="description">Clean up impl context directory</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="532" cache_read_input_tokens="38500" cache_creation="{'ephemeral_5m_input_tokens': 532, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01JNnPkJapYyhzhuFcZTRd6o">
+{"cleaned": false, "reason": "not_tracked"}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_014NyNXtsGg3tAMKyjdcGKfV">
+    <param name="command">erk pr submit</param>
+    <param name="description">Submit PR via erk pipeline</param>
+    <param name="timeout">120000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="105" cache_read_input_tokens="39032" cache_creation="{'ephemeral_5m_input_tokens': 105, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_014NyNXtsGg3tAMKyjdcGKfV">
+🚀 Submitting PR...
+
+   Resolving branch and plan context...
+   Committing uncommitted changes...
+   Checking for existing PR...
+Phase 1: Creating or Updating PR
+   PR #9099 found (already exists)
+
+Phase 2: Getting diff and plan context
+   Incorporating plan #9099
+
+
+Phase 3: Generating PR description
+   Reading diff file...
+   Diff loaded (2,312 chars)
+   Analyzing changes with Claude...
+   Still waiting... (2s)
+   Still waiting... (4s)
+   Still waiting... (6s)
+   Still waiting... (8s)
+   Still waiting... (10s)
+   Still waiting... (12s)
+   Still waiting... (14s)
+   Still waiting... (16s)
+   Still waiting... (18s)
+   Still waiting... (20s)
+   Still waiting... (22s)
+   Still waiting... (24s)
+   Still waiting... (26s)
+   Still waiting... (28s)
+
+... [18 lines omitted] ...
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01CK7138oGztfySB2VCmbiRS">
+    <param name="command">erk exec impl-signal submitted 2&gt;/dev/null || true</param>
+    <param name="description">Signal implementation submitted</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="521" cache_read_input_tokens="39137" cache_creation="{'ephemeral_5m_input_tokens': 521, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01SbadrkTd7dSiX4je2cXKyT">
+    <param name="command">erk pr check --stage=impl</param>
+    <param name="description">Validate PR completion invariants</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="521" cache_read_input_tokens="39137" cache_creation="{'ephemeral_5m_input_tokens': 521, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01CK7138oGztfySB2VCmbiRS">
+{
+  "success": true,
+  "event": "submitted",
+  "plan_number": 9099
+}
+  </tool_result>
+  <tool_result tool="toolu_01SbadrkTd7dSiX4je2cXKyT">
+Exit code 1
+Checking PR #9099 for branch plnd/fix-setup-erk-action-03-09-1544...
+
+[FAIL] .erk/impl-context/ still present (should be removed before submission)
+[PASS] Plan reference found (#9099)
+[PASS] PR body contains checkout footer
+
+1 check failed
+  </tool_result>
+  <assistant>The impl-context directory needs to be force-removed since it's gitignored. Let me handle that:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="477" cache_read_input_tokens="39658" cache_creation="{'ephemeral_5m_input_tokens': 477, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01BMaU5EPiyqkBMse8ogfc4a">
+    <param name="command">ls -la /home/runner/work/erk/erk/.erk/impl-context/</param>
+    <param name="description">Check impl-context directory contents</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="477" cache_read_input_tokens="39658" cache_creation="{'ephemeral_5m_input_tokens': 477, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01BMaU5EPiyqkBMse8ogfc4a">
+total 24
+drwxr-xr-x 3 runner runner 4096 Mar  9 19:46 .
+drwxr-xr-x 6 runner runner 4096 Mar  9 19:46 ..
+-rw-r--r-- 1 runner runner 1378 Mar  9 19:46 plan.md
+drwxr-xr-x 2 runner runner 4096 Mar  9 19:46 plnd--fix-setup-erk-action-03-09-1544
+-rw-r--r-- 1 runner runner  263 Mar  9 19:46 ref.json
+-rw-r--r-- 1 runner runner  105 Mar  9 19:46 run-info.json
+  </tool_result>
+  <tool_use name="Bash" id="toolu_015cwRZnTtU8hmQEpTsP2URe">
+    <param name="command">git add -f .erk/impl-context/ &amp;&amp; git rm -rf --cached .erk/impl-context/ &amp;&amp; rm -rf .erk/impl-context/ &amp;&amp; git commit -m "Clean up impl-context directory" &amp;&amp; git push</param>
+    <param name="description">Force-remove impl-context and push</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="323" cache_read_input_tokens="40135" cache_creation="{'ephemeral_5m_input_tokens': 323, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_015cwRZnTtU8hmQEpTsP2URe">
+Exit code 1
+rm '.erk/impl-context/plan.md'
+rm '.erk/impl-context/plnd--fix-setup-erk-action-03-09-1544/local-run-state.json'
+rm '.erk/impl-context/plnd--fix-setup-erk-action-03-09-1544/plan.md'
+rm '.erk/impl-context/plnd--fix-setup-erk-action-03-09-1544/ref.json'
+rm '.erk/impl-context/ref.json'
+rm '.erk/impl-context/run-info.json'
+On branch plnd/fix-setup-erk-action-03-09-1544
+Your branch and 'origin/plnd/fix-setup-erk-action-03-09-1544' have diverged,
+and have 1 and 1 different commits each, respectively.
+
+nothing to commit, working tree clean
+  </tool_result>
+  <assistant>The files were removed from the index but there was nothing to commit since they weren't tracked. The directory is gone locally. Let me check the state and the divergence:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="536" cache_read_input_tokens="40458" cache_creation="{'ephemeral_5m_input_tokens': 536, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01EhT14Rjd4LkXxauvhxb1HG">
+    <param name="command">git status &amp;&amp; echo "---" &amp;&amp; git log --oneline -5</param>
+    <param name="description">Check git status and recent commits</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="536" cache_read_input_tokens="40458" cache_creation="{'ephemeral_5m_input_tokens': 536, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01EhT14Rjd4LkXxauvhxb1HG">
+On branch plnd/fix-setup-erk-action-03-09-1544
+Your branch and 'origin/plnd/fix-setup-erk-action-03-09-1544' have diverged,
+and have 1 and 1 different commits each, respectively.
+  (use "git pull" if you want to integrate the remote branch with yours)
+
+nothing to commit, working tree clean
+---
+f09416fcc Fix setup-claude-erk action for external repo consumers
+204a7ccf7 Remove plan staging dirs before implementation
+00690b60a Add plan for PR #9099
+e937e8f2c Add plan: Fix setup-claude-erk action for external repo consumers
+8bad317c7 Extract `agentclick` subpackage from `erk.cli` to `packages/erk-shared` (#9033)
+  </tool_result>
+  <assistant>The branch diverged because `erk pr submit` pushed a commit and locally we have a different commit. Let me rebase and force push:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="335" cache_read_input_tokens="40994" cache_creation="{'ephemeral_5m_input_tokens': 335, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01AzNbeHJ1affBi9YgkVHnJW">
+    <param name="command">git pull --rebase origin plnd/fix-setup-erk-action-03-09-1544</param>
+    <param name="description">Rebase on remote branch</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="335" cache_read_input_tokens="40994" cache_creation="{'ephemeral_5m_input_tokens': 335, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01AzNbeHJ1affBi9YgkVHnJW">
+From https://github.com/dagster-io/erk
+ * branch                plnd/fix-setup-erk-action-03-09-1544 -&gt; FETCH_HEAD
+warning: skipped previously applied commit f09416fcc
+hint: use --reapply-cherry-picks to include skipped commits
+hint: Disable this message with "git config set advice.skippedCherryPicks false"
+Successfully rebased and updated refs/heads/plnd/fix-setup-erk-action-03-09-1544.
+  </tool_result>
+  <assistant>Good, rebased cleanly. The impl-context was never tracked in git (gitignored), so the `pr check` warning is about local state. Let me verify it's gone and re-check:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="425" cache_read_input_tokens="41329" cache_creation="{'ephemeral_5m_input_tokens': 425, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01MGEPhV3oULZvi2r48gtBP1">
+    <param name="command">ls .erk/impl-context/ 2&gt;&amp;1 || echo "Directory does not exist"</param>
+    <param name="description">Verify impl-context is gone</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="425" cache_read_input_tokens="41329" cache_creation="{'ephemeral_5m_input_tokens': 425, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01MGEPhV3oULZvi2r48gtBP1">
+ls: cannot access '.erk/impl-context/': No such file or directory
+Directory does not exist
+  </tool_result>
+  <tool_use name="Bash" id="toolu_0112p9hwvUrQThQHwvnSJJWx">
+    <param name="command">erk pr check --stage=impl</param>
+    <param name="description">Re-validate PR completion invariants</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="176" cache_read_input_tokens="41754" cache_creation="{'ephemeral_5m_input_tokens': 176, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_0112p9hwvUrQThQHwvnSJJWx">
+Checking PR #9099 for branch plnd/fix-setup-erk-action-03-09-1544...
+
+[PASS] .erk/impl-context/ not present (cleaned up)
+[PASS] PR body contains checkout footer
+
+All checks passed
+  </tool_result>
+  <assistant>All checks pass. Let me mark everything complete.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="314" cache_read_input_tokens="41930" cache_creation="{'ephemeral_5m_input_tokens': 314, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01SoVyFp1rab3yU4WPen9Dkh">
+    <param name="todos">[{'content': 'Apply fix to setup-claude-erk action.yml else branch', 'status': 'completed'...[truncated 180 chars]... checks'}, {'content': 'Submit PR', 'status': 'completed', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="314" cache_read_input_tokens="41930" cache_creation="{'ephemeral_5m_input_tokens': 314, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01SoVyFp1rab3yU4WPen9Dkh">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Plan execution complete.
+
+**Summary of changes:**
+- `.github/actions/setup-claude-erk/action.yml:14-15` — Replaced the broken `uv tool install --from . --with erk-shared erk` in the else branch (external repos) with `uv sync --group dev` + PATH addition, matching the proven pattern from `erk-remote-setup/action.yml`
+- Also fixed 2 pre-existing Prettier formatting issues in docs files
+
+**PR:** https://github.com/dagster-io/erk/pull/9099</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="209" cache_read_input_tokens="42244" cache_creation="{'ephemeral_5m_input_tokens': 209, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
 </session>
