@@ -1,0 +1,888 @@
+<session>
+  <meta branch="plnd/O9109-rename-plan-to-pr-ph-03-09-2222" />
+  <meta model="claude-sonnet-4-6" />
+  <tool_result tool="toolu_01XbUnwQ9KTTYswqJxsAcYA2">
+571:    assert ref.plan_id == "42"
+607:    assert ref.plan_id == "PROJ-123"
+  </tool_result>
+  <tool_use name="Read" id="toolu_01SSo6NNWugqQN1afMEF3VtS">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/tests/core/test_impl_folder.py</param>
+    <param name="offset">560</param>
+    <param name="limit">60</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="206" cache_read_input_tokens="110428" output_tokens="124" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 206, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01SSo6NNWugqQN1afMEF3VtS">
+   560→        provider="github",
+   561→        plan_id="42",
+   562→        url="https://github.com/owner/repo/issues/42",
+   563→        labels=("erk-pr", "erk-learn"),
+   564→        objective_id=99,
+   565→        node_ids=None,
+   566→    )
+   567→
+   568→    ref = read_plan_ref(impl_dir)
+   569→    assert ref is not None
+   570→    assert ref.provider == "github"
+   571→    assert ref.plan_id == "42"
+   572→    assert ref.url == "https://github.com/owner/repo/issues/42"
+   573→    assert ref.labels == ("erk-pr", "erk-learn")
+   574→    assert ref.objective_id == 99
+   575→    assert len(ref.created_at) &gt; 0
+   576→    assert len(ref.synced_at) &gt; 0
+   577→
+   578→
+   579→def test_read_plan_ref_prefers_ref_json(tmp_path: Path) -&gt; None:
+   580→    """Test read_plan_ref prefers ref.json over legacy issue.json."""
+   581→    impl_dir = get_impl_dir(tmp_path, branch_name=BRANCH)
+   582→    impl_dir.mkdir(parents=True)
+   583→
+   584→    # Write both files with different data
+   585→    ref_data = {
+   586→        "provider": "linear",
+   587→        "plan_id": "PROJ-123",
+   588→        "url": "https://linear.app/proj/PROJ-123",
+   589→        "created_at": "2025-01-15T10:00:00+00:00",
+
+... [35 lines omitted] ...
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="2973" cache_read_input_tokens="110634" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2973}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01DDsvPbjbrafxEi5DDouBSN">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/tests/core/test_impl_folder.py</param>
+    <param name="old_string">    ref = read_plan_ref(impl_dir)
+    assert ref is not None
+    assert ref.provider == "github"
+    assert ref.plan_id == "42"
+    assert ref.url == "https://github.com/owner/repo/issues/42"</param>
+    <param name="new_string">    ref = read_plan_ref(impl_dir)
+    assert ref is not None
+    assert ref.provider == "github"
+    assert ref.pr_id == "42"
+    assert ref.url == "https://github.com/owner/repo/issues/42"</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2973" cache_read_input_tokens="110634" output_tokens="488" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2973, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01DDsvPbjbrafxEi5DDouBSN">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/tests/core/test_impl_folder.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01Fw5VmGsTd7y4KdbtM3YpAb">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/tests/core/test_impl_folder.py</param>
+    <param name="old_string">    ref = read_plan_ref(impl_dir)
+    assert ref is not None
+    assert ref.provider == "linear"
+    assert ref.plan_id == "PROJ-123"</param>
+    <param name="new_string">    ref = read_plan_ref(impl_dir)
+    assert ref is not None
+    assert ref.provider == "linear"
+    assert ref.pr_id == "PROJ-123"</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="544" cache_read_input_tokens="113607" output_tokens="235" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 544, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Fw5VmGsTd7y4KdbtM3YpAb">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/tests/core/test_impl_folder.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me check for more tests in `test_impl_folder.py` that reference `plan_id`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="291" cache_read_input_tokens="114151" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 291}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01VXgRgoayWCceiDxJi8Cvhh">
+    <param name="pattern">\.plan_id\b</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/tests/core/test_impl_folder.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="291" cache_read_input_tokens="114151" output_tokens="155" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 291, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01VXgRgoayWCceiDxJi8Cvhh">
+No matches found
+  </tool_result>
+  <assistant>Good. Now let me check other test files that test `PlanRef`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="170" cache_read_input_tokens="114442" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 170}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_015NcYDpmngBCGTmqoj75XbF">
+    <param name="pattern">\.plan_id\b|plan_ref\.plan_id</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/tests</param>
+    <param name="glob">*.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="170" cache_read_input_tokens="114442" output_tokens="163" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 170, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_015NcYDpmngBCGTmqoj75XbF">
+tests/core/test_plan_duplicate_checker.py:64:    assert result.matches[0].plan_id == "100"
+tests/core/test_plan_duplicate_checker.py:185:    assert result.matches[0].plan_id == "100"
+tests/core/test_plan_duplicate_checker.py:232:    assert result.matches[0].plan_id == "100"
+tests/core/test_plan_duplicate_checker.py:258:    assert result.matches[0].plan_id == "100"
+tests/core/test_plan_duplicate_checker.py:259:    assert result.matches[1].plan_id == "200"
+tests/core/test_impl_issue_wt_workflow.py:49:    assert ref.plan_id == "42"
+tests/core/test_impl_issue_wt_workflow.py:148:    assert ref.plan_id == "123"
+tests/core/test_plan_context_provider.py:436:    assert context.plan_id == "123"
+tests/core/test_plan_context_provider.py:441:        context.plan_id = "456"  # type: ignore[misc]
+tests/tui/data/test_provider.py:1856:        plan_ids = {r.plan_id for r in result}
+tests/tui/data/test_provider.py:1891:        assert [r.plan_id for r in result] == [100, 300]
+tests/tui/screens/test_objective_plans_fake_provider.py:19:    assert {r.plan_id for r in result} == {100, 102}
+tests/tui/filtering/test_logic.py:16:    assert result[0].plan_id == 2
+tests/tui/filtering/test_logic.py:28:    assert result[0].plan_id == 456
+tests/tui/filtering/test_logic.py:40:    assert result[0].plan_id == 2
+tests/tui/filtering/test_logic.py:63:    assert result[0].plan_id == 1
+tests/tui/filtering/test_logic.py:73:    assert result[0].plan_id == 1
+tests/tui/filtering/test_logic.py:96:    assert result[0].plan_id == 123
+tests/tui/filtering/test_logic.py:97:    assert result[1].plan_id == 1234
+tests/tui/filtering/test_logic.py:109:    assert result[0].plan_id == 1
+tests/tui/filtering/test_logic.py:110:    assert result[1].plan_id == 3
+tests/tui/filtering/test_logic.py:122:    assert result[0].plan_id == 1
+tests/tui/filtering/test_logic.py:123:    assert result[1].plan_id == 2
+tests/tui/filtering/test_logic.py:124:    assert result[2].plan_id == 3
+tests/tui/app/test_filter_mode.py:67:            assert app._rows[0].plan_id == 456
+tests/tui/app/test_filter_mode.py:159:            assert app._rows[0].plan_id == 456
+tests/tui/app/test_filter_mode.py:185:            assert app._rows[0].plan_id == 2
+tests/tui/app/test_view_switching.py:61:            assert app._rows[0].plan_id == 1
+tests/tui/app/test_view_switching.py:70:            assert app._rows[0].plan_id == 2
+tests/tui/app/test_view_switching.py:94:            issue_numbers = {r.plan_id for r in app._rows}
+
+... [34 lines omitted] ...
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="2433" cache_read_input_tokens="114612" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2433}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me check what types have `plan_id` as a field (to understand what the agent might incorrectly rename):</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2433" cache_read_input_tokens="114612" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2433}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01RrnvGGqrruP2Cu82xMJhMy">
+    <param name="pattern">plan_id.*:.*int|plan_id.*=.*int|plan_id: int</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11</param>
+    <param name="glob">*.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2433" cache_read_input_tokens="114612" output_tokens="1049" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2433, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01RrnvGGqrruP2Cu82xMJhMy">
+src/erk/tui/data/provider_abc.py:30:    def fetch_plans_by_ids(self, plan_ids: set[int]) -&gt; list[PlanRowData]:
+src/erk/tui/data/real_provider.py:142:            plan_id = int(plan.pr_identifier)
+src/erk/tui/data/real_provider.py:390:    def fetch_plans_by_ids(self, plan_ids: set[int]) -&gt; list[PlanRowData]:
+src/erk/tui/data/real_provider.py:414:            plan_id = int(plan.pr_identifier)
+src/erk/tui/data/real_provider.py:479:        worktree_by_plan_id: dict[int, tuple[str, str | None]] = {}
+src/erk/tui/data/real_provider.py:500:        plan_id: int,
+src/erk/tui/data/real_provider.py:503:        worktree_by_plan_id: dict[int, tuple[str, str | None]],
+src/erk/tui/data/types.py:97:    plan_id: int
+src/erk/tui/data/fake_provider.py:100:    def fetch_plans_by_ids(self, plan_ids: set[int]) -&gt; list[PlanRowData]:
+src/erk/tui/data/fake_provider.py:127:    plan_id: int,
+src/erk/tui/screens/plan_detail_screen.py:471:        plan_id: int,
+src/erk/tui/screens/plan_detail_screen.py:496:        plan_id: int,
+src/erk/tui/screens/plan_body_screen.py:97:        plan_id: int,
+src/erk/tui/screens/objective_nodes_screen.py:247:        plan_id: int,
+src/erk/tui/operations/workers.py:28:    def _close_plan_async(self: ErkDashApp, op_id: str, plan_id: int, plan_url: str) -&gt; None:
+src/erk/tui/operations/workers.py:259:        plan_id: int | None,
+src/erk/tui/operations/workers.py:326:    def _dispatch_to_queue_async(self: ErkDashApp, op_id: str, plan_id: int) -&gt; None:
+src/erk/tui/operations/workers.py:346:    def _close_objective_async(self: ErkDashApp, op_id: str, plan_id: int) -&gt; None:
+src/erk/tui/operations/workers.py:366:    def _check_objective_async(self: ErkDashApp, op_id: str, plan_id: int) -&gt; None:
+src/erk/tui/operations/workers.py:385:    def _one_shot_plan_async(self: ErkDashApp, op_id: str, plan_id: int) -&gt; None:
+src/erk/cli/commands/exec/scripts/upload_impl_session.py:79:    plan_id = int(plan_ref.plan_id)
+src/erk/cli/commands/exec/scripts/create_impl_context_from_plan.py:39:@click.argument("plan_id", type=int)
+src/erk/cli/commands/exec/scripts/create_impl_context_from_plan.py:43:    plan_id: int,
+src/erk/cli/commands/exec/scripts/handle_no_changes.py:41:    plan_id: int
+src/erk/cli/commands/exec/scripts/handle_no_changes.py:59:def _build_no_changes_title(*, plan_id: int, original_title: str) -&gt; str:
+src/erk/cli/commands/exec/scripts/handle_no_changes.py:74:    plan_id: int,
+src/erk/cli/commands/exec/scripts/handle_no_changes.py:158:    plan_id: int,
+src/erk/cli/commands/exec/scripts/fetch_sessions.py:78:    plan_id: int,
+src/erk/cli/commands/exec/scripts/setup_impl.py:205:                plan_id: int | None = int(plan_ref.plan_id)
+src/erk/cli/commands/exec/scripts/ci_update_pr_body.py:326:    plan_id: int,
+
+... [19 lines omitted] ...
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="3086" cache_read_input_tokens="117045" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3086}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me check git status to see what the background agent has done:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3086" cache_read_input_tokens="117045" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3086}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_014MoEiJG7M9nYsN9KTS5qKd">
+    <param name="command">git diff --name-only HEAD | wc -l</param>
+    <param name="description">Count modified files</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3086" cache_read_input_tokens="117045" output_tokens="935" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3086, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_014MoEiJG7M9nYsN9KTS5qKd">
+     118
+  </tool_result>
+  <tool_use name="Bash" id="toolu_011yDgTg29skKtiF4MmkQz3S">
+    <param name="command">git diff --name-only HEAD | grep -v "^packages/erk-shared/src/erk_shared/gateway/plan_service\|^packages/erk-shared/src/erk_shared/gateway/pr_service" | head -50</param>
+    <param name="description">List modified files (excluding gateway rename)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="907" cache_read_input_tokens="120131" output_tokens="133" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 907, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_011yDgTg29skKtiF4MmkQz3S">
+packages/erk-shared/src/erk_shared/config/schema.py
+packages/erk-shared/src/erk_shared/context/helpers.py
+packages/erk-shared/src/erk_shared/context/types.py
+packages/erk-shared/src/erk_shared/core/prompt_executor.py
+packages/erk-shared/src/erk_shared/gateway/github/metadata/schemas.py
+packages/erk-shared/src/erk_shared/gateway/gt/types.py
+packages/erk-shared/src/erk_shared/impl_folder.py
+packages/erk-shared/src/erk_shared/output/next_steps.py
+packages/erk-shared/src/erk_shared/plan_store/conversion.py
+packages/erk-shared/src/erk_shared/plan_store/create_plan_draft_pr.py
+packages/erk-shared/src/erk_shared/plan_store/planned_pr.py
+packages/erk-shared/src/erk_shared/plan_store/types.py
+packages/erk-shared/src/erk_shared/plan_workflow.py
+packages/erk-shared/tests/unit/github/test_objective_issues.py
+packages/erk-shared/tests/unit/output/test_next_steps.py
+src/erk/cli/commands/config.py
+src/erk/cli/commands/exec/scripts/close_pr.py
+src/erk/cli/commands/exec/scripts/close_prs.py
+src/erk/cli/commands/exec/scripts/create_pr_from_session.py
+src/erk/cli/commands/exec/scripts/get_plan_info.py
+src/erk/cli/commands/exec/scripts/objective_apply_landed_update.py
+src/erk/cli/commands/exec/scripts/objective_fetch_context.py
+src/erk/cli/commands/exec/scripts/plan_save.py
+src/erk/cli/commands/init/main.py
+src/erk/cli/commands/land_learn.py
+src/erk/cli/commands/objective/list_cmd.py
+src/erk/cli/commands/objective_helpers.py
+src/erk/cli/commands/pr/close_cmd.py
+src/erk/cli/commands/pr/create_cmd.py
+src/erk/cli/commands/pr/duplicate_check_cmd.py
+
+... [20 lines omitted] ...
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01Aa5vP4k7SQX8gVgi6jV3iS">
+    <param name="command">git diff --name-only HEAD | grep -v "^packages/erk-shared/src/erk_shared/gateway/plan_service\|^packages/erk-shared/src/erk_shared/gateway/pr_service" | tail -70</param>
+    <param name="description">List more modified files</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1031" cache_read_input_tokens="121038" output_tokens="130" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1031, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Aa5vP4k7SQX8gVgi6jV3iS">
+src/erk/status/renderers/simple.py
+src/erk/tui/actions/navigation.py
+src/erk/tui/app.py
+src/erk/tui/data/fake_provider.py
+src/erk/tui/data/provider_abc.py
+src/erk/tui/data/real_provider.py
+src/erk/tui/operations/workers.py
+src/erk/tui/screens/check_runs_screen.py
+src/erk/tui/screens/objective_nodes_screen.py
+src/erk/tui/screens/plan_body_screen.py
+src/erk/tui/screens/plan_detail_screen.py
+src/erk/tui/screens/unresolved_comments_screen.py
+tests/commands/branch/test_checkout_cmd.py
+tests/commands/dash/conftest.py
+tests/commands/dash/test_action_state.py
+tests/commands/dash/test_filtering.py
+tests/commands/dash/test_impl_columns.py
+tests/commands/dash/test_pr_columns.py
+tests/commands/dash/test_workflow_run_state.py
+tests/commands/dispatch/conftest.py
+tests/commands/implement/conftest.py
+tests/commands/pr/test_close.py
+tests/commands/pr/test_duplicate_check.py
+tests/commands/pr/test_list.py
+tests/commands/pr/test_log.py
+tests/commands/pr/test_remote_paths.py
+tests/commands/pr/test_view.py
+tests/commands/test_dash_workflow_runs.py
+tests/commands/test_top_level_commands.py
+tests/commands/workspace/test_delete.py
+
+... [40 lines omitted] ...
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="1196" cache_read_input_tokens="122069" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1196}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01BL2NBjjwpG9ghcsXqsAsMC">
+    <param name="pattern">\.plan_id\b|\.pr_id\b</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/tests/unit/cli/commands/exec/scripts/test_setup_impl_from_pr.py</param>
+    <param name="output_mode">content</param>
+    <param name="head_limit">5</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1196" cache_read_input_tokens="122069" output_tokens="387" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1196, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01BL2NBjjwpG9ghcsXqsAsMC">
+128:    pr_number = int(plan_result.plan_id)
+156:    pr_number = int(plan_result.plan_id)
+466:    pr_number = int(plan_result.plan_id)
+
+[Showing results with pagination = limit: 5, offset: 0]
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="470" cache_read_input_tokens="123265" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 470}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_011YrQ1AVMtbXqdfsQpQXiMz">
+    <param name="pattern">\.plan_id\b|\.pr_id\b|plan_result\.plan_id|plan_result\.pr_id</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/tests/core/test_plan_duplicate_checker.py</param>
+    <param name="output_mode">content</param>
+    <param name="head_limit">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="470" cache_read_input_tokens="123265" output_tokens="249" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 470, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_011YrQ1AVMtbXqdfsQpQXiMz">
+64:    assert result.matches[0].plan_id == "100"
+185:    assert result.matches[0].plan_id == "100"
+232:    assert result.matches[0].plan_id == "100"
+258:    assert result.matches[0].plan_id == "100"
+259:    assert result.matches[1].plan_id == "200"
+
+[Showing results with pagination = limit: 10, offset: 0]
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="368" cache_read_input_tokens="123735" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 368}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01J1yGgkhabnHqwFsewnmToE">
+    <param name="command">git diff HEAD -- tests/core/test_plan_duplicate_checker.py | head -20</param>
+    <param name="description">Check what changed in this test file</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="368" cache_read_input_tokens="123735" output_tokens="225" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 368, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01J1yGgkhabnHqwFsewnmToE">
+diff --git a/tests/core/test_plan_duplicate_checker.py b/tests/core/test_plan_duplicate_checker.py
+index fada834f9..aaa312572 100644
+--- a/tests/core/test_plan_duplicate_checker.py
++++ b/tests/core/test_plan_duplicate_checker.py
+@@ -15,7 +15,7 @@ def _make_plan(
+ ) -&gt; Plan:
+     """Create a minimal Plan for testing."""
+     return Plan(
+-        plan_identifier=plan_identifier,
++        pr_identifier=plan_identifier,
+         title=title,
+         body=body,
+         state=PlanState.OPEN,
+@@ -37,7 +37,7 @@ def test_no_duplicates_found() -&gt; None:
+     checker = PlanDuplicateChecker(executor)
+     result = checker.check(
+         "# New Plan\n\nAdd dark mode toggle",
+-        [_make_plan(plan_identifier="100", title="Refactor auth", body="Restructure auth flow")],
++        [_make_plan(pr_identifier="100", title="Refactor auth", body="Restructure auth flow")],
+     )
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="509" cache_read_input_tokens="124103" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 509}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01M3NJsKUSc5KVPtm1y75RqK">
+    <param name="command">git diff HEAD -- tests/core/test_plan_duplicate_checker.py | grep "plan_id" | head -10</param>
+    <param name="description">Check plan_id changes in duplicate checker test</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="509" cache_read_input_tokens="124103" output_tokens="234" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 509, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01M3NJsKUSc5KVPtm1y75RqK">
+-        plan_identifier=plan_identifier,
++        pr_identifier=plan_identifier,
+-        [_make_plan(plan_identifier="100", title="Refactor auth", body="Restructure auth flow")],
+-        [_make_plan(plan_identifier="100", title="Dark mode support", body="Add dark mode to app")],
+-        [_make_plan(plan_identifier="100", title="Existing plan", body="body")],
+-        [_make_plan(plan_identifier="100", title="Existing plan", body="body")],
+-        [_make_plan(plan_identifier="100", title="Existing plan", body="body")],
+-        [_make_plan(plan_identifier="100", title="Existing plan", body="body")],
+-        [_make_plan(plan_identifier="100", title="Existing plan", body="body")],
+-        [_make_plan(plan_identifier="100", title="Existing plan", body="body")],
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="594" cache_read_input_tokens="124612" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 594}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01BdLCkVUq1zKFgBue8UAR1P">
+    <param name="command">git diff HEAD -- tests/core/test_plan_duplicate_checker.py | grep "plan_id\|pr_id"</param>
+    <param name="description">Check all plan_id/pr_id diffs in duplicate checker test</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="594" cache_read_input_tokens="124612" output_tokens="258" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 594, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01BdLCkVUq1zKFgBue8UAR1P">
+-        plan_identifier=plan_identifier,
++        pr_identifier=plan_identifier,
+-        [_make_plan(plan_identifier="100", title="Refactor auth", body="Restructure auth flow")],
++        [_make_plan(pr_identifier="100", title="Refactor auth", body="Restructure auth flow")],
+-        [_make_plan(plan_identifier="100", title="Dark mode support", body="Add dark mode to app")],
++        [_make_plan(pr_identifier="100", title="Dark mode support", body="Add dark mode to app")],
+-        [_make_plan(plan_identifier="100", title="Existing plan", body="body")],
++        [_make_plan(pr_identifier="100", title="Existing plan", body="body")],
+-        [_make_plan(plan_identifier="100", title="Existing plan", body="body")],
++        [_make_plan(pr_identifier="100", title="Existing plan", body="body")],
+-        [_make_plan(plan_identifier="100", title="Existing plan", body="body")],
++        [_make_plan(pr_identifier="100", title="Existing plan", body="body")],
+-        [_make_plan(plan_identifier="100", title="Existing plan", body="body")],
++        [_make_plan(pr_identifier="100", title="Existing plan", body="body")],
+-        [_make_plan(plan_identifier="100", title="Existing plan", body="body")],
++        [_make_plan(pr_identifier="100", title="Existing plan", body="body")],
+-        [_make_plan(plan_identifier="100", title="Existing plan", body="body")],
++        [_make_plan(pr_identifier="100", title="Existing plan", body="body")],
+-        [_make_plan(plan_identifier="100", title="Existing plan", body="body")],
++        [_make_plan(pr_identifier="100", title="Existing plan", body="body")],
+-        [_make_plan(plan_identifier="100", title="Add authentication", body="Add auth flow")],
++        [_make_plan(pr_identifier="100", title="Add authentication", body="Add auth flow")],
+-            _make_plan(plan_identifier="100", title="Plan A", body="body A"),
+-            _make_plan(plan_identifier="200", title="Plan B", body="body B"),
++            _make_plan(pr_identifier="100", title="Plan A", body="body A"),
++            _make_plan(pr_identifier="200", title="Plan B", body="body B"),
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="927" cache_read_input_tokens="125206" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 927}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01PD43us2c8Da3ouPj4VHtDR">
+    <param name="command">git diff HEAD -- tests/unit/cli/commands/exec/scripts/test_add_plan_label.py | head -40</param>
+    <param name="description">Check test_add_plan_label changes</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="927" cache_read_input_tokens="125206" output_tokens="218" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 927, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01PD43us2c8Da3ouPj4VHtDR">
+
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01NbFrnGN2vNtU8sjRGTtazv">
+    <param name="command">git diff HEAD -- src/erk/cli/commands/pr/create_cmd.py | head -60</param>
+    <param name="description">Check create_cmd.py changes</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="244" cache_read_input_tokens="126133" output_tokens="98" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 244, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01NbFrnGN2vNtU8sjRGTtazv">
+diff --git a/src/erk/cli/commands/pr/create_cmd.py b/src/erk/cli/commands/pr/create_cmd.py
+index 08fba507d..ac0e7cde7 100644
+--- a/src/erk/cli/commands/pr/create_cmd.py
++++ b/src/erk/cli/commands/pr/create_cmd.py
+@@ -86,7 +86,7 @@ def pr_create(
+     # When plans_repo is configured, plans are stored in a separate repo
+     # and source_repo records where implementation will happen
+     source_repo: str | None = None
+-    plans_repo = ctx.local_config.plans_repo if ctx.local_config else None
++    plans_repo = ctx.local_config.github_repo if ctx.local_config else None
+     if plans_repo is not None and repo.github is not None:
+         source_repo = f"{repo.github.owner}/{repo.github.repo}"
+ 
+@@ -124,14 +124,14 @@ def pr_create(
+         raise SystemExit(1)
+ 
+     # Display success message with next steps
+-    user_output(f"Created plan #{result.plan_number}")
++    user_output(f"Created plan #{result.pr_number}")
+     user_output("")
+-    user_output(f"Plan: {result.plan_url}")
++    user_output(f"Plan: {result.pr_url}")
+     user_output(f"Branch: {result.branch_name}")
+     user_output("")
+     if (
+-        result.plan_number is not None
++        result.pr_number is not None
+         and result.branch_name is not None
+-        and result.plan_url is not None
++        and result.pr_url is not None
+
+... [3 lines omitted] ...
+  </tool_result>
+  <assistant>The agent is correctly renaming `.plan_number` → `.pr_number`, `.plan_url` → `.pr_url`, and `.plans_repo` → `.github_repo`. Let me check the `.plan_id` renames:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="623" cache_read_input_tokens="126377" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 623}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01PmbrDbQtVxHEDbwmELwhx2">
+    <param name="command">git diff HEAD | grep "plan_id" | grep "^[+-]" | grep -v "^---\|^+++" | head -30</param>
+    <param name="description">Show all plan_id changes in diff</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="623" cache_read_input_tokens="126377" output_tokens="162" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 623, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01PmbrDbQtVxHEDbwmELwhx2">
+-    def close_plan(self, plan_id: int, plan_url: str) -&gt; list[int]:
+-            plan_id: The plan ID to close
+-    def dispatch_to_queue(self, plan_id: int, plan_url: str) -&gt; None:
+-            plan_id: The plan ID to dispatch
+-    def fetch_plan_content(self, plan_id: int, plan_body: str) -&gt; str | None:
+-            plan_id: The GitHub PR number
+-    def fetch_objective_content(self, plan_id: int, plan_body: str) -&gt; str | None:
+-            plan_id: The GitHub issue number
+-        self._plan_content_by_plan_id: dict[int, str] = {}
+-        self._objective_content_by_plan_id: dict[int, str] = {}
+-    def close_plan(self, plan_id: int, plan_url: str) -&gt; list[int]:
+-            plan_id: The plan ID to close
+-    def dispatch_to_queue(self, plan_id: int, plan_url: str) -&gt; None:
+-            plan_id: The plan ID to dispatch
+-    def fetch_plan_content(self, plan_id: int, plan_body: str) -&gt; str | None:
+-            plan_id: The GitHub issue number
+-        return self._plan_content_by_plan_id.get(plan_id)
+-    def set_plan_content(self, plan_id: int, content: str) -&gt; None:
+-            plan_id: The GitHub issue number
+-        self._plan_content_by_plan_id[plan_id] = content
+-    def fetch_objective_content(self, plan_id: int, plan_body: str) -&gt; str | None:
+-            plan_id: The GitHub issue number
+-        return self._objective_content_by_plan_id.get(plan_id)
+-    def set_objective_content(self, plan_id: int, content: str) -&gt; None:
+-            plan_id: The GitHub issue number
+-        self._objective_content_by_plan_id[plan_id] = content
+-    def close_plan(self, plan_id: int, plan_url: str) -&gt; list[int]:
+-            plan_id: The plan ID to close
+-        closed_prs = self._close_linked_prs_http(plan_id, owner, repo)
+-            f"repos/{owner}/{repo}/issues/{plan_id}",
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="777" cache_read_input_tokens="127000" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 777}" output_tokens="11" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01YbiPN5jDsuybjZjLiP6YAV">
+    <param name="command">git diff HEAD -- packages/erk-shared/src/erk_shared/gateway/plan_data_provider/fake.py | head -80</param>
+    <param name="description">Check plan_data_provider/fake.py changes</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="777" cache_read_input_tokens="127000" output_tokens="318" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 777, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01YbiPN5jDsuybjZjLiP6YAV">
+
+  </tool_result>
+  <tool_use name="Bash" id="toolu_017vM9MZrxgMZdyxLWsM3RHs">
+    <param name="command">git diff HEAD -- packages/erk-shared/src/erk_shared/gateway/plan_data_provider/ | head -40</param>
+    <param name="description">Check plan_data_provider changes</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="343" cache_read_input_tokens="127777" output_tokens="104" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 343, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_017vM9MZrxgMZdyxLWsM3RHs">
+
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="130" cache_read_input_tokens="128120" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 130}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_014fVoUdYfdXUq2aEimfVw8B">
+    <param name="command">git diff HEAD -- tests/unit/cli/commands/exec/scripts/test_setup_impl_from_pr.py | grep "plan_id\|pr_id" | head -20</param>
+    <param name="description">Check setup_impl_from_pr test changes</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="130" cache_read_input_tokens="128120" output_tokens="345" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 130, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_014fVoUdYfdXUq2aEimfVw8B">
+
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="371" cache_read_input_tokens="128250" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 371}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01CYWJqR5EGwMLXHjqyx6CLx">
+    <param name="command">git diff HEAD | grep "plan_id\|\.pr_id" | grep "^[+-]" | grep -v "^---\|^+++" | grep -v "p...[truncated 61 chars]...an_ref\|plan_backend\|plan_id: int\|plan_id: str\|plan_id=\|plan_id,\|plan_id)" | head -30</param>
+    <param name="description">Look for plan_id attribute accesses renamed to pr_id</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="371" cache_read_input_tokens="128250" output_tokens="268" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 371, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01CYWJqR5EGwMLXHjqyx6CLx">
+-            plan_id: The plan ID to close
+-            plan_id: The plan ID to dispatch
+-            plan_id: The GitHub PR number
+-            plan_id: The GitHub issue number
+-        self._objective_content_by_plan_id: dict[int, str] = {}
+-            plan_id: The plan ID to close
+-            plan_id: The plan ID to dispatch
+-            plan_id: The GitHub issue number
+-            plan_id: The GitHub issue number
+-            plan_id: The GitHub issue number
+-            plan_id: The GitHub issue number
+-        self._objective_content_by_plan_id[plan_id] = content
+-            plan_id: The plan ID to close
+-            f"repos/{owner}/{repo}/issues/{plan_id}",
+-            plan_id: The plan ID
+-        pr_linkages = self._ctx.github.get_prs_linked_to_issues(location, [plan_id])
+-            plan_id: The plan ID to dispatch
+-            plan_id: The GitHub PR number
+-            plan_id: The GitHub issue number
+-_REQUIRED_REF_FIELDS = ("provider", "plan_id", "url", "created_at", "synced_at")
++_LEGACY_REF_FIELD_ALIASES = {"plan_id": "pr_id"}
+-        plan_id: Provider-specific ID as string ("42", "PROJ-123")
++    Supports legacy "plan_id" key for backward compatibility.
+-    if not result.plan_id.isdigit():
++    if not result.pr_id.isdigit():
+-            error=f"Expected numeric plan_id from planned PR creation, got: {result.plan_id!r}",
++            error=f"Expected numeric pr_id from planned PR creation, got: {result.pr_id!r}",
++    pr_number = int(result.pr_id)
+-        plan_id: Provider-specific plan identifier as string
++            f"Plan #{plan.pr_identifier} must have 'erk-plan' label.\n"
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="783" cache_read_input_tokens="128621" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 783}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01AfZK8UHLskhmaHkwzXdok2">
+    <param name="command">git diff HEAD | grep -E "^\+.*\.pr_id|^\-.*\.plan_id" | grep -v "^---\|^+++" | head -30</param>
+    <param name="description">Show specific attribute access renames in diff</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="783" cache_read_input_tokens="128621" output_tokens="276" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 783, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01AfZK8UHLskhmaHkwzXdok2">
+-        return plan_ref.plan_id
++        return plan_ref.pr_id
+-    if not result.plan_id.isdigit():
++    if not result.pr_id.isdigit():
+-            error=f"Expected numeric plan_id from planned PR creation, got: {result.plan_id!r}",
++            error=f"Expected numeric pr_id from planned PR creation, got: {result.pr_id!r}",
+-    plan_number = int(result.plan_id)
++    pr_number = int(result.pr_id)
+-            f"Plan #{plan.plan_identifier} must have 'erk-plan' label.\n"
++            f"Plan #{plan.pr_identifier} must have 'erk-plan' label.\n"
+-            f"  gh issue edit {plan.plan_identifier} --add-label erk-plan"
++            f"  gh issue edit {plan.pr_identifier} --add-label erk-plan"
+-    if not plan.plan_identifier.isdigit():
++    if not plan.pr_identifier.isdigit():
+-            f"Plan identifier '{plan.plan_identifier}' is not a valid plan number. "
++            f"Plan identifier '{plan.pr_identifier}' is not a valid plan number. "
+-    plan_number = int(plan.plan_identifier)
++    plan_number = int(plan.pr_identifier)
+-        warnings.append(f"Plan #{plan.plan_identifier} is {plan.state.value}. Proceeding anyway...")
++        warnings.append(f"Plan #{plan.pr_identifier} is {plan.state.value}. Proceeding anyway...")
+-            f"Draft PR plan #{plan.plan_identifier} is missing required "
++            f"Draft PR plan #{plan.pr_identifier} is missing required "
+-        "plan_id": plan.plan_identifier,
++        "plan_id": plan.pr_identifier,
+-    plan_id = plan_result.plan_identifier
++    plan_id = plan_result.pr_identifier
+-        plan_id = plan_result.plan_identifier
++        plan_id = plan_result.pr_identifier
+-        plan_id = plan_result.plan_identifier
++        plan_id = plan_result.pr_identifier
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="955" cache_read_input_tokens="129404" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 955}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_011ouYymc4r87AgjqH6ncMu9">
+    <param name="command">git diff HEAD | grep -E "^\+.*\.pr_number|^\-.*\.plan_number" | grep -v "^---\|^+++" | head -30</param>
+    <param name="description">Show plan_number to pr_number renames in diff</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="955" cache_read_input_tokens="129404" output_tokens="328" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 955, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_011ouYymc4r87AgjqH6ncMu9">
+-        return f"erk pr dispatch {self.plan_number}"
++        return f"erk pr dispatch {self.pr_number}"
+-        return f"erk br co --for-plan {self.plan_number}"
++        return f"erk br co --for-plan {self.pr_number}"
+-        return f"erk br co --new-slot --for-plan {self.plan_number}"
++        return f"erk br co --new-slot --for-plan {self.pr_number}"
+-        return f"erk br co --for-plan {self.plan_number} &amp;&amp; erk implement"
++        return f"erk br co --for-plan {self.pr_number} &amp;&amp; erk implement"
+-        return f"erk br co --for-plan {self.plan_number} &amp;&amp; erk implement -d"
++        return f"erk br co --for-plan {self.pr_number} &amp;&amp; erk implement -d"
+-            f'source "$(erk br co --new-slot --for-plan {self.plan_number} --script)"'
++            f'source "$(erk br co --new-slot --for-plan {self.pr_number} --script)"'
+-            f'source "$(erk br co --new-slot --for-plan {self.plan_number} --script)"'
++            f'source "$(erk br co --new-slot --for-plan {self.pr_number} --script)"'
+-    assert s.plan_number == 42
++    assert s.pr_number == 42
+-        "plan_number": result.plan_number,
++        "plan_number": result.pr_number,
+-            + f" Created learn plan #{pr_result.plan_number} for plan #{plan_id}"
++            + f" Created learn plan #{pr_result.pr_number} for plan #{plan_id}"
+-    user_output(f"Created plan #{result.plan_number}")
++    user_output(f"Created plan #{result.pr_number}")
+-        result.plan_number is not None
++        result.pr_number is not None
+-        user_output(format_plan_next_steps_plain(result.plan_number, url=result.plan_url))
++        user_output(format_plan_next_steps_plain(result.pr_number, url=result.pr_url))
+-            plan_number = result.plan_number
+-        if status.plan.plan_number is not None and status.plan.plan_url:
+-            id_text = f"#{status.plan.plan_number}"
++        if status.plan.pr_number is not None and status.plan.pr_url:
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="993" cache_read_input_tokens="130359" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 993}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_016Wx92Zput3VYjvfdMUznZG">
+    <param name="command">git diff HEAD | grep -E "^\+.*\.github_repo|^\-.*\.plans_repo" | grep -v "^---\|^+++" | head -30</param>
+    <param name="description">Show plans_repo to github_repo renames in diff</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="993" cache_read_input_tokens="130359" output_tokens="303" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 993, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_016Wx92Zput3VYjvfdMUznZG">
+-        ...     plans_repo = config.plans_repo
++        ...     github_repo = config.github_repo
+-        if cfg.plans_repo:
++        if cfg.github_repo:
+-                f"  plans.repo={cfg.plans_repo}"
+-                f"{' (local)' if local_only_config.plans_repo is not None else ''}"
++                f"  plans.repo={cfg.github_repo}"
++                f"{' (local)' if local_only_config.github_repo is not None else ''}"
+-            and not cfg.plans_repo
++            and not cfg.github_repo
+-    if config.plans_repo is not None:
++    if config.github_repo is not None:
+-            if repo_config.plans_repo is not None:
+-                offer_plans_repo_label_setup(repo_context.root, repo_config.plans_repo)
++            if repo_config.github_repo is not None:
++                offer_plans_repo_label_setup(repo_context.root, repo_config.github_repo)
+-    plans_repo = ctx.local_config.plans_repo if ctx.local_config else None
++    plans_repo = ctx.local_config.github_repo if ctx.local_config else None
+-        plans_repo=repo_config.plans_repo,
++        github_repo=repo_config.github_repo,
+-            local_config.plans_repo
+-            if local_config.plans_repo is not None
+-            else base_config.plans_repo
++            local_config.github_repo
++            if local_config.github_repo is not None
++            else base_config.github_repo
+-    issues: GitHubIssues = RealGitHubIssues(target_repo=local_config.plans_repo, time=time)
++    issues: GitHubIssues = RealGitHubIssues(target_repo=local_config.github_repo, time=time)
+-        if repo_config.plans_repo is not None:
++        if repo_config.github_repo is not None:
+  </tool_result>
+  <assistant>The agent is correctly renaming `.plans_repo` → `.github_repo`. The implementation looks good. Now let me check agent status again:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="827" cache_read_input_tokens="131352" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 827}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01WKG6oemUbTdrqDDPPRmiAu">
+    <param name="description">Check libcst agent status</param>
+    <param name="subagent_type">libcst-refactor</param>
+    <param name="resume">a36c2e70a827d43ff</param>
+    <param name="prompt">Status check</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="827" cache_read_input_tokens="131352" output_tokens="158" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 827, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01WKG6oemUbTdrqDDPPRmiAu">
+The branch has a large set of accumulated unstaged changes — 118 files modified or renamed in total, representing this whole phase of the rename campaign. The 4 renames in the staged area are from earlier work (the `plan_service` → `pr_service` directory rename). The 61 files modified in this session are all unstaged.
+
+**Summary of current state:**
+
+- **Branch:** `plnd/O9109-rename-plan-to-pr-ph-03-09-2222`
+- **Staged:** 4 files (the `plan_service/` → `pr_service/` directory renames from prior work)
+- **Unstaged modified:** ~114 files — a mix of prior work (already-updated excluded files listed in your task) plus the 61 files the LibCST agent just modified
+- **Working tree:** Clean otherwise, no untracked files
+
+The refactoring session completed successfully. All attribute access and constructor keyword renames for the 6 target patterns (`plan_identifier`, `plans_repo`, `plan_id` on `PlanNotFound`/`CreatePlanResult`, `PlanNextSteps.plan_number`, and `plan_number`/`plan_url` on `CreatePlanDraftPRResult`) are done across 61 files. All modified files pass Python syntax checks.
+agentId: a36c2e70a827d43ff (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 129641
+tool_uses: 1
+duration_ms: 19470&lt;/usage&gt;
+  </tool_result>
+  <assistant>The background agent has completed! It modified 61 files. Now let me run a comprehensive verification to check what still needs to be fixed:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="529" cache_read_input_tokens="132179" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 529}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01APEhvxi2oGEVCKFS9D7HgF">
+    <param name="command">grep -rn "\.plan_id\b" --include="*.py" packages/erk-shared/src/ src/ tests/ 2&gt;/dev/null | grep -v "plan_id: int\|plan_id: str\|plan_id=\|plan_id,\|plan_id)\|plan_id)" | head -30</param>
+    <param name="description">Find remaining .plan_id attribute accesses</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="529" cache_read_input_tokens="132179" output_tokens="216" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 529, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01APEhvxi2oGEVCKFS9D7HgF">
+packages/erk-shared/src/erk_shared/gateway/plan_data_provider/fake.py:119:        self._plans = [p for p in self._plans if p.plan_id != plan_id]
+packages/erk-shared/src/erk_shared/gateway/plan_data_provider/fake.py:221:            [p for p in self._plans if p.plan_id in plan_ids],
+src/erk/core/commit_message_generator.py:217:## Implementation Plan (Plan #{plan_context.plan_id})
+src/erk/tui/screens/objective_nodes_screen.py:441:                self.notify(f"Opened plan #{row.plan_id}")
+src/erk/tui/screens/objective_nodes_screen.py:447:                self.notify(f"Opened PR #{row.pr_number or row.plan_id}")
+src/erk/tui/screens/objective_nodes_screen.py:507:        op_id = f"close-plan-{row.plan_id}"
+src/erk/tui/screens/objective_nodes_screen.py:508:        app._start_operation(op_id=op_id, label=f"Closing plan #{row.plan_id}...")
+src/erk/tui/screens/objective_nodes_screen.py:517:        op_id = f"dispatch-plan-{row.plan_id}"
+src/erk/tui/screens/objective_nodes_screen.py:518:        app._start_operation(op_id=op_id, label=f"Dispatching plan #{row.plan_id} to queue...")
+src/erk/tui/screens/objective_nodes_screen.py:529:        plan_id = row.plan_id if not row.is_learn_plan else None
+src/erk/tui/screens/objective_nodes_screen.py:618:                    pr_lookup = {row.plan_id: row for row in pr_rows}
+src/erk/tui/screens/plan_detail_screen.py:364:        cmd = f"erk br co --for-plan {self._row.plan_id}"
+src/erk/tui/screens/plan_detail_screen.py:370:            f'source "$(erk br co --for-plan {self._row.plan_id} --script)"'
+src/erk/tui/screens/plan_detail_screen.py:386:        cmd = f"erk pr dispatch {self._row.plan_id}"
+src/erk/tui/screens/plan_detail_screen.py:644:                executor.notify(f"Opened plan #{row.plan_id}", severity=None)
+src/erk/tui/screens/plan_detail_screen.py:682:            cmd = f"erk br co --for-plan {row.plan_id}"
+src/erk/tui/screens/plan_detail_screen.py:688:                f'source "$(erk br co --for-plan {row.plan_id} --script)"'
+src/erk/tui/screens/plan_detail_screen.py:836:                    op_id = f"close-plan-{row.plan_id}"
+src/erk/tui/screens/plan_detail_screen.py:837:                    self.app._start_operation(op_id=op_id, label=f"Closing plan #{row.plan_id}...")
+src/erk/tui/screens/plan_detail_screen.py:844:                    op_id = f"dispatch-plan-{row.plan_id}"
+src/erk/tui/screens/plan_detail_screen.py:846:                        op_id=op_id, label=f"Dispatching plan #{row.plan_id} to queue..."
+src/erk/tui/screens/plan_detail_screen.py:874:                plan_text = f"Plan #{self._row.plan_id}"
+src/erk/tui/screens/plan_detail_screen.py:887:                        f"#{self._row.plan_id}", self._row.plan_url, classes="info-value"
+src/erk/tui/screens/plan_detail_screen.py:890:                    yield Label(f"#{self._row.plan_id}", classes="info-value", markup=False)
+src/erk/tui/screens/plan_detail_screen.py:993:            prepare_cmd = f"erk br co --for-plan {self._row.plan_id}"
+src/erk/tui/screens/plan_detail_screen.py:999:            dispatch_cmd = f"erk pr dispatch {self._row.plan_id}"
+src/erk/tui/actions/palette.py:43:                self.notify(f"Opened plan #{row.plan_id}")
+src/erk/tui/actions/palette.py:196:                op_id = f"close-plan-{row.plan_id}"
+src/erk/tui/actions/palette.py:197:                self._start_operation(op_id=op_id, label=f"Closing plan #{row.plan_id}...")
+src/erk/tui/actions/palette.py:202:                op_id = f"dispatch-plan-{row.plan_id}"
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="1493" cache_read_input_tokens="132708" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1493}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_014sJACQX3stVsxzugx6XzZJ">
+    <param name="pattern">plan_context\.plan_id|plan_context\.pr_id</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/src/erk/core/commit_message_generator.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1493" cache_read_input_tokens="132708" output_tokens="269" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1493, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_014sJACQX3stVsxzugx6XzZJ">
+217:## Implementation Plan (Plan #{plan_context.plan_id})
+  </tool_result>
+  <tool_use name="Grep" id="toolu_015h46AZTRxyEkRP2N4SFoXX">
+    <param name="pattern">class PlanContext|plan_id.*:\s*str|plan_id.*:\s*int</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/src/erk/core/plan_context_provider.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="297" cache_read_input_tokens="134201" output_tokens="149" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 297, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_015h46AZTRxyEkRP2N4SFoXX">
+17:class PlanContext:
+26:    plan_id: str
+31:class PlanContextProvider:
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="185" cache_read_input_tokens="134498" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 185}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_018ujHYVjmA3EWz3Z26PC1Z4">
+    <param name="command">grep -rn "\.plan_number\b" --include="*.py" packages/erk-shared/src/ src/ tests/ 2&gt;/dev/null | grep -v "plan_number: int\|plan_number: str\|plan_number=\|plan_number,\|plan_number)\|# " | head -30</param>
+    <param name="description">Find remaining .plan_number attribute accesses</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="185" cache_read_input_tokens="134498" output_tokens="329" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 185, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_018ujHYVjmA3EWz3Z26PC1Z4">
+src/erk/cli/commands/branch/create_cmd.py:269:                final_message=f'echo "Prepared plan #{setup.plan_number} at $(pwd)"',
+src/erk/cli/commands/branch/create_cmd.py:275:                comment=f"branch create --for-plan {setup.plan_number}",
+src/erk/cli/commands/branch/create_cmd.py:280:        user_output(f"Created .erk/impl-context/ folder from plan #{setup.plan_number}")
+src/erk/cli/commands/branch/checkout_cmd.py:333:            final_message=f'echo "Prepared plan #{setup.plan_number} at $(pwd)"',
+src/erk/cli/commands/branch/checkout_cmd.py:339:            comment=f"branch checkout --for-plan {setup.plan_number}",
+src/erk/cli/commands/branch/checkout_cmd.py:344:    user_output(f"Created .erk/impl-context/ folder from plan #{setup.plan_number}")
+src/erk/cli/commands/pr/dispatch_cmd.py:837:        user_output(f"  #{r.plan_number}: {r.plan_title}")
+src/erk/cli/commands/exec/scripts/objective_save_to_issue.py:207:    if result.plan_number is None:
+src/erk/cli/commands/exec/scripts/objective_save_to_issue.py:247:        click.echo(f"Objective saved to GitHub issue #{result.plan_number}")
+src/erk/cli/commands/implement.py:452:        ctx.console.info(f"Detected plan #{target_info.plan_number}")
+src/erk/cli/commands/implement.py:458:        if target_info.plan_number is None:
+src/erk/cli/commands/wt/create_cmd.py:938:            user_output(f"Created worktree from plan #{setup.plan_number}: {setup.issue_title}")
+tests/unit/shared/test_next_steps.py:15:        assert steps.plan_number == 42
+tests/unit/shared/test_plan_workflow.py:98:    assert result.plan_number == 789
+tests/unit/shared/test_plan_workflow.py:162:    assert result.plan_number == 456
+tests/unit/cli/commands/exec/scripts/test_objective_save_to_issue.py:665:    assert result.plan_number is not None
+tests/commands/implement/test_target_detection.py:15:    assert target_info.plan_number == "123"
+tests/commands/implement/test_target_detection.py:22:    assert target_info.plan_number == "123"
+tests/commands/implement/test_target_detection.py:30:    assert target_info.plan_number == "456"
+tests/commands/implement/test_target_detection.py:38:    assert target_info.plan_number == "789"
+tests/commands/implement/test_target_detection.py:45:    assert target_info.plan_number is None
+tests/commands/implement/test_target_detection.py:53:    assert result_plain.plan_number == result_prefixed.plan_number == "809"
+tests/commands/implement/test_target_detection.py:60:    assert target_info.plan_number is None
+tests/commands/implement/test_target_detection.py:67:    assert target_info.plan_number is None
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="1195" cache_read_input_tokens="134683" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1195}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01PDKhhxxRqdpgBKcPimSMDe">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/tests/unit/shared/test_next_steps.py</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1195" cache_read_input_tokens="134683" output_tokens="438" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1195, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01PDKhhxxRqdpgBKcPimSMDe">
+     1→"""Tests for next_steps formatting functions."""
+     2→
+     3→from erk_shared.output.next_steps import (
+     4→    PlanNextSteps,
+     5→    format_plan_next_steps_plain,
+     6→)
+     7→
+     8→
+     9→class TestPlanNextSteps:
+    10→    def test_construction(self) -&gt; None:
+    11→        steps = PlanNextSteps(
+    12→            pr_number=42,
+    13→            url="https://github.com/org/repo/pull/42",
+    14→        )
+    15→        assert steps.plan_number == 42
+    16→
+    17→    def test_view_returns_url(self) -&gt; None:
+    18→        steps = PlanNextSteps(
+    19→            pr_number=42,
+    20→            url="https://github.com/org/repo/pull/42",
+    21→        )
+    22→        assert steps.view == "https://github.com/org/repo/pull/42"
+    23→
+    24→    def test_dispatch_uses_plan_number(self) -&gt; None:
+    25→        steps = PlanNextSteps(
+    26→            pr_number=42,
+    27→            url="https://github.com/org/repo/pull/42",
+    28→        )
+    29→        assert steps.dispatch == "erk pr dispatch 42"
+    30→
+
+... [5 lines omitted] ...
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="994" cache_read_input_tokens="135878" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 994}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01MYX2hddYkggW6UrMX2Z89c">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/tests/unit/shared/test_next_steps.py</param>
+    <param name="old_string">        assert steps.plan_number == 42</param>
+    <param name="new_string">        assert steps.pr_number == 42</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="994" cache_read_input_tokens="135878" output_tokens="268" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 994, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01MYX2hddYkggW6UrMX2Z89c">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/tests/unit/shared/test_next_steps.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me check `test_plan_workflow.py`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="326" cache_read_input_tokens="136872" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 326}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01FU4joW85xTXDsjqKkDy69d">
+    <param name="pattern">result\.plan_number</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/tests/unit/shared/test_plan_workflow.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="326" cache_read_input_tokens="136872" output_tokens="145" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 326, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01FU4joW85xTXDsjqKkDy69d">
+98:    assert result.plan_number == 789
+99:    assert isinstance(result.plan_number, int)
+162:    assert result.plan_number == 456
+  </tool_result>
+  <tool_use name="Read" id="toolu_01QeS74xi1fGy4dE6PkdDseD">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/tests/unit/shared/test_plan_workflow.py</param>
+    <param name="offset">80</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="197" cache_read_input_tokens="137198" output_tokens="126" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 197, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01QeS74xi1fGy4dE6PkdDseD">
+    80→
+    81→    assert isinstance(result, PlanBranchSetup)
+    82→    assert len(result.warnings) == 1
+    83→    assert "is CLOSED" in result.warnings[0]
+    84→    assert "Proceeding anyway" in result.warnings[0]
+    85→
+    86→
+    87→def test_prepare_plan_converts_identifier_to_int() -&gt; None:
+    88→    """Plan identifier string is converted to plan number int."""
+    89→    plan = _make_plan(
+    90→        pr_identifier="789",
+    91→        header_fields={"branch_name": "plan-test-01-01-0000"},
+    92→    )
+    93→    timestamp = datetime(2024, 1, 1, 0, 0)
+    94→
+    95→    result = prepare_plan_for_worktree(plan, timestamp, warn_non_open=True)
+    96→
+    97→    assert isinstance(result, PlanBranchSetup)
+    98→    assert result.plan_number == 789
+    99→    assert isinstance(result.plan_number, int)
+   100→
+   101→
+   102→def test_prepare_plan_invalid_identifier_returns_failure() -&gt; None:
+   103→    """Non-numeric plan identifier returns PlanValidationFailed."""
+   104→    plan = _make_plan(pr_identifier="not-a-number")
+   105→    timestamp = datetime(2024, 1, 1, 0, 0)
+   106→
+   107→    result = prepare_plan_for_worktree(plan, timestamp, warn_non_open=True)
+   108→
+   109→    assert isinstance(result, PlanValidationFailed)
+
+... [5 lines omitted] ...
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="650" cache_read_input_tokens="137395" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 650}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01Ck29f9wcFE4nQu35SN7Epy">
+    <param name="pattern">class PlanBranchSetup|plan_number|pr_number</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/packages/erk-shared/src/erk_shared/plan_workflow.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="650" cache_read_input_tokens="137395" output_tokens="199" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 650, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Ck29f9wcFE4nQu35SN7Epy">
+21:class PlanBranchSetup:
+28:        plan_number: Plan number
+38:    plan_number: int
+93:    plan_number = int(plan.pr_identifier)
+124:        plan_number=plan_number,
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="269" cache_read_input_tokens="138045" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 269}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01Eb6dyqYWK97Y3Y6vq1bh8H">
+    <param name="command">git diff HEAD -- packages/erk-shared/src/erk_shared/plan_workflow.py | head -40</param>
+    <param name="description">Check plan_workflow.py changes</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="269" cache_read_input_tokens="138045" output_tokens="235" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 269, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+</session>

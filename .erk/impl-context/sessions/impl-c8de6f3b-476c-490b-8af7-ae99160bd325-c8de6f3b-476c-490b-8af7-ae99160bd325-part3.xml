@@ -1,0 +1,631 @@
+<session>
+  <meta branch="plnd/O9109-rename-plan-to-pr-ph-03-09-2222" />
+  <meta model="claude-sonnet-4-6" />
+  <tool_use name="Write" id="toolu_01D2HFz34JWXiyyKiwtBt64o">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/packages/erk-shared/src/erk_shared/output/next_steps.py</param>
+    <param name="content">"""Plan next steps formatting - single source of truth."""
+
+from dataclasses import datacl...[truncated 2277 chars]...tch}
+```
+
+---
+
+### Local Execution
+
+**Checkout plan branch:**
+```bash
+{s.checkout}
+```"""
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="21649" cache_read_input_tokens="117680" output_tokens="1679" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 21649, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01D2HFz34JWXiyyKiwtBt64o">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/packages/erk-shared/src/erk_shared/output/next_steps.py has been updated successfully.
+  </tool_result>
+  <assistant>**Phase 5: Update metadata schemas**</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1729" cache_read_input_tokens="139329" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1729}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_015DYXT7QtfaMi9tR5XeeEu9">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/packages/erk-shared/src/erk_shared/gateway/github/metadata/schemas.py</param>
+    <param name="old_string">def _migrate_issue_number_to_plan_number(data: dict[str, Any]) -&gt; None:
+    """Migrate leg...[truncated 284 chars]...data and "plan_number" not in data:
+        data["plan_number"] = data.pop("issue_number")</param>
+    <param name="new_string">def _migrate_to_pr_number(data: dict[str, Any]) -&gt; None:
+    """Migrate legacy issue_numbe...[truncated 394 chars]..." in data and "pr_number" not in data:
+        data["pr_number"] = data.pop("plan_number")</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1729" cache_read_input_tokens="139329" output_tokens="468" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1729, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_015DYXT7QtfaMi9tR5XeeEu9">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/packages/erk-shared/src/erk_shared/gateway/github/metadata/schemas.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update `WorktreeCreationSchema` to use `_migrate_to_pr_number` and `pr_number`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="536" cache_read_input_tokens="141058" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 536}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01ASmGQNozyVyyzFDKx3Z1g7">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/packages/erk-shared/src/erk_shared/gateway/github/metadata/schemas.py</param>
+    <param name="old_string">    def validate(self, data: dict[str, Any]) -&gt; None:
+        """Validate erk-worktree-cre...[truncated 1542 chars]..._fields))}")
+
+    def get_key(self) -&gt; str:
+        return BlockKeys.ERK_WORKTREE_CREATION</param>
+    <param name="new_string">    def validate(self, data: dict[str, Any]) -&gt; None:
+        """Validate erk-worktree-cre...[truncated 1513 chars]..._fields))}")
+
+    def get_key(self) -&gt; str:
+        return BlockKeys.ERK_WORKTREE_CREATION</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="536" cache_read_input_tokens="141058" output_tokens="1076" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 536, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01ASmGQNozyVyyzFDKx3Z1g7">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/packages/erk-shared/src/erk_shared/gateway/github/metadata/schemas.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update `PlanSchema` to use `_migrate_to_pr_number` and `pr_number`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1144" cache_read_input_tokens="141594" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1144}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01NaEcKESNGJ8xe1Vj4mYoaE">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/packages/erk-shared/src/erk_shared/gateway/github/metadata/schemas.py</param>
+    <param name="old_string">    def validate(self, data: dict[str, Any]) -&gt; None:
+        """Validate erk-plan data st...[truncated 514 chars]... if data["plan_number"] &lt;= 0:
+            raise ValueError("plan_number must be positive")</param>
+    <param name="new_string">    def validate(self, data: dict[str, Any]) -&gt; None:
+        """Validate erk-plan data st...[truncated 489 chars]...     if data["pr_number"] &lt;= 0:
+            raise ValueError("pr_number must be positive")</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1144" cache_read_input_tokens="141594" output_tokens="547" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1144, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01NaEcKESNGJ8xe1Vj4mYoaE">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/packages/erk-shared/src/erk_shared/gateway/github/metadata/schemas.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update `SubmissionQueuedSchema`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="615" cache_read_input_tokens="142738" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 615}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01QU36kJ7VPLZjxE65LkFX2A">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/packages/erk-shared/src/erk_shared/gateway/github/metadata/schemas.py</param>
+    <param name="old_string">    def validate(self, data: dict[str, Any]) -&gt; None:
+        """Validate submission-queue...[truncated 202 chars]...tion_results",
+            "expected_workflow",
+            "trigger_mechanism",
+        }</param>
+    <param name="new_string">    def validate(self, data: dict[str, Any]) -&gt; None:
+        """Validate submission-queue...[truncated 185 chars]...tion_results",
+            "expected_workflow",
+            "trigger_mechanism",
+        }</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="615" cache_read_input_tokens="142738" output_tokens="373" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 615, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01QU36kJ7VPLZjxE65LkFX2A">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/packages/erk-shared/src/erk_shared/gateway/github/metadata/schemas.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_015J8HCPWiUqzWX5NozZ8rd9">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/packages/erk-shared/src/erk_shared/gateway/github/metadata/schemas.py</param>
+    <param name="old_string">        # Validate plan_number
+        if not isinstance(data["plan_number"], int):
+      ...[truncated 294 chars]...must be a dict")
+
+    def get_key(self) -&gt; str:
+        return BlockKeys.SUBMISSION_QUEUED</param>
+    <param name="new_string">        # Validate pr_number
+        if not isinstance(data["pr_number"], int):
+          ...[truncated 284 chars]...must be a dict")
+
+    def get_key(self) -&gt; str:
+        return BlockKeys.SUBMISSION_QUEUED</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="552" cache_read_input_tokens="143353" output_tokens="399" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 552, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_015J8HCPWiUqzWX5NozZ8rd9">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/packages/erk-shared/src/erk_shared/gateway/github/metadata/schemas.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update `WorkflowStartedSchema`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="467" cache_read_input_tokens="143905" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 467}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01SeE9WdzG2qJn7r22MMPa3r">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/packages/erk-shared/src/erk_shared/gateway/github/metadata/schemas.py</param>
+    <param name="old_string">    def validate(self, data: dict[str, Any]) -&gt; None:
+        """Validate workflow-started...[truncated 137 chars]...   "workflow_run_id",
+            "workflow_run_url",
+            "plan_number",
+        }</param>
+    <param name="new_string">    def validate(self, data: dict[str, Any]) -&gt; None:
+        """Validate workflow-started...[truncated 120 chars]...     "workflow_run_id",
+            "workflow_run_url",
+            "pr_number",
+        }</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="467" cache_read_input_tokens="143905" output_tokens="348" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 467, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01SeE9WdzG2qJn7r22MMPa3r">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/packages/erk-shared/src/erk_shared/gateway/github/metadata/schemas.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01PxTsdKB45BEKJuZ6Bj4Qff">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/packages/erk-shared/src/erk_shared/gateway/github/metadata/schemas.py</param>
+    <param name="old_string">        # Validate plan_number
+        if not isinstance(data["plan_number"], int):
+      ...[truncated 125 chars]...ositive")
+
+        # Validate optional fields if present
+        if "branch_name" in data:</param>
+    <param name="new_string">        # Validate pr_number
+        if not isinstance(data["pr_number"], int):
+          ...[truncated 115 chars]...ositive")
+
+        # Validate optional fields if present
+        if "branch_name" in data:</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="416" cache_read_input_tokens="144372" output_tokens="313" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 416, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01PxTsdKB45BEKJuZ6Bj4Qff">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/packages/erk-shared/src/erk_shared/gateway/github/metadata/schemas.py has been updated successfully.
+  </tool_result>
+  <assistant>**Phase 6: Rename config field `plans_repo` → `github_repo`**</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="381" cache_read_input_tokens="144788" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 381}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_0138Toi9f8JnpjmvnRBVeZot">
+    <param name="replace_all">True</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/packages/erk-shared/src/erk_shared/context/types.py</param>
+    <param name="old_string">plans_repo</param>
+    <param name="new_string">github_repo</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="381" cache_read_input_tokens="144788" output_tokens="181" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 381, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0138Toi9f8JnpjmvnRBVeZot">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/packages/erk-shared/src/erk_shared/context/types.py has been updated. All occurrences of 'plans_repo' were successfully replaced with 'github_repo'.
+  </tool_result>
+  <assistant>**Phase 7: Rename `PreAnalysisResult.plan_number` → `pr_number`**</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="266" cache_read_input_tokens="145169" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 266}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01CmLRMv7f4NXGUbqkTGF58f">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/packages/erk-shared/src/erk_shared/gateway/gt/types.py</param>
+    <param name="old_string">    plan_number: int | None = None  # Plan number if linked via plan ref</param>
+    <param name="new_string">    pr_number: int | None = None  # PR number if linked via plan ref</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="266" cache_read_input_tokens="145169" output_tokens="219" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 266, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01CmLRMv7f4NXGUbqkTGF58f">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/packages/erk-shared/src/erk_shared/gateway/gt/types.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me read the config schema and context helpers to update them:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="285" cache_read_input_tokens="145435" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 285}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01GQ3dD3SAN57fgKkiuVxFvs">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/packages/erk-shared/src/erk_shared/config/schema.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="285" cache_read_input_tokens="145435" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 285}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01GQ3dD3SAN57fgKkiuVxFvs">
+     1→"""Pydantic schemas for erk configuration.
+     2→
+     3→These schemas serve as the single source of truth for:
+     4→- Configuration field names and CLI keys
+     5→- Field descriptions (for `erk config keys`)
+     6→- Configuration levels (global-only vs overridable vs repo-only)
+     7→- Display formatting
+     8→"""
+     9→
+    10→from __future__ import annotations
+    11→
+    12→from collections.abc import Iterator
+    13→from enum import StrEnum
+    14→
+    15→from pydantic import BaseModel, Field
+    16→
+    17→
+    18→class ConfigLevel(StrEnum):
+    19→    """Defines where a configuration key can be set.
+    20→
+    21→    GLOBAL_ONLY: Can only be set in ~/.erk/config.toml
+    22→    OVERRIDABLE: Can be set at global, repo (.erk/config.toml), or local level
+    23→    REPO_ONLY: Can only be set in repository config (not global)
+    24→    """
+    25→
+    26→    GLOBAL_ONLY = "global_only"
+    27→    OVERRIDABLE = "overridable"
+    28→    REPO_ONLY = "repo_only"
+    29→
+    30→
+
+... [301 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Ub6VCCcu4LN2GcxydENyCZ">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/packages/erk-shared/src/erk_shared/context/helpers.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="285" cache_read_input_tokens="145435" output_tokens="194" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 285, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Ub6VCCcu4LN2GcxydENyCZ">
+     1→"""Helper functions for accessing context dependencies with LBYL checks.
+     2→
+     3→This module provides getter functions that encapsulate the "Look Before You Leap"
+     4→pattern for accessing dependencies from the ErkContext. These functions:
+     5→
+     6→1. Check that context is initialized
+     7→2. Return the typed dependency
+     8→3. Exit with clear error message if context is missing
+     9→
+    10→This eliminates code duplication across kit CLI commands.
+    11→"""
+    12→
+    13→from __future__ import annotations
+    14→
+    15→from pathlib import Path
+    16→
+    17→import click
+    18→
+    19→from erk_shared.context.context import ErkContext
+    20→from erk_shared.context.types import LoadedConfig, NoRepoSentinel
+    21→from erk_shared.core.prompt_executor import PromptExecutor
+    22→from erk_shared.gateway.branch_manager.abc import BranchManager
+    23→from erk_shared.gateway.claude_installation.abc import ClaudeInstallation
+    24→from erk_shared.gateway.git.abc import Git
+    25→from erk_shared.gateway.github.abc import LocalGitHub
+    26→from erk_shared.gateway.github.issues.abc import GitHubIssues
+    27→from erk_shared.gateway.time.abc import Time
+    28→from erk_shared.plan_store.backend import PlanBackend
+    29→
+    30→
+
+... [454 lines omitted] ...
+
+    32→    """Get the full ErkContext, exiting with error if not initialized.
+    35→    initialized (ctx.obj is None), prints error to stderr and exits with code 1.
+    54→        click.echo("Error: Context not initialized", err=True)
+    58→        click.echo("Error: Context must be ErkContext", err=True)
+    65→    """Get GitHub Issues from context, exiting with error if not initialized.
+    68→    initialized (ctx.obj is None), prints error to stderr and exits with code 1.
+    87→        click.echo("Error: Context not initialized", err=True)
+    91→        click.echo("Error: Context must be ErkContext", err=True)
+    98→    """Get repo root from context, exiting with error if not initialized.
+   120→        click.echo("Error: Context not initialized", err=True)
+   124→        click.echo("Error: Context must be ErkContext", err=True)
+   129→        click.echo("Error: Not in a git repository", err=True)
+   161→    """Get Git from context, exiting with error if not initialized.
+   183→        click.echo("Error: Context not initialized", err=True)
+   190→    """Get GitHub from context, exiting with error if not initialized.
+   212→        click.echo("Error: Context not initialized", err=True)
+   219→    """Get current working directory from context, exiting with error if not initialized.
+   241→        click.echo("Error: Context not initialized", err=True)
+   248→    """Get ClaudeInstallation from context, exiting with error if not initialized.
+   269→        click.echo("Error: Context not initialized", err=True)
+   296→        ...         # handle error
+   305→    """Get PromptExecutor from context, exiting with error if not initialized.
+   326→        click.echo("Error: Context not initialized", err=True)
+   333→    """Get local config from context, exiting with error if not initialized.
+   354→        click.echo("Error: Context not initialized", err=True)
+   384→        click.echo("Error: Context not initialized", err=True)
+   398→    """Get PlanBackend from context, exiting with error if not initialized.
+   419→        click.echo("Error: Context not initialized", err=True)
+   426→    """Get Time from context, exiting with error if not initialized.
+   447→        click.echo("Error: Context not initialized", err=True)
+   454→    """Get BranchManager from context, exiting with error if not initialized.
+   475→        click.echo("Error: Context not initialized", err=True)
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="10382" cache_read_input_tokens="145720" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 10382}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Update `config/schema.py` to rename `plans_repo` field:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="10382" cache_read_input_tokens="145720" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 10382}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01EBF31XGSnaT8mTfnadhEm4">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/packages/erk-shared/src/erk_shared/config/schema.py</param>
+    <param name="old_string">    plans_repo: str | None = Field(
+        description="Repository for storing plan issue...[truncated 4 chars]...        json_schema_extra={"level": ConfigLevel.REPO_ONLY, "cli_key": "plans.repo"},
+    )</param>
+    <param name="new_string">    github_repo: str | None = Field(
+        description="Repository for storing plan issu...[truncated 5 chars]...        json_schema_extra={"level": ConfigLevel.REPO_ONLY, "cli_key": "plans.repo"},
+    )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="10382" cache_read_input_tokens="145720" output_tokens="426" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 10382, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01EBF31XGSnaT8mTfnadhEm4">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/packages/erk-shared/src/erk_shared/config/schema.py has been updated successfully.
+  </tool_result>
+  <assistant>Also update the docstring in `helpers.py`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="490" cache_read_input_tokens="156102" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 490}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01GJveubYAASSu3uvVn4jME1">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/packages/erk-shared/src/erk_shared/context/helpers.py</param>
+    <param name="old_string">        ...     config = require_local_config(ctx)
+        ...     plans_repo = config.plans_repo</param>
+    <param name="new_string">        ...     config = require_local_config(ctx)
+        ...     github_repo = config.github_repo</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="490" cache_read_input_tokens="156102" output_tokens="217" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 490, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01GJveubYAASSu3uvVn4jME1">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/packages/erk-shared/src/erk_shared/context/helpers.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me check on the libcst-refactor agent and run a quick grep to find remaining issues:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="281" cache_read_input_tokens="156592" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 281}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01VZbZsL1RSzUrHrUsBXp3gi">
+    <param name="command">grep -r "from erk_shared.gateway.plan_service" src/ packages/ tests/ --include="*.py" -l 2&gt;/dev/null | head -20</param>
+    <param name="description">Find remaining plan_service import references</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="281" cache_read_input_tokens="156592" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 281}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01VZbZsL1RSzUrHrUsBXp3gi">
+
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01JJ7uRttt6jbaiYZ9Lecyz3">
+    <param name="command">grep -r "PlanService\|RealPlanService\|FakePlanService" src/ packages/ tests/ --include="*.py" -l 2&gt;/dev/null | head -20</param>
+    <param name="description">Find remaining PlanService class references</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="281" cache_read_input_tokens="156592" output_tokens="299" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 281, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01JJ7uRttt6jbaiYZ9Lecyz3">
+src/erk/tui/data/fake_provider.py
+src/erk/tui/data/real_provider.py
+src/erk/tui/data/provider_abc.py
+tests/tui/data/test_fetch_objective_content.py
+tests/tui/data/test_fetch_plan_content.py
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="389" cache_read_input_tokens="156873" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 389}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_014D2qwdpYXJQhL6kZbkRfL7">
+    <param name="command">grep -r "plans_repo\|plan_identifier\|\.plan_id\b\|\.plan_number\b\|\.plan_url\b" src/ packages/ tests/ --include="*.py" -l 2&gt;/dev/null | head -30</param>
+    <param name="description">Find remaining field reference usages that need updating</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="389" cache_read_input_tokens="156873" output_tokens="336" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 389, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_014D2qwdpYXJQhL6kZbkRfL7">
+src/erk/core/plan_duplicate_checker.py
+src/erk/core/commit_message_generator.py
+src/erk/core/display_utils.py
+src/erk/core/context.py
+src/erk/core/plan_context_provider.py
+src/erk/core/health_checks/__init__.py
+src/erk/core/health_checks/plans_repo_labels.py
+src/erk/tui/filtering/logic.py
+src/erk/tui/screens/objective_nodes_screen.py
+src/erk/tui/screens/plan_detail_screen.py
+src/erk/tui/actions/palette.py
+src/erk/tui/actions/navigation.py
+src/erk/tui/sorting/logic.py
+src/erk/tui/app.py
+src/erk/tui/commands/registry.py
+src/erk/tui/data/fake_provider.py
+src/erk/tui/data/real_provider.py
+src/erk/tui/widgets/plan_table.py
+src/erk/status/renderers/simple.py
+src/erk/status/collectors/impl.py
+src/erk/cli/config.py
+src/erk/cli/commands/init/main.py
+src/erk/cli/commands/learn/learn_cmd.py
+src/erk/cli/commands/branch/create_cmd.py
+src/erk/cli/commands/branch/checkout_cmd.py
+src/erk/cli/commands/config.py
+src/erk/cli/commands/land_stack.py
+src/erk/cli/commands/reconcile_cmd.py
+src/erk/cli/commands/land_learn.py
+src/erk/cli/commands/reconcile_pipeline.py
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01K9aod5fyQhYGCJNtK1ccAP">
+    <param name="command">grep -r "plans_repo\|plan_identifier\|\.plan_id\b\|\.plan_number\b\|\.plan_url\b" src/ packages/ tests/ --include="*.py" -l 2&gt;/dev/null | wc -l</param>
+    <param name="description">Count remaining files needing updates</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="793" cache_read_input_tokens="157262" output_tokens="135" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 793, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01K9aod5fyQhYGCJNtK1ccAP">
+     127
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="149" cache_read_input_tokens="158055" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 149}" output_tokens="12" service_tier="standard" inference_geo="not_available" />
+  <assistant>There are many more files. Let me launch a second libcst-refactor agent for field access renames while checking progress on the first:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="149" cache_read_input_tokens="158055" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 149}" output_tokens="12" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01MDfgk6JtPfMGetKG1DX2Vb">
+    <param name="command">tail -20 /private/tmp/claude-501/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-11/tasks/aba685cc778d51210.output 2&gt;/dev/null || echo "not found"</param>
+    <param name="description">Check libcst-refactor agent progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="149" cache_read_input_tokens="158055" output_tokens="655" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 149, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01MDfgk6JtPfMGetKG1DX2Vb">
+{"parentUuid":"5a04caa9-2e39-4b3e-b297-fa104978beed","isSidechain":true,"userType":"external","cwd":"/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11","sessionId":"c8de6f3b-476c-490b-8af7-ae99160bd325","version":"2.1.71","gitBranch":"plnd/O9109-rename-plan-to-pr-ph-03-09-2222","agentId":"aba685cc778d51210","slug":"clever-sprouting-shamir","message":{"model":"claude-sonnet-4-6","id":"msg_01U7GnP51KGGokV5yvSZSKer","type":"message","role":"assistant","content":[{"type":"tool_use","id":"toolu_01EJ6jTp2T7mGK7Rse285aeF","name":"Bash","input":{"command":"grep -n \"plan_service\\|PlanService\\|RealPlanService\\|FakePlanService\" /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/src/erk/tui/app.py","description":"Verify app.py has no old references in code"},"caller":{"type":"direct"}}],"stop_reason":"tool_use","stop_sequence":null,"usage":{"input_tokens":1,"cache_creation_input_tokens":992,"cache_read_input_tokens":49117,"output_tokens":444,"server_tool_use":{"web_search_requests":0,"web_fetch_requests":0},"service_tier":"standard","cache_creation":{"ephemeral_1h_input_tokens":0,"ephemeral_5m_input_tokens":992},"inference_geo":"","iterations":[],"speed":"standard"}},"requestId":"req_011CYtLUKrKAncTYCDg27UCQ","type":"assistant","uuid":"2982fff3-9085-4ab6-92b8-45c9f9a5a17c","timestamp":"2026-03-09T22:59:57.068Z"}
+{"parentUuid":"2982fff3-9085-4ab6-92b8-45c9f9a5a17c","isSidechain":true,"userType":"external","cwd":"/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11","sessionId":"c8de6f3b-476c-490b-8af7-ae99160bd325","version":"2.1.71","gitBranch":"plnd/O9109-rename-plan-to-pr-ph-03-09-2222","agentId":"aba685cc778d51210","slug":"clever-sprouting-shamir","type":"user","message":{"role":"user","content":[{"tool_use_id":"toolu_01EJ6jTp2T7mGK7Rse285aeF","type":"tool_result","content":"","is_error":false}]},"uuid":"4d0f1f81-e483-4d9a-a8ba-48420f0c198b","timestamp":"2026-03-09T22:59:57.105Z","sourceToolAssistantUUID":"2982fff3-9085-4ab6-92b8-45c9f9a5a17c"}
+{"parentUuid":"4d0f1f81-e483-4d9a-a8ba-48420f0c198b","isSidechain":true,"userType":"external","cwd":"/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11","sessionId":"c8de6f3b-476c-490b-8af7-ae99160bd325","version":"2.1.71","gitBranch":"plnd/O9109-rename-plan-to-pr-ph-03-09-2222","agentId":"aba685cc778d51210","slug":"clever-sprouting-shamir","message":{"model":"claude-sonnet-4-6","id":"msg_0189p4AAx8ijNnkgPiVntCRT","type":"message","role":"assistant","content":[{"type":"tool_use","id":"toolu_01Q1ZCmf1kNHyRKnpz5AvjsS","name":"Bash","input":{"command":"grep -n \"pr_service\\|PrService\" /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/src/erk/tui/app.py","description":"Verify new names in app.py"},"caller":{"type":"direct"}}],"stop_reason":null,"stop_sequence":null,"usage":{"input_tokens":1,"cache_creation_input_tokens":518,"cache_read_input_tokens":50109,"cache_creation":{"ephemeral_5m_input_tokens":518,"ephemeral_1h_input_tokens":0},"output_tokens":21,"service_tier":"standard","inference_geo":"not_available"}},"requestId":"req_011CYtLUqUmmVfKBCS48PmkB","type":"assistant","uuid":"b7383861-17f5-4265-b72e-2adcd175b24e","timestamp":"2026-03-09T23:00:00.557Z"}
+{"parentUuid":"b7383861-17f5-4265-b72e-2adcd175b24e","isSidechain":true,"userType":"external","cwd":"/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11","sessionId":"c8de6f3b-476c-490b-8af7-ae99160bd325","version":"2.1.71","gitBranch":"plnd/O9109-rename-plan-to-pr-ph-03-09-2222","agentId":"aba685cc778d51210","slug":"clever-sprouting-shamir","type":"user","message":{"role":"user","content":[{"tool_use_id":"toolu_01Q1ZCmf1kNHyRKnpz5AvjsS","type":"tool_result","content":"42:from erk_shared.gateway.pr_service.abc import PrService\n112:        service: PrService,","is_error":false}]},"uuid":"d8b37ca2-3575-49f9-baeb-779b9f1f0872","timestamp":"2026-03-09T23:00:00.591Z","sourceToolAssistantUUID":"b7383861-17f5-4265-b72e-2adcd175b24e"}
+{"parentUuid":"d8b37ca2-3575-49f9-baeb-779b9f1f0872","isSidechain":true,"userType":"external","cwd":"/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11","sessionId":"c8de6f3b-476c-490b-8af7-ae99160bd325","version":"2.1.71","gitBranch":"plnd/O9109-rename-plan-to-pr-ph-03-09-2222","agentId":"aba685cc778d51210","slug":"clever-sprouting-shamir","message":{"model":"claude-sonnet-4-6","id":"msg_0189p4AAx8ijNnkgPiVntCRT","type":"message","role":"assistant","content":[{"type":"tool_use","id":"toolu_01Rch8XUmmkk72JG3263cLXg","name":"Bash","input":{"command":"# Compile all modified files at once for batch validation\npython3 -c \"\nimport subprocess, sys\nfrom pathlib import Path\n\nfiles = [\n    'src/erk/cli/commands/exec/scripts/close_pr.py',\n    'src/erk/cli/commands/exec/scripts/close_prs.py',\n    'src/erk/cli/commands/objective_helpers.py',\n    'src/erk/cli/commands/pr/close_cmd.py',\n    'src/erk/cli/commands/pr/list_cmd.py',\n    'src/erk/cli/commands/wt/delete_cmd.py',\n    'src/erk/tui/actions/navigation.py',\n    'src/erk/tui/app.py',\n    'src/erk/tui/operations/workers.py',\n    'src/erk/tui/screens/check_runs_screen.py',\n    'src/erk/tui/screens/objective_nodes_screen.py',\n    'src/erk/tui/screens/plan_body_screen.py',\n    'src/erk/tui/screens/plan_detail_screen.py',\n    'src/erk/tui/screens/unresolved_comments_screen.py',\n    'tests/tui/app/test_actions.py',\n    'tests/tui/app/test_app_filtering.py',\n    'tests/tui/app/test_app_runs.py',\n    'tests/tui/app/test_async_operations.py',\n    'tests/tui/app/test_command_palette.py',\n    'tests/tui/app/test_core.py',\n    'tests/tui/app/test_filter_mode.py',\n    'tests/tui/app/test_incremental_dispatch.py',\n    'tests/tui/app/test_one_shot_prompt.py',\n    'tests/tui/app/test_operation_tracking.py',\n    'tests/tui/app/test_plan_body_screen.py',\n    'tests/tui/app/test_plan_detail_screen.py',\n    'tests/tui/app/test_streaming.py',\n    'tests/tui/app/test_view_switching.py',\n    'tests/tui/data/test_fetch_objective_content.py',\n    'tests/tui/data/test_fetch_plan_content.py',\n    'tests/tui/data/test_provider.py',\n    'tests/tui/screens/test_check_runs_screen.py',\n    'tests/tui/screens/test_objective_nodes_screen.py',\n]\n\nbase = Path('/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11')\nerrors = 0\nfor f in files:\n    result = subprocess.run(['python3', '-m', 'py_compile', str(base / f)], capture_output=True)\n    if result.returncode != 0:\n        print(f'FAIL: {f}')\n        print(result.stderr.decode())\n        errors += 1\nif errors == 0:\n    print(f'All {len(files)} files pass syntax check')\n\"\n","description":"Batch syntax validation of all 33 modified files"},"caller":{"type":"direct"}}],"stop_reason":"tool_use","stop_sequence":null,"usage":{"input_tokens":1,"cache_creation_input_tokens":518,"cache_read_input_tokens":50109,"output_tokens":993,"server_tool_use":{"web_search_requests":0,"web_fetch_requests":0},"service_tier":"standard","cache_creation":{"ephemeral_1h_input_tokens":0,"ephemeral_5m_input_tokens":518},"inference_geo":"","iterations":[],"speed":"standard"}},"requestId":"req_011CYtLUqUmmVfKBCS48PmkB","type":"assistant","uuid":"1665fa38-9f11-49e0-8069-abc859296b28","timestamp":"2026-03-09T23:00:08.269Z"}
+{"parentUuid":"1665fa38-9f11-49e0-8069-abc859296b28","isSidechain":true,"userType":"external","cwd":"/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11","sessionId":"c8de6f3b-476c-490b-8af7-ae99160bd325","version":"2.1.71","gitBranch":"plnd/O9109-rename-plan-to-pr-ph-03-09-2222","agentId":"aba685cc778d51210","slug":"clever-sprouting-shamir","type":"user","message":{"role":"user","content":[{"tool_use_id":"toolu_01Rch8XUmmkk72JG3263cLXg","type":"tool_result","content":"All 33 files pass syntax check","is_error":false}]},"uuid":"6dc4ce02-d9bb-443c-9b7a-7c55c55f4884","timestamp":"2026-03-09T23:00:09.080Z","sourceToolAssistantUUID":"1665fa38-9f11-49e0-8069-abc859296b28"}
+{"parentUuid":"6dc4ce02-d9bb-443c-9b7a-7c55c55f4884","isSidechain":true,"userType":"external","cwd":"/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11","sessionId":"c8de6f3b-476c-490b-8af7-ae99160bd325","version":"2.1.71","gitBranch":"plnd/O9109-rename-plan-to-pr-ph-03-09-2222","agentId":"aba685cc778d51210","slug":"clever-sprouting-shamir","message":{"model":"claude-sonnet-4-6","id":"msg_014cvy9utf3ayqtYF6Xym2kt","type":"message","role":"assistant","content":[{"type":"text","text":"All 33 files pass syntax validation. Let me do a final check to confirm no stale references remain in the modified files:"}],"stop_reason":null,"stop_sequence":null,"usage":{"input_tokens":1,"cache_creation_input_tokens":1091,"cache_read_input_tokens":50627,"cache_creation":{"ephemeral_5m_input_tokens":1091,"ephemeral_1h_input_tokens":0},"output_tokens":1,"service_tier":"standard","inference_geo":"not_available"}},"requestId":"req_011CYtLVj1NCZcdEiMoQaLfG","type":"assistant","uuid":"73d50183-42f0-43a9-b31a-36b9f66fe236","timestamp":"2026-03-09T23:00:11.968Z"}
+{"parentUuid":"73d50183-42f0-43a9-b31a-36b9f66fe236","isSidechain":true,"userType":"external","cwd":"/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11","sessionId":"c8de6f3b-476c-490b-8af7-ae99160bd325","version":"2.1.71","gitBranch":"plnd/O9109-rename-plan-to-pr-ph-03-09-2222","agentId":"aba685cc778d51210","slug":"clever-sprouting-shamir","message":{"model":"claude-sonnet-4-6","id":"msg_014cvy9utf3ayqtYF6Xym2kt","type":"message","role":"assistant","content":[{"type":"tool_use","id":"toolu_012KbeS5H7psd8odWvVfGQdH","name":"Bash","input":{"command":"grep -r \"from erk_shared.gateway.plan_service\" src/ packages/ tests/ --include=\"*.py\" 2&gt;/dev/null","description":"Check for remaining old import paths"},"caller":{"type":"direct"}}],"stop_reason":null,"stop_sequence":null,"usage":{"input_tokens":1,"cache_creation_input_tokens":1091,"cache_read_input_tokens":50627,"cache_creation":{"ephemeral_5m_input_tokens":1091,"ephemeral_1h_input_tokens":0},"output_tokens":1,"service_tier":"standard","inference_geo":"not_available"}},"requestId":"req_011CYtLVj1NCZcdEiMoQaLfG","type":"assistant","uuid":"718adbae-e2c3-40b3-b779-8002e6744f8d","timestamp":"2026-03-09T23:00:13.170Z"}
+{"parentUuid":"718adbae-e2c3-40b3-b779-8002e6744f8d","isSidechain":true,"userType":"external","cwd":"/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11","sessionId":"c8de6f3b-476c-490b-8af7-ae99160bd325","version":"2.1.71","gitBranch":"plnd/O9109-rename-plan-to-pr-ph-03-09-2222","agentId":"aba685cc778d51210","slug":"clever-sprouting-shamir","type":"user","message":{"role":"user","content":[{"tool_use_id":"toolu_012KbeS5H7psd8odWvVfGQdH","type":"tool_result","content":"","is_error":false}]},"uuid":"c56e3dfa-4945-4858-8f19-a7e445364553","timestamp":"2026-03-09T23:00:13.381Z","sourceToolAssistantUUID":"718adbae-e2c3-40b3-b779-8002e6744f8d"}
+{"parentUuid":"c56e3dfa-4945-4858-8f19-a7e445364553","isSidechain":true,"userType":"external","cwd":"/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11","sessionId":"c8de6f3b-476c-490b-8af7-ae99160bd325","version":"2.1.71","gitBranch":"plnd/O9109-rename-plan-to-pr-ph-03-09-2222","agentId":"aba685cc778d51210","slug":"clever-sprouting-shamir","message":{"model":"claude-sonnet-4-6","id":"msg_014cvy9utf3ayqtYF6Xym2kt","type":"message","role":"assistant","content":[{"type":"tool_use","id":"toolu_01Ex3AsTmjCJFCtuK6n2jmbd","name":"Bash","input":{"command":"grep -r \"\\bPlanService\\b\\|\\bRealPlanService\\b\\|\\bFakePlanService\\b\" src/ tests/ --include=\"*.py\" 2&gt;/dev/null | grep -v \"\\.pyc\"","description":"Check for remaining old class name references in src and tests"},"caller":{"type":"direct"}}],"stop_reason":"tool_use","stop_sequence":null,"usage":{"input_tokens":1,"cache_creation_input_tokens":1091,"cache_read_input_tokens":50627,"output_tokens":252,"server_tool_use":{"web_search_requests":0,"web_fetch_requests":0},"service_tier":"standard","cache_creation":{"ephemeral_1h_input_tokens":0,"ephemeral_5m_input_tokens":1091},"inference_geo":"","iterations":[],"speed":"standard"}},"requestId":"req_011CYtLVj1NCZcdEiMoQaLfG","type":"assistant","uuid":"ee0bc6ac-4d94-44d0-864b-f9728e3c6bb1","timestamp":"2026-03-09T23:00:14.322Z"}
+{"parentUuid":"ee0bc6ac-4d94-44d0-864b-f9728e3c6bb1","isSidechain":true,"userType":"external","cwd":"/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11","sessionId":"c8de6f3b-476c-490b-8af7-ae99160bd325","version":"2.1.71","gitBranch":"plnd/O9109-rename-plan-to-pr-ph-03-09-2222","agentId":"aba685cc778d51210","slug":"clever-sprouting-shamir","type":"user","message":{"role":"user","content":[{"tool_use_id":"toolu_01Ex3AsTmjCJFCtuK6n2jmbd","type":"tool_result","content":"src/erk/tui/data/fake_provider.py:    Domain operations (close_plan, dispatch, etc.) are on FakePlanService.\nsrc/erk/tui/data/real_provider.py:    Domain operations (close_plan, dispatch, etc.) are on PlanService.\nsrc/erk/tui/data/provider_abc.py:    (close_plan, dispatch, fetch_content, etc.) live in PlanService.\ntests/tui/data/test_fetch_objective_content.py:\"\"\"Tests for fetch_objective_content on RealPlanService.\"\"\"\ntests/tui/data/test_fetch_objective_content.py:    \"\"\"Create a RealPlanService with minimal setup for testing.\"\"\"\ntests/tui/data/test_fetch_plan_content.py:\"\"\"Tests for fetch_plan_content on RealPlanService.\"\"\"\ntests/tui/data/test_fetch_plan_content.py:    \"\"\"Create a RealPlanService with minimal setup for testing.\"\"\"","is_error":false}]},"uuid":"da9b3f94-3a78-47ab-bb3d-c8f830f00009","timestamp":"2026-03-09T23:00:14.580Z","sourceToolAssistantUUID":"ee0bc6ac-4d94-44d0-864b-f9728e3c6bb1"}
+{"parentUuid":"da9b3f94-3a78-47ab-bb3d-c8f830f00009","isSidechain":true,"userType":"external","cwd":"/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11","sessionId":"c8de6f3b-476c-490b-8af7-ae99160bd325","version":"2.1.71","gitBranch":"plnd/O9109-rename-plan-to-pr-ph-03-09-2222","agentId":"aba685cc778d51210","slug":"clever-sprouting-shamir","message":{"model":"claude-sonnet-4-6","id":"msg_015dSGBn5vu9jGJS3ppqMPoe","type":"message","role":"assistant","content":[{"type":"text","text":"There are remaining old class name references, but they're all inside docstrings and comments - not actual code identifiers. LibCST correctly preserves these as-is (they're string/comment nodes, not `Name` AST nodes).\n\nLet me also do a quick spot-check on the test files that had `RealPlanService` in docstrings to confirm the code itself was properly updated:"}],"stop_reason":null,"stop_sequence":null,"usage":{"input_tokens":1,"cache_creation_input_tokens":559,"cache_read_input_tokens":51718,"cache_creation":{"ephemeral_5m_input_tokens":559,"ephemeral_1h_input_tokens":0},"output_tokens":1,"service_tier":"standard","inference_geo":"not_available"}},"requestId":"req_011CYtLW8FrrjJbKfseBjPaB","type":"assistant","uuid":"d4febce8-8255-4125-a56e-7ac2c1893bc6","timestamp":"2026-03-09T23:00:19.414Z"}
+{"parentUuid":"d4febce8-8255-4125-a56e-7ac2c1893bc6","isSidechain":true,"userType":"external","cwd":"/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11","sessionId":"c8de6f3b-476c-490b-8af7-ae99160bd325","version":"2.1.71","gitBranch":"plnd/O9109-rename-plan-to-pr-ph-03-09-2222","agentId":"aba685cc778d51210","slug":"clever-sprouting-shamir","message":{"model":"claude-sonnet-4-6","id":"msg_015dSGBn5vu9jGJS3ppqMPoe","type":"message","role":"assistant","content":[{"type":"tool_use","id":"toolu_01S1kAnz3JZM8tYm5G9y284q","name":"Bash","input":{"command":"grep -n \"RealPrService\\|PrService\\|pr_service\" /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/tests/tui/data/test_fetch_plan_content.py | head -15","description":"Verify test_fetch_plan_content.py code references were updated"},"caller":{"type":"direct"}}],"stop_reason":null,"stop_sequence":null,"usage":{"input_tokens":1,"cache_creation_input_tokens":559,"cache_read_input_tokens":51718,"cache_creation":{"ephemeral_5m_input_tokens":559,"ephemeral_1h_input_tokens":0},"output_tokens":1,"service_tier":"standard","inference_geo":"not_available"}},"requestId":"req_011CYtLW8FrrjJbKfseBjPaB","type":"assistant","uuid":"1e3886d6-c089-4916-ab9c-b1ca9b8293ce","timestamp":"2026-03-09T23:00:20.620Z"}
+{"parentUuid":"1e3886d6-c089-4916-ab9c-b1ca9b8293ce","isSidechain":true,"userType":"external","cwd":"/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11","sessionId":"c8de6f3b-476c-490b-8af7-ae99160bd325","version":"2.1.71","gitBranch":"plnd/O9109-rename-plan-to-pr-ph-03-09-2222","agentId":"aba685cc778d51210","slug":"clever-sprouting-shamir","type":"user","message":{"role":"user","content":[{"tool_use_id":"toolu_01S1kAnz3JZM8tYm5G9y284q","type":"tool_result","content":"12:from erk_shared.gateway.pr_service.real import RealPrService\n29:def _make_service(tmp_path: Path, *, http_client: FakeHttpClient) -&gt; RealPrService:\n56:    return RealPrService(","is_error":false}]},"uuid":"0392f099-62db-4b4e-ab72-bafdb7a03e7b","timestamp":"2026-03-09T23:00:20.658Z","sourceToolAssistantUUID":"1e3886d6-c089-4916-ab9c-b1ca9b8293ce"}
+{"parentUuid":"0392f099-62db-4b4e-ab72-bafdb7a03e7b","isSidechain":true,"userType":"external","cwd":"/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11","sessionId":"c8de6f3b-476c-490b-8af7-ae99160bd325","version":"2.1.71","gitBranch":"plnd/O9109-rename-plan-to-pr-ph-03-09-2222","agentId":"aba685cc778d51210","slug":"clever-sprouting-shamir","message":{"model":"claude-sonnet-4-6","id":"msg_015dSGBn5vu9jGJS3ppqMPoe","type":"message","role":"assistant","content":[{"type":"tool_use","id":"toolu_01NbqvmnkzANyuvavrZLfX2d","name":"Bash","input":{"command":"grep -n \"close_pr\\|fetch_pr_content\" /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/tests/tui/data/test_fetch_plan_content.py","description":"Verify method name updates in test_fetch_plan_content.py"},"caller":{"type":"direct"}}],"stop_reason":"tool_use","stop_sequence":null,"usage":{"input_tokens":1,"cache_creation_input_tokens":559,"cache_read_input_tokens":51718,"output_tokens":360,"server_tool_use":{"web_search_requests":0,"web_fetch_requests":0},"service_tier":"standard","cache_creation":{"ephemeral_1h_input_tokens":0,"ephemeral_5m_input_tokens":559},"inference_geo":"","iterations":[],"speed":"standard"}},"requestId":"req_011CYtLW8FrrjJbKfseBjPaB","type":"assistant","uuid":"bdb09396-585f-4c64-8bee-451ba9f1bde1","timestamp":"2026-03-09T23:00:21.831Z"}
+{"parentUuid":"bdb09396-585f-4c64-8bee-451ba9f1bde1","isSidechain":true,"userType":"external","cwd":"/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11","sessionId":"c8de6f3b-476c-490b-8af7-ae99160bd325","version":"2.1.71","gitBranch":"plnd/O9109-rename-plan-to-pr-ph-03-09-2222","agentId":"aba685cc778d51210","slug":"clever-sprouting-shamir","type":"user","message":{"role":"user","content":[{"tool_use_id":"toolu_01NbqvmnkzANyuvavrZLfX2d","type":"tool_result","content":"91:    result = service.fetch_pr_content(42, plan_content)\n102:    result = service.fetch_pr_content(42, \"   \")\n120:    result = service.fetch_pr_content(123, BODY_WITH_PLAN_HEADER_METADATA)","is_error":false}]},"uuid":"79490c57-406c-4989-a552-7bbce055755b","timestamp":"2026-03-09T23:00:21.864Z","sourceToolAssistantUUID":"bdb09396-585f-4c64-8bee-451ba9f1bde1"}
+{"parentUuid":"79490c57-406c-4989-a552-7bbce055755b","isSidechain":true,"userType":"external","cwd":"/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11","sessionId":"c8de6f3b-476c-490b-8af7-ae99160bd325","version":"2.1.71","gitBranch":"plnd/O9109-rename-plan-to-pr-ph-03-09-2222","agentId":"aba685cc778d51210","slug":"clever-sprouting-shamir","message":{"model":"claude-sonnet-4-6","id":"msg_01VUGVKhEHcAUZyzRUyY6LzK","type":"message","role":"assistant","content":[{"type":"text","text":"The code references are correctly updated. Let me clean up the temporary script:"}],"stop_reason":null,"stop_sequence":null,"usage":{"input_tokens":1,"cache_creation_input_tokens":553,"cache_read_input_tokens":52277,"cache_creation":{"ephemeral_5m_input_tokens":553,"ephemeral_1h_input_tokens":0},"output_tokens":1,"service_tier":"standard","inference_geo":"not_available"}},"requestId":"req_011CYtLWfov531CsTqGU9d2V","type":"assistant","uuid":"862d894c-6c90-4ce0-9cac-3bfbe1e41e6a","timestamp":"2026-03-09T23:00:26.948Z"}
+{"parentUuid":"862d894c-6c90-4ce0-9cac-3bfbe1e41e6a","isSidechain":true,"userType":"external","cwd":"/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11","sessionId":"c8de6f3b-476c-490b-8af7-ae99160bd325","version":"2.1.71","gitBranch":"plnd/O9109-rename-plan-to-pr-ph-03-09-2222","agentId":"aba685cc778d51210","slug":"clever-sprouting-shamir","message":{"model":"claude-sonnet-4-6","id":"msg_01VUGVKhEHcAUZyzRUyY6LzK","type":"message","role":"assistant","content":[{"type":"tool_use","id":"toolu_01TwBTDVwbKyYSXjxx8hCv95","name":"Bash","input":{"command":"rm /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/refactor_plan_to_pr_service.py","description":"Remove temporary refactoring script"},"caller":{"type":"direct"}}],"stop_reason":"tool_use","stop_sequence":null,"usage":{"input_tokens":1,"cache_creation_input_tokens":553,"cache_read_input_tokens":52277,"output_tokens":129,"server_tool_use":{"web_search_requests":0,"web_fetch_requests":0},"service_tier":"standard","cache_creation":{"ephemeral_1h_input_tokens":0,"ephemeral_5m_input_tokens":553},"inference_geo":"","iterations":[],"speed":"standard"}},"requestId":"req_011CYtLWfov531CsTqGU9d2V","type":"assistant","uuid":"aef7af97-c872-4ef1-a4e4-30de81dbd39e","timestamp":"2026-03-09T23:00:27.643Z"}
+{"parentUuid":"aef7af97-c872-4ef1-a4e4-30de81dbd39e","isSidechain":true,"userType":"external","cwd":"/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11","sessionId":"c8de6f3b-476c-490b-8af7-ae99160bd325","version":"2.1.71","gitBranch":"plnd/O9109-rename-plan-to-pr-ph-03-09-2222","agentId":"aba685cc778d51210","slug":"clever-sprouting-shamir","type":"user","message":{"role":"user","content":[{"tool_use_id":"toolu_01TwBTDVwbKyYSXjxx8hCv95","type":"tool_result","content":"","is_error":false}]},"uuid":"4a160b80-d1f1-4e3f-b73b-b0540adf1791","timestamp":"2026-03-09T23:00:27.677Z","sourceToolAssistantUUID":"aef7af97-c872-4ef1-a4e4-30de81dbd39e"}
+{"parentUuid":"4a160b80-d1f1-4e3f-b73b-b0540adf1791","isSidechain":true,"userType":"external","cwd":"/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11","sessionId":"c8de6f3b-476c-490b-8af7-ae99160bd325","version":"2.1.71","gitBranch":"plnd/O9109-rename-plan-to-pr-ph-03-09-2222","agentId":"aba685cc778d51210","slug":"clever-sprouting-shamir","message":{"model":"claude-sonnet-4-6","id":"msg_01W7G61iigfJ4m9MfUjv7jYq","type":"message","role":"assistant","content":[{"type":"text","text":"=== LibCST Refactoring Results ===\n\nTask: Rename plan_service gateway references to pr_service across the codebase\n\nFiles modified: 33\n\n- `src/erk/cli/commands/exec/scripts/close_pr.py`\n- `src/erk/cli/commands/exec/scripts/close_prs.py`\n- `src/erk/cli/commands/objective_helpers.py`\n- `src/erk/cli/commands/pr/close_cmd.py`\n- `src/erk/cli/commands/pr/list_cmd.py`\n- `src/erk/cli/commands/wt/delete_cmd.py`\n- `src/erk/tui/actions/navigation.py`\n- `src/erk/tui/app.py`\n- `src/erk/tui/operations/workers.py`\n- `src/erk/tui/screens/check_runs_screen.py`\n- `src/erk/tui/screens/objective_nodes_screen.py`\n- `src/erk/tui/screens/plan_body_screen.py`\n- `src/erk/tui/screens/plan_detail_screen.py`\n- `src/erk/tui/screens/unresolved_comments_screen.py`\n- 19 test files under `tests/tui/`\n\nChanges:\n- Import paths: `erk_shared.gateway.plan_service.{abc,real,fake}` → `erk_shared.gateway.pr_service.{abc,real,fake}`\n- Class names: `PlanService` → `PrService`, `RealPlanService` → `RealPrService`, `FakePlanService` → `FakePrService`\n- Method attribute calls: `.close_plan(` → `.close_pr(`, `.fetch_plan_content(` → `.fetch_pr_content(`\n\nIntentionally excluded:\n- `packages/erk-shared/src/erk_shared/gateway/pr_service/` (already updated)\n- `packages/erk-shared/src/erk_shared/gateway/command_executor/` (has independent `close_plan` interface)\n- `packages/erk-shared/src/erk_shared/plan_store/` (has independent `close_plan` interface)\n- `tests/unit/fakes/test_fake_command_executor.py` (tests CommandExecutor's `close_plan`, not PrService)\n- `tests/unit/plan_store/` (tests PlanBackend's `close_plan`, not PrService)\n\nRemaining `PlanService`/`close_plan` mentions are confined to docstrings and comments only (not code identifiers) - LibCST correctly preserved these.\n\nStatus: Success"}],"stop_reason":"end_turn","stop_sequence":null,"usage":{"input_tokens":1,"cache_creation_input_tokens":155,"cache_read_input_tokens":52830,"output_tokens":671,"server_tool_use":{"web_search_requests":0,"web_fetch_requests":0},"service_tier":"standard","cache_creation":{"ephemeral_1h_input_tokens":0,"ephemeral_5m_input_tokens":155},"inference_geo":"","iterations":[],"speed":"standard"}},"requestId":"req_011CYtLX6cudP13s6g5JZ5Du","type":"assistant","uuid":"12348185-5a67-46bf-8fbc-080f3e86951f","timestamp":"2026-03-09T23:00:38.650Z"}
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="11023" cache_read_input_tokens="158204" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 11023}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>The libcst-refactor agent completed successfully - it updated 33 files for PlanService imports and method calls. Now let me launch another agent for the remaining field access renames:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="11023" cache_read_input_tokens="158204" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 11023}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01Duh5CySGfe1SeF943gxU1S">
+    <param name="subagent_type">libcst-refactor</param>
+    <param name="description">Batch rename field accesses across codebase</param>
+    <param name="prompt">Perform the following attribute/field access renames across the erk codebase at `/Users/sc...[truncated 3404 chars]...NotFound(pr_id=...)`
+
+After all changes, verify Python syntax is valid on modified files.
+</param>
+    <param name="run_in_background">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="11023" cache_read_input_tokens="158204" output_tokens="1621" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 11023, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <user>This session is being continued from a previous conversation that ran out of context. The summary below covers the earlier portion of the conversation.
+
+Summary:
+1. Primary Request and Intent:
+   The user invoked `/erk:plan-implement` to implement GitHub plan #9110: "Rename 'plan' terminology to 'pr' — Phase 1 (Core Types &amp; Gateway)". This is part of Objective #9109 to rename internal "plan" terminology to "pr" across all APIs, since these entities are actually GitHub draft PRs. The plan covers renaming across `packages/erk-shared/` and `src/erk/`, touching 80+ files.
+
+2. Key Technical Concepts:
+   - Erk plan-oriented engineering workflow with worktrees
+   - `libcst-refactor` agent for batch Python AST-based renames
+   - Gateway ABC pattern (PlanService → PrService) with real/fake implementations
+   - Discriminated union executor events (ExecutorEvent types)
+   - Frozen dataclasses for types (CreatePlanDraftPRResult, CommandResult, etc.)
+   - Metadata schema migration functions for backward compatibility
+   - LBYL (Look Before You Leap) Python coding standard
+   - Background async agents for parallel batch operations
+
+3. Files and Code Sections:
+
+   **Gateway Directory (git mv)**
+   - `packages/erk-shared/src/erk_shared/gateway/plan_service/` → renamed to `pr_service/` via `git mv`
+
+   **`packages/erk-shared/src/erk_shared/gateway/pr_service/__init__.py`**
+   - Updated docstring: PlanService → PrService, RealPlanService → RealPrService, FakePlanService → FakePrService
+
+   **`packages/erk-shared/src/erk_shared/gateway/pr_service/abc.py`**
+   - Class renamed: `PlanService` → `PrService`
+   - Methods renamed: `close_plan(plan_id, plan_url)` → `close_pr(pr_number, pr_url)`, `fetch_plan_content(plan_id, plan_body)` → `fetch_pr_content(pr_number, pr_body)`, `fetch_objective_content(plan_id, plan_body)` → `fetch_objective_content(pr_number, pr_body)`, `dispatch_to_queue(plan_id, plan_url)` → `dispatch_to_queue(pr_number, pr_url)`
+
+   **`packages/erk-shared/src/erk_shared/gateway/pr_service/real.py`**
+   - Class renamed: `RealPlanService` → `RealPrService`
+   - Import updated: `from erk_shared.gateway.pr_service.abc import PrService`
+   - All method signatures updated accordingly
+   - `_close_linked_prs_http(plan_id, ...)` → `_close_linked_prs_http(pr_number, ...)`
+
+   **`packages/erk-shared/src/erk_shared/gateway/pr_service/fake.py`**
+   - Class renamed: `FakePlanService` → `FakePrService`
+   - Import updated: `from erk_shared.gateway.pr_service.abc import PrService`
+   - `_plan_content_by_plan_id` → `_pr_content_by_pr_number`
+   - `_objective_content_by_plan_id` → `_objective_content_by_pr_number`
+   - `set_plan_content(plan_id, ...)` → `set_pr_content(pr_number, ...)`
+   - `set_objective_content(plan_id, ...)` → `set_objective_content(pr_number, ...)`
+
+   **`packages/erk-shared/src/erk_shared/plan_store/types.py`**
+   - `Plan.plan_identifier` → `Plan.pr_identifier`
+   - `CreatePlanResult.plan_id` → `CreatePlanResult.pr_id`
+   - `PlanNotFound.plan_id` → `PlanNotFound.pr_id`
+
+   **`packages/erk-shared/src/erk_shared/plan_store/create_plan_draft_pr.py`**
+   - `CreatePlanDraftPRResult.plan_number` → `CreatePlanDraftPRResult.pr_number`
+   - `CreatePlanDraftPRResult.plan_url` → `CreatePlanDraftPRResult.pr_url`
+   - Updated all uses within the function body: `plan_number=None` → `pr_number=None`, `plan_url=None` → `pr_url=None`, `result.plan_id` → `result.pr_id`, error message updated
+
+   **`packages/erk-shared/src/erk_shared/core/prompt_executor.py`**
+   - Deleted `PlanNumberEvent` dataclass entirely
+   - Removed `PlanNumberEvent` from `ExecutorEvent` union type
+   - Removed `plan_number: int | None` field from `CommandResult`
+   - Removed `plan_number` variable tracking in `execute_command` method
+   - Removed `PlanNumberEvent` case from match statement in `execute_command`
+   - Removed `plan_number=plan_number` from `CommandResult` construction
+
+   **`src/erk/core/prompt_executor.py`**
+   - Removed `PlanNumberEvent` from imports
+   - Removed `text_plan_number = text_metadata.get("plan_number")` block and `yield PlanNumberEvent(...)` 
+   - Removed `plan_number_value = parsed.get("plan_number")` block and `yield PlanNumberEvent(...)`
+   - Removed `"plan_number": None` from result dict
+   - Removed `result["plan_number"] = pr_metadata.get("plan_number")` line
+
+   **`src/erk/core/codex_output_parser.py`**
+   - Removed `PlanNumberEvent` from imports
+   - Removed `plan_number = metadata.get("plan_number")` block and `events.append(PlanNumberEvent(...))`
+
+   **`src/erk/cli/output.py`**
+   - Removed `PlanNumberEvent` from imports
+   - In `format_implement_summary`: removed `plan_number` variable, removed "Linked Plan" display block
+   - In `stream_command_with_feedback`: removed `plan_number` variable, removed `PlanNumberEvent` match case, removed `plan_number=plan_number` from `CommandResult` return
+   - In `stream_rebase` and `stream_diverge_fix`: removed `PlanNumberEvent` from no-op match cases
+
+   **`src/erk/core/output_filter.py`**
+   - `extract_pr_metadata`: removed `plan_number` from return dict and docstring
+   - `extract_pr_metadata_from_text`: removed `plan_number` from result dict, removed `issue_match` pattern and `result["plan_number"]` assignment
+
+   **`tests/fakes/prompt_executor.py`**
+   - Removed `PlanNumberEvent` from imports
+   - Removed `simulated_plan_number: int | None = None` parameter from `__init__`
+   - Removed `self._simulated_plan_number` attribute
+   - Removed `PlanNumberEvent(number=self._simulated_plan_number)` yield
+   - Removed `plan_number=None` and `plan_number=self._simulated_plan_number` from `CommandResult` constructions
+
+   **`packages/erk-shared/src/erk_shared/output/next_steps.py`**
+   - `PlanNextSteps.plan_number` → `PlanNextSteps.pr_number`
+   - All `self.plan_number` → `self.pr_number` in properties
+   - `format_plan_next_steps_plain(plan_number, ...)` → `format_plan_next_steps_plain(pr_number, ...)`
+   - `format_next_steps_markdown(plan_number, ...)` → `format_next_steps_markdown(pr_number, ...)`
+   - `PlanNextSteps(plan_number=plan_number, ...)` → `PlanNextSteps(pr_number=pr_number, ...)`
+
+   **`packages/erk-shared/src/erk_shared/gateway/github/metadata/schemas.py`**
+   - Replaced `_migrate_issue_number_to_plan_number()` with `_migrate_to_pr_number()` which handles both `issue_number` and `plan_number` → `pr_number` migration
+   - `WorktreeCreationSchema`: `_migrate_issue_number_to_plan_number` → `_migrate_to_pr_number`, optional field `"plan_number"` → `"pr_number"`
+   - `PlanSchema`: `_migrate_issue_number_to_plan_number` → `_migrate_to_pr_number`, required field `"plan_number"` → `"pr_number"`
+   - `SubmissionQueuedSchema`: `_migrate_issue_number_to_plan_number` → `_migrate_to_pr_number`, required field `"plan_number"` → `"pr_number"`
+   - `WorkflowStartedSchema`: `_migrate_issue_number_to_plan_number` → `_migrate_to_pr_number`, required field `"plan_number"` → `"pr_number"`
+   - **Kept as-is:** `PLAN_COMMENT_ID`, `plan_comment_id` in PlanHeaderSchema (persisted YAML keys in GitHub bodies)
+
+   **`packages/erk-shared/src/erk_shared/context/types.py`**
+   - `LoadedConfig.plans_repo` → `LoadedConfig.github_repo` (all occurrences replaced)
+
+   **`packages/erk-shared/src/erk_shared/config/schema.py`**
+   - `RepoConfigSchema.plans_repo` → `RepoConfigSchema.github_repo` (field name; CLI key `"plans.repo"` kept same)
+
+   **`packages/erk-shared/src/erk_shared/context/helpers.py`**
+   - Updated docstring comment: `config.plans_repo` → `config.github_repo`
+
+   **`packages/erk-shared/src/erk_shared/gateway/gt/types.py`**
+   - `PreAnalysisResult.plan_number: int | None = None` → `PreAnalysisResult.pr_number: int | None = None`
+
+   **libcst-refactor Agent 1 (completed)** - 33 files modified:
+   - Files in `src/erk/cli/commands/exec/scripts/`, `src/erk/cli/commands/`, `src/erk/tui/` (actions, app, operations, screens), `tests/tui/` (19 test files)
+   - Changes: import paths `plan_service.{abc,real,fake}` → `pr_service.{abc,real,fake}`, class names `PlanService/RealPlanService/FakePlanService` → `PrService/RealPrService/FakePrService`, method calls `.close_plan(` → `.close_pr(`, `.fetch_plan_content(` → `.fetch_pr_content(`
+
+   **libcst-refactor Agent 2 (running in background)** - handles field access renames:
+   - `.plan_identifier` → `.pr_identifier`
+   - `.plan_id` → `.pr_id`
+   - `.plan_number` → `.pr_number` (on CreatePlanDraftPRResult, PlanNextSteps, PreAnalysisResult)
+   - `.plan_url` → `.pr_url`
+   - `.plans_repo` → `.github_repo`
+   - Constructor keyword argument renames
+
+4. Errors and fixes:
+   - **"File has not been read yet" error**: When trying to `Write` to `pr_service/abc.py` after `git mv` (the new path hadn't been read). Fixed by reading the new path first before writing. Same happened for `real.py` and `fake.py` - all fixed by reading the renamed paths first.
+
+5. Problem Solving:
+   - The massive rename (80+ files) was split into two strategies: manual edits for core type definitions (abc, real, fake, types.py, etc.) and libcst-refactor agents for bulk consumer file updates
+   - First libcst-refactor agent handled import/class/method-name renames across 33 TUI and CLI files
+   - Second libcst-refactor agent (running) handles field attribute access renames across remaining ~127 files
+   - Metadata schema migration function was unified to handle both legacy `issue_number` and legacy `plan_number` → new `pr_number`, providing double backward-compatibility
+
+6. All user messages:
+   - The user invoked `/erk:plan-implement` (a skill/slash command), which loaded the `erk:plan-implement` skill and triggered the automated implementation workflow. No other user messages were present beyond this single invocation.
+
+7. Pending Tasks:
+   - Wait for libcst-refactor Agent 2 (field access renames) to complete
+   - Run verification grep sweeps: `grep -r "plan_service" packages/erk-shared/src/` (zero hits), `grep -r "PlanService" packages/erk-shared/src/ src/erk/` (zero hits), `grep -r "PlanNumberEvent" src/ packages/ tests/` (zero hits), `grep -r "\.plan_id\b" packages/erk-shared/src/erk_shared/plan_store/` (zero hits)
+   - Signal GitHub `ended`
+   - Upload session for async learn
+   - Clean up impl context (`erk exec cleanup-impl-context`)
+   - Run CI iteratively (`make fast-ci`)
+   - Submit PR (`erk pr submit`)
+   - Signal lifecycle `submitted`
+   - Run `erk pr check --stage=impl`
+
+8. Current Work:
+   The implementation was mid-execution at Step 8 (Update all importers/consumers). The second libcst-refactor agent was launched in background to handle field access renames (`.plan_number` → `.pr_number`, `.plan_id` → `.pr_id`, `.plan_url` → `.pr_url`, `.plan_identifier` → `.pr_identifier`, `.plans_repo` → `.github_repo`) across ~127 files. The agent ID is `a36c2e70a827d43ff`.
+
+   The most recent action was:
+   ```
+   Launched libcst-refactor agent for field access renames across:
+   - src/ packages/ tests/ --include="*.py"
+   - Renames: .plan_identifier→.pr_identifier, .plan_id→.pr_id, .plan_number→.pr_number, .plan_url→.pr_url, .plans_repo→.github_repo
+   - Also constructor keyword arg renames
+   - Excludes already-updated files
+   ```
+
+9. Optional Next Step:
+   Wait for the background libcst-refactor agent (ID: `a36c2e70a827d43ff`) to complete, then perform verification grep sweeps per the plan's verification section:
+   - `grep -r "plan_service" packages/erk-shared/src/` → zero hits
+   - `grep -r "PlanService" packages/erk-shared/src/ src/erk/` → zero hits  
+   - `grep -r "PlanNumberEvent" src/ packages/ tests/` → zero hits
+   - `grep -r "\.plan_id\b" packages/erk-shared/src/erk_shared/plan_store/` → zero hits
+   
+   Then proceed with Step 9 (Signal GitHub ended), Step 10 (Upload session), Step 11 (Clean up impl context), Step 12 (Run CI `make fast-ci`), and Step 13 (Submit PR via `erk pr submit`).
+
+If you need specific details from before compaction (like exact code snippets, error messages, or content you generated), read the full transcript at: /Users/schrockn/.claude/projects/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-11/c8de6f3b-476c-490b-8af7-ae99160bd325.jsonl
+Continue the conversation from where it left off without asking the user any further questions. Resume directly — do not acknowledge the summary, do not recap what was happening, do not preface with "I'll continue" or similar. Pick up the last task as if the break never happened.</user>
+  <usage input_tokens="3" cache_creation_input_tokens="31039" cache_read_input_tokens="13273" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 31039}" output_tokens="7" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01PsRH1w4kuR3vGFRteooptD">
+    <param name="description">Resume libcst-refactor field access renames</param>
+    <param name="subagent_type">libcst-refactor</param>
+    <param name="resume">a36c2e70a827d43ff</param>
+    <param name="prompt">Check status and continue if not done yet.</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="31039" cache_read_input_tokens="13273" output_tokens="188" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 31039, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01PsRH1w4kuR3vGFRteooptD">
+Cannot resume agent a36c2e70a827d43ff: it is still running. Use TaskStop to stop it first, or wait for it to complete.
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="3335" cache_read_input_tokens="44312" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3335}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>The background agent is still running. Let me do some verification work in parallel while waiting.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3335" cache_read_input_tokens="44312" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3335}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01MgeAkMHYoPAtF4bBViA8PY">
+    <param name="pattern">plan_service</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/packages/erk-shared/src</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3335" cache_read_input_tokens="44312" output_tokens="277" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3335, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01MgeAkMHYoPAtF4bBViA8PY">
+No files found
+  </tool_result>
+</session>

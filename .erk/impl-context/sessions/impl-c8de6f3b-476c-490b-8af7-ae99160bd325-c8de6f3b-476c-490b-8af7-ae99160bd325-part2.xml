@@ -1,0 +1,1110 @@
+<session>
+  <meta branch="plnd/O9109-rename-plan-to-pr-ph-03-09-2222" />
+  <meta model="claude-sonnet-4-6" />
+  <tool_result tool="toolu_019QQAaaePcKqovbn9ptajC7">
+     1→"""Claude CLI prompt execution implementation.
+     2→
+     3→This module provides the ClaudeCliPromptExecutor implementation and re-exports
+     4→ABC and types from erk_shared.core.
+     5→"""
+     6→
+     7→from __future__ import annotations
+     8→
+     9→import json
+    10→import logging
+    11→import os
+    12→import shutil
+    13→import subprocess
+    14→import sys
+    15→import threading
+    16→from collections.abc import Iterator
+    17→from pathlib import Path
+    18→from typing import TYPE_CHECKING
+    19→
+    20→if TYPE_CHECKING:
+    21→    from erk_shared.context.types import PermissionMode
+    22→
+    23→from erk_shared.context.types import permission_mode_to_claude
+    24→from erk_shared.core.prompt_executor import (
+    25→    CommandResult,  # noqa: F401 - re-exported for erk.cli.output
+    26→    ErrorEvent,
+    27→    ExecutorEvent,
+    28→    NoOutputEvent,
+    29→    NoTurnsEvent,
+    30→    PlanNumberEvent,
+
+... [629 lines omitted] ...
+
+    32→    ProcessErrorEvent,
+    53→def format_prompt_error(
+    59→    """Format error message for failed prompt execution.
+    61→    Constructs a structured error message from subprocess failure details.
+    65→        stderr: Standard error output
+    69→        Formatted error string like "Exit code 1 | stderr: ... | stdout: ..."
+    71→    error_parts = [f"Exit code {returncode}"]
+    73→        error_parts.append(f"stderr: {stderr.strip()}")
+    76→        error_parts.append(f"stdout: {stdout_preview}")
+    77→    return " | ".join(error_parts)
+   153→                error_msg = f"Claude command {command} failed with exit code {result.returncode}"
+   154→                yield ErrorEvent(message=error_msg)
+   163→        # Handle Popen errors (e.g., claude not found, permission denied)
+   174→        except OSError as e:
+   175→            yield ProcessErrorEvent(
+   176→                message=f"Failed to start Claude CLI: {e}\nCommand: {' '.join(cmd_args)}"
+   282→                    diag += "\n  Run 'claude' directly to see hook error messages"
+   300→            yield ProcessErrorEvent(
+   318→                yield ErrorEvent(message=f"Exit code {returncode}")
+   321→        # Enhanced error messages for non-zero exit codes
+   323→            error_msg = f"Claude command {command} failed"
+   324→            error_msg += f"\n  Exit code: {returncode}"
+   325→            error_msg += f"\n  Lines processed: {line_count}"
+   327→                error_msg += "\n  Stderr:\n" + "".join(stderr_output).strip()
+   328→            yield ErrorEvent(message=error_msg)
+   364→        # Parse JSON safely - JSON parsing requires exception handling
+   371→            except json.JSONDecodeError:
+   386→            "is_error": None,
+   456→            result["is_error"] = data.get("is_error", False)
+   490→            raise RuntimeError("Claude CLI not found\nInstall from: https://claude.com/download")
+   495→        # FileNotFoundError which is the appropriate error.
+   527→            except OSError:
+   592→                error=f"Prompt execution timed out after {PROMPT_TIMEOUT_SECONDS}s",
+   599→                error=format_prompt_error(
+   609→            error=None,
+  </tool_result>
+  <tool_use name="Read" id="toolu_01RaYCjBLrzP4LEFPEUyRFS1">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/src/erk/core/codex_output_parser.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1324" cache_read_input_tokens="71950" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1324}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01RaYCjBLrzP4LEFPEUyRFS1">
+     1→"""Parser for Codex CLI JSONL streaming output.
+     2→
+     3→Codex's --json output uses a two-level type system completely different from
+     4→Claude's stream-json format. This module provides a standalone parser that
+     5→converts Codex JSONL lines into erk's ExecutorEvent types.
+     6→
+     7→See docs/learned/integrations/codex/codex-jsonl-format.md for format spec.
+     8→"""
+     9→
+    10→from __future__ import annotations
+    11→
+    12→import json
+    13→import logging
+    14→from pathlib import Path
+    15→
+    16→from erk.core.output_filter import extract_pr_metadata_from_text
+    17→from erk_shared.core.prompt_executor import (
+    18→    ErrorEvent,
+    19→    ExecutorEvent,
+    20→    PlanNumberEvent,
+    21→    PrNumberEvent,
+    22→    PrTitleEvent,
+    23→    PrUrlEvent,
+    24→    SpinnerUpdateEvent,
+    25→    TextEvent,
+    26→    ToolEvent,
+    27→)
+    28→
+    29→logger = logging.getLogger(__name__)
+    30→
+
+... [301 lines omitted] ...
+
+    79→    if event_type == "turn.failed":
+    80→        return _handle_turn_failed(data)
+    81→    if event_type == "error":
+    82→        return _handle_top_level_error(data)
+    92→    """Parse JSON text, returning None on failure.
+    94→    JSON parsing is one of the few places where exception handling is
+   101→    except json.JSONDecodeError:
+   156→    """Handle item.completed events — emit TextEvent, ToolEvent, or ErrorEvent."""
+   172→    if item_type == "error":
+   173→        message = item.get("message", "Unknown item error")
+   174→        return [ErrorEvent(message=str(message))]
+   279→    error = item.get("error")
+   283→    if error is not None and isinstance(error, str) and error.strip():
+   284→        return [ToolEvent(summary=f"MCP {label}: error - {_truncate(error, 80)}")]
+   305→def _handle_turn_failed(data: dict) -&gt; list[ExecutorEvent]:
+   306→    """Extract error from turn.failed event."""
+   307→    error = data.get("error", {})
+   308→    if isinstance(error, dict):
+   309→        message = error.get("message", "Turn failed (no message)")
+   311→        message = "Turn failed (no message)"
+   312→    return [ErrorEvent(message=str(message))]
+   315→def _handle_top_level_error(data: dict) -&gt; list[ExecutorEvent]:
+   316→    """Extract error from top-level error event."""
+   317→    message = data.get("message", "Unknown error")
+   318→    return [ErrorEvent(message=str(message))]
+  </tool_result>
+  <tool_use name="Read" id="toolu_014NWXeLDTb2XuLsk2net35o">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/src/erk/cli/output.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1324" cache_read_input_tokens="71950" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1324}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014NWXeLDTb2XuLsk2net35o">
+     1→"""Output utilities for CLI commands with clear intent.
+     2→
+     3→For user_output, machine_output, format_duration - import from erk_shared.output.
+     4→This module provides format_implement_summary and stream_command_with_feedback.
+     5→"""
+     6→
+     7→from __future__ import annotations
+     8→
+     9→import sys
+    10→import time
+    11→from dataclasses import dataclass
+    12→from pathlib import Path
+    13→from typing import TYPE_CHECKING
+    14→
+    15→import click
+    16→from rich.panel import Panel
+    17→from rich.text import Text
+    18→
+    19→if TYPE_CHECKING:
+    20→    from erk_shared.context.types import PermissionMode
+    21→
+    22→from erk.core.prompt_executor import (
+    23→    CommandResult,
+    24→    ErrorEvent,
+    25→    NoOutputEvent,
+    26→    NoTurnsEvent,
+    27→    PlanNumberEvent,
+    28→    PrNumberEvent,
+    29→    ProcessErrorEvent,
+    30→    PromptExecutor,
+
+... [475 lines omitted] ...
+
+    41→    """Format final summary box with status, PR link, timing, errors.
+    65→        lines.append(Text("❌ Status: Failed", style="red"))
+   108→    # Error details (if failed)
+   112→                if result.error_message:
+   114→                    lines.append(Text(f"Error in command {i + 1}:", style="red bold"))
+   115→                    lines.append(Text(result.error_message, style="red"))
+   121→    title = "Implementation Complete" if overall_success else "Implementation Failed"
+   148→    - Error events: `  ! error message` (red)
+   150→    - End (failure): `--- Failed (1m 23s) ---` (red)
+   179→    error_message: str | None = None
+   224→            case ErrorEvent(message=msg):
+   226→                error_message = msg
+   230→                error_message = diag
+   234→                error_message = diag
+   236→            case ProcessErrorEvent(message=msg):
+   238→                error_message = msg
+   252→        click.echo(click.style(f"--- Failed ({duration_str}) ---", fg="red", bold=True), err=True)
+   261→        error_message=error_message,
+   271→    error_message: str | None = None
+   292→        RebaseResult with success status and error details
+   294→    error_message: str | None = None
+   342→            case ErrorEvent(message=msg):
+   344→                error_message = msg
+   348→                error_message = diag
+   352→                error_message = diag
+   354→            case ProcessErrorEvent(message=msg):
+   356→                error_message = msg
+   361→    # Check for no-work-events failure mode
+   364→        error_message = (
+   368→        click.echo(click.style(f"   {error_message}", fg="yellow"))
+   378→        click.echo(click.style(f"--- Failed ({duration_str}) ---", fg="red", bold=True))
+   380→    return RebaseResult(success=success, error_message=error_message)
+   388→    error_message: str | None = None
+   411→        DivergenceFixResult with success status and error details
+   413→    error_message: str | None = None
+   461→            case ErrorEvent(message=msg):
+   463→                error_message = msg
+   467→                error_message = diag
+   471→                error_message = diag
+   473→            case ProcessErrorEvent(message=msg):
+   475→                error_message = msg
+   480→    # Check for no-work-events failure mode
+   483→        error_message = (
+   487→        click.echo(click.style(f"   {error_message}", fg="yellow"))
+   497→        click.echo(click.style(f"--- Failed ({duration_str}) ---", fg="red", bold=True))
+   499→    return DivergenceFixResult(success=success, error_message=error_message)
+  </tool_result>
+  <tool_use name="Read" id="toolu_01P2TC2D4is37KN8tCK7cMzT">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/src/erk/core/output_filter.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1324" cache_read_input_tokens="71950" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1324}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01P2TC2D4is37KN8tCK7cMzT">
+     1→"""Output filtering for Claude CLI stream-json format.
+     2→
+     3→This module provides functions to parse and filter Claude CLI output in stream-json
+     4→format, extracting relevant text content and tool summaries while suppressing
+     5→verbose/noisy tool invocations.
+     6→"""
+     7→
+     8→import json
+     9→from pathlib import Path
+    10→
+    11→
+    12→def extract_text_content(message: dict) -&gt; str | None:
+    13→    """Extract Claude's text response from assistant message.
+    14→
+    15→    Args:
+    16→        message: Assistant message dict from stream-json
+    17→
+    18→    Returns:
+    19→        Extracted text content, or None if no text found
+    20→
+    21→    Example:
+    22→        &gt;&gt;&gt; msg = {"type": "assistant_message", "content": [{"type": "text", "text": "Hello"}]}
+    23→        &gt;&gt;&gt; extract_text_content(msg)
+    24→        'Hello'
+    25→    """
+    26→    content = message.get("content", [])
+    27→    if not isinstance(content, list):
+    28→        return None
+    29→
+    30→    text_parts: list[str] = []
+
+... [308 lines omitted] ...
+
+   159→    # Parse JSON safely - JSON parsing requires exception handling
+   166→        except json.JSONDecodeError:
+   197→    # Parse JSON safely - JSON parsing requires exception handling
+   204→        except json.JSONDecodeError:
+  </tool_result>
+  <tool_use name="Read" id="toolu_01CdrhsM6hfDfxiAnvUxNtDA">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/tests/fakes/prompt_executor.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1324" cache_read_input_tokens="71950" output_tokens="435" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1324, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01CdrhsM6hfDfxiAnvUxNtDA">
+     1→"""Fake implementation of PromptExecutor for testing.
+     2→
+     3→This fake enables testing prompt execution without
+     4→requiring the actual Claude CLI or using subprocess mocks.
+     5→"""
+     6→
+     7→from __future__ import annotations
+     8→
+     9→from collections.abc import Iterator
+    10→from pathlib import Path
+    11→from typing import TYPE_CHECKING
+    12→
+    13→if TYPE_CHECKING:
+    14→    from erk_shared.context.types import PermissionMode
+    15→
+    16→from erk_shared.core.prompt_executor import (
+    17→    CommandResult,
+    18→    ErrorEvent,
+    19→    ExecutorEvent,
+    20→    NoOutputEvent,
+    21→    NoTurnsEvent,
+    22→    PlanNumberEvent,
+    23→    PrNumberEvent,
+    24→    ProcessErrorEvent,
+    25→    PromptExecutor,
+    26→    PromptResult,
+    27→    PrTitleEvent,
+    28→    PrUrlEvent,
+    29→    SpinnerUpdateEvent,
+    30→    TextEvent,
+
+... [410 lines omitted] ...
+
+    57→        # Test command failure
+    61→        ... except RuntimeError:
+    62→        ...     print("Command failed as expected")
+    82→        simulated_process_error: str | None = None,
+    85→        simulated_prompt_error: str | None = None,
+    93→            command_should_fail: Whether execute_command should raise RuntimeError
+   102→            simulated_process_error: Error message to simulate process startup failure
+   109→            simulated_prompt_error: Error message to return from execute_prompt() on failure.
+   110→                If set, execute_prompt() will return a failure result.
+   113→                tests the "empty response" failure mode where Claude produces JSON
+   127→        self._simulated_process_error = simulated_process_error
+   133→        self._simulated_prompt_error = simulated_prompt_error
+   176→            RuntimeError: If command_should_fail was set to True
+   180→        # Process error takes precedence (simulates Popen failure)
+   181→        if self._simulated_process_error is not None:
+   182→            yield ProcessErrorEvent(message=self._simulated_process_error)
+   196→            diag += "\n  Run 'claude' directly to see hook error messages"
+   202→            yield ErrorEvent(message=f"Claude command {command} failed (simulated failure)")
+   260→            RuntimeError: If command_should_fail was set to True
+   272→                error_message=f"Claude command {command} failed (simulated failure)",
+   283→            error_message=None,
+   304→            RuntimeError: If Claude CLI is not available
+   307→            raise RuntimeError("Claude CLI not found\nInstall from: https://claude.com/download")
+   361→            PromptResult with simulated output or error
+   365→        if self._simulated_prompt_error is not None:
+   369→                error=self._simulated_prompt_error,
+   386→            error=None,
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="32489" cache_read_input_tokens="73274" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 32489}" output_tokens="11" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now let me make the remaining changes. I'll do the real prompt_executor.py, codex_output_parser, cli/output.py, output_filter.py, and the fake executor:
+
+**Fix src/erk/core/prompt_executor.py (real implementation)**</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="32489" cache_read_input_tokens="73274" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 32489}" output_tokens="11" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01WAnHXswNhmsxsRBmpcC57D">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/src/erk/core/prompt_executor.py</param>
+    <param name="old_string">from erk_shared.core.prompt_executor import (
+    CommandResult,  # noqa: F401 - re-export...[truncated 174 chars]...
+    PrTitleEvent,
+    PrUrlEvent,
+    SpinnerUpdateEvent,
+    TextEvent,
+    ToolEvent,
+)</param>
+    <param name="new_string">from erk_shared.core.prompt_executor import (
+    CommandResult,  # noqa: F401 - re-export...[truncated 153 chars]...
+    PrTitleEvent,
+    PrUrlEvent,
+    SpinnerUpdateEvent,
+    TextEvent,
+    ToolEvent,
+)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="32489" cache_read_input_tokens="73274" output_tokens="1153" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 32489, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01WAnHXswNhmsxsRBmpcC57D">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/src/erk/core/prompt_executor.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01LH4rwP5bCvXiLMnBtAc6Gi">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/src/erk/core/prompt_executor.py</param>
+    <param name="old_string">                    text_pr_title = text_metadata.get("pr_title")
+                    if t...[truncated 185 chars]...r is not None:
+                        yield PlanNumberEvent(number=int(text_plan_number))</param>
+    <param name="new_string">                    text_pr_title = text_metadata.get("pr_title")
+                    if text_pr_title is not None:
+                        yield PrTitleEvent(title=str(text_pr_title))</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1193" cache_read_input_tokens="105763" output_tokens="299" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1193, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01LH4rwP5bCvXiLMnBtAc6Gi">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/src/erk/core/prompt_executor.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01RWP8vZSrdhvt7UhG6bPVCC">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/src/erk/core/prompt_executor.py</param>
+    <param name="old_string">                # Yield PR title
+                pr_title_value = parsed.get("pr_title")
+ ...[truncated 288 chars]...er=int(plan_number_value))
+
+                # Detect zero-turn completions (hook blocking)</param>
+    <param name="new_string">                # Yield PR title
+                pr_title_value = parsed.get("pr_title")
+ ...[truncated 65 chars]...title=str(pr_title_value))
+
+                # Detect zero-turn completions (hook blocking)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="356" cache_read_input_tokens="106956" output_tokens="334" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 356, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01RWP8vZSrdhvt7UhG6bPVCC">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/src/erk/core/prompt_executor.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update the `_parse_stream_json_line` result dict and the `pr_metadata` extraction:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="502" cache_read_input_tokens="107312" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 502}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01EbZRT69zR9kLhTKV4AKFba">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/src/erk/core/prompt_executor.py</param>
+    <param name="old_string">        result: dict[str, str | int | bool | None] = {
+            "text_content": None,
+ ...[truncated 184 chars]...num_turns": None,
+            "is_error": None,
+            "result_text": None,
+        }</param>
+    <param name="new_string">        result: dict[str, str | int | bool | None] = {
+            "text_content": None,
+ ...[truncated 151 chars]...num_turns": None,
+            "is_error": None,
+            "result_text": None,
+        }</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="502" cache_read_input_tokens="107312" output_tokens="382" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 502, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01EbZRT69zR9kLhTKV4AKFba">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/src/erk/core/prompt_executor.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01DbMpUrT993AG9sQZYoMSPV">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/src/erk/core/prompt_executor.py</param>
+    <param name="old_string">                        if content_str is not None:
+                            pr_metadat...[truncated 338 chars]...sult["plan_number"] = pr_metadata.get("plan_number")
+                                break</param>
+    <param name="new_string">                        if content_str is not None:
+                            pr_metadat...[truncated 251 chars]...        result["pr_title"] = pr_metadata["pr_title"]
+                                break</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="439" cache_read_input_tokens="107814" output_tokens="364" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 439, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01DbMpUrT993AG9sQZYoMSPV">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/src/erk/core/prompt_executor.py has been updated successfully.
+  </tool_result>
+  <assistant>Also update the docstring in `_parse_stream_json_line`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="421" cache_read_input_tokens="108253" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 421}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01VXtfukfUVadF2UGGszvcEc">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/src/erk/core/prompt_executor.py</param>
+    <param name="old_string">        Returns:
+            Dict with text_content, tool_summary, spinner_update, pr_url, pr_number,
+            pr_title, and plan_number keys, or None if not JSON</param>
+    <param name="new_string">        Returns:
+            Dict with text_content, tool_summary, spinner_update, pr_url, pr_number,
+            and pr_title keys, or None if not JSON</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="421" cache_read_input_tokens="108253" output_tokens="247" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 421, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01VXtfukfUVadF2UGGszvcEc">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/src/erk/core/prompt_executor.py has been updated successfully.
+  </tool_result>
+  <assistant>**Fix codex_output_parser.py**</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="304" cache_read_input_tokens="108674" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 304}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_013MnWRW7K7KjHx2NpauQfew">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/src/erk/core/codex_output_parser.py</param>
+    <param name="old_string">from erk_shared.core.prompt_executor import (
+    ErrorEvent,
+    ExecutorEvent,
+    PlanN...[truncated 10 chars]...
+    PrTitleEvent,
+    PrUrlEvent,
+    SpinnerUpdateEvent,
+    TextEvent,
+    ToolEvent,
+)</param>
+    <param name="new_string">from erk_shared.core.prompt_executor import (
+    ErrorEvent,
+    ExecutorEvent,
+    PrNumberEvent,
+    PrTitleEvent,
+    PrUrlEvent,
+    SpinnerUpdateEvent,
+    TextEvent,
+    ToolEvent,
+)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="304" cache_read_input_tokens="108674" output_tokens="300" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 304, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_013MnWRW7K7KjHx2NpauQfew">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/src/erk/core/codex_output_parser.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_0151h2dF9ghvm1TUc3pr84Lb">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/src/erk/core/codex_output_parser.py</param>
+    <param name="old_string">    pr_title = metadata.get("pr_title")
+    if pr_title is not None:
+        events.append...[truncated 86 chars]...t None:
+        events.append(PlanNumberEvent(number=int(plan_number)))
+
+    return events</param>
+    <param name="new_string">    pr_title = metadata.get("pr_title")
+    if pr_title is not None:
+        events.append(PrTitleEvent(title=str(pr_title)))
+
+    return events</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="360" cache_read_input_tokens="108978" output_tokens="286" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 360, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0151h2dF9ghvm1TUc3pr84Lb">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/src/erk/core/codex_output_parser.py has been updated successfully.
+  </tool_result>
+  <assistant>**Fix cli/output.py**</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="346" cache_read_input_tokens="109338" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 346}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01VnLEzu2MfSNUeSdAAvGJRM">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/src/erk/cli/output.py</param>
+    <param name="old_string">from erk.core.prompt_executor import (
+    CommandResult,
+    ErrorEvent,
+    NoOutputEven...[truncated 83 chars]...
+    PrTitleEvent,
+    PrUrlEvent,
+    SpinnerUpdateEvent,
+    TextEvent,
+    ToolEvent,
+)</param>
+    <param name="new_string">from erk.core.prompt_executor import (
+    CommandResult,
+    ErrorEvent,
+    NoOutputEven...[truncated 62 chars]...
+    PrTitleEvent,
+    PrUrlEvent,
+    SpinnerUpdateEvent,
+    TextEvent,
+    ToolEvent,
+)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="346" cache_read_input_tokens="109338" output_tokens="342" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 346, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01VnLEzu2MfSNUeSdAAvGJRM">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/src/erk/cli/output.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_017aJPgAR5sA6qwzZo3z9j7k">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/src/erk/cli/output.py</param>
+    <param name="old_string">    # PR and issue metadata (if any)
+    pr_url: str | None = None
+    pr_number: int | No...[truncated 914 chars]...f"📋 Linked Plan: #{plan_number} (will auto-close on merge)", style="yellow")
+            )</param>
+    <param name="new_string">    # PR and issue metadata (if any)
+    pr_url: str | None = None
+    pr_number: int | No...[truncated 600 chars]...le="cyan"))
+
+        # Show PR URL
+        lines.append(Text(f"   {pr_url}", style="dim"))</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="508" cache_read_input_tokens="109684" output_tokens="719" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 508, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_017aJPgAR5sA6qwzZo3z9j7k">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/src/erk/cli/output.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01WcUPe63aP4RmNaTauGJN62">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/src/erk/cli/output.py</param>
+    <param name="old_string">    filtered_messages: list[str] = []
+    pr_url: str | None = None
+    pr_number: int | N...[truncated 86 chars]...e = None
+    success = True
+    last_spinner_update: str | None = None
+    event_count = 0</param>
+    <param name="new_string">    filtered_messages: list[str] = []
+    pr_url: str | None = None
+    pr_number: int | N...[truncated 51 chars]...e = None
+    success = True
+    last_spinner_update: str | None = None
+    event_count = 0</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="774" cache_read_input_tokens="110192" output_tokens="317" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 774, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01WcUPe63aP4RmNaTauGJN62">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/src/erk/cli/output.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01JGmib4VZmZ6imMysmSPg5E">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/src/erk/cli/output.py</param>
+    <param name="old_string">            case PrTitleEvent(title=title):
+                pr_title = title
+            c...[truncated 35 chars]...umber = num  # Already int, no conversion needed
+            case ErrorEvent(message=msg):</param>
+    <param name="new_string">            case PrTitleEvent(title=title):
+                pr_title = title
+            case ErrorEvent(message=msg):</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="372" cache_read_input_tokens="110966" output_tokens="229" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 372, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01JGmib4VZmZ6imMysmSPg5E">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/src/erk/cli/output.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01DqGiYcXmDdwJYCANgXpyCP">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/src/erk/cli/output.py</param>
+    <param name="old_string">    return CommandResult(
+        success=success,
+        pr_url=pr_url,
+        pr_numbe...[truncated 131 chars]...  filtered_messages=filtered_messages,
+    )
+
+
+@dataclass(frozen=True)
+class RebaseResult:</param>
+    <param name="new_string">    return CommandResult(
+        success=success,
+        pr_url=pr_url,
+        pr_numbe...[truncated 98 chars]...  filtered_messages=filtered_messages,
+    )
+
+
+@dataclass(frozen=True)
+class RebaseResult:</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="284" cache_read_input_tokens="111338" output_tokens="326" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 284, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01DqGiYcXmDdwJYCANgXpyCP">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/src/erk/cli/output.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update the two match cases in `stream_rebase` and `stream_diverge_fix` that use PlanNumberEvent:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="381" cache_read_input_tokens="111622" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 381}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01MRBozW2N6NhRLmWZBWebdB">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/src/erk/cli/output.py</param>
+    <param name="old_string">            case PrUrlEvent() | PrNumberEvent() | PrTitleEvent() | PlanNumberEvent():
+                pass  # PR metadata not relevant for rebase</param>
+    <param name="new_string">            case PrUrlEvent() | PrNumberEvent() | PrTitleEvent():
+                pass  # PR metadata not relevant for rebase</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="381" cache_read_input_tokens="111622" output_tokens="244" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 381, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01MRBozW2N6NhRLmWZBWebdB">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/src/erk/cli/output.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01FX9bcxsfyXGQ9ZW7DGrJRa">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/src/erk/cli/output.py</param>
+    <param name="old_string">            case PrUrlEvent() | PrNumberEvent() | PrTitleEvent() | PlanNumberEvent():
+                pass  # PR metadata not relevant for diverge-fix</param>
+    <param name="new_string">            case PrUrlEvent() | PrNumberEvent() | PrTitleEvent():
+                pass  # PR metadata not relevant for diverge-fix</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="299" cache_read_input_tokens="112003" output_tokens="218" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 299, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01FX9bcxsfyXGQ9ZW7DGrJRa">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/src/erk/cli/output.py has been updated successfully.
+  </tool_result>
+  <assistant>**Fix output_filter.py - remove plan_number**</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="273" cache_read_input_tokens="112302" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 273}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01JfCs7CmMRzqdbTnvxupHSk">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/src/erk/core/output_filter.py</param>
+    <param name="old_string">def extract_pr_metadata(tool_result_content: str) -&gt; dict[str, str | int | None]:
+    """E...[truncated 1521 chars]... None,
+        "plan_number": plan_number if isinstance(plan_number, int) else None,
+    }</param>
+    <param name="new_string">def extract_pr_metadata(tool_result_content: str) -&gt; dict[str, str | int | None]:
+    """E...[truncated 1285 chars]...int) else None,
+        "pr_title": pr_title if isinstance(pr_title, str) else None,
+    }</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="273" cache_read_input_tokens="112302" output_tokens="1157" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 273, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01JfCs7CmMRzqdbTnvxupHSk">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/src/erk/core/output_filter.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_016rdFCni3bMTHqvVHxMRtQj">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/src/erk/core/output_filter.py</param>
+    <param name="old_string">def extract_pr_metadata_from_text(text: str) -&gt; dict[str, str | int | None]:
+    """Extrac...[truncated 833 chars]...e,
+        "pr_number": None,
+        "pr_title": None,
+        "plan_number": None,
+    }</param>
+    <param name="new_string">def extract_pr_metadata_from_text(text: str) -&gt; dict[str, str | int | None]:
+    """Extrac...[truncated 754 chars]...ne] = {
+        "pr_url": None,
+        "pr_number": None,
+        "pr_title": None,
+    }</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1214" cache_read_input_tokens="112575" output_tokens="778" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1214, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_016rdFCni3bMTHqvVHxMRtQj">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/src/erk/core/output_filter.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01QnTtqHMAZaKh8Wdpt4KqZX">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/src/erk/core/output_filter.py</param>
+    <param name="old_string">    # Extract Graphite URL as fallback
+    if result["pr_url"] is None:
+        graphite_u...[truncated 452 chars]... issue_match:
+        result["plan_number"] = int(issue_match.group(1))
+
+    return result</param>
+    <param name="new_string">    # Extract Graphite URL as fallback
+    if result["pr_url"] is None:
+        graphite_u...[truncated 221 chars]...
+                result["pr_number"] = int(graphite_url_match.group(1))
+
+    return result</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="946" cache_read_input_tokens="113789" output_tokens="501" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 946, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01QnTtqHMAZaKh8Wdpt4KqZX">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/src/erk/core/output_filter.py has been updated successfully.
+  </tool_result>
+  <assistant>**Fix tests/fakes/prompt_executor.py**</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="558" cache_read_input_tokens="114735" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 558}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01MxNH4euq2SKn5sHQ8YgXj1">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/tests/fakes/prompt_executor.py</param>
+    <param name="old_string">from erk_shared.core.prompt_executor import (
+    CommandResult,
+    ErrorEvent,
+    Execu...[truncated 127 chars]...
+    PrTitleEvent,
+    PrUrlEvent,
+    SpinnerUpdateEvent,
+    TextEvent,
+    ToolEvent,
+)</param>
+    <param name="new_string">from erk_shared.core.prompt_executor import (
+    CommandResult,
+    ErrorEvent,
+    Execu...[truncated 106 chars]...
+    PrTitleEvent,
+    PrUrlEvent,
+    SpinnerUpdateEvent,
+    TextEvent,
+    ToolEvent,
+)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="558" cache_read_input_tokens="114735" output_tokens="377" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 558, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01MxNH4euq2SKn5sHQ8YgXj1">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/tests/fakes/prompt_executor.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_016KZF7PWFxk5Go8JAZp7Sfu">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/tests/fakes/prompt_executor.py</param>
+    <param name="old_string">        simulated_pr_url: str | None = None,
+        simulated_pr_number: int | None = Non...[truncated 45 chars]...ed_plan_number: int | None = None,
+        simulated_tool_events: list[str] | None = None,</param>
+    <param name="new_string">        simulated_pr_url: str | None = None,
+        simulated_pr_number: int | None = None,
+        simulated_pr_title: str | None = None,
+        simulated_tool_events: list[str] | None = None,</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="432" cache_read_input_tokens="115293" output_tokens="283" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 432, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_016KZF7PWFxk5Go8JAZp7Sfu">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/tests/fakes/prompt_executor.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01Cd6E9W92pmrZYMNQozz1Kt">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/tests/fakes/prompt_executor.py</param>
+    <param name="old_string">            simulated_pr_url: PR URL to return in CommandResult (simulates successful PR c...[truncated 213 chars]...ed plan)
+            simulated_tool_events: Tool event contents to emit (e.g., "Using...")</param>
+    <param name="new_string">            simulated_pr_url: PR URL to return in CommandResult (simulates successful PR c...[truncated 132 chars]...etadata)
+            simulated_tool_events: Tool event contents to emit (e.g., "Using...")</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="338" cache_read_input_tokens="115725" output_tokens="327" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 338, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Cd6E9W92pmrZYMNQozz1Kt">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/tests/fakes/prompt_executor.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_019HJjH6GG8zyXYHiMFQ1j76">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/tests/fakes/prompt_executor.py</param>
+    <param name="old_string">        self._simulated_pr_url = simulated_pr_url
+        self._simulated_pr_number = simu...[truncated 85 chars]... = simulated_plan_number
+        self._simulated_tool_events = simulated_tool_events or []</param>
+    <param name="new_string">        self._simulated_pr_url = simulated_pr_url
+        self._simulated_pr_number = simu...[truncated 25 chars]...tle = simulated_pr_title
+        self._simulated_tool_events = simulated_tool_events or []</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="382" cache_read_input_tokens="116063" output_tokens="299" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 382, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_019HJjH6GG8zyXYHiMFQ1j76">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/tests/fakes/prompt_executor.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01Q6vW9BnpFD1KN6LmjTxnyq">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/tests/fakes/prompt_executor.py</param>
+    <param name="old_string">        if self._simulated_pr_title is not None:
+            yield PrTitleEvent(title=self...[truncated 33 chars]..._number is not None:
+            yield PlanNumberEvent(number=self._simulated_plan_number)</param>
+    <param name="new_string">        if self._simulated_pr_title is not None:
+            yield PrTitleEvent(title=self._simulated_pr_title)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="354" cache_read_input_tokens="116445" output_tokens="244" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 354, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Q6vW9BnpFD1KN6LmjTxnyq">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/tests/fakes/prompt_executor.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update the `execute_command` method in the fake to remove `plan_number`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="299" cache_read_input_tokens="116799" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 299}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01DMEoH1M9CGdqA1ytemExjL">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/tests/fakes/prompt_executor.py</param>
+    <param name="old_string">        if self._command_should_fail:
+            return CommandResult(
+                su...[truncated 563 chars]...n_seconds=0.0,
+            error_message=None,
+            filtered_messages=[],
+        )</param>
+    <param name="new_string">        if self._command_should_fail:
+            return CommandResult(
+                su...[truncated 476 chars]...n_seconds=0.0,
+            error_message=None,
+            filtered_messages=[],
+        )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="299" cache_read_input_tokens="116799" output_tokens="527" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 299, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01DMEoH1M9CGdqA1ytemExjL">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/tests/fakes/prompt_executor.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me handle the remaining phases - metadata schemas, output/next_steps.py, gt/types.py, config:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="582" cache_read_input_tokens="117098" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 582}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_019MZUviztrSfi2kPvS5E7Vz">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/packages/erk-shared/src/erk_shared/gateway/github/metadata/schemas.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="582" cache_read_input_tokens="117098" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 582}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01EXa6FQngT3bSyWcuiCtmYx">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/packages/erk-shared/src/erk_shared/output/next_steps.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="582" cache_read_input_tokens="117098" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 582}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019MZUviztrSfi2kPvS5E7Vz">
+     1→"""Schema implementations for metadata blocks."""
+     2→
+     3→import warnings
+     4→from dataclasses import dataclass
+     5→from typing import Any, Literal
+     6→
+     7→from erk_shared.gateway.github.metadata.types import BlockKeys, MetadataBlockSchema
+     8→
+     9→
+    10→def _migrate_issue_number_to_plan_number(data: dict[str, Any]) -&gt; None:
+    11→    """Migrate legacy ``issue_number`` key to ``plan_number`` in-place.
+    12→
+    13→    Several metadata schemas originally used ``issue_number``.  This helper
+    14→    centralises the backward-compatibility migration so each schema's
+    15→    ``validate`` method can call it instead of duplicating the logic.
+    16→    """
+    17→    if "issue_number" in data and "plan_number" not in data:
+    18→        data["plan_number"] = data.pop("issue_number")
+    19→
+    20→
+    21→@dataclass(frozen=True)
+    22→class ImplementationStatusSchema(MetadataBlockSchema):
+    23→    """Schema for erk-implementation-status blocks (completion status)."""
+    24→
+    25→    def validate(self, data: dict[str, Any]) -&gt; None:
+    26→        """Validate erk-implementation-status data structure."""
+    27→        required_fields = {
+    28→            "status",
+    29→            "timestamp",
+    30→        }
+
+... [855 lines omitted] ...
+
+    35→            raise ValueError(f"Missing required fields: {', '.join(sorted(missing))}")
+    38→        valid_statuses = {"pending", "in_progress", "complete", "failed"}
+    40→            raise ValueError(
+    63→            raise ValueError(f"Missing required fields: {', '.join(sorted(missing))}")
+    68→                raise ValueError(f"{field} must be a string")
+    70→                raise ValueError(f"{field} must not be empty")
+    75→                raise ValueError("plan_number must be an integer")
+    77→                raise ValueError("plan_number must be positive")
+    82→                raise ValueError("plan_file must be a string")
+    84→                raise ValueError("plan_file must not be empty")
+    90→            raise ValueError(f"Unknown fields: {', '.join(sorted(unknown_fields))}")
+   110→            raise ValueError(f"Missing required fields: {', '.join(sorted(missing))}")
+   114→            raise ValueError("plan_number must be an integer")
+   116→            raise ValueError("plan_number must be positive")
+   119→            raise ValueError("worktree_name must be a string")
+   121→            raise ValueError("worktree_name must not be empty")
+   124→            raise ValueError("timestamp must be a string")
+   126→            raise ValueError("timestamp must not be empty")
+   131→                raise ValueError("plan_file must be a string")
+   133→                raise ValueError("plan_file must not be empty")
+   139→            raise ValueError(f"Unknown fields: {', '.join(sorted(unknown_fields))}")
+   166→            raise ValueError(f"Missing required fields: {', '.join(sorted(missing))}")
+   170→            raise ValueError(f"Invalid status '{data['status']}'. Must be 'queued'")
+   174→            raise ValueError("queued_at must be a string")
+   176→            raise ValueError("queued_at must not be empty")
+   179→            raise ValueError("submitted_by must be a string")
+   181→            raise ValueError("submitted_by must not be empty")
+   184→            raise ValueError("expected_workflow must be a string")
+   186→            raise ValueError("expected_workflow must not be empty")
+   189→            raise ValueError("trigger_mechanism must be a string")
+   191→            raise ValueError("trigger_mechanism must not be empty")
+   195→            raise ValueError("plan_number must be an integer")
+   197→            raise ValueError("plan_number must be positive")
+   201→            raise ValueError("validation_results must be a dict")
+   227→            raise ValueError(f"Missing required fields: {', '.join(sorted(missing))}")
+   231→            raise ValueError(f"Invalid status '{data['status']}'. Must be 'started'")
+   235→            raise ValueError("started_at must be a string")
+   237→            raise ValueError("started_at must not be empty")
+   240→            raise ValueError("workflow_run_id must be a string")
+   242→            raise ValueError("workflow_run_id must not be empty")
+   245→            raise ValueError("workflow_run_url must be a string")
+   247→            raise ValueError("workflow_run_url must not be empty")
+   251→            raise ValueError("plan_number must be an integer")
+   253→            raise ValueError("plan_number must be positive")
+   258→                raise ValueError("branch_name must be a string")
+   260→                raise ValueError("branch_name must not be empty")
+   264→                raise ValueError("worktree_path must be a string")
+   266→                raise ValueError("worktree_path must not be empty")
+   272→            raise ValueError(f"Unknown fields: {', '.join(sorted(unknown_fields))}")
+   294→            raise ValueError(f"Missing required fields: {', '.join(sorted(missing))}")
+   298→            raise ValueError("retry_timestamp must be a string")
+   300→            raise ValueError("retry_timestamp must not be empty")
+   303→            raise ValueError("triggered_by must be a string")
+   305→            raise ValueError("triggered_by must not be empty")
+   309→            raise ValueError("retry_count must be an integer")
+   311→            raise ValueError("retry_count must be at least 1")
+   316→                raise ValueError("previous_retry_timestamp must be a string")
+   318→                raise ValueError("previous_retry_timestamp must not be empty")
+   324→            raise ValueError(f"Unknown fields: {', '.join(sorted(unknown_fields))}")
+   471→        ci_summary_comment_id: GitHub comment ID containing CI failure summaries (nullable)
+   543→            raise ValueError(f"Missing required fields: {', '.join(sorted(missing))}")
+   547→            raise ValueError(f"Invalid schema_version '{data[SCHEMA_VERSION]}'. Must be '2'")
+   552→                raise ValueError(f"{field} must be a string")
+   554→                raise ValueError(f"{field} must not be empty")
+   559→                raise ValueError("worktree_name must be a string or null")
+   561→                raise ValueError("worktree_name must not be empty when provided")
+   566→                raise ValueError("branch_name must be a string or null")
+   568→                raise ValueError("branch_name must not be empty when provided")
+   573→                raise ValueError("plan_comment_id must be an integer or null")
+   575→                raise ValueError("plan_comment_id must be positive when provided")
+   580→                raise ValueError("ci_summary_comment_id must be an integer or null")
+   582→                raise ValueError("ci_summary_comment_id must be positive when provided")
+   588→                    warnings.warn(
+   595→                    raise ValueError("last_dispatched_run_id must be a string or null")
+   600→                    raise ValueError("last_dispatched_node_id must be a string or null")
+   605→                    raise ValueError("last_dispatched_at must be a string or null")
+   610→                    raise ValueError("last_local_impl_at must be a string or null")
+   615→                    raise ValueError("last_remote_impl_at must be a string or null")
+   621→                    warnings.warn(
+   628→                    raise ValueError("last_remote_impl_run_id must be a string or null")
+   634→                    raise ValueError("last_remote_impl_session_id must be a string or null")
+   640→                    raise ValueError("last_local_impl_event must be a string or null")
+   644→                    raise ValueError(
+   652→                    raise ValueError("last_local_impl_session must be a string or null")
+   658→                    raise ValueError("last_local_impl_user must be a string or null")
+   663→                raise ValueError("source_repo must be a string or null")
+   665→                raise ValueError("source_repo must not be empty when provided")
+   668→                raise ValueError("source_repo must be in 'owner/repo' format")
+   673→                raise ValueError("objective_issue must be an integer or null")
+   675→                raise ValueError("objective_issue must be positive when provided")
+   680→                raise ValueError("created_from_session must be a string or null")
+   682→                raise ValueError("created_from_session must not be empty when provided")
+   690→                raise ValueError("created_from_workflow_run_url must be a string or null")
+   692→                raise ValueError("created_from_workflow_run_url must not be empty when provided")
+   697→                raise ValueError("last_learn_session must be a string or null")
+   699→                raise ValueError("last_learn_session must not be empty when provided")
+   704→                raise ValueError("last_learn_at must be a string or null")
+   706→                raise ValueError("last_learn_at must not be empty when provided")
+   711→                raise ValueError("learn_status must be a string or null")
+   723→                raise ValueError(f"learn_status must be one of: {valid_list}. Got '{status_value}'")
+   728→                warnings.warn(
+   734→                raise ValueError("learn_run_id must be a string or null")
+   736→                raise ValueError("learn_run_id must not be empty when provided")
+   741→                raise ValueError("last_session_branch must be a string or null")
+   743→                raise ValueError("last_session_branch must not be empty when provided")
+   748→                raise ValueError("last_session_id must be a string or null")
+   750→                raise ValueError("last_session_id must not be empty when provided")
+   755→                raise ValueError("last_session_at must be a string or null")
+   757→                raise ValueError("last_session_at must not be empty when provided")
+   762→                raise ValueError("last_session_source must be a string or null")
+   766→                raise ValueError(
+   773→                raise ValueError("learn_plan_issue must be an integer or null")
+   775→                raise ValueError("learn_plan_issue must be positive when provided")
+   780→                raise ValueError("learn_plan_pr must be an integer or null")
+   782→                raise ValueError("learn_plan_pr must be positive when provided")
+   787→                raise ValueError("learned_from_issue must be an integer or null")
+   789→                raise ValueError("learned_from_issue must be positive when provided")
+   794→                raise ValueError("learn_materials_branch must be a string or null")
+   796→                raise ValueError("learn_materials_branch must not be empty when provided")
+   801→                raise ValueError("lifecycle_stage must be a string or null")
+   813→                raise ValueError(
+   821→            raise ValueError(f"Unknown fields: {', '.join(sorted(unknown_fields))}")
+   849→            raise ValueError(f"Missing required fields: {', '.join(sorted(missing))}")
+   854→                raise ValueError(f"{field} must be a string")
+   856→                raise ValueError(f"{field} must not be empty")
+   861→                raise ValueError("objective_comment_id must be an integer or null")
+   863→                raise ValueError("objective_comment_id must be positive when provided")
+   868→                raise ValueError("slug must be a string")
+   870→                raise ValueError("slug must not be empty when provided")
+   876→            raise ValueError(f"Unknown fields: {', '.join(sorted(unknown_fields))}")
+  </tool_result>
+  <tool_result tool="toolu_01EXa6FQngT3bSyWcuiCtmYx">
+     1→"""Plan next steps formatting - single source of truth."""
+     2→
+     3→from dataclasses import dataclass
+     4→
+     5→
+     6→@dataclass(frozen=True)
+     7→class PlanNextSteps:
+     8→    """Canonical commands for plan operations."""
+     9→
+    10→    plan_number: int
+    11→    url: str
+    12→
+    13→    @property
+    14→    def view(self) -&gt; str:
+    15→        return self.url
+    16→
+    17→    @property
+    18→    def dispatch(self) -&gt; str:
+    19→        return f"erk pr dispatch {self.plan_number}"
+    20→
+    21→    @property
+    22→    def checkout(self) -&gt; str:
+    23→        return f"erk br co --for-plan {self.plan_number}"
+    24→
+    25→    @property
+    26→    def checkout_new_slot(self) -&gt; str:
+    27→        return f"erk br co --new-slot --for-plan {self.plan_number}"
+    28→
+    29→    @property
+    30→    def dispatch_slash_command(self) -&gt; str:
+
+... [72 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_011A5tGPRLg5u9BwVzxyz8rM">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/packages/erk-shared/src/erk_shared/gateway/gt/types.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="582" cache_read_input_tokens="117098" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 582}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011A5tGPRLg5u9BwVzxyz8rM">
+     1→"""Type definitions for GT kit operations."""
+     2→
+     3→from dataclasses import dataclass
+     4→from typing import Literal, NamedTuple
+     5→
+     6→
+     7→class CommandResult(NamedTuple):
+     8→    """Result from running a subprocess command.
+     9→
+    10→    Attributes:
+    11→        success: True if command exited with code 0, False otherwise
+    12→        stdout: Standard output from the command
+    13→        stderr: Standard error from the command
+    14→    """
+    15→
+    16→    success: bool
+    17→    stdout: str
+    18→    stderr: str
+    19→
+    20→
+    21→# =============================================================================
+    22→# Squash Operation Types
+    23→# =============================================================================
+    24→
+    25→
+    26→@dataclass(frozen=True)
+    27→class SquashSuccess:
+    28→    """Success result from idempotent squash."""
+    29→
+    30→    success: Literal[True]
+
+... [170 lines omitted] ...
+
+    37→class SquashError:
+    38→    """Error result from idempotent squash."""
+    41→    error: Literal["no-commits", "squash-conflict", "squash-failed"]
+    56→LandPrErrorType = Literal[
+    61→    "child-pr-reparent-failed",
+    62→    "github-api-error",
+    63→    "merge-failed",
+    78→class LandPrError:
+    79→    """Error result from landing a PR."""
+    82→    error_type: LandPrErrorType
+    91→PrepErrorType = Literal[
+    99→    "squash-failed",
+   118→class PrepError:
+   119→    """Error result from prep phase."""
+   122→    error_type: PrepErrorType
+   131→PreAnalysisErrorType = Literal[
+   137→    "squash-failed",
+   161→class PreAnalysisError:
+   162→    """Error result from pre-analysis phase."""
+   165→    error_type: PreAnalysisErrorType
+   174→QuickSubmitErrorType = Literal["stage-failed", "commit-failed", "submit-failed"]
+   189→class QuickSubmitError:
+   190→    """Error result from quick-submit operation."""
+   193→    error_type: QuickSubmitErrorType
+  </tool_result>
+  <tool_use name="Read" id="toolu_0143m9Uh2d7hfYeochFp43Dm">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/packages/erk-shared/src/erk_shared/context/types.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="582" cache_read_input_tokens="117098" output_tokens="377" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 582, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0143m9Uh2d7hfYeochFp43Dm">
+     1→"""Context types for erk and erk-kits.
+     2→
+     3→This module provides the core data types used by ErkContext:
+     4→- RepoContext: Repository discovery result
+     5→- NoRepoSentinel: Sentinel for when not in a repository
+     6→- GlobalConfig: Global erk configuration
+     7→- LoadedConfig: Repository-level configuration
+     8→- InteractiveAgentConfig: Configuration for interactive agent launches (Claude or Codex)
+     9→- AgentBackend: Type for agent backend selection
+    10→- PermissionMode: Generic permission mode for both Claude and Codex
+    11→"""
+    12→
+    13→from __future__ import annotations
+    14→
+    15→from dataclasses import dataclass
+    16→from functools import cache
+    17→from pathlib import Path
+    18→from typing import Literal, Self
+    19→
+    20→from erk_shared.gateway.github.types import GitHubRepoId
+    21→
+    22→# Agent backend types
+    23→AgentBackend = Literal["claude", "codex"]
+    24→
+    25→# Claude CLI permission modes:
+    26→# - "default": Default mode with permission prompts
+    27→# - "acceptEdits": Accept edits without prompts (--permission-mode acceptEdits)
+    28→# - "plan": Plan mode for exploration and planning (--permission-mode plan)
+    29→# - "bypassPermissions": Bypass all permissions (--permission-mode bypassPermissions)
+    30→ClaudePermissionMode = Literal["default", "acceptEdits", "plan", "bypassPermissions"]
+
+... [303 lines omitted] ...
+
+    51→    raise ValueError(f"Unknown permission_mode: {permission_mode}")
+    75→    raise ValueError(f"Unknown permission_mode: {permission_mode}")
+    99→    raise ValueError(f"Unknown permission_mode: {permission_mode}")
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="21649" cache_read_input_tokens="117680" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 21649}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>**Phase 4: Rename PlanNextSteps fields**</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="21649" cache_read_input_tokens="117680" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 21649}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+</session>
