@@ -8,6 +8,7 @@ import subprocess
 from dataclasses import dataclass
 from pathlib import Path
 
+from erk_shared.context.factories import get_repo_info
 from erk_shared.gateway.git.abc import Git
 from erk_shared.gateway.git.dry_run import DryRunGit
 from erk_shared.gateway.git.real import RealGit
@@ -42,10 +43,6 @@ def create_context(*, dry_run: bool = False) -> ErkDevContext:
     if dry_run:
         git = DryRunGit(git)
 
-    time = RealTime()
-    github_issues = RealGitHubIssues(target_repo=None, time=time)
-    github: LocalGitHub = RealLocalGitHub(time=time, repo_info=None, issues=github_issues)
-
     result = subprocess.run(
         ["git", "rev-parse", "--show-toplevel"],
         capture_output=True,
@@ -53,5 +50,10 @@ def create_context(*, dry_run: bool = False) -> ErkDevContext:
         check=False,
     )
     repo_root = Path(result.stdout.strip()) if result.returncode == 0 else Path.cwd()
+
+    repo_info = get_repo_info(git, repo_root)
+    time = RealTime()
+    github_issues = RealGitHubIssues(target_repo=None, time=time)
+    github: LocalGitHub = RealLocalGitHub(time=time, repo_info=repo_info, issues=github_issues)
 
     return ErkDevContext(git=git, github=github, repo_root=repo_root)
