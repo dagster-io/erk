@@ -9,7 +9,7 @@ erk-statusline = { workspace = true }
 
 [project]
 name = "erk"
-version = "0.9.9"
+version = "0.9.10"
 description = "Add your description here"
 readme = "README.md"
 authors = [

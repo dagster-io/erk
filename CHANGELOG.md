@@ -7,58 +7,64 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-<!-- As of: bae59f09f -->
+## [0.9.10] - 2026-03-09 11:07 PT
 
 ### Major Changes
 
-- Add `--repo` flag to `erk launch` and `erk objective plan`, enabling remote workflow dispatch and planning without requiring a local git checkout (bae59f09f, c17f25a5f)
+- Add `--repo` flag to `erk launch` and `erk objective plan`, enabling remote workflow dispatch and planning without requiring a local git checkout
 
 ### Added
 
-- Support running `erk one-shot --repo owner/repo` to dispatch tasks to remote repositories without a local git clone (c38a10fd, 83ba44ce, 70e592342)
-- Codespace connect auto-checks out local branch in remote environment (9aa2d881)
-- Add objective node management: update fields and add new nodes to existing phases (74f36b32)
-- Wire incremental dispatch into TUI with plan input modal (e94dabcf)
-- Hide stub branches from `erk br list` by default, with `--all/-a` flag to show them (578cc981)
-- Make TUI help screen view-mode-aware, showing context-sensitive shortcuts for plans vs objectives (433c9c2e)
-- Add Check 8 to `erk objective check` for roadmap table sync validation: detects when the prose roadmap table has drifted from YAML source of truth (20f3cd393)
-- Add "l" keyboard shortcut to launch launchpad from the objective nodes screen in TUI (24981a3ef)
-- Add `--branch/-b` option to `erk codespace connect` to specify which branch to checkout on the codespace (21e2ed535)
-- Add remote dispatch support to `erk pr dispatch` for dispatching implementation to remote repositories (4b7d7a400)
-- Add objective link insertion to PR body for better visibility of objective associations (c56e0626a)
-- Add progress output to `erk land` pipeline and stack commands showing real-time status (3aff883f4)
-- Add `erk launch consolidate-learn-plans` workflow for autonomous consolidation of outstanding learn plans (4eea8f29a)
+- Upgrade MCP `one_shot` to auto-discovery with JSON piping and input schema validation
+- Add `@json_command` decorator providing structured JSON I/O (`--json` flag) and unified error handling across CLI commands
+- Add `erk one-shot --plan-only` mode for remote planning without implementation
+- Add `anthropic_api_fast_path` GlobalConfig setting to control API fast path behavior
+- Support running `erk one-shot --repo owner/repo` to dispatch tasks to remote repositories without a local git clone
+- Codespace connect auto-checks out local branch in remote environment
+- Add objective node management: update fields and add new nodes to existing phases
+- Wire incremental dispatch into TUI with plan input modal
+- Hide stub branches from `erk br list` by default, with `--all/-a` flag to show them
+- Make TUI help screen view-mode-aware, showing context-sensitive shortcuts for plans vs objectives
+- Add Check 8 to `erk objective check` for roadmap table sync validation: detects when the prose roadmap table has drifted from YAML source of truth
+- Add "l" keyboard shortcut to launch launchpad from the objective nodes screen in TUI
+- Add `--branch/-b` option to `erk codespace connect` to specify which branch to checkout on the codespace
+- Add remote dispatch support to `erk pr dispatch` for dispatching implementation to remote repositories
+- Add objective link insertion to PR body for better visibility of objective associations
+- Add progress output to `erk land` pipeline and stack commands showing real-time status
+- Add `erk launch consolidate-learn-plans` workflow for autonomous consolidation of outstanding learn plans
 
 ### Changed
 
-- Show conflicted files and prompt for confirmation before launching Claude in `erk pr rebase` (c0461e8a)
-- Sort command palette menu items alphabetically within each subgroup (94957ecb)
-- Remove `--sync` from `erk pr checkout` (now purely local); add `--script` and `--sync` options to `erk pr teleport` for remote Graphite submission workflows (7065d4546)
-- Rename bundled slash command `/erk:rebase` to `/erk:pr-rebase` for consistency with PR-focused command naming (51d6ccb84)
-- `erk objective view` now infers the objective from the current branch when no explicit reference is provided (56dbf1a04)
-- Add arrow key navigation to the objective nodes screen in TUI (91d3f1143)
-- Update `/erk:pr-rebase` skill to use AskUserQuestion for push options (932de4cca)
-- Replace `--dangerous` flag with `live_dangerously` config setting and `--safe` override across CLI commands (ee5b9f186)
-- Enable `erk objective` commands (check, close, list, view) to work without requiring a local repository clone (b219c21b6)
-- Simplify current-worktree commands by removing unnecessary shell activation (76d44ec28)
-- Harden `erk land` with stack landing support (`--stack`), child reparenting verification, and read-after-write checks for resilient PR landing (a8f5f010f)
-- Show per-file metadata in manifest summary output during `erk land` learn pipeline (9db8a24dd)
-- Rename dashboard "Planned PRs" to "PRs" and apply `erk-pr` label to all erk-submitted PRs, showing plan and code PRs in unified view (63134a17f)
-- Improve `erk pr rebase` to skip tracking check when Graphite restack is in progress, preventing stuck state during conflicts (166d63639)
+- Show conflicted files and prompt for confirmation before launching Claude in `erk pr rebase`
+- Sort command palette menu items alphabetically within each subgroup
+- Remove `--sync` from `erk pr checkout` (now purely local); add `--script` and `--sync` options to `erk pr teleport` for remote Graphite submission workflows
+- Rename bundled slash command `/erk:rebase` to `/erk:pr-rebase` for consistency with PR-focused command naming
+- `erk objective view` now infers the objective from the current branch when no explicit reference is provided
+- Add arrow key navigation to the objective nodes screen in TUI
+- Update `/erk:pr-rebase` skill to use AskUserQuestion for push options
+- Replace `--dangerous` flag with `live_dangerously` config setting and `--safe` override across CLI commands
+- Enable `erk objective` commands (check, close, list, view) to work without requiring a local repository clone
+- Simplify current-worktree commands by removing unnecessary shell activation
+- Harden `erk land` with stack landing support (`--stack`), child reparenting verification, and read-after-write checks for resilient PR landing
+- Show per-file metadata in manifest summary output during `erk land` learn pipeline
+- Rename dashboard "Planned PRs" to "PRs" and apply `erk-pr` label to all erk-submitted PRs, showing plan and code PRs in unified view
+- Improve `erk pr rebase` to skip tracking check when Graphite restack is in progress, preventing stuck state during conflicts
 
 ### Fixed
 
-- Fix land learn pipeline to fetch remote sessions from planned-pr-context branches when local sessions are missing (2db54844)
-- Fix objective roadmap sync by normalizing comment format to canonical representation (5ec2d82cf)
-- Fix objective auto-close to reliably close objectives when all roadmap nodes are complete (cc3db5b69)
-- Fix `erk pr teleport --new-slot` to navigate to existing worktree instead of erroring when branch is already checked out (9d78e043d)
-- Fix file list indentation in manifest summary table for learn landing output (9d0149ad0)
-- Fix incremental dispatch not writing workflow dispatch metadata to plan-header, causing empty run columns in dashboard (aed52e300)
-- Fix `update_local_ref` desyncing checked-out worktrees, causing phantom modifications in `git status` after dispatch operations (1724e572e)
+- Fix slot reuse in `erk up`/`erk down` navigation: worktrees created during navigation now participate in slot pool
+- Fix remote planning workflow by restoring `one-shot-plan` command
+- Fix land learn pipeline to fetch remote sessions from planned-pr-context branches when local sessions are missing
+- Fix objective roadmap sync by normalizing comment format to canonical representation
+- Fix objective auto-close to reliably close objectives when all roadmap nodes are complete
+- Fix `erk pr teleport --new-slot` to navigate to existing worktree instead of erroring when branch is already checked out
+- Fix file list indentation in manifest summary table for learn landing output
+- Fix incremental dispatch not writing workflow dispatch metadata to plan-header, causing empty run columns in dashboard
+- Fix `update_local_ref` desyncing checked-out worktrees, causing phantom modifications in `git status` after dispatch operations
 
 ### Removed
 
-- Remove `shell_integration` config field and rename internal `output_for_shell_integration()` method (23be77559)
+- Remove `shell_integration` config field and rename internal `output_for_shell_integration()` method
 
 ## [0.9.9] - 2026-03-06 16:54 PT
 

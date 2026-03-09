@@ -704,7 +704,7 @@ wheels = [
 
 [[package]]
 name = "erk"
-version = "0.9.9"
+version = "0.9.10"
 source = { editable = "." }
 dependencies = [
     { name = "anthropic" },
@@ -777,7 +777,7 @@ dev = [
 
 [[package]]
 name = "erk-dev"
-version = "0.9.9"
+version = "0.9.10"
 source = { editable = "packages/erk-dev" }
 dependencies = [
     { name = "click" },
@@ -811,7 +811,7 @@ dev = [{ name = "pytest", specifier = ">=8.0.0" }]
 
 [[package]]
 name = "erk-shared"
-version = "0.9.9"
+version = "0.9.10"
 source = { editable = "packages/erk-shared" }
 dependencies = [
     { name = "click" },
@@ -832,7 +832,7 @@ requires-dist = [
 
 [[package]]
 name = "erk-statusline"
-version = "0.9.9"
+version = "0.9.10"
 source = { editable = "packages/erk-statusline" }
 dependencies = [
     { name = "erk-shared" },
