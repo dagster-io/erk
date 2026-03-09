@@ -314,126 +314,186 @@ def test_get_default_branch_propagates_runtime_error(mock_execute) -> None:  # n
     assert repo_root not in github._default_branch_cache
 
 
-# --- Tests for _build_issues_by_numbers_query ---
+# --- Tests for _build_prs_by_numbers_query ---
 
 
-def test_build_issues_by_numbers_query_single_issue() -> None:
-    """Query contains one aliased issueOrPullRequest for a single issue."""
+def test_build_prs_by_numbers_query_single_pr() -> None:
+    """Query contains one aliased pullRequest with rich fields for a single PR."""
     github = RealLocalGitHub.for_test()
     repo_id = GitHubRepoId(owner="acme", repo="widgets")
 
-    query = github._build_issues_by_numbers_query([100], repo_id)
+    query = github._build_prs_by_numbers_query([100], repo_id)
 
-    assert "issue_100: issueOrPullRequest(number: 100)" in query
+    assert "pr_100: pullRequest(number: 100)" in query
     assert 'repository(owner: "acme", name: "widgets")' in query
+    assert "statusCheckRollup" in query
+    assert "headRefName" in query
+    assert "mergeable" in query
+    assert "reviewThreads" in query
+    assert "reviewDecision" in query
+    assert "issueOrPullRequest" not in query
 
 
-def test_build_issues_by_numbers_query_multiple_issues() -> None:
-    """Query contains one alias per issue number."""
+def test_build_prs_by_numbers_query_multiple_prs() -> None:
+    """Query contains one alias per PR number."""
     github = RealLocalGitHub.for_test()
     repo_id = GitHubRepoId(owner="acme", repo="widgets")
 
-    query = github._build_issues_by_numbers_query([100, 200, 300], repo_id)
+    query = github._build_prs_by_numbers_query([100, 200, 300], repo_id)
 
-    assert "issue_100: issueOrPullRequest(number: 100)" in query
-    assert "issue_200: issueOrPullRequest(number: 200)" in query
-    assert "issue_300: issueOrPullRequest(number: 300)" in query
-
-
-# --- Tests for _parse_issues_by_numbers_response ---
+    assert "pr_100: pullRequest(number: 100)" in query
+    assert "pr_200: pullRequest(number: 200)" in query
+    assert "pr_300: pullRequest(number: 300)" in query
 
 
-def _make_issue_node(
+# --- Tests for _parse_prs_by_numbers_response ---
+
+
+def _make_pr_node(
     *,
     number: int = 100,
-    title: str = "Test issue",
+    title: str = "Test PR",
     state: str = "OPEN",
+    head_ref_name: str = "feature-branch",
+    base_ref_name: str = "main",
+    is_draft: bool = False,
 ) -> dict:
-    """Create a minimal issue node matching the GraphQL response shape."""
+    """Create a minimal PR node matching the GraphQL pullRequest response shape."""
     return {
         "number": number,
         "title": title,
         "body": "",
         "state": state,
-        "url": f"https://github.com/acme/widgets/issues/{number}",
+        "url": f"https://github.com/acme/widgets/pull/{number}",
         "author": {"login": "testuser"},
         "labels": {"nodes": [{"name": "erk-plan"}]},
         "assignees": {"nodes": []},
         "createdAt": "2025-01-01T00:00:00Z",
         "updatedAt": "2025-01-02T00:00:00Z",
-        "timelineItems": {"nodes": []},
+        "isDraft": is_draft,
+        "headRefName": head_ref_name,
+        "baseRefName": base_ref_name,
+        "statusCheckRollup": None,
+        "mergeable": "MERGEABLE",
+        "reviewDecision": None,
+        "reviewThreads": {"totalCount": 0, "nodes": []},
     }
 
 
-def test_parse_issues_by_numbers_response_single_issue() -> None:
-    """Single issue node is parsed into one IssueInfo."""
+def test_parse_prs_by_numbers_response_single_pr() -> None:
+    """Single PR node is parsed into IssueInfo and PullRequestInfo."""
     github = RealLocalGitHub.for_test()
     repo_id = GitHubRepoId(owner="acme", repo="widgets")
 
     response = {
         "data": {
             "repository": {
-                "issue_100": _make_issue_node(number=100, title="Plan A"),
+                "pr_100": _make_pr_node(number=100, title="Plan A"),
             }
         }
     }
 
-    issues, pr_linkages = github._parse_issues_by_numbers_response(response, repo_id)
+    issues, pr_linkages = github._parse_prs_by_numbers_response(response, repo_id)
 
     assert len(issues) == 1
     assert issues[0].number == 100
     assert issues[0].title == "Plan A"
-    assert pr_linkages == {}
+    assert 100 in pr_linkages
+    assert len(pr_linkages[100]) == 1
+    assert pr_linkages[100][0].number == 100
+    assert pr_linkages[100][0].head_branch == "feature-branch"
+    assert pr_linkages[100][0].has_conflicts is False
 
 
-def test_parse_issues_by_numbers_response_multiple_issues() -> None:
-    """Multiple issue nodes are all parsed."""
+def test_parse_prs_by_numbers_response_multiple_prs() -> None:
+    """Multiple PR nodes are all parsed with pr_linkages."""
     github = RealLocalGitHub.for_test()
     repo_id = GitHubRepoId(owner="acme", repo="widgets")
 
     response = {
         "data": {
             "repository": {
-                "issue_100": _make_issue_node(number=100),
-                "issue_200": _make_issue_node(number=200),
+                "pr_100": _make_pr_node(number=100),
+                "pr_200": _make_pr_node(number=200),
             }
         }
     }
 
-    issues, _ = github._parse_issues_by_numbers_response(response, repo_id)
+    issues, pr_linkages = github._parse_prs_by_numbers_response(response, repo_id)
 
     numbers = {i.number for i in issues}
     assert numbers == {100, 200}
+    assert 100 in pr_linkages
+    assert 200 in pr_linkages
 
 
-def test_parse_issues_by_numbers_response_skips_null_nodes() -> None:
-    """Null nodes (deleted/inaccessible issues) are skipped."""
+def test_parse_prs_by_numbers_response_skips_null_nodes() -> None:
+    """Null nodes (deleted/inaccessible PRs) are skipped."""
     github = RealLocalGitHub.for_test()
     repo_id = GitHubRepoId(owner="acme", repo="widgets")
 
     response = {
         "data": {
             "repository": {
-                "issue_100": _make_issue_node(number=100),
-                "issue_999": None,
+                "pr_100": _make_pr_node(number=100),
+                "pr_999": None,
             }
         }
     }
 
-    issues, _ = github._parse_issues_by_numbers_response(response, repo_id)
+    issues, _ = github._parse_prs_by_numbers_response(response, repo_id)
 
     assert len(issues) == 1
     assert issues[0].number == 100
 
 
-def test_parse_issues_by_numbers_response_empty_repository() -> None:
+def test_parse_prs_by_numbers_response_empty_repository() -> None:
     """Empty repository data returns empty results."""
     github = RealLocalGitHub.for_test()
     repo_id = GitHubRepoId(owner="acme", repo="widgets")
 
     response = {"data": {"repository": {}}}
 
-    issues, pr_linkages = github._parse_issues_by_numbers_response(response, repo_id)
+    issues, pr_linkages = github._parse_prs_by_numbers_response(response, repo_id)
 
     assert issues == []
     assert pr_linkages == {}
+
+
+def test_parse_prs_by_numbers_response_rich_pr_fields() -> None:
+    """PR fields (checks, draft, review) are correctly parsed into PullRequestInfo."""
+    github = RealLocalGitHub.for_test()
+    repo_id = GitHubRepoId(owner="acme", repo="widgets")
+
+    node = _make_pr_node(number=100, is_draft=True, head_ref_name="fix/auth")
+    node["statusCheckRollup"] = {
+        "state": "SUCCESS",
+        "contexts": {
+            "totalCount": 5,
+            "checkRunCountsByState": [{"state": "SUCCESS", "count": 5}],
+            "statusContextCountsByState": [],
+        },
+    }
+    node["mergeable"] = "CONFLICTING"
+    node["reviewDecision"] = "CHANGES_REQUESTED"
+    node["reviewThreads"] = {
+        "totalCount": 3,
+        "nodes": [
+            {"isResolved": True},
+            {"isResolved": False},
+            {"isResolved": False},
+        ],
+    }
+
+    response = {"data": {"repository": {"pr_100": node}}}
+
+    issues, pr_linkages = github._parse_prs_by_numbers_response(response, repo_id)
+
+    assert len(issues) == 1
+    pr_info = pr_linkages[100][0]
+    assert pr_info.is_draft is True
+    assert pr_info.head_branch == "fix/auth"
+    assert pr_info.checks_passing is True
+    assert pr_info.has_conflicts is True
+    assert pr_info.review_decision == "CHANGES_REQUESTED"
+    assert pr_info.review_thread_counts == (1, 3)

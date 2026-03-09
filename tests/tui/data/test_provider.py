@@ -1890,6 +1890,132 @@ class TestFetchPlansByIds:
 
         assert [r.plan_id for r in result] == [100, 300]
 
+    def test_pr_linkages_populate_display_fields(self, tmp_path: Path) -> None:
+        """PR linkages populate pr_head_branch, checks_display, and status_display."""
+        body = format_plan_header_body_for_test()
+        issues = [
+            IssueInfo(
+                number=100,
+                title="Plan: First",
+                body=body,
+                state="OPEN",
+                url="https://github.com/test/repo/issues/100",
+                labels=["erk-pr", "erk-plan"],
+                assignees=[],
+                created_at=datetime(2025, 1, 1, tzinfo=UTC),
+                updated_at=datetime(2025, 1, 2, tzinfo=UTC),
+                author="testuser",
+            ),
+        ]
+        pr = PullRequestInfo(
+            number=500,
+            state="OPEN",
+            url="https://github.com/test/repo/pull/500",
+            is_draft=False,
+            title="impl PR",
+            checks_passing=True,
+            owner="test",
+            repo="repo",
+            has_conflicts=False,
+            checks_counts=(3, 3),
+            head_branch="fix/auth-session",
+            review_decision="APPROVED",
+            review_thread_counts=(2, 2),
+        )
+        pr_linkages = {100: [pr]}
+        provider = self._make_provider(tmp_path, issues_data=issues, pr_linkages=pr_linkages)
+        result = provider.fetch_plans_by_ids({100})
+
+        assert len(result) == 1
+        row = result[0]
+        assert row.pr_head_branch == "fix/auth-session"
+        assert row.pr_number == 500
+        assert row.checks_display != "-"
+        assert row.checks_passing is True
+
+    def test_workflow_runs_fetched_for_dispatch_node_ids(self, tmp_path: Path) -> None:
+        """Plans with dispatch node IDs trigger workflow run fetching."""
+        body = format_plan_header_body_for_test(
+            last_dispatched_node_id="WFR_kwDOTest123",
+            last_dispatched_at="2025-03-01T10:00:00Z",
+        )
+        issues = [
+            IssueInfo(
+                number=100,
+                title="Plan: Dispatched",
+                body=body,
+                state="OPEN",
+                url="https://github.com/test/repo/issues/100",
+                labels=["erk-pr", "erk-plan"],
+                assignees=[],
+                created_at=datetime(2025, 1, 1, tzinfo=UTC),
+                updated_at=datetime(2025, 1, 2, tzinfo=UTC),
+                author="testuser",
+            ),
+        ]
+        http_client = FakeHttpClient()
+        http_client.set_response(
+            "graphql",
+            response={
+                "data": {
+                    "nodes": [
+                        {
+                            "id": "WFR_kwDOTest123",
+                            "databaseId": 99999,
+                            "url": "https://github.com/test/repo/actions/runs/99999",
+                            "createdAt": "2025-03-01T10:00:00Z",
+                            "checkSuite": {
+                                "status": "COMPLETED",
+                                "conclusion": "SUCCESS",
+                                "commit": {"oid": "abc123"},
+                            },
+                        }
+                    ]
+                }
+            },
+        )
+
+        repo_root = tmp_path / "repo"
+        repo_root.mkdir(exist_ok=True)
+        erk_dir = repo_root / ".erk"
+        erk_dir.mkdir(exist_ok=True)
+
+        git = FakeGit(
+            worktrees={
+                repo_root: [
+                    WorktreeInfo(path=repo_root, branch="main", is_root=True),
+                ]
+            },
+            git_common_dirs={repo_root: repo_root / ".git"},
+        )
+        github = FakeLocalGitHub(
+            pr_plan_linkages={},
+            issues_data=issues,
+        )
+        ctx = create_test_context(
+            git=git,
+            github=github,
+            cwd=repo_root,
+            repo=_make_repo_context(repo_root, tmp_path),
+        )
+        location = GitHubRepoLocation(
+            root=repo_root,
+            repo_id=GitHubRepoId(owner="test", repo="repo"),
+        )
+        provider = RealPlanDataProvider(
+            ctx=ctx,
+            location=location,
+            http_client=http_client,
+        )
+
+        result = provider.fetch_plans_by_ids({100})
+
+        assert len(result) == 1
+        row = result[0]
+        assert row.run_id == "99999"
+        assert row.run_status == "completed"
+        assert row.run_conclusion == "success"
+
 
 class TestAppendTimingLog:
     """Tests for _append_timing_log method."""
