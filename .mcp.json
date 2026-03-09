@@ -1,9 +1,0 @@
-{
-  "mcpServers": {
-    "erk": {
-      "type": "stdio",
-      "command": "uv",
-      "args": ["run", "--package", "erk-mcp", "erk-mcp"]
-    }
-  }
-}
