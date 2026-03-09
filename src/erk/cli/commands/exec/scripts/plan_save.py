@@ -402,9 +402,9 @@ def _save_plan_via_planned_pr(
             click.echo(f"Linked to objective #{objective_issue} from session context", err=True)
 
     if session_id is not None:
-        step_id = read_roadmap_step_marker(session_id, repo_root)
-        if step_id is not None:
-            node_ids = (step_id,)
+        step_ids = read_roadmap_step_marker(session_id, repo_root)
+        if step_ids:
+            node_ids = tuple(step_ids)
 
     # Extract plan content before dedup so we can key dedup by title
     plan = resolve_plan_content(

@@ -140,25 +140,32 @@ Exit without creating the plan-saved marker. The session continues so the user c
 
 Update the objective's roadmap table to show that a plan has been created for this node:
 
-1. **Read the roadmap node marker** to get the node ID:
+1. **Read the roadmap node marker** to get the node ID(s):
 
 ```bash
-step_id=$(erk exec marker read --session-id "${CLAUDE_SESSION_ID}" roadmap-step)
+node_ids=$(erk exec marker read --session-id "${CLAUDE_SESSION_ID}" roadmap-step)
 ```
 
 If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-plan`.
 
-2. **Update the roadmap table** using the dedicated command:
+The marker may contain multiple newline-delimited node IDs (for multi-node plans).
+
+2. **Update the roadmap table** using the dedicated command with all node IDs:
 
 ```bash
-erk exec update-objective-node <objective-issue> --node "$step_id" --pr "#<plan_number>" --status in_progress
+# Build --node flags for each node ID (may be multiple lines)
+node_flags=""
+while IFS= read -r node_id; do
+  [ -n "$node_id" ] && node_flags="$node_flags --node $node_id"
+done <<< "$node_ids"
+erk exec update-objective-node <objective-issue> $node_flags --pr "#<plan_number>" --status in_progress
 ```
 
-This atomically fetches the objective body, finds the matching node row, sets the Status cell to `in-progress`, and writes the updated body back.
+This atomically fetches the objective body, finds the matching node rows, sets the Status cell to `in-progress`, and writes the updated body back.
 
 3. **Report the update:**
 
-Display: `Updated objective #<objective-issue> roadmap: node <step_id> → plan #<plan_number>`
+Display: `Updated objective #<objective-issue> roadmap: node(s) <node_ids> → plan #<plan_number>`
 
 **Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
 
