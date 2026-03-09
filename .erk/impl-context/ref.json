@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Learn: Add `anthropic_api_fast_path` GlobalConfig setting to control API fast path behavior"
+}
