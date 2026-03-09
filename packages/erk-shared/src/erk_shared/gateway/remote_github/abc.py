@@ -8,6 +8,7 @@ git repository. All methods take explicit owner/repo parameters.
 from abc import ABC, abstractmethod
 
 from erk_shared.gateway.github.issues.types import IssueInfo, IssueNotFound, PRReference
+from erk_shared.gateway.remote_github.types import RemotePRInfo, RemotePRNotFound
 
 
 class RemoteGitHub(ABC):
@@ -221,6 +222,29 @@ class RemoteGitHub(ABC):
 
         Returns:
             IssueInfo if found, IssueNotFound if not
+        """
+        ...
+
+    @abstractmethod
+    def get_pr(
+        self,
+        *,
+        owner: str,
+        repo: str,
+        number: int,
+    ) -> RemotePRInfo | RemotePRNotFound:
+        """Fetch pull request data by number.
+
+        Returns PR-specific fields (head_ref_name, base_ref_name) that
+        the issues endpoint does not provide.
+
+        Args:
+            owner: Repository owner
+            repo: Repository name
+            number: PR number to fetch
+
+        Returns:
+            RemotePRInfo if found, RemotePRNotFound if not
         """
         ...
 

@@ -7,6 +7,7 @@ from dataclasses import dataclass, replace
 
 from erk_shared.gateway.github.issues.types import IssueInfo, IssueNotFound, PRReference
 from erk_shared.gateway.remote_github.abc import RemoteGitHub
+from erk_shared.gateway.remote_github.types import RemotePRInfo, RemotePRNotFound
 
 
 @dataclass(frozen=True)
@@ -141,6 +142,7 @@ class FakeRemoteGitHub(RemoteGitHub):
         issue_comments: dict[int, list[str]] | None,
         pr_references: dict[int, list[PRReference]] | None,
         comments_by_id: dict[int, str] | None = None,
+        prs: dict[int, RemotePRInfo] | None = None,
     ) -> None:
         """Create FakeRemoteGitHub with configurable responses.
 
@@ -154,6 +156,7 @@ class FakeRemoteGitHub(RemoteGitHub):
             issue_comments: Pre-configured comment bodies keyed by issue number
             comments_by_id: Pre-configured comment bodies keyed by comment ID
             pr_references: Pre-configured PR references keyed by issue number
+            prs: Pre-configured PRs keyed by number (for get_pr)
         """
         self._authenticated_user = authenticated_user
         self._default_branch_name = default_branch_name
@@ -170,6 +173,7 @@ class FakeRemoteGitHub(RemoteGitHub):
         self._pr_references: dict[int, list[PRReference]] = (
             pr_references if pr_references is not None else {}
         )
+        self._prs: dict[int, RemotePRInfo] = prs if prs is not None else {}
 
         # Mutation tracking
         self._created_refs: list[CreatedRef] = []
@@ -312,6 +316,17 @@ class FakeRemoteGitHub(RemoteGitHub):
         if number in self._issues:
             return self._issues[number]
         return IssueNotFound(issue_number=number)
+
+    def get_pr(
+        self,
+        *,
+        owner: str,
+        repo: str,
+        number: int,
+    ) -> RemotePRInfo | RemotePRNotFound:
+        if number in self._prs:
+            return self._prs[number]
+        return RemotePRNotFound(pr_number=number)
 
     def get_issue_comments(
         self,

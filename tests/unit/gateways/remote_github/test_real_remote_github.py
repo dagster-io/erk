@@ -10,7 +10,8 @@ import pytest
 
 from erk_shared.gateway.http.abc import HttpError
 from erk_shared.gateway.http.fake import FakeHttpClient
-from erk_shared.gateway.remote_github.real import RealRemoteGitHub
+from erk_shared.gateway.remote_github.real import RealRemoteGitHub, _parse_pr_response
+from erk_shared.gateway.remote_github.types import RemotePRInfo, RemotePRNotFound
 from erk_shared.gateway.time.fake import FakeTime
 
 
@@ -358,6 +359,135 @@ def test_get_issue_raises_on_non_404_error() -> None:
 
     with pytest.raises(HttpError, match="500"):
         remote.get_issue(owner="o", repo="r", number=42)
+
+
+# --- get_pr ---
+
+
+def test_get_pr_returns_parsed_pr() -> None:
+    remote, http, _ = _make_remote()
+    http.set_response(
+        "repos/o/r/pulls/42",
+        response={
+            "number": 42,
+            "title": "Fix bug",
+            "state": "open",
+            "merged": False,
+            "html_url": "https://github.com/o/r/pull/42",
+            "head": {"ref": "fix-bug"},
+            "base": {"ref": "main"},
+            "labels": [{"name": "erk-pr"}],
+        },
+    )
+
+    result = remote.get_pr(owner="o", repo="r", number=42)
+
+    assert isinstance(result, RemotePRInfo)
+    assert result.number == 42
+    assert result.title == "Fix bug"
+    assert result.state == "OPEN"
+    assert result.url == "https://github.com/o/r/pull/42"
+    assert result.head_ref_name == "fix-bug"
+    assert result.base_ref_name == "main"
+    assert result.owner == "o"
+    assert result.repo == "r"
+    assert result.labels == ["erk-pr"]
+
+
+def test_get_pr_returns_not_found_on_404() -> None:
+    remote, http, _ = _make_remote()
+    http.set_error("repos/o/r/pulls/999", status_code=404, message="Not Found")
+
+    result = remote.get_pr(owner="o", repo="r", number=999)
+    assert isinstance(result, RemotePRNotFound)
+    assert result.pr_number == 999
+
+
+def test_get_pr_raises_on_non_404_error() -> None:
+    remote, http, _ = _make_remote()
+    http.set_error("repos/o/r/pulls/42", status_code=500, message="Server Error")
+
+    with pytest.raises(HttpError, match="500"):
+        remote.get_pr(owner="o", repo="r", number=42)
+
+
+# --- _parse_pr_response ---
+
+
+def test_parse_pr_response_merged_state() -> None:
+    data = {
+        "number": 1,
+        "title": "PR",
+        "state": "closed",
+        "merged": True,
+        "html_url": "",
+        "head": {"ref": "branch"},
+        "base": {"ref": "main"},
+        "labels": [],
+    }
+    result = _parse_pr_response(data, owner="o", repo_name="r")
+    assert result.state == "MERGED"
+
+
+def test_parse_pr_response_open_state() -> None:
+    data = {
+        "number": 1,
+        "title": "PR",
+        "state": "open",
+        "merged": False,
+        "html_url": "",
+        "head": {"ref": "branch"},
+        "base": {"ref": "main"},
+        "labels": [],
+    }
+    result = _parse_pr_response(data, owner="o", repo_name="r")
+    assert result.state == "OPEN"
+
+
+def test_parse_pr_response_closed_state() -> None:
+    data = {
+        "number": 1,
+        "title": "PR",
+        "state": "closed",
+        "merged": False,
+        "html_url": "",
+        "head": {"ref": "branch"},
+        "base": {"ref": "main"},
+        "labels": [],
+    }
+    result = _parse_pr_response(data, owner="o", repo_name="r")
+    assert result.state == "CLOSED"
+
+
+def test_parse_pr_response_labels() -> None:
+    data = {
+        "number": 1,
+        "title": "PR",
+        "state": "open",
+        "merged": False,
+        "html_url": "",
+        "head": {"ref": "branch"},
+        "base": {"ref": "main"},
+        "labels": [{"name": "bug"}, {"name": "priority"}],
+    }
+    result = _parse_pr_response(data, owner="o", repo_name="r")
+    assert result.labels == ["bug", "priority"]
+
+
+def test_parse_pr_response_head_base_refs() -> None:
+    data = {
+        "number": 1,
+        "title": "PR",
+        "state": "open",
+        "merged": False,
+        "html_url": "",
+        "head": {"ref": "feature-branch"},
+        "base": {"ref": "develop"},
+        "labels": [],
+    }
+    result = _parse_pr_response(data, owner="o", repo_name="r")
+    assert result.head_ref_name == "feature-branch"
+    assert result.base_ref_name == "develop"
 
 
 # --- get_issue_comments ---
