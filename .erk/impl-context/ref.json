@@ -1,5 +1,10 @@
 {
   "provider": "github-draft-pr",
-  "title": "Plan: Rename \"plan\" terminology to \"pr\" \u2014 Phase 1 (Core Types & Gateway)",
-  "objective_id": 9109
+  "plan_id": "9110",
+  "url": "https://github.com/dagster-io/erk/pull/9110",
+  "created_at": "2026-03-09T22:24:07.838603",
+  "synced_at": "2026-03-09T22:24:07.838603",
+  "labels": [],
+  "objective_id": 9109,
+  "node_ids": null
 }
