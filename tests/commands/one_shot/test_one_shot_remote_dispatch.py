@@ -76,7 +76,7 @@ def test_remote_dispatch_happy_path() -> None:
     # Verify labels were added
     assert len(remote.added_labels) == 1
     labels = remote.added_labels[0]
-    assert labels.labels == ("erk-pr", "erk-plan")
+    assert labels.labels == ("erk-pr", "erk-plan", "erk-core")
 
     # Verify workflow was dispatched
     assert len(remote.dispatched_workflows) == 1

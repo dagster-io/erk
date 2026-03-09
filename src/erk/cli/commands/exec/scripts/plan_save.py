@@ -295,6 +295,7 @@ def _save_as_planned_pr(
         labels.append("erk-learn")
     else:
         labels.append("erk-plan")
+        labels.append("erk-core")
 
     # Prefix title with [erk-plan] or [erk-learn] for GitHub visibility
     title_tag = get_title_tag_from_labels(labels)

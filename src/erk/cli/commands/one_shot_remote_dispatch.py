@@ -391,7 +391,7 @@ def dispatch_one_shot_remote(
             owner=owner,
             repo=repo,
             issue_number=pr_number,
-            labels=("erk-pr", "erk-plan"),
+            labels=("erk-pr", "erk-plan", "erk-core"),
         )
         user_output(click.style(f"  \u2192 PR #{pr_number}", dim=True))
 

@@ -24,7 +24,7 @@ from erk.cli.commands.pr.shared import (
     recover_plan_header,
     run_commit_message_generation,
 )
-from erk.cli.constants import ERK_PR_LABEL, PLANNED_PR_TITLE_PREFIX
+from erk.cli.constants import ERK_CORE_LABEL, ERK_PR_LABEL, PLANNED_PR_TITLE_PREFIX
 from erk.cli.ensure import UserFacingCliError
 from erk.cli.repo_resolution import get_remote_github
 from erk.core.commit_message_generator import CommitMessageGenerator
@@ -573,7 +573,7 @@ def label_code_pr(ctx: ErkContext, state: SubmitState) -> SubmitState | SubmitEr
         time=ctx.time,
         repo_root=state.repo_root,
         pr_number=state.pr_number,
-        labels=(ERK_PR_LABEL,),
+        labels=(ERK_PR_LABEL, ERK_CORE_LABEL),
     )
     return state
 

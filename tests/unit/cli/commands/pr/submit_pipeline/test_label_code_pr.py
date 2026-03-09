@@ -55,6 +55,7 @@ def test_labels_code_pr(tmp_path: Path) -> None:
 
     assert isinstance(result, SubmitState)
     assert (42, "erk-pr") in fake_local_github.added_labels
+    assert (42, "erk-core") in fake_local_github.added_labels
 
 
 def test_skips_plan_prs(tmp_path: Path) -> None:

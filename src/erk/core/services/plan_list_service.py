@@ -116,7 +116,7 @@ class PlannedPRPlanListService(PlanListService):
 
         # Step 1: REST issues list with server-side filtering
         rest_state = state.lower() if state else "open"
-        effective_limit = limit if limit is not None else 30
+        effective_limit = limit if limit is not None else 100
 
         params = [
             f"labels={','.join(labels)}",

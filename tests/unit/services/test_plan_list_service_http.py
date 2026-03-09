@@ -59,7 +59,7 @@ def _setup_http_client_for_plan(
     """Configure FakeHttpClient with REST + GraphQL responses."""
     client = FakeHttpClient()
     client.set_list_response(
-        "repos/owner/repo/issues?labels=erk-plan&state=open&per_page=30&sort=updated&direction=desc",
+        "repos/owner/repo/issues?labels=erk-plan&state=open&per_page=100&sort=updated&direction=desc",
         response=rest_items,
     )
     client.set_response("graphql", response=_make_graphql_enrichment(pr_numbers))
@@ -86,7 +86,7 @@ def test_http_path_empty_response() -> None:
     """HTTP path with no issues returns empty data."""
     http_client = FakeHttpClient()
     http_client.set_list_response(
-        "repos/owner/repo/issues?labels=erk-plan&state=open&per_page=30&sort=updated&direction=desc",
+        "repos/owner/repo/issues?labels=erk-plan&state=open&per_page=100&sort=updated&direction=desc",
         response=[],
     )
 
@@ -118,7 +118,7 @@ def test_http_path_filters_non_pr_items() -> None:
 
     http_client = FakeHttpClient()
     http_client.set_list_response(
-        "repos/owner/repo/issues?labels=erk-plan&state=open&per_page=30&sort=updated&direction=desc",
+        "repos/owner/repo/issues?labels=erk-plan&state=open&per_page=100&sort=updated&direction=desc",
         response=[issue_without_pr, pr_item],
     )
     http_client.set_response("graphql", response=_make_graphql_enrichment([42]))
@@ -143,7 +143,7 @@ def test_http_path_excludes_labels() -> None:
 
     http_client = FakeHttpClient()
     http_client.set_list_response(
-        "repos/owner/repo/issues?labels=erk-plan&state=open&per_page=30&sort=updated&direction=desc",
+        "repos/owner/repo/issues?labels=erk-plan&state=open&per_page=100&sort=updated&direction=desc",
         response=items,
     )
     http_client.set_response("graphql", response=_make_graphql_enrichment([1]))

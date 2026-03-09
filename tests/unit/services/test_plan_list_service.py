@@ -169,7 +169,7 @@ def _setup_http_for_prs(
     client = FakeHttpClient()
     endpoint = (
         f"repos/owner/repo/issues?labels={labels}"
-        f"&state=open&per_page=30&sort=updated&direction=desc"
+        f"&state=open&per_page=100&sort=updated&direction=desc"
     )
     client.set_list_response(endpoint, response=rest_items)
     client.set_response(

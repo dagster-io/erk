@@ -41,6 +41,10 @@ _LABEL_ERK_PR = "erk-pr"
 _LABEL_ERK_PR_DESC = "Plan managed as a draft PR"
 _LABEL_ERK_PR_COLOR = "1D76DB"
 
+_LABEL_ERK_CORE = "erk-core"
+_LABEL_ERK_CORE_DESC = "Core work PR (plan or code)"
+_LABEL_ERK_CORE_COLOR = "0E8A16"
+
 _LABEL_ERK_LEARN = "erk-learn"
 _LABEL_ERK_LEARN_DESC = "Documentation learning plan"
 _LABEL_ERK_LEARN_COLOR = "D93F0B"
@@ -288,6 +292,13 @@ def _ensure_labels_exist(
                     description=_LABEL_ERK_PLAN_DESC,
                     color=_LABEL_ERK_PLAN_COLOR,
                 )
+            elif label == _LABEL_ERK_CORE:
+                github_issues.ensure_label_exists(
+                    repo_root=repo_root,
+                    label=_LABEL_ERK_CORE,
+                    description=_LABEL_ERK_CORE_DESC,
+                    color=_LABEL_ERK_CORE_COLOR,
+                )
             elif label == _LABEL_ERK_LEARN:
                 github_issues.ensure_label_exists(
                     repo_root=repo_root,
@@ -339,6 +350,11 @@ def get_erk_label_definitions() -> list[LabelDefinition]:
             color=_LABEL_ERK_PR_COLOR,
         ),
         LabelDefinition(
+            name=_LABEL_ERK_CORE,
+            description=_LABEL_ERK_CORE_DESC,
+            color=_LABEL_ERK_CORE_COLOR,
+        ),
+        LabelDefinition(
             name=_LABEL_ERK_PLAN,
             description=_LABEL_ERK_PLAN_DESC,
             color=_LABEL_ERK_PLAN_COLOR,
@@ -374,6 +390,11 @@ def get_required_erk_labels() -> list[LabelDefinition]:
             name=_LABEL_ERK_PR,
             description=_LABEL_ERK_PR_DESC,
             color=_LABEL_ERK_PR_COLOR,
+        ),
+        LabelDefinition(
+            name=_LABEL_ERK_CORE,
+            description=_LABEL_ERK_CORE_DESC,
+            color=_LABEL_ERK_CORE_COLOR,
         ),
         LabelDefinition(
             name=_LABEL_ERK_PLAN,

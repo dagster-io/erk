@@ -68,7 +68,7 @@ def test_dispatch_happy_path() -> None:
 
     # Verify erk-plan label added to PR
     assert len(remote.added_labels) == 1
-    assert remote.added_labels[0].labels == ("erk-pr", "erk-plan")
+    assert remote.added_labels[0].labels == ("erk-pr", "erk-plan", "erk-core")
 
     # Verify workflow was triggered with plan_backend=planned_pr
     assert len(remote.dispatched_workflows) == 1
