@@ -90,7 +90,6 @@ class OneShotDispatchResult:
         }
 
 
-
 @dataclass(frozen=True)
 class OneShotDryRunResult:
     """Result of a dry-run one-shot dispatch (preview only, no mutations)."""
