@@ -1,4 +1,10 @@
 {
   "provider": "github-draft-pr",
-  "title": "Fix: Objective Nodes Screen Missing PR Data"
+  "plan_id": "9061",
+  "url": "https://github.com/dagster-io/erk/pull/9061",
+  "created_at": "2026-03-09T09:48:33.315247",
+  "synced_at": "2026-03-09T09:48:33.315247",
+  "labels": [],
+  "objective_id": null,
+  "node_ids": null
 }
