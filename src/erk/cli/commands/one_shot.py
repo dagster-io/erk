@@ -161,7 +161,7 @@ def one_shot(
     assert prompt is not None  # type narrowing after guard
 
     # Validate prompt is non-empty
-    if len(prompt.strip()) == 0:
+    if not prompt.strip():
         raise UserFacingCliError("Prompt must not be empty", error_type="invalid_input")
 
     # Normalize model name
