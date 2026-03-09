@@ -207,5 +207,7 @@ def emit_json_result(result: Any) -> None:
     elif dataclasses.is_dataclass(result) and not isinstance(result, type):
         data = dataclasses.asdict(result)
     else:
-        raise TypeError(f"Cannot serialize {type(result).__name__}: no to_json_dict() and not a dataclass")
+        raise TypeError(
+            f"Cannot serialize {type(result).__name__}: no to_json_dict() and not a dataclass"
+        )
     emit_json(data)

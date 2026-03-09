@@ -57,7 +57,9 @@ def _get_remote_github(ctx: ErkContext) -> RemoteGitHub:
     return RealRemoteGitHub(http_client=ctx.http_client, time=ctx.time)
 
 
-@json_command(exclude_json_input=frozenset({"file_path"}), required_json_input=frozenset({"prompt"}))
+@json_command(
+    exclude_json_input=frozenset({"file_path"}), required_json_input=frozenset({"prompt"})
+)
 @click.command("one-shot")
 @click.argument("prompt", required=False, default=None)
 @click.option(
