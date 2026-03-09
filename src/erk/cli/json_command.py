@@ -169,7 +169,7 @@ def _apply_json_command(
                 "error_type": "invalid_json_input",
                 "message": f"Invalid JSON: {exc}",
             }
-            click.echo(json.dumps(error_data))
+            click.echo(json.dumps(error_data, indent=2))
             raise SystemExit(1) from None
         except ValueError as exc:
             error_data = {
@@ -177,7 +177,7 @@ def _apply_json_command(
                 "error_type": "invalid_json_input",
                 "message": str(exc),
             }
-            click.echo(json.dumps(error_data))
+            click.echo(json.dumps(error_data, indent=2))
             raise SystemExit(1) from None
 
         if input_data is not None:
@@ -190,7 +190,7 @@ def _apply_json_command(
                         "error_type": "invalid_json_input",
                         "message": f"Unknown key: {key}",
                     }
-                    click.echo(json.dumps(error_data))
+                    click.echo(json.dumps(error_data, indent=2))
                     raise SystemExit(1)
 
             # Map JSON keys to kwargs (override defaults only)
@@ -206,7 +206,7 @@ def _apply_json_command(
                     "error_type": "invalid_json_input",
                     "message": f"Missing required field: {field}",
                 }
-                click.echo(json.dumps(error_data))
+                click.echo(json.dumps(error_data, indent=2))
                 raise SystemExit(1)
 
         try:
@@ -220,7 +220,7 @@ def _apply_json_command(
                 "error_type": exc.error_type,
                 "message": exc.format_message(),
             }
-            click.echo(json.dumps(error_data))
+            click.echo(json.dumps(error_data, indent=2))
             raise SystemExit(1) from None
         except SystemExit:
             raise
@@ -235,7 +235,7 @@ def _apply_json_command(
 def emit_json(data: dict[str, Any]) -> None:
     """Emit a JSON success result to stdout. Adds success=True automatically."""
     data["success"] = True
-    click.echo(json.dumps(data))
+    click.echo(json.dumps(data, indent=2))
 
 
 def emit_json_result(result: Any) -> None:
