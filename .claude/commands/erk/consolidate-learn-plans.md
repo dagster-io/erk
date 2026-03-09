@@ -1,8 +1,8 @@
 ---
-description: Replan all open erk-learn plans via consolidation workflow
+description: Consolidate all open erk-learn plans into a single unified documentation plan
 ---
 
-# /local:replan-learn-plans
+# /erk:consolidate-learn-plans
 
 Queries all open erk-learn plans and passes them to `/erk:replan` for consolidation into a single unified documentation plan.
 
@@ -15,7 +15,7 @@ Queries all open erk-learn plans and passes them to `/erk:replan` for consolidat
 ## Usage
 
 ```bash
-/local:replan-learn-plans
+/erk:consolidate-learn-plans
 ```
 
 ---
