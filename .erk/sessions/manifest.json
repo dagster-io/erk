@@ -32,6 +32,23 @@
       "raw_size_kb": 269,
       "xml_size_kb": 73,
       "git_branch": "plnd/move-ci-cmd-system-folder-03-09-0920"
+    },
+    {
+      "session_id": "618857e2-4649-46d7-b9a7-53328b40f813",
+      "stage": "address",
+      "source": "remote",
+      "uploaded_at": "2026-03-09T18:48:21.592377+00:00",
+      "files": [
+        "address-618857e2-4649-46d7-b9a7-53328b40f813-618857e2-4649-46d7-b9a7-53328b40f813-part1.xml",
+        "address-618857e2-4649-46d7-b9a7-53328b40f813-618857e2-4649-46d7-b9a7-53328b40f813-part2.xml",
+        "address-618857e2-4649-46d7-b9a7-53328b40f813-618857e2-4649-46d7-b9a7-53328b40f813-part3.xml",
+        "address-618857e2-4649-46d7-b9a7-53328b40f813-618857e2-4649-46d7-b9a7-53328b40f813-part4.xml"
+      ],
+      "user_turns": 3,
+      "duration_minutes": 3,
+      "raw_size_kb": 102,
+      "xml_size_kb": 83,
+      "git_branch": "plnd/move-ci-cmd-system-folder-03-09-0920"
     }
   ]
 }
