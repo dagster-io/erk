@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "plan_id": 9112,
+  "sessions": [
+    {
+      "session_id": "",
+      "stage": "impl",
+      "source": "local",
+      "uploaded_at": "2026-03-09T22:56:25.265647+00:00",
+      "files": [
+        "impl--71540d67-9569-41a5-b5e1-a9c30d434217-part1.xml",
+        "impl--71540d67-9569-41a5-b5e1-a9c30d434217-part2.xml",
+        "impl--71540d67-9569-41a5-b5e1-a9c30d434217-part3.xml",
+        "impl--71540d67-9569-41a5-b5e1-a9c30d434217-part4.xml",
+        "impl--71540d67-9569-41a5-b5e1-a9c30d434217-part5.xml"
+      ],
+      "user_turns": 4,
+      "duration_minutes": 6,
+      "raw_size_kb": 421,
+      "xml_size_kb": 82,
+      "git_branch": "plnd/multi-node-roadmap-markers-03-09-2244"
+    }
+  ]
+}
