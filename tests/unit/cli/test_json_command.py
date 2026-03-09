@@ -10,6 +10,7 @@ from unittest.mock import patch
 import click
 from click.testing import CliRunner
 
+from erk.cli.cli import cli
 from erk.cli.ensure import UserFacingCliError
 from erk.cli.json_command import JsonCommandMeta, emit_json, emit_json_result, json_command
 
@@ -522,9 +523,6 @@ def test_schema_with_output_types() -> None:
 
 def test_output_types_matches_return_annotation() -> None:
     """Every @json_command's output_types must match its return annotation."""
-    import click
-
-    from erk.cli.cli import cli
 
     def _collect_json_commands(group: click.BaseCommand) -> list[click.BaseCommand]:
         """Recursively collect all commands with _json_command_meta."""
