@@ -11,4 +11,5 @@
 - **[session-id-substitution.md](session-id-substitution.md)** — writing slash commands or skills that need session context, developing hooks that interact with Claude sessions, debugging session ID unavailable or empty string errors, deciding where to place session-dependent logic (root agent vs sub-agent)
 - **[skill-patterns.md](skill-patterns.md)** — creating slash commands that involve user decisions, using AskUserQuestion in commands or skills, naming prompt executor functions
 - **[step-renumbering-checklist.md](step-renumbering-checklist.md)** — merging, removing, or reordering steps in slash commands, refactoring command workflows that use numbered steps, encountering broken step references after editing a command
+- **[system-folder-convention.md](system-folder-convention.md)** — placing a new command in .claude/commands/, creating a CI-only or inner skill command
 - **[tool-restriction-safety.md](tool-restriction-safety.md)** — adding allowed-tools to a command or agent frontmatter, designing a read-only slash command, creating commands intended for use within plan mode, deciding which tools a restricted command needs

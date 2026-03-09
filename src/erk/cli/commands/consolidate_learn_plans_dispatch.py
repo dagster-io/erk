@@ -122,7 +122,7 @@ def dispatch_consolidate_learn_plans(
         user_output("Committing prompt file...")
         prompt_content = (
             "Consolidate all open erk-learn plans into a single documentation update.\n"
-            "Run /erk:consolidate-learn-plans-plan to query, consolidate, and implement.\n"
+            "Run /erk:system:consolidate-learn-plans-plan to query, consolidate, and implement.\n"
         )
         remote.create_file_commit(
             owner=owner,
