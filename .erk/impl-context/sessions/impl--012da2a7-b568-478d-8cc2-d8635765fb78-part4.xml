@@ -1,0 +1,247 @@
+<session>
+  <meta source="agent-a8d7e1e" />
+  <meta branch="plnd/pretty-print-json-default-03-09-1000" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>Find test files related to json_command.py in the erk project. Search for files matching patterns like *json_command* or *json_cmd* in the tests/ directory. Also search for test files that import from agentclick.json_command. Report file paths found.</user>
+  <assistant>I'll help you find test files related to json_command.py in the erk project. Let me search for these files using multiple approaches.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="18884" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 18884, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01GqGs26hVvxYaLBsbAar3w1">
+    <param name="pattern">tests/**/*json_command*</param>
+    <param name="path">/home/runner/work/erk/erk</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="18884" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 18884, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01BB4ucpdddKXYmXzyho4cuL">
+    <param name="pattern">tests/**/*json_cmd*</param>
+    <param name="path">/home/runner/work/erk/erk</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="18884" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 18884, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_012hPf151nKR1yT26FAmm2NB">
+    <param name="pattern">from agentclick\.json_command|import.*json_command</param>
+    <param name="path">/home/runner/work/erk/erk/tests</param>
+    <param name="type">py</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="18884" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 18884, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012hPf151nKR1yT26FAmm2NB">
+Found 1 file
+tests/unit/cli/test_mcp_cli_sync.py
+  </tool_result>
+  <tool_result tool="toolu_01GqGs26hVvxYaLBsbAar3w1">
+/home/runner/work/erk/erk/tests/unit/cli/test_json_command.py
+  </tool_result>
+  <tool_result tool="toolu_01BB4ucpdddKXYmXzyho4cuL">
+No files found
+  </tool_result>
+  <assistant>Great! I found test files. Let me get more details about these files and check if there are any other related test files.</assistant>
+  <usage input_tokens="53" cache_creation_input_tokens="424" cache_read_input_tokens="18884" cache_creation="{'ephemeral_5m_input_tokens': 424, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01DvABroAigqzbUnEKuPzpQY">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/test_json_command.py</param>
+  </tool_use>
+  <usage input_tokens="53" cache_creation_input_tokens="424" cache_read_input_tokens="18884" cache_creation="{'ephemeral_5m_input_tokens': 424, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01QbdK4KRbunZLYh8XSmiXm6">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/test_mcp_cli_sync.py</param>
+  </tool_use>
+  <usage input_tokens="53" cache_creation_input_tokens="424" cache_read_input_tokens="18884" cache_creation="{'ephemeral_5m_input_tokens': 424, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01N6F3yBue2SspfDhi5GEtAE">
+    <param name="pattern">json_command|JsonCommand</param>
+    <param name="path">/home/runner/work/erk/erk/tests</param>
+    <param name="type">py</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="53" cache_creation_input_tokens="424" cache_read_input_tokens="18884" cache_creation="{'ephemeral_5m_input_tokens': 424, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01DvABroAigqzbUnEKuPzpQY">
+     1→"""Tests for @json_command that depend on the erk CLI tree."""
+     2→
+     3→import types
+     4→import typing
+     5→
+     6→import click
+     7→
+     8→from erk.cli.cli import cli
+     9→
+    10→# -- output_types validation test --
+    11→
+    12→
+    13→def test_output_types_matches_return_annotation() -&gt; None:
+    14→    """Every @json_command's output_types must match its return annotation."""
+    15→
+    16→    def _collect_json_commands(group: click.BaseCommand) -&gt; list[click.BaseCommand]:
+    17→        """Recursively collect all commands with _json_command_meta."""
+    18→        result = []
+    19→        if hasattr(group, "_json_command_meta"):
+    20→            result.append(group)
+    21→        if isinstance(group, click.Group):
+    22→            for cmd in group.commands.values():
+    23→                result.extend(_collect_json_commands(cmd))
+    24→        return result
+    25→
+    26→    def _unwrap_return_types(annotation: typing.Any) -&gt; set[type]:
+    27→        """Decompose A | B unions into member types."""
+    28→        origin = typing.get_origin(annotation)
+    29→        if origin is typing.Union or isinstance(annotation, types.UnionType):
+    30→            return set(typing.get_args(annotation))
+
+... [35 lines omitted] ...
+
+    36→    failures = []
+    49→                failures.append(f"{cmd.name}: return None but output_types={meta.output_types!r}")
+    54→                failures.append(
+    59→    assert not failures, "output_types mismatch:\n" + "\n".join(failures)
+  </tool_result>
+  <tool_result tool="toolu_01QbdK4KRbunZLYh8XSmiXm6">
+     1→"""Parity tests: every @mcp_exposed command is discovered and has correct schema."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→import asyncio
+     6→
+     7→from erk.cli.cli import cli
+     8→from erk_mcp.server import _build_json_command_tools, create_mcp
+     9→from erk_shared.agentclick.json_schema import command_input_schema
+    10→from erk_shared.agentclick.mcp_exposed import discover_mcp_commands
+    11→
+    12→
+    13→def test_every_mcp_exposed_command_is_registered_as_mcp_tool() -&gt; None:
+    14→    """Every command with _mcp_meta in the Click tree appears as an MCP tool."""
+    15→    discovered = discover_mcp_commands(cli)
+    16→    assert len(discovered) &gt; 0, "No @mcp_exposed commands found — check CLI imports"
+    17→
+    18→    server = create_mcp()
+    19→    tools = asyncio.run(server.list_tools())
+    20→    tool_names = {t.name for t in tools}
+    21→
+    22→    for _cmd, meta in discovered:
+    23→        assert meta.name in tool_names, f"@mcp_exposed '{meta.name}' not registered as MCP tool"
+    24→
+    25→
+    26→def test_mcp_tool_schema_matches_click_derived_schema() -&gt; None:
+    27→    """Each MCP tool's schema matches command_input_schema(cmd)."""
+    28→    discovered = discover_mcp_commands(cli)
+    29→
+    30→    built_tools = _build_json_command_tools()
+
+... [38 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01N6F3yBue2SspfDhi5GEtAE">
+Found 3 files
+tests/unit/cli/test_json_command.py
+tests/unit/cli/test_mcp_cli_sync.py
+tests/commands/one_shot/test_one_shot_json.py
+  </tool_result>
+  <assistant>Let me check the third test file that was found:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="6622" cache_read_input_tokens="19308" cache_creation="{'ephemeral_5m_input_tokens': 6622, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01VugdH4XXZwgfoTeAQEpQGC">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/one_shot/test_one_shot_json.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="6622" cache_read_input_tokens="19308" cache_creation="{'ephemeral_5m_input_tokens': 6622, 'ephemeral_1h_input_tokens': 0}" output_tokens="94" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01VugdH4XXZwgfoTeAQEpQGC">
+     1→"""Tests for erk one-shot --json output and input."""
+     2→
+     3→import json
+     4→from typing import Any
+     5→
+     6→from click.testing import CliRunner
+     7→
+     8→from erk.cli.cli import cli
+     9→from erk_shared.gateway.git.fake import FakeGit
+    10→from erk_shared.gateway.github.fake import FakeLocalGitHub
+    11→from erk_shared.gateway.remote_github.fake import FakeRemoteGitHub
+    12→from tests.test_utils.context_builders import build_workspace_test_context
+    13→from tests.test_utils.env_helpers import erk_isolated_fs_env
+    14→
+    15→
+    16→def _make_remote() -&gt; FakeRemoteGitHub:
+    17→    """Create a default FakeRemoteGitHub for tests."""
+    18→    return FakeRemoteGitHub(
+    19→        authenticated_user="testuser",
+    20→        default_branch_name="main",
+    21→        default_branch_sha="abc123",
+    22→        next_pr_number=1,
+    23→        dispatch_run_id="run-1",
+    24→        issues=None,
+    25→        issue_comments=None,
+    26→        pr_references=None,
+    27→    )
+    28→
+    29→
+    30→def _extract_json(output: str) -&gt; dict[str, Any]:
+
+... [222 lines omitted] ...
+
+    44→        except json.JSONDecodeError:
+    46→    raise AssertionError(f"No JSON line found in output:\n{output}")
+    70→            catch_exceptions=False,
+    73→        assert result.exit_code == 0, f"Command failed: {result.output}"
+   106→            catch_exceptions=False,
+   109→        assert result.exit_code == 0, f"Command failed: {result.output}"
+   128→def test_json_error_empty_prompt() -&gt; None:
+   129→    """Empty prompt produces JSON error with error_type."""
+   152→        assert data["error_type"] == "invalid_input"
+   156→def test_json_error_invalid_repo() -&gt; None:
+   157→    """Invalid --repo format produces JSON error with error_type."""
+   180→        assert data["error_type"] == "invalid_repo"
+   205→            catch_exceptions=False,
+   241→                catch_exceptions=False,
+   244→        assert result.exit_code == 0, f"Command failed: {result.output}"
+  </tool_result>
+  <assistant>Now let me verify if there are any other test files that might reference json_command:</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="5450" cache_read_input_tokens="25930" cache_creation="{'ephemeral_5m_input_tokens': 5450, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_018mRkgbncD2kzhScoTz4adQ">
+    <param name="pattern">@json_command|emit_json|json_command_meta</param>
+    <param name="path">/home/runner/work/erk/erk/tests</param>
+    <param name="type">py</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="5450" cache_read_input_tokens="25930" cache_creation="{'ephemeral_5m_input_tokens': 5450, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_018mRkgbncD2kzhScoTz4adQ">
+Found 3 files
+tests/unit/cli/test_json_command.py
+tests/unit/cli/test_mcp_cli_sync.py
+tests/commands/one_shot/test_one_shot_json.py
+  </tool_result>
+  <assistant>Perfect! I have completed my search. Here's my report on test files related to json_command.py in the erk project:
+
+## Test Files Related to json_command.py
+
+I found **3 test files** that are related to `json_command.py`:
+
+### 1. **Main JSON Command Tests**
+**File:** `/home/runner/work/erk/erk/tests/unit/cli/test_json_command.py`
+
+This is the primary test file for the `@json_command` decorator. It contains:
+- **Test name:** `test_output_types_matches_return_annotation()`
+- **Purpose:** Validates that every `@json_command`'s `output_types` parameter matches the actual return type annotation of the decorated function
+- **Approach:** Recursively collects all commands with `_json_command_meta` attribute from the CLI tree and verifies type consistency
+
+### 2. **MCP/CLI Sync Tests**
+**File:** `/home/runner/work/erk/erk/tests/unit/cli/test_mcp_cli_sync.py`
+
+This file tests the synchronization between JSON commands and MCP (Model Context Protocol) exposure. It contains:
+- `test_every_mcp_exposed_command_is_registered_as_mcp_tool()` - Ensures all `@mcp_exposed` commands are registered as MCP tools
+- `test_mcp_tool_schema_matches_click_derived_schema()` - Validates schema consistency between Click and MCP
+- `test_every_mcp_json_command_tool_has_corresponding_mcp_exposed_command()` - Prevents orphaned MCP tools
+- `test_mcp_exposed_commands_have_json_command_meta()` - Ensures `@mcp_exposed` commands also have `@json_command`
+
+Key imports: `from erk_shared.agentclick.json_schema import command_input_schema` and uses `_build_json_command_tools()`
+
+### 3. **One-Shot Command JSON Tests**
+**File:** `/home/runner/work/erk/erk/tests/commands/one_shot/test_one_shot_json.py`
+
+This file tests the `erk one-shot` command with `--json` output flag. It contains:
+- `test_json_success()` - Tests successful JSON output with all expected fields
+- `test_json_dry_run()` - Tests JSON output in dry-run mode with preview fields
+- `test_json_error_empty_prompt()` - Tests error JSON response with `error_type` field
+- `test_json_error_invalid_repo()` - Tests error handling for invalid `--repo` format
+- `test_json_no_human_on_stdout()` - Verifies valid JSON structure with expected fields
+- `test_json_stdin_input()` - Tests JSON stdin input with a patch to `erk_shared.agentclick.json_command.read_stdin_json`
+
+## Summary
+
+All three test files verify the `json_command` functionality through:
+- **Type validation** (test_json_command.py)
+- **MCP integration** (test_mcp_cli_sync.py)
+- **Real command behavior** (test_one_shot_json.py)
+
+The test files collectively ensure that JSON commands are properly decorated, have correct type annotations, integrate with MCP, and produce valid JSON output.</assistant>
+  <usage input_tokens="4" cache_creation_input_tokens="360" cache_read_input_tokens="31380" cache_creation="{'ephemeral_5m_input_tokens': 360, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>

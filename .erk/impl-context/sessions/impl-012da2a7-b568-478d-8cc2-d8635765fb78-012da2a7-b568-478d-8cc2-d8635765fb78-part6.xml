@@ -1,0 +1,846 @@
+<session>
+  <meta source="agent-aa64582" />
+  <meta branch="plnd/pretty-print-json-default-03-09-1000" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>Search through all test files in /home/runner/work/erk/erk/tests that parse JSON from CLI output line-by-line. Look for patterns like:
+- `json.loads(line)` 
+- functions that split output by newlines and try to parse JSON from each line
+- `startswith("{")` patterns
+
+Report each file, function name, and line numbers. I need to know which ones will break when JSON output becomes pretty-printed (multi-line with indent=2).</user>
+  <assistant>I'll search through the test files to find patterns that parse JSON from CLI output line-by-line.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="5941" cache_read_input_tokens="12993" cache_creation="{'ephemeral_5m_input_tokens': 5941, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_016pBZqU32Xp8KLS14wZtKBC">
+    <param name="pattern">json\.loads\s*\(.*line</param>
+    <param name="path">/home/runner/work/erk/erk/tests</param>
+    <param name="type">py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="5941" cache_read_input_tokens="12993" cache_creation="{'ephemeral_5m_input_tokens': 5941, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01RDFsAU959v4RZosM5mos6m">
+    <param name="pattern">startswith\s*\(\s*["{]</param>
+    <param name="path">/home/runner/work/erk/erk/tests</param>
+    <param name="type">py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="5941" cache_read_input_tokens="12993" cache_creation="{'ephemeral_5m_input_tokens': 5941, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01Qaus6QwRAdvpzAWzcrAKtv">
+    <param name="pattern">split\s*\(\s*[\\]?n[)"]</param>
+    <param name="path">/home/runner/work/erk/erk/tests</param>
+    <param name="type">py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="5941" cache_read_input_tokens="12993" cache_creation="{'ephemeral_5m_input_tokens': 5941, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01USdyVp17wXFUqMoD3TkCgD">
+    <param name="pattern">for\s+\w+\s+in\s+.*\.split</param>
+    <param name="path">/home/runner/work/erk/erk/tests</param>
+    <param name="type">py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="5941" cache_read_input_tokens="12993" cache_creation="{'ephemeral_5m_input_tokens': 5941, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01RDFsAU959v4RZosM5mos6m">
+tests/unit/cli/commands/land/test_render_land_script.py:222:    cd_line_idx = next(i for i, line in enumerate(lines) if line.startswith("cd "))
+tests/unit/cli/commands/land/test_render_land_script.py:242:    assert script.startswith("# erk land deferred execution\n")
+tests/unit/cli/commands/land/test_land_learn.py:755:        assert path.startswith(".erk/impl-context/sessions/")
+tests/unit/cli/commands/land/test_land_learn.py:900:    assert header_line.startswith("  ")  # 2-space indent on header
+tests/unit/cli/commands/land/test_land_learn.py:902:        assert line.startswith("    ")  # 4-space indent on file entries
+tests/unit/cli/commands/land/test_land_learn.py:903:        assert not line.startswith("     ")  # not 5+ spaces
+tests/unit/cli/commands/test_admin_test_workflow.py:34:        assert branch.startswith("test-workflow-")
+tests/unit/cli/commands/exec/scripts/test_pr_review_comments.py:454:    assert comment_body.startswith("Resolved via automation\n\n")
+tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py:425:            elif option_start is not None and line.startswith("If user chooses"):
+tests/unit/cli/commands/exec/scripts/test_plan_save.py:66:    assert output["branch_name"].startswith("plnd/")
+tests/unit/cli/commands/exec/scripts/test_plan_save.py:257:    json_line = next(line for line in result.output.strip().splitlines() if line.startswith("{"))
+tests/unit/cli/commands/exec/scripts/test_plan_save.py:319:    assert branch_commit.branch.startswith("plnd/")
+tests/unit/cli/commands/exec/scripts/test_plan_save.py:487:        if name.startswith("plnd/")
+tests/unit/cli/commands/exec/scripts/test_plan_save.py:629:    json_line = next(line for line in result.output.strip().splitlines() if line.startswith("{"))
+tests/unit/cli/commands/exec/scripts/test_plan_save.py:670:    json_line = next(line for line in result.output.strip().splitlines() if line.startswith("{"))
+tests/unit/cli/commands/exec/scripts/test_resolve_review_threads.py:143:    assert comment_body.startswith("Fixed typo\n\n")
+tests/unit/cli/commands/exec/scripts/test_ci_verify_autofix.py:125:        if line.startswith("{"):
+tests/unit/cli/commands/exec/scripts/test_get_learn_sessions.py:568:    json_lines = [line for line in raw_lines if not line.startswith("Skipping session")]
+tests/unit/cli/commands/exec/scripts/test_get_learn_sessions.py:572:    skip_lines = [line for line in raw_lines if line.startswith("Skipping session")]
+tests/unit/cli/commands/exec/scripts/test_setup_impl_from_pr.py:203:    json_line = next(line for line in reversed(output_lines) if line.startswith("{"))
+tests/unit/cli/commands/exec/scripts/test_setup_impl_from_pr.py:295:    json_line = next(line for line in reversed(output_lines) if line.startswith("{"))
+tests/unit/cli/commands/exec/scripts/test_setup_impl_from_pr.py:320:    json_lines = [line for line in result.output.strip().split("\n") if line.startswith("{")]
+tests/unit/cli/commands/exec/scripts/test_setup_impl_from_pr.py:373:    json_line = next(line for line in reversed(output_lines) if line.startswith("{"))
+tests/unit/cli/commands/exec/scripts/test_setup_impl_from_pr.py:644:    json_lines = [line for line in result.output.strip().split("\n") if line.startswith("{")]
+tests/unit/cli/commands/exec/scripts/test_ci_update_pr_body.py:800:    assert not updated_body.startswith("&lt;!-- erk:metadata-block:plan-header --&gt;")
+tests/unit/cli/commands/exec/scripts/test_ci_update_pr_body.py:953:    assert not updated_body.startswith("&lt;!-- erk:metadata-block:plan-header --&gt;")
+tests/unit/cli/commands/exec/scripts/test_preprocess_session/test_session_helpers.py:92:    assert result.startswith("/very")
+tests/unit/cli/commands/exec/scripts/test_preprocess_session/test_preprocess_workflow.py:31:        assert temp_path.name.startswith("session-session-123-")
+tests/unit/cli/commands/exec/scripts/test_preprocess_session/test_splitting.py:120:        assert chunk.startswith("&lt;session&gt;")
+tests/unit/cli/commands/exec/scripts/test_setup_impl.py:141:    json_lines = [line for line in reversed(output_lines) if line.startswith("{")]
+
+... [54 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01Qaus6QwRAdvpzAWzcrAKtv">
+No matches found
+  </tool_result>
+  <tool_result tool="toolu_01USdyVp17wXFUqMoD3TkCgD">
+tests/unit/cli/commands/stack/test_list_cmd.py:111:        lines = [line for line in output.strip().split("\n") if line.strip()]
+tests/unit/cli/commands/stack/test_list_cmd.py:202:        for line in output.split("\n"):
+tests/unit/cli/commands/stack/test_list_cmd.py:348:        lines = [line for line in output.strip().split("\n") if line.strip()]
+tests/unit/cli/commands/stack/test_list_cmd.py:421:        lines = [line for line in output.strip().split("\n") if line.strip()]
+tests/unit/cli/commands/branch/test_list_cmd.py:322:        lines = [line for line in output.strip().split("\n") if line.strip()]
+tests/unit/cli/commands/exec/scripts/test_plan_save.py:257:    json_line = next(line for line in result.output.strip().splitlines() if line.startswith("{"))
+tests/unit/cli/commands/exec/scripts/test_plan_save.py:629:    json_line = next(line for line in result.output.strip().splitlines() if line.startswith("{"))
+tests/unit/cli/commands/exec/scripts/test_plan_save.py:670:    json_line = next(line for line in result.output.strip().splitlines() if line.startswith("{"))
+tests/unit/cli/commands/exec/scripts/test_ci_verify_autofix.py:123:    for line in reversed(output.strip().split("\n")):
+tests/unit/cli/commands/exec/scripts/test_setup_impl_from_pr.py:320:    json_lines = [line for line in result.output.strip().split("\n") if line.startswith("{")]
+tests/unit/cli/commands/exec/scripts/test_setup_impl_from_pr.py:644:    json_lines = [line for line in result.output.strip().split("\n") if line.startswith("{")]
+tests/unit/cli/commands/exec/scripts/test_preprocess_session/test_splitting.py:610:        for line in result.output.strip().split("\n"):
+tests/unit/workflows/test_workflow_names.py:49:        for item in workflows_str.split(","):
+tests/commands/cc/test_session_show.py:603:        segments = [s for s in agent_metadata_line.strip().split("  ") if s]
+tests/commands/one_shot/test_one_shot_json.py:36:    for line in output.strip().split("\n"):
+  </tool_result>
+  <tool_result tool="toolu_016pBZqU32Xp8KLS14wZtKBC">
+tests/unit/cli/commands/exec/scripts/test_plan_save.py:258:    output = json.loads(json_line)
+tests/unit/cli/commands/exec/scripts/test_plan_save.py:630:    output = json.loads(json_line)
+tests/unit/cli/commands/exec/scripts/test_plan_save.py:671:    output = json.loads(json_line)
+tests/unit/cli/commands/exec/scripts/test_ci_verify_autofix.py:126:            return json.loads(line)
+tests/unit/cli/commands/exec/scripts/test_get_learn_sessions.py:569:    output = json.loads("\n".join(json_lines))
+tests/unit/cli/commands/exec/scripts/test_setup_impl_from_pr.py:204:    output = json.loads(json_line)
+tests/unit/cli/commands/exec/scripts/test_setup_impl_from_pr.py:296:    output = json.loads(json_line)
+tests/unit/cli/commands/exec/scripts/test_setup_impl_from_pr.py:322:    error_data = json.loads(json_lines[0])
+tests/unit/cli/commands/exec/scripts/test_setup_impl_from_pr.py:374:    output = json.loads(json_line)
+tests/unit/cli/commands/exec/scripts/test_setup_impl_from_pr.py:646:    error_data = json.loads(json_lines[0])
+tests/unit/cli/commands/exec/scripts/test_setup_impl.py:64:    output = json.loads(last_line)
+tests/unit/cli/commands/exec/scripts/test_setup_impl.py:143:    output = json.loads(json_lines[0])
+tests/unit/core/test_command_log.py:82:    entry = json.loads(lines[0])
+tests/unit/core/test_command_log.py:105:    completion = json.loads(lines[1])
+tests/commands/one_shot/test_one_shot_json.py:41:            data = json.loads(line)
+  </tool_result>
+  <assistant>Now let me read the specific files that use these patterns to get detailed function names and context:</assistant>
+  <usage input_tokens="4040" cache_creation_input_tokens="1092" cache_read_input_tokens="18934" cache_creation="{'ephemeral_5m_input_tokens': 1092, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Ba3hhhZ7ZjxpZ1cnc2WakY">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_plan_save.py</param>
+    <param name="offset">250</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="4040" cache_creation_input_tokens="1092" cache_read_input_tokens="18934" cache_creation="{'ephemeral_5m_input_tokens': 1092, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_016gj72m5fFxiWSyPjFAsBXV">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_plan_save.py</param>
+    <param name="offset">620</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="4040" cache_creation_input_tokens="1092" cache_read_input_tokens="18934" cache_creation="{'ephemeral_5m_input_tokens': 1092, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01MF4ACGH4ND4gQ4RQn98HNE">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_plan_save.py</param>
+    <param name="offset">663</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="4040" cache_creation_input_tokens="1092" cache_read_input_tokens="18934" cache_creation="{'ephemeral_5m_input_tokens': 1092, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01M6jpoi4xL9gTJsieZ51jJK">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_ci_verify_autofix.py</param>
+    <param name="offset">115</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="4040" cache_creation_input_tokens="1092" cache_read_input_tokens="18934" cache_creation="{'ephemeral_5m_input_tokens': 1092, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Ba3hhhZ7ZjxpZ1cnc2WakY">
+   250→        plan_save,
+   251→        ["--format", "json", "--session-id", session_id, "--branch-slug", "test-slug"],
+   252→        obj=ctx,
+   253→    )
+   254→
+   255→    assert result.exit_code == 0, f"Failed: {result.output}"
+   256→    # Parse JSON from output (skip stderr lines mixed in by CliRunner)
+   257→    json_line = next(line for line in result.output.strip().splitlines() if line.startswith("{"))
+   258→    output = json.loads(json_line)
+   259→    assert output["success"] is True
+   260→    # Branch name should include objective ID
+   261→    assert "O123" in output["branch_name"]
+   262→    # objective_issue in JSON output
+   263→    assert output["objective_issue"] == 123
+   264→    # ref.json content should include objective_id (via branch commit, no filesystem)
+   265→    assert len(fake_git.branch_commits) == 1
+   266→    ref_json = json.loads(fake_git.branch_commits[0].files[f"{IMPL_CONTEXT_DIR}/ref.json"])
+   267→    assert ref_json["objective_id"] == 123
+   268→
+   269→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_016gj72m5fFxiWSyPjFAsBXV">
+   620→    runner = CliRunner()
+   621→
+   622→    result = runner.invoke(
+   623→        plan_save,
+   624→        ["--format", "json", "--branch-slug", "test-slug", "--objective", "456"],
+   625→        obj=ctx,
+   626→    )
+   627→
+   628→    assert result.exit_code == 0, f"Failed: {result.output}"
+   629→    json_line = next(line for line in result.output.strip().splitlines() if line.startswith("{"))
+   630→    output = json.loads(json_line)
+   631→    assert output["success"] is True
+   632→    assert "O456" in output["branch_name"]
+   633→    assert output["objective_issue"] == 456
+   634→    # ref.json should include objective_id
+   635→    ref_json = json.loads(fake_git.branch_commits[0].files[f"{IMPL_CONTEXT_DIR}/ref.json"])
+   636→    assert ref_json["objective_id"] == 456
+   637→
+   638→
+   639→def test_planned_pr_objective_flag_overrides_marker(
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_01MF4ACGH4ND4gQ4RQn98HNE">
+   663→            "--objective",
+   664→            "200",
+   665→        ],
+   666→        obj=ctx,
+   667→    )
+   668→
+   669→    assert result.exit_code == 0, f"Failed: {result.output}"
+   670→    json_line = next(line for line in result.output.strip().splitlines() if line.startswith("{"))
+   671→    output = json.loads(json_line)
+   672→    assert output["success"] is True
+   673→    # Flag value (200) should win over marker (100)
+   674→    assert output["objective_issue"] == 200
+   675→    assert "O200" in output["branch_name"]
+   676→    ref_json = json.loads(fake_git.branch_commits[0].files[f"{IMPL_CONTEXT_DIR}/ref.json"])
+   677→    assert ref_json["objective_id"] == 200
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_01M6jpoi4xL9gTJsieZ51jJK">
+   115→
+   116→    Args:
+   117→        output: Combined stdout/stderr output from CliRunner
+   118→
+   119→    Returns:
+   120→        Parsed JSON dict
+   121→    """
+   122→    # Find the last line that looks like JSON (starts with {)
+   123→    for line in reversed(output.strip().split("\n")):
+   124→        line = line.strip()
+   125→        if line.startswith("{"):
+   126→            return json.loads(line)
+   127→    raise ValueError(f"No JSON found in output: {output}")
+   128→
+   129→
+   130→class TestCiVerifyAutofixCommand:
+   131→    """Tests for the CI verify autofix Click command."""
+   132→
+   133→    def test_command_no_new_commit(self, tmp_path: Path) -&gt; None:
+   134→        """Test command when no new commit was pushed."""
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>Let me continue reading the other key test files:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="10243" cache_read_input_tokens="20026" cache_creation="{'ephemeral_5m_input_tokens': 10243, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_013tL6UQKWuiUUJxPpubcUWG">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_get_learn_sessions.py</param>
+    <param name="offset">560</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="10243" cache_read_input_tokens="20026" cache_creation="{'ephemeral_5m_input_tokens': 10243, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_012HdFw4jzNQRGbDaXiK49ha">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_setup_impl_from_pr.py</param>
+    <param name="offset">195</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="10243" cache_read_input_tokens="20026" cache_creation="{'ephemeral_5m_input_tokens': 10243, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01NjqWGshVXYkP4hQAcomjcf">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_setup_impl_from_pr.py</param>
+    <param name="offset">310</param>
+    <param name="limit">25</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="10243" cache_read_input_tokens="20026" cache_creation="{'ephemeral_5m_input_tokens': 10243, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01WUWABGnDTUihN7rmn6FPke">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_setup_impl.py</param>
+    <param name="offset">55</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="10243" cache_read_input_tokens="20026" cache_creation="{'ephemeral_5m_input_tokens': 10243, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013tL6UQKWuiUUJxPpubcUWG">
+   560→            ),
+   561→        )
+   562→
+   563→    assert result.exit_code == 0, result.output
+   564→
+   565→    # Skip messages go to stderr but CliRunner mixes them into output.
+   566→    # Extract only the JSON portion.
+   567→    raw_lines = result.output.strip().splitlines()
+   568→    json_lines = [line for line in raw_lines if not line.startswith("Skipping session")]
+   569→    output = json.loads("\n".join(json_lines))
+   570→
+   571→    # Verify skip messages were logged
+   572→    skip_lines = [line for line in raw_lines if line.startswith("Skipping session")]
+   573→    assert len(skip_lines) == 2
+   574→
+   575→    # Only the matching session should appear in local_session_ids
+   576→    assert output["local_session_ids"] == ["matching-session"]
+   577→
+   578→    # Session sources should only contain the matching session
+   579→    local_sources = [s for s in output["session_sources"] if s["source_type"] == "local"]
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_012HdFw4jzNQRGbDaXiK49ha">
+   195→    # Branch was checked out
+   196→    assert (tmp_path, plan_branch) in fake_git.checked_out_branches
+   197→
+   198→    # Pull-rebase was called to sync with remote
+   199→    assert fake_git.pull_rebase_calls == [(tmp_path, "origin", plan_branch)]
+   200→
+   201→    # Output contains the plan branch name
+   202→    output_lines = result.output.strip().split("\n")
+   203→    json_line = next(line for line in reversed(output_lines) if line.startswith("{"))
+   204→    output = json.loads(json_line)
+   205→    assert output["success"] is True
+   206→    assert output["branch"] == plan_branch
+   207→
+   208→
+   209→def test_planned_pr_plan_already_on_plan_branch(tmp_path: Path) -&gt; None:
+   210→    """Already on the plan branch — no checkout needed, just fetch and pull-rebase."""
+   211→    plan_branch = "my-plan-branch-02-19"
+   212→    fake_git = FakeGit(
+   213→        current_branches={tmp_path: plan_branch},  # Already on the plan branch
+   214→    )
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_01NjqWGshVXYkP4hQAcomjcf">
+   310→    runner = CliRunner()
+   311→    result = runner.invoke(
+   312→        setup_impl_from_pr,
+   313→        [str(pr_number), "--no-impl"],
+   314→        obj=ctx,
+   315→    )
+   316→
+   317→    assert result.exit_code == 1
+   318→
+   319→    # Error JSON is present in output
+   320→    json_lines = [line for line in result.output.strip().split("\n") if line.startswith("{")]
+   321→    assert json_lines, "Expected JSON error output in command output"
+   322→    error_data = json.loads(json_lines[0])
+   323→    assert error_data["success"] is False
+   324→    assert error_data["error"] == "pull_rebase_failed"
+   325→    assert "Rebase conflict" in error_data["message"]
+   326→
+   327→
+   328→# =============================================================================
+   329→# Planned-PR plan: .erk/impl-context/ local file reading
+   330→# =============================================================================
+   331→
+   332→
+   333→def test_planned_pr_reads_from_impl_context_when_present(tmp_path: Path) -&gt; None:
+   334→    """Planned-PR plan reads plan content from .erk/impl-context/ after checkout."""
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_01WUWABGnDTUihN7rmn6FPke">
+    55→    ctx = ErkContext.for_test(cwd=tmp_path, git=git, github=github, repo_root=tmp_path)
+    56→
+    57→    runner = CliRunner()
+    58→    result = runner.invoke(setup_impl, obj=ctx)
+    59→
+    60→    assert result.exit_code == 1
+    61→    # Should have JSON error on stdout
+    62→    lines = result.output.strip().split("\n")
+    63→    last_line = lines[-1]
+    64→    output = json.loads(last_line)
+    65→    assert output["success"] is False
+    66→    assert output["error"] == "no_plan_found"
+    67→
+    68→
+    69→def test_existing_impl_no_tracking(tmp_path: Path) -&gt; None:
+    70→    """Auto-detects existing branch-scoped impl folder without plan tracking."""
+    71→    impl_dir = get_impl_dir(tmp_path, branch_name=BRANCH)
+    72→    impl_dir.mkdir(parents=True)
+    73→    (impl_dir / "plan.md").write_text("# Existing Plan\n\nContent.\n", encoding="utf-8")
+    74→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>Let me continue with the remaining critical files:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="2249" cache_read_input_tokens="30269" cache_creation="{'ephemeral_5m_input_tokens': 2249, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01S8VbgzvjGf7uF747TNc9Pv">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_setup_impl.py</param>
+    <param name="offset">135</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="2249" cache_read_input_tokens="30269" cache_creation="{'ephemeral_5m_input_tokens': 2249, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_016s5gs6AknZRkKpiFL9UhyX">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/core/test_command_log.py</param>
+    <param name="offset">75</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="2249" cache_read_input_tokens="30269" cache_creation="{'ephemeral_5m_input_tokens': 2249, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01LSjDCWt9DcDoDnfEuZwDep">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/one_shot/test_one_shot_json.py</param>
+    <param name="offset">30</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="2249" cache_read_input_tokens="30269" cache_creation="{'ephemeral_5m_input_tokens': 2249, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01TxV9q4qwB5NaErH7opDnKy">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_setup_impl_from_pr.py</param>
+    <param name="offset">365</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="2249" cache_read_input_tokens="30269" cache_creation="{'ephemeral_5m_input_tokens': 2249, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01S8VbgzvjGf7uF747TNc9Pv">
+   135→        ["--issue", str(pr_number)],
+   136→        obj=ctx,
+   137→    )
+   138→
+   139→    assert result.exit_code == 0, f"Command failed: {result.output}"
+   140→    output_lines = result.output.strip().split("\n")
+   141→    json_lines = [line for line in reversed(output_lines) if line.startswith("{")]
+   142→    assert json_lines, "Expected JSON output"
+   143→    output = json.loads(json_lines[0])
+   144→    assert output["success"] is True
+   145→    assert output["plan_number"] == pr_number
+   146→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_016s5gs6AknZRkKpiFL9UhyX">
+    75→        with patch("erk.core.command_log._get_current_branch", return_value="main"):
+    76→            log_command_start(["wt", "delete", "foo"], tmp_path)
+    77→
+    78→    content = log_path.read_text(encoding="utf-8")
+    79→    lines = content.strip().split("\n")
+    80→    assert len(lines) == 1
+    81→
+    82→    entry = json.loads(lines[0])
+    83→    assert entry["command"] == "erk wt delete"
+    84→    assert entry["args"] == ["foo"]
+    85→    assert entry["cwd"] == str(tmp_path)
+    86→    assert entry["branch"] == "main"
+    87→    assert entry["exit_code"] is None
+    88→    assert "timestamp" in entry
+    89→    assert "pid" in entry
+    90→
+    91→
+    92→def test_log_command_end_writes_completion_entry(tmp_path: Path) -&gt; None:
+    93→    """Test log_command_end writes a completion entry."""
+    94→    log_path = tmp_path / "command_history.jsonl"
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_01LSjDCWt9DcDoDnfEuZwDep">
+    30→def _extract_json(output: str) -&gt; dict[str, Any]:
+    31→    """Extract the JSON object from mixed CLI output.
+    32→
+    33→    CliRunner mixes stdout and stderr. The JSON line from emit_json
+    34→    is a single line containing a valid JSON object with "success" key.
+    35→    """
+    36→    for line in output.strip().split("\n"):
+    37→        line = line.strip()
+    38→        if not line:
+    39→            continue
+    40→        try:
+    41→            data = json.loads(line)
+    42→            if isinstance(data, dict) and "success" in data:
+    43→                return data
+    44→        except json.JSONDecodeError:
+    45→            continue
+    46→    raise AssertionError(f"No JSON line found in output:\n{output}")
+    47→
+    48→
+    49→def test_json_success() -&gt; None:
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_01TxV9q4qwB5NaErH7opDnKy">
+   365→    assert "From impl-context" in impl_plan.read_text(encoding="utf-8")
+   366→
+   367→    # .erk/impl-context/ is NOT deleted here — Step 2d in plan-implement.md
+   368→    # handles git rm + commit + push after setup_impl_from_pr completes
+   369→    assert impl_context_dir.exists()
+   370→
+   371→    # Output JSON has correct metadata
+   372→    output_lines = result.output.strip().split("\n")
+   373→    json_line = next(line for line in reversed(output_lines) if line.startswith("{"))
+   374→    output = json.loads(json_line)
+   375→    assert output["success"] is True
+   376→    assert output["plan_title"] == "Local Plan"
+   377→
+   378→
+   379→def test_planned_pr_reads_objective_id_from_ref_json(tmp_path: Path) -&gt; None:
+   380→    """objective_id from ref.json is passed to save_plan_ref."""
+   381→    plan_branch = "plan-test-objective-02-20"
+   382→    fake_git = FakeGit(
+   383→        current_branches={tmp_path: plan_branch},
+   384→    )
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>Now let me search for the specific test function names to get a complete picture:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="4106" cache_read_input_tokens="32518" cache_creation="{'ephemeral_5m_input_tokens': 4106, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01PMSx7mM6GZtCpJVhbAju3G">
+    <param name="pattern">^def test_\w+.*\(.*\).*:</param>
+    <param name="path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_plan_save.py</param>
+    <param name="output_mode">content</param>
+    <param name="head_limit">50</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="4106" cache_read_input_tokens="32518" cache_creation="{'ephemeral_5m_input_tokens': 4106, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01Uf5mbTrjcjcJXaGxoqp3jF">
+    <param name="pattern">^def (\w+).*:.*\n.*json\.loads.*line\.startswith</param>
+    <param name="path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_plan_save.py</param>
+    <param name="output_mode">content</param>
+    <param name="multiline">True</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="4106" cache_read_input_tokens="32518" cache_creation="{'ephemeral_5m_input_tokens': 4106, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Uf5mbTrjcjcJXaGxoqp3jF">
+28:def _planned_pr_context(
+29:    *,
+30:    tmp_path: Path,
+31:    fake_github: FakeLocalGitHub | None = None,
+32:    fake_git: FakeGit | None = None,
+33:    fake_claude: FakeClaudeInstallation | None = None,
+34:    monkeypatch: pytest.MonkeyPatch,
+35:) -&gt; ErkContext:
+36:    """Build an ErkContext configured for planned-PR plan backend."""
+37:    if fake_git is None:
+38:        fake_git = FakeGit(current_branches={tmp_path: "main"})
+39:    if fake_github is None:
+40:        fake_github = FakeLocalGitHub()
+41:    if fake_claude is None:
+42:        fake_claude = FakeClaudeInstallation.for_test(plans={"plan": VALID_PLAN_CONTENT})
+43:
+44:    monkeypatch.setenv("ERK_PLAN_BACKEND", "planned_pr")
+45:    return context_for_test(
+46:        github=fake_github,
+47:        git=fake_git,
+48:        claude_installation=fake_claude,
+49:        cwd=tmp_path,
+50:        repo_root=tmp_path,
+51:    )
+52:
+53:
+54:def test_planned_pr_success_json(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -&gt; None:
+55:    """Happy path: exit 0, JSON output has success/issue_number/branch_name."""
+56:    ctx = _planned_pr_context(tmp_path=tmp_path, monkeypatch=monkeypatch)
+57:    runner = CliRunner()
+
+... [431 lines omitted] ...
+
+61:    assert result.exit_code == 0, f"Failed: {result.output}"
+79:    assert result.exit_code == 0, f"Failed: {result.output}"
+101:    assert "No plan found" in output["error"]
+104:def test_planned_pr_validation_failure(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -&gt; None:
+105:    """Short plan: exit code 2, error_type='validation_failed'."""
+119:    assert output["error_type"] == "validation_failed"
+134:    assert result1.exit_code == 0, f"First call failed: {result1.output}"
+145:    assert result2.exit_code == 0, f"Second call failed: {result2.output}"
+189:    assert result1.exit_code == 0, f"First call failed: {result1.output}"
+205:    assert result2.exit_code == 0, f"Second call failed: {result2.output}"
+229:    assert result.exit_code == 0, f"Failed: {result.output}"
+255:    assert result.exit_code == 0, f"Failed: {result.output}"
+279:    assert result.exit_code == 0, f"Failed: {result.output}"
+298:    assert result.exit_code == 0, f"Failed: {result.output}"
+312:    assert result.exit_code == 0, f"Failed: {result.output}"
+347:    assert result.exit_code == 0, f"Failed: {result.output}"
+370:    assert result.exit_code == 0, f"Failed: {result.output}"
+411:    assert result.exit_code == 0, f"Failed: {result.output}"
+451:    assert result.exit_code == 0, f"Failed: {result.output}"
+479:    assert result.exit_code == 0, f"Failed: {result.output}"
+  </tool_result>
+  <tool_result tool="toolu_01PMSx7mM6GZtCpJVhbAju3G">
+54:def test_planned_pr_success_json(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -&gt; None:
+70:def test_planned_pr_success_display(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -&gt; None:
+87:def test_planned_pr_no_plan_found(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -&gt; None:
+104:def test_planned_pr_validation_failure(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -&gt; None:
+122:def test_planned_pr_session_deduplication(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -&gt; None:
+212:def test_planned_pr_plan_file_priority(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -&gt; None:
+304:def test_planned_pr_commits_plan_file(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -&gt; None:
+599:def test_planned_pr_branch_slug_provided(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -&gt; None:
+616:def test_planned_pr_objective_from_flag(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -&gt; None:
+814:def test_current_branch_sets_base_to_trunk(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -&gt; None:
+841:def test_current_branch_does_not_retrack(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -&gt; None:
+
+[Showing results with pagination = limit: 50, offset: 0]
+  </tool_result>
+  <assistant>Let me get line numbers for the three critical functions in test_plan_save.py:</assistant>
+  <usage input_tokens="6937" cache_creation_input_tokens="916" cache_read_input_tokens="36624" cache_creation="{'ephemeral_5m_input_tokens': 916, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01XNAXueY1xQbH6Te5PoUVfe">
+    <param name="command">grep -n "def test_planned_pr_objective_issue_from_marker\|def test_planned_pr_branch_slug_...[truncated 33 chars]...s_marker" /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_plan_save.py</param>
+    <param name="description">Find line numbers of functions with JSON parsing issues</param>
+  </tool_use>
+  <usage input_tokens="6937" cache_creation_input_tokens="916" cache_read_input_tokens="36624" cache_creation="{'ephemeral_5m_input_tokens': 916, 'ephemeral_1h_input_tokens': 0}" output_tokens="178" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01XNAXueY1xQbH6Te5PoUVfe">
+235:def test_planned_pr_objective_issue_from_marker(
+599:def test_planned_pr_branch_slug_provided(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -&gt; None:
+639:def test_planned_pr_objective_flag_overrides_marker(
+  </tool_result>
+  <assistant>Perfect. Now let me create a comprehensive summary by examining a few more key test files to get complete details:</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="7231" cache_read_input_tokens="37540" cache_creation="{'ephemeral_5m_input_tokens': 7231, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01VvSJjphCmN5SiRvvnhSvdK">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_setup_impl_from_pr.py</param>
+    <param name="offset">635</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="7231" cache_read_input_tokens="37540" cache_creation="{'ephemeral_5m_input_tokens': 7231, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01E6kPxDme6WgeM5Nu983a3J">
+    <param name="command">grep -n "^def test_\|json\.loads.*line\|startswith.*{" /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_setup_impl_from_pr.py | head -60</param>
+    <param name="description">Find all test functions and JSON parsing in test_setup_impl_from_pr.py</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="7231" cache_read_input_tokens="37540" cache_creation="{'ephemeral_5m_input_tokens': 7231, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01VvSJjphCmN5SiRvvnhSvdK">
+   635→
+   636→    runner = CliRunner()
+   637→    result = runner.invoke(
+   638→        setup_impl_from_pr,
+   639→        ["9999"],
+   640→        obj=ctx,
+   641→    )
+   642→
+   643→    assert result.exit_code == 1
+   644→    json_lines = [line for line in result.output.strip().split("\n") if line.startswith("{")]
+   645→    assert json_lines
+   646→    error_data = json.loads(json_lines[0])
+   647→    assert error_data["success"] is False
+   648→    assert "not found" in error_data["message"].lower()
+   649→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_01E6kPxDme6WgeM5Nu983a3J">
+174:def test_planned_pr_plan_uses_plan_branch_name(tmp_path: Path) -&gt; None:
+203:    json_line = next(line for line in reversed(output_lines) if line.startswith("{"))
+204:    output = json.loads(json_line)
+209:def test_planned_pr_plan_already_on_plan_branch(tmp_path: Path) -&gt; None:
+238:def test_planned_pr_plan_skips_checkout_when_impl_exists(tmp_path: Path) -&gt; None:
+295:    json_line = next(line for line in reversed(output_lines) if line.startswith("{"))
+296:    output = json.loads(json_line)
+301:def test_planned_pr_plan_sync_failure_reports_error(tmp_path: Path) -&gt; None:
+320:    json_lines = [line for line in result.output.strip().split("\n") if line.startswith("{")]
+322:    error_data = json.loads(json_lines[0])
+333:def test_planned_pr_reads_from_impl_context_when_present(tmp_path: Path) -&gt; None:
+373:    json_line = next(line for line in reversed(output_lines) if line.startswith("{"))
+374:    output = json.loads(json_line)
+379:def test_planned_pr_reads_objective_id_from_ref_json(tmp_path: Path) -&gt; None:
+413:def test_planned_pr_falls_back_to_pr_body_when_no_impl_context(tmp_path: Path) -&gt; None:
+504:def test_create_impl_context_pr_not_found(tmp_path: Path) -&gt; None:
+534:def test_create_impl_context_ref_json_non_int_objective_id(tmp_path: Path) -&gt; None:
+550:def test_create_impl_context_ref_json_non_string_title(tmp_path: Path) -&gt; None:
+565:def test_create_impl_context_ref_json_non_list_node_ids(tmp_path: Path) -&gt; None:
+580:def test_create_impl_context_ref_json_missing_fields(tmp_path: Path) -&gt; None:
+597:def test_create_impl_context_valid_ref_json(tmp_path: Path) -&gt; None:
+620:def test_planned_pr_pr_not_found_reports_error(tmp_path: Path) -&gt; None:
+644:    json_lines = [line for line in result.output.strip().split("\n") if line.startswith("{")]
+646:    error_data = json.loads(json_lines[0])
+  </tool_result>
+  <assistant>Perfect! Now let me compile the final comprehensive report. Let me verify the exact line numbers for all the critical patterns:</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="1375" cache_read_input_tokens="44771" cache_creation="{'ephemeral_5m_input_tokens': 1375, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_019o7KKM3Sk69HZiax53Mbcr">
+    <param name="command">grep -n "json.loads" /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_plan_save.py | grep -E "line|json_line"</param>
+    <param name="description">Get exact line numbers for json.loads calls in test_plan_save.py</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="1375" cache_read_input_tokens="44771" cache_creation="{'ephemeral_5m_input_tokens': 1375, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01La3PXx3QyVUYUEngW8yLXg">
+    <param name="command">grep -n "json.loads" /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_setup_impl_from_pr.py</param>
+    <param name="description">Get exact line numbers for json.loads calls in test_setup_impl_from_pr.py</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="1375" cache_read_input_tokens="44771" cache_creation="{'ephemeral_5m_input_tokens': 1375, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01Gyddw6ryUqb76P9ABxhXNB">
+    <param name="command">grep -n "json.loads" /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_setup_impl.py</param>
+    <param name="description">Get exact line numbers for json.loads calls in test_setup_impl.py</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="1375" cache_read_input_tokens="44771" cache_creation="{'ephemeral_5m_input_tokens': 1375, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01DBwUtNGNfFniMnG2EJoZQN">
+    <param name="command">grep -n "json.loads" /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_ci_verify_autofix.py</param>
+    <param name="description">Get exact line numbers for json.loads calls in test_ci_verify_autofix.py</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="1375" cache_read_input_tokens="44771" cache_creation="{'ephemeral_5m_input_tokens': 1375, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01DBwUtNGNfFniMnG2EJoZQN">
+126:            return json.loads(line)
+  </tool_result>
+  <tool_result tool="toolu_01La3PXx3QyVUYUEngW8yLXg">
+204:    output = json.loads(json_line)
+296:    output = json.loads(json_line)
+322:    error_data = json.loads(json_lines[0])
+374:    output = json.loads(json_line)
+408:    plan_ref = json.loads(plan_ref_path.read_text(encoding="utf-8"))
+546:    ref_data = json.loads((impl_path / "ref.json").read_text(encoding="utf-8"))
+576:    ref_data = json.loads((impl_path / "ref.json").read_text(encoding="utf-8"))
+592:    ref_data = json.loads((impl_path / "ref.json").read_text(encoding="utf-8"))
+615:    ref_data = json.loads((impl_path / "ref.json").read_text(encoding="utf-8"))
+646:    error_data = json.loads(json_lines[0])
+  </tool_result>
+  <tool_result tool="toolu_019o7KKM3Sk69HZiax53Mbcr">
+258:    output = json.loads(json_line)
+630:    output = json.loads(json_line)
+671:    output = json.loads(json_line)
+  </tool_result>
+  <tool_result tool="toolu_01Gyddw6ryUqb76P9ABxhXNB">
+64:    output = json.loads(last_line)
+143:    output = json.loads(json_lines[0])
+  </tool_result>
+  <assistant>Now let me get the remaining files:</assistant>
+  <usage input_tokens="39" cache_creation_input_tokens="1017" cache_read_input_tokens="46146" cache_creation="{'ephemeral_5m_input_tokens': 1017, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01ATDGhYWcsjkV4bGZfXpS9f">
+    <param name="command">grep -n "json.loads" /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_get_learn_sessions.py</param>
+    <param name="description">Get exact line numbers for json.loads calls in test_get_learn_sessions.py</param>
+  </tool_use>
+  <usage input_tokens="39" cache_creation_input_tokens="1017" cache_read_input_tokens="46146" cache_creation="{'ephemeral_5m_input_tokens': 1017, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_019ENLBCNMsJJ3FRr961i2ax">
+    <param name="command">grep -n "json.loads" /home/runner/work/erk/erk/tests/unit/core/test_command_log.py</param>
+    <param name="description">Get exact line numbers for json.loads calls in test_command_log.py</param>
+  </tool_use>
+  <usage input_tokens="39" cache_creation_input_tokens="1017" cache_read_input_tokens="46146" cache_creation="{'ephemeral_5m_input_tokens': 1017, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_013uQG44Kt3H11fuqNKbxdea">
+    <param name="command">grep -n "json.loads" /home/runner/work/erk/erk/tests/commands/one_shot/test_one_shot_json.py</param>
+    <param name="description">Get exact line numbers for json.loads calls in test_one_shot_json.py</param>
+  </tool_use>
+  <usage input_tokens="39" cache_creation_input_tokens="1017" cache_read_input_tokens="46146" cache_creation="{'ephemeral_5m_input_tokens': 1017, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013uQG44Kt3H11fuqNKbxdea">
+41:            data = json.loads(line)
+  </tool_result>
+  <tool_result tool="toolu_01ATDGhYWcsjkV4bGZfXpS9f">
+69:    output = json.loads(result.output)
+105:    output = json.loads(result.output)
+138:    output = json.loads(result.output)
+175:    output = json.loads(result.output)
+204:    output = json.loads(result.output)
+242:    output = json.loads(result.output)
+318:    output = json.loads(result.output)
+379:    output = json.loads(result.output)
+442:    output = json.loads(result.output)
+497:    output = json.loads(result.output)
+569:    output = json.loads("\n".join(json_lines))
+617:    output = json.loads(result.output)
+653:    output = json.loads(result.output)
+707:    output = json.loads(result.output)
+  </tool_result>
+  <tool_result tool="toolu_019ENLBCNMsJJ3FRr961i2ax">
+82:    entry = json.loads(lines[0])
+105:    completion = json.loads(lines[1])
+126:    entry = json.loads(content.strip())
+140:    entry = json.loads(content.strip())
+  </tool_result>
+  <assistant>Perfect! Now let me compile the final comprehensive report with all the critical information:
+
+## Report: JSON Line-by-Line Parsing in Test Files
+
+I've identified all test files that parse JSON from CLI output line-by-line. Here are the **files and functions that will break** when JSON output becomes pretty-printed (multi-line with indent=2):
+
+### Critical Issues: Line-by-Line JSON Parsing Patterns
+
+#### 1. **test_plan_save.py**
+- **File:** `/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_plan_save.py`
+
+| Function Name | Lines | Pattern | Vulnerability |
+|---|---|---|---|
+| `test_planned_pr_objective_issue_from_marker` | 257-258 | `next(line for line in result.output.strip().splitlines() if line.startswith("{"))` then `json.loads(json_line)` | Will fail - expects JSON on single line starting with `{` |
+| `test_planned_pr_branch_slug_provided` | 629-630 | Same pattern | Will fail |
+| `test_planned_pr_objective_flag_overrides_marker` | 670-671 | Same pattern | Will fail |
+
+#### 2. **test_setup_impl_from_pr.py**
+- **File:** `/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_setup_impl_from_pr.py`
+
+| Function Name | Lines | Pattern | Vulnerability |
+|---|---|---|---|
+| `test_planned_pr_plan_uses_plan_branch_name` | 203-204 | `next(line for line in reversed(output_lines) if line.startswith("{"))` then `json.loads(json_line)` | Will fail - expects JSON on single line |
+| `test_planned_pr_plan_skips_checkout_when_impl_exists` | 295-296 | Same pattern | Will fail |
+| `test_planned_pr_plan_sync_failure_reports_error` | 320-322 | `[line for line in result.output.strip().split("\n") if line.startswith("{")]` then `json.loads(json_lines[0])` | Will fail - first JSON line assumes complete object |
+| `test_planned_pr_reads_from_impl_context_when_present` | 373-374 | `next(line for line in reversed(output_lines) if line.startswith("{"))` | Will fail |
+| `test_planned_pr_pr_not_found_reports_error` | 644-646 | `[line for line in result.output.strip().split("\n") if line.startswith("{")]` | Will fail |
+
+#### 3. **test_setup_impl.py**
+- **File:** `/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_setup_impl.py`
+
+| Function Name | Lines | Pattern | Vulnerability |
+|---|---|---|---|
+| `test_no_plan_found` | 64 | `json.loads(last_line)` where `last_line = lines[-1]` | Will fail - assumes last line is complete JSON object |
+| `test_existing_impl_with_issue` | 141-143 | `[line for line in reversed(output_lines) if line.startswith("{")]` then `json.loads(json_lines[0])` | Will fail |
+
+#### 4. **test_ci_verify_autofix.py**
+- **File:** `/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_ci_verify_autofix.py`
+
+| Function Name | Lines | Pattern | Vulnerability |
+|---|---|---|---|
+| `_extract_json_from_output` (helper function) | 123-126 | Loop: `for line in reversed(output.strip().split("\n")):` then check `if line.startswith("{")` then `return json.loads(line)` | Will fail - used by multiple tests |
+
+#### 5. **test_get_learn_sessions.py**
+- **File:** `/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_get_learn_sessions.py`
+
+| Function Name | Lines | Pattern | Vulnerability |
+|---|---|---|---|
+| Multiple tests | 569 | `json.loads("\n".join(json_lines))` where `json_lines = [line for line in raw_lines if not line.startswith("Skipping session")]` | **DIFFERENT PATTERN** - this one joins lines, so may be OK for pretty-print, but assumes all lines together form valid JSON |
+| Many test functions | 69, 105, 138, 175, 204, 242, 318, 379, 442, 497, 617, 653, 707 | `json.loads(result.output)` directly | Will be OK - expects entire output to be valid JSON |
+
+#### 6. **test_command_log.py**
+- **File:** `/home/runner/work/erk/erk/tests/unit/core/test_command_log.py`
+
+| Function Name | Lines | Pattern | Vulnerability |
+|---|---|---|---|
+| `test_log_command_start_writes_entry` | 82 | `json.loads(lines[0])` where `lines = content.strip().split("\n")` | Will fail - expects JSONL format (each line is complete JSON) |
+| `test_log_command_end_writes_completion_entry` | 105 | `json.loads(lines[1])` | Will fail - JSONL format |
+
+#### 7. **test_one_shot_json.py**
+- **File:** `/home/runner/work/erk/erk/tests/commands/one_shot/test_one_shot_json.py`
+
+| Function Name | Lines | Pattern | Vulnerability |
+|---|---|---|---|
+| `_extract_json` (helper function) | 30-46 | `for line in output.strip().split("\n"):` then `data = json.loads(line)` | Will fail - line-by-line JSON parsing with skip logic |
+
+### Summary by Vulnerability Level
+
+**CRITICAL (Will Break Immediately):**
+- 3 functions in `test_plan_save.py` (lines 257-258, 629-630, 670-671)
+- 5 functions in `test_setup_impl_from_pr.py` (lines 203-204, 295-296, 320-322, 373-374, 644-646)
+- 2 functions in `test_setup_impl.py` (lines 64, 141-143)
+- 1 helper function in `test_ci_verify_autofix.py` (lines 123-126) used by multiple tests
+- 1 helper function in `test_one_shot_json.py` (lines 30-46)
+
+**BORDERLINE (Depends on Output Format):**
+- `test_get_learn_sessions.py` line 569 - joins lines with `\n`, may work if output is still valid JSON when joined, but fragile
+
+**SAFE (Entire Output as JSON):**
+- Most functions in `test_get_learn_sessions.py` that use `json.loads(result.output)` directly
+
+### Key Pattern to Look For
+
+The breaking patterns all rely on **single-line JSON detection**:
+1. `line.startswith("{")` to identify JSON lines
+2. Splitting by `\n` and processing each line independently
+3. Assuming first/last JSON-starting line is a complete object
+
+When JSON becomes pretty-printed across multiple lines, these patterns will fail because:
+- The opening `{` is on line 1, but content spans lines 1-N
+- Each intermediate line won't start with `{`
+- `json.loads()` will fail on incomplete JSON objects</assistant>
+  <usage input_tokens="40" cache_creation_input_tokens="831" cache_read_input_tokens="47163" cache_creation="{'ephemeral_5m_input_tokens': 831, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>
