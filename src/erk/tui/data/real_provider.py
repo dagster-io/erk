@@ -323,6 +323,7 @@ class RealPlanDataProvider(PlanDataProvider):
                 branch_name = run.branch
             else:
                 branch_name = "-"
+            branch = branch_name
             if len(branch_name) > _MAX_BRANCH_LENGTH:
                 branch_name = branch_name[: _MAX_BRANCH_LENGTH - 3] + "..."
             branch_display = branch_name
@@ -346,6 +347,7 @@ class RealPlanDataProvider(PlanDataProvider):
                     created_at=run.created_at,
                     checks_display=checks_display,
                     run_id_display=run_id_display,
+                    branch=branch,
                 )
             )
         return rows

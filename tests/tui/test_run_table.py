@@ -93,7 +93,7 @@ class TestRunDataTableRowValues:
         table = RunDataTable()
         row = make_run_row("12345")
         values = table._row_to_values(row)
-        # Should be: run_id, status, submitted, workflow, pr, title, chks
+        # Should be: run_id, status, submitted, workflow, pr, branch, chks
         assert len(values) == 7
         # run_id should be linkified
         assert "12345" in values[0]
@@ -102,7 +102,7 @@ class TestRunDataTableRowValues:
         assert values[2] == "03-09 14:30"
         assert values[3] == "plan-implement"
         assert values[4] == "-"  # no PR
-        assert values[5] == "-"  # no title
+        assert values[5] == "-"  # no branch
         assert values[6] == "-"  # no checks
 
     def test_row_to_values_with_pr(self) -> None:
@@ -118,6 +118,7 @@ class TestRunDataTableRowValues:
         # PR cell should be linkified
         assert "[link=" in values[4]
         assert "#42" in values[4]
+        assert values[5] == "-"  # branch
 
     def test_row_to_values_no_run_url(self) -> None:
         """_row_to_values doesn't linkify run-id when no URL."""
@@ -141,6 +142,7 @@ class TestRunDataTableRowValues:
             created_at=None,
             checks_display="-",
             run_id_display="12345",
+            branch="-",
         )
         values = table._row_to_values(row_no_url)
         assert values[0] == "12345"

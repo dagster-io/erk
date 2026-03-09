@@ -80,6 +80,7 @@ class FakeLocalGitHub(LocalGitHub):
         comments_by_id: dict[int, str] | None = None,
         time: Time | None = None,
         add_label_errors: dict[str, str] | None = None,
+        pr_head_branches: dict[int, str] | None = None,
     ) -> None:
         """Create FakeLocalGitHub with pre-configured state.
 
@@ -194,6 +195,7 @@ class FakeLocalGitHub(LocalGitHub):
         self._ci_summary_logs = ci_summary_logs or {}
         self._comments_by_id = comments_by_id or {}
         self._add_label_errors = add_label_errors or {}
+        self._pr_head_branches = pr_head_branches or {}
 
     @property
     def issues(self) -> GitHubIssues:
@@ -476,6 +478,20 @@ class FakeLocalGitHub(LocalGitHub):
         for plan_num in plan_numbers:
             if plan_num in self._pr_plan_linkages:
                 result[plan_num] = self._pr_plan_linkages[plan_num]
+        return result
+
+    def get_pr_head_branches(
+        self, location: GitHubRepoLocation, pr_numbers: list[int]
+    ) -> dict[int, str]:
+        """Get head branch names for PRs (returns from pre-configured data)."""
+        result: dict[int, str] = {}
+        for pr_num in pr_numbers:
+            # Check explicit pr_head_branches first
+            if pr_num in self._pr_head_branches:
+                result[pr_num] = self._pr_head_branches[pr_num]
+            # Then check pr_details (keyed by PR number)
+            elif pr_num in self._pr_details:
+                result[pr_num] = self._pr_details[pr_num].head_ref_name
         return result
 
     def get_workflow_runs_by_branches(
