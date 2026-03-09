@@ -49,6 +49,7 @@ def sync_cmd(ctx: click.Context, force: bool, dry_run: bool) -> None:
         installed_capabilities=load_installed_capabilities(project_dir),
         sync_capabilities=not dry_run,
         backend="claude",
+        skip_skills=False,
     )
 
     result = sync_artifacts(project_dir, force, config=config)

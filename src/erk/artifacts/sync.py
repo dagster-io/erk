@@ -51,12 +51,14 @@ class ArtifactSyncConfig:
     installed_capabilities: frozenset[str]
     sync_capabilities: bool  # False in tests to avoid capability install overwriting test fixtures
     backend: AgentBackend
+    skip_skills: bool
 
 
 def create_artifact_sync_config(
     project_dir: Path,
     *,
     backend: AgentBackend,
+    skip_skills: bool,
 ) -> ArtifactSyncConfig:
     """Create config with real values for production use."""
     return ArtifactSyncConfig(
@@ -64,6 +66,7 @@ def create_artifact_sync_config(
         installed_capabilities=load_installed_capabilities(project_dir),
         sync_capabilities=True,
         backend=backend,
+        skip_skills=skip_skills,
     )
 
 
@@ -529,6 +532,7 @@ def _compute_source_artifact_state(
     project_dir: Path,
     *,
     package: ErkPackageInfo,
+    skip_skills: bool,
 ) -> list[SyncedArtifact]:
     """Compute artifact state from source (for erk repo dogfooding).
 
@@ -538,10 +542,11 @@ def _compute_source_artifact_state(
 
     artifacts: list[SyncedArtifact] = []
 
-    # Hash directory-based skills
-    skills_dir = package.bundled_claude_dir / "skills"
-    skill_names = _get_bundled_by_type("skill", installed_capabilities=None)
-    artifacts.extend(_hash_directory_artifacts(skills_dir, skill_names, "skills"))
+    # Hash directory-based skills (skip when npx skills handles installation)
+    if not skip_skills:
+        skills_dir = package.bundled_claude_dir / "skills"
+        skill_names = _get_bundled_by_type("skill", installed_capabilities=None)
+        artifacts.extend(_hash_directory_artifacts(skills_dir, skill_names, "skills"))
 
     # Hash agents (supports both directory-based and single-file)
     agents_dir = package.bundled_claude_dir / "agents"
@@ -723,7 +728,9 @@ def sync_artifacts(
 
     # In erk repo: skip copying but still save state for dogfooding
     if config.package.in_erk_repo:
-        all_synced = _compute_source_artifact_state(project_dir, package=config.package)
+        all_synced = _compute_source_artifact_state(
+            project_dir, package=config.package, skip_skills=config.skip_skills
+        )
         files: dict[str, ArtifactFileState] = {}
         for artifact in all_synced:
             files[artifact.key] = ArtifactFileState(
@@ -759,15 +766,16 @@ def sync_artifacts(
     total_copied = 0
     all_synced: list[SyncedArtifact] = []
 
-    # Sync directory-based skills
-    count, synced = _sync_directory_artifacts(
-        config.package.bundled_claude_dir / "skills",
-        target_claude_dir / "skills",
-        _get_bundled_by_type("skill", installed_capabilities=config.installed_capabilities),
-        "skills",
-    )
-    total_copied += count
-    all_synced.extend(synced)
+    # Sync directory-based skills (skip when npx skills handles installation)
+    if not config.skip_skills:
+        count, synced = _sync_directory_artifacts(
+            config.package.bundled_claude_dir / "skills",
+            target_claude_dir / "skills",
+            _get_bundled_by_type("skill", installed_capabilities=config.installed_capabilities),
+            "skills",
+        )
+        total_copied += count
+        all_synced.extend(synced)
 
     # Sync agents (supports both directory-based and single-file)
     agent_names = _get_bundled_by_type(

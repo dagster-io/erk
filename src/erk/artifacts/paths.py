@@ -111,6 +111,22 @@ def get_bundled_github_dir() -> Path:
     return erk_package_dir / "data" / "github"
 
 
+def get_skills_source_path() -> Path | None:
+    """Get the erk repo root for use as a skills CLI source.
+
+    For editable installs, returns the erk repo root directory (which
+    contains skills.json for the skills CLI). For wheel installs, the
+    skills source is not available locally so returns None.
+
+    Returns:
+        Path to erk repo root if editable install, None for wheel installs.
+    """
+    if not _is_editable_install():
+        return None
+    # Editable: erk package is at src/erk/, repo root is ../..
+    return _get_erk_package_dir().parent.parent
+
+
 @dataclass(frozen=True)
 class ErkPackageInfo:
     """Consolidated erk package installation info.
