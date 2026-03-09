@@ -12,24 +12,24 @@ description: Five-layer testing approach and test placement decisions
 This skill uses a **defense-in-depth testing strategy** with five layers for Python applications:
 
 ```
-┌─────────────────────────────────────────┐
-│  Layer 5: Business Logic Integration Tests (5%)  │  ← Smoke tests over real system
-├─────────────────────────────────────────┤
-│  Layer 4: Business Logic Tests (70%)   │  ← Tests over fakes (MOST TESTS)
-├─────────────────────────────────────────┤
-│  Layer 3: Pure Unit Tests (10%)        │  ← Zero dependencies, isolated testing
-├─────────────────────────────────────────┤
-│  Layer 2: Integration Sanity Tests (10%)│  ← Fast validation with mocking
-├─────────────────────────────────────────┤
-│  Layer 1: Fake Infrastructure Tests (5%)│  ← Verify test doubles work
-└─────────────────────────────────────────┘
+┌─────────────────────────────────────────────────┐
+│  Layer 5 "smoke": Business Logic Integration Tests (5%)  │  ← Smoke tests over real system
+├─────────────────────────────────────────────────┤
+│  Layer 4 "logic": Business Logic Tests (70%)             │  ← Tests over fakes (MOST TESTS)
+├─────────────────────────────────────────────────┤
+│  Layer 3 "pure": Pure Unit Tests (10%)                   │  ← Zero dependencies, isolated testing
+├─────────────────────────────────────────────────┤
+│  Layer 2 "real-sanity": Integration Sanity Tests (10%)   │  ← Fast validation with mocking
+├─────────────────────────────────────────────────┤
+│  Layer 1 "fake-check": Fake Infrastructure Tests (5%)    │  ← Verify test doubles work
+└─────────────────────────────────────────────────┘
 ```
 
 **Philosophy**: Test business logic extensively over fast in-memory fakes. Use real implementations sparingly for integration validation.
 
-**Test distribution guidance**: Aim for 70% Layer 4, 10% Layer 3, 10% Layer 2, 5% Layer 5. Layer 1 tests grow as needed when adding/changing fakes.
+**Test distribution guidance**: Aim for 70% Layer 4 "logic", 10% Layer 3 "pure", 10% Layer 2 "real-sanity", 5% Layer 5 "smoke". Layer 1 "fake-check" tests grow as needed when adding/changing fakes.
 
-## Layer 1: Unit Tests of Fakes
+## Layer 1 "fake-check": Unit Tests of Fakes
 
 **Purpose**: Verify test infrastructure is reliable.
 
@@ -75,7 +75,7 @@ def test_fake_database_tracks_queries(tmp_path: Path) -> None:
 - `tests/unit/fakes/test_fake_cache.py` - Tests of FakeCache
 - `tests/unit/fakes/test_fake_message_queue.py` - Tests of FakeMessageQueue
 
-## Layer 2: Integration Sanity Tests (with Mocking)
+## Layer 2 "real-sanity": Integration Sanity Tests (with Mocking)
 
 **Purpose**: Quick validation of real implementations without slow I/O. Catch syntax errors and basic issues.
 
@@ -128,7 +128,7 @@ def test_real_database_executes_correct_query(monkeypatch: pytest.MonkeyPatch) -
 - `tests/integration/test_real_database.py` - Tests of RealDatabaseAdapter with mocking
 - `tests/integration/test_real_api_client.py` - Tests of RealApiClient with mocked HTTP
 
-## Layer 3: Pure Unit Tests
+## Layer 3 "pure": Pure Unit Tests
 
 **Purpose**: Test isolated utilities, helpers, and pure functions with zero dependencies.
 
@@ -172,7 +172,7 @@ def test_calculate_percentage() -> None:
 
 ### Key Characteristics
 
-- **Zero imports of Fake\* classes** - if you import a fake, this is Layer 4, not Layer 3
+- **Zero imports of Fake\* classes** - if you import a fake, this is Layer 4 "logic", not Layer 3 "pure"
 - **No mocking** - no `mock.patch`, no `monkeypatch`
 - **No external state** - no filesystem, database, network, subprocess
 - **Pure logic only** - string manipulation, parsing, calculations, data structure operations
@@ -188,10 +188,10 @@ def test_calculate_percentage() -> None:
 
 ### What NOT to Test Here
 
-- ❌ Code that uses fakes → That's Layer 4
-- ❌ Code that makes subprocess calls → That's Layer 2 or 5
-- ❌ Code that reads/writes files → That's Layer 2 or 5
-- ❌ Code that hits databases/APIs → That's Layer 2 or 5
+- ❌ Code that uses fakes → That's Layer 4 "logic"
+- ❌ Code that makes subprocess calls → That's Layer 2 "real-sanity" or 5 "smoke"
+- ❌ Code that reads/writes files → That's Layer 2 "real-sanity" or 5 "smoke"
+- ❌ Code that hits databases/APIs → That's Layer 2 "real-sanity" or 5 "smoke"
 
 ### Performance
 
@@ -204,7 +204,7 @@ Pure unit tests are the **fastest tests possible**. They run in microseconds to 
 - `tests/unit/test_validators.py` - Input validation logic
 - `tests/unit/test_calculations.py` - Business calculation logic
 
-## Layer 4: Business Logic Tests over Fakes (MAJORITY)
+## Layer 4 "logic": Business Logic Tests over Fakes (MAJORITY)
 
 **Purpose**: Test application logic extensively with fast in-memory fakes.
 
@@ -272,7 +272,7 @@ Tests over fakes run in **milliseconds**. A typical test suite of 100+ tests run
 - `tests/unit/models/test_pricing.py` - Domain model tests
 - `tests/commands/test_cli.py` - CLI command tests with CliRunner
 
-## Layer 5: Business Logic Integration Tests
+## Layer 5 "smoke": Business Logic Integration Tests
 
 **Purpose**: Smoke tests over real system to catch integration issues.
 
@@ -329,10 +329,10 @@ def test_user_registration_e2e(test_database_url: str) -> None:
 
 ### When NOT to Use Integration Tests
 
-- ❌ Testing business logic (use Layer 4 instead)
-- ❌ Testing error handling (use Layer 4 with fakes configured for errors)
-- ❌ Testing calculations or validation (use Layer 3 for pure logic, Layer 4 for logic with dependencies)
-- ❌ Rapid iteration during development (use Layer 3 or Layer 4)
+- ❌ Testing business logic (use Layer 4 "logic" instead)
+- ❌ Testing error handling (use Layer 4 "logic" with fakes configured for errors)
+- ❌ Testing calculations or validation (use Layer 3 "pure" for pure logic, Layer 4 "logic" for logic with dependencies)
+- ❌ Rapid iteration during development (use Layer 3 "pure" or Layer 4 "logic")
 
 Use integration tests as **final validation**, not primary testing strategy.
 
@@ -342,37 +342,37 @@ Use integration tests as **final validation**, not primary testing strategy.
 ┌─ I need to test...
 │
 ├─ A NEW FEATURE or BUG FIX WITH EXTERNAL DEPENDENCIES
-│  └─> Layer 4: tests/unit/services/ or tests/unit/ (over fakes) ← START HERE FOR BUSINESS LOGIC
+│  └─> Layer 4 "logic": tests/unit/services/ or tests/unit/ (over fakes) ← START HERE
 │
 ├─ A PURE UTILITY/HELPER WITH NO DEPENDENCIES
-│  └─> Layer 3: tests/unit/ (pure unit tests, no fakes/mocks)
+│  └─> Layer 3 "pure": tests/unit/ (pure unit tests, no fakes/mocks)
 │
 ├─ A FAKE IMPLEMENTATION (test infrastructure)
-│  └─> Layer 1: tests/unit/fakes/test_fake_*.py
+│  └─> Layer 1 "fake-check": tests/unit/fakes/test_fake_*.py
 │
 ├─ A REAL ADAPTER IMPLEMENTATION (code coverage with mocks)
-│  └─> Layer 2: tests/integration/test_real_*.py
+│  └─> Layer 2 "real-sanity": tests/integration/test_real_*.py
 │
 └─ CRITICAL USER WORKFLOW (smoke test)
-   └─> Layer 5: tests/e2e/ (integration tests, sparingly)
+   └─> Layer 5 "smoke": tests/e2e/ (integration tests, sparingly)
 ```
 
 **Default**:
 
-- For business logic with dependencies → Layer 4 (tests over fakes)
-- For pure utilities with no dependencies → Layer 3 (pure unit tests)
+- For business logic with dependencies → Layer 4 "logic" (tests over fakes)
+- For pure utilities with no dependencies → Layer 3 "pure" (pure unit tests)
 
 ## Test Distribution Example
 
 For a typical feature (e.g., "add payment processing"):
 
-- **1-2 fake tests** (Layer 1): Verify `FakePaymentGateway.charge()` works
-- **1-2 sanity tests** (Layer 2): Verify `RealPaymentGateway.charge()` calls correct API
-- **2-3 pure unit tests** (Layer 3): Test payment amount formatting, currency conversion logic
+- **1-2 fake tests** (Layer 1 "fake-check"): Verify `FakePaymentGateway.charge()` works
+- **1-2 sanity tests** (Layer 2 "real-sanity"): Verify `RealPaymentGateway.charge()` calls correct API
+- **2-3 pure unit tests** (Layer 3 "pure"): Test payment amount formatting, currency conversion logic
   - `format_currency(1234.56, "USD")` → `"$1,234.56"`
   - `convert_currency(100, "USD", "EUR")` → calculation logic
   - `validate_card_number("4111...")` → Luhn algorithm check
-- **10-12 business logic tests** (Layer 4): Test payment flow over fakes
+- **10-12 business logic tests** (Layer 4 "logic"): Test payment flow over fakes
   - Successful payment
   - Insufficient funds
   - Invalid card
@@ -381,9 +381,9 @@ For a typical feature (e.g., "add payment processing"):
   - Refund processing
   - Tax calculation
   - Receipt generation
-- **1 integration test** (Layer 5): Smoke test entire payment flow with test payment gateway
+- **1 integration test** (Layer 5 "smoke"): Smoke test entire payment flow with test payment gateway
 
-**Total**: ~20 tests, with 70% over fakes (Layer 4), 10% pure unit (Layer 3), 10% sanity (Layer 2), 5% integration (Layer 5), 5% fake tests (Layer 1).
+**Total**: ~20 tests, with 70% over fakes (Layer 4 "logic"), 10% pure unit (Layer 3 "pure"), 10% sanity (Layer 2 "real-sanity"), 5% integration (Layer 5 "smoke"), 5% fake tests (Layer 1 "fake-check").
 
 ## Classifying Existing Tests
 
@@ -396,13 +396,13 @@ Use this flowchart to classify existing tests into the correct layer:
 ```
 Does the test use ANY external dependencies? (files, git, network, etc.)
 ├─ NO → Is it testing a fake implementation itself?
-│  ├─ YES → Layer 1: Fake Infrastructure Test
-│  └─ NO → Layer 3: Pure Unit Test
+│  ├─ YES → Layer 1 "fake-check": Fake Infrastructure Test
+│  └─ NO → Layer 3 "pure": Pure Unit Test
 └─ YES → Does it use real implementations?
-   ├─ NO (uses fakes) → Layer 4: Business Logic Test
+   ├─ NO (uses fakes) → Layer 4 "logic": Business Logic Test
    └─ YES → Does it mock the I/O operations?
-      ├─ YES → Layer 2: Integration Sanity Test
-      └─ NO (real I/O) → Layer 5: Business Logic Integration Test
+      ├─ YES → Layer 2 "real-sanity": Integration Sanity Test
+      └─ NO (real I/O) → Layer 5 "smoke": Business Logic Integration Test
 ```
 
 ### Quick Classification Guide
@@ -410,24 +410,24 @@ Does the test use ANY external dependencies? (files, git, network, etc.)
 **Ask these questions in order:**
 
 1. **Does the test import any Fake\* classes?**
-   - YES → Layer 4 (Business Logic Test)
+   - YES → Layer 4 "logic" (Business Logic Test)
    - NO → Continue to question 2
 
 2. **Does the test use mocking (mock.patch, monkeypatch)?**
-   - YES → Layer 2 (Integration Sanity Test)
+   - YES → Layer 2 "real-sanity" (Integration Sanity Test)
    - NO → Continue to question 3
 
 3. **Does the test make real external calls (subprocess, filesystem, network)?**
-   - YES → Layer 5 (Business Logic Integration Test)
+   - YES → Layer 5 "smoke" (Business Logic Integration Test)
    - NO → Continue to question 4
 
 4. **Is the test testing a Fake implementation itself?**
-   - YES → Layer 1 (Fake Infrastructure Test)
-   - NO → Layer 3 (Pure Unit Test)
+   - YES → Layer 1 "fake-check" (Fake Infrastructure Test)
+   - NO → Layer 3 "pure" (Pure Unit Test)
 
 ### Common Patterns and Their Layer Assignments
 
-**Layer 1 patterns:**
+**Layer 1 "fake-check" patterns:**
 
 ```python
 def test_fake_git_tracks_branches():
@@ -436,7 +436,7 @@ def test_fake_git_tracks_branches():
     assert "feature" in fake.branches  # Checking fake's internal state
 ```
 
-**Layer 2 patterns:**
+**Layer 2 "real-sanity" patterns:**
 
 ```python
 def test_real_git_create_branch(monkeypatch):
@@ -450,7 +450,7 @@ def test_real_git_create_branch(monkeypatch):
     mock_run.assert_called_once()
 ```
 
-**Layer 3 patterns:**
+**Layer 3 "pure" patterns:**
 
 ```python
 def test_sanitize_branch_name():
@@ -459,7 +459,7 @@ def test_sanitize_branch_name():
     assert result == "feat-foo"
 ```
 
-**Layer 4 patterns:**
+**Layer 4 "logic" patterns:**
 
 ```python
 def test_create_worktree_command():
@@ -469,7 +469,7 @@ def test_create_worktree_command():
     assert "feature" in fake_git.worktrees
 ```
 
-**Layer 5 patterns:**
+**Layer 5 "smoke" patterns:**
 
 ```python
 def test_complete_pr_workflow(tmp_path):
@@ -483,7 +483,7 @@ def test_complete_pr_workflow(tmp_path):
 
 **Scenario 1: Test uses both fakes and real I/O**
 
-- **Classification**: Layer 4 (Business Logic Test)
+- **Classification**: Layer 4 "logic" (Business Logic Test)
 - **Recommendation**: Consider refactoring to isolate the I/O behind an integration interface
 
 **Scenario 2: Test has minimal logic, mostly setup**
@@ -493,12 +493,12 @@ def test_complete_pr_workflow(tmp_path):
 
 **Scenario 3: Test mocks at multiple levels**
 
-- **Classification**: Layer 2 (Integration Sanity Test) if mocking real implementation
+- **Classification**: Layer 2 "real-sanity" (Integration Sanity Test) if mocking real implementation
 - **Recommendation**: Simplify mocking strategy if possible
 
 **Scenario 4: Test is very slow but uses fakes**
 
-- **Classification**: Still Layer 4, but investigate performance issue
+- **Classification**: Still Layer 4 "logic", but investigate performance issue
 - **Recommendation**: Profile the test to find the bottleneck
 
 ### Migration Guidance

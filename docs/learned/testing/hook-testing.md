@@ -25,8 +25,8 @@ This silent-failure property drives every architectural decision below.
 
 All erk hooks follow the same structural pattern: pure functions for logic, a thin orchestration entry point for I/O. This isn't arbitrary — it exists because hook logic is complex (nested JSON parsing, capability checks, marker file state machines) but the I/O surface is tiny (stdin read, click.echo, file existence checks). Separating them means:
 
-- **Pure functions** test at Layer 3 (unit) with zero dependencies — no tmp_path, no CliRunner, no mocking. These cover the combinatorial edge cases that would be painful to set up through the full pipeline.
-- **Integration entry point** tests at Layer 4 with CliRunner and `ErkContext.for_test()`. These verify the orchestration wiring — that the right pure functions are called in the right order with the right I/O.
+- **Pure functions** test at Layer 3 "pure" (unit) with zero dependencies — no tmp_path, no CliRunner, no mocking. These cover the combinatorial edge cases that would be painful to set up through the full pipeline.
+- **Integration entry point** tests at Layer 4 "logic" with CliRunner and `ErkContext.for_test()`. These verify the orchestration wiring — that the right pure functions are called in the right order with the right I/O.
 
 <!-- Source: src/erk/cli/commands/exec/scripts/pre_tool_use_hook.py, extract_file_path_from_stdin -->
 <!-- Source: src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py, determine_exit_action -->

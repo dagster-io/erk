@@ -58,7 +58,7 @@ def test_my_command() -> None:
 
 This pattern is **mandatory** for testing erk CLI commands because:
 
-1. **Layer 4 testing** - Tests business logic over fakes (70% of tests should be Layer 4)
+1. **Layer 4 "logic" testing** - Tests business logic over fakes (70% of tests should be Layer 4 "logic")
 2. **No subprocess calls** - Uses in-memory fakes instead of real git/gh/gt commands
 3. **Fast tests** - Completes instantly without external dependencies
 4. **Clear test isolation** - Each test has its own independent fake state

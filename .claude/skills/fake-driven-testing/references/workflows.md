@@ -15,9 +15,9 @@ This document provides concrete workflows for common testing scenarios in Python
 
 **Test-first workflow** (TDD is encouraged):
 
-**Note**: If your feature includes pure utility functions with no dependencies (string manipulation, parsing, calculations), write those as Layer 3 pure unit tests in `tests/unit/test_*.py`. For business logic with dependencies, use Layer 4 tests over fakes as shown below.
+**Note**: If your feature includes pure utility functions with no dependencies (string manipulation, parsing, calculations), write those as Layer 3 "pure" unit tests in `tests/unit/test_*.py`. For business logic with dependencies, use Layer 4 "logic" tests over fakes as shown below.
 
-### Step 1: Write Test Over Fakes (Layer 4)
+### Step 1: Write Test Over Fakes (Layer 4 "logic")
 
 **Location**: `tests/unit/services/test_my_feature.py` or `tests/unit/test_my_logic.py`
 
