@@ -1,4 +1,10 @@
 {
   "provider": "github-draft-pr",
-  "title": "Fix: Incremental dispatch does not update plan-header dispatch metadata"
+  "plan_id": "9047",
+  "url": "https://github.com/dagster-io/erk/pull/9047",
+  "created_at": "2026-03-09T07:44:55.912263",
+  "synced_at": "2026-03-09T07:44:55.912263",
+  "labels": [],
+  "objective_id": null,
+  "node_ids": null
 }
