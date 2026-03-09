@@ -38,12 +38,12 @@ Non-zero exit codes raise `RuntimeError` with the stderr message. MCP clients re
 
 Four tools are registered:
 
-| Tool             | Delegates To             | Purpose                                       |
-| ---------------- | ------------------------ | --------------------------------------------- |
-| `plan_list`      | `erk exec dash-data`     | List plans with status, labels, metadata      |
-| `plan_view`      | `erk exec get-plan-info` | View a specific plan's metadata and body      |
-| `one_shot`       | `erk one-shot <prompt>`  | Submit a task for autonomous remote execution |
-| `release_notes`  | `erk release-notes`      | View release notes and changelog              |
+| Tool            | Delegates To             | Purpose                                       |
+| --------------- | ------------------------ | --------------------------------------------- |
+| `plan_list`     | `erk exec dash-data`     | List plans with status, labels, metadata      |
+| `plan_view`     | `erk exec get-plan-info` | View a specific plan's metadata and body      |
+| `one_shot`      | `erk one-shot <prompt>`  | Submit a task for autonomous remote execution |
+| `release_notes` | `erk release-notes`      | View release notes and changelog              |
 
 ### `plan_list(state: str | None = None) -> str`
 
