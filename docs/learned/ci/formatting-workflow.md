@@ -68,7 +68,7 @@ The alternative (auto-formatting on every edit) would introduce ambiguity about 
 ## Integration Points
 
 - **Edit tool behavior**: [Edit Tool Formatting](edit-tool-formatting.md) explains why Edit doesn't auto-format
-- **CI enforcement**: `fix-formatting` mutates markdown/docs/Python formatting early; `format` still verifies Python formatting
+- **CI enforcement**: `fix-formatting` runs in parallel with speculative test jobs. Format-sensitive jobs (`format`, `docs-check`) wait for `fix-formatting`; speculative jobs (`lint`, `ty`, `unit-tests`, `integration-tests`, `erk-mcp-tests`) start immediately and rely on `cancel-in-progress` if fix-formatting pushes changes.
 - **Make targets**: See Makefile:3-14 for formatter command definitions
 
 ## Related Documentation

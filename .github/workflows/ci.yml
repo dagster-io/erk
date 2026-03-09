@@ -53,8 +53,8 @@ jobs:
         run: make format-check
 
   lint:
-    needs: [check-submission, fix-formatting]
-    if: github.event.pull_request.draft != true && needs.check-submission.outputs.skip == 'false' && needs.fix-formatting.outputs.pushed != 'true'
+    needs: [check-submission]
+    if: github.event.pull_request.draft != true && needs.check-submission.outputs.skip == 'false'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -136,8 +136,8 @@ jobs:
 
   # === Type/Test Checks (parallel) ===
   ty:
-    needs: [check-submission, fix-formatting]
-    if: github.event.pull_request.draft != true && needs.check-submission.outputs.skip == 'false' && needs.fix-formatting.outputs.pushed != 'true'
+    needs: [check-submission]
+    if: github.event.pull_request.draft != true && needs.check-submission.outputs.skip == 'false'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -147,8 +147,8 @@ jobs:
         run: make ty
 
   unit-tests:
-    needs: [check-submission, fix-formatting]
-    if: github.event.pull_request.draft != true && needs.check-submission.outputs.skip == 'false' && needs.fix-formatting.outputs.pushed != 'true'
+    needs: [check-submission]
+    if: github.event.pull_request.draft != true && needs.check-submission.outputs.skip == 'false'
     runs-on: ubuntu-latest
     timeout-minutes: 45
     strategy:
@@ -167,8 +167,8 @@ jobs:
         run: make test
 
   integration-tests:
-    needs: [check-submission, fix-formatting]
-    if: github.event.pull_request.draft != true && needs.check-submission.outputs.skip == 'false' && needs.fix-formatting.outputs.pushed != 'true'
+    needs: [check-submission]
+    if: github.event.pull_request.draft != true && needs.check-submission.outputs.skip == 'false'
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
@@ -180,8 +180,8 @@ jobs:
         run: make test-integration
 
   erk-mcp-tests:
-    needs: [check-submission, fix-formatting]
-    if: github.event.pull_request.draft != true && needs.check-submission.outputs.skip == 'false' && needs.fix-formatting.outputs.pushed != 'true'
+    needs: [check-submission]
+    if: github.event.pull_request.draft != true && needs.check-submission.outputs.skip == 'false'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
