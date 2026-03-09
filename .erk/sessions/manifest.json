@@ -5,17 +5,19 @@
     {
       "session_id": "a04fcac1-6453-4fde-988a-efb8b2fd673e",
       "stage": "impl",
-      "source": "local",
-      "uploaded_at": "2026-03-09T12:01:53.590912+00:00",
+      "source": "remote",
+      "uploaded_at": "2026-03-09T12:04:40.580010+00:00",
       "files": [
         "impl-a04fcac1-6453-4fde-988a-efb8b2fd673e-a04fcac1-6453-4fde-988a-efb8b2fd673e-part1.xml",
         "impl-a04fcac1-6453-4fde-988a-efb8b2fd673e-a04fcac1-6453-4fde-988a-efb8b2fd673e-part2.xml",
-        "impl-a04fcac1-6453-4fde-988a-efb8b2fd673e-a04fcac1-6453-4fde-988a-efb8b2fd673e-part3.xml"
+        "impl-a04fcac1-6453-4fde-988a-efb8b2fd673e-a04fcac1-6453-4fde-988a-efb8b2fd673e-part3.xml",
+        "impl-a04fcac1-6453-4fde-988a-efb8b2fd673e-a04fcac1-6453-4fde-988a-efb8b2fd673e-part4.xml",
+        "impl-a04fcac1-6453-4fde-988a-efb8b2fd673e-a04fcac1-6453-4fde-988a-efb8b2fd673e-part5.xml"
       ],
       "user_turns": 2,
-      "duration_minutes": 7,
-      "raw_size_kb": 1468,
-      "xml_size_kb": 114,
+      "duration_minutes": 10,
+      "raw_size_kb": 1515,
+      "xml_size_kb": 136,
       "git_branch": "plnd/add-layer-short-names-03-09-0751"
     }
   ]
