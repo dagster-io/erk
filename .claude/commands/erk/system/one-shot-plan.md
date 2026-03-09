@@ -1,0 +1,96 @@
+---
+description: Create a plan from a one-shot prompt, save it as a draft PR, and write results to .erk/impl-context/ (used by CI workflow)
+---
+
+# One-Shot Plan
+
+You are running autonomously in a CI workflow. Your job is to read a prompt, explore the codebase, create a detailed implementation plan, and save it as a draft PR.
+
+**Important:** You are ONLY planning, not implementing. The plan must be self-contained — a separate Claude session will implement it with no access to your exploration context.
+
+## Step 1: Read the Prompt
+
+Read `.erk/impl-context/prompt.md` to understand what you need to do.
+
+## Step 2: Read Objective Context (if present)
+
+If the `$OBJECTIVE_ISSUE` environment variable is set (non-empty), this plan is for a specific node of an objective. Use `erk exec check-objective $OBJECTIVE_ISSUE` to fetch the full objective context (title, roadmap, progress). The `$NODE_ID` environment variable contains the specific roadmap node ID being planned. Incorporate the objective context into your planning — understand the broader goal and how this node fits into it.
+
+## Step 3: Load Context
+
+Read `AGENTS.md` to understand the project conventions. Follow its documentation-first discovery process: scan `docs/learned/index.md`, grep `docs/learned/` for relevant docs, and load skills as directed by AGENTS.md routing rules.
+
+## Step 4: Explore the Codebase
+
+Use Explore agents and Grep/Glob to understand the relevant areas of the codebase:
+
+- Search for files, patterns, and existing implementations related to the prompt
+- Identify which files need to be created or modified
+- Understand existing architecture and patterns
+- Find relevant tests and test patterns
+
+## Step 5: Write the Plan
+
+Write a comprehensive implementation plan to `.erk/impl-context/plan.md`.
+
+The plan MUST be self-contained for a separate Claude session to implement. Include:
+
+- **Context**: What problem this solves and why
+- **Changes**: Specific files to create/modify with detailed descriptions of what to change
+- **Implementation details**: Code patterns to follow, key decisions, edge cases
+- **Files NOT changing**: Clarify what's out of scope
+- **Verification**: How to verify the implementation works
+
+Follow the planning conventions in `docs/learned/planning/` if available.
+
+## Step 6: Generate Plan Summary
+
+Generate a 2-3 sentence summary of the plan you wrote in Step 5. Focus on WHAT the plan does and WHY. Plain text, no markdown formatting. Store the result in `PLAN_SUMMARY`.
+
+## Step 7: Save Plan to GitHub
+
+Check the `$PLAN_ISSUE_NUMBER` environment variable:
+
+**If `$PLAN_ISSUE_NUMBER` is set (non-empty):** A skeleton plan was pre-created at dispatch time. Update it with the real plan content:
+
+```bash
+erk exec plan-update --plan-number $PLAN_ISSUE_NUMBER --plan-path .erk/impl-context/plan.md --format json --summary="${PLAN_SUMMARY}"
+```
+
+Parse the JSON output. If `success` is not `true`, stop and report the error. Otherwise, use `$PLAN_ISSUE_NUMBER` as the `plan_number`. To get the `title`, extract the first `# ` heading from `.erk/impl-context/plan.md`.
+
+**If `$PLAN_ISSUE_NUMBER` is not set (empty):** Fall back to creating a new draft PR (backwards compatible for direct `erk one-shot` calls without pre-created skeleton):
+
+If the `$OBJECTIVE_ISSUE` environment variable is set (non-empty), create the objective-context marker before saving:
+
+```bash
+erk exec marker create --session-id "${CLAUDE_SESSION_ID}" --associated-objective $OBJECTIVE_ISSUE objective-context
+```
+
+Then run the save command:
+
+```bash
+erk exec plan-save --plan-file .erk/impl-context/plan.md --format json --session-id="${CLAUDE_SESSION_ID}" --created-from-workflow-run-url "$WORKFLOW_RUN_URL"
+```
+
+If the `WORKFLOW_RUN_URL` environment variable is not set, omit the `--created-from-workflow-run-url` flag.
+
+Parse the JSON output. If `success` is not `true`, stop and report the error. Otherwise, extract `plan_number` and `title` from the output.
+
+## Step 8: Write Plan Result
+
+Write the plan result to `.erk/impl-context/plan-result.json` with the following format:
+
+```json
+{"plan_number": <num>, "title": "<title>"}
+```
+
+Use the `plan_number` and `title` extracted from the Step 7 output.
+
+## Important Notes
+
+- This is planning only — do NOT implement any code changes
+- Your outputs are `.erk/impl-context/plan.md` and `.erk/impl-context/plan-result.json`
+- The plan must be detailed enough for another agent to implement without additional context
+- Keep the plan focused on the prompt
+- Never modify CHANGELOG.md
