@@ -2437,23 +2437,25 @@ query {{
         location: GitHubRepoLocation,
         plan_numbers: list[int],
     ) -> tuple[list[IssueInfo], dict[int, list[PullRequestInfo]]]:
-        """Fetch specific issues by number with full PR linkage data.
+        """Fetch plans as PRs with rich fields for TUI display.
 
-        Uses issueOrPullRequest to handle both issues and merged PRs.
+        Queries pullRequest(number: N) directly since plans are PRs,
+        returning all fields needed for branch, checks, and status display.
         """
         if not plan_numbers:
             return ([], {})
 
         repo_id = location.repo_id
-        query = self._build_issues_by_numbers_query(plan_numbers, repo_id)
+        query = self._build_prs_by_numbers_query(plan_numbers, repo_id)
         response = self._execute_batch_pr_query(query, location.root)
-        return self._parse_issues_by_numbers_response(response, repo_id)
+        return self._parse_prs_by_numbers_response(response, repo_id)
 
-    def _build_issues_by_numbers_query(self, plan_numbers: list[int], repo_id: GitHubRepoId) -> str:
-        """Build GraphQL query to fetch specific issues by number.
+    def _build_prs_by_numbers_query(self, plan_numbers: list[int], repo_id: GitHubRepoId) -> str:
+        """Build GraphQL query to fetch plans as PRs with rich fields.
 
-        Uses issueOrPullRequest(number: N) aliases to handle both issues
-        and merged PRs. Includes full issue fields and PR linkage timeline.
+        Uses pullRequest(number: N) directly since plans are PRs.
+        Includes all fields needed for TUI display (checks, mergeable,
+        review threads, branch names).
 
         Args:
             plan_numbers: List of plan/PR numbers to query
@@ -2462,61 +2464,57 @@ query {{
         Returns:
             GraphQL query string
         """
-        issue_queries = []
+        pr_queries = []
         for plan_num in plan_numbers:
-            issue_query = f"""    issue_{plan_num}: issueOrPullRequest(number: {plan_num}) {{
-      ... on Issue {{
-        number
-        title
-        body
+            pr_query = f"""    pr_{plan_num}: pullRequest(number: {plan_num}) {{
+      number
+      title
+      body
+      state
+      url
+      author {{ login }}
+      labels(first: 100) {{ nodes {{ name }} }}
+      assignees(first: 100) {{ nodes {{ login }} }}
+      createdAt
+      updatedAt
+      isDraft
+      headRefName
+      baseRefName
+      statusCheckRollup {{
         state
-        url
-        author {{ login }}
-        labels(first: 100) {{ nodes {{ name }} }}
-        assignees(first: 100) {{ nodes {{ login }} }}
-        createdAt
-        updatedAt
-        timelineItems(itemTypes: [CROSS_REFERENCED_EVENT], first: 20) {{
-          nodes {{
-            ... on CrossReferencedEvent {{
-              ...IssuePRLinkageFields
-            }}
-          }}
+        contexts(last: 1) {{
+          totalCount
+          checkRunCountsByState {{ state count }}
+          statusContextCountsByState {{ state count }}
         }}
       }}
-      ... on PullRequest {{
-        number
-        title
-        body
-        state
-        url
-        author {{ login }}
-        labels(first: 100) {{ nodes {{ name }} }}
-        assignees(first: 100) {{ nodes {{ login }} }}
-        createdAt
-        updatedAt
+      mergeable
+      reviewDecision
+      reviewThreads(first: 100) {{
+        totalCount
+        nodes {{ isResolved }}
       }}
     }}"""
-            issue_queries.append(issue_query)
+            pr_queries.append(pr_query)
 
-        joined_queries = "\n".join(issue_queries)
-        query = f"""{ISSUE_PR_LINKAGE_FRAGMENT}
-
-query {{
+        joined_queries = "\n".join(pr_queries)
+        query = f"""query {{
   repository(owner: "{repo_id.owner}", name: "{repo_id.repo}") {{
 {joined_queries}
   }}
 }}"""
         return query
 
-    def _parse_issues_by_numbers_response(
+    def _parse_prs_by_numbers_response(
         self,
         response: dict[str, Any],
         repo_id: GitHubRepoId,
     ) -> tuple[list[IssueInfo], dict[int, list[PullRequestInfo]]]:
-        """Parse GraphQL response from issues-by-numbers query.
+        """Parse GraphQL response from PRs-by-numbers query.
 
-        Iterates over aliased keys (issue_8070, etc.) and parses each node.
+        Each aliased key (pr_8070, etc.) is a PR node. Creates an IssueInfo
+        (for plan conversion) and a self-referential PullRequestInfo entry
+        with rich fields (checks, mergeable, review threads, branches).
 
         Args:
             response: GraphQL response data
@@ -2531,7 +2529,7 @@ query {{
         repo_data = response.get("data", {}).get("repository", {})
 
         for key, node in repo_data.items():
-            if not key.startswith("issue_") or node is None:
+            if not key.startswith("pr_") or node is None:
                 continue
 
             issue = self._parse_issue_node(node)
@@ -2539,22 +2537,28 @@ query {{
                 continue
             issues.append(issue)
 
-            # Parse PR linkages from timelineItems (only present on Issue type)
-            timeline_items = node.get("timelineItems")
-            if timeline_items is not None:
-                timeline_nodes = timeline_items.get("nodes", [])
-                prs_with_timestamps: list[tuple[PullRequestInfo, str]] = []
+            # Build PullRequestInfo directly from rich PR fields
+            checks_passing, checks_counts = parse_status_rollup(node.get("statusCheckRollup"))
+            has_conflicts = parse_mergeable_status(node.get("mergeable"))
+            review_thread_counts = parse_review_thread_counts(node.get("reviewThreads"))
 
-                for event in timeline_nodes:
-                    if event is None:
-                        continue
-                    result = self._parse_pr_from_timeline_event(event, repo_id)
-                    if result is not None:
-                        prs_with_timestamps.append(result)
-
-                if prs_with_timestamps:
-                    prs_with_timestamps.sort(key=lambda x: x[1], reverse=True)
-                    pr_linkages[issue.number] = [pr for pr, _ in prs_with_timestamps]
+            pr_info = PullRequestInfo(
+                number=issue.number,
+                state=node.get("state", "OPEN"),
+                url=issue.url,
+                is_draft=node.get("isDraft", False),
+                title=issue.title,
+                checks_passing=checks_passing,
+                owner=repo_id.owner,
+                repo=repo_id.repo,
+                has_conflicts=has_conflicts,
+                checks_counts=checks_counts,
+                review_thread_counts=review_thread_counts,
+                head_branch=node.get("headRefName"),
+                review_decision=node.get("reviewDecision"),
+                base_ref_name=node.get("baseRefName"),
+            )
+            pr_linkages[issue.number] = [pr_info]
 
         return (issues, pr_linkages)
 

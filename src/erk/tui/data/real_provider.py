@@ -16,6 +16,7 @@ from erk.tui.data.provider_abc import PlanDataProvider
 from erk.tui.data.types import FetchTimings, PlanFilters, PlanRowData
 from erk.tui.sorting.types import BranchActivity
 from erk_shared.gateway.github.emoji import format_checks_cell, get_pr_status_emoji
+from erk_shared.gateway.github.graphql_queries import GET_WORKFLOW_RUNS_BY_NODE_IDS_QUERY
 from erk_shared.gateway.github.metadata.core import (
     extract_objective_slug,
 )
@@ -26,6 +27,7 @@ from erk_shared.gateway.github.metadata.dependency_graph import (
     compute_graph_summary,
     find_graph_next_node,
 )
+from erk_shared.gateway.github.metadata.plan_header import extract_plan_header_dispatch_info
 from erk_shared.gateway.github.metadata.roadmap import (
     parse_roadmap,
 )
@@ -40,6 +42,7 @@ from erk_shared.gateway.github.metadata.schemas import (
     OBJECTIVE_ISSUE,
     WORKTREE_NAME,
 )
+from erk_shared.gateway.github.pr_data_parsing import parse_workflow_runs_nodes_response
 from erk_shared.gateway.github.types import (
     GitHubRepoId,
     GitHubRepoLocation,
@@ -226,6 +229,27 @@ class RealPlanDataProvider(PlanDataProvider):
         )
 
         plans = [github_issue_to_plan(issue) for issue in issues]
+
+        # Extract dispatch node IDs for workflow run fetching
+        node_id_to_plan_id: dict[str, int] = {}
+        for issue in issues:
+            _, node_id, _ = extract_plan_header_dispatch_info(issue.body)
+            if node_id is not None:
+                node_id_to_plan_id[node_id] = issue.number
+
+        # Batch fetch workflow runs if any plans have dispatch node IDs
+        workflow_runs: dict[int, WorkflowRun] = {}
+        if node_id_to_plan_id:
+            node_ids = list(node_id_to_plan_id.keys())
+            response = self._http_client.graphql(
+                query=GET_WORKFLOW_RUNS_BY_NODE_IDS_QUERY,
+                variables={"nodeIds": node_ids},
+            )
+            runs_by_node_id = parse_workflow_runs_nodes_response(response, node_ids)
+            for nid, run in runs_by_node_id.items():
+                if run is not None and nid in node_id_to_plan_id:
+                    workflow_runs[node_id_to_plan_id[nid]] = run
+
         worktree_by_plan_id = self._build_worktree_mapping()
 
         global_config = self._ctx.global_config
@@ -237,7 +261,7 @@ class RealPlanDataProvider(PlanDataProvider):
                 plan=plan,
                 plan_id=plan_id,
                 pr_linkages=pr_linkages,
-                workflow_run=None,
+                workflow_run=workflow_runs.get(plan_id),
                 worktree_by_plan_id=worktree_by_plan_id,
                 use_graphite=use_graphite,
             )

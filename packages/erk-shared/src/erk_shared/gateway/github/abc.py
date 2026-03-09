@@ -803,11 +803,10 @@ class LocalGitHub(ABC):
         location: GitHubRepoLocation,
         plan_numbers: list[int],
     ) -> tuple[list[IssueInfo], dict[int, list[PullRequestInfo]]]:
-        """Fetch specific issues by number with full PR linkage data.
+        """Fetch plans as PRs with rich fields for TUI display.
 
-        Uses issueOrPullRequest(number: N) to handle both issues and merged PRs.
-        Returns issue data and PR linkages in the same format as
-        get_issues_with_pr_linkages for compatibility.
+        Queries pullRequest(number: N) directly since plans are PRs,
+        returning all fields needed for branch, checks, and status display.
 
         Args:
             location: GitHub repository location (local root + repo identity)
@@ -815,8 +814,8 @@ class LocalGitHub(ABC):
 
         Returns:
             Tuple of (issues, pr_linkages) where:
-            - issues: List of IssueInfo objects for found issues
-            - pr_linkages: Mapping of plan_number -> list of linked PRs
+            - issues: List of IssueInfo objects for plan conversion
+            - pr_linkages: Mapping of plan_number -> list of PullRequestInfo with rich fields
         """
         ...
 
