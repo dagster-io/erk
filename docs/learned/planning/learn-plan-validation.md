@@ -6,7 +6,7 @@ read_when:
   - "debugging learn-on-learn cycle errors"
 tripwires:
   - action: "creating erk-learn plan for an issue that already has erk-learn label"
-    warning: "Validate target issue has erk-plan label, NOT erk-learn. Learn plans analyze implementation plans, not other learn plans (cycle prevention)."
+    warning: "Validate target issue has erk-pr label, NOT erk-learn. Learn plans analyze implementation plans, not other learn plans (cycle prevention)."
 last_audited: "2026-02-16 14:20 PT"
 audit_result: clean
 ---
@@ -15,7 +15,7 @@ audit_result: clean
 
 ## Core Rule: No Learn-on-Learn
 
-Learn plans exist to extract insights from **implementation work** (erk-plan plans). A learn plan must never target another learn plan — this would create documentation cycles where plans endlessly analyze each other instead of analyzing real code changes.
+Learn plans exist to extract insights from **implementation work** (erk-pr plans). A learn plan must never target another learn plan — this would create documentation cycles where plans endlessly analyze each other instead of analyzing real code changes.
 
 The cycle risk is real because the learn pipeline is automated: after a PR lands, the system can automatically create a learn plan. If learn plans could target other learn plans, the pipeline would generate infinite chains (learn A analyzes learn B which analyzes learn A).
 
@@ -43,17 +43,17 @@ Understanding why this validation matters requires understanding the label-based
 
 | Label       | Role                | Direction                                                    |
 | ----------- | ------------------- | ------------------------------------------------------------ |
-| `erk-plan`  | Implementation plan | Looks **forward** — code changes to make                     |
+| `erk-pr`    | Implementation plan | Looks **forward** — code changes to make                     |
 | `erk-learn` | Documentation plan  | Looks **backward** — insights to extract from completed work |
 
-<!-- Source: src/erk/cli/constants.py, ERK_PLAN_LABEL and ERK_LEARN_LABEL -->
+<!-- Source: src/erk/cli/constants.py, ERK_PR_LABEL and ERK_LEARN_LABEL -->
 
 Both labels are defined as constants and used throughout the CLI for label checks, issue creation, and filtering.
 
-The flow is strictly one-directional: `erk-plan` → implement → land PR → `erk-learn` → extract docs → done. Learn plans are terminal nodes in this pipeline, never sources for further learn plans.
+The flow is strictly one-directional: `erk-pr` → implement → land PR → `erk-learn` → extract docs → done. Learn plans are terminal nodes in this pipeline, never sources for further learn plans.
 
 ## Anti-Patterns
 
-**Creating a learn plan that targets another learn plan.** Even if the goal is "meta-analysis of the learn workflow itself," the correct approach is to create an `erk-plan` plan for improving the learn workflow's code, not an `erk-learn` plan analyzing another `erk-learn` plan.
+**Creating a learn plan that targets another learn plan.** Even if the goal is "meta-analysis of the learn workflow itself," the correct approach is to create an `erk-pr` plan for improving the learn workflow's code, not an `erk-learn` plan analyzing another `erk-learn` plan.
 
-**Skipping the label check when adding new learn entry points.** Any new code path that creates or triggers learn plans must check for the `erk-learn` label on the target plan. The validation is intentionally distributed across entry points rather than centralized, so new entry points need their own check.
+**Skipping the label check when adding new learn entry points.** Any new code path that creates or triggers learn plans must check for the `erk-pr` label on the target plan. The validation is intentionally distributed across entry points rather than centralized, so new entry points need their own check.

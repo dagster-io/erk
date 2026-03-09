@@ -305,12 +305,12 @@ def test_merge_rest_graphql_partial_enrichment() -> None:
 def test_merge_rest_graphql_labels_parsed() -> None:
     """REST labels are correctly extracted into PRDetails."""
     repo_id = GitHubRepoId(owner="test-owner", repo="test-repo")
-    rest_items = [_make_rest_pr_item(number=42, labels=["erk-plan", "bug"])]
+    rest_items = [_make_rest_pr_item(number=42, labels=["erk-pr", "bug"])]
     enrichment = {42: _make_graphql_pr_node()}
 
     pr_details_list, _, _ = merge_rest_graphql_pr_data(rest_items, enrichment, repo_id)
 
-    assert pr_details_list[0].labels == ("erk-plan", "bug")
+    assert pr_details_list[0].labels == ("erk-pr", "bug")
 
 
 def test_merge_rest_graphql_timestamps_parsed() -> None:

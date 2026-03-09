@@ -33,10 +33,6 @@ from erk_shared.naming import InvalidObjectiveSlug, validate_objective_slug
 from erk_shared.plan_utils import extract_title_from_plan
 
 # Label configurations
-_LABEL_ERK_PLAN = "erk-plan"
-_LABEL_ERK_PLAN_DESC = "Implementation plan for manual execution"
-_LABEL_ERK_PLAN_COLOR = "0E8A16"
-
 _LABEL_ERK_PR = "erk-pr"
 _LABEL_ERK_PR_DESC = "Plan managed as a draft PR"
 _LABEL_ERK_PR_COLOR = "1D76DB"
@@ -281,13 +277,6 @@ def _ensure_labels_exist(
                     description=_LABEL_ERK_PR_DESC,
                     color=_LABEL_ERK_PR_COLOR,
                 )
-            elif label == _LABEL_ERK_PLAN:
-                github_issues.ensure_label_exists(
-                    repo_root=repo_root,
-                    label=_LABEL_ERK_PLAN,
-                    description=_LABEL_ERK_PLAN_DESC,
-                    color=_LABEL_ERK_PLAN_COLOR,
-                )
             elif label == _LABEL_ERK_LEARN:
                 github_issues.ensure_label_exists(
                     repo_root=repo_root,
@@ -328,7 +317,7 @@ class LabelDefinition:
 def get_erk_label_definitions() -> list[LabelDefinition]:
     """Get all erk label definitions.
 
-    Returns list of LabelDefinition for all erk labels (erk-plan,
+    Returns list of LabelDefinition for all erk labels (erk-pr,
     erk-learn, erk-objective, no-changes). Used by init command to set up
     labels in target issue repositories.
     """
@@ -337,11 +326,6 @@ def get_erk_label_definitions() -> list[LabelDefinition]:
             name=_LABEL_ERK_PR,
             description=_LABEL_ERK_PR_DESC,
             color=_LABEL_ERK_PR_COLOR,
-        ),
-        LabelDefinition(
-            name=_LABEL_ERK_PLAN,
-            description=_LABEL_ERK_PLAN_DESC,
-            color=_LABEL_ERK_PLAN_COLOR,
         ),
         LabelDefinition(
             name=_LABEL_ERK_LEARN,
@@ -374,11 +358,6 @@ def get_required_erk_labels() -> list[LabelDefinition]:
             name=_LABEL_ERK_PR,
             description=_LABEL_ERK_PR_DESC,
             color=_LABEL_ERK_PR_COLOR,
-        ),
-        LabelDefinition(
-            name=_LABEL_ERK_PLAN,
-            description=_LABEL_ERK_PLAN_DESC,
-            color=_LABEL_ERK_PLAN_COLOR,
         ),
         LabelDefinition(
             name=_LABEL_ERK_OBJECTIVE,

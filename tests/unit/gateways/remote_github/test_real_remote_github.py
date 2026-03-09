@@ -198,12 +198,12 @@ def test_update_pull_request_body_patches_correct_endpoint() -> None:
 def test_add_labels_posts_correct_data() -> None:
     remote, http, _ = _make_remote()
 
-    remote.add_labels(owner="o", repo="r", issue_number=42, labels=("erk-pr", "erk-plan"))
+    remote.add_labels(owner="o", repo="r", issue_number=42, labels=("erk-pr",))
 
     req = http.requests[0]
     assert req.method == "POST"
     assert req.endpoint == "repos/o/r/issues/42/labels"
-    assert req.data == {"labels": ["erk-pr", "erk-plan"]}
+    assert req.data == {"labels": ["erk-pr"]}
 
 
 # --- dispatch_workflow ---
@@ -320,7 +320,7 @@ def test_get_issue_returns_parsed_issue() -> None:
             "body": "Issue body",
             "state": "open",
             "html_url": "https://github.com/o/r/issues/42",
-            "labels": [{"name": "erk-plan"}],
+            "labels": [{"name": "erk-pr"}],
             "assignees": [{"login": "alice"}],
             "user": {"login": "bob"},
             "created_at": "2024-01-15T10:00:00Z",
@@ -337,7 +337,7 @@ def test_get_issue_returns_parsed_issue() -> None:
     assert result.title == "Test Issue"
     assert result.body == "Issue body"
     assert result.state == "OPEN"
-    assert result.labels == ["erk-plan"]
+    assert result.labels == ["erk-pr"]
     assert result.assignees == ["alice"]
     assert result.author == "bob"
 
@@ -524,7 +524,7 @@ def test_get_issue_comments_returns_empty_for_no_comments() -> None:
 def test_list_issues_constructs_correct_query() -> None:
     remote, http, _ = _make_remote()
     http.set_list_response(
-        "repos/o/r/issues?state=open&labels=erk-pr,erk-plan&per_page=100",
+        "repos/o/r/issues?state=open&labels=erk-pr&per_page=100",
         response=[
             {
                 "number": 1,
@@ -542,7 +542,7 @@ def test_list_issues_constructs_correct_query() -> None:
     )
 
     result = remote.list_issues(
-        owner="o", repo="r", labels=("erk-pr", "erk-plan"), state="open", limit=None, creator=None
+        owner="o", repo="r", labels=("erk-pr",), state="open", limit=None, creator=None
     )
     assert len(result) == 1
     assert result[0].number == 1
@@ -551,7 +551,7 @@ def test_list_issues_constructs_correct_query() -> None:
 def test_list_issues_skips_pull_requests() -> None:
     remote, http, _ = _make_remote()
     http.set_list_response(
-        "repos/o/r/issues?state=open&labels=erk-plan&per_page=100",
+        "repos/o/r/issues?state=open&labels=erk-pr&per_page=100",
         response=[
             {
                 "number": 1,
@@ -582,7 +582,7 @@ def test_list_issues_skips_pull_requests() -> None:
     )
 
     result = remote.list_issues(
-        owner="o", repo="r", labels=("erk-plan",), state="open", limit=None, creator=None
+        owner="o", repo="r", labels=("erk-pr",), state="open", limit=None, creator=None
     )
     assert len(result) == 1
     assert result[0].number == 1
@@ -591,7 +591,7 @@ def test_list_issues_skips_pull_requests() -> None:
 def test_list_issues_respects_limit() -> None:
     remote, http, _ = _make_remote()
     http.set_list_response(
-        "repos/o/r/issues?state=open&labels=erk-plan&per_page=100",
+        "repos/o/r/issues?state=open&labels=erk-pr&per_page=100",
         response=[
             {
                 "number": i,
@@ -610,7 +610,7 @@ def test_list_issues_respects_limit() -> None:
     )
 
     result = remote.list_issues(
-        owner="o", repo="r", labels=("erk-plan",), state="open", limit=2, creator=None
+        owner="o", repo="r", labels=("erk-pr",), state="open", limit=2, creator=None
     )
     assert len(result) == 2
 
@@ -618,12 +618,12 @@ def test_list_issues_respects_limit() -> None:
 def test_list_issues_includes_creator_param() -> None:
     remote, http, _ = _make_remote()
     http.set_list_response(
-        "repos/o/r/issues?state=open&labels=erk-plan&per_page=100&creator=alice",
+        "repos/o/r/issues?state=open&labels=erk-pr&per_page=100&creator=alice",
         response=[],
     )
 
     result = remote.list_issues(
-        owner="o", repo="r", labels=("erk-plan",), state="open", limit=None, creator="alice"
+        owner="o", repo="r", labels=("erk-pr",), state="open", limit=None, creator="alice"
     )
     assert result == []
 

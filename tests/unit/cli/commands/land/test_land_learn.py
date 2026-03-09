@@ -230,7 +230,7 @@ def test_skips_for_erk_learn_plan(tmp_path: Path) -> None:
         pr_number=100,
         branch="feature",
         title="Learn: some plan",
-        labels=("erk-plan", "erk-learn"),
+        labels=("erk-pr", "erk-learn"),
     )
     fake_issues = FakeGitHubIssues(username="testuser")
     fake_github = FakeLocalGitHub(pr_details={100: pr}, issues_gateway=fake_issues)
@@ -280,9 +280,9 @@ def test_skips_when_no_xml_files_and_no_sessions(
         pr_number=100,
         branch="feature",
         title="Add widgets",
-        labels=("erk-plan",),
+        labels=("erk-pr",),
     )
-    fake_issues = FakeGitHubIssues(username="testuser", labels={"erk-pr", "erk-learn", "erk-plan"})
+    fake_issues = FakeGitHubIssues(username="testuser", labels={"erk-pr", "erk-learn"})
     fake_github = FakeLocalGitHub(pr_details={100: pr}, issues_gateway=fake_issues)
     fake_time = FakeTime()
     plan_store = PlannedPRBackend(fake_github, fake_issues, time=fake_time)
@@ -319,9 +319,9 @@ def test_skips_when_sessions_exist_but_no_xml_extracted(
         pr_number=100,
         branch="feature",
         title="Add widgets",
-        labels=("erk-plan",),
+        labels=("erk-pr",),
     )
-    fake_issues = FakeGitHubIssues(username="testuser", labels={"erk-pr", "erk-learn", "erk-plan"})
+    fake_issues = FakeGitHubIssues(username="testuser", labels={"erk-pr", "erk-learn"})
     fake_github = FakeLocalGitHub(pr_details={100: pr}, issues_gateway=fake_issues)
     fake_time = FakeTime()
     plan_store = PlannedPRBackend(fake_github, fake_issues, time=fake_time)
@@ -383,9 +383,9 @@ def test_creates_pr_and_shows_success(
         pr_number=100,
         branch="feature",
         title="Add widgets",
-        labels=("erk-plan",),
+        labels=("erk-pr",),
     )
-    fake_issues = FakeGitHubIssues(username="testuser", labels={"erk-pr", "erk-learn", "erk-plan"})
+    fake_issues = FakeGitHubIssues(username="testuser", labels={"erk-pr", "erk-learn"})
     fake_github = FakeLocalGitHub(pr_details={100: pr}, issues_gateway=fake_issues)
     fake_time = FakeTime()
     fake_git = FakeGit(trunk_branches={tmp_path: "main"})
@@ -436,9 +436,9 @@ def test_skips_when_no_sessions_discovered(
         pr_number=100,
         branch="feature",
         title="Add widgets",
-        labels=("erk-plan",),
+        labels=("erk-pr",),
     )
-    fake_issues = FakeGitHubIssues(username="testuser", labels={"erk-pr", "erk-learn", "erk-plan"})
+    fake_issues = FakeGitHubIssues(username="testuser", labels={"erk-pr", "erk-learn"})
     fake_github = FakeLocalGitHub(pr_details={100: pr}, issues_gateway=fake_issues)
     fake_time = FakeTime()
     plan_store = PlannedPRBackend(fake_github, fake_issues, time=fake_time)
@@ -1061,9 +1061,9 @@ def test_fetches_from_context_branch_when_local_not_found(
         pr_number=100,
         branch="feature",
         title="Add widgets",
-        labels=("erk-plan",),
+        labels=("erk-pr",),
     )
-    fake_issues = FakeGitHubIssues(username="testuser", labels={"erk-pr", "erk-learn", "erk-plan"})
+    fake_issues = FakeGitHubIssues(username="testuser", labels={"erk-pr", "erk-learn"})
     fake_github = FakeLocalGitHub(pr_details={100: pr}, issues_gateway=fake_issues)
     fake_time = FakeTime()
 
@@ -1141,9 +1141,9 @@ def test_skips_when_context_branch_not_found(
         pr_number=100,
         branch="feature",
         title="Add widgets",
-        labels=("erk-plan",),
+        labels=("erk-pr",),
     )
-    fake_issues = FakeGitHubIssues(username="testuser", labels={"erk-pr", "erk-learn", "erk-plan"})
+    fake_issues = FakeGitHubIssues(username="testuser", labels={"erk-pr", "erk-learn"})
     fake_github = FakeLocalGitHub(pr_details={100: pr}, issues_gateway=fake_issues)
     fake_time = FakeTime()
     # No planned-pr-context branch configured

@@ -28,7 +28,7 @@ def test_add_plan_label_success() -> None:
         repo_root=Path("/repo"),
         title="Test Plan",
         content="Plan body",
-        labels=("erk-plan",),
+        labels=("erk-pr",),
         metadata={"branch_name": "test-branch-label"},
         summary=None,
     )

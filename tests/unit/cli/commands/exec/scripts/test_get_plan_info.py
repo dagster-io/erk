@@ -30,7 +30,7 @@ def _create_backend_with_plan(
         repo_root=Path("/repo"),
         title=title,
         content=content,
-        labels=("erk-plan",),
+        labels=("erk-pr",),
         metadata={"branch_name": "test-branch-info"},
         summary=None,
     )
@@ -62,7 +62,7 @@ def test_get_plan_info_success() -> None:
     assert output["pr_number"] == plan_id
     assert "Test Plan Title" in output["title"]
     assert output["state"] == "OPEN"
-    assert "erk-plan" in output["labels"]
+    assert "erk-pr" in output["labels"]
     assert isinstance(output["url"], str)
     assert output["backend"] == "github-draft-pr"
 

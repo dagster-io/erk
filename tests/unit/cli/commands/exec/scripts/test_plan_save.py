@@ -78,7 +78,7 @@ def test_planned_pr_success_display(tmp_path: Path, monkeypatch: pytest.MonkeyPa
 
     assert result.exit_code == 0, f"Failed: {result.output}"
     assert "PR saved as planned PR" in result.output
-    assert "Title: [erk-plan] Feature Plan" in result.output
+    assert "Title: [erk-pr] Feature Plan" in result.output
     assert "Branch: plnd/" in result.output
     assert "erk br co" in result.output
     assert "plnd/" in result.output  # branch name appears in checkout command
@@ -206,7 +206,7 @@ This plan describes a different feature implementation.
     output2 = json.loads(result2.output)
     assert output2["success"] is True
     assert "skipped_duplicate" not in output2
-    assert output2["title"] == "[erk-plan] Second Plan"
+    assert output2["title"] == "[erk-pr] Second Plan"
 
 
 def test_planned_pr_plan_file_priority(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -229,7 +229,7 @@ def test_planned_pr_plan_file_priority(tmp_path: Path, monkeypatch: pytest.Monke
     assert result.exit_code == 0, f"Failed: {result.output}"
     output = json.loads(result.output)
     assert output["success"] is True
-    assert output["title"] == "[erk-plan] Custom Plan"
+    assert output["title"] == "[erk-pr] Custom Plan"
 
 
 def test_planned_pr_objective_issue_from_marker(

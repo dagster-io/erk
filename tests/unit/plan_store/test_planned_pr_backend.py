@@ -45,7 +45,7 @@ def test_create_plan_requires_branch_name() -> None:
             repo_root=Path("/repo"),
             title="Test Plan",
             content="# Plan",
-            labels=("erk-plan",),
+            labels=("erk-pr",),
             metadata={},
             summary="",
         )
@@ -60,7 +60,7 @@ def test_create_plan_creates_planned_pr() -> None:
         repo_root=Path("/repo"),
         title="Test Plan",
         content="# Plan content",
-        labels=("erk-plan",),
+        labels=("erk-pr",),
         metadata={"branch_name": "test-branch"},
         summary="",
     )
@@ -80,7 +80,7 @@ def test_create_plan_uses_base_ref_name_as_pr_base() -> None:
         repo_root=Path("/repo"),
         title="Test Plan",
         content="# Plan content",
-        labels=("erk-plan",),
+        labels=("erk-pr",),
         metadata={"branch_name": "test-branch", "base_ref_name": "main"},
         summary="",
     )
@@ -97,7 +97,7 @@ def test_create_plan_falls_back_to_master_when_base_ref_name_missing() -> None:
         repo_root=Path("/repo"),
         title="Test Plan",
         content="# Plan content",
-        labels=("erk-plan",),
+        labels=("erk-pr",),
         metadata={"branch_name": "test-branch"},
         summary="",
     )
@@ -114,7 +114,7 @@ def test_create_plan_falls_back_to_master_when_base_ref_name_not_string() -> Non
         repo_root=Path("/repo"),
         title="Test Plan",
         content="# Plan content",
-        labels=("erk-plan",),
+        labels=("erk-pr",),
         metadata={"branch_name": "test-branch", "base_ref_name": 42},
         summary="",
     )
@@ -131,13 +131,13 @@ def test_create_plan_adds_erk_plan_label() -> None:
         repo_root=Path("/repo"),
         title="Test Plan",
         content="# Plan",
-        labels=("erk-plan",),
+        labels=("erk-pr",),
         metadata={"branch_name": "test-branch"},
         summary="",
     )
 
     # Check label was added
-    assert fake_github.has_pr_label(Path("/repo"), int(result.pr_id), "erk-plan")
+    assert fake_github.has_pr_label(Path("/repo"), int(result.pr_id), "erk-pr")
 
 
 def test_create_plan_adds_extra_labels() -> None:
@@ -168,7 +168,7 @@ def test_create_plan_embeds_plan_content_in_pr_body() -> None:
         repo_root=Path("/repo"),
         title="Test Plan",
         content="# Detailed Plan\n\nStep 1: Do things.",
-        labels=("erk-plan",),
+        labels=("erk-pr",),
         metadata={"branch_name": "test-branch"},
         summary="",
     )
@@ -193,7 +193,7 @@ def test_resolve_plan_id_for_branch_finds_created_pr() -> None:
         repo_root=Path("/repo"),
         title="Plan",
         content="Content",
-        labels=("erk-plan",),
+        labels=("erk-pr",),
         metadata={"branch_name": "my-plan-branch"},
         summary="",
     )
@@ -222,7 +222,7 @@ def test_get_plan_for_branch_roundtrip() -> None:
         repo_root=Path("/repo"),
         title="Branch Plan",
         content="Content for branch",
-        labels=("erk-plan",),
+        labels=("erk-pr",),
         metadata={"branch_name": "my-branch"},
         summary="",
     )
@@ -253,7 +253,7 @@ def test_update_plan_content_roundtrip() -> None:
         repo_root=Path("/repo"),
         title="Plan",
         content="Original content",
-        labels=("erk-plan",),
+        labels=("erk-pr",),
         metadata={"branch_name": "test-branch"},
         summary="",
     )
@@ -270,24 +270,24 @@ def test_update_plan_content_roundtrip() -> None:
 # =============================================================================
 
 
-def test_list_plans_includes_only_planned_prs_with_erk_plan_label() -> None:
-    """list_plans only returns draft PRs that have the erk-plan label."""
+def test_list_plans_includes_only_planned_prs_with_erk_pr_title_prefix() -> None:
+    """list_plans only returns draft PRs that have the [erk-pr] title prefix."""
     fake_github = FakeLocalGitHub()
     backend = PlannedPRBackend(fake_github, fake_github.issues, time=FakeTime())
 
-    # Create a plan (draft with erk-plan label)
+    # Create a plan (draft with [erk-pr] title prefix)
     backend.create_plan(
         repo_root=Path("/repo"),
-        title="Real Plan",
+        title="[erk-pr] Real Plan",
         content="Plan content",
-        labels=("erk-plan",),
+        labels=("erk-pr",),
         metadata={"branch_name": "plan-branch"},
         summary="",
     )
 
     plans = backend.list_plans(Path("/repo"), PlanQuery(state=PlanState.OPEN))
     assert len(plans) == 1
-    assert plans[0].title == "Real Plan"
+    assert plans[0].title == "[erk-pr] Real Plan"
 
 
 # =============================================================================
@@ -335,7 +335,7 @@ def test_create_plan_includes_checkout_footer() -> None:
         repo_root=Path("/repo"),
         title="Test Plan",
         content="# Plan content",
-        labels=("erk-plan",),
+        labels=("erk-pr",),
         metadata={"branch_name": "test-branch"},
         summary="",
     )

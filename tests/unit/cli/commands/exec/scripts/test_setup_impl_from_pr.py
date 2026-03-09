@@ -121,7 +121,7 @@ def _make_planned_pr_backend(
         repo_root=tmp_path,
         title="My Plan",
         content="# Plan\n\nImplement something.",
-        labels=("erk-plan",),
+        labels=("erk-pr",),
         metadata={"branch_name": plan_branch},
         summary=None,
     )
@@ -149,7 +149,7 @@ def _make_planned_pr_context(
         repo_root=tmp_path,
         title="My Plan",
         content="# Plan\n\nImplement something.",
-        labels=("erk-plan",),
+        labels=("erk-pr",),
         metadata={"branch_name": plan_branch},
         summary=None,
     )
@@ -260,7 +260,7 @@ def test_planned_pr_plan_skips_checkout_when_impl_exists(tmp_path: Path) -> None
         provider="github",
         plan_id=str(pr_number),
         url=f"https://github.com/test-owner/test-repo/pull/{pr_number}",
-        labels=("erk-plan",),
+        labels=("erk-pr",),
         objective_id=None,
         node_ids=None,
     )
@@ -459,7 +459,7 @@ def _invoke_create_impl_context(
         repo_root=tmp_path,
         title="Test Plan Title",
         content="# Plan\n\nDo the thing.",
-        labels=("erk-plan",),
+        labels=("erk-pr",),
         metadata={"branch_name": plan_branch},
         summary=None,
     )

@@ -35,7 +35,7 @@ Converts a `Plan` to `PRDetails` for the planned-PR backend. Handles both:
 - Bodies with plan-header metadata block (reformats with separator)
 - Plain bodies without metadata (uses directly)
 
-Generates branch names using `f"plan-{plan.plan_identifier}"` and ensures `"erk-plan"` label is present.
+Generates branch names using `f"plan-{plan.plan_identifier}"` and ensures `"erk-pr"` label is present.
 
 ## Convention
 

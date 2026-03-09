@@ -14,10 +14,10 @@ def check_plans_repo_labels(
 ) -> CheckResult:
     """Check that required erk labels exist in the plans repository.
 
-    When plans_repo is configured, issues are created in that repository.
-    This check verifies that required erk labels (erk-plan, erk-objective)
-    exist in the target repository. Excludes erk-extraction which is
-    optional for documentation workflows.
+    When plans_repo is configured, PRs are created in that repository.
+    This check verifies that required erk labels (erk-pr, erk-objective)
+    exist in the target repository. The erk-learn label is optional
+    for documentation workflows.
 
     Args:
         repo_root: Path to the working repository root (for gh CLI context)

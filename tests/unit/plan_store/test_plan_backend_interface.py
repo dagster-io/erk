@@ -49,9 +49,9 @@ def _make_planned_pr_backend_with_plan() -> tuple[PlanBackend, str]:
 
     result = backend.create_plan(
         repo_root=Path("/repo"),
-        title="Existing Plan",
+        title="[erk-pr] Existing Plan",
         content="Plan content",
-        labels=("erk-plan",),
+        labels=("erk-pr",),
         metadata={"branch_name": "existing-plan-branch"},
         summary="",
     )
@@ -93,7 +93,7 @@ def test_create_and_get_plan_roundtrip(plan_backend: PlanBackend) -> None:
         repo_root=Path("/repo"),
         title="Test Plan Title",
         content="# Plan Content\n\nThis is the plan body.",
-        labels=("erk-plan",),
+        labels=("erk-pr",),
         metadata=_create_metadata(plan_backend),
         summary="",
     )
@@ -269,7 +269,7 @@ def test_list_plans_with_limit(plan_backend: PlanBackend) -> None:
             repo_root=Path("/repo"),
             title=f"Plan {i}",
             content=f"Content {i}",
-            labels=("erk-plan",),
+            labels=("erk-pr",),
             metadata=_create_metadata(plan_backend),
             summary="",
         )
@@ -313,7 +313,7 @@ def test_get_metadata_field_returns_none_for_missing_field(plan_backend: PlanBac
         repo_root=Path("/repo"),
         title="Plan for metadata test",
         content="# Test plan",
-        labels=("erk-plan",),
+        labels=("erk-pr",),
         metadata=_create_metadata(plan_backend),
         summary="",
     )
@@ -330,7 +330,7 @@ def test_get_metadata_field_roundtrips_with_update_metadata(
         repo_root=Path("/repo"),
         title="Plan for roundtrip",
         content="# Roundtrip plan",
-        labels=("erk-plan",),
+        labels=("erk-pr",),
         metadata=_create_metadata(plan_backend),
         summary="",
     )
@@ -364,7 +364,7 @@ def test_get_all_metadata_fields_returns_empty_dict_for_no_metadata(
         repo_root=Path("/repo"),
         title="Plan for all-metadata test",
         content="# Test plan",
-        labels=("erk-plan",),
+        labels=("erk-pr",),
         metadata=_create_metadata(plan_backend),
         summary="",
     )
@@ -382,7 +382,7 @@ def test_get_all_metadata_fields_roundtrips_with_update_metadata(
         repo_root=Path("/repo"),
         title="Plan for all-metadata roundtrip",
         content="# Roundtrip plan",
-        labels=("erk-plan",),
+        labels=("erk-pr",),
         metadata=_create_metadata(plan_backend),
         summary="",
     )
@@ -445,7 +445,7 @@ def test_post_event_metadata_only(plan_backend: PlanBackend) -> None:
         repo_root=Path("/repo"),
         title="Plan for event",
         content="# Event plan",
-        labels=("erk-plan",),
+        labels=("erk-pr",),
         metadata=_create_metadata(plan_backend),
         summary="",
     )
@@ -467,7 +467,7 @@ def test_post_event_metadata_and_comment(plan_backend: PlanBackend) -> None:
         repo_root=Path("/repo"),
         title="Plan for event with comment",
         content="# Event plan",
-        labels=("erk-plan",),
+        labels=("erk-pr",),
         metadata=_create_metadata(plan_backend),
         summary="",
     )
@@ -519,7 +519,7 @@ def test_get_comments_returns_preconfigured_comments_planned_pr() -> None:
         repo_root=Path("/repo"),
         title="Test Plan",
         content="# Plan",
-        labels=("erk-plan",),
+        labels=("erk-pr",),
         metadata={"branch_name": "test-branch-comments"},
         summary="",
     )
@@ -568,7 +568,7 @@ def test_find_sessions_for_plan_reads_header_fields(
         repo_root=Path("/repo"),
         title="Session Discovery Test",
         content="# Plan\n\nTest plan content.",
-        labels=("erk-plan",),
+        labels=("erk-pr",),
         metadata=_create_metadata(plan_backend),
         summary="",
     )
@@ -649,7 +649,7 @@ def test_update_metadata_accepts_previously_blocked_fields() -> None:
         repo_root=Path("/repo"),
         title="Whitelist test",
         content="# Plan",
-        labels=("erk-plan",),
+        labels=("erk-pr",),
         metadata={"branch_name": "whitelist-test-branch"},
         summary="",
     )

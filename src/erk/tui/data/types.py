@@ -239,7 +239,7 @@ class PlanFilters:
     Matches options from the existing CLI command for consistency.
 
     Attributes:
-        labels: Labels to filter by (default: ["erk-plan"])
+        labels: Labels to filter by (default: ["erk-pr"])
         state: Filter by state ("open" or "closed")
         run_state: Filter by workflow run state (e.g., "in_progress")
         limit: Maximum number of results (None for no limit)
@@ -263,9 +263,9 @@ class PlanFilters:
 
     @staticmethod
     def default() -> PlanFilters:
-        """Create default filters (open erk-plan issues)."""
+        """Create default filters (open erk-pr issues)."""
         return PlanFilters(
-            labels=("erk-plan",),
+            labels=("erk-pr",),
             state="open",
             run_state=None,
             limit=None,

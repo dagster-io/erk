@@ -162,7 +162,7 @@ def test_add_worktree_creation_comment_success(tmp_path: Path) -> None:
                 body="Test body",
                 state="OPEN",
                 url="https://github.com/owner/repo/issues/42",
-                labels=["erk-pr", "erk-plan"],
+                labels=["erk-pr"],
                 assignees=[],
                 created_at=datetime.now(UTC),
                 updated_at=datetime.now(UTC),
@@ -497,7 +497,7 @@ def test_save_plan_ref_success(tmp_path: Path) -> None:
         provider="github",
         plan_id="42",
         url="https://github.com/owner/repo/issues/42",
-        labels=("erk-plan",),
+        labels=("erk-pr",),
         objective_id=99,
         node_ids=None,
     )
@@ -509,7 +509,7 @@ def test_save_plan_ref_success(tmp_path: Path) -> None:
     assert data["provider"] == "github"
     assert data["pr_id"] == "42"
     assert data["url"] == "https://github.com/owner/repo/issues/42"
-    assert data["labels"] == ["erk-plan"]
+    assert data["labels"] == ["erk-pr"]
     assert data["objective_id"] == 99
     assert "created_at" in data
     assert "synced_at" in data

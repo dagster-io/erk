@@ -44,21 +44,21 @@ The TUI supports three views — Plans, Learn, and Objectives — with instant s
 
 | View       | Labels               | Exclude Labels   | Key |
 | ---------- | -------------------- | ---------------- | --- |
-| Plans      | `("erk-plan",)`      | `("erk-learn",)` | `1` |
+| Plans      | `("erk-pr",)`        | `("erk-learn",)` | `1` |
 | Learn      | `("erk-learn",)`     | `()`             | `2` |
 | Objectives | `("erk-objective",)` | `()`             | `3` |
 
-Plans and Learn use **different** type-specific labels. Plans queries `erk-plan` and excludes `erk-learn` items. Learn queries `erk-learn` directly. Both share the BASE label `erk-planned-pr` on their issues but use different type labels for API queries.
+Plans and Learn use **different** type-specific labels. Plans queries `erk-pr` and excludes `erk-learn` items. Learn queries `erk-learn` directly. Both share the BASE label `erk-planned-pr` on their issues but use different type labels for API queries.
 
 ## Label-Based Filtering
 
 Each view uses distinct type-specific labels for API queries:
 
-- **Plans view**: Queries `erk-plan` label, then excludes items with `erk-learn` label (via `exclude_labels`)
+- **Plans view**: Queries `erk-pr` label, then excludes items with `erk-learn` label (via `exclude_labels`)
 - **Learn view**: Queries `erk-learn` label directly
 - **Objectives view**: Queries `erk-objective` label
 
-The `exclude_labels` field on `ViewConfig` enables defense-in-depth: Plans view fetches `erk-plan` issues but filters out any that also have `erk-learn` (server-side label filter + client-side exclude).
+The `exclude_labels` field on `ViewConfig` enables defense-in-depth: Plans view fetches `erk-pr` issues but filters out any that also have `erk-learn` (server-side label filter + client-side exclude).
 
 ## Cache Strategy
 
@@ -66,7 +66,7 @@ The `exclude_labels` field on `ViewConfig` enables defense-in-depth: Plans view 
 
 Data is cached by label tuple: `dict[tuple[str, ...], list[PlanRowData]]`.
 
-Plans and Learn use different labels (`("erk-plan",)` vs `("erk-learn",)`), so switching between them requires separate API calls. Each label tuple's data is cached independently for subsequent switches back to the same view.
+Plans and Learn use different labels (`("erk-pr",)` vs `("erk-learn",)`), so switching between them requires separate API calls. Each label tuple's data is cached independently for subsequent switches back to the same view.
 
 Cache is populated in `_load_data()` after each successful fetch and looked up in `_switch_view()` before deciding whether to fetch.
 

@@ -120,7 +120,7 @@ def _build_comment_body(summaries: list[tuple[str, str]]) -> str:
 
 
 def _find_plan_issue_for_pr(*, pr_number: int, cwd: Path) -> int | None:
-    """Find the erk-plan issue linked to a PR via its body.
+    """Find the erk-pr issue linked to a PR via its body.
 
     Parses the PR body for 'Resolves #N' or 'Closes #N' patterns.
 

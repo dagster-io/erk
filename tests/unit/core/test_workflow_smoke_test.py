@@ -79,7 +79,7 @@ class TestRunSmokeTest:
 
         # Verify labels added
         assert len(remote.added_labels) == 1
-        assert remote.added_labels[0].labels == ("erk-pr", "erk-plan")
+        assert remote.added_labels[0].labels == ("erk-pr",)
 
         # Verify workflow triggered
         assert len(remote.dispatched_workflows) == 1

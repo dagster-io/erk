@@ -110,7 +110,7 @@ def test_issue_setup_invokes_setup_impl_from_issue(tmp_path: Path) -> None:
         repo_root=tmp_path,
         title="Fix branch slug",
         content="# Fix\n\nRemove dead branch_slug parameter.",
-        labels=("erk-plan",),
+        labels=("erk-pr",),
         metadata={"branch_name": plan_branch},
         summary=None,
     )

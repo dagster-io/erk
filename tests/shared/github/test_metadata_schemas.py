@@ -244,7 +244,7 @@ class TestSubmissionQueuedSchema:
             "queued_at": "2024-01-15T10:30:00Z",
             "submitted_by": "john.doe",
             "issue_number": 123,
-            "validation_results": {"issue_is_open": True, "has_erk_plan_label": True},
+            "validation_results": {"pr_is_open": True, "has_erk_pr_title": True},
             "expected_workflow": "implement-plan.yml",
             "trigger_mechanism": "label-based-webhook",
         }

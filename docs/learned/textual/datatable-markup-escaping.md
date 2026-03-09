@@ -44,7 +44,7 @@ table.add_row(Text("[erk-learn] My Plan Title"))
 Apply `Text()` wrapping when cells may contain:
 
 - **User-provided titles** - May contain `[bracketed]` text
-- **Plan prefixes** - `[erk-learn]`, `[erk-plan]`, etc.
+- **Plan prefixes** - `[erk-learn]`, `[erk-pr]`, etc.
 - **File paths** - May contain brackets in directory names
 - **Technical content** - Code snippets, JSON, type annotations like `list[str]`
 

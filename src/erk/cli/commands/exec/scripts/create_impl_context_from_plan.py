@@ -62,7 +62,7 @@ def create_impl_context_from_plan(
             "success": False,
             "error": "plan_not_found",
             "message": f"Could not fetch PR for #{pr_number}: Not found. "
-            f"Ensure PR has erk-plan label and plan content.",
+            f"Ensure PR has erk-pr label and plan content.",
         }
         click.echo(json.dumps(error_output), err=True)
         raise SystemExit(1)

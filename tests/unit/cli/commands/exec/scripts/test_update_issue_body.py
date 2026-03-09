@@ -26,7 +26,7 @@ def _make_issue(
         body=body,
         state="OPEN",
         url=f"https://github.com/test/repo/issues/{number}",
-        labels=["erk-pr", "erk-plan"],
+        labels=["erk-pr"],
         assignees=[],
         created_at=now,
         updated_at=now,
@@ -62,7 +62,7 @@ def test_update_issue_body_success() -> None:
 
 def test_update_issue_body_with_markdown() -> None:
     """Test updating issue body with markdown content."""
-    issue = _make_issue(99, "Markdown Test [erk-plan]", "Old content")
+    issue = _make_issue(99, "Markdown Test [erk-pr]", "Old content")
     fake_gh = FakeGitHubIssues(issues={99: issue})
     runner = CliRunner()
 

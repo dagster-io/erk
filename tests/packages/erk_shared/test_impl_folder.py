@@ -15,7 +15,7 @@ def test_build_plan_ref_json_structure() -> None:
         provider="github",
         pr_id="42",
         url="https://github.com/owner/repo/issues/42",
-        labels=("erk-plan", "bug"),
+        labels=("erk-pr", "bug"),
         objective_id=100,
         node_ids=None,
     )
@@ -25,7 +25,7 @@ def test_build_plan_ref_json_structure() -> None:
     assert data["provider"] == "github"
     assert data["pr_id"] == "42"
     assert data["url"] == "https://github.com/owner/repo/issues/42"
-    assert data["labels"] == ["erk-plan", "bug"]
+    assert data["labels"] == ["erk-pr", "bug"]
     assert data["objective_id"] == 100
     assert "created_at" in data
     assert "synced_at" in data

@@ -427,7 +427,7 @@ def format_plan_display(
         url: Optional URL for clickable link
 
     Returns:
-        Formatted string: "#42 (OPEN) [erk-plan] Title"
+        Formatted string: "#42 (OPEN) [erk-pr] Title"
     """
     # Format state with color
     state_color = "green" if state == "OPEN" else "red"

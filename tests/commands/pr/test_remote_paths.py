@@ -45,7 +45,7 @@ def _make_issue(number: int, *, title: str = "Test Plan", state: str = "OPEN") -
         body="Test plan body content",
         state=state,
         url=f"https://github.com/owner/repo/issues/{number}",
-        labels=["erk-pr", "erk-plan"],
+        labels=["erk-pr"],
         assignees=[],
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 2, tzinfo=UTC),
@@ -91,7 +91,7 @@ def test_view_remote_with_full_flag() -> None:
         body="Detailed plan body here",
         state="OPEN",
         url="https://github.com/owner/repo/issues/42",
-        labels=["erk-pr", "erk-plan"],
+        labels=["erk-pr"],
         assignees=[],
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 2, tzinfo=UTC),
@@ -303,7 +303,7 @@ def _make_plan(
         body=body,
         state=PlanState.OPEN,
         url=f"https://github.com/owner/repo/issues/{pr_identifier}",
-        labels=["erk-pr", "erk-plan"],
+        labels=["erk-pr"],
         assignees=[],
         created_at=datetime(2025, 1, 1, tzinfo=UTC),
         updated_at=datetime(2025, 1, 1, tzinfo=UTC),
@@ -332,7 +332,9 @@ def test_duplicate_check_remote_no_duplicates() -> None:
     executor = FakePromptExecutor(
         simulated_prompt_output='{"duplicates": []}',
     )
-    existing = _make_plan(pr_identifier="100", title="Refactor auth", body="Restructure auth flow")
+    existing = _make_plan(
+        pr_identifier="100", title="[erk-pr] Refactor auth", body="Restructure auth flow"
+    )
 
     issue = _make_issue(200, title="New Plan")
     fake_remote = _make_fake_remote(issues={200: issue})
@@ -362,7 +364,9 @@ def test_duplicate_check_remote_finds_duplicate() -> None:
     executor = FakePromptExecutor(
         simulated_prompt_output=llm_output,
     )
-    existing = _make_plan(pr_identifier="100", title="Refactor auth", body="Restructure auth flow")
+    existing = _make_plan(
+        pr_identifier="100", title="[erk-pr] Refactor auth", body="Restructure auth flow"
+    )
 
     issue = _make_issue(200, title="New Plan")
     fake_remote = _make_fake_remote(issues={200: issue})
@@ -458,7 +462,7 @@ def _make_plan_header_body(*, branch_name: str) -> str:
 def _make_plan_issue(
     number: int,
     *,
-    title: str = "Test Plan",
+    title: str = "[erk-pr] Test Plan",
     branch_name: str = "plnd/test-plan",
     state: str = "OPEN",
     labels: list[str] | None = None,
@@ -473,7 +477,7 @@ def _make_plan_issue(
         body=body,
         state=state,
         url=f"https://github.com/owner/repo/pull/{number}",
-        labels=labels if labels is not None else ["erk-pr", "erk-plan"],
+        labels=labels if labels is not None else ["erk-pr"],
         assignees=[],
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 2, tzinfo=UTC),
@@ -483,7 +487,9 @@ def _make_plan_issue(
 
 def test_dispatch_remote_dispatches_workflow() -> None:
     """Test pr dispatch --repo dispatches workflow via RemoteGitHub."""
-    issue = _make_plan_issue(42, title="Remote Dispatch Plan", branch_name="plnd/remote-test")
+    issue = _make_plan_issue(
+        42, title="[erk-pr] Remote Dispatch Plan", branch_name="plnd/remote-test"
+    )
     fake_remote = _make_fake_remote(issues={42: issue})
     ctx = _build_remote_context(fake_remote)
 
@@ -527,9 +533,9 @@ def test_dispatch_remote_plan_not_found() -> None:
     assert "PR #999 not found" in result.output
 
 
-def test_dispatch_remote_missing_label() -> None:
-    """Test pr dispatch --repo rejects plan without erk-plan label."""
-    issue = _make_plan_issue(42, labels=["bug"])
+def test_dispatch_remote_missing_title_prefix() -> None:
+    """Test pr dispatch --repo rejects plan without [erk-pr] title prefix."""
+    issue = _make_plan_issue(42, title="No prefix plan")
     fake_remote = _make_fake_remote(issues={42: issue})
     ctx = _build_remote_context(fake_remote)
 
@@ -541,7 +547,7 @@ def test_dispatch_remote_missing_label() -> None:
     )
 
     assert result.exit_code != 0
-    assert "does not have erk-plan label" in result.output
+    assert "does not have '[erk-pr]' title prefix" in result.output
 
 
 def test_dispatch_remote_closed_plan() -> None:
@@ -579,8 +585,8 @@ def test_dispatch_remote_requires_plan_number() -> None:
 
 def test_dispatch_remote_multiple_plans() -> None:
     """Test pr dispatch --repo dispatches multiple plans."""
-    issue_1 = _make_plan_issue(10, title="Plan A", branch_name="plnd/plan-a")
-    issue_2 = _make_plan_issue(20, title="Plan B", branch_name="plnd/plan-b")
+    issue_1 = _make_plan_issue(10, title="[erk-pr] Plan A", branch_name="plnd/plan-a")
+    issue_2 = _make_plan_issue(20, title="[erk-pr] Plan B", branch_name="plnd/plan-b")
     fake_remote = _make_fake_remote(issues={10: issue_1, 20: issue_2})
     ctx = _build_remote_context(fake_remote)
 

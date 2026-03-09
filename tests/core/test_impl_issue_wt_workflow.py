@@ -123,7 +123,7 @@ Test the workflow.
         repo_root=sentinel_path(),
         title="Test Plan",
         body=plan_content,
-        labels=["erk-pr", "erk-plan"],
+        labels=["erk-pr"],
     )
 
     assert result.number == 123
@@ -157,7 +157,7 @@ def test_workflow_issue_creation_tracks_erk_plan_label() -> None:
         repo_root=sentinel_path(),
         title="Implementation Plan",
         body="Plan content here",
-        labels=["erk-pr", "erk-plan"],
+        labels=["erk-pr"],
     )
 
     # Verify issue was created with label
@@ -165,7 +165,6 @@ def test_workflow_issue_creation_tracks_erk_plan_label() -> None:
     title, body, labels = issues.created_issues[0]
     assert title == "Implementation Plan"
     assert body == "Plan content here"
-    assert "erk-plan" in labels
 
 
 def test_workflow_get_issue_after_creation() -> None:
@@ -179,7 +178,7 @@ def test_workflow_get_issue_after_creation() -> None:
         repo_root=sentinel_path(),
         title="Test Issue",
         body="Body content",
-        labels=["erk-pr", "erk-plan"],
+        labels=["erk-pr"],
     )
 
     # Retrieve issue info

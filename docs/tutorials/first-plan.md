@@ -76,7 +76,7 @@ Standard Claude Code plan mode shows this menu when you approve:
 Choose **Save the plan**. Claude runs `/erk:plan-save`, which:
 
 1. Saves your plan to the configured backend
-2. Adds the `erk-plan` label
+2. Adds the `erk-pr` label
 3. Returns the plan identifier
 
 You'll see output like:
