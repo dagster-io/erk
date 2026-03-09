@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "plan_id": 9081,
+  "sessions": [
+    {
+      "session_id": "",
+      "stage": "impl",
+      "source": "local",
+      "uploaded_at": "2026-03-09T17:30:42.766095+00:00",
+      "files": [
+        "impl--dbcd64f9-bae8-48d6-aeb2-8dc68742783b-part1.xml",
+        "impl--dbcd64f9-bae8-48d6-aeb2-8dc68742783b-part2.xml",
+        "impl--dbcd64f9-bae8-48d6-aeb2-8dc68742783b-part3.xml",
+        "impl--dbcd64f9-bae8-48d6-aeb2-8dc68742783b-part4.xml",
+        "impl--dbcd64f9-bae8-48d6-aeb2-8dc68742783b-part5.xml",
+        "impl--dbcd64f9-bae8-48d6-aeb2-8dc68742783b-part6.xml"
+      ],
+      "user_turns": 2,
+      "duration_minutes": 2,
+      "raw_size_kb": 204,
+      "xml_size_kb": 57,
+      "git_branch": "plnd/add-a-new-release-notes-mc-03-09-1725"
+    }
+  ]
+}
