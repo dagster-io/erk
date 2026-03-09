@@ -1,0 +1,91 @@
+<session>
+  <meta source="agent-afa7656" />
+  <meta branch="plnd/O8832-objective-plan-repo-03-09-0735" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>Read src/erk/cli/commands/ref_resolution.py and return its full contents. I need to understand the resolve_dispatch_ref function.</user>
+  <assistant>I'll read that file for you.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="15040" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15040, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Q7YN5LxhzqL13vFfimwtp1">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/ref_resolution.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15040" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15040, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Q7YN5LxhzqL13vFfimwtp1">
+     1→"""Shared helper for resolving dispatch ref across multiple commands.
+     2→
+     3→This module provides a single point for handling --ref and --ref-current flag
+     4→resolution, ensuring consistent validation and error handling across all
+     5→dispatch commands (launch, one-shot, pr dispatch, workflow smoke-test, objective plan).
+     6→"""
+     7→
+     8→import click
+     9→
+    10→from erk.core.context import ErkContext
+    11→
+    12→
+    13→def resolve_dispatch_ref(
+    14→    ctx: ErkContext, *, dispatch_ref: str | None, ref_current: bool
+    15→) -&gt; str | None:
+    16→    """Resolve dispatch ref from flags and config.
+    17→
+    18→    Handles mutual exclusivity check and falls back to config default.
+    19→
+    20→    Args:
+    21→        ctx: ErkContext with git and local_config
+    22→        dispatch_ref: Value from --ref flag (None if not provided)
+    23→        ref_current: Value from --ref-current flag
+    24→
+    25→    Returns:
+    26→        The resolved ref (branch name) or None if using default
+    27→
+    28→    Raises:
+    29→        click.UsageError: If both --ref and --ref-current are provided,
+    30→            or if --ref-current is used with detached HEAD
+
+... [17 lines omitted] ...
+
+    33→        raise click.UsageError("--ref and --ref-current are mutually exclusive")
+    38→            raise click.UsageError("--ref-current requires being on a branch (not detached HEAD)")
+  </tool_result>
+  <assistant>Here's the full contents of `src/erk/cli/commands/ref_resolution.py`:
+
+## File Overview
+
+This is a utility module that provides a single helper function for resolving dispatch references across multiple CLI commands.
+
+## Key Function: `resolve_dispatch_ref`
+
+**Purpose**: Resolves the dispatch ref (git branch) from command-line flags and configuration, with proper validation.
+
+**Signature**:
+```python
+def resolve_dispatch_ref(
+    ctx: ErkContext, *, dispatch_ref: str | None, ref_current: bool
+) -&gt; str | None:
+```
+
+**Parameters**:
+- `ctx`: ErkContext containing git info and local config
+- `dispatch_ref`: Value from the `--ref` flag (None if not provided)
+- `ref_current`: Boolean from the `--ref-current` flag
+
+**Return Value**: 
+- The resolved ref (branch name) as a string, or None if using the default
+
+**Logic Flow**:
+
+1. **Mutual Exclusivity Check** (line 32-33): Raises `click.UsageError` if both `--ref` and `--ref-current` are provided
+2. **`--ref-current` Handling** (line 35-39):
+   - Gets the current branch from git
+   - If on detached HEAD, raises `click.UsageError`
+   - Returns the current branch name
+3. **Fallback Logic** (line 41):
+   - If `--ref` was provided, uses that
+   - Otherwise, uses the default from `ctx.local_config.dispatch_ref`
+   - Returns None if no default is configured
+
+**Exceptions**:
+- `click.UsageError`: For invalid flag combinations or detached HEAD state
+
+This function centralizes dispatch ref resolution across commands like `launch`, `one-shot`, `pr dispatch`, `workflow smoke-test`, and `objective plan`.</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="721" cache_read_input_tokens="15040" cache_creation="{'ephemeral_5m_input_tokens': 721, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>

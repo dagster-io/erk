@@ -1,0 +1,364 @@
+<session>
+  <meta source="agent-ab0404e" />
+  <meta branch="plnd/O8832-objective-plan-repo-03-09-0735" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>Read the file src/erk/cli/commands/launch_cmd.py and find:
+1. How `--repo` flag is added and `target_repo` parameter is used
+2. How `resolve_owner_repo` is called
+3. How `get_remote_github` is called
+4. The ref resolution pattern (lines 429-442 or nearby): gating `--ref-current` on local repo, fallback to default branch
+5. How `has_local_repo` is determined
+
+Return the relevant code sections with line numbers.</user>
+  <assistant>I'll read the file and find all the requested information about the `--repo` flag, parameter usage, and ref resolution patterns.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="15130" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15130, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_016FbLzGwALUwuNngG6t6hh8">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/launch_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15130" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15130, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016FbLzGwALUwuNngG6t6hh8">
+     1→"""Dispatch GitHub Actions workflows via unified interface.
+     2→
+     3→All workflows dispatch via RemoteGitHub. When a local repo is available,
+     4→it provides enrichments: owner/repo inference, branch-based PR inference,
+     5→dispatch ref from config, and plan metadata updates.
+     6→
+     7→Usage examples:
+     8→    erk launch pr-address --pr 456
+     9→    erk launch pr-rebase --pr 456
+    10→    erk launch pr-rebase --pr 456 --no-squash
+    11→    erk launch learn --plan 789
+    12→    erk launch one-shot --pr 456 --prompt "fix the auth bug"
+    13→    erk launch one-shot --pr 456 -f prompt.md
+    14→    erk launch pr-rebase --pr 456 --repo owner/repo
+    15→    erk launch consolidate-learn-plans
+    16→"""
+    17→
+    18→from pathlib import Path
+    19→
+    20→import click
+    21→
+    22→from erk.cli.commands.consolidate_learn_plans_dispatch import (
+    23→    dispatch_consolidate_learn_plans,
+    24→)
+    25→from erk.cli.commands.pr.metadata_helpers import maybe_update_plan_dispatch_metadata
+    26→from erk.cli.commands.ref_resolution import resolve_dispatch_ref
+    27→from erk.cli.constants import WORKFLOW_COMMAND_MAP
+    28→from erk.cli.ensure import Ensure, UserFacingCliError
+    29→from erk.cli.repo_resolution import get_remote_github, resolved_repo_option
+    30→from erk.core.context import ErkContext
+
+... [583 lines omitted] ...
+
+    43→        raise click.UsageError(
+   447→        raise UserFacingCliError(
+   460→        raise click.UsageError("--ref-current requires a local git repository")
+   475→            raise UserFacingCliError(
+   595→        raise click.UsageError(
+   602→        raise click.UsageError(f"Unknown workflow: {workflow_name}")
+  </tool_result>
+  <assistant>Now let me check the `resolved_repo_option` to understand how the `--repo` flag is added:</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="7788" cache_read_input_tokens="15130" cache_creation="{'ephemeral_5m_input_tokens': 7788, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01KY8UwMedFBkg1EfsR9zURd">
+    <param name="pattern">resolved_repo_option|def resolved_repo_option</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli</param>
+    <param name="type">py</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="7788" cache_read_input_tokens="15130" cache_creation="{'ephemeral_5m_input_tokens': 7788, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01KY8UwMedFBkg1EfsR9zURd">
+Found 11 files
+src/erk/cli/repo_resolution.py
+src/erk/cli/commands/pr/view_cmd.py
+src/erk/cli/commands/objective/check_cmd.py
+src/erk/cli/commands/objective/close_cmd.py
+src/erk/cli/commands/objective/list_cmd.py
+src/erk/cli/commands/objective/view_cmd.py
+src/erk/cli/commands/pr/close_cmd.py
+src/erk/cli/commands/pr/duplicate_check_cmd.py
+src/erk/cli/commands/pr/list_cmd.py
+src/erk/cli/commands/pr/log_cmd.py
+src/erk/cli/commands/launch_cmd.py
+  </tool_result>
+  <assistant>Let me read the `repo_resolution.py` file to see how `resolved_repo_option` is implemented:</assistant>
+  <usage input_tokens="4" cache_creation_input_tokens="376" cache_read_input_tokens="22918" cache_creation="{'ephemeral_5m_input_tokens': 376, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01CRsRrx546cvCLeXY6sUkZK">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/repo_resolution.py</param>
+  </tool_use>
+  <usage input_tokens="4" cache_creation_input_tokens="376" cache_read_input_tokens="22918" cache_creation="{'ephemeral_5m_input_tokens': 376, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01CRsRrx546cvCLeXY6sUkZK">
+     1→"""Shared --repo infrastructure for CLI commands.
+     2→
+     3→Provides helpers for resolving owner/repo from either a --repo flag
+     4→or local git context, and constructing RemoteGitHub instances.
+     5→"""
+     6→
+     7→import functools
+     8→
+     9→import click
+    10→
+    11→from erk.cli.ensure import UserFacingCliError
+    12→from erk.core.context import ErkContext, NoRepoSentinel
+    13→from erk_shared.gateway.github.types import GitHubRepoId
+    14→from erk_shared.gateway.remote_github.abc import RemoteGitHub
+    15→from erk_shared.gateway.remote_github.real import RealRemoteGitHub
+    16→
+    17→
+    18→def resolve_owner_repo(
+    19→    ctx: ErkContext,
+    20→    *,
+    21→    target_repo: str | None,
+    22→) -&gt; tuple[str, str]:
+    23→    """Resolve owner/repo from --repo flag or local git context.
+    24→
+    25→    Args:
+    26→        ctx: ErkContext
+    27→        target_repo: Optional "owner/repo" string from --repo flag
+    28→
+    29→    Returns:
+    30→        Tuple of (owner, repo_name)
+
+... [79 lines omitted] ...
+
+    33→        UserFacingCliError: If owner/repo cannot be determined
+    37→            raise UserFacingCliError(
+    45→        raise UserFacingCliError(
+    65→        UserFacingCliError: If no http_client is available
+    71→        raise UserFacingCliError(
+  </tool_result>
+  <assistant>Perfect! Now let me check the `resolve_dispatch_ref` function to understand the ref resolution pattern:</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="1531" cache_read_input_tokens="23294" cache_creation="{'ephemeral_5m_input_tokens': 1531, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01A2TVS7tD5y8uF7gP28dSZA">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/ref_resolution.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1531" cache_read_input_tokens="23294" cache_creation="{'ephemeral_5m_input_tokens': 1531, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01A2TVS7tD5y8uF7gP28dSZA">
+     1→"""Shared helper for resolving dispatch ref across multiple commands.
+     2→
+     3→This module provides a single point for handling --ref and --ref-current flag
+     4→resolution, ensuring consistent validation and error handling across all
+     5→dispatch commands (launch, one-shot, pr dispatch, workflow smoke-test, objective plan).
+     6→"""
+     7→
+     8→import click
+     9→
+    10→from erk.core.context import ErkContext
+    11→
+    12→
+    13→def resolve_dispatch_ref(
+    14→    ctx: ErkContext, *, dispatch_ref: str | None, ref_current: bool
+    15→) -&gt; str | None:
+    16→    """Resolve dispatch ref from flags and config.
+    17→
+    18→    Handles mutual exclusivity check and falls back to config default.
+    19→
+    20→    Args:
+    21→        ctx: ErkContext with git and local_config
+    22→        dispatch_ref: Value from --ref flag (None if not provided)
+    23→        ref_current: Value from --ref-current flag
+    24→
+    25→    Returns:
+    26→        The resolved ref (branch name) or None if using default
+    27→
+    28→    Raises:
+    29→        click.UsageError: If both --ref and --ref-current are provided,
+    30→            or if --ref-current is used with detached HEAD
+
+... [17 lines omitted] ...
+
+    33→        raise click.UsageError("--ref and --ref-current are mutually exclusive")
+    38→            raise click.UsageError("--ref-current requires being on a branch (not detached HEAD)")
+  </tool_result>
+  <assistant>Perfect! Now I have all the information needed. Let me compile the comprehensive report with the relevant code sections and line numbers.
+
+## Summary
+
+I've found all the requested information from `/home/runner/work/erk/erk/src/erk/cli/commands/launch_cmd.py`. Here are the key sections:
+
+### 1. `--repo` Flag Addition and `target_repo` Parameter Usage
+
+**File:** `/home/runner/work/erk/erk/src/erk/cli/repo_resolution.py` (lines 78-84)
+
+The `--repo` flag is defined as a click option decorator:
+
+```python
+repo_option = click.option(
+    "--repo",
+    "target_repo",
+    type=str,
+    default=None,
+    help="Target repo (owner/repo) for remote operation without local git clone",
+)
+```
+
+**Applied to `launch_cmd.py` at line 381:**
+
+```python
+@resolved_repo_option
+```
+
+The decorator `resolved_repo_option` (lines 87-103) wraps the command to automatically resolve `target_repo` into a `GitHubRepoId`:
+
+```python
+def resolved_repo_option(fn):  # noqa: ANN001, ANN201
+    """Decorator that resolves --repo into a GitHubRepoId.
+
+    Wraps a Click command handler to resolve the --repo flag
+    (or local git context) into a GitHubRepoId before calling
+    the handler. The handler receives ``repo_id: GitHubRepoId``
+    instead of ``target_repo: str | None``.
+    """
+
+    @repo_option
+    @functools.wraps(fn)
+    def wrapper(*, target_repo: str | None, **kwargs):  # noqa: ANN003, ANN202
+        ctx = click.get_current_context().obj
+        owner, repo_name = resolve_owner_repo(ctx, target_repo=target_repo)
+        return fn(repo_id=GitHubRepoId(owner=owner, repo=repo_name), **kwargs)
+
+    return wrapper
+```
+
+### 2. `resolve_owner_repo` Function
+
+**File:** `/home/runner/work/erk/erk/src/erk/cli/repo_resolution.py` (lines 18-49)
+
+```python
+def resolve_owner_repo(
+    ctx: ErkContext,
+    *,
+    target_repo: str | None,
+) -&gt; tuple[str, str]:
+    """Resolve owner/repo from --repo flag or local git context.
+
+    Args:
+        ctx: ErkContext
+        target_repo: Optional "owner/repo" string from --repo flag
+
+    Returns:
+        Tuple of (owner, repo_name)
+
+    Raises:
+        UserFacingCliError: If owner/repo cannot be determined
+    """
+    if target_repo is not None:
+        if "/" not in target_repo or target_repo.count("/") != 1:
+            raise UserFacingCliError(
+                f"Invalid --repo format: '{target_repo}'\n"
+                "Expected format: owner/repo (e.g., dagster-io/erk)"
+            )
+        owner, repo_name = target_repo.split("/")
+        return (owner, repo_name)
+
+    if isinstance(ctx.repo, NoRepoSentinel) or ctx.repo.github is None:
+        raise UserFacingCliError(
+            "Cannot determine target repository.\n"
+            "Use --repo owner/repo or run from inside a git repository."
+        )
+    return (ctx.repo.github.owner, ctx.repo.github.repo)
+```
+
+### 3. `get_remote_github` Function
+
+**File:** `/home/runner/work/erk/erk/src/erk/cli/repo_resolution.py` (lines 52-75)
+
+```python
+def get_remote_github(ctx: ErkContext) -&gt; RemoteGitHub:
+    """Get or construct a RemoteGitHub from context.
+
+    Uses ctx.remote_github if provided (tests inject FakeRemoteGitHub here).
+    Otherwise constructs RealRemoteGitHub from ctx.http_client.
+
+    Args:
+        ctx: ErkContext with http_client and time
+
+    Returns:
+        RemoteGitHub instance
+
+    Raises:
+        UserFacingCliError: If no http_client is available
+    """
+    if ctx.remote_github is not None:
+        return ctx.remote_github
+
+    if ctx.http_client is None:
+        raise UserFacingCliError(
+            "GitHub authentication required.\nRun 'gh auth login' to authenticate."
+        )
+
+    return RealRemoteGitHub(http_client=ctx.http_client, time=ctx.time)
+```
+
+Called in `launch_cmd.py` at **line 442**:
+
+```python
+remote = get_remote_github(ctx)
+```
+
+### 4. Ref Resolution Pattern
+
+**File:** `/home/runner/work/erk/erk/src/erk/cli/commands/launch_cmd.py` (lines 456-469)
+
+The ref resolution gates `--ref-current` on local repo availability and falls back to default branch:
+
+```python
+has_local_repo = not isinstance(ctx.repo, NoRepoSentinel)
+
+# 4. Resolve dispatch ref — local enrichments when available, fallback to default branch
+if ref_current and not has_local_repo:
+    raise click.UsageError("--ref-current requires a local git repository")
+
+ref: str | None
+if has_local_repo:
+    ref = resolve_dispatch_ref(ctx, dispatch_ref=dispatch_ref, ref_current=ref_current)
+else:
+    ref = dispatch_ref
+
+if ref is None:
+    ref = remote.get_default_branch_name(owner=repo_id.owner, repo=repo_id.repo)
+```
+
+The `resolve_dispatch_ref` helper (from `/home/runner/work/erk/erk/src/erk/cli/commands/ref_resolution.py`, lines 13-41):
+
+```python
+def resolve_dispatch_ref(
+    ctx: ErkContext, *, dispatch_ref: str | None, ref_current: bool
+) -&gt; str | None:
+    """Resolve dispatch ref from flags and config.
+
+    Handles mutual exclusivity check and falls back to config default.
+
+    Args:
+        ctx: ErkContext with git and local_config
+        dispatch_ref: Value from --ref flag (None if not provided)
+        ref_current: Value from --ref-current flag
+
+    Returns:
+        The resolved ref (branch name) or None if using default
+
+    Raises:
+        click.UsageError: If both --ref and --ref-current are provided,
+            or if --ref-current is used with detached HEAD
+    """
+    if ref_current and dispatch_ref is not None:
+        raise click.UsageError("--ref and --ref-current are mutually exclusive")
+
+    if ref_current:
+        branch = ctx.git.branch.get_current_branch(ctx.cwd)
+        if branch is None:
+            raise click.UsageError("--ref-current requires being on a branch (not detached HEAD)")
+        return branch
+
+    return dispatch_ref if dispatch_ref is not None else ctx.local_config.dispatch_ref
+```
+
+### 5. `has_local_repo` Determination
+
+**File:** `/home/runner/work/erk/erk/src/erk/cli/commands/launch_cmd.py` (line 456)
+
+```python
+has_local_repo = not isinstance(ctx.repo, NoRepoSentinel)
+```
+
+This simple check determines whether a local repository context is available by checking if `ctx.repo` is NOT a `NoRepoSentinel` instance.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="842" cache_read_input_tokens="24825" cache_creation="{'ephemeral_5m_input_tokens': 842, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>

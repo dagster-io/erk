@@ -1,0 +1,1328 @@
+<session>
+  <meta branch="plnd/O8832-objective-plan-repo-03-09-0735" />
+  <meta model="claude-opus-4-6" />
+  <user>&lt;command-message&gt;erk:plan-implement is running…&lt;/command-message&gt;
+&lt;command-name&gt;/erk:plan-implement&lt;/command-name&gt;
+&lt;command-args&gt;9046&lt;/command-args&gt;</user>
+  <user># /erk:plan-implement
+
+Implement a plan - either from GitHub, a markdown file, an existing impl directory under `.erk/impl-context/`, or by saving the current plan first.
+
+This is the primary implementation workflow - it orchestrates:
+
+1. Setting up the impl directory under `.erk/impl-context/&lt;branch&gt;/` (from issue, file, existing folder, or fresh plan)
+2. Executing the implementation
+3. Running CI and submitting the PR
+
+## Prerequisites
+
+- Must be in a git repository managed by erk
+- GitHub CLI (`gh`) must be authenticated
+- One of:
+  - A plan number, URL, or file path argument
+  - An existing impl directory under `.erk/impl-context/`
+  - A plan branch checked out (e.g., `plnd/...` or `P{number}-...`)
+  - A plan in `~/.claude/plans/` (from plan mode)
+
+## Usage
+
+```bash
+/erk:plan-implement                    # Use impl directory, detect from branch, or save current plan
+/erk:plan-implement 2521               # Fetch and implement plan #2521
+/erk:plan-implement https://github.com/owner/repo/pull/2521   # URL form
+/erk:plan-implement ./my-plan.md       # Implement from local markdown file
+```
+
+---
+
+## CRITICAL: PR Operations
+
+**NEVER** run direct GitHub CLI commands for PR operations during implementation:
+
+- `gh pr edit` — destroys plan-header metadata block
+- `gh pr ready` — bypasses lifecycle tracking
+- `gh pr close` / `gh pr merge`
+
+All PR operations are handled by `erk pr submit` in Step 13. It automatically:
+
+- Generates the PR title and body
+- Preserves the plan-header metadata block
+- Marks draft PRs as ready for review
+- Updates lifecycle stage
+
+## Agent Instructions
+
+### Step 1: Set Up Implementation
+
+Parse `9046` and run the consolidated setup command:
+
+- **If numeric** (e.g., `2521`): `erk exec setup-impl --issue 2521`
+- **If GitHub URL** (e.g., `https://github.com/.../issues/2521`): Extract number, `erk exec setup-impl --issue 2521`
+- **If path to file** (anything else non-empty): `erk exec setup-impl --file &lt;path&gt;`
+- **If empty**: `erk exec setup-impl` (auto-detects from `.erk/impl-context/`, branch, or fails)
+
+```bash
+erk exec setup-impl [--issue &lt;N&gt; | --file &lt;path&gt;]
+```
+
+This single command handles:
+
+- Fetching plan from GitHub (draft PR)
+- Setting up from a local markdown file
+- Auto-detecting from existing impl directory under `.erk/impl-context/`
+- Auto-detecting plan number from branch name (P{number}-... or PR lookup)
+- Creating/checking out the feature branch
+- Creating impl directory under `.erk/impl-context/&lt;branch&gt;/` with plan content
+- Running impl-init validation
+- Cleaning up `.erk/impl-context/` staging directory (git rm + commit + push)
+
+Otherwise, generate a branch slug and set up from the specified issue:
+
+1. Fetch the title: `gh pr view &lt;ISSUE_ARG&gt; --json title -q .title`
+2. Generate a branch slug from the title:
+   - 2-4 hyphenated lowercase words, max 30 characters
+   - Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+   - Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+   - Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+3. Store as `BRANCH_SLUG`.
+
+```bash
+erk exec setup-impl --issue &lt;ISSUE_ARG&gt; --branch-slug="${BRANCH_SLUG}"
+```
+
+If `setup-impl` exits with code 1 and `error: "no_plan_found"`, fall back to saving the current plan:
+
+Generate a branch slug from the plan title (the first `# ` heading in the plan file):
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Store as `BRANCH_SLUG`
+
+Save the current plan to GitHub and capture the plan number:
+
+```bash
+erk exec plan-save --format json --session-id="${CLAUDE_SESSION_ID}" --branch-slug="${BRANCH_SLUG}"
+```
+
+Parse the JSON output to get `plan_number`, then:
+
+```bash
+erk exec setup-impl --issue &lt;plan_number&gt;
+```
+
+The `setup-impl` output includes `related_docs` (skills and docs to load) and `has_plan_tracking` (whether GitHub issue tracking is active).
+
+If this fails, display the error and stop.
+
+### Step 2: Read Plan and Load Context
+
+Read `plan.md` from the impl directory set up in Step 1 to understand:
+
+- Overall goal and context
+- Context &amp; Understanding sections (API quirks, architectural insights, pitfalls)
+- Implementation phases and dependencies
+- Success criteria
+
+**Context Consumption**: Plans contain expensive discoveries. Ignoring `[CRITICAL:]` tags, "Related Context:" subsections, or "DO NOT" items causes repeated mistakes.
+
+### Step 3: Load Related Documentation
+
+If plan contains "Related Documentation" section, load listed skills via Skill tool and read listed docs.
+
+### Step 4: Create TodoWrite Entries
+
+Create todo entries for each phase from the plan.
+
+### Step 5: Signal GitHub Started
+
+```bash
+erk exec impl-signal started --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This also deletes the Claude plan file (from `~/.claude/plans/`) since:
+
+- The content has been saved to GitHub
+- The content has been snapshotted to `.erk/scratch/`
+- Keeping it could cause confusion if the user tries to re-save
+
+### Step 6: Execute Each Phase Sequentially
+
+For each phase:
+
+1. **Mark phase as in_progress** (in TodoWrite)
+2. **Read task requirements** carefully
+3. **Implement code AND tests together**:
+   - Load `dignified-python-313` skill for coding standards
+   - Load `fake-driven-testing` skill for test patterns
+   - Follow project AGENTS.md standards
+4. **Mark phase as completed** (in TodoWrite)
+5. **Report progress**: changes made, what's next
+
+**Important:** `plan.md` is immutable - NEVER edit during implementation
+
+### Step 7: Report Progress
+
+After each phase: report changes made and what's next.
+
+### Step 8: Final Verification
+
+Confirm all tasks executed, success criteria met, note deviations, summarize changes.
+
+### Step 9: Signal GitHub Ended
+
+```bash
+erk exec impl-signal ended --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+### Step 10: Upload Session for Async Learn
+
+```bash
+erk exec upload-impl-session --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This reads plan reference from the impl directory, captures session info, and uploads for async learn processing.
+
+### Step 11: Clean Up Impl Context
+
+Remove the `.erk/impl-context/` directory from the repo:
+
+```bash
+erk exec cleanup-impl-context
+```
+
+This removes `.erk/impl-context/`, stages the deletion, commits, and pushes — all idempotent.
+
+### Step 12: Run CI Iteratively
+
+1. If `.erk/prompt-hooks/post-plan-implement-ci.md` exists: follow its instructions
+2. Otherwise: check CLAUDE.md/AGENTS.md for CI commands
+
+### Step 13: Submit PR
+
+Push the branch and create or update the PR using the Graphite-aware submit pipeline:
+
+```bash
+erk pr submit
+```
+
+This handles pushing commits, creating/updating the PR, generating the PR description, and enhancing with Graphite stack metadata when available.
+
+After successful submission, signal lifecycle transition:
+
+```bash
+erk exec impl-signal submitted 2&gt;/dev/null || true
+```
+
+Then validate PR completion invariants:
+
+```bash
+erk pr check --stage=impl
+```
+
+This validates PR submission readiness including implementation-specific checks
+(e.g., `.erk/impl-context/` must be cleaned up). If checks fail, display output and warn user.
+
+### Step 14: Output Format
+
+- **Start**: "Setting up implementation..." or "Fetching plan #X..."
+- **After setup**: "Implementation environment ready, reading plan..."
+- **Each phase**: "Phase X: [brief description]" with code changes
+- **End**: "Plan execution complete. [Summary]"
+
+---
+
+## Related Commands
+
+- `/erk:plan-save` - Save plan only, don't implement (for defer-to-later workflow)
+- `/erk:replan` - Re-plan an existing plan with current codebase state
+</user>
+  <assistant>
+
+I'll start by setting up the implementation for plan #9046.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="28600" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 28600, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01NreuG3YciG3zS5CBZxdwiC">
+    <param name="command">erk exec setup-impl --issue 9046</param>
+    <param name="description">Set up implementation for plan #9046</param>
+    <param name="timeout">120000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="28600" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 28600, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01NreuG3YciG3zS5CBZxdwiC">
+{"success": true, "impl_path": "/home/runner/work/erk/erk/.erk/impl-context/plnd--O8832-objective-plan-repo-03-09-0735", "plan_number": 9046, "plan_url": "https://github.com/dagster-io/erk/pull/9046", "branch": "plnd/O8832-objective-plan-repo-03-09-0735", "plan_title": "[erk-plan] Plan: Convert `objective plan --one-shot` to `@no_repo_required` with `--repo` flag", "no_impl": false}
+{"success": true, "source": "issue", "plan_number": 9046, "has_plan_tracking": true, "valid": true, "related_docs": {"skills": [], "docs": []}}
+Already on plan branch 'plnd/O8832-objective-plan-repo-03-09-0735', teleporting from remote...
+  </tool_result>
+  <assistant>Setup successful. Let me read the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="367" cache_read_input_tokens="28600" cache_creation="{'ephemeral_5m_input_tokens': 367, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01PU18g9PoEXFkiUSmgbHwUi">
+    <param name="file_path">/home/runner/work/erk/erk/.erk/impl-context/plnd--O8832-objective-plan-repo-03-09-0735/plan.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="367" cache_read_input_tokens="28600" cache_creation="{'ephemeral_5m_input_tokens': 367, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01PU18g9PoEXFkiUSmgbHwUi">
+     1→# Plan: Convert `objective plan --one-shot` to `@no_repo_required` with `--repo` flag
+     2→
+     3→Part of Objective #8832, Node 3.4
+     4→
+     5→## Context
+     6→
+     7→This is the final node of the "Decouple CLI Commands from Git Repo Requirement" objective. The `erk objective plan` command currently requires a local git repo for all modes (interactive, `--one-shot`, `--all-unblocked`). The one-shot and all-unblocked modes already dispatch via `RemoteGitHub` (`dispatch_one_shot_remote()`), so the only blocker is owner/repo resolution and ref resolution still depending on local git context.
+     8→
+     9→The pattern is well-established from 11 completed nodes (PR #9019 for `launch` being the most recent reference).
+    10→
+    11→## Files to Modify
+    12→
+    13→1. **`src/erk/cli/commands/objective/plan_cmd.py`** - Main conversion target
+    14→2. **`tests/commands/objective/test_plan_remote_paths.py`** - New test file for remote paths
+    15→
+    16→## Implementation
+    17→
+    18→### Phase 1: Add `--repo` flag to `plan_objective` command
+    19→
+    20→- Add `@repo_option` decorator (from `erk.cli.repo_resolution`) to `plan_objective`
+    21→- Add `target_repo: str | None` parameter
+    22→- Validate: `--repo` is incompatible with interactive mode (no `--one-shot` or `--all-unblocked`)
+    23→  - Error: `"--repo requires --one-shot or --all-unblocked"`
+    24→- Pass `target_repo` through to `_handle_one_shot()` and `_handle_all_unblocked()`
+    25→- Switch import from `_get_remote_github` (one_shot.py) to `get_remote_github` (repo_resolution.py)
+    26→
+    27→### Phase 2: Refactor `_resolve_next()` for remote support
+    28→
+    29→Add `target_repo: str | None` parameter. When `target_repo is not None` or repo is NoRepoSentinel:
+    30→- Require `issue_ref` (can't infer from branch without local repo)
+
+... [55 lines omitted] ...
+
+    42→- Gate `--ref-current` on having a local repo: `if ref_current and not has_local_repo: raise UsageError`
+    62→7. `test_repo_without_one_shot_fails` - `--repo` without `--one-shot` errors
+    63→8. `test_ref_current_without_local_repo_fails` - `--ref-current --repo` errors
+    64→9. `test_next_without_issue_ref_remote_fails` - `--next` without ISSUE_REF in remote mode errors
+  </tool_result>
+  <assistant>Good, I have the plan. Let me now load the relevant source files and related docs in parallel to understand the current code.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1878" cache_read_input_tokens="28967" cache_creation="{'ephemeral_5m_input_tokens': 1878, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01UptBHbmtT5ihZ8TvgFUSmF">
+    <param name="todos">[{'content': 'Phase 1: Add --repo flag to plan_objective command', 'status': 'pending', 'a...[truncated 926 chars]...ng issues'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1878" cache_read_input_tokens="28967" cache_creation="{'ephemeral_5m_input_tokens': 1878, 'ephemeral_1h_input_tokens': 0}" output_tokens="415" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01UptBHbmtT5ihZ8TvgFUSmF">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01VFTFP2AkTQqCSR3PA6k9Js">
+    <param name="command">erk exec impl-signal started --session-id "0b90fedd-a837-4503-9db6-1e977e2367ac" 2&gt;/dev/null || true</param>
+    <param name="description">Signal GitHub implementation started</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="447" cache_read_input_tokens="30845" cache_creation="{'ephemeral_5m_input_tokens': 447, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01P2M6b7QraevoTzU6hJ7WkF">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/objective/plan_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="447" cache_read_input_tokens="30845" cache_creation="{'ephemeral_5m_input_tokens': 447, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01DPPRouD1kPawhKJ7wh5ANv">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/repo_resolution.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="447" cache_read_input_tokens="30845" cache_creation="{'ephemeral_5m_input_tokens': 447, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01VFTFP2AkTQqCSR3PA6k9Js">
+{
+  "success": true,
+  "event": "started",
+  "plan_number": 9046
+}
+  </tool_result>
+  <tool_result tool="toolu_01DPPRouD1kPawhKJ7wh5ANv">
+     1→"""Shared --repo infrastructure for CLI commands.
+     2→
+     3→Provides helpers for resolving owner/repo from either a --repo flag
+     4→or local git context, and constructing RemoteGitHub instances.
+     5→"""
+     6→
+     7→import functools
+     8→
+     9→import click
+    10→
+    11→from erk.cli.ensure import UserFacingCliError
+    12→from erk.core.context import ErkContext, NoRepoSentinel
+    13→from erk_shared.gateway.github.types import GitHubRepoId
+    14→from erk_shared.gateway.remote_github.abc import RemoteGitHub
+    15→from erk_shared.gateway.remote_github.real import RealRemoteGitHub
+    16→
+    17→
+    18→def resolve_owner_repo(
+    19→    ctx: ErkContext,
+    20→    *,
+    21→    target_repo: str | None,
+    22→) -&gt; tuple[str, str]:
+    23→    """Resolve owner/repo from --repo flag or local git context.
+    24→
+    25→    Args:
+    26→        ctx: ErkContext
+    27→        target_repo: Optional "owner/repo" string from --repo flag
+    28→
+    29→    Returns:
+    30→        Tuple of (owner, repo_name)
+
+... [79 lines omitted] ...
+
+    33→        UserFacingCliError: If owner/repo cannot be determined
+    37→            raise UserFacingCliError(
+    45→        raise UserFacingCliError(
+    65→        UserFacingCliError: If no http_client is available
+    71→        raise UserFacingCliError(
+  </tool_result>
+  <tool_result tool="toolu_01P2M6b7QraevoTzU6hJ7WkF">
+     1→"""Create a plan from an objective node."""
+     2→
+     3→from dataclasses import dataclass
+     4→
+     5→import click
+     6→
+     7→from erk.cli.commands.exec.scripts.update_objective_node import (
+     8→    _replace_node_refs_in_body,
+     9→)
+    10→from erk.cli.commands.implement_shared import normalize_model_name
+    11→from erk.cli.commands.objective.check_cmd import (
+    12→    ObjectiveValidationError,
+    13→    ObjectiveValidationSuccess,
+    14→    validate_objective,
+    15→)
+    16→from erk.cli.commands.objective_helpers import get_objective_for_branch
+    17→from erk.cli.commands.one_shot import _get_remote_github
+    18→from erk.cli.commands.one_shot_remote_dispatch import (
+    19→    OneShotDispatchParams,
+    20→    dispatch_one_shot_remote,
+    21→)
+    22→from erk.cli.commands.ref_resolution import resolve_dispatch_ref
+    23→from erk.cli.github_parsing import parse_issue_identifier
+    24→from erk.core.branch_slug_generator import generate_branch_slug
+    25→from erk.core.context import ErkContext, NoRepoSentinel, RepoContext
+    26→from erk_shared.context.types import InteractiveAgentConfig
+    27→from erk_shared.core.prompt_executor import PromptExecutor
+    28→from erk_shared.gateway.github.issues.types import IssueNotFound
+    29→from erk_shared.gateway.github.metadata.core import extract_metadata_value
+    30→from erk_shared.gateway.github.metadata.dependency_graph import (
+
+... [836 lines omitted] ...
+
+    49→    Uses the prompt executor to generate a concise slug. On failure,
+   118→        click.ClickException: If objective cannot be resolved or has no pending nodes
+   121→        raise click.ClickException("Not in a git repository")
+   130→            raise click.ClickException("Not on a branch")
+   133→            raise click.ClickException(
+   139→        raise click.ClickException("Repository has no GitHub remote configured")
+   147→    if isinstance(result, ObjectiveValidationError):
+   148→        raise click.ClickException(result.error)
+   152→        raise click.ClickException(f"Objective #{issue_number} has no roadmap phases")
+   156→        raise click.ClickException(f"Objective #{issue_number} has no pending unblocked nodes")
+   162→        raise click.ClickException(
+   163→            f"Internal error: next node '{next_node.id}' not found in phases"
+   201→        click.ClickException: If objective cannot be resolved or has no pending unblocked nodes
+   204→        raise click.ClickException("Not in a git repository")
+   213→            raise click.ClickException("Not on a branch")
+   216→            raise click.ClickException(
+   222→        raise click.ClickException("Repository has no GitHub remote configured")
+   230→    if isinstance(result, ObjectiveValidationError):
+   231→        raise click.ClickException(result.error)
+   235→        raise click.ClickException(f"Objective #{issue_number} has no roadmap phases")
+   239→        raise click.ClickException(f"Objective #{issue_number} has no pending unblocked nodes")
+   248→            raise click.ClickException(f"Internal error: node '{node.id}' not found in phases")
+   271→        raise click.ClickException(
+   471→    Silently catches all errors — the inner skill will retry if needed.
+   616→        raise click.ClickException("--all-unblocked and --node are mutually exclusive")
+   618→        raise click.ClickException("--all-unblocked and --next are mutually exclusive")
+   620→        raise click.ClickException("--next and --node are mutually exclusive")
+   623→        raise click.ClickException("ISSUE_REF is required unless --next or --all-unblocked is used")
+   632→            raise click.ClickException("--model requires --one-shot")
+   634→            raise click.ClickException("--dry-run requires --one-shot")
+   722→    except RuntimeError as e:
+   723→        raise click.ClickException(str(e)) from e
+   750→            raise click.ClickException("Not in a git repository")
+   754→            raise click.ClickException("Repository has no GitHub remote configured")
+   764→        if isinstance(result, ObjectiveValidationError):
+   765→            raise click.ClickException(result.error)
+   770→            raise click.ClickException(f"Objective #{issue_number} has no roadmap phases")
+   778→                raise click.ClickException(
+   792→                raise click.ClickException(
+   793→                    f"Internal error: next_node '{result.next_node['id']}' not found"
+   799→        raise click.ClickException(
+  </tool_result>
+  <assistant>Now let me read the reference implementation (launch_cmd.py) and the existing test files to understand the patterns.</assistant>
+  <usage input_tokens="1412" cache_creation_input_tokens="11350" cache_read_input_tokens="31292" cache_creation="{'ephemeral_5m_input_tokens': 11350, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01783rfgjt1B61nGuUj212S6">
+    <param name="description">Read launch_cmd.py remote pattern</param>
+    <param name="prompt">Read the file src/erk/cli/commands/launch_cmd.py and find:
+1. How `--repo` flag is added a...[truncated 213 chars].... How `has_local_repo` is determined
+
+Return the relevant code sections with line numbers.</param>
+    <param name="subagent_type">Explore</param>
+    <param name="run_in_background">True</param>
+  </tool_use>
+  <usage input_tokens="1412" cache_creation_input_tokens="11350" cache_read_input_tokens="31292" cache_creation="{'ephemeral_5m_input_tokens': 11350, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01MWSZYruUKVL3oek2NLPaq8">
+    <param name="description">Read launch test remote paths</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 175 chars]...est patterns for remote paths tests (using NoRepoSentinel, fake_remote, context_for_test).</param>
+    <param name="subagent_type">Explore</param>
+    <param name="run_in_background">True</param>
+  </tool_use>
+  <usage input_tokens="1412" cache_creation_input_tokens="11350" cache_read_input_tokens="31292" cache_creation="{'ephemeral_5m_input_tokens': 11350, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01Eb4bZYN3sqvdK2DFKRf7gW">
+    <param name="description">Read one_shot.py for _get_remote_github</param>
+    <param name="prompt">Read src/erk/cli/commands/one_shot.py and find the _get_remote_github function. Return its full implementation and line numbers. Also check how it differs from get_remote_github in repo_resolution.py.</param>
+    <param name="subagent_type">Explore</param>
+    <param name="run_in_background">True</param>
+  </tool_use>
+  <usage input_tokens="1412" cache_creation_input_tokens="11350" cache_read_input_tokens="31292" cache_creation="{'ephemeral_5m_input_tokens': 11350, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01GXZcBUDHAP5LWVwjSJQJup">
+    <param name="description">Read ref_resolution.py</param>
+    <param name="prompt">Read src/erk/cli/commands/ref_resolution.py and return its full contents. I need to understand the resolve_dispatch_ref function.</param>
+    <param name="subagent_type">Explore</param>
+    <param name="run_in_background">True</param>
+  </tool_use>
+  <usage input_tokens="1412" cache_creation_input_tokens="11350" cache_read_input_tokens="31292" cache_creation="{'ephemeral_5m_input_tokens': 11350, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01783rfgjt1B61nGuUj212S6">
+Async agent launched successfully.
+agentId: ab0404e (This is an internal ID for your use, do not mention it to the user. Use this ID to retrieve results with TaskOutput when the agent finishes).
+The agent is currently working in the background. If you have other tasks you you should continue working on them now. Wait to call TaskOutput until either:
+- If you want to check on the agent's progress - call TaskOutput with block=false to get an immediate update on the agent's status
+- If you run out of things to do and the agent is still running - call TaskOutput with block=true to idle and wait for the agent's result (do not use block=true unless you completely run out of things to do as it will waste time).
+  </tool_result>
+  <tool_result tool="toolu_01MWSZYruUKVL3oek2NLPaq8">
+Async agent launched successfully.
+agentId: a5c9baf (This is an internal ID for your use, do not mention it to the user. Use this ID to retrieve results with TaskOutput when the agent finishes).
+The agent is currently working in the background. If you have other tasks you you should continue working on them now. Wait to call TaskOutput until either:
+- If you want to check on the agent's progress - call TaskOutput with block=false to get an immediate update on the agent's status
+- If you run out of things to do and the agent is still running - call TaskOutput with block=true to idle and wait for the agent's result (do not use block=true unless you completely run out of things to do as it will waste time).
+  </tool_result>
+  <tool_result tool="toolu_01Eb4bZYN3sqvdK2DFKRf7gW">
+Async agent launched successfully.
+agentId: a475da0 (This is an internal ID for your use, do not mention it to the user. Use this ID to retrieve results with TaskOutput when the agent finishes).
+The agent is currently working in the background. If you have other tasks you you should continue working on them now. Wait to call TaskOutput until either:
+- If you want to check on the agent's progress - call TaskOutput with block=false to get an immediate update on the agent's status
+- If you run out of things to do and the agent is still running - call TaskOutput with block=true to idle and wait for the agent's result (do not use block=true unless you completely run out of things to do as it will waste time).
+  </tool_result>
+  <tool_result tool="toolu_01GXZcBUDHAP5LWVwjSJQJup">
+Async agent launched successfully.
+agentId: afa7656 (This is an internal ID for your use, do not mention it to the user. Use this ID to retrieve results with TaskOutput when the agent finishes).
+The agent is currently working in the background. If you have other tasks you you should continue working on them now. Wait to call TaskOutput until either:
+- If you want to check on the agent's progress - call TaskOutput with block=false to get an immediate update on the agent's status
+- If you run out of things to do and the agent is still running - call TaskOutput with block=true to idle and wait for the agent's result (do not use block=true unless you completely run out of things to do as it will waste time).
+  </tool_result>
+  <assistant>
+
+Let me collect the results from the background agents.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="3184" cache_read_input_tokens="42642" cache_creation="{'ephemeral_5m_input_tokens': 3184, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="TaskOutput" id="toolu_01RUg75u4XxHS5h8WEgnkQ7Q">
+    <param name="task_id">ab0404e</param>
+    <param name="block">True</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="3184" cache_read_input_tokens="42642" cache_creation="{'ephemeral_5m_input_tokens': 3184, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="TaskOutput" id="toolu_016NSrqJyzyqakaSFmhPMbeR">
+    <param name="task_id">a5c9baf</param>
+    <param name="block">True</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="3184" cache_read_input_tokens="42642" cache_creation="{'ephemeral_5m_input_tokens': 3184, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="TaskOutput" id="toolu_01Q7TQ7R3P4o347rEBrBmoCK">
+    <param name="task_id">a475da0</param>
+    <param name="block">True</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="3184" cache_read_input_tokens="42642" cache_creation="{'ephemeral_5m_input_tokens': 3184, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="TaskOutput" id="toolu_01DqxvX61nCfTJ4E5F7Em5or">
+    <param name="task_id">afa7656</param>
+    <param name="block">True</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="3184" cache_read_input_tokens="42642" cache_creation="{'ephemeral_5m_input_tokens': 3184, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01DqxvX61nCfTJ4E5F7Em5or">
+&lt;retrieval_status&gt;success&lt;/retrieval_status&gt;
+
+&lt;task_id&gt;afa7656&lt;/task_id&gt;
+
+&lt;task_type&gt;local_agent&lt;/task_type&gt;
+
+&lt;status&gt;completed&lt;/status&gt;
+
+&lt;output&gt;
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/ref_resolution.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/ref_resolution.py"}
+
+--- RESULT ---
+Here's the full contents of `src/erk/cli/commands/ref_resolution.py`:
+
+## File Overview
+
+This is a utility module that provides a single helper function for resolving dispatch references across multiple CLI commands.
+
+## Key Function: `resolve_dispatch_ref`
+
+**Purpose**: Resolves the dispatch ref (git branch) from command-line flags and configuration, with proper validation.
+
+**Signature**:
+```python
+def resolve_dispatch_ref(
+    ctx: ErkContext, *, dispatch_ref: str | None, ref_current: bool
+) -&gt; str | None:
+```
+
+
+... [25 lines omitted] ...
+
+1. **Mutual Exclusivity Check** (line 32-33): Raises `click.UsageError` if both `--ref` and `--ref-current` are provided
+   - If on detached HEAD, raises `click.UsageError`
+**Exceptions**:
+- `click.UsageError`: For invalid flag combinations or detached HEAD state
+  </tool_result>
+  <tool_result tool="toolu_016NSrqJyzyqakaSFmhPMbeR">
+&lt;retrieval_status&gt;success&lt;/retrieval_status&gt;
+
+&lt;task_id&gt;a5c9baf&lt;/task_id&gt;
+
+&lt;task_type&gt;local_agent&lt;/task_type&gt;
+
+&lt;status&gt;completed&lt;/status&gt;
+
+&lt;output&gt;
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/tests/commands/launch/test_launch_remote_paths.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/tests/commands/launch/test_launch_remote_paths.py"}
+
+--- RESULT ---
+Here's the full contents of `/home/runner/work/erk/erk/tests/commands/launch/test_launch_remote_paths.py`:
+
+## File Summary
+
+This test file demonstrates **remote-mode testing patterns** for the `launch` command when operating without a local repository (using `--repo` flag). It uses three key test infrastructure components:
+
+### Key Components
+
+1. **`NoRepoSentinel()`** - A sentinel value indicating no local repository is present. Used in context construction to enable remote-only mode.
+
+2. **`FakeRemoteGitHub`** - A fake GitHub gateway for testing remote workflow dispatch. Created with:
+   - `authenticated_user` - Mock GitHub user
+   - `default_branch_name` - Default branch for workflow ref
+   - `default_branch_sha` - Default branch commit SHA
+   - `next_pr_number` - Auto-incrementing PR numbers
+   - `dispatch_run_id` - Mock workflow run ID
+   - `prs` - Dictionary of PR number to `RemotePRInfo`
+
+... [47 lines omitted] ...
+
+- **repo resolution** (1 test) - Error handling for invalid repo format
+- **plan-implement remote** (1 test) - Usage error for unsupported command
+  </tool_result>
+  <tool_result tool="toolu_01Q7TQ7R3P4o347rEBrBmoCK">
+&lt;retrieval_status&gt;success&lt;/retrieval_status&gt;
+
+&lt;task_id&gt;a475da0&lt;/task_id&gt;
+
+&lt;task_type&gt;local_agent&lt;/task_type&gt;
+
+&lt;status&gt;completed&lt;/status&gt;
+
+&lt;output&gt;
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/one_shot.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/repo_resolution.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/repo_resolution.py"}
+[Tool: Grep] {"pattern":"def get_remote_github","path":"/home/runner/work/erk/erk/src"}
+[Tool: Glob] {"pattern":"**/repo_resolution.py","path":"/home/runner/work/erk/erk"}
+[Tool: Glob] {"pattern":"**/repo_resolution.py","path":"/home/runner/work/erk/erk"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/repo_resolution.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/repo_resolution.py"}
+
+--- RESULT ---
+Perfect! Now I have both functions. Let me provide you with a comprehensive comparison:
+
+## `_get_remote_github` in one_shot.py
+
+**Location:** `/home/runner/work/erk/erk/src/erk/cli/commands/one_shot.py`  
+**Lines:** 32-55
+
+```python
+def _get_remote_github(ctx: ErkContext) -&gt; RemoteGitHub:
+    """Get or construct a RemoteGitHub from context.
+
+
+... [71 lines omitted] ...
+
+        UserFacingCliError: If no http_client is available
+        raise UserFacingCliError(
+        UserFacingCliError: If no http_client is available
+        raise UserFacingCliError(
+  </tool_result>
+  <tool_result tool="toolu_01RUg75u4XxHS5h8WEgnkQ7Q">
+&lt;retrieval_status&gt;success&lt;/retrieval_status&gt;
+
+&lt;task_id&gt;ab0404e&lt;/task_id&gt;
+
+&lt;task_type&gt;local_agent&lt;/task_type&gt;
+
+&lt;status&gt;completed&lt;/status&gt;
+
+&lt;output&gt;
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/launch_cmd.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/launch_cmd.py"}
+[Tool: Grep] {"pattern":"resolved_repo_option|def resolved_repo_option","path":"/home/runner/work/erk/erk/src/erk/cli","type":"py"}
+[Tool: Grep] {"pattern":"resolved_repo_option|def resolved_repo_option","path":"/home/runner/work/erk/erk/src/erk/cli","type":"py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/repo_resolution.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/repo_resolution.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/ref_resolution.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/ref_resolution.py"}
+
+--- RESULT ---
+Perfect! Now I have all the information needed. Let me compile the comprehensive report with the relevant code sections and line numbers.
+
+## Summary
+
+I've found all the requested information from `/home/runner/work/erk/erk/src/erk/cli/commands/launch_cmd.py`. Here are the key sections:
+
+### 1. `--repo` Flag Addition and `target_repo` Parameter Usage
+
+**File:** `/home/runner/work/erk/erk/src/erk/cli/repo_resolution.py` (lines 78-84)
+
+The `--repo` flag is defined as a click option decorator:
+
+... [182 lines omitted] ...
+
+        UserFacingCliError: If owner/repo cannot be determined
+            raise UserFacingCliError(
+        raise UserFacingCliError(
+        UserFacingCliError: If no http_client is available
+        raise UserFacingCliError(
+    raise click.UsageError("--ref-current requires a local git repository")
+        click.UsageError: If both --ref and --ref-current are provided,
+        raise click.UsageError("--ref and --ref-current are mutually exclusive")
+            raise click.UsageError("--ref-current requires being on a branch (not detached HEAD)")
+  </tool_result>
+  <assistant>Now I have all the context I need. Let me also read the actual test file for launch remote paths to get the exact helper patterns.</assistant>
+  <usage input_tokens="2757" cache_creation_input_tokens="2891" cache_read_input_tokens="45826" cache_creation="{'ephemeral_5m_input_tokens': 2891, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01NKUKasVc9c9baNDDjL1Ew3">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/launch/test_launch_remote_paths.py</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="2757" cache_creation_input_tokens="2891" cache_read_input_tokens="45826" cache_creation="{'ephemeral_5m_input_tokens': 2891, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01HjrZ9kezkmdrYAy5MvkS1J">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/objective/test_plan_one_shot.py</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="2757" cache_creation_input_tokens="2891" cache_read_input_tokens="45826" cache_creation="{'ephemeral_5m_input_tokens': 2891, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01NKUKasVc9c9baNDDjL1Ew3">
+     1→"""Tests for launch command with --repo flag (no local repo)."""
+     2→
+     3→from pathlib import Path
+     4→
+     5→from click.testing import CliRunner
+     6→
+     7→from erk.cli.cli import cli
+     8→from erk.cli.constants import WORKFLOW_COMMAND_MAP
+     9→from erk.core.context import context_for_test
+    10→from erk_shared.context.types import NoRepoSentinel
+    11→from erk_shared.gateway.remote_github.fake import FakeRemoteGitHub
+    12→from erk_shared.gateway.remote_github.types import RemotePRInfo
+    13→
+    14→
+    15→def _make_fake_remote(
+    16→    *,
+    17→    prs: dict[int, RemotePRInfo] | None = None,
+    18→) -&gt; FakeRemoteGitHub:
+    19→    """Create a FakeRemoteGitHub with sensible defaults."""
+    20→    return FakeRemoteGitHub(
+    21→        authenticated_user="test-user",
+    22→        default_branch_name="main",
+    23→        default_branch_sha="abc123",
+    24→        next_pr_number=1,
+    25→        dispatch_run_id="run-123",
+    26→        issues=None,
+    27→        issue_comments=None,
+    28→        pr_references=None,
+    29→        prs=prs,
+    30→    )
+
+... [75 lines omitted] ...
+
+    77→    assert result.exit_code == 0, f"Unexpected failure:\n{result.output}"
+  </tool_result>
+  <tool_result tool="toolu_01HjrZ9kezkmdrYAy5MvkS1J">
+     1→"""Tests for objective plan --one-shot command."""
+     2→
+     3→from datetime import UTC, datetime
+     4→
+     5→from click.testing import CliRunner
+     6→
+     7→from erk.cli.cli import cli
+     8→from erk_shared.gateway.git.fake import FakeGit
+     9→from erk_shared.gateway.github.fake import FakeLocalGitHub
+    10→from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+    11→from erk_shared.gateway.github.issues.types import IssueInfo
+    12→from erk_shared.gateway.remote_github.fake import FakeRemoteGitHub
+    13→from tests.test_utils.context_builders import build_workspace_test_context
+    14→from tests.test_utils.env_helpers import erk_isolated_fs_env
+    15→from tests.test_utils.plan_helpers import format_plan_header_body_for_test
+    16→
+    17→OBJECTIVE_BODY = """# Objective: Add caching
+    18→
+    19→&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+    20→&lt;!-- erk:metadata-block:objective-roadmap --&gt;
+    21→&lt;details&gt;
+    22→&lt;summary&gt;&lt;code&gt;objective-roadmap&lt;/code&gt;&lt;/summary&gt;
+    23→
+    24→```yaml
+    25→
+    26→schema_version: '2'
+    27→steps:
+    28→  - id: '1.1'
+    29→    description: Setup infra
+    30→    status: pending
+
+... [75 lines omitted] ...
+
+    67→&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+  </tool_result>
+  <assistant>Let me read more of the test file for one_shot to understand the full patterns.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="5880" cache_read_input_tokens="48717" cache_creation="{'ephemeral_5m_input_tokens': 5880, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01YDe9vELP7Nc96WhyTgQStm">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/objective/test_plan_one_shot.py</param>
+    <param name="offset">100</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5880" cache_read_input_tokens="48717" cache_creation="{'ephemeral_5m_input_tokens': 5880, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Glob" id="toolu_01PapmUsVu6AX9T4BCRSSMh4">
+    <param name="pattern">tests/commands/objective/test_plan_*.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5880" cache_read_input_tokens="48717" cache_creation="{'ephemeral_5m_input_tokens': 5880, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01YDe9vELP7Nc96WhyTgQStm">
+   100→"""
+   101→
+   102→NOW = datetime(2024, 1, 15, 12, 0, 0, tzinfo=UTC)
+   103→
+   104→
+   105→def _make_objective_issue(number: int, body: str) -&gt; IssueInfo:
+   106→    return IssueInfo(
+   107→        number=number,
+   108→        title="Add caching",
+   109→        body=body,
+   110→        state="OPEN",
+   111→        url=f"https://github.com/owner/repo/issues/{number}",
+   112→        labels=["erk-objective"],
+   113→        assignees=[],
+   114→        created_at=NOW,
+   115→        updated_at=NOW,
+   116→        author="testuser",
+   117→    )
+   118→
+   119→
+   120→def _make_remote(*, issues: dict[int, IssueInfo] | None = None) -&gt; FakeRemoteGitHub:
+   121→    """Create a default FakeRemoteGitHub for tests."""
+   122→    return FakeRemoteGitHub(
+   123→        authenticated_user="testuser",
+   124→        default_branch_name="main",
+   125→        default_branch_sha="abc123",
+   126→        next_pr_number=1,
+   127→        dispatch_run_id="run-1",
+   128→        issues=issues,
+   129→        issue_comments=None,
+
+... [431 lines omitted] ...
+
+   171→            catch_exceptions=False,
+   174→        assert result.exit_code == 0, f"Command failed: {result.output}"
+   218→            catch_exceptions=False,
+   220→        assert result1.exit_code == 0, f"First invocation failed: {result1.output}"
+   232→            catch_exceptions=False,
+   234→        assert result2.exit_code == 0, f"Second invocation failed: {result2.output}"
+   249→&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+   292→            catch_exceptions=False,
+   295→        assert result.exit_code == 0, f"Command failed: {result.output}"
+   318→            catch_exceptions=False,
+   321→        assert result.exit_code == 0, f"Command failed: {result.output}"
+   344→            catch_exceptions=False,
+   357→    """Test --node with nonexistent node ID errors."""
+   392→            catch_exceptions=False,
+   409→    """Test error when objective issue doesn't exist."""
+   442→            catch_exceptions=False,
+   445→        assert result.exit_code == 0, f"Command failed: {result.output}"
+   453→    """Test --model, --dry-run without --one-shot produce errors."""
+   514→            catch_exceptions=False,
+   517→        assert result.exit_code == 0, f"Command failed: {result.output}"
+  </tool_result>
+  <tool_result tool="toolu_01PapmUsVu6AX9T4BCRSSMh4">
+/home/runner/work/erk/erk/tests/commands/objective/test_plan_one_shot.py
+  </tool_result>
+  <assistant>Now I have all the context I need. Let me also quickly check the `context_for_test` import to understand how the remote paths test uses it.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="6573" cache_read_input_tokens="54597" cache_creation="{'ephemeral_5m_input_tokens': 6573, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_015iinD2RMvjHbDZBaetp3yD">
+    <param name="pattern">def context_for_test</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/core/context.py</param>
+    <param name="output_mode">content</param>
+    <param name="-A">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6573" cache_read_input_tokens="54597" cache_creation="{'ephemeral_5m_input_tokens': 6573, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_015iinD2RMvjHbDZBaetp3yD">
+207:def context_for_test(
+208-    *,
+209-    git: Git | None = None,
+210-    github: LocalGitHub | None = None,
+211-    github_admin: GitHubAdmin | None = None,
+212-    issues: GitHubIssues | None = None,
+213-    plan_store: PlanBackend | None = None,
+214-    graphite: Graphite | None = None,
+215-    console: Console | None = None,
+216-    shell: Shell | None = None,
+217-    codespace: Codespace | None = None,
+218-    cmux: Cmux | None = None,
+219-    agent_launcher: AgentLauncher | None = None,
+220-    agent_docs: AgentDocs | None = None,
+221-    completion: Completion | None = None,
+222-    time: Time | None = None,
+223-    erk_installation: ErkInstallation | None = None,
+224-    script_writer: ScriptWriter | None = None,
+225-    plan_list_service: PlanListService | None = None,
+226-    objective_list_service: ObjectiveListService | None = None,
+227-    codespace_registry: CodespaceRegistry | None = None,
+228-    claude_installation: ClaudeInstallation | None = None,
+229-    prompt_executor: PromptExecutor | None = None,
+230-    cwd: Path | None = None,
+231-    global_config: GlobalConfig | None = None,
+232-    local_config: LoadedConfig | None = None,
+233-    repo: RepoContext | NoRepoSentinel | None = None,
+234-    repo_info: RepoInfo | None = None,
+235-    package_info: ErkPackageInfo | None = None,
+236-    remote_github: RemoteGitHub | None = None,
+
+... [1 lines omitted] ...
+  </tool_result>
+  <assistant>Now I have everything. Let me start implementing. I'll begin with Phase 1.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="665" cache_read_input_tokens="61170" cache_creation="{'ephemeral_5m_input_tokens': 665, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01SMZcTJtMeCPv3c7CmhRjFg">
+    <param name="todos">[{'content': 'Phase 1: Add --repo flag to plan_objective command', 'status': 'in_progress'...[truncated 930 chars]...ng issues'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="665" cache_read_input_tokens="61170" cache_creation="{'ephemeral_5m_input_tokens': 665, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01SMZcTJtMeCPv3c7CmhRjFg">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Let me load the dignified-python skill before writing code.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="441" cache_read_input_tokens="61835" cache_creation="{'ephemeral_5m_input_tokens': 441, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Skill" id="toolu_01K5xfSxNBgHNAVyg58bxLoR">
+    <param name="skill">dignified-python</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="441" cache_read_input_tokens="61835" cache_creation="{'ephemeral_5m_input_tokens': 441, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01K5xfSxNBgHNAVyg58bxLoR">
+Launching skill: dignified-python
+  </tool_result>
+  <user>Base directory for this skill: /home/runner/work/erk/erk/.claude/skills/dignified-python
+
+# Dignified Python Coding Standards
+
+## Core Knowledge (ALWAYS Loaded)
+
+@dignified-python-core.md
+
+## Version Detection
+
+**Identify the project's minimum Python version** by checking (in order):
+
+1. `pyproject.toml` - Look for `requires-python` field (e.g., `requires-python = "&gt;=3.12"`)
+2. `setup.py` or `setup.cfg` - Look for `python_requires`
+3. `.python-version` file - Contains version like `3.12` or `3.12.0`
+4. Default to Python 3.12 if no version specifier found
+
+**Once identified, load the appropriate version-specific file:**
+
+- Python 3.10: Load `versions/python-3.10.md`
+- Python 3.11: Load `versions/python-3.11.md`
+- Python 3.12: Load `versions/python-3.12.md`
+- Python 3.13: Load `versions/python-3.13.md`
+
+## Conditional Loading (Load Based on Task Patterns)
+
+Core files above cover 80%+ of Python code patterns. Only load these additional files when you detect specific patterns:
+
+Pattern detection examples:
+
+- If task mentions "click" or "CLI" -&gt; Load `cli-patterns.md`
+- If task mentions "subprocess" -&gt; Load `subprocess.md`
+
+## When to Read Each Reference Document
+
+The `references/` directory contains detailed guidance for specialized topics. Load these on-demand when you encounter relevant patterns:
+
+### `references/exception-handling.md`
+
+**Read when**:
+
+- Writing try/except blocks
+- Wrapping third-party APIs that may raise
+- Seeing or writing `from e` or `from None`
+- Unsure if LBYL alternative exists
+
+### `references/interfaces.md`
+
+**Read when**:
+
+- Creating ABC or Protocol classes
+- Writing @abstractmethod decorators
+- Designing gateway layer interfaces
+- Choosing between ABC and Protocol
+
+### `references/typing-advanced.md`
+
+**Read when**:
+
+- Using typing.cast()
+- Creating Literal type aliases
+- Narrowing types in conditional blocks
+
+### `references/module-design.md`
+
+**Read when**:
+
+- Creating new Python modules
+- Adding module-level code (beyond simple constants)
+- Using @cache decorator at module level
+- Seeing Path() or computation at module level
+- Considering inline imports
+
+### `references/api-design.md`
+
+**Read when**:
+
+- Adding default parameter values to functions
+- Defining functions with 5 or more parameters
+- Using ThreadPoolExecutor.submit()
+- Reviewing function signatures
+
+### `references/checklists.md`
+
+**Read when**:
+
+- Final review before committing Python code
+- Unsure if you've followed all rules
+- Need a quick lookup of requirements
+
+## How to Use This Skill
+
+1. **Core knowledge** is loaded automatically (LBYL, pathlib, basic imports, anti-patterns)
+2. **Version detection** happens once - identify the minimum Python version and load the appropriate version file
+3. **Reference documents** are loaded on-demand based on the triggers above
+4. **Additional patterns** may require extra loading (CLI patterns, subprocess)
+5. **Each file is self-contained** with complete guidance for its domain
+</user>
+  <assistant>Now let me read the core rules and the version-specific file for this project.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="889" cache_read_input_tokens="62276" cache_creation="{'ephemeral_5m_input_tokens': 889, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01LLCgWA9mKPdfTAL7AibLvV">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/skills/dignified-python/dignified-python-core.md</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="889" cache_read_input_tokens="62276" cache_creation="{'ephemeral_5m_input_tokens': 889, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01RvbRSoAf1k22XR5qGh478s">
+    <param name="file_path">/home/runner/work/erk/erk/pyproject.toml</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="889" cache_read_input_tokens="62276" cache_creation="{'ephemeral_5m_input_tokens': 889, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01LLCgWA9mKPdfTAL7AibLvV">
+     1→---
+     2→---
+     3→
+     4→# Dignified Python - Core Standards
+     5→
+     6→This document contains the core Python coding standards that apply to 80%+ of Python code. These principles are loaded with every skill invocation.
+     7→
+     8→For conditional loading of specialized patterns:
+     9→
+    10→- CLI development -&gt; Load `cli-patterns.md`
+    11→- Subprocess operations -&gt; Load `subprocess.md`
+    12→
+    13→For detailed reference material, see the "When to Read Each Reference" section in SKILL.md.
+    14→
+    15→---
+    16→
+    17→## The Cornerstone: LBYL Over EAFP
+    18→
+    19→**Look Before You Leap: Check conditions proactively, NEVER use exceptions for control flow.**
+    20→
+    21→This is the single most important rule in dignified Python. Every pattern below flows from this principle.
+    22→
+    23→```python
+    24→# CORRECT: Check first
+    25→if key in mapping:
+    26→    value = mapping[key]
+    27→    process(value)
+    28→
+    29→# WRONG: Exception as control flow
+    30→try:
+
+... [502 lines omitted] ...
+
+    33→except KeyError:
+    39→## Exception Handling Basics
+    45→LBYL means checking conditions before acting. EAFP (Easier to Ask for Forgiveness than Permission) means trying operations and catching exceptions. In dignified Python, we strongly prefer LBYL.
+    65→# WRONG: KeyError as control flow
+    68→except KeyError:
+    72→### When Exceptions ARE Acceptable
+    74→Exceptions are ONLY acceptable at:
+    76→1. **Error boundaries** (CLI/API level)
+    80→**Default: Let exceptions bubble up**
+    82→**When you must use try-except: scope the try block to the single operation that raises.** Don't wrap multiple operations in one try block — each handler should know exactly what failed. Use early returns to keep subsequent code flat.
+    84→For detailed exception handling patterns including minimal exception scope, B904 chaining, third-party API examples, and anti-patterns, see `references/exception-handling.md`.
+   118→- `.resolve()` raises `OSError` for non-existent paths
+   119→- `.is_relative_to()` raises `ValueError` for invalid comparisons
+   120→- Checking `.exists()` first avoids exceptions entirely (LBYL!)
+   135→# WRONG: Using exceptions for path validation
+   140→except (OSError, ValueError):
+   180→3. **Inline imports only for specific exceptions** (circular deps, TYPE_CHECKING, conditional features)
+   211→**Acceptable exceptions:**
+   480→    log.warning("Non-numeric plan_id")
+   494→- **Raise exception**: When invalid data indicates a programming error or corrupt state
+   521→- **Exception chaining (B904), minimal exception scope**: `references/exception-handling.md`
+  </tool_result>
+  <tool_result tool="toolu_01RvbRSoAf1k22XR5qGh478s">
+     1→[tool.uv.workspace]
+     2→members = ["packages/*"]
+     3→
+     4→[tool.uv.sources]
+     5→erk-dev = { workspace = true }
+     6→erk-mcp = { workspace = true }
+     7→erk-shared = { workspace = true }
+     8→erk-statusline = { workspace = true }
+     9→
+    10→[project]
+    11→name = "erk"
+    12→version = "0.9.9"
+    13→description = "Add your description here"
+    14→readme = "README.md"
+    15→authors = [
+    16→    { name = "Dagster Labs", email = "hello@dagsterlabs.com" }
+    17→]
+    18→requires-python = "&gt;=3.11"
+    19→dependencies = [
+    20→    "anthropic&gt;=0.40.0",
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>Good - Python 3.11+. Now I have all the context needed. Let me implement the changes systematically. I'll do Phases 1-5 together since they're all in the same file.
+
+**Phase 1: Add `--repo` flag and update imports**</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="6546" cache_read_input_tokens="63165" cache_creation="{'ephemeral_5m_input_tokens': 6546, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01KCEccAQw4Tjhrx89KtDcRv">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/objective/plan_cmd.py</param>
+    <param name="old_string">from erk.cli.commands.one_shot import _get_remote_github
+from erk.cli.commands.one_shot_re...[truncated 94 chars]...tion import resolve_dispatch_ref
+from erk.cli.github_parsing import parse_issue_identifier</param>
+    <param name="new_string">from erk.cli.commands.one_shot_remote_dispatch import (
+    OneShotDispatchParams,
+    dis...[truncated 124 chars]...ier
+from erk.cli.repo_resolution import get_remote_github, repo_option, resolve_owner_repo</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6546" cache_read_input_tokens="63165" cache_creation="{'ephemeral_5m_input_tokens': 6546, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01KCEccAQw4Tjhrx89KtDcRv">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/objective/plan_cmd.py has been updated successfully.
+  </tool_result>
+  <assistant>Now add `@repo_option` decorator and `target_repo` parameter to `plan_objective`, plus validation:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="682" cache_read_input_tokens="69711" cache_creation="{'ephemeral_5m_input_tokens': 682, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01TfZL8SHEwKT4rSuTp5KyZX">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/objective/plan_cmd.py</param>
+    <param name="old_string">@click.option(
+    "--ref-current",
+    is_flag=True,
+    default=False,
+    help="Dispatc...[truncated 241 chars]...,
+    all_unblocked: bool,
+    dispatch_ref: str | None,
+    ref_current: bool,
+) -&gt; None:</param>
+    <param name="new_string">@click.option(
+    "--ref-current",
+    is_flag=True,
+    default=False,
+    help="Dispatc...[truncated 283 chars]...  dispatch_ref: str | None,
+    ref_current: bool,
+    target_repo: str | None,
+) -&gt; None:</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="682" cache_read_input_tokens="69711" cache_creation="{'ephemeral_5m_input_tokens': 682, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01TfZL8SHEwKT4rSuTp5KyZX">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/objective/plan_cmd.py has been updated successfully.
+  </tool_result>
+  <assistant>Now add the `--repo` validation (incompatible with interactive mode) and pass `target_repo` through to handlers:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="519" cache_read_input_tokens="70393" cache_creation="{'ephemeral_5m_input_tokens': 519, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01N9XuLXfgyhz9Ur6imDsKJk">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/objective/plan_cmd.py</param>
+    <param name="old_string">    # Validate flag combinations
+    if all_unblocked and node_id is not None:
+        rai...[truncated 1447 chars]...tx, issue_ref=issue_ref, dangerous=dangerous, node_id=node_id, use_next=use_next
+        )</param>
+    <param name="new_string">    # Validate flag combinations
+    if all_unblocked and node_id is not None:
+        rai...[truncated 1734 chars]...tx, issue_ref=issue_ref, dangerous=dangerous, node_id=node_id, use_next=use_next
+        )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="519" cache_read_input_tokens="70393" cache_creation="{'ephemeral_5m_input_tokens': 519, 'ephemeral_1h_input_tokens': 0}" output_tokens="1202" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01N9XuLXfgyhz9Ur6imDsKJk">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/objective/plan_cmd.py has been updated successfully.
+  </tool_result>
+  <assistant>Phase 1 done. Now **Phase 2: Refactor `_resolve_next()` for remote support**:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1516" cache_read_input_tokens="70912" cache_creation="{'ephemeral_5m_input_tokens': 1516, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_017EqbA8gBNqpiPkcKDtX7Ed">
+    <param name="todos">[{'content': 'Phase 1: Add --repo flag to plan_objective command', 'status': 'completed', ...[truncated 932 chars]...ng issues'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1516" cache_read_input_tokens="70912" cache_creation="{'ephemeral_5m_input_tokens': 1516, 'ephemeral_1h_input_tokens': 0}" output_tokens="408" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_017EqbA8gBNqpiPkcKDtX7Ed">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01PhcqT9VKZJyrJkmqL1chGu">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/objective/plan_cmd.py</param>
+    <param name="old_string">def _resolve_next(
+    ctx: ErkContext,
+    *,
+    issue_ref: str | None,
+) -&gt; ResolvedNex...[truncated 2241 chars]...      issue_number=issue_number,
+        node=found[0],
+        phase_name=found[1],
+    )</param>
+    <param name="new_string">def _resolve_next(
+    ctx: ErkContext,
+    *,
+    issue_ref: str | None,
+    target_repo:...[truncated 2367 chars]...      issue_number=issue_number,
+        node=found[0],
+        phase_name=found[1],
+    )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="450" cache_read_input_tokens="72428" cache_creation="{'ephemeral_5m_input_tokens': 450, 'ephemeral_1h_input_tokens': 0}" output_tokens="1541" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01PhcqT9VKZJyrJkmqL1chGu">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/objective/plan_cmd.py has been updated successfully.
+  </tool_result>
+  <assistant>Phase 2 done. Now **Phase 3: Refactor `_resolve_all_unblocked()` for remote support**:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1588" cache_read_input_tokens="72878" cache_creation="{'ephemeral_5m_input_tokens': 1588, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_013LjJi59z3VDmzVnBJG1QSU">
+    <param name="todos">[{'content': 'Phase 1: Add --repo flag to plan_objective command', 'status': 'completed', ...[truncated 934 chars]...ng issues'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1588" cache_read_input_tokens="72878" cache_creation="{'ephemeral_5m_input_tokens': 1588, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_013LjJi59z3VDmzVnBJG1QSU">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01EZ85VBBrAsYhnqyeYmYeNP">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/objective/plan_cmd.py</param>
+    <param name="old_string">def _resolve_all_unblocked(
+    ctx: ErkContext,
+    *,
+    issue_ref: str | None,
+) -&gt; Re...[truncated 2375 chars]...lvedAllUnblocked(
+        issue_number=issue_number,
+        nodes=node_phase_pairs,
+    )</param>
+    <param name="new_string">def _resolve_all_unblocked(
+    ctx: ErkContext,
+    *,
+    issue_ref: str | None,
+    tar...[truncated 2501 chars]...lvedAllUnblocked(
+        issue_number=issue_number,
+        nodes=node_phase_pairs,
+    )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="454" cache_read_input_tokens="74466" cache_creation="{'ephemeral_5m_input_tokens': 454, 'ephemeral_1h_input_tokens': 0}" output_tokens="1617" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01EZ85VBBrAsYhnqyeYmYeNP">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/objective/plan_cmd.py has been updated successfully.
+  </tool_result>
+  <assistant>Phase 3 done. Now **Phase 4: Refactor `_handle_one_shot()` for remote support**:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1664" cache_read_input_tokens="74920" cache_creation="{'ephemeral_5m_input_tokens': 1664, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01MjizkvDfNsZ9Fi5RTaUKha">
+    <param name="todos">[{'content': 'Phase 1: Add --repo flag to plan_objective command', 'status': 'completed', ...[truncated 936 chars]...ng issues'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1664" cache_read_input_tokens="74920" cache_creation="{'ephemeral_5m_input_tokens': 1664, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01MjizkvDfNsZ9Fi5RTaUKha">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01XyENiQqEcubCZHfF7Myaa2">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/objective/plan_cmd.py</param>
+    <param name="old_string">def _handle_one_shot(
+    ctx: ErkContext,
+    *,
+    issue_ref: str | None,
+    model: st...[truncated 4480 chars]...        node_id=target_node.id,
+            pr_number=dispatch_result.pr_number,
+        )</param>
+    <param name="new_string">def _handle_one_shot(
+    ctx: ErkContext,
+    *,
+    issue_ref: str | None,
+    model: st...[truncated 4263 chars]...        node_id=target_node.id,
+            pr_number=dispatch_result.pr_number,
+        )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="452" cache_read_input_tokens="76584" cache_creation="{'ephemeral_5m_input_tokens': 452, 'ephemeral_1h_input_tokens': 0}" output_tokens="2671" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01XyENiQqEcubCZHfF7Myaa2">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/objective/plan_cmd.py has been updated successfully.
+  </tool_result>
+  <assistant>Phase 4 done. Now **Phase 5: Refactor `_handle_all_unblocked()` for remote support**:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2718" cache_read_input_tokens="77036" cache_creation="{'ephemeral_5m_input_tokens': 2718, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01TqkdkKu4HVmiZnGJFoBsjf">
+    <param name="todos">[{'content': 'Phase 1: Add --repo flag to plan_objective command', 'status': 'completed', ...[truncated 938 chars]...ng issues'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2718" cache_read_input_tokens="77036" cache_creation="{'ephemeral_5m_input_tokens': 2718, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01TqkdkKu4HVmiZnGJFoBsjf">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01Jx3BXjpjqcPFXa3HGGFpFK">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/objective/plan_cmd.py</param>
+    <param name="old_string">def _handle_all_unblocked(
+    ctx: ErkContext,
+    *,
+    issue_ref: str | None,
+    mode...[truncated 1097 chars]...current)
+    remote = _get_remote_github(ctx)
+
+    for node, phase_name in resolved.nodes:</param>
+    <param name="new_string">def _handle_all_unblocked(
+    ctx: ErkContext,
+    *,
+    issue_ref: str | None,
+    mode...[truncated 1329 chars]...ault_branch_name(owner=owner, repo=repo_name)
+
+    for node, phase_name in resolved.nodes:</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="454" cache_read_input_tokens="79754" cache_creation="{'ephemeral_5m_input_tokens': 454, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Jx3BXjpjqcPFXa3HGGFpFK">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/objective/plan_cmd.py has been updated successfully.
+  </tool_result>
+  <assistant>Now I need to update the remaining `_get_remote_github` calls in `_handle_all_unblocked` (the batch update section):</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1048" cache_read_input_tokens="80208" cache_creation="{'ephemeral_5m_input_tokens': 1048, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01Rjt5BeiaCkP8tKCDcNW8Us">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/objective/plan_cmd.py</param>
+    <param name="offset">325</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1048" cache_read_input_tokens="80208" cache_creation="{'ephemeral_5m_input_tokens': 1048, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Rjt5BeiaCkP8tKCDcNW8Us">
+   325→            },
+   326→            slug=slug,
+   327→        )
+   328→
+   329→        dispatch_result = dispatch_one_shot_remote(
+   330→            remote=remote,
+   331→            owner=owner,
+   332→            repo=repo_name,
+   333→            params=params,
+   334→            dry_run=dry_run,
+   335→            ref=ref,
+   336→            time_gateway=ctx.time,
+   337→            prompt_executor=ctx.prompt_executor,
+   338→        )
+   339→
+   340→        if dispatch_result is not None:
+   341→            successful_dispatches.append((node.id, dispatch_result.pr_number))
+   342→            dispatched_count += 1
+   343→
+   344→    # Single atomic update after all dispatches complete
+   345→    if successful_dispatches:
+   346→        user_output("Updating objective roadmap...")
+   347→        _batch_update_objective_nodes(
+   348→            _get_remote_github(ctx),
+   349→            owner=owner,
+   350→            repo=repo_name,
+   351→            issue_number=resolved.issue_number,
+   352→            node_updates=successful_dispatches,
+   353→        )
+   354→
+
+... [25 lines omitted] ...
+  </tool_result>
+</session>
