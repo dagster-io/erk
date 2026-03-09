@@ -447,7 +447,8 @@ def launch(
         raise UserFacingCliError(
             "GitHub is not authenticated\n\n"
             "Authenticate with: gh auth login\n\n"
-            "This is required before dispatching workflows."
+            "This is required before dispatching workflows.",
+            error_type="auth_required",
         )
 
     # 3. Validate workflow name
@@ -474,7 +475,8 @@ def launch(
         if not has_local_repo:
             raise UserFacingCliError(
                 "--pr is required for pr-rebase without a local repo"
-                " (no local branch to infer from)"
+                " (no local branch to infer from)",
+                error_type="missing_option",
             )
         assert not isinstance(ctx.repo, NoRepoSentinel)
         current_branch = Ensure.not_none(

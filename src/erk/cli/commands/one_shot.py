@@ -19,6 +19,8 @@ import click
 from erk.cli.commands.implement_shared import normalize_model_name
 from erk.cli.commands.one_shot_remote_dispatch import (
     OneShotDispatchParams,
+    OneShotDispatchResult,
+    OneShotDryRunResult,
     dispatch_one_shot_remote,
 )
 from erk.cli.commands.ref_resolution import resolve_dispatch_ref
@@ -127,7 +129,7 @@ def one_shot(
     dispatch_ref: str | None,
     ref_current: bool,
     target_repo: str | None,
-) -> None:
+) -> OneShotDispatchResult | OneShotDryRunResult:
     """Submit a task for fully autonomous remote execution.
 
     Creates a branch, draft PR, and dispatches a GitHub Actions workflow

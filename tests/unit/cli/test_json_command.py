@@ -11,7 +11,6 @@ from click.testing import CliRunner
 from erk.cli.ensure import UserFacingCliError
 from erk.cli.json_command import emit_json, emit_json_result, json_command
 
-
 # -- Helpers --
 
 
