@@ -5,19 +5,20 @@
     {
       "session_id": "45fc3917-c33c-41f2-9822-45ebcad9002b",
       "stage": "impl",
-      "source": "local",
-      "uploaded_at": "2026-03-09T12:11:19.122435+00:00",
+      "source": "remote",
+      "uploaded_at": "2026-03-09T12:12:15.927440+00:00",
       "files": [
         "impl-45fc3917-c33c-41f2-9822-45ebcad9002b-45fc3917-c33c-41f2-9822-45ebcad9002b-part1.xml",
         "impl-45fc3917-c33c-41f2-9822-45ebcad9002b-45fc3917-c33c-41f2-9822-45ebcad9002b-part2.xml",
         "impl-45fc3917-c33c-41f2-9822-45ebcad9002b-45fc3917-c33c-41f2-9822-45ebcad9002b-part3.xml",
         "impl-45fc3917-c33c-41f2-9822-45ebcad9002b-45fc3917-c33c-41f2-9822-45ebcad9002b-part4.xml",
-        "impl-45fc3917-c33c-41f2-9822-45ebcad9002b-45fc3917-c33c-41f2-9822-45ebcad9002b-part5.xml"
+        "impl-45fc3917-c33c-41f2-9822-45ebcad9002b-45fc3917-c33c-41f2-9822-45ebcad9002b-part5.xml",
+        "impl-45fc3917-c33c-41f2-9822-45ebcad9002b-45fc3917-c33c-41f2-9822-45ebcad9002b-part6.xml"
       ],
       "user_turns": 2,
-      "duration_minutes": 6,
-      "raw_size_kb": 1165,
-      "xml_size_kb": 133,
+      "duration_minutes": 7,
+      "raw_size_kb": 1184,
+      "xml_size_kb": 140,
       "git_branch": "plnd/fix-slot-reuse-worktree-03-09-0759"
     }
   ]
