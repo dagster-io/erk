@@ -25,6 +25,30 @@
       "raw_size_kb": 1864,
       "xml_size_kb": 489,
       "git_branch": "plnd/best-of-both-machine-cli-03-10-0835"
+    },
+    {
+      "session_id": "7123279c-6795-48bc-ad57-a4eac5c4f72f",
+      "stage": "impl",
+      "source": "remote",
+      "uploaded_at": "2026-03-10T09:03:24.231249+00:00",
+      "files": [
+        "impl-7123279c-6795-48bc-ad57-a4eac5c4f72f-7123279c-6795-48bc-ad57-a4eac5c4f72f-part1.xml",
+        "impl-7123279c-6795-48bc-ad57-a4eac5c4f72f-7123279c-6795-48bc-ad57-a4eac5c4f72f-part10.xml",
+        "impl-7123279c-6795-48bc-ad57-a4eac5c4f72f-7123279c-6795-48bc-ad57-a4eac5c4f72f-part11.xml",
+        "impl-7123279c-6795-48bc-ad57-a4eac5c4f72f-7123279c-6795-48bc-ad57-a4eac5c4f72f-part2.xml",
+        "impl-7123279c-6795-48bc-ad57-a4eac5c4f72f-7123279c-6795-48bc-ad57-a4eac5c4f72f-part3.xml",
+        "impl-7123279c-6795-48bc-ad57-a4eac5c4f72f-7123279c-6795-48bc-ad57-a4eac5c4f72f-part4.xml",
+        "impl-7123279c-6795-48bc-ad57-a4eac5c4f72f-7123279c-6795-48bc-ad57-a4eac5c4f72f-part5.xml",
+        "impl-7123279c-6795-48bc-ad57-a4eac5c4f72f-7123279c-6795-48bc-ad57-a4eac5c4f72f-part6.xml",
+        "impl-7123279c-6795-48bc-ad57-a4eac5c4f72f-7123279c-6795-48bc-ad57-a4eac5c4f72f-part7.xml",
+        "impl-7123279c-6795-48bc-ad57-a4eac5c4f72f-7123279c-6795-48bc-ad57-a4eac5c4f72f-part8.xml",
+        "impl-7123279c-6795-48bc-ad57-a4eac5c4f72f-7123279c-6795-48bc-ad57-a4eac5c4f72f-part9.xml"
+      ],
+      "user_turns": 4,
+      "duration_minutes": 25,
+      "raw_size_kb": 1872,
+      "xml_size_kb": 493,
+      "git_branch": "plnd/best-of-both-machine-cli-03-10-0835"
     }
   ]
 }

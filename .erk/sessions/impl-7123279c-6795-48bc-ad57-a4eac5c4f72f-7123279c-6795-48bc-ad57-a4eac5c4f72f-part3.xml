@@ -1,0 +1,1268 @@
+<session>
+  <meta branch="plnd/best-of-both-machine-cli-03-10-0835" />
+  <meta model="claude-opus-4-6" />
+  <tool_use name="Read" id="toolu_01CbGUUeJ3VNZr9rVLUTe86J">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/test_mcp_cli_sync.py</param>
+    <param name="limit">5</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1010" cache_read_input_tokens="140409" cache_creation="{'ephemeral_5m_input_tokens': 1010, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01CbGUUeJ3VNZr9rVLUTe86J">
+     1→"""Parity tests: every @mcp_exposed command is discovered and has correct schema."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→import asyncio
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_use name="Write" id="toolu_01DwYRv2udPXwqHKqSf4no2o">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/test_mcp_cli_sync.py</param>
+    <param name="content">"""Parity tests: every @mcp_exposed command is discovered and has correct schema."""
+
+from...[truncated 2519 chars]...      f"@mcp_exposed '{meta.name}' on '{cmd.name}' is missing @machine_command"
+        )
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="238" cache_read_input_tokens="141419" cache_creation="{'ephemeral_5m_input_tokens': 238, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01DwYRv2udPXwqHKqSf4no2o">
+The file /home/runner/work/erk/erk/tests/unit/cli/test_mcp_cli_sync.py has been updated. Here's the result of running `cat -n` on a snippet of the edited file:
+     1→"""Parity tests: every @mcp_exposed command is discovered and has correct schema."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→import asyncio
+     6→
+     7→from erk.cli.cli import cli
+     8→from erk_mcp.server import _build_machine_command_tools, create_mcp
+     9→from erk_shared.agentclick.machine_schema import request_schema
+    10→from erk_shared.agentclick.mcp_exposed import discover_mcp_commands
+    11→
+    12→
+    13→def test_every_mcp_exposed_command_is_registered_as_mcp_tool() -&gt; None:
+    14→    """Every command with _mcp_meta in the Click tree appears as an MCP tool."""
+    15→    discovered = discover_mcp_commands(cli, _parent_path=())
+    16→    assert len(discovered) &gt; 0, "No @mcp_exposed commands found — check CLI imports"
+    17→
+    18→    server = create_mcp()
+    19→    tools = asyncio.run(server.list_tools())
+    20→    tool_names = {t.name for t in tools}
+    21→
+    22→    for _cmd, meta, _path in discovered:
+    23→        assert meta.name in tool_names, f"@mcp_exposed '{meta.name}' not registered as MCP tool"
+    24→
+    25→
+    26→def test_mcp_tool_schema_matches_request_type_schema() -&gt; None:
+    27→    """Each MCP tool's schema matches request_schema(request_type)."""
+    28→    discovered = discover_mcp_commands(cli, _parent_path=())
+    29→
+
+... [37 lines omitted] ...
+  </tool_result>
+  <assistant>Now update `test_json_command.py` - this test looks for `_json_command_meta` which no longer exists on the commands in the CLI tree. It should now check for `_machine_command_meta`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2016" cache_read_input_tokens="141657" cache_creation="{'ephemeral_5m_input_tokens': 2016, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Write" id="toolu_01Qd5HGuCG79dvdBD72Bbck4">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/test_json_command.py</param>
+    <param name="content">"""Tests for @machine_command that depend on the erk CLI tree."""
+
+import types
+import typ...[truncated 679 chars]..._group)
+    assert len(commands) &gt; 0, "No @machine_command commands found under erk json"
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2016" cache_read_input_tokens="141657" cache_creation="{'ephemeral_5m_input_tokens': 2016, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Qd5HGuCG79dvdBD72Bbck4">
+&lt;tool_use_error&gt;File has not been read yet. Read it first before writing to it.&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_use name="Read" id="toolu_0122r4sz3GHcSQbNrQpZVJEj">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/test_json_command.py</param>
+    <param name="limit">5</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="769" cache_read_input_tokens="143673" cache_creation="{'ephemeral_5m_input_tokens': 769, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_0122r4sz3GHcSQbNrQpZVJEj">
+     1→"""Tests for @json_command that depend on the erk CLI tree."""
+     2→
+     3→import types
+     4→import typing
+     5→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_use name="Write" id="toolu_01JdcqsiN1JBpcgmfTfCKLXQ">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/test_json_command.py</param>
+    <param name="content">"""Tests for @machine_command that depend on the erk CLI tree."""
+
+import click
+
+from erk....[truncated 651 chars]..._group)
+    assert len(commands) &gt; 0, "No @machine_command commands found under erk json"
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="226" cache_read_input_tokens="144442" cache_creation="{'ephemeral_5m_input_tokens': 226, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01JdcqsiN1JBpcgmfTfCKLXQ">
+The file /home/runner/work/erk/erk/tests/unit/cli/test_json_command.py has been updated. Here's the result of running `cat -n` on a snippet of the edited file:
+     1→"""Tests for @machine_command that depend on the erk CLI tree."""
+     2→
+     3→import click
+     4→
+     5→from erk.cli.cli import cli
+     6→
+     7→
+     8→def test_machine_commands_exist_in_json_tree() -&gt; None:
+     9→    """At least one @machine_command exists under erk json."""
+    10→    json_group = cli.commands.get("json")
+    11→    assert json_group is not None, "erk json group not found in CLI tree"
+    12→
+    13→    def _collect_machine_commands(group: click.BaseCommand) -&gt; list[click.BaseCommand]:
+    14→        result = []
+    15→        if hasattr(group, "_machine_command_meta"):
+    16→            result.append(group)
+    17→        if isinstance(group, click.Group):
+    18→            for cmd in group.commands.values():
+    19→                result.extend(_collect_machine_commands(cmd))
+    20→        return result
+    21→
+    22→    commands = _collect_machine_commands(json_group)
+    23→    assert len(commands) &gt; 0, "No @machine_command commands found under erk json"
+    24→
+  </tool_result>
+  <assistant>Now write tests for `machine_command` and `machine_schema`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="700" cache_read_input_tokens="144668" cache_creation="{'ephemeral_5m_input_tokens': 700, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_019uNXgTZ9j1eNABmvm3rVwL">
+    <param name="command">mkdir -p /home/runner/work/erk/erk/packages/erk-shared/tests/unit/agentclick</param>
+    <param name="description">Ensure test directory exists</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="700" cache_read_input_tokens="144668" cache_creation="{'ephemeral_5m_input_tokens': 700, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_019uNXgTZ9j1eNABmvm3rVwL">
+
+  </tool_result>
+  <tool_use name="Write" id="toolu_01Rs6dXTaiGyEiHeDZ9212zN">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/tests/unit/agentclick/test_machine_command.py</param>
+    <param name="content">"""Tests for @machine_command decorator and supporting functions."""
+
+import json
+from dat...[truncated 6971 chars]...loads(result.output)
+    assert data["success"] is True
+    assert data["answer"] == "ok"
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="468" cache_read_input_tokens="145368" cache_creation="{'ephemeral_5m_input_tokens': 468, 'ephemeral_1h_input_tokens': 0}" output_tokens="2224" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Rs6dXTaiGyEiHeDZ9212zN">
+File created successfully at: /home/runner/work/erk/erk/packages/erk-shared/tests/unit/agentclick/test_machine_command.py
+  </tool_result>
+  <tool_use name="Write" id="toolu_01Fra53ghEL4RfDHBf8QtkHN">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/tests/unit/agentclick/test_machine_schema.py</param>
+    <param name="content">"""Tests for machine_schema.py - JSON Schema generation for @machine_command."""
+
+from dat...[truncated 3734 chars]...or_type" in ERROR_SCHEMA["properties"]
+    assert "message" in ERROR_SCHEMA["properties"]
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2276" cache_read_input_tokens="145836" cache_creation="{'ephemeral_5m_input_tokens': 2276, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Fra53ghEL4RfDHBf8QtkHN">
+File created successfully at: /home/runner/work/erk/erk/packages/erk-shared/tests/unit/agentclick/test_machine_schema.py
+  </tool_result>
+  <assistant>Now let me also check if there are any existing tests for `pr_json` or `pr_list` that need updating:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1230" cache_read_input_tokens="148112" cache_creation="{'ephemeral_5m_input_tokens': 1230, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_011ph34dCEskPtHSWzDj7rkU">
+    <param name="pattern">test_pr_json|test_pr_list.*json|PrListResult</param>
+    <param name="path">/home/runner/work/erk/erk/tests</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1230" cache_read_input_tokens="148112" cache_creation="{'ephemeral_5m_input_tokens': 1230, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_011ph34dCEskPtHSWzDj7rkU">
+Found 1 file
+tests/unit/cli/test_pr_json.py
+  </tool_result>
+  <tool_use name="Read" id="toolu_01PTzNuvmaHD7g8UH2QaSa1N">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/test_pr_json.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="521" cache_read_input_tokens="149342" cache_creation="{'ephemeral_5m_input_tokens': 521, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01PTzNuvmaHD7g8UH2QaSa1N">
+     1→"""Tests for erk pr list/view --json output and --schema."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→from datetime import UTC, datetime
+     6→
+     7→from erk.cli.commands.pr.list_cmd import PrListResult
+     8→from erk.cli.commands.pr.view_cmd import PrViewResult, _serialize_header_fields
+     9→
+    10→
+    11→class TestPrListResult:
+    12→    """Tests for PrListResult JSON serialization."""
+    13→
+    14→    def test_to_json_dict_structure(self) -&gt; None:
+    15→        result = PrListResult(
+    16→            plans=[{"plan_id": 42, "full_title": "My Plan"}],
+    17→            count=1,
+    18→        )
+    19→
+    20→        data = result.to_json_dict()
+    21→
+    22→        assert data == {
+    23→            "plans": [{"plan_id": 42, "full_title": "My Plan"}],
+    24→            "count": 1,
+    25→        }
+    26→
+    27→    def test_empty_plans(self) -&gt; None:
+    28→        result = PrListResult(plans=[], count=0)
+    29→
+    30→        data = result.to_json_dict()
+
+... [114 lines omitted] ...
+  </tool_result>
+  <assistant>This test imports `PrListResult` from `list_cmd` and `PrViewResult` + `_serialize_header_fields` from `view_cmd`. Both have been moved to the operation modules. Let me update the imports:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1935" cache_read_input_tokens="149863" cache_creation="{'ephemeral_5m_input_tokens': 1935, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Write" id="toolu_014k9zgjnT6B1QCC2wpjxK2C">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/test_pr_json.py</param>
+    <param name="content">"""Tests for pr list/view JSON result serialization."""
+
+from __future__ import annotation...[truncated 4016 chars]...self) -&gt; None:
+        result = _serialize_header_fields({})
+
+        assert result == {}
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1935" cache_read_input_tokens="149863" cache_creation="{'ephemeral_5m_input_tokens': 1935, 'ephemeral_1h_input_tokens': 0}" output_tokens="1459" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_014k9zgjnT6B1QCC2wpjxK2C">
+The file /home/runner/work/erk/erk/tests/unit/cli/test_pr_json.py has been updated. Here's the result of running `cat -n` on a snippet of the edited file:
+     1→"""Tests for pr list/view JSON result serialization."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→from datetime import UTC, datetime
+     6→
+     7→from erk.cli.commands.pr.list_operation import PrListResult
+     8→from erk.cli.commands.pr.view_operation import PrViewResult, _serialize_header_fields
+     9→
+    10→
+    11→class TestPrListResult:
+    12→    """Tests for PrListResult JSON serialization."""
+    13→
+    14→    def test_to_json_dict_structure(self) -&gt; None:
+    15→        result = PrListResult(
+    16→            plans=[{"plan_id": 42, "full_title": "My Plan"}],
+    17→            count=1,
+    18→        )
+    19→
+    20→        data = result.to_json_dict()
+    21→
+    22→        assert data == {
+    23→            "plans": [{"plan_id": 42, "full_title": "My Plan"}],
+    24→            "count": 1,
+    25→        }
+    26→
+    27→    def test_empty_plans(self) -&gt; None:
+    28→        result = PrListResult(plans=[], count=0)
+    29→
+
+... [110 lines omitted] ...
+  </tool_result>
+  <assistant>Now let me also check if the one-shot JSON tests need updating - they test via `["one-shot", ..., "--json"]` which no longer exists:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3624" cache_read_input_tokens="151798" cache_creation="{'ephemeral_5m_input_tokens': 3624, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01AzAap4YuXyaeaLTyCLpsxq">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/one_shot/test_one_shot_json.py</param>
+    <param name="limit">5</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3624" cache_read_input_tokens="151798" cache_creation="{'ephemeral_5m_input_tokens': 3624, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01AzAap4YuXyaeaLTyCLpsxq">
+     1→"""Tests for erk one-shot --json output and input."""
+     2→
+     3→import json
+     4→
+     5→from click.testing import CliRunner
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <system subtype="" duration_ms="" />
+  <user>This session is being continued from a previous conversation that ran out of context. The conversation is summarized below:
+Analysis:
+Let me chronologically trace through the conversation:
+
+1. The user triggered `/erk:plan-implement 9132` - a command to implement plan #9132 from GitHub.
+
+2. I ran `erk exec setup-impl --issue 9132` to set up the implementation directory.
+
+3. I read the plan from `.erk/impl-context/plnd--best-of-both-machine-cli-03-10-0835/plan.md` (output was persisted/large).
+
+4. I loaded the `dignified-python` skill and related documentation, identified Python 3.11 as the target version.
+
+5. I spawned two Explore agents to gather codebase context:
+   - Agent a308f43: Explored agentclick package, command files, MCP server
+   - Agent a94d469: Explored test files, documentation, tripwires
+
+6. I read all key files directly:
+   - `packages/erk-shared/src/erk_shared/agentclick/json_command.py` - The legacy decorator being replaced
+   - `packages/erk-shared/src/erk_shared/agentclick/json_schema.py` - Legacy schema generation
+   - `packages/erk-shared/src/erk_shared/agentclick/mcp_exposed.py` - MCP discovery decorator
+   - `packages/erk-shared/src/erk_shared/agentclick/errors.py` - Error types
+   - `packages/erk-shared/src/erk_shared/agentclick/__init__.py` - Empty init
+   - `src/erk/cli/commands/one_shot.py` - Human one-shot command (had @json_command + @mcp_exposed)
+   - `src/erk/cli/commands/pr/list_cmd.py` - Human pr list command (had @json_command + @mcp_exposed)
+   - `src/erk/cli/commands/pr/view_cmd.py` - Human pr view command (had @json_command + @mcp_exposed)
+   - `packages/erk-mcp/src/erk_mcp/server.py` - MCP server using JsonCommandTool
+   - `src/erk/cli/cli.py` - CLI registration
+   - `src/erk/cli/commands/one_shot_remote_dispatch.py` - Dispatch logic with result types
+   - `src/erk/cli/commands/pr/__init__.py` - PR group registration
+   - `src/erk/cli/repo_resolution.py` - Shared repo resolution helpers
+   - `tests/unit/cli/test_json_command.py` - Tests for json_command in CLI tree
+   - `tests/unit/cli/test_mcp_cli_sync.py` - MCP parity tests
+   - `tests/commands/one_shot/test_one_shot_json.py` - One-shot JSON tests
+   - `tests/unit/cli/test_pr_json.py` - PR JSON serialization tests
+
+7. Implementation steps completed:
+
+**Step 1: Created `machine_command.py`** - New decorator with:
+- `MachineCommandMeta` dataclass (request_type, output_types)
+- `MachineCommandError` for structured errors
+- `machine_command()` decorator that adds --schema, reads JSON stdin, validates via request dataclass
+- `parse_machine_request()` with strict validation
+- `_coerce_value()` for type coercion
+- `emit_machine_error()` and `emit_machine_result()` for output
+
+**Step 2: Created `machine_schema.py`** - Schema generation:
+- `request_schema()` from dataclass fields
+- `result_schema()` from output types
+- `build_machine_schema_document()` combining input/output/error schemas
+- `ERROR_SCHEMA` constant
+
+**Step 3: Updated `mcp_exposed.py`** - Updated docstrings to reference both @machine_command and @json_command
+
+**Step 4: Created operation files:**
+- `src/erk/cli/commands/one_shot_operation.py` - `OneShotRequest` dataclass + `run_one_shot()` function
+- `src/erk/cli/commands/pr/list_operation.py` - `PrListRequest` + `PrListResult` + `run_pr_list()`
+- `src/erk/cli/commands/pr/view_operation.py` - `PrViewRequest` + `PrViewResult` + `run_pr_view()`
+
+**Step 5: Created `erk json` command tree:**
+- `src/erk/cli/commands/json/__init__.py` - json_group with one-shot and pr subcommands
+- `src/erk/cli/commands/json/one_shot_cmd.py` - @machine_command + @mcp_exposed wrapper
+- `src/erk/cli/commands/json/pr/__init__.py` - json_pr_group
+- `src/erk/cli/commands/json/pr/list_cmd.py` - @machine_command + @mcp_exposed wrapper
+- `src/erk/cli/commands/json/pr/view_cmd.py` - @machine_command + @mcp_exposed wrapper
+- Updated `src/erk/cli/cli.py` to add `json_group`
+
+**Step 6: Refactored human commands:**
+- `one_shot.py` - Removed @json_command/@mcp_exposed, now delegates to `run_one_shot()`
+- `pr/list_cmd.py` - Removed @json_command/@mcp_exposed, removed json_mode param, removed PrListResult (moved to operation)
+- `pr/view_cmd.py` - Removed @json_command/@mcp_exposed, delegates to `run_pr_view()` then re-fetches for display
+
+**Step 7: Added deprecation docstrings** to `json_command.py` and `json_schema.py`
+
+**Step 8: Updated MCP server** (`packages/erk-mcp/src/erk_mcp/server.py`):
+- Replaced `JsonCommandTool` with `MachineCommandTool`
+- Uses `request_schema()` from `machine_schema` instead of `command_input_schema()`
+- Looks for `_machine_command_meta` instead of `_json_command_meta`
+- Removed `_run_erk` helper, simplified `_run_erk_json` (no `--json` flag needed)
+
+**Step 9 (in progress): Updated tests:**
+- `tests/unit/cli/test_mcp_cli_sync.py` - Updated to check _machine_command_meta instead of _json_command_meta
+- `tests/unit/cli/test_json_command.py` - Rewritten to test machine commands in json tree
+- `tests/unit/cli/test_pr_json.py` - Updated imports from operation modules
+- Created `packages/erk-shared/tests/unit/agentclick/test_machine_command.py` - Comprehensive tests
+- Created `packages/erk-shared/tests/unit/agentclick/test_machine_schema.py` - Schema generation tests
+
+Still need to handle:
+- `tests/commands/one_shot/test_one_shot_json.py` - Tests `["one-shot", ..., "--json"]` which no longer exists
+- Step 10: Update documentation
+- Run CI
+- Submit PR
+
+Errors encountered:
+- Multiple "File has not been read yet" errors when trying to Edit or Write files without reading first
+- Workaround: Read file first (even just a few lines) before writing
+
+The user has not provided any direct feedback - only the system/command infrastructure triggered the plan-implement workflow.
+
+Summary:
+1. Primary Request and Intent:
+   The user invoked `/erk:plan-implement 9132` to implement GitHub plan #9132, which is a major architectural refactoring titled "Best of Both: Machine CLI" (inferred from the branch name `plnd--best-of-both-machine-cli-03-10-0835`). The plan creates a new `erk json` command tree for machine-readable JSON commands, separating them from human-facing CLI commands. This replaces the existing `@json_command` decorator pattern (which bolted `--json`/`--schema` flags onto human commands) with a dedicated `@machine_command` decorator and separate command tree.
+
+2. Key Technical Concepts:
+   - **@machine_command decorator**: New decorator for pure-JSON CLI commands that accept JSON stdin, validate via frozen dataclass request types, and emit structured JSON output
+   - **@json_command decorator (legacy)**: Being deprecated - previously added `--json`/`--schema` flags to human commands
+   - **Operation layer pattern**: Extracting business logic into `*_operation.py` files shared by both human and machine commands
+   - **`erk json` command tree**: New Click group (`erk json one-shot`, `erk json pr list`, `erk json pr view`) 
+   - **MCP (Model Context Protocol) integration**: MCP server auto-discovers `@mcp_exposed` commands and exposes them as tools
+   - **MachineCommandMeta**: Stores request_type and output_types on Click command objects
+   - **Frozen dataclass request types**: Input validation via dataclass fields instead of Click parameters
+   - **Python 3.11** target version, using `X | None` union syntax
+   - **Click CLI framework** with decorator stacking patterns
+   - **FastMCP** for MCP server implementation
+
+3. Files and Code Sections:
+
+   - **`packages/erk-shared/src/erk_shared/agentclick/machine_command.py`** (CREATED)
+     - Core infrastructure for the new architecture - the @machine_command decorator
+     - Key types: `MachineCommandMeta`, `MachineCommandError`
+     - Key functions: `machine_command()`, `parse_machine_request()`, `_coerce_value()`, `emit_machine_result()`, `emit_machine_error()`, `read_machine_command_input()`
+     - The decorator adds `--schema` flag, reads JSON from stdin, validates against request_type dataclass, passes `request` kwarg to callback
+     ```python
+     @dataclass(frozen=True)
+     class MachineCommandMeta:
+         request_type: type
+         output_types: tuple[type, ...]
+
+     def machine_command(*, request_type: type, output_types: tuple[type, ...] = ()) -&gt; Any:
+         def decorator(cmd: click.Command) -&gt; click.Command:
+             return _apply_machine_command(cmd, request_type, output_types)
+         return decorator
+     ```
+
+   - **`packages/erk-shared/src/erk_shared/agentclick/machine_schema.py`** (CREATED)
+     - JSON Schema generation from dataclass types (replaces json_schema.py for new commands)
+     - `request_schema()` generates input schema from request dataclass fields
+     - `result_schema()` generates output schema, supports `json_schema()` classmethod protocol
+     - `build_machine_schema_document()` combines input/output/error schemas
+     ```python
+     def request_schema(request_type: type) -&gt; dict[str, Any]:
+         # Generates JSON Schema from frozen dataclass fields
+     def result_schema(result_types: tuple[type, ...]) -&gt; dict[str, Any]:
+         # Single type returns directly, multiple wraps in oneOf
+     ```
+
+   - **`packages/erk-shared/src/erk_shared/agentclick/mcp_exposed.py`** (MODIFIED)
+     - Updated docstrings to reference both `@machine_command` and `@json_command`
+     - No functional changes - the `discover_mcp_commands()` function works with both
+
+   - **`src/erk/cli/commands/one_shot_operation.py`** (CREATED)
+     - Operation layer for one-shot dispatch, shared by human and machine commands
+     - `OneShotRequest` frozen dataclass with all parameters
+     - `run_one_shot()` returns `OneShotDispatchResult | OneShotDryRunResult | MachineCommandError`
+     ```python
+     @dataclass(frozen=True)
+     class OneShotRequest:
+         prompt: str
+         model: str | None = None
+         dry_run: bool = False
+         plan_only: bool = False
+         slug: str | None = None
+         dispatch_ref: str | None = None
+         ref_current: bool = False
+         target_repo: str | None = None
+     ```
+
+   - **`src/erk/cli/commands/pr/list_operation.py`** (CREATED)
+     - Operation layer for pr list
+     - `PrListRequest` and `PrListResult` dataclasses (moved from list_cmd.py)
+     - `run_pr_list()` function
+
+   - **`src/erk/cli/commands/pr/view_operation.py`** (CREATED)
+     - Operation layer for pr view
+     - `PrViewRequest` and `PrViewResult` dataclasses (moved from view_cmd.py)
+     - `_serialize_header_fields()` helper (moved from view_cmd.py)
+     - `run_pr_view()` function
+
+   - **`src/erk/cli/commands/json/__init__.py`** (CREATED)
+     - Defines `json_group` Click group, registers one-shot and pr subcommands
+     ```python
+     @click.group("json")
+     def json_group() -&gt; None:
+         """Machine-readable JSON commands."""
+         pass
+     json_group.add_command(json_one_shot, name="one-shot")
+     json_group.add_command(json_pr_group, name="pr")
+     ```
+
+   - **`src/erk/cli/commands/json/one_shot_cmd.py`** (CREATED)
+     - Machine adapter: `@mcp_exposed` + `@machine_command` + `@click.command`
+     - Delegates to `run_one_shot()` from operation layer
+
+   - **`src/erk/cli/commands/json/pr/__init__.py`** (CREATED)
+     - `json_pr_group` with list and view subcommands
+
+   - **`src/erk/cli/commands/json/pr/list_cmd.py`** (CREATED)
+     - Machine adapter for pr list, delegates to `run_pr_list()`
+
+   - **`src/erk/cli/commands/json/pr/view_cmd.py`** (CREATED)
+     - Machine adapter for pr view, delegates to `run_pr_view()`
+
+   - **`src/erk/cli/cli.py`** (MODIFIED)
+     - Added `from erk.cli.commands.json import json_group` import
+     - Added `cli.add_command(json_group)` registration between exec_group and md_group
+
+   - **`src/erk/cli/commands/one_shot.py`** (REWRITTEN)
+     - Removed `@json_command` and `@mcp_exposed` decorators
+     - Now delegates to `run_one_shot()` from operation layer
+     - Human-only: handles Click arguments, file reading, error display
+
+   - **`src/erk/cli/commands/pr/list_cmd.py`** (REWRITTEN)
+     - Removed `@json_command`, `@mcp_exposed`, `PrListResult`, `json_mode` parameter
+     - `_pr_list_impl` renamed to `_pr_list_human` (no json_mode branch)
+     - Human-only: Rich table rendering
+
+   - **`src/erk/cli/commands/pr/view_cmd.py`** (REWRITTEN)
+     - Removed `@json_command`, `@mcp_exposed`, `PrViewResult`, `_serialize_header_fields`
+     - Delegates to `run_pr_view()` then re-fetches Plan object for rich display
+     - Human-only: rich terminal output with clickable links, styled fields
+
+   - **`packages/erk-mcp/src/erk_mcp/server.py`** (REWRITTEN)
+     - `JsonCommandTool` → `MachineCommandTool`
+     - `_build_json_command_tools()` → `_build_machine_command_tools()`
+     - Uses `request_schema()` from `machine_schema` instead of `command_input_schema()` from `json_schema`
+     - Looks for `_machine_command_meta` attribute on discovered commands
+     - `_run_erk_json()` simplified - no `--json` flag (json commands don't need it)
+
+   - **`packages/erk-shared/src/erk_shared/agentclick/json_command.py`** (MODIFIED)
+     - Added deprecation notice in docstring pointing to `machine_command.py`
+
+   - **`packages/erk-shared/src/erk_shared/agentclick/json_schema.py`** (MODIFIED)
+     - Added deprecation notice in docstring pointing to `machine_schema.py`
+
+   - **`tests/unit/cli/test_mcp_cli_sync.py`** (REWRITTEN)
+     - Updated all 4 tests to use `_build_machine_command_tools`, `request_schema`, `_machine_command_meta`
+
+   - **`tests/unit/cli/test_json_command.py`** (REWRITTEN)
+     - Single test `test_machine_commands_exist_in_json_tree()` checking json group has machine commands
+
+   - **`tests/unit/cli/test_pr_json.py`** (MODIFIED)
+     - Updated imports: `PrListResult` from `list_operation`, `PrViewResult`/`_serialize_header_fields` from `view_operation`
+
+   - **`packages/erk-shared/tests/unit/agentclick/test_machine_command.py`** (CREATED)
+     - 14 tests covering: meta storage, schema flag, schema output, success flow, error flow, invalid JSON, missing fields, unknown fields, defaults, parse_machine_request, coerce_bool, coerce_optional_none, emit_machine_error, emit_machine_result
+
+   - **`packages/erk-shared/tests/unit/agentclick/test_machine_schema.py`** (CREATED)
+     - 10 tests covering: request_schema minimal/full, optional not required, result_schema empty/single/custom/multiple, build_machine_schema_document, error_schema structure
+
+4. Errors and fixes:
+   - **"File has not been read yet" errors**: Multiple times when trying to `Edit` or `Write` to files without first calling `Read`. Fixed by reading the file (even just first few lines with `limit=5`) before writing.
+   - **No user feedback was provided** - the entire interaction was driven by the plan-implement command infrastructure.
+
+5. Problem Solving:
+   - Solved the architectural challenge of separating machine and human command concerns by introducing an operation layer pattern: `*_operation.py` files contain business logic shared by both command types
+   - The `pr/view_cmd.py` human command has a trade-off: it calls `run_pr_view()` for validation/resolution, then re-fetches the Plan object for rich rendering (double API call) since the operation returns structured data not the raw Plan
+   - The MCP server was updated to look for `_machine_command_meta` and skip commands that only have legacy `_json_command_meta`
+
+6. All user messages:
+   - Message 1: `/erk:plan-implement 9132` command trigger with detailed instructions for the 14-step implementation workflow
+   - Message 2: System reminder about TodoWrite tool usage (not a user message per se, but a system prompt)
+   - Message 3: The current summary request
+
+7. Pending Tasks:
+   - **`tests/commands/one_shot/test_one_shot_json.py`** needs updating - it tests `["one-shot", ..., "--json"]` which no longer exists on the human command. Should be rewritten to test via `["json", "one-shot"]` path
+   - **Step 10: Update documentation** - docs in `docs/learned/cli/json-command-decorator.md`, `docs/learned/cli/adding-json-to-commands.md`, `docs/learned/integrations/mcp-integration.md` need updates
+   - **Run CI** - Execute test suite iteratively and fix failures
+   - **Submit PR** - via `erk pr submit`
+   - **Signal ended** - `erk exec impl-signal ended`
+   - **Upload session** - `erk exec upload-impl-session`
+   - **Cleanup impl context** - `erk exec cleanup-impl-context`
+
+8. Current Work:
+   I was in the middle of **Step 9: Write comprehensive tests**. I had just:
+   - Updated `test_mcp_cli_sync.py`, `test_json_command.py`, `test_pr_json.py`
+   - Created `test_machine_command.py` and `test_machine_schema.py`
+   - Was about to address `tests/commands/one_shot/test_one_shot_json.py` which tests the old `["one-shot", ..., "--json"]` invocation pattern that no longer exists
+
+   The last action was reading `test_one_shot_json.py` (first 5 lines) to understand what needs to change. The file tests the `--json` flag on `erk one-shot` which has been removed.
+
+9. Optional Next Step:
+   The immediate next step is to update `tests/commands/one_shot/test_one_shot_json.py` to use the new `["json", "one-shot"]` command path instead of `["one-shot", ..., "--json"]`. This is directly in line with Step 9 of the plan which I was actively working on. After that, continue to Step 10 (update documentation), then run CI, fix failures, and submit the PR..
+Please continue the conversation from where we left it off without asking the user any further questions. Continue with the last task that you were asked to work on.</user>
+  <assistant>
+
+I'll continue with the implementation. I was in the middle of Step 9 (writing tests) and need to update the one-shot JSON test file, then proceed to documentation, CI, and PR submission.
+
+Let me first read the files I need to update:</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="28872" cache_read_input_tokens="20429" cache_creation="{'ephemeral_5m_input_tokens': 28872, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_011jwqYTEawf6UxujbWFV7uK">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/one_shot/test_one_shot_json.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="28872" cache_read_input_tokens="20429" cache_creation="{'ephemeral_5m_input_tokens': 28872, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01EnAk3Xaq8EPf56hWJyEYJo">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/json-command-decorator.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="28872" cache_read_input_tokens="20429" cache_creation="{'ephemeral_5m_input_tokens': 28872, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01Pkx3zKeAdcTjZfFVZPqDxR">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/integrations/mcp-integration.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="28872" cache_read_input_tokens="20429" cache_creation="{'ephemeral_5m_input_tokens': 28872, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_011jwqYTEawf6UxujbWFV7uK">
+     1→"""Tests for erk one-shot --json output and input."""
+     2→
+     3→import json
+     4→
+     5→from click.testing import CliRunner
+     6→
+     7→from erk.cli.cli import cli
+     8→from tests.fakes.gateway.git import FakeGit
+     9→from tests.fakes.gateway.github import FakeLocalGitHub
+    10→from tests.fakes.gateway.remote_github import FakeRemoteGitHub
+    11→from tests.test_utils.context_builders import build_workspace_test_context
+    12→from tests.test_utils.env_helpers import erk_isolated_fs_env
+    13→
+    14→
+    15→def _make_remote() -&gt; FakeRemoteGitHub:
+    16→    """Create a default FakeRemoteGitHub for tests."""
+    17→    return FakeRemoteGitHub(
+    18→        authenticated_user="testuser",
+    19→        default_branch_name="main",
+    20→        default_branch_sha="abc123",
+    21→        next_pr_number=1,
+    22→        dispatch_run_id="run-1",
+    23→        issues=None,
+    24→        issue_comments=None,
+    25→        pr_references=None,
+    26→    )
+    27→
+    28→
+    29→def test_json_success() -&gt; None:
+    30→    """JSON output on successful dispatch includes all expected fields."""
+
+... [202 lines omitted] ...
+
+    50→            catch_exceptions=False,
+    53→        assert result.exit_code == 0, f"Command failed: {result.output}"
+    86→            catch_exceptions=False,
+    89→        assert result.exit_code == 0, f"Command failed: {result.output}"
+   108→def test_json_error_empty_prompt() -&gt; None:
+   109→    """Empty prompt produces JSON error with error_type."""
+   132→        assert data["error_type"] == "invalid_input"
+   136→def test_json_error_invalid_repo() -&gt; None:
+   137→    """Invalid --repo format produces JSON error with error_type."""
+   160→        assert data["error_type"] == "invalid_repo"
+   185→            catch_exceptions=False,
+   221→                catch_exceptions=False,
+   224→        assert result.exit_code == 0, f"Command failed: {result.output}"
+  </tool_result>
+  <tool_result tool="toolu_01EnAk3Xaq8EPf56hWJyEYJo">
+     1→---
+     2→title: "@json_command Decorator"
+     3→read_when:
+     4→  - "adding @json_command decorator to a CLI command"
+     5→  - "creating structured JSON CLI output"
+     6→  - "understanding emit_json patterns"
+     7→  - "implementing output_types validation"
+     8→  - "working with AgentCliError error handling"
+     9→tripwires:
+    10→  - action: "applying @json_command below @click.command in the decorator stack"
+    11→    warning: "@json_command must be applied ABOVE @click.command. The correct order is @mcp_exposed &gt; @json_command &gt; @click.command."
+    12→  - action: "using json.dumps without indent=2 in a @json_command context"
+    13→    warning: "All json.dumps() calls in @json_command commands use indent=2 for pretty-printing."
+    14→  - action: "raising an exception in a @json_command without using AgentCliError"
+    15→    warning: "Use AgentCliError(message, error_type=...) to ensure errors serialize as JSON when --json is active."
+    16→  - action: "declaring output_types that don't match the return annotation"
+    17→    warning: "test_output_types_matches_return_annotation() validates output_types against return type hints. Mismatches fail CI."
+    18→---
+    19→
+    20→# @json_command Decorator
+    21→
+    22→Universal CLI JSON infrastructure for agent-optimized command output.
+    23→
+    24→**Source**: `packages/erk-shared/src/erk_shared/agentclick/json_command.py`
+    25→
+    26→## Decorator Parameters
+    27→
+    28→```python
+    29→@json_command(
+    30→    exclude_json_input=frozenset({"repo_id"}),
+
+... [94 lines omitted] ...
+
+    67→3. Raises `TypeError` if neither is available
+    69→## Error Handling
+    71→`AgentCliError` extends `click.ClickException` with an `error_type` parameter. See `packages/erk-shared/src/erk_shared/agentclick/errors.py` for the current class definition.
+    73→Import: `from erk_shared.agentclick.errors import AgentCliError`
+    75→When `--json` is active, `AgentCliError` serializes as:
+    78→{ "success": false, "error_type": "invalid_plan", "message": "Plan not found" }
+    81→Three error categories:
+    83→- **Validation errors**: `error_type: "invalid_json_input"` (bad stdin JSON)
+    84→- **Command errors**: Custom `error_type` from `AgentCliError`
+    85→- **Passthrough**: `SystemExit` and non-Click exceptions pass through unchanged
+   102→- Mismatches fail the test with descriptive error messages
+  </tool_result>
+  <tool_result tool="toolu_01Pkx3zKeAdcTjZfFVZPqDxR">
+     1→---
+     2→title: Erk MCP Integration
+     3→read_when:
+     4→  - "adding new MCP tools to erk"
+     5→  - "configuring erk as an MCP server for Claude"
+     6→  - "understanding the erk-mcp package structure"
+     7→  - "debugging MCP tool calls from external clients"
+     8→---
+     9→
+    10→# Erk MCP Integration
+    11→
+    12→Erk exposes its capabilities as an MCP (Model Context Protocol) server via the `erk-mcp` package. This allows external MCP clients (e.g., Claude Desktop, other AI tools) to invoke erk operations.
+    13→
+    14→## Package Structure
+    15→
+    16→&lt;!-- Source: packages/erk-mcp/src/erk_mcp/server.py --&gt;
+    17→
+    18→```
+    19→packages/erk-mcp/
+    20→├── pyproject.toml           # Package definition, depends on fastmcp&gt;=2.0
+    21→└── src/erk_mcp/
+    22→    ├── __init__.py
+    23→    ├── __main__.py          # Entry point: parses --transport/--host/--port, calls create_mcp().run()
+    24→    └── server.py            # Tool definitions and _run_erk() wrapper
+    25→```
+    26→
+    27→The package depends on [FastMCP](https://github.com/jlowin/fastmcp) (`fastmcp&gt;=2.0`) and is a thin wrapper that delegates to the `erk` CLI.
+    28→
+    29→## CLI Wrappers
+    30→
+
+... [110 lines omitted] ...
+
+    35→- **Standard wrapper** — Runs `erk &lt;args&gt;`, raises `RuntimeError` on non-zero exit. Used by hand-written tools (`plan_list`, `plan_view`).
+    36→- **JSON wrapper** — Runs `erk &lt;command&gt; --json`, pipes params as JSON stdin. Does NOT raise on non-zero exit — `--json` guarantees structured error output flows through to the agent. Used by auto-discovered MCP tools.
+    62→Dispatches a task for fully autonomous execution via `erk one-shot --json`. Returns structured JSON indicating success or failure. On success, includes the created PR reference and CI run details. With `dry_run`: preview without executing.
+  </tool_result>
+  <assistant>Let me also check the current state of key files I created/modified earlier in this session:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="7268" cache_read_input_tokens="49301" cache_creation="{'ephemeral_5m_input_tokens': 7268, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01DT4uNCCqBd98VxYZvRjkDF">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/json/one_shot_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="7268" cache_read_input_tokens="49301" cache_creation="{'ephemeral_5m_input_tokens': 7268, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_019N59Wew8GD2APvbFJr3Mae">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/one_shot_operation.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="7268" cache_read_input_tokens="49301" cache_creation="{'ephemeral_5m_input_tokens': 7268, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01CLaZYWNh6DA8SMkvZN5JsC">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/agentclick/machine_command.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="7268" cache_read_input_tokens="49301" cache_creation="{'ephemeral_5m_input_tokens': 7268, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01DT4uNCCqBd98VxYZvRjkDF">
+     1→"""Machine adapter for one-shot dispatch.
+     2→
+     3→Accepts JSON from stdin, delegates to run_one_shot operation,
+     4→returns structured JSON output.
+     5→"""
+     6→
+     7→import click
+     8→
+     9→from erk.cli.commands.one_shot_operation import (
+    10→    OneShotRequest,
+    11→    run_one_shot,
+    12→)
+    13→from erk.cli.commands.one_shot_remote_dispatch import (
+    14→    OneShotDispatchResult,
+    15→    OneShotDryRunResult,
+    16→)
+    17→from erk.core.context import ErkContext
+    18→from erk_shared.agentclick.machine_command import MachineCommandError, machine_command
+    19→from erk_shared.agentclick.mcp_exposed import mcp_exposed
+    20→
+    21→
+    22→@mcp_exposed(
+    23→    name="one_shot",
+    24→    description=(
+    25→        "Submit a task for fully autonomous remote execution.\n\n"
+    26→        "Returns JSON with 'success' field. On success: pr_number, pr_url, "
+    27→        "run_url, branch_name. With dry_run: preview without executing. "
+    28→        "On error: error_type and message."
+    29→    ),
+    30→)
+
+... [19 lines omitted] ...
+
+    41→) -&gt; OneShotDispatchResult | OneShotDryRunResult | MachineCommandError:
+  </tool_result>
+  <tool_result tool="toolu_019N59Wew8GD2APvbFJr3Mae">
+     1→"""Core operation for one-shot dispatch (transport-independent).
+     2→
+     3→Contains the request type and operation function that both the
+     4→human command (one_shot.py) and machine command (json/one_shot_cmd.py) share.
+     5→"""
+     6→
+     7→from dataclasses import dataclass
+     8→from typing import Literal
+     9→
+    10→from erk.cli.commands.implement_shared import normalize_model_name
+    11→from erk.cli.commands.one_shot_remote_dispatch import (
+    12→    OneShotDispatchParams,
+    13→    OneShotDispatchResult,
+    14→    OneShotDryRunResult,
+    15→    dispatch_one_shot_remote,
+    16→)
+    17→from erk.cli.commands.ref_resolution import resolve_dispatch_ref
+    18→from erk.cli.ensure import UserFacingCliError
+    19→from erk.core.context import ErkContext, NoRepoSentinel
+    20→from erk_shared.agentclick.machine_command import MachineCommandError
+    21→from erk_shared.gateway.remote_github.abc import RemoteGitHub
+    22→from erk_shared.gateway.remote_github.real import RealRemoteGitHub
+    23→
+    24→
+    25→@dataclass(frozen=True)
+    26→class OneShotRequest:
+    27→    """Request type for one-shot dispatch."""
+    28→
+    29→    prompt: str
+    30→    model: str | None = None
+
+... [105 lines omitted] ...
+
+    45→        raise UserFacingCliError(
+    47→            error_type="auth_required",
+    56→) -&gt; OneShotDispatchResult | OneShotDryRunResult | MachineCommandError:
+    66→        Dispatch result, dry-run result, or error
+    72→        return MachineCommandError(error_type="invalid_input", message="Prompt must not be empty")
+    89→            return MachineCommandError(
+    90→                error_type="invalid_repo",
+    99→            return MachineCommandError(
+   100→                error_type="cli_error",
+  </tool_result>
+  <tool_result tool="toolu_01CLaZYWNh6DA8SMkvZN5JsC">
+     1→"""Machine command decorator for pure-JSON CLI commands.
+     2→
+     3→Provides @machine_command for commands that:
+     4→- Accept JSON input from stdin (not Click params)
+     5→- Return structured JSON output
+     6→- Use frozen dataclass request types for strict validation
+     7→- Support --schema flag for introspection
+     8→
+     9→Unlike @json_command (which adds --json/--schema to human commands),
+    10→@machine_command creates dedicated machine-only commands with no
+    11→Click-based input parsing. The request type IS the input schema.
+    12→"""
+    13→
+    14→import dataclasses
+    15→import json
+    16→import sys
+    17→from dataclasses import dataclass, fields
+    18→from typing import Any, Literal, get_args, get_origin
+    19→
+    20→import click
+    21→
+    22→
+    23→@dataclass(frozen=True)
+    24→class MachineCommandMeta:
+    25→    """Metadata stored on Command objects decorated with @machine_command."""
+    26→
+    27→    request_type: type
+    28→    output_types: tuple[type, ...]
+    29→
+    30→
+
+... [305 lines omitted] ...
+
+    32→class MachineCommandError:
+    33→    """Structured error result from a machine command."""
+    35→    error_type: str
+    53→    to_json_dict()) or a MachineCommandError. The decorator handles
+    73→        json.JSONDecodeError: If stdin contains invalid JSON
+    74→        ValueError: If stdin JSON is not an object
+    83→        raise ValueError("JSON input must be an object")
+   101→        ValueError: On validation errors (unknown fields, missing required, type mismatch)
+   121→            raise ValueError(f"Unknown field: {key}")
+   132→            raise ValueError(f"Missing required field: {name}")
+   149→            raise ValueError(f"Invalid value {value!r}, expected one of {args}")
+   183→        raise ValueError(f"Expected boolean, got {type(value).__name__}")
+   187→            raise ValueError("Expected integer, got boolean")
+   215→    raise TypeError(
+   220→def emit_machine_error(error: MachineCommandError) -&gt; None:
+   221→    """Emit a structured error to stdout."""
+   222→    data = {"success": False, "error_type": error.error_type, "message": error.message}
+   270→        except json.JSONDecodeError as exc:
+   271→            emit_machine_error(
+   272→                MachineCommandError(
+   273→                    error_type="invalid_json_input",
+   278→        except ValueError as exc:
+   279→            emit_machine_error(
+   280→                MachineCommandError(
+   281→                    error_type="invalid_json_input",
+   293→        except ValueError as exc:
+   294→            emit_machine_error(
+   295→                MachineCommandError(
+   296→                    error_type="invalid_request",
+   306→            if isinstance(result, MachineCommandError):
+   307→                emit_machine_error(result)
+   312→        except click.ClickException as exc:
+   313→            if hasattr(exc, "error_type"):
+   314→                emit_machine_error(
+   315→                    MachineCommandError(
+   316→                        error_type=exc.error_type,
+  </tool_result>
+  <assistant>Now let me also check the current state of more files that I'll need:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="6851" cache_read_input_tokens="56569" cache_creation="{'ephemeral_5m_input_tokens': 6851, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01CrsQ7Ugr5zoHzGaBW5V4AR">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/one_shot.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6851" cache_read_input_tokens="56569" cache_creation="{'ephemeral_5m_input_tokens': 6851, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_019vN3D2xAN2Uj3eerNTri6v">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/json/__init__.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6851" cache_read_input_tokens="56569" cache_creation="{'ephemeral_5m_input_tokens': 6851, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01FnEyM955CUXCBxePDR6XE4">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/adding-json-to-commands.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6851" cache_read_input_tokens="56569" cache_creation="{'ephemeral_5m_input_tokens': 6851, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01CrsQ7Ugr5zoHzGaBW5V4AR">
+     1→"""Command to dispatch a task for fully autonomous remote execution.
+     2→
+     3→Human-facing command with Click options and rich output.
+     4→Machine-readable JSON equivalent lives in json/one_shot_cmd.py.
+     5→
+     6→Usage:
+     7→    erk one-shot "fix the import in config.py"
+     8→    erk one-shot --file prompt.md
+     9→    erk one-shot "add type hints to utils.py" --model opus
+    10→    erk one-shot "fix the typo in README.md" --dry-run
+    11→    erk one-shot "rename issue_number to plan_number in impl_init.py" --plan-only
+    12→    erk one-shot "fix config bug" --repo owner/repo
+    13→"""
+    14→
+    15→from pathlib import Path
+    16→
+    17→import click
+    18→
+    19→from erk.cli.commands.one_shot_operation import OneShotRequest, run_one_shot
+    20→from erk.cli.ensure import Ensure
+    21→from erk.core.context import ErkContext
+    22→from erk_shared.agentclick.machine_command import MachineCommandError
+    23→from erk_shared.output.output import user_output
+    24→
+    25→
+    26→@click.command("one-shot")
+    27→@click.argument("prompt", required=False, default=None)
+    28→@click.option(
+    29→    "-f",
+    30→    "--file",
+
+... [118 lines omitted] ...
+
+   138→    if isinstance(result, MachineCommandError):
+   139→        user_output(click.style(f"Error: {result.message}", fg="red"))
+  </tool_result>
+  <tool_result tool="toolu_019vN3D2xAN2Uj3eerNTri6v">
+     1→"""Machine-readable JSON command tree (erk json ...).
+     2→
+     3→All commands in this tree accept JSON input from stdin and produce
+     4→structured JSON output. No human-facing formatting or Click options
+     5→for input — the request dataclass IS the schema.
+     6→"""
+     7→
+     8→import click
+     9→
+    10→from erk.cli.commands.json.one_shot_cmd import json_one_shot
+    11→from erk.cli.commands.json.pr import json_pr_group
+    12→
+    13→
+    14→@click.group("json")
+    15→def json_group() -&gt; None:
+    16→    """Machine-readable JSON commands."""
+    17→    pass
+    18→
+    19→
+    20→json_group.add_command(json_one_shot, name="one-shot")
+    21→json_group.add_command(json_pr_group, name="pr")
+    22→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_01FnEyM955CUXCBxePDR6XE4">
+     1→---
+     2→title: "Adding --json to CLI Commands"
+     3→read_when:
+     4→  - "adding --json flag to a CLI command"
+     5→  - "exposing a command via MCP"
+     6→  - "creating result dataclasses for JSON output"
+     7→  - "stacking @mcp_exposed and @json_command decorators"
+     8→tripwires:
+     9→  - action: "placing @mcp_exposed below @json_command in decorator stack"
+    10→    warning: "@mcp_exposed must be ABOVE @json_command. Correct order: @mcp_exposed &gt; @json_command &gt; @click.command."
+    11→  - action: "creating a result dataclass without to_json_dict() method"
+    12→    warning: "Result dataclasses should implement to_json_dict() for custom serialization. Without it, emit_json_result() falls back to dataclasses.asdict() which may not handle complex types correctly."
+    13→---
+    14→
+    15→# Adding --json to CLI Commands
+    16→
+    17→Step-by-step guide to adding structured JSON output to existing Click commands.
+    18→
+    19→## Decorator Stacking Order
+    20→
+    21→The decorators must be stacked in this exact order (outermost to innermost):
+    22→
+    23→1. `@mcp_exposed(...)` — MCP exposure (optional, outermost)
+    24→2. `@json_command(...)` — JSON infrastructure
+    25→3. `@click.command(...)` — Click command
+    26→4. `@click.option(...)` — Options/arguments
+    27→5. `@click.pass_obj` — Context passing (innermost)
+    28→
+    29→See `src/erk/cli/commands/pr/list_cmd.py` for a working example of this stack.
+    30→
+
+... [87 lines omitted] ...
+  </tool_result>
+  <assistant>Good, I have the full picture. Now let me rewrite the one-shot JSON test to use the new `erk json one-shot` path, and then update documentation, and run CI. Let me update the test file first:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="4311" cache_read_input_tokens="63420" cache_creation="{'ephemeral_5m_input_tokens': 4311, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Write" id="toolu_01JXRowm1UEjYSFokPAk1Ehv">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/one_shot/test_one_shot_json.py</param>
+    <param name="content">"""Tests for erk json one-shot output and input."""
+
+import json
+from unittest.mock import...[truncated 8118 chars]....output}"
+        data = json.loads(result.stdout)
+        assert data["success"] is True
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4311" cache_read_input_tokens="63420" cache_creation="{'ephemeral_5m_input_tokens': 4311, 'ephemeral_1h_input_tokens': 0}" output_tokens="2525" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01JXRowm1UEjYSFokPAk1Ehv">
+The file /home/runner/work/erk/erk/tests/commands/one_shot/test_one_shot_json.py has been updated. Here's the result of running `cat -n` on a snippet of the edited file:
+     1→"""Tests for erk json one-shot output and input."""
+     2→
+     3→import json
+     4→from unittest.mock import patch
+     5→
+     6→from click.testing import CliRunner
+     7→
+     8→from erk.cli.cli import cli
+     9→from tests.fakes.gateway.git import FakeGit
+    10→from tests.fakes.gateway.github import FakeLocalGitHub
+    11→from tests.fakes.gateway.remote_github import FakeRemoteGitHub
+    12→from tests.test_utils.context_builders import build_workspace_test_context
+    13→from tests.test_utils.env_helpers import erk_isolated_fs_env
+    14→
+    15→
+    16→def _make_remote() -&gt; FakeRemoteGitHub:
+    17→    """Create a default FakeRemoteGitHub for tests."""
+    18→    return FakeRemoteGitHub(
+    19→        authenticated_user="testuser",
+    20→        default_branch_name="main",
+    21→        default_branch_sha="abc123",
+    22→        next_pr_number=1,
+    23→        dispatch_run_id="run-1",
+    24→        issues=None,
+    25→        issue_comments=None,
+    26→        pr_references=None,
+    27→    )
+    28→
+    29→
+
+... [217 lines omitted] ...
+
+    55→                catch_exceptions=False,
+    58→        assert result.exit_code == 0, f"Command failed: {result.output}"
+    95→                catch_exceptions=False,
+    98→        assert result.exit_code == 0, f"Command failed: {result.output}"
+   117→def test_json_error_empty_prompt() -&gt; None:
+   118→    """Empty prompt produces JSON error with error_type."""
+   145→        assert data["error_type"] == "invalid_input"
+   149→def test_json_error_invalid_repo() -&gt; None:
+   150→    """Invalid target_repo format produces JSON error with error_type."""
+   177→        assert data["error_type"] == "invalid_repo"
+   206→                catch_exceptions=False,
+   240→                catch_exceptions=False,
+   243→        assert result.exit_code == 0, f"Command failed: {result.output}"
+  </tool_result>
+  <assistant>Now let me mark Step 9 as done and update the documentation files:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="5751" cache_read_input_tokens="67731" cache_creation="{'ephemeral_5m_input_tokens': 5751, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01EwSwAqa9WtFoRP5xynfBZr">
+    <param name="todos">[{'content': 'Signal GitHub started', 'status': 'completed', 'activeForm': 'Signaling GitH...[truncated 1421 chars]...ng issues'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5751" cache_read_input_tokens="67731" cache_creation="{'ephemeral_5m_input_tokens': 5751, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01EwSwAqa9WtFoRP5xynfBZr">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Now let me update the three documentation files. First, the json-command-decorator doc needs to reference the new @machine_command approach:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="572" cache_read_input_tokens="73482" cache_creation="{'ephemeral_5m_input_tokens': 572, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Write" id="toolu_019jrrZ4bsU9bbmsyKgyCA2V">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/json-command-decorator.md</param>
+    <param name="content">---
+title: "Machine Command Architecture"
+read_when:
+  - "adding @machine_command decorato...[truncated 5574 chars]...
+**Source**: `packages/erk-shared/src/erk_shared/agentclick/json_command.py` (deprecated)
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="572" cache_read_input_tokens="73482" cache_creation="{'ephemeral_5m_input_tokens': 572, 'ephemeral_1h_input_tokens': 0}" output_tokens="1773" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_019jrrZ4bsU9bbmsyKgyCA2V">
+The file /home/runner/work/erk/erk/docs/learned/cli/json-command-decorator.md has been updated. Here's the result of running `cat -n` on a snippet of the edited file:
+     1→---
+     2→title: "Machine Command Architecture"
+     3→read_when:
+     4→  - "adding @machine_command decorator to a CLI command"
+     5→  - "creating structured JSON CLI output"
+     6→  - "understanding the erk json command tree"
+     7→  - "implementing output_types validation"
+     8→  - "working with MachineCommandError error handling"
+     9→  - "adding @json_command decorator to a CLI command"
+    10→tripwires:
+    11→  - action: "applying @machine_command below @click.command in the decorator stack"
+    12→    warning: "@machine_command must be applied ABOVE @click.command. The correct order is @mcp_exposed &gt; @machine_command &gt; @click.command."
+    13→  - action: "adding --json flag to a human-facing command"
+    14→    warning: "Machine JSON output lives in the `erk json` command tree, not as a flag on human commands. Create a machine adapter in src/erk/cli/commands/json/."
+    15→  - action: "putting business logic in the machine adapter"
+    16→    warning: "Machine adapters should be thin wrappers. Put shared logic in *_operation.py files."
+    17→  - action: "returning MachineCommandError without raising SystemExit"
+    18→    warning: "The @machine_command decorator handles serialization and exit codes. Just return MachineCommandError from the callback."
+    19→---
+    20→
+    21→# Machine Command Architecture
+    22→
+    23→The `erk json` command tree provides machine-readable JSON commands for agent consumption. Human-facing commands live separately with rich terminal output.
+    24→
+    25→## Architecture Overview
+    26→
+    27→```
+    28→src/erk/cli/commands/
+    29→├── one_shot.py              # Human command (Click options, rich output)
+
+... [143 lines omitted] ...
+
+    78→- Serializes return value (or `MachineCommandError`) as JSON to stdout
+    79→- Handles `ClickException` with `error_type` attribute
+   122→## Error Handling
+   124→`MachineCommandError` is a frozen dataclass (not an exception):
+   128→class MachineCommandError:
+   129→    error_type: str
+   136→{"success": false, "error_type": "invalid_input", "message": "Prompt must not be empty"}
+   141→`--schema` returns a document with input, output, and error schemas:
+   147→  "error_schema": { ... }
+  </tool_result>
+  <assistant>Now update the adding-json-to-commands doc:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="4039" cache_read_input_tokens="74054" cache_creation="{'ephemeral_5m_input_tokens': 4039, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Write" id="toolu_01DJPfVqZm8PKmMB4XHnGugo">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/adding-json-to-commands.md</param>
+    <param name="content">---
+title: "Adding Machine JSON Commands"
+read_when:
+  - "adding a new machine-readable JS...[truncated 4544 chars]...st_cmd.py`)
+
+`PrListResult` demonstrates list result serialization with `to_json_dict()`.
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4039" cache_read_input_tokens="74054" cache_creation="{'ephemeral_5m_input_tokens': 4039, 'ephemeral_1h_input_tokens': 0}" output_tokens="1543" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01DJPfVqZm8PKmMB4XHnGugo">
+The file /home/runner/work/erk/erk/docs/learned/cli/adding-json-to-commands.md has been updated. Here's the result of running `cat -n` on a snippet of the edited file:
+     1→---
+     2→title: "Adding Machine JSON Commands"
+     3→read_when:
+     4→  - "adding a new machine-readable JSON command"
+     5→  - "exposing a command via MCP"
+     6→  - "creating result dataclasses for JSON output"
+     7→  - "stacking @mcp_exposed and @machine_command decorators"
+     8→tripwires:
+     9→  - action: "placing @mcp_exposed below @machine_command in decorator stack"
+    10→    warning: "@mcp_exposed must be ABOVE @machine_command. Correct order: @mcp_exposed &gt; @machine_command &gt; @click.command."
+    11→  - action: "creating a result dataclass without to_json_dict() method"
+    12→    warning: "Result dataclasses should implement to_json_dict() for custom serialization. Without it, the serializer falls back to dataclasses.asdict() which may not handle complex types correctly."
+    13→  - action: "adding --json flag to a human command"
+    14→    warning: "Machine JSON output belongs in the `erk json` command tree. Create a machine adapter in src/erk/cli/commands/json/ instead."
+    15→---
+    16→
+    17→# Adding Machine JSON Commands
+    18→
+    19→Step-by-step guide to adding structured JSON output for a CLI command using the `erk json` command tree.
+    20→
+    21→## Architecture
+    22→
+    23→Machine commands live in a separate `erk json` tree, not as flags on human commands:
+    24→
+    25→- **Human command**: `src/erk/cli/commands/foo.py` — Click options, rich terminal output
+    26→- **Operation**: `src/erk/cli/commands/foo_operation.py` — Shared business logic
+    27→- **Machine adapter**: `src/erk/cli/commands/json/foo_cmd.py` — JSON stdin/stdout
+    28→
+    29→## Step 1: Create an Operation File
+
+... [103 lines omitted] ...
+
+    36→from erk_shared.agentclick.machine_command import MachineCommandError
+    51→def run_foo(ctx: ErkContext, request: FooRequest) -&gt; FooResult | MachineCommandError:
+    53→        return MachineCommandError(error_type="invalid_input", message="Name required")
+    65→from erk_shared.agentclick.machine_command import MachineCommandError, machine_command
+    72→def json_foo(ctx: ErkContext, *, request: FooRequest) -&gt; FooResult | MachineCommandError:
+    98→    if isinstance(result, MachineCommandError):
+    99→        user_output(click.style(f"Error: {result.message}", fg="red"))
+  </tool_result>
+  <assistant>Now update the MCP integration doc:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3472" cache_read_input_tokens="78093" cache_creation="{'ephemeral_5m_input_tokens': 3472, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Write" id="toolu_014yHX6GjCScqZAFXoWFn8y9">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/integrations/mcp-integration.md</param>
+    <param name="content">---
+title: Erk MCP Integration
+read_when:
+  - "adding new MCP tools to erk"
+  - "configuri...[truncated 4510 chars]...dering Strategy](../ci/job-ordering-strategy.md) for the full Tier 3 validation job list.
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3472" cache_read_input_tokens="78093" cache_creation="{'ephemeral_5m_input_tokens': 3472, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_014yHX6GjCScqZAFXoWFn8y9">
+&lt;tool_use_error&gt;File has not been read yet. Read it first before writing to it.&lt;/tool_use_error&gt;
+  </tool_result>
+  <assistant>I already read it above but the tool needs a fresh read. Let me do that:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1902" cache_read_input_tokens="81565" cache_creation="{'ephemeral_5m_input_tokens': 1902, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_017P7tS59CWvPekMvJo8osHR">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/integrations/mcp-integration.md</param>
+    <param name="limit">5</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1902" cache_read_input_tokens="81565" cache_creation="{'ephemeral_5m_input_tokens': 1902, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_017P7tS59CWvPekMvJo8osHR">
+     1→---
+     2→title: Erk MCP Integration
+     3→read_when:
+     4→  - "adding new MCP tools to erk"
+     5→  - "configuring erk as an MCP server for Claude"
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_use name="Write" id="toolu_01Likc5qoKsXo7YknE2JT6Pn">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/integrations/mcp-integration.md</param>
+    <param name="content">---
+title: Erk MCP Integration
+read_when:
+  - "adding new MCP tools to erk"
+  - "configuri...[truncated 4510 chars]...dering Strategy](../ci/job-ordering-strategy.md) for the full Tier 3 validation job list.
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="265" cache_read_input_tokens="83467" cache_creation="{'ephemeral_5m_input_tokens': 265, 'ephemeral_1h_input_tokens': 0}" output_tokens="1506" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Likc5qoKsXo7YknE2JT6Pn">
+The file /home/runner/work/erk/erk/docs/learned/integrations/mcp-integration.md has been updated. Here's the result of running `cat -n` on a snippet of the edited file:
+     1→---
+     2→title: Erk MCP Integration
+     3→read_when:
+     4→  - "adding new MCP tools to erk"
+     5→  - "configuring erk as an MCP server for Claude"
+     6→  - "understanding the erk-mcp package structure"
+     7→  - "debugging MCP tool calls from external clients"
+     8→---
+     9→
+    10→# Erk MCP Integration
+    11→
+    12→Erk exposes its capabilities as an MCP (Model Context Protocol) server via the `erk-mcp` package. This allows external MCP clients (e.g., Claude Desktop, other AI tools) to invoke erk operations.
+    13→
+    14→## Package Structure
+    15→
+    16→&lt;!-- Source: packages/erk-mcp/src/erk_mcp/server.py --&gt;
+    17→
+    18→```
+    19→packages/erk-mcp/
+    20→├── pyproject.toml           # Package definition, depends on fastmcp&gt;=2.0
+    21→└── src/erk_mcp/
+    22→    ├── __init__.py
+    23→    ├── __main__.py          # Entry point: parses --transport/--host/--port, calls create_mcp().run()
+    24→    └── server.py            # Tool definitions and _run_erk_json() wrapper
+    25→```
+    26→
+    27→The package depends on [FastMCP](https://github.com/jlowin/fastmcp) (`fastmcp&gt;=2.0`) and is a thin wrapper that delegates to the `erk` CLI.
+    28→
+    29→## CLI Wrappers
+
+... [86 lines omitted] ...
+
+    33→The MCP server uses a JSON wrapper that runs `erk json &lt;command&gt;` and pipes params as JSON stdin. It does NOT raise on non-zero exit — machine commands guarantee structured error output flows through to the agent.
+  </tool_result>
+  <assistant>Documentation is updated. Now let me move to CI. Let me mark Step 10 as done and start CI:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3704" cache_read_input_tokens="83732" cache_creation="{'ephemeral_5m_input_tokens': 3704, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_012FfFWhQEyPosMGsLfiH3UC">
+    <param name="todos">[{'content': 'Step 9: Write comprehensive tests', 'status': 'completed', 'activeForm': 'Wr...[truncated 214 chars]...ng issues'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3704" cache_read_input_tokens="83732" cache_creation="{'ephemeral_5m_input_tokens': 3704, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_012FfFWhQEyPosMGsLfiH3UC">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+</session>
