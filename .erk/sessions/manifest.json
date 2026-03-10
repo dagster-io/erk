@@ -49,6 +49,22 @@
       "raw_size_kb": 1872,
       "xml_size_kb": 493,
       "git_branch": "plnd/best-of-both-machine-cli-03-10-0835"
+    },
+    {
+      "session_id": "872de3a0-dfdc-474d-8730-8cb68133ef69",
+      "stage": "address",
+      "source": "remote",
+      "uploaded_at": "2026-03-10T11:25:38.826356+00:00",
+      "files": [
+        "address-872de3a0-dfdc-474d-8730-8cb68133ef69-872de3a0-dfdc-474d-8730-8cb68133ef69-part1.xml",
+        "address-872de3a0-dfdc-474d-8730-8cb68133ef69-872de3a0-dfdc-474d-8730-8cb68133ef69-part2.xml",
+        "address-872de3a0-dfdc-474d-8730-8cb68133ef69-872de3a0-dfdc-474d-8730-8cb68133ef69-part3.xml"
+      ],
+      "user_turns": 3,
+      "duration_minutes": 3,
+      "raw_size_kb": 142,
+      "xml_size_kb": 99,
+      "git_branch": "plnd/best-of-both-machine-cli-03-10-0835"
     }
   ]
 }
