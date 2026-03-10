@@ -7,6 +7,7 @@ import dataclasses
 import json
 import sys
 import types
+import click
 from dataclasses import fields
 from typing import Any, Literal, Union, get_args, get_origin
 
@@ -246,16 +247,12 @@ def read_json_stdin() -> dict[str, Any] | None:
 
 def emit_json_success(data: dict[str, Any]) -> None:
     """Emit a JSON success result to stdout. Adds success=True automatically."""
-    import click
-
     data["success"] = True
     click.echo(json.dumps(data, indent=2))
 
 
 def emit_json_error(*, error_type: str, message: str) -> None:
     """Emit a structured error to stdout."""
-    import click
-
     data = {"success": False, "error_type": error_type, "message": message}
     click.echo(json.dumps(data, indent=2))
 
