@@ -92,12 +92,12 @@ def _make_issue(*, number: int) -> IssueInfo:
     )
 
 
-def _setup_plan_ref(repo_root: Path, *, plan_id: str) -> None:
+def _setup_plan_ref(repo_root: Path, *, pr_id: str) -> None:
     """Create a ref.json file in the branch-scoped impl directory."""
     plan_ref = {
         "provider": "github",
-        "plan_id": plan_id,
-        "url": f"https://github.com/test/repo/issues/{plan_id}",
+        "pr_id": pr_id,
+        "url": f"https://github.com/test/repo/issues/{pr_id}",
         "created_at": "2024-01-15T10:30:00+00:00",
         "synced_at": "2024-01-15T10:30:00+00:00",
         "labels": [],
@@ -217,7 +217,7 @@ def test_invalid_event() -> None:
 
 def test_started_fails_without_session_id(tmp_path: Path) -> None:
     """Returns error when no session-id provided."""
-    _setup_plan_ref(tmp_path, plan_id="123")
+    _setup_plan_ref(tmp_path, pr_id="123")
 
     runner = CliRunner()
     result = runner.invoke(
@@ -234,7 +234,7 @@ def test_started_fails_without_session_id(tmp_path: Path) -> None:
 
 def test_started_fails_with_empty_session_id(tmp_path: Path) -> None:
     """Returns error when session-id is empty string."""
-    _setup_plan_ref(tmp_path, plan_id="123")
+    _setup_plan_ref(tmp_path, pr_id="123")
 
     runner = CliRunner()
     result = runner.invoke(
@@ -251,7 +251,7 @@ def test_started_fails_with_empty_session_id(tmp_path: Path) -> None:
 
 def test_started_fails_with_whitespace_session_id(tmp_path: Path) -> None:
     """Returns error when session-id is whitespace only."""
-    _setup_plan_ref(tmp_path, plan_id="123")
+    _setup_plan_ref(tmp_path, pr_id="123")
 
     runner = CliRunner()
     result = runner.invoke(
@@ -278,7 +278,7 @@ def test_started_posts_comment_and_updates_metadata(tmp_path: Path) -> None:
         pr_details={123: issue_info_to_pr_details(issue)},
         issues_gateway=fake_issues,
     )
-    _setup_plan_ref(tmp_path, plan_id="123")
+    _setup_plan_ref(tmp_path, pr_id="123")
 
     runner = CliRunner()
     result = runner.invoke(
@@ -319,7 +319,7 @@ def test_ended_updates_metadata(tmp_path: Path) -> None:
         pr_details={456: issue_info_to_pr_details(issue)},
         issues_gateway=fake_issues,
     )
-    _setup_plan_ref(tmp_path, plan_id="456")
+    _setup_plan_ref(tmp_path, pr_id="456")
 
     runner = CliRunner()
     result = runner.invoke(
@@ -358,7 +358,7 @@ def test_started_sets_lifecycle_stage_impl(tmp_path: Path) -> None:
         pr_details={321: issue_info_to_pr_details(issue)},
         issues_gateway=fake_issues,
     )
-    _setup_plan_ref(tmp_path, plan_id="321")
+    _setup_plan_ref(tmp_path, pr_id="321")
 
     runner = CliRunner()
     result = runner.invoke(
@@ -391,7 +391,7 @@ def test_started_writes_local_run_state(tmp_path: Path) -> None:
         pr_details={789: issue_info_to_pr_details(issue)},
         issues_gateway=fake_issues,
     )
-    _setup_plan_ref(tmp_path, plan_id="789")
+    _setup_plan_ref(tmp_path, pr_id="789")
 
     runner = CliRunner()
     result = runner.invoke(
@@ -428,7 +428,7 @@ def test_submitted_updates_lifecycle_stage(tmp_path: Path) -> None:
         pr_details={100: issue_info_to_pr_details(issue)},
         issues_gateway=fake_issues,
     )
-    _setup_plan_ref(tmp_path, plan_id="100")
+    _setup_plan_ref(tmp_path, pr_id="100")
 
     runner = CliRunner()
     result = runner.invoke(
@@ -486,7 +486,7 @@ def test_submitted_no_session_id_ok(tmp_path: Path) -> None:
         pr_details={200: issue_info_to_pr_details(issue)},
         issues_gateway=fake_issues,
     )
-    _setup_plan_ref(tmp_path, plan_id="200")
+    _setup_plan_ref(tmp_path, pr_id="200")
 
     runner = CliRunner()
     result = runner.invoke(
@@ -511,7 +511,7 @@ def test_submitted_issue_not_found(tmp_path: Path) -> None:
     """Submitted event returns error when plan doesn't exist."""
     fake_issues = FakeGitHubIssues(issues={})
     fake_github = FakeLocalGitHub(issues_gateway=fake_issues)
-    _setup_plan_ref(tmp_path, plan_id="999")
+    _setup_plan_ref(tmp_path, pr_id="999")
 
     runner = CliRunner()
     result = runner.invoke(

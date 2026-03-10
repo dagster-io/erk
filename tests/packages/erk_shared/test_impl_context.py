@@ -27,7 +27,7 @@ def test_create_impl_context_success(tmp_path: Path) -> None:
 
     impl_context_dir = create_impl_context(
         plan_content=plan_content,
-        plan_id="123",
+        pr_id="123",
         url="https://github.com/owner/repo/issues/123",
         repo_root=tmp_path,
         provider="github",
@@ -51,7 +51,7 @@ def test_create_impl_context_success(tmp_path: Path) -> None:
     assert ref_file.exists()
     ref_data = json.loads(ref_file.read_text(encoding="utf-8"))
     assert ref_data["provider"] == "github"
-    assert ref_data["plan_id"] == "123"
+    assert ref_data["pr_id"] == "123"
     assert ref_data["url"] == "https://github.com/owner/repo/issues/123"
     assert "created_at" in ref_data
     assert "synced_at" in ref_data
@@ -67,7 +67,7 @@ def test_create_impl_context_already_exists(tmp_path: Path) -> None:
     with pytest.raises(FileExistsError, match=".erk/impl-context/ folder already exists"):
         create_impl_context(
             plan_content="# Test",
-            plan_id="123",
+            pr_id="123",
             url="https://github.com/owner/repo/issues/123",
             repo_root=tmp_path,
             provider="github",
@@ -84,7 +84,7 @@ def test_create_impl_context_repo_root_not_exists(tmp_path: Path) -> None:
     with pytest.raises(ValueError, match="Repository root does not exist"):
         create_impl_context(
             plan_content="# Test",
-            plan_id="123",
+            pr_id="123",
             url="https://github.com/owner/repo/issues/123",
             repo_root=nonexistent_path,
             provider="github",
@@ -103,7 +103,7 @@ def test_create_impl_context_repo_root_not_directory(tmp_path: Path) -> None:
     with pytest.raises(ValueError, match="Repository root is not a directory"):
         create_impl_context(
             plan_content="# Test",
-            plan_id="123",
+            pr_id="123",
             url="https://github.com/owner/repo/issues/123",
             repo_root=file_path,
             provider="github",
@@ -118,7 +118,7 @@ def test_remove_impl_context_success(tmp_path: Path) -> None:
     # Create .erk/impl-context/ folder first
     create_impl_context(
         plan_content="# Test\n",
-        plan_id="123",
+        pr_id="123",
         url="https://github.com/owner/repo/issues/123",
         repo_root=tmp_path,
         provider="github",
@@ -156,7 +156,7 @@ def test_impl_context_exists_true(tmp_path: Path) -> None:
     # Create .erk/impl-context/ folder
     create_impl_context(
         plan_content="# Test\n",
-        plan_id="123",
+        pr_id="123",
         url="https://github.com/owner/repo/issues/123",
         repo_root=tmp_path,
         provider="github",
@@ -202,7 +202,7 @@ def example():
 """
     create_impl_context(
         plan_content=plan_content,
-        plan_id="456",
+        pr_id="456",
         url="https://github.com/owner/repo/issues/456",
         repo_root=tmp_path,
         provider="github",
@@ -222,7 +222,7 @@ def test_create_impl_context_with_objective_id(tmp_path: Path) -> None:
     """Test creating .erk/impl-context/ folder with objective_id included."""
     create_impl_context(
         plan_content="# Test Plan\n",
-        plan_id="123",
+        pr_id="123",
         url="https://github.com/owner/repo/issues/123",
         repo_root=tmp_path,
         provider="github",
@@ -234,7 +234,7 @@ def test_create_impl_context_with_objective_id(tmp_path: Path) -> None:
     ref_file = tmp_path / ".erk" / "impl-context" / "ref.json"
     ref_data = json.loads(ref_file.read_text(encoding="utf-8"))
 
-    assert ref_data["plan_id"] == "123"
+    assert ref_data["pr_id"] == "123"
     assert ref_data["objective_id"] == 456
 
 
@@ -242,7 +242,7 @@ def test_create_impl_context_with_planned_pr_provider(tmp_path: Path) -> None:
     """Test creating .erk/impl-context/ folder with github-draft-pr provider."""
     create_impl_context(
         plan_content="# Test Plan\n",
-        plan_id="789",
+        pr_id="789",
         url="https://github.com/owner/repo/pull/789",
         repo_root=tmp_path,
         provider="github-draft-pr",
@@ -255,7 +255,7 @@ def test_create_impl_context_with_planned_pr_provider(tmp_path: Path) -> None:
     ref_data = json.loads(ref_file.read_text(encoding="utf-8"))
 
     assert ref_data["provider"] == "github-draft-pr"
-    assert ref_data["plan_id"] == "789"
+    assert ref_data["pr_id"] == "789"
     assert ref_data["url"] == "https://github.com/owner/repo/pull/789"
 
 
@@ -263,7 +263,7 @@ def test_create_impl_context_no_readme(tmp_path: Path) -> None:
     """Test that .erk/impl-context/ does NOT contain README.md."""
     create_impl_context(
         plan_content="# Test Plan\n",
-        plan_id="123",
+        pr_id="123",
         url="https://github.com/owner/repo/issues/123",
         repo_root=tmp_path,
         provider="github",
@@ -280,7 +280,7 @@ def test_build_impl_context_files_returns_two_entries() -> None:
     """Test that build_impl_context_files returns exactly plan.md and ref.json."""
     result = build_impl_context_files(
         plan_content="# Test Plan\n",
-        plan_id="42",
+        pr_id="42",
         url="https://github.com/owner/repo/issues/42",
         provider="github",
         objective_id=None,
@@ -297,7 +297,7 @@ def test_build_impl_context_files_preserves_plan_content() -> None:
 
     result = build_impl_context_files(
         plan_content=plan_content,
-        plan_id="42",
+        pr_id="42",
         url="https://github.com/owner/repo/issues/42",
         provider="github",
         objective_id=None,
@@ -312,7 +312,7 @@ def test_build_impl_context_files_ref_json_fields() -> None:
     """Test that ref.json contains all expected fields with correct values."""
     result = build_impl_context_files(
         plan_content="# Plan\n",
-        plan_id="99",
+        pr_id="99",
         url="https://github.com/owner/repo/issues/99",
         provider="github",
         objective_id=None,
@@ -322,7 +322,7 @@ def test_build_impl_context_files_ref_json_fields() -> None:
 
     ref_data = json.loads(result[".erk/impl-context/ref.json"])
     assert ref_data["provider"] == "github"
-    assert ref_data["plan_id"] == "99"
+    assert ref_data["pr_id"] == "99"
     assert ref_data["url"] == "https://github.com/owner/repo/issues/99"
     assert ref_data["created_at"] == FAKE_NOW_ISO
     assert ref_data["synced_at"] == FAKE_NOW_ISO
@@ -334,7 +334,7 @@ def test_build_impl_context_files_with_objective_id() -> None:
     """Test that objective_id is included in ref.json when provided."""
     result = build_impl_context_files(
         plan_content="# Plan\n",
-        plan_id="42",
+        pr_id="42",
         url="https://github.com/owner/repo/issues/42",
         provider="github",
         objective_id=7813,
@@ -350,7 +350,7 @@ def test_build_impl_context_files_planned_pr_provider() -> None:
     """Test that github-draft-pr provider is passed through correctly."""
     result = build_impl_context_files(
         plan_content="# Plan\n",
-        plan_id="789",
+        pr_id="789",
         url="https://github.com/owner/repo/pull/789",
         provider="github-draft-pr",
         objective_id=None,
@@ -360,14 +360,14 @@ def test_build_impl_context_files_planned_pr_provider() -> None:
 
     ref_data = json.loads(result[".erk/impl-context/ref.json"])
     assert ref_data["provider"] == "github-draft-pr"
-    assert ref_data["plan_id"] == "789"
+    assert ref_data["pr_id"] == "789"
     assert ref_data["url"] == "https://github.com/owner/repo/pull/789"
 
 
 def test_build_impl_context_files_matches_create_impl_context_structure(tmp_path: Path) -> None:
     """Test that build_impl_context_files produces the same content as create_impl_context."""
     plan_content = "# Plan\n\nSome content here.\n"
-    plan_id = "55"
+    pr_id = "55"
     url = "https://github.com/owner/repo/issues/55"
     provider = "github"
     objective_id = 100
@@ -375,7 +375,7 @@ def test_build_impl_context_files_matches_create_impl_context_structure(tmp_path
     # Build in-memory version
     in_memory = build_impl_context_files(
         plan_content=plan_content,
-        plan_id=plan_id,
+        pr_id=pr_id,
         url=url,
         provider=provider,
         objective_id=objective_id,
@@ -386,7 +386,7 @@ def test_build_impl_context_files_matches_create_impl_context_structure(tmp_path
     # Build filesystem version
     create_impl_context(
         plan_content=plan_content,
-        plan_id=plan_id,
+        pr_id=pr_id,
         url=url,
         repo_root=tmp_path,
         provider=provider,

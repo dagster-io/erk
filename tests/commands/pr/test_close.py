@@ -22,10 +22,10 @@ from tests.test_utils.plan_helpers import (
 )
 
 
-def test_close_plan_with_plan_number() -> None:
-    """Test closing a plan with plan number."""
+def test_close_pr_with_pr_number() -> None:
+    """Test closing a pr with pr number."""
     # Arrange
-    plan_issue = Plan(
+    pr_issue = Plan(
         pr_identifier="42",
         title="Test Issue",
         body="This is a test issue",
@@ -41,7 +41,7 @@ def test_close_plan_with_plan_number() -> None:
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
-        store, fake_github = create_plan_store_with_plans({"42": plan_issue})
+        store, fake_github = create_plan_store_with_plans({"42": pr_issue})
         fake_remote = FakeRemoteGitHub(
             authenticated_user="test-user",
             default_branch_name="main",
@@ -80,8 +80,8 @@ def test_close_plan_with_plan_number() -> None:
         assert any(num == 42 and "completed" in body for num, body in fake_github.pr_comments)
 
 
-def test_close_plan_not_found() -> None:
-    """Test closing a plan that doesn't exist."""
+def test_close_pr_not_found() -> None:
+    """Test closing a pr that doesn't exist."""
     # Arrange
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
@@ -124,10 +124,10 @@ def _make_issue_info(plan: Plan) -> IssueInfo:
     )
 
 
-def test_close_plan_closes_linked_open_prs() -> None:
-    """Test closing a plan closes all OPEN PRs linked to the issue."""
+def test_close_pr_closes_linked_open_prs() -> None:
+    """Test closing a pr closes all OPEN PRs linked to the issue."""
     # Arrange
-    plan_issue = Plan(
+    pr_issue = Plan(
         pr_identifier="42",
         title="Test Issue",
         body="This is a test issue",
@@ -147,7 +147,7 @@ def test_close_plan_closes_linked_open_prs() -> None:
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
-        issue = _make_issue_info(plan_issue)
+        issue = _make_issue_info(pr_issue)
         # Create FakeGitHubIssues with both the plan issue and PR references
         fake_issues = FakeGitHubIssues(
             issues={42: issue},
@@ -184,10 +184,10 @@ def test_close_plan_closes_linked_open_prs() -> None:
         assert any(cp.number == 101 for cp in fake_remote.closed_prs)
 
 
-def test_close_plan_skips_closed_and_merged_prs() -> None:
-    """Test closing a plan skips CLOSED and MERGED PRs, only closes OPEN."""
+def test_close_pr_skips_closed_and_merged_prs() -> None:
+    """Test closing a pr skips CLOSED and MERGED PRs, only closes OPEN."""
     # Arrange
-    plan_issue = Plan(
+    pr_issue = Plan(
         pr_identifier="42",
         title="Test Issue",
         body="This is a test issue",
@@ -208,7 +208,7 @@ def test_close_plan_skips_closed_and_merged_prs() -> None:
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
-        issue = _make_issue_info(plan_issue)
+        issue = _make_issue_info(pr_issue)
         fake_issues = FakeGitHubIssues(
             issues={42: issue},
             pr_references={42: [open_pr, closed_pr, merged_pr]},
@@ -245,10 +245,10 @@ def test_close_plan_skips_closed_and_merged_prs() -> None:
         assert not any(cp.number == 102 for cp in fake_remote.closed_prs)
 
 
-def test_close_plan_no_linked_prs() -> None:
-    """Test closing a plan with no linked PRs works without error."""
+def test_close_pr_no_linked_prs() -> None:
+    """Test closing a pr with no linked PRs works without error."""
     # Arrange
-    plan_issue = Plan(
+    pr_issue = Plan(
         pr_identifier="42",
         title="Test Issue",
         body="This is a test issue",
@@ -264,7 +264,7 @@ def test_close_plan_no_linked_prs() -> None:
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
-        issue = _make_issue_info(plan_issue)
+        issue = _make_issue_info(pr_issue)
         fake_issues = FakeGitHubIssues(
             issues={42: issue},
             pr_references={},  # No linked PRs
@@ -298,8 +298,8 @@ def test_close_plan_no_linked_prs() -> None:
         assert "linked PR(s)" not in result.output
 
 
-def test_close_plan_invalid_identifier() -> None:
-    """Test closing a plan with invalid identifier fails with helpful error."""
+def test_close_pr_invalid_identifier() -> None:
+    """Test closing a pr with invalid identifier fails with helpful error."""
     # Arrange
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
@@ -325,8 +325,8 @@ def test_close_plan_invalid_identifier() -> None:
         assert "not-a-number" in result.output
 
 
-def test_close_plan_invalid_url_format() -> None:
-    """Test closing a plan with invalid URL format gives specific error."""
+def test_close_pr_invalid_url_format() -> None:
+    """Test closing a pr with invalid URL format gives specific error."""
     # Arrange
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
@@ -354,10 +354,10 @@ def test_close_plan_invalid_url_format() -> None:
         assert "https://github.com/owner/repo/issues/456" in result.output
 
 
-def test_close_plan_reports_closed_prs() -> None:
-    """Test closing a plan reports the closed PRs in output."""
+def test_close_pr_reports_closed_prs() -> None:
+    """Test closing a pr reports the closed PRs in output."""
     # Arrange
-    plan_issue = Plan(
+    pr_issue = Plan(
         pr_identifier="42",
         title="Test Issue",
         body="This is a test issue",
@@ -378,7 +378,7 @@ def test_close_plan_reports_closed_prs() -> None:
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
-        issue = _make_issue_info(plan_issue)
+        issue = _make_issue_info(pr_issue)
         fake_issues = FakeGitHubIssues(
             issues={42: issue},
             pr_references={42: [pr1, pr2, pr3]},
@@ -410,12 +410,12 @@ def test_close_plan_reports_closed_prs() -> None:
         assert "Closed 3 linked PR(s): #100, #200, #300" in result.output
 
 
-def test_close_plan_with_objective_invokes_update() -> None:
-    """Test closing a plan linked to an objective invokes the objective update."""
+def test_close_pr_with_objective_invokes_update() -> None:
+    """Test closing a pr linked to an objective invokes the objective update."""
     # Arrange - body must include plan-header with objective_issue so
     # PlannedPRBackend._convert_to_plan() extracts objective_id correctly
     body_with_header = format_plan_header_body_for_test(objective_issue=99) + "\nPlan content"
-    plan_issue = Plan(
+    pr_issue = Plan(
         pr_identifier="42",
         title="Test Issue",
         body=body_with_header,
@@ -432,7 +432,7 @@ def test_close_plan_with_objective_invokes_update() -> None:
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         executor = FakePromptExecutor()
-        store, fake_github = create_plan_store_with_plans({"42": plan_issue})
+        store, fake_github = create_plan_store_with_plans({"42": pr_issue})
         fake_remote = FakeRemoteGitHub(
             authenticated_user="test-user",
             default_branch_name="main",
@@ -478,10 +478,10 @@ def test_close_plan_with_objective_invokes_update() -> None:
         assert "--objective 99" in executed_cmd
 
 
-def test_close_plan_without_objective_skips_update() -> None:
-    """Test closing a plan without an objective does not invoke objective update."""
+def test_close_pr_without_objective_skips_update() -> None:
+    """Test closing a pr without an objective does not invoke objective update."""
     # Arrange
-    plan_issue = Plan(
+    pr_issue = Plan(
         pr_identifier="42",
         title="Test Issue",
         body="This is a test issue",
@@ -498,7 +498,7 @@ def test_close_plan_without_objective_skips_update() -> None:
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         executor = FakePromptExecutor()
-        store, fake_github = create_plan_store_with_plans({"42": plan_issue})
+        store, fake_github = create_plan_store_with_plans({"42": pr_issue})
         fake_remote = FakeRemoteGitHub(
             authenticated_user="test-user",
             default_branch_name="main",
@@ -540,12 +540,12 @@ def test_close_plan_without_objective_skips_update() -> None:
         assert len(executor.executed_commands) == 0
 
 
-def test_close_plan_objective_update_failure_does_not_break_close() -> None:
+def test_close_pr_objective_update_failure_does_not_break_close() -> None:
     """Test that a failing objective update does not prevent plan close from succeeding."""
     # Arrange - body must include plan-header with objective_issue so
     # PlannedPRBackend._convert_to_plan() extracts objective_id correctly
     body_with_header = format_plan_header_body_for_test(objective_issue=99) + "\nPlan content"
-    plan_issue = Plan(
+    pr_issue = Plan(
         pr_identifier="42",
         title="Test Issue",
         body=body_with_header,
@@ -562,7 +562,7 @@ def test_close_plan_objective_update_failure_does_not_break_close() -> None:
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         executor = FakePromptExecutor(command_should_fail=True)
-        store, fake_github = create_plan_store_with_plans({"42": plan_issue})
+        store, fake_github = create_plan_store_with_plans({"42": pr_issue})
         fake_remote = FakeRemoteGitHub(
             authenticated_user="test-user",
             default_branch_name="main",

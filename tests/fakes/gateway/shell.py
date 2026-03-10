@@ -60,7 +60,7 @@ class FakeShell(Shell):
         installed_tools: dict[str, str] | None = None,
         tool_versions: dict[str, str] | None = None,
         claude_extraction_raises: bool = False,
-        extraction_plan_url: str | None = None,
+        extraction_pr_url: str | None = None,
         subshell_exit_code: int = 0,
     ) -> None:
         """Initialize fake with predetermined shell and tool availability.
@@ -74,7 +74,7 @@ class FakeShell(Shell):
                 this mapping will return None from get_tool_version()
             claude_extraction_raises: If True, run_claude_extraction_plan will raise
                 RuntimeError
-            extraction_plan_url: URL to return from run_claude_extraction_plan on success
+            extraction_pr_url: URL to return from run_claude_extraction_plan on success
             subshell_exit_code: Exit code to return from spawn_subshell()
         """
         self._detected_shell = detected_shell
@@ -82,7 +82,7 @@ class FakeShell(Shell):
         self._tool_versions = tool_versions or {}
         self._extraction_calls: list[Path] = []
         self._claude_extraction_raises = claude_extraction_raises
-        self._extraction_plan_url = extraction_plan_url
+        self._extraction_pr_url = extraction_pr_url
         self._subshell_exit_code = subshell_exit_code
         self._subshell_calls: list[SpawnSubshellCall] = []
 
@@ -104,12 +104,12 @@ class FakeShell(Shell):
         This method records the call parameters for test assertions.
         Raises RuntimeError if configured to do so (matching real
         implementation's run_subprocess_with_context behavior).
-        Returns the configured extraction_plan_url on success.
+        Returns the configured extraction_pr_url on success.
         """
         self._extraction_calls.append(cwd)
         if self._claude_extraction_raises:
             raise RuntimeError("Simulated extraction failure")
-        return self._extraction_plan_url
+        return self._extraction_pr_url
 
     @property
     def extraction_calls(self) -> list[Path]:

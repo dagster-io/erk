@@ -61,7 +61,7 @@ def _make_plan_header_body() -> str:
 
 
 def _create_github_with_plan_pr(
-    plan_id: int,
+    pr_id: int,
 ) -> tuple[FakeLocalGitHub, FakeGitHubIssues, PlannedPRBackend]:
     """Create FakeLocalGitHub with a draft PR configured as a plan for PlannedPRBackend.
 
@@ -73,15 +73,15 @@ def _create_github_with_plan_pr(
     fake_github = FakeLocalGitHub(
         issues_gateway=issues_gateway,
         pr_details={
-            plan_id: PRDetails(
-                number=plan_id,
-                url=f"https://github.com/test-owner/test-repo/pull/{plan_id}",
+            pr_id: PRDetails(
+                number=pr_id,
+                url=f"https://github.com/test-owner/test-repo/pull/{pr_id}",
                 title="Test Plan",
                 body=body,
                 state="OPEN",
                 is_draft=True,
                 base_ref_name="master",
-                head_ref_name=f"plan-test-{plan_id}",
+                head_ref_name=f"plan-test-{pr_id}",
                 is_cross_repository=False,
                 mergeable="MERGEABLE",
                 merge_state_status="CLEAN",

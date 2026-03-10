@@ -110,7 +110,7 @@ def _make_planned_pr_backend(
     tmp_path: Path,
     plan_branch: str,
 ) -> tuple[PlannedPRBackend, int]:
-    """Create a PlannedPRBackend with one plan, returning (backend, pr_number).
+    """Create a PlannedPRBackend with one PR, returning (backend, pr_number).
 
     Unlike _make_planned_pr_context, this does not create a full ErkContext,
     allowing the caller to build their own context (e.g., without github).
@@ -119,7 +119,7 @@ def _make_planned_pr_backend(
     backend = PlannedPRBackend(fake_github, fake_github.issues, time=FakeTime())
     plan_result = backend.create_plan(
         repo_root=tmp_path,
-        title="My Plan",
+        title="My PR",
         content="# Plan\n\nImplement something.",
         labels=("erk-pr",),
         metadata={"branch_name": plan_branch},
@@ -136,7 +136,7 @@ def _make_planned_pr_context(
     fake_git: FakeGit | None = None,
     fake_graphite: FakeGraphite | None = None,
 ) -> tuple[ErkContext, int]:
-    """Create an ErkContext configured for planned-PR plan backend with shared FakeLocalGitHub.
+    """Create an ErkContext configured for planned-PR PR backend with shared FakeLocalGitHub.
 
     The FakeLocalGitHub is shared between the PlannedPRBackend and the context,
     so that both plan_backend.get_provider_name() and github.get_pr() work.
@@ -147,7 +147,7 @@ def _make_planned_pr_context(
     backend = PlannedPRBackend(fake_github, fake_github.issues, time=FakeTime())
     plan_result = backend.create_plan(
         repo_root=tmp_path,
-        title="My Plan",
+        title="My PR",
         content="# Plan\n\nImplement something.",
         labels=("erk-pr",),
         metadata={"branch_name": plan_branch},
@@ -172,7 +172,7 @@ def _make_planned_pr_context(
 
 
 def test_planned_pr_plan_uses_plan_branch_name(tmp_path: Path) -> None:
-    """Planned-PR plan with branch_name checks out the plan branch and teleports from remote."""
+    """Planned-PR PR with branch_name checks out the plan branch and teleports from remote."""
     plan_branch = "my-plan-branch-02-19"
     fake_git = FakeGit(
         current_branches={tmp_path: "master"},
@@ -189,7 +189,7 @@ def test_planned_pr_plan_uses_plan_branch_name(tmp_path: Path) -> None:
 
     assert result.exit_code == 0, f"Command failed: {result.output}"
 
-    # Fetch was called for the plan branch
+    # Fetch was called for the PR branch
     assert fake_git.fetched_branches == [("origin", plan_branch)]
 
     # Branch was checked out
@@ -198,7 +198,7 @@ def test_planned_pr_plan_uses_plan_branch_name(tmp_path: Path) -> None:
     # Pull-rebase was called to sync with remote
     assert fake_git.pull_rebase_calls == [(tmp_path, "origin", plan_branch)]
 
-    # Output contains the plan branch name
+    # Output contains the PR branch name
     output_lines = result.output.strip().split("\n")
     json_line = next(line for line in reversed(output_lines) if line.startswith("{"))
     output = json.loads(json_line)
@@ -207,7 +207,7 @@ def test_planned_pr_plan_uses_plan_branch_name(tmp_path: Path) -> None:
 
 
 def test_planned_pr_plan_already_on_plan_branch(tmp_path: Path) -> None:
-    """Already on the plan branch — no checkout needed, just fetch and pull-rebase."""
+    """Already on the PR branch — no checkout needed, just fetch and pull-rebase."""
     plan_branch = "my-plan-branch-02-19"
     fake_git = FakeGit(
         current_branches={tmp_path: plan_branch},  # Already on the plan branch
@@ -226,7 +226,7 @@ def test_planned_pr_plan_already_on_plan_branch(tmp_path: Path) -> None:
     # Fetch was called
     assert fake_git.fetched_branches == [("origin", plan_branch)]
 
-    # No checkout (already on the plan branch)
+    # No checkout (already on the PR branch)
     assert all(b != plan_branch for _, b in fake_git.checked_out_branches)
 
     # Pull-rebase was called to sync
@@ -236,11 +236,11 @@ def test_planned_pr_plan_already_on_plan_branch(tmp_path: Path) -> None:
 
 
 def test_planned_pr_plan_skips_checkout_when_impl_exists(tmp_path: Path) -> None:
-    """When .impl/ already has a matching plan_id, skip branch switching.
+    """When .impl/ already has a matching pr_id, skip branch switching.
 
     In CI, the workflow checks out an implementation branch and pre-populates
     .impl/ with plan-ref.json. setup-impl-from-pr should detect this and
-    stay on the current branch instead of switching to the plan branch.
+    stay on the current branch instead of switching to the PR branch.
     """
     plan_branch = "plan-my-feature-02-19"
     ci_branch = "P100-my-feature-impl-02-19-1430"
@@ -252,7 +252,7 @@ def test_planned_pr_plan_skips_checkout_when_impl_exists(tmp_path: Path) -> None
     )
     fake_graphite = FakeGraphite()
 
-    # Pre-create branch-scoped impl dir with matching plan_id (simulating CI setup).
+    # Pre-create branch-scoped impl dir with matching pr_id (simulating CI setup).
     impl_dir = get_impl_dir(tmp_path, branch_name=ci_branch)
     impl_dir.mkdir(parents=True)
     save_plan_ref(
@@ -290,12 +290,12 @@ def test_planned_pr_plan_skips_checkout_when_impl_exists(tmp_path: Path) -> None
     # Output should indicate we skipped branch setup
     assert f"Found existing impl dir for PR #{pr_number}, skipping branch setup" in result.output
 
-    # JSON output should have the CI branch, not the plan branch
+    # JSON output should have the CI branch, not the PR branch
     output_lines = result.output.strip().split("\n")
     json_line = next(line for line in reversed(output_lines) if line.startswith("{"))
     output = json.loads(json_line)
     assert output["success"] is True
-    assert output["branch"] == ci_branch  # Stayed on CI branch, not plan branch
+    assert output["branch"] == ci_branch  # Stayed on CI branch, not PR branch
 
 
 def test_planned_pr_plan_sync_failure_reports_error(tmp_path: Path) -> None:
@@ -331,7 +331,7 @@ def test_planned_pr_plan_sync_failure_reports_error(tmp_path: Path) -> None:
 
 
 def test_planned_pr_reads_from_impl_context_when_present(tmp_path: Path) -> None:
-    """Planned-PR plan reads plan content from .erk/impl-context/ after checkout."""
+    """Planned-PR PR reads plan content from .erk/impl-context/ after checkout."""
     plan_branch = "plan-test-local-read-02-20"
     fake_git = FakeGit(
         current_branches={tmp_path: plan_branch},
@@ -411,7 +411,7 @@ def test_planned_pr_reads_objective_id_from_ref_json(tmp_path: Path) -> None:
 
 
 def test_planned_pr_falls_back_to_pr_body_when_no_impl_context(tmp_path: Path) -> None:
-    """When .erk/impl-context/ doesn't exist, extract plan from PR body."""
+    """When .erk/impl-context/ doesn't exist, extract content from PR body."""
     plan_branch = "plan-test-fallback-02-20"
     fake_git = FakeGit(
         current_branches={tmp_path: plan_branch},
@@ -429,7 +429,7 @@ def test_planned_pr_falls_back_to_pr_body_when_no_impl_context(tmp_path: Path) -
 
     assert result.exit_code == 0, f"Command failed: {result.output}"
 
-    # Impl folder was created with plan content extracted from PR body
+    # Impl folder was created with content extracted from PR body
     impl_plan = tmp_path / ".erk" / "impl-context" / plan_branch / "plan.md"
     assert impl_plan.exists()
     # The PR body was created via _make_planned_pr_context with content
@@ -457,7 +457,7 @@ def _invoke_create_impl_context(
     backend = PlannedPRBackend(fake_github, fake_github.issues, time=FakeTime())
     plan_result = backend.create_plan(
         repo_root=tmp_path,
-        title="Test Plan Title",
+        title="Test PR Title",
         content="# Plan\n\nDo the thing.",
         labels=("erk-pr",),
         metadata={"branch_name": plan_branch},
@@ -559,7 +559,7 @@ def test_create_impl_context_ref_json_non_string_title(tmp_path: Path) -> None:
     )
     assert result["success"] is True
     # Non-string title falls back to PR title
-    assert result["pr_title"] == "Test Plan Title"
+    assert result["pr_title"] == "Test PR Title"
 
 
 def test_create_impl_context_ref_json_non_list_node_ids(tmp_path: Path) -> None:
@@ -588,7 +588,7 @@ def test_create_impl_context_ref_json_missing_fields(tmp_path: Path) -> None:
         },
     )
     assert result["success"] is True
-    assert result["pr_title"] == "Test Plan Title"  # Falls back to PR title
+    assert result["pr_title"] == "Test PR Title"  # Falls back to PR title
     ref_data = json.loads((impl_path / "ref.json").read_text(encoding="utf-8"))
     assert ref_data["objective_id"] is None
     assert ref_data.get("node_ids") is None

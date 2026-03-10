@@ -25,7 +25,7 @@ def _make_ctx(tmp_path: Path, *, branch: str = BRANCH) -> ErkContext:
     )
 
 
-def _setup_impl_with_plan_ref(tmp_path: Path, *, plan_id: str) -> None:
+def _setup_impl_with_plan_ref(tmp_path: Path, *, pr_id: str) -> None:
     """Create branch-scoped impl dir with plan.md and ref.json."""
     impl_dir = get_impl_dir(tmp_path, branch_name=BRANCH)
     impl_dir.mkdir(parents=True)
@@ -33,8 +33,8 @@ def _setup_impl_with_plan_ref(tmp_path: Path, *, plan_id: str) -> None:
     save_plan_ref(
         impl_dir,
         provider="github",
-        plan_id=plan_id,
-        url=f"https://github.com/test/repo/issues/{plan_id}",
+        plan_id=pr_id,
+        url=f"https://github.com/test/repo/issues/{pr_id}",
         labels=(),
         objective_id=None,
         node_ids=None,
@@ -73,7 +73,7 @@ def test_no_plan_ref(tmp_path: Path) -> None:
 
 def test_no_session_found(tmp_path: Path) -> None:
     """Reports not uploaded when no Claude session can be found."""
-    _setup_impl_with_plan_ref(tmp_path, plan_id="123")
+    _setup_impl_with_plan_ref(tmp_path, pr_id="123")
 
     # ErkContext.for_test doesn't include claude_installation by default,
     # so require_claude_installation will raise SystemExit

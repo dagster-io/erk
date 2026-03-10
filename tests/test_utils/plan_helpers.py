@@ -89,7 +89,7 @@ def create_plan_store_with_plans(
     constructing Plan objects while using PlannedPRBackend internally.
 
     Args:
-        plans: Mapping of plan_identifier -> Plan
+        plans: Mapping of pr_identifier -> Plan
 
     Returns:
         Tuple of (backend, fake_github) for test assertions.
@@ -101,9 +101,9 @@ def create_plan_store_with_plans(
     prs: dict[str, PullRequestInfo] = {}
     pr_labels: dict[int, set[str]] = {}
 
-    for plan_id, plan in plans.items():
+    for pr_id, plan in plans.items():
         details = _plan_to_pr_details(plan)
-        pr_number = int(plan_id)
+        pr_number = int(pr_id)
         branch_name = details.head_ref_name
 
         pr_details[pr_number] = details

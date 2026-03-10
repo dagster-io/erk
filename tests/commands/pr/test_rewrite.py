@@ -377,7 +377,7 @@ def test_pr_rewrite_skips_lifecycle_when_plan_not_resolved() -> None:
     """Rewrite skips lifecycle update when plan cannot be resolved from branch name."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
-        # plnd/ branch — resolve_plan_id_for_branch returns None
+        # plnd/ branch — resolve_pr_id_for_branch returns None
         branch_name = "plnd/add-feature"
 
         # Create plan issue with lifecycle_stage "planned"

@@ -175,8 +175,8 @@ def test_get_plans_for_objective_finds_multiple_plans() -> None:
     assert len(output["plans"]) == 2
 
     # Extract numbers for verification (order may vary)
-    plan_numbers = {p["number"] for p in output["plans"]}
-    assert plan_numbers == {5066, 5067}
+    pr_numbers = {p["number"] for p in output["plans"]}
+    assert pr_numbers == {5066, 5067}
 
 
 def test_get_plans_for_objective_supports_legacy_field() -> None:

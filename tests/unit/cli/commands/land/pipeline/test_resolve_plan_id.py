@@ -66,7 +66,7 @@ def _validation_state(tmp_path: Path, *, branch: str) -> LandState:
 
 
 def test_sets_plan_id_when_branch_has_plan(tmp_path: Path) -> None:
-    """Branch resolves to a PR → plan_id is set to the PR number string."""
+    """Branch resolves to a PR → pr_id is set to the PR number string."""
     branch = "plnd/my-feature"
     pr = _make_pr_details(pr_number=200, branch=branch)
 

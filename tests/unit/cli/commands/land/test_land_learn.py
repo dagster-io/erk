@@ -137,7 +137,7 @@ def test_returns_true_when_both_unset(tmp_path: Path) -> None:
 
 
 def test_returns_early_when_plan_id_is_none(tmp_path: Path) -> None:
-    """No-op when state.plan_id is None."""
+    """No-op when state.pr_id is None."""
     fake_issues = FakeGitHubIssues(username="testuser")
     fake_github = FakeLocalGitHub(issues_gateway=fake_issues)
     ctx = context_for_test(github=fake_github, issues=fake_issues, cwd=tmp_path)
@@ -263,7 +263,7 @@ def test_skips_when_plan_not_found(tmp_path: Path) -> None:
         plan_store=plan_store,
         cwd=tmp_path,
     )
-    # plan_id "999" has no PR configured in FakeGitHub
+    # pr_id "999" has no PR configured in FakeGitHub
     state = _land_state(tmp_path, pr_id="999", merged_pr_number=99)
 
     _create_learn_pr_impl(ctx, state=state)

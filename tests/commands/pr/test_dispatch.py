@@ -20,7 +20,7 @@ from tests.test_utils.env_helpers import erk_isolated_fs_env
 
 
 def test_dispatch_planned_pr_plan_triggers_workflow_with_planned_pr_backend() -> None:
-    """Test that dispatching a planned-PR plan triggers workflow with plan_backend=planned_pr.
+    """Test that dispatching a planned-PR plan triggers workflow with pr_backend=planned_pr.
 
     Planned-PR plans already have a branch and PR. Dispatch should:
     - Validate the PR has the erk-plan label and is OPEN
@@ -188,7 +188,7 @@ def test_dispatch_auto_detects_from_impl_folder() -> None:
 
         impl_dir = get_impl_dir(env.cwd, branch_name="main")
         impl_dir.mkdir(parents=True, exist_ok=True)
-        plan_ref_content = build_plan_ref_json(
+        pr_ref_content = build_plan_ref_json(
             provider="github-draft-pr",
             pr_id="42",
             url="https://github.com/test-owner/test-repo/pull/42",
@@ -196,7 +196,7 @@ def test_dispatch_auto_detects_from_impl_folder() -> None:
             objective_id=None,
             node_ids=None,
         )
-        (impl_dir / "plan-ref.json").write_text(plan_ref_content, encoding="utf-8")
+        (impl_dir / "plan-ref.json").write_text(pr_ref_content, encoding="utf-8")
 
         fake_gh = FakeLocalGitHub(
             authenticated=True,
@@ -262,7 +262,7 @@ def test_dispatch_auto_detects_from_impl_context() -> None:
         # resolve_impl_dir() requires plan.md to exist for discovery (step 3)
         impl_context_dir = env.cwd / ".erk" / "impl-context" / "main"
         impl_context_dir.mkdir(parents=True)
-        plan_ref_content = build_plan_ref_json(
+        pr_ref_content = build_plan_ref_json(
             provider="github-draft-pr",
             pr_id="42",
             url="https://github.com/test-owner/test-repo/pull/42",
@@ -270,7 +270,7 @@ def test_dispatch_auto_detects_from_impl_context() -> None:
             objective_id=None,
             node_ids=None,
         )
-        (impl_context_dir / "ref.json").write_text(plan_ref_content, encoding="utf-8")
+        (impl_context_dir / "ref.json").write_text(pr_ref_content, encoding="utf-8")
         (impl_context_dir / "plan.md").write_text("# Test plan\n", encoding="utf-8")
 
         fake_gh = FakeLocalGitHub(

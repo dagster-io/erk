@@ -85,7 +85,7 @@ def test_prepare_plan_non_open_generates_warning() -> None:
 
 
 def test_prepare_plan_converts_identifier_to_int() -> None:
-    """Plan identifier string is converted to plan number int."""
+    """Plan identifier string is converted to pr number int."""
     plan = _make_plan(
         pr_identifier="789",
         header_fields={"branch_name": "plan-test-01-01-0000"},

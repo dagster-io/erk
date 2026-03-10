@@ -584,7 +584,7 @@ def test_read_plan_ref_prefers_ref_json(tmp_path: Path) -> None:
     # Write both files with different data
     ref_data = {
         "provider": "linear",
-        "plan_id": "PROJ-123",
+        "pr_id": "PROJ-123",
         "url": "https://linear.app/proj/PROJ-123",
         "created_at": "2025-01-15T10:00:00+00:00",
         "synced_at": "2025-01-15T10:00:00+00:00",
@@ -688,10 +688,10 @@ def test_validate_plan_linkage_both_match(tmp_path: Path) -> None:
 
 
 def test_validate_plan_linkage_mismatch_raises(tmp_path: Path) -> None:
-    """Test validation returns plan_id from plan-ref when branch has no issue number.
+    """Test validation returns pr_id from plan-ref when branch has no issue number.
 
     P-prefix branches cannot provide an issue number to validate against.
-    The function returns the plan_id from plan-ref.json without any mismatch check.
+    The function returns the pr_id from plan-ref.json without any mismatch check.
     """
     impl_dir = get_impl_dir(tmp_path, branch_name=BRANCH)
     impl_dir.mkdir(parents=True)
@@ -707,7 +707,7 @@ def test_validate_plan_linkage_mismatch_raises(tmp_path: Path) -> None:
 
     # No longer raises - branch provides no issue number, so no mismatch possible
     result = validate_plan_linkage(impl_dir, "P42-add-feature-01-04-1234")
-    assert result == "99"  # Returns plan_id from plan-ref.json
+    assert result == "99"  # Returns pr_id from plan-ref.json
 
 
 def test_validate_plan_linkage_branch_only(tmp_path: Path) -> None:
@@ -723,7 +723,7 @@ def test_validate_plan_linkage_branch_only(tmp_path: Path) -> None:
 
 
 def test_validate_plan_linkage_impl_only(tmp_path: Path) -> None:
-    """Test validation returns plan_id when branch has no issue number."""
+    """Test validation returns pr_id when branch has no issue number."""
     impl_dir = get_impl_dir(tmp_path, branch_name=BRANCH)
     impl_dir.mkdir(parents=True)
     save_plan_ref(
@@ -749,7 +749,7 @@ def test_validate_plan_linkage_neither(tmp_path: Path) -> None:
 
 
 def test_validate_plan_linkage_planned_pr_with_plan_ref(tmp_path: Path) -> None:
-    """Test planned-PR branch returns plan_id from plan-ref.json."""
+    """Test planned-PR branch returns pr_id from plan-ref.json."""
     impl_dir = get_impl_dir(tmp_path, branch_name=BRANCH)
     impl_dir.mkdir(parents=True)
     save_plan_ref(

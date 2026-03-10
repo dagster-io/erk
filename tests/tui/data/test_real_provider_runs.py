@@ -65,7 +65,7 @@ def _make_provider(
     tmp_path: Path,
     *,
     workflow_runs: list[WorkflowRun] | None = None,
-    pr_plan_linkages: dict[int, list[PullRequestInfo]] | None = None,
+    pr_pr_linkages: dict[int, list[PullRequestInfo]] | None = None,
     prs: dict[str, PullRequestInfo] | None = None,
     pr_head_branches: dict[int, str] | None = None,
     use_graphite: bool = False,
@@ -83,7 +83,7 @@ def _make_provider(
 
     github = FakeLocalGitHub(
         workflow_runs=workflow_runs or [],
-        pr_plan_linkages=pr_plan_linkages or {},
+        pr_pr_linkages=pr_pr_linkages or {},
         prs=prs or {},
         pr_head_branches=pr_head_branches or {},
     )
@@ -171,7 +171,7 @@ def test_fetch_runs_extracts_pr_number_from_display_title(tmp_path: Path) -> Non
             created_at=datetime(2026, 3, 1, 10, 0, tzinfo=UTC),
         ),
     ]
-    provider = _make_provider(tmp_path, workflow_runs=runs, pr_plan_linkages={})
+    provider = _make_provider(tmp_path, workflow_runs=runs, pr_pr_linkages={})
     rows = provider.fetch_runs()
 
     assert len(rows) == 1
@@ -179,8 +179,8 @@ def test_fetch_runs_extracts_pr_number_from_display_title(tmp_path: Path) -> Non
     assert rows[0].pr_display == "#42"
 
 
-def test_fetch_runs_links_plan_number_runs_to_prs(tmp_path: Path) -> None:
-    """fetch_runs links plan-number runs to their PRs via batch PR linkage."""
+def test_fetch_runs_links_pr_number_runs_to_prs(tmp_path: Path) -> None:
+    """fetch_runs links pr-number runs to their PRs via batch PR linkage."""
     runs = [
         _make_workflow_run(
             "1001",
@@ -201,7 +201,7 @@ def test_fetch_runs_links_plan_number_runs_to_prs(tmp_path: Path) -> None:
     provider = _make_provider(
         tmp_path,
         workflow_runs=runs,
-        pr_plan_linkages={123: [pr]},
+        pr_pr_linkages={123: [pr]},
     )
     rows = provider.fetch_runs()
 
@@ -345,7 +345,7 @@ def test_fetch_runs_pr_title_truncated_at_50_chars(tmp_path: Path) -> None:
     provider = _make_provider(
         tmp_path,
         workflow_runs=runs,
-        pr_plan_linkages={123: [pr]},
+        pr_pr_linkages={123: [pr]},
     )
     rows = provider.fetch_runs()
 

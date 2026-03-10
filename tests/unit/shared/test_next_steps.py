@@ -21,14 +21,14 @@ class TestPlanNextSteps:
         )
         assert steps.view == "https://github.com/org/repo/pull/42"
 
-    def test_dispatch_uses_plan_number(self) -> None:
+    def test_dispatch_uses_pr_number(self) -> None:
         steps = PlanNextSteps(
             pr_number=42,
             url="https://github.com/org/repo/pull/42",
         )
         assert steps.dispatch == "erk pr dispatch 42"
 
-    def test_checkout_uses_plan_number(self) -> None:
+    def test_checkout_uses_pr_number(self) -> None:
         steps = PlanNextSteps(
             pr_number=42,
             url="https://github.com/org/repo/pull/42",

@@ -84,7 +84,7 @@ Build a test feature.
 
 
 def test_impl_init_with_issue_tracking(tmp_path: Path) -> None:
-    """Test impl-init detects plan-ref.json and returns plan_number."""
+    """Test impl-init detects plan-ref.json and returns pr_number."""
     impl_dir = get_impl_dir(tmp_path, branch_name=BRANCH)
     impl_dir.mkdir(parents=True)
     (impl_dir / "plan.md").write_text("# Test Plan\n", encoding="utf-8")
@@ -92,7 +92,7 @@ def test_impl_init_with_issue_tracking(tmp_path: Path) -> None:
         json.dumps(
             {
                 "provider": "github",
-                "plan_id": "123",
+                "pr_id": "123",
                 "url": "https://github.com/org/repo/issues/123",
                 "created_at": "2025-01-01T00:00:00Z",
                 "synced_at": "2025-01-01T00:00:00Z",

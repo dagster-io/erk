@@ -1,6 +1,6 @@
 """Tests for plan issue closure display in erk land command.
 
-Since resolve_plan_id_for_branch always returns None (plan IDs are not
+Since resolve_pr_id_for_branch always returns None (PR IDs are not
 encoded in branch names), check_and_display_plan_issue_closure always
 returns None for any branch. These tests verify that behavior.
 """
@@ -15,7 +15,7 @@ from tests.test_utils.test_context import context_for_test
 
 
 def test_returns_none_for_plnd_branch(tmp_path: Path) -> None:
-    """plnd/ branches don't encode plan IDs — returns None with no output."""
+    """plnd/ branches don't encode PR IDs — returns None with no output."""
     issues_ops = FakeGitHubIssues(username="testuser", issues={})
     ctx = context_for_test(issues=issues_ops, cwd=tmp_path)
 

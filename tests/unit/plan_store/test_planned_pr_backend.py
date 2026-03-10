@@ -198,8 +198,8 @@ def test_resolve_plan_id_for_branch_finds_created_pr() -> None:
         summary="",
     )
 
-    plan_id = backend.resolve_plan_id_for_branch(Path("/repo"), "my-plan-branch")
-    assert plan_id == result.pr_id
+    pr_id = backend.resolve_plan_id_for_branch(Path("/repo"), "my-plan-branch")
+    assert pr_id == result.pr_id
 
 
 def test_resolve_plan_id_for_branch_returns_none_for_unknown() -> None:
