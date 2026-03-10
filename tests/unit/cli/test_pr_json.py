@@ -1,31 +1,30 @@
-"""Tests for erk pr list/view --json output and --schema."""
+"""Tests for pr list/view JSON result serialization."""
 
 from __future__ import annotations
 
 from datetime import UTC, datetime
 
-from erk.cli.commands.pr.list_cmd import PrListResult
-from erk.cli.commands.pr.view_cmd import PrViewResult, _serialize_header_fields
+from erk.cli.commands.pr.list.operation import PrListResult
+from erk.cli.commands.pr.view.operation import PrViewResult, _serialize_header_fields
+from tests.fakes.gateway.plan_data_provider import make_plan_row
 
 
 class TestPrListResult:
     """Tests for PrListResult JSON serialization."""
 
     def test_to_json_dict_structure(self) -> None:
-        result = PrListResult(
-            plans=[{"plan_id": 42, "full_title": "My Plan"}],
-            count=1,
-        )
+        row = make_plan_row(42, "My Plan")
+        result = PrListResult(rows=[row], warnings=[])
 
         data = result.to_json_dict()
 
-        assert data == {
-            "plans": [{"plan_id": 42, "full_title": "My Plan"}],
-            "count": 1,
-        }
+        assert data["count"] == 1
+        assert len(data["plans"]) == 1
+        assert data["plans"][0]["plan_id"] == 42
+        assert data["plans"][0]["full_title"] == "My Plan"
 
     def test_empty_plans(self) -> None:
-        result = PrListResult(plans=[], count=0)
+        result = PrListResult(rows=[], warnings=[])
 
         data = result.to_json_dict()
 

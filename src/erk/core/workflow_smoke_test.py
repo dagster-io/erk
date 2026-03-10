@@ -10,7 +10,7 @@ from pathlib import Path
 
 import click
 
-from erk.cli.commands.one_shot import _get_remote_github
+from erk.cli.commands.one_shot.operation import _get_remote_github
 from erk.cli.commands.one_shot_remote_dispatch import (
     OneShotDispatchParams,
     OneShotDispatchResult,

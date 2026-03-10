@@ -7,7 +7,7 @@ from rich.console import Console
 from rich.markup import escape as escape_markup
 from rich.table import Table
 
-from erk.cli.commands.pr.list_cmd import format_pr_cell
+from erk.cli.commands.pr.list.cli import format_pr_cell
 from erk.cli.commands.run.shared import extract_plan_number, extract_pr_number
 from erk.cli.constants import WORKFLOW_COMMAND_MAP
 from erk.cli.core import discover_repo_context

@@ -26,6 +26,10 @@ Rules triggered by matching actions in code.
 
 **adding --json flag to a command without using @json_output decorator** → Read [Agent-Friendly CLI Design Principles](agent-friendly-cli.md) first. Use the shared @json_output decorator from src/erk/cli/json_output.py. Do not manually implement JSON serialization in individual commands.
 
+**adding --json flag to a human command** → Read [Adding Machine JSON Commands](adding-json-to-commands.md) first. Machine JSON output belongs in the `erk json` command tree. Create a machine adapter as json_cli.py in the command's subpackage instead.
+
+**adding --json flag to a human-facing command** → Read [Machine Command Architecture](json-command-decorator.md) first. Machine JSON output lives in the `erk json` command tree, not as a flag on human commands. Create a json_cli.py machine adapter in the command's subpackage.
+
 **adding --sync to checkout** → Read [Checkout/Teleport Command Split](checkout-teleport-split.md) first. checkout is local-only; use teleport for sync. Checkout preserves local state; teleport force-resets to remote.
 
 **adding a column to plan list without checking PlanDataTable.\_setup_columns()** → Read [Plan List Provider Pattern](plan-list-provider-pattern.md) first. Column order in list_cmd.py must mirror plan_table.py for consistency between CLI and TUI. Check both files when modifying columns.
@@ -62,7 +66,7 @@ Rules triggered by matching actions in code.
 
 **adding user-interactive steps (confirmations, prompts) without CI detection** → Read [CI-Aware Commands](ci-aware-commands.md) first. Commands with user interaction must check `in_github_actions()` and skip prompts in CI. Interactive prompts hang indefinitely in GitHub Actions workflows.
 
-**applying @json_command below @click.command in the decorator stack** → Read [@json_command Decorator](json-command-decorator.md) first. @json_command must be applied ABOVE @click.command. The correct order is @mcp_exposed > @json_command > @click.command.
+**applying @machine_command below @click.command in the decorator stack** → Read [Machine Command Architecture](json-command-decorator.md) first. @machine_command must be applied ABOVE @click.command. The correct order is @mcp_exposed > @machine_command > @click.command.
 
 **assuming erk implement always requires a plan number argument** → Read [Implement Command](implement-command.md) first. erk implement supports auto-detection from .erk/impl-context/ and from branch PRs. Read this doc first.
 
@@ -78,19 +82,21 @@ Rules triggered by matching actions in code.
 
 **committing .impl/ folder to git** → Read [Plan-Implement Workflow](plan-implement.md) first. .impl/ lives in .gitignore and should never be committed. Only .erk/impl-context/ (remote execution artifact) gets committed and later removed.
 
-**creating a result dataclass without to_json_dict() method** → Read [Adding --json to CLI Commands](adding-json-to-commands.md) first. Result dataclasses should implement to_json_dict() for custom serialization. Without it, emit_json_result() falls back to dataclasses.asdict() which may not handle complex types correctly.
+**creating a result dataclass without to_json_dict() method** → Read [Adding Machine JSON Commands](adding-json-to-commands.md) first. Result dataclasses should implement to_json_dict() for custom serialization. Without it, the serializer falls back to dataclasses.asdict() which may not handle complex types correctly.
 
 **creating an MCP tool that parses human-readable CLI output** → Read [Agent-Friendly CLI Design Principles](agent-friendly-cli.md) first. MCP tools must call CLI commands with --json flag and parse structured JSON. Never parse human-readable text output.
 
 **creating exec scripts for operations requiring LLM reasoning between steps** → Read [Slash Command LLM Turn Optimization](slash-command-llm-turn-optimization.md) first. Keep conditional logic in slash commands. Only bundle mechanical API calls where all input params are known upfront.
-
-**declaring output_types that don't match the return annotation** → Read [@json_command Decorator](json-command-decorator.md) first. test_output_types_matches_return_annotation() validates output_types against return type hints. Mismatches fail CI.
 
 **deleting a CLI command without checking integration tests** → Read [Command Deletion Patterns](command-deletion-patterns.md) first. Grep tests/integration/ before deleting gateway methods used by the command. Integration tests may directly exercise the deleted method.
 
 **displaying user-provided text in Rich CLI tables** → Read [CLI Output Styling Guide](output-styling.md) first. Use `escape_markup(value)` for user data. Brackets like `[text]` are interpreted as Rich style tags and will disappear.
 
 **displaying user-provided text in Rich CLI tables without escaping** → Read [Objective Commands](objective-commands.md) first. Use `escape_markup(value)` for user data in Rich tables. Brackets like `[text]` are interpreted as style tags and will disappear.
+
+**duplicating fetch/query logic in cli.py instead of calling run\_\*() from operation.py** → Read [Adding Machine JSON Commands](adding-json-to-commands.md) first. cli.py MUST delegate to the operation. The operation is the single source of truth for business logic. cli.py only marshals Click flags into the Request and renders the Result. Never re-fetch, re-query, or re-compute what the operation already returns.
+
+**eagerly serializing rich objects in the Result dataclass** → Read [Adding Machine JSON Commands](adding-json-to-commands.md) first. Result dataclasses should carry rich domain objects (not pre-serialized dicts). Serialization belongs in to_json_dict() only. The human CLI needs rich objects for display; the machine adapter needs to_json_dict() for JSON.
 
 **editing or deleting .impl/ folder during implementation** → Read [Plan-Implement Workflow](plan-implement.md) first. .impl/plan.md is immutable during implementation. Never edit it. Never delete .impl/ folder - it must be preserved for user review. Only .erk/impl-context/ should be auto-deleted.
 
@@ -144,15 +150,15 @@ Rules triggered by matching actions in code.
 
 **passing --pr flag to erk pr rewrite** → Read [PR Rewrite Command](pr-rewrite.md) first. Do NOT pass --pr to erk pr rewrite; the command auto-discovers the PR from the current branch. The --pr flag does not exist.
 
-**placing @mcp_exposed below @json_command in decorator stack** → Read [Adding --json to CLI Commands](adding-json-to-commands.md) first. @mcp_exposed must be ABOVE @json_command. Correct order: @mcp_exposed > @json_command > @click.command.
+**placing @mcp_exposed below @machine_command in decorator stack** → Read [Adding Machine JSON Commands](adding-json-to-commands.md) first. @mcp_exposed must be ABOVE @machine_command. Correct order: @mcp_exposed > @machine_command > @click.command.
 
 **plan-implement exists in WORKFLOW_COMMAND_MAP but erk launch plan-implement always raises UsageError** → Read [Workflow Commands](workflow-commands.md) first. use erk pr submit instead
 
 **promoting a nested command to top-level** → Read [CLI Command Promotion Pattern](command-promotion.md) first. Three files must be updated: cli.py (import + add_command), help_formatter.py (top_level_commands list), and the command module (help text). See command-promotion.md.
 
-**putting checkout-specific helpers in navigation_helpers.py** → Read [Checkout Helpers Module](checkout-helpers.md) first. `src/erk/cli/commands/navigation_helpers.py` imports from `wt.create_cmd`, which creates a cycle if navigation_helpers tries to import from `wt` subpackage. Keep checkout-specific helpers in separate `checkout_helpers.py` module instead.
+**putting business logic in the machine adapter** → Read [Machine Command Architecture](json-command-decorator.md) first. Machine adapters should be thin wrappers. Put shared logic in \*\_operation.py files.
 
-**raising an exception in a @json_command without using AgentCliError** → Read [@json_command Decorator](json-command-decorator.md) first. Use AgentCliError(message, error_type=...) to ensure errors serialize as JSON when --json is active.
+**putting checkout-specific helpers in navigation_helpers.py** → Read [Checkout Helpers Module](checkout-helpers.md) first. `src/erk/cli/commands/navigation_helpers.py` imports from `wt.create_cmd`, which creates a cycle if navigation_helpers tries to import from `wt` subpackage. Keep checkout-specific helpers in separate `checkout_helpers.py` module instead.
 
 **removing a CLI parameter without checking all consumers** → Read [Parameter Addition Checklist](parameter-addition-checklist.md) first. When removing a CLI parameter, verify: (1) @click.option decorator, (2) function signature, (3) all call sites, (4) helper functions, (5) ctx.invoke calls. Then run erk-dev gen-exec-reference-docs.
 
@@ -171,6 +177,8 @@ Rules triggered by matching actions in code.
 **renaming an exec command without updating all 9 reference locations** → Read [Command Rename Checklist](command-rename-checklist.md) first. Follow the 9-place checklist in command-rename-checklist.md to avoid stale references.
 
 **retrieving dependencies in Click commands** → Read [Dependency Injection in Exec Scripts](dependency-injection-patterns.md) first. Click commands retrieve real implementations from context via require\_\* helpers
+
+**returning MachineCommandError without raising SystemExit** → Read [Machine Command Architecture](json-command-decorator.md) first. The @machine_command decorator handles serialization and exit codes. Just return MachineCommandError from the callback.
 
 **returning non-zero exit code when --json flag is active** → Read [Agent-Friendly CLI Design Principles](agent-friendly-cli.md) first. JSON mode must always exit 0. Errors are communicated via {success: false, error_type, message} in stdout JSON, not via exit codes.
 
@@ -203,8 +211,6 @@ Rules triggered by matching actions in code.
 **using erk exec commands in scripts** → Read [erk exec Commands](erk-exec-commands.md) first. Some erk exec subcommands don't support `--format json`. Always check with `erk exec <command> -h` first.
 
 **using gh issue view on a plan without checking plan backend type** → Read [CLI Backend-Aware Display Patterns](backend-aware-display.md) first. Planned PR plan IDs are PR numbers, not issue numbers. Using gh issue view on a planned-PR plan produces a confusing 404. Route to gh pr view based on backend type.
-
-**using json.dumps without indent=2 in a @json_command context** → Read [@json_command Decorator](json-command-decorator.md) first. All json.dumps() calls in @json_command commands use indent=2 for pretty-printing.
 
 **using ls -t or mtime to find the current session** → Read [Session ID Availability and Propagation](session-management.md) first. Use the ClaudeInstallation gateway or the session-id-injector-hook's scratch file instead. Mtime-based discovery is racy in parallel sessions.
 
