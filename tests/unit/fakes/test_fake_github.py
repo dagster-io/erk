@@ -261,7 +261,7 @@ def test_fake_github_list_workflow_runs_empty() -> None:
 
 
 def test_fake_github_list_workflow_runs_configured() -> None:
-    """Test list_workflow_runs returns pre-configured runs."""
+    """Test list_workflow_runs returns runs matching workflow_path."""
     workflow_runs = [
         WorkflowRun(
             run_id="123",
@@ -269,6 +269,7 @@ def test_fake_github_list_workflow_runs_configured() -> None:
             conclusion="success",
             branch="feat-1",
             head_sha="abc123",
+            workflow_path=".github/workflows/implement-plan.yml",
         ),
         WorkflowRun(
             run_id="456",
@@ -276,6 +277,7 @@ def test_fake_github_list_workflow_runs_configured() -> None:
             conclusion="failure",
             branch="feat-2",
             head_sha="def456",
+            workflow_path=".github/workflows/implement-plan.yml",
         ),
     ]
     ops = FakeLocalGitHub(workflow_runs=workflow_runs)
@@ -291,8 +293,8 @@ def test_fake_github_list_workflow_runs_configured() -> None:
     assert result[1].conclusion == "failure"
 
 
-def test_fake_github_list_workflow_runs_ignores_workflow_param() -> None:
-    """Test list_workflow_runs returns all configured runs regardless of workflow."""
+def test_fake_github_list_workflow_runs_filters_by_workflow() -> None:
+    """Test list_workflow_runs filters runs by workflow_path suffix."""
     workflow_runs = [
         WorkflowRun(
             run_id="123",
@@ -300,20 +302,30 @@ def test_fake_github_list_workflow_runs_ignores_workflow_param() -> None:
             conclusion="success",
             branch="feat-1",
             head_sha="abc123",
+            workflow_path=".github/workflows/implement-plan.yml",
+        ),
+        WorkflowRun(
+            run_id="456",
+            status="completed",
+            conclusion="success",
+            branch="feat-2",
+            head_sha="def456",
+            workflow_path=".github/workflows/pr-address.yml",
         ),
     ]
     ops = FakeLocalGitHub(workflow_runs=workflow_runs)
 
-    # Should return same data regardless of workflow parameter
     result1 = ops.list_workflow_runs(sentinel_path(), "implement-plan.yml")
-    result2 = ops.list_workflow_runs(sentinel_path(), "other-workflow.yml")
+    result2 = ops.list_workflow_runs(sentinel_path(), "pr-address.yml")
 
-    assert result1 == result2
     assert len(result1) == 1
+    assert result1[0].run_id == "123"
+    assert len(result2) == 1
+    assert result2[0].run_id == "456"
 
 
 def test_fake_github_list_workflow_runs_ignores_limit_param() -> None:
-    """Test list_workflow_runs returns all configured runs regardless of limit."""
+    """Test list_workflow_runs returns all matching runs regardless of limit."""
     workflow_runs = [
         WorkflowRun(
             run_id=str(i),
@@ -321,12 +333,13 @@ def test_fake_github_list_workflow_runs_ignores_limit_param() -> None:
             conclusion="success",
             branch=f"feat-{i}",
             head_sha=f"sha{i}",
+            workflow_path=".github/workflows/implement-plan.yml",
         )
         for i in range(10)
     ]
     ops = FakeLocalGitHub(workflow_runs=workflow_runs)
 
-    # Should return all runs regardless of limit parameter
+    # Should return all matching runs regardless of limit parameter
     result = ops.list_workflow_runs(sentinel_path(), "implement-plan.yml", limit=5)
 
     assert len(result) == 10  # All runs returned, limit ignored
@@ -341,6 +354,7 @@ def test_fake_github_list_workflow_runs_with_in_progress() -> None:
             conclusion=None,  # No conclusion yet
             branch="feat-1",
             head_sha="abc123",
+            workflow_path=".github/workflows/implement-plan.yml",
         ),
         WorkflowRun(
             run_id="456",
@@ -348,6 +362,7 @@ def test_fake_github_list_workflow_runs_with_in_progress() -> None:
             conclusion=None,
             branch="feat-2",
             head_sha="def456",
+            workflow_path=".github/workflows/implement-plan.yml",
         ),
     ]
     ops = FakeLocalGitHub(workflow_runs=workflow_runs)
