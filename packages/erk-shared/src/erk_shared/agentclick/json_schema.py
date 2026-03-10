@@ -18,6 +18,7 @@ import click
 
 from erk_shared.agentclick.dataclass_json import (
     ERROR_SCHEMA,
+    dataclass_result_schema,
     output_schema,
     python_type_to_json_schema,
 )
@@ -144,8 +145,6 @@ def dataclass_to_json_schema(cls: type) -> dict[str, Any]:
     Returns:
         JSON Schema object
     """
-    from erk_shared.agentclick.dataclass_json import dataclass_result_schema
-
     return dataclass_result_schema(cls)
 
 
