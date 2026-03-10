@@ -1,0 +1,976 @@
+<session>
+  <meta branch="plnd/O9109-update-test-plan-to-03-10-2146" />
+  <meta model="claude-opus-4-6" />
+  <tool_result tool="toolu_01AEqag8wF1ppWpyQ4Xvwxci">
+   450→    impl_context_files: dict[str, str] | None = None,
+   451→) -&gt; tuple[dict[str, str | int | bool | None], Path]:
+   452→    """Helper to invoke create_impl_context_from_pr() with a fake context.
+   453→
+   454→    Returns (result_dict, impl_path).
+   455→    """
+   456→    fake_github = FakeLocalGitHub()
+   457→    backend = PlannedPRBackend(fake_github, fake_github.issues, time=FakeTime())
+   458→    plan_result = backend.create_plan(
+   459→        repo_root=tmp_path,
+   460→        title="Test PR Title",
+   461→        content="# Plan\n\nDo the thing.",
+   462→        labels=("erk-pr",),
+   463→        metadata={"branch_name": plan_branch},
+   464→        summary=None,
+   465→    )
+   466→    pr_number = int(plan_result.pr_id)
+   467→
+   468→    fake_git = FakeGit(current_branches={tmp_path: plan_branch})
+   469→    ctx = context_for_test(
+   470→        github=fake_github,
+   471→        git=fake_git,
+   472→        cwd=tmp_path,
+   473→        repo_root=tmp_path,
+   474→        plan_store=backend,
+   475→    )
+   476→
+   477→    if impl_context_files is not None:
+   478→        impl_context_dir = tmp_path / IMPL_CONTEXT_DIR
+   479→        impl_context_dir.mkdir(parents=True, exist_ok=True)
+
+... [120 lines omitted] ...
+
+   498→    invoke_result = runner.invoke(_wrapper, obj=ctx, catch_exceptions=False)
+   499→    assert invoke_result.exit_code == 0, f"Wrapper failed: {invoke_result.output}"
+  </tool_result>
+  <tool_use name="Read" id="toolu_015xdSChAnqqfAQ7WnBx6gm3">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/tests/unit/cli/commands/exec/scripts/test_setup_impl_from_pr.py</param>
+    <param name="offset">597</param>
+    <param name="limit">40</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2576" cache_read_input_tokens="91469" output_tokens="136" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2576, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_015xdSChAnqqfAQ7WnBx6gm3">
+   597→def test_create_impl_context_valid_ref_json(tmp_path: Path) -&gt; None:
+   598→    """ref.json with valid fields extracts all metadata correctly."""
+   599→    result, impl_path = _invoke_create_impl_context(
+   600→        tmp_path,
+   601→        "plan-test-branch",
+   602→        impl_context_files={
+   603→            "plan.md": "# Plan\n\nContent.",
+   604→            "ref.json": json.dumps(
+   605→                {
+   606→                    "objective_id": 42,
+   607→                    "title": "Custom Title",
+   608→                    "node_ids": ["node-1", "node-2"],
+   609→                }
+   610→            ),
+   611→        },
+   612→    )
+   613→    assert result["success"] is True
+   614→    assert result["title"] == "Custom Title"
+   615→    ref_data = json.loads((impl_path / "ref.json").read_text(encoding="utf-8"))
+   616→    assert ref_data["objective_id"] == 42
+   617→    assert ref_data["node_ids"] == ["node-1", "node-2"]
+   618→
+   619→
+   620→def test_planned_pr_pr_not_found_reports_error(tmp_path: Path) -&gt; None:
+   621→    """When the PR doesn't exist, report an error."""
+   622→    # Create a PlannedPRBackend but don't create any PR
+   623→    fake_github = FakeLocalGitHub()
+   624→    backend = PlannedPRBackend(fake_github, fake_github.issues, time=FakeTime())
+   625→
+   626→    fake_git = FakeGit(current_branches={tmp_path: "master"})
+
+... [10 lines omitted] ...
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="706" cache_read_input_tokens="94045" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 706}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01CcezLVLV1ohfsymYFGSbCm">
+    <param name="pattern">def create_impl_context_from_pr</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/src</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="706" cache_read_input_tokens="94045" output_tokens="244" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 706, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01CcezLVLV1ohfsymYFGSbCm">
+src/erk/cli/commands/exec/scripts/setup_impl_from_pr.py:116:def create_impl_context_from_pr(
+  </tool_result>
+  <tool_use name="Read" id="toolu_01NgdTd5oiMfGjWqkA75bQfg">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/src/erk/cli/commands/exec/scripts/setup_impl_from_pr.py</param>
+    <param name="offset">116</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="292" cache_read_input_tokens="94751" output_tokens="135" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 292, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01NgdTd5oiMfGjWqkA75bQfg">
+   116→def create_impl_context_from_pr(
+   117→    ctx: click.Context,
+   118→    *,
+   119→    pr_number: int,
+   120→    cwd: Path,
+   121→    branch_name: str,
+   122→) -&gt; dict[str, str | int | bool | None]:
+   123→    """Create .erk/impl-context/ folder from a GitHub PR's plan content.
+   124→
+   125→    Fetches PR metadata, reads plan content (from committed .erk/impl-context/
+   126→    files or PR body fallback), and creates the impl folder structure.
+   127→
+   128→    Does NOT checkout branches or create worktrees — the caller must already
+   129→    be on the correct branch/worktree.
+   130→
+   131→    Args:
+   132→        ctx: Click context (for gateway access)
+   133→        pr_number: PR number containing the plan
+   134→        cwd: Working directory (worktree root)
+   135→        branch_name: Branch name for impl-context scoping
+   136→
+   137→    Returns:
+   138→        Dict with success status, impl_path, pr_number, pr_url, branch,
+   139→        and pr_title.
+   140→    """
+   141→    repo_root = require_repo_root(ctx)
+   142→    github = require_github(ctx)
+   143→
+   144→    pr_result = github.get_pr(repo_root, pr_number)
+   145→    if isinstance(pr_result, PRNotFound):
+
+... [70 lines omitted] ...
+
+   146→        error_output = {
+   148→            "error": "plan_not_found",
+   151→        click.echo(json.dumps(error_output), err=True)
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="2538" cache_read_input_tokens="95043" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2538}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>The source function returns `"pr_title"` (line 213) but the tests reference `result["title"]`. The haiku agent must have missed renaming these dict key accesses. Let me fix them.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2538" cache_read_input_tokens="95043" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2538}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01RuFEzNenDQwtKazfh5cYaX">
+    <param name="pattern">result\["title"\]</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/tests/unit/cli/commands/exec/scripts/test_setup_impl_from_pr.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2538" cache_read_input_tokens="95043" output_tokens="528" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2538, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01RuFEzNenDQwtKazfh5cYaX">
+562:    assert result["title"] == "Test PR Title"
+591:    assert result["title"] == "Test PR Title"  # Falls back to PR title
+614:    assert result["title"] == "Custom Title"
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01BPKee9eQ3rv65ys47Xuv4x">
+    <param name="replace_all">True</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/tests/unit/cli/commands/exec/scripts/test_setup_impl_from_pr.py</param>
+    <param name="old_string">result["title"]</param>
+    <param name="new_string">result["pr_title"]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="588" cache_read_input_tokens="97581" output_tokens="167" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 588, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01BPKee9eQ3rv65ys47Xuv4x">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/tests/unit/cli/commands/exec/scripts/test_setup_impl_from_pr.py has been updated. All occurrences of 'result["title"]' were successfully replaced with 'result["pr_title"]'.
+  </tool_result>
+  <assistant>Now let me also check if there are other `save_plan_ref` calls that were incorrectly renamed from `plan_id=` to `pr_id=`.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="260" cache_read_input_tokens="98169" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 260}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01VrnXd9mLG74KqV14Stk2iN">
+    <param name="pattern">save_plan_ref\(</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/tests</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+    <param name="-A">5</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="260" cache_read_input_tokens="98169" output_tokens="195" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 260, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01VrnXd9mLG74KqV14Stk2iN">
+tests/commands/test_dash_workflow_runs.py:54:        save_plan_ref(
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/tests/commands/test_dash_workflow_runs.py-55-            impl_dir,
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/tests/commands/test_dash_workflow_runs.py-56-            provider="github",
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/tests/commands/test_dash_workflow_runs.py-57-            plan_id="123",
+tests/commands/test_dash_workflow_runs.py-58-            url="https://github.com/owner/repo/issues/123",
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/tests/commands/test_dash_workflow_runs.py-59-            labels=(),
+--
+tests/commands/test_dash_workflow_runs.py:152:        save_plan_ref(
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/tests/commands/test_dash_workflow_runs.py-153-            impl_dir,
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/tests/commands/test_dash_workflow_runs.py-154-            provider="github",
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/tests/commands/test_dash_workflow_runs.py-155-            plan_id="456",
+tests/commands/test_dash_workflow_runs.py-156-            url="https://github.com/testowner/testrepo/issues/456",
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/tests/commands/test_dash_workflow_runs.py-157-            labels=(),
+--
+tests/commands/test_dash_workflow_runs.py:252:        save_plan_ref(
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/tests/commands/test_dash_workflow_runs.py-253-            impl_dir,
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/tests/commands/test_dash_workflow_runs.py-254-            provider="github",
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/tests/commands/test_dash_workflow_runs.py-255-            plan_id="789",
+tests/commands/test_dash_workflow_runs.py-256-            url="https://github.com/owner/repo/issues/789",
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/tests/commands/test_dash_workflow_runs.py-257-            labels=(),
+--
+tests/commands/test_dash_workflow_runs.py:347:        save_plan_ref(
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/tests/commands/test_dash_workflow_runs.py-348-            impl_dir,
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/tests/commands/test_dash_workflow_runs.py-349-            provider="github",
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/tests/commands/test_dash_workflow_runs.py-350-            plan_id="111",
+tests/commands/test_dash_workflow_runs.py-351-            url="https://github.com/owner/repo/issues/111",
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/tests/commands/test_dash_workflow_runs.py-352-            labels=(),
+--
+tests/commands/test_dash_workflow_runs.py:423:        save_plan_ref(
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/tests/commands/test_dash_workflow_runs.py-424-            impl_dir,
+
+... [165 lines omitted] ...
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="7615" cache_read_input_tokens="98429" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7615}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Many `save_plan_ref()` calls were incorrectly renamed from `plan_id=` to `pr_id=`. The source still uses `plan_id`. Let me fix all of them.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="7615" cache_read_input_tokens="98429" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7615}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01VvzBWfEnPruK4zDXEGzti1">
+    <param name="description">Fix save_plan_ref pr_id kwargs</param>
+    <param name="subagent_type">general-purpose</param>
+    <param name="prompt">In the following test files, the function `save_plan_ref()` was incorrectly called with `p...[truncated 1225 chars]...t_files` calls — those correctly use `pr_id`). Only change inside `save_plan_ref()` calls.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="7615" cache_read_input_tokens="98429" output_tokens="1167" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 7615, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01VvzBWfEnPruK4zDXEGzti1">
+Each file has exactly 1 `plan_id=` occurrence from the replacement, matching what was expected. Both files only had the single `pr_id=` inside `save_plan_ref()` calls.
+
+All fixes are complete. Here is a summary:
+
+**Fixed 6 files, 20 total `pr_id=` to `plan_id=` replacements inside `save_plan_ref()` calls:**
+
+1. `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/tests/core/test_impl_folder.py` -- 9 occurrences (lines 498, 526, 542, 561, 649, 679, 701, 732, 758)
+2. `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/tests/core/test_impl_issue_wt_workflow.py` -- 4 occurrences (lines 35, 63, 87, 135)
+3. `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/tests/commands/pr/test_list.py` -- 3 occurrences (lines 412, 518, 534)
+4. `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/tests/unit/status/test_impl_collector.py` -- 1 occurrence (line 60)
+5. `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/tests/unit/cli/commands/exec/scripts/test_update_pr_description.py` -- 1 occurrence (line 405)
+6. `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/tests/unit/cli/commands/exec/scripts/test_setup_impl_from_pr.py` -- 1 occurrence (line 261)
+
+Verified that no `pr_id=` remains inside any `save_plan_ref()` call across the test suite. The only `pr_id` near a `save_plan_ref` is in `test_upload_impl_session.py` where `pr_id` is correctly used as a variable value (`plan_id=pr_id`), not a keyword argument name.
+agentId: aa1eec3ed1c62406a (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 33937
+tool_uses: 28
+duration_ms: 104449&lt;/usage&gt;
+  </tool_result>
+  <assistant>
+
+Good, all `save_plan_ref()` kwargs are fixed. Now let me run CI again to check the current state.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="2162" cache_read_input_tokens="106044" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2162}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_014t76LMDxizi4b3sA67HUPH">
+    <param name="description">Run fast-ci checks again</param>
+    <param name="subagent_type">devrun</param>
+    <param name="prompt">Run `make fast-ci` in /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49 and report results. Report all failures in detail including exact test names and error messages.</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="2162" cache_read_input_tokens="106044" output_tokens="174" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2162, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_014t76LMDxizi4b3sA67HUPH">
+## Fast CI Results
+
+**Status: FAILED** with 25 test failures and 8 errors (5957 passed)
+
+### Summary
+The failures are primarily due to parameter naming changes from `pr_number` to `plan_number` in metadata block creation functions and other plan-related APIs. There are also some assertion failures due to output message changes.
+
+### Detailed Failures
+
+#### TypeError Failures (Parameter Name Changes)
+
+1. **test_create_submission_queued_block() - Parameter renamed**
+   - File: `tests/commands/pr/test_log.py:446`
+   - Error: `create_submission_queued_block()` got unexpected keyword argument `'pr_number'`. Did you mean `'plan_number'`?
+
+2. **test_workflow_started_block() - Parameter renamed**
+   - File: `tests/commands/pr/test_log.py:84`
+   - Error: `create_workflow_started_block()` got unexpected keyword argument `'pr_number'`. Did you mean `'plan_number'`?
+
+3. **test_plan_block() - Parameter renamed**
+   - File: `tests/commands/pr/test_log.py:168`
+   - Error: `create_plan_block()` got unexpected keyword argument `'pr_number'`. Did you mean `'plan_number'`?
+
+4. **test_log_with_all_event_types - Parameter renamed**
+   - File: `tests/commands/pr/test_log.py` (test truncated in output)
+   - Similar parameter renaming issue
+
+5. **test_add_worktree_creation_comment_success - Parameter renamed**
+   - File: `tests/core/test_impl_folder.py:175`
+   - Error: `add_worktree_creation_comment()` got unexpected keyword argument `'pr_number'`. Did you mean `'plan_number'`?
+
+... [45 lines omitted] ...
+
+   - Error: Same `add_worktree_creation_comment()` parameter issue
+#### Metadata Block Creation Errors (8 errors)
+- Multiple collection initialization errors from block creation functions
+   - Error: `assert 0 == 1` (exit code mismatch)
+   - Error: Output text changed from "No pr numbers provided" to "No plan numbers provided"
+   - Error: `KeyError: 'pr_id'` (workflow inputs changed)
+    - Similar `KeyError: 'pr_id'` failures
+    - Error: `KeyError: 'pr_backend'` (missing workflow input)
+    - Error: Assertion failing - text changed from "Close PR #789" to "Close plan #789"
+- **Total unit tests (erk)**: 25 failed, 5957 passed, 8 errors
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="1310" cache_read_input_tokens="108206" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1310}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>There are more over-aggressive renames where the source still uses `plan_number` or `plan_id`. Let me investigate and fix systematically.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1310" cache_read_input_tokens="108206" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1310}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_011yFWENssrABjYbFHgV2LQG">
+    <param name="pattern">def create_submission_queued_block|def create_workflow_started_block|def create_plan_block|def add_worktree_creation_comment</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/src</param>
+    <param name="output_mode">content</param>
+    <param name="-A">8</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1310" cache_read_input_tokens="108206" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1310}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011yFWENssrABjYbFHgV2LQG">
+No matches found
+  </tool_result>
+  <tool_use name="Grep" id="toolu_017QsMhjLL5NhPjMDDPgU5nP">
+    <param name="pattern">pr_number=</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/tests/commands/pr/test_log.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1310" cache_read_input_tokens="108206" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1310}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017QsMhjLL5NhPjMDDPgU5nP">
+58:        next_pr_number=1,
+88:        pr_number=42,
+92:        pr_number=42,
+100:        pr_number=42,
+169:        pr_number=42,
+278:        pr_number=42,
+286:        pr_number=42,
+295:        pr_number=42,
+449:        pr_number=42,
+  </tool_result>
+  <tool_use name="Read" id="toolu_0114a9pv7UY3gFX3c4NwdjeA">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/tests/commands/pr/test_dispatch.py</param>
+    <param name="offset">315</param>
+    <param name="limit">80</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1310" cache_read_input_tokens="108206" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1310}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0114a9pv7UY3gFX3c4NwdjeA">
+   315→
+   316→        result = runner.invoke(cli, ["pr", "dispatch", "--base", "main"], obj=ctx)
+   317→
+   318→        assert "Auto-detected PR #42 from context" in result.output
+   319→        assert len(fake_gh.triggered_workflows) &gt;= 1, (
+   320→            f"Expected workflow trigger, got: {fake_gh.triggered_workflows}\n"
+   321→            f"Output: {result.output}"
+   322→        )
+   323→        _workflow_name, inputs, _ref = fake_gh.triggered_workflows[0]
+   324→        assert inputs["pr_id"] == "42"
+   325→        assert "Traceback" not in result.output
+   326→
+   327→
+   328→def test_dispatch_no_args_no_context_fails() -&gt; None:
+   329→    """Test that dispatch with no arguments and no context gives helpful error."""
+   330→    runner = CliRunner()
+   331→    with erk_isolated_fs_env(runner) as env:
+   332→        fake_gh = FakeLocalGitHub(
+   333→            authenticated=True,
+   334→            # No PRs configured — branch lookup will return PRNotFound
+   335→        )
+   336→        fake_issues = FakeGitHubIssues()
+   337→        fake_time = FakeTime()
+   338→        planned_pr_backend = PlannedPRBackend(fake_gh, fake_issues, time=fake_time)
+   339→
+   340→        git = FakeGit(
+   341→            git_common_dirs={env.cwd: env.git_dir},
+   342→            current_branches={env.cwd: "some-feature-branch"},
+   343→            local_branches={env.cwd: ["main", "some-feature-branch"]},
+   344→            default_branches={env.cwd: "main"},
+
+... [50 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01GNuZ1VW3XjeDMssvKNP6kw">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/tests/commands/workspace/test_delete.py</param>
+    <param name="offset">690</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1310" cache_read_input_tokens="108206" output_tokens="880" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1310, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01GNuZ1VW3XjeDMssvKNP6kw">
+   690→            existing_paths={wt},
+   691→            confirm_responses=[False],  # Abort at confirmation
+   692→        )
+   693→
+   694→        # Abort at confirmation to see the planning output
+   695→        result = runner.invoke(cli, ["wt", "delete", "test-feature", "-a"], obj=test_ctx)
+   696→
+   697→        assert_cli_success(result)
+   698→        # Should show actual PR and PR numbers in planning phase
+   699→        assert "Close PR #123 (currently open)" in result.output
+   700→        assert "Close PR #789 (currently open)" in result.output
+   701→
+   702→
+   703→def test_delete_all_shows_merged_pr_status_in_confirmation() -&gt; None:
+   704→    """Test that --all planning phase shows merged PR status."""
+   705→    runner = CliRunner()
+   706→    with erk_inmem_env(runner) as env:
+   707→        repo_name = env.cwd.name
+   708→        wt = env.erk_root / "repos" / repo_name / "worktrees" / "test-feature"
+   709→
+   710→        # Create MERGED PR for the branch
+   711→        pr_info = _make_pr_info(999, state="MERGED")
+   712→        pr_details = _make_pr_details(999, "feature-branch", state="MERGED")
+   713→        fake_github = FakeLocalGitHub(
+   714→            prs={"feature-branch": pr_info},
+   715→            pr_details={999: pr_details},
+   716→        )
+   717→
+   718→        # Build fake git ops with worktree info
+   719→        fake_git = FakeGit(
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="4384" cache_read_input_tokens="109516" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4384}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_0151ve5qpkuX8mVyvbPvqojg">
+    <param name="pattern">def create_submission_queued_block|def create_workflow_started_block|def create_plan_block</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49</param>
+    <param name="output_mode">content</param>
+    <param name="-A">8</param>
+    <param name="-n">True</param>
+    <param name="glob">**/*.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4384" cache_read_input_tokens="109516" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4384}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0151ve5qpkuX8mVyvbPvqojg">
+packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py:238:def create_plan_block(
+packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py-239-    plan_number: int,
+packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py-240-    worktree_name: str,
+packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py-241-    timestamp: str,
+packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py-242-    plan_file: str | None = None,
+packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py-243-) -&gt; MetadataBlock:
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py-244-    """Create an erk-plan block with validation.
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py-245-
+packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py-246-    Args:
+--
+packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py:272:def create_submission_queued_block(
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py-273-    *,
+packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py-274-    queued_at: str,
+packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py-275-    submitted_by: str,
+packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py-276-    plan_number: int,
+packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py-277-    validation_results: dict[str, bool],
+packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py-278-    expected_workflow: str,
+packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py-279-) -&gt; MetadataBlock:
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py-280-    """Create a submission-queued block with validation.
+--
+packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py:310:def create_workflow_started_block(
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py-311-    *,
+packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py-312-    started_at: str,
+packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py-313-    workflow_run_id: str,
+packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py-314-    workflow_run_url: str,
+packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py-315-    plan_number: int,
+packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py-316-    branch_name: str | None = None,
+packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py-317-    worktree_path: str | None = None,
+packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py-318-) -&gt; MetadataBlock:
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01CiNJFxbzDBfUeNsDtYUAnG">
+    <param name="pattern">def add_worktree_creation_comment</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49</param>
+    <param name="output_mode">content</param>
+    <param name="-A">8</param>
+    <param name="-n">True</param>
+    <param name="glob">**/*.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4384" cache_read_input_tokens="109516" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4384}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01CiNJFxbzDBfUeNsDtYUAnG">
+packages/erk-shared/src/erk_shared/impl_folder.py:466:def add_worktree_creation_comment(
+packages/erk-shared/src/erk_shared/impl_folder.py-467-    *, github_issues, repo_root: Path, plan_number: int, worktree_name: str, branch_name: str
+packages/erk-shared/src/erk_shared/impl_folder.py-468-) -&gt; None:
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/packages/erk-shared/src/erk_shared/impl_folder.py-469-    """Add a comment to the GitHub issue documenting worktree creation.
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/packages/erk-shared/src/erk_shared/impl_folder.py-470-
+packages/erk-shared/src/erk_shared/impl_folder.py-471-    Args:
+packages/erk-shared/src/erk_shared/impl_folder.py-472-        github_issues: GitHubIssues interface for posting comments
+packages/erk-shared/src/erk_shared/impl_folder.py-473-        repo_root: Repository root directory
+packages/erk-shared/src/erk_shared/impl_folder.py-474-        plan_number: Plan number to comment on
+  </tool_result>
+  <tool_use name="Grep" id="toolu_012J3Tovj6xR3iMF6sf8gVkE">
+    <param name="pattern">No plan numbers provided|No pr numbers provided</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/src</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4384" cache_read_input_tokens="109516" output_tokens="814" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 4384, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_012J3Tovj6xR3iMF6sf8gVkE">
+src/erk/cli/commands/pr/dispatch_cmd.py:755:                + "No plan numbers provided and could not auto-detect from context.\n\n"
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="2367" cache_read_input_tokens="113900" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2367}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>All these source functions still use `plan_number` as their parameter. The haiku agents incorrectly renamed them. Let me fix all the remaining failures.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2367" cache_read_input_tokens="113900" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2367}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Usbaa3GagbDKGn3KP4BSY1">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/tests/commands/pr/test_log.py</param>
+    <param name="offset">80</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2367" cache_read_input_tokens="113900" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2367}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Usbaa3GagbDKGn3KP4BSY1">
+    80→        objective_id=None,
+    81→    )
+    82→
+    83→    # Create metadata blocks (intentionally out of order to test sorting)
+    84→    workflow_block = create_workflow_started_block(
+    85→        started_at="2024-01-15T12:35:00Z",
+    86→        workflow_run_id="123456",
+    87→        workflow_run_url="https://github.com/owner/repo/actions/runs/123456",
+    88→        pr_number=42,
+    89→    )
+    90→
+    91→    plan_block = create_plan_block(
+    92→        pr_number=42,
+    93→        worktree_name="test-plan",
+    94→        timestamp="2024-01-15T12:30:00Z",
+    95→    )
+    96→
+    97→    submission_block = create_submission_queued_block(
+    98→        queued_at="2024-01-15T12:32:00Z",
+    99→        submitted_by="user",
+   100→        pr_number=42,
+   101→        validation_results={"pr_is_open": True},
+   102→        expected_workflow="implement-plan",
+   103→    )
+   104→
+   105→    # Create comments with rendered blocks (out of chronological order)
+   106→    comment1 = render_metadata_block(workflow_block)
+   107→    comment2 = render_metadata_block(plan_block)
+   108→    comment3 = render_metadata_block(submission_block)
+   109→
+  </tool_result>
+  <tool_use name="Read" id="toolu_0181ULjRVEfCtAzrK45pLKsm">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/tests/core/test_impl_folder.py</param>
+    <param name="offset">170</param>
+    <param name="limit">60</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2367" cache_read_input_tokens="113900" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2367}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0181ULjRVEfCtAzrK45pLKsm">
+   170→            )
+   171→        }
+   172→    )
+   173→
+   174→    # Post comment
+   175→    add_worktree_creation_comment(
+   176→        github_issues=issues,
+   177→        repo_root=tmp_path,
+   178→        pr_number=42,
+   179→        worktree_name="feature-name",
+   180→        branch_name="feature-branch",
+   181→    )
+   182→
+   183→    # Verify comment was added
+   184→    assert len(issues.added_comments) == 1
+   185→    issue_number, comment_body, _comment_id = issues.added_comments[0]
+   186→
+   187→    # Verify comment details
+   188→    assert issue_number == 42
+   189→    assert "✅ Worktree created: **feature-name**" in comment_body
+   190→    assert "erk br co feature-branch" in comment_body
+   191→    assert "/erk:plan-implement" in comment_body
+   192→
+   193→    # Round-trip verification: Parse metadata block back out
+   194→    result = parse_metadata_blocks(comment_body)
+   195→    assert len(result.blocks) == 1
+   196→
+   197→    block = find_metadata_block(comment_body, "erk-worktree-creation")
+   198→    assert block is not None
+   199→    assert block.key == "erk-worktree-creation"
+
+... [30 lines omitted] ...
+
+   213→    """Test add_worktree_creation_comment raises error when issue doesn't exist."""
+   216→    # Should raise RuntimeError (simulating gh CLI error)
+   217→    with pytest.raises(RuntimeError, match="Issue #999 not found"):
+  </tool_result>
+  <tool_use name="Read" id="toolu_019Bc9CXztoLkFFsrTCER5GM">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/tests/commands/pr/test_dispatch.py</param>
+    <param name="offset">100</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2367" cache_read_input_tokens="113900" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2367}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019Bc9CXztoLkFFsrTCER5GM">
+   100→                    is_trunk=True,
+   101→                    commit_sha=None,
+   102→                ),
+   103→            },
+   104→        )
+   105→
+   106→        ctx = build_workspace_test_context(
+   107→            env,
+   108→            git=git,
+   109→            graphite=graphite,
+   110→            github=fake_gh,
+   111→            issues=fake_issues,
+   112→            use_graphite=True,
+   113→            plan_store=planned_pr_backend,
+   114→        )
+   115→
+   116→        result = runner.invoke(cli, ["pr", "dispatch", "42", "--base", "main"], obj=ctx)
+   117→
+   118→        # Verify: workflow was triggered with plan_backend="planned_pr"
+   119→        assert len(fake_gh.triggered_workflows) &gt;= 1, (
+   120→            f"Expected workflow trigger, got: {fake_gh.triggered_workflows}\n"
+   121→            f"Output: {result.output}"
+   122→        )
+   123→        _workflow_name, inputs, _ref = fake_gh.triggered_workflows[0]
+   124→        assert inputs["pr_backend"] == "planned_pr"
+   125→        assert inputs["pr_id"] == "42"
+   126→        assert inputs["branch_name"] == plan_branch
+   127→
+   128→        # Verify: no new PR was created (planned-PR already exists)
+   129→        assert len(fake_gh.created_prs) == 0
+  </tool_result>
+  <tool_use name="Grep" id="toolu_016YJ4c3VJac7T59evozJHt8">
+    <param name="pattern">pr_number=</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/tests/unit/gateways/github/metadata_blocks/test_round_trip.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+    <param name="-B">2</param>
+    <param name="-A">2</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2367" cache_read_input_tokens="113900" output_tokens="762" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2367, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_016YJ4c3VJac7T59evozJHt8">
+174-    ),
+175-    "erk-plan": create_plan_block(
+176:        pr_number=42,
+177-        worktree_name="test-worktree",
+178-        timestamp="2025-01-15T10:00:00Z",
+--
+181-        queued_at="2025-01-15T10:00:00Z",
+182-        submitted_by="testuser",
+183:        pr_number=42,
+184-        validation_results={"pr_is_open": True, "has_erk_pr_title": True},
+185-        expected_workflow="implement-plan",
+--
+189-        workflow_run_id="12345678",
+190-        workflow_run_url="https://github.com/owner/repo/actions/runs/12345678",
+191:        pr_number=42,
+192-    ),
+193-    "plan-header": create_plan_header_block(
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="2682" cache_read_input_tokens="116267" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2682}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01R6TBxZ6Fxu14AQBxQPqVfa">
+    <param name="pattern">inputs\["pr_id"\]|inputs\["pr_backend"\]|"No pr numbers</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/tests/commands/pr/test_dispatch.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2682" cache_read_input_tokens="116267" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2682}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01R6TBxZ6Fxu14AQBxQPqVfa">
+124:        assert inputs["pr_backend"] == "planned_pr"
+125:        assert inputs["pr_id"] == "42"
+250:        assert inputs["pr_id"] == "42"
+324:        assert inputs["pr_id"] == "42"
+373:        assert "No pr numbers provided and could not auto-detect" in result.output
+545:        assert inputs["pr_backend"] == "planned_pr"
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01RGYzCpkRT987AKSLsDJm7h">
+    <param name="pattern">plan_backend|plan_id</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/src/erk/cli/commands/pr/dispatch_cmd.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+    <param name="head_limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2682" cache_read_input_tokens="116267" output_tokens="743" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2682, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01RGYzCpkRT987AKSLsDJm7h">
+205:    - Pushes and triggers the workflow with plan_backend="planned_pr"
+243:        plan_id=str(pr_number),
+282:    # Build inputs dict with plan_backend="planned_pr"
+287:        "plan_id": str(pr_number),
+293:        "plan_backend": "planned_pr",
+311:            plan_backend=ctx.plan_backend,
+361:        ctx.plan_backend.add_comment(repo.root, str(pr_number), comment_body)
+489:        plan_id=str(pr_number),
+514:        "plan_id": str(pr_number),
+520:        "plan_backend": "planned_pr",
+622:        pr_id = ctx.plan_backend.resolve_plan_id_for_branch(repo.root, branch_name)
+
+[Showing results with pagination = limit: 20, offset: 0]
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="1378" cache_read_input_tokens="118949" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1378}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I have the full picture. The source uses `plan_id`, `plan_backend`, `plan_number`, and "No plan numbers" — the haiku agents incorrectly renamed these in the tests. Let me fix everything in parallel.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1378" cache_read_input_tokens="118949" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1378}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01UmTxdz2713Sx9GHM1HVdk2">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/tests/commands/pr/test_log.py</param>
+    <param name="offset">270</param>
+    <param name="limit">35</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1378" cache_read_input_tokens="118949" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1378}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01UmTxdz2713Sx9GHM1HVdk2">
+   270→        created_at=datetime(2024, 1, 1, tzinfo=UTC),
+   271→        updated_at=datetime(2024, 1, 2, tzinfo=UTC),
+   272→        metadata={},
+   273→        objective_id=None,
+   274→    )
+   275→
+   276→    # Create all event types
+   277→    plan_block = create_plan_block(
+   278→        pr_number=42,
+   279→        worktree_name="test-plan",
+   280→        timestamp="2024-01-15T12:30:00Z",
+   281→    )
+   282→
+   283→    submission_block = create_submission_queued_block(
+   284→        queued_at="2024-01-15T12:32:00Z",
+   285→        submitted_by="testuser",
+   286→        pr_number=42,
+   287→        validation_results={"pr_is_open": True},
+   288→        expected_workflow="implement-plan",
+   289→    )
+   290→
+   291→    workflow_block = create_workflow_started_block(
+   292→        started_at="2024-01-15T12:35:00Z",
+   293→        workflow_run_id="123456",
+   294→        workflow_run_url="https://github.com/owner/repo/actions/runs/123456",
+   295→        pr_number=42,
+   296→    )
+   297→
+   298→    status_block = create_implementation_status_block(
+   299→        status="in_progress",
+
+... [5 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_015uwnDB2Lzjh6Rp8Ls1x86m">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/tests/commands/pr/test_log.py</param>
+    <param name="offset">440</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1378" cache_read_input_tokens="118949" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1378}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_015uwnDB2Lzjh6Rp8Ls1x86m">
+   440→        created_at=datetime(2024, 1, 1, tzinfo=UTC),
+   441→        updated_at=datetime(2024, 1, 2, tzinfo=UTC),
+   442→        metadata={},
+   443→        objective_id=None,
+   444→    )
+   445→
+   446→    submission_block = create_submission_queued_block(
+   447→        queued_at="2024-01-15T12:32:00Z",
+   448→        submitted_by="testuser",
+   449→        pr_number=42,
+   450→        validation_results={"pr_is_open": True},
+   451→        expected_workflow="implement-plan",
+   452→    )
+   453→
+   454→    comment = render_metadata_block(submission_block)
+   455→
+   456→    issue = _make_issue_info(plan)
+   457→    fake_issues = FakeGitHubIssues(
+   458→        issues={42: issue},
+   459→        comments={42: [comment]},
+  </tool_result>
+  <tool_use name="Read" id="toolu_017RyumKRmtTwXpoTRDoEiK5">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/tests/commands/pr/test_dispatch.py</param>
+    <param name="offset">240</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1378" cache_read_input_tokens="118949" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1378}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017RyumKRmtTwXpoTRDoEiK5">
+   240→
+   241→        # Invoke WITHOUT issue number argument
+   242→        result = runner.invoke(cli, ["pr", "dispatch", "--base", "main"], obj=ctx)
+   243→
+   244→        assert "Auto-detected PR #42 from context" in result.output
+   245→        assert len(fake_gh.triggered_workflows) &gt;= 1, (
+   246→            f"Expected workflow trigger, got: {fake_gh.triggered_workflows}\n"
+   247→            f"Output: {result.output}"
+   248→        )
+   249→        _workflow_name, inputs, _ref = fake_gh.triggered_workflows[0]
+   250→        assert inputs["pr_id"] == "42"
+   251→        assert "Traceback" not in result.output
+   252→
+   253→
+   254→def test_dispatch_auto_detects_from_impl_context() -&gt; None:
+   255→    """Test auto-detection from branch-scoped .erk/impl-context/&lt;branch&gt;/ directory."""
+   256→    runner = CliRunner()
+   257→    with erk_isolated_fs_env(runner) as env:
+   258→        plan_branch = "plnd/auto-detect-context"
+   259→        pr_42 = _make_pr_42(plan_branch=plan_branch)
+  </tool_result>
+  <tool_use name="Read" id="toolu_01VCiACcz7suFQX1P3RM5fdr">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/tests/commands/pr/test_dispatch.py</param>
+    <param name="offset">535</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1378" cache_read_input_tokens="118949" output_tokens="797" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1378, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01VCiACcz7suFQX1P3RM5fdr">
+   535→            plan_store=planned_pr_backend,
+   536→        )
+   537→
+   538→        result = runner.invoke(cli, ["pr", "dispatch", "42", "--base", "main"], obj=ctx)
+   539→
+   540→        # Verify: workflow was triggered successfully
+   541→        assert len(fake_gh.triggered_workflows) &gt;= 1, (
+   542→            f"Expected workflow trigger\nOutput: {result.output}"
+   543→        )
+   544→        inputs = fake_gh.triggered_workflows[0][1]
+   545→        assert inputs["pr_backend"] == "planned_pr"
+   546→        assert inputs["branch_name"] == plan_branch
+   547→
+   548→        # Verify: create_branch was NOT called (branch was checked out)
+   549→        assert len(git.created_branches) == 0, (
+   550→            f"Expected no create_branch calls, got: {git.created_branches}"
+   551→        )
+   552→
+   553→        # Verify: reset_hard was used (not update_local_ref) to keep working tree in sync
+   554→        reset_calls = git.branch.reset_hard_calls
+  </tool_result>
+  <assistant>Now let me apply all the fixes. The pattern is clear: revert `pr_number=` → `plan_number=` for block creation functions, and `pr_id`/`pr_backend` → `plan_id`/`plan_backend` for workflow input assertions.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2233" cache_read_input_tokens="120327" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2233}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01TZHo1jVcVsz3usDWL5oa4h">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/tests/commands/pr/test_log.py</param>
+    <param name="old_string">    workflow_block = create_workflow_started_block(
+        started_at="2024-01-15T12:35:0...[truncated 424 chars]...validation_results={"pr_is_open": True},
+        expected_workflow="implement-plan",
+    )</param>
+    <param name="new_string">    workflow_block = create_workflow_started_block(
+        started_at="2024-01-15T12:35:0...[truncated 430 chars]...validation_results={"pr_is_open": True},
+        expected_workflow="implement-plan",
+    )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2233" cache_read_input_tokens="120327" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2233}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01TZHo1jVcVsz3usDWL5oa4h">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/tests/commands/pr/test_log.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01NTvHNBu4NrawcXSVvc8eTe">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/tests/commands/pr/test_log.py</param>
+    <param name="old_string">    plan_block = create_plan_block(
+        pr_number=42,
+        worktree_name="test-plan...[truncated 428 chars]...w_run_url="https://github.com/owner/repo/actions/runs/123456",
+        pr_number=42,
+    )</param>
+    <param name="new_string">    plan_block = create_plan_block(
+        plan_number=42,
+        worktree_name="test-pl...[truncated 434 chars]...run_url="https://github.com/owner/repo/actions/runs/123456",
+        plan_number=42,
+    )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2233" cache_read_input_tokens="120327" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2233}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01NTvHNBu4NrawcXSVvc8eTe">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/tests/commands/pr/test_log.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01NC1U8rcabJuduHtxa3j5cw">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/tests/commands/pr/test_log.py</param>
+    <param name="old_string">    submission_block = create_submission_queued_block(
+        queued_at="2024-01-15T12:32...[truncated 105 chars]...ed_workflow="implement-plan",
+    )
+
+    comment = render_metadata_block(submission_block)</param>
+    <param name="new_string">    submission_block = create_submission_queued_block(
+        queued_at="2024-01-15T12:32...[truncated 107 chars]...ed_workflow="implement-plan",
+    )
+
+    comment = render_metadata_block(submission_block)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2233" cache_read_input_tokens="120327" output_tokens="1447" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2233, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01NC1U8rcabJuduHtxa3j5cw">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/tests/commands/pr/test_log.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01XULhyNtvWYoHX1rtNWezap">
+    <param name="pattern">pr_number=42</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/tests/commands/pr/test_log.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1718" cache_read_input_tokens="122560" output_tokens="147" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1718, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01XULhyNtvWYoHX1rtNWezap">
+169:        pr_number=42,
+  </tool_result>
+  <tool_use name="Read" id="toolu_01TwDC24YoJMKu6sgoyDq6v7">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/tests/commands/pr/test_log.py</param>
+    <param name="offset">160</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="434" cache_read_input_tokens="124278" output_tokens="124" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 434, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01TwDC24YoJMKu6sgoyDq6v7">
+   160→        labels=["erk-pr"],
+   161→        assignees=[],
+   162→        created_at=datetime(2024, 1, 1, tzinfo=UTC),
+   163→        updated_at=datetime(2024, 1, 2, tzinfo=UTC),
+   164→        metadata={},
+   165→        objective_id=None,
+   166→    )
+   167→
+   168→    plan_block = create_plan_block(
+   169→        pr_number=42,
+   170→        worktree_name="test-plan",
+   171→        timestamp="2024-01-15T12:30:00Z",
+   172→    )
+   173→
+   174→    comment = render_metadata_block(plan_block)
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01HLxMccFEGw8UMMetfkmyuj">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/tests/commands/pr/test_log.py</param>
+    <param name="old_string">    plan_block = create_plan_block(
+        pr_number=42,
+        worktree_name="test-plan",
+        timestamp="2024-01-15T12:30:00Z",
+    )
+
+    comment = render_metadata_block(plan_block)</param>
+    <param name="new_string">    plan_block = create_plan_block(
+        plan_number=42,
+        worktree_name="test-plan",
+        timestamp="2024-01-15T12:30:00Z",
+    )
+
+    comment = render_metadata_block(plan_block)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="324" cache_read_input_tokens="124712" output_tokens="275" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 324, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01HLxMccFEGw8UMMetfkmyuj">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/tests/commands/pr/test_log.py has been updated successfully.
+  </tool_result>
+  <assistant>Now fix the other files.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="331" cache_read_input_tokens="125036" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 331}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01UiS1Px15bzdF3XSAxAycwU">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/tests/core/test_impl_folder.py</param>
+    <param name="old_string">    add_worktree_creation_comment(
+        github_issues=issues,
+        repo_root=tmp_pat...[truncated 71 chars]...-branch",
+    )
+
+    # Verify comment was added
+    assert len(issues.added_comments) == 1</param>
+    <param name="new_string">    add_worktree_creation_comment(
+        github_issues=issues,
+        repo_root=tmp_pat...[truncated 73 chars]...-branch",
+    )
+
+    # Verify comment was added
+    assert len(issues.added_comments) == 1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="331" cache_read_input_tokens="125036" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 331}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01UiS1Px15bzdF3XSAxAycwU">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/tests/core/test_impl_folder.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01URcxe4SBm6wTHecSKYtbX1">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/tests/core/test_impl_folder.py</param>
+    <param name="old_string">        add_worktree_creation_comment(
+            github_issues=issues,
+            repo_...[truncated 25 chars]...         worktree_name="feature-name",
+            branch_name="feature-branch",
+        )</param>
+    <param name="new_string">        add_worktree_creation_comment(
+            github_issues=issues,
+            repo_...[truncated 27 chars]...         worktree_name="feature-name",
+            branch_name="feature-branch",
+        )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="331" cache_read_input_tokens="125036" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 331}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01URcxe4SBm6wTHecSKYtbX1">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/tests/core/test_impl_folder.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_019wDC5N5tyngksfo8bHUuoZ">
+    <param name="replace_all">True</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/tests/commands/pr/test_dispatch.py</param>
+    <param name="old_string">inputs["pr_id"]</param>
+    <param name="new_string">inputs["plan_id"]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="331" cache_read_input_tokens="125036" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 331}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019wDC5N5tyngksfo8bHUuoZ">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/tests/commands/pr/test_dispatch.py has been updated. All occurrences of 'inputs["pr_id"]' were successfully replaced with 'inputs["plan_id"]'.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_011BhUWiGQezZEs5ZX2n6Cs4">
+    <param name="replace_all">True</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/tests/commands/pr/test_dispatch.py</param>
+    <param name="old_string">inputs["pr_backend"]</param>
+    <param name="new_string">inputs["plan_backend"]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="331" cache_read_input_tokens="125036" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 331}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011BhUWiGQezZEs5ZX2n6Cs4">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/tests/commands/pr/test_dispatch.py has been updated. All occurrences of 'inputs["pr_backend"]' were successfully replaced with 'inputs["plan_backend"]'.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01PrNVYiSwvEw8FU822vMj86">
+    <param name="replace_all">True</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/tests/commands/pr/test_dispatch.py</param>
+    <param name="old_string">"No pr numbers provided and could not auto-detect"</param>
+    <param name="new_string">"No plan numbers provided and could not auto-detect"</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="331" cache_read_input_tokens="125036" output_tokens="1004" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 331, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01PrNVYiSwvEw8FU822vMj86">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/tests/commands/pr/test_dispatch.py has been updated. All occurrences of '"No pr numbers provided and could not auto-detect"' were successfully replaced with '"No plan numbers provided and could not auto-detect"'.
+  </tool_result>
+  <assistant>Now fix the round_trip test and check the remaining failing tests.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1441" cache_read_input_tokens="125367" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1441}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01BwbXzpj5jh5uyAoy66KhRs">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/tests/unit/gateways/github/metadata_blocks/test_round_trip.py</param>
+    <param name="offset">165</param>
+    <param name="limit">40</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1441" cache_read_input_tokens="125367" output_tokens="149" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1441, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+</session>
