@@ -1,0 +1,877 @@
+<session>
+  <meta branch="plnd/store-planning-run-id-fiel-03-10-1348" />
+  <meta model="claude-opus-4-6" />
+  <tool_result tool="toolu_015GZg8DMutvhinZCQ7zmRnj">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/plan_save.py has been updated successfully.
+  </tool_result>
+  <assistant>Now **Phase 6: CI workflows** - Add `WORKFLOW_RUN_ID` env var to both workflows:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="638" cache_read_input_tokens="131430" cache_creation="{'ephemeral_5m_input_tokens': 638, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01PuB2rTvVxVKDudSLUjN2qg">
+    <param name="file_path">/home/runner/work/erk/erk/.github/workflows/one-shot.yml</param>
+    <param name="old_string">          WORKFLOW_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          OBJECTIVE_ISSUE: ${{ inputs.objective_issue }}</param>
+    <param name="new_string">          WORKFLOW_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs...[truncated 16 chars]...FLOW_RUN_ID: ${{ github.run_id }}
+          OBJECTIVE_ISSUE: ${{ inputs.objective_issue }}</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="638" cache_read_input_tokens="131430" cache_creation="{'ephemeral_5m_input_tokens': 638, 'ephemeral_1h_input_tokens': 0}" output_tokens="255" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01PuB2rTvVxVKDudSLUjN2qg">
+&lt;tool_use_error&gt;File has not been read yet. Read it first before writing to it.&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Tdwc83NWUMD1eda482n7kr">
+    <param name="file_path">/home/runner/work/erk/erk/.github/workflows/one-shot.yml</param>
+    <param name="offset">148</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="301" cache_read_input_tokens="132068" cache_creation="{'ephemeral_5m_input_tokens': 301, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01DG3HuMyds5iGG7E3d4eqyW">
+    <param name="file_path">/home/runner/work/erk/erk/.github/workflows/learn.yml</param>
+    <param name="offset">60</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="301" cache_read_input_tokens="132068" cache_creation="{'ephemeral_5m_input_tokens': 301, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Tdwc83NWUMD1eda482n7kr">
+   148→            echo "plan_success=false" &gt;&gt; $GITHUB_OUTPUT
+   149→          fi
+   150→          exit 0
+   151→        env:
+   152→          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+   153→          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+   154→          GH_TOKEN: ${{ secrets.ERK_QUEUE_GH_PAT }}
+   155→          WORKFLOW_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+   156→          OBJECTIVE_ISSUE: ${{ inputs.objective_issue }}
+   157→          NODE_ID: ${{ inputs.node_id }}
+   158→          PLAN_ISSUE_NUMBER: ${{ inputs.plan_issue_number }}
+   159→
+   160→      - name: Verify plan outputs exist
+   161→        if: steps.plan.outputs.plan_success == 'true'
+   162→        id: verify
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_01DG3HuMyds5iGG7E3d4eqyW">
+    60→
+    61→      - name: Run learn workflow
+    62→        env:
+    63→          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+    64→          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+    65→          GH_TOKEN: ${{ secrets.ERK_QUEUE_GH_PAT }}
+    66→          PLAN_ID: ${{ inputs.pr_number }}
+    67→          WORKFLOW_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+    68→        run: |
+    69→          claude --print \
+    70→            --verbose \
+    71→            --model claude-opus-4-6 \
+    72→            --output-format stream-json \
+    73→            --dangerously-skip-permissions \
+    74→            "/erk:learn $PLAN_ID"
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01EQTVbALVux6wqaka4Pt6He">
+    <param name="file_path">/home/runner/work/erk/erk/.github/workflows/one-shot.yml</param>
+    <param name="old_string">          WORKFLOW_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          OBJECTIVE_ISSUE: ${{ inputs.objective_issue }}</param>
+    <param name="new_string">          WORKFLOW_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs...[truncated 16 chars]...FLOW_RUN_ID: ${{ github.run_id }}
+          OBJECTIVE_ISSUE: ${{ inputs.objective_issue }}</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1320" cache_read_input_tokens="132369" cache_creation="{'ephemeral_5m_input_tokens': 1320, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01EQTVbALVux6wqaka4Pt6He">
+The file /home/runner/work/erk/erk/.github/workflows/one-shot.yml has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01PMMWnQ76yQ3Sq6mjTRLWKL">
+    <param name="file_path">/home/runner/work/erk/erk/.github/workflows/learn.yml</param>
+    <param name="old_string">          WORKFLOW_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |</param>
+    <param name="new_string">          WORKFLOW_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          WORKFLOW_RUN_ID: ${{ github.run_id }}
+        run: |</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="268" cache_read_input_tokens="133689" cache_creation="{'ephemeral_5m_input_tokens': 268, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01PMMWnQ76yQ3Sq6mjTRLWKL">
+The file /home/runner/work/erk/erk/.github/workflows/learn.yml has been updated successfully.
+  </tool_result>
+  <assistant>**Phase 7: Skills/commands** - Update the one-shot-plan and learn commands to pass `--created-from-workflow-run-id`. Let me read the relevant sections:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="244" cache_read_input_tokens="133957" cache_creation="{'ephemeral_5m_input_tokens': 244, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01YXUnaWHPjPV4tDCPDM2gqn">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/commands/erk/system/one-shot-plan.md</param>
+    <param name="offset">56</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="244" cache_read_input_tokens="133957" cache_creation="{'ephemeral_5m_input_tokens': 244, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01YXUnaWHPjPV4tDCPDM2gqn">
+    56→```bash
+    57→erk exec plan-update --pr-number $PLAN_ISSUE_NUMBER --plan-path .erk/impl-context/plan.md --format json --summary="${PLAN_SUMMARY}"
+    58→```
+    59→
+    60→Parse the JSON output. If `success` is not `true`, stop and report the error. Otherwise, use `$PLAN_ISSUE_NUMBER` as the `pr_number`. To get the `title`, extract the first `# ` heading from `.erk/impl-context/plan.md`.
+    61→
+    62→**If `$PLAN_ISSUE_NUMBER` is not set (empty):** Fall back to creating a new draft PR (backwards compatible for direct `erk one-shot` calls without pre-created skeleton):
+    63→
+    64→If the `$OBJECTIVE_ISSUE` environment variable is set (non-empty), create the objective-context marker before saving:
+    65→
+    66→```bash
+    67→erk exec marker create --session-id "${CLAUDE_SESSION_ID}" --associated-objective $OBJECTIVE_ISSUE objective-context
+    68→```
+    69→
+    70→Then run the save command:
+    71→
+    72→```bash
+    73→erk exec plan-save --plan-file .erk/impl-context/plan.md --format json --session-id="${CLAUDE_SESSION_ID}" --created-from-workflow-run-url "$WORKFLOW_RUN_URL"
+    74→```
+    75→
+    76→If the `WORKFLOW_RUN_URL` environment variable is not set, omit the `--created-from-workflow-run-url` flag.
+    77→
+    78→Parse the JSON output. If `success` is not `true`, stop and report the error. Otherwise, extract `pr_number` and `title` from the output.
+    79→
+    80→## Step 8: Write Plan Result
+    81→
+    82→Write the plan result to `.erk/impl-context/plan-result.json` with the following format:
+    83→
+    84→```json
+    85→{"pr_number": &lt;num&gt;, "title": "&lt;title&gt;"}
+
+... [5 lines omitted] ...
+  </tool_result>
+  <tool_use name="Edit" id="toolu_017XC8GY9WTpM5hKLoq5M4oU">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/commands/erk/system/one-shot-plan.md</param>
+    <param name="old_string">```bash
+erk exec plan-save --plan-file .erk/impl-context/plan.md --format json --session-i...[truncated 79 chars]...RUN_URL` environment variable is not set, omit the `--created-from-workflow-run-url` flag.</param>
+    <param name="new_string">```bash
+erk exec plan-save --plan-file .erk/impl-context/plan.md --format json --session-i...[truncated 235 chars]...W_RUN_ID` environment variable is not set, omit the `--created-from-workflow-run-id` flag.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1172" cache_read_input_tokens="134201" cache_creation="{'ephemeral_5m_input_tokens': 1172, 'ephemeral_1h_input_tokens': 0}" output_tokens="359" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_017XC8GY9WTpM5hKLoq5M4oU">
+The file /home/runner/work/erk/erk/.claude/commands/erk/system/one-shot-plan.md has been updated successfully.
+  </tool_result>
+  <assistant>Now update the learn command:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="85730" cache_read_input_tokens="20395" cache_creation="{'ephemeral_5m_input_tokens': 85730, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_015ZFSkJuvhLHmpbjJcDKney">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/commands/erk/learn.md</param>
+    <param name="offset">695</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="85730" cache_read_input_tokens="20395" cache_creation="{'ephemeral_5m_input_tokens': 85730, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_015ZFSkJuvhLHmpbjJcDKney">
+   695→
+   696→Parse the JSON output:
+   697→
+   698→- If `valid: false` → Skip saving, proceed to Step 9 with `completed_no_plan`
+   699→- If `valid: true` → Continue with save below
+   700→
+   701→**If plan is valid**, save it as a draft PR:
+   702→
+   703→```bash
+   704→# Build command with optional workflow run URL for backlink
+   705→CMD="erk exec plan-save \
+   706→    --plan-type learn \
+   707→    --plan-file .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/learn-plan.md \
+   708→    --session-id=\"${CLAUDE_SESSION_ID}\" \
+   709→    --learned-from-issue &lt;parent-issue-number&gt; \
+   710→    --session-xml-dir .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn \
+   711→    --format json"
+   712→
+   713→# Add workflow run URL if set (enables backlink to GitHub Actions run)
+   714→if [ -n "$WORKFLOW_RUN_URL" ]; then
+   715→    CMD="$CMD --created-from-workflow-run-url \"$WORKFLOW_RUN_URL\""
+   716→fi
+   717→
+   718→eval "$CMD"
+   719→```
+   720→
+   721→Parse the JSON output to get `pr_number`, `plan_backend`, `title`, and `pr_url` (the new learn plan number).
+   722→
+   723→Display the result:
+   724→
+
+... [5 lines omitted] ...
+  </tool_result>
+  <tool_use name="Edit" id="toolu_014ifqLfZGRbcqTLrzMyzAqV">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/commands/erk/learn.md</param>
+    <param name="old_string"># Add workflow run URL if set (enables backlink to GitHub Actions run)
+if [ -n "$WORKFLOW_RUN_URL" ]; then
+    CMD="$CMD --created-from-workflow-run-url \"$WORKFLOW_RUN_URL\""
+fi
+
+eval "$CMD"</param>
+    <param name="new_string"># Add workflow run URL if set (enables backlink to GitHub Actions run)
+if [ -n "$WORKFLOW_...[truncated 160 chars]...]; then
+    CMD="$CMD --created-from-workflow-run-id \"$WORKFLOW_RUN_ID\""
+fi
+
+eval "$CMD"</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1000" cache_read_input_tokens="106125" cache_creation="{'ephemeral_5m_input_tokens': 1000, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_014ifqLfZGRbcqTLrzMyzAqV">
+The file /home/runner/work/erk/erk/.claude/commands/erk/learn.md has been updated successfully.
+  </tool_result>
+  <assistant>**Phase 8: TUI display** - Replace URL-parsing with direct field read:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="347" cache_read_input_tokens="107125" cache_creation="{'ephemeral_5m_input_tokens': 347, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_013EZR9a4aNDaJLAhEg6mwxC">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/data/real_provider.py</param>
+    <param name="offset">1</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="347" cache_read_input_tokens="107125" cache_creation="{'ephemeral_5m_input_tokens': 347, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_013EZR9a4aNDaJLAhEg6mwxC">
+     1→"""Real implementation of PrDataProvider for TUI data assembly."""
+     2→
+     3→import logging
+     4→from datetime import UTC, datetime
+     5→
+     6→from erk.cli.constants import WORKFLOW_COMMAND_MAP
+     7→from erk.core.context import ErkContext
+     8→from erk.core.display_utils import (
+     9→    format_relative_time,
+    10→    format_submission_time,
+    11→    format_workflow_outcome,
+    12→    format_workflow_run_id,
+    13→    get_workflow_run_state,
+    14→    strip_rich_markup,
+    15→)
+    16→from erk.core.pr_utils import select_display_pr
+    17→from erk.core.repo_discovery import NoRepoSentinel, RepoContext, ensure_erk_metadata_dir
+    18→from erk.tui.data.provider_abc import PrDataProvider
+    19→from erk.tui.data.types import FetchTimings, PrFilters, PrRowData, RunRowData
+    20→from erk.tui.sorting.types import BranchActivity
+    21→from erk_shared.gateway.github.emoji import format_checks_cell, get_pr_status_emoji
+    22→from erk_shared.gateway.github.metadata.core import (
+    23→    extract_objective_slug,
+    24→)
+    25→from erk_shared.gateway.github.metadata.dependency_graph import (
+    26→    _TERMINAL_STATUSES,
+    27→    build_graph,
+    28→    build_state_sparkline,
+    29→    compute_graph_summary,
+    30→    find_graph_next_node,
+
+... [5 lines omitted] ...
+  </tool_result>
+  <assistant>Now I need to find the specific code that does the URL parsing for the planning run ID:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1058" cache_read_input_tokens="107472" cache_creation="{'ephemeral_5m_input_tokens': 1058, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01AJzTGefvhNWUqmVwTdN6Mb">
+    <param name="pattern">created_from_workflow_run_url|planning_run|_extract_run_id</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/tui/data/real_provider.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1058" cache_read_input_tokens="107472" cache_creation="{'ephemeral_5m_input_tokens': 1058, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01AJzTGefvhNWUqmVwTdN6Mb">
+665:            # Fallback: extract run ID from created_from_workflow_run_url metadata
+  </tool_result>
+  <tool_use name="Read" id="toolu_01H33aaiov2tSnsQLdUq1pnT">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/data/real_provider.py</param>
+    <param name="offset">650</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="206" cache_read_input_tokens="108530" cache_creation="{'ephemeral_5m_input_tokens': 206, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01H33aaiov2tSnsQLdUq1pnT">
+   650→        if workflow_run is not None:
+   651→            run_id = str(workflow_run.run_id)
+   652→            run_status = workflow_run.status
+   653→            run_conclusion = workflow_run.conclusion
+   654→            if plan.url:
+   655→                parts = plan.url.split("/")
+   656→                if len(parts) &gt;= 5:
+   657→                    owner = parts[-4]
+   658→                    repo_name = parts[-3]
+   659→                    run_url = (
+   660→                        f"https://github.com/{owner}/{repo_name}/actions/runs/{workflow_run.run_id}"
+   661→                    )
+   662→            run_id_display = format_workflow_run_id(workflow_run, run_url)
+   663→            run_state_display = format_workflow_outcome(workflow_run)
+   664→        else:
+   665→            # Fallback: extract run ID from created_from_workflow_run_url metadata
+   666→            # Planning-stage PRs store this URL but have no dispatched workflow run
+   667→            created_run_url = header_str(plan.header_fields, CREATED_FROM_WORKFLOW_RUN_URL)
+   668→            if created_run_url is not None:
+   669→                url_parts = created_run_url.rstrip("/").split("/")
+   670→                if len(url_parts) &gt;= 1 and url_parts[-1].isdigit():
+   671→                    run_id = url_parts[-1]
+   672→                    run_url = created_run_url
+   673→                    run_id_display = run_id
+   674→
+   675→        log_entries: tuple[tuple[str, str, str], ...] = ()
+   676→
+   677→        learn_run_url: str | None = None
+   678→        if learn_run_id is not None and plan.url is not None:
+   679→            parts = plan.url.split("/")
+
+... [25 lines omitted] ...
+  </tool_result>
+  <assistant>I need to check what imports are in the file for the schemas:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1375" cache_read_input_tokens="108736" cache_creation="{'ephemeral_5m_input_tokens': 1375, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_011ZfCF5CcWwyhP15xZu8udv">
+    <param name="pattern">from erk_shared.gateway.github.metadata.schemas import</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/tui/data/real_provider.py</param>
+    <param name="output_mode">content</param>
+    <param name="-A">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1375" cache_read_input_tokens="108736" cache_creation="{'ephemeral_5m_input_tokens': 1375, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_011ZfCF5CcWwyhP15xZu8udv">
+35:from erk_shared.gateway.github.metadata.schemas import (
+36-    CI_SUMMARY_COMMENT_ID,
+37-    CREATED_FROM_WORKFLOW_RUN_URL,
+38-    LAST_LOCAL_IMPL_AT,
+39-    LAST_REMOTE_IMPL_AT,
+40-    LEARN_PLAN_ISSUE,
+41-    LEARN_PLAN_PR,
+42-    LEARN_RUN_ID,
+43-    LEARN_STATUS,
+44-    OBJECTIVE_ISSUE,
+45-    WORKTREE_NAME,
+46-)
+47-from erk_shared.gateway.github.types import (
+48-    GitHubRepoId,
+49-    GitHubRepoLocation,
+50-    PullRequestInfo,
+51-    WorkflowRun,
+52-)
+53-from erk_shared.gateway.http.abc import HttpClient
+54-from erk_shared.gateway.plan_data_provider.lifecycle import compute_status_indicators
+55-from erk_shared.impl_folder import read_plan_ref, resolve_impl_dir
+  </tool_result>
+  <assistant>Now I need to add `CREATED_FROM_WORKFLOW_RUN_ID` to the import and update the fallback logic:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="445" cache_read_input_tokens="110111" cache_creation="{'ephemeral_5m_input_tokens': 445, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_014aJBhkf1RhadhEMhNEnzMU">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/data/real_provider.py</param>
+    <param name="old_string">from erk_shared.gateway.github.metadata.schemas import (
+    CI_SUMMARY_COMMENT_ID,
+    CREATED_FROM_WORKFLOW_RUN_URL,
+    LAST_LOCAL_IMPL_AT,</param>
+    <param name="new_string">from erk_shared.gateway.github.metadata.schemas import (
+    CI_SUMMARY_COMMENT_ID,
+    CREATED_FROM_WORKFLOW_RUN_ID,
+    CREATED_FROM_WORKFLOW_RUN_URL,
+    LAST_LOCAL_IMPL_AT,</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="445" cache_read_input_tokens="110111" cache_creation="{'ephemeral_5m_input_tokens': 445, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_014aJBhkf1RhadhEMhNEnzMU">
+The file /home/runner/work/erk/erk/src/erk/tui/data/real_provider.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update the fallback logic to prefer the new `created_from_workflow_run_id` field, falling back to URL parsing:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="717" cache_read_input_tokens="110556" cache_creation="{'ephemeral_5m_input_tokens': 717, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_016CPb1YRijTu5KcyjJHUeot">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/data/real_provider.py</param>
+    <param name="old_string">        else:
+            # Fallback: extract run ID from created_from_workflow_run_url me...[truncated 384 chars]...
+                    run_url = created_run_url
+                    run_id_display = run_id</param>
+    <param name="new_string">        else:
+            # Fallback: use created_from_workflow_run_id metadata field dire...[truncated 728 chars]...
+                    run_url = created_run_url
+                    run_id_display = run_id</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="717" cache_read_input_tokens="110556" cache_creation="{'ephemeral_5m_input_tokens': 717, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_016CPb1YRijTu5KcyjJHUeot">
+The file /home/runner/work/erk/erk/src/erk/tui/data/real_provider.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me update the todos and handle the remaining phases. **Phase 10: Tests** and **Phase 11: Reference doc**:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="620" cache_read_input_tokens="111273" cache_creation="{'ephemeral_5m_input_tokens': 620, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_0186yJWnfTWGrqBWEC7fM3Po">
+    <param name="todos">[{'content': 'Phase 1: Schema - Add CREATED_FROM_WORKFLOW_RUN_ID to schemas.py', 'status':...[truncated 1748 chars]...ng issues'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="620" cache_read_input_tokens="111273" cache_creation="{'ephemeral_5m_input_tokens': 620, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_0186yJWnfTWGrqBWEC7fM3Po">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>**Phase 10: Tests** - Need to update the TUI test to also test the new field. Let me read the full test area and update:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="682" cache_read_input_tokens="111893" cache_creation="{'ephemeral_5m_input_tokens': 682, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_014ReEz6LdiGMiCk8C5WZsYU">
+    <param name="file_path">/home/runner/work/erk/erk/tests/tui/data/test_provider.py</param>
+    <param name="offset">1880</param>
+    <param name="limit">60</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="682" cache_read_input_tokens="111893" cache_creation="{'ephemeral_5m_input_tokens': 682, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_014ReEz6LdiGMiCk8C5WZsYU">
+  1880→    def test_dispatched_run_takes_precedence(self, tmp_path: Path) -&gt; None:
+  1881→        """When both dispatched run and planning run URL exist, dispatched run takes precedence."""
+  1882→        provider = self._make_provider(tmp_path)
+  1883→
+  1884→        pr_body = format_plan_header_body_for_test(
+  1885→            created_from_workflow_run_url="https://github.com/test/repo/actions/runs/11111111"
+  1886→        )
+  1887→        plan = Plan(
+  1888→            pr_identifier="123",
+  1889→            title="Test Plan",
+  1890→            body=pr_body,
+  1891→            state=PlanState.OPEN,
+  1892→            url="https://github.com/test/repo/issues/123",
+  1893→            labels=[],
+  1894→            assignees=[],
+  1895→            created_at=datetime.now(UTC),
+  1896→            updated_at=datetime.now(UTC),
+  1897→            metadata={},
+  1898→            objective_id=None,
+  1899→            header_fields=_parse_header_fields(pr_body),
+  1900→        )
+  1901→
+  1902→        workflow_run = WorkflowRun(
+  1903→            run_id="99999999",
+  1904→            status="completed",
+  1905→            conclusion="success",
+  1906→            branch="plnd/test",
+  1907→            head_sha="abc123",
+  1908→        )
+  1909→
+
+... [35 lines omitted] ...
+  </tool_result>
+  <assistant>Now I need to add a test for the new `created_from_workflow_run_id` field. Let me add a new test method right after the existing `test_planning_run_url_populates_run_fields`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1052" cache_read_input_tokens="112575" cache_creation="{'ephemeral_5m_input_tokens': 1052, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01RKYCuYSmXhMMQpEyRjwsza">
+    <param name="file_path">/home/runner/work/erk/erk/tests/tui/data/test_provider.py</param>
+    <param name="old_string">    def test_no_planning_run_url_shows_dash(self, tmp_path: Path) -&gt; None:
+        """Without planning run URL or dispatched run, run fields are defaults."""</param>
+    <param name="new_string">    def test_planning_run_id_field_takes_precedence_over_url_parsing(
+        self, tmp_pa...[truncated 2412 chars]...&gt; None:
+        """Without planning run URL or dispatched run, run fields are defaults."""</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1052" cache_read_input_tokens="112575" cache_creation="{'ephemeral_5m_input_tokens': 1052, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01RKYCuYSmXhMMQpEyRjwsza">
+The file /home/runner/work/erk/erk/tests/tui/data/test_provider.py has been updated successfully.
+  </tool_result>
+  <assistant>**Phase 11: Reference doc** - Update the reference doc:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1018" cache_read_input_tokens="113627" cache_creation="{'ephemeral_5m_input_tokens': 1018, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_0178WZdkrf1pQnVgWDnvjHu4">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/skills/erk-exec/reference.md</param>
+    <param name="offset">985</param>
+    <param name="limit">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1018" cache_read_input_tokens="113627" cache_creation="{'ephemeral_5m_input_tokens': 1018, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_0178WZdkrf1pQnVgWDnvjHu4">
+   985→| `--plan-file`                     | PATH      | No       | -       | Path to specific PR file (highest priority)                            |
+   986→| `--session-id`                    | TEXT      | No       | -       | Session ID for scoped PR lookup                                        |
+   987→| `--plan-type`                     | CHOICE    | No       | -       | PR type: standard (default) or learn                                   |
+   988→| `--learned-from-issue`            | INTEGER   | No       | -       | Parent PR number (for learn plans)                                     |
+   989→| `--created-from-workflow-run-url` | TEXT      | No       | -       | GitHub Actions workflow run URL                                        |
+   990→| `--branch-slug`                   | TEXT      | No       | -       | Pre-generated branch slug (skips LLM call when provided)               |
+   991→| `--objective`                     | INTEGER   | No       | -       | Objective issue number (overrides session marker)                      |
+   992→| `--summary`                       | TEXT      | No       | -       | AI-generated PR summary for PR description                             |
+   993→| `--session-xml-dir`               | DIRECTORY | No       | -       | Directory containing session XML files to embed in the PR diff         |
+   994→| `--current-branch`                | FLAG      | No       | -       | Use the current branch directly instead of creating a new plnd/ branch |
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01AeCHMq7yLVtLG2Pug7t7n3">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/skills/erk-exec/reference.md</param>
+    <param name="old_string">| `--created-from-workflow-run-url` | TEXT      | No       | -       | GitHub Actions work...[truncated 87 chars]...      | -       | Pre-generated branch slug (skips LLM call when provided)               |</param>
+    <param name="new_string">| `--created-from-workflow-run-url` | TEXT      | No       | -       | GitHub Actions work...[truncated 231 chars]...      | -       | Pre-generated branch slug (skips LLM call when provided)               |</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="974" cache_read_input_tokens="114645" cache_creation="{'ephemeral_5m_input_tokens': 974, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01AeCHMq7yLVtLG2Pug7t7n3">
+The file /home/runner/work/erk/erk/.claude/skills/erk-exec/reference.md has been updated successfully.
+  </tool_result>
+  <assistant>Now let me also check the metadata-field-workflow.md doc mentioned in the plan:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="328" cache_read_input_tokens="115619" cache_creation="{'ephemeral_5m_input_tokens': 328, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_012Zy7V26zfSsWr1MAwUxN8T">
+    <param name="pattern">format_plan_header_body</param>
+    <param name="path">/home/runner/work/erk/erk/docs/learned/planning/metadata-field-workflow.md</param>
+    <param name="output_mode">content</param>
+    <param name="-B">2</param>
+    <param name="-A">5</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="328" cache_read_input_tokens="115619" cache_creation="{'ephemeral_5m_input_tokens': 328, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_012Zy7V26zfSsWr1MAwUxN8T">
+32-
+33-- `create_plan_header_block()` -- Add the parameter and conditionally include it in the `data` dict (follow existing pattern: `if field is not None: data[FIELD] = field`). This function returns a `MetadataBlock`, not a string.
+34:- `format_plan_header_body()` -- Add the same parameter and pass it through to `create_plan_header_block()`.
+35-
+36-### 3. create_plan_draft_pr.py -- Thread Through Plan Creation
+37-
+38-**File:** `packages/erk-shared/src/erk_shared/plan_store/create_plan_draft_pr.py`
+39-
+40:Add the parameter to `create_plan_draft_pr()` and pass it through to `format_plan_header_body()`. All parameters are keyword-only. Review the existing call site to see the current parameter threading pattern.
+41-
+42-### 4. plan_save.py -- Add CLI Option (if CLI-exposed)
+43-
+44-**File:** `src/erk/cli/commands/exec/scripts/plan_save.py`
+45-
+--
+50-- Pass it through to `create_plan_draft_pr()`
+51-
+52:### 5. Test Helpers -- Update format_plan_header_body_for_test
+53-
+54-**File:** `tests/test_utils/plan_helpers.py`
+55-
+56:Add the parameter to `format_plan_header_body_for_test()` and pass it through to `format_plan_header_body()`. This helper provides defaults so tests only specify the fields they care about. Also update any tests that construct plan headers directly.
+57-
+58-## Optional: Additional Files
+59-
+60-Depending on usage, you may also need to update:
+61-
+  </tool_result>
+  <assistant>Good, that's the doc that teaches how to add fields - no modification needed there.
+
+Now let me also check for the `--session-xml-dir` option in the plan_save - the plan mentions adding the param there too. Let me check if I missed any `--node-ids` param:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1023" cache_read_input_tokens="115947" cache_creation="{'ephemeral_5m_input_tokens': 1023, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01JvZxtUc3yrmQqcLRdmMWZ7">
+    <param name="pattern">session_xml_dir</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/plan_save.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1023" cache_read_input_tokens="115947" cache_creation="{'ephemeral_5m_input_tokens': 1023, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01JvZxtUc3yrmQqcLRdmMWZ7">
+126:    session_xml_dir: Path | None,
+147:        session_xml_dir: Directory containing session XML files to embed in the PR diff
+246:    if session_xml_dir is not None:
+247:        for xml_file in sorted(session_xml_dir.glob("*.xml")):
+376:    session_xml_dir: Path | None,
+393:        session_xml_dir: Directory containing session XML files to embed in the PR diff
+489:        session_xml_dir=session_xml_dir,
+578:    session_xml_dir: Path | None,
+594:        session_xml_dir=session_xml_dir,
+  </tool_result>
+  <assistant>Good - the session_xml_dir is already in the functions and doesn't need changes for the new field.
+
+Now let me update the todos and run CI:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="370" cache_read_input_tokens="116970" cache_creation="{'ephemeral_5m_input_tokens': 370, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01FvNoNKw3ekrT7ZQknVDbcK">
+    <param name="todos">[{'content': 'Phase 1: Schema - Add CREATED_FROM_WORKFLOW_RUN_ID to schemas.py', 'status':...[truncated 1752 chars]...ng issues'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="370" cache_read_input_tokens="116970" cache_creation="{'ephemeral_5m_input_tokens': 370, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01FvNoNKw3ekrT7ZQknVDbcK">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Let me run CI:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="687" cache_read_input_tokens="117340" cache_creation="{'ephemeral_5m_input_tokens': 687, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01JSP7PGijnYgQbSQq5SiitK">
+    <param name="description">Run fast CI checks</param>
+    <param name="prompt">Run fast CI checks (ruff, ty, pytest unit tests) and report all results. Do NOT fix anything - just report what passes and what fails. Command: make ci-fast</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="687" cache_read_input_tokens="117340" cache_creation="{'ephemeral_5m_input_tokens': 687, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01JSP7PGijnYgQbSQq5SiitK">
+## Fast CI Results Summary
+
+**Overall Status: FAILED** (Exit code 2)
+
+### Detailed Results:
+
+**LINT** - passed
+- All checks passed!
+
+**FORMAT CHECK** - FAILED
+- 2 files would be reformatted:
+  - `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/schemas.py`
+  - `/home/runner/work/erk/erk/tests/tui/data/test_provider.py`
+- 1,725 files already formatted
+
+**PRETTIER CHECK** - FAILED
+- Markdown formatting issues found in 2 files (based on warning messages)
+
+**MARKDOWN CHECK** - passed
+
+**EXEC REFERENCE CHECK** - passed
+- `.claude/skills/erk-exec/reference.md` is up to date
+
+**TYPE CHECK (ty)** - passed
+- All checks passed!
+
+**UNIT TESTS (erk)** - FAILED
+- 5,982 passed, **4 errors**
+- **Error Location:** `/home/runner/work/erk/erk/tests/unit/gateways/github/metadata_blocks/test_round_trip.py` (lines 193+)
+- **Error Type:** `TypeError: create_plan_header_block() missing 1 required keyword-only argument: 'created_from_workflow_run_id'`
+
+... [16 lines omitted] ...
+
+3. **Test collection error** (test_round_trip.py) - missing required `created_from_workflow_run_id` keyword argument to `create_plan_header_block()`
+  </tool_result>
+  <assistant>Good, I need to fix 3 things:
+1. Format 2 Python files
+2. Fix test_round_trip.py missing the new parameter
+3. Fix Prettier for markdown files
+
+Let me fix the test_round_trip.py first, then run formatting:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="696" cache_read_input_tokens="118027" cache_creation="{'ephemeral_5m_input_tokens': 696, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01GFC2jSXD9NzMepvRsRrg2R">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/gateways/github/metadata_blocks/test_round_trip.py</param>
+    <param name="offset">185</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="696" cache_read_input_tokens="118027" cache_creation="{'ephemeral_5m_input_tokens': 696, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01GFC2jSXD9NzMepvRsRrg2R">
+   185→        expected_workflow="implement-plan",
+   186→    ),
+   187→    "workflow-started": create_workflow_started_block(
+   188→        started_at="2025-01-15T10:00:00Z",
+   189→        workflow_run_id="12345678",
+   190→        workflow_run_url="https://github.com/owner/repo/actions/runs/12345678",
+   191→        plan_number=42,
+   192→    ),
+   193→    "plan-header": create_plan_header_block(
+   194→        created_at="2025-01-15T10:00:00Z",
+   195→        created_by="testuser",
+   196→        worktree_name=None,
+   197→        branch_name=None,
+   198→        plan_comment_id=None,
+   199→        last_dispatched_run_id=None,
+   200→        last_dispatched_node_id=None,
+   201→        last_dispatched_at=None,
+   202→        last_local_impl_at=None,
+   203→        last_local_impl_event=None,
+   204→        last_local_impl_session=None,
+   205→        last_local_impl_user=None,
+   206→        last_remote_impl_at=None,
+   207→        last_remote_impl_run_id=None,
+   208→        last_remote_impl_session_id=None,
+   209→        source_repo=None,
+   210→        objective_issue=None,
+   211→        created_from_session=None,
+   212→        created_from_workflow_run_url=None,
+   213→        last_learn_session=None,
+   214→        last_learn_at=None,
+
+... [5 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_018FJ7u69XgPH64JATqTUFYw">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/gateways/github/metadata_blocks/test_round_trip.py</param>
+    <param name="offset">214</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="718" cache_read_input_tokens="118723" cache_creation="{'ephemeral_5m_input_tokens': 718, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_018FJ7u69XgPH64JATqTUFYw">
+   214→        last_learn_at=None,
+   215→        learn_status=None,
+   216→        learn_plan_issue=None,
+   217→        learn_plan_pr=None,
+   218→        learned_from_issue=None,
+   219→        lifecycle_stage=None,
+   220→    ),
+   221→    "objective-header": create_objective_header_block(
+   222→        created_at="2025-01-15T10:00:00Z",
+   223→        created_by="testuser",
+   224→        objective_comment_id=None,
+   225→        slug=None,
+   226→    ),
+   227→    "plan-retry": create_metadata_block(
+   228→        key="plan-retry",
+   229→        data={
+   230→            "retry_timestamp": "2025-01-15T10:00:00Z",
+   231→            "triggered_by": "testuser",
+   232→            "retry_count": 1,
+   233→        },
+   234→        schema=PlanRetrySchema(),
+   235→    ),
+   236→}
+   237→
+   238→SCHEMA_BACKED_KEYS = list(FACTORY_BLOCKS.keys())
+   239→
+   240→
+   241→# ---------------------------------------------------------------------------
+   242→# Tests
+   243→# ---------------------------------------------------------------------------
+
+... [5 lines omitted] ...
+  </tool_result>
+  <tool_use name="Edit" id="toolu_0131xfKPUwVR3nPX1GquGyA5">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/gateways/github/metadata_blocks/test_round_trip.py</param>
+    <param name="old_string">        created_from_workflow_run_url=None,
+        last_learn_session=None,
+        last_...[truncated 84 chars]...     learned_from_issue=None,
+        lifecycle_stage=None,
+    ),
+    "objective-header":</param>
+    <param name="new_string">        created_from_workflow_run_url=None,
+        created_from_workflow_run_id=None,
+   ...[truncated 127 chars]...     learned_from_issue=None,
+        lifecycle_stage=None,
+    ),
+    "objective-header":</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="543" cache_read_input_tokens="119441" cache_creation="{'ephemeral_5m_input_tokens': 543, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_0131xfKPUwVR3nPX1GquGyA5">
+The file /home/runner/work/erk/erk/tests/unit/gateways/github/metadata_blocks/test_round_trip.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me run formatting to fix the format issues:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="768" cache_read_input_tokens="119984" cache_creation="{'ephemeral_5m_input_tokens': 768, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01AhmpuKrfDXdqVU7QZRKWs3">
+    <param name="description">Run ruff format and prettier</param>
+    <param name="prompt">Run formatting fixes on the repo:
+1. Run `make format` to fix ruff formatting
+2. Run `make prettier-fix` to fix prettier formatting
+Report the results. Do NOT modify any files manually.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="768" cache_read_input_tokens="119984" cache_creation="{'ephemeral_5m_input_tokens': 768, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01AhmpuKrfDXdqVU7QZRKWs3">
+Perfect! The formatting fixes have been successfully applied. Let me verify the results:
+
+## Formatting Results
+
+**make fix** passed successfully with the following changes:
+
+### Ruff Formatting (Python):
+- **Lint checks**: All checks passed
+- **Code formatting**: 2 files reformatted, 1,725 files left unchanged
+
+### Prettier Formatting (Markdown):
+- **Status**: All markdown files checked
+- **Result**: All files already properly formatted (no changes needed)
+
+All formatting fixes have been applied to the repository. The ruff formatter updated 2 Python files to match the configured code style, and all markdown files were already in compliance with Prettier's formatting rules.
+agentId: a8eca08 (for resuming to continue this agent's work if needed)
+  </tool_result>
+  <assistant>Good, the formatter cleaned up the code. Now let me re-run CI to verify everything passes:</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="1234" cache_read_input_tokens="120752" cache_creation="{'ephemeral_5m_input_tokens': 1234, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01WayaTvyMT27RSuzizXsRBZ">
+    <param name="description">Run fast CI checks again</param>
+    <param name="prompt">Run fast CI checks (ruff, ty, pytest unit tests) and report all results. Do NOT fix anything - just report what passes and what fails. Command: make ci-fast</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1234" cache_read_input_tokens="120752" cache_creation="{'ephemeral_5m_input_tokens': 1234, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01WayaTvyMT27RSuzizXsRBZ">
+Perfect! All fast CI checks passed. Here's a summary of the results:
+
+## Fast CI Results: PASSED
+
+All checks completed successfully:
+
+| Check | Result | Details |
+|-------|--------|---------|
+| **Lint** | PASSED | All checks passed |
+| **Format Check** | PASSED | 1727 files already formatted |
+| **Prettier Check** | PASSED | All matched files use Prettier code style |
+| **Markdown Check** | PASSED | (no violations) |
+| **Exec Reference Check** | PASSED | `.claude/skills/erk-exec/reference.md` is up to date |
+| **Type Check (ty)** | PASSED | All checks passed |
+| **Unit Tests (erk)** | PASSED | 6011 tests in 14.38s |
+| **Unit Tests (erk-dev)** | PASSED | 136 tests in 5.75s |
+| **Unit Tests (erk-statusline)** | PASSED | 115 tests in 0.80s |
+| **Unit Tests (erk-mcp)** | PASSED | All tests passed |
+
+**Total test count: 6,373 tests passed**
+
+**Total time: ~21 seconds**
+
+No issues or failures detected across all fast CI checks.
+agentId: ad2ea06 (for resuming to continue this agent's work if needed)
+  </tool_result>
+  <assistant>All 6,373 tests pass. Let me signal completion and submit the PR.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="892" cache_read_input_tokens="121986" cache_creation="{'ephemeral_5m_input_tokens': 892, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_016QH8Xs8Re1y62GDwkAgBnx">
+    <param name="todos">[{'content': 'Phase 1: Schema - Add CREATED_FROM_WORKFLOW_RUN_ID to schemas.py', 'status':...[truncated 1754 chars]...ssues'}, {'content': 'Submit PR', 'status': 'in_progress', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="892" cache_read_input_tokens="121986" cache_creation="{'ephemeral_5m_input_tokens': 892, 'ephemeral_1h_input_tokens': 0}" output_tokens="629" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_016QH8Xs8Re1y62GDwkAgBnx">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01PuhehTpaP3ht4th5FeB9Fd">
+    <param name="command">erk exec impl-signal ended --session-id "${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true</param>
+    <param name="description">Signal GitHub implementation ended</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="673" cache_read_input_tokens="122878" cache_creation="{'ephemeral_5m_input_tokens': 673, 'ephemeral_1h_input_tokens': 0}" output_tokens="26" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01QYH966h6RikCCP8XWLqGhp">
+    <param name="command">erk exec upload-impl-session --session-id "${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true</param>
+    <param name="description">Upload session for async learn</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="673" cache_read_input_tokens="122878" cache_creation="{'ephemeral_5m_input_tokens': 673, 'ephemeral_1h_input_tokens': 0}" output_tokens="26" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01PuhehTpaP3ht4th5FeB9Fd">
+{
+  "success": true,
+  "event": "ended",
+  "pr_number": 9184
+}
+  </tool_result>
+  <tool_result tool="toolu_01QYH966h6RikCCP8XWLqGhp">
+{"uploaded": false, "reason": "push_session_failed"}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01X87cTWrKjcfFoQYc7gtuex">
+    <param name="command">erk exec cleanup-impl-context</param>
+    <param name="description">Clean up impl context directory</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="283" cache_read_input_tokens="123551" cache_creation="{'ephemeral_5m_input_tokens': 283, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01X87cTWrKjcfFoQYc7gtuex">
+{"cleaned": false, "reason": "not_tracked"}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01J9NJLiqgazYqf7uA73MVZK">
+    <param name="command">erk pr submit</param>
+    <param name="description">Submit PR via erk</param>
+    <param name="timeout">120000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="105" cache_read_input_tokens="123834" cache_creation="{'ephemeral_5m_input_tokens': 105, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01J9NJLiqgazYqf7uA73MVZK">
+🚀 Submitting PR...
+
+   Resolving branch and plan context...
+   Committing uncommitted changes...
+   Checking for existing PR...
+Phase 1: Creating or Updating PR
+   PR #9184 found (already exists)
+
+Phase 2: Getting diff and plan context
+   Incorporating plan #9184
+
+
+Phase 3: Generating PR description
+   Reading diff file...
+   Diff loaded (33,218 chars)
+   Analyzing changes with Claude...
+   Still waiting... (2s)
+   Still waiting... (4s)
+   Still waiting... (6s)
+   Still waiting... (8s)
+   Still waiting... (10s)
+   PR description generated
+
+Phase 4: Graphite enhancement
+
+Phase 5: Updating PR metadata
+   Publishing draft PR...
+   PR metadata updated
+   Plan lifecycle stage updated to impl
+
+
+... [7 lines omitted] ...
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01798cQffo1cFvW9uC3pd4HM">
+    <param name="command">erk exec impl-signal submitted 2&gt;/dev/null || true</param>
+    <param name="description">Signal PR submitted</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="419" cache_read_input_tokens="123939" cache_creation="{'ephemeral_5m_input_tokens': 419, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_014NSy3nMSzGK7yh7aFgz1qq">
+    <param name="command">erk pr check --stage=impl 2&gt;/dev/null || true</param>
+    <param name="description">Validate PR completion</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="419" cache_read_input_tokens="123939" cache_creation="{'ephemeral_5m_input_tokens': 419, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01798cQffo1cFvW9uC3pd4HM">
+{
+  "success": true,
+  "event": "submitted",
+  "pr_number": 9184
+}
+  </tool_result>
+  <tool_result tool="toolu_014NSy3nMSzGK7yh7aFgz1qq">
+
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01KUiTBNMykiKGTXHg49qPja">
+    <param name="todos">[{'content': 'Phase 1: Schema - Add CREATED_FROM_WORKFLOW_RUN_ID to schemas.py', 'status':...[truncated 1752 chars]... issues'}, {'content': 'Submit PR', 'status': 'completed', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="641" cache_read_input_tokens="124358" cache_creation="{'ephemeral_5m_input_tokens': 641, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01KUiTBNMykiKGTXHg49qPja">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Plan execution complete. PR #9184 has been submitted: https://github.com/dagster-io/erk/pull/9184
+
+**Summary of changes across 16 files:**
+
+1. **Schema** (`schemas.py`): Added `CREATED_FROM_WORKFLOW_RUN_ID` to the `PlanHeaderFieldName` literal type, constant, docstring, optional fields set, and validation logic
+2. **Plan header** (`plan_header.py`): Added `created_from_workflow_run_id` parameter to both `create_plan_header_block()` and `format_plan_header_body()`, with import and conditional data insertion
+3. **PlannedPR backend** (`planned_pr.py`): Extracts `created_from_workflow_run_id` from metadata and passes it through to `format_plan_header_body()` in both `create_plan` and `ensure_plan_header`
+4. **CLI** (`plan_save.py`): Added `--created-from-workflow-run-id` Click option, threaded through all 3 function layers
+5. **CI workflows**: Added `WORKFLOW_RUN_ID: ${{ github.run_id }}` env var to both `one-shot.yml` and `learn.yml`
+6. **Commands**: Updated `one-shot-plan.md` and `learn.md` to pass `--created-from-workflow-run-id "$WORKFLOW_RUN_ID"`
+7. **TUI display** (`real_provider.py`): Prefers new `created_from_workflow_run_id` field directly, falls back to URL parsing for backward compatibility
+8. **Tests**: Updated all 8 call sites across 4 test files, added 2 new TUI tests for the field precedence logic
+9. **Reference doc**: Added `--created-from-workflow-run-id` row to the exec reference table</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="650" cache_read_input_tokens="124999" cache_creation="{'ephemeral_5m_input_tokens': 650, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+</session>
