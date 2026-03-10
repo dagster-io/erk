@@ -1,0 +1,781 @@
+<session>
+  <meta branch="master" />
+  <meta model="claude-opus-4-6" />
+  <tool_result tool="toolu_01ACatiuFq6VTLf7J1yKjREc">
+Excellent! Now I have enough information. Let me create a comprehensive summary document in the plan area. Since I'm in READ-ONLY mode, I'll provide the findings in my response.
+
+## Summary of Skill Structure and Patterns
+
+Based on my exploration, here's the detailed structure and content patterns for erk skills:
+
+### 1. **SKILL.md Frontmatter Structure**
+
+All skills use a consistent YAML frontmatter pattern:
+
+```yaml
+---
+name: skill-name  # Must match directory name exactly, max 64 chars
+description: &gt;    # 1-line or multiline, max 1024 chars
+  Description of when to use this skill.
+---
+```
+
+**Files read:**
+- `/Users/schrockn/code/erk/.claude/skills/fake-driven-testing/SKILL.md` (16,668 bytes)
+- `/Users/schrockn/code/erk/.claude/skills/dignified-python/SKILL.md` (3,433 bytes)
+
+### 2. **Decision Routing Pattern: "What Should I Read?"**
+
+Both `fake-driven-testing` and `dignified-python` use a **multi-level navigation structure**:
+
+1. **Overview section** (explains skill's philosophy/coverage)
+2. **Quick Decision tree** (2-3 sentence trigger routing to specific docs)
+   - Example: "Adding a feature or fixing a bug? → Read `quick-reference.md` first, then `workflows.md#adding-a-new-feature`"
+3. **When to Read Each Reference Document** (detailed section headers for each reference file)
+
+... [136 lines omitted] ...
+
+- `exception-handling.md` — LBYL vs EAFP guidance
+  </tool_result>
+  <tool_result tool="toolu_01HsdBVpccSAFLGVepmuBE2T">
+Excellent! I've read all 29 TUI and Textual docs. Let me provide you with a comprehensive analysis organized by your proposed skill reference categories, with key insights, specificity level, and staleness assessments.
+
+## Analysis by Proposed Skill Categories
+
+### architecture (directory structure, layers, mixins)
+
+**modal-screen-pattern.md** — 7-element checklist for implementing new modal screens; covers ModalScreen subclass, CSS, BINDINGS, @work(thread=True), call_from_thread bridge, error boundary, loading placeholder. Clean, audited 2/16, high value.
+
+**modal-widget-embedding.md** — Pattern for reusing widgets like PlanDataTable in modals; documents PlanDataTable id= limitation and null safety for optional fields. Very narrow, less frequently useful.
+
+**runs-tab-architecture.md** — Documents RunRowData, RunDataTable widget, branch resolution logic, get_pr_head_branches gateway method, j/k navigation routing. Erk-specific, audited 2/17.
+
+**Status**: All three are erk-specific, mature. Keep all.
+
+---
+
+### data-layer (PlanRowData, PlanFilters, PlanDataProvider, columns)
+
+**column-addition-pattern.md** — 5-step checklist (types.py → real.py → plan_table.py → fake.py → dash_data.py) with worked examples (created_at, author). Reordering cascade tripwire. Very high value, audited 2/16, clean.
+
+**plan-row-data.md** — Complete 48-field inventory, nullability status, common availability patterns, display vs raw field duality, testing with make_plan_row(). Audited 2/23, frequently referenced.
+
+**dashboard-columns.md** — Column inventory by view (Plans 18 columns, Objectives 9 columns), backend-conditional columns (stage, sts, created positioning). Backend-aware layout reference.
+
+**data-contract.md** — Cross-package split explanation (types.py in src/erk/tui, ABC/real/fake in erk-shared), display vs raw duality pattern, PlanDataProvider ABC, PlanFilters, JSON serialization gotchas (datetime, tuple[tuple] handling). Audited 2/16, edited with missing fields warning.
+
+**derived-display-columns.md** — Exception to column-addition pattern for columns reusing existing PlanRowData fields (branch example). Small but crucial optimization pattern.
+
+**frozen-dataclass-field-management.md** — Removal checklist (5 places to update), why keyword arguments matter, make_plan_row() centrality. Erk-specific field lifecycle doc.
+
+
+... [146 lines omitted] ...
+
+**status-indicators.md** — Two public functions: compute_status_indicators() (standalone "sts" column), format_lifecycle_with_status() (inline display). Indicator logic table (🥞 stacked, 🚧 draft, 👀 published, 💥 conflicts, ✔ approved, ❌ changes requested, 🚀 ready to merge). Stage detection via substring matching. Variation selector (\\ufe0f) pitfall warning.
+**async-action-refresh-pattern.md** — @work(thread=True) pattern for background operations. Structure: decorate, run subprocess, show toast, call_from_thread(self.action_refresh), handle errors. Anti-patterns: missing refresh, using --no-wait in worker threads.
+**subprocess-feedback.md** — Subprocess error extraction (iterate backwards, first non-empty line, fallback to "Unknown error"). stderr inspection for status markers. Standard pattern (merge stderr/stdout, check for success markers, notify with timeout). Known gap: CLI-side diagnostic output was reverted.
+  </tool_result>
+  <tool_result tool="toolu_01C4HHW8jFsnATz7wBo2YeyT">
+Excellent! Now I have enough context. Let me compile my findings into a comprehensive response:
+
+## Summary of Findings
+
+Based on my exploration of the erk codebase, I can now provide you with a detailed analysis of how AGENTS.md routes agents to skills and how the curated_in / harvest pattern could work.
+
+### 1. **Current AGENTS.md Routing Structure**
+
+The file uses a **three-tier context injection approach** (documented in `/Users/schrockn/code/erk/docs/learned/documentation/passive-context-vs-retrieval.md`):
+
+**Tier 1: Ambient (Passive Context in AGENTS.md)**
+- Lines 44-48: Lists skills to load FIRST (e.g., `dignified-python`, `fake-driven-testing`, `gt-graphite`, `learned-docs`)
+- Lines 71-76: Key Skills section with descriptions
+- This provides compressed ambient awareness that agents reference without active retrieval
+
+**Tier 2: Structural (Workflow Steps)**
+- UserPromptSubmit hook (user_prompt_hook.py) injects reminders
+- Mandatory grep-before-plan workflow documented in lines 157-182
+- This converts retrieval from "should I search?" to "grep before Plan" (concrete step)
+
+**Tier 3: Just-in-Time (PreToolUse Hooks)**
+- PreToolUse hook (pre_tool_use_hook.py) fires on Write/Edit
+- Currently only handles Python files → injects dignified-python reminder
+- Fires at exact moment code generation occurs
+
+### 2. **Frontmatter Schema - Custom Fields Support**
+
+The frontmatter validation in `src/erk/agent_docs/operations.py` is **restrictive by design**:
+
+**Current Allowed Fields** (lines 188-268):
+
+... [112 lines omitted] ...
+
+- `tripwires` (optional, list of `{action: string, warning: string, pattern?: string}` dicts)
+        errors.append("Field 'curated_in' must be a string")
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="9171" cache_read_input_tokens="66947" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 9171}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now let me design the implementation approach.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="9171" cache_read_input_tokens="66947" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 9171}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01NsUWQFhEbCNxvE7Dt9Babm">
+    <param name="description">Design erk-tui skill plan</param>
+    <param name="subagent_type">Plan</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 3778 chars]...ration and routing
+3. curated_in frontmatter addition to source docs
+4. Verification steps</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="9171" cache_read_input_tokens="66947" output_tokens="1416" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 9171, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01NsUWQFhEbCNxvE7Dt9Babm">
+I now have sufficient understanding. Here is the detailed implementation plan.
+
+---
+
+## Implementation Plan: `erk-tui` Skill
+
+### 1. Overview
+
+Create an `erk-tui` skill that distills 44 raw docs (37 in `docs/learned/tui/`, 7 in `docs/learned/textual/`) into a curated skill with 7 reference files, following the `fake-driven-testing` skill as the structural model. The raw docs remain as living material; the skill provides the "which doc do I need right now?" routing and consolidated tripwire awareness.
+
+### 2. Skill Content Creation
+
+#### 2.1 Create directory structure
+
+```
+.claude/skills/erk-tui/
+  SKILL.md
+  references/
+    architecture.md
+    data-layer.md
+    commands.md
+    filtering-and-views.md
+    screens-and-widgets.md
+    async-operations.md
+    textual-quirks.md
+```
+
+#### 2.2 SKILL.md Design
+
+**Frontmatter** must satisfy validation in `tests/unit/artifacts/test_codex_compatibility.py`:
+
+... [198 lines omitted] ...
+  </tool_result>
+  <assistant>
+
+Let me read the key files I need to verify before finalizing the plan.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="5783" cache_read_input_tokens="76118" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5783}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Wt63Mtpa5WQ4ry29JxrJnD">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/capabilities/skills/bundled.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="5783" cache_read_input_tokens="76118" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5783}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Wt63Mtpa5WQ4ry29JxrJnD">
+     1→"""Bundled skill capabilities — cached factory.
+     2→
+     3→All simple skill capabilities (those that only need a name and description)
+     4→are registered here. The dict is created lazily via a cached function to
+     5→avoid module-import-time allocation.
+     6→
+     7→Skills with custom install/uninstall logic (like learned-docs) are NOT here;
+     8→they have their own capability classes.
+     9→"""
+    10→
+    11→from functools import cache
+    12→
+    13→from erk.core.capabilities.codex_portable import codex_portable_skills
+    14→from erk.core.capabilities.skill_capability import SkillCapability
+    15→from erk_shared.context.types import AgentBackend
+    16→
+    17→_UNBUNDLED_SKILLS: frozenset[str] = frozenset(
+    18→    {
+    19→        "ci-iteration",
+    20→        "cli-skill-creator",
+    21→        "cmux",
+    22→        "command-creator",
+    23→        "learned-docs",  # has its own capability class (LearnedDocsCapability)
+    24→        "refac-cli-push-down",
+    25→        "refac-mock-to-fake",
+    26→        "refac-module-to-subpackage",
+    27→        "rename-swarm",
+    28→        "session-inspector",
+    29→        "erk-skill-onboarding",
+    30→        "skill-creator",
+
+... [75 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01LcQMqUBGBeYs3fDZZ7fTYa">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/agent_docs/operations.py</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="5783" cache_read_input_tokens="76118" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5783}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01LcQMqUBGBeYs3fDZZ7fTYa">
+     1→"""Operations for agent documentation management.
+     2→
+     3→This module provides functionality for validating and syncing agent documentation
+     4→files with frontmatter metadata.
+     5→"""
+     6→
+     7→import re
+     8→from collections import defaultdict
+     9→from collections.abc import Callable, Mapping
+    10→from pathlib import Path
+    11→from typing import Any, cast, get_args
+    12→
+    13→import click
+    14→
+    15→from erk.agent_docs.models import (
+    16→    AgentDocFrontmatter,
+    17→    AgentDocValidationResult,
+    18→    AuditResult,
+    19→    CategoryInfo,
+    20→    CategoryTripwireStats,
+    21→    CollectedTripwire,
+    22→    DocInfo,
+    23→    SyncResult,
+    24→    Tripwire,
+    25→    TripwiresIndexValidationResult,
+    26→)
+    27→from erk_shared.core.frontmatter import parse_markdown_frontmatter
+    28→from erk_shared.gateway.agent_docs.abc import AgentDocs
+    29→
+    30→
+
+... [20 lines omitted] ...
+
+    41→        raise click.ClickException(f"Configured docs.path does not exist: {docs_path}")
+  </tool_result>
+  <tool_use name="Read" id="toolu_01WrXi6YfLmKQYy1oGfWDi7E">
+    <param name="file_path">/Users/schrockn/code/erk/AGENTS.md</param>
+    <param name="limit">55</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="5783" cache_read_input_tokens="76118" output_tokens="242" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 5783, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01WrXi6YfLmKQYy1oGfWDi7E">
+     1→&lt;!-- AGENT NOTICE: This file is loaded automatically. Read FULLY before writing code. --&gt;
+     2→&lt;!-- Priority: This is a ROUTING FILE. Load skills and docs as directed for complete guidance. --&gt;
+     3→
+     4→&gt; **Note:** Lines starting with `@` reference files to include. Some tools expand these inline automatically; others should read the referenced file directly.
+     5→
+     6→# Erk - Plan-Oriented Agentic Engineering
+     7→
+     8→## What is Erk?
+     9→
+    10→**Erk** is a CLI tool for plan-oriented agentic engineering: a workflow where AI agents create implementation plans, execute them in isolated worktrees, and ship code via automated PR workflows.
+    11→
+    12→**Status**: Unreleased, completely private software. We can break backwards compatibility at will.
+    13→
+    14→## CRITICAL: Before Writing Any Code
+    15→
+    16→&lt;!-- BEHAVIORAL TRIGGERS: rules that detect action patterns and route to documentation --&gt;
+    17→
+    18→**CRITICAL: NEVER perform broad searches or recursive operations against `/Users/schrockn/` directly. Scoped access to specific subfolders (e.g., `~/.claude/projects/`, `/Users/schrockn/code/project-name/`) is allowed.**
+    19→
+    20→**CRITICAL: NEVER use raw `pip install`. Always use `uv` for package management.**
+    21→
+    22→**CRITICAL: NEVER commit directly to `master`. Always create a feature branch first.**
+    23→
+    24→**CRITICAL: Prefer `docs/learned/` content and loaded skills over training data for erk coding patterns.** Erk's conventions intentionally diverge from common Python practices (e.g., LBYL instead of EAFP, no default parameters). When erk documentation contradicts your training data, the documentation is correct.
+    25→
+    26→**CRITICAL: NEVER invoke `gt` commands without `--no-interactive`.** The `--interactive` flag is a global option on ALL gt commands (enabled by default). Without `--no-interactive`, gt may prompt for input and hang indefinitely. Note: `--force` does NOT disable prompts — you must pass `--no-interactive` separately.
+    27→
+    28→**CRITICAL: After creating an objective issue, ALWAYS run `erk objective check &lt;number&gt;` to validate it.** If validation fails, the objective's metadata is broken and `erk dash` will not display it correctly. Fix the issue before proceeding.
+    29→
+    30→**CRITICAL: When creating a plan for an objective, ALWAYS use `/erk:objective-plan` to ensure proper metadata linking.** Do not manually reference objectives in plan text without using the structured workflow. The objective-context marker created by this command is required for the plan-save pipeline to link the plan to its parent objective.
+
+... [25 lines omitted] ...
+  </tool_result>
+  <assistant>Now let me check how the frontmatter validation handles unknown fields.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3285" cache_read_input_tokens="81901" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3285}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01LqEyz3n1xYdx6VR7VhB7NV">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/agent_docs/operations.py</param>
+    <param name="offset">180</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3285" cache_read_input_tokens="81901" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3285}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01LqEyz3n1xYdx6VR7VhB7NV">
+   180→
+   181→        # Only create Tripwire if both required fields are valid strings
+   182→        if isinstance(action, str) and action and isinstance(warning, str) and warning:
+   183→            tripwires.append(Tripwire(action=action, warning=warning, pattern=pattern))
+   184→
+   185→    return tripwires, errors
+   186→
+   187→
+   188→def validate_agent_doc_frontmatter(
+   189→    data: Mapping[str, object],
+   190→) -&gt; tuple[AgentDocFrontmatter | None, list[str]]:
+   191→    """Validate parsed frontmatter against the schema.
+   192→
+   193→    Args:
+   194→        data: Parsed YAML dictionary.
+   195→
+   196→    Returns:
+   197→        Tuple of (frontmatter, errors). If validation succeeds,
+   198→        errors is empty. If validation fails, frontmatter is None.
+   199→    """
+   200→    errors: list[str] = []
+   201→
+   202→    # Check title
+   203→    title = data.get("title")
+   204→    if not title:
+   205→        errors.append("Missing required field: title")
+   206→    elif not isinstance(title, str):
+   207→        errors.append("Field 'title' must be a string")
+   208→
+   209→    # Check read_when
+
+... [70 lines omitted] ...
+
+   212→        errors.append("Missing required field: read_when")
+   214→        errors.append("Field 'read_when' must be a list")
+   216→        errors.append("Field 'read_when' must not be empty")
+   220→                errors.append(f"Field 'read_when[{i}]' must be a string")
+   226→        tripwires, tripwire_errors = _validate_tripwires(tripwires_data)
+   227→        errors.extend(tripwire_errors)
+   234→            errors.append("Field 'last_audited' must be a string")
+   236→            errors.append(
+   248→            errors.append("Field 'audit_result' must be a string")
+   250→            errors.append(
+   256→    if errors:
+   257→        return None, errors
+   279→        Validation result with any errors found.
+  </tool_result>
+  <tool_use name="Read" id="toolu_012hppYWsihJsMzg1aMhFeLW">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/agent_docs/models.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3285" cache_read_input_tokens="81901" output_tokens="186" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3285, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_012hppYWsihJsMzg1aMhFeLW">
+     1→"""Models for agent documentation frontmatter.
+     2→
+     3→This module defines the frontmatter schema for agent documentation files.
+     4→"""
+     5→
+     6→from dataclasses import dataclass
+     7→from typing import Literal
+     8→
+     9→# "clean" — audit found no issues, doc content matches codebase reality
+    10→# "edited" — audit found issues and the doc was updated to fix them
+    11→AuditResult = Literal["clean", "edited"]
+    12→
+    13→
+    14→@dataclass(frozen=True)
+    15→class Tripwire:
+    16→    """A single action-triggered rule.
+    17→
+    18→    Tripwires are "if you're about to do X, consult Y" rules that detect
+    19→    action patterns and route agents to documentation before mistakes happen.
+    20→
+    21→    Attributes:
+    22→        action: The action pattern that triggers (gerund phrase, e.g., "writing to /tmp/").
+    23→        warning: Brief explanation of why and what to do instead.
+    24→        pattern: Optional regex for mechanical diff matching in code review.
+    25→    """
+    26→
+    27→    action: str
+    28→    warning: str
+    29→    pattern: str | None
+    30→
+
+... [139 lines omitted] ...
+
+    59→        frontmatter: Parsed frontmatter, or None if parsing failed.
+    60→        errors: List of validation errors.
+    65→    errors: tuple[str, ...]
+    70→        return len(self.errors) == 0 and self.frontmatter is not None
+   126→        warning: Brief explanation of why and what to do instead.
+   133→    warning: str
+   160→        errors: List of validation errors.
+   166→    errors: tuple[str, ...]
+  </tool_result>
+  <assistant>Good — the validator only checks known fields and silently ignores unknown ones. So adding `curated_in` to frontmatter won't break `erk docs sync`. Now let me write the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3570" cache_read_input_tokens="85186" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3570}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01C9NQ7UUquZCZ6n6Br2zMo8">
+    <param name="file_path">/Users/schrockn/.claude/plans/fluttering-singing-aho.md</param>
+    <param name="content"># Plan: Create `erk-tui` Skill
+
+## Context
+
+The erk TUI has 44 learned docs (37 in `docs/l...[truncated 6563 chars]...matter) |
+| `docs/learned/textual/*.md` (5 files) | Edit (add `curated_in` frontmatter) |
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3570" cache_read_input_tokens="85186" output_tokens="2197" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3570, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01C9NQ7UUquZCZ6n6Br2zMo8">
+File created successfully at: /Users/schrockn/.claude/plans/fluttering-singing-aho.md
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_0156nSzsAQskw4k9iWkKuHjv">
+    <param name="query">select:ExitPlanMode</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2236" cache_read_input_tokens="88756" output_tokens="78" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2236, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0156nSzsAQskw4k9iWkKuHjv">
+
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_01YbeUyBZUQQBgRpGjeJxbBM">
+    <param name="plan"># Plan: Create `erk-tui` Skill
+
+## Context
+
+The erk TUI has 44 learned docs (37 in `docs/l...[truncated 6563 chars]...matter) |
+| `docs/learned/textual/*.md` (5 files) | Edit (add `curated_in` frontmatter) |
+</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="738" cache_read_input_tokens="90992" output_tokens="39" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 738, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01YbeUyBZUQQBgRpGjeJxbBM">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/fluttering-singing-aho.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Plan: Create `erk-tui` Skill
+Current context: (wt:erk) (br:master)\n\nWhat would you like to do with this plan?"
+  header: "br:master"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create new branch and planned PR. Stays on current branch." - Create a new branch, save plan as draft PR.
+  2. "Implement without saving" - Implement directly on the current branch without saving a plan PR.
+  3. "View/Edit the Plan" - Open plan in editor to review or modify before deciding.
+
+⚠️  WARNING: Currently on 'master'. We strongly discourage implementing directly on the trunk branch. Consider saving the plan and implementing in a dedicated worktree instead.
+
+If user chooses 'Create new branch and planned PR':
+  1. Run /erk:plan-save
+  2. Call ExitPlanMode to end the planning session.
+
+If user chooses 'Implement without saving':
+  1. Create implement-now marker:
+     erk exec marker create --session-id 2aef4d83-df03-46cf-a961-1ee12b533eda \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly on the current branch.
+     Do NOT run 'erk exec setup-impl' or create a new branch.
+
+... [8 lines omitted] ...
+  </tool_result>
+  <assistant>Let me display the plan and ask what you'd like to do.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="683" cache_read_input_tokens="91730" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 683}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_017oqHf3hd89cyoqGtXK2LBR">
+    <param name="file_path">/Users/schrockn/.claude/plans/fluttering-singing-aho.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="683" cache_read_input_tokens="91730" output_tokens="89" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 683, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_017oqHf3hd89cyoqGtXK2LBR">
+     1→# Plan: Create `erk-tui` Skill
+     2→
+     3→## Context
+     4→
+     5→The erk TUI has 44 learned docs (37 in `docs/learned/tui/`, 7 in `docs/learned/textual/`) totaling ~4,265 lines. These raw docs are valuable but hard for agents to navigate — when working on TUI code, agents must grep and read across dozens of files to find relevant patterns.
+     6→
+     7→This plan creates an `erk-tui` skill that distills these raw docs into a curated, task-routed reference. The raw docs remain as living material where new insights land via `/erk:learn`. The skill is the refined layer that agents load for TUI work.
+     8→
+     9→**Flow**: Session insights → `/erk:learn` → `docs/learned/tui/*.md` (raw) → periodic harvest → `.claude/skills/erk-tui/` (curated)
+    10→
+    11→## Deliverables
+    12→
+    13→### 1. Create skill content
+    14→
+    15→**Directory**: `.claude/skills/erk-tui/`
+    16→
+    17→```
+    18→.claude/skills/erk-tui/
+    19→├── SKILL.md                        # Entry point with routing
+    20→└── references/
+    21→    ├── architecture.md             # Layers, mixins, directory structure
+    22→    ├── data-layer.md               # PlanRowData, PlanFilters, columns, data contract
+    23→    ├── commands.md                 # Registration, dual-handler, categories, view-aware
+    24→    ├── filtering-and-views.md     # Filter pipeline, toggle, escape chain, view switching
+    25→    ├── screens-and-widgets.md     # Modals, tables, status bar, keyboard shortcuts
+    26→    ├── async-operations.md        # Streaming, subprocess, multi-op tracking, state snapshots
+    27→    └── textual-quirks.md          # Framework gotchas (DataTable, CSS, Rich markup, testing)
+    28→```
+    29→
+    30→**SKILL.md structure** (modeled on `fake-driven-testing/SKILL.md`):
+
+... [91 lines omitted] ...
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_01UuzEVMytMiKTNcxKpSXJx6">
+    <param name="query">select:AskUserQuestion</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2896" cache_read_input_tokens="92413" output_tokens="77" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2896, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01UuzEVMytMiKTNcxKpSXJx6">
+
+  </tool_result>
+  <tool_use name="AskUserQuestion" id="toolu_01LQuXKQkeWG9RkoqhPR2ZDu">
+    <param name="questions">[{'question': '📋 Plan: Create `erk-tui` Skill\nCurrent context: (wt:erk) (br:master)\n\nWh...[truncated 369 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1442" cache_read_input_tokens="95309" output_tokens="215" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1442, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01LQuXKQkeWG9RkoqhPR2ZDu">
+User has answered your questions: "📋 Plan: Create `erk-tui` Skill
+Current context: (wt:erk) (br:master)
+
+What would you like to do with this plan?"="Create new branch and planned PR". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="Skill" id="toolu_01A1Ruz1R6wrcYjc8jWwLxFr">
+    <param name="skill">erk:plan-save</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="301" cache_read_input_tokens="96751" output_tokens="57" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 301, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01A1Ruz1R6wrcYjc8jWwLxFr">
+Launching skill: erk:plan-save
+  </tool_result>
+  <user># /erk:plan-save
+
+Save the current session's plan to GitHub with session context.
+
+## Usage
+
+```bash
+/erk:plan-save                           # Standalone plan
+/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+/erk:plan-save --objective=123           # Explicit objective link (overrides marker)
+/erk:plan-save --current-branch          # Use current branch instead of creating new plnd/ branch
+```
+
+Objective linking: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command. Use `--objective=&lt;number&gt;` to override the marker or provide the link when no marker exists (e.g., during replan).
+
+## Plan Storage
+
+The plan is saved using the configured backend:
+
+- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+  The JSON output contract includes `plan_number`, `plan_url`, `title`, `branch_name`, `plan_backend`.
+
+## Agent Instructions
+
+### Step 1: Parse Arguments
+
+Check `` for the `--plan-type`, `--objective`, and `--current-branch` flags:
+
+```
+If  contains "--plan-type=&lt;type&gt;":
+  - Extract the type (standard or learn)
+  - Store as PLAN_TYPE variable
+  - Set PLAN_TYPE_FLAG to "--plan-type=&lt;type&gt;"
+Else:
+  - Set PLAN_TYPE_FLAG to empty string
+
+If  contains "--objective=&lt;number&gt;":
+  - Extract the number
+  - Set OBJECTIVE_FLAG to "--objective=&lt;number&gt;"
+Else:
+  - Set OBJECTIVE_FLAG to empty string
+
+If  contains "--current-branch":
+  - Set CURRENT_BRANCH_FLAG to "--current-branch"
+Else:
+  - Set CURRENT_BRANCH_FLAG to empty string
+```
+
+### Step 2: Generate Branch Slug
+
+**Skip this step if `--current-branch` was passed.** The current branch is used directly.
+
+Before saving, generate a branch slug from the plan title. Read the plan title from the plan file you wrote in plan mode (the first `# ` heading).
+
+Generate a branch slug from the title:
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+
+Store the result as `BRANCH_SLUG`.
+
+### Step 3: Generate Plan Summary
+
+Write a concise 2-3 sentence summary of the plan. This summary will be visible
+at the top of the PR description (above the collapsed full plan).
+
+Guidelines:
+
+- Focus on WHAT the plan does and WHY
+- Do not repeat the title
+- Plain text, no markdown headers or formatting
+- Avoid special shell characters (backticks, dollar signs)
+- Store as PLAN_SUMMARY
+
+### Step 4: Run Save Command
+
+Run this command with the session ID, summary, and optional flags.
+
+If CURRENT_BRANCH_FLAG is set, pass `--current-branch` (no branch slug needed):
+
+```bash
+erk exec plan-save --format json --session-id="2aef4d83-df03-46cf-a961-1ee12b533eda" --current-branch --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Otherwise, pass the branch slug:
+
+```bash
+erk exec plan-save --format json --session-id="2aef4d83-df03-46cf-a961-1ee12b533eda" --branch-slug="${BRANCH_SLUG}" --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Parse the JSON output to extract `plan_number` for verification in Step 5.
+
+If the command fails, display the error and stop.
+
+### Step 5: Verify Objective Link (if applicable)
+
+**Only run this step if `objective_issue` is non-null in the JSON output from Step 4.**
+
+Verify the objective link was saved correctly:
+
+```bash
+erk exec get-plan-metadata &lt;plan_number&gt; objective_issue
+```
+
+Parse the JSON response:
+
+- If `success: true` and `value` matches the expected objective number: verification passed
+- If `success: false` or value doesn't match: verification failed
+
+**On verification success:**
+
+Display: `Verified objective link: #&lt;objective-number&gt;`
+
+**On verification failure:**
+
+Display error and remediation steps:
+
+```
+ERROR: Objective link verification failed
+Expected objective: #&lt;expected&gt;
+Actual: &lt;actual-or-null&gt;
+
+The plan was saved but without the correct objective link.
+Fix: Close draft PR #&lt;plan_number&gt;,
+ensure the objective-context marker exists, and re-run /erk:plan-save.
+```
+
+Exit without creating the plan-saved marker. The session continues so the user can retry.
+
+### Step 6: Update Objective Roadmap (if objective linked)
+
+**Only run this step if `objective_issue` was non-null in JSON output and verification passed.**
+
+Update the objective's roadmap table to show that a plan has been created for this node:
+
+1. **Read the roadmap node marker** to get the node ID:
+
+```bash
+step_id=$(erk exec marker read --session-id "2aef4d83-df03-46cf-a961-1ee12b533eda" roadmap-step)
+```
+
+If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-plan`.
+
+2. **Update the roadmap table** using the dedicated command:
+
+```bash
+erk exec update-objective-node &lt;objective-issue&gt; --node "$step_id" --pr "#&lt;plan_number&gt;" --status in_progress
+```
+
+This atomically fetches the objective body, finds the matching node row, sets the Status cell to `in-progress`, and writes the updated body back.
+
+3. **Report the update:**
+
+Display: `Updated objective #&lt;objective-issue&gt; roadmap: node &lt;step_id&gt; → plan #&lt;plan_number&gt;`
+
+**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+
+### Step 7: Display Results
+
+**If JSON contains `skipped_duplicate: true`:**
+
+Display: `Plan already saved as #&lt;plan_number&gt; (duplicate skipped)`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options.
+
+**Otherwise, on success**, display:
+
+```
+Plan "&lt;title&gt;" saved as draft PR #&lt;plan_number&gt;
+URL: &lt;issue_url&gt;
+```
+
+If objective was verified, also display: `Verified objective link: #&lt;objective-number&gt;`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options
+(implement in current worktree, implement in new worktree, or done).
+
+On failure, display the error message and suggest:
+
+- Checking that a plan exists (enter Plan mode and exit it first)
+- Verifying GitHub CLI authentication (`gh auth status`)
+- Checking network connectivity
+
+### Step 5: Push Planning Session
+
+After saving successfully, push the planning session for cross-machine learning.
+This captures the in-progress session state so it's available even if implementation
+happens on a different machine.
+
+Run `erk exec capture-session-info` to get the session file path, then push it:
+
+```bash
+erk exec upload-impl-session --session-id "2aef4d83-df03-46cf-a961-1ee12b533eda" 2&gt;/dev/null || true
+```
+
+If the plan was saved successfully and `plan_number` is known, use push-session directly
+for better stage tracking:
+
+```bash
+erk exec push-session \
+    --session-file "&lt;session_file_path&gt;" \
+    --session-id "2aef4d83-df03-46cf-a961-1ee12b533eda" \
+    --stage planning \
+    --source local \
+    --plan-id &lt;plan_number&gt; \
+    2&gt;/dev/null || true
+```
+
+Where `&lt;session_file_path&gt;` is obtained from `erk exec capture-session-info` output
+and `&lt;plan_number&gt;` is from Step 2's JSON output.
+
+**Note:** This is non-critical. If it fails, the plan was still saved successfully.
+The `2&gt;/dev/null || true` ensures graceful degradation.
+
+## Session Tracking
+
+After successfully saving a plan, the plan number is stored in a marker file that enables automatic plan updates in the same session.
+
+**To read the saved plan number:**
+
+```bash
+erk exec marker read --session-id "2aef4d83-df03-46cf-a961-1ee12b533eda" plan-saved-issue
+```
+
+This returns the plan number (exit code 0) or exits with code 1 if no plan was saved in this session.
+</user>
+  <assistant>
+
+Let me execute the plan save.
+
+**Branch slug**: `create-erk-tui-skill`
+
+**Plan summary**: Consolidates 44 raw docs from docs/learned/tui/ and docs/learned/textual/ into a curated erk-tui skill with 7 reference files, registers it as an unbundled skill, updates AGENTS.md routing, and tags raw docs with curated_in frontmatter for future harvest workflows.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="2277" cache_read_input_tokens="97052" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2277}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01Qpa85CzdbJ5qV8gZXpTLkj">
+    <param name="command">erk exec plan-save --format json --session-id="2aef4d83-df03-46cf-a961-1ee12b533eda" --bra...[truncated 199 chars]...S.md routing, and tags raw docs with curated_in frontmatter for future harvest workflows."</param>
+    <param name="description">Save plan as draft PR</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2277" cache_read_input_tokens="97052" output_tokens="324" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2277, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Qpa85CzdbJ5qV8gZXpTLkj">
+{"success": true, "pr_number": 9129, "pr_url": "https://github.com/dagster-io/erk/pull/9129", "title": "[erk-plan] Plan: Create `erk-tui` Skill", "branch_name": "plnd/create-erk-tui-skill-03-10-0421", "plan_backend": "planned_pr", "objective_issue": null, "archived_to": "/Users/schrockn/code/erk/.erk/scratch/sessions/2aef4d83-df03-46cf-a961-1ee12b533eda/plan_snapshots/000001-7adb9662"}
+  </tool_result>
+  <assistant>Now let me push the planning session.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="602" cache_read_input_tokens="99329" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 602}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01T5rLGAtWkNeENvmrdiVicj">
+    <param name="command">erk exec capture-session-info 2&gt;/dev/null</param>
+    <param name="description">Get session file path</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="602" cache_read_input_tokens="99329" output_tokens="94" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 602, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01T5rLGAtWkNeENvmrdiVicj">
+SESSION_ID=2aef4d83-df03-46cf-a961-1ee12b533eda
+SESSION_FILE=/Users/schrockn/.claude/projects/-Users-schrockn-code-erk/2aef4d83-df03-46cf-a961-1ee12b533eda.jsonl
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01McDRKEVcFNZoqoL57Qe1Jj">
+    <param name="command">erk exec push-session --session-file "/Users/schrockn/.claude/projects/-Users-schrockn-cod...[truncated 58 chars]...46cf-a961-1ee12b533eda" --stage planning --source local --plan-id 9129 2&gt;/dev/null || true</param>
+    <param name="description">Push planning session</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="187" cache_read_input_tokens="99931" output_tokens="199" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 187, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+</session>

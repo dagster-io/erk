@@ -1,0 +1,1052 @@
+<session>
+  <meta branch="master" />
+  <meta model="claude-opus-4-6" />
+  <user>I want to look into converting the docs about the tui in @docs/learned and reorganizing them as a skill</user>
+  <usage input_tokens="3" cache_creation_input_tokens="13324" cache_read_input_tokens="9131" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 13324}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me explore the TUI documentation first.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="13324" cache_read_input_tokens="9131" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 13324}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01UgUJT5hLLsCD6CFbkTEAEf">
+    <param name="command">ls /Users/schrockn/code/erk/docs/learned/tui/</param>
+    <param name="description">List TUI docs</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="13324" cache_read_input_tokens="9131" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 13324}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01UgUJT5hLLsCD6CFbkTEAEf">
+action-inventory.md
+adding-commands.md
+architecture.md
+async-action-refresh-pattern.md
+async-state-snapshot.md
+clipboard-text-generation.md
+column-addition-pattern.md
+command-execution.md
+command-palette.md
+dashboard-columns.md
+data-contract.md
+derived-display-columns.md
+dual-handler-pattern.md
+filter-pipeline.md
+filter-toggle-pattern.md
+frozen-dataclass-field-management.md
+index.md
+keyboard-shortcuts.md
+lifecycle-display.md
+modal-screen-pattern.md
+modal-widget-embedding.md
+multi-operation-tracking.md
+one-shot-prompt-modal.md
+plan-row-data.md
+plan-title-rendering-pipeline.md
+runs-tab-architecture.md
+stacked-pr-indicator.md
+status-indicators.md
+streaming-output.md
+subprocess-feedback.md
+
+... [7 lines omitted] ...
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01ULQRnsTJZhyFV9ofUvGWnC">
+    <param name="command">ls /Users/schrockn/code/erk/docs/learned/textual/</param>
+    <param name="description">List Textual docs</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="13324" cache_read_input_tokens="9131" output_tokens="230" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 13324, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01ULQRnsTJZhyFV9ofUvGWnC">
+background-workers.md
+datatable-markup-escaping.md
+index.md
+quirks.md
+testing.md
+tripwires.md
+widget-development.md
+  </tool_result>
+  <assistant>That's a lot of docs — 37 TUI files + 7 Textual files. Let me read the indexes and a sample of the docs to understand their content and structure.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="604" cache_read_input_tokens="22455" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 604}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01F4cYBBmtYkGqnqoWffJLrr">
+    <param name="file_path">/Users/schrockn/code/erk/docs/learned/tui/index.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="604" cache_read_input_tokens="22455" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 604}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01F4cYBBmtYkGqnqoWffJLrr">
+     1→&lt;!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY --&gt;
+     2→&lt;!-- Edit source frontmatter, then run 'erk docs sync' to regenerate. --&gt;
+     3→
+     4→# Tui Documentation
+     5→
+     6→- **[action-inventory.md](action-inventory.md)** — adding a new command to the TUI or desktop dashboard, understanding how command availability is determined, choosing which execution pattern a new command should use
+     7→- **[adding-commands.md](adding-commands.md)** — adding a new command to the TUI command palette, implementing TUI actions with streaming output, understanding the dual-handler pattern for TUI commands
+     8→- **[architecture.md](architecture.md)** — understanding TUI structure, implementing TUI components, working with TUI data providers
+     9→- **[async-action-refresh-pattern.md](async-action-refresh-pattern.md)** — adding background operations to the TUI, implementing worker thread actions in the dashboard, refreshing TUI data after a background subprocess
+    10→- **[async-state-snapshot.md](async-state-snapshot.md)** — adding async data fetching to the TUI, reading self.\_view_mode during async operations, debugging stale data appearing in the wrong tab
+    11→- **[clipboard-text-generation.md](clipboard-text-generation.md)** — implementing copy-to-clipboard in the TUI, adding a new command that supports clipboard copy, debugging why a copy command returns wrong text
+    12→- **[column-addition-pattern.md](column-addition-pattern.md)** — adding a column to the plan table, adding a field to PlanRowData, modifying plan_table.py column layout
+    13→- **[command-execution.md](command-execution.md)** — executing commands in TUI, choosing between sync and streaming execution, implementing command runners
+    14→- **[command-palette.md](command-palette.md)** — implementing command palette in Textual TUI, hiding system commands from command palette, get_system_commands method, removing Keys Quit Screenshot Theme from palette, adding emoji prefixes to command palette entries, using CommandCategory for command categorization
+    15→- **[dashboard-columns.md](dashboard-columns.md)** — adding a new column to the erk dash TUI, understanding which columns are always present vs conditional, debugging why a column is missing in a particular view mode
+    16→- **[data-contract.md](data-contract.md)** — building an alternate frontend consuming plan data, adding fields to PlanRowData or PlanDataProvider, understanding the display-vs-raw field duality, serializing plan data to JSON for external consumers
+    17→- **[derived-display-columns.md](derived-display-columns.md)** — adding a TUI column that uses an existing PlanRowData field, deciding whether a new column needs gateway/query changes
+    18→- **[dual-handler-pattern.md](dual-handler-pattern.md)** — implementing a TUI command that works from both list and detail views, understanding how MainListCommandProvider and PlanCommandProvider share commands, adding command palette support to a new screen
+    19→- **[filter-pipeline.md](filter-pipeline.md)** — adding a new filter to the TUI dashboard, understanding how objective/stack/text filters interact, modifying the escape key behavior in the TUI
+    20→- **[filter-toggle-pattern.md](filter-toggle-pattern.md)** — adding a filter toggle to the TUI dashboard, implementing server-side filtering in the TUI, adding keybindings that toggle dashboard state
+    21→- **[frozen-dataclass-field-management.md](frozen-dataclass-field-management.md)** — removing a field from a frozen dataclass, renaming a field in PlanRowData or similar frozen dataclass, getting unexpected constructor errors after field changes
+    22→- **[keyboard-shortcuts.md](keyboard-shortcuts.md)** — adding a new keyboard shortcut to the TUI, checking for shortcut conflicts before binding a new key, understanding what keys are available in the TUI
+    23→- **[lifecycle-display.md](lifecycle-display.md)** — adding a new lifecycle stage to the TUI, changing lifecycle abbreviations or colors, modifying PR status emoji indicators, understanding the stage column in erk dash
+    24→- **[modal-screen-pattern.md](modal-screen-pattern.md)** — adding a new modal screen to the TUI, implementing a ModalScreen subclass, displaying detail views or confirmation dialogs
+    25→- **[modal-widget-embedding.md](modal-widget-embedding.md)** — reusing PlanDataTable in a modal screen, embedding complex widgets in Textual modal screens, handling null safety for optional gateway fields in TUI
+    26→- **[multi-operation-tracking.md](multi-operation-tracking.md)** — adding a new background operation to the TUI, implementing status bar progress for a workflow command, debugging operation lifecycle or stuck operations
+    27→- **[one-shot-prompt-modal.md](one-shot-prompt-modal.md)** — adding a new modal or input screen to the TUI, working with the one-shot dispatch workflow in erk dash, adding global keybindings that trigger modals
+    28→- **[plan-row-data.md](plan-row-data.md)** — writing command availability predicates, understanding what data is available for TUI commands, checking which PlanRowData fields are nullable
+    29→- **[plan-title-rendering-pipeline.md](plan-title-rendering-pipeline.md)** — debugging why plan titles display incorrectly, troubleshooting missing prefixes in TUI, understanding plan data flow in TUI
+    30→- **[runs-tab-architecture.md](runs-tab-architecture.md)** — working with TUI Runs tab, adding columns to RunDataTable, understanding branch resolution in runs, modifying workflow run display in TUI
+
+... [11 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_011tAakyf11axAdTdvVdyBtu">
+    <param name="file_path">/Users/schrockn/code/erk/docs/learned/textual/index.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="604" cache_read_input_tokens="22455" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 604}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011tAakyf11axAdTdvVdyBtu">
+     1→&lt;!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY --&gt;
+     2→&lt;!-- Edit source frontmatter, then run 'erk docs sync' to regenerate. --&gt;
+     3→
+     4→# Textual Documentation
+     5→
+     6→- **[background-workers.md](background-workers.md)** — running subprocess in TUI without blocking, streaming output to Textual widgets, using run_worker for async operations
+     7→- **[datatable-markup-escaping.md](datatable-markup-escaping.md)** — adding cell values to Textual DataTable, displaying user data in DataTable cells, troubleshooting invisible text in DataTable
+     8→- **[quirks.md](quirks.md)** — working with Textual TUI framework, debugging DataTable, App, or CSS issues in Textual, writing tests for Textual applications
+     9→- **[testing.md](testing.md)** — testing Textual TUI components, writing tests for ModalScreen, testing keyboard bindings, using Pilot API for async tests
+    10→- **[widget-development.md](widget-development.md)** — creating Textual widgets, adding ModalScreen dialogs, implementing keyboard bindings, writing Textual CSS styles
+    11→
+  </tool_result>
+  <tool_use name="Read" id="toolu_01EwywPHJKnZGuucuVSXreqM">
+    <param name="file_path">/Users/schrockn/code/erk/docs/learned/tui/tripwires.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="604" cache_read_input_tokens="22455" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 604}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01EwywPHJKnZGuucuVSXreqM">
+     1→---
+     2→title: Tui Tripwires
+     3→read_when:
+     4→  - "working on tui code"
+     5→---
+     6→
+     7→&lt;!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY --&gt;
+     8→&lt;!-- Edit source frontmatter, then run 'erk docs sync' to regenerate. --&gt;
+     9→&lt;!-- Generated from tui/*.md frontmatter --&gt;
+    10→
+    11→# Tui Tripwires
+    12→
+    13→Rules triggered by matching actions in code.
+    14→
+    15→**accessing \_status_bar without null guard** → Read [TUI Streaming Output Patterns](streaming-output.md) first. Guard \_status_bar access with `if self._status_bar is not None:` — timing issue during widget lifecycle can cause AttributeError.
+    16→
+    17→**accessing optional gateway fields without null checks in TUI event handlers** → Read [Modal Widget Embedding Pattern](modal-widget-embedding.md) first. Gateway fields like plan_body or objective_content may be None. Always check before accessing in event handlers.
+    18→
+    19→**adding CI check formatting to TUI screens** → Read [TUI Architecture Overview](architecture.md) first. Use src/erk/tui/formatting/ci_checks.py shared module (format_check_line, format_summary_blockquote, format_check_runs) instead of duplicating formatting logic.
+    20→
+    21→**adding a CLI flag that affects behavior without checking TUI command palette** → Read [TUI Command Registration](tui-command-registration.md) first. TUI command palette generates shell commands via src/erk/tui/commands/registry.py. When adding CLI flags that change behavior, check if TUI-generated commands need the flag too.
+    22→
+    23→**adding a DataTable column with add_column(key=...)** → Read [TUI Architecture Overview](architecture.md) first. Column key is a data binding contract — must match data field name. Silent failure when mismatched.
+    24→
+    25→**adding a column to PlanDataTable without updating make_plan_row** → Read [Column Addition Pattern](column-addition-pattern.md) first. Column additions require 5 coordinated changes. See column-addition-pattern.md for the complete checklist.
+    26→
+    27→**adding a command without an availability predicate** → Read [TUI Command Architecture](action-inventory.md) first. Every command needs an is_available predicate based on PlanRowData field presence. Commands without predicates appear when they can't execute.
+    28→
+    29→**adding a field to PlanRowData without updating make_plan_row** → Read [TUI Data Contract](data-contract.md) first. The fake's make_plan_row() helper must stay in sync. Add the new field with a sensible default there too, or all TUI tests will break.
+    30→
+
+... [110 lines omitted] ...
+
+    35→**adding a new ViewMode without updating VIEW_CONFIGS** → Read [TUI View Switching](view-switching.md) first. Every ViewMode must have a corresponding ViewConfig in VIEW_CONFIGS. Missing configs cause KeyError at runtime.
+    45→**adding a subprocess call to the TUI without stderr inspection** → Read [TUI Subprocess Feedback Patterns](subprocess-feedback.md) first. TUI subprocess calls should inspect stderr for known success/failure markers. See subprocess-feedback.md for the pattern.
+    65→**calling start_operation() without a matching finish_operation() in the error path** → Read [TUI Multi-Operation Tracking](multi-operation-tracking.md) first. Always call finish_operation() in both success and error paths. Use try/finally or explicit error handling. Missing finish calls leave ghost operations in the status bar.
+    75→**constructing PlanFilters without copying all fields from existing filters** → Read [TUI Data Contract](data-contract.md) first. All fields must be explicitly copied in \_load_data() PlanFilters construction. Missing fields (like creator) cause silent filtering failures.
+    89→**extending PlanDataProvider ABC** → Read [TUI Architecture Overview](architecture.md) first. Requires 3-file update: abc.py + real.py + fake.py. Fake must initialize new dict in **init**. Missing init causes AttributeError at test time.
+   117→**removing a field from a frozen dataclass** → Read [Frozen Dataclass Field Management](frozen-dataclass-field-management.md) first. Grep for the class name across ALL constructor sites. Frozen dataclasses have 5+ places to update: field definition, real provider, fake provider, test helpers, and filtering/display logic. Missing one causes runtime TypeError.
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Wk6wpqLtbH5nBoxXpHXkEs">
+    <param name="file_path">/Users/schrockn/code/erk/docs/learned/textual/tripwires.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="604" cache_read_input_tokens="22455" output_tokens="294" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 604, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Wk6wpqLtbH5nBoxXpHXkEs">
+     1→---
+     2→title: Textual Tripwires
+     3→read_when:
+     4→  - "working on textual code"
+     5→---
+     6→
+     7→&lt;!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY --&gt;
+     8→&lt;!-- Edit source frontmatter, then run 'erk docs sync' to regenerate. --&gt;
+     9→&lt;!-- Generated from textual/*.md frontmatter --&gt;
+    10→
+    11→# Textual Tripwires
+    12→
+    13→Rules triggered by matching actions in code.
+    14→
+    15→**adding cell values to Textual DataTable** → Read [DataTable Rich Markup Escaping](datatable-markup-escaping.md) first. Always wrap in `Text(value)` if strings contain user data with brackets. Otherwise `[anything]` will be interpreted as Rich markup.
+    16→
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="7716" cache_read_input_tokens="23059" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7716}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me read a few representative docs and also look at an existing skill for the pattern.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="7716" cache_read_input_tokens="23059" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7716}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_017jMfnAfB5nHofPz4iBmEm3">
+    <param name="file_path">/Users/schrockn/code/erk/docs/learned/tui/architecture.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="7716" cache_read_input_tokens="23059" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7716}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017jMfnAfB5nHofPz4iBmEm3">
+     1→---
+     2→title: TUI Architecture Overview
+     3→read_when:
+     4→  - "understanding TUI structure"
+     5→  - "implementing TUI components"
+     6→  - "working with TUI data providers"
+     7→tripwires:
+     8→  - action: "reusing same DOM element id across loading/empty/content states"
+     9→    warning: "query_one() returns wrong element silently when id is reused across lifecycle phases. Use unique IDs per phase."
+    10→  - action: "calling widget methods directly from @work(thread=True) background threads"
+    11→    warning: "Direct widget calls from background threads cause silent UI corruption. Must use self.app.call_from_thread(callback, ...)."
+    12→  - action: "extending PlanDataProvider ABC"
+    13→    warning: "Requires 3-file update: abc.py + real.py + fake.py. Fake must initialize new dict in __init__. Missing init causes AttributeError at test time."
+    14→  - action: "adding a DataTable column with add_column(key=...)"
+    15→    warning: "Column key is a data binding contract — must match data field name. Silent failure when mismatched."
+    16→  - action: "moving @on decorated event handlers to a mixin"
+    17→    warning: "Textual's _MessagePumpMeta only scans class.__dict__, not inherited methods. Event handlers on mixins are silently ignored."
+    18→  - action: "adding CI check formatting to TUI screens"
+    19→    warning: "Use src/erk/tui/formatting/ci_checks.py shared module (format_check_line, format_summary_blockquote, format_check_runs) instead of duplicating formatting logic."
+    20→last_audited: "2026-02-17 18:30 PT"
+    21→audit_result: clean
+    22→---
+    23→
+    24→# TUI Architecture Overview
+    25→
+    26→The erk TUI is built with Textual and follows a layered architecture separating data fetching, filtering, and rendering.
+    27→
+    28→## Directory Structure
+    29→
+    30→```
+
+... [178 lines omitted] ...
+
+   128→Use fake providers instead of mocking. `FakePlanDataProvider` lives in `tests.fakes.gateway.plan_data_provider` and accepts keyword-only arguments (`plans`, `clipboard`, `browser`, `repo_root`, `fetch_error`). The `make_plan_row()` helper in the same module creates test `PlanRowData` instances with sensible defaults.
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Lw9wqiSpkTcPB5jSg9bWYM">
+    <param name="file_path">/Users/schrockn/code/erk/docs/learned/tui/adding-commands.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="7716" cache_read_input_tokens="23059" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7716}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Lw9wqiSpkTcPB5jSg9bWYM">
+     1→---
+     2→title: Adding Commands to TUI
+     3→read_when:
+     4→  - "adding a new command to the TUI command palette"
+     5→  - "implementing TUI actions with streaming output"
+     6→  - "understanding the dual-handler pattern for TUI commands"
+     7→tripwires:
+     8→  - action: "generating TUI commands that depend on optional PlanRowData fields"
+     9→    warning: "Implement three-layer validation: registry predicate, handler guard, app-level helper. Never rely on registry predicate alone."
+    10→last_audited: "2026-02-05 00:00 PT"
+    11→audit_result: edited
+    12→---
+    13→
+    14→# Adding Commands to TUI
+    15→
+    16→## Architecture: The Dual-Handler Pattern
+    17→
+    18→Commands follow a **dual-handler pattern**:
+    19→
+    20→1. **Registry** (`src/erk/tui/commands/registry.py`) — Defines `CommandDefinition` with metadata and availability predicates
+    21→2. **Handlers** — Implement actual logic in two locations:
+    22→   - `ErkDashApp.execute_palette_command()` in `app.py` — Main list context
+    23→   - `PlanDetailScreen.execute_command()` — Detail modal context
+    24→
+    25→Commands need different behavior depending on invocation context. See the actual source files for current command definitions and handler implementations.
+    26→
+    27→## Adding a New Command
+    28→
+    29→1. **Add `CommandDefinition`** to `registry.py` with id, name, description, category, shortcut, availability predicate
+    30→2. **Add handler** in `ErkDashApp.execute_palette_command()` for main list context
+
+... [69 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01SMwV3n1grY5yU5s7fv7wW2">
+    <param name="file_path">/Users/schrockn/code/erk/docs/learned/textual/quirks.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="7716" cache_read_input_tokens="23059" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7716}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01SMwV3n1grY5yU5s7fv7wW2">
+     1→---
+     2→title: Textual API Quirks and Workarounds
+     3→read_when:
+     4→  - "working with Textual TUI framework"
+     5→  - "debugging DataTable, App, or CSS issues in Textual"
+     6→  - "writing tests for Textual applications"
+     7→last_audited: "2026-02-16 14:30 PT"
+     8→audit_result: edited
+     9→---
+    10→
+    11→# Textual API Quirks and Workarounds
+    12→
+    13→This document captures API quirks discovered while building the erk dash TUI with Textual.
+    14→
+    15→## DataTable Quirks
+    16→
+    17→### cursor_type Must Be Set via `__init__`
+    18→
+    19→**Problem**: `cursor_type` is a `Reactive[CursorType]`, not a plain attribute. Setting it as a class attribute causes type errors:
+    20→
+    21→```python
+    22→# WRONG - causes type error
+    23→class MyTable(DataTable):
+    24→    cursor_type = "row"  # Type error: Literal['row'] not assignable to Reactive[CursorType]
+    25→```
+    26→
+    27→**Solution**: Pass to `super().__init__()`:
+    28→
+    29→```python
+    30→# CORRECT
+
+... [207 lines omitted] ...
+
+    80→**Problem**: The base `App.action_quit` is an async method. Overriding it with a sync method causes pyright errors about incompatible return types.
+    86→def action_quit(self) -&gt; None:  # Type error: incompatible override
+   104→**Problem**: When loading data in a background thread with `run_in_executor`, you might try to use `call_from_thread` to update the UI. This fails in test context with "must run in different thread" error.
+   159→# WRONG - causes MarkupError at render time
+   163→**Error signature:**
+   166→MarkupError: Expected markup value (found '://github.com/...')
+   196→**Problem**: When displaying raw JSON, code, or file contents in a Static widget, `escape_markup()` may not fully prevent `MarkupError`. Content with Python type annotations like `list[str]` or complex nested escape sequences can still cause parsing failures.
+   198→**Error signature:**
+   201→MarkupError: Expected markup value (found '\\"number\\"],\\n ...')
+   221→**Problem**: The StatusBar widget displays subprocess error messages that may contain brackets (e.g., `[error details]`). With default `markup=True`, these brackets are parsed as Rich markup tags, causing `MarkupError` at render time.
+  </tool_result>
+  <tool_use name="Glob" id="toolu_01Hn6xFiXhvGiQ5KzRgJN2cS">
+    <param name="pattern">.claude/skills/**/*.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="7716" cache_read_input_tokens="23059" output_tokens="299" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 7716, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Hn6xFiXhvGiQ5KzRgJN2cS">
+/Users/schrockn/code/erk/.claude/skills/erk-diff-analysis/SKILL.md
+/Users/schrockn/code/erk/.claude/skills/dignified-python/subprocess.md
+/Users/schrockn/code/erk/.claude/skills/fake-driven-testing/references/patterns.md
+/Users/schrockn/code/erk/.claude/skills/fake-driven-testing/references/python-specific.md
+/Users/schrockn/code/erk/.claude/skills/gt/references/gt-reference.md
+/Users/schrockn/code/erk/.claude/skills/ci-iteration/SKILL.md
+/Users/schrockn/code/erk/.claude/skills/command-creator/SKILL.md
+/Users/schrockn/code/erk/.claude/skills/command-creator/references/best-practices.md
+/Users/schrockn/code/erk/.claude/skills/command-creator/references/patterns.md
+/Users/schrockn/code/erk/.claude/skills/dignified-python/versions/python-3.10.md
+/Users/schrockn/code/erk/.claude/skills/dignified-python/versions/python-3.11.md
+/Users/schrockn/code/erk/.claude/skills/dignified-python/versions/python-3.12.md
+/Users/schrockn/code/erk/.claude/skills/dignified-python/versions/python-3.13.md
+/Users/schrockn/code/erk/.claude/skills/command-creator/references/examples.md
+/Users/schrockn/code/erk/.claude/skills/gh/SKILL.md
+/Users/schrockn/code/erk/.claude/skills/gh/references/api-backend-audit.md
+/Users/schrockn/code/erk/.claude/skills/gh/references/graphql-schema-core.md
+/Users/schrockn/code/erk/.claude/skills/gh/references/graphql.md
+/Users/schrockn/code/erk/.claude/skills/cli-skill-creator/references/help-text-patterns.md
+/Users/schrockn/code/erk/.claude/skills/dignified-python/SKILL.md
+/Users/schrockn/code/erk/.claude/skills/dignified-python/references/checklists.md
+/Users/schrockn/code/erk/.claude/skills/dignified-python/references/interfaces.md
+/Users/schrockn/code/erk/.claude/skills/session-inspector/references/learn.md
+/Users/schrockn/code/erk/.claude/skills/dignified-python/cli-patterns.md
+/Users/schrockn/code/erk/.claude/skills/cli-skill-creator/references/skill-templates.md
+/Users/schrockn/code/erk/.claude/skills/session-inspector/references/format.md
+/Users/schrockn/code/erk/.claude/skills/pr-operations/references/commands.md
+/Users/schrockn/code/erk/.claude/skills/gh/references/gh.md
+/Users/schrockn/code/erk/.claude/skills/pr-operations/SKILL.md
+/Users/schrockn/code/erk/.claude/skills/cli-skill-creator/SKILL.md
+
+... [40 lines omitted] ...
+
+/Users/schrockn/code/erk/.claude/skills/dignified-python/references/exception-handling.md
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="10938" cache_read_input_tokens="30775" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 10938}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me look at an existing skill's structure for reference, and check the total size of the TUI docs.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="10938" cache_read_input_tokens="30775" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 10938}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01TndgQECWkoCVhtLk36Qwpz">
+    <param name="file_path">/Users/schrockn/code/erk/.claude/skills/fake-driven-testing/SKILL.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="10938" cache_read_input_tokens="30775" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 10938}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01TndgQECWkoCVhtLk36Qwpz">
+     1→---
+     2→name: fake-driven-testing
+     3→description:
+     4→  This skill should be used when writing tests, fixing bugs, adding features,
+     5→  or modifying the gateway layer. Use when you need guidance on testing architecture,
+     6→  working with fakes, implementing ABC gateway interfaces, or understanding the defense-in-depth
+     7→  testing strategy. Essential for maintaining test quality and understanding where
+     8→  different types of tests belong.
+     9→---
+    10→
+    11→# Fake-Driven Testing Architecture for Python
+    12→
+    13→**Use this skill when**: Writing tests, fixing bugs, adding features, or modifying gateway layers in Python projects.
+    14→
+    15→**Prerequisites**: For Python code standards, load the `dignified-python-313` skill first. This skill focuses on testing architecture, not Python syntax.
+    16→
+    17→## Overview
+    18→
+    19→This skill provides a **defense-in-depth testing strategy** with five layers for Python applications:
+    20→
+    21→```
+    22→┌─────────────────────────────────────────────────┐
+    23→│  Layer 5 "smoke": Business Logic Integration Tests (5%)  │  ← Smoke tests over real system
+    24→├─────────────────────────────────────────────────┤
+    25→│  Layer 4 "logic": Business Logic Tests (70%)             │  ← Tests over fakes (MOST TESTS)
+    26→├─────────────────────────────────────────────────┤
+    27→│  Layer 3 "pure": Pure Unit Tests (10%)                   │  ← Zero dependencies, isolated testing
+    28→├─────────────────────────────────────────────────┤
+    29→│  Layer 2 "real-sanity": Integration Sanity Tests (10%)   │  ← Fast validation with mocking
+    30→├─────────────────────────────────────────────────┤
+
+... [320 lines omitted] ...
+
+   162→- Error injection pattern
+   283→│ │ Purpose: Quick validation, catch syntax errors           │ │
+  </tool_result>
+  <tool_use name="Bash" id="toolu_019F5joSarBREydNbXMuUSNU">
+    <param name="command">wc -l /Users/schrockn/code/erk/docs/learned/tui/*.md /Users/schrockn/code/erk/docs/learned/textual/*.md | tail -3</param>
+    <param name="description">Count total lines in TUI + Textual docs</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="10938" cache_read_input_tokens="30775" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 10938}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019F5joSarBREydNbXMuUSNU">
+      15 /Users/schrockn/code/erk/docs/learned/textual/tripwires.md
+      35 /Users/schrockn/code/erk/docs/learned/textual/widget-development.md
+    4265 total
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01Gw9RaWPaSRyc6XovQxTbSB">
+    <param name="command">ls /Users/schrockn/code/erk/.claude/skills/fake-driven-testing/</param>
+    <param name="description">List fake-driven-testing skill structure</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="10938" cache_read_input_tokens="30775" output_tokens="344" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 10938, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Gw9RaWPaSRyc6XovQxTbSB">
+references
+SKILL.md
+  </tool_result>
+  <assistant>OK, here's what I see:
+
+## Current State
+
+- **37 TUI docs** (~3,600 lines) + **7 Textual docs** (~665 lines) = ~4,265 total lines across 44 files
+- Content covers: architecture, command patterns, data contracts, filtering, async patterns, modal screens, streaming, keyboard shortcuts, Textual framework quirks, etc.
+- 63 TUI tripwires + 1 Textual tripwire
+
+## What a Skill Would Look Like
+
+Looking at `fake-driven-testing` as the model, a TUI skill would have:
+
+1. **`SKILL.md`** — Entry point with overview, quick decision routing ("What should I read?"), and key principles
+2. **`references/`** — Distilled reference docs organized by workflow, not by original file
+
+The key question is how to **compress and reorganize** 44 files into a skill. Here's my proposed structure:
+
+### Proposed: `tui-development` skill
+
+```
+.claude/skills/tui-development/
+├── SKILL.md                          # Overview, architecture, decision routing
+└── references/
+    ├── architecture.md               # Directory structure, data layers, mixin constraints
+    ├── commands.md                    # Command registration, dual-handler, categories, palette
+    ├── data-and-filtering.md         # PlanRowData, PlanFilters, filter pipeline, sorting
+    ├── async-and-streaming.md        # Background workers, streaming output, thread safety
+    ├── screens-and-widgets.md        # Modals, tables, status bar, keyboard shortcuts
+    ├── textual-quirks.md             # Framework-specific gotchas (DataTable, CSS, Rich markup)
+    └── tripwires.md                  # Consolidated tripwires (all 64)
+```
+
+### Key Decisions
+
+1. **Merge tui/ and textual/ categories** — They're inseparable in practice; the Textual quirks are only relevant when working on the TUI
+2. **Organize by workflow, not by original doc** — e.g., all command-related content (adding-commands, command-palette, command-execution, dual-handler, view-aware-commands, tui-command-registration, action-inventory) consolidates into one `commands.md`
+3. **Keep tripwires as a dedicated reference** — They're machine-consumed for safety, worth preserving intact
+4. **Drop some docs entirely** — Several docs are very narrow (title-truncation-edge-cases, stacked-pr-indicator, plan-title-rendering-pipeline) and can be folded into broader references or dropped if the code is self-documenting
+
+### What I'd Want Your Input On
+
+- **Should this replace the docs/learned/ files or coexist?** Skills are session-persistent context; docs/learned are grep-discoverable references. We could deprecate the individual docs or keep them as the "source of truth" that feeds the skill.
+- **Naming**: `tui-development` vs `tui` vs `erk-tui`?
+- **Scope**: Include the Textual quirks inline, or keep them as a separate reference?
+
+Want me to proceed with drafting this, or do you want to adjust the structure first?</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="5438" cache_read_input_tokens="41713" output_tokens="767" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 5438, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <user>what would it look like if we wanted a textual-specific skill that an erk-tui skill would compose?</user>
+  <assistant>
+
+Good question. The idea would be: `textual` captures framework-level knowledge (works for any Textual app), while `erk-tui` captures erk-specific patterns (our architecture, our data types, our commands).
+
+Let me check what content falls cleanly into each bucket.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="947" cache_read_input_tokens="47151" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 947}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_012LTzZnqrwBpeN6U7CjFF8b">
+    <param name="file_path">/Users/schrockn/code/erk/docs/learned/textual/background-workers.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="947" cache_read_input_tokens="47151" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 947}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012LTzZnqrwBpeN6U7CjFF8b">
+     1→---
+     2→title: Textual Background Workers
+     3→read_when:
+     4→  - "running subprocess in TUI without blocking"
+     5→  - "streaming output to Textual widgets"
+     6→  - "using run_worker for async operations"
+     7→last_audited: "2026-02-16 14:20 PT"
+     8→audit_result: clean
+     9→---
+    10→
+    11→# Textual Background Workers
+    12→
+    13→## When to Use `run_worker()`
+    14→
+    15→Use `run_worker()` for I/O-bound operations that should not block the UI:
+    16→
+    17→- Subprocess execution with output streaming
+    18→- Network requests
+    19→- File operations on large files
+    20→
+    21→## Subprocess Streaming Pattern
+    22→
+    23→```python
+    24→from textual.worker import Worker, WorkerState
+    25→import asyncio
+    26→
+    27→def action_execute(self) -&gt; None:
+    28→    """Start command execution."""
+    29→    self._output_panel.visible = True
+    30→    self.run_worker(self._stream_subprocess, exclusive=True)
+
+... [34 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01RXED8WrJmAN8LPMHBRSVds">
+    <param name="file_path">/Users/schrockn/code/erk/docs/learned/textual/widget-development.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="947" cache_read_input_tokens="47151" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 947}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01RXED8WrJmAN8LPMHBRSVds">
+     1→---
+     2→title: Textual Widget Development Guide
+     3→read_when:
+     4→  - "creating Textual widgets"
+     5→  - "adding ModalScreen dialogs"
+     6→  - "implementing keyboard bindings"
+     7→  - "writing Textual CSS styles"
+     8→last_audited: "2026-02-05 00:00 PT"
+     9→audit_result: edited
+    10→---
+    11→
+    12→# Textual Widget Development
+    13→
+    14→For standard Textual API patterns (ModalScreen, Bindings, compose(), CSS, widget types), consult the [Textual documentation](https://textual.textualize.io/). This doc focuses on erk-specific patterns.
+    15→
+    16→## Erk TUI Source Layout
+    17→
+    18→| Component | Location                            |
+    19→| --------- | ----------------------------------- |
+    20→| Main app  | `src/erk/tui/app.py` (`ErkDashApp`) |
+    21→| Widgets   | `src/erk/tui/widgets/`              |
+    22→| Screens   | `src/erk/tui/screens/`              |
+    23→| CSS       | `src/erk/tui/styles/`               |
+    24→
+    25→## Reference Implementations
+    26→
+    27→- **ModalScreens**: `HelpScreen` (`screens/help_screen.py`), `PlanDetailScreen` (`screens/plan_detail_screen.py`), `IssueBodyScreen` (`screens/issue_body_screen.py`)
+    28→- **Streaming output**: `CommandOutputPanel` (`widgets/command_output.py`) — uses `RichLog` for live output display
+    29→- **Clickable links**: `widgets/clickable_link.py` — demonstrates accessing app properties from widgets
+    30→
+
+... [6 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Q59AxJfTTXXjPbRTsgqSE5">
+    <param name="file_path">/Users/schrockn/code/erk/docs/learned/textual/testing.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="947" cache_read_input_tokens="47151" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 947}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Q59AxJfTTXXjPbRTsgqSE5">
+     1→---
+     2→title: Textual TUI Testing Patterns
+     3→read_when:
+     4→  - "testing Textual TUI components"
+     5→  - "writing tests for ModalScreen"
+     6→  - "testing keyboard bindings"
+     7→  - "using Pilot API for async tests"
+     8→last_audited: "2026-02-16 14:20 PT"
+     9→audit_result: clean
+    10→---
+    11→
+    12→# Textual TUI Testing Patterns
+    13→
+    14→## Overview
+    15→
+    16→This project uses Textual for TUI applications. Testing Textual apps requires async tests with the Pilot API.
+    17→
+    18→## Basic Test Structure
+    19→
+    20→```python
+    21→import pytest
+    22→from erk.tui.app import ErkDashApp, PlanDetailScreen
+    23→
+    24→@pytest.mark.asyncio
+    25→async def test_tui_behavior() -&gt; None:
+    26→    """Test TUI interaction."""
+    27→    provider = FakePlanDataProvider([make_plan_row(123, "Test")])
+    28→    filters = PlanFilters.default()
+    29→    app = ErkDashApp(provider, filters, refresh_interval=0)
+    30→
+
+... [85 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_019gif2JUKxgeaitnkPA7avC">
+    <param name="file_path">/Users/schrockn/code/erk/docs/learned/textual/datatable-markup-escaping.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="947" cache_read_input_tokens="47151" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 947}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019gif2JUKxgeaitnkPA7avC">
+     1→---
+     2→title: DataTable Rich Markup Escaping
+     3→last_audited: "2026-02-17 18:30 PT"
+     4→audit_result: clean
+     5→read_when:
+     6→  - "adding cell values to Textual DataTable"
+     7→  - "displaying user data in DataTable cells"
+     8→  - "troubleshooting invisible text in DataTable"
+     9→tripwires:
+    10→  - action: "adding cell values to Textual DataTable"
+    11→    warning: "Always wrap in `Text(value)` if strings contain user data with brackets. Otherwise `[anything]` will be interpreted as Rich markup."
+    12→---
+    13→
+    14→# DataTable Rich Markup Escaping
+    15→
+    16→Textual's DataTable interprets plain strings as Rich markup by default. This causes user data containing brackets (like `[erk-learn]` prefixes) to disappear.
+    17→
+    18→## The Problem
+    19→
+    20→When you pass a plain string to `DataTable.add_row()`, Rich interprets bracket sequences as markup tags:
+    21→
+    22→```python
+    23→# WRONG: The [prefix] disappears because Rich interprets it as markup
+    24→table.add_row("[erk-learn] My Plan Title")
+    25→# Result: "My Plan Title" (prefix invisible)
+    26→```
+    27→
+    28→The `[erk-learn]` text is treated as a Rich style tag. Since no style named `erk-learn` exists, Rich silently renders nothing for that portion.
+    29→
+    30→## The Solution
+
+... [55 lines omitted] ...
+  </tool_result>
+  <assistant>Now let me also quickly check some of the erk-specific TUI docs to see how they'd differ from the Textual layer.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="4101" cache_read_input_tokens="48098" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4101}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_013U18X4g7rwuroZWwWQGRVf">
+    <param name="file_path">/Users/schrockn/code/erk/docs/learned/tui/filter-pipeline.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4101" cache_read_input_tokens="48098" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4101}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013U18X4g7rwuroZWwWQGRVf">
+     1→---
+     2→title: TUI Filter Pipeline Pattern
+     3→read_when:
+     4→  - "adding a new filter to the TUI dashboard"
+     5→  - "understanding how objective/stack/text filters interact"
+     6→  - "modifying the escape key behavior in the TUI"
+     7→tripwires:
+     8→  - action: "adding a new filter without updating the escape chain"
+     9→    warning: "New filter implementations must add an entry to `action_exit_app()` progressive escape chain. Missing entries leave filters stuck with no way for the user to clear them."
+    10→  - action: "changing filter application order in _apply_filter_and_sort()"
+    11→    warning: "Filter order is intentional: objective → stack → text → sort. Objective is broadest (cross-stack), stack is mid-level, text is narrowest. Changing order produces unexpected results."
+    12→  - action: "using a mutable set for _stack_filter_branches"
+    13→    warning: "Stack filter branches use frozenset[str] for immutability and efficient membership testing. Do not use set or list."
+    14→---
+    15→
+    16→# TUI Filter Pipeline Pattern
+    17→
+    18→The TUI dashboard applies filters in a defined pipeline sequence: objective filter, stack filter, text filter, then sort. Each filter follows the same toggle pattern with state variables, toggle actions, and escape chain integration.
+    19→
+    20→## Filter Pipeline
+    21→
+    22→`_apply_filter_and_sort()` in `src/erk/tui/app.py` applies filters in sequence:
+    23→
+    24→1. **Objective filter**: Filters rows matching `_objective_filter_issue`
+    25→2. **Stack filter**: Filters rows matching branches in `_stack_filter_branches`
+    26→3. **Text filter**: Applies text search query if `FilterMode.ACTIVE`
+    27→4. **Sort**: Sorts using `SortKey` (supports `BranchActivity` ordering)
+    28→
+    29→## State Variables
+    30→
+
+... [48 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_016782j2uVgcTHMCGTyhG4DY">
+    <param name="file_path">/Users/schrockn/code/erk/docs/learned/tui/command-palette.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4101" cache_read_input_tokens="48098" output_tokens="167" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 4101, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_016782j2uVgcTHMCGTyhG4DY">
+     1→---
+     2→title: Textual CommandPalette Guide
+     3→read_when:
+     4→  - "implementing command palette in Textual TUI"
+     5→  - "hiding system commands from command palette"
+     6→  - "get_system_commands method"
+     7→  - "removing Keys Quit Screenshot Theme from palette"
+     8→  - "adding emoji prefixes to command palette entries"
+     9→  - "using CommandCategory for command categorization"
+    10→last_audited: "2026-02-05 00:00 PT"
+    11→audit_result: edited
+    12→---
+    13→
+    14→# Textual CommandPalette Guide
+    15→
+    16→For standard Textual CommandPalette patterns (Providers, Hit/DiscoveryHit, Matcher, async generators, Screen.COMMANDS), consult the [Textual documentation](https://textual.textualize.io/). This doc focuses on erk-specific patterns and a critical Textual pitfall.
+    17→
+    18→## System Commands Pitfall
+    19→
+    20→**CRITICAL:** `get_system_commands` must be overridden on the **App class**, not the Screen class. Textual calls `app.get_system_commands(screen)` when opening the palette — it never calls this method on screens.
+    21→
+    22→```python
+    23→# WRONG — This method is never called by Textual
+    24→class MyModalScreen(ModalScreen):
+    25→    def get_system_commands(self, screen: Screen) -&gt; Iterator[SystemCommand]:
+    26→        return iter(())  # Has no effect!
+    27→
+    28→# CORRECT — Override on App class
+    29→class MyApp(App):
+    30→    def get_system_commands(self, screen: Screen) -&gt; Iterator[SystemCommand]:
+
+... [40 lines omitted] ...
+  </tool_result>
+  <assistant>Now I have a clear picture. Here's how the two-skill composition would work:
+
+## Proposed Two-Skill Structure
+
+### Skill 1: `textual` — Framework Knowledge (portable, not erk-specific)
+
+**Audience**: Anyone building a Textual app. No erk imports or paths.
+
+```
+.claude/skills/textual/
+├── SKILL.md                    # Overview, when to use, decision routing
+└── references/
+    ├── quirks.md               # API gotchas (DataTable, App, CSS, Rich markup)
+    ├── async-patterns.md       # Background workers, run_worker, call_from_thread, thread safety
+    └── testing.md              # Pilot API, async test structure, pauses, screen stack assertions
+```
+
+**Content sourced from**:
+- `textual/quirks.md` → `quirks.md` (almost verbatim — it's already framework-generic)
+- `textual/background-workers.md` → `async-patterns.md`
+- `textual/testing.md` → `testing.md` (strip erk-specific fixtures, keep Pilot patterns)
+- `textual/datatable-markup-escaping.md` → fold into `quirks.md` (it's a DataTable gotcha)
+- `textual/widget-development.md` → drop (already says "consult Textual docs", mostly just links to erk stuff)
+- `tui/command-palette.md` → the `get_system_commands` pitfall goes into `quirks.md`; the erk-specific command categories go into erk-tui
+- `tui/textual-async.md` → fold into `async-patterns.md`
+
+**Tripwires** (~5): DataTable markup escaping, `call_from_thread` requirement, `_render()` reserved name, `_filters` attribute collision, `prevent_default()` + `stop()` pattern.
+
+### Skill 2: `erk-tui` — Erk Dashboard Development
+
+**Prerequisite**: "For Textual framework patterns, load the `textual` skill first."
+
+```
+.claude/skills/erk-tui/
+├── SKILL.md                        # Architecture overview, directory structure, decision routing
+└── references/
+    ├── data-layer.md               # PlanRowData, PlanFilters, PlanDataProvider ABC, data contract
+    ├── commands.md                  # Registration, dual-handler, categories, action inventory, view-aware filtering
+    ├── filtering-and-views.md      # Filter pipeline, toggle pattern, escape chain, view switching, view configs
+    ├── screens-and-widgets.md      # Modals, PlanDataTable, status bar, keyboard shortcuts, column patterns
+    ├── async-operations.md         # Streaming output, subprocess feedback, multi-operation tracking, state snapshots
+    └── tripwires.md                # All 63 erk-tui tripwires
+```
+
+**Content sourced from** (mapping the 37 tui/ docs):
+
+| erk-tui reference | Source docs |
+|---|---|
+| `data-layer.md` | architecture (data section), data-contract, plan-row-data, derived-display-columns, frozen-dataclass-field-management, column-addition-pattern, dashboard-columns |
+| `commands.md` | adding-commands, action-inventory, tui-command-registration, dual-handler-pattern, view-aware-commands, command-execution, clipboard-text-generation |
+| `filtering-and-views.md` | filter-pipeline, filter-toggle-pattern, view-switching, view-mode-help |
+| `screens-and-widgets.md` | modal-screen-pattern, modal-widget-embedding, one-shot-prompt-modal, keyboard-shortcuts, status-indicators, lifecycle-display, stacked-pr-indicator, plan-title-rendering-pipeline, title-truncation-edge-cases, runs-tab-architecture |
+| `async-operations.md` | streaming-output, subprocess-feedback, multi-operation-tracking, async-action-refresh-pattern, async-state-snapshot |
+| `SKILL.md` | architecture (structure, mixins, design principles) |
+
+### The Composition Boundary
+
+The split is clean because it follows a natural seam:
+
+| Question | Answer from... |
+|---|---|
+| "How do I use `call_from_thread`?" | `textual` skill |
+| "How do I update the status bar from a worker thread?" | `erk-tui` skill (references `textual` for the underlying pattern) |
+| "Why is my DataTable cell empty?" | `textual` skill (markup escaping) |
+| "How do I add a column to PlanDataTable?" | `erk-tui` skill |
+| "How do I test a ModalScreen?" | `textual` skill (Pilot API) |
+| "How do I test the confirmation dialog?" | `erk-tui` skill (FakePlanDataProvider setup) |
+
+### What This Buys You
+
+1. **`textual` skill is reusable** — if you ever build another Textual app, the framework knowledge carries over
+2. **`erk-tui` stays focused** — it's all about erk's specific architecture, not framework mechanics
+3. **Smaller context per skill** — an agent working on a simple Textual widget quirk doesn't need 63 erk tripwires loaded
+4. **Clear prerequisite chain** — `erk-tui` SKILL.md says "load `textual` first", similar to how `fake-driven-testing` says "load `dignified-python` first"
+
+### Open Question
+
+The `textual` skill would be relatively small (~3 reference files). That's fine — `dignified-python` has a subprocess.md that's just one file too. But worth asking: is there enough Textual-generic content to justify the split, or would it be simpler to have one `erk-tui` skill with a `textual-quirks.md` reference inside it?
+
+Want me to start building these out?</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2532" cache_read_input_tokens="52199" output_tokens="1448" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2532, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <user>i think it should one skill called erk-tui
+
+what would be alterantives ? e.g erk-dev-tui, erk-arch-tui, etc, list 10 or so</user>
+  <assistant>1. `erk-tui`
+2. `erk-tui-dev`
+3. `erk-dash`
+4. `erk-dash-dev`
+5. `erk-tui-architecture`
+6. `erk-tui-guide`
+7. `erk-tui-patterns`
+8. `erk-dashboard`
+9. `tui-development`
+10. `erk-textual`
+
+My recommendation is `erk-tui` — it's the shortest, most obvious name, and matches how the codebase already refers to it (`src/erk/tui/`, "TUI" in doc titles, `erk dash` as the command). The others either add unnecessary qualifiers or are less discoverable.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="1650" cache_read_input_tokens="54731" output_tokens="181" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1650, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>ok i would also want to use this as time to cleanup and crystallize the content AND to have to learning system be aware of the skill so we do not re-add the same content again</user>
+  <assistant>
+
+Good — three goals:
+
+1. **Create `erk-tui` skill** — consolidate 44 docs into a well-structured skill
+2. **Clean up content** — deduplicate, remove stale info, crystallize what matters
+3. **Make the learning system aware** — so future `/erk:learn` runs route TUI insights to the skill instead of recreating docs/learned files
+
+Let me plan this properly. First, let me understand how the learning system currently works and how existing skills integrate with it.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="377" cache_read_input_tokens="56381" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 377}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01V2iq556v36oWQ5ijVaYE3a">
+    <param name="description">Explore learning system routing</param>
+    <param name="subagent_type">Explore</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 724 chars]...rk/ for learn-related code, and docs/learned/ for any meta-documentation about the system.</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="377" cache_read_input_tokens="56381" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 377}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01K6FjzwBCHPc6erWgq8bYyZ">
+    <param name="description">Explore skill onboarding process</param>
+    <param name="subagent_type">Explore</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 360 chars]...heck for registry files, skill configuration, and any tests related to skill registration.</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="377" cache_read_input_tokens="56381" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 377}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01BEzupmjd3cxwx8eAf7GBWv">
+    <param name="description">Explore learned-docs skill</param>
+    <param name="subagent_type">Explore</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 468 chars]... there's an existing pattern for deprecating a docs/learned/ category in favor of a skill.</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="377" cache_read_input_tokens="56381" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 377}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01BEzupmjd3cxwx8eAf7GBWv">
+Excellent! Now I have a comprehensive understanding. Let me create a summary report for the user:
+
+## Summary: Learned-Docs Skill and Documentation System
+
+I've thoroughly explored the learned-docs skill and the erk documentation system. Here are the key findings:
+
+### **1. How Docs/Learned Files Are Created and Maintained**
+
+**Source Files:**
+- `/Users/schrockn/code/erk/.claude/skills/learned-docs/SKILL.md` — The skill documentation
+- `/Users/schrockn/code/erk/.claude/skills/learned-docs/learned-docs-core.md` — Content quality standards (the "cornerstone")
+
+**Frontmatter Requirements:**
+Every doc (except index.md) MUST have:
+```yaml
+---
+title: Document Title
+read_when:
+  - "first condition"
+  - "second condition"
+---
+```
+
+**Key Rules from learned-docs-core.md:**
+- Docs are token caches for AI agents, not human documentation
+- Document reality, not aspiration (including tech debt and workarounds)
+- Never reproduce source code (4 exceptions: data formats, third-party APIs, anti-patterns, input/output examples)
+- Explain WHY, not WHAT — the "what" is in source code
+- Cross-cutting insight that spans multiple files is the sweet spot
+
+
+... [111 lines omitted] ...
+
+       warning: "Load `skill-name` skill first. See [full-doc](../path/) for context."
+  </tool_result>
+  <tool_result tool="toolu_01V2iq556v36oWQ5ijVaYE3a">
+Perfect! Now I have a comprehensive understanding. Let me compile my findings into a clear report:
+
+## Summary
+
+Based on my thorough analysis of the erk learning system, here's how the documentation routing and categorization works:
+
+### **1. How `/erk:learn` Decides Where to Put Documentation**
+
+The learning system **does NOT have explicit routing logic built into `/erk:learn`** itself. Instead, it follows a **file-path-based categorization system**:
+
+- **Category is determined by directory structure**, not by content inspection
+- When a document is placed at `docs/learned/architecture/foo.md`, it's automatically categorized as "architecture"
+- Root-level docs at `docs/learned/foo.md` are categorized as "uncategorized"
+- The `erk docs sync` command then regenerates index files based purely on **where files physically exist**
+
+**Reference**: `/Users/schrockn/code/erk/src/erk/agent_docs/operations.py` lines 407-419:
+```python
+def _get_category_from_path(doc_path: str) -&gt; str | None:
+    """Extract category from a doc path."""
+    parts = doc_path.split("/")
+    if len(parts) &gt; 1:
+        return parts[0]
+    return None
+```
+
+### **2. Awareness of Skills and Routing to Them**
+
+The learning system **is aware of skills but does NOT automatically route content to them**:
+
+- The `existing-docs-checker` agent **actively searches** `.claude/skills/` alongside `docs/learned/` to prevent duplicates
+
+... [84 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01K6FjzwBCHPc6erWgq8bYyZ">
+Perfect! I now have comprehensive information. Let me compile the complete findings for the user.
+
+## Summary: Erk Skill Onboarding and Registration System
+
+I've thoroughly analyzed the erk-skill-onboarding skill and the entire skill registration system. Here's a comprehensive breakdown:
+
+### Core Documentation
+
+**Main skill reference:** `/Users/schrockn/code/erk/.claude/skills/erk-skill-onboarding/SKILL.md`
+
+This file provides a complete decision tree and checklist for adding new skills. It's well-documented and serves as the primary guide.
+
+---
+
+### Skill Registration: Three Key Decisions
+
+Every skill must answer these three questions:
+
+1. **Bundled or Unbundled?**
+   - **Bundled** = distributed externally via `erk init capability add &lt;name&gt;` (installed to other projects)
+   - **Unbundled** = lives only in `.claude/skills/` within the erk repo (erk-internal use)
+
+2. **Codex Portable or Claude-Only?**
+   - **Codex Portable** = works with any AI agent (no Claude-specific features)
+   - **Claude-Only** = uses hooks, session logs, slash commands, Claude Code features
+
+3. **Required or Optional?** (bundled skills only)
+   - **Required** = auto-installed by `erk init`
+   - **Optional** = user opts in via `erk init capability add`
+
+
+... [209 lines omitted] ...
+  </tool_result>
+  <usage input_tokens="1875" cache_creation_input_tokens="5226" cache_read_input_tokens="56758" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5226}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Here's what I learned from the three explorations:
+
+## Current State of Affairs
+
+1. **No skill redirect mechanism exists** — The learning system always outputs to `docs/learned/`. The `existing-docs-checker` agent detects skill content for deduplication but can't route new insights to a skill.
+
+2. **Skill registration** — For an unbundled (erk-internal) skill, we need:
+   - `.claude/skills/erk-tui/SKILL.md` + references
+   - Add to `_UNBUNDLED_SKILLS` in `src/erk/capabilities/skills/bundled.py`
+
+3. **No deprecation pattern exists** — There's no documented way to say "this docs/learned category is now covered by a skill."
+
+## Proposed Plan
+
+### Phase 1: Create the `erk-tui` skill
+- Consolidate 44 docs into the skill structure we discussed
+- Include Textual quirks as a reference file within the skill
+
+### Phase 2: Wire it into the system
+- Register in `_UNBUNDLED_SKILLS`
+- Update AGENTS.md routing table: `**TUI code** → erk-tui skill`
+- Add to the "Load these skills FIRST" section
+
+### Phase 3: Make the learning system aware
+This is the novel part. Two approaches:
+
+**Option A: Category redirect marker** — Add a new convention to `docs/learned/tui/index.md` and `docs/learned/textual/index.md` that the learning pipeline reads:
+
+```yaml
+---
+skill_redirect: erk-tui
+skill_redirect_note: "TUI content is maintained in the erk-tui skill. New insights should update the skill, not create docs here."
+---
+```
+
+Then update the `existing-docs-checker` agent and/or `plan-synthesizer` agent to recognize this marker and route accordingly.
+
+**Option B: Delete the categories entirely** — Remove `docs/learned/tui/` and `docs/learned/textual/` after migrating content. The learning system can't create files in categories that don't exist (it only writes to existing categories or root). Add a tripwire in the skill itself.
+
+**Option C: Tombstone files** — Replace each category with a single redirect file that points to the skill, keeping the directory alive but empty of real content.
+
+My recommendation is **Option A + partial cleanup**: Keep a slim `docs/learned/tui/index.md` with the redirect marker and maybe 2-3 docs that are genuinely "reference-only" (like the tripwires file which is auto-generated). Delete the rest. This way the learning pipeline knows where to route, and we don't lose the category for future use.
+
+Want me to proceed with this plan, or do you want to adjust the approach to the learning system integration?</assistant>
+  <usage input_tokens="1875" cache_creation_input_tokens="5226" cache_read_input_tokens="56758" output_tokens="897" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 5226, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <user>well i still want to develop *raw* content in the learned folder, and then have raw insights be harvested into more curated content in the skill</user>
+  <assistant>
+
+Ah, that's a much better mental model. The docs/learned files are the **raw material** — where insights get captured in the moment — and the skill is the **refined product** that gets curated from them over time.
+
+So the flow is:
+
+```
+Session insights → /erk:learn → docs/learned/tui/*.md (raw, append-only-ish)
+                                        ↓
+                        periodic curation / harvest
+                                        ↓
+                      .claude/skills/erk-tui/ (crystallized, maintained)
+```
+
+This means:
+
+1. **Keep `docs/learned/tui/` and `docs/learned/textual/` alive** — they continue receiving new raw insights from the learning pipeline as-is
+2. **The skill is a curated distillation** — not a 1:1 migration but a hand-edited synthesis
+3. **The learning system doesn't need to change routing** — it keeps writing to docs/learned. The new thing is a **harvest step** that periodically pulls raw insights into the skill
+4. **Tripwires stay in both places** — raw docs have them for discovery, the skill has a consolidated version for when it's loaded
+
+### What changes vs. my earlier proposal
+
+- **Don't delete docs/learned files** — they're the living raw layer
+- **Don't add redirect markers** — the categories stay active
+- **Do add a harvest mechanism** — a command or workflow that reviews raw docs against the skill and identifies what's new/changed
+- **Do update AGENTS.md** — so agents load the skill for TUI work (the curated version) rather than grep-reading 44 raw files
+
+### Concrete deliverables
+
+1. **Create `.claude/skills/erk-tui/`** — curated skill distilled from current raw content
+2. **Register it** — `_UNBUNDLED_SKILLS`, AGENTS.md routing
+3. **Add a harvest command** (or at minimum document the harvest workflow) — "compare docs/learned/tui/*.md against skill references, identify unincorporated insights"
+4. **Tag raw docs** — optional: add frontmatter like `curated_in: erk-tui` so future harvest knows which docs have been processed
+
+Does this match what you're thinking? If so, I'll start with creating the skill content — that's the biggest piece.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="3061" cache_read_input_tokens="61984" output_tokens="546" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3061, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>create plan for this strategy</user>
+  <assistant>
+
+Let me explore the remaining pieces I need to understand before creating the plan.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="1902" cache_read_input_tokens="65045" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1902}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01ACatiuFq6VTLf7J1yKjREc">
+    <param name="description">Explore existing skill structures</param>
+    <param name="subagent_type">Explore</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 897 chars]...eferences are organized and cross-linked
+- The registration mechanism for unbundled skills</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1902" cache_read_input_tokens="65045" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1902}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01HsdBVpccSAFLGVepmuBE2T">
+    <param name="description">Read all remaining TUI docs</param>
+    <param name="subagent_type">Explore</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 1724 chars]...s (framework gotchas)
+
+Also note any content that seems stale or low-value enough to drop.</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1902" cache_read_input_tokens="65045" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1902}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01C4HHW8jFsnATz7wBo2YeyT">
+    <param name="description">Explore AGENTS.md routing patterns</param>
+    <param name="subagent_type">Explore</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 884 chars]...orts custom fields (for curated_in tagging)
+- How the learn pipeline processes frontmatter</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1902" cache_read_input_tokens="65045" output_tokens="1395" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1902, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+</session>
