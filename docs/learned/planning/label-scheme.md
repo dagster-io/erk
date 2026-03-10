@@ -24,7 +24,7 @@ Plans are identified by the `[erk-pr]` or `[erk-learn]` title prefix.
 | `erk-learn`     | Type label — documentation plans | Learn plans                          |
 | `erk-objective` | Separate system — objectives     | Objective issues                     |
 
-Plans are identified by the `[erk-pr]` or `[erk-learn]` title prefix (applied via `get_title_tag_from_labels()`).
+Title prefix is derived from the plan's labels at creation time. See `packages/erk-shared/src/erk_shared/plan_utils.py`.
 
 ## Label Assignment
 
@@ -49,7 +49,7 @@ Plans are identified by the `[erk-pr]` or `[erk-learn]` title prefix (applied vi
 
 For plan-only filtering within `erk-pr` results, use client-side `[erk-pr]` title prefix check.
 
-## Server-Side Filtering
+## Client-Side Filtering
 
 The PRs view queries `erk-pr` with `exclude_labels=("erk-learn",)` to show only non-learn PRs.
 This client-side exclusion prevents learn PRs from appearing in the main plans tab.
