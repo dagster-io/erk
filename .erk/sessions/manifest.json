@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "pr_number": 9177,
+  "sessions": [
+    {
+      "session_id": "",
+      "stage": "impl",
+      "source": "local",
+      "uploaded_at": "2026-03-10T17:28:46.939227+00:00",
+      "files": [
+        "impl--eb21d0de-3f5e-4cb8-a27c-910c923e8cd0-part1.xml",
+        "impl--eb21d0de-3f5e-4cb8-a27c-910c923e8cd0-part2.xml",
+        "impl--eb21d0de-3f5e-4cb8-a27c-910c923e8cd0-part3.xml",
+        "impl--eb21d0de-3f5e-4cb8-a27c-910c923e8cd0-part4.xml",
+        "impl--eb21d0de-3f5e-4cb8-a27c-910c923e8cd0-part5.xml"
+      ],
+      "user_turns": 3,
+      "duration_minutes": 4,
+      "raw_size_kb": 201,
+      "xml_size_kb": 60,
+      "git_branch": "plnd/fix-objectives-press-p-03-10-1318"
+    }
+  ]
+}
