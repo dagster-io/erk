@@ -430,7 +430,6 @@ def _run_interactive_mode(
         http_client=http_client,
     )
     effective_state: IssueFilterState = "closed" if state == "closed" else "open"
-    exclude_labels = () if include_learn else ("erk-learn",)
 
     filters = PlanFilters(
         labels=labels,
@@ -439,7 +438,7 @@ def _run_interactive_mode(
         limit=limit,
         show_prs=prs,
         show_runs=runs,
-        exclude_labels=exclude_labels,
+        exclude_labels=() if include_learn else ("erk-learn",),
         creator=creator,
         show_pr_column=False,
         lifecycle_stage=stage,
