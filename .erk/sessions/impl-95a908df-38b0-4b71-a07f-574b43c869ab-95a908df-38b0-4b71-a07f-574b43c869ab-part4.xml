@@ -1,0 +1,652 @@
+<session>
+  <meta branch="plnd/O9109-rename-plan-pr-docs-03-10-1247" />
+  <meta model="claude-opus-4-6" />
+  <tool_result tool="toolu_01FJasCD2fELUWcnrXBZZCVQ">
+&lt;retrieval_status&gt;success&lt;/retrieval_status&gt;
+
+&lt;task_id&gt;ab9d9a5&lt;/task_id&gt;
+
+&lt;task_type&gt;local_agent&lt;/task_type&gt;
+
+&lt;status&gt;completed&lt;/status&gt;
+
+&lt;output&gt;
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/tui/data-contract.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/tui/plan-row-data.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/tui/architecture.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/tui/action-inventory.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/tui/view-switching.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/tui/view-switching.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/tui/frozen-dataclass-field-management.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/tui/runs-tab-architecture.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/tui/clipboard-text-generation.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/cli/output-styling.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/cli/output-styling.md"}
+[Tool: Grep] {"pattern":"plan_number|pr_number","path":"/home/runner/work/erk/erk/src","type":"py","output_mode":"files_with_matches"}
+[Tool: Grep] {"pattern":"\"plan_id\"|\"pr_id\"","path":"/home/runner/work/erk/erk/src/erk/tui","type":"py","output_mode":"files_with_matches"}
+[Tool: Grep] {"pattern":"\"plan_id\"|\"pr_id\"","path":"/home/runner/work/erk/erk/src/erk/tui","type":"py","output_mode":"files_with_matches"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/src/erk/tui/data/types.py","limit":100}
+[Tool: Grep] {"pattern":"pr_number.*=|plan_id.*=","path":"/home/runner/work/erk/erk/src/erk/tui/data/types.py","output_mode":"content"}
+[Tool: Grep] {"pattern":"pr_number.*=|plan_id.*=","path":"/home/runner/work/erk/erk/src/erk/tui/data/types.py","output_mode":"content"}
+[Tool: Grep] {"pattern":"\"plan_number\"|\"pr_number\"","path":"/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts","type":"py","output_mode":"content","head_limit":30}
+[Tool: Grep] {"pattern":"\"plan_number\"|\"pr_number\"","path":"/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts","type":"py","output_mode":"content","head_limit":30}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/cli/pr-submit-pipeline.md","limit":80}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/cli/exec-command-patterns.md","limit":80}
+
+... [73 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_0177LkxGCK2PkDbxRKB4e3jH">
+&lt;retrieval_status&gt;success&lt;/retrieval_status&gt;
+
+&lt;task_id&gt;a185b62&lt;/task_id&gt;
+
+&lt;task_type&gt;local_agent&lt;/task_type&gt;
+
+&lt;status&gt;completed&lt;/status&gt;
+
+&lt;output&gt;
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/plan-id-semantics.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/planned-pr-backend.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/plan-backend-migration.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/lifecycle.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/workflow.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/workflow.md"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/plan-id-semantics.md","old_string":"read_when:\n  - \"calling github.get_pr() or github.get_issue() with a plan_id\"\n  - \"writing code that handles plan IDs\"\n  - \"debugging 404 errors when fetching plan metadata\"\ntripwires:\n  - action: \"calling gh issue view with a plan_id from PlannedPRBackend\"\n    warning: \"For planned-PR plans, plan_id is a PR number, not an issue number. Use gh pr view instead. Check provider type before assuming plan_id semantics.\"","new_string":"read_when:\n  - \"calling github.get_pr() or github.get_issue() with a plan_id\"\n  - \"writing code that handles plan IDs\"\n  - \"debugging 404 errors when fetching plan metadata\"\ntripwires:\n  - action: \"calling gh issue view with a pr_id from PlannedPRBackend\"\n    warning: \"For planned-PR plans, pr_id is a PR number, not an issue number. Use gh pr view instead. Check provider type before assuming pr_id semantics.\""}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/plan-id-semantics.md","old_string":"# Plan ID Semantics\n\nThe meaning of `plan_id` depends on which backend created the plan.\n\n## Backend → plan_id Mapping\n\n| Backend          | Provider Name     | plan_id Refers To | Fetch With                          |\n| ---------------- | ----------------- | ----------------- | ----------------------------------- |\n| PlannedPRBackend | `github-draft-pr` | PR number         | `github.get_pr(repo_root, plan_id)` |\n\n## Why This Matters\n\nFor planned-PR plans, the plan content lives in a draft PR body — not a separate issue. Callers working with planned-PR plans can call `github.get_pr(plan_id)` directly without extracting metadata first.\n\n## Detection Pattern\n\n&lt;!-- Source: src/erk/cli/commands/exec/scripts/setup_impl_from_pr.py, setup_impl_from_pr function --&gt;\n\nFor planned-PR plans, call `github.get_pr(repo_root, plan_number)` and check for `PRNotFound` to handle missing plans. See the source file for the full implementation.","new_string":"# Plan ID Semantics\n\nThe meaning of `plan_id` depends on which backend created the plan.\n\n## Backend → pr_id Mapping\n\n| Backend          | Provider Name     | pr_id Refers To | Fetch With                       |\n| ---------------- | ----------------- | --------------- | -------------------------------- |\n| PlannedPRBackend | `github-draft-pr` | PR number       | `github.get_pr(repo_root, pr_id)` |\n\n## Why This Matters\n\nFor planned-PR plans, the plan content lives in a draft PR body — not a separate issue. Callers working with planned-PR plans can call `github.get_pr(pr_id)` directly without extracting metadata first.\n\n## Detection Pattern\n\n&lt;!-- Source: src/erk/cli/commands/exec/scripts/setup_impl_from_pr.py, setup_impl_from_pr function --&gt;\n\nFor planned-PR plans, call `github.get_pr(repo_root, pr_number)` and check for `PRNotFound` to handle missing plans. See the source file for the full implementation."}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/plan-id-semantics.md","old_string":"# Plan ID Semantics\n\nThe meaning of `plan_id` depends on which backend created the plan.\n\n## Backend → plan_id Mapping\n\n| Backend          | Provider Name     | plan_id Refers To | Fetch With                          |\n| ---------------- | ----------------- | ----------------- | ----------------------------------- |\n| PlannedPRBackend | `github-draft-pr` | PR number         | `github.get_pr(repo_root, plan_id)` |\n\n## Why This Matters\n\nFor planned-PR plans, the plan content lives in a draft PR body — not a separate issue. Callers working with planned-PR plans can call `github.get_pr(plan_id)` directly without extracting metadata first.\n\n## Detection Pattern\n\n&lt;!-- Source: src/erk/cli/commands/exec/scripts/setup_impl_from_pr.py, setup_impl_from_pr function --&gt;\n\nFor planned-PR plans, call `github.get_pr(repo_root, plan_number)` and check for `PRNotFound` to handle missing plans. See the source file for the full implementation.","new_string":"# Plan ID Semantics\n\nThe meaning of `plan_id` depends on which backend created the plan.\n\n## Backend → pr_id Mapping\n\n| Backend          | Provider Name     | pr_id Refers To | Fetch With                       |\n| ---------------- | ----------------- | --------------- | -------------------------------- |\n| PlannedPRBackend | `github-draft-pr` | PR number       | `github.get_pr(repo_root, pr_id)` |\n\n## Why This Matters\n\nFor planned-PR plans, the plan content lives in a draft PR body — not a separate issue. Callers working with planned-PR plans can call `github.get_pr(pr_id)` directly without extracting metadata first.\n\n## Detection Pattern\n\n&lt;!-- Source: src/erk/cli/commands/exec/scripts/setup_impl_from_pr.py, setup_impl_from_pr function --&gt;\n\nFor planned-PR plans, call `github.get_pr(repo_root, pr_number)` and check for `PRNotFound` to handle missing plans. See the source file for the full implementation."}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/planned-pr-backend.md","old_string":"tripwires:\n  - action: \"validating plan_id in exec scripts without checking provider type\"\n    warning: \"Planned PR plan_id IS the PR number (not an issue number). Check provider type before assuming plan_id semantics.\"\n    score: 4\n  - action: \"using gh issue view on a plan ID without checking plan backend type\"\n    warning: \"Planned PR plan IDs are PR numbers. Using gh issue view on a planned-PR plan produces a confusing 404. Route to gh pr view based on backend type.\"\n    score: 7","new_string":"tripwires:\n  - action: \"validating pr_id in exec scripts without checking provider type\"\n    warning: \"Planned PR pr_id IS the PR number (not an issue number). Check provider type before assuming pr_id semantics.\"\n    score: 4\n  - action: \"using gh issue view on a PR ID without checking plan backend type\"\n    warning: \"Planned PR PR IDs are PR numbers. Using gh issue view on a planned-PR plan produces a confusing 404. Route to gh pr view based on backend type.\"\n    score: 7"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/planned-pr-backend.md","old_string":"## Learn Pipeline Integration\n\nThe learn pipeline detects planned-PR plans via `plan_backend.get_provider_name()`. For planned-PR plans, `plan_id` is the PR number — the learn pipeline can call `github.get_pr(plan_id)` directly without metadata extraction. See [Plan ID Semantics](plan-id-semantics.md) for details.","new_string":"## Learn Pipeline Integration\n\nThe learn pipeline detects planned-PR plans via `plan_backend.get_provider_name()`. For planned-PR plans, `pr_id` is the PR number — the learn pipeline can call `github.get_pr(pr_id)` directly without metadata extraction. See [Plan ID Semantics](plan-id-semantics.md) for details."}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/planned-pr-backend.md","old_string":"## Learn Pipeline Integration\n\nThe learn pipeline detects planned-PR plans via `plan_backend.get_provider_name()`. For planned-PR plans, `plan_id` is the PR number — the learn pipeline can call `github.get_pr(plan_id)` directly without metadata extraction. See [Plan ID Semantics](plan-id-semantics.md) for details.","new_string":"## Learn Pipeline Integration\n\nThe learn pipeline detects planned-PR plans via `plan_backend.get_provider_name()`. For planned-PR plans, `pr_id` is the PR number — the learn pipeline can call `github.get_pr(pr_id)` directly without metadata extraction. See [Plan ID Semantics](plan-id-semantics.md) for details."}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/plan-backend-migration.md","old_string":"**After (PlanBackend):**\n\n```python\nbackend = require_plan_backend(ctx)\nplan_result = backend.get_plan(repo_root, plan_id)\nif isinstance(plan_result, PlanNotFound):\n    # Handle missing plan explicitly\n    return\n# plan_result is now typed as Plan\n```","new_string":"**After (PlanBackend):**\n\n```python\nbackend = require_plan_backend(ctx)\nplan_result = backend.get_plan(repo_root, pr_id)\nif isinstance(plan_result, PlanNotFound):\n    # Handle missing plan explicitly\n    return\n# plan_result is now typed as Plan\n```"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/plan-backend-migration.md","old_string":"## LBYL Pattern for Plan Existence\n\nAlways check plan existence **before** calling mutation methods:\n\n```python\nbackend = require_plan_backend(ctx)\nplan_id = str(issue_number)\n\n# LBYL: Check plan exists before updating\nplan_result = backend.get_plan(repo_root, plan_id)\nif isinstance(plan_result, PlanNotFound):\n    output_error(\"issue-not-found\", f\"Issue #{issue_number} not found\")\n    return\n\n# Safe to update\nbackend.update_metadata(repo_root, plan_id, metadata)\n```","new_string":"## LBYL Pattern for Plan Existence\n\nAlways check plan existence **before** calling mutation methods:\n\n```python\nbackend = require_plan_backend(ctx)\npr_id = str(issue_number)\n\n# LBYL: Check plan exists before updating\nplan_result = backend.get_plan(repo_root, pr_id)\nif isinstance(plan_result, PlanNotFound):\n    output_error(\"issue-not-found\", f\"Issue #{issue_number} not found\")\n    return\n\n# Safe to update\nbackend.update_metadata(repo_root, pr_id, metadata)\n```"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/plan-backend-migration.md","old_string":"```python\nplan_result = backend.get_plan(repo_root, plan_id)\nif isinstance(plan_result, PlanNotFound):\n    # Plan doesn't exist at all\n    return\n\ntry:\n    backend.update_metadata(repo_root, plan_id, metadata)\nexcept PlanHeaderNotFoundError:\n    # Plan exists but has no plan-header metadata block\n    output_error(\"no-plan-header-block\", str(e))\nexcept RuntimeError:\n    # GitHub API failure\n    output_error(\"github-api-failed\", str(e))\n```","new_string":"```python\nplan_result = backend.get_plan(repo_root, pr_id)\nif isinstance(plan_result, PlanNotFound):\n    # Plan doesn't exist at all\n    return\n\ntry:\n    backend.update_metadata(repo_root, pr_id, metadata)\nexcept PlanHeaderNotFoundError:\n    # Plan exists but has no plan-header metadata block\n    output_error(\"no-plan-header-block\", str(e))\nexcept RuntimeError:\n    # GitHub API failure\n    output_error(\"github-api-failed\", str(e))\n```"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/plan-backend-migration.md","old_string":"```python\n# Gist already created successfully\nplan_result = backend.get_plan(repo_root, plan_id)\nif isinstance(plan_result, PlanNotFound):\n    result[\"issue_updated\"] = False\n    result[\"issue_update_error\"] = f\"Issue #{issue_number} not found\"\nelse:\n    try:\n        backend.update_metadata(repo_root, plan_id, metadata)\n        result[\"issue_updated\"] = True\n    except RuntimeError as e:\n        result[\"issue_updated\"] = False\n        result[\"issue_update_error\"] = str(e)\n```","new_string":"```python\n# Gist already created successfully\nplan_result = backend.get_plan(repo_root, pr_id)\nif isinstance(plan_result, PlanNotFound):\n    result[\"issue_updated\"] = False\n    result[\"issue_update_error\"] = f\"Issue #{issue_number} not found\"\nelse:\n    try:\n        backend.update_metadata(repo_root, pr_id, metadata)\n        result[\"issue_updated\"] = True\n    except RuntimeError as e:\n        result[\"issue_updated\"] = False\n        result[\"issue_update_error\"] = str(e)\n```"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/plan-backend-migration.md","old_string":"## PlanBackend Methods\n\nKey methods on `PlanBackend` ABC (`packages/erk-shared/src/erk_shared/plan_store/backend.py`):\n\n| Method                                             | Returns                  | Description                                 |\n| -------------------------------------------------- | ------------------------ | ------------------------------------------- |\n| `get_plan(repo_root, plan_id)`                     | `Plan \\| PlanNotFound`   | Fetch full plan by ID                       |\n| `get_metadata_field(repo_root, plan_id, field)`    | `object \\| PlanNotFound` | Get a single metadata field value           |\n| `update_metadata(repo_root, plan_id, metadata)`    | `None \\| PlanNotFound`   | Update metadata fields in plan header block |\n| `add_label(repo_root, plan_id, label)`             | `None` (raises on fail)  | Add a label to a plan                       |\n| `post_event(repo_root, plan_id, event_type, data)` | `None`                   | Post a lifecycle event to the plan          |","new_string":"## PlanBackend Methods\n\nKey methods on `PlanBackend` ABC (`packages/erk-shared/src/erk_shared/plan_store/backend.py`):\n\n| Method                                            | Returns                  | Description                                 |\n| ------------------------------------------------- | ------------------------ | ------------------------------------------- |\n| `get_plan(repo_root, pr_id)`                     | `Plan \\| PlanNotFound`   | Fetch full plan by ID                       |\n| `get_metadata_field(repo_root, pr_id, field)`    | `object \\| PlanNotFound` | Get a single metadata field value           |\n| `update_metadata(repo_root, pr_id, metadata)`    | `None \\| PlanNotFound`   | Update metadata fields in plan header block |\n| `add_label(repo_root, pr_id, label)`             | `None` (raises on fail)  | Add a label to a plan                       |\n| `post_event(repo_root, pr_id, event_type, data)` | `None`                   | Post a lifecycle event to the plan          |"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/plan-backend-migration.md","old_string":"## PlanBackend Methods\n\nKey methods on `PlanBackend` ABC (`packages/erk-shared/src/erk_shared/plan_store/backend.py`):\n\n| Method                                             | Returns                  | Description                                 |\n| -------------------------------------------------- | ------------------------ | ------------------------------------------- |\n| `get_plan(repo_root, plan_id)`                     | `Plan \\| PlanNotFound`   | Fetch full plan by ID                       |\n| `get_metadata_field(repo_root, plan_id, field)`    | `object \\| PlanNotFound` | Get a single metadata field value           |\n| `update_metadata(repo_root, plan_id, metadata)`    | `None \\| PlanNotFound`   | Update metadata fields in plan header block |\n| `add_label(repo_root, plan_id, label)`             | `None` (raises on fail)  | Add a label to a plan                       |\n| `post_event(repo_root, plan_id, event_type, data)` | `None`                   | Post a lifecycle event to the plan          |","new_string":"## PlanBackend Methods\n\nKey methods on `PlanBackend` ABC (`packages/erk-shared/src/erk_shared/plan_store/backend.py`):\n\n| Method                                            | Returns                  | Description                                 |\n| ------------------------------------------------- | ------------------------ | ------------------------------------------- |\n| `get_plan(repo_root, pr_id)`                     | `Plan \\| PlanNotFound`   | Fetch full plan by ID                       |\n| `get_metadata_field(repo_root, pr_id, field)`    | `object \\| PlanNotFound` | Get a single metadata field value           |\n| `update_metadata(repo_root, pr_id, metadata)`    | `None \\| PlanNotFound`   | Update metadata fields in plan header block |\n| `add_label(repo_root, pr_id, label)`             | `None` (raises on fail)  | Add a label to a plan                       |\n| `post_event(repo_root, pr_id, event_type, data)` | `None`                   | Post a lifecycle event to the plan          |"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/lifecycle.md","old_string":"**`ref.json` structure:**\n\n```json\n{\n  \"provider\": \"github\",\n  \"plan_id\": \"123\",\n  \"url\": \"https://github.com/owner/repo/issues/123\",\n  \"created_at\": \"2025-01-15T10:30:00Z\",\n  \"synced_at\": \"2025-01-15T10:30:00Z\",\n  \"labels\": [],\n  \"objective_id\": null\n}\n```","new_string":"**`ref.json` structure:**\n\n```json\n{\n  \"provider\": \"github\",\n  \"pr_id\": \"123\",\n  \"url\": \"https://github.com/owner/repo/issues/123\",\n  \"created_at\": \"2025-01-15T10:30:00Z\",\n  \"synced_at\": \"2025-01-15T10:30:00Z\",\n  \"labels\": [],\n  \"objective_id\": null\n}\n```"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/lifecycle.md","old_string":"When setting up implementation environments:\n\n```bash\n# Always verify after setup\nif [ ! -f .erk/impl-context/plan-ref.json ] &amp;&amp; [ ! -f .erk/impl-context/issue.json ]; then\n  echo \"ERROR: Missing plan-ref.json - issue linking will fail\"\n  exit 1\nfi\n```","new_string":"When setting up implementation environments:\n\n```bash\n# Always verify after setup\nif [ ! -f .erk/impl-context/plan-ref.json ] &amp;&amp; [ ! -f .erk/impl-context/issue.json ]; then\n  echo \"ERROR: Missing plan-ref.json - issue linking will fail\"\n  exit 1\nfi\n```"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/lifecycle.md","old_string":"The `update-plan-header` exec command allows explicit field updates, including lifecycle stage:\n\n```bash\nerk exec update-plan-header 123 lifecycle_stage=impl\n```\n\nReturns JSON on success:\n\n```json\n{ \"success\": true, \"plan_id\": \"123\", \"fields_updated\": [\"lifecycle_stage\"] }\n```","new_string":"The `update-plan-header` exec command allows explicit field updates, including lifecycle stage:\n\n```bash\nerk exec update-plan-header 123 lifecycle_stage=impl\n```\n\nReturns JSON on success:\n\n```json\n{ \"success\": true, \"pr_id\": \"123\", \"fields_updated\": [\"lifecycle_stage\"] }\n```"}
+
+... [41 lines omitted] ...
+
+- Updated tripwire warning from `plan_id` to `pr_id` in PlannedPRBackend context
+- Updated tripwire warnings to use `pr_id` instead of `plan_id`
+  </tool_result>
+  <tool_result tool="toolu_01BYVAGymGyQRc3jZz87aYGP">
+&lt;retrieval_status&gt;success&lt;/retrieval_status&gt;
+
+&lt;task_id&gt;a8c1afe&lt;/task_id&gt;
+
+&lt;task_type&gt;local_agent&lt;/task_type&gt;
+
+&lt;status&gt;completed&lt;/status&gt;
+
+&lt;output&gt;
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/erk/branch-naming.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/erk/issue-pr-linkage-storage.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/erk/dispatch-ref-config.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/erk/pr-address-workflows.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/erk/graphite-divergence-detection.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/conventions.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/integrations/linear-erk-mapping.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/testing/cli-testing.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/testing/fake-api-migration-pattern.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/testing/import-conflict-resolution.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/testing/import-conflict-resolution.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/testing/dual-backend-testing.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/github-parsing.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/agent-backpressure-gates.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/pr-operations/plan-implementation-auto-force.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/backend-naming-conventions.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/planned-pr-branch-teleport.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/index.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/index.md"}
+[Tool: Grep] {"pattern":"class PlanRef","type":"py"}
+[Tool: Grep] {"pattern":"\"pr_number\"|\"plan_number\"","type":"py","head_limit":10}
+
+... [96 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01EpagZgazMWozHzgCJxiuQs">
+&lt;retrieval_status&gt;timeout&lt;/retrieval_status&gt;
+
+&lt;task_id&gt;a07d3b3&lt;/task_id&gt;
+
+&lt;task_type&gt;local_agent&lt;/task_type&gt;
+
+&lt;status&gt;running&lt;/status&gt;
+
+&lt;output&gt;
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/objective-update-after-land.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/branch-plan-resolution.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/plan-mismatch-recovery.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/planned-pr-lifecycle.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/metadata-update-patterns.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/branch-name-inference.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/next-steps-output.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/one-shot-workflow.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/learn-workflow.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/learn-workflow.md"}
+[Tool: Grep] {"pattern":"class PlanRef","type":"py"}
+[Tool: Grep] {"pattern":"pr_number|plan_number.*json","type":"py","glob":"**/*.py","head_limit":20}
+[Tool: Bash] {"command":"grep -r \"planned-pr-context\" /home/runner/work/erk/erk/src --include=\"*.py\" | head -5","description":"Search for planned-pr-context branch references"}
+[Tool: Bash] {"command":"grep -r \"planned-pr-context\" /home/runner/work/erk/erk/src --include=\"*.py\" | head -5","description":"Search for planned-pr-context branch references"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/impl_folder.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/impl_folder.py"}
+[Tool: Bash] {"command":"grep -r \"pr_number.*json\\|\\\"pr_number\\\"\" /home/runner/work/erk/erk/src --include=\"*.py\" | head -10","description":"Search for pr_number in JSON outputs"}
+[Tool: Bash] {"command":"grep -r \"pr_number.*json\\|\\\"pr_number\\\"\" /home/runner/work/erk/erk/src --include=\"*.py\" | head -10","description":"Search for pr_number in JSON outputs"}
+[Tool: Bash] {"command":"grep -r \"planned-pr-context.*pr_number\\|planned-pr-context.*pr_id\" /home/runner/work/erk/erk/src --include=\"*.py\"","description":"Search for branch naming with pr_number or pr_id"}
+[Tool: Bash] {"command":"grep -r \"planned-pr-context.*pr_number\\|planned-pr-context.*pr_id\" /home/runner/work/erk/erk/src --include=\"*.py\"","description":"Search for branch naming with pr_number or pr_id"}
+[Tool: Bash] {"command":"grep -r \"plan-number\\|pr-number\" /home/runner/work/erk/erk/src/erk/cli --include=\"*.py\" | grep -i \"option\\|argument\" | head -10","description":"Search for CLI option names"}
+
+... [39 lines omitted] ...
+  </tool_result>
+  <assistant>All agents have completed. Let me also wait for the last running one and then move to verification.</assistant>
+  <usage input_tokens="14464" cache_creation_input_tokens="23822" cache_read_input_tokens="118241" cache_creation="{'ephemeral_5m_input_tokens': 23822, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TaskOutput" id="toolu_01QcQqcxKh8ng1d97rVD12wq">
+    <param name="task_id">a07d3b3</param>
+    <param name="block">True</param>
+    <param name="timeout">120000</param>
+  </tool_use>
+  <usage input_tokens="14464" cache_creation_input_tokens="23822" cache_read_input_tokens="118241" cache_creation="{'ephemeral_5m_input_tokens': 23822, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01QcQqcxKh8ng1d97rVD12wq">
+&lt;retrieval_status&gt;success&lt;/retrieval_status&gt;
+
+&lt;task_id&gt;a07d3b3&lt;/task_id&gt;
+
+&lt;task_type&gt;local_agent&lt;/task_type&gt;
+
+&lt;status&gt;completed&lt;/status&gt;
+
+&lt;output&gt;
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/objective-update-after-land.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/branch-plan-resolution.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/plan-mismatch-recovery.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/planned-pr-lifecycle.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/metadata-update-patterns.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/branch-name-inference.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/next-steps-output.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/one-shot-workflow.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/learn-workflow.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/learn-workflow.md"}
+[Tool: Grep] {"pattern":"class PlanRef","type":"py"}
+[Tool: Grep] {"pattern":"pr_number|plan_number.*json","type":"py","glob":"**/*.py","head_limit":20}
+[Tool: Bash] {"command":"grep -r \"planned-pr-context\" /home/runner/work/erk/erk/src --include=\"*.py\" | head -5","description":"Search for planned-pr-context branch references"}
+[Tool: Bash] {"command":"grep -r \"planned-pr-context\" /home/runner/work/erk/erk/src --include=\"*.py\" | head -5","description":"Search for planned-pr-context branch references"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/impl_folder.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/impl_folder.py"}
+[Tool: Bash] {"command":"grep -r \"pr_number.*json\\|\\\"pr_number\\\"\" /home/runner/work/erk/erk/src --include=\"*.py\" | head -10","description":"Search for pr_number in JSON outputs"}
+[Tool: Bash] {"command":"grep -r \"pr_number.*json\\|\\\"pr_number\\\"\" /home/runner/work/erk/erk/src --include=\"*.py\" | head -10","description":"Search for pr_number in JSON outputs"}
+[Tool: Bash] {"command":"grep -r \"planned-pr-context.*pr_number\\|planned-pr-context.*pr_id\" /home/runner/work/erk/erk/src --include=\"*.py\"","description":"Search for branch naming with pr_number or pr_id"}
+[Tool: Bash] {"command":"grep -r \"planned-pr-context.*pr_number\\|planned-pr-context.*pr_id\" /home/runner/work/erk/erk/src --include=\"*.py\"","description":"Search for branch naming with pr_number or pr_id"}
+[Tool: Bash] {"command":"grep -r \"plan-number\\|pr-number\" /home/runner/work/erk/erk/src/erk/cli --include=\"*.py\" | grep -i \"option\\|argument\" | head -10","description":"Search for CLI option names"}
+
+... [105 lines omitted] ...
+  </tool_result>
+  <system subtype="" duration_ms="" />
+  <user>This session is being continued from a previous conversation that ran out of context. The conversation is summarized below:
+Analysis:
+Let me chronologically analyze this conversation:
+
+1. The user invoked `/erk:plan-implement 9156` which is a command to implement a plan from GitHub PR #9156.
+
+2. I set up the implementation by running `erk exec setup-impl --issue 9156`, which checked out the branch `plnd/O9109-rename-plan-pr-docs-03-10-1247`.
+
+3. I read the plan from `.erk/impl-context/plnd--O9109-rename-plan-pr-docs-03-10-1247/plan.md`. The plan is about renaming "plan" field terminology to "pr" in commands, skills, and docs as part of Objective #9109, Nodes 4.2 + 4.3 + 4.4.
+
+4. The plan has clear scope:
+   - **What changes:** Programmatic field names (`plan_number` → `pr_number`, `plan_id` → `pr_number`/`pr_id`, `plan_url` → `pr_url`, `plan_title` → `pr_title`, `--plan` flag → `--pr`, `&lt;plan_number&gt;` → `&lt;pr_number&gt;`, `plan #N` → `PR #N`)
+   - **What does NOT change:** "erk-plan" label, "plan" as concept noun, `--plan-type`/`--plan-file` flags, `plan.md` references, skill/command names with "plan"
+
+5. I loaded the rename-swarm skill for the bulk rename pattern.
+
+6. I investigated the actual source code to understand which fields were already renamed:
+   - `PlanRef.plan_id` → `PlanRef.pr_id` (in `packages/erk-shared/src/erk_shared/impl_folder.py`)
+   - JSON output `"plan_number"` → `"pr_number"` in exec scripts
+   - Branch pattern `planned-pr-context/{plan_id}` → `planned-pr-context/{pr_number}` (in push_session.py)
+   - BUT: `state.plan_id`, `PlanContext.plan_id`, `SubmitState.plan_id`, TUI `PlanRowData.plan_id`, `resolve_plan_id_for_branch()` are all STILL `plan_id` in source
+
+7. I launched Wave 1 (8 parallel agents) for `.claude/commands/` and `.claude/skills/` files:
+   - learn.md, plan-save.md, plan-implement.md, replan.md, land.md
+   - 5 more command files (consolidate-learn-plans, pr-address, pr-dispatch, pr-submit, objective-update-with-closed-plan)
+   - System commands (consolidate-learn-plans-plan, one-shot-plan, objective-plan-node, plan-update)
+   - Skills files (workflow.md, dignified-python-core.md, gateway-architecture.md, anti-patterns.md, rename-swarm SKILL.md, refac-cli-push-down SKILL.md)
+
+8. I launched Wave 2 (9 parallel agents) for `docs/learned/` files, carefully scoped by context:
+   - plan-ref/ref-json docs (ref-json-migration.md, plan-ref-architecture.md, issue-reference-flow.md)
+   - Session/branch docs (sessions/lifecycle.md, session-accumulation.md, session-discovery.md, session-storage-revert-rationale.md, remote-branch-learn.md, planned-pr-context-local-preprocessing.md, learn-pipeline-workflow.md, glossary.md)
+   - Planning docs batch 1 (plan-id-semantics.md, planned-pr-backend.md, plan-backend-migration.md, lifecycle.md, workflow.md)
+   - Planning docs batch 2 (objective-update-after-land.md, branch-plan-resolution.md, plan-mismatch-recovery.md, planned-pr-lifecycle.md, metadata-update-patterns.md, branch-name-inference.md, next-steps-output.md, one-shot-workflow.md, learn-workflow.md)
+   - Architecture docs batch 1 (12 files including state-threading-pattern, error-handling, pipeline-transformation, etc.)
+   - Architecture tripwires
+   - Planning tripwires
+   - TUI and CLI docs (17 files)
+   - Misc docs (17 files)
+
+9. All agents completed successfully. The results show:
+   - Wave 1: All 8 agents completed, updating ~18 files in .claude/commands/ and .claude/skills/
+   - Wave 2: All 9 agents completed, updating relevant docs in docs/learned/
+
+10. I collected all task outputs and verified the changes were applied correctly.
+
+Now let me identify pending tasks from the todo list:
+- Step 1: COMPLETED - Rename plan terminology in .claude/commands/ and .claude/skills/
+- Step 2: COMPLETED (agents all finished) - Rename plan terminology in docs/learned/
+- Step 3: PENDING - Verify AGENTS.md and CLAUDE.md need no changes
+- Step 4: PENDING - Run verification (ruff, prettier, grep for remaining occurrences)
+- Step 5: PENDING - Signal GitHub, clean up, run CI, submit PR
+
+The learn.md agent made a mistake where it created duplicate `pr_number` lines and `pr_title` lines, then had to fix them - eventually reverted `plan_title` back since it wasn't supposed to be renamed.
+
+Some agents also noted that for the `plan_title` field in learn.md YAML metadata, the agent source code still uses `plan_title` so it was reverted back.
+
+The next-steps-output.md agent added a redundant note about `format_plan_next_steps_plain()` parameters and renamed a heading "Plan-Saved Marker Format" to "PR-Saved Marker Format".
+
+The learn-workflow.md agent added a "Branch naming note" paragraph that may be unnecessary.
+
+Some of these edits from haiku agents might need review/cleanup in verification.
+
+No explicit user feedback was given during the process - the user only triggered the command and the system provided status updates.
+
+Summary:
+1. Primary Request and Intent:
+   The user invoked `/erk:plan-implement 9156` to implement GitHub PR #9156, which is a plan to rename "plan" field terminology to "pr" across commands, skills, and documentation files. This is part of Objective #9109 (Nodes 4.2, 4.3, 4.4) — the final documentation sweep after Phases 1-3 renamed source code types, gateway ABCs, exec scripts, and CLI arguments.
+
+   The rename scope is:
+   - `plan_number` → `pr_number`, `plan_id` → `pr_id` (for PlanRef field), `plan_url` → `pr_url`, `plan_title` → `pr_title`
+   - `&lt;plan-number&gt;` → `&lt;pr-number&gt;`, `--plan` flag → `--pr`, `plan #N` → `PR #N`
+   - NOT renamed: "erk-plan" label, "plan" as concept noun, `--plan-type`/`--plan-file`, `plan.md` references, skill/command names with "plan", `state.plan_id`, `PlanContext.plan_id`, TUI `plan_id`
+
+2. Key Technical Concepts:
+   - **Rename-swarm pattern**: Bulk mechanical renames using parallel haiku agents, one per file or small file group
+   - **Context-dependent rename**: `plan_id` in source code has different meanings — `PlanRef.plan_id` was renamed to `pr_id`, but `state.plan_id`, `PlanContext.plan_id`, `SubmitState.plan_id`, TUI `PlanRowData.plan_id`, `resolve_plan_id_for_branch()` all remain `plan_id`
+   - **Branch pattern rename**: `planned-pr-context/{plan_id}` → `planned-pr-context/{pr_number}` (verified in push_session.py line 232)
+   - **JSON output field rename**: `"plan_number"` → `"pr_number"` in exec script outputs
+   - **PlanRef field rename**: In `packages/erk-shared/src/erk_shared/impl_folder.py`, `PlanRef.plan_id` is now `PlanRef.pr_id` with legacy alias `{"plan_id": "pr_id"}`
+   - **erk plan-implement workflow**: setup-impl → read plan → create todos → signal GitHub → execute phases → verify → signal ended → clean up → CI → submit PR
+
+3. Files and Code Sections:
+
+   **Plan file:**
+   - `/home/runner/work/erk/erk/.erk/impl-context/plnd--O9109-rename-plan-pr-docs-03-10-1247/plan.md` — The implementation plan defining all rename patterns and scope boundaries
+
+   **Source code verification (read-only, not modified):**
+   - `packages/erk-shared/src/erk_shared/impl_folder.py` — Confirmed `PlanRef` now uses `pr_id: str` (line 162), with legacy alias `{"plan_id": "pr_id"}` (line 32)
+   - `src/erk/cli/commands/pr/submit_pipeline.py` — Confirmed `SubmitState.plan_id` is STILL `plan_id` (line 104)
+   - `src/erk/core/plan_context_provider.py` — Confirmed `PlanContext.plan_id` is STILL `plan_id` (line 26)
+   - `src/erk/tui/data/types.py` — Confirmed TUI `PlanRowData.plan_id` and `plan_url` are STILL those names (lines 97-98)
+   - `src/erk/cli/commands/exec/scripts/push_session.py` — Confirmed branch pattern is now `planned-pr-context/{pr_number}` (line 232)
+
+   **Wave 1 — .claude/commands/ files modified (14 files):**
+   - `.claude/commands/erk/learn.md` — argument-hint `[plan-number]`→`[pr-number]`, `plan_number`/`plan_url` JSON fields→`pr_number`/`pr_url`, `plan #&lt;N&gt;`→`PR #&lt;N&gt;` in output messages, `&lt;plan-number&gt;`→`&lt;pr-number&gt;` in command placeholders. Agent had issues with duplicate lines that were self-corrected.
+   - `.claude/commands/erk/plan-save.md` — `plan_number`→`pr_number`, `plan_url`→`pr_url` in JSON contract, command placeholders, and output messages
+   - `.claude/commands/erk/plan-implement.md` — argument-hint `[&lt;plan-number-or-url-or-path&gt;]`→`[&lt;pr-number-or-url-or-path&gt;]`, `plan_number`→`pr_number` in JSON parsing
+   - `.claude/commands/erk/replan.md` — argument-hint, `plan_number`→`pr_number` in JSON examples, `plan #&lt;N&gt;`→`PR #&lt;N&gt;` in output messages, error messages
+   - `.claude/commands/erk/land.md` — `plan_id`→`pr_id`, `plan_number`→`pr_number` in JSON examples
+   - `.claude/commands/erk/consolidate-learn-plans.md` — `plan_number`→`pr_number`
+   - `.claude/commands/erk/pr-address.md` — `plan_id`→`pr_id` in session push context
+   - `.claude/commands/erk/pr-dispatch.md` — `plan_number`→`pr_number`
+   - `.claude/commands/erk/pr-submit.md` — `plan_id`→`pr_id` in plan_context field description
+   - `.claude/commands/erk/objective-update-with-closed-plan.md` — `--plan`→`--pr` flag, `plan-number`→`pr-number`, `plan #&lt;N&gt;`→`PR #&lt;N&gt;`
+   - `.claude/commands/erk/system/consolidate-learn-plans-plan.md` — `plan_number`→`pr_number` in JSON
+   - `.claude/commands/erk/system/one-shot-plan.md` — `plan_number`→`pr_number` in JSON
+   - `.claude/commands/erk/system/objective-plan-node.md` — `plan-number`→`pr-number`
+   - `.claude/commands/local/plan-update.md` — argument-hint `&lt;plan-number&gt;`→`&lt;pr-number&gt;`, section headings
+
+   **Wave 1 — .claude/skills/ files modified (6 files):**
+   - `.claude/skills/erk-planning/references/workflow.md` — `plan_id`→`pr_id`, `plan_url`→`pr_url` in JSON
+   - `.claude/skills/dignified-python/dignified-python-core.md` — PlanRef examples: `plan_id`→`pr_id`, `numeric_plan_id`→`numeric_pr_id`
+   - `.claude/skills/fake-driven-testing/references/gateway-architecture.md` — `CreatePlanResult(plan_id=...)`→`CreatePlanResult(pr_id=...)`
+   - `.claude/skills/fake-driven-testing/references/anti-patterns.md` — `result.plan_id`→`result.pr_id`
+   - `.claude/skills/rename-swarm/SKILL.md` — Example heading `issue_number to plan_number`→`issue_number to pr_number`
+   - `.claude/skills/refac-cli-push-down/SKILL.md` — `plan_number`→`pr_number` in JSON examples
+
+   **Wave 2 — docs/learned/ files modified (~30+ files):**
+   
+   *Architecture docs:*
+   - `docs/learned/architecture/ref-json-migration.md` — `plan_id`→`pr_id` in PlanRef description, field mapping table, JSON example
+   - `docs/learned/architecture/plan-ref-architecture.md` — Comprehensive rename of all PlanRef field references, section headings, code examples, tripwires
+   - `docs/learned/architecture/issue-reference-flow.md` — `plan_id`→`pr_id` in function signature and JSON diagram
+   - `docs/learned/architecture/session-discovery.md` — `planned-pr-context/{plan_id}`→`planned-pr-context/{pr_number}` (6 occurrences)
+   - `docs/learned/architecture/session-storage-revert-rationale.md` — `planned-pr-context/{plan_id}`→`planned-pr-context/{pr_number}` (4 occurrences)
+   - `docs/learned/architecture/tripwires.md` — `plan_ref.plan_id`→`plan_ref.pr_id`, `planned-pr-context/{plan_id}`→`planned-pr-context/{pr_number}`
+   - `docs/learned/architecture/command-composition.md` — `"plan_number": 123`→`"pr_number": 123` in JSON
+
+   *Planning docs:*
+   - `docs/learned/planning/plan-id-semantics.md` — Table heading and content: `plan_id`→`pr_id` for PlanRef context
+   - `docs/learned/planning/planned-pr-backend.md` — Tripwires and learn integration: `plan_id`→`pr_id`
+   - `docs/learned/planning/plan-backend-migration.md` — All PlanBackend method signatures and code examples: `plan_id`→`pr_id`
+   - `docs/learned/planning/lifecycle.md` — ref.json JSON example: `"plan_id":"123"`→`"pr_id":"123"`, update-plan-header response
+   - `docs/learned/planning/workflow.md` — ref.json description: `plan_id, plan_url`→`pr_id, pr_url`
+   - `docs/learned/planning/tripwires.md` — PlanRef-related tripwires: `plan_id`→`pr_id`
+   - `docs/learned/planning/plan-mismatch-recovery.md` — `&lt;plan_number&gt;`→`&lt;pr_number&gt;` in commands
+   - `docs/learned/planning/planned-pr-lifecycle.md` — `plan_id`→`pr_id` (PlanRef context), `plan_number`→`pr_number` (function param)
+   - `docs/learned/planning/next-steps-output.md` — `plan_number: int`→`pr_number: int`, heading rename
+   - `docs/learned/planning/one-shot-workflow.md` — `"plan_number": 1234`→`"pr_number": 1234`, branch pattern
+   - `docs/learned/planning/learn-workflow.md` — `&lt;learn-plan-number&gt;`→`&lt;learn-pr-number&gt;`, added branch naming note
+   - `docs/learned/planning/learn-pipeline-workflow.md` — `planned-pr-context/{plan_id}`→`planned-pr-context/{pr_number}`
+   - `docs/learned/planning/remote-branch-learn.md` — Branch pattern rename
+   - `docs/learned/planning/planned-pr-context-local-preprocessing.md` — Branch pattern rename
+   - `docs/learned/planning/planned-pr-branch-teleport.md` — `plan_number`→`pr_number` in API call
+
+   *Session docs:*
+   - `docs/learned/sessions/lifecycle.md` — `planned-pr-context/{plan_id}`→`planned-pr-context/{pr_number}` (3 occurrences)
+   - `docs/learned/sessions/session-accumulation.md` — `"plan_id": 2521`→`"pr_number": 2521`
+
+   *CLI docs:*
+   - `docs/learned/cli/erk-exec-commands.md` — `"plan_number"`→`"pr_number"` in JSON schema descriptions
+   - `docs/learned/cli/commands/pr-prepare.md` — `plan_number`→`number` parameter reference
+
+   *Erk docs:*
+   - `docs/learned/erk/branch-naming.md` — `plan_id`→`pr_id` in plan-ref.json description
+   - `docs/learned/erk/issue-pr-linkage-storage.md` — `"plan_id":"123"`→`"pr_id":"123"` in JSON
+   - `docs/learned/conventions.md` — `plan_id`→`pr_id` in naming conventions table
+   - `docs/learned/pr-operations/plan-implementation-auto-force.md` — Clarified detection language
+   - `docs/learned/glossary.md` — `planned-pr-context/{plan_id}`→`planned-pr-context/{pr_number}`
+
+   **Files verified as needing NO changes:**
+   - All TUI docs (data-contract.md, plan-row-data.md, architecture.md, action-inventory.md, view-switching.md, frozen-dataclass-field-management.md, runs-tab-architecture.md, clipboard-text-generation.md) — TUI source still uses `plan_id`
+   - `docs/learned/architecture/state-threading-pattern.md` — `state.plan_id` still in source
+   - `docs/learned/architecture/derived-flags.md` — `state.plan_id` still in source
+   - `docs/learned/architecture/plan-context-integration.md` — `PlanContext.plan_id` still in source
+   - `docs/learned/architecture/type-safety-patterns.md` — TUI `plan_id` still in source
+   - `docs/learned/planning/branch-plan-resolution.md` — `resolve_plan_id_for_branch()` still in source
+   - `docs/learned/planning/metadata-update-patterns.md` — `resolve_plan_id_for_branch()` still in source
+   - `docs/learned/planning/objective-update-after-land.md` — `state.plan_id` references still in source
+   - Various testing, architecture, and other docs that document unchanged source code
+
+4. Errors and Fixes:
+   - **learn.md duplicate lines**: The haiku agent for learn.md accidentally created duplicate `pr_number` lines (`pr_number: &lt;pr-number&gt;` repeated twice) and duplicate `pr_title` lines. It detected and fixed these by reverting one back, eventually determining `plan_title` should NOT be renamed (it's still `plan_title` in the source) and restoring it.
+   - **learn.md `plan_title`→`pr_title` over-rename**: The agent initially renamed `plan_title` to `pr_title` in YAML metadata input fields, but upon checking the source code agent definitions, found that `plan_title` is the correct field name in agents. Reverted back to `plan_title`.
+   - **pr-submit.md `plan_context.plan_id`**: The agent for pr-submit.md renamed `plan_id` within the `plan_context` description to `pr_id`. This may be incorrect since `PlanContext.plan_id` is still `plan_id` in source — will need verification.
+   - **No user feedback errors**: The user did not provide any explicit corrections during the process.
+
+5. Problem Solving:
+   - **Context-dependent rename challenge**: The core challenge was that `plan_id` appears in many different contexts — some renamed in source (`PlanRef.plan_id`→`pr_id`), some not (`state.plan_id`, `PlanContext.plan_id`, TUI `plan_id`). Solved by systematically verifying the source code before launching agents, and providing detailed context-specific instructions to each agent about what to rename vs. what to leave.
+   - **Scale management**: ~80+ files with 200+ occurrences. Solved using the rename-swarm pattern with 17 parallel haiku agents across 2 waves.
+
+6. All User Messages:
+   - **Message 1**: `/erk:plan-implement 9156` — The only explicit user action, triggering the plan implementation workflow.
+   - No other user messages were sent — all subsequent messages were system reminders and agent progress notifications.
+
+7. Pending Tasks:
+   - **Step 3**: Verify AGENTS.md and CLAUDE.md need no changes (plan says they don't, but needs confirmation grep)
+   - **Step 4**: Run verification — grep for remaining `plan_number`, `plan_id`, `plan_url`, `plan_title` in `.claude/` and `docs/learned/` to find any missed renames; spot-check files; verify no command/skill names were accidentally renamed
+   - **Step 5**: Signal GitHub ended, upload session, clean up `.erk/impl-context/`, run CI, submit PR via `erk pr submit`
+   - **Step 4 of plan**: Mark objective #9109 nodes 4.2, 4.3, 4.4 as done
+
+8. Current Work:
+   I had just finished collecting all TaskOutput results from both Wave 1 (8 agents for `.claude/commands/` and `.claude/skills/`) and Wave 2 (9 agents for `docs/learned/`). All 17 agents completed successfully. The todo list shows:
+   - Step 1: ✅ COMPLETED
+   - Step 2: ✅ COMPLETED (all agents finished)
+   - Step 3: PENDING (verify AGENTS.md/CLAUDE.md)
+   - Step 4: PENDING (verification grep/CI)
+   - Step 5: PENDING (cleanup, CI, PR submit)
+
+9. Optional Next Step:
+   The next step is **Step 3: Verify AGENTS.md and CLAUDE.md need no changes**, followed by **Step 4: Run verification** — grep for remaining occurrences of old field names across `.claude/` and `docs/learned/` to catch any missed renames, then spot-check files. After that, proceed to **Step 5**: signal GitHub ended, cleanup impl-context, run CI, and submit the PR.
+
+   From the plan: "1. Run `ruff check` and `prettier` (via devrun) to ensure no formatting issues. 2. Grep for remaining `plan_number`, `plan_id`, `plan_url`, `plan_title` in `.claude/` and `docs/learned/` — should be zero matches (excluding intentional concept references). 3. Spot-check 5-10 files to verify context-appropriate renames (no false positives). 4. Verify no command/skill names were accidentally renamed.".
+Please continue the conversation from where we left it off without asking the user any further questions. Continue with the last task that you were asked to work on.</user>
+  <assistant>
+
+I'll continue from where we left off. Steps 1 and 2 are complete. Now I need to verify AGENTS.md/CLAUDE.md, run verification greps, and then submit the PR.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="15390" cache_read_input_tokens="20425" cache_creation="{'ephemeral_5m_input_tokens': 15390, 'ephemeral_1h_input_tokens': 0}" output_tokens="9" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_0117EF9A6M17E7oTVvWKeC3X">
+    <param name="todos">[{'content': 'Step 1: Rename plan terminology in .claude/commands/ and .claude/skills/ (~1...[truncated 663 chars]... CI, submit PR', 'status': 'pending', 'activeForm': 'Signaling GitHub and submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15390" cache_read_input_tokens="20425" cache_creation="{'ephemeral_5m_input_tokens': 15390, 'ephemeral_1h_input_tokens': 0}" output_tokens="9" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_0117EF9A6M17E7oTVvWKeC3X">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Let me verify AGENTS.md and CLAUDE.md, and simultaneously grep for remaining old field names:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="394" cache_read_input_tokens="35815" cache_creation="{'ephemeral_5m_input_tokens': 394, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_011e2Y1RWWCgQvv6eKbcFm9W">
+    <param name="pattern">plan_number|plan_id|plan_url|plan_title</param>
+    <param name="path">/home/runner/work/erk/erk/AGENTS.md</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="394" cache_read_input_tokens="35815" cache_creation="{'ephemeral_5m_input_tokens': 394, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01S4YWmLnJd9GDsLg9nnL43F">
+    <param name="pattern">plan_number|plan_id|plan_url|plan_title</param>
+    <param name="path">/home/runner/work/erk/erk/CLAUDE.md</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="394" cache_read_input_tokens="35815" cache_creation="{'ephemeral_5m_input_tokens': 394, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01TmigtLdypihptzn7oMEtk5">
+    <param name="pattern">plan_number|plan_url|plan_title</param>
+    <param name="path">/home/runner/work/erk/erk/.claude</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="394" cache_read_input_tokens="35815" cache_creation="{'ephemeral_5m_input_tokens': 394, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_0175dQVAyPnmtu8We25Vfq4S">
+    <param name="pattern">plan_number|plan_url|plan_title</param>
+    <param name="path">/home/runner/work/erk/erk/docs/learned</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="394" cache_read_input_tokens="35815" cache_creation="{'ephemeral_5m_input_tokens': 394, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01HTh3CHC1cB9RLv7mNzDa9t">
+    <param name="pattern">\bplan_id\b</param>
+    <param name="path">/home/runner/work/erk/erk/.claude</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="394" cache_read_input_tokens="35815" cache_creation="{'ephemeral_5m_input_tokens': 394, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01PkWfZgVnxy2GnbEmSH3WGu">
+    <param name="pattern">\bplan_id\b</param>
+    <param name="path">/home/runner/work/erk/erk/docs/learned</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="394" cache_read_input_tokens="35815" cache_creation="{'ephemeral_5m_input_tokens': 394, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01S4YWmLnJd9GDsLg9nnL43F">
+No matches found
+  </tool_result>
+  <tool_result tool="toolu_0175dQVAyPnmtu8We25Vfq4S">
+docs/learned/erk/dispatch-ref-config.md:101:&lt;!-- Source: src/erk/cli/commands/pr/dispatch_cmd.py, _detect_plan_number_from_context --&gt;
+docs/learned/erk/dispatch-ref-config.md:103:See `_detect_plan_number_from_context()` in `src/erk/cli/commands/pr/dispatch_cmd.py` for the implementation.
+docs/learned/erk/pr-address-workflows.md:71:| **File modified**     | Source code files      | `PLAN-REVIEW-{plan_number}.md` |
+docs/learned/erk/pr-address-workflows.md:79:2. **Edit plan file**: Make changes to `PLAN-REVIEW-{plan_number}.md` based on feedback
+docs/learned/erk/pr-address-workflows.md:90:- **PR branch**: `PLAN-REVIEW-{plan_number}.md` file (for version control)
+docs/learned/erk/pr-address-workflows.md:121:| **File modified**  | `PLAN-REVIEW-{plan_number}.md`      | `.erk/impl-context/plan.md`             |
+docs/learned/tui/clipboard-text-generation.md:34:- `copy_plan_url` — generates the GitHub URL for the plan
+docs/learned/architecture/github-parsing.md:38:See `packages/erk-shared/src/erk_shared/gateway/github/parsing.py:222-265` for `parse_pr_number_from_url` and `parse_plan_number_from_url`.
+docs/learned/tui/data-contract.md:72:| `plan_url`  | `str` | Yes      | Full URL to the plan (None if unavailable) |
+docs/learned/tui/data-contract.md:184:| `close_plan`                | `(plan_id: int, plan_url: str)`  | `list[int]` (PR numbers)    |
+docs/learned/tui/data-contract.md:185:| `dispatch_to_queue`         | `(plan_id: int, plan_url: str)`  | `None`                      |
+docs/learned/tui/architecture.md:159:Key design: display fields (e.g., `pr_display`, `checks_display`, `learn_display_icon`) are pre-formatted at fetch time so the table widget never does string formatting during render. Raw fields (e.g., `pr_number`, `plan_url`, `run_url`) are available for actions like opening URLs.
+docs/learned/architecture/error-handling-patterns.md:69:def get_plan_number():
+docs/learned/architecture/error-handling-patterns.md:80:def get_plan_number() -&gt; int | PlanNotFound:
+docs/learned/tui/plan-row-data.md:29:| `plan_url`   | `str \| None` | Full URL to the plan          | Yes                           |
+docs/learned/tui/plan-row-data.md:139:is_available=lambda ctx: ctx.row.plan_url is not None
+docs/learned/tui/plan-row-data.md:161:is_available=lambda ctx: bool(ctx.row.pr_url or ctx.row.plan_url)
+docs/learned/tui/action-inventory.md:53:| Needs plan URL     | `plan_url is not None`        | dispatch_to_queue, copy_replan, open_issue                     | Requires the plan to exist on GitHub (not just locally)       |
+docs/learned/tui/frozen-dataclass-field-management.md:44:row = PlanRowData(plan_id=123, plan_url=None, ...)
+docs/learned/architecture/agent-backpressure-gates.md:69:| `validate_plan_title`      | `generate_filename_from_title`                  | `erk_shared/naming.py`                                      |
+docs/learned/architecture/plan-ref-architecture.md:95:The `erk-statusline` package has its own plan-ref reading logic via `_load_impl_data()`, `get_plan_number()`, and `get_objective_issue()` because it cannot import from `erk_shared` (separate package with no dependency). This duplication is intentional and must be kept in sync manually.
+docs/learned/planning/learn-workflow.md:335:- `plan_title`: Title from plan
+docs/learned/planning/learn-workflow.md:352:- `plan_title`: Title from plan
+docs/learned/planning/learn-workflow.md:367:- `plan_title`: Title from plan
+docs/learned/planning/planned-pr-backend.md:125:When `erk exec plan-save --format json` detects that a plan was already saved in the current session (via the `plan-saved` marker), it returns `{"skipped_duplicate": true, "plan_number": &lt;N&gt;}`. This JSON is written to **stderr**, not stdout.
+docs/learned/cli/ambiguity-resolution.md:57:    user_output(f"Multiple branches found for plan #{plan_number}:\n")
+docs/learned/cli/ambiguity-resolution.md:83:        f"No local branch or open PR found for plan #{plan_number}\n\n"
+docs/learned/cli/ambiguity-resolution.md:85:        f"  • Run: erk implement {plan_number}"
+docs/learned/cli/workflow-run-list.md:44:Formats without `#` return None and fall back to plan-PR linkage via `extract_plan_number()` which parses `"NUMBER:HASH"` format.
+docs/learned/testing/import-conflict-resolution.md:37:from erk_shared.gateway.github.parsing import parse_pr_number, parse_plan_number
+
+... [12 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_011e2Y1RWWCgQvv6eKbcFm9W">
+No matches found
+  </tool_result>
+  <tool_result tool="toolu_01TmigtLdypihptzn7oMEtk5">
+.claude/skills/rename-swarm/SKILL.md:13:- Examples: renaming `issue_number` to `plan_number`, renaming `old_func` to `new_func`, updating a key name across config consumers
+.claude/agents/learn/existing-docs-checker.md:19:- `plan_title`: Title of the plan being analyzed (e.g., "Add parallel agent orchestration")
+.claude/agents/learn/existing-docs-checker.md:26:   - Extract key nouns and concepts from plan_title
+.claude/agents/learn/existing-docs-checker.md:102:Plan title: &lt;plan_title&gt;
+.claude/agents/learn/documentation-gap-identifier.md:23:- `plan_title`: Title of the plan being analyzed
+.claude/agents/learn/plan-synthesizer.md:22:- `plan_title`: Title from the original plan issue
+.claude/agents/learn/plan-synthesizer.md:103:# Documentation Plan: &lt;plan_title&gt;
+.claude/commands/erk/learn.md:326:    - plan_title: &lt;title from the plan&gt;
+.claude/commands/erk/learn.md:443:    - plan_title: &lt;title from the plan&gt;
+.claude/commands/erk/learn.md:482:    - plan_title: &lt;title from the plan&gt;
+  </tool_result>
+  <tool_result tool="toolu_01HTh3CHC1cB9RLv7mNzDa9t">
+.claude/skills/fake-driven-testing/references/anti-patterns.md:780:        return CreatePlanResult(plan_id=str(result.number), url=result.url)
+  </tool_result>
+  <tool_result tool="toolu_01PkWfZgVnxy2GnbEmSH3WGu">
+docs/learned/erk/graphite-divergence-detection.md:35:[Omitted long matching line]
+docs/learned/pr-operations/plan-implementation-auto-force.md:15:Auto-force is triggered when `state.plan_id is not None`, which is set when `.erk/impl-context/` is valid and contains issue tracking metadata.
+docs/learned/tui/view-switching.md:128:See `PlanBodyScreen.__init__()` in `src/erk/tui/screens/plan_body_screen.py`. Accepts `provider`, `plan_id`, `plan_body`, `full_title`, and `content_type: Literal["Plan", "Objective"]` keyword arguments.
+docs/learned/cli/output-styling.md:232:  "plan_id": "6545",
+docs/learned/cli/output-styling.md:304:   - Format: `"   Incorporating plan from issue #{plan_id}"`
+docs/learned/cli/output-styling.md:318:See `echo_plan_context_status()` in `src/erk/cli/commands/pr/shared.py` for the canonical implementation. Uses `plan_context.plan_id` (not `plan_number`) to display the plan reference.
+docs/learned/cli/output-styling.md:942:- **Internal variable names may differ.** Internal code can use `plan_id`, `plan_number`, or similar — these are implementation details. Only the user-visible strings must say "plan".
+docs/learned/cli/output-styling.md:952:click.echo(f"Plan #{plan_id} created")
+docs/learned/tui/data-contract.md:71:| `plan_id`   | `int` | No       | Plan identifier                            |
+docs/learned/tui/data-contract.md:184:| `close_plan`                | `(plan_id: int, plan_url: str)`  | `list[int]` (PR numbers)    |
+docs/learned/tui/data-contract.md:185:| `dispatch_to_queue`         | `(plan_id: int, plan_url: str)`  | `None`                      |
+docs/learned/tui/data-contract.md:187:| `fetch_plan_content`        | `(plan_id: int, plan_body: str)` | `str \| None`               |
+docs/learned/tui/data-contract.md:188:| `fetch_objective_content`   | `(plan_id: int, plan_body: str)` | `str \| None`               |
+docs/learned/cli/learn-plan-land-flow.md:45:4. Populate `state.plan_id` for execution pipeline
+docs/learned/cli/learn-plan-land-flow.md:88:The `LandState` dataclass threads `plan_id` through the validation and execution pipelines. See the `LandState` definition in `src/erk/cli/commands/land_pipeline.py`.
+docs/learned/cli/learn-plan-land-flow.md:96:1. **Validation pipeline**: `check_learn_status()` extracts from branch name → `state.plan_id`
+docs/learned/cli/learn-plan-land-flow.md:98:3. **Execution pipeline**: `make_execution_state()` re-derives from branch name → `state.plan_id`
+docs/learned/cli/learn-plan-land-flow.md:106:All learn-specific steps check `state.plan_id` and skip execution if `None`. This happens when:
+docs/learned/cli/learn-plan-land-flow.md:114:Not every branch is a plan branch. Regular feature branches should land normally without triggering learn plan logic. Checking `plan_id is None` makes the pipeline generic—it handles both plan and non-plan branches.
+docs/learned/tui/architecture.md:90:- **Raw data**: For actions and sorting (`pr_number`, `plan_id`, timestamps)
+docs/learned/cli/pr-submit-pipeline.md:37:Step 1 (`prepare_state()`) resolves 6 fields: `repo_root`, `branch_name`, `parent_branch`, `trunk_branch`, `plan_id`, and validates `.erk/impl-context/plan-ref.json` linkage (with legacy `.erk/impl-context/issue.json` fallback).
+docs/learned/cli/pr-submit-pipeline.md:41:1. **DRY** — Before this pattern, `plan_id` was derived independently in 3+ places with subtly different logic
+docs/learned/cli/pr-submit-pipeline.md:44:4. **Single source of truth** — Grep for "where does `plan_id` come from?" finds one place, not four
+docs/learned/cli/pr-submit-pipeline.md:98:**Why in prepare_state() instead of a separate "repair" step?** Because the repair needs `plan_id` (discovered in prepare), `repo_root` (discovered in prepare), and `remote_url` (fetched for repair). Preparing and repairing are coupled — no value in separating them.
+docs/learned/cli/pr-submit-pipeline.md:157:The pipeline detects plan implementations via `state.plan_id is not None or state.branch_name.startswith("plnd/")`. The branch-prefix fallback handles the case where `.erk/impl-context/` cleanup occurred before a failed push attempt, leaving `plan_id` as `None` but the branch name still indicating a plan implementation. This drives two auto-behaviors:
+docs/learned/tui/plan-row-data.md:28:| `plan_id`    | `int`         | Plan identifier               | Never                         |
+docs/learned/tui/plan-row-data.md:115:| `objective_deps_plans`        | `tuple[tuple[str, str], ...]` | Dependency plan references (plan_id, status) tuples   | Never (empty tuple)   |
+docs/learned/tui/plan-row-data.md:176:| `plan_id`                                      | (used directly in display)           | Plan identifier         |
+docs/learned/tui/action-inventory.md:52:| Always available   | `lambda _: True`              | close_plan, copy_prepare, copy_prepare_activate, copy_dispatch | Only need `plan_id`, which is always present                  |
+docs/learned/planning/objective-update-after-land.md:11:    warning: "Capture plan_id and objective_number BEFORE pipeline execution. The pipeline deletes the branch, making branch-based resolution impossible afterward."
+
+... [39 lines omitted] ...
+
+docs/learned/planning/branch-plan-resolution.md:48:- **`PlanNotFound`**: Frozen dataclass with `plan_id: str`. Returned when a plan can't be found — used as a return type, not an exception (per erk convention).
+docs/learned/planning/index.md:47:- **[plan-id-semantics.md](plan-id-semantics.md)** — calling github.get_pr() or github.get_issue() with a plan_id, writing code that handles plan IDs, debugging 404 errors when fetching plan metadata
+docs/learned/architecture/session-storage-revert-rationale.md:9:    warning: "Session storage IS branch-based (planned-pr-context/{plan_id} branches). An earlier attempt at a different branch-based approach was tried and reverted in PR #7757→#7765. The current branch-based approach (push_session.py) is the stable implementation."
+docs/learned/architecture/error-handling-patterns.md:30:    backend.update_metadata(repo_root, plan_id, metadata={"lifecycle_stage": "impl"})
+docs/learned/architecture/selection-preservation-by-value.md:13:    warning: "Track selection by unique identifier (plan_id, row key), not array position. Array indices become unstable when rows are added, removed, or reordered."
+  </tool_result>
+  <assistant>Good. AGENTS.md and CLAUDE.md have zero matches — confirmed no changes needed. Now let me analyze the remaining occurrences to categorize them:
+
+**Legitimate remaining `plan_id` references** (source code still uses `plan_id`):
+- TUI docs (`data-contract.md`, `plan-row-data.md`, `architecture.md`, `action-inventory.md`, `frozen-dataclass-field-management.md`, `view-switching.md`) — TUI source uses `PlanRowData.plan_id`
+- CLI docs (`output-styling.md`, `pr-submit-pipeline.md`, `learn-plan-land-flow.md`, `land-learn-integration.md`) — source uses `state.plan_id`, `PlanContext.plan_id`
+- Architecture docs (`state-threading-pattern.md`, `derived-flags.md`, `plan-context-integration.md`, `selection-preservation-by-value.md`, `linear-pipelines.md`, `land-state-threading.md`, `type-safety-patterns.md`, etc.) — these document `state.plan_id`, TUI `plan_id`
+- Planning docs (`objective-update-after-land.md`, `branch-plan-resolution.md`, `plan-id-semantics.md`, `tripwires.md`, `lifecycle.md`) — document `state.plan_id`, `PlanNotFound(plan_id=...)`
+
+**Remaining `plan_number` / `plan_url` / `plan_title` references to check:**
+
+Let me look at the specific remaining matches more carefully:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="6896" cache_read_input_tokens="36209" cache_creation="{'ephemeral_5m_input_tokens': 6896, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01TcgBNzSarY3opXGj6zRzRL">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/skills/fake-driven-testing/references/anti-patterns.md</param>
+    <param name="offset">775</param>
+    <param name="limit">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6896" cache_read_input_tokens="36209" cache_creation="{'ephemeral_5m_input_tokens': 6896, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01UcbFagTdrDZtBGzD8omYA4">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/skills/rename-swarm/SKILL.md</param>
+    <param name="offset">10</param>
+    <param name="limit">8</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6896" cache_read_input_tokens="36209" cache_creation="{'ephemeral_5m_input_tokens': 6896, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01D8Aghqyw5eiroYbHdNxbPm">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/agents/learn/existing-docs-checker.md</param>
+    <param name="offset">15</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6896" cache_read_input_tokens="36209" cache_creation="{'ephemeral_5m_input_tokens': 6896, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_012w7GkEprCJH1qc3Y1CrxTk">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/erk/pr-address-workflows.md</param>
+    <param name="offset">65</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6896" cache_read_input_tokens="36209" cache_creation="{'ephemeral_5m_input_tokens': 6896, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01P1mTfiW8a59MRS7BQQJRf9">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/erk/dispatch-ref-config.md</param>
+    <param name="offset">97</param>
+    <param name="limit">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6896" cache_read_input_tokens="36209" cache_creation="{'ephemeral_5m_input_tokens': 6896, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01YaH672C8Xanvmiy4VNxbHH">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/learn-workflow.md</param>
+    <param name="offset">325</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6896" cache_read_input_tokens="36209" cache_creation="{'ephemeral_5m_input_tokens': 6896, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01HuPxtmB2Xf3PdAdcc1MpWM">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/planned-pr-backend.md</param>
+    <param name="offset">120</param>
+    <param name="limit">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6896" cache_read_input_tokens="36209" cache_creation="{'ephemeral_5m_input_tokens': 6896, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01Vh93Sh8NRBUDbioEh9KKoB">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/ambiguity-resolution.md</param>
+    <param name="offset">52</param>
+    <param name="limit">40</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6896" cache_read_input_tokens="36209" cache_creation="{'ephemeral_5m_input_tokens': 6896, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01TcgBNzSarY3opXGj6zRzRL">
+   775→    def __init__(self, github_issues: GitHubIssues):
+   776→        self._github_issues = github_issues  # Gateway injected here
+   777→
+   778→    def create_plan(self, ...) -&gt; CreatePlanResult:
+   779→        result = self._github_issues.create_issue(...)
+   780→        return CreatePlanResult(plan_id=str(result.number), url=result.url)
+   781→
+   782→# ✅ CORRECT: Test backend with fake gateway
+   783→def test_create_plan():
+   784→    fake_issues = FakeGitHubIssues()  # Fake at gateway level
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_01UcbFagTdrDZtBGzD8omYA4">
+    10→- Renaming an identifier, parameter, key, or variable across **5+ files**
+    11→- The renames are **mechanical** — same find-and-replace logic in each file, no reasoning required
+    12→- Files are **independent** — editing file A doesn't affect what needs to change in file B
+    13→- Examples: renaming `issue_number` to `plan_number`, renaming `old_func` to `new_func`, updating a key name across config consumers
+    14→
+    15→## When NOT to Use
+    16→
+    17→- **Cross-file cascading refactors** where renaming a shared type changes method signatures, requiring each file to adapt differently
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_01D8Aghqyw5eiroYbHdNxbPm">
+    15→## Input
+    16→
+    17→You receive:
+    18→
+    19→- `plan_title`: Title of the plan being analyzed (e.g., "Add parallel agent orchestration")
+    20→- `pr_title`: PR title if available (often similar to plan title)
+    21→- `search_hints`: Key terms extracted from plan title (e.g., "parallel", "agent", "orchestration")
+    22→
+    23→## Search Process
+    24→
+    25→1. **Generate search terms from inputs:**
+    26→   - Extract key nouns and concepts from plan_title
+    27→   - Combine with provided search_hints
+    28→   - Remove common words (the, a, an, to, for, with, etc.)
+    29→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+</session>

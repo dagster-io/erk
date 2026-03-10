@@ -1,0 +1,47 @@
+{
+  "version": 1,
+  "pr_number": 9156,
+  "sessions": [
+    {
+      "session_id": "95a908df-38b0-4b71-a07f-574b43c869ab",
+      "stage": "impl",
+      "source": "remote",
+      "uploaded_at": "2026-03-10T13:06:20.130770+00:00",
+      "files": [
+        "impl-95a908df-38b0-4b71-a07f-574b43c869ab-95a908df-38b0-4b71-a07f-574b43c869ab-part1.xml",
+        "impl-95a908df-38b0-4b71-a07f-574b43c869ab-95a908df-38b0-4b71-a07f-574b43c869ab-part10.xml",
+        "impl-95a908df-38b0-4b71-a07f-574b43c869ab-95a908df-38b0-4b71-a07f-574b43c869ab-part11.xml",
+        "impl-95a908df-38b0-4b71-a07f-574b43c869ab-95a908df-38b0-4b71-a07f-574b43c869ab-part12.xml",
+        "impl-95a908df-38b0-4b71-a07f-574b43c869ab-95a908df-38b0-4b71-a07f-574b43c869ab-part13.xml",
+        "impl-95a908df-38b0-4b71-a07f-574b43c869ab-95a908df-38b0-4b71-a07f-574b43c869ab-part14.xml",
+        "impl-95a908df-38b0-4b71-a07f-574b43c869ab-95a908df-38b0-4b71-a07f-574b43c869ab-part15.xml",
+        "impl-95a908df-38b0-4b71-a07f-574b43c869ab-95a908df-38b0-4b71-a07f-574b43c869ab-part16.xml",
+        "impl-95a908df-38b0-4b71-a07f-574b43c869ab-95a908df-38b0-4b71-a07f-574b43c869ab-part17.xml",
+        "impl-95a908df-38b0-4b71-a07f-574b43c869ab-95a908df-38b0-4b71-a07f-574b43c869ab-part18.xml",
+        "impl-95a908df-38b0-4b71-a07f-574b43c869ab-95a908df-38b0-4b71-a07f-574b43c869ab-part19.xml",
+        "impl-95a908df-38b0-4b71-a07f-574b43c869ab-95a908df-38b0-4b71-a07f-574b43c869ab-part2.xml",
+        "impl-95a908df-38b0-4b71-a07f-574b43c869ab-95a908df-38b0-4b71-a07f-574b43c869ab-part20.xml",
+        "impl-95a908df-38b0-4b71-a07f-574b43c869ab-95a908df-38b0-4b71-a07f-574b43c869ab-part21.xml",
+        "impl-95a908df-38b0-4b71-a07f-574b43c869ab-95a908df-38b0-4b71-a07f-574b43c869ab-part22.xml",
+        "impl-95a908df-38b0-4b71-a07f-574b43c869ab-95a908df-38b0-4b71-a07f-574b43c869ab-part23.xml",
+        "impl-95a908df-38b0-4b71-a07f-574b43c869ab-95a908df-38b0-4b71-a07f-574b43c869ab-part24.xml",
+        "impl-95a908df-38b0-4b71-a07f-574b43c869ab-95a908df-38b0-4b71-a07f-574b43c869ab-part25.xml",
+        "impl-95a908df-38b0-4b71-a07f-574b43c869ab-95a908df-38b0-4b71-a07f-574b43c869ab-part26.xml",
+        "impl-95a908df-38b0-4b71-a07f-574b43c869ab-95a908df-38b0-4b71-a07f-574b43c869ab-part27.xml",
+        "impl-95a908df-38b0-4b71-a07f-574b43c869ab-95a908df-38b0-4b71-a07f-574b43c869ab-part28.xml",
+        "impl-95a908df-38b0-4b71-a07f-574b43c869ab-95a908df-38b0-4b71-a07f-574b43c869ab-part3.xml",
+        "impl-95a908df-38b0-4b71-a07f-574b43c869ab-95a908df-38b0-4b71-a07f-574b43c869ab-part4.xml",
+        "impl-95a908df-38b0-4b71-a07f-574b43c869ab-95a908df-38b0-4b71-a07f-574b43c869ab-part5.xml",
+        "impl-95a908df-38b0-4b71-a07f-574b43c869ab-95a908df-38b0-4b71-a07f-574b43c869ab-part6.xml",
+        "impl-95a908df-38b0-4b71-a07f-574b43c869ab-95a908df-38b0-4b71-a07f-574b43c869ab-part7.xml",
+        "impl-95a908df-38b0-4b71-a07f-574b43c869ab-95a908df-38b0-4b71-a07f-574b43c869ab-part8.xml",
+        "impl-95a908df-38b0-4b71-a07f-574b43c869ab-95a908df-38b0-4b71-a07f-574b43c869ab-part9.xml"
+      ],
+      "user_turns": 4,
+      "duration_minutes": 15,
+      "raw_size_kb": 1550,
+      "xml_size_kb": 1110,
+      "git_branch": "plnd/O9109-rename-plan-pr-docs-03-10-1247"
+    }
+  ]
+}

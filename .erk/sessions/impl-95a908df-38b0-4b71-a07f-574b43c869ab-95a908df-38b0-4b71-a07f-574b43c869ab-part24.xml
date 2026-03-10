@@ -1,0 +1,621 @@
+<session>
+  <meta source="agent-ac2e259" />
+  <meta branch="plnd/O9109-rename-plan-pr-docs-03-10-1247" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>Update the following documentation files. `PlanRef.plan_id` is now `PlanRef.pr_id`. JSON output `"plan_number"` is now `"pr_number"`.
+
+IMPORTANT: `state.plan_id`, `PlanContext.plan_id`, `resolve_plan_id_for_branch()` are STILL `plan_id` in source. Do NOT rename those.
+
+**File 1: `/home/runner/work/erk/erk/docs/learned/architecture/state-threading-pattern.md`**
+- `state.plan_id` and `SubmitState.plan_id` are still `plan_id` in source. Leave ALL references to `plan_id` unchanged.
+- `extract_plan_id()` — leave unchanged.
+- This file likely needs NO changes.
+
+**File 2: `/home/runner/work/erk/erk/docs/learned/architecture/error-handling-patterns.md`**
+- `backend.update_metadata(repo_root, plan_id, ...)` — if this documents the PlanBackend ABC method which was renamed to `pr_id`, update. Otherwise leave.
+- `get_plan_number()` function examples — these are general pattern examples, may not need renaming.
+
+**File 3: `/home/runner/work/erk/erk/docs/learned/architecture/pipeline-transformation-patterns.md`**
+- `plan_id=plan.plan_id` — if `plan.plan_id` refers to a PlanRef field (now pr_id), update to `pr_id=plan.pr_id`. If it refers to something else, leave.
+- `plan_id: int` in a dataclass — context dependent. Read the file to determine.
+
+**File 4: `/home/runner/work/erk/erk/docs/learned/architecture/plan-context-integration.md`**
+- `PlanContext.plan_id` — still `plan_id` in source. Leave unchanged.
+
+**File 5: `/home/runner/work/erk/erk/docs/learned/architecture/type-safety-patterns.md`**
+- `row.plan_id` — this is TUI PlanRowData which still has `plan_id`. Leave unchanged.
+
+**File 6: `/home/runner/work/erk/erk/docs/learned/architecture/command-composition.md`**
+- JSON output: `"plan_number": 123` → `"pr_number": 123` (if this is exec script output)
+
+**File 7: `/home/runner/work/erk/erk/docs/learned/architecture/derived-flags.md`**
+- `state.plan_id` — leave unchanged (still in source)
+
+**File 8: `/home/runner/work/erk/erk/docs/learned/architecture/land-state-threading.md`**
+- `plan_id` field in submit state — still `plan_id` in source. Leave unchanged.
+
+**File 9: `/home/runner/work/erk/erk/docs/learned/architecture/json-parsing-patterns.md`**
+- `plan_id=data["plan_id"]` — if this parses PlanRef JSON where the field is now `pr_id`, update. Read the file to determine context.
+
+**File 10: `/home/runner/work/erk/erk/docs/learned/architecture/linear-pipelines.md`**
+- `plan_id` references — if they refer to `state.plan_id` or execution state, leave unchanged.
+
+**File 11: `/home/runner/work/erk/erk/docs/learned/architecture/optional-field-propagation.md`**
+- `plan_id=plan.plan_id` — determine context and update if PlanRef.
+
+**File 12: `/home/runner/work/erk/erk/docs/learned/architecture/selection-preservation-by-value.md`**
+- Check if `plan_id` refers to TUI row data (leave unchanged) or PlanRef (rename).
+
+Read each file first, then apply ONLY the changes that are clearly about renamed source code fields. Skip files that don't need changes.</user>
+  <assistant>I'll help you update the documentation files. Let me start by reading each file to understand the context and determine which changes are needed.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="6816" cache_read_input_tokens="10097" cache_creation="{'ephemeral_5m_input_tokens': 6816, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01SEwb5p8GrtaHzyLKqArTVV">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/state-threading-pattern.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6816" cache_read_input_tokens="10097" cache_creation="{'ephemeral_5m_input_tokens': 6816, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_014cRuFJpd86RxJ5ijTJyeY2">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/error-handling-patterns.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6816" cache_read_input_tokens="10097" cache_creation="{'ephemeral_5m_input_tokens': 6816, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_016FfTusGY4jAwFahNyFeqmv">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/pipeline-transformation-patterns.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6816" cache_read_input_tokens="10097" cache_creation="{'ephemeral_5m_input_tokens': 6816, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01WGy7pcurby8AYcL6peVzBG">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/plan-context-integration.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6816" cache_read_input_tokens="10097" cache_creation="{'ephemeral_5m_input_tokens': 6816, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01FtTwxVKzsxTWXFEbuYE9iy">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/type-safety-patterns.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6816" cache_read_input_tokens="10097" cache_creation="{'ephemeral_5m_input_tokens': 6816, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Jz1JsETvp24oJ3wNwWDdtC">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/command-composition.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6816" cache_read_input_tokens="10097" cache_creation="{'ephemeral_5m_input_tokens': 6816, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_017gBGsiqcErBqc2EFtB6yN6">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/derived-flags.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6816" cache_read_input_tokens="10097" cache_creation="{'ephemeral_5m_input_tokens': 6816, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01VfLaFiGzQCNNgYHZYu1wjs">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/land-state-threading.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6816" cache_read_input_tokens="10097" cache_creation="{'ephemeral_5m_input_tokens': 6816, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01HPJjQEZGeCDHnjXaHexLQ7">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/json-parsing-patterns.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6816" cache_read_input_tokens="10097" cache_creation="{'ephemeral_5m_input_tokens': 6816, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01NTDnwYGPb37dNhPe6JGMB5">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/linear-pipelines.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6816" cache_read_input_tokens="10097" cache_creation="{'ephemeral_5m_input_tokens': 6816, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_011MAhRKFbbTXVLszAQCNYti">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/optional-field-propagation.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6816" cache_read_input_tokens="10097" cache_creation="{'ephemeral_5m_input_tokens': 6816, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_015YzXRCRsg4v7iLjiC7MbLS">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/selection-preservation-by-value.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6816" cache_read_input_tokens="10097" cache_creation="{'ephemeral_5m_input_tokens': 6816, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01SEwb5p8GrtaHzyLKqArTVV">
+     1→---
+     2→title: State Threading Pattern
+     3→last_audited: "2026-02-16 00:00 PT"
+     4→audit_result: clean
+     5→read_when:
+     6→  - "designing linear pipelines with immutable state"
+     7→  - "understanding SubmitState or pipeline architecture"
+     8→  - "implementing multi-step workflows with frozen dataclasses"
+     9→tripwires:
+    10→  - action: "mutating pipeline state directly instead of using dataclasses.replace()"
+    11→    warning: "Pipeline state must be frozen. Use dataclasses.replace() to create new state at each step."
+    12→  - action: "adding optional fields to pipeline state without defaults"
+    13→    warning: "New pipeline state fields must have defaults (usually None) to avoid breaking make_initial_state() factories. See optional-field-propagation.md for the pattern."
+    14→---
+    15→
+    16→# State Threading Pattern
+    17→
+    18→State threading is the immutable data flow pattern underlying erk's linear pipelines. This document explains **why** frozen dataclasses and explicit state accumulation matter for pipeline composition, not **what** the code looks like (read the source for that).
+    19→
+    20→## The Core Problem: Mutable State Creates Hidden Dependencies
+    21→
+    22→Traditional imperative code mutates local variables as operations progress:
+    23→
+    24→```python
+    25→# WRONG: Mutable state pattern (anti-pattern)
+    26→branch_name = None
+    27→pr_number = None
+    28→plan_id = None
+    29→
+    30→# Step 1
+
+... [169 lines omitted] ...
+
+    57→2. Each step takes state as input, returns updated state (or error) as output
+    80→**Trade-off:** State carries fields that aren't relevant to early steps (e.g., `graphite_url` is `None` during validation). This is intentional — the runner doesn't need to know which fields are valid at which step. The `isinstance(result, Error)` check is the only branch.
+    96→**Critical constraint:** When adding new fields to state, they **must** have default values. Otherwise `make_initial_state()` breaks with "missing required argument" errors. See [Optional Field Propagation](optional-field-propagation.md) for the detailed pattern.
+   113→## Type Narrowing After Error Checks
+   115→The discriminated union pattern (`State | Error`) enables type narrowing:
+   121→    return SubmitError(phase="prepare", error_type="no_branch", ...)
+   130→- **Runtime safety** — if a step forgets to check, type error surfaces at development time
+   132→See [Discriminated Union Error Handling](discriminated-union-error-handling.md) for the full pattern.
+   139→- Steps can fail independently, and failures should stop the pipeline
+   140→- You need clear error attribution (which phase failed and why)
+   186→- Error handling is explicit (return `Error`) rather than hidden in monad machinery
+   191→- [Discriminated Union Error Handling](discriminated-union-error-handling.md) — The `State | Error` union pattern
+  </tool_result>
+  <tool_result tool="toolu_014cRuFJpd86RxJ5ijTJyeY2">
+     1→---
+     2→title: Error Handling Patterns
+     3→read_when:
+     4→  - "implementing error handling in exec scripts"
+     5→  - "deciding between fail-fast and best-effort patterns"
+     6→  - "handling GitHub API errors gracefully"
+     7→tripwires:
+     8→  - action: "swallowing errors silently in a deterministic code path"
+     9→    warning: "Never suppress errors deterministically. Use best-effort (catch + log warning) only for truly optional operations. Use error-first (check + fail with remediation) for required operations."
+    10→    score: 5
+    11→  - action: "writing a try-except block that wraps multiple independent operations"
+    12→    warning: "Minimal exception scope: each try block should wrap only the single operation that can raise the caught exception. Split into separate try-except blocks with early returns. Broader scope is only acceptable when statements form an atomic unit (same message and recovery regardless of which line raises). See dignified-python references/exception-handling.md."
+    13→    score: 4
+    14→---
+    15→
+    16→# Error Handling Patterns
+    17→
+    18→Erk uses three distinct error handling strategies depending on the operation's criticality. These patterns apply specifically to exec scripts and gateway operations.
+    19→
+    20→## Pattern 1: Best-Effort, Never-Block
+    21→
+    22→For optional operations that should not prevent the main workflow from completing.
+    23→
+    24→**When to use:** Lifecycle stage updates, telemetry, non-critical metadata writes.
+    25→
+    26→**Pattern:** Catch the exception, log a warning, and continue.
+    27→
+    28→```python
+    29→try:
+    30→    backend.update_metadata(repo_root, plan_id, metadata={"lifecycle_stage": "impl"})
+
+... [75 lines omitted] ...
+
+    31→except RuntimeError as e:
+    33→    click.echo(f"Warning: Failed to update lifecycle stage: {e}", err=True)
+    36→**Example:** `mark_impl_started.py` catches `RuntimeError` from GitHub API failures and returns a success=False result without raising, allowing the implementation to proceed.
+    38→## Pattern 2: Error-First Validation
+    40→For operations where failure should stop execution immediately with actionable remediation.
+    44→**Pattern:** Check all preconditions before attempting the operation. Fail with a clear error message that includes remediation steps.
+    49→    click.echo(f"Error: Plan file not found: {plan_file}")
+    60→Deterministic error suppression is forbidden. If an operation fails in a predictable way, it should either:
+    62→1. **Fail loudly** with a clear error message
+    72→    except (FileNotFoundError, ValueError):
+    79→# RIGHT: Explicit sentinel or error
+    98→- [Discriminated Union Error Handling](discriminated-union-error-handling.md) - Result type patterns
+    99→- [Command Composition](command-composition.md) - How orchestrator commands aggregate errors
+  </tool_result>
+  <tool_result tool="toolu_016FfTusGY4jAwFahNyFeqmv">
+     1→---
+     2→title: Pipeline Transformation Patterns
+     3→read_when:
+     4→  - "designing data transformation pipelines"
+     5→  - "deciding when to enrich vs filter data"
+     6→  - "troubleshooting lost metadata in pipelines"
+     7→last_audited: "2026-02-16 14:10 PT"
+     8→audit_result: clean
+     9→---
+    10→
+    11→# Pipeline Transformation Patterns
+    12→
+    13→When data flows through multiple transformation stages, the ordering of operations matters. This document covers patterns for maintaining data integrity.
+    14→
+    15→## The ENRICH → FILTER → DISPLAY Principle
+    16→
+    17→Data pipelines should follow this order:
+    18→
+    19→```
+    20→Raw Data → ENRICH (add metadata) → FILTER (reduce set) → DISPLAY (format for output)
+    21→```
+    22→
+    23→### Why This Order
+    24→
+    25→**ENRICH before FILTER**: Enrichment adds metadata needed for filtering decisions. If you filter first, you can't enrich filtered-out items, and re-adding them later loses metadata.
+    26→
+    27→**FILTER before DISPLAY**: Display formatting is expensive. Only format items that will be shown.
+    28→
+    29→### Anti-Pattern: Filter Before Enrich
+    30→
+
+... [72 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01WGy7pcurby8AYcL6peVzBG">
+     1→---
+     2→title: Plan Context Integration
+     3→read_when:
+     4→  - "using PlanContextProvider for PR generation"
+     5→  - "extracting plan content from branches"
+     6→  - "understanding how PR descriptions get plan context"
+     7→tripwires:
+     8→  - action: "using PlanContextProvider"
+     9→    warning: "Read this doc first. PlanContextProvider returns None on any failure (graceful degradation). Always handle the None case."
+    10→last_audited: "2026-02-16 14:20 PT"
+    11→audit_result: clean
+    12→---
+    13→
+    14→# Plan Context Integration
+    15→
+    16→The `PlanContextProvider` extracts plan content for branches linked to erk plans, enabling more accurate PR descriptions that understand the "why" behind changes.
+    17→
+    18→## 5-Step Extraction Algorithm
+    19→
+    20→Given a branch name, the provider attempts to extract plan context through these steps:
+    21→
+    22→```
+    23→1. Extract issue number from branch name
+    24→   P5763-fix-bug → 5763
+    25→   ↓
+    26→2. Fetch the issue body from GitHub
+    27→   GET /repos/{owner}/{repo}/issues/5763
+    28→   ↓
+    29→3. Extract plan_comment_id from issue metadata
+    30→   Parse YAML header for `plan_comment_id: 123456789`
+
+... [73 lines omitted] ...
+
+    62→- API errors occur
+  </tool_result>
+  <tool_result tool="toolu_01FtTwxVKzsxTWXFEbuYE9iy">
+     1→---
+     2→title: Type Safety Patterns
+     3→last_audited: "2026-02-16 14:20 PT"
+     4→audit_result: clean
+     5→read_when:
+     6→  - "designing flexible collection types"
+     7→  - "working with union types in Python"
+     8→  - "handling mixed-type lists"
+     9→---
+    10→
+    11→# Type Safety Patterns
+    12→
+    13→Patterns for maintaining type safety with flexible data structures in Python.
+    14→
+    15→## Union Types for Flexible Collections
+    16→
+    17→When a list needs to accept multiple types (e.g., plain strings and Rich `Text` objects), use union types:
+    18→
+    19→```python
+    20→from rich.text import Text
+    21→
+    22→def render_table(rows: list[list[str | Text]]) -&gt; None:
+    23→    """Render rows that may contain strings or Text objects."""
+    24→    for row in rows:
+    25→        for cell in row:
+    26→            # Both str and Text have __str__, so this works
+    27→            print(str(cell))
+    28→```
+    29→
+    30→### Benefits
+
+... [89 lines omitted] ...
+
+    32→- **Type checker catches errors** - Can't accidentally pass incompatible types
+  </tool_result>
+  <tool_result tool="toolu_01Jz1JsETvp24oJ3wNwWDdtC">
+     1→---
+     2→title: Command Composition Pattern
+     3→read_when:
+     4→  - "creating an exec script that orchestrates other exec scripts"
+     5→  - "understanding setup-impl command architecture"
+     6→  - "adding CWD injection for testability"
+     7→tripwires:
+     8→  - action: "using Path.cwd() directly in an exec script without CWD injection"
+     9→    warning: "Use `cwd: Path | None = None` parameter defaulting to `Path.cwd()` for testability. This allows tests to override the working directory."
+    10→    score: 5
+    11→---
+    12→
+    13→# Command Composition Pattern
+    14→
+    15→Exec scripts can orchestrate other exec scripts as sub-commands, aggregating their JSON outputs into a combined result. This pattern enables complex workflows while keeping individual commands focused and testable.
+    16→
+    17→## Pattern
+    18→
+    19→```
+    20→Orchestrator exec script
+    21→  ├── Sub-command 1 (e.g., setup-impl-from-pr)
+    22→  ├── Sub-command 2 (e.g., impl-init)
+    23→  └── Sub-command 3 (e.g., cleanup-impl-context)
+    24→```
+    25→
+    26→The orchestrator calls sub-commands as Python functions (not subprocess calls), aggregates their results, and returns a combined JSON output.
+    27→
+    28→## Example: `setup-impl`
+    29→
+    30→The `setup-impl` command (`src/erk/cli/commands/exec/scripts/setup_impl.py`) demonstrates this pattern:
+
+... [36 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_017gBGsiqcErBqc2EFtB6yN6">
+     1→---
+     2→title: Derived Flags Pattern
+     3→read_when:
+     4→  - "combining a user-provided flag with automatic detection"
+     5→  - "adding auto-behavior that should be transparent to the user"
+     6→  - "implementing --force auto-detection for plan implementations"
+     7→tripwires:
+     8→  - action: "auto-enabling a flag without informing the user"
+     9→    warning: "When deriving a flag from auto-detection, always print a dim-styled informational message explaining why the behavior was activated. Users should never be surprised by automatic actions."
+    10→---
+    11→
+    12→# Derived Flags Pattern
+    13→
+    14→When a boolean flag should be auto-enabled based on context (e.g., plan implementation always needs force-push), derive an **effective flag** that combines user intent with auto-detection.
+    15→
+    16→## Pattern
+    17→
+    18→```python
+    19→effective_flag = user_flag or auto_detected_condition
+    20→```
+    21→
+    22→## Canonical Example: Auto-Force Push
+    23→
+    24→&lt;!-- Source: src/erk/cli/commands/pr/submit_pipeline.py, _run_phase1_graphite_submit --&gt;
+    25→
+    26→See `_run_phase1_graphite_submit()` in `src/erk/cli/commands/pr/submit_pipeline.py`. The plan detection condition combines `state.plan_id is not None` (normal case) with `state.branch_name.startswith("plnd/")` (fallback when impl-context was deleted before push). The effective force flag is then `state.force or is_plan_impl`.
+    27→
+    28→**Why:** Plan implementation branches always diverge from remote because the draft PR scaffolding commits differ from the worker's implementation commits. Requiring `--force` every time would be a UX burden with no safety benefit.
+    29→
+    30→## User Transparency
+
+... [35 lines omitted] ...
+
+    42→The dim styling signals informational output (not an error or warning).
+  </tool_result>
+  <tool_result tool="toolu_01VfLaFiGzQCNNgYHZYu1wjs">
+     1→---
+     2→title: Land State Threading Pattern
+     3→read_when:
+     4→  - "implementing pipelines with immutable state"
+     5→  - "using dataclasses.replace() for state updates"
+     6→  - "designing stateful workflows with frozen dataclasses"
+     7→tripwires:
+     8→  - action: "threading state through pipeline steps with mutable dataclasses"
+     9→    warning: "Use frozen dataclasses (@dataclass(frozen=True)) for pipeline state. Update fields with dataclasses.replace() to create new instances. Immutability enables caching, testability, and replay."
+    10→last_audited: "2026-02-07 20:43 PT"
+    11→audit_result: edited
+    12→---
+    13→
+    14→# Land State Threading Pattern
+    15→
+    16→Pipeline steps thread immutable state through functional transformations. This document explains **why** erk uses frozen dataclasses for pipeline state, not **what** the implementation looks like (the code already shows that).
+    17→
+    18→## Why Immutability for Pipeline State
+    19→
+    20→The land command demonstrates three critical benefits of immutable state threading that generalize to any multi-step pipeline:
+    21→
+    22→### 1. Shell Script Serialization Boundary
+    23→
+    24→&lt;!-- Source: src/erk/cli/commands/land_pipeline.py, two-pipeline pattern --&gt;
+    25→
+    26→The land command splits into two pipelines separated by a shell script boundary. See `run_validation_pipeline()` and `run_execution_pipeline()` in `src/erk/cli/commands/land_pipeline.py`.
+    27→
+    28→**The problem**: After validation completes, the user must approve execution by sourcing a shell script. This creates a serialization boundary—all state must encode as CLI flags and arguments.
+    29→
+    30→**Why immutability matters**:
+
+... [118 lines omitted] ...
+
+   105→state.branch = discovered_branch  # Compiler error with frozen=True
+   118→def merge_pr(ctx: ErkContext, state: LandState) -&gt; LandState | LandError:
+   132→- Pipeline step signature: `(ErkContext, LandState) -&gt; LandState | LandError`
+  </tool_result>
+  <tool_result tool="toolu_01HPJjQEZGeCDHnjXaHexLQ7">
+     1→---
+     2→title: JSON Parsing Patterns
+     3→read_when:
+     4→  - "parsing JSON from files or API responses"
+     5→  - "validating JSON field presence"
+     6→  - "implementing LBYL JSON parsing"
+     7→tripwires:
+     8→  - action: "using try/except KeyError for JSON field access"
+     9→    warning: "Use LBYL pattern: check field presence with `any(f not in data for f in _REQUIRED_FIELDS)` before accessing. Never use try/except for control flow."
+    10→    score: 4
+    11→---
+    12→
+    13→# JSON Parsing Patterns
+    14→
+    15→Erk uses a consistent LBYL pattern for parsing JSON from external sources (files, API responses). This avoids try/except for control flow.
+    16→
+    17→## Core Pattern: Required Fields Constant + Parse Helper
+    18→
+    19→**Location:** `packages/erk-shared/src/erk_shared/impl_folder.py`
+    20→
+    21→### 1. Define required fields as a module-level constant
+    22→
+    23→&lt;!-- Source: packages/erk-shared/src/erk_shared/impl_folder.py, _REQUIRED_REF_FIELDS --&gt;
+    24→
+    25→A module-level tuple lists every field that must be present. See `_REQUIRED_REF_FIELDS` in `packages/erk-shared/src/erk_shared/impl_folder.py`.
+    26→
+    27→### 2. Check all required fields before accessing any
+    28→
+    29→&lt;!-- Source: packages/erk-shared/src/erk_shared/impl_folder.py, _parse_ref_json --&gt;
+    30→
+
+... [48 lines omitted] ...
+
+    33→1. Read and decode JSON (the one place `try/except json.JSONDecodeError` is acceptable — corrupted files are genuinely exceptional)
+    41→- **`json.JSONDecodeError` is the one exception**: Invalid JSON is a genuine exceptional case (corrupted file), not a control flow decision. This is acceptable.
+    63→    except KeyError as e:
+    64→        raise ValueError(f"Missing field: {e}")
+    67→This violates the LBYL principle and makes it unclear which field was missing until the exception fires.
+  </tool_result>
+  <tool_result tool="toolu_01NTDnwYGPb37dNhPe6JGMB5">
+     1→---
+     2→title: Linear Pipeline Architecture
+     3→read_when:
+     4→  - "designing multi-step operations with validation and execution phases"
+     5→  - "refactoring complex commands into functional pipelines"
+     6→  - "working with land command or similar staged workflows"
+     7→tripwires:
+     8→  - action: "creating a new complex command with multiple validation steps"
+     9→    warning: "Consider two-pipeline pattern: validation pipeline (check preconditions) + execution pipeline (perform operations). Use discriminated unions (State | Error) for pipeline steps. Reference land_pipeline.py as exemplar."
+    10→last_audited: "2026-02-17 12:00 PT"
+    11→audit_result: clean
+    12→---
+    13→
+    14→# Linear Pipeline Architecture
+    15→
+    16→Complex workflows that mix read-only validation with destructive operations benefit from explicit separation. The land command demonstrates a two-pipeline architecture that divides precondition checking from mutation execution, bridging them with a shell script serialization boundary.
+    17→
+    18→## Why Two Pipelines
+    19→
+    20→**The core problem**: Command-line tools need to validate preconditions, gather user confirmations, and perform mutations — but mixing these concerns creates fragile error handling and makes testing difficult.
+    21→
+    22→**The solution**: Split the workflow into two independent pipelines with a serialization boundary:
+    23→
+    24→1. **Validation pipeline**: Read-only operations that check preconditions, resolve values, and gather confirmations. Failures are cheap — no state has been modified.
+    25→2. **Execution pipeline**: Mutating operations that assume validation passed. Failures are expensive — rollback may be required.
+    26→
+    27→**Why this matters**:
+    28→
+    29→- **Fail-fast validation**: All precondition checks happen before any mutations. If landing fails due to unresolved comments or missing PRs, the repository state is unchanged.
+    30→- **Independent testing**: Each pipeline can be tested in isolation. Validation tests don't need to mock destructive operations. Execution tests can assume validation passed.
+
+... [173 lines omitted] ...
+
+    54→LandStep = Callable[[ErkContext, LandState], LandState | LandError]
+    60→- **Discriminated union returns**: Each step returns either success (updated state) or error. The runner short-circuits on the first error without catching exceptions or checking status codes.
+    63→**Anti-pattern**: Don't use exceptions for control flow in pipeline steps. Raising exceptions makes it unclear whether validation failed (expected) or implementation crashed (bug). Return `LandError` for validation failures.
+   173→**Why the pipeline pattern is an evolution**: The two-phase model separates CLI concerns from business logic, but doesn't specify how to structure multi-step business logic. The pipeline pattern fills that gap by imposing functional composition and discriminated union error handling on the business logic layer.
+   181→- Validation failures are common and should be cheap (no rollback required)
+   182→- The command modifies shared state (repository, GitHub) and failures are expensive
+   188→- The command is idempotent and failures are cheap (no need for separation)
+   190→**Decision test**: If you find yourself writing rollback logic to undo partial mutations after validation failures, you need the two-pipeline pattern.
+   197→- [Discriminated Union Error Handling](discriminated-union-error-handling.md) - State | Error return types
+  </tool_result>
+  <tool_result tool="toolu_011MAhRKFbbTXVLszAQCNYti">
+     1→---
+     2→title: Optional Field Propagation
+     3→last_audited: "2026-02-16 00:00 PT"
+     4→audit_result: clean
+     5→read_when:
+     6→  - "transforming dataclass instances in pipelines"
+     7→  - "debugging null metadata fields"
+     8→  - "adding optional fields to dataclasses"
+     9→tripwires:
+    10→  - action: "hand-constructing frozen dataclass instances with selective field copying"
+    11→    warning: "Always use dataclasses.replace() to preserve all fields. Hand-construction with partial field copying silently drops optional fields (learn_status, learn_plan_issue, objective_issue, etc.)."
+    12→---
+    13→
+    14→# Optional Field Propagation
+    15→
+    16→**The Problem**: Frozen dataclasses with many optional fields (10+ fields, half optional) flow through multi-stage pipelines (fetch → enrich → filter → transform → display). Optional fields are silently lost when transformations create new instances instead of modifying existing ones.
+    17→
+    18→**Why This Matters**: Unlike mutable objects where you can `.set_field()` incrementally, frozen dataclasses require creating new instances at each transformation. Any transformation that doesn't explicitly preserve all fields will drop optional data—and the type system won't catch it since `field: str | None` accepts `None`.
+    19→
+    20→## The Cross-Cutting Pattern
+    21→
+    22→This pattern appears wherever frozen dataclasses with optional fields flow through multi-stage processing:
+    23→
+    24→- **TUI data pipelines**: `PlanRowData` with 30+ fields (15 optional) flows through filtering/sorting
+    25→- **CLI pipelines**: `SubmitState`, `LandState` with 10+ optional fields threaded through validation/execution stages
+    26→- **Gateway responses**: API data structures enriched with local metadata
+    27→
+    28→The danger zone: any transformation between stages.
+    29→
+    30→## Why Optional Fields Disappear
+
+... [123 lines omitted] ...
+
+    54→The type system doesn't help: `field: int | None` accepts `None`, so this compiles without warnings.
+  </tool_result>
+  <tool_result tool="toolu_015YzXRCRsg4v7iLjiC7MbLS">
+     1→---
+     2→title: Selection Preservation by Value
+     3→read_when:
+     4→  - "working with auto-refreshing lists or tables in UI components"
+     5→  - "implementing selection state that should persist across data updates"
+     6→  - "building real-time dashboard views with user-selected items"
+     7→  - "debugging cursor position resets in DataTable or list components"
+     8→last_audited: "2026-02-07 21:34 PT"
+     9→audit_result: edited
+    10→category: architecture
+    11→tripwires:
+    12→  - action: "tracking selection by array index when the array can be mutated"
+    13→    warning: "Track selection by unique identifier (plan_id, row key), not array position. Array indices become unstable when rows are added, removed, or reordered."
+    14→  - action: "assuming cursor position will persist across DataTable.clear() calls"
+    15→    warning: "Save cursor position by row key before clear(), restore after repopulating. See textual/quirks.md for pattern."
+    16→  - action: "skipping fallback strategies when the selected item might disappear"
+    17→    warning: "Always provide fallback behavior when selected item not found in refreshed data (reset to 0, preserve index clamped, or clear selection)."
+    18→---
+    19→
+    20→# Selection Preservation by Value
+    21→
+    22→## The Problem
+    23→
+    24→Array indices are fundamentally unstable when the underlying data can mutate. When a UI component refreshes its data (new rows inserted, existing rows removed, or reordering), tracking selection by position causes the cursor to jump to a different item or reset unexpectedly. The user loses their place.
+    25→
+    26→This isn't a bug in any particular framework — it's a category error. Position is the wrong identity for items that can move.
+    27→
+    28→## The Cross-Cutting Pattern
+    29→
+    30→**Track selection by stable identifier, not array position.** After refreshing data:
+
+... [61 lines omitted] ...
+  </tool_result>
+  <assistant>Now I'll analyze which files need changes and apply them:
+
+1. **state-threading-pattern.md**: Contains `state.plan_id` and `SubmitState.plan_id` - LEAVE UNCHANGED
+2. **error-handling-patterns.md**: References `plan_id` in example code - need to check if it's `PlanRef.plan_id`. Line 30 shows `backend.update_metadata(repo_root, plan_id, ...)` - this is example generic code, LEAVE
+3. **pipeline-transformation-patterns.md**: Line 59 has `plan_id=plan.plan_id` - this is part of generic dataclass example, and the context shows it's a general `Plan` class definition, LEAVE
+4. **plan-context-integration.md**: Line 80 references `PlanContext.plan_id` - this is still `plan_id` in source, LEAVE
+5. **type-safety-patterns.md**: Line 66 has `row.plan_id` - this is TUI `PlanRowData` which still has `plan_id`, LEAVE
+6. **command-composition.md**: Line 52 has `"plan_number": 123` - this is JSON output, CHANGE to `"pr_number": 123`
+7. **derived-flags.md**: Line 26 references `state.plan_id` - this is still `plan_id` in source, LEAVE
+8. **land-state-threading.md**: References `plan_id` in state - this is still in source, LEAVE
+9. **json-parsing-patterns.md**: Line 60 shows `plan_id=data["plan_id"]` - this is generic example code, context is about parsing PlanRef but in example anti-pattern section, need to check if this should be `pr_id`. Actually looking closer, this is in the anti-pattern section (lines 54-64) showing WRONG code. LEAVE
+10. **linear-pipelines.md**: References `plan_id` in state context - this is still in source, LEAVE
+11. **optional-field-propagation.md**: References `plan.plan_id` in generic examples - LEAVE
+12. **selection-preservation-by-value.md**: References `plan_id` in row data context - this is TUI row data which still has `plan_id`, LEAVE
+
+Let me make the required change to command-composition.md:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="22586" cache_read_input_tokens="16913" cache_creation="{'ephemeral_5m_input_tokens': 22586, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01TqCsuHBg4fqeLzCjnYFdRx">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/command-composition.md</param>
+    <param name="old_string">```json
+{"success": true, "source": "issue", "plan_number": 123, "has_plan_tracking": true}
+{"cleaned": true}
+{"success": true, "source": "issue", "has_plan_tracking": true, "valid": true}
+```</param>
+    <param name="new_string">```json
+{"success": true, "source": "issue", "pr_number": 123, "has_plan_tracking": true}
+{"cleaned": true}
+{"success": true, "source": "issue", "has_plan_tracking": true, "valid": true}
+```</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="22586" cache_read_input_tokens="16913" cache_creation="{'ephemeral_5m_input_tokens': 22586, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01TqCsuHBg4fqeLzCjnYFdRx">
+The file /home/runner/work/erk/erk/docs/learned/architecture/command-composition.md has been updated successfully.
+  </tool_result>
+  <assistant>Perfect! I've completed the analysis and updates. Here's a summary of what I found:
+
+## Summary of Documentation Updates
+
+**Files Analyzed:** 12 architecture documentation files
+
+**Changes Made:** 1 file updated
+- `/home/runner/work/erk/erk/docs/learned/architecture/command-composition.md` - Updated JSON example output from `"plan_number": 123` to `"pr_number": 123`
+
+**Files with NO Changes Required:** 11 files
+- **state-threading-pattern.md** - References to `state.plan_id` and `SubmitState.plan_id` are still valid in source code
+- **error-handling-patterns.md** - Generic example pattern code showing `backend.update_metadata(repo_root, plan_id, ...)`
+- **pipeline-transformation-patterns.md** - Generic `Plan` dataclass example with `plan_id` field
+- **plan-context-integration.md** - References `PlanContext.plan_id` which remains unchanged in source
+- **type-safety-patterns.md** - References `PlanRowData` TUI row data which still uses `plan_id`
+- **derived-flags.md** - References `state.plan_id` which remains unchanged in source
+- **land-state-threading.md** - Pipeline state threading uses `plan_id` which is unchanged in source
+- **json-parsing-patterns.md** - Generic LBYL parsing pattern example code
+- **linear-pipelines.md** - References pipeline state `plan_id` which remains in source
+- **optional-field-propagation.md** - Generic optional field examples
+- **selection-preservation-by-value.md** - References TUI row data `plan_id` which is unchanged
+
+All changes align with your specification: only `PlanRef.plan_id` → `PlanRef.pr_id` and JSON `"plan_number"` → `"pr_number"` were updated, while all internal state references to `state.plan_id`, `PlanContext.plan_id`, and TUI data structures remain unchanged.</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="850" cache_read_input_tokens="39499" cache_creation="{'ephemeral_5m_input_tokens': 850, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>

@@ -1,0 +1,206 @@
+<session>
+  <meta source="agent-a7c3cce" />
+  <meta branch="plnd/O9109-rename-plan-pr-docs-03-10-1247" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>Update the following documentation file:
+
+**File: `/home/runner/work/erk/erk/docs/learned/planning/tripwires.md`**
+
+`PlanRef.plan_id` is now `PlanRef.pr_id` in source. Branch `planned-pr-context/{plan_id}` is now `planned-pr-context/{pr_number}`.
+
+IMPORTANT: `state.plan_id`, `resolve_plan_id_for_branch()`, `PlanNotFound.plan_id` are STILL `plan_id` in source. Do NOT rename those.
+
+Specific changes needed (read the file first to verify):
+1. Line ~71: "plan_id from PlannedPRBackend" and "plan_id is a PR number" — if this refers to PlanRef field, rename to `pr_id`. The warning text references `plan_id` semantics from the PlanRef perspective.
+2. Line ~135: `resolve_plan_id_for_branch()` — leave as-is
+3. Line ~209: "Capture plan_id" — refers to `state.plan_id`, leave as-is
+4. Line ~259: "validating plan_id in exec scripts" and "Planned PR plan_id IS the PR number" — if referring to PlanRef field, rename to `pr_id`
+
+Read the file first to understand context, then apply only correct edits.</user>
+  <assistant>I'll start by reading the file to understand the context and verify which references need to be updated.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="6159" cache_read_input_tokens="10097" cache_creation="{'ephemeral_5m_input_tokens': 6159, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Xz33mgNn68Pk8Gbg1uZMgH">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/tripwires.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6159" cache_read_input_tokens="10097" cache_creation="{'ephemeral_5m_input_tokens': 6159, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Xz33mgNn68Pk8Gbg1uZMgH">
+     1→---
+     2→title: Planning Tripwires
+     3→read_when:
+     4→  - "working on planning code"
+     5→---
+     6→
+     7→&lt;!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY --&gt;
+     8→&lt;!-- Edit source frontmatter, then run 'erk docs sync' to regenerate. --&gt;
+     9→&lt;!-- Generated from planning/*.md frontmatter --&gt;
+    10→
+    11→# Planning Tripwires
+    12→
+    13→Rules triggered by matching actions in code.
+    14→
+    15→**adding &lt;code&gt; inside &lt;summary&gt; elements in PR bodies** → Read [Planned PR Lifecycle](planned-pr-lifecycle.md) first. Graphite doesn't render &lt;code&gt; inside &lt;summary&gt; — use plain text instead. GitHub renders it but Graphite does not. The correct format is &lt;summary&gt;original-plan&lt;/summary&gt; not &lt;summary&gt;&lt;code&gt;original-plan&lt;/code&gt;&lt;/summary&gt;.
+    16→
+    17→**adding Closes #N to a planned PR footer** → Read [Planned PR Lifecycle](planned-pr-lifecycle.md) first. Planned PR IS the plan. Self-referential close would close the plan itself. Use issue_number=None for github-draft-pr backend.
+    18→
+    19→**adding a new PR-dependent step to trigger-async-learn** → Read [Learn Without PR Context](learn-without-pr-context.md) first. Any new PR-dependent step must handle the None case from \_get_pr_for_plan_direct. The entire PR comment block is gated on pr_result not being None.
+    20→
+    21→**adding a new filtering step to preprocess_session.py** → Read [Session Preprocessing Architecture](session-preprocessing.md) first. There are TWO preprocessing implementations: the exec script (preprocess_session.py) and erk-shared (session_preprocessing.py). The exec script has the full filtering pipeline; erk-shared has only Stage 1 mechanical reduction. New filters go in the exec script. Read this doc first.
+    22→
+    23→**adding a new pipeline stage to the async learn pipeline** → Read [Learn Pipeline Workflow](learn-pipeline-workflow.md) first. New stages must be direct Python function calls, not subprocess invocations. The orchestrator uses tight coupling for performance. See the Direct-Call Architecture section in planned-pr-context-local-preprocessing.md.
+    24→
+    25→**adding a new setup path to plan-implement without routing through Step 2d** → Read [Impl-Context Staging Directory](impl-context.md) first. Impl-context cleanup routing: all code paths that set up an implementation context must route through Step 2d in plan-implement.md, which is the single convergence point for .erk/impl-context/ cleanup. Adding a new setup path that bypasses Step 2d will silently skip cleanup, leaving .erk/impl-context/ files in the final PR diff.
+    26→
+    27→**adding branch_name to plan-header at creation time** → Read [Branch Name Inference](branch-name-inference.md) first. branch_name is intentionally omitted at creation because the branch doesn't exist yet. The plan-save → branch-create → impl-signal lifecycle requires this gap. See the temporal gap section below.
+    28→
+    29→**adding dry-run support to one-shot commands** → Read [One-Shot Workflow](one-shot-workflow.md) first. One-shot dry-run mode must NOT create skeleton issues
+    30→
+
+... [241 lines omitted] ...
+
+    45→**after plan-implement execution completes** → Read [Plan Lifecycle](lifecycle.md) first. Always clean .erk/impl-context/ with `git rm -rf .erk/impl-context/` and commit. Transient artifacts cause CI formatter failures (Prettier).
+    67→**calling `create_impl_context()` without checking `impl_context_exists()` first** → Read [Impl-Context Staging Directory](impl-context.md) first. Both submit paths use LBYL: `if impl_context_exists(): remove_impl_context()` before creating. Stale .erk/impl-context/ from a prior failed submission causes errors.
+    79→**calling update_metadata() on PlannedPRBackend without verifying plan exists** → Read [Planned PR Backend](planned-pr-backend.md) first. PlannedPRBackend.update_metadata() raises PlanHeaderNotFoundError if the header block is absent. Read operations (get_plan) return None gracefully. Always check plan existence before writing metadata.
+    81→**capturing subagent output inline when it may exceed 1KB** → Read [Agent Orchestration Safety Patterns](agent-orchestration-safety.md) first. Bash tool truncates output at ~10KB with no error. Use Write tool to save agent output to scratch storage, then pass the file path to dependent agents.
+    83→**catching PlanHeaderNotFoundError** → Read [PlanBackend Migration Guide](plan-backend-migration.md) first. PlanHeaderNotFoundError is an exception; PlanNotFound is a result type - use LBYL for the latter
+    89→**checking erk exec plan-save --format json output for empty result** → Read [Planned PR Backend](planned-pr-backend.md) first. Empty stdout does not mean failure. The duplicate-detection path writes JSON to stderr, not stdout. Always capture both streams with 2&gt;&amp;1 or check for empty stdout and retry with stderr capture.
+    95→**closing a plan without verifying all items were addressed** → Read [Complete File Inventory Protocol](complete-inventory-protocol.md) first. Compare the file inventory against the plan's items before closing. Silent omissions are the most common failure mode.
+    97→**committing to planned-PR plan branches after checkout without pulling remote** → Read [Planned PR Branch Teleport](planned-pr-branch-teleport.md) first. Both setup_impl_from_pr.py and submit.py use the same three-step teleport: fetch_branch -&gt; checkout/create_tracking -&gt; pull_rebase. Skipping pull_rebase causes non-fast-forward push failures.
+   141→**grepping only for the error message text** → Read [Source Investigation Over Trial-and-Error](debugging-patterns.md) first. Also grep for function names extracted from the error (e.g., 'checkout_footer' from 'Missing checkout footer'). Validator function names are more stable search targets than error message strings.
+   159→**making a third trial-and-error attempt at a validation fix** → Read [Source Investigation Over Trial-and-Error](debugging-patterns.md) first. After 2 failed attempts, stop guessing. Grep for the validator function and read the source to understand the exact requirement.
+   161→**making objective-update-after-land exit non-zero** → Read [Objective Update After Land](objective-update-after-land.md) first. This script uses fail-open design. Failures must not block landing. See objective-update-after-land.md.
+   187→**pushing implementation commits after impl-context cleanup without git pull --rebase** → Read [Impl-Context Staging Directory](impl-context.md) first. After git rm + commit + push of .erk/impl-context/, the local branch may diverge from remote if other commits were pushed. Run git pull --rebase before pushing further implementation commits to avoid non-fast-forward push failures.
+   193→**reading parallel agent output without verifying files exist** → Read [Parallel Agent Orchestration for Bulk Operations](parallel-audit-pattern.md) first. Always verify output files exist (ls -la) before reading. Agent failures may produce empty or missing files.
+   205→**renaming a lifecycle stage value** → Read [Plan Lifecycle](lifecycle.md) first. Update 3 locations: LifecycleStageValue type, valid_stages set, and color conditions in compute_lifecycle_display(). Missing any location causes silent validation failures or incorrect TUI colors.
+   213→**reviewing a PR that contains .erk/impl-context/ files** → Read [Impl-Context Staging Directory](impl-context.md) first. Leave a PR comment telling the author to remove .erk/impl-context/. This is an erk tooling error — the directory should have been cleaned up before implementation. Run: git rm -rf .erk/impl-context/ &amp;&amp; git commit -m 'Remove leaked impl-context'
+   223→**saving a plan linked to an objective** → Read [Plan Lifecycle](lifecycle.md) first. Always verify the link was saved correctly with `erk exec get-plan-metadata &lt;issue&gt; objective_issue`. Silent failures can leave plans unlinked from their objectives.
+   229→**treating missing PR as an error in the learn pipeline** → Read [Learn Without PR Context](learn-without-pr-context.md) first. No-PR is a valid workflow state, not an error. The learn pipeline must degrade gracefully — sessions alone provide sufficient material for insight extraction.
+   241→**using assertive metadata writes in a best-effort context** → Read [Metadata Update Patterns](metadata-update-patterns.md) first. write_dispatch_metadata() raises on error. maybe_update_plan_dispatch_metadata() uses LBYL guards and silent skip with warning. Choose based on whether failure should block the operation.
+   263→**writing post-dispatch operations without try/except guards** → Read [One-Shot Workflow](one-shot-workflow.md) first. Post-dispatch operations (metadata write, queued comment) are best-effort. Wrap in try/except with user-visible warnings. See write_dispatch_metadata() and create_submission_queued_block() in one_shot_dispatch.py.
+  </tool_result>
+  <assistant>Now I'll check the specific lines mentioned and verify the context. Let me examine lines around 71, 135, 209, and 259:
+
+Based on my reading of the file, I can see:
+
+- **Line 71**: "calling gh issue view with a plan_id from PlannedPRBackend" — This references `plan_id` in the context of PlannedPRBackend, which should now be `pr_id` according to your instructions.
+- **Line 135**: "extracting plan ID from branch name instead of using plan-ref.json" — This discusses `resolve_plan_id_for_branch()` which you said to leave as-is (it's still `plan_id`).
+- **Line 209**: "resolving plan or objective metadata after the merge pipeline runs" — This refers to `plan_id` and objective_number being captured, and you said `state.plan_id` should stay as-is.
+- **Line 259**: "validating plan_id in exec scripts without checking provider type" — This discusses Planned PR plan_id being the PR number, which should now reference `pr_id`.
+
+Now I'll apply the edits:</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="10064" cache_read_input_tokens="16256" cache_creation="{'ephemeral_5m_input_tokens': 10064, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01VDB27bv9qmEdkUtFRizarG">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/tripwires.md</param>
+    <param name="old_string">**calling gh issue view with a plan_id from PlannedPRBackend** → Read [Plan ID Semantics](...[truncated 64 chars]...sue number. Use gh pr view instead. Check provider type before assuming plan_id semantics.</param>
+    <param name="new_string">**calling gh issue view with a pr_id from PlannedPRBackend** → Read [Plan ID Semantics](pl...[truncated 58 chars]...issue number. Use gh pr view instead. Check provider type before assuming pr_id semantics.</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="10064" cache_read_input_tokens="16256" cache_creation="{'ephemeral_5m_input_tokens': 10064, 'ephemeral_1h_input_tokens': 0}" output_tokens="527" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01VDB27bv9qmEdkUtFRizarG">
+The file /home/runner/work/erk/erk/docs/learned/planning/tripwires.md has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01SDqxCoVg4waXQAGPAG4LoE">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/tripwires.md</param>
+    <param name="old_string">**using gh issue view on a plan ID without checking plan backend type** → Read [Planned PR...[truncated 75 chars]... on a planned-PR plan produces a confusing 404. Route to gh pr view based on backend type.</param>
+    <param name="new_string">**using gh issue view on a pr_id without checking plan backend type** → Read [Planned PR B...[truncated 77 chars]... on a planned-PR plan produces a confusing 404. Route to gh pr view based on backend type.</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="570" cache_read_input_tokens="26320" cache_creation="{'ephemeral_5m_input_tokens': 570, 'ephemeral_1h_input_tokens': 0}" output_tokens="252" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01SDqxCoVg4waXQAGPAG4LoE">
+The file /home/runner/work/erk/erk/docs/learned/planning/tripwires.md has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01EThfQdmqmwJn6uCUZMVzmB">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/tripwires.md</param>
+    <param name="old_string">**validating plan_id in exec scripts without checking provider type** → Read [Planned PR B...[truncated 41 chars]...he PR number (not an issue number). Check provider type before assuming plan_id semantics.</param>
+    <param name="new_string">**validating pr_id in exec scripts without checking provider type** → Read [Planned PR Bac...[truncated 35 chars]... the PR number (not an issue number). Check provider type before assuming pr_id semantics.</param>
+  </tool_use>
+  <usage input_tokens="4" cache_creation_input_tokens="295" cache_read_input_tokens="26890" cache_creation="{'ephemeral_5m_input_tokens': 295, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01EThfQdmqmwJn6uCUZMVzmB">
+The file /home/runner/work/erk/erk/docs/learned/planning/tripwires.md has been updated successfully.
+  </tool_result>
+  <assistant>Now let me verify the changes were applied correctly:</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="271" cache_read_input_tokens="27185" cache_creation="{'ephemeral_5m_input_tokens': 271, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Dap7VH5Z1ED7fFYqxNV4kE">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/tripwires.md</param>
+    <param name="offset">65</param>
+    <param name="limit">10</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="271" cache_read_input_tokens="27185" cache_creation="{'ephemeral_5m_input_tokens': 271, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Dap7VH5Z1ED7fFYqxNV4kE">
+    65→**backfilling labels on existing issues without considering updated_at side effects** → Read [PR and Plan Label Assignment Scheme](label-scheme.md) first. GitHub label operations change the issue's updated_at timestamp. This affects sort order in list views and may confuse users.
+    66→
+    67→**calling `create_impl_context()` without checking `impl_context_exists()` first** → Read [Impl-Context Staging Directory](impl-context.md) first. Both submit paths use LBYL: `if impl_context_exists(): remove_impl_context()` before creating. Stale .erk/impl-context/ from a prior failed submission causes errors.
+    68→
+    69→**calling commands that depend on `.erk/impl-context/plan-ref.json` metadata** → Read [Plan Lifecycle](lifecycle.md) first. Verify metadata file exists in worktree; if missing, operations silently return empty values. read_plan_ref() tries plan-ref.json first, falls back to legacy issue.json.
+    70→
+    71→**calling gh issue view with a pr_id from PlannedPRBackend** → Read [Plan ID Semantics](plan-id-semantics.md) first. For planned-PR plans, pr_id is a PR number, not an issue number. Use gh pr view instead. Check provider type before assuming pr_id semantics.
+    72→
+    73→**calling gt track before rebasing a stacked plan branch** → Read [Stacked Plan Branch Rebase](stacked-plan-branch-rebase.md) first. Always rebase BEFORE gt track for stacked plans (not after). gt track requires the parent branch to be an ancestor in git history.
+    74→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_use name="Read" id="toolu_01UCR7A13iZtcRddd8aGnhw4">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/tripwires.md</param>
+    <param name="offset">245</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="721" cache_read_input_tokens="27456" cache_creation="{'ephemeral_5m_input_tokens': 721, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01UCR7A13iZtcRddd8aGnhw4">
+   245→**using extract_metadata_prefix() or extract_plan_header_block() for metadata extraction** → Read [Plan Content Extraction Fallback](metadata-block-fallback.md) first. These functions are deleted. Use find_metadata_block() from packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py for extraction and render_metadata_block() for rendering.
+   246→
+   247→**using gh issue view on a pr_id without checking plan backend type** → Read [Planned PR Backend](planned-pr-backend.md) first. Planned PR pr_id values are PR numbers. Using gh issue view on a planned-PR plan produces a confusing 404. Route to gh pr view based on backend type.
+   248→
+   249→**using issue timeline API as the primary PR lookup path** → Read [PR Discovery Strategies for Plans](pr-discovery.md) first. The primary path is branch_name from plan-header → get_pr_for_branch(). Timeline API is a separate strategy for when branch_name is unavailable.
+   250→
+   251→**using only branch-based discovery for plan/objective resolution** → Read [Objective Update After Land](objective-update-after-land.md) first. Use direct lookup with --plan parameter when available. Branch-based discovery fails if the branch is already deleted. Direct lookup with fallback is the resilient pattern.
+   252→
+   253→**using opus/sonnet for mechanical data fetching or formatting tasks** → Read [Token Optimization Patterns](token-optimization-patterns.md) first. Use haiku for mechanical work (fetch, parse, format). Reserve expensive models for synthesis and reasoning.
+   254→
+   255→**using plan number from .erk/impl-context/plan-ref.json in a checkout footer** → Read [PR Submission Patterns](pr-submission-patterns.md) first. Checkout footers require the PR number, not the plan number. The plan is the source, the PR is the implementation. See the PR Number vs Plan Number section.
+   256→
+   257→**using session-scoped markers in exec scripts** → Read [Session-Based Plan Deduplication](session-deduplication.md) first. Session markers enable idempotency in command retries. Always write markers AFTER successful operation completion, never before. Use triple-check guard on marker read: file exists AND content is valid AND expected type (numeric for issue numbers).
+   258→
+   259→**validating pr_id in exec scripts without checking provider type** → Read [Planned PR Backend](planned-pr-backend.md) first. Planned PR pr_id IS the PR number (not an issue number). Check provider type before assuming pr_id semantics.
+   260→
+   261→**writing lifecycle_stage value other than 'impl' in a write point** → Read [Lifecycle Stage Consolidation](lifecycle-stage-consolidation.md) first. All lifecycle write points must use 'impl', never the legacy values 'implementing' or 'implemented'. Schema validation accepts legacy values for backwards compatibility only.
+   262→
+   263→**writing post-dispatch operations without try/except guards** → Read [One-Shot Workflow](one-shot-workflow.md) first. Post-dispatch operations (metadata write, queued comment) are best-effort. Wrap in try/except with user-visible warnings. See write_dispatch_metadata() and create_submission_queued_block() in one_shot_dispatch.py.
+   264→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>Perfect! All three edits have been successfully applied. Let me verify the file is complete and correct:
+
+## Summary
+
+I've successfully updated `/home/runner/work/erk/erk/docs/learned/planning/tripwires.md` with the following changes:
+
+### Changes Made:
+
+1. **Line 71** - Updated the tripwire about `calling gh issue view`:
+   - Changed `plan_id from PlannedPRBackend` → `pr_id from PlannedPRBackend`
+   - Changed `plan_id is a PR number` → `pr_id is a PR number`
+   - Changed both instances of `assuming plan_id semantics` → `assuming pr_id semantics`
+
+2. **Line 247** - Updated the tripwire about `using gh issue view on a plan ID`:
+   - Changed `using gh issue view on a plan ID` → `using gh issue view on a pr_id`
+   - Changed `Planned PR plan IDs are PR numbers` → `Planned PR pr_id values are PR numbers`
+
+3. **Line 259** - Updated the tripwire about `validating plan_id in exec scripts`:
+   - Changed `validating plan_id in exec scripts` → `validating pr_id in exec scripts`
+   - Changed `Planned PR plan_id IS the PR number` → `Planned PR pr_id IS the PR number`
+   - Changed both instances of `assuming plan_id semantics` → `assuming pr_id semantics`
+
+### Unchanged (As Instructed):
+
+- **Line 135** (`resolve_plan_id_for_branch()`) - Left as-is, still references `plan_id`
+- **Line 209** (`state.plan_id`) - Left as-is, still references `plan_id`
+- All other references to `plan_id` in different contexts remained unchanged
+
+The edits correctly distinguish between the renamed `PlanRef` field (`pr_id`) and the semantically different fields that remain `plan_id` (`state.plan_id`, `resolve_plan_id_for_branch()`, `PlanNotFound.plan_id`).</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="1006" cache_read_input_tokens="28177" cache_creation="{'ephemeral_5m_input_tokens': 1006, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>

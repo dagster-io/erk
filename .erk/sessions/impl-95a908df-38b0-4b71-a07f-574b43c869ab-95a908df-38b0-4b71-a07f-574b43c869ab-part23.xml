@@ -1,0 +1,367 @@
+<session>
+  <meta source="agent-ab9e5a8" />
+  <meta branch="plnd/O9109-rename-plan-pr-docs-03-10-1247" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>Update the following documentation files. The source code field `PlanRef.plan_id` has been renamed to `PlanRef.pr_id`. The `planned-pr-context/{plan_id}` branch pattern is now `planned-pr-context/{pr_number}` in source. JSON output field `"plan_number"` is now `"pr_number"`.
+
+IMPORTANT: Many other source code identifiers still use `plan_id` (e.g., `state.plan_id`, `PlanContext.plan_id`, `resolve_plan_id_for_branch()`). Do NOT rename those references.
+
+**File 1: `/home/runner/work/erk/erk/docs/learned/architecture/ref-json-migration.md`**
+- `PlanRef` fields description: `plan_id (str)` → `pr_id (str)`
+- Migration table: `"plan_id"` field → `"pr_id"`
+- JSON example: `"plan_id": "7952"` → `"pr_id": "7952"`
+- Leave class name `PlanRef` unchanged
+
+**File 2: `/home/runner/work/erk/erk/docs/learned/architecture/plan-ref-architecture.md`**
+- All references to `PlanRef.plan_id` → `PlanRef.pr_id`
+- `plan_id` field descriptions for PlanRef → `pr_id`
+- Section heading "String `plan_id` Rationale" → "String `pr_id` Rationale"
+- Function signature `save_plan_ref(..., plan_id, ...)` → `save_plan_ref(..., pr_id, ...)`
+- `plan_id` String-to-Int section → `pr_id`
+- Code example: `plan_ref.plan_id.isdigit()` → `plan_ref.pr_id.isdigit()`
+- `"Non-numeric plan_id"` → `"Non-numeric pr_id"`
+- `numeric_plan_id` property → `numeric_pr_id`
+- Leave class names PlanRef, PlanNotFound unchanged
+- Leave mentions of `state.plan_id` unchanged if any
+
+**File 3: `/home/runner/work/erk/erk/docs/learned/architecture/issue-reference-flow.md`**
+- `plan_id` in the PlanRef context → `pr_id`
+- JSON example: `"plan_id": "123"` → `"pr_id": "123"`
+
+Read each file first, then apply edits.</user>
+  <assistant>I'll help you update the documentation files to reflect the renaming from `plan_id` to `pr_id` for the `PlanRef` field. Let me start by reading each file to understand their current content.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="6438" cache_read_input_tokens="10097" cache_creation="{'ephemeral_5m_input_tokens': 6438, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_011aghUeJsK6GhYGbRYQ8fEZ">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/ref-json-migration.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6438" cache_read_input_tokens="10097" cache_creation="{'ephemeral_5m_input_tokens': 6438, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01UnSXspitQegroSuarcwV4u">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/plan-ref-architecture.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6438" cache_read_input_tokens="10097" cache_creation="{'ephemeral_5m_input_tokens': 6438, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01VfpfuYG5Sxsmy8cm15sWrB">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/issue-reference-flow.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6438" cache_read_input_tokens="10097" cache_creation="{'ephemeral_5m_input_tokens': 6438, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011aghUeJsK6GhYGbRYQ8fEZ">
+     1→---
+     2→title: Ref JSON Migration
+     3→read_when:
+     4→  - "working with plan-ref.json or ref.json"
+     5→  - "understanding plan reference file formats"
+     6→  - "debugging plan reference loading failures"
+     7→tripwires:
+     8→  - action: "reading plan reference without using read_plan_ref()"
+     9→    warning: "Use read_plan_ref() which handles the three-file fallback chain: plan-ref.json → ref.json → issue.json (legacy). Manual JSON parsing skips fallback and field mapping."
+    10→    score: 5
+    11→---
+    12→
+    13→# Ref JSON Migration
+    14→
+    15→Plan references have evolved through multiple file formats. The `read_plan_ref()` function handles all formats transparently via a fallback chain.
+    16→
+    17→## PlanRef Dataclass
+    18→
+    19→**Location:** `packages/erk-shared/src/erk_shared/impl_folder.py`
+    20→
+    21→&lt;!-- Source: packages/erk-shared/src/erk_shared/impl_folder.py, PlanRef --&gt;
+    22→
+    23→A frozen dataclass with fields: `provider` (PlanProviderType), `plan_id` (str), `url` (str), `created_at` (str, ISO 8601), `synced_at` (str, ISO 8601), `labels` (tuple of str), and `objective_id` (int or None). See `PlanRef` in `packages/erk-shared/src/erk_shared/impl_folder.py`.
+    24→
+    25→## Required Fields Constant
+    26→
+    27→&lt;!-- Source: packages/erk-shared/src/erk_shared/impl_folder.py, _REQUIRED_REF_FIELDS --&gt;
+    28→
+    29→The private `_REQUIRED_REF_FIELDS` tuple in `packages/erk-shared/src/erk_shared/impl_folder.py` defines which fields must be present. Used by `_parse_ref_json()` for LBYL validation before constructing `PlanRef`. See the source file for current fields.
+    30→
+
+... [59 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01UnSXspitQegroSuarcwV4u">
+     1→---
+     2→title: PlanRef Architecture
+     3→read_when:
+     4→  - "working with plan-ref.json"
+     5→  - "working with PlanRef dataclass"
+     6→  - "migrating from IssueReference to PlanRef"
+     7→  - "understanding provider-agnostic plan references"
+     8→tripwires:
+     9→  - action: "accessing plan_ref.plan_id as int without checking"
+    10→    warning: "plan_id is a string. Use LBYL: `plan_ref.plan_id.isdigit()` before `int(plan_ref.plan_id)`. Supports future non-numeric providers like 'PROJ-123'."
+    11→  - action: "calling save_plan_ref with positional arguments"
+    12→    warning: "All parameters after `impl_dir` are keyword-only. Positional calls will fail at runtime."
+    13→---
+    14→
+    15→# PlanRef Architecture
+    16→
+    17→PlanRef is the provider-agnostic plan reference abstraction stored in `.erk/impl-context/plan-ref.json`. It replaced the GitHub-specific `IssueReference` to support future plan providers.
+    18→
+    19→## Why PlanRef Replaced IssueReference
+    20→
+    21→The original `IssueReference` was tightly coupled to GitHub:
+    22→
+    23→- Fields: `issue_number` (int), `issue_url` (str)
+    24→- File: `.erk/impl-context/issue.json`
+    25→- Only supported GitHub issues as plan storage
+    26→
+    27→PlanRef generalizes this:
+    28→
+    29→- Fields: `provider`, `plan_id` (str), `url`, `labels`, `objective_id`
+    30→- File: `.erk/impl-context/plan-ref.json`
+
+... [76 lines omitted] ...
+
+    50→Saves a plan reference to `plan-ref.json`. All parameters after `impl_dir` are keyword-only. Raises `FileNotFoundError` if `impl_dir` doesn't exist.
+  </tool_result>
+  <tool_result tool="toolu_01VfpfuYG5Sxsmy8cm15sWrB">
+     1→---
+     2→title: Issue Reference Flow
+     3→read_when:
+     4→  - "issue references not appearing in PRs"
+     5→  - "debugging 'Closes #N' in PR body"
+     6→  - "working with plan-ref.json"
+     7→  - "closing reference lost after erk pr submit"
+     8→last_audited: "2026-02-16 14:05 PT"
+     9→audit_result: clean
+    10→---
+    11→
+    12→# Issue Reference Flow
+    13→
+    14→This document describes how issue references flow through the erk system, from creation to consumption in PR bodies.
+    15→
+    16→## Creation
+    17→
+    18→The `save_plan_ref()` function in `erk_shared/impl_folder.py` writes to `plan-ref.json`.
+    19→
+    20→Parameters are keyword-only after `impl_dir`:
+    21→
+    22→See `save_plan_ref()` in
+    23→[`packages/erk-shared/src/erk_shared/impl_folder.py`](../../../packages/erk-shared/src/erk_shared/impl_folder.py)
+    24→for the full signature. Key points: all parameters after `impl_dir` are keyword-only (`provider`, `plan_id`, `url`, `labels`, `objective_id`).
+    25→
+    26→Called by:
+    27→
+    28→- `setup-impl-from-pr` exec command - For local implementation
+    29→
+    30→**Note:** `create_impl_context()` writes `ref.json` directly (not via `save_plan_ref()`). It uses a lighter format than `plan-ref.json`.
+
+... [95 lines omitted] ...
+  </tool_result>
+  <assistant>Now I'll apply the edits to each file. Let me start with the first file:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="5209" cache_read_input_tokens="16535" cache_creation="{'ephemeral_5m_input_tokens': 5209, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01TzmnyL12v23XGpPueXDpPu">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/ref-json-migration.md</param>
+    <param name="old_string">A frozen dataclass with fields: `provider` (PlanProviderType), `plan_id` (str), `url` (str...[truncated 80 chars]...e_id` (int or None). See `PlanRef` in `packages/erk-shared/src/erk_shared/impl_folder.py`.</param>
+    <param name="new_string">A frozen dataclass with fields: `provider` (PlanProviderType), `pr_id` (str), `url` (str),...[truncated 78 chars]...e_id` (int or None). See `PlanRef` in `packages/erk-shared/src/erk_shared/impl_folder.py`.</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="5209" cache_read_input_tokens="16535" cache_creation="{'ephemeral_5m_input_tokens': 5209, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01TKYSySxhrPcwQxCYhSgBoS">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/ref-json-migration.md</param>
+    <param name="old_string">| issue.json field  | PlanRef field                   |
+| ----------------- | ------------...[truncated 247 chars]... `labels`                        |
+| `objective_issue` | `objective_id`                  |</param>
+    <param name="new_string">| issue.json field  | PlanRef field                   |
+| ----------------- | ------------...[truncated 247 chars]... `labels`                        |
+| `objective_issue` | `objective_id`                  |</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="5209" cache_read_input_tokens="16535" cache_creation="{'ephemeral_5m_input_tokens': 5209, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01V75TwVhac8rUUY2ADNC96Y">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/ref-json-migration.md</param>
+    <param name="old_string">```json
+{
+  "provider": "github-draft-pr",
+  "plan_id": "7952",
+  "url": "https://github.c...[truncated 51 chars]...
+  "synced_at": "2026-02-23T12:43:12.965231",
+  "labels": [],
+  "objective_id": null
+}
+```</param>
+    <param name="new_string">```json
+{
+  "provider": "github-draft-pr",
+  "pr_id": "7952",
+  "url": "https://github.com...[truncated 49 chars]...
+  "synced_at": "2026-02-23T12:43:12.965231",
+  "labels": [],
+  "objective_id": null
+}
+```</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="5209" cache_read_input_tokens="16535" cache_creation="{'ephemeral_5m_input_tokens': 5209, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01TzmnyL12v23XGpPueXDpPu">
+The file /home/runner/work/erk/erk/docs/learned/architecture/ref-json-migration.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01TKYSySxhrPcwQxCYhSgBoS">
+The file /home/runner/work/erk/erk/docs/learned/architecture/ref-json-migration.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01V75TwVhac8rUUY2ADNC96Y">
+The file /home/runner/work/erk/erk/docs/learned/architecture/ref-json-migration.md has been updated successfully.
+  </tool_result>
+  <assistant>Now let me update the second file:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="1297" cache_read_input_tokens="21744" cache_creation="{'ephemeral_5m_input_tokens': 1297, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01YSSLDdy3Yns1JkZ2uJ3Vbu">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/plan-ref-architecture.md</param>
+    <param name="old_string">- Fields: `provider`, `plan_id` (str), `url`, `labels`, `objective_id`
+- File: `.erk/impl-context/plan-ref.json`
+- Designed for any plan provider (GitHub, Jira, Linear, etc.)</param>
+    <param name="new_string">- Fields: `provider`, `pr_id` (str), `url`, `labels`, `objective_id`
+- File: `.erk/impl-context/plan-ref.json`
+- Designed for any plan provider (GitHub, Jira, Linear, etc.)</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1297" cache_read_input_tokens="21744" cache_creation="{'ephemeral_5m_input_tokens': 1297, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01B5W5Qn5DoYyGWWbgxpGXHL">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/plan-ref-architecture.md</param>
+    <param name="old_string">Key fields: `provider` (`PlanProviderType`), `plan_id` (str), `url`, `created_at`, `synced_at`, `labels` (tuple), `objective_id` (int | None).</param>
+    <param name="new_string">Key fields: `provider` (`PlanProviderType`), `pr_id` (str), `url`, `created_at`, `synced_at`, `labels` (tuple), `objective_id` (int | None).</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1297" cache_read_input_tokens="21744" cache_creation="{'ephemeral_5m_input_tokens': 1297, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01XBb8vtQhpxVWXvC3jzDVL5">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/plan-ref-architecture.md</param>
+    <param name="old_string">### String `plan_id` Rationale
+
+`plan_id` is deliberately a `str`, not `int`, to support f...[truncated 54 chars]...-123`). GitHub issue numbers are stored as strings and converted at callsites when needed.</param>
+    <param name="new_string">### String `pr_id` Rationale
+
+`pr_id` is deliberately a `str`, not `int`, to support futur...[truncated 50 chars]...-123`). GitHub issue numbers are stored as strings and converted at callsites when needed.</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1297" cache_read_input_tokens="21744" cache_creation="{'ephemeral_5m_input_tokens': 1297, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01ATdaQ3AWQ7FFrRieCGJ8Ea">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/plan-ref-architecture.md</param>
+    <param name="old_string">### `save_plan_ref(impl_dir, *, provider, plan_id, url, labels, objective_id)`</param>
+    <param name="new_string">### `save_plan_ref(impl_dir, *, provider, pr_id, url, labels, objective_id)`</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1297" cache_read_input_tokens="21744" cache_creation="{'ephemeral_5m_input_tokens': 1297, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_011WdjfCDmupWEWbWwjFQDMS">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/plan-ref-architecture.md</param>
+    <param name="old_string">The legacy fallback maps old fields to new PlanRef structure:
+
+- `issue_number` -&gt; `plan_i...[truncated 3 chars]...)
+- `issue_url` -&gt; `url`
+- Defaults: `provider="github"`, `labels=()`, `objective_id=None`</param>
+    <param name="new_string">The legacy fallback maps old fields to new PlanRef structure:
+
+- `issue_number` -&gt; `pr_id`...[truncated 1 chars]...)
+- `issue_url` -&gt; `url`
+- Defaults: `provider="github"`, `labels=()`, `objective_id=None`</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1297" cache_read_input_tokens="21744" cache_creation="{'ephemeral_5m_input_tokens': 1297, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01996gda4NBxghJT8p711hau">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/plan-ref-architecture.md</param>
+    <param name="old_string">Returns plan_id from plan-ref.json. Plan-ref.json is the sole source of truth for plan-to-...[truncated 163 chars]...ace compatibility)
+- Returns `plan_id` as string if plan-ref.json exists, `None` otherwise</param>
+    <param name="new_string">Returns pr_id from plan-ref.json. Plan-ref.json is the sole source of truth for plan-to-br...[truncated 159 chars]...rface compatibility)
+- Returns `pr_id` as string if plan-ref.json exists, `None` otherwise</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1297" cache_read_input_tokens="21744" cache_creation="{'ephemeral_5m_input_tokens': 1297, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01XrsaRvsRPrMNLF1Mm58zUs">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/plan-ref-architecture.md</param>
+    <param name="old_string">## The `plan_id` String-to-Int Conversion Pattern
+
+Since `plan_id` is a string but GitHub ...[truncated 114 chars]...   issue_number = int(plan_ref.plan_id)
+else:
+    # Handle non-numeric plan_id
+    ...
+```</param>
+    <param name="new_string">## The `pr_id` String-to-Int Conversion Pattern
+
+Since `pr_id` is a string but GitHub APIs...[truncated 104 chars]...):
+    issue_number = int(plan_ref.pr_id)
+else:
+    # Handle non-numeric pr_id
+    ...
+```</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1297" cache_read_input_tokens="21744" cache_creation="{'ephemeral_5m_input_tokens': 1297, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01YSSLDdy3Yns1JkZ2uJ3Vbu">
+The file /home/runner/work/erk/erk/docs/learned/architecture/plan-ref-architecture.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01B5W5Qn5DoYyGWWbgxpGXHL">
+The file /home/runner/work/erk/erk/docs/learned/architecture/plan-ref-architecture.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01XBb8vtQhpxVWXvC3jzDVL5">
+The file /home/runner/work/erk/erk/docs/learned/architecture/plan-ref-architecture.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01ATdaQ3AWQ7FFrRieCGJ8Ea">
+The file /home/runner/work/erk/erk/docs/learned/architecture/plan-ref-architecture.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_011WdjfCDmupWEWbWwjFQDMS">
+The file /home/runner/work/erk/erk/docs/learned/architecture/plan-ref-architecture.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01996gda4NBxghJT8p711hau">
+The file /home/runner/work/erk/erk/docs/learned/architecture/plan-ref-architecture.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01XrsaRvsRPrMNLF1Mm58zUs">
+The file /home/runner/work/erk/erk/docs/learned/architecture/plan-ref-architecture.md has been updated successfully.
+  </tool_result>
+  <assistant>Now I need to update the tripwire in the header of plan-ref-architecture.md to reference `pr_id` instead of `plan_id`:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="2151" cache_read_input_tokens="23041" cache_creation="{'ephemeral_5m_input_tokens': 2151, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_012kHzq6X6qFsgAZWMKxp1un">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/plan-ref-architecture.md</param>
+    <param name="old_string">tripwires:
+  - action: "accessing plan_ref.plan_id as int without checking"
+    warning: "...[truncated 203 chars]..."All parameters after `impl_dir` are keyword-only. Positional calls will fail at runtime."</param>
+    <param name="new_string">tripwires:
+  - action: "accessing plan_ref.pr_id as int without checking"
+    warning: "pr...[truncated 195 chars]..."All parameters after `impl_dir` are keyword-only. Positional calls will fail at runtime."</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="2151" cache_read_input_tokens="23041" cache_creation="{'ephemeral_5m_input_tokens': 2151, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012kHzq6X6qFsgAZWMKxp1un">
+The file /home/runner/work/erk/erk/docs/learned/architecture/plan-ref-architecture.md has been updated successfully.
+  </tool_result>
+  <assistant>Now let me update the third file:</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="451" cache_read_input_tokens="25192" cache_creation="{'ephemeral_5m_input_tokens': 451, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01Y2hFBDNynurJPnmyCPysJG">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/issue-reference-flow.md</param>
+    <param name="old_string">See `save_plan_ref()` in
+[`packages/erk-shared/src/erk_shared/impl_folder.py`](../../../pa...[truncated 81 chars]...fter `impl_dir` are keyword-only (`provider`, `plan_id`, `url`, `labels`, `objective_id`).</param>
+    <param name="new_string">See `save_plan_ref()` in
+[`packages/erk-shared/src/erk_shared/impl_folder.py`](../../../pa...[truncated 79 chars]... after `impl_dir` are keyword-only (`provider`, `pr_id`, `url`, `labels`, `objective_id`).</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="451" cache_read_input_tokens="25192" cache_creation="{'ephemeral_5m_input_tokens': 451, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_012HMEXY5ggYR4hxr1z9PoAh">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/issue-reference-flow.md</param>
+    <param name="old_string">┌────────────────────────────┐
+│ .erk/impl-context/plan-ref.json │
+│ {                    ...[truncated 59 chars]...rl": "..."              │
+│ }                           │
+└─────────┬────────────────────┘</param>
+    <param name="new_string">┌────────────────────────────┐
+│ .erk/impl-context/plan-ref.json │
+│ {                    ...[truncated 59 chars]...rl": "..."              │
+│ }                           │
+└─────────┬────────────────────┘</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="451" cache_read_input_tokens="25192" cache_creation="{'ephemeral_5m_input_tokens': 451, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Y2hFBDNynurJPnmyCPysJG">
+The file /home/runner/work/erk/erk/docs/learned/architecture/issue-reference-flow.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_012HMEXY5ggYR4hxr1z9PoAh">
+The file /home/runner/work/erk/erk/docs/learned/architecture/issue-reference-flow.md has been updated successfully.
+  </tool_result>
+  <assistant>Perfect! I have successfully updated all three documentation files. Here's a summary of the changes made:
+
+## Summary of Changes
+
+### File 1: `/home/runner/work/erk/erk/docs/learned/architecture/ref-json-migration.md`
+- Updated PlanRef dataclass description: `plan_id` → `pr_id`
+- Updated legacy field mapping table: `plan_id` → `pr_id`
+- Updated JSON schema example: `"plan_id": "7952"` → `"pr_id": "7952"`
+
+### File 2: `/home/runner/work/erk/erk/docs/learned/architecture/plan-ref-architecture.md`
+- Updated PlanRef fields list: `plan_id` → `pr_id`
+- Updated tripwire warnings: `plan_ref.plan_id` → `plan_ref.pr_id`
+- Updated section heading: "String `plan_id` Rationale" → "String `pr_id` Rationale"
+- Updated function signature: `save_plan_ref(..., plan_id, ...)` → `save_plan_ref(..., pr_id, ...)`
+- Updated field mapping comment: `issue_number` -&gt; `pr_id`
+- Updated `validate_plan_linkage()` documentation: references to `plan_id` → `pr_id`
+- Updated section heading: "The `plan_id` String-to-Int Conversion Pattern" → "The `pr_id` String-to-Int Conversion Pattern"
+- Updated code example: `plan_ref.plan_id.isdigit()` → `plan_ref.pr_id.isdigit()` and `"Non-numeric plan_id"` → `"Non-numeric pr_id"`
+
+### File 3: `/home/runner/work/erk/erk/docs/learned/architecture/issue-reference-flow.md`
+- Updated function signature in save_plan_ref() parameters: `plan_id` → `pr_id`
+- Updated JSON data flow diagram: `"plan_id": "123"` → `"pr_id": "123"`
+
+All updates specifically targeted `PlanRef.plan_id` and related field references while preserving other identifiers like `state.plan_id` and function names like `resolve_plan_id_for_branch()` as instructed.</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="818" cache_read_input_tokens="25643" cache_creation="{'ephemeral_5m_input_tokens': 818, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>

@@ -1,0 +1,319 @@
+<session>
+  <meta source="agent-aca01a0" />
+  <meta branch="plnd/O9109-rename-plan-pr-docs-03-10-1247" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>In the file `/home/runner/work/erk/erk/.claude/commands/erk/plan-save.md`:
+
+This file documents a CLI command. The project has renamed programmatic field names from "plan" to "pr" in the API/CLI. Update this file to match.
+
+**Rename these patterns:**
+1. `plan_number` → `pr_number` (variable names, JSON field names)
+2. `plan_url` → `pr_url` (variable names, JSON field names)
+3. `plan_title` → `pr_title` (variable names, JSON field names)
+4. `plan-number` → `pr-number` (kebab-case placeholders)
+5. `plan #&lt;plan_number&gt;` or similar → `PR #&lt;pr_number&gt;` (output messages referring to the PR entity)
+
+**DO NOT rename:**
+- "plan" as a concept noun (e.g., "save plan", "plan mode", "the plan")
+- `plan.md` file references
+- `--plan-type` flag or `--plan-file` flag
+- Skill/command names containing "plan" (e.g., `/erk:plan-save`)
+- `plan_backend` field name (NOT renamed)
+- "erk-plan" label names
+
+Read the file first, then apply all renames using the Edit tool.</user>
+  <assistant>I'll start by reading the file to see its current content.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="16242" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 16242, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Dn5qEbuGy51W4ayYaw4AoZ">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/commands/erk/plan-save.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="16242" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 16242, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Dn5qEbuGy51W4ayYaw4AoZ">
+     1→---
+     2→description: Save the current session's plan to GitHub
+     3→argument-hint: "[--plan-type=learn]"
+     4→---
+     5→
+     6→# /erk:plan-save
+     7→
+     8→Save the current session's plan to GitHub with session context.
+     9→
+    10→## Usage
+    11→
+    12→```bash
+    13→/erk:plan-save                           # Standalone plan
+    14→/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+    15→/erk:plan-save --objective=123           # Explicit objective link (overrides marker)
+    16→/erk:plan-save --current-branch          # Use current branch instead of creating new plnd/ branch
+    17→```
+    18→
+    19→Objective linking: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command. Use `--objective=&lt;number&gt;` to override the marker or provide the link when no marker exists (e.g., during replan).
+    20→
+    21→## Plan Storage
+    22→
+    23→The plan is saved using the configured backend:
+    24→
+    25→- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+    26→  The JSON output contract includes `plan_number`, `plan_url`, `title`, `branch_name`, `plan_backend`.
+    27→
+    28→## Agent Instructions
+    29→
+    30→### Step 1: Parse Arguments
+
+... [208 lines omitted] ...
+
+   100→If the command fails, display the error and stop.
+   115→- If `success: false` or value doesn't match: verification failed
+   121→**On verification failure:**
+   123→Display error and remediation steps:
+   126→ERROR: Objective link verification failed
+   163→**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+   185→On failure, display the error message and suggest:
+  </tool_result>
+  <assistant>Now I'll apply all the necessary renames according to the requirements. Let me identify the changes needed:
+
+1. `plan_number` → `pr_number` (variable names, JSON field names)
+2. `plan_url` → `pr_url` (variable names, JSON field names)
+3. `plan_title` → `pr_title` (variable names, JSON field names)
+4. `plan-number` → `pr-number` (kebab-case placeholders)
+5. `plan #&lt;plan_number&gt;` or similar → `PR #&lt;pr_number&gt;` (output messages)
+
+Let me apply these changes:</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="3090" cache_read_input_tokens="16242" cache_creation="{'ephemeral_5m_input_tokens': 3090, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_014Ush2FfCXyDqf7nBGN1MSr">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/commands/erk/plan-save.md</param>
+    <param name="old_string">The JSON output contract includes `plan_number`, `plan_url`, `title`, `branch_name`, `plan_backend`.</param>
+    <param name="new_string">The JSON output contract includes `pr_number`, `pr_url`, `title`, `branch_name`, `plan_backend`.</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="3090" cache_read_input_tokens="16242" cache_creation="{'ephemeral_5m_input_tokens': 3090, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014Ush2FfCXyDqf7nBGN1MSr">
+The file /home/runner/work/erk/erk/.claude/commands/erk/plan-save.md has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01FxRTYgPX8LCPn2VdQRUHpT">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/commands/erk/plan-save.md</param>
+    <param name="old_string">Parse the JSON output to extract `plan_number` for verification in Step 5.</param>
+    <param name="new_string">Parse the JSON output to extract `pr_number` for verification in Step 5.</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="358" cache_read_input_tokens="19332" cache_creation="{'ephemeral_5m_input_tokens': 358, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01FxRTYgPX8LCPn2VdQRUHpT">
+The file /home/runner/work/erk/erk/.claude/commands/erk/plan-save.md has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_019AraASXsa1zqkMfhPCHonp">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/commands/erk/plan-save.md</param>
+    <param name="old_string">```bash
+erk exec get-plan-metadata &lt;plan_number&gt; objective_issue
+```</param>
+    <param name="new_string">```bash
+erk exec get-plan-metadata &lt;pr_number&gt; objective_issue
+```</param>
+  </tool_use>
+  <usage input_tokens="4" cache_creation_input_tokens="191" cache_read_input_tokens="19690" cache_creation="{'ephemeral_5m_input_tokens': 191, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019AraASXsa1zqkMfhPCHonp">
+The file /home/runner/work/erk/erk/.claude/commands/erk/plan-save.md has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_014376nGhCfeHxtBXvx1teoh">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/commands/erk/plan-save.md</param>
+    <param name="old_string">Fix: Close draft PR #&lt;plan_number&gt;,
+ensure the objective-context marker exists, and re-run /erk:plan-save.</param>
+    <param name="new_string">Fix: Close draft PR #&lt;pr_number&gt;,
+ensure the objective-context marker exists, and re-run /erk:plan-save.</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="199" cache_read_input_tokens="19881" cache_creation="{'ephemeral_5m_input_tokens': 199, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014376nGhCfeHxtBXvx1teoh">
+The file /home/runner/work/erk/erk/.claude/commands/erk/plan-save.md has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_017haWbMnrJ9nkn4gfDerguE">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/commands/erk/plan-save.md</param>
+    <param name="old_string">```bash
+erk exec update-objective-node &lt;objective-issue&gt; --node "$step_id" --pr "#&lt;plan_number&gt;" --status in_progress
+```</param>
+    <param name="new_string">```bash
+erk exec update-objective-node &lt;objective-issue&gt; --node "$step_id" --pr "#&lt;pr_number&gt;" --status in_progress
+```</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="323" cache_read_input_tokens="20080" cache_creation="{'ephemeral_5m_input_tokens': 323, 'ephemeral_1h_input_tokens': 0}" output_tokens="189" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017haWbMnrJ9nkn4gfDerguE">
+The file /home/runner/work/erk/erk/.claude/commands/erk/plan-save.md has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01TviNFwT2B3e6yEiTPzBgvQ">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/commands/erk/plan-save.md</param>
+    <param name="old_string">Display: `Updated objective #&lt;objective-issue&gt; roadmap: node &lt;step_id&gt; → plan #&lt;plan_number&gt;`</param>
+    <param name="new_string">Display: `Updated objective #&lt;objective-issue&gt; roadmap: node &lt;step_id&gt; → PR #&lt;pr_number&gt;`</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="233" cache_read_input_tokens="20403" cache_creation="{'ephemeral_5m_input_tokens': 233, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01TviNFwT2B3e6yEiTPzBgvQ">
+The file /home/runner/work/erk/erk/.claude/commands/erk/plan-save.md has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_011NprEhrqYomHXoL38xbfkk">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/commands/erk/plan-save.md</param>
+    <param name="old_string">Display: `Plan already saved as #&lt;plan_number&gt; (duplicate skipped)`</param>
+    <param name="new_string">Display: `Plan already saved as PR #&lt;pr_number&gt; (duplicate skipped)`</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="213" cache_read_input_tokens="20636" cache_creation="{'ephemeral_5m_input_tokens': 213, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011NprEhrqYomHXoL38xbfkk">
+The file /home/runner/work/erk/erk/.claude/commands/erk/plan-save.md has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_017wy21pnhCBkWopGrNQShhq">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/commands/erk/plan-save.md</param>
+    <param name="old_string">```
+Plan "&lt;title&gt;" saved as draft PR #&lt;plan_number&gt;
+URL: &lt;issue_url&gt;
+```</param>
+    <param name="new_string">```
+Plan "&lt;title&gt;" saved as draft PR #&lt;pr_number&gt;
+URL: &lt;issue_url&gt;
+```</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="297" cache_read_input_tokens="20849" cache_creation="{'ephemeral_5m_input_tokens': 297, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017wy21pnhCBkWopGrNQShhq">
+The file /home/runner/work/erk/erk/.claude/commands/erk/plan-save.md has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01MufJiLUfnCsvJdFrndqonV">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/commands/erk/plan-save.md</param>
+    <param name="old_string">erk exec push-session \
+    --session-file "&lt;session_file_path&gt;" \
+    --session-id "${CLA...[truncated 147 chars]...m `erk exec capture-session-info` output
+and `&lt;plan_number&gt;` is from Step 2's JSON output.</param>
+    <param name="new_string">erk exec push-session \
+    --session-file "&lt;session_file_path&gt;" \
+    --session-id "${CLA...[truncated 143 chars]...rom `erk exec capture-session-info` output
+and `&lt;pr_number&gt;` is from Step 2's JSON output.</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="208" cache_read_input_tokens="21146" cache_creation="{'ephemeral_5m_input_tokens': 208, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01MufJiLUfnCsvJdFrndqonV">
+The file /home/runner/work/erk/erk/.claude/commands/erk/plan-save.md has been updated successfully.
+  </tool_result>
+  <assistant>Perfect! Now let me verify the changes by reading the updated file:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="382" cache_read_input_tokens="21354" cache_creation="{'ephemeral_5m_input_tokens': 382, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_0182tLj4bA3V6Zzso2N1ZdhM">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/commands/erk/plan-save.md</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="382" cache_read_input_tokens="21354" cache_creation="{'ephemeral_5m_input_tokens': 382, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0182tLj4bA3V6Zzso2N1ZdhM">
+     1→---
+     2→description: Save the current session's plan to GitHub
+     3→argument-hint: "[--plan-type=learn]"
+     4→---
+     5→
+     6→# /erk:plan-save
+     7→
+     8→Save the current session's plan to GitHub with session context.
+     9→
+    10→## Usage
+    11→
+    12→```bash
+    13→/erk:plan-save                           # Standalone plan
+    14→/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+    15→/erk:plan-save --objective=123           # Explicit objective link (overrides marker)
+    16→/erk:plan-save --current-branch          # Use current branch instead of creating new plnd/ branch
+    17→```
+    18→
+    19→Objective linking: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command. Use `--objective=&lt;number&gt;` to override the marker or provide the link when no marker exists (e.g., during replan).
+    20→
+    21→## Plan Storage
+    22→
+    23→The plan is saved using the configured backend:
+    24→
+    25→- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+    26→  The JSON output contract includes `pr_number`, `pr_url`, `title`, `branch_name`, `plan_backend`.
+    27→
+    28→## Agent Instructions
+    29→
+    30→### Step 1: Parse Arguments
+
+... [208 lines omitted] ...
+
+   100→If the command fails, display the error and stop.
+   115→- If `success: false` or value doesn't match: verification failed
+   121→**On verification failure:**
+   123→Display error and remediation steps:
+   126→ERROR: Objective link verification failed
+   163→**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+   185→On failure, display the error message and suggest:
+  </tool_result>
+  <assistant>I notice there's one more instance on line 203 that still needs to be updated. Let me fix that:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="3196" cache_read_input_tokens="21736" cache_creation="{'ephemeral_5m_input_tokens': 3196, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01QfoLZa6hqqxPAzwD9XqVqy">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/commands/erk/plan-save.md</param>
+    <param name="old_string">If the plan was saved successfully and `plan_number` is known, use push-session directly
+for better stage tracking:</param>
+    <param name="new_string">If the plan was saved successfully and `pr_number` is known, use push-session directly
+for better stage tracking:</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="3196" cache_read_input_tokens="21736" cache_creation="{'ephemeral_5m_input_tokens': 3196, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01QfoLZa6hqqxPAzwD9XqVqy">
+The file /home/runner/work/erk/erk/.claude/commands/erk/plan-save.md has been updated successfully.
+  </tool_result>
+  <assistant>Perfect! Let me verify the final result:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="231" cache_read_input_tokens="24932" cache_creation="{'ephemeral_5m_input_tokens': 231, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01AfnqHFepqBU74CsqYy5hxC">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/commands/erk/plan-save.md</param>
+    <param name="offset">200</param>
+    <param name="limit">35</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="231" cache_read_input_tokens="24932" cache_creation="{'ephemeral_5m_input_tokens': 231, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01AfnqHFepqBU74CsqYy5hxC">
+   200→erk exec upload-impl-session --session-id "${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+   201→```
+   202→
+   203→If the plan was saved successfully and `pr_number` is known, use push-session directly
+   204→for better stage tracking:
+   205→
+   206→```bash
+   207→erk exec push-session \
+   208→    --session-file "&lt;session_file_path&gt;" \
+   209→    --session-id "${CLAUDE_SESSION_ID}" \
+   210→    --stage planning \
+   211→    --source local \
+   212→    --pr-number &lt;pr_number&gt; \
+   213→    2&gt;/dev/null || true
+   214→```
+   215→
+   216→Where `&lt;session_file_path&gt;` is obtained from `erk exec capture-session-info` output
+   217→and `&lt;pr_number&gt;` is from Step 2's JSON output.
+   218→
+   219→**Note:** This is non-critical. If it fails, the plan was still saved successfully.
+   220→The `2&gt;/dev/null || true` ensures graceful degradation.
+   221→
+   222→## Session Tracking
+   223→
+   224→After successfully saving a plan, the plan number is stored in a marker file that enables automatic plan updates in the same session.
+   225→
+   226→**To read the saved plan number:**
+   227→
+   228→```bash
+   229→erk exec marker read --session-id "${CLAUDE_SESSION_ID}" plan-saved-issue
+
+... [9 lines omitted] ...
+  </tool_result>
+  <assistant>Excellent! All changes have been successfully applied. Let me provide a summary of the updates made.
+
+## Summary
+
+I've successfully updated `/home/runner/work/erk/erk/.claude/commands/erk/plan-save.md` to rename programmatic field names from "plan" to "pr" according to the project's API/CLI refactoring. 
+
+### Changes Applied:
+
+1. **Line 26**: `plan_number`, `plan_url` → `pr_number`, `pr_url` (JSON field names in output contract)
+2. **Line 98**: `plan_number` → `pr_number` (variable reference in Step 4)
+3. **Line 109**: `&lt;plan_number&gt;` → `&lt;pr_number&gt;` (command placeholder)
+4. **Line 131**: `#&lt;plan_number&gt;` → `#&lt;pr_number&gt;` (error message)
+5. **Line 154**: `#&lt;plan_number&gt;` → `#&lt;pr_number&gt;` (command argument)
+6. **Line 161**: `plan #&lt;plan_number&gt;` → `PR #&lt;pr_number&gt;` (output message)
+7. **Line 169**: `#&lt;plan_number&gt;` → `#&lt;pr_number&gt;` (duplicate message)
+8. **Line 176**: `#&lt;plan_number&gt;` → `#&lt;pr_number&gt;` (success message)
+9. **Line 203**: `plan_number` → `pr_number` (variable reference in Step 5)
+10. **Line 212**: `&lt;plan_number&gt;` → `&lt;pr_number&gt;` (command argument)
+11. **Line 217**: `&lt;plan_number&gt;` → `&lt;pr_number&gt;` (output description)
+
+### What Was NOT Changed (as specified):
+- "plan" as a concept noun (e.g., "save plan", "plan mode")
+- `plan.md` file references
+- `--plan-type` and `--plan-file` flags
+- Skill/command names like `/erk:plan-save`
+- `plan_backend` field name
+- "erk-plan" label names
+
+All renames have been completed and verified.</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="735" cache_read_input_tokens="25163" cache_creation="{'ephemeral_5m_input_tokens': 735, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+</session>

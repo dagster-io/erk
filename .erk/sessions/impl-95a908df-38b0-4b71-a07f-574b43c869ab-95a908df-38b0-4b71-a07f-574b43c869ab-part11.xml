@@ -1,0 +1,196 @@
+<session>
+  <meta source="agent-a1e5217" />
+  <meta branch="plnd/O9109-rename-plan-pr-docs-03-10-1247" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <tool_result tool="toolu_01CksAAyKgQ9CTnr86Bu9Zs1">
+   724→
+   725→```
+   726→Learn plan saved as draft PR #&lt;pr_number&gt;: &lt;title&gt;
+   727→URL: &lt;pr_url&gt;
+   728→```
+   729→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>I see `pr_number` in the output which should probably be `pr-number` in the kebab-case placeholder, but let me check the context:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="351" cache_read_input_tokens="46801" cache_creation="{'ephemeral_5m_input_tokens': 351, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01P1sz7WgePQPuNGa4aTQDg4">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/commands/erk/learn.md</param>
+    <param name="offset">720</param>
+    <param name="limit">10</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="351" cache_read_input_tokens="46801" cache_creation="{'ephemeral_5m_input_tokens': 351, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01P1sz7WgePQPuNGa4aTQDg4">
+   720→
+   721→Parse the JSON output to get `pr_number`, `plan_backend`, `title`, and `pr_url` (the new learn plan number).
+   722→
+   723→Display the result:
+   724→
+   725→```
+   726→Learn plan saved as draft PR #&lt;pr_number&gt;: &lt;title&gt;
+   727→URL: &lt;pr_url&gt;
+   728→```
+   729→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>I see - line 721 refers to JSON field names (`pr_number`, `plan_backend`, `pr_url`) which are correct. Line 726 is showing example output with `&lt;pr_number&gt;` which is a placeholder/variable reference in the output message, so it should use kebab-case. Let me fix this:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="336" cache_read_input_tokens="47152" cache_creation="{'ephemeral_5m_input_tokens': 336, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_012dRFnikt4JAGnKYL4fhURe">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/commands/erk/learn.md</param>
+    <param name="old_string">Display the result:
+
+```
+Learn plan saved as draft PR #&lt;pr_number&gt;: &lt;title&gt;
+URL: &lt;pr_url&gt;
+```</param>
+    <param name="new_string">Display the result:
+
+```
+Learn plan saved as draft PR #&lt;pr-number&gt;: &lt;title&gt;
+URL: &lt;pr-url&gt;
+```</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="336" cache_read_input_tokens="47152" cache_creation="{'ephemeral_5m_input_tokens': 336, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012dRFnikt4JAGnKYL4fhURe">
+The file /home/runner/work/erk/erk/.claude/commands/erk/learn.md has been updated successfully.
+  </tool_result>
+  <assistant>Now let me do one final comprehensive check to make sure everything is correct:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="396" cache_read_input_tokens="47488" cache_creation="{'ephemeral_5m_input_tokens': 396, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01FwJqk9ushSxpuAYz7CTVtU">
+    <param name="command">grep -n "plan_number\|plan_url\|plan-number\|plan-url" /home/runner/work/erk/erk/.claude/commands/erk/learn.md | grep -v "learn-plan\|learn-pr"</param>
+    <param name="description">Final check for unrenamed plan fields</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="396" cache_read_input_tokens="47488" cache_creation="{'ephemeral_5m_input_tokens': 396, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01FwJqk9ushSxpuAYz7CTVtU">
+
+  </tool_result>
+  <assistant>Perfect! Now let me verify the key renamed patterns are present:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="175" cache_read_input_tokens="47884" cache_creation="{'ephemeral_5m_input_tokens': 175, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01NozHgTGsC3DoGSkHJxQwqf">
+    <param name="command">grep -c "pr_number\|pr_url\|&lt;pr-number&gt;\|&lt;pr-url&gt;" /home/runner/work/erk/erk/.claude/commands/erk/learn.md</param>
+    <param name="description">Count renamed fields to verify completeness</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="175" cache_read_input_tokens="47884" cache_creation="{'ephemeral_5m_input_tokens': 175, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01NozHgTGsC3DoGSkHJxQwqf">
+18
+  </tool_result>
+  <assistant>Excellent! Let me verify the PR # references are correct:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="253" cache_read_input_tokens="48059" cache_creation="{'ephemeral_5m_input_tokens': 253, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_013L82m6e6jCqPYpjyiDiSS2">
+    <param name="command">grep -c "PR #" /home/runner/work/erk/erk/.claude/commands/erk/learn.md</param>
+    <param name="description">Count PR # references</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="253" cache_read_input_tokens="48059" cache_creation="{'ephemeral_5m_input_tokens': 253, 'ephemeral_1h_input_tokens': 0}" output_tokens="115" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013L82m6e6jCqPYpjyiDiSS2">
+9
+  </tool_result>
+  <assistant>Great! Let me do a final spot check of a few key sections to ensure everything is correct:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="128" cache_read_input_tokens="48312" cache_creation="{'ephemeral_5m_input_tokens': 128, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01B2oRJBbiD57Tjwo7xBv4c5">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/commands/erk/learn.md</param>
+    <param name="offset">1</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="128" cache_read_input_tokens="48312" cache_creation="{'ephemeral_5m_input_tokens': 128, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01B2oRJBbiD57Tjwo7xBv4c5">
+     1→---
+     2→description: Extract insights from plan-associated sessions
+     3→argument-hint: "[pr-number]"
+     4→---
+     5→
+     6→# /erk:learn
+     7→
+     8→Create a documentation plan from Claude Code sessions associated with a plan implementation. The verb "learn" means: analyze what happened, extract insights, and create an actionable plan to document those learnings.
+     9→
+    10→## Usage
+    11→
+    12→```
+    13→/erk:learn                              # Infers plan from current branch
+    14→/erk:learn 4655                          # Explicit PR number
+    15→```
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>Perfect! Let me check one more section with the pipeline displays:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="483" cache_read_input_tokens="48440" cache_creation="{'ephemeral_5m_input_tokens': 483, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_012KB13eLy4eVoxvEYcxSa8K">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/commands/erk/learn.md</param>
+    <param name="offset">27</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="483" cache_read_input_tokens="48440" cache_creation="{'ephemeral_5m_input_tokens': 483, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012KB13eLy4eVoxvEYcxSa8K">
+    27→**When `.erk/impl-context/` exists (CI/async mode):**
+    28→
+    29→```
+    30→Learn pipeline for PR #&lt;pr-number&gt; (using preprocessed materials):
+    31→  1. Read preprocessed materials from .erk/impl-context/
+    32→  2. Launch analysis agents (session, diff, docs check, PR comments)
+    33→  3. Synthesize findings into a documentation plan
+    34→  4. Save plan as a draft PR
+    35→```
+    36→
+    37→**When no `.erk/impl-context/`:**
+    38→
+    39→```
+    40→Learn pipeline for PR #&lt;pr-number&gt;:
+    41→  1. Discover and preprocess session logs
+    42→  2. Launch analysis agents (session, diff, docs check, PR comments)
+    43→  3. Synthesize findings into a documentation plan
+    44→  4. Save plan as a draft PR
+    45→```
+    46→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>Excellent! All the changes look correct. Let me create a final summary of what was changed:
+
+## Summary
+
+I have successfully updated `/home/runner/work/erk/erk/.claude/commands/erk/learn.md` to rename programmatic field names from "plan" to "pr" terminology. Here's what was changed:
+
+### Renames Applied:
+
+1. **Argument hints and placeholders** (kebab-case: `plan-number` → `pr-number`):
+   - Line 3: `[plan-number]` → `[pr-number]`
+   - Line 140: `&lt;plan-number&gt;` → `&lt;pr-number&gt;` (in command invocation)
+   - Line 152: `&lt;plan-number&gt;` → `&lt;pr-number&gt;` (in fetch-sessions command)
+   - Line 752: `&lt;learn-plan-number&gt;` → `&lt;learn-pr-number&gt;` (in track-learn-result command)
+
+2. **Output display placeholders** (example output messages):
+   - Lines 30, 40: `plan #&lt;plan-number&gt;` → `PR #&lt;pr-number&gt;`
+   - Lines 58: `Plan #&lt;plan-number&gt;` → `PR #&lt;pr-number&gt;`
+   - Lines 130: `plan #&lt;plan-number&gt;` → `PR #&lt;pr-number&gt;`
+   - Lines 726-727: `&lt;pr_number&gt;` → `&lt;pr-number&gt;` and `&lt;pr_url&gt;` → `&lt;pr-url&gt;` (in output template)
+
+3. **JSON field names** (snake_case: `plan_number` → `pr_number`, `plan_url` → `pr_url`):
+   - Line 721: References to JSON fields `pr_number`, `pr_url`
+   - Various command invocations now reference these renamed fields
+
+### What Was NOT Changed (Per Instructions):
+
+- `plan_title` - Remains unchanged as it wasn't renamed in the API
+- `plan_backend` - Not renamed per instructions
+- `plan_content` - Not renamed per instructions
+- `--plan-type` flag - Not renamed per instructions
+- Skill/command names with "plan" (e.g., `/erk:plan-save`, `erk-plan` labels)
+- Conceptual uses of "plan" (e.g., "implementation plan", "learn plan", "plan mode")
+- File references like `plan.md`
+- `plan_file` parameter in commands
+
+All edits maintain the distinction between programmatic field names (which were renamed) and conceptual terminology (which was preserved).</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="457" cache_read_input_tokens="48923" cache_creation="{'ephemeral_5m_input_tokens': 457, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+</session>
