@@ -34,6 +34,7 @@ class FakeGraphite(Graphite):
         squash_branch_raises: Exception | None = None,
         submit_stack_raises: Exception | None = None,
         delete_branch_raises: Exception | None = None,
+        restack_result: tuple[bool, str | None] = (True, None),
         pr_info: dict[str, PullRequestInfo] | None = None,
         branches: dict[str, BranchMetadata] | None = None,
         stacks: dict[str, list[str]] | None = None,
@@ -63,6 +64,8 @@ class FakeGraphite(Graphite):
         self._squash_branch_raises = squash_branch_raises
         self._submit_stack_raises = submit_stack_raises
         self._delete_branch_raises = delete_branch_raises
+        self._restack_result = restack_result
+        self._restack_calls: list[Path] = []
         self._submit_branch_calls: list[tuple[Path, str, bool]] = []
         self._track_branch_calls: list[tuple[Path, str, str]] = []
         self._retrack_branch_calls: list[tuple[Path, str]] = []
@@ -272,6 +275,19 @@ class FakeGraphite(Graphite):
         FakeGraphiteBranchOps created via create_linked_branch_ops().
         """
         return self._submit_branch_calls
+
+    def restack(self, repo_root: Path) -> tuple[bool, str | None]:
+        """Return pre-configured restack result."""
+        self._restack_calls.append(repo_root)
+        return self._restack_result
+
+    @property
+    def restack_calls(self) -> list[Path]:
+        """Get the list of restack() calls.
+
+        Returns list of repo_root Path values.
+        """
+        return self._restack_calls
 
     def is_branch_tracked(self, repo_root: Path, branch: str) -> bool:
         """Return True if branch is in configured branches."""
