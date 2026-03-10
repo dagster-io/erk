@@ -1,0 +1,456 @@
+<session>
+  <meta source="agent-ae70181" />
+  <meta branch="plnd/hide-learn-command-03-10-0523" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant docs before exploring raw files. Then explore codebase as necessary.
+
+Find the code in the erk PR submit pipeline that checks for "No commits ahead of main" and returns this error. I need to understand what logic it uses to determine there are no commits - specifically look for how it filters commits or checks for implementation commits vs plan commits. Search in `src/erk/` for the string "No commits ahead of main" or similar and show me the relevant code context.</user>
+  <assistant>I'll help you find the code in the PR submit pipeline that checks for "No commits ahead of main". Let me start by searching for this message.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="18992" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 18992, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_013Af8nRuznWoF67wQiCt2Ce">
+    <param name="pattern">No commits ahead</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="18992" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 18992, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01XfFjXgVazKpxxo6Ek2qTrR">
+    <param name="pattern">No commits ahead</param>
+    <param name="path">/home/runner/work/erk/erk/docs/learned</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="18992" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 18992, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013Af8nRuznWoF67wQiCt2Ce">
+src/erk/cli/commands/pr/submit_pipeline.py:414:            message=f"No commits ahead of {state.parent_branch}. Nothing to submit.",
+  </tool_result>
+  <tool_result tool="toolu_01XfFjXgVazKpxxo6Ek2qTrR">
+docs/learned/testing/cli-test-error-assertions.md:68:    # Breaks when: message changes to "No commits ahead of main. Nothing to submit."
+  </tool_result>
+  <assistant>Great! I found it. Now let me read the relevant file to understand the context and logic around this check.</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="432" cache_read_input_tokens="18992" cache_creation="{'ephemeral_5m_input_tokens': 432, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Qt7ZEhWu6Syvf5vkpsgBbw">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/submit_pipeline.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="432" cache_read_input_tokens="18992" cache_creation="{'ephemeral_5m_input_tokens': 432, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Qt7ZEhWu6Syvf5vkpsgBbw">
+     1→"""Linear pipeline for PR submission.
+     2→
+     3→Replaces the dual-path branching orchestration with a sequence of plain
+     4→functions transforming a frozen SubmitState dataclass.
+     5→
+     6→Each step: (ErkContext, SubmitState) -&gt; SubmitState | SubmitError
+     7→"""
+     8→
+     9→import concurrent.futures
+    10→import dataclasses
+    11→import sys
+    12→import uuid
+    13→from collections.abc import Callable
+    14→from dataclasses import dataclass
+    15→from functools import cache
+    16→from pathlib import Path
+    17→
+    18→import click
+    19→
+    20→from erk.cli.commands.pr.shared import (
+    21→    assemble_pr_body,
+    22→    echo_plan_context_status,
+    23→    maybe_advance_lifecycle_to_impl,
+    24→    recover_plan_header,
+    25→    run_commit_message_generation,
+    26→)
+    27→from erk.cli.constants import ERK_PR_LABEL, PLANNED_PR_TITLE_PREFIX
+    28→from erk.cli.ensure import UserFacingCliError
+    29→from erk.cli.repo_resolution import get_remote_github
+    30→from erk.core.commit_message_generator import CommitMessageGenerator
+
+... [1097 lines omitted] ...
+
+    34→from erk_shared.gateway.git.remote_ops.types import PullRebaseError, PushError
+   120→class SubmitError:
+   121→    """Error result from a pipeline step."""
+   124→    error_type: str
+   133→SubmitStep = Callable[[ErkContext, SubmitState], SubmitState | SubmitError]
+   136→def prepare_state(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   149→        return SubmitError(
+   151→            error_type="no_branch",
+   165→        except ValueError as e:
+   166→            return SubmitError(
+   168→                error_type="issue_linkage_mismatch",
+   211→def cleanup_impl_for_submit(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   231→def commit_wip(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   241→def capture_existing_pr_body(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   253→def push_and_create_pr(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   270→def _graphite_first_flow(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   277→    # but the first submit attempt failed before pushing.
+   299→            return SubmitError(
+   301→                error_type="remote_diverged",
+   331→    except RuntimeError as e:
+   332→        error_str = str(e)
+   333→        if "restack" in error_str.lower():
+   334→            return SubmitError(
+   336→                error_type="graphite_restack_required",
+   345→        return SubmitError(
+   347→            error_type="graphite_submit_failed",
+   348→            message=f"Graphite submit failed: {e}",
+   360→        return SubmitError(
+   362→            error_type="pr_not_found",
+   391→def _core_submit_flow(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   399→        return SubmitError(
+   401→            error_type="github_auth_failed",
+   411→        return SubmitError(
+   413→            error_type="no_commits",
+   431→        if isinstance(pull_result, PullRebaseError):
+   432→            return SubmitError(
+   434→                error_type="rebase_failed",
+   436→                    f"Failed to rebase '{state.branch_name}' on origin.\n"
+   437→                    f"Error: {pull_result.message}\n\n"
+   447→        return SubmitError(
+   449→            error_type="branch_diverged",
+   468→    if isinstance(push_result, PushError):
+   470→            return SubmitError(
+   472→                error_type="branch_diverged",
+   481→        raise UserFacingCliError(push_result.message, error_type="cli_error")
+   491→                return SubmitError(
+   493→                    error_type="parent_branch_no_pr",
+   565→def label_code_pr(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   581→def extract_diff(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   587→        return SubmitError(
+   589→            error_type="no_base_branch",
+   617→def fetch_plan_context(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   627→        return SubmitError(
+   629→            error_type="no_repo",
+   648→) -&gt; SubmitState | SubmitError:
+   661→    if isinstance(diff_result, SubmitError):
+   663→    if isinstance(plan_result, SubmitError):
+   675→def generate_description(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   682→        return SubmitError(
+   684→            error_type="no_diff_file",
+   685→            message="Failed to extract diff for AI analysis",
+   706→        return SubmitError(
+   708→            error_type="ai_generation_failed",
+   709→            message=f"Failed to generate message: {msg_result.error_message}",
+   722→def enhance_with_graphite(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   764→    except RuntimeError as e:
+   765→        error_msg = str(e).lower()
+   766→        if "nothing to submit" in error_msg or "no changes" in error_msg:
+   770→        return SubmitError(
+   772→            error_type="graphite_enhance_failed",
+   773→            message=f"Graphite enhancement failed: {e}",
+   790→def finalize_pr(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   797→        return SubmitError(
+   799→            error_type="no_pr_number",
+   872→        except OSError as e:
+   874→                click.echo(click.style(f"   Failed to clean up diff file: {e}", dim=True))
+   902→def link_pr_to_objective_nodes(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   928→                f"   Warning: Objective #{objective_id} not found, skipping node linking",
+   969→            except ValueError:
+  1024→def run_push_and_create_pipeline(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+  1029→        except Exception as e:
+  1031→            return SubmitError(
+  1033→                error_type="unhandled_exception",
+  1034→                message=f"Unexpected error in {step_name}: {e}",
+  1038→        if isinstance(result, SubmitError):
+  1061→def run_submit_pipeline(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+  1062→    """Run the submit pipeline, returning final state or first error."""
+  1066→        except Exception as e:
+  1068→            return SubmitError(
+  1070→                error_type="unhandled_exception",
+  1071→                message=f"Unexpected error in {step_name}: {e}",
+  1075→        if isinstance(result, SubmitError):
+  </tool_result>
+  <assistant>Perfect! I found the exact code. Now let me look at the key function that performs the check - `count_commits_ahead`:</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="15393" cache_read_input_tokens="19424" cache_creation="{'ephemeral_5m_input_tokens': 15393, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_016hB1jPFpv4r7PqTJFuGSz9">
+    <param name="pattern">count_commits_ahead</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="15393" cache_read_input_tokens="19424" cache_creation="{'ephemeral_5m_input_tokens': 15393, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016hB1jPFpv4r7PqTJFuGSz9">
+Found 3 files
+src/erk/cli/commands/pr/submit_pipeline.py
+src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py
+src/erk/cli/commands/exec/scripts/generate_pr_address_summary.py
+  </tool_result>
+  <assistant>Now let me find the actual implementation of `count_commits_ahead`:</assistant>
+  <usage input_tokens="4" cache_creation_input_tokens="361" cache_read_input_tokens="34817" cache_creation="{'ephemeral_5m_input_tokens': 361, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01WmgR5g9AaTyRR4r2GssXP5">
+    <param name="pattern">def count_commits_ahead</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk</param>
+    <param name="output_mode">content</param>
+    <param name="-A">20</param>
+    <param name="type">py</param>
+  </tool_use>
+  <usage input_tokens="4" cache_creation_input_tokens="361" cache_read_input_tokens="34817" cache_creation="{'ephemeral_5m_input_tokens': 361, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01WmgR5g9AaTyRR4r2GssXP5">
+No matches found
+  </tool_result>
+  <assistant>Let me search in the context object or gateway:</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="211" cache_read_input_tokens="35178" cache_creation="{'ephemeral_5m_input_tokens': 211, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01NnAAnsqwSTzVgpsdQBGRp6">
+    <param name="command">grep -r "count_commits_ahead" --include="*.py" src/</param>
+    <param name="description">Search for count_commits_ahead definition</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="211" cache_read_input_tokens="35178" cache_creation="{'ephemeral_5m_input_tokens': 211, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01NnAAnsqwSTzVgpsdQBGRp6">
+src/erk/cli/commands/pr/submit_pipeline.py:    commit_count = ctx.git.analysis.count_commits_ahead(state.cwd, state.parent_branch)
+src/erk/cli/commands/exec/scripts/generate_pr_address_summary.py:    # count_commits_ahead accepts any ref (branch or commit SHA)
+src/erk/cli/commands/exec/scripts/generate_pr_address_summary.py:    return git.analysis.count_commits_ahead(repo_root, pre_head)
+src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py:        commits_ahead = git.analysis.count_commits_ahead(repo_root, parent_branch)
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01CDAuf3WCukE12LjjHCendC">
+    <param name="command">find /home/runner/work/erk/erk -path "*gateway*" -name "*.py" | grep -i analysis | head -20</param>
+    <param name="description">Find git analysis gateway files</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="432" cache_read_input_tokens="35389" cache_creation="{'ephemeral_5m_input_tokens': 432, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01CDAuf3WCukE12LjjHCendC">
+/home/runner/work/erk/erk/tests/fakes/gateway/git_analysis_ops.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/analysis_ops/dry_run.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/analysis_ops/__init__.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/analysis_ops/real.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/analysis_ops/abc.py
+  </tool_result>
+  <assistant>Now let me look at the analysis_ops ABC and real implementation:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1096" cache_read_input_tokens="35821" cache_creation="{'ephemeral_5m_input_tokens': 1096, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01B3FLYhVq6D2arT1cRmL2hh">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/analysis_ops/abc.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1096" cache_read_input_tokens="35821" cache_creation="{'ephemeral_5m_input_tokens': 1096, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01B3FLYhVq6D2arT1cRmL2hh">
+     1→"""Abstract interface for git analysis operations."""
+     2→
+     3→from abc import ABC, abstractmethod
+     4→from pathlib import Path
+     5→
+     6→
+     7→class GitAnalysisOps(ABC):
+     8→    """Abstract interface for Git branch analysis operations.
+     9→
+    10→    This interface contains query operations for comparing branches and commits.
+    11→    All implementations (real, fake, dry-run, printing) must implement this interface.
+    12→    """
+    13→
+    14→    # ============================================================================
+    15→    # Query Operations
+    16→    # ============================================================================
+    17→
+    18→    @abstractmethod
+    19→    def count_commits_ahead(self, cwd: Path, base_branch: str) -&gt; int:
+    20→        """Count commits in HEAD that are not in base_branch.
+    21→
+    22→        Uses `git rev-list --count {base_branch}..HEAD`.
+    23→
+    24→        Args:
+    25→            cwd: Working directory
+    26→            base_branch: Branch to compare against
+    27→
+    28→        Returns:
+    29→            Number of commits ahead, or 0 on error
+    30→        """
+
+... [55 lines omitted] ...
+
+    61→            Number of commits behind, or 0 on error
+  </tool_result>
+  <assistant>Now let me check the real implementation:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="1174" cache_read_input_tokens="36917" cache_creation="{'ephemeral_5m_input_tokens': 1174, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_0174Ds4cveNmZyqDYuyt8xYQ">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/analysis_ops/real.py</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="1174" cache_read_input_tokens="36917" cache_creation="{'ephemeral_5m_input_tokens': 1174, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0174Ds4cveNmZyqDYuyt8xYQ">
+     1→"""Real implementation of git analysis operations."""
+     2→
+     3→import subprocess
+     4→from pathlib import Path
+     5→
+     6→from erk_shared.gateway.git.analysis_ops.abc import GitAnalysisOps
+     7→from erk_shared.subprocess_utils import run_subprocess_with_context
+     8→
+     9→
+    10→class RealGitAnalysisOps(GitAnalysisOps):
+    11→    """Real implementation of Git analysis operations using subprocess."""
+    12→
+    13→    # ============================================================================
+    14→    # Query Operations
+    15→    # ============================================================================
+    16→
+    17→    def count_commits_ahead(self, cwd: Path, base_branch: str) -&gt; int:
+    18→        """Count commits in HEAD that are not in base_branch."""
+    19→        result = subprocess.run(
+    20→            ["git", "rev-list", "--count", f"{base_branch}..HEAD"],
+    21→            cwd=cwd,
+    22→            capture_output=True,
+    23→            text=True,
+    24→            check=False,
+    25→        )
+    26→        if result.returncode != 0:
+    27→            return 0
+    28→        count_str = result.stdout.strip()
+    29→        if not count_str:
+    30→            return 0
+
+... [51 lines omitted] ...
+  </tool_result>
+  <assistant>Perfect! Now let me check the other two files that use `count_commits_ahead` to understand the context better:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="1158" cache_read_input_tokens="38091" cache_creation="{'ephemeral_5m_input_tokens': 1158, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01J9Cadk8QuqBrJ2p5Q2PbVP">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="1158" cache_read_input_tokens="38091" cache_creation="{'ephemeral_5m_input_tokens': 1158, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01J9Cadk8QuqBrJ2p5Q2PbVP">
+     1→#!/usr/bin/env python3
+     2→"""Exit Plan Mode Hook.
+     3→
+     4→Prompts user before exiting plan mode when a plan exists. This hook intercepts
+     5→the ExitPlanMode tool via PreToolUse lifecycle to ask whether to save to GitHub
+     6→or implement immediately.
+     7→
+     8→Exit codes:
+     9→    0: Success (allow exit - no plan, implement-now marker present, or no session)
+    10→    2: Block (plan exists, no implement-now marker - prompt user)
+    11→
+    12→This command is invoked via:
+    13→    erk exec exit-plan-mode-hook
+    14→
+    15→Marker File State Machine
+    16→=========================
+    17→
+    18→This hook uses marker files in .erk/scratch/sessions/&lt;session-id&gt;/ for state management.
+    19→Marker files are self-describing: their names indicate their purpose and their contents
+    20→explain their effect.
+    21→
+    22→Marker Files:
+    23→    exit-plan-mode-hook.implement-now.marker
+    24→        Created by: Agent (when user chooses "Implement without saving")
+    25→        Effect: Next ExitPlanMode call is ALLOWED (exit plan mode, proceed to implementation)
+    26→        Lifecycle: Deleted after being read by next hook invocation
+    27→
+    28→    exit-plan-mode-hook.plan-saved.marker
+    29→        Created by: /erk:plan-save command (both new-branch and current-branch paths)
+    30→        Content: First line is the plan PR number
+
+... [866 lines omitted] ...
+
+   403→                f"⚠️  WARNING: Currently on '{current_branch}'. "
+  </tool_result>
+  <assistant>Excellent! Now let me get the third file for completeness:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="12194" cache_read_input_tokens="39249" cache_creation="{'ephemeral_5m_input_tokens': 12194, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01FKAW1hgE9HLKzFFU6pGkZ2">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/generate_pr_address_summary.py</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="12194" cache_read_input_tokens="39249" cache_creation="{'ephemeral_5m_input_tokens': 12194, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01FKAW1hgE9HLKzFFU6pGkZ2">
+     1→"""Generate enhanced PR comment for pr-address workflow.
+     2→
+     3→This exec command generates a detailed PR comment summarizing changes made
+     4→by the pr-address workflow. It reads a diff from stdin and uses Claude to
+     5→generate a human-readable summary.
+     6→
+     7→Usage:
+     8→    git diff $PRE_HEAD..HEAD | erk exec generate-pr-address-summary \
+     9→        --pr-number 123 \
+    10→        --pre-head abc1234 \
+    11→        --model-name claude-sonnet-4-5 \
+    12→        --run-url https://github.com/owner/repo/actions/runs/789 \
+    13→        --job-status success
+    14→
+    15→Output:
+    16→    Complete markdown comment body (including marker for idempotent updates)
+    17→
+    18→Exit Codes:
+    19→    0: Success
+    20→    1: Error (Claude failure, invalid job status)
+    21→
+    22→Examples:
+    23→    # Success with changes
+    24→    $ echo "+added line" | erk exec generate-pr-address-summary \
+    25→        --pr-number 123 --pre-head abc --run-url URL --job-status success
+    26→    &lt;!-- erk:pr-address-run --&gt;
+    27→    ## PR Review Comments Addressed
+    28→    ...
+    29→
+    30→    # Success with no changes
+
+... [75 lines omitted] ...
+  </tool_result>
+  <assistant>Perfect! Now I have all the information I need. Let me provide a comprehensive summary of my findings.
+
+## Summary: "No commits ahead of main" Check in PR Submit Pipeline
+
+I found the code that performs this check in the **PR submit pipeline**. Here's the relevant context:
+
+### Location
+**File:** `/home/runner/work/erk/erk/src/erk/cli/commands/pr/submit_pipeline.py`
+**Function:** `_core_submit_flow()` (lines 391-562)
+**Error check:** Lines 408-416
+
+### The Check Code
+
+```python
+# Verify commits to push
+commit_count = ctx.git.analysis.count_commits_ahead(state.cwd, state.parent_branch)
+if commit_count == 0:
+    return SubmitError(
+        phase="push_and_create_pr",
+        error_type="no_commits",
+        message=f"No commits ahead of {state.parent_branch}. Nothing to submit.",
+        details={"parent_branch": state.parent_branch, "branch": state.branch_name},
+    )
+```
+
+### How It Filters Commits
+
+The logic uses **`git rev-list --count`** to count commits:
+
+**File:** `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/analysis_ops/real.py`
+**Method:** `count_commits_ahead()` (lines 17-31)
+
+```python
+def count_commits_ahead(self, cwd: Path, base_branch: str) -&gt; int:
+    """Count commits in HEAD that are not in base_branch."""
+    result = subprocess.run(
+        ["git", "rev-list", "--count", f"{base_branch}..HEAD"],
+        cwd=cwd,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if result.returncode != 0:
+        return 0
+    count_str = result.stdout.strip()
+    if not count_str:
+        return 0
+    return int(count_str)
+```
+
+### Key Points About How Commits Are Filtered
+
+1. **Git command used:** `git rev-list --count {base_branch}..HEAD`
+   - The `{base_branch}..HEAD` range syntax only shows commits reachable from HEAD that are NOT reachable from base_branch
+   - This is a standard git range query that automatically filters out any commits that exist in the base branch
+
+2. **What gets counted:**
+   - All unique commits on the current branch that don't exist in the parent/base branch
+   - No special filtering for "plan commits" vs "implementation commits"—it counts ALL commits
+
+3. **Error handling:**
+   - If the git command fails (returncode != 0), it returns 0 (treats it as "no commits")
+   - This means any git error silently resolves to "no commits ahead"
+
+4. **Context in submit pipeline:**
+   - The `state.parent_branch` is resolved in the `prepare_state()` step (line 157)
+   - It uses branch_manager to get the parent branch, falling back to the trunk_branch if no parent exists
+   - This is called BEFORE any commit staging or pushing happens
+
+### Usage in Other Parts of the Codebase
+
+The same `count_commits_ahead()` method is also used in:
+1. **exit_plan_mode_hook.py** (line 784) - to determine if the branch has commits to display UI prompts appropriately
+2. **generate_pr_address_summary.py** - for pr-address workflow commit counting</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="1325" cache_read_input_tokens="51443" cache_creation="{'ephemeral_5m_input_tokens': 1325, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>
