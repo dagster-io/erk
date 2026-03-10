@@ -8,7 +8,7 @@ from erk.core.context import ErkContext
 from erk.core.stack_sync import BranchSyncAction, StackSyncResult, sync_stack
 
 
-@click.command("sync", cls=GraphiteCommand)
+@click.command("sync", cls=GraphiteCommand, hidden=True)
 @click.pass_obj
 def sync_stack_cmd(ctx: ErkContext) -> None:
     """Sync all stack branches with their remote tracking branches.
