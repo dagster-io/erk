@@ -22,6 +22,30 @@
       "raw_size_kb": 714,
       "xml_size_kb": 182,
       "git_branch": "plnd/add-impl-failure-summary-03-10-0912"
+    },
+    {
+      "session_id": "be981a8d-5d51-4de4-bbd2-3be3cbb53e11",
+      "stage": "impl",
+      "source": "remote",
+      "uploaded_at": "2026-03-10T13:23:47.594214+00:00",
+      "files": [
+        "impl-be981a8d-5d51-4de4-bbd2-3be3cbb53e11-be981a8d-5d51-4de4-bbd2-3be3cbb53e11-part1.xml",
+        "impl-be981a8d-5d51-4de4-bbd2-3be3cbb53e11-be981a8d-5d51-4de4-bbd2-3be3cbb53e11-part10.xml",
+        "impl-be981a8d-5d51-4de4-bbd2-3be3cbb53e11-be981a8d-5d51-4de4-bbd2-3be3cbb53e11-part11.xml",
+        "impl-be981a8d-5d51-4de4-bbd2-3be3cbb53e11-be981a8d-5d51-4de4-bbd2-3be3cbb53e11-part2.xml",
+        "impl-be981a8d-5d51-4de4-bbd2-3be3cbb53e11-be981a8d-5d51-4de4-bbd2-3be3cbb53e11-part3.xml",
+        "impl-be981a8d-5d51-4de4-bbd2-3be3cbb53e11-be981a8d-5d51-4de4-bbd2-3be3cbb53e11-part4.xml",
+        "impl-be981a8d-5d51-4de4-bbd2-3be3cbb53e11-be981a8d-5d51-4de4-bbd2-3be3cbb53e11-part5.xml",
+        "impl-be981a8d-5d51-4de4-bbd2-3be3cbb53e11-be981a8d-5d51-4de4-bbd2-3be3cbb53e11-part6.xml",
+        "impl-be981a8d-5d51-4de4-bbd2-3be3cbb53e11-be981a8d-5d51-4de4-bbd2-3be3cbb53e11-part7.xml",
+        "impl-be981a8d-5d51-4de4-bbd2-3be3cbb53e11-be981a8d-5d51-4de4-bbd2-3be3cbb53e11-part8.xml",
+        "impl-be981a8d-5d51-4de4-bbd2-3be3cbb53e11-be981a8d-5d51-4de4-bbd2-3be3cbb53e11-part9.xml"
+      ],
+      "user_turns": 3,
+      "duration_minutes": 9,
+      "raw_size_kb": 759,
+      "xml_size_kb": 206,
+      "git_branch": "plnd/add-impl-failure-summary-03-10-0912"
     }
   ]
 }

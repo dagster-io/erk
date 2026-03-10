@@ -1,0 +1,805 @@
+<session>
+  <meta source="agent-a31f189" />
+  <meta branch="plnd/add-impl-failure-summary-03-10-0912" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant docs before exploring raw files. Then explore codebase as necessary.
+
+I need to understand the existing `ci_generate_summaries.py` exec script pattern to follow it for a new similar script. Find and read:
+
+1. `src/erk/cli/commands/exec/scripts/ci_generate_summaries.py` - the full file
+2. `src/erk/cli/commands/exec/group.py` - to see how commands are registered
+3. Any existing prompt templates in `.github/prompts/` directory
+4. `src/erk/sessions/preprocess_session.py` - specifically the `generate_compressed_xml` function
+5. `src/erk/artifacts/paths.py` - specifically `get_bundled_github_dir`
+6. `erk_shared/context/helpers.py` or similar - specifically `require_prompt_executor` and `require_cwd`
+7. `erk_shared/subprocess_utils.py` or similar - specifically `run_subprocess_with_context`
+8. Any existing tests for ci_generate_summaries to understand test patterns
+
+Read ALL these files fully and report their complete contents. This is research only - do not write any code.</user>
+  <assistant>I'll help you find and read these files to understand the existing pattern. Let me start by searching for these files in the codebase.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="7016" cache_read_input_tokens="8268" cache_creation="{'ephemeral_5m_input_tokens': 7016, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01Teq83Cy8WsBf8XbDUFwqG7">
+    <param name="pattern">**/ci_generate_summaries.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="7016" cache_read_input_tokens="8268" cache_creation="{'ephemeral_5m_input_tokens': 7016, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01Fknc3EWD9uiUZQ3d3RZefu">
+    <param name="pattern">**/exec/group.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="7016" cache_read_input_tokens="8268" cache_creation="{'ephemeral_5m_input_tokens': 7016, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01WqCSCH48xCg4fNmCdQwTb6">
+    <param name="pattern">.github/prompts/**</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="7016" cache_read_input_tokens="8268" cache_creation="{'ephemeral_5m_input_tokens': 7016, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01HHCjR1Tf63vesCqY8aWoTC">
+    <param name="pattern">**/preprocess_session.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="7016" cache_read_input_tokens="8268" cache_creation="{'ephemeral_5m_input_tokens': 7016, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01Tw215pKsq381ngiMs7Vqta">
+    <param name="pattern">**/artifacts/paths.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="7016" cache_read_input_tokens="8268" cache_creation="{'ephemeral_5m_input_tokens': 7016, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01M8bLARYQ8zDHjSmRAEj6oR">
+    <param name="pattern">**/subprocess_utils.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="7016" cache_read_input_tokens="8268" cache_creation="{'ephemeral_5m_input_tokens': 7016, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_011yn8hUHS4chmMEq1o3omda">
+    <param name="pattern">**/test*ci_generate_summaries*</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="7016" cache_read_input_tokens="8268" cache_creation="{'ephemeral_5m_input_tokens': 7016, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01DkYFMoDPvecnnbNEkZPd7r">
+    <param name="pattern">**/*test*exec*</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="7016" cache_read_input_tokens="8268" cache_creation="{'ephemeral_5m_input_tokens': 7016, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01WqCSCH48xCg4fNmCdQwTb6">
+/home/runner/work/erk/erk/.github/prompts/ci-autofix.md
+/home/runner/work/erk/erk/.github/prompts/ci-summarize.md
+  </tool_result>
+  <tool_result tool="toolu_01Fknc3EWD9uiUZQ3d3RZefu">
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/group.py
+  </tool_result>
+  <tool_result tool="toolu_01DkYFMoDPvecnnbNEkZPd7r">
+/home/runner/work/erk/erk/packages/erk-shared/tests/unit/github/test_execute_gh_command_with_retry.py
+/home/runner/work/erk/erk/tests/commands/implement/test_execution_modes.py
+/home/runner/work/erk/erk/tests/core/test_anthropic_prompt_executor.py
+/home/runner/work/erk/erk/tests/core/test_fallback_prompt_executor.py
+/home/runner/work/erk/erk/tests/core/test_prompt_executor.py
+/home/runner/work/erk/erk/tests/tui/commands/test_execute_command.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_add_remote_execution_note.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_land_execute_objective_detection.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_land_execute.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/land/pipeline/test_run_execution_pipeline.py
+/home/runner/work/erk/erk/tests/unit/core/test_codex_prompt_executor.py
+/home/runner/work/erk/erk/tests/unit/fakes/test_fake_command_executor.py
+/home/runner/work/erk/erk/tests/unit/fakes/test_fake_prompt_executor.py
+  </tool_result>
+  <tool_result tool="toolu_01HHCjR1Tf63vesCqY8aWoTC">
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/preprocess_session.py
+  </tool_result>
+  <tool_result tool="toolu_01Teq83Cy8WsBf8XbDUFwqG7">
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/ci_generate_summaries.py
+  </tool_result>
+  <tool_result tool="toolu_011yn8hUHS4chmMEq1o3omda">
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_ci_generate_summaries.py
+  </tool_result>
+  <tool_result tool="toolu_01M8bLARYQ8zDHjSmRAEj6oR">
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/subprocess_utils.py
+/home/runner/work/erk/erk/src/erk/cli/subprocess_utils.py
+  </tool_result>
+  <tool_result tool="toolu_01Tw215pKsq381ngiMs7Vqta">
+/home/runner/work/erk/erk/src/erk/artifacts/paths.py
+  </tool_result>
+  <assistant>Now let me search for the helper functions you mentioned:</assistant>
+  <usage input_tokens="576" cache_creation_input_tokens="809" cache_read_input_tokens="15284" cache_creation="{'ephemeral_5m_input_tokens': 809, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_015RS6G7ug5GbT91SrnnPKaF">
+    <param name="pattern">**/context/helpers.py</param>
+  </tool_use>
+  <usage input_tokens="576" cache_creation_input_tokens="809" cache_read_input_tokens="15284" cache_creation="{'ephemeral_5m_input_tokens': 809, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01LfoPt7J5okzS2AvqfMSz7m">
+    <param name="pattern">require_prompt_executor|require_cwd</param>
+    <param name="type">py</param>
+    <param name="head_limit">5</param>
+  </tool_use>
+  <usage input_tokens="576" cache_creation_input_tokens="809" cache_read_input_tokens="15284" cache_creation="{'ephemeral_5m_input_tokens': 809, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_015RS6G7ug5GbT91SrnnPKaF">
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/context/helpers.py
+  </tool_result>
+  <tool_result tool="toolu_01LfoPt7J5okzS2AvqfMSz7m">
+Found 5 files limit: 5, offset: 0
+src/erk/cli/commands/exec/scripts/track_learn_evaluation.py
+src/erk/cli/commands/exec/scripts/upload_impl_session.py
+src/erk/cli/commands/exec/scripts/validate_claude_credentials.py
+src/erk/cli/commands/exec/scripts/rebase_with_conflict_resolution.py
+src/erk/cli/commands/exec/scripts/resolve_objective_ref.py
+  </tool_result>
+  <assistant>Now let me read all the files I found:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="1072" cache_read_input_tokens="16093" cache_creation="{'ephemeral_5m_input_tokens': 1072, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01N2YosQjjcvcNN5YJaau1k5">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/ci_generate_summaries.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1072" cache_read_input_tokens="16093" cache_creation="{'ephemeral_5m_input_tokens': 1072, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01ShEjHiYuutZ2RLKbghJ99G">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/group.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1072" cache_read_input_tokens="16093" cache_creation="{'ephemeral_5m_input_tokens': 1072, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01BFwCrsDqFfmwBozumdFcFZ">
+    <param name="file_path">/home/runner/work/erk/erk/.github/prompts/ci-summarize.md</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1072" cache_read_input_tokens="16093" cache_creation="{'ephemeral_5m_input_tokens': 1072, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_014vMxms158WUsStXVwri98P">
+    <param name="file_path">/home/runner/work/erk/erk/.github/prompts/ci-autofix.md</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1072" cache_read_input_tokens="16093" cache_creation="{'ephemeral_5m_input_tokens': 1072, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01NfWNL11MWPp1PXPYjErjJg">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/preprocess_session.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1072" cache_read_input_tokens="16093" cache_creation="{'ephemeral_5m_input_tokens': 1072, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01GW8Q5q6CEM5wVtw7xJjvuD">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/artifacts/paths.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1072" cache_read_input_tokens="16093" cache_creation="{'ephemeral_5m_input_tokens': 1072, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_016q1o1gJwDP8Q89odfpTzA7">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/context/helpers.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1072" cache_read_input_tokens="16093" cache_creation="{'ephemeral_5m_input_tokens': 1072, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01KTCwBVE4wgKg5ex6TT5WH8">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/subprocess_utils.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1072" cache_read_input_tokens="16093" cache_creation="{'ephemeral_5m_input_tokens': 1072, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Awdw3Zjv73aXj3vqbf6Uyn">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_ci_generate_summaries.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1072" cache_read_input_tokens="16093" cache_creation="{'ephemeral_5m_input_tokens': 1072, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01N2YosQjjcvcNN5YJaau1k5">
+     1→"""Generate CI failure summaries using Haiku.
+     2→
+     3→Fetches failing jobs from a GitHub Actions run, retrieves their logs,
+     4→sends them to Claude Haiku for summarization, and outputs results
+     5→in ERK-CI-SUMMARY marker format (consumed by ci_summary_parsing.py).
+     6→
+     7→When --pr-number is provided, summaries are also posted as a PR comment
+     8→and the ci_summary_comment_id is stored in the plan-header metadata.
+     9→
+    10→Usage:
+    11→    erk exec ci-generate-summaries --run-id 12345
+    12→    erk exec ci-generate-summaries --run-id 12345 --pr-number 42
+    13→
+    14→Output:
+    15→    ERK-CI-SUMMARY markers to stdout, progress messages to stderr
+    16→
+    17→Exit Codes:
+    18→    0: Success (even if individual jobs fail to summarize)
+    19→    1: Error during execution (e.g., cannot fetch failing jobs)
+    20→
+    21→Examples:
+    22→    $ erk exec ci-generate-summaries --run-id 12345 --pr-number 42
+    23→    === ERK-CI-SUMMARY:lint ===
+    24→    - Formatting issues in `src/foo.py`
+    25→    === /ERK-CI-SUMMARY:lint ===
+    26→"""
+    27→
+    28→from __future__ import annotations
+    29→
+    30→import re
+
+... [442 lines omitted] ...
+
+    95→        f"Summarize this CI failure log for job '{job_name}' in 2-5 concise "
+    96→        f"bullet points. Focus on what failed and why.\n\n{log_content}"
+   109→    lines = ["## CI Failure Summary", ""]
+   178→        The comment ID, or None if posting failed
+   223→        click.echo(f"Failed to update comment, creating new one: {result.stderr}", err=True)
+   241→        click.echo(f"Failed to post comment: {result.stderr}", err=True)
+   259→        click.echo("Failed to retrieve comment ID", err=True)
+   308→        click.echo(f"Failed to read PR issue #{plan_issue}", err=True)
+   314→            "Failed to update plan-header: plan-header block not found in issue body",
+   337→        click.echo(f"Failed to update PR issue: {update_result.stderr}", err=True)
+   353→    Individual job failures don't stop other jobs from being summarized.
+   363→            '.jobs[] | select(.conclusion == "failure") | "\\(.id)\\t\\(.name)"',
+   371→        click.echo(f"Error fetching failing jobs: {result.stderr}", err=True)
+   399→            click.echo("(Log fetch failed)")
+   422→            summary = "(Summarization failed)"
+   441→            click.echo(f"Failed to post CI summary comment on PR #{pr_number}", err=True)
+   449→    """Generate CI failure summaries using Haiku.
+  </tool_result>
+  <tool_result tool="toolu_01ShEjHiYuutZ2RLKbghJ99G">
+     1→"""Static exec group for erk scripts.
+     2→
+     3→This module provides the `erk exec` command group with all scripts
+     4→statically registered.
+     5→"""
+     6→
+     7→import click
+     8→
+     9→# Import and register all scripts
+    10→from erk.cli.commands.exec.scripts.add_objective_node import add_objective_node
+    11→from erk.cli.commands.exec.scripts.add_plan_label import add_plan_label
+    12→from erk.cli.commands.exec.scripts.add_plan_labels import add_plan_labels
+    13→from erk.cli.commands.exec.scripts.add_pr_labels_cmd import add_pr_labels
+    14→from erk.cli.commands.exec.scripts.add_remote_execution_note import (
+    15→    add_remote_execution_note,
+    16→)
+    17→from erk.cli.commands.exec.scripts.capture_session_info import (
+    18→    capture_session_info,
+    19→)
+    20→from erk.cli.commands.exec.scripts.ci_fetch_summaries import ci_fetch_summaries
+    21→from erk.cli.commands.exec.scripts.ci_generate_summaries import ci_generate_summaries
+    22→from erk.cli.commands.exec.scripts.ci_update_pr_body import ci_update_pr_body
+    23→from erk.cli.commands.exec.scripts.ci_verify_autofix import ci_verify_autofix
+    24→from erk.cli.commands.exec.scripts.cleanup_impl_context import cleanup_impl_context
+    25→from erk.cli.commands.exec.scripts.close_pr import (
+    26→    close_pr,
+    27→)
+    28→from erk.cli.commands.exec.scripts.close_prs import close_prs
+    29→from erk.cli.commands.exec.scripts.cmux_checkout_workspace import cmux_open_pr
+    30→from erk.cli.commands.exec.scripts.create_impl_context_from_plan import (
+
+... [264 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01BFwCrsDqFfmwBozumdFcFZ">
+     1→Summarize this CI job failure log concisely in 2-5 bullet points.
+     2→
+     3→Focus on:
+     4→
+     5→1. What specific check/test failed (file names, test names)
+     6→2. The error message or root cause
+     7→3. Which files are affected
+     8→
+     9→Rules:
+    10→
+    11→- One line per bullet point
+    12→- Use backticks for file paths and commands
+    13→- Do NOT suggest fixes
+    14→- Do NOT include timestamps, run IDs, or GitHub URLs
+    15→
+    16→## Job: {{ JOB_NAME }}
+    17→
+    18→## Log output:
+    19→
+    20→{{ LOG_CONTENT }}
+    21→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_014vMxms158WUsStXVwri98P">
+     1→# Autofix CI Errors
+     2→
+     3→Fix the style/formatting errors. You have full context of all CI job results.
+     4→
+     5→## Job Results
+     6→
+     7→- format: {{ format }}
+     8→- lint: {{ lint }}
+     9→- fix-formatting: {{ fix-formatting }}
+    10→- docs-check: {{ docs-check }}
+    11→- ty: {{ ty }}
+    12→- unit-tests: {{ unit-tests }} (NOT auto-fixable)
+    13→- integration-tests: {{ integration-tests }} (NOT auto-fixable)
+    14→
+    15→## Errors to Fix
+    16→
+    17→{{ ERRORS }}
+    18→
+    19→## Rules
+    20→
+    21→- For ruff format errors: run `uv run ruff format &lt;file&gt;` on each file
+    22→- For ruff lint errors: run `uv run ruff check --fix &lt;file&gt;` for auto-fixable errors
+    23→- For docs errors: run `make docs-sync` if generated docs are out of sync
+    24→- For prettier errors: run `prettier --write &lt;file&gt;` for each markdown file
+    25→- For ty type errors: read the files with errors, understand the type issue, and edit the files to fix the types. Run `uv run ty check` after fixing to verify.
+    26→- DO NOT attempt to fix test failures - those require human intervention
+    27→- Commit with a structured message:
+    28→  - Subject line: Brief summary of fixes (e.g., "style: fix ruff format in 2 files")
+    29→  - Blank line
+    30→  - Body explaining:
+
+... [24 lines omitted] ...
+
+    32→    - Which check(s) failed (format, lint, prettier, docs)
+    41→    Failed checks: prettier
+  </tool_result>
+  <tool_result tool="toolu_01GW8Q5q6CEM5wVtw7xJjvuD">
+     1→"""Bundled artifact path utilities.
+     2→
+     3→These utilities locate bundled .claude/, .erk/, and .github/ directories in the erk package.
+     4→Extracted to a separate module to avoid circular dependencies.
+     5→"""
+     6→
+     7→from __future__ import annotations
+     8→
+     9→from dataclasses import dataclass
+    10→from functools import cache
+    11→from pathlib import Path
+    12→
+    13→
+    14→@cache
+    15→def _get_erk_package_dir() -&gt; Path:
+    16→    """Get the erk package directory (where erk/__init__.py lives)."""
+    17→    # __file__ is .../erk/artifacts/paths.py, so parent.parent is erk/
+    18→    return Path(__file__).parent.parent
+    19→
+    20→
+    21→def _is_editable_install() -&gt; bool:
+    22→    """Check if erk is installed in editable mode.
+    23→
+    24→    Editable: erk package is in src/ layout (e.g., .../src/erk/)
+    25→    Wheel: erk package is in site-packages (e.g., .../site-packages/erk/)
+    26→    """
+    27→    return "site-packages" not in str(_get_erk_package_dir().resolve())
+    28→
+    29→
+    30→@cache
+
+... [147 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_016q1o1gJwDP8Q89odfpTzA7">
+     1→"""Helper functions for accessing context dependencies with LBYL checks.
+     2→
+     3→This module provides getter functions that encapsulate the "Look Before You Leap"
+     4→pattern for accessing dependencies from the ErkContext. These functions:
+     5→
+     6→1. Check that context is initialized
+     7→2. Return the typed dependency
+     8→3. Exit with clear error message if context is missing
+     9→
+    10→This eliminates code duplication across kit CLI commands.
+    11→"""
+    12→
+    13→from __future__ import annotations
+    14→
+    15→from pathlib import Path
+    16→
+    17→import click
+    18→
+    19→from erk_shared.context.context import ErkContext
+    20→from erk_shared.context.types import LoadedConfig, NoRepoSentinel
+    21→from erk_shared.core.prompt_executor import PromptExecutor
+    22→from erk_shared.gateway.branch_manager.abc import BranchManager
+    23→from erk_shared.gateway.claude_installation.abc import ClaudeInstallation
+    24→from erk_shared.gateway.git.abc import Git
+    25→from erk_shared.gateway.github.abc import LocalGitHub
+    26→from erk_shared.gateway.github.issues.abc import GitHubIssues
+    27→from erk_shared.gateway.time.abc import Time
+    28→from erk_shared.plan_store.backend import PlanBackend
+    29→
+    30→
+
+... [454 lines omitted] ...
+
+    32→    """Get the full ErkContext, exiting with error if not initialized.
+    35→    initialized (ctx.obj is None), prints error to stderr and exits with code 1.
+    54→        click.echo("Error: Context not initialized", err=True)
+    58→        click.echo("Error: Context must be ErkContext", err=True)
+    65→    """Get GitHub Issues from context, exiting with error if not initialized.
+    68→    initialized (ctx.obj is None), prints error to stderr and exits with code 1.
+    87→        click.echo("Error: Context not initialized", err=True)
+    91→        click.echo("Error: Context must be ErkContext", err=True)
+    98→    """Get repo root from context, exiting with error if not initialized.
+   120→        click.echo("Error: Context not initialized", err=True)
+   124→        click.echo("Error: Context must be ErkContext", err=True)
+   129→        click.echo("Error: Not in a git repository", err=True)
+   161→    """Get Git from context, exiting with error if not initialized.
+   183→        click.echo("Error: Context not initialized", err=True)
+   190→    """Get GitHub from context, exiting with error if not initialized.
+   212→        click.echo("Error: Context not initialized", err=True)
+   219→    """Get current working directory from context, exiting with error if not initialized.
+   241→        click.echo("Error: Context not initialized", err=True)
+   248→    """Get ClaudeInstallation from context, exiting with error if not initialized.
+   269→        click.echo("Error: Context not initialized", err=True)
+   296→        ...         # handle error
+   305→    """Get PromptExecutor from context, exiting with error if not initialized.
+   326→        click.echo("Error: Context not initialized", err=True)
+   333→    """Get local config from context, exiting with error if not initialized.
+   354→        click.echo("Error: Context not initialized", err=True)
+   384→        click.echo("Error: Context not initialized", err=True)
+   398→    """Get PlanBackend from context, exiting with error if not initialized.
+   419→        click.echo("Error: Context not initialized", err=True)
+   426→    """Get Time from context, exiting with error if not initialized.
+   447→        click.echo("Error: Context not initialized", err=True)
+   454→    """Get BranchManager from context, exiting with error if not initialized.
+   475→        click.echo("Error: Context not initialized", err=True)
+  </tool_result>
+  <tool_result tool="toolu_01KTCwBVE4wgKg5ex6TT5WH8">
+     1→"""Simple subprocess utilities for erk-shared.
+     2→
+     3→This module provides basic subprocess execution for GitHub CLI commands.
+     4→It's intentionally minimal to avoid pulling in complex dependencies.
+     5→"""
+     6→
+     7→import logging
+     8→import os
+     9→import subprocess
+    10→import time
+    11→from collections.abc import Sequence
+    12→from pathlib import Path
+    13→from typing import IO, Any
+    14→
+    15→from erk_shared.gateway.github.retry import (
+    16→    RETRY_DELAYS,
+    17→    RetriesExhausted,
+    18→    RetryRequested,
+    19→    with_retries,
+    20→)
+    21→from erk_shared.gateway.github.transient_errors import is_transient_error
+    22→from erk_shared.gateway.time.abc import Time
+    23→
+    24→logger = logging.getLogger(__name__)
+    25→
+    26→
+    27→def copied_env_for_git_subprocess() -&gt; dict[str, str]:
+    28→    """Return a copy of the environment for git subprocess calls.
+    29→
+    30→    Sets GIT_TERMINAL_PROMPT=0 so git commands fail fast with an error
+
+... [225 lines omitted] ...
+
+    87→    """Execute subprocess with enriched error reporting for integration layer.
+    89→    Wraps subprocess.run() to catch CalledProcessError and re-raise as RuntimeError
+   109→        RuntimeError: If command fails or times out, with enriched error context
+   110→        FileNotFoundError: If command binary is not found
+   140→        error_msg = f"Timed out after {timeout}s trying to {operation_context}"
+   141→        error_msg += f"\nCommand: {cmd_str}"
+   142→        raise RuntimeError(error_msg) from e
+   144→    except subprocess.CalledProcessError as e:
+   146→        error_msg = f"Failed to {operation_context}"
+   147→        error_msg += f"\nCommand: {cmd_str}"
+   148→        error_msg += f"\nExit code: {e.returncode}"
+   154→                error_msg += f"\nstdout: {stdout_stripped}"
+   160→                error_msg += f"\nstderr: {stderr_stripped}"
+   162→        raise RuntimeError(error_msg) from e
+   164→    except FileNotFoundError as e:
+   166→        error_msg = f"Command not found while trying to {operation_context}: {cmd[0]}"
+   167→        error_msg += f"\nFull command: {cmd_str}"
+   168→        raise RuntimeError(error_msg) from e
+   173→# transient errors, but each attempt won't hang indefinitely.
+   188→        RuntimeError: If command fails or times out, with enriched error context
+   189→        FileNotFoundError: If gh is not installed
+   210→    """Execute gh command with automatic retry on transient network errors.
+   213→    Transient errors (network timeouts, connection failures) trigger automatic
+   226→        RuntimeError: If command fails after all retries, or with non-transient error
+   227→        FileNotFoundError: If gh is not installed
+   234→        except RuntimeError as e:
+   235→            if is_transient_error(str(e)):
+   243→        msg = f"GitHub command failed after retries: {result.reason}"
+   244→        raise RuntimeError(msg)
+  </tool_result>
+  <tool_result tool="toolu_01Awdw3Zjv73aXj3vqbf6Uyn">
+     1→"""Tests for ci-generate-summaries exec command.
+     2→
+     3→Tests the pure functions: _parse_failing_jobs, _truncate_logs, _build_summary_prompt.
+     4→The CLI command calls gh api via run_subprocess_with_context, so it is tested
+     5→via CI integration rather than unit tests.
+     6→"""
+     7→
+     8→from __future__ import annotations
+     9→
+    10→from pathlib import Path
+    11→
+    12→from erk.cli.commands.exec.scripts.ci_generate_summaries import (
+    13→    FailingJob,
+    14→    _build_comment_body,
+    15→    _build_summary_prompt,
+    16→    _parse_failing_jobs,
+    17→    _truncate_logs,
+    18→)
+    19→
+    20→
+    21→class TestParseFailingJobs:
+    22→    """Tests for _parse_failing_jobs."""
+    23→
+    24→    def test_empty_input(self) -&gt; None:
+    25→        assert _parse_failing_jobs("") == []
+    26→
+    27→    def test_whitespace_only(self) -&gt; None:
+    28→        assert _parse_failing_jobs("  \n  \n  ") == []
+    29→
+    30→    def test_single_job(self) -&gt; None:
+
+... [103 lines omitted] ...
+
+    78→        assert "## CI Failure Summary" in result
+    86→            ("lint", "- format errors"),
+    87→            ("unit-tests", "- assertion failed in test_foo"),
+    97→        assert "## CI Failure Summary" in result
+   112→            log_content="error in foo.py",
+   116→        assert result == "Job: lint\nLogs: error in foo.py"
+  </tool_result>
+  <tool_result tool="toolu_01NfWNL11MWPp1PXPYjErjJg">
+     1→#!/usr/bin/env python3
+     2→"""
+     3→Session Log Preprocessor
+     4→
+     5→Compresses JSONL session logs to XML format by removing metadata and deduplicating messages.
+     6→This command is invoked via erk exec preprocess-session &lt;log-path&gt;.
+     7→"""
+     8→
+     9→import json
+    10→import tempfile
+    11→from pathlib import Path
+    12→
+    13→import click
+    14→
+    15→
+    16→def escape_xml(text: str) -&gt; str:
+    17→    """Minimal XML escaping for special characters."""
+    18→    return text.replace("&amp;", "&amp;amp;").replace("&lt;", "&amp;lt;").replace("&gt;", "&amp;gt;")
+    19→
+    20→
+    21→def is_empty_session(entries: list[dict]) -&gt; bool:
+    22→    """Check if session contains only metadata with no meaningful content.
+    23→
+    24→    Empty sessions are characterized by:
+    25→    - Fewer than 3 entries (too small to be meaningful)
+    26→    - Only metadata/system entries without substantive interaction
+    27→
+    28→    Args:
+    29→        entries: List of session entries to check
+    30→
+
+... [1039 lines omitted] ...
+
+   268→    """Prune verbose tool results to first 30 lines, preserving errors.
+   272→    containing error keywords.
+   278→        Pruned result text with error preservation
+   288→    # Scan remaining lines for errors
+   289→    error_keywords = ["error", "exception", "failed", "failure", "fatal", "warning"]
+   290→    error_lines = []
+   294→        if any(keyword in line_lower for keyword in error_keywords):
+   295→            error_lines.append(line)
+   298→    if error_lines:
+   299→        result_lines = kept_lines + [f"\n... [{len(lines) - 30} lines omitted] ...\n"] + error_lines
+   878→        raise click.UsageError("--output-dir and --prefix must be used together")
+   882→        raise click.UsageError("--output-dir/--prefix cannot be used with --stdout")
+  </tool_result>
+  <assistant>Now let me search for how subprocess_utils is used in the CLI context:</assistant>
+  <usage input_tokens="13315" cache_creation_input_tokens="32041" cache_read_input_tokens="17165" cache_creation="{'ephemeral_5m_input_tokens': 32041, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_013R3cGXPcN94EtDTx4FURJv">
+    <param name="command">find src/erk/cli -name "subprocess_utils.py" -type f</param>
+    <param name="description">Find subprocess_utils in CLI area</param>
+  </tool_use>
+  <usage input_tokens="13315" cache_creation_input_tokens="32041" cache_read_input_tokens="17165" cache_creation="{'ephemeral_5m_input_tokens': 32041, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013R3cGXPcN94EtDTx4FURJv">
+src/erk/cli/subprocess_utils.py
+  </tool_result>
+  <tool_use name="Read" id="toolu_015iSYFbXA3uMi5c6uxT5QDw">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/subprocess_utils.py</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="13479" cache_read_input_tokens="49206" cache_creation="{'ephemeral_5m_input_tokens': 13479, 'ephemeral_1h_input_tokens': 0}" output_tokens="18" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_015iSYFbXA3uMi5c6uxT5QDw">
+     1→"""Utilities for running subprocesses with better error reporting.
+     2→
+     3→This module provides CLI-layer subprocess execution with user-friendly error output.
+     4→
+     5→For integration layer subprocess calls (raises RuntimeError), use:
+     6→    from erk_shared.subprocess_utils import run_subprocess_with_context
+     7→
+     8→For CLI-layer subprocess calls (prints message, raises SystemExit), use:
+     9→    from erk.cli.subprocess_utils import run_with_error_reporting (this module)
+    10→"""
+    11→
+    12→import subprocess
+    13→from collections.abc import Sequence
+    14→from pathlib import Path
+    15→
+    16→from erk_shared.output.output import user_output
+    17→
+    18→
+    19→def run_with_error_reporting(
+    20→    cmd: Sequence[str],
+    21→    *,
+    22→    cwd: Path | None = None,
+    23→    error_prefix: str = "Command failed",
+    24→    troubleshooting: list[str] | None = None,
+    25→    show_output: bool = False,
+    26→) -&gt; subprocess.CompletedProcess[str]:
+    27→    """Run subprocess command with user-friendly error reporting for CLI layer.
+    28→
+    29→    This function is designed for CLI commands that need to display error messages
+    30→    directly to users and exit the program. For integration layer code that needs
+
+... [68 lines omitted] ...
+
+    31→    to raise exceptions with context, use run_subprocess_with_context() instead.
+    36→        error_prefix: Prefix for error message
+    44→        SystemExit: If command fails (after displaying user-friendly error)
+    47→        &gt;&gt;&gt; run_with_error_reporting(
+    50→        ...     error_prefix="Failed to view PR",
+    57→        - Uses check=False and manually handles errors for user-friendly output
+    64→        # When show_output=True, output already displayed, only show error context
+    67→                f"Error: {error_prefix}.\n",
+    72→            error_msg = result.stderr.strip() if result.stderr else result.stdout.strip()
+    74→            # Build error message
+    76→                f"Error: {error_prefix}.\n",
+    81→            if error_msg:
+    82→                message_parts.append(f"Output:\n{error_msg}\n")
+  </tool_result>
+  <assistant>Perfect! I now have all the files you requested. Let me compile a comprehensive report for you.
+
+## Complete Research Report: ci_generate_summaries.py Pattern
+
+I've successfully retrieved and analyzed all eight files you requested. Here's a comprehensive summary:
+
+### 1. **ci_generate_summaries.py** (Main Script)
+**Location**: `/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/ci_generate_summaries.py` (467 lines)
+
+**Key Pattern Elements**:
+- **Docstring Format**: Module docstring at top with usage examples and exit codes
+- **Structure**: Uses Click decorators with `@click.command(name="ci-generate-summaries")`
+- **Context Injection**: `@click.pass_context` with `require_cwd(ctx)` and `require_prompt_executor(ctx)`
+- **Main Helpers**:
+  - `_parse_failing_jobs()` - Parses tab-separated gh api output
+  - `_truncate_logs()` - Keeps last N lines (equivalent to tail)
+  - `_build_summary_prompt()` - Template substitution with {{ }} placeholders
+  - `_build_comment_body()` - Formats PR comment with ERK-CI-SUMMARY markers
+  - `_generate_all_summaries()` - Core workflow function
+  - `_post_or_update_comment()` - Posts/updates comments on PRs
+  - `_find_plan_issue_for_pr()` - Extracts plan issue from PR body via regex
+  - `_update_plan_header_comment_id()` - Updates metadata in issue body
+
+**Output Format**: Markers to stdout: `=== ERK-CI-SUMMARY:{job_name} ===` ... `=== /ERK-CI-SUMMARY:{job_name} ===`
+
+**Model Used**: `"claude-haiku-4-5-20251001"` (hardcoded)
+
+### 2. **exec/group.py** (Command Registration)
+**Location**: `/home/runner/work/erk/erk/src/erk/cli/commands/exec/group.py` (289 lines)
+
+**Registration Pattern**:
+```python
+from erk.cli.commands.exec.scripts.ci_generate_summaries import ci_generate_summaries
+exec_group.add_command(ci_generate_summaries, name="ci-generate-summaries")
+```
+
+All commands are:
+- Imported at top of file
+- Added to `exec_group` via `add_command()`
+- Named with kebab-case in Click registration
+- Hidden from top-level help
+
+### 3. **Prompt Templates** (`.github/prompts/`)
+
+**ci-summarize.md** (20 lines):
+- Asks for 2-5 bullet points
+- Focus on: what failed, error message, affected files
+- Rules: backticks for paths, no fixes, no timestamps/URLs
+- Uses `{{ JOB_NAME }}` and `{{ LOG_CONTENT }}` substitution
+
+**ci-autofix.md** (49 lines):
+- Template for automatic fix automation
+- Shows job results with status
+- Specifies rules for each check type (ruff, prettier, docs, ty)
+- Commit message format with automated note
+
+### 4. **preprocess_session.py** (Session Compression)
+**Location**: `/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/preprocess_session.py` (1064 lines)
+
+**Key Function - `generate_compressed_xml()`** (lines 376-539):
+- Takes `entries: list[dict]` and optional `source_label`
+- Returns XML string representation
+- Handles multiple content block types: user, assistant, thinking, tool_use, tool_result, system, summary
+- Uses `escape_xml()` for special character handling
+- Applies pruning via `prune_tool_result_content()` if enabled
+- Metadata extraction: gitBranch, model info, usage stats
+
+**Session Filtering**:
+- `is_empty_session()` - Detects sessions with &lt;3 entries or no meaningful interaction
+- `is_warmup_session()` - Detects "warmup" keyword
+- `deduplicate_documentation_blocks()` - Replaces duplicate doc blocks with markers
+- `truncate_tool_parameters()` - Truncates long parameter values
+- `deduplicate_assistant_messages()` - Removes duplicate text when tool_use present
+
+### 5. **paths.py** (Artifact Paths)
+**Location**: `/home/runner/work/erk/erk/src/erk/artifacts/paths.py` (172 lines)
+
+**Key Function - `get_bundled_github_dir()`** (lines 94-111):
+```python
+@cache
+def get_bundled_github_dir() -&gt; Path:
+    """Get path to bundled .github/ directory in installed erk package."""
+    erk_package_dir = _get_erk_package_dir()
+    
+    if _is_editable_install():
+        # Editable: erk package is at src/erk/, repo root is ../..
+        erk_repo_root = erk_package_dir.parent.parent
+        return erk_repo_root / ".github"
+    
+    # Wheel install: data is bundled at erk/data/github/
+    return erk_package_dir / "data" / "github"
+```
+
+**Pattern**: Returns cached path based on editable vs wheel install mode
+
+### 6. **context/helpers.py** (Dependency Injection)
+**Location**: `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/context/helpers.py` (479 lines)
+
+**Key Functions**:
+
+**`require_cwd(ctx: click.Context) -&gt; Path`** (lines 218-244):
+```python
+def require_cwd(ctx: click.Context) -&gt; Path:
+    """Get current working directory from context, exiting with error if not initialized."""
+    if ctx.obj is None:
+        click.echo("Error: Context not initialized", err=True)
+        raise SystemExit(1)
+    return ctx.obj.cwd
+```
+
+**`require_prompt_executor(ctx: click.Context) -&gt; PromptExecutor`** (lines 304-329):
+```python
+def require_prompt_executor(ctx: click.Context) -&gt; PromptExecutor:
+    """Get PromptExecutor from context, exiting with error if not initialized."""
+    if ctx.obj is None:
+        click.echo("Error: Context not initialized", err=True)
+        raise SystemExit(1)
+    return ctx.obj.prompt_executor
+```
+
+**Pattern**: LBYL (Look Before You Leap) checks, print to stderr, raise SystemExit(1) on failure
+
+### 7. **subprocess_utils.py** (Subprocess Execution)
+**Location**: `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/subprocess_utils.py` (250 lines)
+
+**Key Function - `run_subprocess_with_context()`** (lines 73-169):
+```python
+def run_subprocess_with_context(
+    *,
+    cmd: Sequence[str],
+    operation_context: str,
+    cwd: Path | None = None,
+    timeout: float | None = None,
+    capture_output: bool = True,
+    text: bool = True,
+    encoding: str = "utf-8",
+    check: bool = True,
+    ...
+) -&gt; subprocess.CompletedProcess[str]:
+    """Execute subprocess with enriched error reporting."""
+```
+
+**Features**:
+- Wraps subprocess.run()
+- Catches CalledProcessError and re-raises as RuntimeError with context
+- Logs timing info via logger.debug
+- Includes operation_context in error messages
+- Supports timeout, capture_output, text mode
+- Returns CompletedProcess on success
+- Raises RuntimeError with enriched error details
+
+**CLI Wrapper** (`/home/runner/work/erk/erk/src/erk/cli/subprocess_utils.py`):
+- `run_with_error_reporting()` - For CLI layer, prints user-friendly errors
+
+### 8. **test_ci_generate_summaries.py** (Tests)
+**Location**: `/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_ci_generate_summaries.py` (128 lines)
+
+**Test Structure**:
+- Uses test classes: `TestParseFailingJobs`, `TestTruncateLogs`, `TestBuildCommentBody`, `TestBuildSummaryPrompt`
+- Tests pure functions only (not the CLI command itself)
+- **`_parse_failing_jobs` tests**: empty input, whitespace, single/multiple jobs, blank lines, spaces in names
+- **`_truncate_logs` tests**: within limit, at limit, exceeds limit, empty input
+- **`_build_comment_body` tests**: single/multiple summaries, empty list
+- **`_build_summary_prompt` tests**: with template file, fallback when missing
+
+**Note**: CLI command tested via CI integration, not unit tests (because it calls gh api)
+
+---
+
+## Summary of Key Patterns
+
+| Aspect | Pattern |
+|--------|---------|
+| **File Structure** | Module docstring with usage examples, imports, helper functions, Click command at bottom |
+| **Command Registration** | Import in `group.py`, add via `exec_group.add_command()` with kebab-case name |
+| **Context Injection** | `@click.pass_context`, use `require_cwd()` and `require_prompt_executor()` |
+| **Subprocess Calls** | Use `run_subprocess_with_context()` with `operation_context` parameter |
+| **Error Handling** | Check return codes, use `check=False` for optional operations, output to stderr |
+| **Prompt Execution** | Call `executor.execute_prompt()` with model, tools=None, system_prompt=None |
+| **Output Format** | Write markers to stdout, progress to stderr via `click.echo(..., err=True)` |
+| **Template Handling** | Store in `.github/prompts/`, use `{{ PLACEHOLDER }}` substitution |
+| **Path Utilities** | Use `get_bundled_github_dir()` from `erk.artifacts.paths` (cached) |
+| **Testing** | Test pure functions in `tests/unit/cli/commands/exec/scripts/test_*.py`, use plain `def` functions |
+
+All files are now available for your reference.</assistant>
+  <usage input_tokens="4" cache_creation_input_tokens="1480" cache_read_input_tokens="62685" cache_creation="{'ephemeral_5m_input_tokens': 1480, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>

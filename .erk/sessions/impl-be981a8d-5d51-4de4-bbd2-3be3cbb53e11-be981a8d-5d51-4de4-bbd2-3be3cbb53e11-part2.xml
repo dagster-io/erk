@@ -1,0 +1,959 @@
+<session>
+  <meta branch="plnd/add-impl-failure-summary-03-10-0912" />
+  <meta model="claude-opus-4-6" />
+  <tool_use name="Write" id="toolu_016r4tyXxhpYw5Zbj2Eu733F">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_summarize_impl_failure.py</param>
+    <param name="content">"""Tests for summarize-impl-failure exec command.
+
+Tests the pure functions: _extract_sess...[truncated 7630 chars]...1,
+            total_events=0,
+        )
+        assert "**Session events:** 0" in result
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="367" cache_read_input_tokens="98780" cache_creation="{'ephemeral_5m_input_tokens': 367, 'ephemeral_1h_input_tokens': 0}" output_tokens="2388" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_016r4tyXxhpYw5Zbj2Eu733F">
+File created successfully at: /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_summarize_impl_failure.py
+  </tool_result>
+  <assistant>Now let me register the command and update the workflow.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2440" cache_read_input_tokens="99147" cache_creation="{'ephemeral_5m_input_tokens': 2440, 'ephemeral_1h_input_tokens': 0}" output_tokens="7" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01T42KK8imuaJFatcxgbLpTJ">
+    <param name="todos">[{'content': 'Create prompt template `.github/prompts/impl-failure-summarize.md`', 'status...[truncated 718 chars]...CI checks'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2440" cache_read_input_tokens="99147" cache_creation="{'ephemeral_5m_input_tokens': 2440, 'ephemeral_1h_input_tokens': 0}" output_tokens="7" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01T42KK8imuaJFatcxgbLpTJ">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01V1PTHUCcNWmYZUHpKX6Hkx">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/group.py</param>
+    <param name="old_string">from erk.cli.commands.exec.scripts.store_tripwire_candidates import (
+    store_tripwire_candidates,
+)</param>
+    <param name="new_string">from erk.cli.commands.exec.scripts.store_tripwire_candidates import (
+    store_tripwire_candidates,
+)
+from erk.cli.commands.exec.scripts.summarize_impl_failure import (
+    summarize_impl_failure,
+)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="370" cache_read_input_tokens="101587" cache_creation="{'ephemeral_5m_input_tokens': 370, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01V1PTHUCcNWmYZUHpKX6Hkx">
+&lt;tool_use_error&gt;File has not been read yet. Read it first before writing to it.&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_use name="Read" id="toolu_01M4RpyhDq2hAMMeFtHBdY5V">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/group.py</param>
+    <param name="offset">160</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="257" cache_read_input_tokens="101957" cache_creation="{'ephemeral_5m_input_tokens': 257, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01M4RpyhDq2hAMMeFtHBdY5V">
+   160→from erk.cli.commands.exec.scripts.setup_impl import setup_impl
+   161→from erk.cli.commands.exec.scripts.setup_impl_from_pr import (
+   162→    setup_impl_from_pr,
+   163→)
+   164→from erk.cli.commands.exec.scripts.store_tripwire_candidates import (
+   165→    store_tripwire_candidates,
+   166→)
+   167→from erk.cli.commands.exec.scripts.track_learn_evaluation import (
+   168→    track_learn_evaluation,
+   169→)
+   170→from erk.cli.commands.exec.scripts.track_learn_result import (
+   171→    track_learn_result,
+   172→)
+   173→from erk.cli.commands.exec.scripts.update_issue_body import update_issue_body
+   174→from erk.cli.commands.exec.scripts.update_objective_node import update_objective_node
+   175→from erk.cli.commands.exec.scripts.update_plan_header import update_plan_header
+   176→from erk.cli.commands.exec.scripts.update_pr_description import (
+   177→    update_pr_description,
+   178→)
+   179→from erk.cli.commands.exec.scripts.upload_impl_session import upload_impl_session
+   180→from erk.cli.commands.exec.scripts.user_prompt_hook import user_prompt_hook
+   181→from erk.cli.commands.exec.scripts.validate_claude_credentials import (
+   182→    validate_claude_credentials,
+   183→)
+   184→from erk.cli.commands.exec.scripts.validate_plan_content import (
+   185→    validate_plan_content,
+   186→)
+   187→
+   188→
+   189→# Create the exec group (hidden from top-level help)
+
+... [5 lines omitted] ...
+  </tool_result>
+  <tool_use name="Edit" id="toolu_019fsDFcztaN9C12MpnbFTRk">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/group.py</param>
+    <param name="old_string">from erk.cli.commands.exec.scripts.store_tripwire_candidates import (
+    store_tripwire_candidates,
+)
+from erk.cli.commands.exec.scripts.track_learn_evaluation import (</param>
+    <param name="new_string">from erk.cli.commands.exec.scripts.store_tripwire_candidates import (
+    store_tripwire_c...[truncated 66 chars]...mmarize_impl_failure,
+)
+from erk.cli.commands.exec.scripts.track_learn_evaluation import (</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="668" cache_read_input_tokens="102214" cache_creation="{'ephemeral_5m_input_tokens': 668, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_019fsDFcztaN9C12MpnbFTRk">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/group.py has been updated successfully.
+  </tool_result>
+  <assistant>Now add the command registration. Let me find the right spot in the registration section.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="298" cache_read_input_tokens="102882" cache_creation="{'ephemeral_5m_input_tokens': 298, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01SFsinu7e4TEGAvqJXHRR1N">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/group.py</param>
+    <param name="offset">268</param>
+    <param name="limit">25</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="298" cache_read_input_tokens="102882" cache_creation="{'ephemeral_5m_input_tokens': 298, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01SFsinu7e4TEGAvqJXHRR1N">
+   268→exec_group.add_command(run_review, name="run-review")
+   269→exec_group.add_command(reply_to_discussion_comment, name="reply-to-discussion-comment")
+   270→exec_group.add_command(session_id_injector_hook, name="session-id-injector-hook")
+   271→exec_group.add_command(set_local_review_marker, name="set-local-review-marker")
+   272→exec_group.add_command(set_pr_description, name="set-pr-description")
+   273→exec_group.add_command(setup_impl, name="setup-impl")
+   274→exec_group.add_command(setup_impl_from_pr, name="setup-impl-from-pr")
+   275→exec_group.add_command(store_tripwire_candidates, name="store-tripwire-candidates")
+   276→exec_group.add_command(track_learn_evaluation, name="track-learn-evaluation")
+   277→exec_group.add_command(track_learn_result, name="track-learn-result")
+   278→exec_group.add_command(update_issue_body, name="update-issue-body")
+   279→exec_group.add_command(update_plan_header, name="update-plan-header")
+   280→exec_group.add_command(update_objective_node, name="update-objective-node")
+   281→exec_group.add_command(update_pr_description, name="update-pr-description")
+   282→exec_group.add_command(upload_impl_session, name="upload-impl-session")
+   283→exec_group.add_command(ci_fetch_summaries, name="ci-fetch-summaries")
+   284→exec_group.add_command(ci_generate_summaries, name="ci-generate-summaries")
+   285→exec_group.add_command(ci_update_pr_body)
+   286→exec_group.add_command(ci_verify_autofix, name="ci-verify-autofix")
+   287→exec_group.add_command(close_pr, name="close-pr")
+   288→exec_group.add_command(close_prs, name="close-prs")
+   289→exec_group.add_command(user_prompt_hook, name="user-prompt-hook")
+   290→exec_group.add_command(validate_claude_credentials, name="validate-claude-credentials")
+   291→exec_group.add_command(validate_plan_content, name="validate-plan-content")
+   292→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01Ebrk8ccRwRecM6p46GSRMg">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/group.py</param>
+    <param name="old_string">exec_group.add_command(store_tripwire_candidates, name="store-tripwire-candidates")
+exec_group.add_command(track_learn_evaluation, name="track-learn-evaluation")</param>
+    <param name="new_string">exec_group.add_command(store_tripwire_candidates, name="store-tripwire-candidates")
+exec_g...[truncated 39 chars]...pl-failure")
+exec_group.add_command(track_learn_evaluation, name="track-learn-evaluation")</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="858" cache_read_input_tokens="103180" cache_creation="{'ephemeral_5m_input_tokens': 858, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Ebrk8ccRwRecM6p46GSRMg">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/group.py has been updated successfully.
+  </tool_result>
+  <assistant>Good. Now let me add the workflow step. I need to insert it after "Update plan header" and before "Handle implementation outcome".</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="554" cache_read_input_tokens="104038" cache_creation="{'ephemeral_5m_input_tokens': 554, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_013tWPWUuuT3y4QB4MfxAeVT">
+    <param name="todos">[{'content': 'Create prompt template `.github/prompts/impl-failure-summarize.md`', 'status...[truncated 720 chars]...CI checks'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="554" cache_read_input_tokens="104038" cache_creation="{'ephemeral_5m_input_tokens': 554, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_013tWPWUuuT3y4QB4MfxAeVT">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="Read" id="toolu_018tMczipoJNKeztr94L5C9Z">
+    <param name="file_path">/home/runner/work/erk/erk/.github/workflows/plan-implement.yml</param>
+    <param name="offset">296</param>
+    <param name="limit">25</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="387" cache_read_input_tokens="104592" cache_creation="{'ephemeral_5m_input_tokens': 387, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_018tMczipoJNKeztr94L5C9Z">
+   296→            --pr-number "$PLAN_ID"
+   297→
+   298→      - name: Update plan header with remote impl info
+   299→        if: always() &amp;&amp; steps.session.outputs.session_id
+   300→        continue-on-error: true
+   301→        env:
+   302→          GH_TOKEN: ${{ secrets.ERK_QUEUE_GH_PAT }}
+   303→          PLAN_ID: ${{ inputs.plan_id }}
+   304→          RUN_ID: ${{ github.run_id }}
+   305→          SESSION_ID: ${{ steps.session.outputs.session_id }}
+   306→          BRANCH_NAME: ${{ inputs.branch_name }}
+   307→        run: |
+   308→          TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%S+00:00")
+   309→          erk exec update-plan-header "$PLAN_ID" \
+   310→            "last_remote_impl_at=$TIMESTAMP" \
+   311→            "last_remote_impl_run_id=$RUN_ID" \
+   312→            "last_remote_impl_session_id=$SESSION_ID" \
+   313→            "branch_name=$BRANCH_NAME"
+   314→
+   315→      - name: Handle implementation outcome
+   316→        id: handle_outcome
+   317→        if: steps.implement.outputs.implementation_success == 'true'
+   318→        env:
+   319→          BASE_BRANCH: ${{ inputs.base_branch }}
+   320→          PLAN_ID: ${{ inputs.plan_id }}
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_use name="Edit" id="toolu_013ktFWmBoFy9syLwwuzj58R">
+    <param name="file_path">/home/runner/work/erk/erk/.github/workflows/plan-implement.yml</param>
+    <param name="old_string">            "branch_name=$BRANCH_NAME"
+
+      - name: Handle implementation outcome</param>
+    <param name="new_string">            "branch_name=$BRANCH_NAME"
+
+      - name: Summarize implementation failure
+   ...[truncated 601 chars]...    echo "$SUMMARY" &gt;&gt; "$GITHUB_STEP_SUMMARY"
+
+      - name: Handle implementation outcome</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="595" cache_read_input_tokens="104979" cache_creation="{'ephemeral_5m_input_tokens': 595, 'ephemeral_1h_input_tokens': 0}" output_tokens="357" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_013ktFWmBoFy9syLwwuzj58R">
+The file /home/runner/work/erk/erk/.github/workflows/plan-implement.yml has been updated successfully.
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01Q2QDBTnut8oQ1XFzMQzsWm">
+    <param name="todos">[{'content': 'Create prompt template `.github/prompts/impl-failure-summarize.md`', 'status...[truncated 722 chars]...CI checks'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="397" cache_read_input_tokens="105574" cache_creation="{'ephemeral_5m_input_tokens': 397, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Q2QDBTnut8oQ1XFzMQzsWm">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Now let me run CI checks. I'll run formatting first, then the unit tests and type checking.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="358" cache_read_input_tokens="105971" cache_creation="{'ephemeral_5m_input_tokens': 358, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_017ngVXP3oUSDHETh27RcHsS">
+    <param name="description">Run formatting and lint</param>
+    <param name="prompt">Run `make format` to format all code, then report the results. This is READ-ONLY - report what happened but do not modify any files yourself.</param>
+    <param name="subagent_type">devrun</param>
+    <param name="run_in_background">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="358" cache_read_input_tokens="105971" cache_creation="{'ephemeral_5m_input_tokens': 358, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_017nuZZxcUX6z6BgZw4cxNKz">
+    <param name="description">Run unit tests</param>
+    <param name="prompt">Run `pytest tests/unit/cli/commands/exec/scripts/test_summarize_impl_failure.py -xvs` and report the results. This is READ-ONLY - report what happened but do not modify any files yourself.</param>
+    <param name="subagent_type">devrun</param>
+    <param name="run_in_background">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="358" cache_read_input_tokens="105971" cache_creation="{'ephemeral_5m_input_tokens': 358, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_017ngVXP3oUSDHETh27RcHsS">
+Async agent launched successfully.
+agentId: a1bf9fb (This is an internal ID for your use, do not mention it to the user. Use this ID to retrieve results with TaskOutput when the agent finishes).
+The agent is currently working in the background. If you have other tasks you you should continue working on them now. Wait to call TaskOutput until either:
+- If you want to check on the agent's progress - call TaskOutput with block=false to get an immediate update on the agent's status
+- If you run out of things to do and the agent is still running - call TaskOutput with block=true to idle and wait for the agent's result (do not use block=true unless you completely run out of things to do as it will waste time).
+  </tool_result>
+  <tool_result tool="toolu_017nuZZxcUX6z6BgZw4cxNKz">
+Async agent launched successfully.
+agentId: aabe1b9 (This is an internal ID for your use, do not mention it to the user. Use this ID to retrieve results with TaskOutput when the agent finishes).
+The agent is currently working in the background. If you have other tasks you you should continue working on them now. Wait to call TaskOutput until either:
+- If you want to check on the agent's progress - call TaskOutput with block=false to get an immediate update on the agent's status
+- If you run out of things to do and the agent is still running - call TaskOutput with block=true to idle and wait for the agent's result (do not use block=true unless you completely run out of things to do as it will waste time).
+  </tool_result>
+  <tool_use name="TaskOutput" id="toolu_01F72ZD2Pvi66fDYdjuSnS6N">
+    <param name="task_id">a1bf9fb</param>
+    <param name="block">True</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="706" cache_read_input_tokens="106329" cache_creation="{'ephemeral_5m_input_tokens': 706, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_use name="TaskOutput" id="toolu_01M2MMC7gWigaVnbmRQdAfXu">
+    <param name="task_id">aabe1b9</param>
+    <param name="block">True</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="706" cache_read_input_tokens="106329" cache_creation="{'ephemeral_5m_input_tokens': 706, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01M2MMC7gWigaVnbmRQdAfXu">
+&lt;retrieval_status&gt;success&lt;/retrieval_status&gt;
+
+&lt;task_id&gt;aabe1b9&lt;/task_id&gt;
+
+&lt;task_type&gt;local_agent&lt;/task_type&gt;
+
+&lt;status&gt;completed&lt;/status&gt;
+
+&lt;output&gt;
+[Tool: Bash] {"command":"uv run pytest tests/unit/cli/commands/exec/scripts/test_summarize_impl_failure.py -xvs","description":"Run pytest on summarize_impl_failure test file"}
+[Tool: Bash] {"command":"uv run pytest tests/unit/cli/commands/exec/scripts/test_summarize_impl_failure.py -xvs","description":"Run pytest on summarize_impl_failure test file"}
+
+--- RESULT ---
+**pytest passed: 14 tests passed in 2.67s**
+
+All 14 tests in the summarize_impl_failure test file executed successfully with no failures. The test file at `/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_summarize_impl_failure.py` is passing.
+&lt;/output&gt;
+  </tool_result>
+  <tool_result tool="toolu_01F72ZD2Pvi66fDYdjuSnS6N">
+&lt;retrieval_status&gt;success&lt;/retrieval_status&gt;
+
+&lt;task_id&gt;a1bf9fb&lt;/task_id&gt;
+
+&lt;task_type&gt;local_agent&lt;/task_type&gt;
+
+&lt;status&gt;completed&lt;/status&gt;
+
+&lt;output&gt;
+[Tool: Bash] {"command":"make format","description":"Run make format to format all code"}
+[Tool: Bash] {"command":"make format","description":"Run make format to format all code"}
+[Tool: Bash] {"command":"make -n 2&gt;&amp;1 | head -50","description":"List available make targets"}
+[Tool: Bash] {"command":"make -n 2&gt;&amp;1 | head -50","description":"List available make targets"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/Makefile"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/Makefile"}
+[Tool: Bash] {"command":"make fix","description":"Run make fix to format all code"}
+[Tool: Bash] {"command":"make fix","description":"Run make fix to format all code"}
+
+--- RESULT ---
+**REFUSED: devrun is read-only. Returning results only.**
+
+The `make fix` command failed with 4 linting errors found. All errors are E501 violations (line too long - exceeds the 100 character limit).
+
+## Formatting Results Summary
+
+**Status:** Failed with formatting errors detected
+
+**Error Count:** 4 E501 line length violations
+
+### Detailed Error Locations
+
+... [15 lines omitted] ...
+
+1. **src/erk/cli/commands/exec/scripts/summarize_impl_failure.py:9:101** - Line too long (102 &gt; 100)
+2. **src/erk/cli/commands/exec/scripts/summarize_impl_failure.py:171:101** - Line too long (114 &gt; 100)
+3. **tests/unit/cli/commands/exec/scripts/test_summarize_impl_failure.py:162:101** - Line too long (110 &gt; 100)
+4. **tests/unit/cli/commands/exec/scripts/test_summarize_impl_failure.py:190:101** - Line too long (110 &gt; 100)
+  </tool_result>
+  <assistant>All 14 tests pass. I need to fix the 4 line-length violations.</assistant>
+  <usage input_tokens="285" cache_creation_input_tokens="803" cache_read_input_tokens="107035" cache_creation="{'ephemeral_5m_input_tokens': 803, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_013k9zjzyKw6RJSyJR2FKDXP">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/summarize_impl_failure.py</param>
+    <param name="offset">1</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="285" cache_creation_input_tokens="803" cache_read_input_tokens="107035" cache_creation="{'ephemeral_5m_input_tokens': 803, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_013k9zjzyKw6RJSyJR2FKDXP">
+     1→"""Summarize implementation failures using Haiku.
+     2→
+     3→Reads a raw session JSONL file, extracts the tail entries, sends them
+     4→to Claude Haiku for failure diagnosis, posts the summary as a PR comment,
+     5→and prints the summary to stdout for use as a GitHub Actions job summary.
+     6→
+     7→Usage:
+     8→    erk exec summarize-impl-failure --session-file /path/to/session.jsonl --pr-number 42
+     9→    erk exec summarize-impl-failure --session-file /path/to/session.jsonl --pr-number 42 --exit-code 1
+    10→
+    11→Output:
+    12→    Markdown failure summary to stdout (for GITHUB_STEP_SUMMARY)
+    13→
+    14→Exit Codes:
+    15→    0: Always (diagnostic tool, never blocks workflow)
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01JTdRm5u4eiyuEWgv4SRLUA">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/summarize_impl_failure.py</param>
+    <param name="old_string">Usage:
+    erk exec summarize-impl-failure --session-file /path/to/session.jsonl --pr-number 42
+    erk exec summarize-impl-failure --session-file /path/to/session.jsonl --pr-number 42 --exit-code 1</param>
+    <param name="new_string">Usage:
+    erk exec summarize-impl-failure \
+        --session-file /path/to/session.jsonl...[truncated 28 chars]...ure \
+        --session-file /path/to/session.jsonl --pr-number 42 \
+        --exit-code 1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1008" cache_read_input_tokens="107838" cache_creation="{'ephemeral_5m_input_tokens': 1008, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01JTdRm5u4eiyuEWgv4SRLUA">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/summarize_impl_failure.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Read" id="toolu_01T2dHUbkDa4ucCgnr6jKE5G">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/summarize_impl_failure.py</param>
+    <param name="offset">168</param>
+    <param name="limit">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="321" cache_read_input_tokens="108846" cache_creation="{'ephemeral_5m_input_tokens': 321, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01T2dHUbkDa4ucCgnr6jKE5G">
+   168→        cwd=cwd,
+   169→        check=False,
+   170→    )
+   171→
+   172→
+   173→@click.command(name="summarize-impl-failure")
+   174→@click.option("--session-file", required=True, type=click.Path(path_type=Path), help="Path to session JSONL file")
+   175→@click.option("--pr-number", required=True, type=int, help="PR number to post comment on")
+   176→@click.option("--exit-code", type=int, default=None, help="Implementation process exit code")
+   177→@click.pass_context
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01Em8SvpU8kg6LKk3zrf7JjC">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/summarize_impl_failure.py</param>
+    <param name="old_string">@click.command(name="summarize-impl-failure")
+@click.option("--session-file", required=Tru...[truncated 145 chars]...ick.option("--exit-code", type=int, default=None, help="Implementation process exit code")</param>
+    <param name="new_string">@click.command(name="summarize-impl-failure")
+@click.option(
+    "--session-file",
+    req...[truncated 122 chars]..., help="PR number")
+@click.option("--exit-code", type=int, default=None, help="Exit code")</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="373" cache_read_input_tokens="109167" cache_creation="{'ephemeral_5m_input_tokens': 373, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Em8SvpU8kg6LKk3zrf7JjC">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/summarize_impl_failure.py has been updated successfully.
+  </tool_result>
+  <assistant>Now fix the test file line-length issues:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="659" cache_read_input_tokens="109540" cache_creation="{'ephemeral_5m_input_tokens': 659, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_017xerXJ8nezCLj6x1J1Zsut">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_summarize_impl_failure.py</param>
+    <param name="offset">155</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="659" cache_read_input_tokens="109540" cache_creation="{'ephemeral_5m_input_tokens': 659, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_017xerXJ8nezCLj6x1J1Zsut">
+   155→        prompts_dir.mkdir()
+   156→        template = prompts_dir / "impl-failure-summarize.md"
+   157→        template.write_text(
+   158→            "Exit: {{ EXIT_CODE }}\nTail: {{ SESSION_TAIL }}",
+   159→            encoding="utf-8",
+   160→        )
+   161→
+   162→        tail = SessionTail(total_events=10, last_entries_xml="&lt;session&gt;...&lt;/session&gt;", has_result_event=False)
+   163→        result = _build_failure_prompt(
+   164→            session_tail=tail,
+   165→            exit_code=1,
+   166→            prompts_dir=tmp_path,
+   167→        )
+   168→
+   169→        assert result == "Exit: 1\nTail: &lt;session&gt;...&lt;/session&gt;"
+   170→
+   171→    def test_with_template_unknown_exit_code(self, tmp_path: Path) -&gt; None:
+   172→        prompts_dir = tmp_path / "prompts"
+   173→        prompts_dir.mkdir()
+   174→        template = prompts_dir / "impl-failure-summarize.md"
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01PKNU6ztzYb9M6cZvdJsUkc">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_summarize_impl_failure.py</param>
+    <param name="old_string">        tail = SessionTail(total_events=10, last_entries_xml="&lt;session&gt;...&lt;/session&gt;", has...[truncated 116 chars]..._dir=tmp_path,
+        )
+
+        assert result == "Exit: 1\nTail: &lt;session&gt;...&lt;/session&gt;"</param>
+    <param name="new_string">        tail = SessionTail(
+            total_events=10,
+            last_entries_xml="&lt;se...[truncated 163 chars]..._dir=tmp_path,
+        )
+
+        assert result == "Exit: 1\nTail: &lt;session&gt;...&lt;/session&gt;"</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="521" cache_read_input_tokens="110199" cache_creation="{'ephemeral_5m_input_tokens': 521, 'ephemeral_1h_input_tokens': 0}" output_tokens="324" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01PKNU6ztzYb9M6cZvdJsUkc">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_summarize_impl_failure.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Read" id="toolu_01PD323nHsvCRuFM8SSgciXA">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_summarize_impl_failure.py</param>
+    <param name="offset">185</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="648" cache_read_input_tokens="110720" cache_creation="{'ephemeral_5m_input_tokens': 648, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01PD323nHsvCRuFM8SSgciXA">
+   185→        result = _build_failure_prompt(
+   186→            session_tail=tail,
+   187→            exit_code=None,
+   188→            prompts_dir=tmp_path,
+   189→        )
+   190→
+   191→        assert "unknown" in result
+   192→
+   193→    def test_fallback_when_template_missing(self, tmp_path: Path) -&gt; None:
+   194→        tail = SessionTail(total_events=5, last_entries_xml="&lt;session&gt;data&lt;/session&gt;", has_result_event=False)
+   195→        result = _build_failure_prompt(
+   196→            session_tail=tail,
+   197→            exit_code=1,
+   198→            prompts_dir=tmp_path,
+   199→        )
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01BLAnwhzYfrin7FYCQffH6f">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_summarize_impl_failure.py</param>
+    <param name="old_string">    def test_fallback_when_template_missing(self, tmp_path: Path) -&gt; None:
+        tail = SessionTail(total_events=5, last_entries_xml="&lt;session&gt;data&lt;/session&gt;", has_result_event=False)</param>
+    <param name="new_string">    def test_fallback_when_template_missing(self, tmp_path: Path) -&gt; None:
+        tail = ...[truncated 32 chars]... last_entries_xml="&lt;session&gt;data&lt;/session&gt;",
+            has_result_event=False,
+        )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="410" cache_read_input_tokens="111368" cache_creation="{'ephemeral_5m_input_tokens': 410, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01BLAnwhzYfrin7FYCQffH6f">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_summarize_impl_failure.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me also check for the line 180 area (the second SessionTail in the unknown exit code test):</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="304" cache_read_input_tokens="111778" cache_creation="{'ephemeral_5m_input_tokens': 304, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01GEHFbH8js7mjNR3mxoDUL3">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_summarize_impl_failure.py</param>
+    <param name="offset">176</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="304" cache_read_input_tokens="111778" cache_creation="{'ephemeral_5m_input_tokens': 304, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01GEHFbH8js7mjNR3mxoDUL3">
+   176→        prompts_dir = tmp_path / "prompts"
+   177→        prompts_dir.mkdir()
+   178→        template = prompts_dir / "impl-failure-summarize.md"
+   179→        template.write_text(
+   180→            "Exit: {{ EXIT_CODE }}",
+   181→            encoding="utf-8",
+   182→        )
+   183→
+   184→        tail = SessionTail(total_events=5, last_entries_xml="&lt;session/&gt;", has_result_event=False)
+   185→        result = _build_failure_prompt(
+   186→            session_tail=tail,
+   187→            exit_code=None,
+   188→            prompts_dir=tmp_path,
+   189→        )
+   190→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>That line 184 is under 100 chars (SessionTail with short values). Let me now re-run CI checks.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="699" cache_read_input_tokens="112082" cache_creation="{'ephemeral_5m_input_tokens': 699, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_016ATLidQqLgcEXsmaRdK5CU">
+    <param name="description">Run lint and format check</param>
+    <param name="prompt">Run `make fix` and report results. This is READ-ONLY - report what happened but do not modify any files yourself.</param>
+    <param name="subagent_type">devrun</param>
+    <param name="run_in_background">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="699" cache_read_input_tokens="112082" cache_creation="{'ephemeral_5m_input_tokens': 699, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01Cvz1d8MWQpeBGdtYMC65W9">
+    <param name="description">Run unit tests again</param>
+    <param name="prompt">Run `pytest tests/unit/cli/commands/exec/scripts/test_summarize_impl_failure.py -xvs` and report the results. This is READ-ONLY - report what happened but do not modify any files yourself.</param>
+    <param name="subagent_type">devrun</param>
+    <param name="run_in_background">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="699" cache_read_input_tokens="112082" cache_creation="{'ephemeral_5m_input_tokens': 699, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01FsJUkFF6kS579obcqLUUzy">
+    <param name="description">Run ty type checking</param>
+    <param name="prompt">Run `ty check src/erk/cli/commands/exec/scripts/summarize_impl_failure.py` and report results. This is READ-ONLY - report what happened but do not modify any files yourself.</param>
+    <param name="subagent_type">devrun</param>
+    <param name="run_in_background">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="699" cache_read_input_tokens="112082" cache_creation="{'ephemeral_5m_input_tokens': 699, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_016ATLidQqLgcEXsmaRdK5CU">
+Async agent launched successfully.
+agentId: a97b354 (This is an internal ID for your use, do not mention it to the user. Use this ID to retrieve results with TaskOutput when the agent finishes).
+The agent is currently working in the background. If you have other tasks you you should continue working on them now. Wait to call TaskOutput until either:
+- If you want to check on the agent's progress - call TaskOutput with block=false to get an immediate update on the agent's status
+- If you run out of things to do and the agent is still running - call TaskOutput with block=true to idle and wait for the agent's result (do not use block=true unless you completely run out of things to do as it will waste time).
+  </tool_result>
+  <tool_result tool="toolu_01Cvz1d8MWQpeBGdtYMC65W9">
+Async agent launched successfully.
+agentId: acef679 (This is an internal ID for your use, do not mention it to the user. Use this ID to retrieve results with TaskOutput when the agent finishes).
+The agent is currently working in the background. If you have other tasks you you should continue working on them now. Wait to call TaskOutput until either:
+- If you want to check on the agent's progress - call TaskOutput with block=false to get an immediate update on the agent's status
+- If you run out of things to do and the agent is still running - call TaskOutput with block=true to idle and wait for the agent's result (do not use block=true unless you completely run out of things to do as it will waste time).
+  </tool_result>
+  <tool_result tool="toolu_01FsJUkFF6kS579obcqLUUzy">
+Async agent launched successfully.
+agentId: ae62885 (This is an internal ID for your use, do not mention it to the user. Use this ID to retrieve results with TaskOutput when the agent finishes).
+The agent is currently working in the background. If you have other tasks you you should continue working on them now. Wait to call TaskOutput until either:
+- If you want to check on the agent's progress - call TaskOutput with block=false to get an immediate update on the agent's status
+- If you run out of things to do and the agent is still running - call TaskOutput with block=true to idle and wait for the agent's result (do not use block=true unless you completely run out of things to do as it will waste time).
+  </tool_result>
+  <assistant>Let me wait for all three CI check results.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="1311" cache_read_input_tokens="112781" cache_creation="{'ephemeral_5m_input_tokens': 1311, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TaskOutput" id="toolu_01Lkt7qp81J77AgxdQE8DX3r">
+    <param name="task_id">a97b354</param>
+    <param name="block">True</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1311" cache_read_input_tokens="112781" cache_creation="{'ephemeral_5m_input_tokens': 1311, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TaskOutput" id="toolu_01VFV4R821Asu4N3kUjP1o9s">
+    <param name="task_id">acef679</param>
+    <param name="block">True</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1311" cache_read_input_tokens="112781" cache_creation="{'ephemeral_5m_input_tokens': 1311, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TaskOutput" id="toolu_01Xo7oLQZVKt8C9iYM7AfkSR">
+    <param name="task_id">ae62885</param>
+    <param name="block">True</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1311" cache_read_input_tokens="112781" cache_creation="{'ephemeral_5m_input_tokens': 1311, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Xo7oLQZVKt8C9iYM7AfkSR">
+&lt;retrieval_status&gt;success&lt;/retrieval_status&gt;
+
+&lt;task_id&gt;ae62885&lt;/task_id&gt;
+
+&lt;task_type&gt;local_agent&lt;/task_type&gt;
+
+&lt;status&gt;completed&lt;/status&gt;
+
+&lt;output&gt;
+[Tool: Bash] {"command":"uv run ty check /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/summarize_impl_failure.py","description":"Run type checking on summarize_impl_failure.py"}
+[Tool: Bash] {"command":"uv run ty check /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/summarize_impl_failure.py","description":"Run type checking on summarize_impl_failure.py"}
+
+--- RESULT ---
+ty passed: All type checks passed!
+
+The type checking for `/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/summarize_impl_failure.py` completed successfully with no errors or warnings.
+&lt;/output&gt;
+  </tool_result>
+  <tool_result tool="toolu_01VFV4R821Asu4N3kUjP1o9s">
+&lt;retrieval_status&gt;success&lt;/retrieval_status&gt;
+
+&lt;task_id&gt;acef679&lt;/task_id&gt;
+
+&lt;task_type&gt;local_agent&lt;/task_type&gt;
+
+&lt;status&gt;completed&lt;/status&gt;
+
+&lt;output&gt;
+[Tool: Bash] {"command":"uv run pytest tests/unit/cli/commands/exec/scripts/test_summarize_impl_failure.py -xvs","description":"Run summarize_impl_failure unit tests with verbose output","timeout":60000}
+[Tool: Bash] {"command":"uv run pytest tests/unit/cli/commands/exec/scripts/test_summarize_impl_failure.py -xvs","description":"Run summarize_impl_failure unit tests with verbose output","timeout":60000}
+
+--- RESULT ---
+**pytest passed: 14 tests passed in 1.47s**
+
+All 14 tests in `tests/unit/cli/commands/exec/scripts/test_summarize_impl_failure.py` passed successfully with no failures or skips.
+&lt;/output&gt;
+  </tool_result>
+  <tool_result tool="toolu_01Lkt7qp81J77AgxdQE8DX3r">
+&lt;retrieval_status&gt;success&lt;/retrieval_status&gt;
+
+&lt;task_id&gt;a97b354&lt;/task_id&gt;
+
+&lt;task_type&gt;local_agent&lt;/task_type&gt;
+
+&lt;status&gt;completed&lt;/status&gt;
+
+&lt;output&gt;
+[Tool: Bash] {"command":"make fix","description":"Run make fix to check for issues"}
+[Tool: Bash] {"command":"make fix","description":"Run make fix to check for issues"}
+
+--- RESULT ---
+**REFUSED: devrun is read-only. Reporting results only.**
+
+## Summary
+
+`make fix` passed successfully.
+
+### Results:
+
+All checks passed without requiring any modifications:
+
+1. **Ruff Check** - Passed: `All checks passed!`
+2. **Ruff Format** - Passed: `1721 files left unchanged`
+3. **Prettier** - Passed: All 483+ markdown files checked and formatted (all unchanged)
+
+The codebase is clean and requires no fixes. All linting, formatting, and code quality checks completed successfully.
+&lt;/output&gt;
+  </tool_result>
+  <assistant>All checks pass:
+- **Lint/format**: All checks passed, 1721 files unchanged
+- **Unit tests**: 14/14 passed
+- **Type checking**: No errors
+
+Now let me signal completion and submit the PR.</assistant>
+  <usage input_tokens="541" cache_creation_input_tokens="792" cache_read_input_tokens="114092" cache_creation="{'ephemeral_5m_input_tokens': 792, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_013NtuvrbbS3ChefEXPvd7tc">
+    <param name="todos">[{'content': 'Create prompt template `.github/prompts/impl-failure-summarize.md`', 'status...[truncated 724 chars]...hecks'}, {'content': 'Submit PR', 'status': 'in_progress', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="541" cache_creation_input_tokens="792" cache_read_input_tokens="114092" cache_creation="{'ephemeral_5m_input_tokens': 792, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_013NtuvrbbS3ChefEXPvd7tc">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01ML5BCBS9QS5eCUdXrJ4F7e">
+    <param name="command">erk exec impl-signal ended --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true</param>
+    <param name="description">Signal implementation ended</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="952" cache_read_input_tokens="114884" cache_creation="{'ephemeral_5m_input_tokens': 952, 'ephemeral_1h_input_tokens': 0}" output_tokens="26" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01ML5BCBS9QS5eCUdXrJ4F7e">
+{
+  "success": true,
+  "event": "ended",
+  "pr_number": 9160
+}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_019HYLCfpX7fRzHvTvF6qbc6">
+    <param name="command">erk exec upload-impl-session --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true</param>
+    <param name="description">Upload session for async learn</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="135" cache_read_input_tokens="115836" cache_creation="{'ephemeral_5m_input_tokens': 135, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_019HYLCfpX7fRzHvTvF6qbc6">
+{"uploaded": false, "reason": "push_session_failed"}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_0176ZtchcLjASAgNTM8Bpv6k">
+    <param name="command">erk exec cleanup-impl-context</param>
+    <param name="description">Clean up impl context directory</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="127" cache_read_input_tokens="115971" cache_creation="{'ephemeral_5m_input_tokens': 127, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_0176ZtchcLjASAgNTM8Bpv6k">
+{"cleaned": false, "reason": "not_tracked"}
+  </tool_result>
+  <assistant>Now let me check if there's a post-plan-implement CI hook:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="105" cache_read_input_tokens="116098" cache_creation="{'ephemeral_5m_input_tokens': 105, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01NdoKP9ScL9CBf8F3guzgha">
+    <param name="command">test -f /home/runner/work/erk/erk/.erk/prompt-hooks/post-plan-implement-ci.md &amp;&amp; echo "exists" || echo "not found"</param>
+    <param name="description">Check for post-plan-implement CI hook</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="105" cache_read_input_tokens="116098" cache_creation="{'ephemeral_5m_input_tokens': 105, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01NdoKP9ScL9CBf8F3guzgha">
+exists
+  </tool_result>
+  <tool_use name="Read" id="toolu_01JaC1aEk4JnFq6wcJpYnCvj">
+    <param name="file_path">/home/runner/work/erk/erk/.erk/prompt-hooks/post-plan-implement-ci.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="149" cache_read_input_tokens="116203" cache_creation="{'ephemeral_5m_input_tokens': 149, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01JaC1aEk4JnFq6wcJpYnCvj">
+     1→# Post-Implementation CI
+     2→
+     3→Run CI validation after plan implementation using `make fast-ci`.
+     4→
+     5→Load the `ci-iteration` skill for the iterative fix workflow.
+     6→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>I need to run `make fast-ci` per the hook. I already ran lint, format, and unit tests. Let me run the full `make fast-ci` to be thorough.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="497" cache_read_input_tokens="116352" cache_creation="{'ephemeral_5m_input_tokens': 497, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01G6FoCCR5TWEbTB92tZ3drC">
+    <param name="description">Run make fast-ci</param>
+    <param name="prompt">Run `make fast-ci` and report the results. This is READ-ONLY - report what happened but do not modify any files yourself.</param>
+    <param name="subagent_type">devrun</param>
+    <param name="run_in_background">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="497" cache_read_input_tokens="116352" cache_creation="{'ephemeral_5m_input_tokens': 497, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01G6FoCCR5TWEbTB92tZ3drC">
+Async agent launched successfully.
+agentId: a24ad22 (This is an internal ID for your use, do not mention it to the user. Use this ID to retrieve results with TaskOutput when the agent finishes).
+The agent is currently working in the background. If you have other tasks you you should continue working on them now. Wait to call TaskOutput until either:
+- If you want to check on the agent's progress - call TaskOutput with block=false to get an immediate update on the agent's status
+- If you run out of things to do and the agent is still running - call TaskOutput with block=true to idle and wait for the agent's result (do not use block=true unless you completely run out of things to do as it will waste time).
+  </tool_result>
+  <tool_use name="TaskOutput" id="toolu_012Gwa3uEFV55UBD71TFviBd">
+    <param name="task_id">a24ad22</param>
+    <param name="block">True</param>
+    <param name="timeout">120000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="363" cache_read_input_tokens="116849" cache_creation="{'ephemeral_5m_input_tokens': 363, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_012Gwa3uEFV55UBD71TFviBd">
+&lt;retrieval_status&gt;success&lt;/retrieval_status&gt;
+
+&lt;task_id&gt;a24ad22&lt;/task_id&gt;
+
+&lt;task_type&gt;local_agent&lt;/task_type&gt;
+
+&lt;status&gt;completed&lt;/status&gt;
+
+&lt;output&gt;
+[Tool: Bash] {"command":"make fast-ci","description":"Run fast-ci target"}
+[Tool: Bash] {"command":"make fast-ci","description":"Run fast-ci target"}
+
+--- RESULT ---
+The `make fast-ci` command failed with exit code 2. Here's a summary of the results:
+
+## Summary
+
+**Status: FAILED**
+
+### Passing Checks:
+- AGENTS.md standard: PASSED
+- Lint (ruff): All checks passed
+- Format Check (ruff format): 1721 files already formatted
+- Prettier Check: All matched files use Prettier code style
+- Type Checking (ty): All checks passed
+- Unit Tests (erk): 6025 passed in 27.11s
+- Unit Tests (erk-dev): 136 passed in 6.24s
+- Unit Tests (erk-statusline): 115 passed in 0.91s
+- Unit Tests (erk-mcp): 28 passed
+
+
+... [7 lines omitted] ...
+
+- **Exec Reference Check**: FAILED
+  - Error: `.claude/skills/erk-exec/reference.md is out of date`
+  </tool_result>
+  <assistant>The exec reference doc is out of date because I added a new exec command. Let me regenerate it.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="775" cache_read_input_tokens="117212" cache_creation="{'ephemeral_5m_input_tokens': 775, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01QbcM8TRPGKjRGqemH8SSeu">
+    <param name="description">Regenerate exec reference docs</param>
+    <param name="prompt">Run `erk-dev gen-exec-reference-docs` and report the results. This is READ-ONLY - report what happened but do not modify any files yourself.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="775" cache_read_input_tokens="117212" cache_creation="{'ephemeral_5m_input_tokens': 775, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01QbcM8TRPGKjRGqemH8SSeu">
+Success: The command completed successfully.
+
+**Summary:**
+- Generated file: `.claude/skills/erk-exec/reference.md`
+- 94 top-level commands documented
+
+The command introspected the erk CLI and generated reference documentation for all available exec commands. The output file has been created and formatted in the skills directory.
+agentId: aacc80f (for resuming to continue this agent's work if needed)
+  </tool_result>
+  <assistant>Good. Now let me re-run the exec reference check to confirm it's fixed:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="259" cache_read_input_tokens="117987" cache_creation="{'ephemeral_5m_input_tokens': 259, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01Pz4eJJycCzPxfRYCB2Zwkf">
+    <param name="description">Re-run fast-ci check</param>
+    <param name="prompt">Run `make fast-ci` and report the results. This is READ-ONLY - report what happened but do not modify any files yourself.</param>
+    <param name="subagent_type">devrun</param>
+    <param name="run_in_background">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="259" cache_read_input_tokens="117987" cache_creation="{'ephemeral_5m_input_tokens': 259, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Pz4eJJycCzPxfRYCB2Zwkf">
+Async agent launched successfully.
+agentId: a681765 (This is an internal ID for your use, do not mention it to the user. Use this ID to retrieve results with TaskOutput when the agent finishes).
+The agent is currently working in the background. If you have other tasks you you should continue working on them now. Wait to call TaskOutput until either:
+- If you want to check on the agent's progress - call TaskOutput with block=false to get an immediate update on the agent's status
+- If you run out of things to do and the agent is still running - call TaskOutput with block=true to idle and wait for the agent's result (do not use block=true unless you completely run out of things to do as it will waste time).
+  </tool_result>
+  <assistant>
+
+Waiting for the fast-ci results to confirm everything passes.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="614" cache_read_input_tokens="118246" cache_creation="{'ephemeral_5m_input_tokens': 614, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="TaskOutput" id="toolu_01J3WEaUaWeXnAqAgoS42Rq8">
+    <param name="task_id">a681765</param>
+    <param name="block">True</param>
+    <param name="timeout">120000</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="614" cache_read_input_tokens="118246" cache_creation="{'ephemeral_5m_input_tokens': 614, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01J3WEaUaWeXnAqAgoS42Rq8">
+&lt;retrieval_status&gt;success&lt;/retrieval_status&gt;
+
+&lt;task_id&gt;a681765&lt;/task_id&gt;
+
+&lt;task_type&gt;local_agent&lt;/task_type&gt;
+
+&lt;status&gt;completed&lt;/status&gt;
+
+&lt;output&gt;
+[Tool: Bash] {"command":"make fast-ci","description":"Run fast-ci make target"}
+[Tool: Bash] {"command":"make fast-ci","description":"Run fast-ci make target"}
+
+--- RESULT ---
+Perfect! `make fast-ci` completed successfully. Here's a summary of the results:
+
+## Fast CI Results - PASSED
+
+All checks passed successfully:
+
+**Linting &amp; Formatting:**
+- Lint: All checks passed
+- Format check: 1721 files already formatted
+- Prettier check: All matched files use Prettier code style
+- Type checking (ty): All checks passed
+
+**Test Results:**
+- Unit Tests (erk): 6025 passed in 15.37s
+- Tests (erk-dev): 136 passed in 6.20s
+- Tests (erk-statusline): 115 passed in 0.83s
+- Tests (erk-mcp): All passed
+
+... [8 lines omitted] ...
+  </tool_result>
+  <assistant>All 6,292+ tests pass with zero issues. Now let me submit the PR.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="471" cache_read_input_tokens="118860" cache_creation="{'ephemeral_5m_input_tokens': 471, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01NR813UMyZaqKBkHiJDyCBF">
+    <param name="command">erk pr submit</param>
+    <param name="description">Submit PR via erk pipeline</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="471" cache_read_input_tokens="118860" cache_creation="{'ephemeral_5m_input_tokens': 471, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01NR813UMyZaqKBkHiJDyCBF">
+🚀 Submitting PR...
+
+   Resolving branch and plan context...
+   Committing uncommitted changes...
+   Checking for existing PR...
+Phase 1: Creating or Updating PR
+   PR #9160 found (already exists)
+
+Phase 2: Getting diff and plan context
+   Incorporating plan #9160
+
+
+Phase 3: Generating PR description
+   Reading diff file...
+   Diff loaded (23,766 chars)
+   Analyzing changes with Claude...
+   Still waiting... (2s)
+   Still waiting... (4s)
+   Still waiting... (6s)
+   Still waiting... (8s)
+   PR description generated
+
+Phase 4: Graphite enhancement
+
+Phase 5: Updating PR metadata
+   Publishing draft PR...
+   PR metadata updated
+   Plan lifecycle stage updated to impl
+
+✅ PR submitted
+
+... [6 lines omitted] ...
+
+  Branch:      plnd/add-impl-failure-summary-03-10-0912 → master
+  Title:       Add implementation failure summary to remote CI
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01XZY7HsfDktBtAckqcWvQjr">
+    <param name="command">erk exec impl-signal submitted 2&gt;/dev/null || true</param>
+    <param name="description">Signal implementation submitted</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="696" cache_read_input_tokens="119331" cache_creation="{'ephemeral_5m_input_tokens': 696, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01XZY7HsfDktBtAckqcWvQjr">
+{
+  "success": true,
+  "event": "submitted",
+  "pr_number": 9160
+}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01G7oZdKs52BhzptZvMx8Vrh">
+    <param name="command">erk pr check --stage=impl 2&gt;/dev/null || true</param>
+    <param name="description">Validate PR completion invariants</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="123" cache_read_input_tokens="120027" cache_creation="{'ephemeral_5m_input_tokens': 123, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01G7oZdKs52BhzptZvMx8Vrh">
+
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01B9VBc5x3KQ83kvdz2F188N">
+    <param name="todos">[{'content': 'Create prompt template `.github/prompts/impl-failure-summarize.md`', 'status...[truncated 722 chars]... checks'}, {'content': 'Submit PR', 'status': 'completed', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="115" cache_read_input_tokens="120150" cache_creation="{'ephemeral_5m_input_tokens': 115, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01B9VBc5x3KQ83kvdz2F188N">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Plan execution complete. Here's a summary of what was implemented:
+
+**PR:** https://github.com/dagster-io/erk/pull/9160
+
+### Changes Made
+
+**3 files created:**
+1. `.github/prompts/impl-failure-summarize.md` — Haiku prompt template for diagnosing implementation failures
+2. `src/erk/cli/commands/exec/scripts/summarize_impl_failure.py` — New exec script that reads session JSONL, extracts the tail entries, sends to Haiku for diagnosis, posts a PR comment, and prints to stdout for `GITHUB_STEP_SUMMARY`
+3. `tests/unit/cli/commands/exec/scripts/test_summarize_impl_failure.py` — 14 unit tests covering `_extract_session_tail`, `_build_failure_prompt`, and `_build_comment_body`
+
+**3 files modified:**
+1. `src/erk/cli/commands/exec/group.py` — Import and register `summarize-impl-failure` command
+2. `.github/workflows/plan-implement.yml` — New workflow step that runs on implementation failure, posts PR comment + writes to `GITHUB_STEP_SUMMARY`
+3. `.claude/skills/erk-exec/reference.md` — Auto-regenerated to include the new command
+
+**Key design decisions:**
+- Follows `ci_generate_summaries.py` pattern exactly (same imports, same Haiku call pattern)
+- Uses `generate_compressed_xml()` from `preprocess_session.py` for session tail compression
+- `continue-on-error: true` on workflow step — diagnostic only, never blocks the workflow
+- Always exits 0 from the script itself
+- Parameter injection for `prompts_dir` to maintain testability</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="356" cache_read_input_tokens="120265" cache_creation="{'ephemeral_5m_input_tokens': 356, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+</session>
