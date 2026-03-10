@@ -3,13 +3,13 @@
 import pytest
 
 from erk.tui.app import ErkDashApp
-from erk.tui.data.types import PlanFilters
+from erk.tui.data.types import PrFilters
 from erk.tui.screens.launch_screen import LaunchScreen
 from erk.tui.screens.objective_nodes_screen import ObjectiveNodesScreen
 from erk.tui.screens.unresolved_comments_screen import UnresolvedCommentsScreen
 from erk.tui.widgets.status_bar import StatusBar
 from tests.fakes.gateway.clipboard import FakeClipboard
-from tests.fakes.gateway.plan_data_provider import FakePlanDataProvider, make_plan_row
+from tests.fakes.gateway.plan_data_provider import FakePrDataProvider, make_pr_row
 from tests.fakes.gateway.pr_service import FakePrService
 
 
@@ -19,8 +19,8 @@ class TestActionViewComments:
     @pytest.mark.asyncio
     async def test_no_selected_row_does_nothing(self) -> None:
         """No selected row → early return, no screen pushed."""
-        provider = FakePlanDataProvider(plans=[])
-        filters = PlanFilters.default()
+        provider = FakePrDataProvider(plans=[])
+        filters = PrFilters.default()
         app = ErkDashApp(
             provider=provider, service=FakePrService(), filters=filters, refresh_interval=0
         )
@@ -37,12 +37,12 @@ class TestActionViewComments:
             assert len(app.screen_stack) == initial_stack_len
 
     @pytest.mark.asyncio
-    async def test_no_pr_linked_shows_status_message(self) -> None:
-        """Row with pr_number=None → status bar shows 'No PR linked to this plan'."""
-        provider = FakePlanDataProvider(
-            plans=[make_plan_row(123, "Test Plan")]  # No pr_number
+    async def test_zero_unresolved_no_comments_shows_status_message(self) -> None:
+        """Row with no comments → status bar shows 'No unresolved comments'."""
+        provider = FakePrDataProvider(
+            plans=[make_pr_row(123, "Test Plan")]  # Default 0/0 comments
         )
-        filters = PlanFilters.default()
+        filters = PrFilters.default()
         app = ErkDashApp(
             provider=provider, service=FakePrService(), filters=filters, refresh_interval=0
         )
@@ -55,15 +55,13 @@ class TestActionViewComments:
             await pilot.pause()
 
             status_bar = app.query_one(StatusBar)
-            assert status_bar._message == "No PR linked to this plan"
+            assert status_bar._message == "No unresolved comments"
 
     @pytest.mark.asyncio
     async def test_zero_unresolved_shows_status_message(self) -> None:
         """Row with 0 unresolved comments → status bar shows 'No unresolved comments'."""
-        provider = FakePlanDataProvider(
-            plans=[make_plan_row(123, "Test Plan", pr_number=456, comment_counts=(5, 5))]
-        )
-        filters = PlanFilters.default()
+        provider = FakePrDataProvider(plans=[make_pr_row(123, "Test Plan", comment_counts=(5, 5))])
+        filters = PrFilters.default()
         app = ErkDashApp(
             provider=provider, service=FakePrService(), filters=filters, refresh_interval=0
         )
@@ -81,10 +79,8 @@ class TestActionViewComments:
     @pytest.mark.asyncio
     async def test_unresolved_comments_pushes_screen(self) -> None:
         """Row with unresolved comments → pushes UnresolvedCommentsScreen."""
-        provider = FakePlanDataProvider(
-            plans=[make_plan_row(123, "Test Plan", pr_number=456, comment_counts=(3, 5))]
-        )
-        filters = PlanFilters.default()
+        provider = FakePrDataProvider(plans=[make_pr_row(123, "Test Plan", comment_counts=(3, 5))])
+        filters = PrFilters.default()
         app = ErkDashApp(
             provider=provider, service=FakePrService(), filters=filters, refresh_interval=0
         )
@@ -131,8 +127,8 @@ class TestActionViewNodes:
     @pytest.mark.asyncio
     async def test_no_selected_row_does_nothing(self) -> None:
         """No selected row → early return, no screen pushed."""
-        provider = FakePlanDataProvider(plans=[])
-        filters = PlanFilters.default()
+        provider = FakePrDataProvider(plans=[])
+        filters = PrFilters.default()
         app = ErkDashApp(
             provider=provider, service=FakePrService(), filters=filters, refresh_interval=0
         )
@@ -151,8 +147,8 @@ class TestActionViewNodes:
     @pytest.mark.asyncio
     async def test_not_objectives_view_does_nothing(self) -> None:
         """In Plans view, pressing 'b' does nothing."""
-        provider = FakePlanDataProvider(plans=[make_plan_row(123, "Test Plan")])
-        filters = PlanFilters.default()
+        provider = FakePrDataProvider(plans=[make_pr_row(123, "Test Plan")])
+        filters = PrFilters.default()
         app = ErkDashApp(
             provider=provider, service=FakePrService(), filters=filters, refresh_interval=0
         )
@@ -169,10 +165,10 @@ class TestActionViewNodes:
             assert len(app.screen_stack) == initial_stack_len
 
     @pytest.mark.asyncio
-    async def test_empty_plan_body_shows_status_message(self) -> None:
-        """Objective row with empty plan_body → status bar shows message."""
-        provider = FakePlanDataProvider(plans=[make_plan_row(123, "Test Objective")])
-        filters = PlanFilters.default()
+    async def test_empty_pr_body_shows_status_message(self) -> None:
+        """Objective row with empty pr_body → status bar shows message."""
+        provider = FakePrDataProvider(plans=[make_pr_row(123, "Test Objective")])
+        filters = PrFilters.default()
         app = ErkDashApp(
             provider=provider, service=FakePrService(), filters=filters, refresh_interval=0
         )
@@ -192,12 +188,12 @@ class TestActionViewNodes:
             assert status_bar._message == "No objective body available"
 
     @pytest.mark.asyncio
-    async def test_plan_body_pushes_nodes_screen(self) -> None:
-        """Objective row with plan_body → pushes ObjectiveNodesScreen."""
-        provider = FakePlanDataProvider(
-            plans=[make_plan_row(123, "Test Objective", plan_body=_V2_ROADMAP_BODY)]
+    async def test_pr_body_pushes_nodes_screen(self) -> None:
+        """Objective row with pr_body → pushes ObjectiveNodesScreen."""
+        provider = FakePrDataProvider(
+            plans=[make_pr_row(123, "Test Objective", pr_body=_V2_ROADMAP_BODY)]
         )
-        filters = PlanFilters.default()
+        filters = PrFilters.default()
         app = ErkDashApp(
             provider=provider, service=FakePrService(), filters=filters, refresh_interval=0
         )
@@ -224,8 +220,8 @@ class TestActionLaunch:
     @pytest.mark.asyncio
     async def test_launch_with_no_selected_row_does_nothing(self) -> None:
         """Pressing 'l' with no rows does not push a screen."""
-        provider = FakePlanDataProvider(plans=[])
-        filters = PlanFilters.default()
+        provider = FakePrDataProvider(plans=[])
+        filters = PrFilters.default()
         app = ErkDashApp(
             provider=provider, service=FakePrService(), filters=filters, refresh_interval=0
         )
@@ -244,18 +240,16 @@ class TestActionLaunch:
     @pytest.mark.asyncio
     async def test_launch_pushes_launch_screen(self) -> None:
         """Pressing 'l' with a selected row pushes LaunchScreen."""
-        provider = FakePlanDataProvider(
+        provider = FakePrDataProvider(
             plans=[
-                make_plan_row(
+                make_pr_row(
                     123,
                     "Test Plan",
-                    plan_url="https://github.com/test/repo/issues/123",
-                    pr_number=456,
                     pr_url="https://github.com/test/repo/pull/456",
                 )
             ]
         )
-        filters = PlanFilters.default()
+        filters = PrFilters.default()
         app = ErkDashApp(
             provider=provider, service=FakePrService(), filters=filters, refresh_interval=0
         )
@@ -275,10 +269,10 @@ class TestActionLaunch:
     async def test_launch_result_none_does_not_execute_command(self) -> None:
         """_on_launch_result with None does not execute any command."""
         clipboard = FakeClipboard()
-        provider = FakePlanDataProvider(
-            plans=[make_plan_row(123, "Test Plan")],
+        provider = FakePrDataProvider(
+            plans=[make_pr_row(123, "Test Plan")],
         )
-        filters = PlanFilters.default()
+        filters = PrFilters.default()
         app = ErkDashApp(
             provider=provider,
             service=FakePrService(clipboard=clipboard),
@@ -298,10 +292,10 @@ class TestActionLaunch:
     async def test_launch_result_executes_command(self) -> None:
         """_on_launch_result with a command_id executes that command."""
         clipboard = FakeClipboard()
-        provider = FakePlanDataProvider(
-            plans=[make_plan_row(123, "Test Plan", pr_number=123)],
+        provider = FakePrDataProvider(
+            plans=[make_pr_row(123, "Test Plan")],
         )
-        filters = PlanFilters.default()
+        filters = PrFilters.default()
         app = ErkDashApp(
             provider=provider,
             service=FakePrService(clipboard=clipboard),
@@ -321,18 +315,16 @@ class TestActionLaunch:
     @pytest.mark.asyncio
     async def test_launch_screen_dismisses_on_unmapped_key(self) -> None:
         """Pressing an unmapped key dismisses LaunchScreen with None result."""
-        provider = FakePlanDataProvider(
+        provider = FakePrDataProvider(
             plans=[
-                make_plan_row(
+                make_pr_row(
                     123,
                     "Test Plan",
-                    plan_url="https://github.com/test/repo/issues/123",
-                    pr_number=456,
                     pr_url="https://github.com/test/repo/pull/456",
                 )
             ]
         )
-        filters = PlanFilters.default()
+        filters = PrFilters.default()
         app = ErkDashApp(
             provider=provider, service=FakePrService(), filters=filters, refresh_interval=0
         )

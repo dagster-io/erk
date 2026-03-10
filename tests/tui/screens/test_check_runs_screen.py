@@ -4,11 +4,11 @@ import pytest
 from textual.widgets import Markdown
 
 from erk.tui.app import ErkDashApp
-from erk.tui.data.types import PlanFilters
+from erk.tui.data.types import PrFilters
 from erk.tui.formatting.ci_checks import format_check_runs
 from erk.tui.screens.check_runs_screen import CheckRunsScreen
 from erk_shared.gateway.github.types import PRCheckRun
-from tests.fakes.gateway.plan_data_provider import FakePlanDataProvider, make_plan_row
+from tests.fakes.gateway.plan_data_provider import FakePrDataProvider, make_pr_row
 from tests.fakes.gateway.pr_service import FakePrService
 
 
@@ -162,13 +162,12 @@ def test_summary_with_multiple_checks_only_matching() -> None:
 @pytest.mark.asyncio
 async def test_summaries_update_markdown_in_place() -> None:
     """Summaries update existing Markdown widget in-place (no remove/mount race)."""
-    provider = FakePlanDataProvider(
+    provider = FakePrDataProvider(
         plans=[
-            make_plan_row(
+            make_pr_row(
                 100,
                 "Test Plan",
-                pr_number=42,
-                pr_url="https://github.com/test/repo/pull/42",
+                pr_url="https://github.com/test/repo/pull/100",
                 checks_passing=False,
                 checks_counts=(3, 4),
             )
@@ -176,7 +175,7 @@ async def test_summaries_update_markdown_in_place() -> None:
     )
     service = FakePrService()
     service.set_check_runs(
-        42,
+        100,
         [
             PRCheckRun(
                 name="CI / lint",
@@ -186,9 +185,9 @@ async def test_summaries_update_markdown_in_place() -> None:
             ),
         ],
     )
-    service.set_ci_summaries(42, {"lint": "- Unused import in foo.py"})
+    service.set_ci_summaries(100, {"lint": "- Unused import in foo.py"})
 
-    filters = PlanFilters.default()
+    filters = PrFilters.default()
     app = ErkDashApp(provider=provider, service=service, filters=filters, refresh_interval=0)
 
     async with app.run_test() as pilot:

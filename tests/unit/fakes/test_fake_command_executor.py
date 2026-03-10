@@ -62,7 +62,7 @@ def test_close_plan_returns_empty_list_by_default() -> None:
 def test_close_plan_returns_configured_pr_numbers() -> None:
     """close_plan returns configured PR numbers when set."""
     executor = FakeCommandExecutor()
-    executor.set_close_plan_return([789, 790])
+    executor.set_close_pr_return([789, 790])
     result = executor.close_plan(123, "https://github.com/test/repo/issues/123")
     assert result == [789, 790]
 

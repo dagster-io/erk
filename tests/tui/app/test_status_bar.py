@@ -43,7 +43,7 @@ class TestStatusBar:
         timings = FetchTimings(
             rest_issues_ms=1000,
             graphql_enrich_ms=500,
-            plan_parsing_ms=200,
+            pr_parsing_ms=200,
             workflow_runs_ms=300,
             worktree_mapping_ms=50,
             row_building_ms=20,

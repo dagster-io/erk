@@ -2,11 +2,11 @@
 
 from datetime import UTC, datetime
 
-from erk.tui.data.types import PlanRowData
+from erk.tui.data.types import PrRowData
 from erk.tui.screens.plan_detail_screen import PlanDetailScreen
 from erk.tui.views.types import ViewMode
 from tests.fakes.gateway.command_executor import FakeCommandExecutor
-from tests.fakes.gateway.plan_data_provider import make_plan_row
+from tests.fakes.gateway.plan_data_provider import make_pr_row
 
 
 class TestExecuteCommandBrowserCommands:
@@ -14,11 +14,10 @@ class TestExecuteCommandBrowserCommands:
 
     def test_open_browser_opens_pr_url_when_available(self) -> None:
         """open_browser opens PR URL when PR is available."""
-        row = make_plan_row(
+        row = make_pr_row(
             123,
             "Test",
             pr_url="https://github.com/test/repo/pull/456",
-            plan_url="https://github.com/test/repo/issues/123",
         )
         executor = FakeCommandExecutor()
         screen = PlanDetailScreen(row=row, executor=executor, view_mode=ViewMode.PLANS)
@@ -27,7 +26,7 @@ class TestExecuteCommandBrowserCommands:
 
     def test_open_browser_opens_issue_url_when_no_pr(self) -> None:
         """open_browser opens issue URL when no PR is available."""
-        row = make_plan_row(123, "Test", plan_url="https://github.com/test/repo/issues/123")
+        row = make_pr_row(123, "Test", pr_url="https://github.com/test/repo/issues/123")
         executor = FakeCommandExecutor()
         screen = PlanDetailScreen(row=row, executor=executor, view_mode=ViewMode.PLANS)
         screen.execute_command("open_browser")
@@ -35,7 +34,7 @@ class TestExecuteCommandBrowserCommands:
 
     def test_open_issue_opens_issue_url(self) -> None:
         """open_issue opens the issue URL."""
-        row = make_plan_row(123, "Test", plan_url="https://github.com/test/repo/issues/123")
+        row = make_pr_row(123, "Test", pr_url="https://github.com/test/repo/issues/123")
         executor = FakeCommandExecutor()
         screen = PlanDetailScreen(row=row, executor=executor, view_mode=ViewMode.PLANS)
         screen.execute_command("open_issue")
@@ -44,21 +43,20 @@ class TestExecuteCommandBrowserCommands:
 
     def test_open_pr_opens_pr_url(self) -> None:
         """open_pr opens the PR URL."""
-        row = make_plan_row(
+        row = make_pr_row(
             123,
             "Test",
-            pr_number=456,
-            pr_url="https://github.com/test/repo/pull/456",
+            pr_url="https://github.com/test/repo/pull/123",
         )
         executor = FakeCommandExecutor()
         screen = PlanDetailScreen(row=row, executor=executor, view_mode=ViewMode.PLANS)
         screen.execute_command("open_pr")
-        assert executor.opened_urls == ["https://github.com/test/repo/pull/456"]
-        assert "Opened PR #456" in executor.notifications
+        assert executor.opened_urls == ["https://github.com/test/repo/pull/123"]
+        assert "Opened PR #123" in executor.notifications
 
     def test_open_run_opens_run_url(self) -> None:
         """open_run opens the workflow run URL."""
-        row = make_plan_row(
+        row = make_pr_row(
             123,
             "Test",
             run_url="https://github.com/test/repo/actions/runs/789",
@@ -74,7 +72,7 @@ class TestExecuteCommandCopyCommands:
 
     def test_copy_checkout_copies_command(self) -> None:
         """copy_checkout copies branch checkout command."""
-        row = make_plan_row(
+        row = make_pr_row(
             123,
             "Test",
             worktree_name="feature-123",
@@ -89,7 +87,7 @@ class TestExecuteCommandCopyCommands:
 
     def test_copy_checkout_notifies_when_worktree_branch_none(self) -> None:
         """copy_checkout shows notification when worktree_branch is None."""
-        row = make_plan_row(123, "Test")  # worktree_branch defaults to None
+        row = make_pr_row(123, "Test")  # worktree_branch defaults to None
         executor = FakeCommandExecutor()
         screen = PlanDetailScreen(row=row, executor=executor, view_mode=ViewMode.PLANS)
         screen.execute_command("copy_checkout")
@@ -101,47 +99,47 @@ class TestExecuteCommandCopyCommands:
 
     def test_copy_pr_checkout_script_copies_command(self) -> None:
         """copy_pr_checkout_script copies the PR checkout command with --script."""
-        row = make_plan_row(123, "Test", pr_number=456)
+        row = make_pr_row(123, "Test")
         executor = FakeCommandExecutor()
         screen = PlanDetailScreen(row=row, executor=executor, view_mode=ViewMode.PLANS)
         screen.execute_command("copy_pr_checkout_script")
-        expected_cmd = 'source "$(erk pr checkout 456 --script)"'
+        expected_cmd = 'source "$(erk pr checkout 123 --script)"'
         assert executor.copied_texts == [expected_cmd]
         assert f"Copied: {expected_cmd}" in executor.notifications
 
     def test_copy_pr_checkout_plain_copies_command(self) -> None:
         """copy_pr_checkout_plain copies the plain PR checkout command."""
-        row = make_plan_row(123, "Test", pr_number=456)
+        row = make_pr_row(123, "Test")
         executor = FakeCommandExecutor()
         screen = PlanDetailScreen(row=row, executor=executor, view_mode=ViewMode.PLANS)
         screen.execute_command("copy_pr_checkout_plain")
-        expected_cmd = "erk pr checkout 456"
+        expected_cmd = "erk pr checkout 123"
         assert executor.copied_texts == [expected_cmd]
         assert f"Copied: {expected_cmd}" in executor.notifications
 
     def test_copy_teleport_copies_command(self) -> None:
         """copy_teleport copies the teleport command."""
-        row = make_plan_row(123, "Test", pr_number=456)
+        row = make_pr_row(123, "Test")
         executor = FakeCommandExecutor()
         screen = PlanDetailScreen(row=row, executor=executor, view_mode=ViewMode.PLANS)
         screen.execute_command("copy_teleport")
-        expected_cmd = "erk pr teleport 456"
+        expected_cmd = "erk pr teleport 123"
         assert executor.copied_texts == [expected_cmd]
         assert f"Copied: {expected_cmd}" in executor.notifications
 
     def test_copy_teleport_new_slot_copies_command(self) -> None:
         """copy_teleport_new_slot copies the teleport --new-slot command."""
-        row = make_plan_row(123, "Test", pr_number=456)
+        row = make_pr_row(123, "Test")
         executor = FakeCommandExecutor()
         screen = PlanDetailScreen(row=row, executor=executor, view_mode=ViewMode.PLANS)
         screen.execute_command("copy_teleport_new_slot")
-        expected_cmd = "erk pr teleport 456 --new-slot"
+        expected_cmd = "erk pr teleport 123 --new-slot"
         assert executor.copied_texts == [expected_cmd]
         assert f"Copied: {expected_cmd}" in executor.notifications
 
     def test_copy_prepare_copies_command(self) -> None:
         """copy_prepare copies the prepare command."""
-        row = make_plan_row(123, "Test")
+        row = make_pr_row(123, "Test")
         executor = FakeCommandExecutor()
         screen = PlanDetailScreen(row=row, executor=executor, view_mode=ViewMode.PLANS)
         screen.execute_command("copy_prepare")
@@ -150,7 +148,7 @@ class TestExecuteCommandCopyCommands:
 
     def test_copy_dispatch_copies_command(self) -> None:
         """copy_dispatch copies the dispatch command."""
-        row = make_plan_row(123, "Test")
+        row = make_pr_row(123, "Test")
         executor = FakeCommandExecutor()
         screen = PlanDetailScreen(row=row, executor=executor, view_mode=ViewMode.PLANS)
         screen.execute_command("copy_dispatch")
@@ -159,21 +157,19 @@ class TestExecuteCommandCopyCommands:
 
 
 class TestExecuteCommandClosePlan:
-    """Tests for close_plan command.
+    """Tests for close_pr command.
 
-    Note: close_plan now uses in-process HTTP client (no subprocess).
+    Note: close_pr now uses in-process HTTP client (no subprocess).
     These tests verify the guard conditions. The HTTP client behavior
     is tested in tests/tui/data/test_provider.py.
     """
 
-    def test_close_plan_does_nothing_without_issue_url(self) -> None:
-        """close_plan does nothing if no issue URL."""
-        # Create row directly to set plan_url=None (make_plan_row defaults it)
-        row = PlanRowData(
-            plan_id=123,
-            plan_url=None,  # Explicitly None
-            pr_number=None,
-            pr_url=None,
+    def test_close_pr_does_nothing_without_issue_url(self) -> None:
+        """close_pr does nothing if no issue URL."""
+        # Create row directly to set pr_url=None (make_pr_row defaults it)
+        row = PrRowData(
+            pr_number=123,
+            pr_url=None,  # Explicitly None
             pr_display="-",
             checks_display="-",
             checks_passing=None,
@@ -187,7 +183,7 @@ class TestExecuteCommandClosePlan:
             run_state_display="-",
             run_url=None,
             full_title="Test",
-            plan_body="",
+            pr_body="",
             pr_title=None,
             pr_state=None,
             pr_head_branch=None,
@@ -230,7 +226,7 @@ class TestExecuteCommandClosePlan:
         )
         executor = FakeCommandExecutor()
         screen = PlanDetailScreen(row=row, executor=executor, view_mode=ViewMode.PLANS)
-        screen.execute_command("close_plan")
+        screen.execute_command("close_pr")
         assert executor.refresh_count == 0
 
 
@@ -244,11 +240,9 @@ class TestExecuteCommandDispatchToQueue:
 
     def test_dispatch_to_queue_does_nothing_without_issue_url(self) -> None:
         """dispatch_to_queue does nothing if no issue URL."""
-        row = PlanRowData(
-            plan_id=123,
-            plan_url=None,  # Explicitly None
-            pr_number=None,
-            pr_url=None,
+        row = PrRowData(
+            pr_number=123,
+            pr_url=None,  # Explicitly None
             pr_display="-",
             checks_display="-",
             checks_passing=None,
@@ -262,7 +256,7 @@ class TestExecuteCommandDispatchToQueue:
             run_state_display="-",
             run_url=None,
             full_title="Test",
-            plan_body="",
+            pr_body="",
             pr_title=None,
             pr_state=None,
             pr_head_branch=None,
@@ -317,9 +311,9 @@ class TestExecuteCommandLandPR:
     (including objective update chaining) is tested in test_app.py.
     """
 
-    def test_land_pr_does_nothing_without_pr_number(self) -> None:
-        """land_pr does nothing if no PR is associated with the plan."""
-        row = make_plan_row(123, "Test")  # No pr_number
+    def test_land_pr_does_nothing_without_pr_state(self) -> None:
+        """land_pr does nothing if pr_state is not OPEN."""
+        row = make_pr_row(123, "Test")  # No pr_state set
         executor = FakeCommandExecutor()
         screen = PlanDetailScreen(row=row, executor=executor, view_mode=ViewMode.PLANS)
         screen.execute_command("land_pr")
@@ -334,24 +328,20 @@ class TestExecuteCommandRebaseRemote:
     in test_app.py.
     """
 
-    def test_rebase_remote_does_nothing_without_pr_number(self) -> None:
-        """rebase_remote does nothing if no PR is associated with the plan."""
-        row = make_plan_row(123, "Test")  # No pr_number
-        executor = FakeCommandExecutor()
-        screen = PlanDetailScreen(row=row, executor=executor, view_mode=ViewMode.PLANS)
-        screen.execute_command("rebase_remote")
-        assert executor.refresh_count == 0
+    # Note: pr_number is always set (int), so rebase_remote is always available.
+    # The guard `pr_number is not None` always passes. The rebase action is
+    # delegated to ErkDashApp via dismiss(), tested in test_app.py.
 
 
 class TestExecuteCommandCopyClosePlan:
-    """Tests for copy_close_plan command."""
+    """Tests for copy_close_pr command."""
 
-    def test_copy_close_plan_copies_command(self) -> None:
-        """copy_close_plan copies the close plan command."""
-        row = make_plan_row(123, "Test")
+    def test_copy_close_pr_copies_command(self) -> None:
+        """copy_close_pr copies the close plan command."""
+        row = make_pr_row(123, "Test")
         executor = FakeCommandExecutor()
         screen = PlanDetailScreen(row=row, executor=executor, view_mode=ViewMode.PLANS)
-        screen.execute_command("copy_close_plan")
+        screen.execute_command("copy_close_pr")
         assert executor.copied_texts == ["erk pr close 123"]
         assert "Copied: erk pr close 123" in executor.notifications
 
@@ -360,42 +350,26 @@ class TestExecuteCommandCopyRebaseRemote:
     """Tests for copy_rebase_remote command."""
 
     def test_copy_rebase_remote_copies_command(self) -> None:
-        """copy_rebase_remote copies the launch command when PR exists."""
-        row = make_plan_row(123, "Test", pr_number=456)
+        """copy_rebase_remote copies the launch command."""
+        row = make_pr_row(123, "Test")
         executor = FakeCommandExecutor()
         screen = PlanDetailScreen(row=row, executor=executor, view_mode=ViewMode.PLANS)
         screen.execute_command("copy_rebase_remote")
-        assert executor.copied_texts == ["erk launch pr-rebase --pr 456"]
-        assert "Copied: erk launch pr-rebase --pr 456" in executor.notifications
-
-    def test_copy_rebase_remote_does_nothing_without_pr(self) -> None:
-        """copy_rebase_remote does nothing when no PR number."""
-        row = make_plan_row(123, "Test")  # No pr_number
-        executor = FakeCommandExecutor()
-        screen = PlanDetailScreen(row=row, executor=executor, view_mode=ViewMode.PLANS)
-        screen.execute_command("copy_rebase_remote")
-        assert executor.copied_texts == []
+        assert executor.copied_texts == ["erk launch pr-rebase --pr 123"]
+        assert "Copied: erk launch pr-rebase --pr 123" in executor.notifications
 
 
 class TestExecuteCommandCopyAddressRemote:
     """Tests for copy_address_remote command."""
 
     def test_copy_address_remote_copies_command(self) -> None:
-        """copy_address_remote copies the launch command when PR exists."""
-        row = make_plan_row(123, "Test", pr_number=456)
+        """copy_address_remote copies the launch command."""
+        row = make_pr_row(123, "Test")
         executor = FakeCommandExecutor()
         screen = PlanDetailScreen(row=row, executor=executor, view_mode=ViewMode.PLANS)
         screen.execute_command("copy_address_remote")
-        assert executor.copied_texts == ["erk launch pr-address --pr 456"]
-        assert "Copied: erk launch pr-address --pr 456" in executor.notifications
-
-    def test_copy_address_remote_does_nothing_without_pr(self) -> None:
-        """copy_address_remote does nothing when no PR number."""
-        row = make_plan_row(123, "Test")  # No pr_number
-        executor = FakeCommandExecutor()
-        screen = PlanDetailScreen(row=row, executor=executor, view_mode=ViewMode.PLANS)
-        screen.execute_command("copy_address_remote")
-        assert executor.copied_texts == []
+        assert executor.copied_texts == ["erk launch pr-address --pr 123"]
+        assert "Copied: erk launch pr-address --pr 123" in executor.notifications
 
 
 class TestExecuteCommandNoExecutor:
@@ -403,15 +377,15 @@ class TestExecuteCommandNoExecutor:
 
     def test_does_nothing_without_executor(self) -> None:
         """Commands do nothing when no executor is provided."""
-        row = make_plan_row(123, "Test")
+        row = make_pr_row(123, "Test")
         screen = PlanDetailScreen(row=row, view_mode=ViewMode.PLANS)  # No executor
         # Should not raise
         screen.execute_command("open_browser")
         screen.execute_command("copy_prepare")
-        screen.execute_command("close_plan")
+        screen.execute_command("close_pr")
         screen.execute_command("dispatch_to_queue")
         screen.execute_command("land_pr")
         screen.execute_command("rebase_remote")
-        screen.execute_command("copy_close_plan")
+        screen.execute_command("copy_close_pr")
         screen.execute_command("copy_rebase_remote")
         screen.execute_command("copy_address_remote")

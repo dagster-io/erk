@@ -18,7 +18,7 @@ from textual.widgets import Label
 from erk.tui.commands.provider import PlanCommandProvider
 from erk.tui.commands.registry import get_copy_text
 from erk.tui.commands.types import CommandContext
-from erk.tui.data.types import PlanRowData
+from erk.tui.data.types import PrRowData
 from erk.tui.views.types import ViewMode
 from erk.tui.widgets.clickable_link import ClickableLink
 from erk.tui.widgets.command_output import CommandOutputPanel
@@ -30,14 +30,14 @@ if TYPE_CHECKING:
     from erk_shared.gateway.clipboard.abc import Clipboard
 
 
-def _extract_repo_base_url(plan_url: str) -> str:
+def _extract_repo_base_url(pr_url: str) -> str:
     """Extract repository base URL from a plan URL.
 
     Handles both /pull/ (new plan-as-PR format) and /issues/ (legacy).
     """
-    if "/pull/" in plan_url:
-        return plan_url.rsplit("/pull/", 1)[0]
-    return plan_url.rsplit("/issues/", 1)[0]
+    if "/pull/" in pr_url:
+        return pr_url.rsplit("/pull/", 1)[0]
+    return pr_url.rsplit("/issues/", 1)[0]
 
 
 class PlanDetailScreen(ModalScreen):
@@ -225,7 +225,7 @@ class PlanDetailScreen(ModalScreen):
     def __init__(
         self,
         *,
-        row: PlanRowData,
+        row: PrRowData,
         clipboard: Clipboard | None = None,
         browser: BrowserLauncher | None = None,
         executor: CommandExecutor | None = None,
@@ -237,7 +237,7 @@ class PlanDetailScreen(ModalScreen):
         """Initialize with plan row data.
 
         Args:
-            row: PlanRowData containing all plan information
+            row: PrRowData containing all plan information
             clipboard: Optional clipboard interface for copy operations
             browser: Optional browser launcher interface for opening URLs
             executor: Optional command executor for palette commands
@@ -304,15 +304,13 @@ class PlanDetailScreen(ModalScreen):
             return
         if self._row.pr_url:
             self._browser.launch(self._row.pr_url)
-        elif self._row.plan_url:
-            self._browser.launch(self._row.plan_url)
 
     def action_open_issue(self) -> None:
         """Open the issue in browser."""
         if self._browser is None:
             return
-        if self._row.plan_url:
-            self._browser.launch(self._row.plan_url)
+        if self._row.pr_url:
+            self._browser.launch(self._row.pr_url)
 
     def action_open_pr(self) -> None:
         """Open the PR in browser."""
@@ -361,13 +359,13 @@ class PlanDetailScreen(ModalScreen):
 
     def action_copy_prepare(self) -> None:
         """Copy basic prepare command to clipboard."""
-        cmd = f"erk br co --for-plan {self._row.plan_id}"
+        cmd = f"erk br co --for-plan {self._row.pr_number}"
         self._copy_and_notify(cmd)
 
     def action_copy_prepare_activate(self) -> None:
         """Copy one-liner to prepare worktree and start implementation."""
         cmd = (
-            f'source "$(erk br co --for-plan {self._row.plan_id} --script)"'
+            f'source "$(erk br co --for-plan {self._row.pr_number} --script)"'
             " && erk implement --dangerous"
         )
         self._copy_and_notify(cmd)
@@ -383,7 +381,7 @@ class PlanDetailScreen(ModalScreen):
 
     def action_copy_dispatch(self) -> None:
         """Copy dispatch command to clipboard."""
-        cmd = f"erk pr dispatch {self._row.plan_id}"
+        cmd = f"erk pr dispatch {self._row.pr_number}"
         self._copy_and_notify(cmd)
 
     def action_rebase_remote(self) -> None:
@@ -466,10 +464,10 @@ class PlanDetailScreen(ModalScreen):
         # Run subprocess in worker thread
         self._stream_subprocess(command, cwd)
 
-    def run_close_plan_in_process(
+    def run_close_pr_in_process(
         self,
-        plan_id: int,
-        plan_url: str,
+        pr_number: int,
+        pr_url: str,
     ) -> None:
         """Run close plan in-process using HTTP client directly.
 
@@ -477,30 +475,30 @@ class PlanDetailScreen(ModalScreen):
         the HTTP client that was initialized at TUI startup.
 
         Args:
-            plan_id: The plan identifier to close
-            plan_url: The plan URL for PR linkage lookup
+            pr_number: The plan identifier to close
+            pr_url: The plan URL for PR linkage lookup
         """
         # Create and mount output panel
-        title = f"Closing Plan #{plan_id}"
+        title = f"Closing PR #{pr_number}"
         self._output_panel = CommandOutputPanel(title)
         dialog = self.query_one("#detail-dialog")
         dialog.mount(self._output_panel)
         self._command_running = True
 
         # Run in-process worker (no timeout needed - HTTP has its own timeout)
-        self._run_close_plan_worker(plan_id, plan_url)
+        self._run_close_pr_worker(pr_number, pr_url)
 
     @work(thread=True)
-    def _run_close_plan_worker(
+    def _run_close_pr_worker(
         self,
-        plan_id: int,
-        plan_url: str,
+        pr_number: int,
+        pr_url: str,
     ) -> None:
-        """Worker: close plan using executor's close_plan_fn.
+        """Worker: close plan using executor's close_pr_fn.
 
         Args:
-            plan_id: The plan identifier to close
-            plan_url: The plan URL for PR linkage lookup
+            pr_number: The plan identifier to close
+            pr_url: The plan URL for PR linkage lookup
         """
         panel = self._output_panel
         if panel is None or self._executor is None:
@@ -512,13 +510,13 @@ class PlanDetailScreen(ModalScreen):
         # them in the output panel rather than crashing the TUI.
         try:
             self.app.call_from_thread(panel.append_line, "Closing linked PRs...")
-            closed_prs = self._executor.close_plan(plan_id, plan_url)
+            closed_prs = self._executor.close_plan(pr_number, pr_url)
 
             if closed_prs:
                 pr_list = ", ".join(f"#{pr}" for pr in closed_prs)
                 self.app.call_from_thread(panel.append_line, f"Closed PRs: {pr_list}")
 
-            self.app.call_from_thread(panel.append_line, f"Closed plan #{plan_id}")
+            self.app.call_from_thread(panel.append_line, f"Closed PR #{pr_number}")
         except Exception as e:
             self.app.call_from_thread(panel.append_line, f"Error: {e}")
             success = False
@@ -633,15 +631,15 @@ class PlanDetailScreen(ModalScreen):
         executor = self._executor
 
         if command_id == "open_browser":
-            url = row.pr_url or row.plan_url
+            url = row.pr_url
             if url:
                 executor.open_url(url)
                 executor.notify(f"Opened {url}", severity=None)
 
         elif command_id == "open_issue":
-            if row.plan_url:
-                executor.open_url(row.plan_url)
-                executor.notify(f"Opened plan #{row.plan_id}", severity=None)
+            if row.pr_url:
+                executor.open_url(row.pr_url)
+                executor.notify(f"Opened plan #{row.pr_number}", severity=None)
 
         elif command_id == "open_pr":
             if row.pr_url:
@@ -679,13 +677,13 @@ class PlanDetailScreen(ModalScreen):
                 executor.notify(f"Copied: {text}", severity=None)
 
         elif command_id == "copy_prepare":
-            cmd = f"erk br co --for-plan {row.plan_id}"
+            cmd = f"erk br co --for-plan {row.pr_number}"
             executor.copy_to_clipboard(cmd)
             executor.notify(f"Copied: {cmd}", severity=None)
 
         elif command_id == "copy_prepare_activate":
             cmd = (
-                f'source "$(erk br co --for-plan {row.plan_id} --script)"'
+                f'source "$(erk br co --for-plan {row.pr_number} --script)"'
                 " && erk implement --dangerous"
             )
             executor.copy_to_clipboard(cmd)
@@ -727,7 +725,7 @@ class PlanDetailScreen(ModalScreen):
                 executor.copy_to_clipboard(text)
                 executor.notify(f"Copied: {text}", severity=None)
 
-        elif command_id == "copy_close_plan":
+        elif command_id == "copy_close_pr":
             ctx = CommandContext(
                 row=row, view_mode=self._view_mode, cmux_integration=self._cmux_integration
             )
@@ -827,25 +825,26 @@ class PlanDetailScreen(ModalScreen):
                     )
                     self.app._rewrite_remote_async(op_id, row.pr_number)
 
-        elif command_id == "close_plan":
-            if row.plan_url:
+        elif command_id == "close_pr":
+            if row.pr_url:
                 # Dismiss detail screen first, then run async close on main app
                 self.dismiss()
                 # Access parent app and trigger async close with toast
                 if isinstance(self.app, ErkDashApp):
-                    op_id = f"close-plan-{row.plan_id}"
-                    self.app._start_operation(op_id=op_id, label=f"Closing plan #{row.plan_id}...")
-                    self.app._close_plan_async(op_id, row.plan_id, row.plan_url)
+                    op_id = f"close-plan-{row.pr_number}"
+                    label = f"Closing plan #{row.pr_number}..."
+                    self.app._start_operation(op_id=op_id, label=label)
+                    self.app._close_pr_async(op_id, row.pr_number, row.pr_url)
 
         elif command_id == "dispatch_to_queue":
-            if row.plan_url:
+            if row.pr_url:
                 self.dismiss()
                 if isinstance(self.app, ErkDashApp):
-                    op_id = f"dispatch-plan-{row.plan_id}"
+                    op_id = f"dispatch-plan-{row.pr_number}"
                     self.app._start_operation(
-                        op_id=op_id, label=f"Dispatching plan #{row.plan_id} to queue..."
+                        op_id=op_id, label=f"Dispatching plan #{row.pr_number} to queue..."
                     )
-                    self.app._dispatch_to_queue_async(op_id, row.plan_id)
+                    self.app._dispatch_to_queue_async(op_id, row.pr_number)
 
         elif command_id == "land_pr":
             if row.pr_number and row.pr_head_branch:
@@ -871,7 +870,7 @@ class PlanDetailScreen(ModalScreen):
         with Vertical(id="detail-dialog"):
             # Header: Plan number + title
             with Vertical(id="detail-header"):
-                plan_text = f"Plan #{self._row.plan_id}"
+                plan_text = f"Plan #{self._row.pr_number}"
                 yield Label(plan_text, id="detail-plan-link")
                 yield Label(self._row.full_title, id="detail-title", markup=False)
 
@@ -882,12 +881,12 @@ class PlanDetailScreen(ModalScreen):
             # Plan Info - clickable plan number
             with Container(classes="info-row"):
                 yield Label("Plan", classes="info-label")
-                if self._row.plan_url:
+                if self._row.pr_url:
                     yield ClickableLink(
-                        f"#{self._row.plan_id}", self._row.plan_url, classes="info-value"
+                        f"#{self._row.pr_number}", self._row.pr_url, classes="info-value"
                     )
                 else:
-                    yield Label(f"#{self._row.plan_id}", classes="info-value", markup=False)
+                    yield Label(f"#{self._row.pr_number}", classes="info-value", markup=False)
 
             # PR Info (if exists) - clickable PR number with state badge inline
             if self._row.pr_number:
@@ -919,12 +918,12 @@ class PlanDetailScreen(ModalScreen):
             with Container(classes="info-row"):
                 yield Label("Learn", classes="info-label")
                 # Make clickable if there's a plan issue, PR, or workflow run
-                if self._row.learn_plan_pr is not None and self._row.plan_url:
-                    base_url = _extract_repo_base_url(self._row.plan_url)
+                if self._row.learn_plan_pr is not None and self._row.pr_url:
+                    base_url = _extract_repo_base_url(self._row.pr_url)
                     pr_url = f"{base_url}/pull/{self._row.learn_plan_pr}"
                     yield ClickableLink(self._row.learn_display, pr_url, classes="info-value")
-                elif self._row.learn_plan_issue is not None and self._row.plan_url:
-                    base_url = _extract_repo_base_url(self._row.plan_url)
+                elif self._row.learn_plan_issue is not None and self._row.pr_url:
+                    base_url = _extract_repo_base_url(self._row.pr_url)
                     issue_url = f"{base_url}/issues/{self._row.learn_plan_issue}"
                     yield ClickableLink(self._row.learn_display, issue_url, classes="info-value")
                 elif self._row.learn_run_url is not None:
@@ -943,9 +942,9 @@ class PlanDetailScreen(ModalScreen):
                         if self._row.objective_progress_display != "-"
                         else self._row.objective_display
                     )
-                    if self._row.plan_url:
+                    if self._row.pr_url:
                         objective_url = (
-                            _extract_repo_base_url(self._row.plan_url)
+                            _extract_repo_base_url(self._row.pr_url)
                             + f"/issues/{self._row.objective_issue}"
                         )
                         yield ClickableLink(display_text, objective_url, classes="info-value")
@@ -990,13 +989,13 @@ class PlanDetailScreen(ModalScreen):
                         yield CopyableLabel(pr_checkout_cmd, pr_checkout_cmd)
 
             # Prepare commands
-            prepare_cmd = f"erk br co --for-plan {self._row.plan_id}"
+            prepare_cmd = f"erk br co --for-plan {self._row.pr_number}"
             with Container(classes="command-row"):
                 yield Label("[1]", classes="command-key")
                 yield CopyableLabel(prepare_cmd, prepare_cmd)
 
             # Submit command
-            dispatch_cmd = f"erk pr dispatch {self._row.plan_id}"
+            dispatch_cmd = f"erk pr dispatch {self._row.pr_number}"
             with Container(classes="command-row"):
                 yield Label("[3]", classes="command-key")
                 yield CopyableLabel(dispatch_cmd, dispatch_cmd)

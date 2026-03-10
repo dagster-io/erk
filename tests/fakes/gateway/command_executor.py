@@ -16,7 +16,7 @@ class FakeCommandExecutor(CommandExecutor):
         self._closed_plans: list[tuple[int, str]] = []
         self._notifications: list[str] = []
         self._refresh_count: int = 0
-        self._close_plan_return: list[int] = []
+        self._close_pr_return: list[int] = []
         self._dispatched_to_queue: list[tuple[int, str]] = []
 
     @property
@@ -31,7 +31,7 @@ class FakeCommandExecutor(CommandExecutor):
 
     @property
     def closed_plans(self) -> list[tuple[int, str]]:
-        """Plans that were closed (plan_id, plan_url)."""
+        """Plans that were closed (pr_number, pr_url)."""
         return list(self._closed_plans)
 
     @property
@@ -46,16 +46,16 @@ class FakeCommandExecutor(CommandExecutor):
 
     @property
     def dispatched_to_queue(self) -> list[tuple[int, str]]:
-        """Plans that were dispatched to queue (plan_id, plan_url)."""
+        """Plans that were dispatched to queue (pr_number, pr_url)."""
         return list(self._dispatched_to_queue)
 
-    def set_close_plan_return(self, pr_numbers: list[int]) -> None:
-        """Configure what close_plan should return.
+    def set_close_pr_return(self, pr_numbers: list[int]) -> None:
+        """Configure what close_pr should return.
 
         Args:
-            pr_numbers: List of PR numbers to return when close_plan is called
+            pr_numbers: List of PR numbers to return when close_pr is called
         """
-        self._close_plan_return = pr_numbers
+        self._close_pr_return = pr_numbers
 
     def open_url(self, url: str) -> None:
         """Track URL open."""
@@ -65,10 +65,10 @@ class FakeCommandExecutor(CommandExecutor):
         """Track clipboard copy."""
         self._copied_texts.append(text)
 
-    def close_plan(self, plan_id: int, plan_url: str) -> list[int]:
+    def close_plan(self, pr_number: int, pr_url: str) -> list[int]:
         """Track plan close and return configured PRs."""
-        self._closed_plans.append((plan_id, plan_url))
-        return self._close_plan_return
+        self._closed_plans.append((pr_number, pr_url))
+        return self._close_pr_return
 
     def notify(self, message: str, *, severity: str | None) -> None:
         """Track notification."""
@@ -78,6 +78,6 @@ class FakeCommandExecutor(CommandExecutor):
         """Track refresh."""
         self._refresh_count += 1
 
-    def dispatch_to_queue(self, plan_id: int, plan_url: str) -> None:
+    def dispatch_to_queue(self, pr_number: int, pr_url: str) -> None:
         """Track queue dispatch."""
-        self._dispatched_to_queue.append((plan_id, plan_url))
+        self._dispatched_to_queue.append((pr_number, pr_url))

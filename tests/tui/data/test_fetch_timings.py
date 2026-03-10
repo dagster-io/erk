@@ -13,7 +13,7 @@ class TestFetchTimings:
         timings = FetchTimings(
             rest_issues_ms=100,
             graphql_enrich_ms=200,
-            plan_parsing_ms=50,
+            pr_parsing_ms=50,
             workflow_runs_ms=300,
             worktree_mapping_ms=10,
             row_building_ms=5,
@@ -27,7 +27,7 @@ class TestFetchTimings:
         timings = FetchTimings(
             rest_issues_ms=1200,
             graphql_enrich_ms=2300,
-            plan_parsing_ms=160,
+            pr_parsing_ms=160,
             workflow_runs_ms=800,
             worktree_mapping_ms=200,
             row_building_ms=300,
@@ -41,7 +41,7 @@ class TestFetchTimings:
         timings = FetchTimings(
             rest_issues_ms=1000,
             graphql_enrich_ms=0,
-            plan_parsing_ms=0,
+            pr_parsing_ms=0,
             workflow_runs_ms=0,
             worktree_mapping_ms=0,
             row_building_ms=0,
@@ -55,7 +55,7 @@ class TestFetchTimings:
         timings = FetchTimings(
             rest_issues_ms=500,
             graphql_enrich_ms=300,
-            plan_parsing_ms=50,
+            pr_parsing_ms=50,
             workflow_runs_ms=100,
             worktree_mapping_ms=99,
             row_building_ms=10,
@@ -74,7 +74,7 @@ class TestFetchTimings:
         timings = FetchTimings(
             rest_issues_ms=0,
             graphql_enrich_ms=0,
-            plan_parsing_ms=0,
+            pr_parsing_ms=0,
             workflow_runs_ms=0,
             worktree_mapping_ms=0,
             row_building_ms=0,

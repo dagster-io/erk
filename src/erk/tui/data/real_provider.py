@@ -1,4 +1,4 @@
-"""Real implementation of PlanDataProvider for TUI data assembly."""
+"""Real implementation of PrDataProvider for TUI data assembly."""
 
 import logging
 from datetime import UTC, datetime
@@ -15,8 +15,8 @@ from erk.core.display_utils import (
 )
 from erk.core.pr_utils import select_display_pr
 from erk.core.repo_discovery import NoRepoSentinel, RepoContext, ensure_erk_metadata_dir
-from erk.tui.data.provider_abc import PlanDataProvider
-from erk.tui.data.types import FetchTimings, PlanFilters, PlanRowData, RunRowData
+from erk.tui.data.provider_abc import PrDataProvider
+from erk.tui.data.types import FetchTimings, PrFilters, PrRowData, RunRowData
 from erk.tui.sorting.types import BranchActivity
 from erk_shared.gateway.github.emoji import format_checks_cell, get_pr_status_emoji
 from erk_shared.gateway.github.metadata.core import (
@@ -63,10 +63,10 @@ from erk_shared.plan_store.types import Plan
 logger = logging.getLogger(__name__)
 
 
-class RealPlanDataProvider(PlanDataProvider):
+class RealPrDataProvider(PrDataProvider):
     """Production implementation that assembles TUI display data.
 
-    Transforms PlanListData into PlanRowData for TUI display.
+    Transforms PlanListData into PrRowData for TUI display.
     Domain operations (close_pr, dispatch, etc.) are on PrService.
     """
 
@@ -88,14 +88,14 @@ class RealPlanDataProvider(PlanDataProvider):
         self._location = location
         self._http_client = http_client
 
-    def fetch_plans(self, filters: PlanFilters) -> tuple[list[PlanRowData], FetchTimings | None]:
+    def fetch_prs(self, filters: PrFilters) -> tuple[list[PrRowData], FetchTimings | None]:
         """Fetch plans and transform to TUI row format.
 
         Args:
             filters: Filter options for the query
 
         Returns:
-            Tuple of (list of PlanRowData for display, optional FetchTimings breakdown)
+            Tuple of (list of PrRowData for display, optional FetchTimings breakdown)
         """
         t_total_start = self._ctx.time.monotonic()
 
@@ -127,21 +127,21 @@ class RealPlanDataProvider(PlanDataProvider):
 
         # Build local worktree mapping
         t_wt_start = self._ctx.time.monotonic()
-        worktree_by_plan_id = self._build_worktree_mapping()
+        worktree_by_pr_number = self._build_worktree_mapping()
         t_wt_end = self._ctx.time.monotonic()
 
         plans = plan_data.plans
 
-        # Transform to PlanRowData
+        # Transform to PrRowData
         t_rows_start = self._ctx.time.monotonic()
-        rows: list[PlanRowData] = []
+        rows: list[PrRowData] = []
         global_config = self._ctx.global_config
         use_graphite = global_config.use_graphite if global_config is not None else False
 
         for plan in plans:
-            plan_id = int(plan.pr_identifier)
+            pr_number = int(plan.pr_identifier)
 
-            workflow_run = plan_data.workflow_runs.get(plan_id)
+            workflow_run = plan_data.workflow_runs.get(pr_number)
 
             if filters.run_state is not None:
                 if workflow_run is None:
@@ -151,10 +151,10 @@ class RealPlanDataProvider(PlanDataProvider):
 
             row = self._build_row_data(
                 plan=plan,
-                plan_id=plan_id,
+                pr_number=pr_number,
                 pr_linkages=plan_data.pr_linkages,
                 workflow_run=workflow_run,
-                worktree_by_plan_id=worktree_by_plan_id,
+                worktree_by_pr_number=worktree_by_pr_number,
                 use_graphite=use_graphite,
             )
             rows.append(row)
@@ -163,7 +163,7 @@ class RealPlanDataProvider(PlanDataProvider):
         timings = FetchTimings(
             rest_issues_ms=plan_data.api_ms,
             graphql_enrich_ms=0.0,
-            plan_parsing_ms=plan_data.plan_parsing_ms,
+            pr_parsing_ms=plan_data.plan_parsing_ms,
             workflow_runs_ms=plan_data.workflow_runs_ms,
             worktree_mapping_ms=(t_wt_end - t_wt_start) * 1000,
             row_building_ms=(t_rows_end - t_rows_start) * 1000,
@@ -171,7 +171,7 @@ class RealPlanDataProvider(PlanDataProvider):
             warnings=plan_data.warnings,
         )
 
-        logger.info("fetch_plans timings: %s", timings.summary())
+        logger.info("fetch_prs timings: %s", timings.summary())
         self._append_timing_log(timings, len(rows))
 
         return (rows, timings)
@@ -369,14 +369,14 @@ class RealPlanDataProvider(PlanDataProvider):
             )
         return rows
 
-    def fetch_branch_activity(self, rows: list[PlanRowData]) -> dict[int, BranchActivity]:
+    def fetch_branch_activity(self, rows: list[PrRowData]) -> dict[int, BranchActivity]:
         """Fetch branch activity for plans that exist locally.
 
         Args:
             rows: List of plan rows to fetch activity for
 
         Returns:
-            Mapping of plan_id to BranchActivity for plans with local worktrees.
+            Mapping of pr_number to BranchActivity for plans with local worktrees.
         """
         result: dict[int, BranchActivity] = {}
         trunk = self._ctx.git.branch.detect_trunk_branch(self._location.root)
@@ -395,65 +395,65 @@ class RealPlanDataProvider(PlanDataProvider):
             if commits:
                 timestamp_str = commits[0]["timestamp"]
                 commit_at = datetime.fromisoformat(timestamp_str)
-                result[row.plan_id] = BranchActivity(
+                result[row.pr_number] = BranchActivity(
                     last_commit_at=commit_at,
                     last_commit_author=commits[0]["author"],
                 )
             else:
-                result[row.plan_id] = BranchActivity.empty()
+                result[row.pr_number] = BranchActivity.empty()
 
         return result
 
-    def fetch_plans_by_ids(self, plan_ids: set[int]) -> list[PlanRowData]:
+    def fetch_prs_by_ids(self, pr_ids: set[int]) -> list[PrRowData]:
         """Fetch specific plans by their GitHub numbers.
 
         Args:
-            plan_ids: Set of plan numbers to fetch (issue or PR numbers)
+            pr_ids: Set of plan numbers to fetch (issue or PR numbers)
 
         Returns:
-            List of PlanRowData objects sorted by plan_id
+            List of PrRowData objects sorted by pr_number
         """
-        if not plan_ids:
+        if not pr_ids:
             return []
 
         issues, pr_linkages = self._ctx.github.get_issues_by_numbers_with_pr_linkages(
             location=self._location,
-            plan_numbers=list(plan_ids),
+            plan_numbers=list(pr_ids),
         )
 
         plans = [github_issue_to_plan(issue) for issue in issues]
-        worktree_by_plan_id = self._build_worktree_mapping()
+        worktree_by_pr_number = self._build_worktree_mapping()
 
         global_config = self._ctx.global_config
         use_graphite = global_config.use_graphite if global_config is not None else False
-        rows: list[PlanRowData] = []
+        rows: list[PrRowData] = []
         for plan in plans:
-            plan_id = int(plan.pr_identifier)
+            pr_number = int(plan.pr_identifier)
             row = self._build_row_data(
                 plan=plan,
-                plan_id=plan_id,
+                pr_number=pr_number,
                 pr_linkages=pr_linkages,
                 workflow_run=None,
-                worktree_by_plan_id=worktree_by_plan_id,
+                worktree_by_pr_number=worktree_by_pr_number,
                 use_graphite=use_graphite,
             )
             rows.append(row)
 
-        rows.sort(key=lambda r: r.plan_id)
+        rows.sort(key=lambda r: r.pr_number)
         return rows
 
-    def fetch_plans_for_objective(self, objective_issue: int) -> list[PlanRowData]:
+    def fetch_prs_for_objective(self, objective_issue: int) -> list[PrRowData]:
         """Fetch plans associated with a specific objective.
 
         Args:
             objective_issue: The objective issue number to filter by
 
         Returns:
-            List of PlanRowData objects for plans linked to this objective
+            List of PrRowData objects for plans linked to this objective
         """
-        all_plans: list[PlanRowData] = []
+        all_plans: list[PrRowData] = []
         for state in ("open", "closed"):
-            filters = PlanFilters(
+            filters = PrFilters(
                 labels=("erk-pr",),
                 state=state,
                 run_state=None,
@@ -463,7 +463,7 @@ class RealPlanDataProvider(PlanDataProvider):
                 exclude_labels=(),
                 creator=None,
             )
-            rows, _timings = self.fetch_plans(filters)
+            rows, _timings = self.fetch_prs(filters)
             all_plans.extend(rows)
         return [row for row in all_plans if row.objective_issue == objective_issue]
 
@@ -493,7 +493,7 @@ class RealPlanDataProvider(PlanDataProvider):
             Mapping of plan ID to tuple of (worktree_name, branch_name)
         """
         _ensure_erk_metadata_dir_from_context(self._ctx.repo)
-        worktree_by_plan_id: dict[int, tuple[str, str | None]] = {}
+        worktree_by_pr_number: dict[int, tuple[str, str | None]] = {}
         worktrees = self._ctx.git.worktree.list_worktrees(self._location.root)
         for worktree in worktrees:
             impl_dir = resolve_impl_dir(worktree.path, branch_name=worktree.branch)
@@ -503,24 +503,24 @@ class RealPlanDataProvider(PlanDataProvider):
             if plan_ref is None or not plan_ref.pr_id.isdigit():
                 continue
             plan_number = int(plan_ref.pr_id)
-            if plan_number not in worktree_by_plan_id:
-                worktree_by_plan_id[plan_number] = (
+            if plan_number not in worktree_by_pr_number:
+                worktree_by_pr_number[plan_number] = (
                     worktree.path.name,
                     worktree.branch,
                 )
-        return worktree_by_plan_id
+        return worktree_by_pr_number
 
     def _build_row_data(
         self,
         *,
         plan: Plan,
-        plan_id: int,
+        pr_number: int,
         pr_linkages: dict[int, list[PullRequestInfo]],
         workflow_run: WorkflowRun | None,
-        worktree_by_plan_id: dict[int, tuple[str, str | None]],
+        worktree_by_pr_number: dict[int, tuple[str, str | None]],
         use_graphite: bool,
-    ) -> PlanRowData:
-        """Build a single PlanRowData from plan and related data."""
+    ) -> PrRowData:
+        """Build a single PrRowData from plan and related data."""
         full_title = plan.title
 
         # Worktree info
@@ -528,8 +528,8 @@ class RealPlanDataProvider(PlanDataProvider):
         worktree_branch: str | None = None
         exists_locally = False
 
-        if plan_id in worktree_by_plan_id:
-            worktree_name, worktree_branch = worktree_by_plan_id[plan_id]
+        if pr_number in worktree_by_pr_number:
+            worktree_name, worktree_branch = worktree_by_pr_number[pr_number]
             exists_locally = True
 
         # Extract from pre-parsed header fields
@@ -578,9 +578,8 @@ class RealPlanDataProvider(PlanDataProvider):
         remote_impl = format_relative_time(remote_impl_str)
         remote_impl_display = remote_impl if remote_impl else "-"
 
-        # PR info
-        pr_number: int | None = None
-        pr_url: str | None = None
+        # PR info — pr_url defaults to the issue URL, overridden by linked PR URL
+        pr_url: str | None = plan.url
         pr_title: str | None = None
         pr_state: str | None = None
         pr_head_branch: str | None = None
@@ -599,11 +598,10 @@ class RealPlanDataProvider(PlanDataProvider):
         pr_has_unresolved_comments: bool | None = None
         pr_is_stacked: bool | None = None
 
-        if plan_id in pr_linkages:
-            issue_prs = pr_linkages[plan_id]
+        if pr_number in pr_linkages:
+            issue_prs = pr_linkages[pr_number]
             selected_pr = select_display_pr(issue_prs, exclude_pr_numbers=None)
             if selected_pr is not None:
-                pr_number = selected_pr.number
                 pr_title = selected_pr.title
                 pr_state = selected_pr.state
                 pr_head_branch = selected_pr.head_branch
@@ -758,9 +756,7 @@ class RealPlanDataProvider(PlanDataProvider):
             is_stacked=pr_is_stacked,
         )
 
-        return PlanRowData(
-            plan_id=plan_id,
-            plan_url=plan.url,
+        return PrRowData(
             pr_number=pr_number,
             pr_url=pr_url,
             pr_display=pr_display,
@@ -776,7 +772,7 @@ class RealPlanDataProvider(PlanDataProvider):
             run_state_display=run_state_display,
             run_url=run_url,
             full_title=full_title,
-            plan_body=plan.body or "",
+            pr_body=plan.body or "",
             pr_title=pr_title,
             pr_state=pr_state,
             pr_head_branch=pr_head_branch,

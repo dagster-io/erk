@@ -3,9 +3,9 @@
 import pytest
 
 from erk.tui.app import ErkDashApp
-from erk.tui.data.types import PlanFilters
+from erk.tui.data.types import PrFilters
 from erk.tui.widgets.status_bar import StatusBar
-from tests.fakes.gateway.plan_data_provider import FakePlanDataProvider, make_plan_row
+from tests.fakes.gateway.plan_data_provider import FakePrDataProvider, make_pr_row
 from tests.fakes.gateway.pr_service import FakePrService
 
 
@@ -15,11 +15,11 @@ class TestStackFilter:
     @pytest.mark.asyncio
     async def test_t_filters_to_stack_members(self) -> None:
         """Pressing 't' filters table to rows sharing the same Graphite stack."""
-        provider = FakePlanDataProvider(
+        provider = FakePrDataProvider(
             plans=[
-                make_plan_row(1, "Plan A", pr_head_branch="branch-a"),
-                make_plan_row(2, "Plan B", pr_head_branch="branch-b"),
-                make_plan_row(3, "Plan C", pr_head_branch="branch-c"),
+                make_pr_row(1, "Plan A", pr_head_branch="branch-a"),
+                make_pr_row(2, "Plan B", pr_head_branch="branch-b"),
+                make_pr_row(3, "Plan C", pr_head_branch="branch-c"),
             ]
         )
         service = FakePrService()
@@ -27,7 +27,7 @@ class TestStackFilter:
         stack_ac = ["branch-a", "branch-c"]
         service.set_branch_stack("branch-a", stack_ac)
         service.set_branch_stack("branch-c", stack_ac)
-        filters = PlanFilters.default()
+        filters = PrFilters.default()
         app = ErkDashApp(provider=provider, service=service, filters=filters, refresh_interval=0)
 
         async with app.run_test() as pilot:
@@ -36,29 +36,29 @@ class TestStackFilter:
 
             assert len(app._rows) == 3
 
-            # Rows are sorted descending by plan_id; row 0 is branch-c
+            # Rows are sorted descending by pr_number; row 0 is branch-c
             await pilot.press("t")
             await pilot.pause()
 
             assert len(app._rows) == 2
-            plan_ids = {r.plan_id for r in app._rows}
-            assert plan_ids == {1, 3}
+            pr_ids = {r.pr_number for r in app._rows}
+            assert pr_ids == {1, 3}
 
     @pytest.mark.asyncio
     async def test_t_toggles_off(self) -> None:
         """Pressing 't' again restores all rows."""
-        provider = FakePlanDataProvider(
+        provider = FakePrDataProvider(
             plans=[
-                make_plan_row(1, "Plan A", pr_head_branch="branch-a"),
-                make_plan_row(2, "Plan B", pr_head_branch="branch-b"),
-                make_plan_row(3, "Plan C", pr_head_branch="branch-c"),
+                make_pr_row(1, "Plan A", pr_head_branch="branch-a"),
+                make_pr_row(2, "Plan B", pr_head_branch="branch-b"),
+                make_pr_row(3, "Plan C", pr_head_branch="branch-c"),
             ]
         )
         service = FakePrService()
         stack_ac = ["branch-a", "branch-c"]
         service.set_branch_stack("branch-a", stack_ac)
         service.set_branch_stack("branch-c", stack_ac)
-        filters = PlanFilters.default()
+        filters = PrFilters.default()
         app = ErkDashApp(provider=provider, service=service, filters=filters, refresh_interval=0)
 
         async with app.run_test() as pilot:
@@ -78,16 +78,16 @@ class TestStackFilter:
     @pytest.mark.asyncio
     async def test_escape_clears_stack_filter_before_text_filter(self) -> None:
         """Escape clears stack filter first, then text filter, then quits."""
-        provider = FakePlanDataProvider(
+        provider = FakePrDataProvider(
             plans=[
-                make_plan_row(1, "Plan A", pr_head_branch="branch-a"),
-                make_plan_row(2, "Plan B", pr_head_branch="branch-b"),
+                make_pr_row(1, "Plan A", pr_head_branch="branch-a"),
+                make_pr_row(2, "Plan B", pr_head_branch="branch-b"),
             ]
         )
         service = FakePrService()
         # Row 0 (selected) is branch-b due to descending sort
         service.set_branch_stack("branch-b", ["branch-b"])
-        filters = PlanFilters.default()
+        filters = PrFilters.default()
         app = ErkDashApp(provider=provider, service=service, filters=filters, refresh_interval=0)
 
         async with app.run_test() as pilot:
@@ -109,11 +109,11 @@ class TestStackFilter:
     @pytest.mark.asyncio
     async def test_t_on_row_without_branch_shows_message(self) -> None:
         """Pressing 't' on row with no pr_head_branch shows status message."""
-        provider = FakePlanDataProvider(
-            plans=[make_plan_row(1, "Plan A")]  # No pr_head_branch
+        provider = FakePrDataProvider(
+            plans=[make_pr_row(1, "Plan A")]  # No pr_head_branch
         )
         service = FakePrService()
-        filters = PlanFilters.default()
+        filters = PrFilters.default()
         app = ErkDashApp(provider=provider, service=service, filters=filters, refresh_interval=0)
 
         async with app.run_test() as pilot:
@@ -130,12 +130,12 @@ class TestStackFilter:
     @pytest.mark.asyncio
     async def test_t_on_branch_not_in_stack_shows_message(self) -> None:
         """Pressing 't' on branch not in a Graphite stack shows status message."""
-        provider = FakePlanDataProvider(
-            plans=[make_plan_row(1, "Plan A", pr_head_branch="solo-branch")]
+        provider = FakePrDataProvider(
+            plans=[make_pr_row(1, "Plan A", pr_head_branch="solo-branch")]
             # No stack configured for solo-branch -> get_branch_stack returns None
         )
         service = FakePrService()
-        filters = PlanFilters.default()
+        filters = PrFilters.default()
         app = ErkDashApp(provider=provider, service=service, filters=filters, refresh_interval=0)
 
         async with app.run_test() as pilot:
@@ -152,11 +152,11 @@ class TestStackFilter:
     @pytest.mark.asyncio
     async def test_stack_filter_composes_with_text_filter(self) -> None:
         """Stack filter and text filter compose -- stack first, then text narrows."""
-        provider = FakePlanDataProvider(
+        provider = FakePrDataProvider(
             plans=[
-                make_plan_row(1, "Add feature alpha", pr_head_branch="branch-a"),
-                make_plan_row(2, "Fix bug beta", pr_head_branch="branch-b"),
-                make_plan_row(3, "Add feature gamma", pr_head_branch="branch-c"),
+                make_pr_row(1, "Add feature alpha", pr_head_branch="branch-a"),
+                make_pr_row(2, "Fix bug beta", pr_head_branch="branch-b"),
+                make_pr_row(3, "Add feature gamma", pr_head_branch="branch-c"),
             ]
         )
         service = FakePrService()
@@ -164,7 +164,7 @@ class TestStackFilter:
         stack_ac = ["branch-a", "branch-c"]
         service.set_branch_stack("branch-a", stack_ac)
         service.set_branch_stack("branch-c", stack_ac)
-        filters = PlanFilters.default()
+        filters = PrFilters.default()
         app = ErkDashApp(provider=provider, service=service, filters=filters, refresh_interval=0)
 
         async with app.run_test() as pilot:
@@ -184,21 +184,21 @@ class TestStackFilter:
 
             # Text filter narrows further
             assert len(app._rows) == 1
-            assert app._rows[0].plan_id == 3
+            assert app._rows[0].pr_number == 3
 
     @pytest.mark.asyncio
     async def test_view_switch_clears_stack_filter(self) -> None:
         """Switching views clears the stack filter."""
-        provider = FakePlanDataProvider(
+        provider = FakePrDataProvider(
             plans=[
-                make_plan_row(1, "Plan A", pr_head_branch="branch-a"),
-                make_plan_row(2, "Plan B", pr_head_branch="branch-b"),
+                make_pr_row(1, "Plan A", pr_head_branch="branch-a"),
+                make_pr_row(2, "Plan B", pr_head_branch="branch-b"),
             ]
         )
         service = FakePrService()
         # Row 0 (selected) is branch-b due to descending sort
         service.set_branch_stack("branch-b", ["branch-b"])
-        filters = PlanFilters.default()
+        filters = PrFilters.default()
         app = ErkDashApp(provider=provider, service=service, filters=filters, refresh_interval=0)
 
         async with app.run_test() as pilot:
@@ -224,15 +224,15 @@ class TestObjectiveFilter:
     @pytest.mark.asyncio
     async def test_o_filters_plans_by_objective(self) -> None:
         """Pressing 'o' filters table to rows sharing the same objective_issue."""
-        provider = FakePlanDataProvider(
+        provider = FakePrDataProvider(
             plans=[
-                make_plan_row(1, "Plan A", objective_issue=42),
-                make_plan_row(2, "Plan B", objective_issue=99),
-                make_plan_row(3, "Plan C", objective_issue=42),
+                make_pr_row(1, "Plan A", objective_issue=42),
+                make_pr_row(2, "Plan B", objective_issue=99),
+                make_pr_row(3, "Plan C", objective_issue=42),
             ]
         )
         service = FakePrService()
-        filters = PlanFilters.default()
+        filters = PrFilters.default()
         app = ErkDashApp(provider=provider, service=service, filters=filters, refresh_interval=0)
 
         async with app.run_test() as pilot:
@@ -241,26 +241,26 @@ class TestObjectiveFilter:
 
             assert len(app._rows) == 3
 
-            # Row 0 (selected) is plan_id=3 (descending sort), objective_issue=42
+            # Row 0 (selected) is pr_number=3 (descending sort), objective_issue=42
             await pilot.press("o")
             await pilot.pause()
 
             assert len(app._rows) == 2
-            plan_ids = {r.plan_id for r in app._rows}
-            assert plan_ids == {1, 3}
+            pr_ids = {r.pr_number for r in app._rows}
+            assert pr_ids == {1, 3}
 
     @pytest.mark.asyncio
     async def test_o_toggles_off_objective_filter(self) -> None:
         """Pressing 'o' again restores all rows."""
-        provider = FakePlanDataProvider(
+        provider = FakePrDataProvider(
             plans=[
-                make_plan_row(1, "Plan A", objective_issue=42),
-                make_plan_row(2, "Plan B", objective_issue=99),
-                make_plan_row(3, "Plan C", objective_issue=42),
+                make_pr_row(1, "Plan A", objective_issue=42),
+                make_pr_row(2, "Plan B", objective_issue=99),
+                make_pr_row(3, "Plan C", objective_issue=42),
             ]
         )
         service = FakePrService()
-        filters = PlanFilters.default()
+        filters = PrFilters.default()
         app = ErkDashApp(provider=provider, service=service, filters=filters, refresh_interval=0)
 
         async with app.run_test() as pilot:
@@ -280,11 +280,11 @@ class TestObjectiveFilter:
     @pytest.mark.asyncio
     async def test_o_on_plan_without_objective_shows_message(self) -> None:
         """Pressing 'o' on plan with no objective_issue shows status message."""
-        provider = FakePlanDataProvider(
-            plans=[make_plan_row(1, "Plan A")]  # No objective_issue
+        provider = FakePrDataProvider(
+            plans=[make_pr_row(1, "Plan A")]  # No objective_issue
         )
         service = FakePrService()
-        filters = PlanFilters.default()
+        filters = PrFilters.default()
         app = ErkDashApp(provider=provider, service=service, filters=filters, refresh_interval=0)
 
         async with app.run_test() as pilot:
@@ -301,21 +301,21 @@ class TestObjectiveFilter:
     @pytest.mark.asyncio
     async def test_escape_clears_objective_filter(self) -> None:
         """Escape clears objective filter."""
-        provider = FakePlanDataProvider(
+        provider = FakePrDataProvider(
             plans=[
-                make_plan_row(1, "Plan A", objective_issue=42),
-                make_plan_row(2, "Plan B", objective_issue=99),
+                make_pr_row(1, "Plan A", objective_issue=42),
+                make_pr_row(2, "Plan B", objective_issue=99),
             ]
         )
         service = FakePrService()
-        filters = PlanFilters.default()
+        filters = PrFilters.default()
         app = ErkDashApp(provider=provider, service=service, filters=filters, refresh_interval=0)
 
         async with app.run_test() as pilot:
             await pilot.pause()
             await pilot.pause()
 
-            # Row 0 (selected) is plan_id=2 (descending sort), objective_issue=99
+            # Row 0 (selected) is pr_number=2 (descending sort), objective_issue=99
             await pilot.press("o")
             await pilot.pause()
             assert app._objective_filter_issue is not None
@@ -330,14 +330,14 @@ class TestObjectiveFilter:
     @pytest.mark.asyncio
     async def test_view_switch_clears_objective_filter(self) -> None:
         """Switching views clears the objective filter."""
-        provider = FakePlanDataProvider(
+        provider = FakePrDataProvider(
             plans=[
-                make_plan_row(1, "Plan A", objective_issue=42),
-                make_plan_row(2, "Plan B", objective_issue=99),
+                make_pr_row(1, "Plan A", objective_issue=42),
+                make_pr_row(2, "Plan B", objective_issue=99),
             ]
         )
         service = FakePrService()
-        filters = PlanFilters.default()
+        filters = PrFilters.default()
         app = ErkDashApp(provider=provider, service=service, filters=filters, refresh_interval=0)
 
         async with app.run_test() as pilot:
@@ -359,22 +359,22 @@ class TestObjectiveFilter:
     @pytest.mark.asyncio
     async def test_objective_filter_composes_with_text_filter(self) -> None:
         """Objective filter and text filter compose -- objective first, then text narrows."""
-        provider = FakePlanDataProvider(
+        provider = FakePrDataProvider(
             plans=[
-                make_plan_row(1, "Add feature alpha", objective_issue=42),
-                make_plan_row(2, "Fix bug beta", objective_issue=99),
-                make_plan_row(3, "Add feature gamma", objective_issue=42),
+                make_pr_row(1, "Add feature alpha", objective_issue=42),
+                make_pr_row(2, "Fix bug beta", objective_issue=99),
+                make_pr_row(3, "Add feature gamma", objective_issue=42),
             ]
         )
         service = FakePrService()
-        filters = PlanFilters.default()
+        filters = PrFilters.default()
         app = ErkDashApp(provider=provider, service=service, filters=filters, refresh_interval=0)
 
         async with app.run_test() as pilot:
             await pilot.pause()
             await pilot.pause()
 
-            # Row 0 (selected) is plan_id=3, objective_issue=42
+            # Row 0 (selected) is pr_number=3, objective_issue=42
             await pilot.press("o")
             await pilot.pause()
             assert len(app._rows) == 2  # Plans 1 and 3
@@ -387,7 +387,7 @@ class TestObjectiveFilter:
 
             # Text filter narrows further
             assert len(app._rows) == 1
-            assert app._rows[0].plan_id == 3
+            assert app._rows[0].pr_number == 3
 
 
 class TestAuthorFilter:
@@ -396,9 +396,9 @@ class TestAuthorFilter:
     @pytest.mark.asyncio
     async def test_a_toggles_show_all_users_on(self) -> None:
         """Pressing 'a' sets _show_all_users to True and triggers refresh."""
-        provider = FakePlanDataProvider(plans=[make_plan_row(1, "Plan A")])
+        provider = FakePrDataProvider(plans=[make_pr_row(1, "Plan A")])
         service = FakePrService()
-        filters = PlanFilters.default()
+        filters = PrFilters.default()
         app = ErkDashApp(provider=provider, service=service, filters=filters, refresh_interval=0)
 
         async with app.run_test() as pilot:
@@ -418,9 +418,9 @@ class TestAuthorFilter:
     @pytest.mark.asyncio
     async def test_a_toggles_show_all_users_off(self) -> None:
         """Pressing 'a' twice returns to my-plans mode."""
-        provider = FakePlanDataProvider(plans=[make_plan_row(1, "Plan A")])
+        provider = FakePrDataProvider(plans=[make_pr_row(1, "Plan A")])
         service = FakePrService()
-        filters = PlanFilters.default()
+        filters = PrFilters.default()
         app = ErkDashApp(provider=provider, service=service, filters=filters, refresh_interval=0)
 
         async with app.run_test() as pilot:
@@ -440,9 +440,9 @@ class TestAuthorFilter:
     @pytest.mark.asyncio
     async def test_a_clears_data_cache(self) -> None:
         """Pressing 'a' clears the data cache to force re-fetch."""
-        provider = FakePlanDataProvider(plans=[make_plan_row(1, "Plan A")])
+        provider = FakePrDataProvider(plans=[make_pr_row(1, "Plan A")])
         service = FakePrService()
-        filters = PlanFilters.default()
+        filters = PrFilters.default()
         app = ErkDashApp(provider=provider, service=service, filters=filters, refresh_interval=0)
 
         async with app.run_test() as pilot:
@@ -462,9 +462,9 @@ class TestAuthorFilter:
     @pytest.mark.asyncio
     async def test_a_updates_status_bar_author_filter(self) -> None:
         """Pressing 'a' updates the status bar author filter indicator."""
-        provider = FakePlanDataProvider(plans=[make_plan_row(1, "Plan A")])
+        provider = FakePrDataProvider(plans=[make_pr_row(1, "Plan A")])
         service = FakePrService()
-        filters = PlanFilters(
+        filters = PrFilters(
             labels=("erk-pr",),
             state="open",
             run_state=None,
@@ -497,9 +497,9 @@ class TestAuthorFilter:
     @pytest.mark.asyncio
     async def test_escape_clears_all_users_filter(self) -> None:
         """Escape clears the all-users filter before other filters."""
-        provider = FakePlanDataProvider(plans=[make_plan_row(1, "Plan A")])
+        provider = FakePrDataProvider(plans=[make_pr_row(1, "Plan A")])
         service = FakePrService()
-        filters = PlanFilters.default()
+        filters = PrFilters.default()
         app = ErkDashApp(provider=provider, service=service, filters=filters, refresh_interval=0)
 
         async with app.run_test() as pilot:
@@ -520,9 +520,9 @@ class TestAuthorFilter:
     @pytest.mark.asyncio
     async def test_original_creator_preserved(self) -> None:
         """The original creator value is preserved across toggles."""
-        provider = FakePlanDataProvider(plans=[make_plan_row(1, "Plan A")])
+        provider = FakePrDataProvider(plans=[make_pr_row(1, "Plan A")])
         service = FakePrService()
-        filters = PlanFilters(
+        filters = PrFilters(
             labels=("erk-pr",),
             state="open",
             run_state=None,

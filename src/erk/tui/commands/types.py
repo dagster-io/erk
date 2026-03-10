@@ -4,7 +4,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from enum import Enum, auto
 
-from erk.tui.data.types import PlanRowData, RunRowData
+from erk.tui.data.types import PrRowData, RunRowData
 from erk.tui.views.types import ViewMode
 
 
@@ -28,7 +28,7 @@ class CommandContext:
         view_mode: The active view mode (plans, learn, objectives)
     """
 
-    row: PlanRowData
+    row: PrRowData
     view_mode: ViewMode
     cmux_integration: bool = False
 
@@ -51,7 +51,7 @@ class CommandDefinition:
     """Definition of a command in the command palette.
 
     Attributes:
-        id: Unique identifier for the command (e.g., "close_plan")
+        id: Unique identifier for the command (e.g., "close_pr")
         name: Display name (e.g., "Close Plan")
         description: Brief description of what the command does
         category: Command category for emoji prefix display

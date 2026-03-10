@@ -1,4 +1,4 @@
-"""Integration tests for RealPlanDataProvider.fetch_runs().
+"""Integration tests for RealPrDataProvider.fetch_runs().
 
 Tests the fetch_runs() method which aggregates workflow runs from
 multiple registered workflows, deduplicates, links to PRs, and
@@ -10,7 +10,7 @@ from pathlib import Path
 
 from erk.core.context import GlobalConfig
 from erk.core.repo_discovery import RepoContext
-from erk.tui.data.real_provider import RealPlanDataProvider
+from erk.tui.data.real_provider import RealPrDataProvider
 from erk_shared.gateway.git.abc import WorktreeInfo
 from erk_shared.gateway.github.types import (
     GitHubRepoId,
@@ -69,8 +69,8 @@ def _make_provider(
     prs: dict[str, PullRequestInfo] | None = None,
     pr_head_branches: dict[int, str] | None = None,
     use_graphite: bool = False,
-) -> RealPlanDataProvider:
-    """Create a RealPlanDataProvider wired to fakes for testing."""
+) -> RealPrDataProvider:
+    """Create a RealPrDataProvider wired to fakes for testing."""
     repo_root = tmp_path / "repo"
     repo_root.mkdir(exist_ok=True)
     erk_dir = repo_root / ".erk"
@@ -103,7 +103,7 @@ def _make_provider(
         root=repo_root,
         repo_id=GitHubRepoId(owner="test", repo="repo"),
     )
-    return RealPlanDataProvider(
+    return RealPrDataProvider(
         ctx=ctx,
         location=location,
         http_client=FakeHttpClient(),
@@ -184,7 +184,7 @@ def test_fetch_runs_links_plan_number_runs_to_prs(tmp_path: Path) -> None:
     runs = [
         _make_workflow_run(
             "1001",
-            display_title="123:abc456",  # Legacy format: plan_id at start
+            display_title="123:abc456",  # Legacy format: pr_number at start
             created_at=datetime(2026, 3, 1, 10, 0, tzinfo=UTC),
         ),
     ]

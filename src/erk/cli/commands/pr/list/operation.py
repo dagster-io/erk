@@ -12,8 +12,8 @@ from typing import Any
 from erk.cli.repo_resolution import get_remote_github
 from erk.core.context import ErkContext
 from erk.core.display_utils import strip_rich_markup
-from erk.tui.data.real_provider import RealPlanDataProvider
-from erk.tui.data.types import PlanFilters, PlanRowData, serialize_plan_row
+from erk.tui.data.real_provider import RealPrDataProvider
+from erk.tui.data.types import PrFilters, PrRowData, serialize_pr_row
 from erk.tui.sorting.logic import sort_plans
 from erk.tui.sorting.types import SortKey
 from erk_shared.agentclick.machine_command import MachineCommandError
@@ -38,15 +38,15 @@ class PrListRequest:
 class PrListResult:
     """Result for erk pr list.
 
-    Carries rich PlanRowData rows for human display.
+    Carries rich PrRowData rows for human display.
     Serialization to JSON dicts happens in to_json_dict().
     """
 
-    rows: list[PlanRowData]
+    rows: list[PrRowData]
     warnings: list[str]
 
     def to_json_dict(self) -> dict[str, Any]:
-        plans = [serialize_plan_row(row) for row in self.rows]
+        plans = [serialize_pr_row(row) for row in self.rows]
         return {"plans": plans, "count": len(plans)}
 
 
@@ -91,11 +91,11 @@ def run_pr_list(
 
     location = GitHubRepoLocation(root=root, repo_id=repo_id)
 
-    provider = RealPlanDataProvider(ctx, location=location, http_client=http_client)
+    provider = RealPrDataProvider(ctx, location=location, http_client=http_client)
 
     effective_state: IssueFilterState = "closed" if request.state == "closed" else "open"
 
-    filters = PlanFilters(
+    filters = PrFilters(
         labels=labels,
         state=effective_state,
         run_state=request.run_state,
@@ -108,7 +108,7 @@ def run_pr_list(
         lifecycle_stage=request.stage,
     )
 
-    rows, timings = provider.fetch_plans(filters)
+    rows, timings = provider.fetch_prs(filters)
 
     warnings: list[str] = []
     if timings is not None and timings.warnings:

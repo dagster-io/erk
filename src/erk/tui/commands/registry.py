@@ -40,14 +40,14 @@ def _is_objectives_view(ctx: CommandContext) -> bool:
 # === Display Name Generators (Plan Commands) ===
 
 
-def _display_close_plan(ctx: CommandContext) -> str:
-    """Display name for close_plan command."""
-    return f"erk pr close {ctx.row.plan_id}"
+def _display_close_pr(ctx: CommandContext) -> str:
+    """Display name for close_pr command."""
+    return f"erk pr close {ctx.row.pr_number}"
 
 
 def _display_dispatch_to_queue(ctx: CommandContext) -> str:
     """Display name for dispatch_to_queue command."""
-    return f"erk pr dispatch {ctx.row.plan_id}"
+    return f"erk pr dispatch {ctx.row.pr_number}"
 
 
 def _display_land_pr(ctx: CommandContext) -> str:
@@ -67,8 +67,8 @@ def _display_address_remote(ctx: CommandContext) -> str:
 
 def _display_open_issue(ctx: CommandContext) -> str:
     """Display name for open_issue command."""
-    if ctx.row.plan_url:
-        return ctx.row.plan_url
+    if ctx.row.pr_url:
+        return ctx.row.pr_url
     return "Issue"
 
 
@@ -136,12 +136,12 @@ def _display_copy_implement_local(ctx: CommandContext) -> str:
 
 def _display_copy_dispatch(ctx: CommandContext) -> str:
     """Display name for copy_dispatch command."""
-    return f"erk pr dispatch {ctx.row.plan_id}"
+    return f"erk pr dispatch {ctx.row.pr_number}"
 
 
 def _display_copy_replan(ctx: CommandContext) -> str:
     """Display name for copy_replan command."""
-    return f"erk pr replan {ctx.row.plan_id}"
+    return f"erk pr replan {ctx.row.pr_number}"
 
 
 def _display_copy_land(ctx: CommandContext) -> str:
@@ -149,9 +149,9 @@ def _display_copy_land(ctx: CommandContext) -> str:
     return f"erk land {ctx.row.pr_number}"
 
 
-def _display_copy_close_plan(ctx: CommandContext) -> str:
-    """Display name for copy_close_plan command."""
-    return f"erk pr close {ctx.row.plan_id}"
+def _display_copy_close_pr(ctx: CommandContext) -> str:
+    """Display name for copy_close_pr command."""
+    return f"erk pr close {ctx.row.pr_number}"
 
 
 def _display_copy_rebase_remote(ctx: CommandContext) -> str:
@@ -184,39 +184,39 @@ def _display_incremental_dispatch(ctx: CommandContext) -> str:
 
 def _display_one_shot_plan(ctx: CommandContext) -> str:
     """Display name for one_shot_plan command."""
-    return f"erk objective plan {ctx.row.plan_id} --one-shot"
+    return f"erk objective plan {ctx.row.pr_number} --one-shot"
 
 
 def _display_check_objective(ctx: CommandContext) -> str:
     """Display name for check_objective command."""
-    return f"erk objective check {ctx.row.plan_id}"
+    return f"erk objective check {ctx.row.pr_number}"
 
 
 def _display_close_objective(ctx: CommandContext) -> str:
     """Display name for close_objective command."""
-    return f"erk objective close {ctx.row.plan_id} --force"
+    return f"erk objective close {ctx.row.pr_number} --force"
 
 
 def _display_codespace_run_plan(ctx: CommandContext) -> str:
     """Display name for codespace_run_plan command."""
-    return f"erk codespace run objective plan {ctx.row.plan_id}"
+    return f"erk codespace run objective plan {ctx.row.pr_number}"
 
 
 def _display_open_objective(ctx: CommandContext) -> str:
     """Display name for open_objective command."""
-    if ctx.row.plan_url:
-        return ctx.row.plan_url
+    if ctx.row.pr_url:
+        return ctx.row.pr_url
     return "Objective"
 
 
 def _display_copy_plan(ctx: CommandContext) -> str:
     """Display name for copy_plan command."""
-    return f"erk objective plan {ctx.row.plan_id}"
+    return f"erk objective plan {ctx.row.pr_number}"
 
 
 def _display_copy_view(ctx: CommandContext) -> str:
     """Display name for copy_view command."""
-    return f"erk objective view {ctx.row.plan_id}"
+    return f"erk objective view {ctx.row.pr_number}"
 
 
 def get_all_commands() -> list[CommandDefinition]:
@@ -236,14 +236,14 @@ def get_all_commands() -> list[CommandDefinition]:
     return [
         # === PLAN ACTIONS ===
         CommandDefinition(
-            id="close_plan",
+            id="close_pr",
             name="Close Plan",
             description="close",
             category=CommandCategory.ACTION,
             shortcut=None,
             launch_key="c",
             is_available=lambda ctx: _is_plan_view(ctx),
-            get_display_name=_display_close_plan,
+            get_display_name=_display_close_pr,
         ),
         CommandDefinition(
             id="dispatch_to_queue",
@@ -252,7 +252,7 @@ def get_all_commands() -> list[CommandDefinition]:
             category=CommandCategory.ACTION,
             shortcut="d",
             launch_key="d",
-            is_available=lambda ctx: _is_plan_view(ctx) and ctx.row.plan_url is not None,
+            is_available=lambda ctx: _is_plan_view(ctx) and ctx.row.pr_url is not None,
             get_display_name=_display_dispatch_to_queue,
         ),
         CommandDefinition(
@@ -378,7 +378,7 @@ def get_all_commands() -> list[CommandDefinition]:
             category=CommandCategory.OPEN,
             shortcut="i",
             launch_key=None,
-            is_available=lambda ctx: _is_plan_view(ctx) and ctx.row.plan_url is not None,
+            is_available=lambda ctx: _is_plan_view(ctx) and ctx.row.pr_url is not None,
             get_display_name=_display_open_issue,
         ),
         CommandDefinition(
@@ -409,7 +409,7 @@ def get_all_commands() -> list[CommandDefinition]:
             category=CommandCategory.OPEN,
             shortcut="p",
             launch_key=None,
-            is_available=lambda ctx: _is_objectives_view(ctx) and ctx.row.plan_url is not None,
+            is_available=lambda ctx: _is_objectives_view(ctx) and ctx.row.pr_url is not None,
             get_display_name=_display_open_objective,
         ),
         # === PLAN COPIES ===
@@ -464,14 +464,14 @@ def get_all_commands() -> list[CommandDefinition]:
             get_display_name=_display_copy_teleport_new_slot,
         ),
         CommandDefinition(
-            id="copy_close_plan",
+            id="copy_close_pr",
             name="erk pr close",
             description="close",
             category=CommandCategory.COPY,
             shortcut=None,
             launch_key=None,
             is_available=lambda ctx: _is_plan_view(ctx),
-            get_display_name=_display_copy_close_plan,
+            get_display_name=_display_copy_close_pr,
         ),
         CommandDefinition(
             id="copy_cmux_checkout",
@@ -540,7 +540,7 @@ def get_all_commands() -> list[CommandDefinition]:
             category=CommandCategory.COPY,
             shortcut="6",
             launch_key=None,
-            is_available=lambda ctx: _is_plan_view(ctx) and ctx.row.plan_url is not None,
+            is_available=lambda ctx: _is_plan_view(ctx) and ctx.row.pr_url is not None,
             get_display_name=_display_copy_replan,
         ),
         CommandDefinition(

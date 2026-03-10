@@ -4,7 +4,7 @@ from erk.tui.commands.registry import get_all_commands
 from erk.tui.commands.types import CommandCategory, CommandContext
 from erk.tui.screens.launch_screen import LaunchScreen
 from erk.tui.views.types import ViewMode
-from tests.fakes.gateway.plan_data_provider import make_plan_row
+from tests.fakes.gateway.plan_data_provider import make_pr_row
 
 
 def test_launch_key_only_set_on_action_commands() -> None:
@@ -49,11 +49,9 @@ def test_launch_key_no_duplicate_keys_within_objective_view() -> None:
 
 def test_launch_screen_builds_key_mapping_for_plan_view() -> None:
     """LaunchScreen should map keys only for available ACTION commands in plan view."""
-    row = make_plan_row(
+    row = make_pr_row(
         123,
         "Test Plan",
-        plan_url="https://github.com/test/repo/issues/123",
-        pr_number=456,
         pr_url="https://github.com/test/repo/pull/456",
         pr_state="OPEN",
         run_url="https://github.com/test/repo/actions/runs/789",
@@ -62,7 +60,7 @@ def test_launch_screen_builds_key_mapping_for_plan_view() -> None:
     screen = LaunchScreen(ctx=ctx)
 
     # Key mapping is built in __init__, no need to call compose()
-    assert "c" in screen._key_to_command_id  # close_plan
+    assert "c" in screen._key_to_command_id  # close_pr
     assert "d" in screen._key_to_command_id  # dispatch_to_queue
     assert "l" in screen._key_to_command_id  # land_pr
     assert "r" in screen._key_to_command_id  # rebase_remote
@@ -75,10 +73,10 @@ def test_launch_screen_builds_key_mapping_for_plan_view() -> None:
 
 def test_launch_screen_builds_key_mapping_for_objectives_view() -> None:
     """LaunchScreen should map keys only for available ACTION commands in objectives view."""
-    row = make_plan_row(
+    row = make_pr_row(
         123,
         "Test Objective",
-        plan_url="https://github.com/test/repo/issues/123",
+        pr_url="https://github.com/test/repo/issues/123",
     )
     ctx = CommandContext(row=row, view_mode=ViewMode.OBJECTIVES)
     screen = LaunchScreen(ctx=ctx)
@@ -95,39 +93,38 @@ def test_launch_screen_builds_key_mapping_for_objectives_view() -> None:
 
 def test_launch_screen_excludes_unavailable_commands() -> None:
     """LaunchScreen should not show commands whose predicates return False."""
-    # Row with no PR: rebase_remote and address_remote should be excluded
-    row = make_plan_row(
+    # Row without pr_head_branch or run_url: land_pr should be excluded
+    row = make_pr_row(
         123,
         "Test Plan",
-        plan_url="https://github.com/test/repo/issues/123",
+        pr_url="https://github.com/test/repo/issues/123",
     )
     ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
     screen = LaunchScreen(ctx=ctx)
 
-    # close_plan and dispatch_to_queue should be present (always available / needs plan_url)
+    # close_pr and dispatch_to_queue should be present (always available)
     assert "c" in screen._key_to_command_id
     assert "d" in screen._key_to_command_id
 
-    # rebase_remote and address_remote need pr_number, should be absent
-    assert "f" not in screen._key_to_command_id
-    assert "a" not in screen._key_to_command_id
+    # rebase_remote and address_remote are available (pr_number is always set)
+    assert "r" in screen._key_to_command_id
+    assert "a" in screen._key_to_command_id
 
-    # land_pr needs pr_number + OPEN state + run_url, should be absent
+    # land_pr needs pr_head_branch + OPEN state, should be absent
     assert "l" not in screen._key_to_command_id
 
 
 def test_launch_screen_maps_command_ids_correctly() -> None:
     """Key mappings should resolve to the correct command IDs."""
-    row = make_plan_row(
+    row = make_pr_row(
         123,
         "Test Plan",
-        plan_url="https://github.com/test/repo/issues/123",
-        pr_number=456,
+        pr_url="https://github.com/test/repo/issues/123",
     )
     ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
     screen = LaunchScreen(ctx=ctx)
 
-    assert screen._key_to_command_id["c"] == "close_plan"
+    assert screen._key_to_command_id["c"] == "close_pr"
     assert screen._key_to_command_id["d"] == "dispatch_to_queue"
     assert screen._key_to_command_id["r"] == "rebase_remote"
     assert screen._key_to_command_id["a"] == "address_remote"

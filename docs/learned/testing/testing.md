@@ -365,8 +365,8 @@ When testing code that uses `shlex.quote()` for path quoting:
 The dignified-python no-default-parameters rule has an explicit exemption for test code. This includes:
 
 - Functions in `test_*.py` and `conftest.py`
-- Fake classes (`FakeGit`, `FakeLocalGitHub`, `FakeGraphite`, `FakePlanDataProvider`, etc.)
-- Test factory functions like `make_plan_row()`, `make_run_row()`, `create_test_context()`
+- Fake classes (`FakeGit`, `FakeLocalGitHub`, `FakeGraphite`, `FakePrDataProvider`, etc.)
+- Test factory functions like `make_pr_row()`, `make_run_row()`, `create_test_context()`
 - Any file named `fake_*.py` or `fake.py`, regardless of whether it lives in `tests/` or `src/`
 
 These all serve test infrastructure purposes. Test helpers wrap complex constructors with sensible defaults to reduce boilerplate — having many default parameters is their intended purpose. Fake classes and factory functions have many optional configuration parameters for setting up different test scenarios.

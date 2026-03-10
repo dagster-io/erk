@@ -1,9 +1,9 @@
 """Pure filtering logic for TUI dashboard."""
 
-from erk.tui.data.types import PlanRowData
+from erk.tui.data.types import PrRowData
 
 
-def filter_plans(plans: list[PlanRowData], query: str) -> list[PlanRowData]:
+def filter_plans(plans: list[PrRowData], query: str) -> list[PrRowData]:
     """Filter plans by query matching full title, plan ID, or PR number.
 
     Case-insensitive substring matching against:
@@ -23,7 +23,7 @@ def filter_plans(plans: list[PlanRowData], query: str) -> list[PlanRowData]:
         return plans
 
     query_lower = query.lower()
-    result: list[PlanRowData] = []
+    result: list[PrRowData] = []
 
     for plan in plans:
         # Check full title (case-insensitive)
@@ -32,7 +32,7 @@ def filter_plans(plans: list[PlanRowData], query: str) -> list[PlanRowData]:
             continue
 
         # Check plan ID
-        if query_lower in str(plan.plan_id):
+        if query_lower in str(plan.pr_number):
             result.append(plan)
             continue
 

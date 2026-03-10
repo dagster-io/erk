@@ -16,7 +16,7 @@ from erk.core.display_utils import strip_rich_markup
 from erk.tui.commands.provider import NodeCommandProvider
 from erk.tui.commands.registry import get_copy_text
 from erk.tui.commands.types import CommandContext
-from erk.tui.data.types import PlanRowData
+from erk.tui.data.types import PrRowData
 from erk.tui.screens.launch_screen import LaunchScreen
 from erk.tui.views.types import ViewMode
 from erk_shared.gateway.github.metadata.dependency_graph import (
@@ -25,7 +25,7 @@ from erk_shared.gateway.github.metadata.dependency_graph import (
     parse_graph,
 )
 from erk_shared.gateway.github.metadata.roadmap import RoadmapPhase
-from erk_shared.gateway.plan_data_provider.abc import PlanDataProvider
+from erk_shared.gateway.plan_data_provider.abc import PrDataProvider
 from erk_shared.gateway.pr_service.abc import PrService
 
 if TYPE_CHECKING:
@@ -58,7 +58,7 @@ def _styled_stage(lifecycle_display: str) -> str | Text:
 def _stage_from_node_status(status: str) -> Text | None:
     """Infer a styled stage cell from objective node status.
 
-    Used when a node references a PR but fetch_plans_by_ids did not
+    Used when a node references a PR but fetch_prs_by_ids did not
     return data for it (e.g., the PR is already merged or closed).
     """
     if status == "done":
@@ -72,7 +72,7 @@ def _build_table_rows(
     phases: list[RoadmapPhase],
     *,
     graph_nodes: tuple[ObjectiveNode, ...],
-    pr_lookup: dict[int, PlanRowData],
+    pr_lookup: dict[int, PrRowData],
     next_node_id: str | None,
 ) -> tuple[list[tuple[str | Text, ...]], list[ObjectiveNode | None]]:
     """Build table row tuples grouped by phase.
@@ -80,7 +80,7 @@ def _build_table_rows(
     Args:
         phases: Roadmap phases for grouping
         graph_nodes: All graph nodes
-        pr_lookup: Mapping of PR number to PlanRowData
+        pr_lookup: Mapping of PR number to PrRowData
         next_node_id: ID of the next actionable node
 
     Returns:
@@ -242,10 +242,10 @@ class ObjectiveNodesScreen(ModalScreen):
     def __init__(
         self,
         *,
-        provider: PlanDataProvider,
+        provider: PrDataProvider,
         service: PrService,
-        plan_id: int,
-        plan_body: str,
+        pr_number: int,
+        pr_body: str,
         full_title: str,
     ) -> None:
         """Initialize with objective metadata and provider for async loading.
@@ -253,18 +253,18 @@ class ObjectiveNodesScreen(ModalScreen):
         Args:
             provider: Data provider for fetching PR details
             service: Plan service for browser/clipboard/repo_root access
-            plan_id: The objective issue number
-            plan_body: The objective body text with roadmap metadata
+            pr_number: The objective issue number
+            pr_body: The objective body text with roadmap metadata
             full_title: The full objective title for display
         """
         super().__init__()
         self._provider = provider
         self._service = service
-        self._plan_id = plan_id
-        self._plan_body = plan_body
+        self._pr_number = pr_number
+        self._pr_body = pr_body
         self._full_title = full_title
         self._node_rows: list[ObjectiveNode | None] = []
-        self._pr_lookup: dict[int, PlanRowData] = {}
+        self._pr_lookup: dict[int, PrRowData] = {}
         self._last_valid_row: int = 1
         self._skipping_separator: bool = False
 
@@ -272,7 +272,7 @@ class ObjectiveNodesScreen(ModalScreen):
         """Create the nodes dialog content."""
         with Vertical(id="nodes-dialog"):
             with Vertical(id="nodes-header"):
-                yield Label(f"Objective #{self._plan_id} Nodes", id="nodes-title")
+                yield Label(f"Objective #{self._pr_number} Nodes", id="nodes-title")
                 yield Label(self._full_title, id="nodes-summary", markup=False)
 
             yield Label("", id="nodes-divider")
@@ -364,8 +364,8 @@ class ObjectiveNodesScreen(ModalScreen):
         if command_id is not None:
             self.execute_command(command_id)
 
-    def _get_selected_row(self) -> PlanRowData | None:
-        """Get PlanRowData for the currently selected table row."""
+    def _get_selected_row(self) -> PrRowData | None:
+        """Get PrRowData for the currently selected table row."""
         table_results = self.query("#nodes-table")
         if not table_results:
             return None
@@ -384,24 +384,24 @@ class ObjectiveNodesScreen(ModalScreen):
     def action_open_pr(self) -> None:
         """Open selected node's PR in browser.
 
-        Uses pr_url if available, falls back to plan_url (which IS the PR URL
+        Uses pr_url if available, falls back to pr_url (which IS the PR URL
         for PR-based plans).
         """
         row = self._get_selected_row()
         if row is None:
             return
-        url = row.pr_url or row.plan_url
+        url = row.pr_url
         if url is None:
             return
         self._service.browser.launch(url)
 
     def action_open_objective(self) -> None:
         """Open the parent objective issue in browser."""
-        # Find any PlanRowData to get the repo base URL
+        # Find any PrRowData to get the repo base URL
         for pr_data in self._pr_lookup.values():
-            if pr_data.plan_url is not None:
-                base_url = pr_data.plan_url.rsplit("/", 2)[0]
-                objective_url = f"{base_url}/issues/{self._plan_id}"
+            if pr_data.pr_url is not None:
+                base_url = pr_data.pr_url.rsplit("/", 2)[0]
+                objective_url = f"{base_url}/issues/{self._pr_number}"
                 self._service.browser.launch(objective_url)
                 return
 
@@ -436,15 +436,15 @@ class ObjectiveNodesScreen(ModalScreen):
             return
 
         if command_id == "open_issue":
-            if row.plan_url:
-                self._service.browser.launch(row.plan_url)
-                self.notify(f"Opened plan #{row.plan_id}")
+            if row.pr_url:
+                self._service.browser.launch(row.pr_url)
+                self.notify(f"Opened plan #{row.pr_number}")
 
         elif command_id == "open_pr":
-            url = row.pr_url or row.plan_url
+            url = row.pr_url
             if url:
                 self._service.browser.launch(url)
-                self.notify(f"Opened PR #{row.pr_number or row.plan_id}")
+                self.notify(f"Opened PR #{row.pr_number}")
 
         elif command_id == "open_run":
             if row.run_url:
@@ -474,15 +474,15 @@ class ObjectiveNodesScreen(ModalScreen):
             return self.app
         return None
 
-    def _execute_action_command(self, command_id: str, row: PlanRowData) -> None:
+    def _execute_action_command(self, command_id: str, row: PrRowData) -> None:
         """Execute an ACTION command by dismissing and delegating to app.
 
         Args:
             command_id: The ACTION command ID
             row: The selected row's plan data
         """
-        if command_id == "close_plan":
-            self._action_close_plan(row)
+        if command_id == "close_pr":
+            self._action_close_pr(row)
         elif command_id == "dispatch_to_queue":
             self._action_dispatch_to_queue(row)
         elif command_id == "land_pr":
@@ -498,27 +498,27 @@ class ObjectiveNodesScreen(ModalScreen):
         elif command_id == "incremental_dispatch":
             self._action_incremental_dispatch(row)
 
-    def _action_close_plan(self, row: PlanRowData) -> None:
-        if row.plan_url is None:
+    def _action_close_pr(self, row: PrRowData) -> None:
+        if row.pr_url is None:
             return
         app = self._dismiss_and_get_app()
         if app is None:
             return
-        op_id = f"close-plan-{row.plan_id}"
-        app._start_operation(op_id=op_id, label=f"Closing plan #{row.plan_id}...")
-        app._close_plan_async(op_id, row.plan_id, row.plan_url)
+        op_id = f"close-plan-{row.pr_number}"
+        app._start_operation(op_id=op_id, label=f"Closing plan #{row.pr_number}...")
+        app._close_pr_async(op_id, row.pr_number, row.pr_url)
 
-    def _action_dispatch_to_queue(self, row: PlanRowData) -> None:
-        if row.plan_url is None:
+    def _action_dispatch_to_queue(self, row: PrRowData) -> None:
+        if row.pr_url is None:
             return
         app = self._dismiss_and_get_app()
         if app is None:
             return
-        op_id = f"dispatch-plan-{row.plan_id}"
-        app._start_operation(op_id=op_id, label=f"Dispatching plan #{row.plan_id} to queue...")
-        app._dispatch_to_queue_async(op_id, row.plan_id)
+        op_id = f"dispatch-plan-{row.pr_number}"
+        app._start_operation(op_id=op_id, label=f"Dispatching plan #{row.pr_number} to queue...")
+        app._dispatch_to_queue_async(op_id, row.pr_number)
 
-    def _action_land_pr(self, row: PlanRowData) -> None:
+    def _action_land_pr(self, row: PrRowData) -> None:
         if row.pr_number is None or row.pr_head_branch is None:
             return
         app = self._dismiss_and_get_app()
@@ -526,18 +526,16 @@ class ObjectiveNodesScreen(ModalScreen):
             return
         op_id = f"land-pr-{row.pr_number}"
         app._start_operation(op_id=op_id, label=f"Landing PR #{row.pr_number}...")
-        plan_id = row.plan_id if not row.is_learn_plan else None
+        plan_number = row.pr_number if not row.is_learn_plan else None
         app._land_pr_async(
             op_id=op_id,
             pr_number=row.pr_number,
             branch=row.pr_head_branch,
             objective_issue=row.objective_issue,
-            plan_id=plan_id,
+            plan_number=plan_number,
         )
 
-    def _action_rebase_remote(self, row: PlanRowData) -> None:
-        if row.pr_number is None:
-            return
+    def _action_rebase_remote(self, row: PrRowData) -> None:
         app = self._dismiss_and_get_app()
         if app is None:
             return
@@ -545,9 +543,7 @@ class ObjectiveNodesScreen(ModalScreen):
         app._start_operation(op_id=op_id, label=f"Dispatching rebase for PR #{row.pr_number}...")
         app._rebase_remote_async(op_id, row.pr_number)
 
-    def _action_address_remote(self, row: PlanRowData) -> None:
-        if row.pr_number is None:
-            return
+    def _action_address_remote(self, row: PrRowData) -> None:
         app = self._dismiss_and_get_app()
         if app is None:
             return
@@ -555,9 +551,7 @@ class ObjectiveNodesScreen(ModalScreen):
         app._start_operation(op_id=op_id, label=f"Dispatching address for PR #{row.pr_number}...")
         app._address_remote_async(op_id, row.pr_number)
 
-    def _action_rewrite_remote(self, row: PlanRowData) -> None:
-        if row.pr_number is None:
-            return
+    def _action_rewrite_remote(self, row: PrRowData) -> None:
         app = self._dismiss_and_get_app()
         if app is None:
             return
@@ -565,8 +559,8 @@ class ObjectiveNodesScreen(ModalScreen):
         app._start_operation(op_id=op_id, label=f"Dispatching rewrite for PR #{row.pr_number}...")
         app._rewrite_remote_async(op_id, row.pr_number)
 
-    def _action_cmux_checkout(self, command_id: str, row: PlanRowData) -> None:
-        if row.pr_number is None or row.pr_head_branch is None:
+    def _action_cmux_checkout(self, command_id: str, row: PrRowData) -> None:
+        if row.pr_head_branch is None:
             return
         teleport = command_id == "cmux_teleport"
         app = self._dismiss_and_get_app()
@@ -579,9 +573,7 @@ class ObjectiveNodesScreen(ModalScreen):
         app._start_operation(op_id=op_id, label=label)
         app._cmux_checkout_async(op_id, row.pr_number, row.pr_head_branch, teleport=teleport)
 
-    def _action_incremental_dispatch(self, row: PlanRowData) -> None:
-        if row.pr_number is None:
-            return
+    def _action_incremental_dispatch(self, row: PrRowData) -> None:
         app = self._dismiss_and_get_app()
         if app is None:
             return
@@ -593,10 +585,10 @@ class ObjectiveNodesScreen(ModalScreen):
         error: str | None = None
         table_rows: list[tuple[str | Text, ...]] = []
         node_rows: list[ObjectiveNode | None] = []
-        pr_lookup: dict[int, PlanRowData] = {}
+        pr_lookup: dict[int, PrRowData] = {}
 
         try:
-            result = parse_graph(self._plan_body)
+            result = parse_graph(self._pr_body)
             if result is None:
                 error = "No roadmap found in objective body"
             else:
@@ -614,8 +606,8 @@ class ObjectiveNodesScreen(ModalScreen):
 
                 # Fetch PR data
                 if pr_numbers:
-                    pr_rows = self._provider.fetch_plans_by_ids(pr_numbers)
-                    pr_lookup = {row.plan_id: row for row in pr_rows}
+                    pr_rows = self._provider.fetch_prs_by_ids(pr_numbers)
+                    pr_lookup = {row.pr_number: row for row in pr_rows}
 
                 table_rows, node_rows = _build_table_rows(
                     phases,
@@ -632,7 +624,7 @@ class ObjectiveNodesScreen(ModalScreen):
         self,
         table_rows: list[tuple[str | Text, ...]],
         node_rows: list[ObjectiveNode | None],
-        pr_lookup: dict[int, PlanRowData],
+        pr_lookup: dict[int, PrRowData],
         error: str | None,
     ) -> None:
         """Handle nodes loaded - populate the DataTable.
@@ -640,7 +632,7 @@ class ObjectiveNodesScreen(ModalScreen):
         Args:
             table_rows: List of row tuples for the table
             node_rows: Parallel list mapping row index to ObjectiveNode (None for separators)
-            pr_lookup: Mapping of PR number to PlanRowData
+            pr_lookup: Mapping of PR number to PrRowData
             error: Error message if fetch failed, or None
         """
         self._node_rows = node_rows

@@ -8,7 +8,7 @@ from erk.tui.commands.registry import (
 )
 from erk.tui.commands.types import CommandCategory, CommandContext
 from erk.tui.views.types import ViewMode
-from tests.fakes.gateway.plan_data_provider import make_plan_row
+from tests.fakes.gateway.plan_data_provider import make_pr_row
 
 
 def test_all_commands_have_unique_ids() -> None:
@@ -31,7 +31,7 @@ def test_all_commands_have_required_fields() -> None:
 
 def test_open_issue_available_when_issue_url_exists() -> None:
     """open_issue should be available when issue URL exists."""
-    row = make_plan_row(123, "Test", plan_url="https://github.com/test/repo/issues/123")
+    row = make_pr_row(123, "Test", pr_url="https://github.com/test/repo/issues/123")
     ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
     commands = get_available_commands(ctx)
     cmd_ids = [cmd.id for cmd in commands]
@@ -40,25 +40,25 @@ def test_open_issue_available_when_issue_url_exists() -> None:
 
 def test_open_pr_available_when_pr_url_exists() -> None:
     """open_pr should be available when PR URL exists."""
-    row = make_plan_row(123, "Test", pr_url="https://github.com/test/repo/pull/456")
+    row = make_pr_row(123, "Test", pr_url="https://github.com/test/repo/pull/456")
     ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
     commands = get_available_commands(ctx)
     cmd_ids = [cmd.id for cmd in commands]
     assert "open_pr" in cmd_ids
 
 
-def test_open_pr_not_available_when_no_pr() -> None:
-    """open_pr should not be available when no PR URL."""
-    row = make_plan_row(123, "Test")
+def test_open_pr_available_when_pr_url_set() -> None:
+    """open_pr should be available when PR URL is set (default includes issue URL)."""
+    row = make_pr_row(123, "Test")
     ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
     commands = get_available_commands(ctx)
     cmd_ids = [cmd.id for cmd in commands]
-    assert "open_pr" not in cmd_ids
+    assert "open_pr" in cmd_ids
 
 
 def test_open_run_available_when_run_url_exists() -> None:
     """open_run should be available when run URL exists."""
-    row = make_plan_row(123, "Test", run_url="https://github.com/test/repo/actions/runs/789")
+    row = make_pr_row(123, "Test", run_url="https://github.com/test/repo/actions/runs/789")
     ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
     commands = get_available_commands(ctx)
     cmd_ids = [cmd.id for cmd in commands]
@@ -67,7 +67,7 @@ def test_open_run_available_when_run_url_exists() -> None:
 
 def test_open_run_not_available_when_no_run() -> None:
     """open_run should not be available when no run URL."""
-    row = make_plan_row(123, "Test")
+    row = make_pr_row(123, "Test")
     ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
     commands = get_available_commands(ctx)
     cmd_ids = [cmd.id for cmd in commands]
@@ -76,7 +76,7 @@ def test_open_run_not_available_when_no_run() -> None:
 
 def test_copy_checkout_available_when_worktree_branch_exists() -> None:
     """copy_checkout should be available when worktree_branch exists."""
-    row = make_plan_row(123, "Test", worktree_branch="feature-123")
+    row = make_pr_row(123, "Test", worktree_branch="feature-123")
     ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
     commands = get_available_commands(ctx)
     cmd_ids = [cmd.id for cmd in commands]
@@ -85,7 +85,7 @@ def test_copy_checkout_available_when_worktree_branch_exists() -> None:
 
 def test_copy_checkout_not_available_when_worktree_branch_none() -> None:
     """copy_checkout should not be available when worktree_branch is None."""
-    row = make_plan_row(123, "Test")  # worktree_branch defaults to None
+    row = make_pr_row(123, "Test")  # worktree_branch defaults to None
     ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
     commands = get_available_commands(ctx)
     cmd_ids = [cmd.id for cmd in commands]
@@ -94,7 +94,7 @@ def test_copy_checkout_not_available_when_worktree_branch_none() -> None:
 
 def test_checkout_and_teleport_available_when_pr_exists() -> None:
     """Checkout and teleport commands should be available when PR number exists."""
-    row = make_plan_row(123, "Test", pr_number=456)
+    row = make_pr_row(123, "Test")
     ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
     commands = get_available_commands(ctx)
     cmd_ids = [cmd.id for cmd in commands]
@@ -104,40 +104,39 @@ def test_checkout_and_teleport_available_when_pr_exists() -> None:
     assert "copy_teleport_new_slot" in cmd_ids
 
 
-def test_checkout_and_teleport_not_available_when_no_pr() -> None:
-    """Checkout and teleport commands should not be available when no PR number."""
-    row = make_plan_row(123, "Test")
+def test_checkout_and_teleport_available_with_pr_number() -> None:
+    """Checkout and teleport commands should be available since pr_number is always set."""
+    row = make_pr_row(123, "Test")
     ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
     commands = get_available_commands(ctx)
     cmd_ids = [cmd.id for cmd in commands]
-    assert "copy_pr_checkout_script" not in cmd_ids
-    assert "copy_pr_checkout_plain" not in cmd_ids
-    assert "copy_teleport" not in cmd_ids
-    assert "copy_teleport_new_slot" not in cmd_ids
+    assert "copy_pr_checkout_script" in cmd_ids
+    assert "copy_pr_checkout_plain" in cmd_ids
+    assert "copy_teleport" in cmd_ids
+    assert "copy_teleport_new_slot" in cmd_ids
 
 
-def test_close_plan_always_available() -> None:
-    """close_plan should always be available in plans view."""
-    row = make_plan_row(123, "Test")
+def test_close_pr_always_available() -> None:
+    """close_pr should always be available in plans view."""
+    row = make_pr_row(123, "Test")
     ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
     commands = get_available_commands(ctx)
     cmd_ids = [cmd.id for cmd in commands]
-    assert "close_plan" in cmd_ids
+    assert "close_pr" in cmd_ids
 
 
-def test_close_plan_has_no_shortcut() -> None:
-    """close_plan should have no keyboard shortcut (must use palette)."""
+def test_close_pr_has_no_shortcut() -> None:
+    """close_pr should have no keyboard shortcut (must use palette)."""
     commands = get_all_commands()
-    close_plan = next(cmd for cmd in commands if cmd.id == "close_plan")
-    assert close_plan.shortcut is None
+    close_pr = next(cmd for cmd in commands if cmd.id == "close_pr")
+    assert close_pr.shortcut is None
 
 
 def test_land_pr_available_when_all_conditions_met() -> None:
     """land_pr should be available when PR is open."""
-    row = make_plan_row(
+    row = make_pr_row(
         123,
         "Test",
-        pr_number=456,
         pr_state="OPEN",
         exists_locally=True,
     )
@@ -147,9 +146,9 @@ def test_land_pr_available_when_all_conditions_met() -> None:
     assert "land_pr" in cmd_ids
 
 
-def test_land_pr_not_available_when_no_pr() -> None:
-    """land_pr should not be available when no PR."""
-    row = make_plan_row(123, "Test")
+def test_land_pr_not_available_when_no_pr_state() -> None:
+    """land_pr should not be available when pr_state is not OPEN."""
+    row = make_pr_row(123, "Test")
     ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
     commands = get_available_commands(ctx)
     cmd_ids = [cmd.id for cmd in commands]
@@ -158,10 +157,9 @@ def test_land_pr_not_available_when_no_pr() -> None:
 
 def test_land_pr_not_available_when_pr_merged() -> None:
     """land_pr should not be available when PR is already merged."""
-    row = make_plan_row(
+    row = make_pr_row(
         123,
         "Test",
-        pr_number=456,
         pr_state="MERGED",
         exists_locally=False,
     )
@@ -173,10 +171,9 @@ def test_land_pr_not_available_when_pr_merged() -> None:
 
 def test_land_pr_available_when_exists_locally() -> None:
     """land_pr should be available even when worktree exists locally."""
-    row = make_plan_row(
+    row = make_pr_row(
         123,
         "Test",
-        pr_number=456,
         pr_state="OPEN",
         exists_locally=True,
     )
@@ -188,10 +185,9 @@ def test_land_pr_available_when_exists_locally() -> None:
 
 def test_land_pr_available_without_run_url() -> None:
     """land_pr should be available even without a remote run."""
-    row = make_plan_row(
+    row = make_pr_row(
         123,
         "Test",
-        pr_number=456,
         pr_state="OPEN",
         exists_locally=False,
     )
@@ -203,25 +199,25 @@ def test_land_pr_available_without_run_url() -> None:
 
 def test_rebase_remote_available_when_pr_exists() -> None:
     """rebase_remote should be available when PR number exists."""
-    row = make_plan_row(123, "Test", pr_number=456)
+    row = make_pr_row(123, "Test")
     ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
     commands = get_available_commands(ctx)
     cmd_ids = [cmd.id for cmd in commands]
     assert "rebase_remote" in cmd_ids
 
 
-def test_rebase_remote_not_available_when_no_pr() -> None:
-    """rebase_remote should not be available when no PR number."""
-    row = make_plan_row(123, "Test")
+def test_rebase_remote_available_with_pr_number() -> None:
+    """rebase_remote should be available since pr_number is always set."""
+    row = make_pr_row(123, "Test")
     ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
     commands = get_available_commands(ctx)
     cmd_ids = [cmd.id for cmd in commands]
-    assert "rebase_remote" not in cmd_ids
+    assert "rebase_remote" in cmd_ids
 
 
 def test_copy_replan_available_when_issue_url_exists() -> None:
     """copy_replan should be available when issue URL exists."""
-    row = make_plan_row(123, "Test", plan_url="https://github.com/test/repo/issues/123")
+    row = make_pr_row(123, "Test", pr_url="https://github.com/test/repo/issues/123")
     ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
     commands = get_available_commands(ctx)
     cmd_ids = [cmd.id for cmd in commands]
@@ -231,17 +227,17 @@ def test_copy_replan_available_when_issue_url_exists() -> None:
 # === Dynamic Display Name Tests (Plan Commands) ===
 
 
-def test_display_name_close_plan_shows_cli_command() -> None:
-    """close_plan should show the CLI command with issue number."""
-    row = make_plan_row(5831, "Test Plan")
+def test_display_name_close_pr_shows_cli_command() -> None:
+    """close_pr should show the CLI command with issue number."""
+    row = make_pr_row(5831, "Test Plan")
     ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
-    cmd = next(c for c in get_all_commands() if c.id == "close_plan")
+    cmd = next(c for c in get_all_commands() if c.id == "close_pr")
     assert get_display_name(cmd, ctx) == "erk pr close 5831"
 
 
 def test_display_name_dispatch_to_queue_shows_cli_command() -> None:
     """dispatch_to_queue should show the CLI command with issue number."""
-    row = make_plan_row(5831, "Test Plan")
+    row = make_pr_row(5831, "Test Plan")
     ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
     cmd = next(c for c in get_all_commands() if c.id == "dispatch_to_queue")
     assert get_display_name(cmd, ctx) == "erk pr dispatch 5831"
@@ -249,26 +245,26 @@ def test_display_name_dispatch_to_queue_shows_cli_command() -> None:
 
 def test_display_name_land_pr_shows_cli_command() -> None:
     """land_pr should show the CLI command with PR number."""
-    row = make_plan_row(5831, "Test Plan", pr_number=456)
+    row = make_pr_row(5831, "Test Plan")
     ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
     cmd = next(c for c in get_all_commands() if c.id == "land_pr")
-    assert get_display_name(cmd, ctx) == "erk land 456"
+    assert get_display_name(cmd, ctx) == "erk land 5831"
 
 
 def test_display_name_rebase_remote_shows_cli_command() -> None:
     """rebase_remote should show the launch command with PR number."""
-    row = make_plan_row(5831, "Test Plan", pr_number=456)
+    row = make_pr_row(5831, "Test Plan")
     ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
     cmd = next(c for c in get_all_commands() if c.id == "rebase_remote")
-    assert get_display_name(cmd, ctx) == "erk launch pr-rebase --pr 456"
+    assert get_display_name(cmd, ctx) == "erk launch pr-rebase --pr 5831"
 
 
 def test_display_name_open_issue_shows_bare_url() -> None:
     """open_issue should show the bare issue URL (no prefix)."""
-    row = make_plan_row(
+    row = make_pr_row(
         5831,
         "Test Plan",
-        plan_url="https://github.com/test/repo/issues/5831",
+        pr_url="https://github.com/test/repo/issues/5831",
     )
     ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
     cmd = next(c for c in get_all_commands() if c.id == "open_issue")
@@ -277,7 +273,7 @@ def test_display_name_open_issue_shows_bare_url() -> None:
 
 def test_display_name_open_pr_shows_bare_url() -> None:
     """open_pr should show the bare PR URL (no prefix)."""
-    row = make_plan_row(
+    row = make_pr_row(
         5831,
         "Test Plan",
         pr_url="https://github.com/test/repo/pull/456",
@@ -289,7 +285,7 @@ def test_display_name_open_pr_shows_bare_url() -> None:
 
 def test_display_name_open_run_shows_bare_url() -> None:
     """open_run should show the bare run URL (no prefix)."""
-    row = make_plan_row(
+    row = make_pr_row(
         5831,
         "Test Plan",
         run_url="https://github.com/test/repo/actions/runs/789",
@@ -301,7 +297,7 @@ def test_display_name_open_run_shows_bare_url() -> None:
 
 def test_display_name_copy_checkout_shows_branch() -> None:
     """copy_checkout should show the worktree branch."""
-    row = make_plan_row(5831, "Test Plan", worktree_branch="feature-5831")
+    row = make_pr_row(5831, "Test Plan", worktree_branch="feature-5831")
     ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
     cmd = next(c for c in get_all_commands() if c.id == "copy_checkout")
     assert get_display_name(cmd, ctx) == "erk br co feature-5831"
@@ -309,66 +305,66 @@ def test_display_name_copy_checkout_shows_branch() -> None:
 
 def test_display_name_copy_checkout_falls_back_to_pr() -> None:
     """copy_checkout should fall back to PR number if no worktree branch."""
-    row = make_plan_row(5831, "Test Plan", pr_number=456)
+    row = make_pr_row(5831, "Test Plan")
     ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
     cmd = next(c for c in get_all_commands() if c.id == "copy_checkout")
-    assert get_display_name(cmd, ctx) == "erk pr co 456"
+    assert get_display_name(cmd, ctx) == "erk pr co 5831"
 
 
 def test_display_name_copy_pr_checkout_script_shows_pr() -> None:
     """copy_pr_checkout_script should show the PR number in the source command."""
-    row = make_plan_row(5831, "Test Plan", pr_number=456)
+    row = make_pr_row(5831, "Test Plan")
     ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
     cmd = next(c for c in get_all_commands() if c.id == "copy_pr_checkout_script")
-    expected = 'source "$(erk pr checkout 456 --script)"'
+    expected = 'source "$(erk pr checkout 5831 --script)"'
     assert get_display_name(cmd, ctx) == expected
 
 
 def test_display_name_copy_pr_checkout_plain_shows_pr() -> None:
     """copy_pr_checkout_plain should show the PR number."""
-    row = make_plan_row(5831, "Test Plan", pr_number=456)
+    row = make_pr_row(5831, "Test Plan")
     ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
     cmd = next(c for c in get_all_commands() if c.id == "copy_pr_checkout_plain")
-    assert get_display_name(cmd, ctx) == "erk pr checkout 456"
+    assert get_display_name(cmd, ctx) == "erk pr checkout 5831"
 
 
 def test_display_name_copy_teleport_shows_pr() -> None:
     """copy_teleport should show the PR number."""
-    row = make_plan_row(5831, "Test Plan", pr_number=456)
+    row = make_pr_row(5831, "Test Plan")
     ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
     cmd = next(c for c in get_all_commands() if c.id == "copy_teleport")
-    assert get_display_name(cmd, ctx) == "erk pr teleport 456"
+    assert get_display_name(cmd, ctx) == "erk pr teleport 5831"
 
 
 def test_display_name_copy_teleport_new_slot_shows_pr() -> None:
     """copy_teleport_new_slot should show the PR number with --new-slot."""
-    row = make_plan_row(5831, "Test Plan", pr_number=456)
+    row = make_pr_row(5831, "Test Plan")
     ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
     cmd = next(c for c in get_all_commands() if c.id == "copy_teleport_new_slot")
-    assert get_display_name(cmd, ctx) == "erk pr teleport 456 --new-slot"
+    assert get_display_name(cmd, ctx) == "erk pr teleport 5831 --new-slot"
 
 
 def test_display_name_copy_cmux_checkout() -> None:
     """copy_cmux_checkout generates checkout command."""
-    row = make_plan_row(5831, "Test Plan", pr_number=456, pr_head_branch="feature-branch")
+    row = make_pr_row(5831, "Test Plan", pr_head_branch="feature-branch")
     ctx = CommandContext(row=row, view_mode=ViewMode.PLANS, cmux_integration=True)
     cmd = next(c for c in get_all_commands() if c.id == "copy_cmux_checkout")
     result = get_display_name(cmd, ctx)
-    assert result == "erk pr checkout 456 --script"
+    assert result == "erk pr checkout 5831 --script"
 
 
 def test_display_name_copy_cmux_teleport() -> None:
     """copy_cmux_teleport generates teleport command."""
-    row = make_plan_row(5831, "Test Plan", pr_number=456, pr_head_branch="feature-branch")
+    row = make_pr_row(5831, "Test Plan", pr_head_branch="feature-branch")
     ctx = CommandContext(row=row, view_mode=ViewMode.PLANS, cmux_integration=True)
     cmd = next(c for c in get_all_commands() if c.id == "copy_cmux_teleport")
     result = get_display_name(cmd, ctx)
-    assert result == "erk pr teleport 456 --new-slot --script --sync"
+    assert result == "erk pr teleport 5831 --new-slot --script --sync"
 
 
 def test_display_name_cmux_checkout_action() -> None:
     """cmux_checkout ACTION command uses same display name as copy_cmux_checkout."""
-    row = make_plan_row(5831, "Test Plan", pr_number=456, pr_head_branch="feature-branch")
+    row = make_pr_row(5831, "Test Plan", pr_head_branch="feature-branch")
     ctx = CommandContext(row=row, view_mode=ViewMode.PLANS, cmux_integration=True)
     action_cmd = next(c for c in get_all_commands() if c.id == "cmux_checkout")
     copy_cmd = next(c for c in get_all_commands() if c.id == "copy_cmux_checkout")
@@ -377,7 +373,7 @@ def test_display_name_cmux_checkout_action() -> None:
 
 def test_display_name_cmux_teleport_action() -> None:
     """cmux_teleport ACTION command uses same display name as copy_cmux_teleport."""
-    row = make_plan_row(5831, "Test Plan", pr_number=456, pr_head_branch="feature-branch")
+    row = make_pr_row(5831, "Test Plan", pr_head_branch="feature-branch")
     ctx = CommandContext(row=row, view_mode=ViewMode.PLANS, cmux_integration=True)
     action_cmd = next(c for c in get_all_commands() if c.id == "cmux_teleport")
     copy_cmd = next(c for c in get_all_commands() if c.id == "copy_cmux_teleport")
@@ -386,7 +382,7 @@ def test_display_name_cmux_teleport_action() -> None:
 
 def test_copy_cmux_checkout_unavailable_without_branch() -> None:
     """cmux commands are unavailable when no head branch exists."""
-    row = make_plan_row(5831, "Test Plan", pr_number=456)
+    row = make_pr_row(5831, "Test Plan")
     ctx = CommandContext(row=row, view_mode=ViewMode.PLANS, cmux_integration=True)
     cmd_ids = [cmd.id for cmd in get_available_commands(ctx)]
     assert "cmux_checkout" not in cmd_ids
@@ -397,7 +393,7 @@ def test_copy_cmux_checkout_unavailable_without_branch() -> None:
 
 def test_copy_cmux_checkout_unavailable_without_cmux_integration() -> None:
     """cmux commands are unavailable when cmux_integration is disabled."""
-    row = make_plan_row(5831, "Test Plan", pr_number=456, pr_head_branch="feature-branch")
+    row = make_pr_row(5831, "Test Plan", pr_head_branch="feature-branch")
     ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
     cmd_ids = [cmd.id for cmd in get_available_commands(ctx)]
     assert "cmux_checkout" not in cmd_ids
@@ -408,7 +404,7 @@ def test_copy_cmux_checkout_unavailable_without_cmux_integration() -> None:
 
 def test_display_name_copy_dispatch_shows_issue() -> None:
     """copy_dispatch should show the issue number."""
-    row = make_plan_row(5831, "Test Plan")
+    row = make_pr_row(5831, "Test Plan")
     ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
     cmd = next(c for c in get_all_commands() if c.id == "copy_dispatch")
     assert get_display_name(cmd, ctx) == "erk pr dispatch 5831"
@@ -416,7 +412,7 @@ def test_display_name_copy_dispatch_shows_issue() -> None:
 
 def test_display_name_copy_replan_shows_issue() -> None:
     """copy_replan should show the issue number."""
-    row = make_plan_row(5831, "Test Plan")
+    row = make_pr_row(5831, "Test Plan")
     ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
     cmd = next(c for c in get_all_commands() if c.id == "copy_replan")
     assert get_display_name(cmd, ctx) == "erk pr replan 5831"
@@ -424,149 +420,149 @@ def test_display_name_copy_replan_shows_issue() -> None:
 
 def test_display_name_copy_land_shows_pr_number() -> None:
     """copy_land should show the erk land command with PR number."""
-    row = make_plan_row(5831, "Test Plan", pr_number=456)
+    row = make_pr_row(5831, "Test Plan")
     ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
     cmd = next(c for c in get_all_commands() if c.id == "copy_land")
-    assert get_display_name(cmd, ctx) == "erk land 456"
+    assert get_display_name(cmd, ctx) == "erk land 5831"
 
 
 def test_copy_land_available_when_pr_exists() -> None:
     """copy_land should be available when PR number exists."""
-    row = make_plan_row(123, "Test", pr_number=456)
+    row = make_pr_row(123, "Test")
     ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
     commands = get_available_commands(ctx)
     cmd_ids = [cmd.id for cmd in commands]
     assert "copy_land" in cmd_ids
 
 
-def test_copy_land_not_available_when_no_pr() -> None:
-    """copy_land should not be available when no PR number."""
-    row = make_plan_row(123, "Test")
+def test_copy_land_available_with_pr_number() -> None:
+    """copy_land should be available since pr_number is always set."""
+    row = make_pr_row(123, "Test")
     ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
     commands = get_available_commands(ctx)
     cmd_ids = [cmd.id for cmd in commands]
-    assert "copy_land" not in cmd_ids
+    assert "copy_land" in cmd_ids
 
 
-def test_copy_close_plan_always_available() -> None:
-    """copy_close_plan should always be available in plan view."""
-    row = make_plan_row(123, "Test")
+def test_copy_close_pr_always_available() -> None:
+    """copy_close_pr should always be available in plan view."""
+    row = make_pr_row(123, "Test")
     ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
     commands = get_available_commands(ctx)
     cmd_ids = [cmd.id for cmd in commands]
-    assert "copy_close_plan" in cmd_ids
+    assert "copy_close_pr" in cmd_ids
 
 
 def test_copy_rebase_remote_available_when_pr_exists() -> None:
     """copy_rebase_remote should be available when PR number exists."""
-    row = make_plan_row(123, "Test", pr_number=456)
+    row = make_pr_row(123, "Test")
     ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
     commands = get_available_commands(ctx)
     cmd_ids = [cmd.id for cmd in commands]
     assert "copy_rebase_remote" in cmd_ids
 
 
-def test_copy_rebase_remote_not_available_when_no_pr() -> None:
-    """copy_rebase_remote should not be available when no PR number."""
-    row = make_plan_row(123, "Test")
+def test_copy_rebase_remote_available_with_pr_number() -> None:
+    """copy_rebase_remote should be available since pr_number is always set."""
+    row = make_pr_row(123, "Test")
     ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
     commands = get_available_commands(ctx)
     cmd_ids = [cmd.id for cmd in commands]
-    assert "copy_rebase_remote" not in cmd_ids
+    assert "copy_rebase_remote" in cmd_ids
 
 
 def test_copy_address_remote_available_when_pr_exists() -> None:
     """copy_address_remote should be available when PR number exists."""
-    row = make_plan_row(123, "Test", pr_number=456)
+    row = make_pr_row(123, "Test")
     ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
     commands = get_available_commands(ctx)
     cmd_ids = [cmd.id for cmd in commands]
     assert "copy_address_remote" in cmd_ids
 
 
-def test_copy_address_remote_not_available_when_no_pr() -> None:
-    """copy_address_remote should not be available when no PR number."""
-    row = make_plan_row(123, "Test")
+def test_copy_address_remote_available_with_pr_number() -> None:
+    """copy_address_remote should be available since pr_number is always set."""
+    row = make_pr_row(123, "Test")
     ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
     commands = get_available_commands(ctx)
     cmd_ids = [cmd.id for cmd in commands]
-    assert "copy_address_remote" not in cmd_ids
+    assert "copy_address_remote" in cmd_ids
 
 
 def test_rewrite_remote_available_when_pr_exists() -> None:
     """rewrite_remote should be available when PR number exists."""
-    row = make_plan_row(123, "Test", pr_number=456)
+    row = make_pr_row(123, "Test")
     ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
     commands = get_available_commands(ctx)
     cmd_ids = [cmd.id for cmd in commands]
     assert "rewrite_remote" in cmd_ids
 
 
-def test_rewrite_remote_not_available_when_no_pr() -> None:
-    """rewrite_remote should not be available when no PR number."""
-    row = make_plan_row(123, "Test")
+def test_rewrite_remote_available_with_pr_number() -> None:
+    """rewrite_remote should be available since pr_number is always set."""
+    row = make_pr_row(123, "Test")
     ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
     commands = get_available_commands(ctx)
     cmd_ids = [cmd.id for cmd in commands]
-    assert "rewrite_remote" not in cmd_ids
+    assert "rewrite_remote" in cmd_ids
 
 
 def test_copy_rewrite_remote_available_when_pr_exists() -> None:
     """copy_rewrite_remote should be available when PR number exists."""
-    row = make_plan_row(123, "Test", pr_number=456)
+    row = make_pr_row(123, "Test")
     ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
     commands = get_available_commands(ctx)
     cmd_ids = [cmd.id for cmd in commands]
     assert "copy_rewrite_remote" in cmd_ids
 
 
-def test_copy_rewrite_remote_not_available_when_no_pr() -> None:
-    """copy_rewrite_remote should not be available when no PR number."""
-    row = make_plan_row(123, "Test")
+def test_copy_rewrite_remote_available_with_pr_number() -> None:
+    """copy_rewrite_remote should be available since pr_number is always set."""
+    row = make_pr_row(123, "Test")
     ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
     commands = get_available_commands(ctx)
     cmd_ids = [cmd.id for cmd in commands]
-    assert "copy_rewrite_remote" not in cmd_ids
+    assert "copy_rewrite_remote" in cmd_ids
 
 
 def test_display_name_rewrite_remote_shows_cli_command() -> None:
     """rewrite_remote should show the launch command with PR number."""
-    row = make_plan_row(5831, "Test Plan", pr_number=456)
+    row = make_pr_row(5831, "Test Plan")
     ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
     cmd = next(c for c in get_all_commands() if c.id == "rewrite_remote")
-    assert get_display_name(cmd, ctx) == "erk launch pr-rewrite --pr 456"
+    assert get_display_name(cmd, ctx) == "erk launch pr-rewrite --pr 5831"
 
 
 def test_display_name_copy_rewrite_remote_shows_cli_command() -> None:
     """copy_rewrite_remote should show the launch command with PR number."""
-    row = make_plan_row(5831, "Test Plan", pr_number=456)
+    row = make_pr_row(5831, "Test Plan")
     ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
     cmd = next(c for c in get_all_commands() if c.id == "copy_rewrite_remote")
-    assert get_display_name(cmd, ctx) == "erk launch pr-rewrite --pr 456"
+    assert get_display_name(cmd, ctx) == "erk launch pr-rewrite --pr 5831"
 
 
-def test_display_name_copy_close_plan_shows_cli_command() -> None:
-    """copy_close_plan should show the erk pr close command."""
-    row = make_plan_row(5831, "Test Plan")
+def test_display_name_copy_close_pr_shows_cli_command() -> None:
+    """copy_close_pr should show the erk pr close command."""
+    row = make_pr_row(5831, "Test Plan")
     ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
-    cmd = next(c for c in get_all_commands() if c.id == "copy_close_plan")
+    cmd = next(c for c in get_all_commands() if c.id == "copy_close_pr")
     assert get_display_name(cmd, ctx) == "erk pr close 5831"
 
 
 def test_display_name_copy_rebase_remote_shows_cli_command() -> None:
     """copy_rebase_remote should show the launch command with PR number."""
-    row = make_plan_row(5831, "Test Plan", pr_number=456)
+    row = make_pr_row(5831, "Test Plan")
     ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
     cmd = next(c for c in get_all_commands() if c.id == "copy_rebase_remote")
-    assert get_display_name(cmd, ctx) == "erk launch pr-rebase --pr 456"
+    assert get_display_name(cmd, ctx) == "erk launch pr-rebase --pr 5831"
 
 
 def test_display_name_copy_address_remote_shows_cli_command() -> None:
     """copy_address_remote should show the launch command with PR number."""
-    row = make_plan_row(5831, "Test Plan", pr_number=456)
+    row = make_pr_row(5831, "Test Plan")
     ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
     cmd = next(c for c in get_all_commands() if c.id == "copy_address_remote")
-    assert get_display_name(cmd, ctx) == "erk launch pr-address --pr 456"
+    assert get_display_name(cmd, ctx) == "erk launch pr-address --pr 5831"
 
 
 def test_all_commands_have_get_display_name() -> None:
@@ -626,11 +622,9 @@ def test_format_search_display_preserves_highlighting() -> None:
 
 def test_plan_commands_hidden_in_objectives_view() -> None:
     """Plan commands should not appear in Objectives view."""
-    row = make_plan_row(
+    row = make_pr_row(
         123,
         "Test",
-        plan_url="https://github.com/test/repo/issues/123",
-        pr_number=456,
         pr_url="https://github.com/test/repo/pull/456",
         pr_state="OPEN",
         worktree_branch="feature-123",
@@ -642,7 +636,7 @@ def test_plan_commands_hidden_in_objectives_view() -> None:
 
     # All plan commands should be absent
     plan_cmd_ids = [
-        "close_plan",
+        "close_pr",
         "dispatch_to_queue",
         "land_pr",
         "rebase_remote",
@@ -664,18 +658,19 @@ def test_plan_commands_hidden_in_objectives_view() -> None:
         "copy_dispatch",
         "copy_replan",
         "copy_land",
-        "copy_close_plan",
+        "copy_close_pr",
         "copy_rebase_remote",
         "copy_address_remote",
         "copy_rewrite_remote",
     ]
-    for plan_id in plan_cmd_ids:
-        assert plan_id not in cmd_ids, f"Plan command {plan_id} should be hidden in Objectives view"
+    for pr_number in plan_cmd_ids:
+        msg = f"Plan command {pr_number} should be hidden in Objectives view"
+        assert pr_number not in cmd_ids, msg
 
 
 def test_objective_commands_hidden_in_plans_view() -> None:
     """Objective commands should not appear in Plans view."""
-    row = make_plan_row(123, "Test", plan_url="https://github.com/test/repo/issues/123")
+    row = make_pr_row(123, "Test", pr_url="https://github.com/test/repo/issues/123")
     ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
     commands = get_available_commands(ctx)
     cmd_ids = [cmd.id for cmd in commands]
@@ -695,7 +690,7 @@ def test_objective_commands_hidden_in_plans_view() -> None:
 
 def test_objective_commands_appear_in_objectives_view() -> None:
     """All 7 objective commands should appear in Objectives view."""
-    row = make_plan_row(123, "Test", plan_url="https://github.com/test/repo/issues/123")
+    row = make_pr_row(123, "Test", pr_url="https://github.com/test/repo/issues/123")
     ctx = CommandContext(row=row, view_mode=ViewMode.OBJECTIVES)
     commands = get_available_commands(ctx)
     cmd_ids = [cmd.id for cmd in commands]
@@ -715,11 +710,11 @@ def test_objective_commands_appear_in_objectives_view() -> None:
 
 def test_plan_commands_available_in_learn_view() -> None:
     """Plan commands should still appear in Learn view (not objectives)."""
-    row = make_plan_row(123, "Test", plan_url="https://github.com/test/repo/issues/123")
+    row = make_pr_row(123, "Test", pr_url="https://github.com/test/repo/issues/123")
     ctx = CommandContext(row=row, view_mode=ViewMode.LEARN)
     commands = get_available_commands(ctx)
     cmd_ids = [cmd.id for cmd in commands]
-    assert "close_plan" in cmd_ids
+    assert "close_pr" in cmd_ids
 
 
 # === Dynamic Display Name Tests (Objective Commands) ===
@@ -727,7 +722,7 @@ def test_plan_commands_available_in_learn_view() -> None:
 
 def test_display_name_one_shot_plan() -> None:
     """one_shot_plan should show the objective command with --one-shot."""
-    row = make_plan_row(7100, "Test Objective")
+    row = make_pr_row(7100, "Test Objective")
     ctx = CommandContext(row=row, view_mode=ViewMode.OBJECTIVES)
     cmd = next(c for c in get_all_commands() if c.id == "one_shot_plan")
     assert get_display_name(cmd, ctx) == "erk objective plan 7100 --one-shot"
@@ -735,7 +730,7 @@ def test_display_name_one_shot_plan() -> None:
 
 def test_display_name_check_objective() -> None:
     """check_objective should show the check command."""
-    row = make_plan_row(7100, "Test Objective")
+    row = make_pr_row(7100, "Test Objective")
     ctx = CommandContext(row=row, view_mode=ViewMode.OBJECTIVES)
     cmd = next(c for c in get_all_commands() if c.id == "check_objective")
     assert get_display_name(cmd, ctx) == "erk objective check 7100"
@@ -743,7 +738,7 @@ def test_display_name_check_objective() -> None:
 
 def test_display_name_close_objective() -> None:
     """close_objective should show the close command with --force."""
-    row = make_plan_row(7100, "Test Objective")
+    row = make_pr_row(7100, "Test Objective")
     ctx = CommandContext(row=row, view_mode=ViewMode.OBJECTIVES)
     cmd = next(c for c in get_all_commands() if c.id == "close_objective")
     assert get_display_name(cmd, ctx) == "erk objective close 7100 --force"
@@ -751,10 +746,10 @@ def test_display_name_close_objective() -> None:
 
 def test_display_name_open_objective() -> None:
     """open_objective should show the issue URL."""
-    row = make_plan_row(
+    row = make_pr_row(
         7100,
         "Test Objective",
-        plan_url="https://github.com/test/repo/issues/7100",
+        pr_url="https://github.com/test/repo/issues/7100",
     )
     ctx = CommandContext(row=row, view_mode=ViewMode.OBJECTIVES)
     cmd = next(c for c in get_all_commands() if c.id == "open_objective")
@@ -763,7 +758,7 @@ def test_display_name_open_objective() -> None:
 
 def test_display_name_copy_plan() -> None:
     """copy_plan should show the plan command."""
-    row = make_plan_row(7100, "Test Objective")
+    row = make_pr_row(7100, "Test Objective")
     ctx = CommandContext(row=row, view_mode=ViewMode.OBJECTIVES)
     cmd = next(c for c in get_all_commands() if c.id == "copy_plan")
     assert get_display_name(cmd, ctx) == "erk objective plan 7100"
@@ -771,7 +766,7 @@ def test_display_name_copy_plan() -> None:
 
 def test_display_name_codespace_run_plan() -> None:
     """codespace_run_plan should show the codespace run command."""
-    row = make_plan_row(7100, "Test Objective")
+    row = make_pr_row(7100, "Test Objective")
     ctx = CommandContext(row=row, view_mode=ViewMode.OBJECTIVES)
     cmd = next(c for c in get_all_commands() if c.id == "codespace_run_plan")
     assert get_display_name(cmd, ctx) == "erk codespace run objective plan 7100"
@@ -779,7 +774,7 @@ def test_display_name_codespace_run_plan() -> None:
 
 def test_codespace_run_plan_available_in_objectives_view() -> None:
     """codespace_run_plan should be available in Objectives view."""
-    row = make_plan_row(123, "Test", plan_url="https://github.com/test/repo/issues/123")
+    row = make_pr_row(123, "Test", pr_url="https://github.com/test/repo/issues/123")
     ctx = CommandContext(row=row, view_mode=ViewMode.OBJECTIVES)
     commands = get_available_commands(ctx)
     cmd_ids = [cmd.id for cmd in commands]
@@ -788,7 +783,7 @@ def test_codespace_run_plan_available_in_objectives_view() -> None:
 
 def test_codespace_run_plan_not_available_in_plans_view() -> None:
     """codespace_run_plan should not be available in Plans view."""
-    row = make_plan_row(123, "Test", plan_url="https://github.com/test/repo/issues/123")
+    row = make_pr_row(123, "Test", pr_url="https://github.com/test/repo/issues/123")
     ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
     commands = get_available_commands(ctx)
     cmd_ids = [cmd.id for cmd in commands]
@@ -797,7 +792,7 @@ def test_codespace_run_plan_not_available_in_plans_view() -> None:
 
 def test_display_name_copy_view() -> None:
     """copy_view should show the view command."""
-    row = make_plan_row(7100, "Test Objective")
+    row = make_pr_row(7100, "Test Objective")
     ctx = CommandContext(row=row, view_mode=ViewMode.OBJECTIVES)
     cmd = next(c for c in get_all_commands() if c.id == "copy_view")
     assert get_display_name(cmd, ctx) == "erk objective view 7100"
@@ -813,11 +808,9 @@ def test_shortcuts_no_conflicts_within_view() -> None:
     because they are mutually exclusive (filtered by view mode). But within a single
     view, shortcuts must be unique.
     """
-    row = make_plan_row(
+    row = make_pr_row(
         123,
         "Test",
-        plan_url="https://github.com/test/repo/issues/123",
-        pr_number=456,
         pr_url="https://github.com/test/repo/pull/456",
         pr_state="OPEN",
         pr_head_branch="feature-123",
@@ -839,11 +832,9 @@ def test_shortcuts_no_conflicts_within_view() -> None:
 
 def test_commands_available_in_plans_view() -> None:
     """Plan commands should be available in plans view."""
-    row = make_plan_row(
+    row = make_pr_row(
         123,
         "Test",
-        plan_url="https://github.com/test/repo/pull/123",
-        pr_number=456,
         pr_url="https://github.com/test/repo/pull/456",
         pr_state="OPEN",
         worktree_branch="feature-123",
@@ -855,7 +846,7 @@ def test_commands_available_in_plans_view() -> None:
 
     # These should all be available
     expected_available = [
-        "close_plan",
+        "close_pr",
         "dispatch_to_queue",
         "rebase_remote",
         "address_remote",
@@ -873,7 +864,7 @@ def test_commands_available_in_plans_view() -> None:
         "copy_dispatch",
         "copy_replan",
         "copy_land",
-        "copy_close_plan",
+        "copy_close_pr",
         "copy_rebase_remote",
         "copy_address_remote",
         "copy_rewrite_remote",
@@ -888,16 +879,16 @@ def test_commands_available_in_plans_view() -> None:
 
 def test_get_copy_text_returns_display_name_for_valid_command() -> None:
     """get_copy_text returns display name for a valid, available command."""
-    row = make_plan_row(123, "Test", pr_number=456)
+    row = make_pr_row(123, "Test")
     ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
     result = get_copy_text("copy_pr_checkout_script", ctx)
-    expected = 'source "$(erk pr checkout 456 --script)"'
+    expected = 'source "$(erk pr checkout 123 --script)"'
     assert result == expected
 
 
 def test_get_copy_text_returns_none_for_unknown_command() -> None:
     """get_copy_text returns None when command ID does not exist."""
-    row = make_plan_row(123, "Test")
+    row = make_pr_row(123, "Test")
     ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
     result = get_copy_text("nonexistent_command", ctx)
     assert result is None
@@ -905,35 +896,35 @@ def test_get_copy_text_returns_none_for_unknown_command() -> None:
 
 def test_get_copy_text_returns_none_for_unavailable_command() -> None:
     """get_copy_text returns None when command is not available in context."""
-    row = make_plan_row(123, "Test")  # No pr_number, so checkout/teleport unavailable
+    row = make_pr_row(123, "Test")  # No worktree_branch, so copy_checkout unavailable
     ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
-    result = get_copy_text("copy_pr_checkout_script", ctx)
+    result = get_copy_text("copy_checkout", ctx)
     assert result is None
 
 
 def test_get_copy_text_returns_none_for_wrong_view_mode() -> None:
     """get_copy_text returns None when command is not available in the view mode."""
-    row = make_plan_row(123, "Test")
+    row = make_pr_row(123, "Test")
     ctx = CommandContext(row=row, view_mode=ViewMode.OBJECTIVES)
-    # close_plan is a plan command, not available in objectives view
-    result = get_copy_text("close_plan", ctx)
+    # close_pr is a plan command, not available in objectives view
+    result = get_copy_text("close_pr", ctx)
     assert result is None
 
 
 def test_get_copy_text_copy_cmux_checkout() -> None:
     """get_copy_text for copy_cmux_checkout generates checkout command."""
-    row = make_plan_row(123, "Test", pr_number=456, pr_head_branch="my-branch")
+    row = make_pr_row(123, "Test", pr_head_branch="my-branch")
     ctx = CommandContext(row=row, view_mode=ViewMode.PLANS, cmux_integration=True)
     result = get_copy_text("copy_cmux_checkout", ctx)
-    assert result == "erk pr checkout 456 --script"
+    assert result == "erk pr checkout 123 --script"
 
 
 def test_get_copy_text_copy_cmux_teleport() -> None:
     """get_copy_text for copy_cmux_teleport generates teleport command."""
-    row = make_plan_row(123, "Test", pr_number=456, pr_head_branch="my-branch")
+    row = make_pr_row(123, "Test", pr_head_branch="my-branch")
     ctx = CommandContext(row=row, view_mode=ViewMode.PLANS, cmux_integration=True)
     result = get_copy_text("copy_cmux_teleport", ctx)
-    assert result == "erk pr teleport 456 --new-slot --script --sync"
+    assert result == "erk pr teleport 123 --new-slot --script --sync"
 
 
 # === Launch Key Safety Tests ===
@@ -946,11 +937,9 @@ def test_launch_key_no_conflicts_within_view_mode() -> None:
     because they are mutually exclusive. But within a single view,
     launch_keys must be unique.
     """
-    row = make_plan_row(
+    row = make_pr_row(
         123,
         "Test",
-        plan_url="https://github.com/test/repo/issues/123",
-        pr_number=456,
         pr_url="https://github.com/test/repo/pull/456",
         pr_state="OPEN",
         pr_head_branch="feature-123",
@@ -993,16 +982,16 @@ def test_incremental_dispatch_registered() -> None:
 
 def test_incremental_dispatch_available_when_pr_open() -> None:
     """incremental_dispatch should be available when PR is OPEN."""
-    row = make_plan_row(123, "Test", pr_number=456, pr_state="OPEN")
+    row = make_pr_row(123, "Test", pr_state="OPEN")
     ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
     commands = get_available_commands(ctx)
     cmd_ids = [cmd.id for cmd in commands]
     assert "incremental_dispatch" in cmd_ids
 
 
-def test_incremental_dispatch_not_available_when_no_pr() -> None:
-    """incremental_dispatch should not be available when no PR."""
-    row = make_plan_row(123, "Test")
+def test_incremental_dispatch_not_available_when_no_pr_state() -> None:
+    """incremental_dispatch should not be available when pr_state is not OPEN."""
+    row = make_pr_row(123, "Test")
     ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
     commands = get_available_commands(ctx)
     cmd_ids = [cmd.id for cmd in commands]
@@ -1011,7 +1000,7 @@ def test_incremental_dispatch_not_available_when_no_pr() -> None:
 
 def test_incremental_dispatch_not_available_when_pr_merged() -> None:
     """incremental_dispatch should not be available when PR is MERGED."""
-    row = make_plan_row(123, "Test", pr_number=456, pr_state="MERGED")
+    row = make_pr_row(123, "Test", pr_state="MERGED")
     ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
     commands = get_available_commands(ctx)
     cmd_ids = [cmd.id for cmd in commands]
@@ -1020,7 +1009,7 @@ def test_incremental_dispatch_not_available_when_pr_merged() -> None:
 
 def test_incremental_dispatch_not_available_in_objectives_view() -> None:
     """incremental_dispatch should not appear in Objectives view."""
-    row = make_plan_row(123, "Test", pr_number=456, pr_state="OPEN")
+    row = make_pr_row(123, "Test", pr_state="OPEN")
     ctx = CommandContext(row=row, view_mode=ViewMode.OBJECTIVES)
     commands = get_available_commands(ctx)
     cmd_ids = [cmd.id for cmd in commands]
@@ -1029,7 +1018,7 @@ def test_incremental_dispatch_not_available_in_objectives_view() -> None:
 
 def test_display_name_incremental_dispatch() -> None:
     """incremental_dispatch should show the exec command with PR number."""
-    row = make_plan_row(5831, "Test Plan", pr_number=456)
+    row = make_pr_row(5831, "Test Plan")
     ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
     cmd = next(c for c in get_all_commands() if c.id == "incremental_dispatch")
-    assert get_display_name(cmd, ctx) == "erk exec incremental-dispatch --pr 456"
+    assert get_display_name(cmd, ctx) == "erk exec incremental-dispatch --pr 5831"

@@ -5,9 +5,9 @@ from pathlib import Path
 import pytest
 
 from erk.tui.app import ErkDashApp
-from erk.tui.data.types import PlanFilters
+from erk.tui.data.types import PrFilters
 from erk.tui.screens.plan_detail_screen import PlanDetailScreen
-from tests.fakes.gateway.plan_data_provider import FakePlanDataProvider, make_plan_row
+from tests.fakes.gateway.plan_data_provider import FakePrDataProvider, make_pr_row
 from tests.fakes.gateway.pr_service import FakePrService
 
 
@@ -25,10 +25,10 @@ class TestStreamingCommandTimeout:
         Uses a short timeout (0.1s) with a sleep command to verify
         the timeout handler fires and terminates the process.
         """
-        provider = FakePlanDataProvider(
-            plans=[make_plan_row(123, "Test Plan")],
+        provider = FakePrDataProvider(
+            plans=[make_pr_row(123, "Test Plan")],
         )
-        filters = PlanFilters.default()
+        filters = PrFilters.default()
         app = ErkDashApp(
             provider=provider,
             service=FakePrService(repo_root=tmp_path),
@@ -70,10 +70,10 @@ class TestStreamingCommandTimeout:
     @pytest.mark.asyncio
     async def test_successful_command_cancels_timer(self, tmp_path: Path) -> None:
         """Fast command completes before timeout and cancels timer."""
-        provider = FakePlanDataProvider(
-            plans=[make_plan_row(123, "Test Plan")],
+        provider = FakePrDataProvider(
+            plans=[make_pr_row(123, "Test Plan")],
         )
-        filters = PlanFilters.default()
+        filters = PrFilters.default()
         app = ErkDashApp(
             provider=provider,
             service=FakePrService(repo_root=tmp_path),
@@ -116,10 +116,10 @@ class TestStreamingCommandTimeout:
     @pytest.mark.asyncio
     async def test_timeout_disabled_when_zero(self, tmp_path: Path) -> None:
         """Setting timeout=0 disables the timeout timer."""
-        provider = FakePlanDataProvider(
-            plans=[make_plan_row(123, "Test Plan")],
+        provider = FakePrDataProvider(
+            plans=[make_pr_row(123, "Test Plan")],
         )
-        filters = PlanFilters.default()
+        filters = PrFilters.default()
         app = ErkDashApp(
             provider=provider,
             service=FakePrService(repo_root=tmp_path),
@@ -164,10 +164,10 @@ class TestStreamingCommandTimeout:
     @pytest.mark.asyncio
     async def test_dismiss_blocked_during_command(self, tmp_path: Path) -> None:
         """Modal cannot be dismissed while command is running."""
-        provider = FakePlanDataProvider(
-            plans=[make_plan_row(123, "Test Plan")],
+        provider = FakePrDataProvider(
+            plans=[make_pr_row(123, "Test Plan")],
         )
-        filters = PlanFilters.default()
+        filters = PrFilters.default()
         app = ErkDashApp(
             provider=provider,
             service=FakePrService(repo_root=tmp_path),
@@ -207,25 +207,25 @@ class TestStreamingCommandTimeout:
 
 
 class TestClosePlanInProcess:
-    """Tests for run_close_plan_in_process functionality.
+    """Tests for run_close_pr_in_process functionality.
 
     This tests the in-process close plan action which uses the HTTP client
     directly rather than spawning a subprocess.
     """
 
     @pytest.mark.asyncio
-    async def test_close_plan_in_process_creates_output_panel(self) -> None:
+    async def test_close_pr_in_process_creates_output_panel(self) -> None:
         """In-process close plan creates and mounts output panel."""
-        provider = FakePlanDataProvider(
+        provider = FakePrDataProvider(
             plans=[
-                make_plan_row(
+                make_pr_row(
                     123,
                     "Test Plan",
-                    plan_url="https://github.com/test/repo/issues/123",
+                    pr_url="https://github.com/test/repo/issues/123",
                 )
             ],
         )
-        filters = PlanFilters.default()
+        filters = PrFilters.default()
         app = ErkDashApp(
             provider=provider, service=FakePrService(), filters=filters, refresh_interval=0
         )
@@ -243,7 +243,7 @@ class TestClosePlanInProcess:
             assert isinstance(detail_screen, PlanDetailScreen)
 
             # Run close plan in-process
-            detail_screen.run_close_plan_in_process(123, "https://github.com/test/repo/issues/123")
+            detail_screen.run_close_pr_in_process(123, "https://github.com/test/repo/issues/123")
 
             # Output panel should be created
             assert detail_screen._output_panel is not None
@@ -256,15 +256,15 @@ class TestClosePlanInProcess:
             assert detail_screen._command_running is False
 
     @pytest.mark.asyncio
-    async def test_close_plan_in_process_completes_successfully(self) -> None:
+    async def test_close_pr_in_process_completes_successfully(self) -> None:
         """In-process close plan completes with success status."""
-        provider = FakePlanDataProvider(
+        provider = FakePrDataProvider(
             plans=[
-                make_plan_row(123, "Plan A"),
-                make_plan_row(456, "Plan B"),
+                make_pr_row(123, "Plan A"),
+                make_pr_row(456, "Plan B"),
             ],
         )
-        filters = PlanFilters.default()
+        filters = PrFilters.default()
         app = ErkDashApp(
             provider=provider, service=FakePrService(), filters=filters, refresh_interval=0
         )
@@ -282,7 +282,7 @@ class TestClosePlanInProcess:
             assert isinstance(detail_screen, PlanDetailScreen)
 
             # Close plan 123
-            detail_screen.run_close_plan_in_process(123, "https://github.com/test/repo/issues/123")
+            detail_screen.run_close_pr_in_process(123, "https://github.com/test/repo/issues/123")
             await pilot.pause(0.3)
 
             # Close should complete successfully

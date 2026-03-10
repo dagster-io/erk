@@ -1,8 +1,8 @@
 """Tests for RunDataTable widget."""
 
-from erk.tui.data.fake_provider import make_run_row
 from erk.tui.data.types import RunRowData
 from erk.tui.widgets.run_table import RunDataTable
+from tests.fakes.tests.tui_plan_data_provider import make_run_row
 
 
 class TestRunRowData:
@@ -149,21 +149,21 @@ class TestRunDataTableRowValues:
         assert "[link=" not in values[0]
 
 
-class TestFakePlanDataProviderRuns:
-    """Tests for FakePlanDataProvider.fetch_runs."""
+class TestFakePrDataProviderRuns:
+    """Tests for FakePrDataProvider.fetch_runs."""
 
     def test_fetch_runs_empty_by_default(self) -> None:
-        """FakePlanDataProvider.fetch_runs returns empty list by default."""
-        from erk.tui.data.fake_provider import FakePlanDataProvider
+        """FakePrDataProvider.fetch_runs returns empty list by default."""
+        from tests.fakes.tests.tui_plan_data_provider import FakePrDataProvider
 
-        provider = FakePlanDataProvider()
+        provider = FakePrDataProvider()
         assert provider.fetch_runs() == []
 
     def test_fetch_runs_returns_set_data(self) -> None:
-        """FakePlanDataProvider.fetch_runs returns data set via set_runs."""
-        from erk.tui.data.fake_provider import FakePlanDataProvider
+        """FakePrDataProvider.fetch_runs returns data set via set_runs."""
+        from tests.fakes.tests.tui_plan_data_provider import FakePrDataProvider
 
-        provider = FakePlanDataProvider()
+        provider = FakePrDataProvider()
         rows = [make_run_row("111"), make_run_row("222")]
         provider.set_runs(rows)
         result = provider.fetch_runs()
@@ -172,10 +172,10 @@ class TestFakePlanDataProviderRuns:
         assert result[1].run_id == "222"
 
     def test_fetch_runs_returns_copy(self) -> None:
-        """FakePlanDataProvider.fetch_runs returns a new list each time."""
-        from erk.tui.data.fake_provider import FakePlanDataProvider
+        """FakePrDataProvider.fetch_runs returns a new list each time."""
+        from tests.fakes.tests.tui_plan_data_provider import FakePrDataProvider
 
-        provider = FakePlanDataProvider()
+        provider = FakePrDataProvider()
         rows = [make_run_row("111")]
         provider.set_runs(rows)
         result1 = provider.fetch_runs()
