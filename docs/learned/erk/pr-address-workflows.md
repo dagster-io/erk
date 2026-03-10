@@ -68,12 +68,12 @@ See [Phase 0 Detection Pattern](../architecture/phase-zero-detection-pattern.md)
 
 #### What's different in Plan File Mode
 
-| Aspect             | Code Review Mode       | Plan File Mode                          |
-| ------------------ | ---------------------- | --------------------------------------- |
-| **Trigger**        | Default                | Git-tracked `.erk/impl-context/plan.md` |
-| **File modified**  | Source code files      | `.erk/impl-context/plan.md`             |
+| Aspect             | Code Review Mode                    | Plan File Mode                          |
+| ------------------ | ----------------------------------- | --------------------------------------- |
+| **Trigger**        | Default                             | Git-tracked `.erk/impl-context/plan.md` |
+| **File modified**  | Source code files                   | `.erk/impl-context/plan.md`             |
 | **PR description** | Updated via `update-pr-description` | Skipped (plan PRs have own format)      |
-| **Push method**    | Graphite submit        | `git push` directly                     |
+| **Push method**    | Graphite submit                     | `git push` directly                     |
 
 #### Behavioral constraint
 

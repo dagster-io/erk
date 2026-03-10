@@ -48,14 +48,14 @@ if: contains(github.event.pull_request.labels.*.name, 'skip-ci')
 
 ```yaml
 # CORRECT - safe defaults
-if: !contains(github.event.pull_request.labels.*.name, 'skip-ci')
+if: !contains(github.event.pull_request.labels.*.name , 'skip-ci')
 ```
 
-| Event Type    | labels.\*.name value | Result  | Job runs? | Behavior                |
-| ------------- | -------------------- | ------- | --------- | ----------------------- |
-| PR with label | `["skip-ci"]`        | `false` | No        | Intended: skip CI       |
-| PR no label   | `[]`                 | `true`  | Yes       | Intended: run normal CI |
-| Push event    | `[]` (null context)  | `true`  | Yes       | Safe: run CI when unsure|
+| Event Type    | labels.\*.name value | Result  | Job runs? | Behavior                 |
+| ------------- | -------------------- | ------- | --------- | ------------------------ |
+| PR with label | `["skip-ci"]`        | `false` | No        | Intended: skip CI        |
+| PR no label   | `[]`                 | `true`  | Yes       | Intended: run normal CI  |
+| Push event    | `[]` (null context)  | `true`  | Yes       | Safe: run CI when unsure |
 
 **The insight:** Negation makes "run CI" the default, ensuring push events aren't silently skipped.
 

@@ -12,7 +12,7 @@ read_when:
 
 Rules triggered by matching actions in code.
 
-**Add branches-ignore for ephemeral branch patterns** → Read [GitHub Actions Workflow Gating Patterns](workflow-gating-patterns.md) first. Label-based gating doesn't work on push events — use branches-ignore to prevent workflow queuing
+**Add branches-ignore for ephemeral branch patterns** → Read [GitHub Actions Workflow Gating Patterns](workflow-gating-patterns.md) first. Use branches-ignore to prevent workflow queuing for ephemeral branches
 
 **CI job timing out in post-job cleanup** → Read [UV Cache Management in CI](uv-cache-management.md) first. check if UV cache pruning is enabled. Use prune-cache: false for ephemeral CI runners.
 
@@ -27,8 +27,6 @@ Rules triggered by matching actions in code.
 **Label checks in push event workflows** → Read [GitHub Actions Label Queries](github-actions-label-queries.md) first. Job-level label access via github.event.pull_request.labels is ONLY available in pull_request events, NOT push events. For push events, you must use step-level GitHub API queries with gh cli or REST API.
 
 **Renaming a GitHub label used in CI automation** → Read [CI Label Rename Checklist](label-rename-checklist.md) first. Labels are referenced in multiple places: (1) Job-level if: conditions in all workflow files, (2) Step name descriptions and comments, (3) Documentation examples showing the label check. Missing any location will cause CI behavior to diverge from intent. Use the CI Label Rename Checklist to ensure comprehensive updates.
-
-**Use !contains() pattern for label-based gating** → Read [GitHub Actions Workflow Gating Patterns](workflow-gating-patterns.md) first. Negation is critical — contains() without ! skips all push events
 
 **Use direct GCS download for Claude Code installation** → Read [Composite Action Patterns](composite-action-patterns.md) first. NEVER use the curl | bash install script for Claude Code in CI — it hangs unpredictably. Use direct GCS download via setup-claude-code action.
 
@@ -116,7 +114,7 @@ Rules triggered by matching actions in code.
 
 **using heredoc (<<) syntax in GitHub Actions YAML** → Read [CI Prompt Patterns](prompt-patterns.md) first. Use `erk exec get-embedded-prompt` instead. Heredocs in YAML `run:` blocks have fragile indentation that causes silent failures.
 
-**using this pattern** → Read [GitHub Actions Label Filtering Reference](github-actions-label-filtering.md) first. Always use negation (!contains) for safe defaults on push events without PR context
+**using label-based gating** → Read [GitHub Actions Label Filtering Reference](github-actions-label-filtering.md) first. Always use negation (!contains) for safe defaults on push events without PR context
 
 **using this pattern** → Read [Workflow Naming Conventions](workflow-naming-conventions.md) first. The CLI command name MUST match the workflow filename (without .yml)
 
