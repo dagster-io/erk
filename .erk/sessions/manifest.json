@@ -35,6 +35,22 @@
       "raw_size_kb": 4741,
       "xml_size_kb": 453,
       "git_branch": "plnd/remove-erk-plan-label-03-10-0509"
+    },
+    {
+      "session_id": "ff893aef-8a22-44d7-a838-0b6dab9bc19e",
+      "stage": "address",
+      "source": "remote",
+      "uploaded_at": "2026-03-10T11:26:22.055244+00:00",
+      "files": [
+        "address-ff893aef-8a22-44d7-a838-0b6dab9bc19e-ff893aef-8a22-44d7-a838-0b6dab9bc19e-part1.xml",
+        "address-ff893aef-8a22-44d7-a838-0b6dab9bc19e-ff893aef-8a22-44d7-a838-0b6dab9bc19e-part2.xml",
+        "address-ff893aef-8a22-44d7-a838-0b6dab9bc19e-ff893aef-8a22-44d7-a838-0b6dab9bc19e-part3.xml"
+      ],
+      "user_turns": 3,
+      "duration_minutes": 3,
+      "raw_size_kb": 139,
+      "xml_size_kb": 91,
+      "git_branch": "plnd/remove-erk-plan-label-03-10-0509"
     }
   ]
 }
