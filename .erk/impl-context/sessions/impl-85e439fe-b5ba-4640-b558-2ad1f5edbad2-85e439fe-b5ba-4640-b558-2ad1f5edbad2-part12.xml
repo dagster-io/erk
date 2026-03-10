@@ -1,0 +1,259 @@
+<session>
+  <meta source="agent-a6dba5c" />
+  <meta branch="plnd/add-erk-core-label-03-09-1959" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <tool_result tool="toolu_01URukqRnphzrb9wMqSpL72P">
+/home/runner/work/erk/erk/tests/commands/branch/test_checkout_cmd.py
+/home/runner/work/erk/erk/tests/commands/dash/test_action_state.py
+/home/runner/work/erk/erk/tests/commands/dash/test_filtering.py
+/home/runner/work/erk/erk/tests/commands/dash/test_impl_columns.py
+/home/runner/work/erk/erk/tests/commands/dash/test_pr_columns.py
+/home/runner/work/erk/erk/tests/commands/dash/test_workflow_run_state.py
+/home/runner/work/erk/erk/tests/commands/land/test_objective_update.py
+/home/runner/work/erk/erk/tests/commands/learn/test_display.py
+/home/runner/work/erk/erk/tests/commands/objective/test_plan.py
+/home/runner/work/erk/erk/tests/commands/objective/test_plan_one_shot.py
+/home/runner/work/erk/erk/tests/commands/pr/test_check_plan.py
+/home/runner/work/erk/erk/tests/commands/pr/test_close.py
+/home/runner/work/erk/erk/tests/commands/pr/test_duplicate_check.py
+/home/runner/work/erk/erk/tests/commands/pr/test_log.py
+/home/runner/work/erk/erk/tests/commands/pr/test_remote_paths.py
+/home/runner/work/erk/erk/tests/commands/pr/test_rewrite.py
+/home/runner/work/erk/erk/tests/commands/pr/test_submit.py
+/home/runner/work/erk/erk/tests/commands/pr/test_view.py
+/home/runner/work/erk/erk/tests/commands/run/test_list.py
+/home/runner/work/erk/erk/tests/commands/test_top_level_commands.py
+/home/runner/work/erk/erk/tests/commands/workspace/test_delete.py
+  </tool_result>
+  <assistant>Perfect! Now let me also check if any of these test files invoke CLI commands without --label flags. Let me start with the dash test files and PR test files:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="892" cache_read_input_tokens="56725" cache_creation="{'ephemeral_5m_input_tokens': 892, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01B6KdvXH52VYXojpKTzVFQy">
+    <param name="command">grep -n "runner.invoke.*pr list\|invoke.*pr\|invoke.*dashboard" /home/runner/work/erk/erk/tests/commands/dash/test_filtering.py | head -15</param>
+    <param name="description">Find CLI invocations in test_filtering.py</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="892" cache_read_input_tokens="56725" cache_creation="{'ephemeral_5m_input_tokens': 892, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01VpdqPKJ2QtD5Ap4aENRWh5">
+    <param name="command">grep -n "runner.invoke.*pr list\|invoke.*pr\|invoke.*dashboard" /home/runner/work/erk/erk/tests/commands/pr/test_view.py | head -15</param>
+    <param name="description">Find CLI invocations in test_view.py</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="892" cache_read_input_tokens="56725" cache_creation="{'ephemeral_5m_input_tokens': 892, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01B6KdvXH52VYXojpKTzVFQy">
+63:        result = runner.invoke(cli, ["pr", "list"], obj=ctx)
+114:        result = runner.invoke(cli, ["pr", "list", "--state", "open"], obj=ctx)
+215:        result = runner.invoke(cli, ["pr", "list", "--limit", "2"], obj=ctx)
+337:        result = runner.invoke(cli, ["pr", "list", "--state", "closed"], obj=ctx)
+  </tool_result>
+  <tool_result tool="toolu_01VpdqPKJ2QtD5Ap4aENRWh5">
+72:        result = runner.invoke(cli, ["pr", "view", "42"], obj=ctx)
+119:        result = runner.invoke(cli, ["pr", "view"], obj=ctx)
+138:        result = runner.invoke(cli, ["pr", "view"], obj=ctx)
+172:        result = runner.invoke(cli, ["pr", "view", "42", "--full"], obj=ctx)
+207:        result = runner.invoke(cli, ["pr", "view", "42", "-f"], obj=ctx)
+224:        result = runner.invoke(cli, ["pr", "view", "999"], obj=ctx)
+257:        result = runner.invoke(cli, ["pr", "view", "1"], obj=ctx)
+308:        result = runner.invoke(cli, ["pr", "view", "invalid-input"], obj=ctx)
+367:        result = runner.invoke(cli, ["pr", "view", "42"], obj=ctx)
+424:        result = runner.invoke(cli, ["pr", "view", "42"], obj=ctx)
+464:        result = runner.invoke(cli, ["pr", "view", "42"], obj=ctx)
+514:        result = runner.invoke(cli, ["pr", "view", "42"], obj=ctx)
+569:        result = runner.invoke(cli, ["pr", "view", "42"], obj=ctx)
+618:        result = runner.invoke(cli, ["pr", "view", "42"], obj=ctx)
+663:        result = runner.invoke(cli, ["pr", "view", "42"], obj=ctx)
+  </tool_result>
+  <assistant>Now let me check test_filtering.py more carefully to see what it expects:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="951" cache_read_input_tokens="57617" cache_creation="{'ephemeral_5m_input_tokens': 951, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01EkHkTYmqSAco7aRAr2srEA">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/dash/test_filtering.py</param>
+    <param name="offset">1</param>
+    <param name="limit">120</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="951" cache_read_input_tokens="57617" cache_creation="{'ephemeral_5m_input_tokens': 951, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01EkHkTYmqSAco7aRAr2srEA">
+     1→"""Tests for plan list filtering functionality.
+     2→
+     3→Tests state, labels, limit, and combined filters for plan list command.
+     4→"""
+     5→
+     6→from datetime import UTC, datetime
+     7→
+     8→from click.testing import CliRunner
+     9→
+    10→from erk.cli.cli import cli
+    11→from erk_shared.gateway.github.fake import FakeLocalGitHub
+    12→from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+    13→from erk_shared.gateway.github.issues.types import IssueInfo
+    14→from erk_shared.plan_store.types import Plan, PlanState
+    15→from tests.commands.dash.conftest import plan_to_issue
+    16→from tests.test_utils.context_builders import (
+    17→    build_fake_plan_list_service,
+    18→    build_workspace_test_context,
+    19→)
+    20→from tests.test_utils.env_helpers import erk_inmem_env
+    21→
+    22→
+    23→def test_plan_list_no_filters() -&gt; None:
+    24→    """Test listing all plan issues with no filters (defaults to open plans only)."""
+    25→    # Arrange - Create two OPEN plans (no filter defaults to open state)
+    26→    plan1 = Plan(
+    27→        pr_identifier="1",
+    28→        title="Issue 1",
+    29→        body="",
+    30→        state=PlanState.OPEN,
+
+... [95 lines omitted] ...
+  </tool_result>
+  <assistant>Now let me check what the comment says. It seems like the tests are expecting erk-plan label to be returned by default. Let me search for how the default label filtering works in the command implementation:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="1991" cache_read_input_tokens="58568" cache_creation="{'ephemeral_5m_input_tokens': 1991, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_012vJEKWimQWRcYAViX97Qza">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/list_cmd.py</param>
+    <param name="offset">1</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="1991" cache_read_input_tokens="58568" cache_creation="{'ephemeral_5m_input_tokens': 1991, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012vJEKWimQWRcYAViX97Qza">
+     1→"""Command to list plans with filtering."""
+     2→
+     3→import tempfile
+     4→from collections.abc import Callable
+     5→from dataclasses import dataclass
+     6→from pathlib import Path
+     7→from typing import Any, ParamSpec, TypeVar
+     8→
+     9→import click
+    10→from rich.console import Console
+    11→from rich.table import Table
+    12→from rich.text import Text
+    13→
+    14→from erk.cli.core import discover_repo_context
+    15→from erk.cli.repo_resolution import get_remote_github, resolved_repo_option
+    16→from erk.core.context import ErkContext
+    17→from erk.core.display_utils import strip_rich_markup
+    18→from erk.core.repo_discovery import ensure_erk_metadata_dir
+    19→from erk.tui.app import ErkDashApp
+    20→from erk.tui.data.real_provider import RealPlanDataProvider
+    21→from erk.tui.data.types import PlanFilters, PlanRowData, serialize_plan_row
+    22→from erk.tui.sorting.logic import sort_plans
+    23→from erk.tui.sorting.types import SortKey, SortState
+    24→from erk_shared.agentclick.json_command import json_command
+    25→from erk_shared.agentclick.mcp_exposed import mcp_exposed
+    26→from erk_shared.context.types import NoRepoSentinel
+    27→from erk_shared.gateway.browser.real import RealBrowserLauncher
+    28→from erk_shared.gateway.clipboard.real import RealClipboard
+    29→from erk_shared.gateway.github.emoji import get_pr_status_emoji
+    30→from erk_shared.gateway.github.types import (
+
+... [75 lines omitted] ...
+
+   100→            ["queued", "in_progress", "success", "failure", "cancelled"], case_sensitive=False
+  </tool_result>
+  <assistant>Let me search for where the default label is set in the command:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="1750" cache_read_input_tokens="60559" cache_creation="{'ephemeral_5m_input_tokens': 1750, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_014H5qqcBcAoksxgAKALVh1c">
+    <param name="command">grep -n "erk-core" /home/runner/work/erk/erk/src/erk/cli/commands/pr/list_cmd.py</param>
+    <param name="description">Find erk-core in list_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="1750" cache_read_input_tokens="60559" cache_creation="{'ephemeral_5m_input_tokens': 1750, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014H5qqcBcAoksxgAKALVh1c">
+281:    labels = label if label else ("erk-core",)
+399:    # Build labels - default to ["erk-core"]
+400:    labels = label if label else ("erk-core",)
+  </tool_result>
+  <assistant>Perfect! Now I understand the complete picture. The issue is that test Plans with labels=["erk-pr", "erk-plan"] without "erk-core" will NOT be returned by default when the command invokes `pr list` without explicit --label flags, because the default is now ("erk-core",).
+
+Let me now create a comprehensive report by summarizing my findings:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="227" cache_read_input_tokens="62309" cache_creation="{'ephemeral_5m_input_tokens': 227, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_012EmetDDpjdSpXcmHQpU3Qj">
+    <param name="command">wc -l /home/runner/work/erk/erk/tests/commands/pr/test_view.py /home/runner/work/erk/erk/t...[truncated 47 chars].../commands/pr/test_close.py /home/runner/work/erk/erk/tests/commands/dash/test_filtering.py</param>
+    <param name="description">Get line counts for main affected files</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="227" cache_read_input_tokens="62309" cache_creation="{'ephemeral_5m_input_tokens': 227, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012EmetDDpjdSpXcmHQpU3Qj">
+  804 /home/runner/work/erk/erk/tests/commands/pr/test_view.py
+  663 /home/runner/work/erk/erk/tests/commands/pr/test_check_plan.py
+  603 /home/runner/work/erk/erk/tests/commands/pr/test_close.py
+  341 /home/runner/work/erk/erk/tests/commands/dash/test_filtering.py
+ 2411 total
+  </tool_result>
+  <assistant>Perfect! Now let me create my final comprehensive report:
+
+## Summary Report: Label Mismatch Analysis for erk-core Label Change
+
+Based on my thorough search and analysis of the test suite, I have identified all test files with potential label mismatches related to the new "erk-core" label default.
+
+### Key Documentation Reference
+From `/home/runner/work/erk/erk/docs/learned/planning/label-scheme.md`:
+- **erk-core** is the new label for core work (non-learn PRs)
+- **erk-plan** is the type label for implementation plans
+- **erk-pr** is the universal base label for all erk-submitted PRs
+- Default label filter for `pr list` command is now **("erk-core",)** (set at line 281 and 400 in list_cmd.py)
+
+### Critical Finding: test_dash_workflow_runs.py
+
+**File:** `/home/runner/work/erk/erk/tests/commands/test_dash_workflow_runs.py`
+
+This file has Plan objects that already include "erk-core" in their labels, which is correct:
+- Line 85: `labels=["erk-pr", "erk-plan", "erk-core"]`
+- Line 181: `labels=["erk-pr", "erk-plan", "erk-core"]`
+- Line 281: `labels=["erk-pr", "erk-plan", "erk-core"]`
+
+These tests are already properly updated and will work correctly with the new default.
+
+### Remaining Test Files Needing Updates
+
+All the following test files create Plan objects with `labels=["erk-pr", "erk-plan"]` (missing "erk-core"):
+
+**PR Command Tests (tests/commands/pr/):**
+1. `/home/runner/work/erk/erk/tests/commands/pr/test_view.py` - 14 occurrences
+2. `/home/runner/work/erk/erk/tests/commands/pr/test_check_plan.py` - 12 occurrences
+3. `/home/runner/work/erk/erk/tests/commands/pr/test_close.py` - 12 occurrences
+4. `/home/runner/work/erk/erk/tests/commands/pr/test_log.py` - 6 occurrences
+5. `/home/runner/work/erk/erk/tests/commands/pr/test_remote_paths.py` - 4 occurrences
+6. `/home/runner/work/erk/erk/tests/commands/pr/test_duplicate_check.py` - 2 occurrences
+7. `/home/runner/work/erk/erk/tests/commands/pr/test_submit.py` - 2 occurrences
+8. `/home/runner/work/erk/erk/tests/commands/pr/test_rewrite.py` - 1 occurrence
+
+**Dashboard/Filtering Tests (tests/commands/dash/):**
+9. `/home/runner/work/erk/erk/tests/commands/dash/test_filtering.py` - Plans with only ["erk-pr", "erk-plan"] at lines 32, 45, 81, 94
+10. `/home/runner/work/erk/erk/tests/commands/dash/test_pr_columns.py`
+11. `/home/runner/work/erk/erk/tests/commands/dash/test_impl_columns.py`
+12. `/home/runner/work/erk/erk/tests/commands/dash/test_action_state.py`
+13. `/home/runner/work/erk/erk/tests/commands/dash/test_workflow_run_state.py`
+
+**Other Test Files:**
+14. `/home/runner/work/erk/erk/tests/commands/branch/test_checkout_cmd.py`
+15. `/home/runner/work/erk/erk/tests/commands/land/test_objective_update.py`
+16. `/home/runner/work/erk/erk/tests/commands/learn/test_display.py`
+17. `/home/runner/work/erk/erk/tests/commands/objective/test_plan.py`
+18. `/home/runner/work/erk/erk/tests/commands/objective/test_plan_one_shot.py`
+19. `/home/runner/work/erk/erk/tests/commands/run/test_list.py`
+20. `/home/runner/work/erk/erk/tests/commands/test_top_level_commands.py`
+21. `/home/runner/work/erk/erk/tests/commands/workspace/test_delete.py`
+
+### Test Impact Analysis
+
+**Risk Categories:**
+
+1. **HIGH RISK - Tests that invoke `pr list` without explicit --label flags:**
+   - `/home/runner/work/erk/erk/tests/commands/dash/test_filtering.py` (lines 63, 114, 215, 337)
+     - Creates plans with `labels=["erk-pr", "erk-plan"]` then calls `runner.invoke(cli, ["pr", "list"], obj=ctx)`
+     - These plans will NOT be returned by default because the command filters by "erk-core"
+     
+2. **MEDIUM RISK - Tests that display or check plan details without filtering:**
+   - `test_view.py` - Displays plan details for plans without erk-core
+   - `test_check_plan.py` - Checks plan status
+   - `test_close.py` - Closes plans without erk-core label
+   - These use `pr view &lt;number&gt;` and `pr check &lt;number&gt;` which may directly fetch by ID rather than filtering
+
+3. **LOW RISK - Tests that set up plans but may not rely on label filtering:**
+   - Commands like `pr log`, `pr remote-paths`, `pr rewrite` that don't use default filtering
+
+### Reference: Already Updated File
+
+**File:** `/home/runner/work/erk/erk/tests/commands/pr/test_list.py`
+
+This file has already been properly updated with all Plan objects containing the "erk-core" label:
+- Lines 43, 56, 89, 102, etc.: `labels=["erk-pr", "erk-plan", "erk-core"]`
+
+This is the correct pattern that other test files should follow.</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="530" cache_read_input_tokens="62536" cache_creation="{'ephemeral_5m_input_tokens': 530, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>
