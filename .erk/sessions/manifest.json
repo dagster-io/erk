@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "pr_number": 9134,
+  "sessions": [
+    {
+      "session_id": "",
+      "stage": "impl",
+      "source": "local",
+      "uploaded_at": "2026-03-10T08:54:17.502878+00:00",
+      "files": [
+        "impl--3f09f03b-2aa0-4f49-91cd-95d8f26afdaa-part1.xml",
+        "impl--3f09f03b-2aa0-4f49-91cd-95d8f26afdaa-part2.xml",
+        "impl--3f09f03b-2aa0-4f49-91cd-95d8f26afdaa-part3.xml",
+        "impl--3f09f03b-2aa0-4f49-91cd-95d8f26afdaa-part4.xml",
+        "impl--3f09f03b-2aa0-4f49-91cd-95d8f26afdaa-part5.xml",
+        "impl--3f09f03b-2aa0-4f49-91cd-95d8f26afdaa-part6.xml",
+        "impl--3f09f03b-2aa0-4f49-91cd-95d8f26afdaa-part7.xml"
+      ],
+      "user_turns": 3,
+      "duration_minutes": 7,
+      "raw_size_kb": 1094,
+      "xml_size_kb": 173,
+      "git_branch": "plnd/pushdown-review-activity-l-03-10-0845"
+    }
+  ]
+}
