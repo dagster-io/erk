@@ -399,6 +399,14 @@ class DryRunLocalGitHub(LocalGitHub):
             location=location, plan_numbers=plan_numbers
         )
 
+    def cancel_workflow_run(self, repo_root: Path, run_id: str) -> None:
+        """No-op for cancelling workflow run in dry-run mode."""
+        pass
+
+    def rerun_workflow_run(self, repo_root: Path, run_id: str, *, failed_only: bool) -> None:
+        """No-op for re-running workflow run in dry-run mode."""
+        pass
+
     def create_commit_status(
         self,
         *,

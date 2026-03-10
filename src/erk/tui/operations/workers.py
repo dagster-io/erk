@@ -482,6 +482,50 @@ class BackgroundWorkersMixin:
                 scratch_path.unlink()
 
     @work(thread=True)
+    def _cancel_run_async(self: ErkDashApp, op_id: str, run_id: str) -> None:
+        """Cancel workflow run in background thread with toast."""
+        result = self._run_streaming_operation(
+            op_id=op_id,
+            command=["erk", "workflow", "run", "cancel", run_id],
+        )
+        self.call_from_thread(self._finish_operation, op_id=op_id)
+        if result.success:
+            self.call_from_thread(self.notify, f"Cancelled run {run_id}", timeout=3)
+            self.call_from_thread(self.action_refresh)
+        else:
+            error_msg = last_output_line(result)
+            self.call_from_thread(
+                self.notify,
+                f"Failed to cancel run {run_id}: {error_msg}",
+                severity="error",
+                timeout=5,
+            )
+
+    @work(thread=True)
+    def _retry_run_async(self: ErkDashApp, op_id: str, run_id: str, *, failed_only: bool) -> None:
+        """Retry workflow run in background thread with toast."""
+        command = ["erk", "workflow", "run", "retry", run_id]
+        if failed_only:
+            command.append("--failed")
+        result = self._run_streaming_operation(
+            op_id=op_id,
+            command=command,
+        )
+        self.call_from_thread(self._finish_operation, op_id=op_id)
+        label = "failed jobs of " if failed_only else ""
+        if result.success:
+            self.call_from_thread(self.notify, f"Retried {label}run {run_id}", timeout=3)
+            self.call_from_thread(self.action_refresh)
+        else:
+            error_msg = last_output_line(result)
+            self.call_from_thread(
+                self.notify,
+                f"Failed to retry {label}run {run_id}: {error_msg}",
+                severity="error",
+                timeout=5,
+            )
+
+    @work(thread=True)
     def _load_activity_and_resort(self: ErkDashApp) -> None:
         """Load branch activity in background, then resort."""
         self._activity_loading = True

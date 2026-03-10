@@ -196,6 +196,8 @@ class FakeLocalGitHub(LocalGitHub):
         self._comments_by_id = comments_by_id or {}
         self._add_label_errors = add_label_errors or {}
         self._pr_head_branches = pr_head_branches or {}
+        self._cancelled_run_ids: list[str] = []
+        self._rerun_run_ids: list[tuple[str, bool]] = []
 
     @property
     def issues(self) -> GitHubIssues:
@@ -1261,6 +1263,27 @@ class FakeLocalGitHub(LocalGitHub):
                 pr_linkages[issue.number] = self._pr_plan_linkages[issue.number]
 
         return (filtered_issues, pr_linkages)
+
+    def cancel_workflow_run(self, repo_root: Path, run_id: str) -> None:
+        """Record workflow run cancellation in mutation tracking list."""
+        self._cancelled_run_ids.append(run_id)
+
+    @property
+    def cancelled_run_ids(self) -> list[str]:
+        """Read-only access to cancelled run IDs for test assertions."""
+        return self._cancelled_run_ids
+
+    def rerun_workflow_run(self, repo_root: Path, run_id: str, *, failed_only: bool) -> None:
+        """Record workflow run re-run in mutation tracking list."""
+        self._rerun_run_ids.append((run_id, failed_only))
+
+    @property
+    def rerun_run_ids(self) -> list[tuple[str, bool]]:
+        """Read-only access to re-run run IDs for test assertions.
+
+        Returns list of (run_id, failed_only) tuples.
+        """
+        return self._rerun_run_ids
 
     def create_commit_status(
         self,

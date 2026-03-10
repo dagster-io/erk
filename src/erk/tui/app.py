@@ -18,7 +18,7 @@ from textual.widgets import Header, Input, Label
 from erk.tui.actions.filter_actions import FilterActionsMixin
 from erk.tui.actions.navigation import NavigationActionsMixin
 from erk.tui.actions.palette import PaletteActionsMixin
-from erk.tui.commands.provider import MainListCommandProvider
+from erk.tui.commands.provider import MainListCommandProvider, RunCommandProvider
 from erk.tui.data.provider_abc import PlanDataProvider
 from erk.tui.data.types import FetchTimings, PlanFilters, PlanRowData, RunRowData
 from erk.tui.filtering.logic import filter_plans
@@ -56,7 +56,7 @@ class ErkDashApp(
     """
 
     CSS_PATH = Path(__file__).parent / "styles" / "dash.tcss"
-    COMMANDS = {MainListCommandProvider}
+    COMMANDS = {MainListCommandProvider, RunCommandProvider}
 
     BINDINGS = [
         Binding("q", "exit_app", "Quit"),

@@ -8,8 +8,14 @@ from typing import TYPE_CHECKING
 from rich.text import Text
 from textual.command import DiscoveryHit, Hit, Hits, Provider
 
-from erk.tui.commands.registry import CATEGORY_EMOJI, get_available_commands, get_display_name
-from erk.tui.commands.types import CommandContext
+from erk.tui.commands.registry import (
+    CATEGORY_EMOJI,
+    get_available_commands,
+    get_available_run_commands,
+    get_display_name,
+    get_run_display_name,
+)
+from erk.tui.commands.types import CommandContext, RunCommandContext
 from erk.tui.views.types import ViewMode
 
 if TYPE_CHECKING:
@@ -347,4 +353,97 @@ class NodeCommandProvider(Provider):
                     score,
                     display,
                     partial(self._nodes_screen.execute_command, cmd.id),
+                )
+
+
+class RunCommandProvider(Provider):
+    """Command provider for runs tab.
+
+    Provides commands for the currently selected workflow run row.
+    """
+
+    @property
+    def _app(self) -> ErkDashApp:
+        """Get the ErkDashApp instance.
+
+        Returns:
+            The ErkDashApp instance
+
+        Raises:
+            AssertionError: If app is not ErkDashApp
+        """
+        from erk.tui.app import ErkDashApp
+
+        app = self.app
+        if not isinstance(app, ErkDashApp):
+            msg = f"RunCommandProvider expected ErkDashApp, got {type(app)}"
+            raise AssertionError(msg)
+        return app
+
+    def _get_context(self) -> RunCommandContext | None:
+        """Build run command context from selected row.
+
+        Returns None when not on runs tab or no row is selected.
+
+        Returns:
+            RunCommandContext if a run row is selected, None otherwise
+        """
+        from textual.screen import ModalScreen
+
+        if isinstance(self.screen, ModalScreen):
+            return None
+        row = self._app._get_selected_run_row()
+        if row is None:
+            return None
+        return RunCommandContext(row=row, view_mode=ViewMode.RUNS)
+
+    async def discover(self) -> Hits:
+        """Show available run commands when palette opens.
+
+        Yields:
+            DiscoveryHit for each available run command
+        """
+        ctx = self._get_context()
+        if ctx is None:
+            return
+
+        for cmd in get_available_run_commands(ctx):
+            emoji = CATEGORY_EMOJI[cmd.category]
+            name = get_run_display_name(cmd, ctx)
+            display = _format_palette_display(emoji, cmd.description, name)
+            yield DiscoveryHit(
+                display,
+                partial(self._app.execute_run_palette_command, cmd.id),
+            )
+
+    async def search(self, query: str) -> Hits:
+        """Fuzzy search run commands.
+
+        Args:
+            query: The search query from user input
+
+        Yields:
+            Hit for each matching run command, with fuzzy match score
+        """
+        ctx = self._get_context()
+        if ctx is None:
+            return
+
+        matcher = self.matcher(query)
+
+        for cmd in get_available_run_commands(ctx):
+            name = get_run_display_name(cmd, ctx)
+            search_text = f"{cmd.description}: {name}"
+            score = matcher.match(search_text)
+            if score > 0:
+                emoji = CATEGORY_EMOJI[cmd.category]
+                highlighted = matcher.highlight(search_text)
+                if isinstance(highlighted, Text):
+                    display = _format_search_display(emoji, highlighted, len(cmd.description))
+                else:
+                    display = _format_palette_display(emoji, cmd.description, name)
+                yield Hit(
+                    score,
+                    display,
+                    partial(self._app.execute_run_palette_command, cmd.id),
                 )

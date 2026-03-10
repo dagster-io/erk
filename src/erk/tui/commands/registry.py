@@ -3,9 +3,18 @@
 This module defines all available commands and their availability predicates.
 Commands are organized by category: Actions, Opens, Copies.
 Plan commands appear only in Plans/Learn views; objective commands appear only in Objectives view.
+Run commands appear only in Runs view.
 """
 
-from erk.tui.commands.types import CommandCategory, CommandContext, CommandDefinition
+from collections.abc import Callable
+from dataclasses import dataclass
+
+from erk.tui.commands.types import (
+    CommandCategory,
+    CommandContext,
+    CommandDefinition,
+    RunCommandContext,
+)
 from erk.tui.views.types import ViewMode
 
 CATEGORY_EMOJI: dict[CommandCategory, str] = {
@@ -646,3 +655,164 @@ def get_copy_text(command_id: str, ctx: CommandContext) -> str | None:
                 return cmd.get_display_name(ctx)
             break
     return None
+
+
+# === Run Command Definitions ===
+# Run commands use RunCommandContext instead of CommandContext.
+# They share CommandCategory and display formatting but have their own
+# availability predicates operating on RunRowData.
+
+
+@dataclass(frozen=True)
+class RunCommandDefinition:
+    """Definition of a command for the Runs tab.
+
+    Attributes:
+        id: Unique identifier for the command
+        name: Display name
+        description: Brief description for palette display
+        category: Command category for emoji prefix
+        is_available: Predicate function to check if command is available
+        get_display_name: Optional function to generate context-aware display name
+    """
+
+    id: str
+    name: str
+    description: str
+    category: CommandCategory
+    is_available: Callable[[RunCommandContext], bool]
+    get_display_name: Callable[[RunCommandContext], str] | None
+
+
+def _run_is_cancellable(ctx: RunCommandContext) -> bool:
+    """True when run is queued or in_progress."""
+    return ctx.row.status in ("queued", "in_progress")
+
+
+def _run_is_retryable(ctx: RunCommandContext) -> bool:
+    """True when run is completed with failure or cancelled conclusion."""
+    return ctx.row.status == "completed" and ctx.row.conclusion in ("failure", "cancelled")
+
+
+def _display_cancel_run(ctx: RunCommandContext) -> str:
+    return f"erk workflow run cancel {ctx.row.run_id}"
+
+
+def _display_retry_run(ctx: RunCommandContext) -> str:
+    return f"erk workflow run retry {ctx.row.run_id}"
+
+
+def _display_retry_failed_run(ctx: RunCommandContext) -> str:
+    return f"erk workflow run retry {ctx.row.run_id} --failed"
+
+
+def _display_open_run_url(ctx: RunCommandContext) -> str:
+    return ctx.row.run_url or "Run"
+
+
+def _display_open_run_pr(ctx: RunCommandContext) -> str:
+    return ctx.row.pr_url or "PR"
+
+
+def _display_copy_cancel_cmd(ctx: RunCommandContext) -> str:
+    return f"erk workflow run cancel {ctx.row.run_id}"
+
+
+def _display_copy_retry_cmd(ctx: RunCommandContext) -> str:
+    return f"erk workflow run retry {ctx.row.run_id}"
+
+
+def get_all_run_commands() -> list[RunCommandDefinition]:
+    """Return all run command definitions.
+
+    Returns:
+        List of all run-specific command definitions
+    """
+    return [
+        # === RUN ACTIONS ===
+        RunCommandDefinition(
+            id="cancel_run",
+            name="Cancel Run",
+            description="cancel",
+            category=CommandCategory.ACTION,
+            is_available=_run_is_cancellable,
+            get_display_name=_display_cancel_run,
+        ),
+        RunCommandDefinition(
+            id="retry_run",
+            name="Retry Run",
+            description="retry",
+            category=CommandCategory.ACTION,
+            is_available=_run_is_retryable,
+            get_display_name=_display_retry_run,
+        ),
+        RunCommandDefinition(
+            id="retry_failed_run",
+            name="Retry Failed Jobs",
+            description="retry failed",
+            category=CommandCategory.ACTION,
+            is_available=_run_is_retryable,
+            get_display_name=_display_retry_failed_run,
+        ),
+        # === RUN OPENS ===
+        RunCommandDefinition(
+            id="open_run_url",
+            name="Run",
+            description="run",
+            category=CommandCategory.OPEN,
+            is_available=lambda ctx: ctx.row.run_url is not None,
+            get_display_name=_display_open_run_url,
+        ),
+        RunCommandDefinition(
+            id="open_run_pr",
+            name="PR",
+            description="pr",
+            category=CommandCategory.OPEN,
+            is_available=lambda ctx: ctx.row.pr_url is not None,
+            get_display_name=_display_open_run_pr,
+        ),
+        # === RUN COPIES ===
+        RunCommandDefinition(
+            id="copy_cancel_cmd",
+            name="erk workflow run cancel",
+            description="cancel",
+            category=CommandCategory.COPY,
+            is_available=_run_is_cancellable,
+            get_display_name=_display_copy_cancel_cmd,
+        ),
+        RunCommandDefinition(
+            id="copy_retry_cmd",
+            name="erk workflow run retry",
+            description="retry",
+            category=CommandCategory.COPY,
+            is_available=_run_is_retryable,
+            get_display_name=_display_copy_retry_cmd,
+        ),
+    ]
+
+
+def get_available_run_commands(ctx: RunCommandContext) -> list[RunCommandDefinition]:
+    """Return run commands available in current context.
+
+    Args:
+        ctx: Run command context containing the run row data
+
+    Returns:
+        List of run commands that are available for the given context
+    """
+    return [cmd for cmd in get_all_run_commands() if cmd.is_available(ctx)]
+
+
+def get_run_display_name(cmd: RunCommandDefinition, ctx: RunCommandContext) -> str:
+    """Get the display name for a run command in the given context.
+
+    Args:
+        cmd: The run command definition
+        ctx: The run command context
+
+    Returns:
+        The dynamic display name if get_display_name is set, otherwise the static name
+    """
+    if cmd.get_display_name is not None:
+        return cmd.get_display_name(ctx)
+    return cmd.name

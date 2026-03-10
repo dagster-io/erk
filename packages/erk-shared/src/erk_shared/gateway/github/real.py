@@ -2672,6 +2672,31 @@ query {{
 
         return (issues, pr_linkages)
 
+    def cancel_workflow_run(self, repo_root: Path, run_id: str) -> None:
+        """Cancel an in-progress or queued workflow run via REST API."""
+        # GH-API-AUDIT: REST - POST actions/runs/{id}/cancel
+        cmd = [
+            "gh",
+            "api",
+            "--method",
+            "POST",
+            f"repos/{{owner}}/{{repo}}/actions/runs/{run_id}/cancel",
+        ]
+        execute_gh_command_with_retry(cmd, repo_root, self._time)
+
+    def rerun_workflow_run(self, repo_root: Path, run_id: str, *, failed_only: bool) -> None:
+        """Re-run a completed workflow run via REST API."""
+        endpoint = "rerun-failed-jobs" if failed_only else "rerun"
+        # GH-API-AUDIT: REST - POST actions/runs/{id}/rerun or rerun-failed-jobs
+        cmd = [
+            "gh",
+            "api",
+            "--method",
+            "POST",
+            f"repos/{{owner}}/{{repo}}/actions/runs/{run_id}/{endpoint}",
+        ]
+        execute_gh_command_with_retry(cmd, repo_root, self._time)
+
     def create_commit_status(
         self,
         *,

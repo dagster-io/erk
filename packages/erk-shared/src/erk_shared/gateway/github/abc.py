@@ -902,6 +902,27 @@ class LocalGitHub(ABC):
         ...
 
     @abstractmethod
+    def cancel_workflow_run(self, repo_root: Path, run_id: str) -> None:
+        """Cancel an in-progress or queued workflow run.
+
+        Args:
+            repo_root: Repository root directory
+            run_id: GitHub Actions run ID to cancel
+        """
+        ...
+
+    @abstractmethod
+    def rerun_workflow_run(self, repo_root: Path, run_id: str, *, failed_only: bool) -> None:
+        """Re-run a completed workflow run.
+
+        Args:
+            repo_root: Repository root directory
+            run_id: GitHub Actions run ID to re-run
+            failed_only: If True, only re-run failed jobs
+        """
+        ...
+
+    @abstractmethod
     def create_commit_status(
         self,
         *,
