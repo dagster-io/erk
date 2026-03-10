@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.types import (
@@ -689,6 +689,26 @@ class LocalGitHub(ABC):
 
         Returns:
             Comment ID of the created comment
+        """
+        ...
+
+    @abstractmethod
+    def fetch_pr_comments(
+        self,
+        repo_root: Path,
+        pr_number: int,
+    ) -> list[dict[str, Any]]:
+        """Fetch all issue/PR comments as a list of dicts.
+
+        Returns raw comment data from the GitHub API. Each dict contains
+        at minimum "id" and "body" keys.
+
+        Args:
+            repo_root: Repository root (for gh CLI context)
+            pr_number: PR number to fetch comments for
+
+        Returns:
+            List of comment dicts, or empty list on failure
         """
         ...
 

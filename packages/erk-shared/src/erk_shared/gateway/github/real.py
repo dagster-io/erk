@@ -2247,6 +2247,27 @@ query {{
         response = json.loads(stdout)
         return response["id"]
 
+    def fetch_pr_comments(self, repo_root: Path, pr_number: int) -> list[dict[str, Any]]:
+        """Fetch all issue/PR comments as a list of dicts.
+
+        Returns:
+            List of comment dicts from the GitHub API, or empty list on failure.
+        """
+        # GH-API-AUDIT: REST - GET issues/{number}/comments
+        cmd = [
+            "gh",
+            "api",
+            f"repos/{{owner}}/{{repo}}/issues/{pr_number}/comments",
+            "--paginate",
+        ]
+
+        try:
+            stdout = execute_gh_command_with_retry(cmd, repo_root, self._time)
+            return json.loads(stdout)
+        except RuntimeError as e:
+            debug_log(f"fetch_pr_comments failed: {e}")
+            return []
+
     def find_pr_comment_by_marker(
         self,
         repo_root: Path,
@@ -2260,29 +2281,14 @@ query {{
         Fetches all comments as JSON and searches in Python to avoid
         shell escaping issues with special characters in markers.
         """
-        # GH-API-AUDIT: REST - GET issues/{number}/comments
-        cmd = [
-            "gh",
-            "api",
-            f"repos/{{owner}}/{{repo}}/issues/{pr_number}/comments",
-            "--paginate",
-        ]
-
-        try:
-            stdout = execute_gh_command_with_retry(cmd, repo_root, self._time)
-            comments = json.loads(stdout)
-            for comment in comments:
-                body = comment.get("body", "")
-                if marker in body:
-                    comment_id = comment.get("id")
-                    if comment_id is not None:
-                        return int(comment_id)
-            return None
-        except RuntimeError as e:
-            # Command failed - log for diagnostics but return None
-            # (marker not found is expected on first run)
-            debug_log(f"find_pr_comment_by_marker failed: {e}")
-            return None
+        comments = self.fetch_pr_comments(repo_root, pr_number)
+        for comment in comments:
+            body = comment.get("body", "")
+            if marker in body:
+                comment_id = comment.get("id")
+                if comment_id is not None:
+                    return int(comment_id)
+        return None
 
     def update_pr_comment(
         self,

@@ -1,6 +1,7 @@
 """No-op wrapper for GitHub operations."""
 
 from pathlib import Path
+from typing import Any
 
 from erk_shared.gateway.github.abc import LocalGitHub
 from erk_shared.gateway.github.issues.abc import GitHubIssues
@@ -313,6 +314,14 @@ class DryRunLocalGitHub(LocalGitHub):
         Returns a fake comment ID to allow dry-run workflows to continue.
         """
         return 1234567890
+
+    def fetch_pr_comments(
+        self,
+        repo_root: Path,
+        pr_number: int,
+    ) -> list[dict[str, Any]]:
+        """Delegate read operation to wrapped implementation."""
+        return self._wrapped.fetch_pr_comments(repo_root, pr_number)
 
     def find_pr_comment_by_marker(
         self,
