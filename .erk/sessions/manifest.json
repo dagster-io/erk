@@ -17,6 +17,23 @@
       "raw_size_kb": 848,
       "xml_size_kb": 134,
       "git_branch": "plnd/remove-plan-review-refs-03-10-1109"
+    },
+    {
+      "session_id": "f0bc70b6-3bf6-4b6b-854e-3b71e9d32316",
+      "stage": "impl",
+      "source": "remote",
+      "uploaded_at": "2026-03-10T15:31:36.233245+00:00",
+      "files": [
+        "impl-f0bc70b6-3bf6-4b6b-854e-3b71e9d32316-f0bc70b6-3bf6-4b6b-854e-3b71e9d32316-part1.xml",
+        "impl-f0bc70b6-3bf6-4b6b-854e-3b71e9d32316-f0bc70b6-3bf6-4b6b-854e-3b71e9d32316-part2.xml",
+        "impl-f0bc70b6-3bf6-4b6b-854e-3b71e9d32316-f0bc70b6-3bf6-4b6b-854e-3b71e9d32316-part3.xml",
+        "impl-f0bc70b6-3bf6-4b6b-854e-3b71e9d32316-f0bc70b6-3bf6-4b6b-854e-3b71e9d32316-part4.xml"
+      ],
+      "user_turns": 2,
+      "duration_minutes": 20,
+      "raw_size_kb": 875,
+      "xml_size_kb": 152,
+      "git_branch": "plnd/remove-plan-review-refs-03-10-1109"
     }
   ]
 }
