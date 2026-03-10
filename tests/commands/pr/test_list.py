@@ -733,3 +733,103 @@ def test_pr_list_no_warnings_when_enrichment_succeeds() -> None:
 
         assert result.exit_code == 0
         assert "Warning:" not in result.output
+
+
+def test_pr_list_excludes_learn_plans_by_default() -> None:
+    """Test that learn plans are excluded by default (without --include-learn)."""
+    regular_plan = Plan(
+        plan_identifier="1",
+        title="Regular Plan",
+        body="",
+        state=PlanState.OPEN,
+        url="https://github.com/owner/repo/issues/1",
+        labels=["erk-pr", "erk-plan"],
+        assignees=[],
+        created_at=datetime(2024, 1, 1, tzinfo=UTC),
+        updated_at=datetime(2024, 1, 1, tzinfo=UTC),
+        metadata={},
+        objective_id=None,
+    )
+    learn_plan = Plan(
+        plan_identifier="2",
+        title="Learn Plan",
+        body="",
+        state=PlanState.OPEN,
+        url="https://github.com/owner/repo/issues/2",
+        labels=["erk-pr", "erk-plan", "erk-learn"],
+        assignees=[],
+        created_at=datetime(2024, 1, 2, tzinfo=UTC),
+        updated_at=datetime(2024, 1, 2, tzinfo=UTC),
+        metadata={},
+        objective_id=None,
+    )
+
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        issues = FakeGitHubIssues(
+            issues={1: plan_to_issue(regular_plan), 2: plan_to_issue(learn_plan)}
+        )
+        github = FakeLocalGitHub(
+            issues_data=[plan_to_issue(regular_plan), plan_to_issue(learn_plan)]
+        )
+        plan_service = build_fake_plan_list_service([regular_plan, learn_plan])
+        ctx = build_workspace_test_context(
+            env, issues=issues, github=github, plan_list_service=plan_service
+        )
+
+        result = runner.invoke(cli, ["pr", "list"], obj=ctx)
+
+        assert result.exit_code == 0
+        assert "Found 1 plan(s)" in result.output
+        assert "#1" in result.output
+        assert "#2" not in result.output
+
+
+def test_pr_list_includes_learn_plans_with_flag() -> None:
+    """Test that --include-learn shows learn plans alongside regular plans."""
+    regular_plan = Plan(
+        plan_identifier="1",
+        title="Regular Plan",
+        body="",
+        state=PlanState.OPEN,
+        url="https://github.com/owner/repo/issues/1",
+        labels=["erk-pr", "erk-plan"],
+        assignees=[],
+        created_at=datetime(2024, 1, 1, tzinfo=UTC),
+        updated_at=datetime(2024, 1, 1, tzinfo=UTC),
+        metadata={},
+        objective_id=None,
+    )
+    learn_plan = Plan(
+        plan_identifier="2",
+        title="Learn Plan",
+        body="",
+        state=PlanState.OPEN,
+        url="https://github.com/owner/repo/issues/2",
+        labels=["erk-pr", "erk-plan", "erk-learn"],
+        assignees=[],
+        created_at=datetime(2024, 1, 2, tzinfo=UTC),
+        updated_at=datetime(2024, 1, 2, tzinfo=UTC),
+        metadata={},
+        objective_id=None,
+    )
+
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        issues = FakeGitHubIssues(
+            issues={1: plan_to_issue(regular_plan), 2: plan_to_issue(learn_plan)}
+        )
+        github = FakeLocalGitHub(
+            issues_data=[plan_to_issue(regular_plan), plan_to_issue(learn_plan)]
+        )
+        plan_service = build_fake_plan_list_service([regular_plan, learn_plan])
+        ctx = build_workspace_test_context(
+            env, issues=issues, github=github, plan_list_service=plan_service
+        )
+
+        result = runner.invoke(cli, ["pr", "list", "--include-learn"], obj=ctx)
+
+        assert result.exit_code == 0
+        assert "Found 2 plan(s)" in result.output
+        assert "#1" in result.output
+        assert "#2" in result.output
