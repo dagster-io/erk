@@ -265,6 +265,47 @@ def _perform_checkout(
         )
 
 
+def _find_containing_worktree(worktrees: list[WorktreeInfo], cwd: Path) -> WorktreeInfo | None:
+    """Find the worktree that contains the current working directory.
+
+    Resolves paths and checks if cwd is under a worktree path. Returns the root
+    worktree as fallback if no other worktree contains cwd.
+
+    Args:
+        worktrees: List of all worktrees
+        cwd: Current working directory
+
+    Returns:
+        WorktreeInfo containing cwd, or root worktree as fallback, or None if empty list
+    """
+    if not cwd.exists():
+        return _find_root_worktree(worktrees)
+
+    resolved_cwd = cwd.resolve()
+    for wt in worktrees:
+        if wt.path.exists():
+            resolved_wt = wt.path.resolve()
+            if resolved_cwd == resolved_wt or resolved_cwd.is_relative_to(resolved_wt):
+                return wt
+
+    return _find_root_worktree(worktrees)
+
+
+def _find_root_worktree(worktrees: list[WorktreeInfo]) -> WorktreeInfo | None:
+    """Find the root worktree from the list.
+
+    Args:
+        worktrees: List of all worktrees
+
+    Returns:
+        Root worktree if found, None otherwise
+    """
+    for wt in worktrees:
+        if wt.is_root:
+            return wt
+    return None
+
+
 def _find_current_slot_assignment(state: PoolState, cwd: Path) -> SlotAssignment | None:
     """Find slot assignment matching the current working directory.
 
@@ -413,7 +454,9 @@ def _rebase_and_track_for_plan(
 )
 @click.option("--no-slot", is_flag=True, help="Create worktree without slot assignment")
 @click.option(
-    "--new-slot", is_flag=True, help="Force allocation of a new slot instead of stacking in place"
+    "--new-slot",
+    is_flag=True,
+    help="Allocate a new slot for the branch (default: checkout in current worktree)",
 )
 @click.option("-f", "--force", is_flag=True, help="Auto-unassign oldest branch if pool is full")
 @script_option
@@ -667,27 +710,43 @@ def _branch_checkout_impl(
                         force_script_activation=True,
                     )
                     return
-                elif setup is not None and not new_slot:
-                    # --for-plan from a non-slot worktree: checkout in current worktree
-                    # (only --new-slot should trigger slot allocation for --for-plan)
-                    ctx.branch_manager.checkout_branch(repo.root, branch)
-                    target_wt = WorktreeInfo(path=repo.root, branch=branch)
+                elif new_slot:
+                    # Allocate slot for the branch (only with explicit --new-slot)
+                    slot_result = allocate_slot_for_branch(
+                        ctx,
+                        repo,
+                        branch,
+                        force=force,
+                        reuse_inactive_slots=True,
+                        cleanup_artifacts=True,
+                    )
+                    is_newly_created = not slot_result.already_assigned
+                    if is_newly_created:
+                        msg = f"✓ Assigned {branch} to {slot_result.slot_name}"
+                        user_output(click.style(msg, fg="green"))
+                else:
+                    # Default: checkout in current worktree (like git checkout)
+                    current_wt = _find_containing_worktree(worktrees, ctx.cwd)
+                    wt_path = current_wt.path if current_wt is not None else repo.root
+                    ctx.branch_manager.checkout_branch(wt_path, branch)
+                    target_wt = WorktreeInfo(path=wt_path, branch=branch)
 
-                    _rebase_and_track_for_plan(
-                        ctx,
-                        repo_root=repo.root,
-                        worktree_path=target_wt.path,
-                        branch=branch,
-                        parent_branch=parent_branch,
-                        trunk=trunk,
-                    )
-                    _setup_impl_for_plan(
-                        ctx,
-                        setup=setup,
-                        worktree_path=target_wt.path,
-                        branch_name=branch,
-                        script=script,
-                    )
+                    if setup is not None:
+                        _rebase_and_track_for_plan(
+                            ctx,
+                            repo_root=repo.root,
+                            worktree_path=target_wt.path,
+                            branch=branch,
+                            parent_branch=parent_branch,
+                            trunk=trunk,
+                        )
+                        _setup_impl_for_plan(
+                            ctx,
+                            setup=setup,
+                            worktree_path=target_wt.path,
+                            branch_name=branch,
+                            script=script,
+                        )
 
                     worktrees = ctx.git.worktree.list_worktrees(repo.root)
                     _perform_checkout(
@@ -701,20 +760,6 @@ def _branch_checkout_impl(
                         force_script_activation=True,
                     )
                     return
-                else:
-                    # Allocate slot for the branch (normal checkout or --new-slot)
-                    slot_result = allocate_slot_for_branch(
-                        ctx,
-                        repo,
-                        branch,
-                        force=force,
-                        reuse_inactive_slots=True,
-                        cleanup_artifacts=True,
-                    )
-                    is_newly_created = not slot_result.already_assigned
-                    if is_newly_created:
-                        msg = f"✓ Assigned {branch} to {slot_result.slot_name}"
-                        user_output(click.style(msg, fg="green"))
 
             # Refresh worktree list to include the newly created worktree
             worktrees = ctx.git.worktree.list_worktrees(repo.root)
