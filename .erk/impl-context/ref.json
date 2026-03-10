@@ -1,4 +1,10 @@
 {
   "provider": "github-draft-pr",
-  "title": "Plan: `erk br co` defaults to current worktree"
+  "plan_id": "9131",
+  "url": "https://github.com/dagster-io/erk/pull/9131",
+  "created_at": "2026-03-10T04:33:23.791050",
+  "synced_at": "2026-03-10T04:33:23.791050",
+  "labels": [],
+  "objective_id": null,
+  "node_ids": null
 }
