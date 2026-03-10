@@ -121,7 +121,7 @@ This means even if `\n\n---\n\n` appears mid-body, `find()` still finds the real
 
 ## Self-Referential Close Prevention
 
-Planned PR IS the plan. The `plan_id` from prepare_state is the PR's own number. Using `Closes #N` in the footer would be self-referential, causing the plan to close itself. All three consumers of `assemble_pr_body()` set `issue_number=None` when the backend is `github-draft-pr`.
+Planned PR IS the plan. The `pr_id` from prepare_state is the PR's own number. Using `Closes #N` in the footer would be self-referential, causing the plan to close itself. All three consumers of `assemble_pr_body()` set `issue_number=None` when the backend is `github-draft-pr`.
 
 ## Footer Timing Constraint
 
@@ -157,7 +157,7 @@ During PR #8679, plan-related types were consolidated to remove "issue-based" na
 | `IssueNumberEvent`                      | `PlanNumberEvent`                |
 | `format_planned_pr_next_steps_plain()`  | `format_plan_next_steps_plain()` |
 
-The new `format_plan_next_steps_plain()` takes only `plan_number` and `url` parameters (no `branch_name`). Historical references to "issue-based" naming in documentation are intentional for migration context.
+The new `format_plan_next_steps_plain()` takes only `pr_number` and `url` parameters (no `branch_name`). Historical references to "issue-based" naming in documentation are intentional for migration context.
 
 <!-- Source: packages/erk-shared/src/erk_shared/output/next_steps.py, PlanNextSteps -->
 <!-- Source: packages/erk-shared/src/erk_shared/core/prompt_executor.py, PlanNumberEvent -->

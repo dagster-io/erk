@@ -21,7 +21,7 @@ After saving a plan, erk displays next-steps commands to the user. The formattin
 
 ### `PlanNextSteps`
 
-Takes `plan_number: int` and `url: str`.
+Takes `pr_number: int` and `url: str`.
 
 Properties return pre-formatted command strings. See the source file for the full list of available properties.
 
@@ -44,6 +44,8 @@ See [Shell Activation Pattern](../cli/shell-activation-pattern.md) for the full 
 | `format_plan_next_steps_plain()` | CLI output, exit-plan-mode-hook | Plain text    |
 | `format_next_steps_markdown()`   | PR body                         | Markdown      |
 
+Note: The `format_plan_next_steps_plain()` function takes `pr_number` and `url` as parameters.
+
 `format_plan_next_steps_plain()` is called in `exit_plan_mode_hook.py` when handling the plan-saved marker (Step 2 "what next?" output shown after saving a plan).
 
 ## Step 2 Blocking Message (`build_step2_message`)
@@ -57,11 +59,11 @@ After plan-save completes, the exit-plan-mode hook detects the plan-saved marker
 3. Instructs Claude to display the commands verbatim (not summarized)
 4. Ends with "Session complete. Do NOT call ExitPlanMode again."
 
-### Plan-Saved Marker Format
+### PR-Saved Marker Format
 
 <!-- Source: packages/erk-shared/src/erk_shared/scratch/session_markers.py, read_plan_saved_marker -->
 
-The marker file `exit-plan-mode-hook.plan-saved.marker` stores the plan number on its first line. `read_plan_saved_marker()` in `session_markers.py` reads this file and returns `int | None`.
+The marker file `exit-plan-mode-hook.plan-saved.marker` stores the PR number on its first line. `read_plan_saved_marker()` in `session_markers.py` reads this file and returns `int | None`.
 
 The marker path is determined by `read_plan_saved_marker()` — see the source for current details.
 

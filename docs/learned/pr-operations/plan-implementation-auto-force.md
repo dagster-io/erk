@@ -38,4 +38,4 @@ This message appears only when the branch has diverged from remote AND `--force`
 
 ## When It Does Not Apply
 
-Regular feature branches (no `.erk/impl-context/` folder, or `.erk/impl-context/` without issue tracking) are **not** auto-forced. Only branches where `state.plan_id is not None` receive this treatment.
+Regular feature branches (no `.erk/impl-context/` folder, or `.erk/impl-context/` without issue tracking) are **not** auto-forced. Only branches where plan metadata is detected receive this treatment.

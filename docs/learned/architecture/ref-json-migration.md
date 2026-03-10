@@ -20,7 +20,7 @@ Plan references have evolved through multiple file formats. The `read_plan_ref()
 
 <!-- Source: packages/erk-shared/src/erk_shared/impl_folder.py, PlanRef -->
 
-A frozen dataclass with fields: `provider` (PlanProviderType), `plan_id` (str), `url` (str), `created_at` (str, ISO 8601), `synced_at` (str, ISO 8601), `labels` (tuple of str), and `objective_id` (int or None). See `PlanRef` in `packages/erk-shared/src/erk_shared/impl_folder.py`.
+A frozen dataclass with fields: `provider` (PlanProviderType), `pr_id` (str), `url` (str), `created_at` (str, ISO 8601), `synced_at` (str, ISO 8601), `labels` (tuple of str), and `objective_id` (int or None). See `PlanRef` in `packages/erk-shared/src/erk_shared/impl_folder.py`.
 
 ## Required Fields Constant
 
@@ -50,14 +50,14 @@ The shared parser reads JSON, validates all required fields via LBYL (`any(f not
 
 The legacy format uses different field names that are automatically mapped:
 
-| issue.json field  | PlanRef field                   |
-| ----------------- | ------------------------------- |
-| `issue_number`    | `plan_id` (converted to string) |
-| `issue_url`       | `url`                           |
-| `created_at`      | `created_at`                    |
-| `synced_at`       | `synced_at`                     |
-| `labels`          | `labels`                        |
-| `objective_issue` | `objective_id`                  |
+| issue.json field  | PlanRef field                 |
+| ----------------- | ----------------------------- |
+| `issue_number`    | `pr_id` (converted to string) |
+| `issue_url`       | `url`                         |
+| `created_at`      | `created_at`                  |
+| `synced_at`       | `synced_at`                   |
+| `labels`          | `labels`                      |
+| `objective_issue` | `objective_id`                |
 
 The `provider` is hardcoded to `"github"` for legacy files.
 
@@ -68,7 +68,7 @@ Used by `.erk/impl-context/ref.json`:
 ```json
 {
   "provider": "github-draft-pr",
-  "plan_id": "7952",
+  "pr_id": "7952",
   "url": "https://github.com/owner/repo/pull/7952",
   "created_at": "2026-02-23T12:43:12.965231",
   "synced_at": "2026-02-23T12:43:12.965231",

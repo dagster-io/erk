@@ -1,6 +1,6 @@
 ---
 description: Update an existing plan with the current session's plan
-argument-hint: <plan-number>
+argument-hint: <pr-number>
 ---
 
 # /local:plan-update
@@ -11,23 +11,23 @@ Update an existing plan with the current session's plan content.
 
 ```bash
 /local:plan-update 42
-/local:plan-update https://github.com/owner/repo/issues/42
+/local:plan-update https://github.com/owner/repo/pull/42
 ```
 
 ---
 
 ## Agent Instructions
 
-### Step 1: Parse Plan Number
+### Step 1: Parse PR Number
 
-Extract the plan number from the argument:
+Extract the PR number from the argument:
 
 - If numeric (e.g., `42`), use directly
 - If URL (e.g., `https://github.com/owner/repo/pull/42`), extract the number from the path
 
-If no argument provided, check `ref.json` in `.erk/impl-context/<branch>/` for a linked plan number.
+If no argument provided, check `ref.json` in `.erk/impl-context/<branch>/` for a linked PR number.
 
-If still no plan number, ask the user for the plan number.
+If still no PR number, ask the user for the PR number.
 
 ### Step 2: Generate Plan Summary
 

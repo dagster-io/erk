@@ -57,7 +57,7 @@ Check the `$PLAN_ISSUE_NUMBER` environment variable:
 erk exec plan-update --pr-number $PLAN_ISSUE_NUMBER --plan-path .erk/impl-context/plan.md --format json --summary="${PLAN_SUMMARY}"
 ```
 
-Parse the JSON output. If `success` is not `true`, stop and report the error. Otherwise, use `$PLAN_ISSUE_NUMBER` as the `plan_number`. To get the `title`, extract the first `# ` heading from `.erk/impl-context/plan.md`.
+Parse the JSON output. If `success` is not `true`, stop and report the error. Otherwise, use `$PLAN_ISSUE_NUMBER` as the `pr_number`. To get the `title`, extract the first `# ` heading from `.erk/impl-context/plan.md`.
 
 **If `$PLAN_ISSUE_NUMBER` is not set (empty):** Fall back to creating a new draft PR (backwards compatible for direct `erk one-shot` calls without pre-created skeleton):
 
@@ -75,17 +75,17 @@ erk exec plan-save --plan-file .erk/impl-context/plan.md --format json --session
 
 If the `WORKFLOW_RUN_URL` environment variable is not set, omit the `--created-from-workflow-run-url` flag.
 
-Parse the JSON output. If `success` is not `true`, stop and report the error. Otherwise, extract `plan_number` and `title` from the output.
+Parse the JSON output. If `success` is not `true`, stop and report the error. Otherwise, extract `pr_number` and `title` from the output.
 
 ## Step 8: Write Plan Result
 
 Write the plan result to `.erk/impl-context/plan-result.json` with the following format:
 
 ```json
-{"plan_number": <num>, "title": "<title>"}
+{"pr_number": <num>, "title": "<title>"}
 ```
 
-Use the `plan_number` and `title` extracted from the Step 7 output.
+Use the `pr_number` and `title` extracted from the Step 7 output.
 
 ## Important Notes
 

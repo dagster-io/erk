@@ -27,6 +27,8 @@ The learn workflow extracts insights from implementation sessions and creates do
 
 **Key change**: Learn no longer writes documentation directly. Instead, it creates a plan for human review, which is then implemented through the standard `plan-implement` workflow. This gives humans control over documentation quality while maintaining the unified implementation pattern.
 
+**Branch naming note**: Learn plan implementations use `planned-pr-context/{pr_number}` branches for session data storage.
+
 ```
 ┌─────────────────┐     /erk:learn      ┌─────────────────┐
 │  Parent Plan    │ ─────────────────→  │  Learn Plan     │
@@ -157,7 +159,7 @@ After creating the learn plan, the skill calls:
 erk exec track-learn-result \
     --issue <parent-issue-number> \
     --status completed_with_plan \
-    --learn-plan <learn-plan-number>
+    --learn-plan <learn-pr-number>
 ```
 
 This sets `learn_status` and `learn_plan_issue` on the parent plan.

@@ -73,8 +73,8 @@ When working in a worktree with `.erk/impl-context/<branch>/ref.json`:
 
 ```json
 {
-  "plan_id": 123,
-  "plan_url": "https://github.com/owner/repo/pull/123"
+  "pr_id": 123,
+  "pr_url": "https://github.com/owner/repo/pull/123"
 }
 ```
 

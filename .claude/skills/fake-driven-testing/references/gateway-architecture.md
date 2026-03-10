@@ -529,7 +529,7 @@ class PlannedPRBackend(PlanBackend):
     def create_plan(self, ...) -> CreatePlanResult:
         # Uses gateway to implement domain operation
         result = self._github.create_pr(...)
-        return CreatePlanResult(plan_id=str(result.number), url=result.url)
+        return CreatePlanResult(pr_id=str(result.number), url=result.url)
 ```
 
 ### Testing Backends

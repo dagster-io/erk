@@ -23,7 +23,7 @@ Objective linking: if a plan was created via `/erk:objective-plan`, the session'
 The plan is saved using the configured backend:
 
 - **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
-  The JSON output contract includes `plan_number`, `plan_url`, `title`, `branch_name`, `plan_backend`.
+  The JSON output contract includes `pr_number`, `pr_url`, `title`, `branch_name`, `plan_backend`.
 
 ## Agent Instructions
 
@@ -95,7 +95,7 @@ Otherwise, pass the branch slug:
 erk exec plan-save --format json --session-id="${CLAUDE_SESSION_ID}" --branch-slug="${BRANCH_SLUG}" --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
 ```
 
-Parse the JSON output to extract `plan_number` for verification in Step 5.
+Parse the JSON output to extract `pr_number` for verification in Step 5.
 
 If the command fails, display the error and stop.
 
@@ -106,7 +106,7 @@ If the command fails, display the error and stop.
 Verify the objective link was saved correctly:
 
 ```bash
-erk exec get-plan-metadata <plan_number> objective_issue
+erk exec get-plan-metadata <pr_number> objective_issue
 ```
 
 Parse the JSON response:
@@ -128,7 +128,7 @@ Expected objective: #<expected>
 Actual: <actual-or-null>
 
 The plan was saved but without the correct objective link.
-Fix: Close draft PR #<plan_number>,
+Fix: Close draft PR #<pr_number>,
 ensure the objective-context marker exists, and re-run /erk:plan-save.
 ```
 
@@ -151,14 +151,14 @@ If the marker doesn't exist (command fails), skip this step - the plan wasn't cr
 2. **Update the roadmap table** using the dedicated command:
 
 ```bash
-erk exec update-objective-node <objective-issue> --node "$step_id" --pr "#<plan_number>" --status in_progress
+erk exec update-objective-node <objective-issue> --node "$step_id" --pr "#<pr_number>" --status in_progress
 ```
 
 This atomically fetches the objective body, finds the matching node row, sets the Status cell to `in-progress`, and writes the updated body back.
 
 3. **Report the update:**
 
-Display: `Updated objective #<objective-issue> roadmap: node <step_id> → plan #<plan_number>`
+Display: `Updated objective #<objective-issue> roadmap: node <step_id> → PR #<pr_number>`
 
 **Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
 
@@ -166,14 +166,14 @@ Display: `Updated objective #<objective-issue> roadmap: node <step_id> → plan 
 
 **If JSON contains `skipped_duplicate: true`:**
 
-Display: `Plan already saved as #<plan_number> (duplicate skipped)`
+Display: `Plan already saved as PR #<pr_number> (duplicate skipped)`
 
 Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options.
 
 **Otherwise, on success**, display:
 
 ```
-Plan "<title>" saved as draft PR #<plan_number>
+Plan "<title>" saved as draft PR #<pr_number>
 URL: <issue_url>
 ```
 
@@ -200,7 +200,7 @@ Run `erk exec capture-session-info` to get the session file path, then push it:
 erk exec upload-impl-session --session-id "${CLAUDE_SESSION_ID}" 2>/dev/null || true
 ```
 
-If the plan was saved successfully and `plan_number` is known, use push-session directly
+If the plan was saved successfully and `pr_number` is known, use push-session directly
 for better stage tracking:
 
 ```bash
@@ -209,12 +209,12 @@ erk exec push-session \
     --session-id "${CLAUDE_SESSION_ID}" \
     --stage planning \
     --source local \
-    --pr-number <plan_number> \
+    --pr-number <pr_number> \
     2>/dev/null || true
 ```
 
 Where `<session_file_path>` is obtained from `erk exec capture-session-info` output
-and `<plan_number>` is from Step 2's JSON output.
+and `<pr_number>` is from Step 2's JSON output.
 
 **Note:** This is non-critical. If it fails, the plan was still saved successfully.
 The `2>/dev/null || true` ensures graceful degradation.

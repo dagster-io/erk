@@ -11,8 +11,8 @@ Find the most recent plan created in this conversation and dispatch it for remot
 ## What This Command Does
 
 1. Search conversation for the last plan reference
-2. Extract the plan number
-3. Run `erk pr dispatch <plan_number>` to trigger remote implementation
+2. Extract the pr number
+3. Run `erk pr dispatch <pr_number>` to trigger remote implementation
 
 ## Finding the Plan
 
@@ -22,14 +22,14 @@ Search the conversation from bottom to top for these patterns (in priority order
 2. **Pull request URL**: `https://github.com/<owner>/<repo>/pull/<number>`
 3. **Plan URL**: `https://github.com/.../pull/<number>` (legacy: `https://github.com/.../issues/<number>`)
 
-Extract the plan number from the most recent match.
+Extract the pr number from the most recent match.
 
 ## Execution
 
-Once you have the plan number, run:
+Once you have the pr number, run:
 
 ```bash
-erk pr dispatch <plan_number>
+erk pr dispatch <pr_number>
 ```
 
 If the command succeeds, clear the session marker to allow creating new plans in this session:

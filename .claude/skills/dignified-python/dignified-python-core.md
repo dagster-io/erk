@@ -447,17 +447,17 @@ class Registry:
 ```python
 @dataclass(frozen=True)
 class PlanRef:
-    plan_id: int          # Always valid — numeric guaranteed
+    pr_id: int          # Always valid — numeric guaranteed
     url: str
     provider: str
 
 def read_plan_ref(folder: Path) -> PlanRef | None:
     """Validate at the boundary. Return None if invalid."""
     data = json.loads(path.read_text())
-    raw_id = data.get("plan_id")
+    raw_id = data.get("pr_id")
     if not isinstance(raw_id, int):
         return None  # Don't construct with invalid state
-    return PlanRef(plan_id=raw_id, url=data["url"], provider=data["provider"])
+    return PlanRef(pr_id=raw_id, url=data["url"], provider=data["provider"])
 ```
 
 ### Anti-pattern
@@ -465,19 +465,19 @@ def read_plan_ref(folder: Path) -> PlanRef | None:
 ```python
 @dataclass(frozen=True)
 class PlanRef:
-    plan_id: str          # Could be "42" or "PROJ-123" — caller must check
+    pr_id: str          # Could be "42" or "PROJ-123" — caller must check
 
     @property
-    def numeric_plan_id(self) -> int | None:
-        """Every callsite must use this instead of plan_id."""
-        if self.plan_id.isdigit():
-            return int(self.plan_id)
+    def numeric_pr_id(self) -> int | None:
+        """Every callsite must use this instead of pr_id."""
+        if self.pr_id.isdigit():
+            return int(self.pr_id)
         return None
 
 # Result: N callsites with defensive guards
-issue = plan_ref.numeric_plan_id
+issue = plan_ref.numeric_pr_id
 if issue is None:
-    log.warning("Non-numeric plan_id")
+    log.warning("Non-numeric pr_id")
     return
 ```
 

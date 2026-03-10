@@ -777,7 +777,7 @@ class GitHubPlanBackend(PlanBackend):
 
     def create_plan(self, ...) -> CreatePlanResult:
         result = self._github_issues.create_issue(...)
-        return CreatePlanResult(plan_id=str(result.number), url=result.url)
+        return CreatePlanResult(pr_id=str(result.number), url=result.url)
 
 # ✅ CORRECT: Test backend with fake gateway
 def test_create_plan():
@@ -788,7 +788,7 @@ def test_create_plan():
 
     # Assert on gateway mutations
     assert fake_issues.created_issues[0][0] == "expected title"
-    assert result.plan_id == "1"
+    assert result.pr_id == "1"
 ```
 
 ### Why This Is Wrong

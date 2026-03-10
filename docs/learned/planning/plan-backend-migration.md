@@ -31,7 +31,7 @@ issue = gh.get_issue(repo_root, issue_number)
 
 ```python
 backend = require_plan_backend(ctx)
-plan_result = backend.get_plan(repo_root, plan_id)
+plan_result = backend.get_plan(repo_root, pr_id)
 if isinstance(plan_result, PlanNotFound):
     # Handle missing plan explicitly
     return
@@ -44,16 +44,16 @@ Always check plan existence **before** calling mutation methods:
 
 ```python
 backend = require_plan_backend(ctx)
-plan_id = str(issue_number)
+pr_id = str(issue_number)
 
 # LBYL: Check plan exists before updating
-plan_result = backend.get_plan(repo_root, plan_id)
+plan_result = backend.get_plan(repo_root, pr_id)
 if isinstance(plan_result, PlanNotFound):
     output_error("issue-not-found", f"Issue #{issue_number} not found")
     return
 
 # Safe to update
-backend.update_metadata(repo_root, plan_id, metadata)
+backend.update_metadata(repo_root, pr_id, metadata)
 ```
 
 ## Error Type Distinction
@@ -68,13 +68,13 @@ Two different error types serve different purposes:
 **PlanNotFound** is checked with `isinstance()` (LBYL pattern). **PlanHeaderNotFoundError** is caught with try/except because it indicates a corrupted plan state that cannot be predicted.
 
 ```python
-plan_result = backend.get_plan(repo_root, plan_id)
+plan_result = backend.get_plan(repo_root, pr_id)
 if isinstance(plan_result, PlanNotFound):
     # Plan doesn't exist at all
     return
 
 try:
-    backend.update_metadata(repo_root, plan_id, metadata)
+    backend.update_metadata(repo_root, pr_id, metadata)
 except PlanHeaderNotFoundError:
     # Plan exists but has no plan-header metadata block
     output_error("no-plan-header-block", str(e))
@@ -89,13 +89,13 @@ Some exec scripts create artifacts (like gists) before updating plan metadata. W
 
 ```python
 # Gist already created successfully
-plan_result = backend.get_plan(repo_root, plan_id)
+plan_result = backend.get_plan(repo_root, pr_id)
 if isinstance(plan_result, PlanNotFound):
     result["issue_updated"] = False
     result["issue_update_error"] = f"Issue #{issue_number} not found"
 else:
     try:
-        backend.update_metadata(repo_root, plan_id, metadata)
+        backend.update_metadata(repo_root, pr_id, metadata)
         result["issue_updated"] = True
     except RuntimeError as e:
         result["issue_updated"] = False
@@ -142,13 +142,13 @@ These represent opportunities for future migration.
 
 Key methods on `PlanBackend` ABC (`packages/erk-shared/src/erk_shared/plan_store/backend.py`):
 
-| Method                                             | Returns                  | Description                                 |
-| -------------------------------------------------- | ------------------------ | ------------------------------------------- |
-| `get_plan(repo_root, plan_id)`                     | `Plan \| PlanNotFound`   | Fetch full plan by ID                       |
-| `get_metadata_field(repo_root, plan_id, field)`    | `object \| PlanNotFound` | Get a single metadata field value           |
-| `update_metadata(repo_root, plan_id, metadata)`    | `None \| PlanNotFound`   | Update metadata fields in plan header block |
-| `add_label(repo_root, plan_id, label)`             | `None` (raises on fail)  | Add a label to a plan                       |
-| `post_event(repo_root, plan_id, event_type, data)` | `None`                   | Post a lifecycle event to the plan          |
+| Method                                           | Returns                  | Description                                 |
+| ------------------------------------------------ | ------------------------ | ------------------------------------------- |
+| `get_plan(repo_root, pr_id)`                     | `Plan \| PlanNotFound`   | Fetch full plan by ID                       |
+| `get_metadata_field(repo_root, pr_id, field)`    | `object \| PlanNotFound` | Get a single metadata field value           |
+| `update_metadata(repo_root, pr_id, metadata)`    | `None \| PlanNotFound`   | Update metadata fields in plan header block |
+| `add_label(repo_root, pr_id, label)`             | `None` (raises on fail)  | Add a label to a plan                       |
+| `post_event(repo_root, pr_id, event_type, data)` | `None`                   | Post a lifecycle event to the plan          |
 
 `add_label()` raises `RuntimeError` if the provider fails or the plan is not found (unlike `get_plan`/`update_metadata` which use the `PlanNotFound` result type).
 

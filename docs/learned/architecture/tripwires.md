@@ -18,7 +18,7 @@ Rules triggered by matching actions in code.
 
 **accessing ctx.obj directly without a require\_\*() helper** → Read [Click Context Dependency Injection Pattern](click-context-di-pattern.md) first. Use typed require\_\*() helpers (require_issues, require_git, require_cwd, etc.) instead of direct ctx.obj access. Helpers provide type narrowing and clear error messages.
 
-**accessing plan_ref.plan_id as int without checking** → Read [PlanRef Architecture](plan-ref-architecture.md) first. plan_id is a string. Use LBYL: `plan_ref.plan_id.isdigit()` before `int(plan_ref.plan_id)`. Supports future non-numeric providers like 'PROJ-123'.
+**accessing plan_ref.pr_id as int without checking** → Read [PlanRef Architecture](plan-ref-architecture.md) first. pr_id is a string. Use LBYL: `plan_ref.pr_id.isdigit()` before `int(plan_ref.pr_id)`. Supports future non-numeric providers like 'PROJ-123'.
 
 **accessing properties on a discriminated union result without isinstance() check** → Read [Discriminated Union Error Handling](discriminated-union-error-handling.md) first. Always check isinstance(result, ErrorType) before accessing success-variant properties. Without type narrowing, you may access .message on a success type or .data on an error type.
 

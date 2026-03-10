@@ -44,7 +44,7 @@
 - **[plan-creation-pathways.md](plan-creation-pathways.md)** — understanding how plans are created in erk, adding a new plan creation entry point, debugging which code path created a plan
 - **[plan-execution-patterns.md](plan-execution-patterns.md)** — implementing a plan from a GitHub draft PR, understanding branch naming and worktree isolation, designing PR submission workflows for plans
 - **[plan-header-privatization.md](plan-header-privatization.md)** — migrating callers of plan_header.py functions, understanding why plan_header functions are being privatized, working with PlanBackend metadata operations
-- **[plan-id-semantics.md](plan-id-semantics.md)** — calling github.get_pr() or github.get_issue() with a plan_id, writing code that handles plan IDs, debugging 404 errors when fetching plan metadata
+- **[plan-id-semantics.md](plan-id-semantics.md)** — calling github.get_pr() or github.get_issue() with a pr_id, writing code that handles plan IDs, debugging 404 errors when fetching plan metadata
 - **[plan-lookup-strategy.md](plan-lookup-strategy.md)** — debugging plan lookup issues, understanding plan file discovery, troubleshooting wrong plan saved
 - **[plan-mismatch-recovery.md](plan-mismatch-recovery.md)** — debugging stale plan content in .erk/impl-context/, plan content doesn't match what's on GitHub, re-running implementation setup for an existing plan
 - **[plan-schema.md](plan-schema.md)** — understanding plan structure, debugging plan validation errors, working with plan-header or plan-body blocks

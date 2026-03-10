@@ -52,7 +52,7 @@ PR comments are fetched via gateway calls, not `gh` CLI. This matters because th
 
 **Graceful degradation**: If no PR exists for the plan, comment fetching is skipped entirely. Missing PR comments don't block the learn workflow — sessions alone contain sufficient material for insight extraction.
 
-All files are committed to a `planned-pr-context/{plan_id}` git branch under `.erk/sessions/`, then the branch name is passed to the `learn.yml` workflow via `workflow_dispatch`.
+All files are committed to a `planned-pr-context/{pr_number}` git branch under `.erk/sessions/`, then the branch name is passed to the `learn.yml` workflow via `workflow_dispatch`.
 
 ## Preprocessing Pipeline Internals
 

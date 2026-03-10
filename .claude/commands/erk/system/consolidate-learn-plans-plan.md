@@ -40,7 +40,7 @@ If zero plans remain after filtering:
 
 ```bash
 cat > .erk/impl-context/plan-result.json <<'EOF'
-{"plan_number": 0, "has_plans": false, "title": "No learn plans to consolidate"}
+{"pr_number": 0, "has_plans": false, "title": "No learn plans to consolidate"}
 EOF
 ```
 
@@ -94,14 +94,14 @@ Check the `$PR_NUMBER` environment variable. If set:
 erk exec plan-update --pr-number $PR_NUMBER --plan-path .erk/impl-context/plan.md --format json --summary="${PLAN_SUMMARY}"
 ```
 
-Parse the JSON output. If `success` is `true`, use `$PR_NUMBER` as the plan number.
+Parse the JSON output. If `success` is `true`, use `$PR_NUMBER` as the PR number.
 
 ## Step 9: Write Plan Result
 
 Write the result file:
 
 ```json
-{"plan_number": <num>, "title": "<title>", "has_plans": true}
+{"pr_number": <num>, "title": "<title>", "has_plans": true}
 ```
 
 To `.erk/impl-context/plan-result.json`.
@@ -117,7 +117,7 @@ gh api repos/${GITHUB_REPOSITORY:-dagster-io/erk}/issues/<number>/labels \
   -f "labels[]=erk-consolidated"
 
 # Add cross-reference comment
-gh issue comment <number> --body "Consolidated into #<new_plan_number>. See consolidated plan for implementation details."
+gh issue comment <number> --body "Consolidated into PR #<new_pr_number>. See consolidated plan for implementation details."
 
 # Close the plan
 gh issue close <number>

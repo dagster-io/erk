@@ -115,7 +115,7 @@ For very large renames (30+ files), consider sub-batching into groups of ~10-15 
 - **Two waves (source then test)** — tests depend on source; parallel within each wave, sequential between waves.
 - **Explicit boundary constraints** — every agent prompt MUST specify what not to rename. Omitting this causes over-eager renames (e.g., renaming API field names that must stay as-is).
 
-## Example: Renaming `issue_number` to `plan_number`
+## Example: Renaming `issue_number` to `pr_number`
 
 1. Grep found 16 source files and 12 test files containing `issue_number`
 2. Wave 1: Launched 16 haiku agents for source files — completed in ~25 seconds
