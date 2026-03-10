@@ -9,6 +9,7 @@ import click
 
 from erk.cli.commands.json.objective import json_objective_group
 from erk.cli.commands.json.pr import json_pr_group
+from erk.cli.commands.json.repo import json_repo_group
 from erk.cli.commands.one_shot.json_cli import json_one_shot
 
 
@@ -21,3 +22,4 @@ def json_group() -> None:
 json_group.add_command(json_one_shot, name="one-shot")
 json_group.add_command(json_objective_group, name="objective")
 json_group.add_command(json_pr_group, name="pr")
+json_group.add_command(json_repo_group, name="repo")
