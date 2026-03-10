@@ -502,9 +502,7 @@ class BackgroundWorkersMixin:
             )
 
     @work(thread=True)
-    def _retry_run_async(
-        self: ErkDashApp, op_id: str, run_id: str, *, failed_only: bool
-    ) -> None:
+    def _retry_run_async(self: ErkDashApp, op_id: str, run_id: str, *, failed_only: bool) -> None:
         """Retry workflow run in background thread with toast."""
         command = ["erk", "run", "retry", run_id]
         if failed_only:
