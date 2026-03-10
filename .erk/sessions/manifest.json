@@ -21,6 +21,26 @@
       "raw_size_kb": 981,
       "xml_size_kb": 119,
       "git_branch": "plnd/show-planning-run-id-03-10-1209"
+    },
+    {
+      "session_id": "e4a7e2b4-fb85-42d4-9883-ad38692dcce3",
+      "stage": "impl",
+      "source": "remote",
+      "uploaded_at": "2026-03-10T16:19:09.813616+00:00",
+      "files": [
+        "impl-e4a7e2b4-fb85-42d4-9883-ad38692dcce3-e4a7e2b4-fb85-42d4-9883-ad38692dcce3-part1.xml",
+        "impl-e4a7e2b4-fb85-42d4-9883-ad38692dcce3-e4a7e2b4-fb85-42d4-9883-ad38692dcce3-part2.xml",
+        "impl-e4a7e2b4-fb85-42d4-9883-ad38692dcce3-e4a7e2b4-fb85-42d4-9883-ad38692dcce3-part3.xml",
+        "impl-e4a7e2b4-fb85-42d4-9883-ad38692dcce3-e4a7e2b4-fb85-42d4-9883-ad38692dcce3-part4.xml",
+        "impl-e4a7e2b4-fb85-42d4-9883-ad38692dcce3-e4a7e2b4-fb85-42d4-9883-ad38692dcce3-part5.xml",
+        "impl-e4a7e2b4-fb85-42d4-9883-ad38692dcce3-e4a7e2b4-fb85-42d4-9883-ad38692dcce3-part6.xml",
+        "impl-e4a7e2b4-fb85-42d4-9883-ad38692dcce3-e4a7e2b4-fb85-42d4-9883-ad38692dcce3-part7.xml"
+      ],
+      "user_turns": 4,
+      "duration_minutes": 8,
+      "raw_size_kb": 1004,
+      "xml_size_kb": 127,
+      "git_branch": "plnd/show-planning-run-id-03-10-1209"
     }
   ]
 }
