@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "pr_number": 9167,
+  "sessions": [
+    {
+      "session_id": "",
+      "stage": "impl",
+      "source": "local",
+      "uploaded_at": "2026-03-10T15:12:16.739092+00:00",
+      "files": [
+        "impl--a95199aa-31eb-4ae2-b250-3b7f4631c59a-part1.xml",
+        "impl--a95199aa-31eb-4ae2-b250-3b7f4631c59a-part2.xml",
+        "impl--a95199aa-31eb-4ae2-b250-3b7f4631c59a-part3.xml",
+        "impl--a95199aa-31eb-4ae2-b250-3b7f4631c59a-part4.xml"
+      ],
+      "user_turns": 2,
+      "duration_minutes": 7,
+      "raw_size_kb": 577,
+      "xml_size_kb": 127,
+      "git_branch": "consolidate-learn-plans-03-10-1056"
+    }
+  ]
+}
