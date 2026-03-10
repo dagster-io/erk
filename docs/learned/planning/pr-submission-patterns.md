@@ -32,9 +32,9 @@ See `push_and_create_pr()` in `src/erk/cli/commands/pr/submit_pipeline.py` — i
 
 **Session-level:** Plan-save operations use scratch-directory marker files keyed by session ID. Before creating a GitHub issue, the command checks if this session already created one. This prevents the specific failure mode where exit-plan-mode hook retries cause duplicate plans.
 
-<!-- Source: packages/erk-shared/src/erk_shared/scratch/session_markers.py, get_existing_saved_issue -->
+<!-- Source: packages/erk-shared/src/erk_shared/scratch/session_markers.py, get_existing_saved_pr -->
 
-See `get_existing_saved_issue()` in `packages/erk-shared/src/erk_shared/scratch/session_markers.py`.
+See `get_existing_saved_pr()` in `packages/erk-shared/src/erk_shared/scratch/session_markers.py`.
 
 ## The Two-Phase Footer Problem
 

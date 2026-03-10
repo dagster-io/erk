@@ -226,7 +226,7 @@ After successfully saving a plan, the plan number is stored in a marker file tha
 **To read the saved plan number:**
 
 ```bash
-erk exec marker read --session-id "${CLAUDE_SESSION_ID}" plan-saved-issue
+erk exec marker read --session-id "${CLAUDE_SESSION_ID}" plan-saved
 ```
 
 This returns the plan number (exit code 0) or exits with code 1 if no plan was saved in this session.

@@ -168,18 +168,18 @@ class TestMarkerCreate:
 
         result = runner.invoke(
             marker,
-            ["create", "--session-id", session_id, "--content", content_value, "plan-saved-issue"],
+            ["create", "--session-id", session_id, "--content", content_value, "plan-saved"],
             obj=ctx,
         )
 
         assert result.exit_code == 0
         data = json.loads(result.output)
         assert data["success"] is True
-        assert "plan-saved-issue" in data["message"]
+        assert "plan-saved" in data["message"]
 
         # Verify marker file was created with correct content
         marker_file = (
-            tmp_path / ".erk" / "scratch" / "sessions" / session_id / "plan-saved-issue.marker"
+            tmp_path / ".erk" / "scratch" / "sessions" / session_id / "plan-saved.marker"
         )
         assert marker_file.exists()
         assert marker_file.read_text(encoding="utf-8") == "4386"
@@ -228,14 +228,14 @@ class TestMarkerRead:
         # Pre-create the marker file with content
         marker_dir = tmp_path / ".erk" / "scratch" / "sessions" / session_id
         marker_dir.mkdir(parents=True)
-        marker_file = marker_dir / "plan-saved-issue.marker"
+        marker_file = marker_dir / "plan-saved.marker"
         marker_file.write_text(marker_content, encoding="utf-8")
 
         ctx = ErkContext.for_test(repo_root=tmp_path, cwd=tmp_path)
 
         result = runner.invoke(
             marker,
-            ["read", "--session-id", session_id, "plan-saved-issue"],
+            ["read", "--session-id", session_id, "plan-saved"],
             obj=ctx,
         )
 
@@ -309,14 +309,14 @@ class TestMarkerRead:
         # Pre-create the marker file with whitespace
         marker_dir = tmp_path / ".erk" / "scratch" / "sessions" / session_id
         marker_dir.mkdir(parents=True)
-        marker_file = marker_dir / "plan-saved-issue.marker"
+        marker_file = marker_dir / "plan-saved.marker"
         marker_file.write_text(marker_content, encoding="utf-8")
 
         ctx = ErkContext.for_test(repo_root=tmp_path, cwd=tmp_path)
 
         result = runner.invoke(
             marker,
-            ["read", "--session-id", session_id, "plan-saved-issue"],
+            ["read", "--session-id", session_id, "plan-saved"],
             obj=ctx,
         )
 
