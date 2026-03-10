@@ -10,6 +10,7 @@ Options:
     --plan-type standard|learn: Plan type (default: standard)
     --learned-from-issue INT: Parent plan (for learn plans)
     --created-from-workflow-run-url URL: Workflow run URL
+    --created-from-workflow-run-id ID: Workflow run ID
 
 Objective linking: use --objective to pass directly, or rely on
 automatic linking via the objective-context session marker
@@ -118,6 +119,7 @@ def _save_as_planned_pr(
     plan_file: Path | None,
     learned_from_issue: int | None,
     created_from_workflow_run_url: str | None,
+    created_from_workflow_run_id: str | None,
     branch_slug: str | None,
     node_ids: tuple[str, ...] | None,
     summary: str | None,
@@ -138,6 +140,7 @@ def _save_as_planned_pr(
         plan_file: Original plan file path (for snapshot)
         learned_from_issue: Parent plan number (for learn plans)
         created_from_workflow_run_url: GitHub Actions workflow run URL
+        created_from_workflow_run_id: GitHub Actions workflow run ID
         branch_slug: Pre-generated branch slug (skips LLM call when provided)
         node_ids: Objective roadmap node IDs to associate with this plan
         summary: AI-generated summary for the PR description (None coerced to empty string)
@@ -289,6 +292,9 @@ def _save_as_planned_pr(
     if created_from_workflow_run_url is not None:
         metadata["created_from_workflow_run_url"] = created_from_workflow_run_url
 
+    if created_from_workflow_run_id is not None:
+        metadata["created_from_workflow_run_id"] = created_from_workflow_run_id
+
     # Build labels
     labels = ["erk-pr"]
     if plan_type == "learn":
@@ -363,6 +369,7 @@ def _save_plan_via_planned_pr(
     plan_type: str | None,
     learned_from_issue: int | None,
     created_from_workflow_run_url: str | None,
+    created_from_workflow_run_id: str | None,
     branch_slug: str | None,
     objective: int | None,
     summary: str | None,
@@ -379,6 +386,7 @@ def _save_plan_via_planned_pr(
         plan_type: Plan type (standard or learn)
         learned_from_issue: Parent plan number (for learn plans)
         created_from_workflow_run_url: GitHub Actions workflow run URL
+        created_from_workflow_run_id: GitHub Actions workflow run ID
         branch_slug: Pre-generated branch slug (skips LLM call when provided)
         objective: Objective issue number from CLI flag (overrides session marker)
         summary: Optional AI-generated summary for the PR description
@@ -474,6 +482,7 @@ def _save_plan_via_planned_pr(
         plan_file=plan_file,
         learned_from_issue=learned_from_issue,
         created_from_workflow_run_url=created_from_workflow_run_url,
+        created_from_workflow_run_id=created_from_workflow_run_id,
         branch_slug=branch_slug,
         node_ids=node_ids,
         summary=summary,
@@ -519,6 +528,11 @@ def _save_plan_via_planned_pr(
     help="GitHub Actions workflow run URL",
 )
 @click.option(
+    "--created-from-workflow-run-id",
+    default=None,
+    help="GitHub Actions workflow run ID",
+)
+@click.option(
     "--branch-slug",
     default=None,
     help="Pre-generated branch slug (skips LLM call when provided)",
@@ -557,6 +571,7 @@ def plan_save(
     plan_type: str | None,
     learned_from_issue: int | None,
     created_from_workflow_run_url: str | None,
+    created_from_workflow_run_id: str | None,
     branch_slug: str | None,
     objective: int | None,
     summary: str | None,
@@ -572,6 +587,7 @@ def plan_save(
         plan_type=plan_type,
         learned_from_issue=learned_from_issue,
         created_from_workflow_run_url=created_from_workflow_run_url,
+        created_from_workflow_run_id=created_from_workflow_run_id,
         branch_slug=branch_slug,
         objective=objective,
         summary=summary,

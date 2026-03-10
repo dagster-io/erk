@@ -715,6 +715,11 @@ if [ -n "$WORKFLOW_RUN_URL" ]; then
     CMD="$CMD --created-from-workflow-run-url \"$WORKFLOW_RUN_URL\""
 fi
 
+# Add workflow run ID if set (stored as proper metadata field)
+if [ -n "$WORKFLOW_RUN_ID" ]; then
+    CMD="$CMD --created-from-workflow-run-id \"$WORKFLOW_RUN_ID\""
+fi
+
 eval "$CMD"
 ```
 
