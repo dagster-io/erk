@@ -1,0 +1,1537 @@
+<session>
+  <meta source="agent-adb9ba9" />
+  <meta branch="plnd/add-repo-check-cmd-03-10-1211" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant docs before exploring raw files. Then explore codebase as necessary.
+
+I need to understand several existing patterns in this codebase to implement `erk repo check`. Find and read the following files:
+
+1. `src/erk/cli/constants.py` - specifically WORKFLOW_COMMAND_MAP values
+2. `src/erk/cli/cli.py` - how command groups are registered
+3. `src/erk/cli/commands/json/__init__.py` - how JSON command groups are registered
+4. `src/erk/cli/commands/objective/check/cli.py` - pattern for [PASS]/[FAIL] output
+5. `src/erk/cli/commands/pr/view/json_cli.py` - pattern for @mcp_exposed + @machine_command
+6. `packages/erk-shared/src/erk_shared/gateway/github_admin/real.py` - secret_exists() and get_workflow_permissions() subprocess patterns
+7. Any file containing `get_required_erk_labels` - for label definitions
+8. `packages/erk-shared/src/erk_shared/agentclick/machine_command.py` - for MachineCommandError
+
+For each file, report:
+- The full file path
+- The relevant code sections (full functions, imports, class definitions)
+- Any patterns I need to follow
+
+Be thorough - I need to see exact import paths and function signatures.</user>
+  <assistant>I'll search for and read these files systematically to understand the patterns you need.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="15347" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15347, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01U2j2mUN6oRZkNLxe8GNdW6">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/constants.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15347" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15347, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01YQNAhoLCJn2Gsbaz1GE2hE">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/cli.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15347" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15347, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01V36wVruUydHzreqS3VHc2Q">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/json/__init__.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15347" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15347, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_014zRT1W46Bi8XuNnz5XFqfy">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/objective/check/cli.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15347" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15347, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Srq5JETiANYFnaonZ3LXTj">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/view/json_cli.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15347" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15347, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01JQdoqFW2Wn66n9HQL8yA3u">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github_admin/real.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15347" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15347, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01U2j2mUN6oRZkNLxe8GNdW6">
+     1→"""Shared constants for erk CLI commands."""
+     2→
+     3→# Title prefix for erk-pr issues (with trailing space for easy stripping)
+     4→ERK_PR_TITLE_PREFIX = "[erk-pr] "
+     5→
+     6→# Plan markdown heading prefix (with trailing space for easy stripping)
+     7→PLAN_HEADING_PREFIX = "Plan: "
+     8→
+     9→# PR title prefix for plan-originated PRs
+    10→PLANNED_PR_TITLE_PREFIX = "plnd/"
+    11→
+    12→# GitHub Actions workflow for remote implementation dispatch
+    13→DISPATCH_WORKFLOW_NAME = "plan-implement.yml"
+    14→DISPATCH_WORKFLOW_METADATA_NAME = "plan-implement"
+    15→
+    16→# GitHub Actions workflow for remote rebase with conflict resolution
+    17→REBASE_WORKFLOW_NAME = "pr-rebase.yml"
+    18→
+    19→# GitHub Actions workflow for remote PR comment addressing
+    20→PR_ADDRESS_WORKFLOW_NAME = "pr-address.yml"
+    21→
+    22→# GitHub Actions workflow for remote PR rewrite (rebase + AI PR summary)
+    23→PR_REWRITE_WORKFLOW_NAME = "pr-rewrite.yml"
+    24→
+    25→# GitHub Actions workflow for one-shot autonomous execution
+    26→ONE_SHOT_WORKFLOW_NAME = "one-shot.yml"
+    27→
+    28→# GitHub Actions workflow for consolidating learn plans
+    29→CONSOLIDATE_LEARN_PLANS_WORKFLOW_NAME = "consolidate-learn-plans.yml"
+    30→
+
+... [37 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01YQNAhoLCJn2Gsbaz1GE2hE">
+     1→import logging
+     2→import os
+     3→import sys
+     4→from pathlib import Path
+     5→
+     6→import click
+     7→
+     8→from erk.cli.alias import register_with_aliases
+     9→from erk.cli.capability_check import is_learned_docs_available
+    10→from erk.cli.commands.admin import admin_group
+    11→from erk.cli.commands.artifact.group import artifact_group
+    12→from erk.cli.commands.branch import branch_group
+    13→from erk.cli.commands.cc import cc_group
+    14→from erk.cli.commands.codespace import codespace_group
+    15→from erk.cli.commands.completion import completion_group
+    16→from erk.cli.commands.config import config_group
+    17→from erk.cli.commands.doctor import doctor_cmd
+    18→from erk.cli.commands.doctor_workflow import workflow_group
+    19→from erk.cli.commands.down import down_cmd
+    20→from erk.cli.commands.exec.group import exec_group
+    21→from erk.cli.commands.implement import implement
+    22→from erk.cli.commands.info.release_notes_cmd import release_notes_cmd
+    23→from erk.cli.commands.init import init_group
+    24→from erk.cli.commands.json import json_group
+    25→from erk.cli.commands.land_cmd import land
+    26→from erk.cli.commands.launch_cmd import launch
+    27→from erk.cli.commands.log_cmd import log_cmd
+    28→from erk.cli.commands.md.group import md_group
+    29→from erk.cli.commands.objective import objective_group
+    30→from erk.cli.commands.one_shot.cli import one_shot
+
+... [210 lines omitted] ...
+
+    45→    format_version_warning,
+    62→    exceptions are logged but don't break the CLI.
+   119→    except Exception as e:
+   121→        logging.warning("Failed to show version change banner: %s", e)
+   124→def _show_version_warning() -&gt; None:
+   125→    """Show warning if installed erk version doesn't match repo-required version.
+   127→    This is designed to never fail - exceptions are logged but don't break the CLI.
+   155→        # Show warning
+   156→        click.echo(format_version_warning(installed, required), err=True)
+   158→    except Exception as e:
+   160→        logging.warning("Failed to check version: %s", e)
+   175→        _show_version_warning()
+   232→    # UserFacingCliError extends click.ClickException, so Click handles it
+  </tool_result>
+  <tool_result tool="toolu_01V36wVruUydHzreqS3VHc2Q">
+     1→"""Machine-readable JSON command tree (erk json ...).
+     2→
+     3→All commands in this tree accept JSON input from stdin and produce
+     4→structured JSON output. No human-facing formatting or Click options
+     5→for input — the request dataclass IS the schema.
+     6→"""
+     7→
+     8→import click
+     9→
+    10→from erk.cli.commands.json.objective import json_objective_group
+    11→from erk.cli.commands.json.pr import json_pr_group
+    12→from erk.cli.commands.one_shot.json_cli import json_one_shot
+    13→
+    14→
+    15→@click.group("json")
+    16→def json_group() -&gt; None:
+    17→    """Machine-readable JSON commands."""
+    18→    pass
+    19→
+    20→
+    21→json_group.add_command(json_one_shot, name="one-shot")
+    22→json_group.add_command(json_objective_group, name="objective")
+    23→json_group.add_command(json_pr_group, name="pr")
+    24→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_014zRT1W46Bi8XuNnz5XFqfy">
+     1→"""Human command for objective check with [PASS]/[FAIL] output."""
+     2→
+     3→import json
+     4→
+     5→import click
+     6→
+     7→from erk.cli.alias import alias
+     8→from erk.cli.commands.objective.check.operation import (
+     9→    ObjectiveCheckRequest,
+    10→    ObjectiveCheckResult,
+    11→    run_objective_check,
+    12→)
+    13→from erk.cli.repo_resolution import resolved_repo_option
+    14→from erk.core.context import ErkContext
+    15→from erk_shared.agentclick.machine_command import MachineCommandError
+    16→from erk_shared.gateway.github.types import GitHubRepoId
+    17→from erk_shared.output.output import user_output
+    18→
+    19→
+    20→@alias("ch")
+    21→@click.command("check")
+    22→@click.argument("objective_ref", type=str)
+    23→@click.option(
+    24→    "--json-output",
+    25→    "json_mode",
+    26→    is_flag=True,
+    27→    help="[Deprecated: use 'erk json objective check'] Output structured JSON",
+    28→)
+    29→@resolved_repo_option
+    30→@click.pass_obj
+
+... [75 lines omitted] ...
+
+    51→    if isinstance(result, MachineCommandError):
+    53→            click.echo(json.dumps({"success": False, "error": result.message}))
+    56→            click.style("Error: ", fg="red") + f"Failed to validate objective: {result.message}"
+    93→        check_word = "checks" if v.failed_count &gt; 1 else "check"
+    96→                f"Objective validation failed ({v.failed_count} {check_word} failed)", fg="red"
+  </tool_result>
+  <tool_result tool="toolu_01Srq5JETiANYFnaonZ3LXTj">
+     1→"""Machine adapter for pr view.
+     2→
+     3→Accepts JSON from stdin, delegates to run_pr_view operation,
+     4→returns structured JSON output.
+     5→"""
+     6→
+     7→import click
+     8→
+     9→from erk.cli.commands.pr.view.operation import PrViewRequest, PrViewResult, run_pr_view
+    10→from erk.cli.repo_resolution import resolve_owner_repo
+    11→from erk.core.context import ErkContext
+    12→from erk_shared.agentclick.machine_command import MachineCommandError, machine_command
+    13→from erk_shared.agentclick.mcp_exposed import mcp_exposed
+    14→from erk_shared.gateway.github.types import GitHubRepoId
+    15→
+    16→
+    17→@mcp_exposed(
+    18→    name="pr_view",
+    19→    description=(
+    20→        "View a specific plan's metadata, header info, and body content."
+    21→        " Returns plan title, state, labels, timestamps, and header metadata."
+    22→    ),
+    23→)
+    24→@machine_command(
+    25→    request_type=PrViewRequest,
+    26→    output_types=(PrViewResult,),
+    27→)
+    28→@click.command("view")
+    29→@click.pass_obj
+    30→def json_pr_view(
+
+... [14 lines omitted] ...
+
+    34→) -&gt; PrViewResult | MachineCommandError:
+  </tool_result>
+  <tool_result tool="toolu_01JQdoqFW2Wn66n9HQL8yA3u">
+     1→"""Production implementation of GitHub Actions admin operations."""
+     2→
+     3→import json
+     4→import subprocess
+     5→from typing import Any
+     6→
+     7→from erk_shared.gateway.github.types import GitHubRepoLocation
+     8→from erk_shared.gateway.github_admin.abc import AuthStatus, GitHubAdmin
+     9→from erk_shared.subprocess_utils import run_subprocess_with_context
+    10→
+    11→
+    12→class RealGitHubAdmin(GitHubAdmin):
+    13→    """Production implementation using gh CLI.
+    14→
+    15→    All GitHub Actions admin operations execute actual gh commands via subprocess.
+    16→    """
+    17→
+    18→    def get_workflow_permissions(self, location: GitHubRepoLocation) -&gt; dict[str, Any]:
+    19→        """Get current workflow permissions using gh CLI.
+    20→
+    21→        Args:
+    22→            location: GitHub repository location (local root + repo identity)
+    23→
+    24→        Returns:
+    25→            Dict with keys:
+    26→            - default_workflow_permissions: "read" or "write"
+    27→            - can_approve_pull_request_reviews: bool
+    28→
+    29→        Raises:
+    30→            RuntimeError: If gh CLI command fails
+
+... [225 lines omitted] ...
+
+    60→            RuntimeError: If gh CLI command fails
+   113→                return AuthStatus(authenticated=True, username=username, error=None)
+   115→                return AuthStatus(authenticated=False, username=None, error=None)
+   117→            return AuthStatus(authenticated=False, username=None, error="Auth check timed out")
+   118→        except OSError as e:
+   119→            return AuthStatus(authenticated=False, username=None, error=str(e))
+   125→        Returns True if 200, False if 404, None on other errors.
+   153→            # Other error (permissions, rate limit, etc.)
+   155→        except (subprocess.TimeoutExpired, OSError):
+   225→        except (subprocess.TimeoutExpired, OSError):
+  </tool_result>
+  <assistant>Now let me search for files containing `get_required_erk_labels` and find the MachineCommandError file:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="10562" cache_read_input_tokens="15347" cache_creation="{'ephemeral_5m_input_tokens': 10562, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_017QgbrkLHa4WWkmpkNRk3cz">
+    <param name="pattern">get_required_erk_labels</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="10562" cache_read_input_tokens="15347" cache_creation="{'ephemeral_5m_input_tokens': 10562, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01LafZiMhiFYDRcsQYutwe56">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/agentclick/machine_command.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="10562" cache_read_input_tokens="15347" cache_creation="{'ephemeral_5m_input_tokens': 10562, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01LafZiMhiFYDRcsQYutwe56">
+     1→"""Machine command decorator for pure-JSON CLI commands.
+     2→
+     3→Provides @machine_command for commands that:
+     4→- Accept JSON input from stdin (not Click params)
+     5→- Return structured JSON output
+     6→- Use frozen dataclass request types for strict validation
+     7→- Support --schema flag for introspection
+     8→
+     9→Unlike @json_command (which adds --json/--schema to human commands),
+    10→@machine_command creates dedicated machine-only commands with no
+    11→Click-based input parsing. The request type IS the input schema.
+    12→"""
+    13→
+    14→import json
+    15→from dataclasses import dataclass
+    16→from typing import Any
+    17→
+    18→import click
+    19→
+    20→from erk_shared.agentclick.dataclass_json import (
+    21→    emit_json_error,
+    22→    emit_json_success,
+    23→    parse_dataclass_from_json,
+    24→    read_json_stdin,
+    25→    serialize_to_json_dict,
+    26→)
+    27→
+    28→
+    29→@dataclass(frozen=True)
+    30→class MachineCommandMeta:
+
+... [188 lines omitted] ...
+
+    38→class MachineCommandError:
+    39→    """Structured error result from a machine command."""
+    41→    error_type: str
+    59→    to_json_dict()) or a MachineCommandError. The decorator handles
+    79→        json.JSONDecodeError: If stdin contains invalid JSON
+    80→        ValueError: If stdin JSON is not an object
+    99→        ValueError: On validation errors (unknown fields, missing required, type mismatch)
+   104→def emit_machine_error(error: MachineCommandError) -&gt; None:
+   105→    """Emit a structured error to stdout."""
+   106→    emit_json_error(error_type=error.error_type, message=error.message)
+   152→        except json.JSONDecodeError as exc:
+   153→            emit_machine_error(
+   154→                MachineCommandError(
+   155→                    error_type="invalid_json_input",
+   160→        except ValueError as exc:
+   161→            emit_machine_error(
+   162→                MachineCommandError(
+   163→                    error_type="invalid_json_input",
+   175→        except ValueError as exc:
+   176→            emit_machine_error(
+   177→                MachineCommandError(
+   178→                    error_type="invalid_request",
+   188→            if isinstance(result, MachineCommandError):
+   189→                emit_machine_error(result)
+   194→        except click.ClickException as exc:
+   195→            error_type_attr = getattr(exc, "error_type", None)
+   196→            if error_type_attr is not None:
+   197→                emit_machine_error(
+   198→                    MachineCommandError(
+   199→                        error_type=str(error_type_attr),
+  </tool_result>
+  <tool_result tool="toolu_017QgbrkLHa4WWkmpkNRk3cz">
+Found 3 files
+tests/unit/objective_issues/test_label_definitions.py
+src/erk/core/health_checks/plans_repo_labels.py
+packages/erk-shared/src/erk_shared/gateway/github/objective_issues.py
+  </tool_result>
+  <assistant>Now let me read the files containing label definitions:</assistant>
+  <usage input_tokens="2504" cache_creation_input_tokens="421" cache_read_input_tokens="25909" cache_creation="{'ephemeral_5m_input_tokens': 421, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_012iUQCfv69eYwsZiGLMS1th">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/objective_issues.py</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="2504" cache_creation_input_tokens="421" cache_read_input_tokens="25909" cache_creation="{'ephemeral_5m_input_tokens': 421, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01QjCowgnWT3ti2Pi6QBkAtQ">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/core/health_checks/plans_repo_labels.py</param>
+  </tool_use>
+  <usage input_tokens="2504" cache_creation_input_tokens="421" cache_read_input_tokens="25909" cache_creation="{'ephemeral_5m_input_tokens': 421, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012iUQCfv69eYwsZiGLMS1th">
+     1→"""GitHub issue creation for objectives and label management.
+     2→
+     3→This module contains:
+     4→- create_objective_issue(): Create objective issues with roadmap metadata
+     5→- Label management utilities (definitions, ensuring labels exist)
+     6→- CreateObjectiveIssueResult: Result type shared by objective issue creation
+     7→
+     8→Plan creation now uses create_plan_draft_pr() from plan_store.create_plan_draft_pr.
+     9→"""
+    10→
+    11→from dataclasses import dataclass
+    12→from datetime import UTC
+    13→from pathlib import Path
+    14→
+    15→from erk_shared.gateway.github.issues.abc import GitHubIssues
+    16→from erk_shared.gateway.github.metadata.core import (
+    17→    create_objective_header_block,
+    18→    extract_raw_metadata_blocks,
+    19→    format_objective_content_comment,
+    20→    render_metadata_block,
+    21→    update_objective_header_comment_id,
+    22→)
+    23→from erk_shared.gateway.github.metadata.roadmap import (
+    24→    parse_roadmap_frontmatter,
+    25→    render_objective_roadmap_block,
+    26→    render_roadmap_block_inner,
+    27→    rerender_comment_roadmap,
+    28→)
+    29→from erk_shared.gateway.github.metadata.types import BlockKeys
+    30→from erk_shared.gateway.github.types import BodyText
+
+... [75 lines omitted] ...
+
+    59→        plan_number: Plan number if created (may be set even on failure if
+    60→            partial success - issue created but comment failed)
+    63→        error: Error message if failed, None if success
+    70→    error: str | None
+  </tool_result>
+  <tool_result tool="toolu_01QjCowgnWT3ti2Pi6QBkAtQ">
+     1→"""Check that required erk labels exist in the plans repository."""
+     2→
+     3→from pathlib import Path
+     4→
+     5→from erk.core.health_checks.models import CheckResult
+     6→from erk_shared.gateway.github.issues.abc import GitHubIssues
+     7→from erk_shared.gateway.github.objective_issues import LabelDefinition, get_required_erk_labels
+     8→
+     9→
+    10→def check_plans_repo_labels(
+    11→    repo_root: Path,
+    12→    plans_repo: str,
+    13→    github_issues: GitHubIssues,
+    14→) -&gt; CheckResult:
+    15→    """Check that required erk labels exist in the plans repository.
+    16→
+    17→    When plans_repo is configured, PRs are created in that repository.
+    18→    This check verifies that required erk labels (erk-pr, erk-objective)
+    19→    exist in the target repository. The erk-learn label is optional
+    20→    for documentation workflows.
+    21→
+    22→    Args:
+    23→        repo_root: Path to the working repository root (for gh CLI context)
+    24→        plans_repo: Target repository in "owner/repo" format
+    25→        github_issues: GitHubIssues interface (should be configured with target_repo)
+    26→
+    27→    Returns:
+    28→        CheckResult indicating whether labels are present
+    29→    """
+    30→    labels = get_required_erk_labels()
+
+... [33 lines omitted] ...
+  </tool_result>
+  <assistant>Let me continue reading the objective_issues file to see the full `get_required_erk_labels` function:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="5076" cache_read_input_tokens="26330" cache_creation="{'ephemeral_5m_input_tokens': 5076, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01HiRHNLB8vRN5zbLjZoBnJv">
+    <param name="pattern">def get_required_erk_labels|@dataclass.*\nclass LabelDefinition</param>
+    <param name="path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/objective_issues.py</param>
+    <param name="output_mode">content</param>
+    <param name="-A">20</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="5076" cache_read_input_tokens="26330" cache_creation="{'ephemeral_5m_input_tokens': 5076, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01HiRHNLB8vRN5zbLjZoBnJv">
+No matches found
+  </tool_result>
+  <assistant>Let me read more of that file:</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="239" cache_read_input_tokens="31406" cache_creation="{'ephemeral_5m_input_tokens': 239, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_019jTn4xdTB9JP6jwqUL4HMU">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/objective_issues.py</param>
+    <param name="offset">100</param>
+    <param name="limit">150</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="239" cache_read_input_tokens="31406" cache_creation="{'ephemeral_5m_input_tokens': 239, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019jTn4xdTB9JP6jwqUL4HMU">
+   100→    if steps is None:
+   101→        return None
+   102→
+   103→    # Re-render to normalize format
+   104→    inner = render_roadmap_block_inner(steps)
+   105→
+   106→    return render_objective_roadmap_block(inner)
+   107→
+   108→
+   109→def create_objective_issue(
+   110→    github_issues: GitHubIssues,
+   111→    repo_root: Path,
+   112→    plan_content: str,
+   113→    *,
+   114→    time: Time,
+   115→    title: str | None,
+   116→    extra_labels: list[str] | None,
+   117→    slug: str | None,
+   118→) -&gt; CreateObjectiveIssueResult:
+   119→    """Create objective issue with v2 format: metadata body + content comment.
+   120→
+   121→    Objectives use the same pattern as plans:
+   122→    - Body: objective-header metadata block + objective-roadmap block (if roadmap exists)
+   123→    - First comment: objective content wrapped in objective-body metadata block
+   124→    - Labels: erk-objective (NOT erk-plan)
+   125→    - No title suffix, no commands section
+   126→
+   127→    Args:
+   128→        github_issues: GitHubIssues interface (real, fake, or dry-run)
+   129→        repo_root: Repository root directory
+
+... [125 lines omitted] ...
+
+   139→        Does NOT raise exceptions. All errors returned in result.
+   149→            error="Could not get GitHub username (gh CLI not authenticated?)",
+   165→                error=slug_result.message,
+   178→    label_errors = _ensure_labels_exist(github_issues, repo_root, labels)
+   179→    if label_errors:
+   185→            error=label_errors,
+   211→    except RuntimeError as e:
+   217→            error=f"Failed to create GitHub issue: {e}",
+   224→    except RuntimeError as e:
+   225→        # Partial success - issue created but comment failed
+   231→            error=f"Issue #{result.number} created but failed to add objective comment: {e}",
+  </tool_result>
+  <assistant>Let me continue reading to find the label definitions and get_required_erk_labels function:</assistant>
+  <usage input_tokens="4" cache_creation_input_tokens="2293" cache_read_input_tokens="31645" cache_creation="{'ephemeral_5m_input_tokens': 2293, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01R6oyxYYURQpEdj88DLJ1Qo">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/objective_issues.py</param>
+    <param name="offset">250</param>
+    <param name="limit">150</param>
+  </tool_use>
+  <usage input_tokens="4" cache_creation_input_tokens="2293" cache_read_input_tokens="31645" cache_creation="{'ephemeral_5m_input_tokens': 2293, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01R6oyxYYURQpEdj88DLJ1Qo">
+   250→        plan_url=result.url,
+   251→        title=title,
+   252→        error=None,
+   253→    )
+   254→
+   255→
+   256→def _ensure_labels_exist(
+   257→    github_issues: GitHubIssues,
+   258→    repo_root: Path,
+   259→    labels: list[str],
+   260→) -&gt; str | None:
+   261→    """Ensure all required labels exist in the repository.
+   262→
+   263→    Args:
+   264→        github_issues: GitHubIssues interface
+   265→        repo_root: Repository root directory
+   266→        labels: List of label names to ensure exist
+   267→
+   268→    Returns:
+   269→        Error message if failed, None if success
+   270→    """
+   271→    try:
+   272→        for label in labels:
+   273→            if label == _LABEL_ERK_PR:
+   274→                github_issues.ensure_label_exists(
+   275→                    repo_root=repo_root,
+   276→                    label=_LABEL_ERK_PR,
+   277→                    description=_LABEL_ERK_PR_DESC,
+   278→                    color=_LABEL_ERK_PR_COLOR,
+   279→                )
+
+... [94 lines omitted] ...
+
+   302→    except RuntimeError as e:
+   303→        return f"Failed to ensure labels exist: {e}"
+  </tool_result>
+  <assistant>Perfect! Now let me search for any existing `repo check` related files to understand the pattern better:</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="1716" cache_read_input_tokens="33938" cache_creation="{'ephemeral_5m_input_tokens': 1716, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_019VG7nhLi23ztZq6DczGDpZ">
+    <param name="pattern">**/commands/repo/**</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1716" cache_read_input_tokens="33938" cache_creation="{'ephemeral_5m_input_tokens': 1716, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01XhF1aZk8gFfeogCFNoEtNG">
+    <param name="pattern">**/cli/commands/**/check*cli.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1716" cache_read_input_tokens="33938" cache_creation="{'ephemeral_5m_input_tokens': 1716, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01N44EatVS63fZMDvXf3s4Cr">
+    <param name="command">find /home/runner/work/erk/erk/src/erk/cli/commands -type d -name "repo" 2&gt;/dev/null</param>
+    <param name="description">Find repo command directory if it exists</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1716" cache_read_input_tokens="33938" cache_creation="{'ephemeral_5m_input_tokens': 1716, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01N44EatVS63fZMDvXf3s4Cr">
+
+  </tool_result>
+  <tool_result tool="toolu_019VG7nhLi23ztZq6DczGDpZ">
+No files found
+  </tool_result>
+  <tool_result tool="toolu_01XhF1aZk8gFfeogCFNoEtNG">
+No files found
+  </tool_result>
+  <assistant>Let me look at how other command groups are structured, like the pr group:</assistant>
+  <usage input_tokens="34" cache_creation_input_tokens="423" cache_read_input_tokens="35654" cache_creation="{'ephemeral_5m_input_tokens': 423, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01Aq2TyPPQ3TntuwV5K4KPid">
+    <param name="command">ls -la /home/runner/work/erk/erk/src/erk/cli/commands/pr/ | head -30</param>
+    <param name="description">List pr command directory structure</param>
+  </tool_use>
+  <usage input_tokens="34" cache_creation_input_tokens="423" cache_read_input_tokens="35654" cache_creation="{'ephemeral_5m_input_tokens': 423, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01Y83gnUZDH8AmrSZGtpZEGi">
+    <param name="command">find /home/runner/work/erk/erk/src/erk/cli/commands/pr -name "__init__.py" -o -name "group.py" | head -5</param>
+    <param name="description">Find pr group structure</param>
+  </tool_use>
+  <usage input_tokens="34" cache_creation_input_tokens="423" cache_read_input_tokens="35654" cache_creation="{'ephemeral_5m_input_tokens': 423, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Aq2TyPPQ3TntuwV5K4KPid">
+total 252
+drwxr-xr-x  5 runner runner  4096 Mar 10 16:27 .
+drwxr-xr-x 22 runner runner  4096 Mar 10 16:27 ..
+-rw-r--r--  1 runner runner  1923 Mar 10 16:27 __init__.py
+drwxr-xr-x  2 runner runner  4096 Mar 10 16:27 __pycache__
+-rw-r--r--  1 runner runner  2153 Mar 10 16:27 address_cmd.py
+-rw-r--r--  1 runner runner 11862 Mar 10 16:27 check_cmd.py
+-rw-r--r--  1 runner runner 17625 Mar 10 16:27 checkout_cmd.py
+-rw-r--r--  1 runner runner  2588 Mar 10 16:27 close_cmd.py
+-rw-r--r--  1 runner runner  4843 Mar 10 16:27 create_cmd.py
+-rw-r--r--  1 runner runner 31724 Mar 10 16:27 dispatch_cmd.py
+-rw-r--r--  1 runner runner  4854 Mar 10 16:27 dispatch_helpers.py
+-rw-r--r--  1 runner runner  3388 Mar 10 16:27 diverge_fix_cmd.py
+-rw-r--r--  1 runner runner  7250 Mar 10 16:27 duplicate_check_cmd.py
+drwxr-xr-x  3 runner runner  4096 Mar 10 16:27 list
+-rw-r--r--  1 runner runner 12863 Mar 10 16:27 log_cmd.py
+-rw-r--r--  1 runner runner  3297 Mar 10 16:27 metadata_helpers.py
+-rw-r--r--  1 runner runner   365 Mar 10 16:27 parse_pr_reference.py
+-rw-r--r--  1 runner runner  3106 Mar 10 16:27 prepare_cmd.py
+-rw-r--r--  1 runner runner  5613 Mar 10 16:27 rebase_cmd.py
+-rw-r--r--  1 runner runner  1651 Mar 10 16:27 replan_cmd.py
+-rw-r--r--  1 runner runner  7910 Mar 10 16:27 rewrite_cmd.py
+-rw-r--r--  1 runner runner 14668 Mar 10 16:27 shared.py
+-rw-r--r--  1 runner runner  4407 Mar 10 16:27 submit_cmd.py
+-rw-r--r--  1 runner runner 39862 Mar 10 16:27 submit_pipeline.py
+-rw-r--r--  1 runner runner 13297 Mar 10 16:27 teleport_cmd.py
+drwxr-xr-x  3 runner runner  4096 Mar 10 16:27 view
+  </tool_result>
+  <tool_result tool="toolu_01Y83gnUZDH8AmrSZGtpZEGi">
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/__init__.py
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/view/__init__.py
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/list/__init__.py
+  </tool_result>
+  <assistant>Let me look at the pr group structure to understand the pattern:</assistant>
+  <usage input_tokens="4" cache_creation_input_tokens="1339" cache_read_input_tokens="36077" cache_creation="{'ephemeral_5m_input_tokens': 1339, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Xf9uSYiat9wwybwkqxqYKa">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/__init__.py</param>
+  </tool_use>
+  <usage input_tokens="4" cache_creation_input_tokens="1339" cache_read_input_tokens="36077" cache_creation="{'ephemeral_5m_input_tokens': 1339, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01PzpwAAb7PqrcVjRF6B34cj">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/view/__init__.py</param>
+  </tool_use>
+  <usage input_tokens="4" cache_creation_input_tokens="1339" cache_read_input_tokens="36077" cache_creation="{'ephemeral_5m_input_tokens': 1339, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Xf9uSYiat9wwybwkqxqYKa">
+     1→"""PR management commands."""
+     2→
+     3→import click
+     4→
+     5→from erk.cli.alias import register_with_aliases
+     6→from erk.cli.commands.pr.address_cmd import address
+     7→from erk.cli.commands.pr.check_cmd import pr_check
+     8→from erk.cli.commands.pr.checkout_cmd import pr_checkout
+     9→from erk.cli.commands.pr.close_cmd import pr_close
+    10→from erk.cli.commands.pr.create_cmd import pr_create
+    11→from erk.cli.commands.pr.dispatch_cmd import pr_dispatch
+    12→from erk.cli.commands.pr.diverge_fix_cmd import pr_diverge_fix
+    13→from erk.cli.commands.pr.duplicate_check_cmd import duplicate_check_plan
+    14→from erk.cli.commands.pr.list.cli import pr_list
+    15→from erk.cli.commands.pr.log_cmd import pr_log
+    16→from erk.cli.commands.pr.prepare_cmd import pr_prepare
+    17→from erk.cli.commands.pr.rebase_cmd import rebase
+    18→from erk.cli.commands.pr.replan_cmd import pr_replan
+    19→from erk.cli.commands.pr.rewrite_cmd import pr_rewrite
+    20→from erk.cli.commands.pr.submit_cmd import pr_submit
+    21→from erk.cli.commands.pr.teleport_cmd import pr_teleport
+    22→from erk.cli.commands.pr.view.cli import pr_view
+    23→
+    24→
+    25→@click.group("pr")
+    26→def pr_group() -&gt; None:
+    27→    """Manage pull requests."""
+    28→    pass
+    29→
+    30→
+
+... [23 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01PzpwAAb7PqrcVjRF6B34cj">
+&lt;system-reminder&gt;Warning: the file exists but is shorter than the provided offset (1). The file has 1 lines.&lt;/system-reminder&gt;
+  </tool_result>
+  <assistant>Let me check the pr view structure:</assistant>
+  <usage input_tokens="4" cache_creation_input_tokens="1288" cache_read_input_tokens="37416" cache_creation="{'ephemeral_5m_input_tokens': 1288, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01CW8mBpHuuRF7qk5Q6zKbG5">
+    <param name="command">ls -la /home/runner/work/erk/erk/src/erk/cli/commands/pr/view/</param>
+    <param name="description">List pr view command directory structure</param>
+  </tool_use>
+  <usage input_tokens="4" cache_creation_input_tokens="1288" cache_read_input_tokens="37416" cache_creation="{'ephemeral_5m_input_tokens': 1288, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01CW8mBpHuuRF7qk5Q6zKbG5">
+total 36
+drwxr-xr-x 3 runner runner 4096 Mar 10 16:27 .
+drwxr-xr-x 5 runner runner 4096 Mar 10 16:27 ..
+-rw-r--r-- 1 runner runner    0 Mar 10 16:27 __init__.py
+drwxr-xr-x 2 runner runner 4096 Mar 10 16:27 __pycache__
+-rw-r--r-- 1 runner runner 9939 Mar 10 16:27 cli.py
+-rw-r--r-- 1 runner runner 1214 Mar 10 16:27 json_cli.py
+-rw-r--r-- 1 runner runner 5314 Mar 10 16:27 operation.py
+  </tool_result>
+  <assistant>Let me read the pr view cli.py and operation.py to understand the pattern:</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="369" cache_read_input_tokens="38704" cache_creation="{'ephemeral_5m_input_tokens': 369, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01SVWbfp5Lf51TXRiQ9cp15A">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/view/cli.py</param>
+    <param name="limit">80</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="369" cache_read_input_tokens="38704" cache_creation="{'ephemeral_5m_input_tokens': 369, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01KH2tsQVcpj2NdPuArgfKqL">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/view/operation.py</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="369" cache_read_input_tokens="38704" cache_creation="{'ephemeral_5m_input_tokens': 369, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01SVWbfp5Lf51TXRiQ9cp15A">
+     1→"""Command to fetch and display a single plan.
+     2→
+     3→Human-facing command with Click options and rich terminal output.
+     4→Machine-readable JSON equivalent lives in pr/view/json_cli.py.
+     5→"""
+     6→
+     7→from datetime import datetime
+     8→
+     9→import click
+    10→
+    11→from erk.cli.commands.pr.view.operation import PrViewRequest, PrViewResult, run_pr_view
+    12→from erk.cli.repo_resolution import resolved_repo_option
+    13→from erk.core.context import ErkContext
+    14→from erk_shared.agentclick.machine_command import MachineCommandError
+    15→from erk_shared.core.typing_utils import narrow_to_literal
+    16→from erk_shared.gateway.github.metadata.schemas import (
+    17→    CREATED_BY,
+    18→    CREATED_FROM_SESSION,
+    19→    LAST_DISPATCHED_AT,
+    20→    LAST_DISPATCHED_RUN_ID,
+    21→    LAST_LEARN_SESSION,
+    22→    LAST_LOCAL_IMPL_AT,
+    23→    LAST_LOCAL_IMPL_EVENT,
+    24→    LAST_LOCAL_IMPL_SESSION,
+    25→    LAST_LOCAL_IMPL_USER,
+    26→    LAST_REMOTE_IMPL_AT,
+    27→    LEARN_PLAN_ISSUE,
+    28→    LEARN_PLAN_PR,
+    29→    LEARN_RUN_ID,
+    30→    LEARN_STATUS,
+
+... [55 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01KH2tsQVcpj2NdPuArgfKqL">
+     1→"""Core operation for pr view (transport-independent).
+     2→
+     3→Contains the request type and operation function that both the
+     4→human command (pr/view/cli.py) and machine command (pr/view/json_cli.py) share.
+     5→"""
+     6→
+     7→from dataclasses import dataclass
+     8→from datetime import datetime
+     9→from typing import Any
+    10→
+    11→from erk.cli.github_parsing import parse_issue_identifier
+    12→from erk.cli.repo_resolution import get_remote_github
+    13→from erk.core.context import ErkContext
+    14→from erk_shared.agentclick.machine_command import MachineCommandError
+    15→from erk_shared.context.types import NoRepoSentinel
+    16→from erk_shared.gateway.github.issues.types import IssueNotFound
+    17→from erk_shared.gateway.github.metadata.schemas import BRANCH_NAME
+    18→from erk_shared.gateway.github.types import GitHubRepoId
+    19→from erk_shared.plan_store.conversion import github_issue_to_plan
+    20→from erk_shared.plan_store.types import PlanNotFound
+    21→
+    22→
+    23→@dataclass(frozen=True)
+    24→class PrViewRequest:
+    25→    """Request type for pr view."""
+    26→
+    27→    identifier: str | None = None
+    28→    full: bool = False
+    29→
+    30→
+
+... [139 lines omitted] ...
+
+    83→) -&gt; PrViewResult | MachineCommandError:
+    92→        PrViewResult or MachineCommandError
+   101→            return MachineCommandError(
+   102→                error_type="missing_identifier",
+   111→            return MachineCommandError(
+   112→                error_type="missing_identifier",
+   118→            return MachineCommandError(
+   119→                error_type="missing_identifier",
+   133→        return MachineCommandError(
+   134→            error_type="not_found",
+  </tool_result>
+  <assistant>Now let me look at the objective check operation for more patterns:</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="3666" cache_read_input_tokens="39073" cache_creation="{'ephemeral_5m_input_tokens': 3666, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01QSMyCbh8vvMVBh9sJngPcg">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/objective/check/operation.py</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="3666" cache_read_input_tokens="39073" cache_creation="{'ephemeral_5m_input_tokens': 3666, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01QSMyCbh8vvMVBh9sJngPcg">
+     1→"""Core operation for objective check (transport-independent).
+     2→
+     3→Contains the request type, result type, and operation function shared
+     4→by both the human command (cli.py) and machine command (json_cli.py).
+     5→"""
+     6→
+     7→from dataclasses import dataclass
+     8→from typing import Any
+     9→
+    10→from erk.cli.commands.objective.check.validation import (
+    11→    ObjectiveValidationError,
+    12→    ObjectiveValidationSuccess,
+    13→    validate_objective,
+    14→)
+    15→from erk.cli.github_parsing import parse_issue_identifier
+    16→from erk.cli.repo_resolution import get_remote_github
+    17→from erk.core.context import ErkContext
+    18→from erk_shared.agentclick.machine_command import MachineCommandError
+    19→from erk_shared.gateway.github.metadata.dependency_graph import phases_from_graph
+    20→from erk_shared.gateway.github.metadata.roadmap import serialize_phases
+    21→from erk_shared.gateway.github.types import GitHubRepoId
+    22→
+    23→
+    24→@dataclass(frozen=True)
+    25→class ObjectiveCheckRequest:
+    26→    """Request type for objective check."""
+    27→
+    28→    identifier: str
+    29→
+    30→
+
+... [69 lines omitted] ...
+
+    53→            "validation_errors": v.validation_errors,
+    63→) -&gt; ObjectiveCheckResult | MachineCommandError:
+    72→        ObjectiveCheckResult or MachineCommandError
+    84→    if isinstance(result, ObjectiveValidationError):
+    85→        return MachineCommandError(
+    86→            error_type="validation_error",
+    87→            message=result.error,
+  </tool_result>
+  <assistant>Excellent! Now let me check how the json objective command is structured:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1278" cache_read_input_tokens="42739" cache_creation="{'ephemeral_5m_input_tokens': 1278, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01PpcKypxZbKDRaR5vDB8NtU">
+    <param name="command">find /home/runner/work/erk/erk/src/erk/cli/commands/json -type f -name "*.py" | head -20</param>
+    <param name="description">Find json command files</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1278" cache_read_input_tokens="42739" cache_creation="{'ephemeral_5m_input_tokens': 1278, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01PpcKypxZbKDRaR5vDB8NtU">
+/home/runner/work/erk/erk/src/erk/cli/commands/json/objective/__init__.py
+/home/runner/work/erk/erk/src/erk/cli/commands/json/__init__.py
+/home/runner/work/erk/erk/src/erk/cli/commands/json/pr/__init__.py
+  </tool_result>
+  <tool_use name="Read" id="toolu_01WjfKr1wBDVKphM5N5SfX41">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/json/objective/__init__.py</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="362" cache_read_input_tokens="44017" cache_creation="{'ephemeral_5m_input_tokens': 362, 'ephemeral_1h_input_tokens': 0}" output_tokens="18" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01JPpH2ioEPFH4UQBhC1Hk3D">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/json/pr/__init__.py</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="362" cache_read_input_tokens="44017" cache_creation="{'ephemeral_5m_input_tokens': 362, 'ephemeral_1h_input_tokens': 0}" output_tokens="18" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01WjfKr1wBDVKphM5N5SfX41">
+     1→"""Machine-readable JSON objective commands (erk json objective ...)."""
+     2→
+     3→import click
+     4→
+     5→from erk.cli.commands.objective.check.json_cli import json_objective_check
+     6→from erk.cli.commands.objective.view.json_cli import json_objective_view
+     7→
+     8→
+     9→@click.group("objective")
+    10→def json_objective_group() -&gt; None:
+    11→    """Machine-readable objective commands."""
+    12→    pass
+    13→
+    14→
+    15→json_objective_group.add_command(json_objective_view, name="view")
+    16→json_objective_group.add_command(json_objective_check, name="check")
+    17→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_01JPpH2ioEPFH4UQBhC1Hk3D">
+     1→"""Machine-readable JSON PR commands (erk json pr ...)."""
+     2→
+     3→import click
+     4→
+     5→from erk.cli.commands.pr.list.json_cli import json_pr_list
+     6→from erk.cli.commands.pr.view.json_cli import json_pr_view
+     7→
+     8→
+     9→@click.group("pr")
+    10→def json_pr_group() -&gt; None:
+    11→    """Machine-readable PR commands."""
+    12→    pass
+    13→
+    14→
+    15→json_pr_group.add_command(json_pr_list, name="list")
+    16→json_pr_group.add_command(json_pr_view, name="view")
+    17→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>Now let me check the objective check json_cli:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="782" cache_read_input_tokens="44379" cache_creation="{'ephemeral_5m_input_tokens': 782, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Y7Lq1KEFPRTyFpFURUC9qM">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/objective/check/json_cli.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="782" cache_read_input_tokens="44379" cache_creation="{'ephemeral_5m_input_tokens': 782, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Y7Lq1KEFPRTyFpFURUC9qM">
+     1→"""Machine adapter for objective check.
+     2→
+     3→Accepts JSON from stdin, delegates to run_objective_check operation,
+     4→returns structured JSON output.
+     5→"""
+     6→
+     7→import click
+     8→
+     9→from erk.cli.commands.objective.check.operation import (
+    10→    ObjectiveCheckRequest,
+    11→    ObjectiveCheckResult,
+    12→    run_objective_check,
+    13→)
+    14→from erk.cli.repo_resolution import resolve_owner_repo
+    15→from erk.core.context import ErkContext
+    16→from erk_shared.agentclick.machine_command import MachineCommandError, machine_command
+    17→from erk_shared.gateway.github.types import GitHubRepoId
+    18→
+    19→
+    20→@machine_command(
+    21→    request_type=ObjectiveCheckRequest,
+    22→    output_types=(ObjectiveCheckResult,),
+    23→)
+    24→@click.command("check")
+    25→@click.pass_obj
+    26→def json_objective_check(
+    27→    ctx: ErkContext,
+    28→    *,
+    29→    request: ObjectiveCheckRequest,
+    30→) -&gt; ObjectiveCheckResult | MachineCommandError:
+
+... [10 lines omitted] ...
+  </tool_result>
+  <assistant>Perfect! Now let me check if there's a mcp_exposed decorator usage elsewhere to see the pattern:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="752" cache_read_input_tokens="45161" cache_creation="{'ephemeral_5m_input_tokens': 752, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01MznKJtcgUHvhcYMYBhqmkU">
+    <param name="command">grep -r "@mcp_exposed" /home/runner/work/erk/erk/src/erk/cli/commands/ --include="*.py" | head -5</param>
+    <param name="description">Find mcp_exposed decorator usage</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="752" cache_read_input_tokens="45161" cache_creation="{'ephemeral_5m_input_tokens': 752, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01MznKJtcgUHvhcYMYBhqmkU">
+/home/runner/work/erk/erk/src/erk/cli/commands/one_shot/json_cli.py:@mcp_exposed(
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/view/json_cli.py:@mcp_exposed(
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/list/json_cli.py:@mcp_exposed(
+  </tool_result>
+  <assistant>Let me look at the mcp_exposed decorator:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="300" cache_read_input_tokens="45913" cache_creation="{'ephemeral_5m_input_tokens': 300, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_014EkyaTVopLfrNWBft43BXj">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/agentclick/mcp_exposed.py</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="300" cache_read_input_tokens="45913" cache_creation="{'ephemeral_5m_input_tokens': 300, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014EkyaTVopLfrNWBft43BXj">
+     1→"""Decorator and discovery for auto-exposing CLI commands as MCP tools.
+     2→
+     3→Supports both @machine_command (new) and @json_command (legacy) commands.
+     4→Discovery walks the Click command tree looking for MachineCommandMeta
+     5→(preferred) or JsonCommandMeta on commands that have @mcp_exposed.
+     6→"""
+     7→
+     8→from collections.abc import Callable
+     9→from dataclasses import dataclass
+    10→
+    11→import click
+    12→
+    13→
+    14→@dataclass(frozen=True)
+    15→class McpMeta:
+    16→    """MCP metadata attached to a Click command by @mcp_exposed."""
+    17→
+    18→    name: str
+    19→    description: str
+    20→
+    21→
+    22→_MCP_REGISTRY: dict[click.Command, McpMeta] = {}
+    23→
+    24→
+    25→def mcp_exposed(*, name: str, description: str) -&gt; Callable[[click.Command], click.Command]:
+    26→    """Mark a command for automatic MCP exposure.
+    27→
+    28→    Apply above @machine_command or @json_command in the decorator stack:
+    29→
+    30→        @mcp_exposed(name="one_shot", description="...")
+
+... [47 lines omitted] ...
+  </tool_result>
+  <assistant>Perfect! Now let me check one more pattern - how to look at imports for subprocess utilities:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="1248" cache_read_input_tokens="46213" cache_creation="{'ephemeral_5m_input_tokens': 1248, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_0139ikFxcDW3hp3iXGpeadxF">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/subprocess_utils.py</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="1248" cache_read_input_tokens="46213" cache_creation="{'ephemeral_5m_input_tokens': 1248, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0139ikFxcDW3hp3iXGpeadxF">
+     1→"""Simple subprocess utilities for erk-shared.
+     2→
+     3→This module provides basic subprocess execution for GitHub CLI commands.
+     4→It's intentionally minimal to avoid pulling in complex dependencies.
+     5→"""
+     6→
+     7→import logging
+     8→import os
+     9→import subprocess
+    10→import time
+    11→from collections.abc import Sequence
+    12→from pathlib import Path
+    13→from typing import IO, Any
+    14→
+    15→from erk_shared.gateway.github.retry import (
+    16→    RETRY_DELAYS,
+    17→    RetriesExhausted,
+    18→    RetryRequested,
+    19→    with_retries,
+    20→)
+    21→from erk_shared.gateway.github.transient_errors import is_transient_error
+    22→from erk_shared.gateway.time.abc import Time
+    23→
+    24→logger = logging.getLogger(__name__)
+    25→
+    26→
+    27→def copied_env_for_git_subprocess() -&gt; dict[str, str]:
+    28→    """Return a copy of the environment for git subprocess calls.
+    29→
+    30→    Sets GIT_TERMINAL_PROMPT=0 so git commands fail fast with an error
+
+... [75 lines omitted] ...
+
+    87→    """Execute subprocess with enriched error reporting for integration layer.
+    89→    Wraps subprocess.run() to catch CalledProcessError and re-raise as RuntimeError
+  </tool_result>
+  <assistant>Perfect! Now let me compile a comprehensive summary report:
+
+---
+
+## Comprehensive Pattern Analysis for `erk repo check` Implementation
+
+Based on my thorough exploration of the codebase, here are all the critical patterns and files you need to follow:
+
+### 1. **File: `/home/runner/work/erk/erk/src/erk/cli/constants.py`**
+
+**Relevant Code:**
+```python
+# Workflow command mapping pattern
+WORKFLOW_COMMAND_MAP: dict[str, str] = {
+    "plan-implement": DISPATCH_WORKFLOW_NAME,
+    "pr-rebase": REBASE_WORKFLOW_NAME,
+    # ... etc
+}
+
+# Label definitions  
+ERK_PR_LABEL = "erk-pr"
+ERK_LEARN_LABEL = "erk-learn"
+```
+
+**Pattern:** Constants are defined at module level. No time estimates in code. Constants are used module-wide.
+
+---
+
+### 2. **File: `/home/runner/work/erk/erk/src/erk/cli/cli.py`**
+
+**Relevant Code:**
+```python
+# Command registration pattern
+cli.add_command(admin_group)
+cli.add_command(artifact_group)
+register_with_aliases(cli, branch_group)  # Has @alias decorators
+cli.add_command(json_group)  # JSON commands group
+```
+
+**Pattern:** Commands are registered via `cli.add_command()` or `register_with_aliases()`. The `json_group` is already added to main CLI at line 222.
+
+---
+
+### 3. **File: `/home/runner/work/erk/erk/src/erk/cli/commands/json/__init__.py`**
+
+**Relevant Code:**
+```python
+@click.group("json")
+def json_group() -&gt; None:
+    """Machine-readable JSON commands."""
+    pass
+
+json_group.add_command(json_one_shot, name="one-shot")
+json_group.add_command(json_objective_group, name="objective")
+json_group.add_command(json_pr_group, name="pr")
+```
+
+**Pattern:** Create a subgroup under `json_group` for your new command group. Import your json repo group and add it here.
+
+---
+
+### 4. **File: `/home/runner/work/erk/erk/src/erk/cli/commands/objective/check/cli.py`**
+
+**Relevant Code:**
+```python
+@alias("ch")
+@click.command("check")
+@click.argument("objective_ref", type=str)
+@resolved_repo_option
+@click.pass_obj
+def check_objective(
+    ctx: ErkContext,
+    objective_ref: str,
+    *,
+    repo_id: GitHubRepoId,
+) -&gt; None:
+    """Validate an objective's format and roadmap consistency."""
+    request = ObjectiveCheckRequest(identifier=objective_ref)
+    result = run_objective_check(ctx, request, repo_id=repo_id)
+
+    if isinstance(result, MachineCommandError):
+        if json_mode:
+            click.echo(json.dumps({"success": False, "error": result.message}))
+            raise SystemExit(1)
+        user_output(
+            click.style("Error: ", fg="red") + f"Failed to validate objective: {result.message}"
+        )
+        raise SystemExit(1)
+
+    _render_human(result)
+
+
+def _render_human(result: ObjectiveCheckResult) -&gt; None:
+    """Render [PASS]/[FAIL] output."""
+    v = result.validation
+    user_output(f"Validating objective #{result.issue_number}...")
+    user_output("")
+    for passed, description in v.checks:
+        status = click.style("[PASS]", fg="green") if passed else click.style("[FAIL]", fg="red")
+        user_output(f"{status} {description}")
+    # ...
+```
+
+**Pattern:** 
+- Separate `_render_human()` helper for [PASS]/[FAIL] formatting
+- Use `click.style()` for colors (green for pass, red for fail)
+- Use `user_output()` from `erk_shared.output.output`
+- Check `isinstance(result, MachineCommandError)` for errors
+- Raise `SystemExit(0)` for success, `SystemExit(1)` for failure
+
+---
+
+### 5. **File: `/home/runner/work/erk/erk/src/erk/cli/commands/pr/view/json_cli.py`**
+
+**Relevant Code:**
+```python
+@mcp_exposed(
+    name="pr_view",
+    description=(
+        "View a specific plan's metadata, header info, and body content."
+        " Returns plan title, state, labels, timestamps, and header metadata."
+    ),
+)
+@machine_command(
+    request_type=PrViewRequest,
+    output_types=(PrViewResult,),
+)
+@click.command("view")
+@click.pass_obj
+def json_pr_view(
+    ctx: ErkContext,
+    *,
+    request: PrViewRequest,
+) -&gt; PrViewResult | MachineCommandError:
+    """View a plan's metadata as structured JSON."""
+    owner, repo_name = resolve_owner_repo(ctx, target_repo=None)
+    repo_id = GitHubRepoId(owner=owner, repo=repo_name)
+    return run_pr_view(ctx, request, repo_id=repo_id)
+```
+
+**Pattern:**
+- **Decorator stack order (top to bottom):**
+  1. `@mcp_exposed(name=..., description=...)`
+  2. `@machine_command(request_type=..., output_types=(...))`
+  3. `@click.command("command-name")`
+  4. `@click.pass_obj`
+- Always return `TypeResult | MachineCommandError`
+- Command receives `request: RequestType` as keyword argument
+- Call shared `operation.run_*()` function
+
+---
+
+### 6. **File: `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github_admin/real.py`**
+
+**Relevant Code:**
+```python
+def secret_exists(self, location: GitHubRepoLocation, secret_name: str) -&gt; bool | None:
+    """Check if a repository secret exists using gh CLI.
+    
+    Uses GET /repos/{owner}/{repo}/actions/secrets/{secret_name} endpoint.
+    Returns True if 200, False if 404, None on other errors.
+    """
+    repo_id = location.repo_id
+    # GH-API-AUDIT: REST - GET actions/secrets/{secret_name}
+    cmd = [
+        "gh",
+        "api",
+        "-H",
+        "Accept: application/vnd.github+json",
+        "-H",
+        "X-GitHub-Api-Version: 2022-11-28",
+        f"/repos/{repo_id.owner}/{repo_id.repo}/actions/secrets/{secret_name}",
+    ]
+
+    try:
+        result = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=10,
+            cwd=location.root,
+        )
+        if result.returncode == 0:
+            return True
+        # Check for 404 in stderr (secret not found)
+        if "404" in result.stderr or "Not Found" in result.stderr:
+            return False
+        # Other error (permissions, rate limit, etc.)
+        return None
+    except (subprocess.TimeoutExpired, OSError):
+        return None
+
+def get_workflow_permissions(self, location: GitHubRepoLocation) -&gt; dict[str, Any]:
+    """Get current workflow permissions using gh CLI."""
+    repo_id = location.repo_id
+    # GH-API-AUDIT: REST - GET actions/permissions/workflow
+    cmd = [
+        "gh",
+        "api",
+        "-H",
+        "Accept: application/vnd.github+json",
+        "-H",
+        "X-GitHub-Api-Version: 2022-11-28",
+        f"/repos/{repo_id.owner}/{repo_id.repo}/actions/permissions/workflow",
+    ]
+
+    result = run_subprocess_with_context(
+        cmd=cmd,
+        operation_context=f"get workflow permissions for {repo_id.owner}/{repo_id.repo}",
+        cwd=location.root,
+    )
+
+    return json.loads(result.stdout)
+```
+
+**Pattern:**
+- Use `run_subprocess_with_context()` for most operations (includes retry logic, error handling)
+- Use raw `subprocess.run()` only for graceful degradation (with try/except)
+- Include `# GH-API-AUDIT: REST - ...` comments for API calls
+- Return None on transient errors, bool/value on deterministic results
+- Pass `check=False` for error handling, not exceptions
+
+---
+
+### 7. **Files Containing Label Definitions**
+
+**File: `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/objective_issues.py`**
+
+**Relevant Code:**
+```python
+from dataclasses import dataclass
+
+@dataclass(frozen=True)
+class LabelDefinition:
+    """Definition of a label with its properties."""
+    name: str
+    description: str
+    color: str
+
+
+def get_required_erk_labels() -&gt; list[LabelDefinition]:
+    """Get erk labels required for doctor check.
+    
+    Returns subset of labels checked by doctor command. Excludes
+    erk-learn (optional, for documentation workflows).
+    """
+    return [
+        LabelDefinition(
+            name=_LABEL_ERK_PR,
+            description=_LABEL_ERK_PR_DESC,
+            color=_LABEL_ERK_PR_COLOR,
+        ),
+        LabelDefinition(
+            name=_LABEL_ERK_OBJECTIVE,
+            description=_LABEL_ERK_OBJECTIVE_DESC,
+            color=_LABEL_ERK_OBJECTIVE_COLOR,
+        ),
+    ]
+
+
+def get_erk_label_definitions() -&gt; list[LabelDefinition]:
+    """Get all erk label definitions."""
+    return [
+        # All 4 labels: erk-pr, erk-learn, erk-objective, no-changes
+    ]
+```
+
+**Label Definitions (lines 36-50):**
+```python
+_LABEL_ERK_PR = "erk-pr"
+_LABEL_ERK_PR_DESC = "Plan managed as a draft PR"
+_LABEL_ERK_PR_COLOR = "1D76DB"
+
+_LABEL_ERK_LEARN = "erk-learn"
+_LABEL_ERK_LEARN_DESC = "Documentation learning plan"
+_LABEL_ERK_LEARN_COLOR = "D93F0B"
+
+_LABEL_ERK_OBJECTIVE = "erk-objective"
+_LABEL_ERK_OBJECTIVE_DESC = "Multi-phase objective with roadmap"
+_LABEL_ERK_OBJECTIVE_COLOR = "5319E7"
+
+_LABEL_NO_CHANGES = "no-changes"
+_LABEL_NO_CHANGES_DESC = "Implementation produced no code changes"
+_LABEL_NO_CHANGES_COLOR = "FFA500"
+```
+
+**Usage pattern (from `/home/runner/work/erk/erk/src/erk/core/health_checks/plans_repo_labels.py`):**
+```python
+from erk_shared.gateway.github.objective_issues import LabelDefinition, get_required_erk_labels
+
+labels = get_required_erk_labels()
+for label in labels:
+    if not github_issues.label_exists(repo_root, label.name):
+        missing_labels.append(label)
+```
+
+---
+
+### 8. **File: `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/agentclick/machine_command.py`**
+
+**Relevant Code:**
+```python
+@dataclass(frozen=True)
+class MachineCommandError:
+    """Structured error result from a machine command."""
+    error_type: str
+    message: str
+
+
+# Usage:
+def run_operation(...) -&gt; ResultType | MachineCommandError:
+    if error_condition:
+        return MachineCommandError(
+            error_type="specific_error_code",
+            message="User-facing error message",
+        )
+    return SuccessResult(...)
+```
+
+**Pattern:**
+- Two fields: `error_type` (machine-readable code) and `message` (human readable)
+- Always return `Union[SuccessType, MachineCommandError]`
+- Check with `isinstance(result, MachineCommandError)`
+
+---
+
+### 9. **Operation Pattern (Shared by Human and Machine Commands)**
+
+**File: `/home/runner/work/erk/erk/src/erk/cli/commands/pr/view/operation.py`**
+
+**Structure:**
+```python
+@dataclass(frozen=True)
+class RequestType:
+    """Request type for operation."""
+    field1: str
+    field2: bool = False
+
+
+@dataclass(frozen=True)
+class ResultType:
+    """JSON result for operation."""
+    result_field1: str
+    result_field2: list[str]
+    
+    def to_json_dict(self) -&gt; dict[str, Any]:
+        """Serialize to JSON dict."""
+        return {
+            "field1": self.result_field1,
+            "field2": self.result_field2,
+        }
+
+
+def run_operation(
+    ctx: ErkContext,
+    request: RequestType,
+    *,
+    repo_id: GitHubRepoId,
+) -&gt; ResultType | MachineCommandError:
+    """Execute operation (shared by human and machine commands)."""
+    # Implementation
+    return ResultType(...) or MachineCommandError(...)
+```
+
+**Pattern:**
+- Request type has all inputs as frozen dataclass
+- Result type has all outputs, implements `to_json_dict()`
+- Operation function always returns `Result | MachineCommandError`
+- Operation takes `request: RequestType` as parameter
+- No Click decorators in operation module (transport-independent)
+
+---
+
+### 10. **JSON Command Group Registration Pattern**
+
+**File: `/home/runner/work/erk/erk/src/erk/cli/commands/json/objective/__init__.py`**
+
+**Pattern:**
+```python
+import click
+from erk.cli.commands.objective.check.json_cli import json_objective_check
+from erk.cli.commands.objective.view.json_cli import json_objective_view
+
+@click.group("objective")
+def json_objective_group() -&gt; None:
+    """Machine-readable objective commands."""
+    pass
+
+json_objective_group.add_command(json_objective_check, name="check")
+json_objective_group.add_command(json_objective_view, name="view")
+```
+
+**For `repo` group, you need:**
+1. `/src/erk/cli/commands/json/repo/__init__.py` - register subcommands
+2. Import and add to `/src/erk/cli/commands/json/__init__.py`
+
+---
+
+### 11. **Subprocess Utilities**
+
+**File: `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/subprocess_utils.py`**
+
+**Function Signature:**
+```python
+def run_subprocess_with_context(
+    *,
+    cmd: Sequence[str],
+    operation_context: str,
+    cwd: Path | None = None,
+    timeout: float | None = None,
+    capture_output: bool = True,
+    text: bool = True,
+    encoding: str = "utf-8",
+    check: bool = True,
+    stdout: int | IO[Any] | None = None,
+    stderr: int | IO[Any] | None = None,
+    input: str | None = None,  # For stdin
+    **kwargs: Any,
+) -&gt; subprocess.CompletedProcess[str]:
+```
+
+**Usage Pattern:**
+```python
+from erk_shared.subprocess_utils import run_subprocess_with_context
+
+result = run_subprocess_with_context(
+    cmd=["gh", "api", ...],
+    operation_context="descriptive operation name",
+    cwd=location.root,
+)
+# result.stdout, result.returncode, etc. available
+```
+
+---
+
+### 12. **Key Import Paths**
+
+```python
+# Machine command infrastructure
+from erk_shared.agentclick.machine_command import MachineCommandError, machine_command
+from erk_shared.agentclick.mcp_exposed import mcp_exposed
+
+# Common decorators
+from erk.cli.alias import alias
+
+# Context and repo resolution
+from erk.core.context import ErkContext
+from erk.cli.repo_resolution import resolved_repo_option, resolve_owner_repo
+from erk_shared.gateway.github.types import GitHubRepoId
+
+# GitHub operations
+from erk_shared.gateway.github_admin.abc import GitHubAdmin
+from erk_shared.gateway.github.objective_issues import get_required_erk_labels, LabelDefinition
+
+# Output
+from erk_shared.output.output import user_output
+import click
+```
+
+---
+
+### 13. **Command Registration in Main CLI**
+
+The command must be:
+1. **Added to json_group** - Register in `/src/erk/cli/commands/json/__init__.py`
+2. **Auto-loaded** - No changes needed to `/src/erk/cli/cli.py` (json_group already registered)
+
+---
+
+### 14. **Testing Pattern Reference**
+
+From test file at `/home/runner/work/erk/erk/tests/unit/objective_issues/test_label_definitions.py`:
+- Tests use `get_required_erk_labels()` from the objective_issues module
+- Both human and machine commands should have corresponding tests
+
+---
+
+### Summary: File Structure You Need
+
+```
+src/erk/cli/commands/repo/
+├── __init__.py                 # repo_group definition
+├── check_cmd.py                # Human command: @alias, @click.command
+└── check/
+    ├── __init__.py             # Empty init
+    ├── operation.py            # RepoCheckRequest, RepoCheckResult, run_repo_check()
+    ├── json_cli.py             # @mcp_exposed + @machine_command
+    └── validation.py           # Validation logic (optional)
+
+src/erk/cli/commands/json/repo/
+├── __init__.py                 # json_repo_group, import json_repo_check
+
+UPDATE: src/erk/cli/commands/json/__init__.py
+ADD: json_repo_group.add_command(json_repo_check, name="check")
+```</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="1510" cache_read_input_tokens="47461" cache_creation="{'ephemeral_5m_input_tokens': 1510, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>

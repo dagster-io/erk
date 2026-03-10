@@ -1,0 +1,1099 @@
+<session>
+  <meta source="agent-a89da44" />
+  <meta branch="plnd/add-repo-check-cmd-03-10-1211" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant docs before exploring raw files. Then explore codebase as necessary.
+
+I need to understand the test patterns for operation.py tests in this project:
+
+1. Find test files for other operations, e.g. `tests/**/test_*operation*` or similar
+2. Show me a complete test file that tests an operation with subprocess mocking - ideally one that tests `run_*` functions
+3. Look specifically for tests that mock `subprocess.run` — show me the patterns used
+4. Check if there are any test conftest.py files I should be aware of
+
+Focus on files in `tests/` directory. Show complete file contents for 1-2 relevant test files.</user>
+  <assistant>I'll help you understand the test patterns for operation.py tests. Let me start by checking the documentation and then exploring the test structure.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="6001" cache_read_input_tokens="9164" cache_creation="{'ephemeral_5m_input_tokens': 6001, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_013B7W2pmnJ1gdAw8MoZAAn9">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/index.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6001" cache_read_input_tokens="9164" cache_creation="{'ephemeral_5m_input_tokens': 6001, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01RCiwcqxLkYB2R8Fywe99Jz">
+    <param name="pattern">tests/**/test_*operation*.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6001" cache_read_input_tokens="9164" cache_creation="{'ephemeral_5m_input_tokens': 6001, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_019g3c5KV13Wuon5JD9xsTta">
+    <param name="pattern">tests/**/conftest.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6001" cache_read_input_tokens="9164" cache_creation="{'ephemeral_5m_input_tokens': 6001, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013B7W2pmnJ1gdAw8MoZAAn9">
+     1→&lt;!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY --&gt;
+     2→&lt;!-- Edit source frontmatter, then run 'erk docs sync' to regenerate. --&gt;
+     3→
+     4→# Agent Documentation
+     5→
+     6→Before starting work, scan the read-when conditions below.
+     7→If your current task matches, read the linked document **before writing code**.
+     8→
+     9→## Categories
+    10→
+    11→- [architecture/](architecture/) — Explore when working on core patterns (dry-run, gateways, subprocess, shell integration). Add docs here for cross-cutting technical patterns.
+    12→- [capabilities/](capabilities/)
+    13→- [changelog/](changelog/)
+    14→- [checklists/](checklists/)
+    15→- [ci/](ci/)
+    16→- [claude-code/](claude-code/)
+    17→- [cli/](cli/) — Explore when building CLI commands or output formatting. Add docs here for Click patterns and terminal UX.
+    18→- [commands/](commands/) — Explore when creating or optimizing slash commands. Add docs here for command authoring patterns.
+    19→- [config/](config/)
+    20→- [configuration/](configuration/)
+    21→- [documentation/](documentation/) — Explore when structuring or writing documentation. Add docs here for documentation methodology and best practices.
+    22→- [erk/](erk/) — Explore when working with erk-specific workflows (worktrees, PR sync, Graphite). Add docs here for erk user-facing features.
+    23→- [erk-dev/](erk-dev/)
+    24→- [gateway/](gateway/)
+    25→- [hooks/](hooks/) — Explore when creating or debugging hooks. Add docs here for hook development patterns.
+    26→- [integrations/](integrations/)
+    27→- [objectives/](objectives/)
+    28→- [planning/](planning/) — Explore when working with plans, .erk/impl-context/ folders, or agent delegation. Add docs here for planning workflow patterns.
+    29→- [pr-operations/](pr-operations/)
+    30→- [refactoring/](refactoring/)
+
+... [22 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_019g3c5KV13Wuon5JD9xsTta">
+/home/runner/work/erk/erk/tests/commands/dash/conftest.py
+/home/runner/work/erk/erk/tests/commands/dispatch/conftest.py
+/home/runner/work/erk/erk/tests/commands/implement/conftest.py
+/home/runner/work/erk/erk/tests/commands/workspace/create/conftest.py
+/home/runner/work/erk/erk/tests/conftest.py
+/home/runner/work/erk/erk/tests/integration/conftest.py
+/home/runner/work/erk/erk/tests/integration/real_github_issues/conftest.py
+/home/runner/work/erk/erk/tests/unit/gateways/github/metadata_blocks/conftest.py
+  </tool_result>
+  <tool_result tool="toolu_01RCiwcqxLkYB2R8Fywe99Jz">
+/home/runner/work/erk/erk/tests/commands/workspace/create/test_plan_file_operations.py
+/home/runner/work/erk/erk/tests/core/utils/worktree/test_determine_move_operation.py
+/home/runner/work/erk/erk/tests/tui/app/test_async_operations.py
+/home/runner/work/erk/erk/tests/tui/app/test_operation_tracking.py
+/home/runner/work/erk/erk/tests/unit/agent_docs/test_operations.py
+  </tool_result>
+  <assistant>Now let me check the testing documentation and look at some of these test files:</assistant>
+  <usage input_tokens="229" cache_creation_input_tokens="1474" cache_read_input_tokens="15165" cache_creation="{'ephemeral_5m_input_tokens': 1474, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01WdzSkVdS9v59HdkCivmWBc">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/testing/testing.md</param>
+  </tool_use>
+  <usage input_tokens="229" cache_creation_input_tokens="1474" cache_read_input_tokens="15165" cache_creation="{'ephemeral_5m_input_tokens': 1474, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01PHp8qyYx1XAGDVf5snNaQF">
+    <param name="file_path">/home/runner/work/erk/erk/tests/conftest.py</param>
+  </tool_use>
+  <usage input_tokens="229" cache_creation_input_tokens="1474" cache_read_input_tokens="15165" cache_creation="{'ephemeral_5m_input_tokens': 1474, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_013sGEaueJLNmfrVDUZjVFhv">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/agent_docs/test_operations.py</param>
+  </tool_use>
+  <usage input_tokens="229" cache_creation_input_tokens="1474" cache_read_input_tokens="15165" cache_creation="{'ephemeral_5m_input_tokens': 1474, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01WdzSkVdS9v59HdkCivmWBc">
+     1→---
+     2→title: Erk Test Reference
+     3→last_audited: "2026-02-13 00:00 PT"
+     4→audit_result: clean
+     5→read_when:
+     6→  - "writing tests for erk"
+     7→  - "using erk fakes"
+     8→  - "running erk test commands"
+     9→tripwires:
+    10→  - action: "modifying business logic in src/ without adding a test"
+    11→    warning: "Bug fixes require regression tests (fails before, passes after). Features require behavior tests."
+    12→  - action: "implementing interactive prompts with ctx.console.confirm()"
+    13→    warning: "Ensure FakeConsole in test fixture is configured with `confirm_responses` parameter. Array length must match prompt count exactly — too few causes IndexError, too many indicates a removed prompt. See tests/commands/submit/test_existing_branch_detection.py for examples."
+    14→  - action: "accessing FakeGit properties in tests"
+    15→    warning: "FakeGit has top-level properties (e.g., `git.staged_files`, `git.deleted_branches`, `git.added_worktrees`). Worktree operations delegate to an internal FakeWorktree sub-gateway."
+    16→  - action: "asserting on fake-specific properties in tests using `build_workspace_test_context` with `use_graphite=True`"
+    17→    warning: "Production wrappers (e.g., `GraphiteBranchManager`) do not expose fake tracking properties like `submitted_branches`. Assert on observable behavior (CLI output, return values) instead of accessing fake internals through the wrapper."
+    18→  - action: "asserting on YAML metadata field values with exact string matching"
+    19→    warning: 'Assert on key-only format (''field_name:''), not ''field_name: "value"''. YAML serialization differs from Python repr.'
+    20→  - action: "changing cleanup or deletion behavior without updating test assertions"
+    21→    warning: "When behavior changes from 'delete X' to 'preserve X', update test assertions to verify the new behavior (e.g., assert file persists instead of asserting it was deleted). Stale assertions silently validate the old behavior."
+    22→    score: 4
+    23→  - action: "asserting user_output() content against capsys stdout"
+    24→    warning: "user_output() routes to stderr. When testing code that calls user_output(), assert against capsys.readouterr().err, not .out."
+    25→  - action: "using context_for_test() with wrong parameter name for issues"
+    26→    warning: "erk-shared uses github_issues= parameter, src/erk uses issues= parameter. These are NOT interchangeable — using wrong name causes TypeError."
+    27→---
+    28→
+    29→# Erk Test Reference
+    30→
+
+... [547 lines omitted] ...
+
+   154→**If you see path mismatch errors:** Ensure FakeGit's path resolution methods are being used (they handle symlinks), not direct dict lookups.
+   156→#### FakeWorktree Error Injection
+   158→FakeWorktree (in `tests/fakes/gateway/git_worktree.py`) uses string-based error injection via constructor parameters. Errors raise `RuntimeError`:
+   163→# Inject error for add_worktree
+   165→    add_worktree_error="Worktree already exists",
+   166→    remove_worktree_error="Worktree is locked",
+   170→When `add_worktree_error` or `remove_worktree_error` is set, the corresponding method raises `RuntimeError` with that message. Error injection is checked FIRST in the method body, before any success logic executes.
+   172→You can also inject these errors via the top-level `FakeGit` constructor:
+   176→    add_worktree_error="Worktree already exists",
+   177→    remove_worktree_error="Worktree is locked",
+   199→This fake supports error injection via the `create_branch_error` constructor parameter, which accepts a `BranchAlreadyExists` instance:
+   209→# With error injection
+   210→fake_with_error = FakeGitBranchOps(
+   226→### Common Mistake: Sentinel Path Errors
+   459→fake_console.assert_not_contains("Error")
+   462→### Error Behavior
+   464→If `confirm()` is called but no responses remain, FakeConsole raises `AssertionError` with the prompt text. This catches missing test setup.
+   519→When refactoring gateway methods from exception-based to discriminated unions, update test names to reflect the new pattern.
+   521→### Pattern: Exception -&gt; Union
+   523→| Old Test Name (Exception-Based)       | New Test Name (Discriminated Union)      |
+   525→| `test_merge_pr_failure_returns_false` | `test_merge_pr_returns_merge_error`      |
+   528→| `test_get_issue_raises_api_error`     | `test_get_issue_returns_api_error`       |
+   537→**Error Case:**
+   539→- Old: `test_&lt;method&gt;_raises_&lt;error&gt;` or `test_&lt;method&gt;_returns_false`
+   540→- New: `test_&lt;method&gt;_returns_&lt;error_type&gt;`
+   548→3. [ ] Update docstring to describe return type (not exception)
+   549→4. [ ] Verify fake setup returns type (not raises exception)
+   554→When function signatures change (e.g., adding a column to a table, adding a new parameter), **all test fixtures must be updated comprehensively**. Partial updates cause hard-to-debug failures.
+  </tool_result>
+  <tool_result tool="toolu_01PHp8qyYx1XAGDVf5snNaQF">
+     1→"""Shared test fixtures and configuration."""
+     2→
+     3→import json
+     4→import shutil
+     5→import tarfile
+     6→import tempfile
+     7→from pathlib import Path
+     8→
+     9→import pytest
+    10→
+    11→
+    12→def load_fixture(fixture_path: str) -&gt; str:
+    13→    """Load a fixture file as a string.
+    14→
+    15→    Args:
+    16→        fixture_path: Path relative to tests/fixtures/ directory
+    17→
+    18→    Returns:
+    19→        Content of the fixture file as a string
+    20→    """
+    21→    base_path = Path(__file__).parent / "fixtures" / fixture_path
+    22→    if not base_path.exists():
+    23→        raise FileNotFoundError(f"Fixture not found: {fixture_path}")
+    24→    return base_path.read_text(encoding="utf-8")
+    25→
+    26→
+    27→def load_json_fixture(fixture_path: str) -&gt; dict:
+    28→    """Load a JSON fixture file.
+    29→
+    30→    Args:
+
+... [198 lines omitted] ...
+
+    60→            raise FileNotFoundError(f"Repository fixture not found: {fixture_name}")
+    82→            shutil.rmtree(temp_dir, ignore_errors=True)
+    96→        shutil.rmtree(temp_dir, ignore_errors=True)
+  </tool_result>
+  <tool_result tool="toolu_013sGEaueJLNmfrVDUZjVFhv">
+     1→"""Layer 4 tests for agent_docs operations using FakeAgentDocs.
+     2→
+     3→Tests business logic functions (discover, validate, collect_tripwires, sync)
+     4→against in-memory fakes for fast, deterministic verification.
+     5→"""
+     6→
+     7→from pathlib import Path
+     8→
+     9→from erk.agent_docs.operations import (
+    10→    collect_tripwires,
+    11→    discover_agent_docs,
+    12→    sync_agent_docs,
+    13→    validate_agent_docs,
+    14→    validate_tripwires_index,
+    15→)
+    16→from tests.fakes.gateway.agent_docs import FakeAgentDocs
+    17→
+    18→PROJECT_ROOT = Path("/fake/repo")
+    19→
+    20→VALID_DOC = """\
+    21→---
+    22→title: Test Document
+    23→read_when:
+    24→  - editing test code
+    25→---
+    26→
+    27→# Test Document
+    28→
+    29→Some content.
+    30→"""
+
+... [285 lines omitted] ...
+
+    39→    warning: Follow the 4-place pattern.
+    41→    warning: Use run_subprocess_with_context instead.
+   120→def test_validate_valid_doc_has_no_errors() -&gt; None:
+   126→    assert results[0].errors == ()
+   129→def test_validate_invalid_doc_has_errors() -&gt; None:
+   135→    assert len(results[0].errors) &gt; 0
+   139→    """If discover finds a file but read_file returns None, report error."""
+   165→    assert tripwires[0].warning == "Follow the 4-place pattern."
+   277→    assert "does not exist" in result.errors[0]
+  </tool_result>
+  <assistant>Now let me search for tests that specifically mock subprocess.run:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="19489" cache_read_input_tokens="16639" cache_creation="{'ephemeral_5m_input_tokens': 19489, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01RKHEb6ngziSZ7L8bbnBXxR">
+    <param name="pattern">subprocess\.run</param>
+    <param name="path">/home/runner/work/erk/erk/tests</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="19489" cache_read_input_tokens="16639" cache_creation="{'ephemeral_5m_input_tokens': 19489, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01A64JXTvYzvmek6wmBNSaBN">
+    <param name="pattern">tests/real/test_*.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="19489" cache_read_input_tokens="16639" cache_creation="{'ephemeral_5m_input_tokens': 19489, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01A64JXTvYzvmek6wmBNSaBN">
+/home/runner/work/erk/erk/tests/real/test_subprocess.py
+/home/runner/work/erk/erk/tests/real/test_real_git.py
+/home/runner/work/erk/erk/tests/real/test_real_gt_kit.py
+/home/runner/work/erk/erk/tests/real/test_real_graphite.py
+/home/runner/work/erk/erk/tests/real/test_real_http_client.py
+/home/runner/work/erk/erk/tests/real/test_real_agent_docs.py
+  </tool_result>
+  <tool_result tool="toolu_01RKHEb6ngziSZ7L8bbnBXxR">
+Found 24 files
+tests/unit/cli/commands/exec/scripts/test_push_session.py
+tests/unit/cli/commands/exec/scripts/test_impl_signal.py
+tests/unit/cli/commands/exec/scripts/test_get_pr_commits.py
+tests/unit/agent_docs/test_generate_tripwires_doc.py
+tests/unit/agent_docs/test_validate_tripwires.py
+tests/test_utils/cli_helpers.py
+tests/real/test_real_git.py
+tests/real/test_real_graphite.py
+tests/real/test_real_gt_kit.py
+tests/real/test_subprocess.py
+tests/integration/test_real_git_commit_ops.py
+tests/integration/test_real_github.py
+tests/integration/test_real_graphite_branch_ops.py
+tests/integration/test_completion_e2e.py
+tests/integration/test_dryrun_integration.py
+tests/integration/test_helpers.py
+tests/integration/test_real_git_analysis_ops.py
+tests/integration/test_real_git_branch_ops.py
+tests/integration/test_real_git.py
+tests/integration/cli/commands/test_doctor_integration.py
+tests/integration/conftest.py
+tests/integration/AGENTS.md
+tests/commands/workspace/create/test_graphite_integration.py
+tests/commands/AGENTS.md
+  </tool_result>
+  <assistant>Perfect! Let me look at the subprocess test and real_git test which should show the mocking patterns:</assistant>
+  <usage input_tokens="184" cache_creation_input_tokens="692" cache_read_input_tokens="36128" cache_creation="{'ephemeral_5m_input_tokens': 692, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01CSCnoeH1CBvRKK1Wnryms3">
+    <param name="file_path">/home/runner/work/erk/erk/tests/real/test_subprocess.py</param>
+  </tool_use>
+  <usage input_tokens="184" cache_creation_input_tokens="692" cache_read_input_tokens="36128" cache_creation="{'ephemeral_5m_input_tokens': 692, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01BBUMErhEyUBtj82i1noda6">
+    <param name="file_path">/home/runner/work/erk/erk/tests/real/test_real_git.py</param>
+    <param name="limit">150</param>
+  </tool_use>
+  <usage input_tokens="184" cache_creation_input_tokens="692" cache_read_input_tokens="36128" cache_creation="{'ephemeral_5m_input_tokens': 692, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01CSCnoeH1CBvRKK1Wnryms3">
+     1→"""Tests for subprocess wrapper with rich error context."""
+     2→
+     3→import subprocess
+     4→from pathlib import Path
+     5→from unittest.mock import Mock, patch
+     6→
+     7→import pytest
+     8→
+     9→from erk_shared.subprocess_utils import run_subprocess_with_context
+    10→
+    11→
+    12→def test_success_case_returns_completed_process() -&gt; None:
+    13→    """Test that successful subprocess execution returns CompletedProcess."""
+    14→    with patch("erk_shared.subprocess_utils.subprocess.run") as mock_run:
+    15→        # Setup successful execution
+    16→        mock_result = Mock(spec=subprocess.CompletedProcess)
+    17→        mock_result.returncode = 0
+    18→        mock_result.stdout = "success output"
+    19→        mock_result.stderr = ""
+    20→        mock_run.return_value = mock_result
+    21→
+    22→        # Execute
+    23→        result = run_subprocess_with_context(
+    24→            cmd=["git", "status"],
+    25→            operation_context="check git status",
+    26→            cwd=Path("/repo"),
+    27→        )
+    28→
+    29→        # Verify
+    30→        assert result == mock_result
+
+... [427 lines omitted] ...
+
+    48→def test_failure_with_stderr_includes_stderr_in_error() -&gt; None:
+    49→    """Test that subprocess failure with stderr includes stderr in error message."""
+    51→        # Setup failed execution with stderr
+    52→        error = subprocess.CalledProcessError(
+    55→            stderr="error: pathspec 'nonexistent' did not match any file(s) known to git",
+    57→        mock_run.side_effect = error
+    59→        # Execute and verify exception
+    60→        with pytest.raises(RuntimeError) as exc_info:
+    67→        # Verify error message contains all expected parts
+    68→        error_message = str(exc_info.value)
+    69→        assert "Failed to checkout branch 'nonexistent'" in error_message
+    70→        assert "Command: git checkout nonexistent" in error_message
+    71→        assert "Exit code: 1" in error_message
+    73→            "stderr: error: pathspec 'nonexistent' did not match any file(s) known to git"
+    74→            in error_message
+    78→def test_failure_without_stderr_handles_gracefully() -&gt; None:
+    79→    """Test that subprocess failure without stderr still produces useful error."""
+    81→        # Setup failed execution without stderr
+    82→        error = subprocess.CalledProcessError(
+    87→        mock_run.side_effect = error
+    89→        # Execute and verify exception
+    90→        with pytest.raises(RuntimeError) as exc_info:
+    96→        # Verify error message contains command and exit code but not stderr
+    97→        error_message = str(exc_info.value)
+    98→        assert "Failed to run nonexistent command" in error_message
+    99→        assert "Command: nonexistent-command" in error_message
+   100→        assert "Exit code: 127" in error_message
+   102→        assert "stderr:" not in error_message
+   105→def test_failure_with_empty_stderr_omits_stderr_line() -&gt; None:
+   106→    """Test that subprocess failure with empty stderr omits the stderr line."""
+   108→        # Setup failed execution with empty stderr
+   109→        error = subprocess.CalledProcessError(
+   114→        mock_run.side_effect = error
+   116→        # Execute and verify exception
+   117→        with pytest.raises(RuntimeError) as exc_info:
+   123→        # Verify error message omits stderr when it's only whitespace
+   124→        error_message = str(exc_info.value)
+   125→        assert "Failed to run command" in error_message
+   126→        assert "Command: command" in error_message
+   127→        assert "Exit code: 1" in error_message
+   128→        assert "stderr:" not in error_message
+   131→def test_exception_chaining_preserved() -&gt; None:
+   132→    """Test that original CalledProcessError is preserved via exception chaining."""
+   134→        # Setup failed execution
+   135→        original_error = subprocess.CalledProcessError(
+   138→            stderr="fatal: not a git repository",
+   140→        mock_run.side_effect = original_error
+   142→        # Execute and verify exception chaining
+   143→        with pytest.raises(RuntimeError) as exc_info:
+   149→        # Verify original exception is preserved as __cause__
+   150→        assert exc_info.value.__cause__ is original_error
+   151→        assert isinstance(exc_info.value.__cause__, subprocess.CalledProcessError)
+   186→def test_check_false_behavior_no_exception() -&gt; None:
+   187→    """Test that check=False prevents exception on non-zero exit."""
+   189→        # Setup failed execution but with check=False
+   192→        mock_result.stderr = "some error"
+   202→        # Verify result returned without exception
+   271→    stdout/stderr parameters should disable capture_output to avoid ValueError.
+   280→        # Execute with explicit stderr parameter - should NOT raise ValueError
+   323→def test_failure_with_stdout_includes_stdout_in_error() -&gt; None:
+   324→    """Test that subprocess failure with stdout includes stdout in error message."""
+   326→        # Setup failed execution with stdout
+   327→        error = subprocess.CalledProcessError(
+   331→        error.stdout = "ERROR: Could not find branch 'branch'"
+   332→        mock_run.side_effect = error
+   334→        # Execute and verify exception
+   335→        with pytest.raises(RuntimeError) as exc_info:
+   342→        # Verify error message contains all expected parts including stdout
+   343→        error_message = str(exc_info.value)
+   344→        assert "Failed to delete branch 'branch' with Graphite" in error_message
+   345→        assert "Command: gt delete branch" in error_message
+   346→        assert "Exit code: 1" in error_message
+   347→        assert "stdout: ERROR: Could not find branch 'branch'" in error_message
+   350→def test_failure_with_both_stdout_and_stderr_includes_both() -&gt; None:
+   351→    """Test that subprocess failure with both outputs includes both in error."""
+   353→        # Setup failed execution with both stdout and stderr
+   354→        error = subprocess.CalledProcessError(
+   358→        error.stdout = "Output message"
+   359→        error.stderr = "Error message"
+   360→        mock_run.side_effect = error
+   362→        # Execute and verify exception
+   363→        with pytest.raises(RuntimeError) as exc_info:
+   370→        # Verify error message contains both stdout and stderr
+   371→        error_message = str(exc_info.value)
+   372→        assert "Failed to run command" in error_message
+   373→        assert "Command: command arg" in error_message
+   374→        assert "Exit code: 1" in error_message
+   375→        assert "stdout: Output message" in error_message
+   376→        assert "stderr: Error message" in error_message
+   379→def test_timeout_expired_raises_runtime_error() -&gt; None:
+   380→    """Test that TimeoutExpired is converted to RuntimeError with timeout message."""
+   387→        with pytest.raises(RuntimeError) as exc_info:
+   395→        error_message = str(exc_info.value)
+   396→        assert "Timed out after 120s" in error_message
+   397→        assert "push branch 'main' to remote 'origin'" in error_message
+   398→        assert "Command: git push origin main" in error_message
+   401→def test_timeout_expired_preserves_exception_chain() -&gt; None:
+   402→    """Test that TimeoutExpired is preserved as __cause__ on the RuntimeError."""
+   404→        original_error = subprocess.TimeoutExpired(
+   408→        mock_run.side_effect = original_error
+   410→        with pytest.raises(RuntimeError) as exc_info:
+   417→        assert exc_info.value.__cause__ is original_error
+  </tool_result>
+  <tool_result tool="toolu_01BBUMErhEyUBtj82i1noda6">
+     1→"""Unit tests for RealGit with mocked subprocess calls.
+     2→
+     3→These tests verify that RealGit correctly constructs subprocess commands
+     4→for external tools (git) without actually executing them.
+     5→"""
+     6→
+     7→from pathlib import Path
+     8→from unittest.mock import MagicMock, patch
+     9→
+    10→from erk_shared.gateway.git.real import RealGit
+    11→
+    12→
+    13→def test_list_remote_branches() -&gt; None:
+    14→    """Test git branch -r with mocked subprocess."""
+    15→    with patch("subprocess.run") as mock_run:
+    16→        # Arrange: Configure mock to return sample remote branches
+    17→        mock_run.return_value = MagicMock(
+    18→            stdout="origin/main\norigin/feature-1\norigin/feature-2\n",
+    19→            returncode=0,
+    20→        )
+    21→
+    22→        # Act: Call the method
+    23→        ops = RealGit()
+    24→        branches = ops.branch.list_remote_branches(Path("/test/repo"))
+    25→
+    26→        # Assert: Verify command construction
+    27→        mock_run.assert_called_once()
+    28→        call_args = mock_run.call_args
+    29→        assert call_args[0][0] == ["git", "branch", "-r", "--format=%(refname:short)"]
+    30→        assert call_args[1]["cwd"] == Path("/test/repo")
+
+... [125 lines omitted] ...
+  </tool_result>
+  <assistant>Perfect! Now let me also check one more test file that shows patterns for testing operations more directly. Let me look at a test that exercises operations.py directly:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="8810" cache_read_input_tokens="36820" cache_creation="{'ephemeral_5m_input_tokens': 8810, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01QcSi1VXd5UU8cqKST5Qo3E">
+    <param name="pattern">run_\w+</param>
+    <param name="path">/home/runner/work/erk/erk/tests/real/test_subprocess.py</param>
+    <param name="output_mode">content</param>
+    <param name="head_limit">30</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="8810" cache_read_input_tokens="36820" cache_creation="{'ephemeral_5m_input_tokens': 8810, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01ENEP88M7hZ2vCc2BrbNsph">
+    <param name="pattern">src/erk/**/operation*.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="8810" cache_read_input_tokens="36820" cache_creation="{'ephemeral_5m_input_tokens': 8810, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01ENEP88M7hZ2vCc2BrbNsph">
+/home/runner/work/erk/erk/src/erk/agent_docs/operations.py
+/home/runner/work/erk/erk/src/erk/cli/commands/objective/check/operation.py
+/home/runner/work/erk/erk/src/erk/cli/commands/objective/view/operation.py
+/home/runner/work/erk/erk/src/erk/cli/commands/one_shot/operation.py
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/list/operation.py
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/view/operation.py
+/home/runner/work/erk/erk/src/erk/cli/commands/repo/check/operation.py
+  </tool_result>
+  <tool_result tool="toolu_01QcSi1VXd5UU8cqKST5Qo3E">
+9:from erk_shared.subprocess_utils import run_subprocess_with_context
+23:        result = run_subprocess_with_context(
+61:            run_subprocess_with_context(
+91:            run_subprocess_with_context(
+118:            run_subprocess_with_context(
+144:            run_subprocess_with_context(
+163:        run_subprocess_with_context(
+196:        result = run_subprocess_with_context(
+216:        run_subprocess_with_context(
+236:        run_subprocess_with_context(
+256:        run_subprocess_with_context(
+281:        result = run_subprocess_with_context(
+306:        result = run_subprocess_with_context(
+336:            run_subprocess_with_context(
+364:            run_subprocess_with_context(
+388:            run_subprocess_with_context(
+411:            run_subprocess_with_context(
+428:        run_subprocess_with_context(
+445:        run_subprocess_with_context(
+
+[Showing results with pagination = limit: 30, offset: 0]
+  </tool_result>
+  <assistant>Let me look at the conftest to understand the fixture patterns better:</assistant>
+  <usage input_tokens="235" cache_creation_input_tokens="646" cache_read_input_tokens="45630" cache_creation="{'ephemeral_5m_input_tokens': 646, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01GjaAi7hCXYddp7sZ3jVttx">
+    <param name="file_path">/home/runner/work/erk/erk/tests/integration/conftest.py</param>
+  </tool_use>
+  <usage input_tokens="235" cache_creation_input_tokens="646" cache_read_input_tokens="45630" cache_creation="{'ephemeral_5m_input_tokens': 646, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01GjaAi7hCXYddp7sZ3jVttx">
+     1→"""Fixtures and helpers for integration tests.
+     2→
+     3→This module provides fixtures that configure real git operations for integration testing.
+     4→"""
+     5→
+     6→import subprocess
+     7→from collections.abc import Iterator
+     8→from pathlib import Path
+     9→from typing import NamedTuple
+    10→
+    11→import pytest
+    12→
+    13→from erk_shared.gateway.git.abc import Git
+    14→from erk_shared.gateway.git.branch_ops.abc import GitBranchOps
+    15→from erk_shared.gateway.git.branch_ops.real import RealGitBranchOps
+    16→from erk_shared.gateway.git.real import RealGit
+    17→
+    18→
+    19→class GitBranchOpsSetup(NamedTuple):
+    20→    """Result of git branch operations setup fixture for integration testing.
+    21→
+    22→    Attributes:
+    23→        branch_ops: RealGitBranchOps instance for integration testing
+    24→        git: RealGit instance for verification queries
+    25→        repo: Path to the real repository root
+    26→    """
+    27→
+    28→    branch_ops: GitBranchOps
+    29→    git: Git
+    30→    repo: Path
+
+... [186 lines omitted] ...
+  </tool_result>
+  <assistant>Excellent! Now let me create a comprehensive summary document. Let me check one more file to see a complete example of an operation test:</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="3781" cache_read_input_tokens="46276" cache_creation="{'ephemeral_5m_input_tokens': 3781, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01X2HtM6HvZmae3tks3ftZxC">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/agent_docs/operations.py</param>
+    <param name="limit">80</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="3781" cache_read_input_tokens="46276" cache_creation="{'ephemeral_5m_input_tokens': 3781, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01X2HtM6HvZmae3tks3ftZxC">
+     1→"""Operations for agent documentation management.
+     2→
+     3→This module provides functionality for validating and syncing agent documentation
+     4→files with frontmatter metadata.
+     5→"""
+     6→
+     7→import re
+     8→from collections import defaultdict
+     9→from collections.abc import Callable, Mapping
+    10→from pathlib import Path
+    11→from typing import Any, cast, get_args
+    12→
+    13→import click
+    14→
+    15→from erk.agent_docs.models import (
+    16→    AgentDocFrontmatter,
+    17→    AgentDocValidationResult,
+    18→    AuditResult,
+    19→    CategoryInfo,
+    20→    CategoryTripwireStats,
+    21→    CollectedTripwire,
+    22→    DocInfo,
+    23→    SyncResult,
+    24→    Tripwire,
+    25→    TripwiresIndexValidationResult,
+    26→)
+    27→from erk_shared.core.frontmatter import parse_markdown_frontmatter
+    28→from erk_shared.gateway.agent_docs.abc import AgentDocs
+    29→
+    30→
+
+... [55 lines omitted] ...
+
+    41→        raise click.ClickException(f"Configured docs.path does not exist: {docs_path}")
+  </tool_result>
+  <assistant>Perfect! Now I have all the information needed to provide a comprehensive summary. Let me create a detailed report.
+
+## Test Patterns for Operation Tests in ERK
+
+Based on my exploration of the codebase, here's a comprehensive guide to the test patterns used for operation.py tests in this project:
+
+### Key Documentation References
+
+1. **Main Testing Guide**: `/home/runner/work/erk/erk/docs/learned/testing/testing.md` - Complete erk testing patterns
+2. **Test Architecture Overview**: `/home/runner/work/erk/erk/tests/AGENTS.md` - Test layer organization
+
+---
+
+## Test Files Found
+
+I located several test patterns for operations:
+
+1. **Unit tests of operations** (uses fakes):
+   - `/home/runner/work/erk/erk/tests/unit/agent_docs/test_operations.py`
+   - `/home/runner/work/erk/erk/tests/core/utils/worktree/test_determine_move_operation.py`
+
+2. **Real implementation tests** (mocks subprocess):
+   - `/home/runner/work/erk/erk/tests/real/test_subprocess.py` - Complete subprocess mocking patterns
+   - `/home/runner/work/erk/erk/tests/real/test_real_git.py` - Git operation mocking
+   - `/home/runner/work/erk/erk/tests/real/test_real_graphite.py`
+   - `/home/runner/work/erk/erk/tests/real/test_real_gt_kit.py`
+
+---
+
+## Complete Test File Examples
+
+### 1. Subprocess Mocking Pattern (Real Implementation Tests)
+
+**File**: `/home/runner/work/erk/erk/tests/real/test_subprocess.py`
+
+This is the **primary example** for mocking subprocess.run() operations. Here's a representative section:
+
+```python
+"""Tests for subprocess wrapper with rich error context."""
+
+import subprocess
+from pathlib import Path
+from unittest.mock import Mock, patch
+
+import pytest
+
+from erk_shared.subprocess_utils import run_subprocess_with_context
+
+
+def test_success_case_returns_completed_process() -&gt; None:
+    """Test that successful subprocess execution returns CompletedProcess."""
+    with patch("erk_shared.subprocess_utils.subprocess.run") as mock_run:
+        # Setup successful execution
+        mock_result = Mock(spec=subprocess.CompletedProcess)
+        mock_result.returncode = 0
+        mock_result.stdout = "success output"
+        mock_result.stderr = ""
+        mock_run.return_value = mock_result
+
+        # Execute
+        result = run_subprocess_with_context(
+            cmd=["git", "status"],
+            operation_context="check git status",
+            cwd=Path("/repo"),
+        )
+
+        # Verify
+        assert result == mock_result
+        assert result.returncode == 0
+        assert result.stdout == "success output"
+
+        # Verify subprocess.run was called with correct parameters
+        mock_run.assert_called_once_with(
+            ["git", "status"],
+            cwd=Path("/repo"),
+            timeout=None,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            check=True,
+            stdout=None,
+            stderr=None,
+        )
+
+
+def test_failure_with_stderr_includes_stderr_in_error() -&gt; None:
+    """Test that subprocess failure with stderr includes stderr in error message."""
+    with patch("erk_shared.subprocess_utils.subprocess.run") as mock_run:
+        # Setup failed execution with stderr
+        error = subprocess.CalledProcessError(
+            returncode=1,
+            cmd=["git", "checkout", "nonexistent"],
+            stderr="error: pathspec 'nonexistent' did not match any file(s) known to git",
+        )
+        mock_run.side_effect = error
+
+        # Execute and verify exception
+        with pytest.raises(RuntimeError) as exc_info:
+            run_subprocess_with_context(
+                cmd=["git", "checkout", "nonexistent"],
+                operation_context="checkout branch 'nonexistent'",
+                cwd=Path("/repo"),
+            )
+
+        # Verify error message contains all expected parts
+        error_message = str(exc_info.value)
+        assert "Failed to checkout branch 'nonexistent'" in error_message
+        assert "Command: git checkout nonexistent" in error_message
+        assert "Exit code: 1" in error_message
+        assert (
+            "stderr: error: pathspec 'nonexistent' did not match any file(s) known to git"
+            in error_message
+        )
+
+
+def test_exception_chaining_preserved() -&gt; None:
+    """Test that original CalledProcessError is preserved via exception chaining."""
+    with patch("erk_shared.subprocess_utils.subprocess.run") as mock_run:
+        # Setup failed execution
+        original_error = subprocess.CalledProcessError(
+            returncode=1,
+            cmd=["git", "status"],
+            stderr="fatal: not a git repository",
+        )
+        mock_run.side_effect = original_error
+
+        # Execute and verify exception chaining
+        with pytest.raises(RuntimeError) as exc_info:
+            run_subprocess_with_context(
+                cmd=["git", "status"],
+                operation_context="check git status",
+            )
+
+        # Verify original exception is preserved as __cause__
+        assert exc_info.value.__cause__ is original_error
+        assert isinstance(exc_info.value.__cause__, subprocess.CalledProcessError)
+```
+
+**Key Patterns**:
+- Use `patch()` context manager to mock subprocess.run at module level
+- Use `Mock(spec=subprocess.CompletedProcess)` for return values
+- Set `.returncode`, `.stdout`, `.stderr` attributes on mock
+- Use `side_effect` to raise exceptions
+- Use `assert_called_once_with()` to verify call parameters
+- Test both success (returncode=0) and failure (returncode!=0) cases
+- Verify exception chaining with `__cause__`
+
+---
+
+### 2. Real Git Operation Mocking Pattern
+
+**File**: `/home/runner/work/erk/erk/tests/real/test_real_git.py` (partial)
+
+```python
+"""Unit tests for RealGit with mocked subprocess calls.
+
+These tests verify that RealGit correctly constructs subprocess commands
+for external tools (git) without actually executing them.
+"""
+
+from pathlib import Path
+from unittest.mock import MagicMock, patch
+
+from erk_shared.gateway.git.real import RealGit
+
+
+def test_list_remote_branches() -&gt; None:
+    """Test git branch -r with mocked subprocess."""
+    with patch("subprocess.run") as mock_run:
+        # Arrange: Configure mock to return sample remote branches
+        mock_run.return_value = MagicMock(
+            stdout="origin/main\norigin/feature-1\norigin/feature-2\n",
+            returncode=0,
+        )
+
+        # Act: Call the method
+        ops = RealGit()
+        branches = ops.branch.list_remote_branches(Path("/test/repo"))
+
+        # Assert: Verify command construction
+        mock_run.assert_called_once()
+        call_args = mock_run.call_args
+        assert call_args[0][0] == ["git", "branch", "-r", "--format=%(refname:short)"]
+        assert call_args[1]["cwd"] == Path("/test/repo")
+        assert call_args[1]["capture_output"] is True
+        assert call_args[1]["text"] is True
+        assert call_args[1]["check"] is True
+
+        # Assert: Verify parsing
+        assert branches == ["origin/main", "origin/feature-1", "origin/feature-2"]
+
+
+def test_branch_exists_on_remote_when_exists() -&gt; None:
+    """Test git ls-remote returns True when branch exists on remote."""
+    with patch("subprocess.run") as mock_run:
+        # Arrange: Configure mock to return branch ref (branch exists)
+        mock_run.return_value = MagicMock(
+            stdout="abc123def456\trefs/heads/feature-branch\n",
+            returncode=0,
+        )
+
+        # Act: Call the method
+        ops = RealGit()
+        exists = ops.branch.branch_exists_on_remote(Path("/test/repo"), "origin", "feature-branch")
+
+        # Assert: Verify command construction
+        mock_run.assert_called_once()
+        call_args = mock_run.call_args
+        assert call_args[0][0] == ["git", "ls-remote", "origin", "feature-branch"]
+        assert call_args[1]["cwd"] == Path("/test/repo")
+        assert call_args[1]["capture_output"] is True
+        assert call_args[1]["text"] is True
+        assert call_args[1]["check"] is False
+
+        # Assert: Verify result
+        assert exists is True
+```
+
+**Key Patterns**:
+- Patch `subprocess.run` at module level (global)
+- Use `MagicMock()` with keyword args for stdout/stderr
+- Verify both command construction AND output parsing
+- Check `call_args[0][0]` for command list
+- Check `call_args[1]` dict for subprocess parameters
+- Test with realistic command outputs (with tabs, newlines)
+
+---
+
+### 3. Operation-Level Fake Testing Pattern
+
+**File**: `/home/runner/work/erk/erk/tests/unit/agent_docs/test_operations.py` (complete)
+
+```python
+"""Layer 4 tests for agent_docs operations using FakeAgentDocs.
+
+Tests business logic functions (discover, validate, collect_tripwires, sync)
+against in-memory fakes for fast, deterministic verification.
+"""
+
+from pathlib import Path
+
+from erk.agent_docs.operations import (
+    collect_tripwires,
+    discover_agent_docs,
+    sync_agent_docs,
+    validate_agent_docs,
+    validate_tripwires_index,
+)
+from tests.fakes.gateway.agent_docs import FakeAgentDocs
+
+PROJECT_ROOT = Path("/fake/repo")
+
+VALID_DOC = """\
+---
+title: Test Document
+read_when:
+  - editing test code
+---
+
+# Test Document
+
+Some content.
+"""
+
+VALID_DOC_WITH_TRIPWIRES = """\
+---
+title: Architecture Patterns
+read_when:
+  - working on gateways
+tripwires:
+  - action: creating a new gateway
+    warning: Follow the 4-place pattern.
+  - action: using subprocess directly
+    warning: Use run_subprocess_with_context instead.
+---
+
+# Architecture Patterns
+"""
+
+INVALID_DOC = """\
+---
+title: ""
+---
+
+Missing read_when field.
+"""
+
+
+# -- discover_agent_docs --
+
+def test_discover_returns_empty_when_no_docs_dir() -&gt; None:
+    agent_docs = FakeAgentDocs(files={}, has_docs_dir=False)
+    assert discover_agent_docs(agent_docs, PROJECT_ROOT) == []
+
+
+def test_discover_skips_index_files() -&gt; None:
+    agent_docs = FakeAgentDocs(
+        has_docs_dir=True,
+        files={
+            "index.md": "# Root Index",
+            "architecture/index.md": "# Arch Index",
+            "doc.md": VALID_DOC,
+        },
+    )
+    result = discover_agent_docs(agent_docs, PROJECT_ROOT)
+    assert result == ["doc.md"]
+
+
+def test_discover_skips_auto_generated_tripwires() -&gt; None:
+    agent_docs = FakeAgentDocs(
+        has_docs_dir=True,
+        files={
+            "architecture/tripwires.md": "&lt;!-- AUTO-GENERATED FILE --&gt;\n# Tripwires",
+            "doc.md": VALID_DOC,
+        },
+    )
+    result = discover_agent_docs(agent_docs, PROJECT_ROOT)
+    assert result == ["doc.md"]
+
+
+def test_discover_returns_sorted_paths() -&gt; None:
+    agent_docs = FakeAgentDocs(
+        has_docs_dir=True,
+        files={
+            "b/doc.md": VALID_DOC,
+            "a/doc.md": VALID_DOC,
+        },
+    )
+    result = discover_agent_docs(agent_docs, PROJECT_ROOT)
+    assert result == ["a/doc.md", "b/doc.md"]
+
+
+# -- validate_agent_docs --
+
+def test_validate_valid_doc_has_no_errors() -&gt; None:
+    agent_docs = FakeAgentDocs(has_docs_dir=True, files={"doc.md": VALID_DOC})
+    results = validate_agent_docs(agent_docs, PROJECT_ROOT)
+
+    assert len(results) == 1
+    assert results[0].is_valid
+    assert results[0].errors == ()
+
+
+def test_validate_invalid_doc_has_errors() -&gt; None:
+    agent_docs = FakeAgentDocs(has_docs_dir=True, files={"bad.md": INVALID_DOC})
+    results = validate_agent_docs(agent_docs, PROJECT_ROOT)
+
+    assert len(results) == 1
+    assert not results[0].is_valid
+    assert len(results[0].errors) &gt; 0
+
+
+# -- collect_tripwires --
+
+def test_collect_tripwires_from_valid_doc() -&gt; None:
+    agent_docs = FakeAgentDocs(
+        has_docs_dir=True,
+        files={"architecture/patterns.md": VALID_DOC_WITH_TRIPWIRES},
+    )
+    tripwires = collect_tripwires(agent_docs, PROJECT_ROOT)
+
+    assert len(tripwires) == 2
+    assert tripwires[0].action == "creating a new gateway"
+    assert tripwires[0].warning == "Follow the 4-place pattern."
+    assert tripwires[0].doc_path == "architecture/patterns.md"
+    assert tripwires[0].doc_title == "Architecture Patterns"
+
+
+# -- sync_agent_docs --
+
+def test_sync_returns_empty_when_no_docs_dir() -&gt; None:
+    agent_docs = FakeAgentDocs(files={}, has_docs_dir=False)
+    result = sync_agent_docs(agent_docs, PROJECT_ROOT, dry_run=False, on_progress=lambda _: None)
+
+    assert result.created == ()
+    assert result.updated == ()
+    assert result.unchanged == ()
+
+
+def test_sync_creates_root_index() -&gt; None:
+    agent_docs = FakeAgentDocs(has_docs_dir=True, files={"doc.md": VALID_DOC})
+    result = sync_agent_docs(agent_docs, PROJECT_ROOT, dry_run=False, on_progress=lambda _: None)
+
+    assert "index.md" in result.created
+    assert "index.md" in agent_docs.written_files
+
+
+def test_sync_dry_run_does_not_write() -&gt; None:
+    agent_docs = FakeAgentDocs(has_docs_dir=True, files={"doc.md": VALID_DOC})
+    result = sync_agent_docs(agent_docs, PROJECT_ROOT, dry_run=True, on_progress=lambda _: None)
+
+    assert "index.md" in result.created
+    assert agent_docs.written_files == {}
+
+
+def test_sync_invokes_on_progress_callback() -&gt; None:
+    """Verify on_progress is called with expected progress messages at each phase."""
+    agent_docs = FakeAgentDocs(
+        has_docs_dir=True,
+        files={"architecture/patterns.md": VALID_DOC_WITH_TRIPWIRES},
+    )
+    progress_messages: list[str] = []
+    sync_agent_docs(agent_docs, PROJECT_ROOT, dry_run=False, on_progress=progress_messages.append)
+
+    assert progress_messages == [
+        "Scanning docs...",
+        "Generating root index...",
+        "Generating category indexes...",
+        "Collecting tripwires...",
+        "Generating tripwire files...",
+        "Generating tripwires index...",
+    ]
+```
+
+**Key Patterns**:
+- Use FakeAgentDocs instead of mocking - cleaner, more readable
+- Create test data as module-level constants (VALID_DOC, etc.)
+- Test operations directly with fakes
+- Verify both return values AND side effects (written_files)
+- Test callback invocations
+- Test dry_run mode doesn't modify state
+- Use plain functions, not test classes
+
+---
+
+## Test Organization Layers
+
+The project uses a **5-layer test architecture**:
+
+| Layer | Path | Purpose | Mocking Strategy |
+|-------|------|---------|------------------|
+| **1** | `tests/unit/fakes/` | Test fake implementations | None (tests the test infrastructure) |
+| **2** | `tests/real/` | Test Real* gateways (command construction) | Mock subprocess.run at module level |
+| **2b** | `tests/integration/` | Test with actual external tools | Real subprocess calls with tmp_path |
+| **3** | `tests/commands/` | Test CLI commands | Use FakeX gateways via CliRunner |
+| **4** | `tests/core/` | Test business logic | Use FakeX gateways directly |
+
+---
+
+## conftest.py Files
+
+**Root conftest**: `/home/runner/work/erk/erk/tests/conftest.py`
+- `load_fixture()` - Load text fixture files
+- `load_json_fixture()` - Load JSON fixtures
+- `extract_repo_fixture()` - Extract tarred git repos for testing
+- `temp_workspace` - Create temporary workspace
+- Scenario builders: `simple_repo`, `repo_with_feature`, `repo_with_pr`, etc.
+
+**Integration conftest**: `/home/runner/work/erk/erk/tests/integration/conftest.py`
+- `git_ops` - RealGit with tmp_path repo
+- `git_ops_with_worktrees` - RealGit with multiple real worktrees
+- `git_ops_with_detached` - RealGit with detached HEAD
+- `git_branch_ops` - RealGitBranchOps with real repo
+- `init_git_repo()` - Helper to initialize real git repos
+
+---
+
+## Critical Patterns for operation.py Tests
+
+### Pattern 1: Subprocess Mocking
+```python
+with patch("module.subprocess.run") as mock_run:
+    mock_run.return_value = Mock(returncode=0, stdout="...")
+    # Or:
+    mock_run.side_effect = subprocess.CalledProcessError(...)
+    # Test code here
+    mock_run.assert_called_once_with(...)
+```
+
+### Pattern 2: Fake Gateway Testing
+```python
+from tests.fakes.gateway.agent_docs import FakeAgentDocs
+
+fake = FakeAgentDocs(files={"doc.md": content})
+result = operation_function(fake, ...)
+# Verify return value AND side effects
+assert result.created == (...)
+assert "file.md" in fake.written_files
+```
+
+### Pattern 3: Integration Testing
+```python
+def test_with_real_git(tmp_path: Path) -&gt; None:
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    subprocess.run(["git", "init"], cwd=repo, check=True)
+    
+    git = RealGit()
+    result = git.list_branches(repo)
+```
+
+---
+
+## Key Testing References
+
+- **Testing documentation**: `/home/runner/work/erk/erk/docs/learned/testing/testing.md`
+- **Test layer organization**: `/home/runner/work/erk/erk/tests/AGENTS.md`
+- **Fake implementations**: `/home/runner/work/erk/erk/tests/fakes/`
+- **Real subprocess wrapper**: `tests/real/test_subprocess.py` - 452 lines of comprehensive subprocess mocking examples
+
+This is a well-structured, layered testing approach that separates concerns at each level.</assistant>
+  <usage input_tokens="4" cache_creation_input_tokens="1342" cache_read_input_tokens="50057" cache_creation="{'ephemeral_5m_input_tokens': 1342, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>
