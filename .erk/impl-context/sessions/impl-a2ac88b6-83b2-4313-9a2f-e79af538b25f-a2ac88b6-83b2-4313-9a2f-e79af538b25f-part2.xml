@@ -1,0 +1,774 @@
+<session>
+  <meta branch="plnd/O9109-rename-tui-plan-to-p-03-10-1220" />
+  <meta model="claude-opus-4-6" />
+  <tool_result tool="toolu_01SFuh9gSxKKEYupa4EsT62o">
+  Modified: src/erk/core/services/plan_list_service.py
+  Modified: src/erk/tui/actions/navigation.py
+  Modified: src/erk/tui/app.py
+  Modified: src/erk/tui/data/real_provider.py
+  Modified: src/erk/tui/data/types.py
+  Modified: src/erk/tui/screens/objective_nodes_screen.py
+  Modified: src/erk/tui/screens/plan_body_screen.py
+  Modified: tests/commands/dash/test_impl_columns.py
+  Modified: tests/commands/dash/test_workflow_run_state.py
+  Modified: tests/commands/dispatch/conftest.py
+  Modified: tests/commands/learn/test_display.py
+  Modified: tests/commands/pr/test_check_plan.py
+  Modified: tests/commands/pr/test_list.py
+  Modified: tests/commands/pr/test_rewrite.py
+  Modified: tests/commands/pr/test_submit.py
+  Modified: tests/commands/test_dash_workflow_runs.py
+  Modified: tests/commands/workspace/test_delete.py
+  Modified: tests/core/test_plan_context_provider.py
+  Modified: tests/fakes/gateway/plan_data_provider.py
+  Modified: tests/fakes/tests/tui_plan_data_provider.py
+  Modified: tests/tui/app/test_actions.py
+  Modified: tests/tui/app/test_plan_body_screen.py
+  Modified: tests/tui/commands/test_execute_command.py
+  Modified: tests/tui/data/test_provider.py
+  Modified: tests/tui/screens/test_objective_nodes_screen.py
+  Modified: tests/unit/cli/commands/exec/scripts/test_create_impl_context_from_plan.py
+  Modified: tests/unit/cli/commands/exec/scripts/test_dash_data.py
+  Modified: tests/unit/cli/commands/exec/scripts/test_get_learn_sessions.py
+  Modified: tests/unit/cli/commands/exec/scripts/test_track_learn_evaluation.py
+  Modified: tests/unit/cli/commands/exec/scripts/test_track_learn_result.py
+
+... [13 lines omitted] ...
+  </tool_result>
+  <assistant>Wait — `plan_body` was too broad. It renamed things in non-TUI files like `plan_store/conversion.py` and `gateway/github/metadata`. Those files use `plan_body` as a domain concept (the body of a plan/issue), not as the TUI data field. Let me check what got changed incorrectly.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1135" cache_read_input_tokens="94977" cache_creation="{'ephemeral_5m_input_tokens': 1135, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01KTV3uBWLfmw8dcdujLn76y">
+    <param name="command">git diff --stat | grep -v "src/erk/tui\|tests/tui\|tests/fakes\|tests/unit/cli/commands/exec/scripts/test_dash_data"</param>
+    <param name="description">Check files changed outside TUI scope</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1135" cache_read_input_tokens="94977" cache_creation="{'ephemeral_5m_input_tokens': 1135, 'ephemeral_1h_input_tokens': 0}" output_tokens="200" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01KTV3uBWLfmw8dcdujLn76y">
+ .../src/erk_shared/core/plan_list_service.py       |   4 +-
+ .../src/erk_shared/gateway/github/metadata/core.py |  12 +-
+ .../gateway/github/metadata/plan_header.py         |   8 +-
+ .../gateway/plan_data_provider/__init__.py         |   4 +-
+ .../erk_shared/gateway/plan_data_provider/abc.py   |   6 +-
+ .../gateway/plan_data_provider/lifecycle.py        |   2 +-
+ .../erk_shared/gateway/plan_data_provider/real.py  |   6 +-
+ .../src/erk_shared/gateway/pr_service/abc.py       |   2 +-
+ .../src/erk_shared/plan_store/conversion.py        |   8 +-
+ .../src/erk_shared/plan_store/planned_pr.py        |   4 +-
+ src/erk/cli/commands/exec/scripts/dash_data.py     |  12 +-
+ src/erk/cli/commands/pr/list/cli.py                |  18 +-
+ src/erk/cli/commands/pr/list/operation.py          |  16 +-
+ src/erk/core/services/objective_list_service.py    |   2 +-
+ src/erk/core/services/plan_list_service.py         |  14 +-
+ tests/commands/dash/test_impl_columns.py           |   4 +-
+ tests/commands/dash/test_workflow_run_state.py     |  16 +-
+ tests/commands/dispatch/conftest.py                |   4 +-
+ tests/commands/learn/test_display.py               |  20 +-
+ tests/commands/pr/test_check_plan.py               |  16 +-
+ tests/commands/pr/test_list.py                     |  10 +-
+ tests/commands/pr/test_rewrite.py                  |   4 +-
+ tests/commands/pr/test_submit.py                   |   8 +-
+ tests/commands/test_dash_workflow_runs.py          |  12 +-
+ tests/commands/workspace/test_delete.py            |   8 +-
+ tests/core/test_plan_context_provider.py           |  12 +-
+ .../plan_data_provider/test_real_routing.py        |  50 ++---
+ .../screens/test_objective_plans_fake_provider.py  |  34 ++--
+ .../scripts/test_create_impl_context_from_plan.py  |  10 +-
+ .../cli/commands/exec/scripts/test_dash_data.py    |  52 +++---
+
+... [12 lines omitted] ...
+  </tool_result>
+  <assistant>I need to be more careful. The `plan_body` rename was too broad — it changed it in `plan_store` and `metadata` modules where it's a different concept (the body field of a `Plan` object). Let me revert the `plan_body` rename in those non-TUI files and keep it only where it refers to the `PrRowData.plan_body` field.
+
+Let me check what `plan_body` means in those contexts:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1212" cache_read_input_tokens="96112" cache_creation="{'ephemeral_5m_input_tokens': 1212, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_015B8L7xCDv7tqtJNkfiunsD">
+    <param name="pattern">plan_body|pr_body</param>
+    <param name="path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_store/conversion.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1212" cache_read_input_tokens="96112" cache_creation="{'ephemeral_5m_input_tokens': 1212, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01ARRJTtvZcDdHDH81NUGNAg">
+    <param name="pattern">plan_body|pr_body</param>
+    <param name="path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_store/planned_pr.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1212" cache_read_input_tokens="96112" cache_creation="{'ephemeral_5m_input_tokens': 1212, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01WoPhG6X8dg374VStg4VgGt">
+    <param name="pattern">plan_body|pr_body</param>
+    <param name="path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1212" cache_read_input_tokens="96112" cache_creation="{'ephemeral_5m_input_tokens': 1212, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_015B8L7xCDv7tqtJNkfiunsD">
+61:def pr_details_to_plan(pr: PRDetails, *, pr_body: str | None) -&gt; Plan:
+65:    plan content. If pr_body is provided, it overrides the body
+71:        pr_body: Extracted plan content, or None to use pr.body
+90:    body = pr_body if pr_body is not None else pr.body
+  </tool_result>
+  <tool_result tool="toolu_01WoPhG6X8dg374VStg4VgGt">
+358:def create_pr_body_block(plan_content: str) -&gt; MetadataBlock:
+376:def render_pr_body_block(block: MetadataBlock) -&gt; str:
+452:    plan_block = create_pr_body_block(plan_content)
+453:    return render_pr_body_block(plan_block)
+472:    plan_block = create_pr_body_block(plan_content)
+473:    plan_markdown = render_pr_body_block(plan_block)
+  </tool_result>
+  <tool_result tool="toolu_01ARRJTtvZcDdHDH81NUGNAg">
+35:from erk_shared.gateway.github.pr_footer import build_pr_body_footer
+352:        pr_body = build_plan_stage_body(metadata_body, content, summary=summary)
+361:            body=pr_body,
+367:        footer = build_pr_body_footer(pr_number)
+368:        self._github.update_pr_body(repo_root, pr_number, pr_body + footer)
+495:        self._github.update_pr_body(repo_root, pr_number, updated_body)
+534:        self._github.update_pr_body(repo_root, pr_number, updated_body)
+677:        self._github.update_pr_body(repo_root, pr_number, updated_body)
+711:        pr_body = extract_plan_content(pr.body)
+712:        plan = pr_details_to_plan(pr, pr_body=pr_body)
+  </tool_result>
+  <assistant>I see — these files have `pr_body` as a *local variable name* that refers to the PR body content, NOT the `PrRowData.plan_body` field. The rename from `plan_body` → `pr_body` happened to match legitimate `pr_body` uses in those files. But looking closer, the rename script changed `plan_body` to `pr_body` in the `planned_pr.py` and `conversion.py` files — where `plan_body` was the *original* variable name. Let me revert only the files that shouldn't have been touched.
+
+Let me check which files had `plan_body` changes that should NOT have been made (non-TUI, non-test-of-TUI files):</assistant>
+  <usage input_tokens="152" cache_creation_input_tokens="1373" cache_read_input_tokens="97324" cache_creation="{'ephemeral_5m_input_tokens': 1373, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01WA9wu3iQ8bmhEpa23W3Ntb">
+    <param name="command">git diff --name-only | sort</param>
+    <param name="description">List all modified files</param>
+  </tool_use>
+  <usage input_tokens="152" cache_creation_input_tokens="1373" cache_read_input_tokens="97324" cache_creation="{'ephemeral_5m_input_tokens': 1373, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01WA9wu3iQ8bmhEpa23W3Ntb">
+packages/erk-shared/src/erk_shared/core/plan_list_service.py
+packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py
+packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py
+packages/erk-shared/src/erk_shared/gateway/plan_data_provider/__init__.py
+packages/erk-shared/src/erk_shared/gateway/plan_data_provider/abc.py
+packages/erk-shared/src/erk_shared/gateway/plan_data_provider/lifecycle.py
+packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py
+packages/erk-shared/src/erk_shared/gateway/pr_service/abc.py
+packages/erk-shared/src/erk_shared/plan_store/conversion.py
+packages/erk-shared/src/erk_shared/plan_store/planned_pr.py
+src/erk/cli/commands/exec/scripts/dash_data.py
+src/erk/cli/commands/pr/list/cli.py
+src/erk/cli/commands/pr/list/operation.py
+src/erk/core/services/objective_list_service.py
+src/erk/core/services/plan_list_service.py
+src/erk/tui/actions/navigation.py
+src/erk/tui/app.py
+src/erk/tui/commands/types.py
+src/erk/tui/data/provider_abc.py
+src/erk/tui/data/real_provider.py
+src/erk/tui/data/types.py
+src/erk/tui/filtering/logic.py
+src/erk/tui/screens/objective_nodes_screen.py
+src/erk/tui/screens/plan_body_screen.py
+src/erk/tui/screens/plan_detail_screen.py
+src/erk/tui/sorting/logic.py
+src/erk/tui/widgets/plan_table.py
+tests/commands/dash/test_impl_columns.py
+tests/commands/dash/test_workflow_run_state.py
+tests/commands/dispatch/conftest.py
+
+... [52 lines omitted] ...
+  </tool_result>
+  <assistant>I need to revert the `plan_body` → `pr_body` change in files where `plan_body` refers to the Plan domain object's body (not the TUI field). The files that should KEEP the `pr_body` rename are files that directly reference `PrRowData.plan_body` (now `pr_body`). Let me revert the wrong ones:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1809" cache_read_input_tokens="98697" cache_creation="{'ephemeral_5m_input_tokens': 1809, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01NtZDSHUZAFjdmGX3aRQwBa">
+    <param name="command"># Revert plan_body -&gt; pr_body in files that use plan_body as a domain concept, not a PrRow...[truncated 1727 chars]..._body', 'plan_body')
+p.write_text(content)
+"
+    echo "Reverted plan_body in $f"
+  fi
+done</param>
+    <param name="description">Revert plan_body rename in non-TUI files</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1809" cache_read_input_tokens="98697" cache_creation="{'ephemeral_5m_input_tokens': 1809, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01NtZDSHUZAFjdmGX3aRQwBa">
+Reverted plan_body in packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py
+Reverted plan_body in packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py
+Reverted plan_body in packages/erk-shared/src/erk_shared/plan_store/conversion.py
+Reverted plan_body in packages/erk-shared/src/erk_shared/plan_store/planned_pr.py
+Reverted plan_body in tests/commands/dash/test_impl_columns.py
+Reverted plan_body in tests/commands/dash/test_workflow_run_state.py
+Reverted plan_body in tests/commands/dispatch/conftest.py
+Reverted plan_body in tests/commands/learn/test_display.py
+Reverted plan_body in tests/commands/pr/test_check_plan.py
+Reverted plan_body in tests/commands/pr/test_list.py
+Reverted plan_body in tests/commands/pr/test_rewrite.py
+Reverted plan_body in tests/commands/pr/test_submit.py
+Reverted plan_body in tests/commands/test_dash_workflow_runs.py
+Reverted plan_body in tests/commands/workspace/test_delete.py
+Reverted plan_body in tests/core/test_plan_context_provider.py
+Reverted plan_body in tests/unit/cli/commands/exec/scripts/test_create_impl_context_from_plan.py
+Reverted plan_body in tests/unit/cli/commands/exec/scripts/test_get_learn_sessions.py
+Reverted plan_body in tests/unit/cli/commands/exec/scripts/test_track_learn_evaluation.py
+Reverted plan_body in tests/unit/cli/commands/exec/scripts/test_track_learn_result.py
+Reverted plan_body in tests/unit/cli/commands/exec/scripts/test_update_pr_description.py
+Reverted plan_body in tests/unit/cli/commands/pr/submit_pipeline/test_finalize_pr.py
+Reverted plan_body in tests/unit/cli/commands/pr/test_metadata_helpers.py
+Reverted plan_body in tests/unit/entity_store/test_entity_log.py
+Reverted plan_body in tests/unit/gateways/github/metadata_blocks/test_round_trip.py
+Reverted plan_body in tests/unit/plan_store/test_conversion.py
+  </tool_result>
+  <assistant>Now I need to check a few of those reverted files. Some of those test files (like `test_check_plan.py`, `test_list.py`) might use `make_pr_row(plan_body=...)` which SHOULD be `pr_body` because it's passing it to the `PrRowData` constructor. Let me check:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2066" cache_read_input_tokens="100506" cache_creation="{'ephemeral_5m_input_tokens': 2066, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01Kd5TZ8LV5dHMMN2dsLzCCH">
+    <param name="pattern">make_pr_row.*plan_body|make_plan_row.*plan_body</param>
+    <param name="path">/home/runner/work/erk/erk/tests/commands</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2066" cache_read_input_tokens="100506" cache_creation="{'ephemeral_5m_input_tokens': 2066, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01X8cZaev7ECcsEVtVdPXKxJ">
+    <param name="pattern">plan_body</param>
+    <param name="path">/home/runner/work/erk/erk/tests/commands</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+    <param name="head_limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2066" cache_read_input_tokens="100506" cache_creation="{'ephemeral_5m_input_tokens': 2066, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01X8cZaev7ECcsEVtVdPXKxJ">
+tests/commands/test_dash_workflow_runs.py:65:        plan_body = """&lt;!-- erk:metadata-block:plan-header --&gt;
+tests/commands/test_dash_workflow_runs.py:82:            body=plan_body,
+tests/commands/test_dash_workflow_runs.py:163:        plan_body = """&lt;!-- erk:metadata-block:plan-header --&gt;
+tests/commands/test_dash_workflow_runs.py:178:            body=plan_body,
+tests/commands/test_dash_workflow_runs.py:263:        plan_body = """&lt;!-- erk:metadata-block:plan-header --&gt;
+tests/commands/test_dash_workflow_runs.py:278:            body=plan_body,
+tests/commands/dash/test_workflow_run_state.py:26:    queued_plan_body = """&lt;!-- erk:metadata-block:plan-header --&gt;
+tests/commands/dash/test_workflow_run_state.py:38:    running_plan_body = """&lt;!-- erk:metadata-block:plan-header --&gt;
+tests/commands/dash/test_workflow_run_state.py:53:        body=queued_plan_body,
+tests/commands/dash/test_workflow_run_state.py:67:        body=running_plan_body,
+tests/commands/dash/test_workflow_run_state.py:123:    success_plan_body = """&lt;!-- erk:metadata-block:plan-header --&gt;
+tests/commands/dash/test_workflow_run_state.py:135:    failed_plan_body = """&lt;!-- erk:metadata-block:plan-header --&gt;
+tests/commands/dash/test_workflow_run_state.py:150:        body=success_plan_body,
+tests/commands/dash/test_workflow_run_state.py:164:        body=failed_plan_body,
+tests/commands/dash/test_impl_columns.py:26:    plan_body = """&lt;!-- erk:metadata-block:plan-header --&gt;
+tests/commands/dash/test_impl_columns.py:41:        body=plan_body,
+tests/commands/learn/test_display.py:95:def _make_plan_body_with_session(session_id: str) -&gt; str:
+tests/commands/learn/test_display.py:111:    issue_body = _make_plan_body_with_session(session_id)
+tests/commands/learn/test_display.py:198:    issue_body = _make_plan_body_with_session(session_id)
+tests/commands/learn/test_display.py:281:def _make_plan_body_with_learn_branch(session_id: str, learn_branch: str) -&gt; str:
+tests/commands/learn/test_display.py:298:    issue_body = _make_plan_body_with_learn_branch(session_id, learn_branch)
+tests/commands/learn/test_display.py:382:    issue_body = _make_plan_body_with_learn_branch(session_id, learn_branch)
+tests/commands/learn/test_display.py:478:    issue_body = _make_plan_body_with_session(session_id)
+tests/commands/learn/test_display.py:563:    issue_body = _make_plan_body_with_learn_branch(session_id, learn_branch)
+tests/commands/learn/test_display.py:646:    issue_body = _make_plan_body_with_session(session_id)
+tests/commands/learn/test_display.py:730:    issue_body = _make_plan_body_with_session(session_id)
+tests/commands/workspace/test_delete.py:30:def _make_plan_body_with_worktree(worktree_name: str) -&gt; str:
+tests/commands/workspace/test_delete.py:428:            body=_make_plan_body_with_worktree("test-feature"),
+tests/commands/workspace/test_delete.py:610:            body=_make_plan_body_with_worktree("test-feature"),
+tests/commands/workspace/test_delete.py:658:            body=_make_plan_body_with_worktree("test-feature"),
+
+... [2 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01Kd5TZ8LV5dHMMN2dsLzCCH">
+No matches found
+  </tool_result>
+  <assistant>Good — those `plan_body` references in `tests/commands/` are local variable names that represent the body of a plan/issue, not the `PrRowData.plan_body` field. The revert was correct. The `_make_plan_body_with_session` function names are also domain-level (they create an issue body), not TUI field references.
+
+Now let me do the critical field collapse step. I need to:
+1. In `PrRowData`: Remove the `plan_id: int` field, change `pr_number: int | None` to `pr_number: int`, remove `plan_url: str | None` (keep `pr_url`)
+2. Update all references to `.plan_id` → `.pr_number` and `.plan_url` → `.pr_url` in TUI code
+
+Let me first handle the field collapse in types.py:</assistant>
+  <usage input_tokens="1077" cache_creation_input_tokens="921" cache_read_input_tokens="102572" cache_creation="{'ephemeral_5m_input_tokens': 921, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_016QFnT9ssy42VrpU4HpSSax">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/data/types.py</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="1077" cache_creation_input_tokens="921" cache_read_input_tokens="102572" cache_creation="{'ephemeral_5m_input_tokens': 921, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_016QFnT9ssy42VrpU4HpSSax">
+     1→"""Data types for TUI components."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→import dataclasses
+     6→from dataclasses import dataclass
+     7→from datetime import datetime
+     8→from typing import Any
+     9→
+    10→from erk_shared.gateway.github.types import IssueFilterState
+    11→
+    12→
+    13→@dataclass(frozen=True)
+    14→class PlanRowData:
+    15→    """Row data for displaying a plan in the TUI table.
+    16→
+    17→    Contains pre-formatted display strings and raw data needed for actions.
+    18→    Immutable to ensure table state consistency.
+    19→
+    20→    **Display vs Raw convention:** Many data points have both a raw field (for
+    21→    logic/predicates) and a display field (for table rendering). Raw fields are
+    22→    often nullable (None when absent), while display fields are always strings
+    23→    (dash "-" or empty when absent). Use raw fields in availability predicates
+    24→    (``ctx.row.pr_number is not None``), display fields for rendering.
+    25→
+    26→    Attributes:
+    27→
+    28→        plan_id: GitHub issue number (e.g., 123). Never None.
+    29→        plan_url: Full URL to the GitHub issue. None when unavailable.
+    30→        full_title: Complete untruncated plan title. Empty string possible.
+
+... [75 lines omitted] ...
+
+    58→        run_conclusion: Run conclusion ("success", "failure", "cancelled").
+  </tool_result>
+  <assistant>Now let me update `types.py` — remove `plan_id`, `plan_url` fields, widen `pr_number` to non-optional, and update `plan_body`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3220" cache_read_input_tokens="103493" cache_creation="{'ephemeral_5m_input_tokens': 3220, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01SgjxTKpSABpfnNDdXBpvT5">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/data/types.py</param>
+    <param name="old_string">    """Row data for displaying a plan in the TUI table.
+
+    Contains pre-formatted displa...[truncated 1126 chars]...anch: Head branch from PR metadata (source branch for landing).
+            None if no PR.</param>
+    <param name="new_string">    """Row data for displaying a PR in the TUI table.
+
+    Contains pre-formatted display ...[truncated 1005 chars]...anch: Head branch from PR metadata (source branch for landing).
+            None if no PR.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3220" cache_read_input_tokens="103493" cache_creation="{'ephemeral_5m_input_tokens': 3220, 'ephemeral_1h_input_tokens': 0}" output_tokens="805" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01SgjxTKpSABpfnNDdXBpvT5">
+The file /home/runner/work/erk/erk/src/erk/tui/data/types.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update the field declarations — remove `plan_id`, `plan_url`, widen `pr_number`, rename `plan_body`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1400" cache_read_input_tokens="106713" cache_creation="{'ephemeral_5m_input_tokens': 1400, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_0194L97miPyGRWfomthEAyRP">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/data/types.py</param>
+    <param name="old_string">    plan_id: int
+    plan_url: str | None
+    pr_number: int | None
+    pr_url: str | None</param>
+    <param name="new_string">    pr_number: int
+    pr_url: str | None</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1400" cache_read_input_tokens="106713" cache_creation="{'ephemeral_5m_input_tokens': 1400, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_0194L97miPyGRWfomthEAyRP">
+&lt;tool_use_error&gt;File has been modified since read, either by the user or by a linter. Read it again before attempting to write it.&lt;/tool_use_error&gt;
+  </tool_result>
+  <assistant>A linter reverted my docstring changes. Let me re-read and re-apply:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="933" cache_read_input_tokens="108113" cache_creation="{'ephemeral_5m_input_tokens': 933, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01M1VfUkqryarr56F7HM4iUt">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/data/types.py</param>
+    <param name="limit">160</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="933" cache_read_input_tokens="108113" cache_creation="{'ephemeral_5m_input_tokens': 933, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01M1VfUkqryarr56F7HM4iUt">
+     1→"""Data types for TUI components."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→import dataclasses
+     6→from dataclasses import dataclass
+     7→from datetime import datetime
+     8→from typing import Any
+     9→
+    10→from erk_shared.gateway.github.types import IssueFilterState
+    11→
+    12→
+    13→@dataclass(frozen=True)
+    14→class PlanRowData:
+    15→    """Row data for displaying a plan in the TUI table.
+    16→
+    17→    Contains pre-formatted display strings and raw data needed for actions.
+    18→    Immutable to ensure table state consistency.
+    19→
+    20→    **Display vs Raw convention:** Many data points have both a raw field (for
+    21→    logic/predicates) and a display field (for table rendering). Raw fields are
+    22→    often nullable (None when absent), while display fields are always strings
+    23→    (dash "-" or empty when absent). Use raw fields in availability predicates
+    24→    (``ctx.row.pr_number is not None``), display fields for rendering.
+    25→
+    26→    Attributes:
+    27→
+    28→        plan_id: GitHub issue number (e.g., 123). Never None.
+    29→        plan_url: Full URL to the GitHub issue. None when unavailable.
+    30→        full_title: Complete untruncated plan title. Empty string possible.
+
+... [135 lines omitted] ...
+
+    58→        run_conclusion: Run conclusion ("success", "failure", "cancelled").
+  </tool_result>
+  <assistant>I see — the linter reverted my docstring edit but NOT the class name change (it's still `PlanRowData` — wait, checking...). Actually looking at line 14 it's still `PlanRowData`. The batch rename script already changed it to `PrRowData` though, and then a linter must have partially reverted. Let me check:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3187" cache_read_input_tokens="109046" cache_creation="{'ephemeral_5m_input_tokens': 3187, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01FUjUcwD7cEtXnS5sxjRTjK">
+    <param name="command">git diff src/erk/tui/data/types.py | head -50</param>
+    <param name="description">Check diff for types.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3187" cache_read_input_tokens="109046" cache_creation="{'ephemeral_5m_input_tokens': 3187, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01FUjUcwD7cEtXnS5sxjRTjK">
+
+  </tool_result>
+  <assistant>No diff — the linter reverted ALL changes to types.py. Let me check:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="200" cache_read_input_tokens="112233" cache_creation="{'ephemeral_5m_input_tokens': 200, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01TjpyyLQhddrshG9cPYvDvL">
+    <param name="command">git diff --stat src/erk/tui/data/types.py</param>
+    <param name="description">Check if types.py has any changes</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="200" cache_read_input_tokens="112233" cache_creation="{'ephemeral_5m_input_tokens': 200, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01TjpyyLQhddrshG9cPYvDvL">
+
+  </tool_result>
+  <assistant>The file has no diff — it was fully reverted! The background agents must have done a `git checkout`. Let me check the overall state:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="614" cache_read_input_tokens="112433" cache_creation="{'ephemeral_5m_input_tokens': 614, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_014vs4u3rWcsobnXZpq58ZM1">
+    <param name="command">git diff --stat | wc -l</param>
+    <param name="description">Count files with changes</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="614" cache_read_input_tokens="112433" cache_creation="{'ephemeral_5m_input_tokens': 614, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_014vs4u3rWcsobnXZpq58ZM1">
+33
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01A6r2SBUkAeGZMeaBkZZANH">
+    <param name="command">git diff --stat</param>
+    <param name="description">Show changed files</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="124" cache_read_input_tokens="113047" cache_creation="{'ephemeral_5m_input_tokens': 124, 'ephemeral_1h_input_tokens': 0}" output_tokens="74" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01A6r2SBUkAeGZMeaBkZZANH">
+ .../src/erk_shared/core/plan_list_service.py       |   2 +-
+ src/erk/cli/commands/exec/scripts/dash_data.py     |   4 +-
+ src/erk/cli/commands/pr/list/cli.py                |   4 +-
+ src/erk/cli/commands/pr/list/operation.py          |   4 +-
+ src/erk/tui/app.py                                 |   6 +-
+ src/erk/tui/data/provider_abc.py                   |   4 +-
+ src/erk/tui/data/real_provider.py                  |   6 +-
+ src/erk/tui/data/types.py                          |   6 +-
+ src/erk/tui/widgets/plan_table.py                  |   6 +-
+ .../plan_data_provider/test_real_routing.py        |  20 +--
+ tests/fakes/gateway/plan_data_provider.py          |   6 +-
+ tests/fakes/tests/tui_plan_data_provider.py        |   6 +-
+ tests/tui/app/test_actions.py                      |  50 +++---
+ tests/tui/app/test_app_filtering.py                | 112 +++++++-------
+ tests/tui/app/test_app_runs.py                     |  96 ++++++------
+ tests/tui/app/test_async_operations.py             | 140 ++++++++---------
+ tests/tui/app/test_command_palette.py              |  52 +++----
+ tests/tui/app/test_core.py                         |  30 ++--
+ tests/tui/app/test_filter_mode.py                  |  40 ++---
+ tests/tui/app/test_incremental_dispatch.py         |  12 +-
+ tests/tui/app/test_one_shot_prompt.py              |  14 +-
+ tests/tui/app/test_operation_tracking.py           |  44 +++---
+ tests/tui/app/test_plan_body_screen.py             |  48 +++---
+ tests/tui/app/test_plan_detail_screen.py           |  60 ++++----
+ tests/tui/app/test_status_bar.py                   |   2 +-
+ tests/tui/app/test_streaming.py                    |  30 ++--
+ tests/tui/app/test_view_switching.py               |  90 +++++------
+ tests/tui/commands/test_execute_command.py         |  44 +++---
+ tests/tui/commands/test_node_command_provider.py   |  10 +-
+ tests/tui/commands/test_registry.py                | 168 ++++++++++-----------
+
+... [12 lines omitted] ...
+  </tool_result>
+  <assistant>OK — I can see that some changes remain (41 files, 722 insertions/deletions) but many were reverted by the agents. Let me check what specifically survived in types.py:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1597" cache_read_input_tokens="113171" cache_creation="{'ephemeral_5m_input_tokens': 1597, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01HzcnBpjwR3cYYuNUqDEu4D">
+    <param name="command">git diff src/erk/tui/data/types.py</param>
+    <param name="description">Show types.py diff</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1597" cache_read_input_tokens="113171" cache_creation="{'ephemeral_5m_input_tokens': 1597, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01HzcnBpjwR3cYYuNUqDEu4D">
+diff --git a/src/erk/tui/data/types.py b/src/erk/tui/data/types.py
+index e9d9629c5..c4bd99fdf 100644
+--- a/src/erk/tui/data/types.py
++++ b/src/erk/tui/data/types.py
+@@ -233,7 +233,7 @@ class FetchTimings:
+ 
+ 
+ @dataclass(frozen=True)
+-class PlanFilters:
++class PrFilters:
+     """Filter options for plan list queries.
+ 
+     Matches options from the existing CLI command for consistency.
+@@ -262,9 +262,9 @@ class PlanFilters:
+     lifecycle_stage: str | None = None
+ 
+     @staticmethod
+-    def default() -&gt; PlanFilters:
++    def default() -&gt; PrFilters:
+         """Create default filters (open erk-plan issues)."""
+-        return PlanFilters(
++        return PrFilters(
+             labels=("erk-plan",),
+             state="open",
+             run_state=None,
+  </tool_result>
+  <assistant>Only the `PlanFilters` → `PrFilters` rename survived in types.py. The agents reverted most of the other changes. Let me start fresh - revert everything and do all changes in one clean pass.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="470" cache_read_input_tokens="114768" cache_creation="{'ephemeral_5m_input_tokens': 470, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01LT13pECTiRpfGWQ4Xda27d">
+    <param name="command">git checkout -- .</param>
+    <param name="description">Revert all changes to start fresh</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="470" cache_read_input_tokens="114768" cache_creation="{'ephemeral_5m_input_tokens': 470, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01LT13pECTiRpfGWQ4Xda27d">
+
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01QURLxu6j55H1WNF2RvK1mo">
+    <param name="command">git status --short</param>
+    <param name="description">Confirm clean state</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="638" cache_read_input_tokens="115238" cache_creation="{'ephemeral_5m_input_tokens': 638, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01QURLxu6j55H1WNF2RvK1mo">
+ M packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py
+ M packages/erk-shared/src/erk_shared/gateway/pr_service/abc.py
+ M src/erk/tui/actions/navigation.py
+ M src/erk/tui/app.py
+ M src/erk/tui/commands/types.py
+ M src/erk/tui/data/provider_abc.py
+ M src/erk/tui/data/real_provider.py
+ M src/erk/tui/data/types.py
+ M src/erk/tui/filtering/logic.py
+ M src/erk/tui/screens/objective_nodes_screen.py
+ M src/erk/tui/screens/plan_detail_screen.py
+ M src/erk/tui/sorting/logic.py
+ M src/erk/tui/widgets/plan_table.py
+ M tests/tui/data/test_provider.py
+ M tests/tui/data/test_real_provider_runs.py
+ M tests/tui/screens/test_check_runs_screen.py
+ M tests/tui/screens/test_objective_nodes_screen.py
+ M tests/tui/screens/test_objective_plans_fake_provider.py
+ M tests/tui/test_run_table.py
+?? refactor_plan_row_data.py
+?? rename_plan_filters.py
+?? rename_provider_classes.py
+  </tool_result>
+  <assistant>The background agents are STILL running and modifying files. Let me kill them and fully reset.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="518" cache_read_input_tokens="115876" cache_creation="{'ephemeral_5m_input_tokens': 518, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01F4W3gchNpSApY9N32d1QCY">
+    <param name="command">rm -f refactor_plan_row_data.py rename_plan_filters.py rename_provider_classes.py &amp;&amp; git checkout -- . &amp;&amp; git clean -fd</param>
+    <param name="description">Full reset of working directory</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="518" cache_read_input_tokens="115876" cache_creation="{'ephemeral_5m_input_tokens': 518, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01F4W3gchNpSApY9N32d1QCY">
+
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01ViHevrWwrLvya5U3eP1tef">
+    <param name="command">git status --short</param>
+    <param name="description">Verify clean state</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="586" cache_read_input_tokens="116394" cache_creation="{'ephemeral_5m_input_tokens': 586, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01ViHevrWwrLvya5U3eP1tef">
+
+  </tool_result>
+  <assistant>Clean. Now let me write a comprehensive rename script that does everything in a single pass, including the field collapse. I'll be precise about which files get which renames.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="135" cache_read_input_tokens="116980" cache_creation="{'ephemeral_5m_input_tokens': 135, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Write" id="toolu_01HdDLcnwW2DwFZL458Lj45g">
+    <param name="file_path">/tmp/rename_all.py</param>
+    <param name="content">#!/usr/bin/env python3
+"""All-in-one rename: plan → pr for TUI types.
+
+Scope: Only files i...[truncated 2623 chars]...se)}")
+
+    print(f"\nModified {modified} files")
+
+
+if __name__ == "__main__":
+    main()
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="135" cache_read_input_tokens="116980" cache_creation="{'ephemeral_5m_input_tokens': 135, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01HdDLcnwW2DwFZL458Lj45g">
+File created successfully at: /tmp/rename_all.py
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01QmPm8VXGni1Hnmb55dvcns">
+    <param name="command">git status --short &amp;&amp; python /tmp/rename_all.py</param>
+    <param name="description">Run rename after confirming clean state</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1616" cache_read_input_tokens="117115" cache_creation="{'ephemeral_5m_input_tokens': 1616, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01QmPm8VXGni1Hnmb55dvcns">
+?? debug_types.py
+  src/erk/cli/commands/exec/scripts/dash_data.py
+  src/erk/cli/commands/pr/list/cli.py
+  src/erk/cli/commands/pr/list/operation.py
+  src/erk/core/services/objective_list_service.py
+  src/erk/core/services/plan_list_service.py
+  src/erk/tui/actions/navigation.py
+  src/erk/tui/app.py
+  src/erk/tui/commands/types.py
+  src/erk/tui/data/provider_abc.py
+  src/erk/tui/data/real_provider.py
+  src/erk/tui/data/types.py
+  src/erk/tui/filtering/logic.py
+  src/erk/tui/screens/objective_nodes_screen.py
+  src/erk/tui/screens/plan_body_screen.py
+  src/erk/tui/screens/plan_detail_screen.py
+  src/erk/tui/sorting/logic.py
+  src/erk/tui/widgets/plan_table.py
+  tests/erk_shared/gateway/plan_data_provider/test_real_routing.py
+  tests/fakes/gateway/plan_data_provider.py
+  tests/fakes/tests/tui_plan_data_provider.py
+  tests/tui/app/test_actions.py
+  tests/tui/app/test_app_filtering.py
+  tests/tui/app/test_app_runs.py
+  tests/tui/app/test_async_operations.py
+  tests/tui/app/test_command_palette.py
+  tests/tui/app/test_core.py
+  tests/tui/app/test_filter_mode.py
+  tests/tui/app/test_incremental_dispatch.py
+  tests/tui/app/test_one_shot_prompt.py
+
+... [30 lines omitted] ...
+  </tool_result>
+  <assistant>There was a stale `debug_types.py` untracked file. Let me clean it up. The rename itself looks good — 57 files modified. Let me now immediately apply the field collapse to types.py before any agent touches it.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1191" cache_read_input_tokens="118731" cache_creation="{'ephemeral_5m_input_tokens': 1191, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01NZ89yMGeihomDFL8dfBeXt">
+    <param name="command">rm -f debug_types.py</param>
+    <param name="description">Remove stale debug file</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1191" cache_read_input_tokens="118731" cache_creation="{'ephemeral_5m_input_tokens': 1191, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01NZ89yMGeihomDFL8dfBeXt">
+
+  </tool_result>
+  <assistant>Now let me read the current state of types.py and apply the field collapse:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="643" cache_read_input_tokens="119922" cache_creation="{'ephemeral_5m_input_tokens': 643, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01BScdmtJMRRk8KpKRMtTCYc">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/data/types.py</param>
+    <param name="limit">120</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="643" cache_read_input_tokens="119922" cache_creation="{'ephemeral_5m_input_tokens': 643, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01BScdmtJMRRk8KpKRMtTCYc">
+     1→"""Data types for TUI components."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→import dataclasses
+     6→from dataclasses import dataclass
+     7→from datetime import datetime
+     8→from typing import Any
+     9→
+    10→from erk_shared.gateway.github.types import IssueFilterState
+    11→
+    12→
+    13→@dataclass(frozen=True)
+    14→class PrRowData:
+    15→    """Row data for displaying a plan in the TUI table.
+    16→
+    17→    Contains pre-formatted display strings and raw data needed for actions.
+    18→    Immutable to ensure table state consistency.
+    19→
+    20→    **Display vs Raw convention:** Many data points have both a raw field (for
+    21→    logic/predicates) and a display field (for table rendering). Raw fields are
+    22→    often nullable (None when absent), while display fields are always strings
+    23→    (dash "-" or empty when absent). Use raw fields in availability predicates
+    24→    (``ctx.row.pr_number is not None``), display fields for rendering.
+    25→
+    26→    Attributes:
+    27→
+    28→        plan_id: GitHub issue number (e.g., 123). Never None.
+    29→        plan_url: Full URL to the GitHub issue. None when unavailable.
+    30→        full_title: Complete untruncated plan title. Empty string possible.
+
+... [95 lines omitted] ...
+
+    58→        run_conclusion: Run conclusion ("success", "failure", "cancelled").
+  </tool_result>
+  <assistant>Good — the rename script worked. Now I can see the class is `PrRowData` (line 14), `pr_body` (line 114), but `plan_id` (line 97), `plan_url` (line 98), `pr_number: int | None` (line 99) still need the field collapse. Let me apply it:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2259" cache_read_input_tokens="120565" cache_creation="{'ephemeral_5m_input_tokens': 2259, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_019BSyLY8SJBAVY7LGZV3WWy">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/data/types.py</param>
+    <param name="old_string">    Attributes:
+
+        plan_id: GitHub issue number (e.g., 123). Never None.
+        pla...[truncated 217 chars]... if linked, None otherwise.
+        pr_url: URL to PR (GitHub or Graphite), None if no PR.</param>
+    <param name="new_string">    Attributes:
+
+        pr_number: GitHub PR/issue number (e.g., 123). Never None.
+      ...[truncated 100 chars]...ring possible.
+        full_title: Complete untruncated plan title. Empty string possible.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2259" cache_read_input_tokens="120565" cache_creation="{'ephemeral_5m_input_tokens': 2259, 'ephemeral_1h_input_tokens': 0}" output_tokens="388" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_019BSyLY8SJBAVY7LGZV3WWy">
+The file /home/runner/work/erk/erk/src/erk/tui/data/types.py has been updated successfully.
+  </tool_result>
+  <assistant>Now collapse the field declarations:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="932" cache_read_input_tokens="122824" cache_creation="{'ephemeral_5m_input_tokens': 932, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01UyuGjdht7A42ZSzyc4fU7b">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/data/types.py</param>
+    <param name="old_string">    plan_id: int
+    plan_url: str | None
+    pr_number: int | None
+    pr_url: str | None</param>
+    <param name="new_string">    pr_number: int
+    pr_url: str | None</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="932" cache_read_input_tokens="122824" cache_creation="{'ephemeral_5m_input_tokens': 932, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01UyuGjdht7A42ZSzyc4fU7b">
+&lt;tool_use_error&gt;File has been modified since read, either by the user or by a linter. Read it again before attempting to write it.&lt;/tool_use_error&gt;
+  </tool_result>
+  <assistant>A background agent reverted all my changes AGAIN! The agents are running git checkout. Let me check the status:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2160" cache_read_input_tokens="123756" cache_creation="{'ephemeral_5m_input_tokens': 2160, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_012Ckmbnj5Z6EH9FdCRZML9v">
+    <param name="command">git diff --stat | wc -l</param>
+    <param name="description">Check if changes survive</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2160" cache_read_input_tokens="123756" cache_creation="{'ephemeral_5m_input_tokens': 2160, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_012Ckmbnj5Z6EH9FdCRZML9v">
+3
+  </tool_result>
+  <assistant>The agents keep reverting my work. Only 3 files remain. I need to wait for the agents to finish and then do all the work. Let me check their status:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="617" cache_read_input_tokens="125916" cache_creation="{'ephemeral_5m_input_tokens': 617, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="TaskOutput" id="toolu_0135JFu6wr82t4E7tYrB3t9g">
+    <param name="task_id">affe8aa</param>
+    <param name="block">False</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="617" cache_read_input_tokens="125916" cache_creation="{'ephemeral_5m_input_tokens': 617, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="TaskOutput" id="toolu_01FqWtTaf4Cy1tZMBMW6RMmJ">
+    <param name="task_id">ab6855f</param>
+    <param name="block">False</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="617" cache_read_input_tokens="125916" cache_creation="{'ephemeral_5m_input_tokens': 617, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="TaskOutput" id="toolu_01AJVHg5yUoENC2LuZsU628P">
+    <param name="task_id">ad22d36</param>
+    <param name="block">False</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="617" cache_read_input_tokens="125916" cache_creation="{'ephemeral_5m_input_tokens': 617, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="TaskOutput" id="toolu_01H3fcVbHtnYuU9z3SMNprTp">
+    <param name="task_id">a24e437</param>
+    <param name="block">False</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="617" cache_read_input_tokens="125916" cache_creation="{'ephemeral_5m_input_tokens': 617, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="TaskOutput" id="toolu_01V7xbUSgBaVq6w856knCprg">
+    <param name="task_id">ace87eb</param>
+    <param name="block">False</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="617" cache_read_input_tokens="125916" cache_creation="{'ephemeral_5m_input_tokens': 617, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_0135JFu6wr82t4E7tYrB3t9g">
+&lt;retrieval_status&gt;not_ready&lt;/retrieval_status&gt;
+
+&lt;task_id&gt;affe8aa&lt;/task_id&gt;
+
+&lt;task_type&gt;local_agent&lt;/task_type&gt;
+
+&lt;status&gt;running&lt;/status&gt;
+
+&lt;output&gt;
+[Tool: Bash] {"command":"find src/erk tests packages -name \"*.py\" -type f | head -20","description":"Check if Python files exist in target directories"}
+[Tool: Grep] {"pattern":"PlanRowData","path":"/home/runner/work/erk/erk","type":"py","output_mode":"files_with_matches"}
+[Tool: Grep] {"pattern":"PlanRowData","path":"/home/runner/work/erk/erk","type":"py","output_mode":"files_with_matches"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/src/erk/tui/data/types.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/src/erk/tui/data/types.py"}
+[Tool: Bash] {"command":"python -m libcst.tool print /home/runner/work/erk/erk/src/erk/tui/data/types.py --show-whitespace | head -50","description":"Visualize LibCST structure of types.py"}
+[Tool: Bash] {"command":"uv pip list | grep libcst","description":"Check if libcst is installed"}
+[Tool: Bash] {"command":"uv pip install libcst","description":"Install libcst for refactoring"}
+[Tool: Bash] {"command":"uv pip install --system libcst","description":"Install libcst into system Python"}
+[Tool: Bash] {"command":"uv pip install --system libcst","description":"Install libcst into system Python"}
+[Tool: Bash] {"command":"ls -la .venv 2&gt;/dev/null || echo \"No .venv found\"","description":"Check for virtual environment"}
+[Tool: Bash] {"command":"uv venv &amp;&amp; source .venv/bin/activate &amp;&amp; uv pip install libcst","description":"Create venv and install libcst"}
+[Tool: Bash] {"command":"uv venv &amp;&amp; source .venv/bin/activate &amp;&amp; uv pip install libcst","description":"Create venv and install libcst"}
+[Tool: Write] {"file_path":"/home/runner/work/erk/erk/refactor_plan_row_data.py","content":"#!/usr/bin/env python3\n\"\"\"\nRename PlanRowData to PrRowData across all Python files.\n\nThis script transforms:\n- Class definitions: class PlanRowData → class PrRowData\n- Import statements: from erk.tui.data.types import PlanRowData → PrRowData\n- All type annotations, isinstance checks, and references\n\nExample:\n  python refactor_plan_row_data.py src/erk tests packages --dry-run\n  python refactor_plan_row_data.py src/erk tests packages\n\"\"\"\nimport sys\nfrom pathlib import Path\nimport libcst as cst\nfrom libcst import matchers as m\n\nclass RenamePlanRowDataTransformer(cst.CSTTransformer):\n    \"\"\"Rename PlanRowData to PrRowData everywhere.\"\"\"\n\n    def __init__(self):\n        super().__init__()\n        self.changes_made = 0\n\n    def leave_Name(self, original_node: cst.Name, updated_node: cst.Name) -&gt; cst.Name:\n        \"\"\"Rename all Name nodes matching PlanRowData.\"\"\"\n        if updated_node.value == \"PlanRowData\":\n            self.changes_made += 1\n            return updated_node.with_changes(value=\"PrRowData\")\n        return updated_node\n\n    def leave_ImportFrom(self, original_node: cst.ImportFrom, updated_node: cst.ImportFrom) -&gt; cst.ImportFrom:\n        \"\"\"Update import statements that import PlanRowData.\"\"\"\n        # This handles: from erk.tui.data.types import PlanRowData\n        # The leave_Name visitor will handle the actual name change\n        # But we track imports for informational purposes\n        if isinstance(updated_node.names, cst.ImportStar):\n            return updated_node\n\n        # Check if any imported names match PlanRowData\n        if not isinstance(updated_node.names, (list, tuple)):\n            names = [updated_node.names]\n        else:\n            names = updated_node.names\n\n        for name in names:\n            if isinstance(name, cst.ImportAlias):\n                if isinstance(name.name, cst.Name) and name.name.value == \"PlanRowData\":\n                    # The leave_Name will handle this, just track it\n                    pass\n\n        return updated_node\n\n\ndef transform_file(file_path: Path, dry_run: bool = False) -&gt; bool:\n    \"\"\"Transform a single file. Returns True if changes made.\"\"\"\n    if not file_path.exists():\n        print(f\"Skipping {file_path}: does not exist\")\n        return False\n\n    source = file_path.read_text(encoding=\"utf-8\")\n\n    try:\n        tree = cst.parse_module(source)\n    except Exception as e:\n        print(f\"Parse error in {file_path}: {e}\")\n        return False\n\n    transformer = RenamePlanRowDataTransformer()\n    new_tree = tree.visit(transformer)\n\n    if transformer.changes_made == 0:\n        return False\n\n    if dry_run:\n        print(f\"[DRY RUN] Would modify {file_path}: {transformer.changes_made} changes\")\n        return True\n\n    file_path.write_text(new_tree.code, encoding=\"utf-8\")\n    print(f\"✓ Modified {file_path}: {transformer.changes_made} changes\")\n    return True\n\n\ndef main():\n    dry_run = \"--dry-run\" in sys.argv\n    paths = [arg for arg in sys.argv[1:] if arg != \"--dry-run\"]\n\n    if not paths:\n        print(__doc__)\n        sys.exit(1)\n\n    total_modified = 0\n    total_files_checked = 0\n\n    for path_str in paths:\n        path = Path(path_str)\n        if path.is_file():\n            total_files_checked += 1\n            if transform_file(path, dry_run):\n                total_modified += 1\n        elif path.is_dir():\n            for py_file in sorted(path.rglob(\"*.py\")):\n                total_files_checked += 1\n                if transform_file(py_file, dry_run):\n                    total_modified += 1\n\n    print(f\"\\nChecked {total_files_checked} files\")\n    print(f\"{'[DRY RUN] Would modify' if dry_run else 'Modified'} {total_modified} files\")\n\n\nif __name__ == \"__main__\":\n    main()\n"}
+[Tool: Write] {"file_path":"/home/runner/work/erk/erk/refactor_plan_row_data.py","content":"#!/usr/bin/env python3\n\"\"\"\nRename PlanRowData to PrRowData across all Python files.\n\nThis script transforms:\n- Class definitions: class PlanRowData → class PrRowData\n- Import statements: from erk.tui.data.types import PlanRowData → PrRowData\n- All type annotations, isinstance checks, and references\n\nExample:\n  python refactor_plan_row_data.py src/erk tests packages --dry-run\n  python refactor_plan_row_data.py src/erk tests packages\n\"\"\"\nimport sys\nfrom pathlib import Path\nimport libcst as cst\nfrom libcst import matchers as m\n\nclass RenamePlanRowDataTransformer(cst.CSTTransformer):\n    \"\"\"Rename PlanRowData to PrRowData everywhere.\"\"\"\n\n    def __init__(self):\n        super().__init__()\n        self.changes_made = 0\n\n    def leave_Name(self, original_node: cst.Name, updated_node: cst.Name) -&gt; cst.Name:\n        \"\"\"Rename all Name nodes matching PlanRowData.\"\"\"\n        if updated_node.value == \"PlanRowData\":\n            self.changes_made += 1\n            return updated_node.with_changes(value=\"PrRowData\")\n        return updated_node\n\n    def leave_ImportFrom(self, original_node: cst.ImportFrom, updated_node: cst.ImportFrom) -&gt; cst.ImportFrom:\n        \"\"\"Update import statements that import PlanRowData.\"\"\"\n        # This handles: from erk.tui.data.types import PlanRowData\n        # The leave_Name visitor will handle the actual name change\n        # But we track imports for informational purposes\n        if isinstance(updated_node.names, cst.ImportStar):\n            return updated_node\n\n        # Check if any imported names match PlanRowData\n        if not isinstance(updated_node.names, (list, tuple)):\n            names = [updated_node.names]\n        else:\n            names = updated_node.names\n\n        for name in names:\n            if isinstance(name, cst.ImportAlias):\n                if isinstance(name.name, cst.Name) and name.name.value == \"PlanRowData\":\n                    # The leave_Name will handle this, just track it\n                    pass\n\n        return updated_node\n\n\ndef transform_file(file_path: Path, dry_run: bool = False) -&gt; bool:\n    \"\"\"Transform a single file. Returns True if changes made.\"\"\"\n    if not file_path.exists():\n        print(f\"Skipping {file_path}: does not exist\")\n        return False\n\n    source = file_path.read_text(encoding=\"utf-8\")\n\n    try:\n        tree = cst.parse_module(source)\n    except Exception as e:\n        print(f\"Parse error in {file_path}: {e}\")\n        return False\n\n    transformer = RenamePlanRowDataTransformer()\n    new_tree = tree.visit(transformer)\n\n    if transformer.changes_made == 0:\n        return False\n\n    if dry_run:\n        print(f\"[DRY RUN] Would modify {file_path}: {transformer.changes_made} changes\")\n        return True\n\n    file_path.write_text(new_tree.code, encoding=\"utf-8\")\n    print(f\"✓ Modified {file_path}: {transformer.changes_made} changes\")\n    return True\n\n\ndef main():\n    dry_run = \"--dry-run\" in sys.argv\n    paths = [arg for arg in sys.argv[1:] if arg != \"--dry-run\"]\n\n    if not paths:\n        print(__doc__)\n        sys.exit(1)\n\n    total_modified = 0\n    total_files_checked = 0\n\n    for path_str in paths:\n        path = Path(path_str)\n        if path.is_file():\n            total_files_checked += 1\n            if transform_file(path, dry_run):\n                total_modified += 1\n        elif path.is_dir():\n            for py_file in sorted(path.rglob(\"*.py\")):\n                total_files_checked += 1\n                if transform_file(py_file, dry_run):\n                    total_modified += 1\n\n    print(f\"\\nChecked {total_files_checked} files\")\n    print(f\"{'[DRY RUN] Would modify' if dry_run else 'Modified'} {total_modified} files\")\n\n\nif __name__ == \"__main__\":\n    main()\n"}
+[Tool: Bash] {"command":".venv/bin/python refactor_plan_row_data.py src/erk/tui/data/types.py --dry-run","description":"Test refactoring on types.py in dry-run mode"}
+[Tool: Bash] {"command":".venv/bin/python refactor_plan_row_data.py src/erk/tui/data/types.py --dry-run","description":"Test refactoring on types.py in dry-run mode"}
+[Tool: Bash] {"command":"cp src/erk/tui/data/types.py /tmp/types_backup.py &amp;&amp; .venv/bin/python refactor_plan_row_data.py src/erk/tui/data/types.py","description":"Test refactoring on types.py"}
+[Tool: Bash] {"command":"diff -u /tmp/types_backup.py src/erk/tui/data/types.py | head -50","description":"Show what changed in types.py"}
+[Tool: Bash] {"command":"diff -u /tmp/types_backup.py src/erk/tui/data/types.py | head -50","description":"Show what changed in types.py"}
+[Tool: Bash] {"command":"cp /tmp/types_backup.py src/erk/tui/data/types.py","description":"Restore original types.py"}
+
+... [96 lines omitted] ...
+
+[Tool: Write] {"file_path":"/home/runner/work/erk/erk/refactor_plan_row_data.py","content":"#!/usr/bin/env python3\n\"\"\"\nRename PlanRowData to PrRowData across all Python files.\n\nThis script transforms:\n- Class definitions: class PlanRowData → class PrRowData\n- Import statements: from erk.tui.data.types import PlanRowData → PrRowData\n- All type annotations, isinstance checks, and references\n\nExample:\n  python refactor_plan_row_data.py src/erk tests packages --dry-run\n  python refactor_plan_row_data.py src/erk tests packages\n\"\"\"\nimport sys\nfrom pathlib import Path\nimport libcst as cst\n\nclass RenamePlanRowDataTransformer(cst.CSTTransformer):\n    \"\"\"Rename PlanRowData to PrRowData everywhere.\"\"\"\n\n    def __init__(self):\n        super().__init__()\n        self.changes_made = 0\n\n    def leave_Name(self, original_node: cst.Name, updated_node: cst.Name) -&gt; cst.Name:\n        \"\"\"Rename all Name nodes matching PlanRowData.\"\"\"\n        if updated_node.value == \"PlanRowData\":\n            self.changes_made += 1\n            return updated_node.with_changes(value=\"PrRowData\")\n        return updated_node\n\n\ndef transform_file(file_path: Path, dry_run: bool = False) -&gt; bool:\n    \"\"\"Transform a single file. Returns True if changes made.\"\"\"\n    if not file_path.exists():\n        print(f\"Skipping {file_path}: does not exist\")\n        return False\n\n    source = file_path.read_text(encoding=\"utf-8\")\n\n    try:\n        tree = cst.parse_module(source)\n    except Exception as e:\n        print(f\"Parse error in {file_path}: {e}\")\n        return False\n\n    transformer = RenamePlanRowDataTransformer()\n    new_tree = tree.visit(transformer)\n\n    if transformer.changes_made == 0:\n        return False\n\n    if dry_run:\n        print(f\"[DRY RUN] Would modify {file_path}: {transformer.changes_made} changes\")\n        return True\n\n    file_path.write_text(new_tree.code, encoding=\"utf-8\")\n    print(f\"✓ Modified {file_path}: {transformer.changes_made} changes\")\n    return True\n\n\ndef main():\n    dry_run = \"--dry-run\" in sys.argv\n    paths = [arg for arg in sys.argv[1:] if arg != \"--dry-run\"]\n\n    if not paths:\n        print(__doc__)\n        sys.exit(1)\n\n    total_modified = 0\n    total_files_checked = 0\n\n    for path_str in paths:\n        path = Path(path_str)\n        if path.is_file():\n            total_files_checked += 1\n            if transform_file(path, dry_run):\n                total_modified += 1\n        elif path.is_dir():\n            for py_file in sorted(path.rglob(\"*.py\")):\n                total_files_checked += 1\n                if transform_file(py_file, dry_run):\n                    total_modified += 1\n\n    print(f\"\\nChecked {total_files_checked} files\")\n    print(f\"{'[DRY RUN] Would modify' if dry_run else 'Modified'} {total_modified} files\")\n\n\nif __name__ == \"__main__\":\n    main()\n"}
+[Tool: Write] {"file_path":"/home/runner/work/erk/erk/refactor_plan_row_data.py","content":"#!/usr/bin/env python3\n\"\"\"\nRename PlanRowData to PrRowData across all Python files.\n\nThis script transforms:\n- Class definitions: class PlanRowData → class PrRowData\n- Import statements: from erk.tui.data.types import PlanRowData → PrRowData\n- All type annotations, isinstance checks, and references\n\nExample:\n  python refactor_plan_row_data.py src/erk tests packages --dry-run\n  python refactor_plan_row_data.py src/erk tests packages\n\"\"\"\nimport sys\nfrom pathlib import Path\nimport libcst as cst\n\nclass RenamePlanRowDataTransformer(cst.CSTTransformer):\n    \"\"\"Rename PlanRowData to PrRowData everywhere.\"\"\"\n\n    def __init__(self):\n        super().__init__()\n        self.changes_made = 0\n\n    def leave_Name(self, original_node: cst.Name, updated_node: cst.Name) -&gt; cst.Name:\n        \"\"\"Rename all Name nodes matching PlanRowData.\"\"\"\n        if updated_node.value == \"PlanRowData\":\n            self.changes_made += 1\n            return updated_node.with_changes(value=\"PrRowData\")\n        return updated_node\n\n\ndef transform_file(file_path: Path, dry_run: bool = False) -&gt; bool:\n    \"\"\"Transform a single file. Returns True if changes made.\"\"\"\n    if not file_path.exists():\n        print(f\"Skipping {file_path}: does not exist\")\n        return False\n\n    source = file_path.read_text(encoding=\"utf-8\")\n\n    try:\n        tree = cst.parse_module(source)\n    except Exception as e:\n        print(f\"Parse error in {file_path}: {e}\")\n        return False\n\n    transformer = RenamePlanRowDataTransformer()\n    new_tree = tree.visit(transformer)\n\n    if transformer.changes_made == 0:\n        return False\n\n    if dry_run:\n        print(f\"[DRY RUN] Would modify {file_path}: {transformer.changes_made} changes\")\n        return True\n\n    file_path.write_text(new_tree.code, encoding=\"utf-8\")\n    print(f\"✓ Modified {file_path}: {transformer.changes_made} changes\")\n    return True\n\n\ndef main():\n    dry_run = \"--dry-run\" in sys.argv\n    paths = [arg for arg in sys.argv[1:] if arg != \"--dry-run\"]\n\n    if not paths:\n        print(__doc__)\n        sys.exit(1)\n\n    total_modified = 0\n    total_files_checked = 0\n\n    for path_str in paths:\n        path = Path(path_str)\n        if path.is_file():\n            total_files_checked += 1\n            if transform_file(path, dry_run):\n                total_modified += 1\n        elif path.is_dir():\n            for py_file in sorted(path.rglob(\"*.py\")):\n                total_files_checked += 1\n                if transform_file(py_file, dry_run):\n                    total_modified += 1\n\n    print(f\"\\nChecked {total_files_checked} files\")\n    print(f\"{'[DRY RUN] Would modify' if dry_run else 'Modified'} {total_modified} files\")\n\n\nif __name__ == \"__main__\":\n    main()\n"}
+[Tool: Write] {"file_path":"/home/runner/work/erk/erk/refactor_plan_row_data.py","content":"#!/usr/bin/env python3\n\"\"\"\nRename PlanRowData to PrRowData across all Python files.\n\nThis script transforms:\n- Class definitions: class PlanRowData → class PrRowData\n- Import statements: from erk.tui.data.types import PlanRowData → PrRowData\n- All type annotations, isinstance checks, and references\n\nExample:\n  python refactor_plan_row_data.py src/erk tests packages --dry-run\n  python refactor_plan_row_data.py src/erk tests packages\n\"\"\"\nimport sys\nfrom pathlib import Path\nimport libcst as cst\n\nclass RenamePlanRowDataTransformer(cst.CSTTransformer):\n    \"\"\"Rename PlanRowData to PrRowData everywhere.\"\"\"\n\n    def __init__(self):\n        super().__init__()\n        self.changes_made = 0\n\n    def leave_Name(self, original_node: cst.Name, updated_node: cst.Name) -&gt; cst.Name:\n        \"\"\"Rename all Name nodes matching PlanRowData.\"\"\"\n        if updated_node.value == \"PlanRowData\":\n            self.changes_made += 1\n            return updated_node.with_changes(value=\"PrRowData\")\n        return updated_node\n\n\ndef transform_file(file_path: Path, dry_run: bool = False) -&gt; bool:\n    \"\"\"Transform a single file. Returns True if changes made.\"\"\"\n    if not file_path.exists():\n        print(f\"Skipping {file_path}: does not exist\")\n        return False\n\n    source = file_path.read_text(encoding=\"utf-8\")\n\n    try:\n        tree = cst.parse_module(source)\n    except Exception as e:\n        print(f\"Parse error in {file_path}: {e}\")\n        return False\n\n    transformer = RenamePlanRowDataTransformer()\n    new_tree = tree.visit(transformer)\n\n    if transformer.changes_made == 0:\n        return False\n\n    if dry_run:\n        print(f\"[DRY RUN] Would modify {file_path}: {transformer.changes_made} changes\")\n        return True\n\n    file_path.write_text(new_tree.code, encoding=\"utf-8\")\n    print(f\"✓ Modified {file_path}: {transformer.changes_made} changes\")\n    return True\n\n\ndef main():\n    dry_run = \"--dry-run\" in sys.argv\n    paths = [arg for arg in sys.argv[1:] if arg != \"--dry-run\"]\n\n    if not paths:\n        print(__doc__)\n        sys.exit(1)\n\n    total_modified = 0\n    total_files_checked = 0\n\n    for path_str in paths:\n        path = Path(path_str)\n        if path.is_file():\n            total_files_checked += 1\n            if transform_file(path, dry_run):\n                total_modified += 1\n        elif path.is_dir():\n            for py_file in sorted(path.rglob(\"*.py\")):\n                total_files_checked += 1\n                if transform_file(py_file, dry_run):\n                    total_modified += 1\n\n    print(f\"\\nChecked {total_files_checked} files\")\n    print(f\"{'[DRY RUN] Would modify' if dry_run else 'Modified'} {total_modified} files\")\n\n\nif __name__ == \"__main__\":\n    main()\n"}
+  </tool_result>
+</session>
