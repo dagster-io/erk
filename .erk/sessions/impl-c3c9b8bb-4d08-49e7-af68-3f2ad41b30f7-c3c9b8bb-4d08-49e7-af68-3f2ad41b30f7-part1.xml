@@ -1,0 +1,1287 @@
+<session>
+  <meta branch="plnd/bash-erk-exec-marker-delet-03-10-1748" />
+  <meta model="claude-opus-4-6" />
+  <user>&lt;command-message&gt;erk:plan-implement is running…&lt;/command-message&gt;
+&lt;command-name&gt;/erk:plan-implement&lt;/command-name&gt;
+&lt;command-args&gt;9183&lt;/command-args&gt;</user>
+  <user># /erk:plan-implement
+
+Implement a plan - either from GitHub, a markdown file, an existing impl directory under `.erk/impl-context/`, or by saving the current plan first.
+
+This is the primary implementation workflow - it orchestrates:
+
+1. Setting up the impl directory under `.erk/impl-context/&lt;branch&gt;/` (from issue, file, existing folder, or fresh plan)
+2. Executing the implementation
+3. Running CI and submitting the PR
+
+## Prerequisites
+
+- Must be in a git repository managed by erk
+- GitHub CLI (`gh`) must be authenticated
+- One of:
+  - A plan number, URL, or file path argument
+  - An existing impl directory under `.erk/impl-context/`
+  - A plan branch checked out (e.g., `plnd/...` or `P{number}-...`)
+  - A plan in `~/.claude/plans/` (from plan mode)
+
+## Usage
+
+```bash
+/erk:plan-implement                    # Use impl directory, detect from branch, or save current plan
+/erk:plan-implement 2521               # Fetch and implement PR #2521
+/erk:plan-implement https://github.com/owner/repo/pull/2521   # URL form
+/erk:plan-implement ./my-plan.md       # Implement from local markdown file
+```
+
+---
+
+## CRITICAL: PR Operations
+
+**NEVER** run direct GitHub CLI commands for PR operations during implementation:
+
+- `gh pr edit` — destroys plan-header metadata block
+- `gh pr ready` — bypasses lifecycle tracking
+- `gh pr close` / `gh pr merge`
+
+All PR operations are handled by `erk pr submit` in Step 13. It automatically:
+
+- Generates the PR title and body
+- Preserves the plan-header metadata block
+- Marks draft PRs as ready for review
+- Updates lifecycle stage
+
+## Agent Instructions
+
+### Step 1: Set Up Implementation
+
+Parse `9183` and run the consolidated setup command:
+
+- **If numeric** (e.g., `2521`): `erk exec setup-impl --issue 2521`
+- **If GitHub URL** (e.g., `https://github.com/.../issues/2521`): Extract number, `erk exec setup-impl --issue 2521`
+- **If path to file** (anything else non-empty): `erk exec setup-impl --file &lt;path&gt;`
+- **If empty**: `erk exec setup-impl` (auto-detects from `.erk/impl-context/`, branch, or fails)
+
+```bash
+erk exec setup-impl [--issue &lt;N&gt; | --file &lt;path&gt;]
+```
+
+This single command handles:
+
+- Fetching plan from GitHub (draft PR)
+- Setting up from a local markdown file
+- Auto-detecting from existing impl directory under `.erk/impl-context/`
+- Auto-detecting plan number from branch name (P{number}-... or PR lookup)
+- Creating/checking out the feature branch
+- Creating impl directory under `.erk/impl-context/&lt;branch&gt;/` with plan content
+- Running impl-init validation
+- Cleaning up `.erk/impl-context/` staging directory (git rm + commit + push)
+
+Otherwise, generate a branch slug and set up from the specified issue:
+
+1. Fetch the title: `gh pr view &lt;ISSUE_ARG&gt; --json title -q .title`
+2. Generate a branch slug from the title:
+   - 2-4 hyphenated lowercase words, max 30 characters
+   - Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+   - Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+   - Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+3. Store as `BRANCH_SLUG`.
+
+```bash
+erk exec setup-impl --issue &lt;ISSUE_ARG&gt; --branch-slug="${BRANCH_SLUG}"
+```
+
+If `setup-impl` exits with code 1 and `error: "no_plan_found"`, fall back to saving the current plan:
+
+Generate a branch slug from the plan title (the first `# ` heading in the plan file):
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Store as `BRANCH_SLUG`
+
+Save the current plan to GitHub and capture the plan number:
+
+```bash
+erk exec plan-save --format json --session-id="${CLAUDE_SESSION_ID}" --branch-slug="${BRANCH_SLUG}"
+```
+
+Parse the JSON output to get `pr_number`, then:
+
+```bash
+erk exec setup-impl --issue &lt;pr_number&gt;
+```
+
+The `setup-impl` output includes `related_docs` (skills and docs to load) and `has_plan_tracking` (whether GitHub issue tracking is active).
+
+If this fails, display the error and stop.
+
+### Step 2: Read Plan and Load Context
+
+Read `plan.md` from the impl directory set up in Step 1 to understand:
+
+- Overall goal and context
+- Context &amp; Understanding sections (API quirks, architectural insights, pitfalls)
+- Implementation phases and dependencies
+- Success criteria
+
+**Context Consumption**: Plans contain expensive discoveries. Ignoring `[CRITICAL:]` tags, "Related Context:" subsections, or "DO NOT" items causes repeated mistakes.
+
+### Step 3: Load Related Documentation
+
+If plan contains "Related Documentation" section, load listed skills via Skill tool and read listed docs.
+
+### Step 4: Create TodoWrite Entries
+
+Create todo entries for each phase from the plan.
+
+### Step 5: Signal GitHub Started
+
+```bash
+erk exec impl-signal started --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This also deletes the Claude plan file (from `~/.claude/plans/`) since:
+
+- The content has been saved to GitHub
+- The content has been snapshotted to `.erk/scratch/`
+- Keeping it could cause confusion if the user tries to re-save
+
+### Step 6: Execute Each Phase Sequentially
+
+For each phase:
+
+1. **Mark phase as in_progress** (in TodoWrite)
+2. **Read task requirements** carefully
+3. **Implement code AND tests together**:
+   - Load `dignified-python-313` skill for coding standards
+   - Load `fake-driven-testing` skill for test patterns
+   - Follow project AGENTS.md standards
+4. **Mark phase as completed** (in TodoWrite)
+5. **Report progress**: changes made, what's next
+
+**Important:** `plan.md` is immutable - NEVER edit during implementation
+
+### Step 7: Report Progress
+
+After each phase: report changes made and what's next.
+
+### Step 8: Final Verification
+
+Confirm all tasks executed, success criteria met, note deviations, summarize changes.
+
+### Step 9: Signal GitHub Ended
+
+```bash
+erk exec impl-signal ended --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+### Step 10: Upload Session for Async Learn
+
+```bash
+erk exec upload-impl-session --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This reads plan reference from the impl directory, captures session info, and uploads for async learn processing.
+
+### Step 11: Clean Up Impl Context
+
+Remove the `.erk/impl-context/` directory from the repo:
+
+```bash
+erk exec cleanup-impl-context
+```
+
+This removes `.erk/impl-context/`, stages the deletion, commits, and pushes — all idempotent.
+
+### Step 12: Run CI Iteratively
+
+1. If `.erk/prompt-hooks/post-plan-implement-ci.md` exists: follow its instructions
+2. Otherwise: check CLAUDE.md/AGENTS.md for CI commands
+
+### Step 13: Submit PR
+
+Push the branch and create or update the PR using the Graphite-aware submit pipeline:
+
+```bash
+erk pr submit
+```
+
+This handles pushing commits, creating/updating the PR, generating the PR description, and enhancing with Graphite stack metadata when available.
+
+After successful submission, signal lifecycle transition:
+
+```bash
+erk exec impl-signal submitted 2&gt;/dev/null || true
+```
+
+Then validate PR completion invariants:
+
+```bash
+erk pr check --stage=impl
+```
+
+This validates PR submission readiness including implementation-specific checks
+(e.g., `.erk/impl-context/` must be cleaned up). If checks fail, display output and warn user.
+
+### Step 14: Output Format
+
+- **Start**: "Setting up implementation..." or "Fetching plan #X..."
+- **After setup**: "Implementation environment ready, reading plan..."
+- **Each phase**: "Phase X: [brief description]" with code changes
+- **End**: "Plan execution complete. [Summary]"
+
+---
+
+## Related Commands
+
+- `/erk:plan-save` - Save plan only, don't implement (for defer-to-later workflow)
+- `/erk:replan` - Re-plan an existing plan with current codebase state
+</user>
+  <assistant>
+
+I'll implement plan #9183. Let me start by setting up the implementation environment.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="11308" cache_read_input_tokens="17332" cache_creation="{'ephemeral_5m_input_tokens': 11308, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01Xtz8vnC3nMoyLmfuBvpShu">
+    <param name="command">erk exec setup-impl --issue 9183</param>
+    <param name="description">Set up implementation for plan #9183</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="11308" cache_read_input_tokens="17332" cache_creation="{'ephemeral_5m_input_tokens': 11308, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Xtz8vnC3nMoyLmfuBvpShu">
+{"success": true, "impl_path": "/home/runner/work/erk/erk/.erk/impl-context/plnd--bash-erk-exec-marker-delet-03-10-1748", "pr_number": 9183, "pr_url": "https://github.com/dagster-io/erk/pull/9183", "branch": "plnd/bash-erk-exec-marker-delet-03-10-1748", "pr_title": "[erk-pr] Rename plan-saved-issue marker to plan-saved", "no_impl": false}
+{"success": true, "source": "issue", "pr_number": 9183, "has_plan_tracking": true, "valid": true, "related_docs": {"skills": [], "docs": []}}
+Already on PR branch 'plnd/bash-erk-exec-marker-delet-03-10-1748', teleporting from remote...
+  </tool_result>
+  <assistant>Implementation environment is set up. Let me read the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="363" cache_read_input_tokens="28640" cache_creation="{'ephemeral_5m_input_tokens': 363, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01FqQq9NHwF6MwXjGcHXLrMN">
+    <param name="file_path">/home/runner/work/erk/erk/.erk/impl-context/plnd--bash-erk-exec-marker-delet-03-10-1748/plan.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="363" cache_read_input_tokens="28640" cache_creation="{'ephemeral_5m_input_tokens': 363, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01FqQq9NHwF6MwXjGcHXLrMN">
+     1→# Rename `plan-saved-issue` marker to `plan-saved`
+     2→
+     3→## Context
+     4→
+     5→The `plan-saved-issue` marker name incorrectly implies that plans are GitHub issues. Plans are actually PRs (draft pull requests). The marker stores the PR number and title of a saved plan for session deduplication. Renaming to `plan-saved` is clearer and consistent with the project's recent terminology migration from "issue" to "pr" for plans (see commit 27a8d08ef).
+     6→
+     7→Note: `objective-saved-issue` is NOT renamed because objectives actually ARE GitHub issues, so that name is correct.
+     8→
+     9→## Changes
+    10→
+    11→### 1. Core marker implementation: `packages/erk-shared/src/erk_shared/scratch/session_markers.py`
+    12→
+    13→**Rename marker file from `plan-saved-issue.marker` to `plan-saved.marker`:**
+    14→
+    15→- Line 10: Update docstring reference from `plan-saved-issue.marker` to `plan-saved.marker`
+    16→- Line 63: Rename function `create_plan_saved_issue_marker` to `create_plan_saved_marker_with_title` (to avoid collision with existing `create_plan_saved_marker`)
+    17→  - Actually, better approach: rename to `create_plan_saved_pr_marker` — but wait, the prompt says rename to `plan-saved`. Let me reconsider.
+    18→  - The function `create_plan_saved_issue_marker` stores `{pr_number}\n{title}` in `plan-saved-issue.marker`. Rename the function to `create_plan_saved_dedup_marker` and the file to `plan-saved.marker`.
+    19→  - Actually, simplest: rename function to `create_plan_saved_pr_marker` and file to `plan-saved.marker`. The prompt says "change the name of the plan-saved-issue marker to just plan-saved."
+    20→
+    21→**Specific changes:**
+    22→- Line 10: `plan-saved-issue.marker` -&gt; `plan-saved.marker` in docstring
+    23→- Line 63-66: Rename `create_plan_saved_issue_marker` -&gt; `create_plan_saved_pr_marker`
+    24→- Line 66: Update docstring: "Create marker file storing the PR number and title of the saved plan."
+    25→- Line 81: Change `"plan-saved-issue.marker"` -&gt; `"plan-saved.marker"`
+    26→- Line 169: Rename `get_existing_saved_issue` -&gt; `get_existing_saved_pr`
+    27→- Line 169: Update docstring references from "issue" to "PR"
+    28→- Line 185: Change `"plan-saved-issue.marker"` -&gt; `"plan-saved.marker"`
+    29→
+    30→### 2. Plan save script: `src/erk/cli/commands/exec/scripts/plan_save.py`
+
+... [99 lines omitted] ...
+
+   119→1. Run `ruff check` to verify no import errors
+  </tool_result>
+  <assistant>Good, I have a clear plan. Let me set up the todo list and read the files I need to modify.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3017" cache_read_input_tokens="29003" cache_creation="{'ephemeral_5m_input_tokens': 3017, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01Y9uGrFPAG7A2Qbi1jZVvkP">
+    <param name="todos">[{'content': 'Rename markers in session_markers.py (core implementation)', 'status': 'pend...[truncated 1116 chars]...ubmit PR', 'status': 'pending', 'activeForm': 'Signaling GitHub ended and submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3017" cache_read_input_tokens="29003" cache_creation="{'ephemeral_5m_input_tokens': 3017, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Y9uGrFPAG7A2Qbi1jZVvkP">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Let me signal GitHub started and read all the files I need to modify in parallel.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="459" cache_read_input_tokens="32020" cache_creation="{'ephemeral_5m_input_tokens': 459, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_017qUu3Coa6y1AGmaJxQnWrV">
+    <param name="command">erk exec impl-signal started --session-id "${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true</param>
+    <param name="description">Signal GitHub implementation started</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="459" cache_read_input_tokens="32020" cache_creation="{'ephemeral_5m_input_tokens': 459, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01G6g1MurgvLTGHpkycJ1xvP">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/scratch/session_markers.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="459" cache_read_input_tokens="32020" cache_creation="{'ephemeral_5m_input_tokens': 459, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_0119qCuNMETsAVdJF3g5iG4y">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/plan_save.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="459" cache_read_input_tokens="32020" cache_creation="{'ephemeral_5m_input_tokens': 459, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01JHcc6dWsFqKQb2fL2dKM3X">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/marker.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="459" cache_read_input_tokens="32020" cache_creation="{'ephemeral_5m_input_tokens': 459, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01N745PwM7NUwCRrNkcgqd43">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/tests/unit/scratch/test_session_markers.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="459" cache_read_input_tokens="32020" cache_creation="{'ephemeral_5m_input_tokens': 459, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01TGetec2nUAnZbMXaavkKUu">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_plan_save.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="459" cache_read_input_tokens="32020" cache_creation="{'ephemeral_5m_input_tokens': 459, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_012cXGn3wgwfkRscm5QLTVF3">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_marker.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="459" cache_read_input_tokens="32020" cache_creation="{'ephemeral_5m_input_tokens': 459, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_014qJMgRbz4mGyw1whtvcemk">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/workflow-markers.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="459" cache_read_input_tokens="32020" cache_creation="{'ephemeral_5m_input_tokens': 459, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01KXWxTnzTjrkh7xHM4PaATH">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/commands/erk/plan-save.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="459" cache_read_input_tokens="32020" cache_creation="{'ephemeral_5m_input_tokens': 459, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01M4DtMEjcJ7nYunhbiRXTqZ">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/commands/erk/pr-dispatch.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="459" cache_read_input_tokens="32020" cache_creation="{'ephemeral_5m_input_tokens': 459, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01DkvLKE619Hkmo2a4vgPGMn">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/skills/erk-planning/SKILL.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="459" cache_read_input_tokens="32020" cache_creation="{'ephemeral_5m_input_tokens': 459, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01QHYse9XXM8BLKQmi1dWvDc">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/session-deduplication.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="459" cache_read_input_tokens="32020" cache_creation="{'ephemeral_5m_input_tokens': 459, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01XfTMkJNREfHMLrhp3tHADg">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/pr-submission-patterns.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="459" cache_read_input_tokens="32020" cache_creation="{'ephemeral_5m_input_tokens': 459, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_017qUu3Coa6y1AGmaJxQnWrV">
+{
+  "success": false,
+  "event": "started",
+  "error_type": "session-id-required",
+  "message": "Session ID required for impl-signal started. Ensure ${CLAUDE_SESSION_ID} is available in the command context."
+}
+  </tool_result>
+  <tool_result tool="toolu_01G6g1MurgvLTGHpkycJ1xvP">
+     1→"""Session-scoped marker utilities for plan save state tracking.
+     2→
+     3→These markers are stored in the session scratch directory and track
+     4→plan save state within a session. They are distinct from worktree-scoped
+     5→markers in markers.py.
+     6→
+     7→Markers:
+     8→    exit-plan-mode-hook.plan-saved.marker: Signals plan was saved to GitHub.
+     9→        Content: plan number on first line. Triggers Step 2 "what next?" prompt.
+    10→    plan-saved-issue.marker: Stores the issue/PR number of the saved plan
+    11→        (persists for session deduplication, not consumed by hook).
+    12→"""
+    13→
+    14→from pathlib import Path
+    15→
+    16→from erk_shared.scratch.scratch import get_scratch_dir
+    17→
+    18→
+    19→def create_plan_saved_marker(session_id: str, repo_root: Path, plan_number: int) -&gt; None:
+    20→    """Create marker file to indicate plan was saved to GitHub.
+    21→
+    22→    The plan number is stored on the first line so the hook can read it
+    23→    when building the Step 2 "what next?" prompt.
+    24→
+    25→    Args:
+    26→        session_id: The session ID for the scratch directory.
+    27→        repo_root: The repository root path.
+    28→        plan_number: The plan PR number.
+    29→    """
+    30→    marker_dir = get_scratch_dir(session_id, repo_root=repo_root)
+
+... [175 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_0119qCuNMETsAVdJF3g5iG4y">
+     1→"""Plan save: creates a draft PR with the plan content.
+     2→
+     3→Usage:
+     4→    erk exec plan-save [OPTIONS]
+     5→
+     6→Options:
+     7→    --format json|display: Output format (default: json)
+     8→    --plan-file PATH: Use specific plan file (highest priority)
+     9→    --session-id ID: Session ID for scoped plan lookup
+    10→    --plan-type standard|learn: Plan type (default: standard)
+    11→    --learned-from-issue INT: Parent plan (for learn plans)
+    12→    --created-from-workflow-run-url URL: Workflow run URL
+    13→
+    14→Objective linking: use --objective to pass directly, or rely on
+    15→automatic linking via the objective-context session marker
+    16→(created by /erk:objective-plan). The --objective flag takes
+    17→precedence over the session marker.
+    18→
+    19→Exit Codes:
+    20→    0: Success
+    21→    1: Error
+    22→    2: Validation failed
+    23→"""
+    24→
+    25→import json
+    26→from pathlib import Path
+    27→
+    28→import click
+    29→
+    30→from erk.cli.commands.exec.scripts.validate_plan_content import _validate_plan_content
+
+... [556 lines omitted] ...
+
+   162→            click.echo(f"Error: {title_validation.message}", err=True)
+   168→                        "error": f"Plan title validation failed: {title_validation.reason}",
+   169→                        "error_type": "validation_failed",
+   183→            click.echo("Error: --current-branch requires a checked-out branch.", err=True)
+   190→                "Error: --branch-slug is required. "
+   222→            click.echo(f"Error: {create_result.message}", err=True)
+   314→        raise RuntimeError(msg)
+   418→            click.echo("Error: No plan found in ~/.claude/plans/", err=True)
+   420→            click.echo(json.dumps({"success": False, "error": "No plan found in ~/.claude/plans/"}))
+   450→    valid, error, details = _validate_plan_content(plan)
+   453→            click.echo(f"Error: Plan validation failed: {error}", err=True)
+   459→                        "error": f"Plan validation failed: {error}",
+   460→                        "error_type": "validation_failed",
+  </tool_result>
+  <tool_result tool="toolu_01JHcc6dWsFqKQb2fL2dKM3X">
+     1→"""Marker file operations for inter-process communication.
+     2→
+     3→Usage:
+     4→    erk exec marker create --session-id SESSION_ID &lt;name&gt;
+     5→    erk exec marker read --session-id SESSION_ID &lt;name&gt;
+     6→    erk exec marker exists --session-id SESSION_ID &lt;name&gt;
+     7→    erk exec marker delete --session-id SESSION_ID &lt;name&gt;
+     8→
+     9→Marker files are stored in `.erk/scratch/sessions/&lt;session-id&gt;/` and are used for
+    10→inter-process communication between hooks and commands. Session ID MUST be provided
+    11→via the `--session-id` flag (erk code never has access to CLAUDE_CODE_SESSION_ID
+    12→environment variable - session IDs must be passed explicitly).
+    13→
+    14→Exit codes:
+    15→    create: 0 = created, 1 = error (missing session ID)
+    16→    read: 0 = marker exists (content on stdout), 1 = marker doesn't exist or error
+    17→    exists: 0 = exists, 1 = does not exist
+    18→    delete: 0 = deleted (or didn't exist), 1 = error (missing session ID)
+    19→"""
+    20→
+    21→import json
+    22→
+    23→import click
+    24→
+    25→from erk_shared.context.helpers import require_repo_root
+    26→from erk_shared.scratch.scratch import get_scratch_dir
+    27→
+    28→MARKER_EXTENSION = ".marker"
+    29→
+    30→
+
+... [170 lines omitted] ...
+
+   116→    Exit code 0 if marker exists, 1 if it doesn't exist or error.
+  </tool_result>
+  <tool_result tool="toolu_01N745PwM7NUwCRrNkcgqd43">
+     1→"""Unit tests for session_markers module."""
+     2→
+     3→from pathlib import Path
+     4→
+     5→from erk_shared.scratch.session_markers import (
+     6→    create_plan_saved_branch_marker,
+     7→    create_plan_saved_issue_marker,
+     8→    create_plan_saved_marker,
+     9→    get_existing_saved_branch,
+    10→    get_existing_saved_issue,
+    11→    read_plan_saved_marker,
+    12→    read_roadmap_step_marker,
+    13→)
+    14→
+    15→# create_plan_saved_marker tests
+    16→
+    17→
+    18→def test_create_plan_saved_marker_creates_file(tmp_path: Path) -&gt; None:
+    19→    """Verify marker file is created at correct path."""
+    20→    session_id = "test-session-123"
+    21→
+    22→    create_plan_saved_marker(session_id, tmp_path, 42)
+    23→
+    24→    marker_file = (
+    25→        tmp_path
+    26→        / ".erk"
+    27→        / "scratch"
+    28→        / "sessions"
+    29→        / session_id
+    30→        / "exit-plan-mode-hook.plan-saved.marker"
+
+... [265 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_012cXGn3wgwfkRscm5QLTVF3">
+     1→"""Tests for erk exec marker command.
+     2→
+     3→Tests the create/exists/delete subcommands for marker file management.
+     4→"""
+     5→
+     6→import json
+     7→from pathlib import Path
+     8→
+     9→from click.testing import CliRunner
+    10→
+    11→from erk.cli.commands.exec.scripts.marker import marker
+    12→from erk_shared.context.context import ErkContext
+    13→
+    14→
+    15→class TestMarkerCreate:
+    16→    """Tests for 'erk exec marker create' subcommand."""
+    17→
+    18→    def test_create_marker_success(self, tmp_path: Path) -&gt; None:
+    19→        """Test creating a marker file succeeds with --session-id flag."""
+    20→        runner = CliRunner()
+    21→        session_id = "test-session-123"
+    22→
+    23→        ctx = ErkContext.for_test(repo_root=tmp_path, cwd=tmp_path)
+    24→
+    25→        result = runner.invoke(
+    26→            marker,
+    27→            ["create", "--session-id", session_id, "my-marker"],
+    28→            obj=ctx,
+    29→        )
+    30→
+
+... [504 lines omitted] ...
+
+   269→    def test_read_returns_failure_when_marker_missing(self, tmp_path: Path) -&gt; None:
+   283→        # No JSON output for read command on failure (silent exit)
+   401→    def test_exists_returns_failure_when_marker_missing(self, tmp_path: Path) -&gt; None:
+  </tool_result>
+  <tool_result tool="toolu_014qJMgRbz4mGyw1whtvcemk">
+     1→---
+     2→title: Workflow Markers
+     3→last_audited: "2026-02-16 14:20 PT"
+     4→audit_result: clean
+     5→read_when:
+     6→  - "building multi-step workflows that need state persistence"
+     7→  - "using erk exec marker commands"
+     8→  - "implementing objective-to-plan workflows"
+     9→---
+    10→
+    11→# Workflow Markers
+    12→
+    13→Markers persist state across workflow steps when a single session needs to pass information between distinct phases.
+    14→
+    15→## Commands
+    16→
+    17→- `erk exec marker create --name &lt;name&gt; --value &lt;value&gt;` - Create/update a marker
+    18→- `erk exec marker read --name &lt;name&gt;` - Read marker value (empty if not set)
+    19→
+    20→## Use Cases
+    21→
+    22→### Objective Context
+    23→
+    24→When creating a plan from an objective step, markers track the objective for later hooks:
+    25→
+    26→```bash
+    27→erk exec marker create --name objective-context --value "5503"
+    28→erk exec marker create --name roadmap-step --value "1B.4"
+    29→```
+    30→
+
+... [40 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01KXWxTnzTjrkh7xHM4PaATH">
+     1→---
+     2→description: Save the current session's plan to GitHub
+     3→argument-hint: "[--plan-type=learn]"
+     4→---
+     5→
+     6→# /erk:plan-save
+     7→
+     8→Save the current session's plan to GitHub with session context.
+     9→
+    10→## Usage
+    11→
+    12→```bash
+    13→/erk:plan-save                           # Standalone plan
+    14→/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+    15→/erk:plan-save --objective=123           # Explicit objective link (overrides marker)
+    16→/erk:plan-save --current-branch          # Use current branch instead of creating new plnd/ branch
+    17→```
+    18→
+    19→Objective linking: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command. Use `--objective=&lt;number&gt;` to override the marker or provide the link when no marker exists (e.g., during replan).
+    20→
+    21→## Plan Storage
+    22→
+    23→The plan is saved using the configured backend:
+    24→
+    25→- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+    26→  The JSON output contract includes `pr_number`, `pr_url`, `title`, `branch_name`, `plan_backend`.
+    27→
+    28→## Agent Instructions
+    29→
+    30→### Step 1: Parse Arguments
+
+... [208 lines omitted] ...
+
+   100→If the command fails, display the error and stop.
+   115→- If `success: false` or value doesn't match: verification failed
+   121→**On verification failure:**
+   123→Display error and remediation steps:
+   126→ERROR: Objective link verification failed
+   163→**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+   185→On failure, display the error message and suggest:
+  </tool_result>
+  <tool_result tool="toolu_01M4DtMEjcJ7nYunhbiRXTqZ">
+     1→---
+     2→description: Dispatch plans for remote AI implementation
+     3→---
+     4→
+     5→# /erk:pr-dispatch
+     6→
+     7→## Goal
+     8→
+     9→Find the most recent plan created in this conversation and dispatch it for remote AI implementation via `erk pr dispatch`.
+    10→
+    11→## What This Command Does
+    12→
+    13→1. Search conversation for the last plan reference
+    14→2. Extract the pr number
+    15→3. Run `erk pr dispatch &lt;pr_number&gt;` to trigger remote implementation
+    16→
+    17→## Finding the Plan
+    18→
+    19→Search the conversation from bottom to top for these patterns (in priority order):
+    20→
+    21→1. **Draft PR reference**: `saved as draft PR #&lt;number&gt;` or `draft PR #&lt;number&gt;`
+    22→2. **Pull request URL**: `https://github.com/&lt;owner&gt;/&lt;repo&gt;/pull/&lt;number&gt;`
+    23→3. **Plan URL**: `https://github.com/.../pull/&lt;number&gt;` (legacy: `https://github.com/.../issues/&lt;number&gt;`)
+    24→
+    25→Extract the pr number from the most recent match.
+    26→
+    27→## Execution
+    28→
+    29→Once you have the pr number, run:
+    30→
+
+... [22 lines omitted] ...
+
+    43→## Error Cases
+    46→- **erk pr dispatch fails**: Display the error output from the command (erk pr dispatch validates the plan)
+  </tool_result>
+  <tool_result tool="toolu_01DkvLKE619Hkmo2a4vgPGMn">
+     1→---
+     2→name: erk-planning
+     3→description: &gt;
+     4→  This skill documents plan management in erk. Use when creating, updating,
+     5→  or working with erk-plan GitHub PRs. Covers plan structure, the planning
+     6→  workflow, and when to update vs create new plans.
+     7→---
+     8→
+     9→# Erk Planning Skill
+    10→
+    11→## When to Load
+    12→
+    13→Load this skill when user mentions:
+    14→
+    15→- "update plan", "update the plan"
+    16→- "modify the plan", "change the plan"
+    17→- "edit the plan"
+    18→
+    19→**When these triggers fire and a plan was saved in this session:**
+    20→
+    21→1. Check for `plan-saved-issue.marker` in session scratch:
+    22→   ```bash
+    23→   erk exec marker read --session-id &lt;session-id&gt; plan-saved-issue
+    24→   ```
+    25→2. If found (exit code 0), invoke `/local:plan-update &lt;issue-number&gt;` with the marker content
+    26→3. If not found (exit code 1), ask user for issue number
+    27→
+    28→## Overview
+    29→
+    30→Erk-plans are GitHub PRs that track implementation plans. They have a two-part structure:
+
+... [128 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01QHYse9XXM8BLKQmi1dWvDc">
+     1→---
+     2→title: Session-Based Plan Deduplication
+     3→read_when:
+     4→  - "understanding duplicate plan prevention"
+     5→  - "working with exit-plan-mode hook"
+     6→  - "debugging duplicate plan creation"
+     7→tripwires:
+     8→  - action: "modifying marker deletion behavior in exit-plan-mode hook"
+     9→    warning: "Reusable markers (plan-saved) must persist; one-time markers (implement-now, objective-context) are consumed. Deleting reusable markers breaks state machines and enables retry loops that create duplicates."
+    10→  - action: "using session-scoped markers in exec scripts"
+    11→    warning: "Session markers enable idempotency in command retries. Always write markers AFTER successful operation completion, never before. Use triple-check guard on marker read: file exists AND content is valid AND expected type (numeric for issue numbers)."
+    12→last_audited: "2026-02-16 14:20 PT"
+    13→audit_result: clean
+    14→---
+    15→
+    16→# Session-Based Plan Deduplication
+    17→
+    18→This document explains how erk prevents duplicate plans from being created during retry loops or hook edge cases.
+    19→
+    20→## Problem
+    21→
+    22→When Claude retries a blocked ExitPlanMode call, the same plan could be saved multiple times, creating duplicate GitHub issues. This can happen when:
+    23→
+    24→1. Hook blocks with prompt → user chooses "save" → save succeeds → hook fires again
+    25→2. Network failures during save → retry creates second issue
+    26→3. Session interruption → user resumes → re-runs save command
+    27→
+    28→## Two-Layer Defense
+    29→
+    30→Erk uses two complementary mechanisms:
+
+... [78 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01XfTMkJNREfHMLrhp3tHADg">
+     1→---
+     2→title: PR Submission Patterns
+     3→read_when:
+     4→  - "creating or updating PRs programmatically in erk"
+     5→  - "debugging why a duplicate PR or issue was created"
+     6→  - "fixing erk pr check validation failures"
+     7→  - "understanding the PR number vs plan number distinction"
+     8→last_audited: "2026-02-17 16:00 PT"
+     9→audit_result: clean
+    10→tripwires:
+    11→  - action: "using plan number from .erk/impl-context/plan-ref.json in a checkout footer"
+    12→    warning: "Checkout footers require the PR number, not the plan number. The plan is the source, the PR is the implementation. See the PR Number vs Plan Number section."
+    13→  - action: "creating a PR without first checking if one already exists for the branch"
+    14→    warning: "The dispatch pipeline is idempotent — it checks for existing PRs before creating. If building PR creation outside the pipeline, replicate this check to prevent duplicates."
+    15→  - action: "constructing a PR footer manually instead of using build_pr_body_footer()"
+    16→    warning: "The footer format includes checkout commands and closing references with specific patterns. Use the builder function to ensure validation passes."
+    17→---
+    18→
+    19→# PR Submission Patterns
+    20→
+    21→Cross-cutting patterns for reliable, idempotent PR creation in erk. The dispatch pipeline touches git, GitHub API, Graphite, and the `.erk/impl-context/` metadata system — mistakes in any layer cascade into validation failures or duplicate artifacts.
+    22→
+    23→## Idempotency: Why Every PR Operation Must Be Re-Runnable
+    24→
+    25→PR submission frequently retries due to network failures, hook loops, or agent restarts. Without idempotency, each retry creates duplicate PRs or issues. Erk enforces idempotency at two levels:
+    26→
+    27→**Branch-level:** The dispatch pipeline checks GitHub for an existing PR on the current branch before creating one. If found, it updates the existing PR rather than creating a duplicate. This is the single most important idempotency guarantee — without it, every retry during the push-and-create phase would spawn a new PR.
+    28→
+    29→&lt;!-- Source: src/erk/cli/commands/pr/submit_pipeline.py, push_and_create_pr --&gt;
+    30→
+
+... [65 lines omitted] ...
+
+    33→**Session-level:** Plan-save operations use scratch-directory marker files keyed by session ID. Before creating a GitHub issue, the command checks if this session already created one. This prevents the specific failure mode where exit-plan-mode hook retries cause duplicate plans.
+    65→## Iterate-Until-Valid: Fixing PR Validation Failures
+    67→When `erk pr check` reports failures, use this workflow:
+    69→1. Read the error message — it names the specific check that failed
+    74→The escalation to source investigation after two failures is the key discipline. Erk validators use literal regex matching, not semantic equivalence — "close enough" formats fail silently. For the full investigation methodology, see [Source Investigation Over Trial-and-Error](debugging-patterns.md).
+    88→- [Source Investigation Over Trial-and-Error](debugging-patterns.md) — When to stop guessing and read validator source
+  </tool_result>
+  <tool_result tool="toolu_01TGetec2nUAnZbMXaavkKUu">
+     1→"""Unit tests for plan-save command (draft PR creation)."""
+     2→
+     3→import json
+     4→from pathlib import Path
+     5→
+     6→import pytest
+     7→from click.testing import CliRunner
+     8→
+     9→from erk.cli.commands.exec.scripts.plan_save import plan_save
+    10→from erk_shared.context.context import ErkContext
+    11→from erk_shared.plan_store.planned_pr_lifecycle import IMPL_CONTEXT_DIR
+    12→from tests.fakes.gateway.claude_installation import FakeClaudeInstallation
+    13→from tests.fakes.gateway.git import FakeGit
+    14→from tests.fakes.gateway.github import FakeLocalGitHub
+    15→from tests.fakes.gateway.graphite import FakeGraphite
+    16→from tests.fakes.tests.shared_context import context_for_test
+    17→
+    18→# Valid plan content that passes validation (100+ chars with structure)
+    19→VALID_PLAN_CONTENT = """# Feature Plan
+    20→
+    21→This plan describes the implementation of a new feature.
+    22→
+    23→- Step 1: Set up the environment
+    24→- Step 2: Implement the core logic
+    25→- Step 3: Add tests and documentation"""
+    26→
+    27→
+    28→def _planned_pr_context(
+    29→    *,
+    30→    tmp_path: Path,
+
+... [897 lines omitted] ...
+
+    61→    assert result.exit_code == 0, f"Failed: {result.output}"
+    79→    assert result.exit_code == 0, f"Failed: {result.output}"
+   101→    assert "No plan found" in output["error"]
+   104→def test_planned_pr_validation_failure(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -&gt; None:
+   105→    """Short plan: exit code 2, error_type='validation_failed'."""
+   119→    assert output["error_type"] == "validation_failed"
+   134→    assert result1.exit_code == 0, f"First call failed: {result1.output}"
+   145→    assert result2.exit_code == 0, f"Second call failed: {result2.output}"
+   189→    assert result1.exit_code == 0, f"First call failed: {result1.output}"
+   205→    assert result2.exit_code == 0, f"Second call failed: {result2.output}"
+   229→    assert result.exit_code == 0, f"Failed: {result.output}"
+   255→    assert result.exit_code == 0, f"Failed: {result.output}"
+   279→    assert result.exit_code == 0, f"Failed: {result.output}"
+   298→    assert result.exit_code == 0, f"Failed: {result.output}"
+   312→    assert result.exit_code == 0, f"Failed: {result.output}"
+   347→    assert result.exit_code == 0, f"Failed: {result.output}"
+   370→    assert result.exit_code == 0, f"Failed: {result.output}"
+   411→    assert result.exit_code == 0, f"Failed: {result.output}"
+   451→    assert result.exit_code == 0, f"Failed: {result.output}"
+   479→    assert result.exit_code == 0, f"Failed: {result.output}"
+   515→    assert result.exit_code == 0, f"Failed: {result.output}"
+   559→    assert output["error_type"] == "validation_failed"
+   579→    assert output["error_type"] == "validation_failed"
+   585→    """Planned-PR save shows error message for invalid title in display format."""
+   610→    assert result.exit_code == 0, f"Failed: {result.output}"
+   628→    assert result.exit_code == 0, f"Failed: {result.output}"
+   669→    assert result.exit_code == 0, f"Failed: {result.output}"
+   680→def test_planned_pr_branch_slug_missing_errors(
+   683→    """When --branch-slug is not provided, exits with error and remediation message."""
+   712→    assert result.exit_code == 0, f"Failed: {result.output}"
+   745→    assert result.exit_code == 0, f"Failed: {result.output}"
+   762→    assert result.exit_code == 0, f"Failed: {result.output}"
+   786→    assert result.exit_code == 0, f"Failed: {result.output}"
+   809→    assert result.exit_code == 0, f"Failed: {result.output}"
+   835→    assert result.exit_code == 0, f"Failed: {result.output}"
+   861→    assert result.exit_code == 0, f"Failed: {result.output}"
+   880→    assert result.exit_code == 0, f"Failed: {result.output}"
+   907→    assert result.exit_code == 0, f"Failed: {result.output}"
+  </tool_result>
+  <assistant>I've read all the files. Let me update the todo list and start implementing. This is a straightforward rename task. I'll use the `libcst-refactor` agent for the Python function renames and then handle the remaining string replacements.</assistant>
+  <usage input_tokens="16753" cache_creation_input_tokens="33286" cache_read_input_tokens="32479" cache_creation="{'ephemeral_5m_input_tokens': 33286, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01AbdpybrRZW6nZnSpNR5SKU">
+    <param name="todos">[{'content': 'Rename markers in session_markers.py (core implementation)', 'status': 'in_p...[truncated 1122 chars]...ubmit PR', 'status': 'pending', 'activeForm': 'Signaling GitHub ended and submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="16753" cache_creation_input_tokens="33286" cache_read_input_tokens="32479" cache_creation="{'ephemeral_5m_input_tokens': 33286, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01AbdpybrRZW6nZnSpNR5SKU">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Let me make all the edits. I'll start with the core implementation and work through all files.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="17242" cache_read_input_tokens="65765" cache_creation="{'ephemeral_5m_input_tokens': 17242, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01Q8uK96iEcuWtpcbi76LnRq">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/scratch/session_markers.py</param>
+    <param name="old_string">    plan-saved-issue.marker: Stores the issue/PR number of the saved plan
+        (persists for session deduplication, not consumed by hook).</param>
+    <param name="new_string">    plan-saved.marker: Stores the PR number of the saved plan
+        (persists for session deduplication, not consumed by hook).</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="17242" cache_read_input_tokens="65765" cache_creation="{'ephemeral_5m_input_tokens': 17242, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_013ZgrJHPD6K55TJJ8UYKBJM">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/scratch/session_markers.py</param>
+    <param name="old_string">def create_plan_saved_issue_marker(
+    session_id: str, repo_root: Path, plan_number: int...[truncated 777 chars]...aved-issue.marker"
+    marker_file.write_text(f"{plan_number}\n{title}", encoding="utf-8")</param>
+    <param name="new_string">def create_plan_saved_pr_marker(
+    session_id: str, repo_root: Path, plan_number: int, *...[truncated 762 chars]...plan-saved.marker"
+    marker_file.write_text(f"{plan_number}\n{title}", encoding="utf-8")</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="17242" cache_read_input_tokens="65765" cache_creation="{'ephemeral_5m_input_tokens': 17242, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01WjwAWZWE6Pd9mwMVo5Q2Yi">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/scratch/session_markers.py</param>
+    <param name="old_string">def get_existing_saved_issue(session_id: str, repo_root: Path, *, title: str) -&gt; int | Non...[truncated 586 chars]...(session_id, repo_root=repo_root)
+    marker_file = marker_dir / "plan-saved-issue.marker"</param>
+    <param name="new_string">def get_existing_saved_pr(session_id: str, repo_root: Path, *, title: str) -&gt; int | None:
+...[truncated 574 chars]...ch_dir(session_id, repo_root=repo_root)
+    marker_file = marker_dir / "plan-saved.marker"</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="17242" cache_read_input_tokens="65765" cache_creation="{'ephemeral_5m_input_tokens': 17242, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Q8uK96iEcuWtpcbi76LnRq">
+&lt;tool_use_error&gt;File has not been read yet. Read it first before writing to it.&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_result tool="toolu_013ZgrJHPD6K55TJJ8UYKBJM">
+&lt;tool_use_error&gt;File has not been read yet. Read it first before writing to it.&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_result tool="toolu_01WjwAWZWE6Pd9mwMVo5Q2Yi">
+&lt;tool_use_error&gt;File has not been read yet. Read it first before writing to it.&lt;/tool_use_error&gt;
+  </tool_result>
+  <assistant>Let me re-read the files first (the read tool requirement seems to need a fresh read):</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1504" cache_read_input_tokens="83007" cache_creation="{'ephemeral_5m_input_tokens': 1504, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01Q5JbPmSiMNJfouXoiyoXPc">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/scratch/session_markers.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1504" cache_read_input_tokens="83007" cache_creation="{'ephemeral_5m_input_tokens': 1504, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_018bM3nNtLMfzWVJxTfBYp5M">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/plan_save.py</param>
+    <param name="limit">70</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1504" cache_read_input_tokens="83007" cache_creation="{'ephemeral_5m_input_tokens': 1504, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01QQ3VeeaWR2SJoXZkBCjgCa">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/marker.py</param>
+    <param name="limit">120</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1504" cache_read_input_tokens="83007" cache_creation="{'ephemeral_5m_input_tokens': 1504, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Q5JbPmSiMNJfouXoiyoXPc">
+     1→"""Session-scoped marker utilities for plan save state tracking.
+     2→
+     3→These markers are stored in the session scratch directory and track
+     4→plan save state within a session. They are distinct from worktree-scoped
+     5→markers in markers.py.
+     6→
+     7→Markers:
+     8→    exit-plan-mode-hook.plan-saved.marker: Signals plan was saved to GitHub.
+     9→        Content: plan number on first line. Triggers Step 2 "what next?" prompt.
+    10→    plan-saved-issue.marker: Stores the issue/PR number of the saved plan
+    11→        (persists for session deduplication, not consumed by hook).
+    12→"""
+    13→
+    14→from pathlib import Path
+    15→
+    16→from erk_shared.scratch.scratch import get_scratch_dir
+    17→
+    18→
+    19→def create_plan_saved_marker(session_id: str, repo_root: Path, plan_number: int) -&gt; None:
+    20→    """Create marker file to indicate plan was saved to GitHub.
+    21→
+    22→    The plan number is stored on the first line so the hook can read it
+    23→    when building the Step 2 "what next?" prompt.
+    24→
+    25→    Args:
+    26→        session_id: The session ID for the scratch directory.
+    27→        repo_root: The repository root path.
+    28→        plan_number: The plan PR number.
+    29→    """
+    30→    marker_dir = get_scratch_dir(session_id, repo_root=repo_root)
+
+... [175 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_018bM3nNtLMfzWVJxTfBYp5M">
+     1→"""Plan save: creates a draft PR with the plan content.
+     2→
+     3→Usage:
+     4→    erk exec plan-save [OPTIONS]
+     5→
+     6→Options:
+     7→    --format json|display: Output format (default: json)
+     8→    --plan-file PATH: Use specific plan file (highest priority)
+     9→    --session-id ID: Session ID for scoped plan lookup
+    10→    --plan-type standard|learn: Plan type (default: standard)
+    11→    --learned-from-issue INT: Parent plan (for learn plans)
+    12→    --created-from-workflow-run-url URL: Workflow run URL
+    13→
+    14→Objective linking: use --objective to pass directly, or rely on
+    15→automatic linking via the objective-context session marker
+    16→(created by /erk:objective-plan). The --objective flag takes
+    17→precedence over the session marker.
+    18→
+    19→Exit Codes:
+    20→    0: Success
+    21→    1: Error
+    22→    2: Validation failed
+    23→"""
+    24→
+    25→import json
+    26→from pathlib import Path
+    27→
+    28→import click
+    29→
+    30→from erk.cli.commands.exec.scripts.validate_plan_content import _validate_plan_content
+
+... [45 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01QQ3VeeaWR2SJoXZkBCjgCa">
+     1→"""Marker file operations for inter-process communication.
+     2→
+     3→Usage:
+     4→    erk exec marker create --session-id SESSION_ID &lt;name&gt;
+     5→    erk exec marker read --session-id SESSION_ID &lt;name&gt;
+     6→    erk exec marker exists --session-id SESSION_ID &lt;name&gt;
+     7→    erk exec marker delete --session-id SESSION_ID &lt;name&gt;
+     8→
+     9→Marker files are stored in `.erk/scratch/sessions/&lt;session-id&gt;/` and are used for
+    10→inter-process communication between hooks and commands. Session ID MUST be provided
+    11→via the `--session-id` flag (erk code never has access to CLAUDE_CODE_SESSION_ID
+    12→environment variable - session IDs must be passed explicitly).
+    13→
+    14→Exit codes:
+    15→    create: 0 = created, 1 = error (missing session ID)
+    16→    read: 0 = marker exists (content on stdout), 1 = marker doesn't exist or error
+    17→    exists: 0 = exists, 1 = does not exist
+    18→    delete: 0 = deleted (or didn't exist), 1 = error (missing session ID)
+    19→"""
+    20→
+    21→import json
+    22→
+    23→import click
+    24→
+    25→from erk_shared.context.helpers import require_repo_root
+    26→from erk_shared.scratch.scratch import get_scratch_dir
+    27→
+    28→MARKER_EXTENSION = ".marker"
+    29→
+    30→
+
+... [95 lines omitted] ...
+
+   116→    Exit code 0 if marker exists, 1 if it doesn't exist or error.
+  </tool_result>
+  <assistant>Good, now I can make all the edits. Let me do all the source code edits in parallel:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="6023" cache_read_input_tokens="84511" cache_creation="{'ephemeral_5m_input_tokens': 6023, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01R5NJqEFpe5SPVyd9hN9b56">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/scratch/session_markers.py</param>
+    <param name="old_string">    plan-saved-issue.marker: Stores the issue/PR number of the saved plan
+        (persists for session deduplication, not consumed by hook).</param>
+    <param name="new_string">    plan-saved.marker: Stores the PR number of the saved plan
+        (persists for session deduplication, not consumed by hook).</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6023" cache_read_input_tokens="84511" cache_creation="{'ephemeral_5m_input_tokens': 6023, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01UDr2DKwPsEM7bXe86sL214">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/scratch/session_markers.py</param>
+    <param name="old_string">def create_plan_saved_issue_marker(
+    session_id: str, repo_root: Path, plan_number: int...[truncated 777 chars]...aved-issue.marker"
+    marker_file.write_text(f"{plan_number}\n{title}", encoding="utf-8")</param>
+    <param name="new_string">def create_plan_saved_pr_marker(
+    session_id: str, repo_root: Path, plan_number: int, *...[truncated 762 chars]...plan-saved.marker"
+    marker_file.write_text(f"{plan_number}\n{title}", encoding="utf-8")</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6023" cache_read_input_tokens="84511" cache_creation="{'ephemeral_5m_input_tokens': 6023, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_019oJ9MnXJqAjVXuu2TeSgFU">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/scratch/session_markers.py</param>
+    <param name="old_string">def get_existing_saved_issue(session_id: str, repo_root: Path, *, title: str) -&gt; int | Non...[truncated 586 chars]...(session_id, repo_root=repo_root)
+    marker_file = marker_dir / "plan-saved-issue.marker"</param>
+    <param name="new_string">def get_existing_saved_pr(session_id: str, repo_root: Path, *, title: str) -&gt; int | None:
+...[truncated 574 chars]...ch_dir(session_id, repo_root=repo_root)
+    marker_file = marker_dir / "plan-saved.marker"</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6023" cache_read_input_tokens="84511" cache_creation="{'ephemeral_5m_input_tokens': 6023, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01W5oPT4aJDdCjBNj2UDWhJE">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/plan_save.py</param>
+    <param name="old_string">    create_plan_saved_issue_marker,
+    create_plan_saved_marker,
+    get_existing_saved_branch,
+    get_existing_saved_issue,</param>
+    <param name="new_string">    create_plan_saved_marker,
+    create_plan_saved_pr_marker,
+    get_existing_saved_branch,
+    get_existing_saved_pr,</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6023" cache_read_input_tokens="84511" cache_creation="{'ephemeral_5m_input_tokens': 6023, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_019v6QXgVjiecaTvLwN41t7f">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/marker.py</param>
+    <param name="old_string">    NAME is the marker name (e.g., 'plan-saved-issue').</param>
+    <param name="new_string">    NAME is the marker name (e.g., 'plan-saved').</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6023" cache_read_input_tokens="84511" cache_creation="{'ephemeral_5m_input_tokens': 6023, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01R5NJqEFpe5SPVyd9hN9b56">
+The file /home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/scratch/session_markers.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01UDr2DKwPsEM7bXe86sL214">
+The file /home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/scratch/session_markers.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_019oJ9MnXJqAjVXuu2TeSgFU">
+The file /home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/scratch/session_markers.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01W5oPT4aJDdCjBNj2UDWhJE">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/plan_save.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_019v6QXgVjiecaTvLwN41t7f">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/marker.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update the call sites in plan_save.py:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2238" cache_read_input_tokens="90534" cache_creation="{'ephemeral_5m_input_tokens': 2238, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_0199cthLEHjJYPSsVEGETt9C">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/plan_save.py</param>
+    <param name="old_string">        create_plan_saved_issue_marker(session_id, repo_root, plan_number, title=title)</param>
+    <param name="new_string">        create_plan_saved_pr_marker(session_id, repo_root, plan_number, title=title)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2238" cache_read_input_tokens="90534" cache_creation="{'ephemeral_5m_input_tokens': 2238, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_016abEZK1YWUz1fhhwDs9oWh">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/plan_save.py</param>
+    <param name="old_string">        existing_issue = get_existing_saved_issue(session_id, repo_root, title=title)</param>
+    <param name="new_string">        existing_issue = get_existing_saved_pr(session_id, repo_root, title=title)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2238" cache_read_input_tokens="90534" cache_creation="{'ephemeral_5m_input_tokens': 2238, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_0199cthLEHjJYPSsVEGETt9C">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/plan_save.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_016abEZK1YWUz1fhhwDs9oWh">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/plan_save.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update the test files. Let me read the test files fresh and update them:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="719" cache_read_input_tokens="92772" cache_creation="{'ephemeral_5m_input_tokens': 719, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01Ei8LELLUPNHNSrqHpye6bQ">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/tests/unit/scratch/test_session_markers.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="719" cache_read_input_tokens="92772" cache_creation="{'ephemeral_5m_input_tokens': 719, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01CFiVu77wKkoGuJxSMwwZDJ">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_plan_save.py</param>
+    <param name="offset">915</param>
+    <param name="limit">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="719" cache_read_input_tokens="92772" cache_creation="{'ephemeral_5m_input_tokens': 719, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01GsvtVYweMWZJArzUaVuAFB">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_marker.py</param>
+    <param name="offset">160</param>
+    <param name="limit">90</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="719" cache_read_input_tokens="92772" cache_creation="{'ephemeral_5m_input_tokens': 719, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Ei8LELLUPNHNSrqHpye6bQ">
+     1→"""Unit tests for session_markers module."""
+     2→
+     3→from pathlib import Path
+     4→
+     5→from erk_shared.scratch.session_markers import (
+     6→    create_plan_saved_branch_marker,
+     7→    create_plan_saved_issue_marker,
+     8→    create_plan_saved_marker,
+     9→    get_existing_saved_branch,
+    10→    get_existing_saved_issue,
+    11→    read_plan_saved_marker,
+    12→    read_roadmap_step_marker,
+    13→)
+    14→
+    15→# create_plan_saved_marker tests
+    16→
+    17→
+    18→def test_create_plan_saved_marker_creates_file(tmp_path: Path) -&gt; None:
+    19→    """Verify marker file is created at correct path."""
+    20→    session_id = "test-session-123"
+    21→
+    22→    create_plan_saved_marker(session_id, tmp_path, 42)
+    23→
+    24→    marker_file = (
+    25→        tmp_path
+    26→        / ".erk"
+    27→        / "scratch"
+    28→        / "sessions"
+    29→        / session_id
+    30→        / "exit-plan-mode-hook.plan-saved.marker"
+
+... [265 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01CFiVu77wKkoGuJxSMwwZDJ">
+   915→    assert first_line == str(output["pr_number"]), "first line should be plan number"
+   916→    # Old current-branch marker should NOT exist
+   917→    old_marker = marker_dir / "exit-plan-mode-hook.plan-saved-current-branch.marker"
+   918→    assert not old_marker.exists(), "plan-saved-current-branch marker should NOT exist"
+   919→    # Issue and branch markers should still exist
+   920→    assert (marker_dir / "plan-saved-issue.marker").exists()
+   921→    assert (marker_dir / "plan-saved-branch.marker").exists()
+   922→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_01GsvtVYweMWZJArzUaVuAFB">
+   160→
+   161→    def test_create_marker_with_content_stores_string(self, tmp_path: Path) -&gt; None:
+   162→        """Test creating marker with --content stores the string content."""
+   163→        runner = CliRunner()
+   164→        session_id = "test-session-123"
+   165→        content_value = "4386"
+   166→
+   167→        ctx = ErkContext.for_test(repo_root=tmp_path, cwd=tmp_path)
+   168→
+   169→        result = runner.invoke(
+   170→            marker,
+   171→            ["create", "--session-id", session_id, "--content", content_value, "plan-saved-issue"],
+   172→            obj=ctx,
+   173→        )
+   174→
+   175→        assert result.exit_code == 0
+   176→        data = json.loads(result.output)
+   177→        assert data["success"] is True
+   178→        assert "plan-saved-issue" in data["message"]
+   179→
+   180→        # Verify marker file was created with correct content
+   181→        marker_file = (
+   182→            tmp_path / ".erk" / "scratch" / "sessions" / session_id / "plan-saved-issue.marker"
+   183→        )
+   184→        assert marker_file.exists()
+   185→        assert marker_file.read_text(encoding="utf-8") == "4386"
+   186→
+   187→    def test_create_marker_associated_objective_takes_precedence_over_content(
+   188→        self, tmp_path: Path
+   189→    ) -&gt; None:
+
+... [65 lines omitted] ...
+  </tool_result>
+  <assistant>Now let me update all the test files and the remaining marker test file in parallel:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="6311" cache_read_input_tokens="93491" cache_creation="{'ephemeral_5m_input_tokens': 6311, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01WzAhkhJZosDQUCQ1yka829">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/tests/unit/scratch/test_session_markers.py</param>
+    <param name="old_string">    create_plan_saved_issue_marker,
+    create_plan_saved_marker,
+    get_existing_saved_branch,
+    get_existing_saved_issue,</param>
+    <param name="new_string">    create_plan_saved_marker,
+    create_plan_saved_pr_marker,
+    get_existing_saved_branch,
+    get_existing_saved_pr,</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6311" cache_read_input_tokens="93491" cache_creation="{'ephemeral_5m_input_tokens': 6311, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01QJxUWu8caxM1gVqysy4TqD">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/tests/unit/scratch/test_session_markers.py</param>
+    <param name="old_string"># create_plan_saved_issue_marker tests
+
+
+def test_create_plan_saved_issue_marker_stores_nu...[truncated 2455 chars]...get_existing_saved_issue(session_id, tmp_path, title="Any Title")
+
+    assert result == 42</param>
+    <param name="new_string"># create_plan_saved_pr_marker tests
+
+
+def test_create_plan_saved_pr_marker_stores_number_a...[truncated 2386 chars]... = get_existing_saved_pr(session_id, tmp_path, title="Any Title")
+
+    assert result == 42</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6311" cache_read_input_tokens="93491" cache_creation="{'ephemeral_5m_input_tokens': 6311, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01LAHtmv2ohfF8U5ZgmRHifi">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/tests/unit/scratch/test_session_markers.py</param>
+    <param name="old_string">    assert get_existing_saved_issue(session_id, tmp_path, title=title) is None
+
+    # Crea...[truncated 229 chars]...
+    assert get_existing_saved_issue(session_id, tmp_path, title="Different Plan") is None</param>
+    <param name="new_string">    assert get_existing_saved_pr(session_id, tmp_path, title=title) is None
+
+    # Create ...[truncated 214 chars]...one
+    assert get_existing_saved_pr(session_id, tmp_path, title="Different Plan") is None</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6311" cache_read_input_tokens="93491" cache_creation="{'ephemeral_5m_input_tokens': 6311, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_014yHLYhX1bkTXS3Uwgtd916">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_plan_save.py</param>
+    <param name="old_string">    assert (marker_dir / "plan-saved-issue.marker").exists()</param>
+    <param name="new_string">    assert (marker_dir / "plan-saved.marker").exists()</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6311" cache_read_input_tokens="93491" cache_creation="{'ephemeral_5m_input_tokens': 6311, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01XnKJWFVsz2WMdSQmsRaJUe">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_marker.py</param>
+    <param name="old_string">            ["create", "--session-id", session_id, "--content", content_value, "plan-saved...[truncated 294 chars]..._path / ".erk" / "scratch" / "sessions" / session_id / "plan-saved-issue.marker"
+        )</param>
+    <param name="new_string">            ["create", "--session-id", session_id, "--content", content_value, "plan-saved...[truncated 276 chars]...   tmp_path / ".erk" / "scratch" / "sessions" / session_id / "plan-saved.marker"
+        )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6311" cache_read_input_tokens="93491" cache_creation="{'ephemeral_5m_input_tokens': 6311, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01S3EEEppoQjbEkcZxhyqD68">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_marker.py</param>
+    <param name="old_string">        marker_file = marker_dir / "plan-saved-issue.marker"
+        marker_file.write_tex...[truncated 117 chars]...
+            marker,
+            ["read", "--session-id", session_id, "plan-saved-issue"],</param>
+    <param name="new_string">        marker_file = marker_dir / "plan-saved.marker"
+        marker_file.write_text(mark...[truncated 105 chars]...nvoke(
+            marker,
+            ["read", "--session-id", session_id, "plan-saved"],</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6311" cache_read_input_tokens="93491" cache_creation="{'ephemeral_5m_input_tokens': 6311, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01WzAhkhJZosDQUCQ1yka829">
+The file /home/runner/work/erk/erk/packages/erk-shared/tests/unit/scratch/test_session_markers.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01QJxUWu8caxM1gVqysy4TqD">
+The file /home/runner/work/erk/erk/packages/erk-shared/tests/unit/scratch/test_session_markers.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01LAHtmv2ohfF8U5ZgmRHifi">
+The file /home/runner/work/erk/erk/packages/erk-shared/tests/unit/scratch/test_session_markers.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_014yHLYhX1bkTXS3Uwgtd916">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_plan_save.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01XnKJWFVsz2WMdSQmsRaJUe">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_marker.py has been updated successfully.
+  </tool_result>
+</session>

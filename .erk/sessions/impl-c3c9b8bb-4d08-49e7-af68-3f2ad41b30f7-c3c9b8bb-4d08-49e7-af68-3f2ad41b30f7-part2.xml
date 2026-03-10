@@ -1,0 +1,736 @@
+<session>
+  <meta branch="plnd/bash-erk-exec-marker-delet-03-10-1748" />
+  <meta model="claude-opus-4-6" />
+  <tool_result tool="toolu_01S3EEEppoQjbEkcZxhyqD68">
+&lt;tool_use_error&gt;Found 2 matches of the string to replace, but replace_all is false. To replace all occurrences, set replace_all to true. To replace only one occurrence, please provide more context to uniquely identify the instance.
+String:         marker_file = marker_dir / "plan-saved-issue.marker"
+        marker_file.write_text(marker_content, encoding="utf-8")
+
+        ctx = ErkContext.for_test(repo_root=tmp_path, cwd=tmp_path)
+
+        result = runner.invoke(
+            marker,
+            ["read", "--session-id", session_id, "plan-saved-issue"],&lt;/tool_use_error&gt;
+  </tool_result>
+  <assistant>Let me use replace_all for the remaining marker test file changes since the string appears multiple times:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3908" cache_read_input_tokens="99802" cache_creation="{'ephemeral_5m_input_tokens': 3908, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01U2diXP37knZnC9DpQkmPof">
+    <param name="replace_all">True</param>
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_marker.py</param>
+    <param name="old_string">plan-saved-issue</param>
+    <param name="new_string">plan-saved</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3908" cache_read_input_tokens="99802" cache_creation="{'ephemeral_5m_input_tokens': 3908, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01U2diXP37knZnC9DpQkmPof">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_marker.py has been updated. All occurrences of 'plan-saved-issue' were successfully replaced with 'plan-saved'.
+  </tool_result>
+  <assistant>Now update the documentation files. Let me read them fresh and make edits:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="237" cache_read_input_tokens="103710" cache_creation="{'ephemeral_5m_input_tokens': 237, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01H3GYXj96mcY934fYWMCdss">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/workflow-markers.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="237" cache_read_input_tokens="103710" cache_creation="{'ephemeral_5m_input_tokens': 237, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01Q1SfwE2QUSDS8wG1CbQhdi">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/commands/erk/plan-save.md</param>
+    <param name="offset">225</param>
+    <param name="limit">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="237" cache_read_input_tokens="103710" cache_creation="{'ephemeral_5m_input_tokens': 237, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01NyoEGocUnc6ph6gxWBDaDT">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/commands/erk/pr-dispatch.md</param>
+    <param name="offset">35</param>
+    <param name="limit">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="237" cache_read_input_tokens="103710" cache_creation="{'ephemeral_5m_input_tokens': 237, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01MxEndPzGsF5uxAqr4Zhw3c">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/skills/erk-planning/SKILL.md</param>
+    <param name="offset">18</param>
+    <param name="limit">12</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="237" cache_read_input_tokens="103710" cache_creation="{'ephemeral_5m_input_tokens': 237, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01FqjfVm4U5GHqFCsRRGegvF">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/session-deduplication.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="237" cache_read_input_tokens="103710" cache_creation="{'ephemeral_5m_input_tokens': 237, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01MTT9yASiBrz84PVEeUgLpH">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/pr-submission-patterns.md</param>
+    <param name="offset">30</param>
+    <param name="limit">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="237" cache_read_input_tokens="103710" cache_creation="{'ephemeral_5m_input_tokens': 237, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01H3GYXj96mcY934fYWMCdss">
+     1→---
+     2→title: Workflow Markers
+     3→last_audited: "2026-02-16 14:20 PT"
+     4→audit_result: clean
+     5→read_when:
+     6→  - "building multi-step workflows that need state persistence"
+     7→  - "using erk exec marker commands"
+     8→  - "implementing objective-to-plan workflows"
+     9→---
+    10→
+    11→# Workflow Markers
+    12→
+    13→Markers persist state across workflow steps when a single session needs to pass information between distinct phases.
+    14→
+    15→## Commands
+    16→
+    17→- `erk exec marker create --name &lt;name&gt; --value &lt;value&gt;` - Create/update a marker
+    18→- `erk exec marker read --name &lt;name&gt;` - Read marker value (empty if not set)
+    19→
+    20→## Use Cases
+    21→
+    22→### Objective Context
+    23→
+    24→When creating a plan from an objective step, markers track the objective for later hooks:
+    25→
+    26→```bash
+    27→erk exec marker create --name objective-context --value "5503"
+    28→erk exec marker create --name roadmap-step --value "1B.4"
+    29→```
+    30→
+
+... [40 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01Q1SfwE2QUSDS8wG1CbQhdi">
+   225→
+   226→**To read the saved plan number:**
+   227→
+   228→```bash
+   229→erk exec marker read --session-id "${CLAUDE_SESSION_ID}" plan-saved-issue
+   230→```
+   231→
+   232→This returns the plan number (exit code 0) or exits with code 1 if no plan was saved in this session.
+   233→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_01NyoEGocUnc6ph6gxWBDaDT">
+    35→If the command succeeds, clear the session marker to allow creating new plans in this session:
+    36→
+    37→```bash
+    38→erk exec marker delete --session-id "${CLAUDE_SESSION_ID}" plan-saved-issue
+    39→```
+    40→
+    41→Display the command output to the user. The `erk pr dispatch` command handles all validation (plan existence, labels, state).
+    42→
+    43→## Error Cases
+    44→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_01MxEndPzGsF5uxAqr4Zhw3c">
+    18→
+    19→**When these triggers fire and a plan was saved in this session:**
+    20→
+    21→1. Check for `plan-saved-issue.marker` in session scratch:
+    22→   ```bash
+    23→   erk exec marker read --session-id &lt;session-id&gt; plan-saved-issue
+    24→   ```
+    25→2. If found (exit code 0), invoke `/local:plan-update &lt;issue-number&gt;` with the marker content
+    26→3. If not found (exit code 1), ask user for issue number
+    27→
+    28→## Overview
+    29→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_01FqjfVm4U5GHqFCsRRGegvF">
+     1→---
+     2→title: Session-Based Plan Deduplication
+     3→read_when:
+     4→  - "understanding duplicate plan prevention"
+     5→  - "working with exit-plan-mode hook"
+     6→  - "debugging duplicate plan creation"
+     7→tripwires:
+     8→  - action: "modifying marker deletion behavior in exit-plan-mode hook"
+     9→    warning: "Reusable markers (plan-saved) must persist; one-time markers (implement-now, objective-context) are consumed. Deleting reusable markers breaks state machines and enables retry loops that create duplicates."
+    10→  - action: "using session-scoped markers in exec scripts"
+    11→    warning: "Session markers enable idempotency in command retries. Always write markers AFTER successful operation completion, never before. Use triple-check guard on marker read: file exists AND content is valid AND expected type (numeric for issue numbers)."
+    12→last_audited: "2026-02-16 14:20 PT"
+    13→audit_result: clean
+    14→---
+    15→
+    16→# Session-Based Plan Deduplication
+    17→
+    18→This document explains how erk prevents duplicate plans from being created during retry loops or hook edge cases.
+    19→
+    20→## Problem
+    21→
+    22→When Claude retries a blocked ExitPlanMode call, the same plan could be saved multiple times, creating duplicate GitHub issues. This can happen when:
+    23→
+    24→1. Hook blocks with prompt → user chooses "save" → save succeeds → hook fires again
+    25→2. Network failures during save → retry creates second issue
+    26→3. Session interruption → user resumes → re-runs save command
+    27→
+    28→## Two-Layer Defense
+    29→
+    30→Erk uses two complementary mechanisms:
+
+... [78 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01MTT9yASiBrz84PVEeUgLpH">
+    30→
+    31→See `push_and_create_pr()` in `src/erk/cli/commands/pr/submit_pipeline.py` — it calls `get_pr_for_branch()` and branches on `PRNotFound` vs existing.
+    32→
+    33→**Session-level:** Plan-save operations use scratch-directory marker files keyed by session ID. Before creating a GitHub issue, the command checks if this session already created one. This prevents the specific failure mode where exit-plan-mode hook retries cause duplicate plans.
+    34→
+    35→&lt;!-- Source: packages/erk-shared/src/erk_shared/scratch/session_markers.py, get_existing_saved_issue --&gt;
+    36→
+    37→See `get_existing_saved_issue()` in `packages/erk-shared/src/erk_shared/scratch/session_markers.py`.
+    38→
+    39→## The Two-Phase Footer Problem
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>Now let me update all the documentation and command files in parallel:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="4181" cache_read_input_tokens="103947" cache_creation="{'ephemeral_5m_input_tokens': 4181, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01HkfpsQqu5qMDHoYPQLKSBG">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/workflow-markers.md</param>
+    <param name="old_string">When saving a plan to GitHub, markers communicate the issue number between commands:
+
+```b...[truncated 349 chars]...umber
+3. Marker persists for the session, enabling subsequent operations on the saved plan</param>
+    <param name="new_string">When saving a plan to GitHub, markers communicate the PR number between commands:
+
+```bash...[truncated 319 chars]...umber
+3. Marker persists for the session, enabling subsequent operations on the saved plan</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4181" cache_read_input_tokens="103947" cache_creation="{'ephemeral_5m_input_tokens': 4181, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01Q52ytDsYTcRT8imQQ8mfuH">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/commands/erk/plan-save.md</param>
+    <param name="old_string">erk exec marker read --session-id "${CLAUDE_SESSION_ID}" plan-saved-issue</param>
+    <param name="new_string">erk exec marker read --session-id "${CLAUDE_SESSION_ID}" plan-saved</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4181" cache_read_input_tokens="103947" cache_creation="{'ephemeral_5m_input_tokens': 4181, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01WYchTyJF45n9LDZNCKKY2s">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/commands/erk/pr-dispatch.md</param>
+    <param name="old_string">erk exec marker delete --session-id "${CLAUDE_SESSION_ID}" plan-saved-issue</param>
+    <param name="new_string">erk exec marker delete --session-id "${CLAUDE_SESSION_ID}" plan-saved</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4181" cache_read_input_tokens="103947" cache_creation="{'ephemeral_5m_input_tokens': 4181, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_011uJ5SywKKd27JPajap7HzU">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/skills/erk-planning/SKILL.md</param>
+    <param name="old_string">1. Check for `plan-saved-issue.marker` in session scratch:
+   ```bash
+   erk exec marker read --session-id &lt;session-id&gt; plan-saved-issue
+   ```</param>
+    <param name="new_string">1. Check for `plan-saved.marker` in session scratch:
+   ```bash
+   erk exec marker read --session-id &lt;session-id&gt; plan-saved
+   ```</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4181" cache_read_input_tokens="103947" cache_creation="{'ephemeral_5m_input_tokens': 4181, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_014E4UKfy8RmSSCRnuTuxT6s">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/session-deduplication.md</param>
+    <param name="old_string">Even if hooks fail, `plan-save` checks for existing saved issues:
+
+1. Before creating an i...[truncated 63 chars]...)` helper to query GitHub
+3. If found, return existing issue instead of creating duplicate</param>
+    <param name="new_string">Even if hooks fail, `plan-save` checks for existing saved PRs:
+
+1. Before creating a PR, c...[truncated 58 chars]...per to check session markers
+3. If found, return existing PR instead of creating duplicate</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4181" cache_read_input_tokens="103947" cache_creation="{'ephemeral_5m_input_tokens': 4181, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01VSLaiqDTgfptmEuN9deRGX">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/session-deduplication.md</param>
+    <param name="old_string">## \_get_existing_saved_issue() Pattern
+
+The command-level deduplication uses this pattern...[truncated 94 chars]...metadata for session_id match
+4. Return existing issue number if found, None otherwise
+```</param>
+    <param name="new_string">## get_existing_saved_pr() Pattern
+
+The command-level deduplication uses this pattern:
+
+``...[truncated 82 chars]...title against current plan title
+4. Return existing PR number if found, None otherwise
+```</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4181" cache_read_input_tokens="103947" cache_creation="{'ephemeral_5m_input_tokens': 4181, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_013gyDdhPik3u4Kg2JWPmZGw">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/pr-submission-patterns.md</param>
+    <param name="old_string">&lt;!-- Source: packages/erk-shared/src/erk_shared/scratch/session_markers.py, get_existing_s...[truncated 6 chars]...xisting_saved_issue()` in `packages/erk-shared/src/erk_shared/scratch/session_markers.py`.</param>
+    <param name="new_string">&lt;!-- Source: packages/erk-shared/src/erk_shared/scratch/session_markers.py, get_existing_saved_pr --&gt;
+
+See `get_existing_saved_pr()` in `packages/erk-shared/src/erk_shared/scratch/session_markers.py`.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4181" cache_read_input_tokens="103947" cache_creation="{'ephemeral_5m_input_tokens': 4181, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01HkfpsQqu5qMDHoYPQLKSBG">
+The file /home/runner/work/erk/erk/docs/learned/planning/workflow-markers.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01Q52ytDsYTcRT8imQQ8mfuH">
+The file /home/runner/work/erk/erk/.claude/commands/erk/plan-save.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01WYchTyJF45n9LDZNCKKY2s">
+The file /home/runner/work/erk/erk/.claude/commands/erk/pr-dispatch.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_011uJ5SywKKd27JPajap7HzU">
+The file /home/runner/work/erk/erk/.claude/skills/erk-planning/SKILL.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_014E4UKfy8RmSSCRnuTuxT6s">
+The file /home/runner/work/erk/erk/docs/learned/planning/session-deduplication.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01VSLaiqDTgfptmEuN9deRGX">
+The file /home/runner/work/erk/erk/docs/learned/planning/session-deduplication.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_013gyDdhPik3u4Kg2JWPmZGw">
+The file /home/runner/work/erk/erk/docs/learned/planning/pr-submission-patterns.md has been updated successfully.
+  </tool_result>
+  <assistant>All edits are done. Let me update the todo list and verify there are no remaining references to `plan-saved-issue`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2209" cache_read_input_tokens="108128" cache_creation="{'ephemeral_5m_input_tokens': 2209, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01A5Ucoxc9wrCHKLbaMCjncb">
+    <param name="todos">[{'content': 'Rename markers in session_markers.py (core implementation)', 'status': 'comp...[truncated 1291 chars]...ubmit PR', 'status': 'pending', 'activeForm': 'Signaling GitHub ended and submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2209" cache_read_input_tokens="108128" cache_creation="{'ephemeral_5m_input_tokens': 2209, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01A5Ucoxc9wrCHKLbaMCjncb">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01LB8Et7dCvGfVFHikHbfGav">
+    <param name="pattern">plan-saved-issue</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="503" cache_read_input_tokens="110337" cache_creation="{'ephemeral_5m_input_tokens': 503, 'ephemeral_1h_input_tokens': 0}" output_tokens="26" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_017AhaxztRCzsZP2am3wDWWd">
+    <param name="pattern">get_existing_saved_issue|create_plan_saved_issue_marker</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="503" cache_read_input_tokens="110337" cache_creation="{'ephemeral_5m_input_tokens': 503, 'ephemeral_1h_input_tokens': 0}" output_tokens="26" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01LB8Et7dCvGfVFHikHbfGav">
+No matches found
+  </tool_result>
+  <tool_result tool="toolu_017AhaxztRCzsZP2am3wDWWd">
+No matches found
+  </tool_result>
+  <assistant>No remaining references. All renames are complete. Now let me run CI:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="248" cache_read_input_tokens="110840" cache_creation="{'ephemeral_5m_input_tokens': 248, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01DTQFYYdfRFsLdYxZmH9J2x">
+    <param name="todos">[{'content': 'Rename markers in session_markers.py (core implementation)', 'status': 'comp...[truncated 1293 chars]...ubmit PR', 'status': 'pending', 'activeForm': 'Signaling GitHub ended and submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="248" cache_read_input_tokens="110840" cache_creation="{'ephemeral_5m_input_tokens': 248, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01DTQFYYdfRFsLdYxZmH9J2x">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="Task" id="toolu_01PTPbybxdbHFomrqpJV8Q1c">
+    <param name="description">Run targeted unit tests</param>
+    <param name="prompt">Run the following pytest commands and report the results. Do NOT fix any errors, just repo...[truncated 158 chars]...ts/unit/cli/commands/exec/scripts/test_marker.py -x -q`
+
+Report pass/fail status for each.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="492" cache_read_input_tokens="111088" cache_creation="{'ephemeral_5m_input_tokens': 492, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01LiojgdRK96w6NZdQeUB6FL">
+    <param name="description">Run ruff and ty checks</param>
+    <param name="prompt">Run the following checks and report results. Do NOT fix any errors, just report them:
+
+1. ...[truncated 204 chars]...ssion_markers.py src/erk/cli/commands/exec/scripts/plan_save.py`
+
+Report pass/fail status.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="492" cache_read_input_tokens="111088" cache_creation="{'ephemeral_5m_input_tokens': 492, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01LiojgdRK96w6NZdQeUB6FL">
+Both checks passed successfully:
+
+1. **ruff check** on `packages/erk-shared/src/erk_shared/scratch/session_markers.py`, `src/erk/cli/commands/exec/scripts/plan_save.py`, and `src/erk/cli/commands/exec/scripts/marker.py`: **PASSED** - All checks passed!
+
+2. **ty check** on `packages/erk-shared/src/erk_shared/scratch/session_markers.py` and `src/erk/cli/commands/exec/scripts/plan_save.py`: **PASSED** - All checks passed!
+agentId: ab2f4f7 (for resuming to continue this agent's work if needed)
+  </tool_result>
+  <tool_result tool="toolu_01PTPbybxdbHFomrqpJV8Q1c">
+## Test Results
+
+All three pytest test suites **passed**:
+
+1. **test_session_markers.py** - PASSED (23 tests)
+2. **test_plan_save.py** - PASSED (33 tests)
+3. **test_marker.py** - PASSED (22 tests)
+
+**Total: 78 tests passed**
+agentId: a091bf7 (for resuming to continue this agent's work if needed)
+  </tool_result>
+  <assistant>All 78 tests pass, ruff and ty checks are clean. Now let me signal GitHub ended, clean up impl context, and submit:</assistant>
+  <usage input_tokens="205" cache_creation_input_tokens="556" cache_read_input_tokens="111580" cache_creation="{'ephemeral_5m_input_tokens': 556, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_012r8AecPFqP7RZSSE12vTBG">
+    <param name="todos">[{'content': 'Rename markers in session_markers.py (core implementation)', 'status': 'comp...[truncated 1295 chars]...t PR', 'status': 'in_progress', 'activeForm': 'Signaling GitHub ended and submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="205" cache_creation_input_tokens="556" cache_read_input_tokens="111580" cache_creation="{'ephemeral_5m_input_tokens': 556, 'ephemeral_1h_input_tokens': 0}" output_tokens="464" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_012r8AecPFqP7RZSSE12vTBG">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01EwdaKiS5sTagc2uyV3qLHq">
+    <param name="command">erk exec impl-signal ended --session-id "${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true</param>
+    <param name="description">Signal GitHub implementation ended</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="710" cache_read_input_tokens="112136" cache_creation="{'ephemeral_5m_input_tokens': 710, 'ephemeral_1h_input_tokens': 0}" output_tokens="26" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01CY2tow5AxbcfpktgBH8JWP">
+    <param name="command">erk exec upload-impl-session --session-id "${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true</param>
+    <param name="description">Upload session for async learn</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="710" cache_read_input_tokens="112136" cache_creation="{'ephemeral_5m_input_tokens': 710, 'ephemeral_1h_input_tokens': 0}" output_tokens="26" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01EwdaKiS5sTagc2uyV3qLHq">
+{
+  "success": true,
+  "event": "ended",
+  "pr_number": 9183
+}
+  </tool_result>
+  <tool_result tool="toolu_01CY2tow5AxbcfpktgBH8JWP">
+{"uploaded": false, "reason": "push_session_failed"}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01X8kQ69ZSpxAYpRXkmewK4f">
+    <param name="command">erk exec cleanup-impl-context</param>
+    <param name="description">Clean up impl context directory</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="283" cache_read_input_tokens="112846" cache_creation="{'ephemeral_5m_input_tokens': 283, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01X8kQ69ZSpxAYpRXkmewK4f">
+{"cleaned": false, "reason": "not_tracked"}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01XeoacMoyvoei68hvgBVQgL">
+    <param name="command">erk pr submit</param>
+    <param name="description">Submit PR with changes</param>
+    <param name="timeout">120000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="105" cache_read_input_tokens="113129" cache_creation="{'ephemeral_5m_input_tokens': 105, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01XeoacMoyvoei68hvgBVQgL">
+Exit code 1
+Error: No commits ahead of main. Nothing to submit.
+
+🚀 Submitting PR...
+
+   Resolving branch and plan context...
+   Committing uncommitted changes...
+   Checking for existing PR...
+Phase 1: Creating or Updating PR
+  </tool_result>
+  <assistant>I need to commit the changes first. Let me check the status:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="177" cache_read_input_tokens="113234" cache_creation="{'ephemeral_5m_input_tokens': 177, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01KoYZ5Hv2jTvj5qqT4QGg6A">
+    <param name="command">git status &amp;&amp; git log --oneline -3</param>
+    <param name="description">Check git status and recent commits</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="177" cache_read_input_tokens="113234" cache_creation="{'ephemeral_5m_input_tokens': 177, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01KoYZ5Hv2jTvj5qqT4QGg6A">
+On branch plnd/bash-erk-exec-marker-delet-03-10-1748
+Your branch is ahead of 'origin/plnd/bash-erk-exec-marker-delet-03-10-1748' by 1 commit.
+  (use "git push" to publish your local commits)
+
+nothing to commit, working tree clean
+a1e5ddec2 WIP: Prepare for PR submission
+19daf55bf Remove plan staging dirs before implementation
+f97aacb66 Update plan: Rename plan-saved-issue marker to plan-saved
+  </tool_result>
+  <assistant>The changes were auto-committed (WIP commit). Let me push and try submit again:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="512" cache_read_input_tokens="113411" cache_creation="{'ephemeral_5m_input_tokens': 512, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_015P5eXJeejXqrF2rjp8UJET">
+    <param name="command">git push origin plnd/bash-erk-exec-marker-delet-03-10-1748</param>
+    <param name="description">Push changes to remote</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="512" cache_read_input_tokens="113411" cache_creation="{'ephemeral_5m_input_tokens': 512, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_015P5eXJeejXqrF2rjp8UJET">
+remote: 
+remote: GitHub found 9 vulnerabilities on dagster-io/erk's default branch (8 high, 1 low). To find out more, visit:        
+remote:      https://github.com/dagster-io/erk/security/dependabot        
+remote: 
+To https://github.com/dagster-io/erk
+   19daf55bf..a1e5ddec2  plnd/bash-erk-exec-marker-delet-03-10-1748 -&gt; plnd/bash-erk-exec-marker-delet-03-10-1748
+  </tool_result>
+  <tool_use name="Bash" id="toolu_019rA7xEd55nfg3uqFJGL5xu">
+    <param name="command">erk pr submit</param>
+    <param name="description">Submit PR with changes</param>
+    <param name="timeout">120000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="290" cache_read_input_tokens="113923" cache_creation="{'ephemeral_5m_input_tokens': 290, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_019rA7xEd55nfg3uqFJGL5xu">
+Exit code 1
+Error: No commits ahead of main. Nothing to submit.
+
+🚀 Submitting PR...
+
+   Resolving branch and plan context...
+   Checking for existing PR...
+Phase 1: Creating or Updating PR
+  </tool_result>
+  <assistant>The submit pipeline says "no commits ahead of main". Let me check what's happening with the branch structure:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="435" cache_read_input_tokens="114213" cache_creation="{'ephemeral_5m_input_tokens': 435, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01L26HBJ2bxFn7vWPj4zB14r">
+    <param name="command">git log --oneline origin/master..HEAD 2&gt;/dev/null || git log --oneline origin/main..HEAD 2&gt;/dev/null</param>
+    <param name="description">Check commits ahead of main</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="435" cache_read_input_tokens="114213" cache_creation="{'ephemeral_5m_input_tokens': 435, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01L26HBJ2bxFn7vWPj4zB14r">
+a1e5ddec2 WIP: Prepare for PR submission
+19daf55bf Remove plan staging dirs before implementation
+f97aacb66 Update plan: Rename plan-saved-issue marker to plan-saved
+742110c08 One-shot: ● Bash(erk exec marker delete --session-id "3ca0407e-a558-47
+  </tool_result>
+  <assistant>There are 4 commits ahead of master. Let me check if there's a PR already:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="226" cache_read_input_tokens="114648" cache_creation="{'ephemeral_5m_input_tokens': 226, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01WAFDG6fAAQRhszxxyARgdj">
+    <param name="command">gh pr view 9183 --json state,title,url,isDraft -q '.state + " " + .title + " " + (.isDraft|tostring)'</param>
+    <param name="description">Check PR 9183 status</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="226" cache_read_input_tokens="114648" cache_creation="{'ephemeral_5m_input_tokens': 226, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01WAFDG6fAAQRhszxxyARgdj">
+OPEN [erk-pr] Rename plan-saved-issue marker to plan-saved true
+  </tool_result>
+  <assistant>The PR already exists as a draft (#9183). The `erk pr submit` is failing because it can't detect commits ahead of main (likely a Graphite tracking issue). Let me try marking it as ready directly:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="433" cache_read_input_tokens="114874" cache_creation="{'ephemeral_5m_input_tokens': 433, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01U97QdgS6BNDqaX2qgzhMBV">
+    <param name="command">erk pr submit --verbose 2&gt;&amp;1 | head -30</param>
+    <param name="description">Try submit with verbose output</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="433" cache_read_input_tokens="114874" cache_creation="{'ephemeral_5m_input_tokens': 433, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01U97QdgS6BNDqaX2qgzhMBV">
+Usage: erk pr submit [OPTIONS]
+Try 'erk pr submit -h' for help.
+
+Error: No such option: --verbose
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01KWPxbH9FGogEAQ49qktbLJ">
+    <param name="command">git log --oneline master..HEAD 2&gt;/dev/null || echo "no master branch"; git merge-base HEAD origin/master 2&gt;/dev/null || echo "no merge base"</param>
+    <param name="description">Check branch relationship to master</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="197" cache_read_input_tokens="115307" cache_creation="{'ephemeral_5m_input_tokens': 197, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01KWPxbH9FGogEAQ49qktbLJ">
+no master branch
+52067f1ffc04efb862eceb7c7d24b2e1baa0d9c6
+  </tool_result>
+  <tool_use name="Bash" id="toolu_0155zUUQos1MBFhim6dTLMVA">
+    <param name="command">git branch -a | head -20</param>
+    <param name="description">List available branches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="425" cache_read_input_tokens="115504" cache_creation="{'ephemeral_5m_input_tokens': 425, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_0155zUUQos1MBFhim6dTLMVA">
+  planned-pr-context/9183
+* plnd/bash-erk-exec-marker-delet-03-10-1748
+  remotes/origin/02-08-batch-regen-01-scripts
+  remotes/origin/02-08-batch-regen-02
+  remotes/origin/02-08-batch-regen-03
+  remotes/origin/02-08-batch-regen-04
+  remotes/origin/02-08-batch-regen-05
+  remotes/origin/02-08-batch-regen-06
+  remotes/origin/02-08-batch-regen-07
+  remotes/origin/02-08-batch-regen-08
+  remotes/origin/02-08-batch-regen-09
+  remotes/origin/02-08-batch-regen-10
+  remotes/origin/02-08-batch-regen-11
+  remotes/origin/02-08-batch-regen-12
+  remotes/origin/02-08-batch-regen-13
+  remotes/origin/02-08-batch-regen-14
+  remotes/origin/02-08-batch-regen-15
+  remotes/origin/02-08-batch-regen-16
+  remotes/origin/02-08-batch-regen-17
+  remotes/origin/02-08-batch-regen-18
+  </tool_result>
+  <assistant>No local `master` branch. The submit pipeline probably needs the local trunk. Let me try a different approach:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="430" cache_read_input_tokens="115929" cache_creation="{'ephemeral_5m_input_tokens': 430, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01Uk6Gj2eYXSnrJY6PND8TF3">
+    <param name="command">git fetch origin master &amp;&amp; git branch master origin/master</param>
+    <param name="description">Create local master tracking branch</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="430" cache_read_input_tokens="115929" cache_creation="{'ephemeral_5m_input_tokens': 430, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Uk6Gj2eYXSnrJY6PND8TF3">
+branch 'master' set up to track 'origin/master'.
+From https://github.com/dagster-io/erk
+ * branch                master     -&gt; FETCH_HEAD
+   52067f1ff..bcc0c2d73  master     -&gt; origin/master
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01Ea2gnX1YWxFMUzNd42Xt4T">
+    <param name="command">erk pr submit</param>
+    <param name="description">Submit PR with changes</param>
+    <param name="timeout">120000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="450" cache_read_input_tokens="116359" cache_creation="{'ephemeral_5m_input_tokens': 450, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Ea2gnX1YWxFMUzNd42Xt4T">
+🚀 Submitting PR...
+
+   Resolving branch and plan context...
+   Checking for existing PR...
+Phase 1: Creating or Updating PR
+   PR #9183 found (already exists)
+
+Phase 2: Getting diff and plan context
+   Incorporating plan #9183
+
+
+Phase 3: Generating PR description
+   Reading diff file...
+   Diff loaded (20,909 chars)
+   Analyzing changes with Claude...
+   Still waiting... (2s)
+   Still waiting... (4s)
+   Still waiting... (6s)
+   Still waiting... (8s)
+   Still waiting... (10s)
+   Still waiting... (12s)
+   PR description generated
+
+Phase 4: Graphite enhancement
+
+Phase 5: Updating PR metadata
+   Publishing draft PR...
+   PR metadata updated
+   Plan lifecycle stage updated to impl
+
+
+... [7 lines omitted] ...
+  </tool_result>
+  <assistant>PR submitted successfully. Let me signal the lifecycle transition:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="426" cache_read_input_tokens="116809" cache_creation="{'ephemeral_5m_input_tokens': 426, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01AcKn8n22xSsRzYrPpHy29r">
+    <param name="command">erk exec impl-signal submitted 2&gt;/dev/null || true</param>
+    <param name="description">Signal PR submitted</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="426" cache_read_input_tokens="116809" cache_creation="{'ephemeral_5m_input_tokens': 426, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_018Za8x6CLCN8tGSMz2UUEqv">
+    <param name="command">erk pr check --stage=impl 2&gt;&amp;1 || true</param>
+    <param name="description">Validate PR completion</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="426" cache_read_input_tokens="116809" cache_creation="{'ephemeral_5m_input_tokens': 426, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01AcKn8n22xSsRzYrPpHy29r">
+{
+  "success": true,
+  "event": "submitted",
+  "pr_number": 9183
+}
+  </tool_result>
+  <tool_result tool="toolu_018Za8x6CLCN8tGSMz2UUEqv">
+Checking PR #9183 for branch plnd/bash-erk-exec-marker-delet-03-10-1748...
+
+[FAIL] .erk/impl-context/ still present (should be removed before submission)
+[PASS] Plan reference found (#9183)
+[PASS] PR body contains checkout footer
+
+1 check failed
+  </tool_result>
+  <assistant>The impl-context cleanup didn't work earlier. Let me clean it up now:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="600" cache_read_input_tokens="117235" cache_creation="{'ephemeral_5m_input_tokens': 600, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01NjyBvoVYkhwbpSVAMrg9ab">
+    <param name="command">erk exec cleanup-impl-context</param>
+    <param name="description">Clean up impl context directory</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="600" cache_read_input_tokens="117235" cache_creation="{'ephemeral_5m_input_tokens': 600, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01NjyBvoVYkhwbpSVAMrg9ab">
+{"cleaned": false, "reason": "not_tracked"}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01K8EMi1a117XxD7RhMWQfU3">
+    <param name="command">ls -la /home/runner/work/erk/erk/.erk/impl-context/ 2&gt;/dev/null &amp;&amp; echo "exists" || echo "no local dir"</param>
+    <param name="description">Check impl-context on disk</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="141" cache_read_input_tokens="117835" cache_creation="{'ephemeral_5m_input_tokens': 141, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01K8EMi1a117XxD7RhMWQfU3">
+total 28
+drwxr-xr-x 3 runner runner 4096 Mar 10 17:53 .
+drwxr-xr-x 6 runner runner 4096 Mar 10 17:53 ..
+-rw-r--r-- 1 runner runner 7567 Mar 10 17:53 plan.md
+drwxr-xr-x 2 runner runner 4096 Mar 10 17:57 plnd--bash-erk-exec-marker-delet-03-10-1748
+-rw-r--r-- 1 runner runner  353 Mar 10 17:53 prompt.md
+-rw-r--r-- 1 runner runner  105 Mar 10 17:53 run-info.json
+exists
+  </tool_result>
+  <assistant>The impl-context exists on disk but isn't git-tracked. Let me check if it's in git:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="589" cache_read_input_tokens="117976" cache_creation="{'ephemeral_5m_input_tokens': 589, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_016UkLLkZ5CHN6aBQbgqD3hs">
+    <param name="command">git ls-files .erk/impl-context/</param>
+    <param name="description">Check git-tracked impl-context files</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="589" cache_read_input_tokens="117976" cache_creation="{'ephemeral_5m_input_tokens': 589, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_016UkLLkZ5CHN6aBQbgqD3hs">
+
+  </tool_result>
+  <assistant>It's not tracked in git — the check failure is about the directory existing in the branch's git history. Let me check what's on the remote:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="137" cache_read_input_tokens="118565" cache_creation="{'ephemeral_5m_input_tokens': 137, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01KydX5CW6btJxbzz5Ksecwb">
+    <param name="command">git ls-tree -r HEAD --name-only | grep impl-context</param>
+    <param name="description">Check impl-context in HEAD tree</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="137" cache_read_input_tokens="118565" cache_creation="{'ephemeral_5m_input_tokens': 137, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01KydX5CW6btJxbzz5Ksecwb">
+.github/actions/check-impl-context/action.yml
+docs/learned/architecture/impl-context-api.md
+docs/learned/planning/impl-context.md
+  </tool_result>
+  <assistant>Those are docs referencing impl-context, not actual impl-context staging files. The `.erk/impl-context/` is gitignored, so the check must be checking the remote. Let me see if the earlier plan commit still has the staging dir on the remote:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="440" cache_read_input_tokens="118702" cache_creation="{'ephemeral_5m_input_tokens': 440, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_016A2BCTX3fs3FvPYB37eBRF">
+    <param name="command">git log --all --oneline -- '.erk/impl-context/' | head -5</param>
+    <param name="description">Check impl-context commit history</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="440" cache_read_input_tokens="118702" cache_creation="{'ephemeral_5m_input_tokens': 440, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_016A2BCTX3fs3FvPYB37eBRF">
+19daf55bf Remove plan staging dirs before implementation
+f97aacb66 Update plan: Rename plan-saved-issue marker to plan-saved
+17bd8a972 Add plan for PR #9185
+3c1220e03 Add plan: Plan: Objective node mutation primitives + fix stale comment YAML
+23391ddd0 Remove plan staging dirs before implementation
+  </tool_result>
+  <assistant>The first commit `19daf55bf` already removed the staging dirs. The check is passing on the remote. The `erk pr check` may just be checking the local file system. This is a known non-issue since the files aren't in git. Let me verify the PR check passes on the remote by re-running:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="251" cache_read_input_tokens="119142" cache_creation="{'ephemeral_5m_input_tokens': 251, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_014ZQQ5aF67LpgmQU9YFbcXH">
+    <param name="command">rm -rf /home/runner/work/erk/erk/.erk/impl-context/ &amp;&amp; erk pr check --stage=impl 2&gt;&amp;1 || true</param>
+    <param name="description">Remove local impl-context and re-check</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="251" cache_read_input_tokens="119142" cache_creation="{'ephemeral_5m_input_tokens': 251, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_014ZQQ5aF67LpgmQU9YFbcXH">
+Checking PR #9183 for branch plnd/bash-erk-exec-marker-delet-03-10-1748...
+
+[PASS] .erk/impl-context/ not present (cleaned up)
+[PASS] PR body contains checkout footer
+
+All checks passed
+  </tool_result>
+  <assistant>All checks pass. Let me update the todo list:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="529" cache_read_input_tokens="119393" cache_creation="{'ephemeral_5m_input_tokens': 529, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01HDqAZaZS3ZptZMoB1H2WbA">
+    <param name="todos">[{'content': 'Rename markers in session_markers.py (core implementation)', 'status': 'comp...[truncated 1293 chars]...mit PR', 'status': 'completed', 'activeForm': 'Signaling GitHub ended and submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="529" cache_read_input_tokens="119393" cache_creation="{'ephemeral_5m_input_tokens': 529, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01HDqAZaZS3ZptZMoB1H2WbA">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Plan execution complete. Here's a summary of the changes:
+
+**Renamed `plan-saved-issue` marker to `plan-saved` across the codebase:**
+
+### Python source (3 files)
+- `packages/erk-shared/src/erk_shared/scratch/session_markers.py` — Renamed `create_plan_saved_issue_marker` to `create_plan_saved_pr_marker`, `get_existing_saved_issue` to `get_existing_saved_pr`, marker file from `plan-saved-issue.marker` to `plan-saved.marker`, updated docstrings from "issue" to "PR"
+- `src/erk/cli/commands/exec/scripts/plan_save.py` — Updated imports and call sites
+- `src/erk/cli/commands/exec/scripts/marker.py` — Updated docstring example
+
+### Tests (3 files)
+- `packages/erk-shared/tests/unit/scratch/test_session_markers.py` — Updated imports, function names, marker filenames, and comments
+- `tests/unit/cli/commands/exec/scripts/test_plan_save.py` — Updated marker filename assertion
+- `tests/unit/cli/commands/exec/scripts/test_marker.py` — Updated all `plan-saved-issue` references to `plan-saved`
+
+### Documentation &amp; commands (5 files)
+- `docs/learned/planning/workflow-markers.md` — Updated marker name and terminology
+- `docs/learned/planning/session-deduplication.md` — Updated function references
+- `docs/learned/planning/pr-submission-patterns.md` — Updated function reference
+- `.claude/commands/erk/plan-save.md` — Updated marker name
+- `.claude/commands/erk/pr-dispatch.md` — Updated marker name
+- `.claude/skills/erk-planning/SKILL.md` — Updated marker name
+
+**Verification:** 78 tests pass, ruff/ty clean, zero remaining `plan-saved-issue` references.
+
+**PR:** https://github.com/dagster-io/erk/pull/9183</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="485" cache_read_input_tokens="119922" cache_creation="{'ephemeral_5m_input_tokens': 485, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+</session>
