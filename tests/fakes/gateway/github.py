@@ -403,15 +403,29 @@ class FakeLocalGitHub(LocalGitHub):
         """Read-only access to tracked workflow triggers for test assertions."""
         return self._triggered_workflows
 
+    def list_all_workflow_runs(
+        self, repo_root: Path, *, limit: int, actor: str | None = None
+    ) -> list[WorkflowRun]:
+        """List all workflow runs (returns pre-configured data).
+
+        Returns the same pre-configured list as list_workflow_runs.
+        The limit and actor parameters are accepted but ignored.
+        """
+        return self._workflow_runs
+
     def list_workflow_runs(
         self, repo_root: Path, workflow: str, limit: int = 50, *, user: str | None = None
     ) -> list[WorkflowRun]:
-        """List workflow runs for a specific workflow (returns pre-configured data).
+        """List workflow runs for a specific workflow.
 
-        Returns the pre-configured list of workflow runs. The workflow, limit and user
-        parameters are accepted but ignored - fake returns all pre-configured runs.
+        Filters pre-configured runs by workflow filename, matching runs whose
+        workflow_path ends with the requested workflow file.
         """
-        return self._workflow_runs
+        return [
+            run
+            for run in self._workflow_runs
+            if run.workflow_path is not None and run.workflow_path.endswith(workflow)
+        ]
 
     def get_workflow_run(self, repo_root: Path, run_id: str) -> WorkflowRun | None:
         """Get details for a specific workflow run by ID (returns pre-configured data).
@@ -478,6 +492,22 @@ class FakeLocalGitHub(LocalGitHub):
         for plan_num in plan_numbers:
             if plan_num in self._pr_plan_linkages:
                 result[plan_num] = self._pr_plan_linkages[plan_num]
+        return result
+
+    def get_prs_by_numbers(
+        self, location: GitHubRepoLocation, pr_numbers: list[int]
+    ) -> dict[int, PullRequestInfo]:
+        """Batch fetch PR info for specific PR numbers (returns from pre-configured data).
+
+        Looks up PRs from pre-configured prs dict by number. The location
+        parameter is accepted but ignored.
+        """
+        result: dict[int, PullRequestInfo] = {}
+        for pr_num in pr_numbers:
+            for pr_info in self._prs.values():
+                if pr_info.number == pr_num:
+                    result[pr_num] = pr_info
+                    break
         return result
 
     def get_pr_head_branches(

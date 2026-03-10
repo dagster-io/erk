@@ -105,6 +105,12 @@ class DryRunLocalGitHub(LocalGitHub):
         """No-op for closing PR in dry-run mode."""
         pass
 
+    def list_all_workflow_runs(
+        self, repo_root: Path, *, limit: int, actor: str | None = None
+    ) -> list[WorkflowRun]:
+        """Delegate read operation to wrapped implementation."""
+        return self._wrapped.list_all_workflow_runs(repo_root, limit=limit, actor=actor)
+
     def list_workflow_runs(
         self, repo_root: Path, workflow: str, limit: int = 50, *, user: str | None = None
     ) -> list[WorkflowRun]:
@@ -134,6 +140,12 @@ class DryRunLocalGitHub(LocalGitHub):
     ) -> dict[int, list[PullRequestInfo]]:
         """Delegate read operation to wrapped implementation."""
         return self._wrapped.get_prs_linked_to_issues(location, plan_numbers)
+
+    def get_prs_by_numbers(
+        self, location: GitHubRepoLocation, pr_numbers: list[int]
+    ) -> dict[int, PullRequestInfo]:
+        """Delegate read operation to wrapped implementation."""
+        return self._wrapped.get_prs_by_numbers(location, pr_numbers)
 
     def get_pr_head_branches(
         self, location: GitHubRepoLocation, pr_numbers: list[int]

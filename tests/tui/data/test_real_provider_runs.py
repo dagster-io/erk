@@ -12,17 +12,17 @@ from erk.core.context import GlobalConfig
 from erk.core.repo_discovery import RepoContext
 from erk.tui.data.real_provider import RealPlanDataProvider
 from erk_shared.gateway.git.abc import WorktreeInfo
-from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.types import (
     GitHubRepoId,
     GitHubRepoLocation,
     PullRequestInfo,
     WorkflowRun,
 )
-from erk_shared.gateway.graphite.fake import FakeGraphite
-from erk_shared.gateway.http.fake import FakeHttpClient
-from tests.fakes.context import create_test_context
+from tests.fakes.gateway.git import FakeGit
+from tests.fakes.gateway.github import FakeLocalGitHub
+from tests.fakes.gateway.graphite import FakeGraphite
+from tests.fakes.gateway.http import FakeHttpClient
+from tests.fakes.tests.context import create_test_context
 
 
 def _make_repo_context(repo_root: Path, tmp_path: Path) -> RepoContext:
@@ -46,6 +46,7 @@ def _make_workflow_run(
     conclusion: str | None = "success",
     branch: str = "main",
     created_at: datetime | None = None,
+    workflow_path: str = ".github/workflows/plan-implement.yml",
 ) -> WorkflowRun:
     """Create a WorkflowRun for testing."""
     return WorkflowRun(
@@ -56,6 +57,7 @@ def _make_workflow_run(
         head_sha="abc123",
         display_title=display_title,
         created_at=created_at,
+        workflow_path=workflow_path,
     )
 
 
@@ -138,18 +140,24 @@ def test_fetch_runs_returns_rows_for_workflow_runs(tmp_path: Path) -> None:
     assert rows[1].run_id == "1001"
 
 
-def test_fetch_runs_deduplicates_by_run_id(tmp_path: Path) -> None:
-    """fetch_runs deduplicates runs that appear under multiple workflows."""
-    # Same run returned by multiple workflows (e.g., plan-implement and pr-rebase)
-    run = _make_workflow_run(
+def test_fetch_runs_filters_to_known_workflows(tmp_path: Path) -> None:
+    """fetch_runs only includes runs from known workflows in WORKFLOW_COMMAND_MAP."""
+    known_run = _make_workflow_run(
         "1001",
         display_title="pr-address:#42:abc123",
         created_at=datetime(2026, 3, 1, 10, 0, tzinfo=UTC),
+        workflow_path=".github/workflows/plan-implement.yml",
     )
-    provider = _make_provider(tmp_path, workflow_runs=[run, run])
+    unknown_run = _make_workflow_run(
+        "1002",
+        display_title="unknown:abc123",
+        created_at=datetime(2026, 3, 1, 11, 0, tzinfo=UTC),
+        workflow_path=".github/workflows/unknown-workflow.yml",
+    )
+    provider = _make_provider(tmp_path, workflow_runs=[known_run, unknown_run])
     rows = provider.fetch_runs()
 
-    # Should only appear once despite being returned twice
+    # Only the known workflow run should appear
     assert len(rows) == 1
     assert rows[0].run_id == "1001"
 
