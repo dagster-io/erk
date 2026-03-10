@@ -217,6 +217,7 @@ jobs:
 
       - name: Checkout PR branch
         env:
+          GH_TOKEN: ${{ secrets.ERK_QUEUE_GH_PAT }}
           PR_NUMBER: ${{ inputs.pr_number }}
           SUBMITTED_BY: ${{ inputs.submitted_by }}
         run: |
