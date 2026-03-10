@@ -19,8 +19,8 @@
     {
       "session_id": "289e648d-92c7-4bf9-8969-987dfac417ae",
       "stage": "impl",
-      "source": "local",
-      "uploaded_at": "2026-03-10T17:55:55.551292+00:00",
+      "source": "remote",
+      "uploaded_at": "2026-03-10T17:57:39.247143+00:00",
       "files": [
         "impl-289e648d-92c7-4bf9-8969-987dfac417ae-289e648d-92c7-4bf9-8969-987dfac417ae-part1.xml",
         "impl-289e648d-92c7-4bf9-8969-987dfac417ae-289e648d-92c7-4bf9-8969-987dfac417ae-part2.xml",
@@ -30,9 +30,9 @@
         "impl-289e648d-92c7-4bf9-8969-987dfac417ae-289e648d-92c7-4bf9-8969-987dfac417ae-part6.xml"
       ],
       "user_turns": 2,
-      "duration_minutes": 12,
-      "raw_size_kb": 1568,
-      "xml_size_kb": 226,
+      "duration_minutes": 14,
+      "raw_size_kb": 1611,
+      "xml_size_kb": 238,
       "git_branch": "plnd/rename-reason-to-comment-03-10-1342"
     }
   ]
