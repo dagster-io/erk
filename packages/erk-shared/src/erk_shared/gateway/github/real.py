@@ -2247,7 +2247,7 @@ query {{
         response = json.loads(stdout)
         return response["id"]
 
-    def fetch_pr_comments(self, repo_root: Path, pr_number: int) -> list[dict[str, str]]:
+    def fetch_pr_comments(self, repo_root: Path, pr_number: int) -> list[dict[str, Any]]:
         """Fetch all issue/PR comments as a list of dicts.
 
         Returns:
