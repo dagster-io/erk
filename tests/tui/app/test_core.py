@@ -3,11 +3,11 @@
 import pytest
 
 from erk.tui.app import ErkDashApp
-from erk.tui.data.types import PlanFilters
+from erk.tui.data.types import PrFilters
 from erk.tui.screens.help_screen import HelpScreen
 from erk.tui.widgets.plan_table import PlanDataTable
 from erk.tui.widgets.status_bar import StatusBar
-from tests.fakes.gateway.plan_data_provider import FakePlanDataProvider, make_plan_row
+from tests.fakes.gateway.plan_data_provider import FakePrDataProvider, make_pr_row
 from tests.fakes.gateway.pr_service import FakePrService
 
 
@@ -17,8 +17,8 @@ class TestErkDashAppCompose:
     @pytest.mark.asyncio
     async def test_app_has_required_widgets(self) -> None:
         """App composes all required widgets."""
-        provider = FakePlanDataProvider()
-        filters = PlanFilters.default()
+        provider = FakePrDataProvider()
+        filters = PrFilters.default()
         app = ErkDashApp(
             provider=provider, service=FakePrService(), filters=filters, refresh_interval=0
         )
@@ -39,13 +39,13 @@ class TestErkDashAppDataLoading:
     @pytest.mark.asyncio
     async def test_fetches_data_on_mount(self) -> None:
         """App fetches data when mounted."""
-        provider = FakePlanDataProvider(
+        provider = FakePrDataProvider(
             plans=[
-                make_plan_row(123, "Plan A"),
-                make_plan_row(456, "Plan B"),
+                make_pr_row(123, "Plan A"),
+                make_pr_row(456, "Plan B"),
             ]
         )
-        filters = PlanFilters.default()
+        filters = PrFilters.default()
         app = ErkDashApp(
             provider=provider, service=FakePrService(), filters=filters, refresh_interval=0
         )
@@ -60,10 +60,10 @@ class TestErkDashAppDataLoading:
     @pytest.mark.asyncio
     async def test_api_error_shows_notification_and_empty_table(self) -> None:
         """App shows error notification and empty table when API fails."""
-        provider = FakePlanDataProvider(
+        provider = FakePrDataProvider(
             fetch_error="Network unreachable",
         )
-        filters = PlanFilters.default()
+        filters = PrFilters.default()
         app = ErkDashApp(
             provider=provider, service=FakePrService(), filters=filters, refresh_interval=0
         )
@@ -91,8 +91,8 @@ class TestErkDashAppNavigation:
     @pytest.mark.asyncio
     async def test_quit_on_q(self) -> None:
         """Pressing q quits the app."""
-        provider = FakePlanDataProvider()
-        filters = PlanFilters.default()
+        provider = FakePrDataProvider()
+        filters = PrFilters.default()
         app = ErkDashApp(
             provider=provider, service=FakePrService(), filters=filters, refresh_interval=0
         )
@@ -104,8 +104,8 @@ class TestErkDashAppNavigation:
     @pytest.mark.asyncio
     async def test_quit_on_escape(self) -> None:
         """Pressing escape quits the app."""
-        provider = FakePlanDataProvider()
-        filters = PlanFilters.default()
+        provider = FakePrDataProvider()
+        filters = PrFilters.default()
         app = ErkDashApp(
             provider=provider, service=FakePrService(), filters=filters, refresh_interval=0
         )
@@ -117,8 +117,8 @@ class TestErkDashAppNavigation:
     @pytest.mark.asyncio
     async def test_help_on_question_mark(self) -> None:
         """Pressing ? shows help screen."""
-        provider = FakePlanDataProvider()
-        filters = PlanFilters.default()
+        provider = FakePrDataProvider()
+        filters = PrFilters.default()
         app = ErkDashApp(
             provider=provider, service=FakePrService(), filters=filters, refresh_interval=0
         )
@@ -136,8 +136,8 @@ class TestErkDashAppNavigation:
     @pytest.mark.asyncio
     async def test_help_screen_does_not_dismiss_on_unmapped_key(self) -> None:
         """Pressing an unmapped key does NOT dismiss HelpScreen."""
-        provider = FakePlanDataProvider()
-        filters = PlanFilters.default()
+        provider = FakePrDataProvider()
+        filters = PrFilters.default()
         app = ErkDashApp(
             provider=provider, service=FakePrService(), filters=filters, refresh_interval=0
         )
@@ -158,8 +158,8 @@ class TestErkDashAppNavigation:
     @pytest.mark.asyncio
     async def test_help_screen_dismisses_on_escape(self) -> None:
         """Pressing Esc dismisses HelpScreen."""
-        provider = FakePlanDataProvider()
-        filters = PlanFilters.default()
+        provider = FakePrDataProvider()
+        filters = PrFilters.default()
         app = ErkDashApp(
             provider=provider, service=FakePrService(), filters=filters, refresh_interval=0
         )
@@ -179,8 +179,8 @@ class TestErkDashAppNavigation:
     @pytest.mark.asyncio
     async def test_help_screen_dismisses_on_q(self) -> None:
         """Pressing q dismisses HelpScreen."""
-        provider = FakePlanDataProvider()
-        filters = PlanFilters.default()
+        provider = FakePrDataProvider()
+        filters = PrFilters.default()
         app = ErkDashApp(
             provider=provider, service=FakePrService(), filters=filters, refresh_interval=0
         )
@@ -204,8 +204,8 @@ class TestErkDashAppRefresh:
     @pytest.mark.asyncio
     async def test_refresh_on_r(self) -> None:
         """Pressing r refreshes data."""
-        provider = FakePlanDataProvider(plans=[make_plan_row(123, "Plan A")])
-        filters = PlanFilters.default()
+        provider = FakePrDataProvider(plans=[make_pr_row(123, "Plan A")])
+        filters = PrFilters.default()
         app = ErkDashApp(
             provider=provider, service=FakePrService(), filters=filters, refresh_interval=0
         )

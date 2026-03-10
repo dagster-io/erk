@@ -1,7 +1,7 @@
 """Lifecycle stage display computation for plans.
 
 Extracted to a standalone module to avoid circular imports when testing.
-The main consumer is RealPlanDataProvider in real.py.
+The main consumer is RealPrDataProvider in real.py.
 """
 
 from erk_shared.gateway.github.metadata.schemas import LIFECYCLE_STAGE

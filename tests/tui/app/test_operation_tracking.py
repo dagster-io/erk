@@ -5,9 +5,9 @@ from pathlib import Path
 import pytest
 
 from erk.tui.app import ErkDashApp
-from erk.tui.data.types import PlanFilters
+from erk.tui.data.types import PrFilters
 from erk.tui.widgets.status_bar import StatusBar
-from tests.fakes.gateway.plan_data_provider import FakePlanDataProvider, make_plan_row
+from tests.fakes.gateway.plan_data_provider import FakePrDataProvider, make_pr_row
 from tests.fakes.gateway.pr_service import FakePrService
 
 
@@ -32,10 +32,10 @@ class TestOperationTracking:
     @pytest.mark.asyncio
     async def test_start_operation_sets_status_bar(self) -> None:
         """_start_operation registers operation and adds running class."""
-        provider = FakePlanDataProvider(
-            plans=[make_plan_row(123, "Test Plan")],
+        provider = FakePrDataProvider(
+            plans=[make_pr_row(123, "Test Plan")],
         )
-        filters = PlanFilters.default()
+        filters = PrFilters.default()
         app = ErkDashApp(
             provider=provider, service=FakePrService(), filters=filters, refresh_interval=0
         )
@@ -56,10 +56,10 @@ class TestOperationTracking:
     @pytest.mark.asyncio
     async def test_finish_operation_clears_status_bar(self) -> None:
         """_finish_operation removes operation and clears running class."""
-        provider = FakePlanDataProvider(
-            plans=[make_plan_row(123, "Test Plan")],
+        provider = FakePrDataProvider(
+            plans=[make_pr_row(123, "Test Plan")],
         )
-        filters = PlanFilters.default()
+        filters = PrFilters.default()
         app = ErkDashApp(
             provider=provider, service=FakePrService(), filters=filters, refresh_interval=0
         )
@@ -77,14 +77,12 @@ class TestOperationTracking:
             assert not status_bar.has_class("running")
 
     @pytest.mark.asyncio
-    async def test_close_plan_starts_then_finishes_operation(self, tmp_path: Path) -> None:
-        """_close_plan_async finishes operation on success."""
-        provider = FakePlanDataProvider(
-            plans=[
-                make_plan_row(123, "Test Plan", plan_url="https://github.com/test/repo/issues/123")
-            ],
+    async def test_close_pr_starts_then_finishes_operation(self, tmp_path: Path) -> None:
+        """_close_pr_async finishes operation on success."""
+        provider = FakePrDataProvider(
+            plans=[make_pr_row(123, "Test Plan", pr_url="https://github.com/test/repo/issues/123")],
         )
-        filters = PlanFilters.default()
+        filters = PrFilters.default()
         app = ErkDashApp(
             provider=provider,
             service=FakePrService(repo_root=tmp_path),
@@ -102,7 +100,7 @@ class TestOperationTracking:
             app._start_operation(op_id=op_id, label="Closing plan #123...")
             assert op_id in status_bar._operations
 
-            app._close_plan_async(op_id, 123, "https://github.com/test/repo/issues/123")
+            app._close_pr_async(op_id, 123, "https://github.com/test/repo/issues/123")
             await pilot.pause(0.3)
 
             assert op_id not in status_bar._operations
@@ -114,10 +112,10 @@ class TestOperationTracking:
         """_address_remote_async finishes operation on success."""
         import subprocess
 
-        provider = FakePlanDataProvider(
-            plans=[make_plan_row(123, "Test Plan", pr_number=456)],
+        provider = FakePrDataProvider(
+            plans=[make_pr_row(123, "Test Plan")],
         )
-        filters = PlanFilters.default()
+        filters = PrFilters.default()
         app = ErkDashApp(
             provider=provider,
             service=FakePrService(repo_root=tmp_path),
@@ -135,11 +133,11 @@ class TestOperationTracking:
             await pilot.pause()
 
             status_bar = app.query_one(StatusBar)
-            op_id = "address-pr-456"
-            app._start_operation(op_id=op_id, label="Dispatching address for PR #456...")
+            op_id = "address-pr-123"
+            app._start_operation(op_id=op_id, label="Dispatching address for PR #123...")
             assert op_id in status_bar._operations
 
-            app._address_remote_async(op_id, 456)
+            app._address_remote_async(op_id, 123)
             await pilot.pause(0.3)
 
             assert op_id not in status_bar._operations
@@ -151,10 +149,10 @@ class TestOperationTracking:
         """_address_remote_async finishes operation on failure."""
         import subprocess
 
-        provider = FakePlanDataProvider(
-            plans=[make_plan_row(123, "Test Plan", pr_number=456)],
+        provider = FakePrDataProvider(
+            plans=[make_pr_row(123, "Test Plan")],
         )
-        filters = PlanFilters.default()
+        filters = PrFilters.default()
         app = ErkDashApp(
             provider=provider,
             service=FakePrService(repo_root=tmp_path),
@@ -172,10 +170,10 @@ class TestOperationTracking:
             await pilot.pause()
 
             status_bar = app.query_one(StatusBar)
-            op_id = "address-pr-456"
-            app._start_operation(op_id=op_id, label="Dispatching address for PR #456...")
+            op_id = "address-pr-123"
+            app._start_operation(op_id=op_id, label="Dispatching address for PR #123...")
 
-            app._address_remote_async(op_id, 456)
+            app._address_remote_async(op_id, 123)
             await pilot.pause(0.3)
 
             assert op_id not in status_bar._operations
@@ -187,10 +185,10 @@ class TestOperationTracking:
         """_land_pr_async finishes operation on success."""
         import subprocess
 
-        provider = FakePlanDataProvider(
-            plans=[make_plan_row(123, "Test Plan", pr_number=456, pr_head_branch="test-branch")],
+        provider = FakePrDataProvider(
+            plans=[make_pr_row(123, "Test Plan", pr_head_branch="test-branch")],
         )
-        filters = PlanFilters.default()
+        filters = PrFilters.default()
         app = ErkDashApp(
             provider=provider,
             service=FakePrService(repo_root=tmp_path),
@@ -208,15 +206,15 @@ class TestOperationTracking:
             await pilot.pause()
 
             status_bar = app.query_one(StatusBar)
-            op_id = "land-pr-456"
-            app._start_operation(op_id=op_id, label="Landing PR #456...")
+            op_id = "land-pr-123"
+            app._start_operation(op_id=op_id, label="Landing PR #123...")
 
             app._land_pr_async(
                 op_id=op_id,
-                pr_number=456,
+                pr_number=123,
                 branch="test-branch",
                 objective_issue=None,
-                plan_id=None,
+                plan_number=None,
             )
             await pilot.pause(0.3)
 
@@ -229,10 +227,10 @@ class TestOperationTracking:
         """_land_pr_async finishes operation on failure."""
         import subprocess
 
-        provider = FakePlanDataProvider(
-            plans=[make_plan_row(123, "Test Plan", pr_number=456, pr_head_branch="test-branch")],
+        provider = FakePrDataProvider(
+            plans=[make_pr_row(123, "Test Plan", pr_head_branch="test-branch")],
         )
-        filters = PlanFilters.default()
+        filters = PrFilters.default()
         app = ErkDashApp(
             provider=provider,
             service=FakePrService(repo_root=tmp_path),
@@ -250,15 +248,15 @@ class TestOperationTracking:
             await pilot.pause()
 
             status_bar = app.query_one(StatusBar)
-            op_id = "land-pr-456"
-            app._start_operation(op_id=op_id, label="Landing PR #456...")
+            op_id = "land-pr-123"
+            app._start_operation(op_id=op_id, label="Landing PR #123...")
 
             app._land_pr_async(
                 op_id=op_id,
-                pr_number=456,
+                pr_number=123,
                 branch="test-branch",
                 objective_issue=None,
-                plan_id=None,
+                plan_number=None,
             )
             await pilot.pause(0.3)
 
@@ -267,10 +265,10 @@ class TestOperationTracking:
     @pytest.mark.asyncio
     async def test_multi_operation_keeps_running_until_all_finish(self) -> None:
         """Starting two operations, finishing one keeps running class."""
-        provider = FakePlanDataProvider(
-            plans=[make_plan_row(123, "Test Plan")],
+        provider = FakePrDataProvider(
+            plans=[make_pr_row(123, "Test Plan")],
         )
-        filters = PlanFilters.default()
+        filters = PrFilters.default()
         app = ErkDashApp(
             provider=provider, service=FakePrService(), filters=filters, refresh_interval=0
         )
@@ -299,10 +297,10 @@ class TestOperationTracking:
     @pytest.mark.asyncio
     async def test_update_operation_updates_progress(self) -> None:
         """update_operation updates the progress text for an operation."""
-        provider = FakePlanDataProvider(
-            plans=[make_plan_row(123, "Test Plan")],
+        provider = FakePrDataProvider(
+            plans=[make_pr_row(123, "Test Plan")],
         )
-        filters = PlanFilters.default()
+        filters = PrFilters.default()
         app = ErkDashApp(
             provider=provider, service=FakePrService(), filters=filters, refresh_interval=0
         )
@@ -312,7 +310,7 @@ class TestOperationTracking:
             await pilot.pause()
 
             status_bar = app.query_one(StatusBar)
-            app._start_operation(op_id="test-op", label="Landing PR #456...")
+            app._start_operation(op_id="test-op", label="Landing PR #123...")
             assert status_bar._operations["test-op"].progress == ""
 
             app._update_operation(op_id="test-op", progress="Merging branch")
@@ -322,10 +320,10 @@ class TestOperationTracking:
     @pytest.mark.asyncio
     async def test_update_operation_skips_unknown_op_id(self) -> None:
         """update_operation is a no-op if op_id is not registered."""
-        provider = FakePlanDataProvider(
-            plans=[make_plan_row(123, "Test Plan")],
+        provider = FakePrDataProvider(
+            plans=[make_pr_row(123, "Test Plan")],
         )
-        filters = PlanFilters.default()
+        filters = PrFilters.default()
         app = ErkDashApp(
             provider=provider, service=FakePrService(), filters=filters, refresh_interval=0
         )

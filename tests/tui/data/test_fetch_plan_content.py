@@ -1,4 +1,4 @@
-"""Tests for fetch_plan_content on RealPrService."""
+"""Tests for fetch_pr_content on RealPrService."""
 
 from pathlib import Path
 
@@ -82,7 +82,7 @@ plan_comment_id: null
 <!-- /erk:metadata-block:plan-header -->"""
 
 
-def test_fetch_plan_content_returns_body_directly(tmp_path: Path) -> None:
+def test_fetch_pr_content_returns_body_directly(tmp_path: Path) -> None:
     """Plan content without metadata block is returned directly."""
     http_client = FakeHttpClient()
     service = _make_service(tmp_path, http_client=http_client)
@@ -94,7 +94,7 @@ def test_fetch_plan_content_returns_body_directly(tmp_path: Path) -> None:
     assert len(http_client.requests) == 0
 
 
-def test_fetch_plan_content_empty_body_returns_none(tmp_path: Path) -> None:
+def test_fetch_pr_content_empty_body_returns_none(tmp_path: Path) -> None:
     """Empty plan body returns None."""
     http_client = FakeHttpClient()
     service = _make_service(tmp_path, http_client=http_client)
@@ -105,7 +105,7 @@ def test_fetch_plan_content_empty_body_returns_none(tmp_path: Path) -> None:
     assert len(http_client.requests) == 0
 
 
-def test_fetch_plan_content_with_embedded_metadata_returns_content(
+def test_fetch_pr_content_with_embedded_metadata_returns_content(
     tmp_path: Path,
 ) -> None:
     """Plan body with embedded plan-header metadata returns the full body.

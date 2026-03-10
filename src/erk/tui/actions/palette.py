@@ -32,15 +32,15 @@ class PaletteActionsMixin:
             return
 
         if command_id == "open_browser":
-            url = row.pr_url or row.plan_url
+            url = row.pr_url
             if url:
                 self._service.browser.launch(url)
                 self.notify(f"Opened {url}")
 
         elif command_id == "open_issue":
-            if row.plan_url:
-                self._service.browser.launch(row.plan_url)
-                self.notify(f"Opened plan #{row.plan_id}")
+            if row.pr_url:
+                self._service.browser.launch(row.pr_url)
+                self.notify(f"Opened plan #{row.pr_number}")
 
         elif command_id == "open_pr":
             if row.pr_url:
@@ -105,7 +105,7 @@ class PaletteActionsMixin:
                 self._service.clipboard.copy(text)
                 self.notify(f"Copied: {text}")
 
-        elif command_id == "copy_close_plan":
+        elif command_id == "copy_close_pr":
             ctx = CommandContext(
                 row=row, view_mode=self._view_mode, cmux_integration=self._cmux_integration
             )
@@ -191,31 +191,31 @@ class PaletteActionsMixin:
                 )
                 self._rewrite_remote_async(op_id, row.pr_number)
 
-        elif command_id == "close_plan":
-            if row.plan_url:
-                op_id = f"close-plan-{row.plan_id}"
-                self._start_operation(op_id=op_id, label=f"Closing plan #{row.plan_id}...")
-                self._close_plan_async(op_id, row.plan_id, row.plan_url)
+        elif command_id == "close_pr":
+            if row.pr_url:
+                op_id = f"close-plan-{row.pr_number}"
+                self._start_operation(op_id=op_id, label=f"Closing plan #{row.pr_number}...")
+                self._close_pr_async(op_id, row.pr_number, row.pr_url)
 
         elif command_id == "dispatch_to_queue":
-            if row.plan_url:
-                op_id = f"dispatch-plan-{row.plan_id}"
+            if row.pr_url:
+                op_id = f"dispatch-plan-{row.pr_number}"
                 self._start_operation(
-                    op_id=op_id, label=f"Dispatching plan #{row.plan_id} to queue..."
+                    op_id=op_id, label=f"Dispatching plan #{row.pr_number} to queue..."
                 )
-                self._dispatch_to_queue_async(op_id, row.plan_id)
+                self._dispatch_to_queue_async(op_id, row.pr_number)
 
         elif command_id == "land_pr":
             if row.pr_number and row.pr_head_branch:
                 op_id = f"land-pr-{row.pr_number}"
                 self._start_operation(op_id=op_id, label=f"Landing PR #{row.pr_number}...")
-                plan_id = row.plan_id if not row.is_learn_plan else None
+                plan_number = row.pr_number if not row.is_learn_plan else None
                 self._land_pr_async(
                     op_id=op_id,
                     pr_number=row.pr_number,
                     branch=row.pr_head_branch,
                     objective_issue=row.objective_issue,
-                    plan_id=plan_id,
+                    plan_number=plan_number,
                 )
 
         elif command_id == "incremental_dispatch":
@@ -227,46 +227,46 @@ class PaletteActionsMixin:
                 )
 
         elif command_id == "copy_replan":
-            cmd = f"/erk:replan {row.plan_id}"
+            cmd = f"/erk:replan {row.pr_number}"
             self._service.clipboard.copy(cmd)
             self.notify(f"Copied: {cmd}")
 
         # === OBJECTIVE COMMANDS ===
         elif command_id == "copy_plan":
-            cmd = f"erk objective plan {row.plan_id}"
+            cmd = f"erk objective plan {row.pr_number}"
             self._service.clipboard.copy(cmd)
             self.notify(f"Copied: {cmd}")
 
         elif command_id == "copy_view":
-            cmd = f"erk objective view {row.plan_id}"
+            cmd = f"erk objective view {row.pr_number}"
             self._service.clipboard.copy(cmd)
             self.notify(f"Copied: {cmd}")
 
         elif command_id == "open_objective":
-            if row.plan_url:
-                self._service.browser.launch(row.plan_url)
-                self.notify(f"Opened objective #{row.plan_id}")
+            if row.pr_url:
+                self._service.browser.launch(row.pr_url)
+                self.notify(f"Opened objective #{row.pr_number}")
 
         elif command_id == "one_shot_plan":
-            op_id = f"one-shot-plan-{row.plan_id}"
+            op_id = f"one-shot-plan-{row.pr_number}"
             self._start_operation(
                 op_id=op_id,
-                label=f"Dispatching one-shot plan for objective #{row.plan_id}...",
+                label=f"Dispatching one-shot plan for objective #{row.pr_number}...",
             )
-            self._one_shot_plan_async(op_id, row.plan_id)
+            self._one_shot_plan_async(op_id, row.pr_number)
 
         elif command_id == "check_objective":
-            op_id = f"check-objective-{row.plan_id}"
-            self._start_operation(op_id=op_id, label=f"Checking objective #{row.plan_id}...")
-            self._check_objective_async(op_id, row.plan_id)
+            op_id = f"check-objective-{row.pr_number}"
+            self._start_operation(op_id=op_id, label=f"Checking objective #{row.pr_number}...")
+            self._check_objective_async(op_id, row.pr_number)
 
         elif command_id == "close_objective":
-            op_id = f"close-objective-{row.plan_id}"
-            self._start_operation(op_id=op_id, label=f"Closing objective #{row.plan_id}...")
-            self._close_objective_async(op_id, row.plan_id)
+            op_id = f"close-objective-{row.pr_number}"
+            self._start_operation(op_id=op_id, label=f"Closing objective #{row.pr_number}...")
+            self._close_objective_async(op_id, row.pr_number)
 
         elif command_id == "codespace_run_plan":
-            cmd = f"erk codespace run objective plan {row.plan_id}"
+            cmd = f"erk codespace run objective plan {row.pr_number}"
             self._service.clipboard.copy(cmd)
             self.notify(f"Copied: {cmd}")
 

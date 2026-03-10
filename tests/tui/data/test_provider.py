@@ -15,7 +15,7 @@ from erk_shared.gateway.github.types import (
     GitHubRepoLocation,
     PullRequestInfo,
 )
-from erk_shared.gateway.plan_data_provider.real import RealPlanDataProvider
+from erk_shared.gateway.plan_data_provider.real import RealPrDataProvider
 from erk_shared.gateway.pr_service.real import RealPrService
 from erk_shared.plan_store.types import Plan, PlanState
 from tests.fakes.gateway.browser import FakeBrowserLauncher
@@ -89,7 +89,7 @@ class TestBuildWorktreeMapping:
             root=repo_root,
             repo_id=GitHubRepoId(owner="test", repo="repo"),
         )
-        provider = RealPlanDataProvider(
+        provider = RealPrDataProvider(
             ctx=ctx,
             location=location,
             http_client=FakeHttpClient(),
@@ -137,7 +137,7 @@ class TestBuildWorktreeMapping:
             root=repo_root,
             repo_id=GitHubRepoId(owner="test", repo="repo"),
         )
-        provider = RealPlanDataProvider(
+        provider = RealPrDataProvider(
             ctx=ctx,
             location=location,
             http_client=FakeHttpClient(),
@@ -180,7 +180,7 @@ class TestBuildWorktreeMapping:
             root=repo_root,
             repo_id=GitHubRepoId(owner="test", repo="repo"),
         )
-        provider = RealPlanDataProvider(
+        provider = RealPrDataProvider(
             ctx=ctx,
             location=location,
             http_client=FakeHttpClient(),
@@ -221,7 +221,7 @@ class TestBuildWorktreeMapping:
             root=repo_root,
             repo_id=GitHubRepoId(owner="test", repo="repo"),
         )
-        provider = RealPlanDataProvider(
+        provider = RealPrDataProvider(
             ctx=ctx,
             location=location,
             http_client=FakeHttpClient(),
@@ -286,7 +286,7 @@ class TestBuildWorktreeMapping:
             root=repo_root,
             repo_id=GitHubRepoId(owner="test", repo="repo"),
         )
-        provider = RealPlanDataProvider(
+        provider = RealPrDataProvider(
             ctx=ctx,
             location=location,
             http_client=FakeHttpClient(),
@@ -353,7 +353,7 @@ class TestBuildWorktreeMapping:
             root=repo_root,
             repo_id=GitHubRepoId(owner="test", repo="repo"),
         )
-        provider = RealPlanDataProvider(
+        provider = RealPrDataProvider(
             ctx=ctx,
             location=location,
             http_client=FakeHttpClient(),
@@ -422,7 +422,7 @@ class TestBuildWorktreeMapping:
             root=repo_root,
             repo_id=GitHubRepoId(owner="test", repo="repo"),
         )
-        provider = RealPlanDataProvider(
+        provider = RealPrDataProvider(
             ctx=ctx,
             location=location,
             http_client=FakeHttpClient(),
@@ -470,7 +470,7 @@ class TestBuildWorktreeMapping:
             root=repo_root,
             repo_id=GitHubRepoId(owner="test", repo="repo"),
         )
-        provider = RealPlanDataProvider(
+        provider = RealPrDataProvider(
             ctx=ctx,
             location=location,
             http_client=FakeHttpClient(),
@@ -483,10 +483,10 @@ class TestBuildWorktreeMapping:
 
 
 class TestClosePlan:
-    """Tests for close_plan method using HTTP client."""
+    """Tests for close_pr method using HTTP client."""
 
-    def test_close_plan_uses_http_client(self, tmp_path: Path) -> None:
-        """close_plan should use HTTP client to close issue via API."""
+    def test_close_pr_uses_http_client(self, tmp_path: Path) -> None:
+        """close_pr should use HTTP client to close issue via API."""
         repo_root = tmp_path / "repo"
         repo_root.mkdir()
         erk_dir = repo_root / ".erk"
@@ -541,8 +541,8 @@ class TestClosePlan:
         assert request.data == {"state": "closed"}
         assert closed_prs == []
 
-    def test_close_plan_closes_linked_prs(self, tmp_path: Path) -> None:
-        """close_plan should close linked PRs before closing issue."""
+    def test_close_pr_closes_linked_prs(self, tmp_path: Path) -> None:
+        """close_pr should close linked PRs before closing issue."""
         repo_root = tmp_path / "repo"
         repo_root.mkdir()
         erk_dir = repo_root / ".erk"
@@ -666,7 +666,7 @@ class TestCommentCountsDisplay:
             root=repo_root,
             repo_id=GitHubRepoId(owner="test", repo="repo"),
         )
-        provider = RealPlanDataProvider(
+        provider = RealPrDataProvider(
             ctx=ctx,
             location=location,
             http_client=FakeHttpClient(),
@@ -704,10 +704,10 @@ class TestCommentCountsDisplay:
 
         row = provider._build_row_data(
             plan=plan,
-            plan_id=123,
+            pr_number=123,
             pr_linkages=pr_linkages,
             workflow_run=None,
-            worktree_by_plan_id={},
+            worktree_by_pr_number={},
             use_graphite=False,
         )
 
@@ -744,7 +744,7 @@ class TestCommentCountsDisplay:
             root=repo_root,
             repo_id=GitHubRepoId(owner="test", repo="repo"),
         )
-        provider = RealPlanDataProvider(
+        provider = RealPrDataProvider(
             ctx=ctx,
             location=location,
             http_client=FakeHttpClient(),
@@ -782,10 +782,10 @@ class TestCommentCountsDisplay:
 
         row = provider._build_row_data(
             plan=plan,
-            plan_id=123,
+            pr_number=123,
             pr_linkages=pr_linkages,
             workflow_run=None,
-            worktree_by_plan_id={},
+            worktree_by_pr_number={},
             use_graphite=False,
         )
 
@@ -822,7 +822,7 @@ class TestCommentCountsDisplay:
             root=repo_root,
             repo_id=GitHubRepoId(owner="test", repo="repo"),
         )
-        provider = RealPlanDataProvider(
+        provider = RealPrDataProvider(
             ctx=ctx,
             location=location,
             http_client=FakeHttpClient(),
@@ -846,10 +846,10 @@ class TestCommentCountsDisplay:
 
         row = provider._build_row_data(
             plan=plan,
-            plan_id=123,
+            pr_number=123,
             pr_linkages=pr_linkages,
             workflow_run=None,
-            worktree_by_plan_id={},
+            worktree_by_pr_number={},
             use_graphite=False,
         )
 
@@ -914,7 +914,7 @@ class TestStackedPrDetection:
             root=repo_root,
             repo_id=GitHubRepoId(owner="test", repo="repo"),
         )
-        provider = RealPlanDataProvider(
+        provider = RealPrDataProvider(
             ctx=ctx,
             location=location,
             http_client=FakeHttpClient(),
@@ -952,10 +952,10 @@ class TestStackedPrDetection:
 
         row = provider._build_row_data(
             plan=plan,
-            plan_id=123,
+            pr_number=123,
             pr_linkages=pr_linkages,
             workflow_run=None,
-            worktree_by_plan_id={},
+            worktree_by_pr_number={},
             use_graphite=True,
         )
 
@@ -994,7 +994,7 @@ class TestLearnStatusDisplay:
             root=repo_root,
             repo_id=GitHubRepoId(owner="test", repo="repo"),
         )
-        provider = RealPlanDataProvider(
+        provider = RealPrDataProvider(
             ctx=ctx,
             location=location,
             http_client=FakeHttpClient(),
@@ -1017,10 +1017,10 @@ class TestLearnStatusDisplay:
 
         row = provider._build_row_data(
             plan=plan,
-            plan_id=123,
+            pr_number=123,
             pr_linkages={},
             workflow_run=None,
-            worktree_by_plan_id={},
+            worktree_by_pr_number={},
             use_graphite=False,
         )
 
@@ -1058,18 +1058,18 @@ class TestLearnStatusDisplay:
             root=repo_root,
             repo_id=GitHubRepoId(owner="test", repo="repo"),
         )
-        provider = RealPlanDataProvider(
+        provider = RealPrDataProvider(
             ctx=ctx,
             location=location,
             http_client=FakeHttpClient(),
         )
 
         # Plan with learn_status: pending in metadata
-        plan_body = format_plan_header_body_for_test(learn_status="pending")
+        pr_body = format_plan_header_body_for_test(learn_status="pending")
         plan = Plan(
             pr_identifier="123",
             title="Test Plan",
-            body=plan_body,
+            body=pr_body,
             state=PlanState.OPEN,
             url="https://github.com/test/repo/issues/123",
             labels=[],
@@ -1078,15 +1078,15 @@ class TestLearnStatusDisplay:
             updated_at=datetime.now(UTC),
             metadata={},
             objective_id=None,
-            header_fields=_parse_header_fields(plan_body),
+            header_fields=_parse_header_fields(pr_body),
         )
 
         row = provider._build_row_data(
             plan=plan,
-            plan_id=123,
+            pr_number=123,
             pr_linkages={},
             workflow_run=None,
-            worktree_by_plan_id={},
+            worktree_by_pr_number={},
             use_graphite=False,
         )
 
@@ -1122,18 +1122,18 @@ class TestLearnStatusDisplay:
             root=repo_root,
             repo_id=GitHubRepoId(owner="test", repo="repo"),
         )
-        provider = RealPlanDataProvider(
+        provider = RealPrDataProvider(
             ctx=ctx,
             location=location,
             http_client=FakeHttpClient(),
         )
 
         # Plan with learn_status: completed_no_plan
-        plan_body = format_plan_header_body_for_test(learn_status="completed_no_plan")
+        pr_body = format_plan_header_body_for_test(learn_status="completed_no_plan")
         plan = Plan(
             pr_identifier="123",
             title="Test Plan",
-            body=plan_body,
+            body=pr_body,
             state=PlanState.OPEN,
             url="https://github.com/test/repo/issues/123",
             labels=[],
@@ -1142,15 +1142,15 @@ class TestLearnStatusDisplay:
             updated_at=datetime.now(UTC),
             metadata={},
             objective_id=None,
-            header_fields=_parse_header_fields(plan_body),
+            header_fields=_parse_header_fields(pr_body),
         )
 
         row = provider._build_row_data(
             plan=plan,
-            plan_id=123,
+            pr_number=123,
             pr_linkages={},
             workflow_run=None,
-            worktree_by_plan_id={},
+            worktree_by_pr_number={},
             use_graphite=False,
         )
 
@@ -1186,20 +1186,20 @@ class TestLearnStatusDisplay:
             root=repo_root,
             repo_id=GitHubRepoId(owner="test", repo="repo"),
         )
-        provider = RealPlanDataProvider(
+        provider = RealPrDataProvider(
             ctx=ctx,
             location=location,
             http_client=FakeHttpClient(),
         )
 
         # Plan with learn_status: completed_with_plan and learn_plan_issue
-        plan_body = format_plan_header_body_for_test(
+        pr_body = format_plan_header_body_for_test(
             learn_status="completed_with_plan", learn_plan_issue=456
         )
         plan = Plan(
             pr_identifier="123",
             title="Test Plan",
-            body=plan_body,
+            body=pr_body,
             state=PlanState.OPEN,
             url="https://github.com/test/repo/issues/123",
             labels=[],
@@ -1208,15 +1208,15 @@ class TestLearnStatusDisplay:
             updated_at=datetime.now(UTC),
             metadata={},
             objective_id=None,
-            header_fields=_parse_header_fields(plan_body),
+            header_fields=_parse_header_fields(pr_body),
         )
 
         row = provider._build_row_data(
             plan=plan,
-            plan_id=123,
+            pr_number=123,
             pr_linkages={},
             workflow_run=None,
-            worktree_by_plan_id={},
+            worktree_by_pr_number={},
             use_graphite=False,
         )
 
@@ -1254,20 +1254,20 @@ class TestLearnStatusDisplay:
             root=repo_root,
             repo_id=GitHubRepoId(owner="test", repo="repo"),
         )
-        provider = RealPlanDataProvider(
+        provider = RealPrDataProvider(
             ctx=ctx,
             location=location,
             http_client=FakeHttpClient(),
         )
 
         # Plan with learn_status: plan_completed and learn_plan_pr
-        plan_body = format_plan_header_body_for_test(
+        pr_body = format_plan_header_body_for_test(
             learn_status="plan_completed", learn_plan_issue=456, learn_plan_pr=789
         )
         plan = Plan(
             pr_identifier="123",
             title="Test Plan",
-            body=plan_body,
+            body=pr_body,
             state=PlanState.OPEN,
             url="https://github.com/test/repo/issues/123",
             labels=[],
@@ -1276,15 +1276,15 @@ class TestLearnStatusDisplay:
             updated_at=datetime.now(UTC),
             metadata={},
             objective_id=None,
-            header_fields=_parse_header_fields(plan_body),
+            header_fields=_parse_header_fields(pr_body),
         )
 
         row = provider._build_row_data(
             plan=plan,
-            plan_id=123,
+            pr_number=123,
             pr_linkages={},
             workflow_run=None,
-            worktree_by_plan_id={},
+            worktree_by_pr_number={},
             use_graphite=False,
         )
 
@@ -1322,20 +1322,20 @@ class TestLearnStatusDisplay:
             root=repo_root,
             repo_id=GitHubRepoId(owner="test", repo="repo"),
         )
-        provider = RealPlanDataProvider(
+        provider = RealPrDataProvider(
             ctx=ctx,
             location=location,
             http_client=FakeHttpClient(),
         )
 
         # Plan with learn_status: completed_with_plan and learn_plan_issue
-        plan_body = format_plan_header_body_for_test(
+        pr_body = format_plan_header_body_for_test(
             learn_status="completed_with_plan", learn_plan_issue=456
         )
         plan = Plan(
             pr_identifier="123",
             title="Test Plan",
-            body=plan_body,
+            body=pr_body,
             state=PlanState.OPEN,
             url="https://github.com/test/repo/issues/123",
             labels=[],
@@ -1344,15 +1344,15 @@ class TestLearnStatusDisplay:
             updated_at=datetime(2024, 1, 1, tzinfo=UTC),
             metadata={},
             objective_id=None,
-            header_fields=_parse_header_fields(plan_body),
+            header_fields=_parse_header_fields(pr_body),
         )
 
         row = provider._build_row_data(
             plan=plan,
-            plan_id=123,
+            pr_number=123,
             pr_linkages={},
             workflow_run=None,
-            worktree_by_plan_id={},
+            worktree_by_pr_number={},
             use_graphite=False,
         )
 
@@ -1392,20 +1392,20 @@ class TestLearnStatusDisplay:
             root=repo_root,
             repo_id=GitHubRepoId(owner="test", repo="repo"),
         )
-        provider = RealPlanDataProvider(
+        provider = RealPrDataProvider(
             ctx=ctx,
             location=location,
             http_client=FakeHttpClient(),
         )
 
         # Plan with learn_status: completed_with_plan and learn_plan_issue
-        plan_body = format_plan_header_body_for_test(
+        pr_body = format_plan_header_body_for_test(
             learn_status="completed_with_plan", learn_plan_issue=456
         )
         plan = Plan(
             pr_identifier="123",
             title="Test Plan",
-            body=plan_body,
+            body=pr_body,
             state=PlanState.OPEN,
             url="https://github.com/test/repo/issues/123",
             labels=[],
@@ -1414,15 +1414,15 @@ class TestLearnStatusDisplay:
             updated_at=datetime(2024, 1, 1, tzinfo=UTC),
             metadata={},
             objective_id=None,
-            header_fields=_parse_header_fields(plan_body),
+            header_fields=_parse_header_fields(pr_body),
         )
 
         row = provider._build_row_data(
             plan=plan,
-            plan_id=123,
+            pr_number=123,
             pr_linkages={},
             workflow_run=None,
-            worktree_by_plan_id={},
+            worktree_by_pr_number={},
             use_graphite=False,
         )
 
@@ -1457,8 +1457,8 @@ def _make_roadmap_body(steps_yaml: str) -> str:
 class TestBlockingDepsPlans:
     """Tests for blocking dependency plan collection in _build_row_data."""
 
-    def _make_provider(self, tmp_path: Path) -> RealPlanDataProvider:
-        """Create a minimal RealPlanDataProvider for testing."""
+    def _make_provider(self, tmp_path: Path) -> RealPrDataProvider:
+        """Create a minimal RealPrDataProvider for testing."""
         repo_root = tmp_path / "repo"
         repo_root.mkdir()
         erk_dir = repo_root / ".erk"
@@ -1484,7 +1484,7 @@ class TestBlockingDepsPlans:
             root=repo_root,
             repo_id=GitHubRepoId(owner="test", repo="repo"),
         )
-        return RealPlanDataProvider(
+        return RealPrDataProvider(
             ctx=ctx,
             location=location,
             http_client=FakeHttpClient(),
@@ -1526,10 +1526,10 @@ class TestBlockingDepsPlans:
 
         row = provider._build_row_data(
             plan=plan,
-            plan_id=42,
+            pr_number=42,
             pr_linkages={},
             workflow_run=None,
-            worktree_by_plan_id={},
+            worktree_by_pr_number={},
             use_graphite=False,
         )
 
@@ -1569,10 +1569,10 @@ class TestBlockingDepsPlans:
 
         row = provider._build_row_data(
             plan=plan,
-            plan_id=42,
+            pr_number=42,
             pr_linkages={},
             workflow_run=None,
-            worktree_by_plan_id={},
+            worktree_by_pr_number={},
             use_graphite=False,
         )
 
@@ -1615,10 +1615,10 @@ class TestBlockingDepsPlans:
 
         row = provider._build_row_data(
             plan=plan,
-            plan_id=42,
+            pr_number=42,
             pr_linkages={},
             workflow_run=None,
-            worktree_by_plan_id={},
+            worktree_by_pr_number={},
             use_graphite=False,
         )
 
@@ -1663,10 +1663,10 @@ class TestBlockingDepsPlans:
 
         row = provider._build_row_data(
             plan=plan,
-            plan_id=42,
+            pr_number=42,
             pr_linkages={},
             workflow_run=None,
-            worktree_by_plan_id={},
+            worktree_by_pr_number={},
             use_graphite=False,
         )
 
@@ -1709,10 +1709,10 @@ class TestBlockingDepsPlans:
 
         row = provider._build_row_data(
             plan=plan,
-            plan_id=42,
+            pr_number=42,
             pr_linkages={},
             workflow_run=None,
-            worktree_by_plan_id={},
+            worktree_by_pr_number={},
             use_graphite=False,
         )
 
@@ -1759,10 +1759,10 @@ class TestBlockingDepsPlans:
 
         row = provider._build_row_data(
             plan=plan,
-            plan_id=42,
+            pr_number=42,
             pr_linkages={},
             workflow_run=None,
-            worktree_by_plan_id={},
+            worktree_by_pr_number={},
             use_graphite=False,
         )
 
@@ -1772,7 +1772,7 @@ class TestBlockingDepsPlans:
 
 
 class TestFetchPlansByIds:
-    """Tests for fetch_plans_by_ids method."""
+    """Tests for fetch_prs_by_ids method."""
 
     @staticmethod
     def _make_provider(
@@ -1780,7 +1780,7 @@ class TestFetchPlansByIds:
         *,
         issues_data: list[IssueInfo] | None = None,
         pr_linkages: dict[int, list[PullRequestInfo]] | None = None,
-    ) -> RealPlanDataProvider:
+    ) -> RealPrDataProvider:
         repo_root = tmp_path / "repo"
         repo_root.mkdir(exist_ok=True)
         erk_dir = repo_root / ".erk"
@@ -1808,20 +1808,20 @@ class TestFetchPlansByIds:
             root=repo_root,
             repo_id=GitHubRepoId(owner="test", repo="repo"),
         )
-        return RealPlanDataProvider(
+        return RealPrDataProvider(
             ctx=ctx,
             location=location,
             http_client=FakeHttpClient(),
         )
 
-    def test_empty_plan_ids_returns_empty(self, tmp_path: Path) -> None:
-        """Empty plan_ids set returns empty list without API calls."""
+    def test_empty_pr_ids_returns_empty(self, tmp_path: Path) -> None:
+        """Empty pr_ids set returns empty list without API calls."""
         provider = self._make_provider(tmp_path)
-        result = provider.fetch_plans_by_ids(set())
+        result = provider.fetch_prs_by_ids(set())
         assert result == []
 
     def test_fetches_matching_issues(self, tmp_path: Path) -> None:
-        """Returns PlanRowData for each matching issue."""
+        """Returns PrRowData for each matching issue."""
         body = format_plan_header_body_for_test()
         issues = [
             IssueInfo(
@@ -1850,14 +1850,14 @@ class TestFetchPlansByIds:
             ),
         ]
         provider = self._make_provider(tmp_path, issues_data=issues)
-        result = provider.fetch_plans_by_ids({100, 200})
+        result = provider.fetch_prs_by_ids({100, 200})
 
         assert len(result) == 2
-        plan_ids = {r.plan_id for r in result}
-        assert plan_ids == {100, 200}
+        pr_ids = {r.pr_number for r in result}
+        assert pr_ids == {100, 200}
 
-    def test_results_sorted_by_plan_id(self, tmp_path: Path) -> None:
-        """Results are sorted by plan_id ascending."""
+    def test_results_sorted_by_pr_number(self, tmp_path: Path) -> None:
+        """Results are sorted by pr_number ascending."""
         body = format_plan_header_body_for_test()
         issues = [
             IssueInfo(
@@ -1886,16 +1886,16 @@ class TestFetchPlansByIds:
             ),
         ]
         provider = self._make_provider(tmp_path, issues_data=issues)
-        result = provider.fetch_plans_by_ids({100, 300})
+        result = provider.fetch_prs_by_ids({100, 300})
 
-        assert [r.plan_id for r in result] == [100, 300]
+        assert [r.pr_number for r in result] == [100, 300]
 
 
 class TestAppendTimingLog:
     """Tests for _append_timing_log method."""
 
-    def _make_provider(self, tmp_path: Path) -> RealPlanDataProvider:
-        """Create a RealPlanDataProvider for testing timing log."""
+    def _make_provider(self, tmp_path: Path) -> RealPrDataProvider:
+        """Create a RealPrDataProvider for testing timing log."""
         repo_root = tmp_path / "repo"
         repo_root.mkdir()
         erk_dir = repo_root / ".erk"
@@ -1921,7 +1921,7 @@ class TestAppendTimingLog:
             root=repo_root,
             repo_id=GitHubRepoId(owner="test", repo="repo"),
         )
-        return RealPlanDataProvider(
+        return RealPrDataProvider(
             ctx=ctx,
             location=location,
             http_client=FakeHttpClient(),
@@ -1931,7 +1931,7 @@ class TestAppendTimingLog:
         return FetchTimings(
             rest_issues_ms=1000,
             graphql_enrich_ms=500,
-            plan_parsing_ms=200,
+            pr_parsing_ms=200,
             workflow_runs_ms=300,
             worktree_mapping_ms=50,
             row_building_ms=20,

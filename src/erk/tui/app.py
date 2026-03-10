@@ -19,8 +19,8 @@ from erk.tui.actions.filter_actions import FilterActionsMixin
 from erk.tui.actions.navigation import NavigationActionsMixin
 from erk.tui.actions.palette import PaletteActionsMixin
 from erk.tui.commands.provider import MainListCommandProvider, RunCommandProvider
-from erk.tui.data.provider_abc import PlanDataProvider
-from erk.tui.data.types import FetchTimings, PlanFilters, PlanRowData, RunRowData
+from erk.tui.data.provider_abc import PrDataProvider
+from erk.tui.data.types import FetchTimings, PrFilters, PrRowData, RunRowData
 from erk.tui.filtering.logic import filter_plans
 from erk.tui.filtering.types import FilterMode, FilterState
 from erk.tui.operations.logic import build_github_url
@@ -73,7 +73,7 @@ class ErkDashApp(
         Binding("c", "view_comments", "Comments", show=False),
         Binding("h", "view_checks", "Checks", show=False),
         Binding("i", "show_implement", "Implement"),
-        Binding("v", "view_plan_body", "View", show=False),
+        Binding("v", "view_pr_body", "View", show=False),
         Binding("l", "launch", "Launch"),
         Binding("slash", "start_filter", "Filter", key_display="/"),
         Binding("s", "toggle_sort", "Sort"),
@@ -108,9 +108,9 @@ class ErkDashApp(
     def __init__(
         self,
         *,
-        provider: PlanDataProvider,
+        provider: PrDataProvider,
         service: PrService,
-        filters: PlanFilters,
+        filters: PrFilters,
         refresh_interval: float = 15.0,
         initial_sort: SortState | None = None,
         cmux_integration: bool = False,
@@ -135,8 +135,8 @@ class ErkDashApp(
         self._run_table: RunDataTable | None = None
         self._status_bar: StatusBar | None = None
         self._filter_input: Input | None = None
-        self._all_rows: list[PlanRowData] = []  # Unfiltered data
-        self._rows: list[PlanRowData] = []  # Currently displayed (possibly filtered)
+        self._all_rows: list[PrRowData] = []  # Unfiltered data
+        self._rows: list[PrRowData] = []  # Currently displayed (possibly filtered)
         self._refresh_task: asyncio.Task | None = None
         self._loading = True
         self._filter_state = FilterState.initial()
@@ -149,7 +149,7 @@ class ErkDashApp(
         self._activity_loading = False
         self._view_mode: ViewMode = ViewMode.PLANS
         self._view_bar: ViewBar | None = None
-        self._data_cache: dict[tuple[str, ...], list[PlanRowData]] = {}
+        self._data_cache: dict[tuple[str, ...], list[PrRowData]] = {}
         self._run_rows: list[RunRowData] = []
         self._run_data_cache: list[RunRowData] | None = None
         self._show_all_users = False
@@ -221,7 +221,7 @@ class ErkDashApp(
 
         view_config = get_view_config(fetched_mode)
         active_creator = None if self._show_all_users else self._original_creator
-        active_filters = PlanFilters(
+        active_filters = PrFilters(
             labels=view_config.labels,
             state=self._plan_filters.state,
             run_state=self._plan_filters.run_state,
@@ -237,7 +237,7 @@ class ErkDashApp(
             # Run sync fetch in executor to avoid blocking
             loop = asyncio.get_running_loop()
             rows, fetch_timings = await loop.run_in_executor(
-                None, self._provider.fetch_plans, active_filters
+                None, self._provider.fetch_prs, active_filters
             )
 
             # If sorting by activity, also fetch activity data
@@ -300,7 +300,7 @@ class ErkDashApp(
 
     def _update_table(
         self,
-        rows: list[PlanRowData],
+        rows: list[PrRowData],
         update_time: str | None,
         duration: float | None,
         *,
@@ -348,7 +348,7 @@ class ErkDashApp(
             if update_time is not None:
                 self._status_bar.set_last_update(update_time, duration, fetch_timings=fetch_timings)
 
-    def _apply_filter_and_sort(self, rows: list[PlanRowData]) -> list[PlanRowData]:
+    def _apply_filter_and_sort(self, rows: list[PrRowData]) -> list[PrRowData]:
         """Apply current filter and sort to rows.
 
         Filter pipeline: objective filter → stack filter → text filter → sort.
@@ -385,7 +385,7 @@ class ErkDashApp(
         )
 
     @staticmethod
-    def _filter_rows_for_view(rows: list[PlanRowData], mode: ViewMode) -> list[PlanRowData]:
+    def _filter_rows_for_view(rows: list[PrRowData], mode: ViewMode) -> list[PrRowData]:
         """Filter rows based on view mode.
 
         Plans view excludes learn plans; Learn view includes only learn plans.
@@ -591,10 +591,10 @@ class ErkDashApp(
         """Handle click on plan cell - open issue in browser."""
         if event.row_index < len(self._rows):
             row = self._rows[event.row_index]
-            if row.plan_url:
-                self._service.browser.launch(row.plan_url)
+            if row.pr_url:
+                self._service.browser.launch(row.pr_url)
                 if self._status_bar is not None:
-                    self._status_bar.set_message(f"Opened plan #{row.plan_id}")
+                    self._status_bar.set_message(f"Opened plan #{row.pr_number}")
 
     @on(PlanDataTable.PrClicked)
     def on_pr_clicked(self, event: PlanDataTable.PrClicked) -> None:
@@ -665,9 +665,9 @@ class ErkDashApp(
         """Handle click on objective cell - open objective issue in browser."""
         if event.row_index < len(self._rows):
             row = self._rows[event.row_index]
-            if row.objective_issue is not None and row.plan_url:
+            if row.objective_issue is not None and row.pr_url:
                 self._service.browser.launch(
-                    build_github_url(row.plan_url, "issues", row.objective_issue)
+                    build_github_url(row.pr_url, "issues", row.objective_issue)
                 )
                 if self._status_bar is not None:
                     self._status_bar.set_message(f"Opened objective #{row.objective_issue}")

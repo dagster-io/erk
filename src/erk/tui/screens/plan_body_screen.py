@@ -94,8 +94,8 @@ class PlanBodyScreen(ModalScreen):
         self,
         *,
         service: PrService,
-        plan_id: int,
-        plan_body: str,
+        pr_number: int,
+        pr_body: str,
         full_title: str,
         content_type: Literal["Plan", "Objective"],
     ) -> None:
@@ -103,15 +103,15 @@ class PlanBodyScreen(ModalScreen):
 
         Args:
             service: Plan service for fetching plan/objective content
-            plan_id: The plan identifier
-            plan_body: The plan body (contains metadata with comment ID)
+            pr_number: The plan identifier
+            pr_body: The plan body (contains metadata with comment ID)
             full_title: The full plan/objective title for display
             content_type: Display label - "Plan" or "Objective"
         """
         super().__init__()
         self._service = service
-        self._plan_id = plan_id
-        self._plan_body = plan_body
+        self._pr_number = pr_number
+        self._pr_body = pr_body
         self._full_title = full_title
         self._content_type = content_type
         self._content: str | None = None
@@ -124,7 +124,7 @@ class PlanBodyScreen(ModalScreen):
         with Vertical(id="body-dialog"):
             # Header: Plan/Objective number + title
             with Vertical(id="body-header"):
-                yield Label(f"{self._content_type} #{self._plan_id}", id="body-plan-number")
+                yield Label(f"{self._content_type} #{self._pr_number}", id="body-plan-number")
                 yield Label(self._full_title, id="body-title", markup=False)
 
             # Divider
@@ -150,9 +150,9 @@ class PlanBodyScreen(ModalScreen):
         # them in the UI rather than crashing the TUI.
         try:
             if self._content_type == "Objective":
-                content = self._service.fetch_objective_content(self._plan_id, self._plan_body)
+                content = self._service.fetch_objective_content(self._pr_number, self._pr_body)
             else:
-                content = self._service.fetch_pr_content(self._plan_id, self._plan_body)
+                content = self._service.fetch_pr_content(self._pr_number, self._pr_body)
         except Exception as e:
             error = str(e)
 

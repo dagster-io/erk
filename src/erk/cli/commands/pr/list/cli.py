@@ -19,8 +19,8 @@ from erk.core.context import ErkContext
 from erk.core.display_utils import strip_rich_markup
 from erk.core.repo_discovery import ensure_erk_metadata_dir
 from erk.tui.app import ErkDashApp
-from erk.tui.data.real_provider import RealPlanDataProvider
-from erk.tui.data.types import PlanFilters, PlanRowData
+from erk.tui.data.real_provider import RealPrDataProvider
+from erk.tui.data.types import PrFilters, PrRowData
 from erk.tui.sorting.types import SortKey, SortState
 from erk_shared.agentclick.machine_command import MachineCommandError
 from erk_shared.gateway.browser.real import RealBrowserLauncher
@@ -124,16 +124,16 @@ def dash_options(f: Callable[P, T]) -> Callable[P, T]:
 
 
 def _build_static_table(
-    rows: list[PlanRowData],
+    rows: list[PrRowData],
     *,
     show_pr_column: bool,
 ) -> Table:
-    """Build a Rich static table from PlanRowData rows.
+    """Build a Rich static table from PrRowData rows.
 
     Column order matches the TUI PlanDataTable exactly.
 
     Args:
-        rows: List of PlanRowData to display
+        rows: List of PrRowData to display
         show_pr_column: Whether to show a separate PR column
 
     Returns:
@@ -164,11 +164,11 @@ def _build_static_table(
 
 
 def _row_to_static_values(
-    row: PlanRowData,
+    row: PrRowData,
     *,
     show_pr_column: bool,
 ) -> tuple[str | Text, ...]:
-    """Convert PlanRowData to static table cell values.
+    """Convert PrRowData to static table cell values.
 
     Mirrors PlanDataTable._row_to_values() for Rich Console rendering.
 
@@ -179,9 +179,9 @@ def _row_to_static_values(
     Returns:
         Tuple of cell values matching column order
     """
-    plan_cell: str | Text = f"#{row.plan_id}"
-    if row.plan_url:
-        plan_cell = f"[link={row.plan_url}]#{row.plan_id}[/link]"
+    plan_cell: str | Text = f"#{row.pr_number}"
+    if row.pr_url:
+        plan_cell = f"[link={row.pr_url}]#{row.pr_number}[/link]"
 
     objective_cell: str | Text = row.objective_display
     if row.objective_issue is not None and row.objective_url is not None:
@@ -327,13 +327,13 @@ def _run_interactive_mode(
         user_output(click.style("Error: ", fg="red") + "GitHub authentication not available")
         raise SystemExit(1)
 
-    provider = RealPlanDataProvider(ctx, location=location, http_client=http_client)
+    provider = RealPrDataProvider(ctx, location=location, http_client=http_client)
     service = RealPrService(
         ctx, location=location, clipboard=clipboard, browser=browser, http_client=http_client
     )
     effective_state: IssueFilterState = "closed" if state == "closed" else "open"
 
-    filters = PlanFilters(
+    filters = PrFilters(
         labels=labels,
         state=effective_state,
         run_state=run_state,

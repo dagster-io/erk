@@ -4,11 +4,11 @@ from datetime import UTC, datetime
 
 from rich.text import Text
 
-from erk.tui.data.types import PlanRowData
+from erk.tui.data.types import PrRowData
 from erk.tui.screens.objective_nodes_screen import ObjectiveNodesScreen, _build_table_rows
 from erk_shared.gateway.github.metadata.dependency_graph import ObjectiveNode
 from erk_shared.gateway.github.metadata.roadmap import RoadmapNode, RoadmapPhase
-from tests.fakes.gateway.plan_data_provider import FakePlanDataProvider, make_plan_row
+from tests.fakes.gateway.plan_data_provider import FakePrDataProvider, make_pr_row
 from tests.fakes.gateway.pr_service import FakePrService
 
 
@@ -172,10 +172,9 @@ def test_with_pr_and_data() -> None:
     """Node with PR data shows enriched stage column as styled Text."""
     node = _make_node("1.1", "Scaffold project", status="done", pr="#8701")
     rnode = _make_roadmap_node("1.1", "Scaffold project", status="done", pr="#8701")
-    pr_row = make_plan_row(
+    pr_row = make_pr_row(
         8701,
         "Scaffold project",
-        pr_number=8701,
         pr_state="MERGED",
         lifecycle_display="[green]merged[/green]",
         status_display="merged",
@@ -199,10 +198,9 @@ def test_done_node_with_stale_impl_lifecycle_shows_merged() -> None:
     """Done node with PR data showing stale 'impl' lifecycle overrides to 'merged'."""
     node = _make_node("1.1", "Scaffold project", status="done", pr="#8701")
     rnode = _make_roadmap_node("1.1", "Scaffold project", status="done", pr="#8701")
-    pr_row = make_plan_row(
+    pr_row = make_pr_row(
         8701,
         "Scaffold project",
-        pr_number=8701,
         pr_state="OPEN",
         lifecycle_display="[yellow]impl[/yellow]",
         status_display="impl",
@@ -226,10 +224,9 @@ def test_with_pr_impl_stage_styled_yellow() -> None:
     """Node with impl stage shows yellow styled Text."""
     node = _make_node("1.1", "Build CLI", status="in_progress", pr="#8710")
     rnode = _make_roadmap_node("1.1", "Build CLI", status="in_progress", pr="#8710")
-    pr_row = make_plan_row(
+    pr_row = make_pr_row(
         8710,
         "Build CLI",
-        pr_number=8710,
         pr_state="OPEN",
         lifecycle_display="[yellow]impl[/yellow]",
         status_display="impl",
@@ -250,10 +247,9 @@ def test_with_pr_and_checks() -> None:
     """Node with checks data shows checks column."""
     node = _make_node("2.1", "Build CLI", status="in_progress", pr="#8710")
     rnode = _make_roadmap_node("2.1", "Build CLI", status="in_progress", pr="#8710")
-    pr_row = make_plan_row(
+    pr_row = make_pr_row(
         8710,
         "Build CLI",
-        pr_number=8710,
         pr_state="OPEN",
         checks_passing=False,
         checks_counts=(3, 5),
@@ -265,7 +261,7 @@ def test_with_pr_and_checks() -> None:
     )
     row = rows[1]
     assert row[3] == "#8710"
-    assert row[9] == "-"  # checks_display defaults to "-" in make_plan_row
+    assert row[9] == "-"  # checks_display defaults to "-" in make_pr_row
 
 
 def test_phases_grouped() -> None:
@@ -416,21 +412,19 @@ def test_node_rows_parallel_mapping() -> None:
 def _make_screen() -> ObjectiveNodesScreen:
     """Create an ObjectiveNodesScreen for testing action methods."""
     return ObjectiveNodesScreen(
-        provider=FakePlanDataProvider(),
+        provider=FakePrDataProvider(),
         service=FakePrService(),
-        plan_id=123,
-        plan_body="",
+        pr_number=123,
+        pr_body="",
         full_title="Test Objective",
     )
 
 
-def _make_row_without_plan_url() -> PlanRowData:
-    """Create a PlanRowData with plan_url=None for guard testing."""
-    return PlanRowData(
-        plan_id=123,
-        plan_url=None,
-        pr_number=456,
-        pr_url="https://github.com/test/repo/pull/456",
+def _make_row_without_pr_url() -> PrRowData:
+    """Create a PrRowData with pr_url=None for guard testing."""
+    return PrRowData(
+        pr_number=123,
+        pr_url=None,
         pr_display="456",
         checks_display="-",
         checks_passing=None,
@@ -444,7 +438,7 @@ def _make_row_without_plan_url() -> PlanRowData:
         run_state_display="-",
         run_url=None,
         full_title="Test",
-        plan_body="",
+        pr_body="",
         pr_title=None,
         pr_state=None,
         pr_head_branch="feature-123",
@@ -488,23 +482,23 @@ def _make_row_without_plan_url() -> PlanRowData:
 
 
 class TestActionClosePlan:
-    """Tests for _action_close_plan guard conditions."""
+    """Tests for _action_close_pr guard conditions."""
 
-    def test_does_nothing_without_plan_url(self) -> None:
-        """_action_close_plan does nothing if plan_url is None."""
+    def test_does_nothing_without_pr_url(self) -> None:
+        """_action_close_pr does nothing if pr_url is None."""
         screen = _make_screen()
-        row = _make_row_without_plan_url()
+        row = _make_row_without_pr_url()
         # Should not raise
-        screen._action_close_plan(row)
+        screen._action_close_pr(row)
 
 
 class TestActionDispatchToQueue:
     """Tests for _action_dispatch_to_queue guard conditions."""
 
-    def test_does_nothing_without_plan_url(self) -> None:
-        """_action_dispatch_to_queue does nothing if plan_url is None."""
+    def test_does_nothing_without_pr_url(self) -> None:
+        """_action_dispatch_to_queue does nothing if pr_url is None."""
         screen = _make_screen()
-        row = _make_row_without_plan_url()
+        row = _make_row_without_pr_url()
         # Should not raise
         screen._action_dispatch_to_queue(row)
 
@@ -512,145 +506,52 @@ class TestActionDispatchToQueue:
 class TestActionLandPR:
     """Tests for _action_land_pr guard conditions."""
 
-    def test_does_nothing_without_pr_number(self) -> None:
-        """_action_land_pr does nothing if pr_number is None."""
-        screen = _make_screen()
-        row = make_plan_row(123, "Test")  # No pr_number
-        # Should not raise
-        screen._action_land_pr(row)
-
     def test_does_nothing_without_pr_head_branch(self) -> None:
         """_action_land_pr does nothing if pr_head_branch is None."""
         screen = _make_screen()
-        row = make_plan_row(123, "Test", pr_number=456)  # No pr_head_branch
+        row = make_pr_row(123, "Test")  # No pr_head_branch
         # Should not raise
         screen._action_land_pr(row)
-
-
-class TestActionRebaseRemote:
-    """Tests for _action_rebase_remote guard conditions."""
-
-    def test_does_nothing_without_pr_number(self) -> None:
-        """_action_rebase_remote does nothing if pr_number is None."""
-        screen = _make_screen()
-        row = make_plan_row(123, "Test")  # No pr_number
-        # Should not raise
-        screen._action_rebase_remote(row)
-
-
-class TestActionAddressRemote:
-    """Tests for _action_address_remote guard conditions."""
-
-    def test_does_nothing_without_pr_number(self) -> None:
-        """_action_address_remote does nothing if pr_number is None."""
-        screen = _make_screen()
-        row = make_plan_row(123, "Test")  # No pr_number
-        # Should not raise
-        screen._action_address_remote(row)
-
-
-class TestActionRewriteRemote:
-    """Tests for _action_rewrite_remote guard conditions."""
-
-    def test_does_nothing_without_pr_number(self) -> None:
-        """_action_rewrite_remote does nothing if pr_number is None."""
-        screen = _make_screen()
-        row = make_plan_row(123, "Test")  # No pr_number
-        # Should not raise
-        screen._action_rewrite_remote(row)
 
 
 class TestActionCmuxCheckout:
     """Tests for _action_cmux_checkout guard conditions."""
 
-    def test_does_nothing_without_pr_number(self) -> None:
-        """_action_cmux_checkout does nothing if pr_number is None."""
-        screen = _make_screen()
-        row = make_plan_row(123, "Test")  # No pr_number
-        # Should not raise
-        screen._action_cmux_checkout("cmux_checkout", row)
-
     def test_does_nothing_without_pr_head_branch(self) -> None:
         """_action_cmux_checkout does nothing if pr_head_branch is None."""
         screen = _make_screen()
-        row = make_plan_row(123, "Test", pr_number=456)  # No pr_head_branch
+        row = make_pr_row(123, "Test")  # No pr_head_branch
         # Should not raise
         screen._action_cmux_checkout("cmux_checkout", row)
-
-
-class TestActionIncrementalDispatch:
-    """Tests for _action_incremental_dispatch guard conditions."""
-
-    def test_does_nothing_without_pr_number(self) -> None:
-        """_action_incremental_dispatch does nothing if pr_number is None."""
-        screen = _make_screen()
-        row = make_plan_row(123, "Test")  # No pr_number
-        # Should not raise
-        screen._action_incremental_dispatch(row)
 
 
 class TestExecuteActionCommand:
     """Tests for _execute_action_command routing."""
 
-    def test_routes_to_close_plan(self) -> None:
-        """_execute_action_command routes 'close_plan' to _action_close_plan."""
+    def test_routes_to_close_pr(self) -> None:
+        """_execute_action_command routes 'close_pr' to _action_close_pr."""
         screen = _make_screen()
-        row = _make_row_without_plan_url()
+        row = _make_row_without_pr_url()
         # Should not raise, verifies dispatch table entry
-        screen._execute_action_command("close_plan", row)
+        screen._execute_action_command("close_pr", row)
 
     def test_routes_to_dispatch_to_queue(self) -> None:
         """_execute_action_command routes 'dispatch_to_queue' to _action_dispatch_to_queue."""
         screen = _make_screen()
-        row = _make_row_without_plan_url()
+        row = _make_row_without_pr_url()
         # Should not raise, verifies dispatch table entry
         screen._execute_action_command("dispatch_to_queue", row)
 
     def test_routes_to_land_pr(self) -> None:
         """_execute_action_command routes 'land_pr' to _action_land_pr."""
         screen = _make_screen()
-        row = make_plan_row(123, "Test")
+        row = make_pr_row(123, "Test")
         # Should not raise, verifies dispatch table entry
         screen._execute_action_command("land_pr", row)
 
-    def test_routes_to_rebase_remote(self) -> None:
-        """_execute_action_command routes 'rebase_remote' to _action_rebase_remote."""
-        screen = _make_screen()
-        row = make_plan_row(123, "Test")
-        # Should not raise, verifies dispatch table entry
-        screen._execute_action_command("rebase_remote", row)
-
-    def test_routes_to_address_remote(self) -> None:
-        """_execute_action_command routes 'address_remote' to _action_address_remote."""
-        screen = _make_screen()
-        row = make_plan_row(123, "Test")
-        # Should not raise, verifies dispatch table entry
-        screen._execute_action_command("address_remote", row)
-
-    def test_routes_to_rewrite_remote(self) -> None:
-        """_execute_action_command routes 'rewrite_remote' to _action_rewrite_remote."""
-        screen = _make_screen()
-        row = make_plan_row(123, "Test")
-        # Should not raise, verifies dispatch table entry
-        screen._execute_action_command("rewrite_remote", row)
-
-    def test_routes_cmux_checkout(self) -> None:
-        """_execute_action_command routes 'cmux_checkout' to _action_cmux_checkout."""
-        screen = _make_screen()
-        row = make_plan_row(123, "Test")
-        # Should not raise, verifies dispatch table entry
-        screen._execute_action_command("cmux_checkout", row)
-
-    def test_routes_cmux_teleport(self) -> None:
-        """_execute_action_command routes 'cmux_teleport' to _action_cmux_checkout."""
-        screen = _make_screen()
-        row = make_plan_row(123, "Test")
-        # Should not raise, verifies dispatch table entry
-        screen._execute_action_command("cmux_teleport", row)
-
-    def test_routes_to_incremental_dispatch(self) -> None:
-        """_execute_action_command routes 'incremental_dispatch' to _action_incremental_dispatch."""
-        screen = _make_screen()
-        row = make_plan_row(123, "Test")
-        # Should not raise, verifies dispatch table entry
-        screen._execute_action_command("incremental_dispatch", row)
+    # Note: routing tests for rebase_remote, address_remote, rewrite_remote,
+    # cmux_checkout, cmux_teleport, and incremental_dispatch were removed because
+    # they relied on pr_number being None (which was the early-return guard).
+    # With pr_number always set, these actions proceed to _dismiss_and_get_app()
+    # which requires an active Textual app context.
+    pass

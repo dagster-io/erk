@@ -11,7 +11,7 @@ from erk_shared.gateway.github.types import IssueFilterState
 
 
 @dataclass(frozen=True)
-class PlanRowData:
+class PrRowData:
     """Row data for displaying a plan in the TUI table.
 
     Contains pre-formatted display strings and raw data needed for actions.
@@ -25,13 +25,10 @@ class PlanRowData:
 
     Attributes:
 
-        plan_id: GitHub issue number (e.g., 123). Never None.
-        plan_url: Full URL to the GitHub issue. None when unavailable.
-        full_title: Complete untruncated plan title. Empty string possible.
-        plan_body: Raw issue body text (markdown). Empty string possible.
-
-        pr_number: PR number if linked, None otherwise.
-        pr_url: URL to PR (GitHub or Graphite), None if no PR.
+        pr_number: GitHub issue/PR number (e.g., 123). Never None.
+        pr_url: URL to PR (GitHub or Graphite), None if unavailable.
+        full_title: Complete untruncated title. Empty string possible.
+        pr_body: Raw issue body text (markdown). Empty string possible.
         pr_display: Formatted PR cell content (e.g., "#123 👀"). Always a string.
         pr_title: PR title if different from issue title. None if no PR.
         pr_state: PR state ("OPEN", "MERGED", "CLOSED"). None if no PR.
@@ -94,9 +91,7 @@ class PlanRowData:
         status_display: Status indicator emojis (e.g., "🚀", "👀 💥", "-").
     """
 
-    plan_id: int
-    plan_url: str | None
-    pr_number: int | None
+    pr_number: int
     pr_url: str | None
     pr_display: str
     checks_display: str
@@ -111,7 +106,7 @@ class PlanRowData:
     run_state_display: str
     run_url: str | None
     full_title: str
-    plan_body: str
+    pr_body: str
     pr_title: str | None
     pr_state: str | None
     pr_head_branch: str | None
@@ -211,7 +206,7 @@ class FetchTimings:
 
     rest_issues_ms: float
     graphql_enrich_ms: float
-    plan_parsing_ms: float
+    pr_parsing_ms: float
     workflow_runs_ms: float
     worktree_mapping_ms: float
     row_building_ms: float
@@ -223,7 +218,7 @@ class FetchTimings:
         entries = [
             ("rest", self.rest_issues_ms, 0),
             ("gql", self.graphql_enrich_ms, 0),
-            ("parse", self.plan_parsing_ms, 100),
+            ("parse", self.pr_parsing_ms, 100),
             ("wf", self.workflow_runs_ms, 0),
             ("wt", self.worktree_mapping_ms, 100),
             ("rows", self.row_building_ms, 100),
@@ -233,7 +228,7 @@ class FetchTimings:
 
 
 @dataclass(frozen=True)
-class PlanFilters:
+class PrFilters:
     """Filter options for plan list queries.
 
     Matches options from the existing CLI command for consistency.
@@ -262,9 +257,9 @@ class PlanFilters:
     lifecycle_stage: str | None = None
 
     @staticmethod
-    def default() -> PlanFilters:
+    def default() -> PrFilters:
         """Create default filters (open erk-pr issues)."""
-        return PlanFilters(
+        return PrFilters(
             labels=("erk-pr",),
             state="open",
             run_state=None,
@@ -276,8 +271,8 @@ class PlanFilters:
         )
 
 
-def serialize_plan_row(row: PlanRowData) -> dict[str, Any]:
-    """Convert PlanRowData to JSON-serializable dict.
+def serialize_pr_row(row: PrRowData) -> dict[str, Any]:
+    """Convert PrRowData to JSON-serializable dict.
 
     Handles datetime fields (to ISO 8601 strings) and tuple fields
     (log_entries, objective_deps_plans) to lists for JSON compatibility.

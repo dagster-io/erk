@@ -2,51 +2,51 @@
 
 from abc import ABC, abstractmethod
 
-from erk.tui.data.types import FetchTimings, PlanFilters, PlanRowData, RunRowData
+from erk.tui.data.types import FetchTimings, PrFilters, PrRowData, RunRowData
 from erk.tui.sorting.types import BranchActivity
 
 
-class PlanDataProvider(ABC):
+class PrDataProvider(ABC):
     """Abstract base class for TUI plan data assembly.
 
     Contains only the methods that produce TUI-specific types
-    (PlanRowData, FetchTimings, BranchActivity). Domain operations
+    (PrRowData, FetchTimings, BranchActivity). Domain operations
     (close_pr, dispatch, fetch_content, etc.) live in PrService.
     """
 
     @abstractmethod
-    def fetch_plans(self, filters: PlanFilters) -> tuple[list[PlanRowData], FetchTimings | None]:
+    def fetch_prs(self, filters: PrFilters) -> tuple[list[PrRowData], FetchTimings | None]:
         """Fetch plans matching the given filters.
 
         Args:
             filters: Filter options for the query
 
         Returns:
-            Tuple of (list of PlanRowData for display, optional FetchTimings breakdown)
+            Tuple of (list of PrRowData for display, optional FetchTimings breakdown)
         """
         ...
 
     @abstractmethod
-    def fetch_plans_by_ids(self, plan_ids: set[int]) -> list[PlanRowData]:
+    def fetch_prs_by_ids(self, pr_ids: set[int]) -> list[PrRowData]:
         """Fetch specific plans by their GitHub numbers.
 
         Args:
-            plan_ids: Set of plan numbers to fetch (issue or PR numbers)
+            pr_ids: Set of plan numbers to fetch (issue or PR numbers)
 
         Returns:
-            List of PlanRowData objects for the specified plans, sorted by plan_id
+            List of PrRowData objects for the specified plans, sorted by pr_number
         """
         ...
 
     @abstractmethod
-    def fetch_plans_for_objective(self, objective_issue: int) -> list[PlanRowData]:
+    def fetch_prs_for_objective(self, objective_issue: int) -> list[PrRowData]:
         """Fetch plans associated with a specific objective.
 
         Args:
             objective_issue: The objective issue number to filter by
 
         Returns:
-            List of PlanRowData objects for plans linked to this objective
+            List of PrRowData objects for plans linked to this objective
         """
         ...
 
@@ -60,13 +60,13 @@ class PlanDataProvider(ABC):
         ...
 
     @abstractmethod
-    def fetch_branch_activity(self, rows: list[PlanRowData]) -> dict[int, BranchActivity]:
+    def fetch_branch_activity(self, rows: list[PrRowData]) -> dict[int, BranchActivity]:
         """Fetch branch activity for plans that exist locally.
 
         Args:
             rows: List of plan rows to fetch activity for
 
         Returns:
-            Mapping of plan_id to BranchActivity for plans with local worktrees.
+            Mapping of pr_number to BranchActivity for plans with local worktrees.
         """
         ...

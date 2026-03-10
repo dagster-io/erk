@@ -3,9 +3,9 @@
 import pytest
 
 from erk.tui.app import ErkDashApp
-from erk.tui.data.types import PlanFilters
+from erk.tui.data.types import PrFilters
 from erk.tui.widgets.plan_table import PlanDataTable
-from tests.fakes.gateway.plan_data_provider import FakePlanDataProvider, make_plan_row
+from tests.fakes.gateway.plan_data_provider import FakePrDataProvider, make_pr_row
 from tests.fakes.gateway.pr_service import FakePrService
 
 
@@ -15,8 +15,8 @@ class TestFilterMode:
     @pytest.mark.asyncio
     async def test_slash_activates_filter_mode(self) -> None:
         """Pressing '/' shows filter input and focuses it."""
-        provider = FakePlanDataProvider(plans=[make_plan_row(123, "Plan A")])
-        filters = PlanFilters.default()
+        provider = FakePrDataProvider(plans=[make_pr_row(123, "Plan A")])
+        filters = PrFilters.default()
         app = ErkDashApp(
             provider=provider, service=FakePrService(), filters=filters, refresh_interval=0
         )
@@ -38,14 +38,14 @@ class TestFilterMode:
     @pytest.mark.asyncio
     async def test_filter_narrows_results(self) -> None:
         """Typing in filter input narrows displayed results."""
-        provider = FakePlanDataProvider(
+        provider = FakePrDataProvider(
             plans=[
-                make_plan_row(123, "Add user authentication"),
-                make_plan_row(456, "Fix login bug"),
-                make_plan_row(789, "Refactor database"),
+                make_pr_row(123, "Add user authentication"),
+                make_pr_row(456, "Fix login bug"),
+                make_pr_row(789, "Refactor database"),
             ]
         )
-        filters = PlanFilters.default()
+        filters = PrFilters.default()
         app = ErkDashApp(
             provider=provider, service=FakePrService(), filters=filters, refresh_interval=0
         )
@@ -64,13 +64,13 @@ class TestFilterMode:
 
             # Only matching row should be visible
             assert len(app._rows) == 1
-            assert app._rows[0].plan_id == 456
+            assert app._rows[0].pr_number == 456
 
     @pytest.mark.asyncio
     async def test_escape_clears_then_exits(self) -> None:
         """First escape clears text, second exits filter mode."""
-        provider = FakePlanDataProvider(plans=[make_plan_row(123, "Plan A")])
-        filters = PlanFilters.default()
+        provider = FakePrDataProvider(plans=[make_pr_row(123, "Plan A")])
+        filters = PrFilters.default()
         app = ErkDashApp(
             provider=provider, service=FakePrService(), filters=filters, refresh_interval=0
         )
@@ -107,8 +107,8 @@ class TestFilterMode:
     @pytest.mark.asyncio
     async def test_enter_returns_focus_to_table(self) -> None:
         """Pressing Enter in filter input returns focus to table."""
-        provider = FakePlanDataProvider(plans=[make_plan_row(123, "Plan A")])
-        filters = PlanFilters.default()
+        provider = FakePrDataProvider(plans=[make_pr_row(123, "Plan A")])
+        filters = PrFilters.default()
         app = ErkDashApp(
             provider=provider, service=FakePrService(), filters=filters, refresh_interval=0
         )
@@ -135,14 +135,14 @@ class TestFilterMode:
     @pytest.mark.asyncio
     async def test_filter_by_issue_number(self) -> None:
         """Filter can match by issue number."""
-        provider = FakePlanDataProvider(
+        provider = FakePrDataProvider(
             plans=[
-                make_plan_row(123, "Plan A"),
-                make_plan_row(456, "Plan B"),
-                make_plan_row(789, "Plan C"),
+                make_pr_row(123, "Plan A"),
+                make_pr_row(456, "Plan B"),
+                make_pr_row(789, "Plan C"),
             ]
         )
-        filters = PlanFilters.default()
+        filters = PrFilters.default()
         app = ErkDashApp(
             provider=provider, service=FakePrService(), filters=filters, refresh_interval=0
         )
@@ -156,19 +156,19 @@ class TestFilterMode:
             await pilot.pause()
 
             assert len(app._rows) == 1
-            assert app._rows[0].plan_id == 456
+            assert app._rows[0].pr_number == 456
 
     @pytest.mark.asyncio
     async def test_filter_by_pr_number(self) -> None:
         """Filter can match by PR number."""
-        provider = FakePlanDataProvider(
+        provider = FakePrDataProvider(
             plans=[
-                make_plan_row(1, "Plan A", pr_number=100),
-                make_plan_row(2, "Plan B", pr_number=200),
-                make_plan_row(3, "Plan C"),
+                make_pr_row(1, "Plan A"),
+                make_pr_row(2, "Plan B"),
+                make_pr_row(3, "Plan C"),
             ]
         )
-        filters = PlanFilters.default()
+        filters = PrFilters.default()
         app = ErkDashApp(
             provider=provider, service=FakePrService(), filters=filters, refresh_interval=0
         )
@@ -182,4 +182,4 @@ class TestFilterMode:
             await pilot.pause()
 
             assert len(app._rows) == 1
-            assert app._rows[0].plan_id == 2
+            assert app._rows[0].pr_number == 2

@@ -3,9 +3,9 @@
 import pytest
 
 from erk.tui.app import ErkDashApp
-from erk.tui.data.types import PlanFilters
+from erk.tui.data.types import PrFilters
 from erk.tui.screens.one_shot_prompt_screen import OneShotPromptScreen
-from tests.fakes.gateway.plan_data_provider import FakePlanDataProvider, make_plan_row
+from tests.fakes.gateway.plan_data_provider import FakePrDataProvider, make_pr_row
 from tests.fakes.gateway.pr_service import FakePrService
 
 
@@ -15,8 +15,8 @@ class TestActionOneShotPrompt:
     @pytest.mark.asyncio
     async def test_x_pushes_prompt_screen(self) -> None:
         """Pressing 'x' pushes OneShotPromptScreen even with no rows."""
-        provider = FakePlanDataProvider(plans=[])
-        filters = PlanFilters.default()
+        provider = FakePrDataProvider(plans=[])
+        filters = PrFilters.default()
         app = ErkDashApp(
             provider=provider, service=FakePrService(), filters=filters, refresh_interval=0
         )
@@ -35,8 +35,8 @@ class TestActionOneShotPrompt:
     @pytest.mark.asyncio
     async def test_x_works_with_rows_present(self) -> None:
         """Pressing 'x' pushes OneShotPromptScreen when rows exist (global action)."""
-        provider = FakePlanDataProvider(plans=[make_plan_row(123, "Test Plan")])
-        filters = PlanFilters.default()
+        provider = FakePrDataProvider(plans=[make_pr_row(123, "Test Plan")])
+        filters = PrFilters.default()
         app = ErkDashApp(
             provider=provider, service=FakePrService(), filters=filters, refresh_interval=0
         )
@@ -54,8 +54,8 @@ class TestActionOneShotPrompt:
     @pytest.mark.asyncio
     async def test_escape_dismisses_without_dispatch(self) -> None:
         """Pressing Escape in OneShotPromptScreen dismisses without starting an operation."""
-        provider = FakePlanDataProvider(plans=[])
-        filters = PlanFilters.default()
+        provider = FakePrDataProvider(plans=[])
+        filters = PrFilters.default()
         app = ErkDashApp(
             provider=provider, service=FakePrService(), filters=filters, refresh_interval=0
         )
@@ -78,8 +78,8 @@ class TestActionOneShotPrompt:
     @pytest.mark.asyncio
     async def test_none_result_does_not_dispatch(self) -> None:
         """_on_one_shot_prompt_result with None does not start an operation."""
-        provider = FakePlanDataProvider(plans=[])
-        filters = PlanFilters.default()
+        provider = FakePrDataProvider(plans=[])
+        filters = PrFilters.default()
         app = ErkDashApp(
             provider=provider, service=FakePrService(), filters=filters, refresh_interval=0
         )

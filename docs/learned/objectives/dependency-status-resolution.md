@@ -25,7 +25,7 @@ The `_STATUS_ORDER` dict in `dependency_graph.py` defines priority ordering. See
 
 ## Display Logic
 
-The `objective_deps_display` field in `PlanRowData` shows the dependency status of the next node:
+The `objective_deps_display` field in `PrRowData` shows the dependency status of the next node:
 
 | Condition                           | Display                                                           |
 | ----------------------------------- | ----------------------------------------------------------------- |

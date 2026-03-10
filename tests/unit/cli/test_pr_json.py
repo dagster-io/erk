@@ -6,21 +6,21 @@ from datetime import UTC, datetime
 
 from erk.cli.commands.pr.list.operation import PrListResult
 from erk.cli.commands.pr.view.operation import PrViewResult, _serialize_header_fields
-from tests.fakes.gateway.plan_data_provider import make_plan_row
+from tests.fakes.gateway.plan_data_provider import make_pr_row
 
 
 class TestPrListResult:
     """Tests for PrListResult JSON serialization."""
 
     def test_to_json_dict_structure(self) -> None:
-        row = make_plan_row(42, "My Plan")
+        row = make_pr_row(42, "My Plan")
         result = PrListResult(rows=[row], warnings=[])
 
         data = result.to_json_dict()
 
         assert data["count"] == 1
         assert len(data["plans"]) == 1
-        assert data["plans"][0]["plan_id"] == 42
+        assert data["plans"][0]["pr_number"] == 42
         assert data["plans"][0]["full_title"] == "My Plan"
 
     def test_empty_plans(self) -> None:

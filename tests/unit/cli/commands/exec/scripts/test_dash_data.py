@@ -3,30 +3,27 @@
 import json
 from datetime import UTC, datetime
 
-from erk.tui.data.types import PlanRowData, serialize_plan_row
-from tests.fakes.gateway.plan_data_provider import make_plan_row
+from erk.tui.data.types import PrRowData, serialize_pr_row
+from tests.fakes.gateway.plan_data_provider import make_pr_row
 
 
-def test_serialize_plan_row_basic() -> None:
-    """Test basic serialization of PlanRowData to dict."""
-    row = make_plan_row(123, "Test Plan")
-    result = serialize_plan_row(row)
+def test_serialize_pr_row_basic() -> None:
+    """Test basic serialization of PrRowData to dict."""
+    row = make_pr_row(123, "Test Plan")
+    result = serialize_pr_row(row)
 
-    assert result["plan_id"] == 123
-    assert result["plan_url"] == "https://github.com/test/repo/issues/123"
-    assert result["pr_number"] is None
+    assert result["pr_number"] == 123
+    assert result["pr_url"] == "https://github.com/test/repo/issues/123"
     assert result["exists_locally"] is False
     assert result["last_local_impl_at"] is None
     assert result["last_remote_impl_at"] is None
 
 
-def test_serialize_plan_row_datetime_fields() -> None:
+def test_serialize_pr_row_datetime_fields() -> None:
     """Test that datetime fields are converted to ISO 8601 strings."""
     now = datetime(2025, 6, 15, 12, 30, 0, tzinfo=UTC)
-    row = PlanRowData(
-        plan_id=456,
-        plan_url="https://github.com/test/repo/issues/456",
-        pr_number=None,
+    row = PrRowData(
+        pr_number=456,
         pr_url=None,
         pr_display="-",
         checks_display="-",
@@ -41,7 +38,7 @@ def test_serialize_plan_row_datetime_fields() -> None:
         run_state_display="-",
         run_url=None,
         full_title="Datetime Test",
-        plan_body="",
+        pr_body="",
         pr_title=None,
         pr_state=None,
         pr_head_branch=None,
@@ -83,18 +80,16 @@ def test_serialize_plan_row_datetime_fields() -> None:
         status_display="-",
     )
 
-    result = serialize_plan_row(row)
+    result = serialize_pr_row(row)
 
     assert result["last_local_impl_at"] == "2025-06-15T12:30:00+00:00"
     assert result["last_remote_impl_at"] == "2025-06-15T12:30:00+00:00"
 
 
-def test_serialize_plan_row_tuple_to_list() -> None:
+def test_serialize_pr_row_tuple_to_list() -> None:
     """Test that tuple fields (log_entries) are converted to lists."""
-    row = PlanRowData(
-        plan_id=789,
-        plan_url="https://github.com/test/repo/issues/789",
-        pr_number=None,
+    row = PrRowData(
+        pr_number=789,
         pr_url=None,
         pr_display="-",
         checks_display="-",
@@ -109,7 +104,7 @@ def test_serialize_plan_row_tuple_to_list() -> None:
         run_state_display="-",
         run_url=None,
         full_title="Tuple Test",
-        plan_body="",
+        pr_body="",
         pr_title=None,
         pr_state=None,
         pr_head_branch=None,
@@ -151,39 +146,36 @@ def test_serialize_plan_row_tuple_to_list() -> None:
         status_display="-",
     )
 
-    result = serialize_plan_row(row)
+    result = serialize_pr_row(row)
 
     assert isinstance(result["log_entries"], list)
     assert len(result["log_entries"]) == 1
     assert result["log_entries"][0] == ["started", "2025-01-01T00:00:00Z", "https://example.com"]
 
 
-def test_serialize_plan_row_with_pr_data() -> None:
+def test_serialize_pr_row_with_pr_data() -> None:
     """Test serialization includes PR data when present."""
-    row = make_plan_row(
+    row = make_pr_row(
         100,
         "PR Plan",
-        pr_number=200,
-        pr_url="https://github.com/test/repo/pull/200",
+        pr_url="https://github.com/test/repo/pull/100",
         pr_title="Fix something",
         pr_state="OPEN",
     )
-    result = serialize_plan_row(row)
+    result = serialize_pr_row(row)
 
-    assert result["pr_number"] == 200
-    assert result["pr_url"] == "https://github.com/test/repo/pull/200"
+    assert result["pr_number"] == 100
+    assert result["pr_url"] == "https://github.com/test/repo/pull/100"
     assert result["pr_title"] == "Fix something"
     assert result["pr_state"] == "OPEN"
 
 
-def test_serialize_plan_row_all_fields_present() -> None:
-    """Test that all PlanRowData fields appear in serialized output."""
-    row = make_plan_row(1, "All Fields")
-    result = serialize_plan_row(row)
+def test_serialize_pr_row_all_fields_present() -> None:
+    """Test that all PrRowData fields appear in serialized output."""
+    row = make_pr_row(1, "All Fields")
+    result = serialize_pr_row(row)
 
     expected_fields = {
-        "plan_id",
-        "plan_url",
         "pr_number",
         "pr_url",
         "pr_display",
@@ -199,7 +191,7 @@ def test_serialize_plan_row_all_fields_present() -> None:
         "run_state_display",
         "run_url",
         "full_title",
-        "plan_body",
+        "pr_body",
         "pr_title",
         "pr_state",
         "pr_head_branch",
@@ -243,15 +235,13 @@ def test_serialize_plan_row_all_fields_present() -> None:
     assert set(result.keys()) == expected_fields
 
 
-def test_serialize_plan_row_json_roundtrip() -> None:
+def test_serialize_pr_row_json_roundtrip() -> None:
     """Test that serialized output is valid JSON."""
     now = datetime(2025, 1, 15, 10, 0, 0, tzinfo=UTC)
-    row = PlanRowData(
-        plan_id=42,
-        plan_url="https://github.com/test/repo/issues/42",
-        pr_number=99,
+    row = PrRowData(
+        pr_number=42,
         pr_url="https://github.com/test/repo/pull/99",
-        pr_display="#99 ✅",
+        pr_display="#42 ✅",
         checks_display="✓",
         checks_passing=True,
         checks_counts=(5, 5),
@@ -264,7 +254,7 @@ def test_serialize_plan_row_json_roundtrip() -> None:
         run_state_display="-",
         run_url=None,
         full_title="JSON Test Full Title",
-        plan_body="Some body",
+        pr_body="Some body",
         pr_title="Fix it",
         pr_state="MERGED",
         pr_head_branch="feature-branch",
@@ -306,11 +296,11 @@ def test_serialize_plan_row_json_roundtrip() -> None:
         status_display="-",
     )
 
-    result = serialize_plan_row(row)
+    result = serialize_pr_row(row)
     json_str = json.dumps(result)
     parsed = json.loads(json_str)
 
-    assert parsed["plan_id"] == 42
+    assert parsed["pr_number"] == 42
     assert parsed["last_local_impl_at"] == "2025-01-15T10:00:00+00:00"
     assert parsed["last_remote_impl_at"] is None
     assert parsed["log_entries"] == [["started", "2025-01-01T00:00:00Z", "https://example.com"]]

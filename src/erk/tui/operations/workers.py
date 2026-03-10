@@ -25,23 +25,23 @@ class BackgroundWorkersMixin:
     """
 
     @work(thread=True)
-    def _close_plan_async(self: ErkDashApp, op_id: str, plan_id: int, plan_url: str) -> None:
+    def _close_pr_async(self: ErkDashApp, op_id: str, pr_number: int, pr_url: str) -> None:
         """Close plan in background thread with toast notifications.
 
         Args:
             op_id: Operation identifier for status bar tracking
-            plan_id: The plan identifier
-            plan_url: The plan URL
+            pr_number: The plan identifier
+            pr_url: The plan URL
         """
         # Error boundary: catch all exceptions from the close operation to display
         # them as toast notifications rather than crashing the TUI.
         try:
-            closed_prs = self._service.close_pr(plan_id, plan_url)
+            closed_prs = self._service.close_pr(pr_number, pr_url)
             # Success toast
             if closed_prs:
-                msg = f"Closed plan #{plan_id} (and {len(closed_prs)} linked PRs)"
+                msg = f"Closed PR #{pr_number} (and {len(closed_prs)} linked PRs)"
             else:
-                msg = f"Closed plan #{plan_id}"
+                msg = f"Closed PR #{pr_number}"
             self.call_from_thread(self._finish_operation, op_id=op_id)
             self.call_from_thread(self.notify, msg, timeout=3)
             # Trigger data refresh
@@ -51,7 +51,7 @@ class BackgroundWorkersMixin:
             self.call_from_thread(self._finish_operation, op_id=op_id)
             self.call_from_thread(
                 self.notify,
-                f"Failed to close plan #{plan_id}: {e}",
+                f"Failed to close PR #{pr_number}: {e}",
                 severity="error",
                 timeout=5,
             )
@@ -256,7 +256,7 @@ class BackgroundWorkersMixin:
         pr_number: int,
         branch: str,
         objective_issue: int | None,
-        plan_id: int | None,
+        plan_number: int | None,
     ) -> None:
         """Land PR in background thread with toast."""
         command = [
@@ -267,8 +267,8 @@ class BackgroundWorkersMixin:
             f"--branch={branch}",
             "-f",
         ]
-        if plan_id is not None:
-            command.append(f"--plan-number={plan_id}")
+        if plan_number is not None:
+            command.append(f"--plan-number={plan_number}")
         result = self._run_streaming_operation(
             op_id=op_id,
             command=command,
@@ -323,82 +323,82 @@ class BackgroundWorkersMixin:
         self.call_from_thread(self._finish_operation, op_id=op_id)
 
     @work(thread=True)
-    def _dispatch_to_queue_async(self: ErkDashApp, op_id: str, plan_id: int) -> None:
+    def _dispatch_to_queue_async(self: ErkDashApp, op_id: str, pr_number: int) -> None:
         """Dispatch plan to queue in background thread with toast."""
         result = self._run_streaming_operation(
             op_id=op_id,
-            command=["erk", "pr", "dispatch", str(plan_id)],
+            command=["erk", "pr", "dispatch", str(pr_number)],
         )
         self.call_from_thread(self._finish_operation, op_id=op_id)
         if result.success:
-            self.call_from_thread(self.notify, f"Dispatched plan #{plan_id} to queue", timeout=3)
+            self.call_from_thread(self.notify, f"Dispatched PR #{pr_number} to queue", timeout=3)
             self.call_from_thread(self.action_refresh)
         else:
             error_msg = last_output_line(result)
             self.call_from_thread(
                 self.notify,
-                f"Failed to dispatch plan #{plan_id}: {error_msg}",
+                f"Failed to dispatch PR #{pr_number}: {error_msg}",
                 severity="error",
                 timeout=5,
             )
 
     @work(thread=True)
-    def _close_objective_async(self: ErkDashApp, op_id: str, plan_id: int) -> None:
+    def _close_objective_async(self: ErkDashApp, op_id: str, pr_number: int) -> None:
         """Close objective in background thread with toast."""
         result = self._run_streaming_operation(
             op_id=op_id,
-            command=["erk", "objective", "close", str(plan_id), "--force"],
+            command=["erk", "objective", "close", str(pr_number), "--force"],
         )
         self.call_from_thread(self._finish_operation, op_id=op_id)
         if result.success:
-            self.call_from_thread(self.notify, f"Closed objective #{plan_id}", timeout=3)
+            self.call_from_thread(self.notify, f"Closed objective #{pr_number}", timeout=3)
             self.call_from_thread(self.action_refresh)
         else:
             error_msg = last_output_line(result)
             self.call_from_thread(
                 self.notify,
-                f"Failed to close objective #{plan_id}: {error_msg}",
+                f"Failed to close objective #{pr_number}: {error_msg}",
                 severity="error",
                 timeout=5,
             )
 
     @work(thread=True)
-    def _check_objective_async(self: ErkDashApp, op_id: str, plan_id: int) -> None:
+    def _check_objective_async(self: ErkDashApp, op_id: str, pr_number: int) -> None:
         """Check objective in background thread with toast."""
         result = self._run_streaming_operation(
             op_id=op_id,
-            command=["erk", "objective", "check", str(plan_id)],
+            command=["erk", "objective", "check", str(pr_number)],
         )
         self.call_from_thread(self._finish_operation, op_id=op_id)
         if result.success:
-            self.call_from_thread(self.notify, f"Checked objective #{plan_id}", timeout=3)
+            self.call_from_thread(self.notify, f"Checked objective #{pr_number}", timeout=3)
         else:
             error_msg = last_output_line(result)
             self.call_from_thread(
                 self.notify,
-                f"Failed to check objective #{plan_id}: {error_msg}",
+                f"Failed to check objective #{pr_number}: {error_msg}",
                 severity="error",
                 timeout=5,
             )
 
     @work(thread=True)
-    def _one_shot_plan_async(self: ErkDashApp, op_id: str, plan_id: int) -> None:
+    def _one_shot_plan_async(self: ErkDashApp, op_id: str, pr_number: int) -> None:
         """Dispatch one-shot plan in background thread with toast."""
         result = self._run_streaming_operation(
             op_id=op_id,
-            command=["erk", "objective", "plan", str(plan_id), "--one-shot"],
+            command=["erk", "objective", "plan", str(pr_number), "--one-shot"],
         )
         self.call_from_thread(self._finish_operation, op_id=op_id)
         if result.success:
             self.call_from_thread(
-                self.notify, f"Dispatched one-shot plan for objective #{plan_id}", timeout=3
+                self.notify, f"Dispatched one-shot plan for objective #{pr_number}", timeout=3
             )
             self.call_from_thread(self.action_refresh)
         else:
             error_msg = last_output_line(result)
             self.call_from_thread(
                 self.notify,
-                f"Failed to dispatch one-shot plan for objective #{plan_id}: {error_msg}",
+                f"Failed to dispatch one-shot plan for objective #{pr_number}: {error_msg}",
                 severity="error",
                 timeout=5,
             )

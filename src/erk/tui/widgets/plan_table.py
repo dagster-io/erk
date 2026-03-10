@@ -10,7 +10,7 @@ from textual.message import Message
 from textual.widgets import DataTable
 
 from erk.core.display_utils import strip_rich_markup
-from erk.tui.data.types import PlanFilters, PlanRowData
+from erk.tui.data.types import PrFilters, PrRowData
 from erk.tui.views.types import ViewMode
 
 if TYPE_CHECKING:
@@ -20,7 +20,7 @@ if TYPE_CHECKING:
 class PlanDataTable(DataTable):
     """DataTable subclass for displaying plans.
 
-    Manages column configuration and row population from PlanRowData.
+    Manages column configuration and row population from PrRowData.
     Uses row selection mode (not cell selection) for simpler navigation.
     """
 
@@ -78,7 +78,7 @@ class PlanDataTable(DataTable):
             super().__init__()
             self.row_index = row_index
 
-    def __init__(self, plan_filters: PlanFilters) -> None:
+    def __init__(self, plan_filters: PrFilters) -> None:
         """Initialize table with column configuration based on filters.
 
         Args:
@@ -87,7 +87,7 @@ class PlanDataTable(DataTable):
         super().__init__(cursor_type="row")
         self._plan_filters = plan_filters
         self._view_mode: ViewMode = ViewMode.PLANS
-        self._rows: list[PlanRowData] = []
+        self._rows: list[PrRowData] = []
         self._plan_column_index: int = 0  # Always first column
         self._objective_column_index: int | None = None
         self._pr_column_index: int | None = None
@@ -114,7 +114,7 @@ class PlanDataTable(DataTable):
         """Delegate right arrow to app's next_view action."""
         cast("ErkDashApp", self.app).action_next_view()
 
-    def reconfigure(self, *, plan_filters: PlanFilters, view_mode: ViewMode) -> None:
+    def reconfigure(self, *, plan_filters: PrFilters, view_mode: ViewMode) -> None:
         """Reconfigure the table for a new view mode.
 
         Clears existing columns and rows, then sets up new columns
@@ -219,29 +219,29 @@ class PlanDataTable(DataTable):
         self.add_column("remote-impl", key="remote_impl", width=10)
         col_index += 1
 
-    def populate(self, rows: list[PlanRowData]) -> None:
+    def populate(self, rows: list[PrRowData]) -> None:
         """Populate table with plan data, preserving cursor position.
 
         If the selected plan still exists, cursor stays on it.
         If the selected plan disappeared, cursor stays at the same row index.
 
         Args:
-            rows: List of PlanRowData to display
+            rows: List of PrRowData to display
         """
         # Save current selection by issue number (row key)
         selected_key: str | None = None
         if self._rows and self.cursor_row is not None and 0 <= self.cursor_row < len(self._rows):
-            selected_key = str(self._rows[self.cursor_row].plan_id)
+            selected_key = str(self._rows[self.cursor_row].pr_number)
 
         # Save cursor row index for fallback (move up if plan disappears)
         saved_cursor_row = self.cursor_row
 
-        # Deduplicate rows by plan_id (multi-label queries can return the same plan twice)
+        # Deduplicate rows by pr_number (multi-label queries can return the same plan twice)
         seen: set[int] = set()
-        unique_rows: list[PlanRowData] = []
+        unique_rows: list[PrRowData] = []
         for row in rows:
-            if row.plan_id not in seen:
-                seen.add(row.plan_id)
+            if row.pr_number not in seen:
+                seen.add(row.pr_number)
                 unique_rows.append(row)
         rows = unique_rows
 
@@ -250,14 +250,14 @@ class PlanDataTable(DataTable):
 
         for row in rows:
             values = self._row_to_values(row)
-            self.add_row(*values, key=str(row.plan_id))
+            self.add_row(*values, key=str(row.pr_number))
 
         # Restore cursor position
         if rows:
             # Try to restore by key (issue number) first
             if selected_key is not None:
                 for idx, row in enumerate(rows):
-                    if str(row.plan_id) == selected_key:
+                    if str(row.pr_number) == selected_key:
                         self.move_cursor(row=idx)
                         return
 
@@ -266,8 +266,8 @@ class PlanDataTable(DataTable):
                 target_row = min(saved_cursor_row, len(rows) - 1)
                 self.move_cursor(row=target_row)
 
-    def _row_to_values(self, row: PlanRowData) -> tuple[str | Text, ...]:
-        """Convert PlanRowData to table cell values.
+    def _row_to_values(self, row: PrRowData) -> tuple[str | Text, ...]:
+        """Convert PrRowData to table cell values.
 
         Args:
             row: Plan row data
@@ -276,9 +276,9 @@ class PlanDataTable(DataTable):
             Tuple of cell values matching column order
         """
         # Format issue number - colorize if clickable
-        plan_cell: str | Text = f"#{row.plan_id}"
-        if row.plan_url:
-            plan_cell = f"[link={row.plan_url}]#{row.plan_id}[/link]"
+        plan_cell: str | Text = f"#{row.pr_number}"
+        if row.pr_url:
+            plan_cell = f"[link={row.pr_url}]#{row.pr_number}[/link]"
 
         # Objectives view: plan, slug, progress, state, deps-state, deps, next, updated, author
         if self._view_mode == ViewMode.OBJECTIVES:
@@ -364,11 +364,11 @@ class PlanDataTable(DataTable):
 
         return tuple(values)
 
-    def get_selected_row_data(self) -> PlanRowData | None:
-        """Get the PlanRowData for the currently selected row.
+    def get_selected_row_data(self) -> PrRowData | None:
+        """Get the PrRowData for the currently selected row.
 
         Returns:
-            PlanRowData for selected row, or None if no selection
+            PrRowData for selected row, or None if no selection
         """
         cursor_row = self.cursor_row
         if cursor_row is None or cursor_row < 0 or cursor_row >= len(self._rows):
@@ -401,7 +401,7 @@ class PlanDataTable(DataTable):
 
         # Check plan column (issue number)
         if col_index == self._plan_column_index:
-            if row_index < len(self._rows) and self._rows[row_index].plan_url:
+            if row_index < len(self._rows) and self._rows[row_index].pr_url:
                 self.post_message(self.PlanClicked(row_index))
                 event.prevent_default()
                 event.stop()

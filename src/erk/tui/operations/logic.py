@@ -23,11 +23,11 @@ def extract_learn_plan_number(result: OperationResult) -> int | None:
     return None
 
 
-def build_github_url(plan_url: str, resource_type: str, number: int) -> str:
+def build_github_url(pr_url: str, resource_type: str, number: int) -> str:
     """Build a GitHub URL for a PR or issue from an existing plan URL.
 
     Args:
-        plan_url: Base plan URL (e.g., https://github.com/owner/repo/pull/123)
+        pr_url: Base plan URL (e.g., https://github.com/owner/repo/pull/123)
         resource_type: Either "pull" or "issues"
         number: The PR or issue number
 
@@ -35,8 +35,8 @@ def build_github_url(plan_url: str, resource_type: str, number: int) -> str:
         Full URL (e.g., https://github.com/owner/repo/pull/456)
     """
     # Try /pull/ first (new plan-as-PR format), fall back to /issues/ (legacy)
-    if "/pull/" in plan_url:
-        base_url = plan_url.rsplit("/pull/", 1)[0]
+    if "/pull/" in pr_url:
+        base_url = pr_url.rsplit("/pull/", 1)[0]
     else:
-        base_url = plan_url.rsplit("/issues/", 1)[0]
+        base_url = pr_url.rsplit("/issues/", 1)[0]
     return f"{base_url}/{resource_type}/{number}"
