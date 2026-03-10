@@ -8,7 +8,7 @@ from erk.cli.commands.exec.scripts.update_objective_node import (
     _replace_node_refs_in_body,
 )
 from erk.cli.commands.implement_shared import normalize_model_name
-from erk.cli.commands.objective.check_cmd import (
+from erk.cli.commands.objective.check.validation import (
     ObjectiveValidationError,
     ObjectiveValidationSuccess,
     validate_objective,

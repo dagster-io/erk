@@ -25,7 +25,7 @@ from typing import Any, cast
 
 import click
 
-from erk.cli.commands.objective.check_cmd import (
+from erk.cli.commands.objective.check.validation import (
     ObjectiveValidationError,
     ObjectiveValidationSuccess,
     validate_objective,
