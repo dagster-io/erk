@@ -1,0 +1,619 @@
+<session>
+  <meta branch="master" />
+  <meta model="claude-opus-4-6" />
+  <user>add pr status to this ui</user>
+  <usage input_tokens="3" cache_creation_input_tokens="12166" cache_read_input_tokens="12727" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 12166}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_016JTWXNiMuTqk2cvXA8efga">
+    <param name="subagent_type">Explore</param>
+    <param name="description">Explore TUI runs tab</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 650 chars]... logic in the codebase
+
+Be thorough - trace from the UI rendering back to the data source.</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="12166" cache_read_input_tokens="12727" output_tokens="410" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 12166, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_016JTWXNiMuTqk2cvXA8efga">
+Perfect! Now I have all the information I need. Let me create a comprehensive summary document.
+
+## Summary: TUI Runs Tab Implementation
+
+I've thoroughly traced the TUI runs tab implementation from UI rendering back to the data sources. Here's my complete findings:
+
+### 1. **TUI Screen/Widget That Renders the Runs Tab**
+
+**File:** `/Users/schrockn/code/erk/src/erk/tui/widgets/run_table.py`
+
+- **Widget Class:** `RunDataTable` (extends Textual's `DataTable`)
+- **Column Setup:** `_setup_columns()` method (lines 56-77)
+- **Current columns:**
+  - `run-id` (width 12)
+  - `status` (width 14)
+  - `submitted` (width 12)
+  - `workflow` (width 16)
+  - `pr` (width 8)
+  - `branch` (width 40)
+  - `chks` (width 8)
+
+- **Messages:** 
+  - `RunClicked` — fired when user clicks run-id column
+  - `PrClicked` — fired when user clicks pr column
+
+- **Row rendering:** `_row_to_values()` (lines 109-134) converts `RunRowData` to table cell values with Textual markup links for clickable cells
+
+**App integration:** `/Users/schrockn/code/erk/src/erk/tui/app.py`
+- View mode `ViewMode.RUNS` (key binding "4")
+- `_load_run_data()` worker method (line 265)
+
+... [177 lines omitted] ...
+
+| `conclusion` | `str \| None` | Raw conclusion: "success", "failure", "cancelled", None |
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="3383" cache_read_input_tokens="24893" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3383}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>Great - `pr_state` is already fetched and stored in `RunRowData`. Let me read the key files to verify the details.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3383" cache_read_input_tokens="24893" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3383}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01UoBiVgEEKfrmNegziW6PUw">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/tui/widgets/run_table.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3383" cache_read_input_tokens="24893" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3383}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01UoBiVgEEKfrmNegziW6PUw">
+     1→"""Run table widget for TUI dashboard Runs tab."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→from typing import TYPE_CHECKING, cast
+     6→
+     7→from textual.events import Click
+     8→from textual.message import Message
+     9→from textual.widgets import DataTable
+    10→
+    11→from erk.tui.data.types import RunRowData
+    12→
+    13→if TYPE_CHECKING:
+    14→    from erk.tui.app import ErkDashApp
+    15→
+    16→
+    17→class RunDataTable(DataTable):
+    18→    """DataTable subclass for displaying workflow runs.
+    19→
+    20→    Manages column configuration and row population from RunRowData.
+    21→    Uses row selection mode (not cell selection) for simpler navigation.
+    22→    """
+    23→
+    24→    class RunClicked(Message):
+    25→        """Posted when user clicks run-id column on a row."""
+    26→
+    27→        def __init__(self, row_index: int) -&gt; None:
+    28→            super().__init__()
+    29→            self.row_index = row_index
+    30→
+
+... [143 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_012PTPHuWSEhqd9a6FpcrDyJ">
+    <param name="file_path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/github/emoji.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3383" cache_read_input_tokens="24893" output_tokens="244" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3383, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_012PTPHuWSEhqd9a6FpcrDyJ">
+     1→"""GitHub PR and checks status emojis.
+     2→
+     3→This module provides emoji constants and formatting functions for displaying
+     4→GitHub PR states, checks status, and merge conflicts in CLI output.
+     5→"""
+     6→
+     7→from erk_shared.gateway.github.types import PullRequestInfo
+     8→
+     9→# PR state emojis (aligned with erk-statusline conventions)
+    10→PR_STATE_EMOJIS = {
+    11→    "OPEN": "👀",  # published/open PR
+    12→    "DRAFT": "🚧",  # draft PR
+    13→    "MERGED": "🎉",  # merged PR
+    14→    "CLOSED": "⛔",  # closed PR
+    15→}
+    16→
+    17→# Additional status indicators
+    18→CONFLICTS_EMOJI = "💥"  # merge conflicts
+    19→CHECKS_PENDING_EMOJI = "🔄"  # checks pending or no checks
+    20→CHECKS_PASSING_EMOJI = "✅"  # all checks passing
+    21→CHECKS_FAILING_EMOJI = "🚫"  # any checks failing
+    22→
+    23→
+    24→def get_pr_status_emoji(pr: PullRequestInfo) -&gt; str:
+    25→    """Get emoji representation of PR status (state + conflicts).
+    26→
+    27→    Returns a combination of state emoji (👀/🚧/🎉/⛔) and optionally
+    28→    a conflicts indicator (💥) for open/draft PRs with merge conflicts.
+    29→
+    30→    Args:
+
+... [86 lines omitted] ...
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="5760" cache_read_input_tokens="28276" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5760}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01TJVFKAsCVYzgkLmSG8aPyr">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/tui/data/types.py</param>
+    <param name="offset">150</param>
+    <param name="limit">60</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5760" cache_read_input_tokens="28276" output_tokens="160" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 5760, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01TJVFKAsCVYzgkLmSG8aPyr">
+   150→    author: str
+   151→    is_learn_plan: bool
+   152→    lifecycle_display: str
+   153→    status_display: str
+   154→
+   155→
+   156→@dataclass(frozen=True)
+   157→class RunRowData:
+   158→    """Row data for displaying a workflow run in the TUI Runs tab.
+   159→
+   160→    Contains pre-formatted display strings and raw data needed for actions.
+   161→    Immutable to ensure table state consistency.
+   162→
+   163→    Attributes:
+   164→        run_id: GitHub Actions workflow run ID string.
+   165→        run_url: URL to the GitHub Actions run page. None if unavailable.
+   166→        status: Raw run status ("queued", "in_progress", "completed").
+   167→        conclusion: Raw run conclusion ("success", "failure", "cancelled"). None if in progress.
+   168→        status_display: Pre-formatted status string for table display.
+   169→        workflow_name: Workflow command name (e.g., "plan-implement", "pr-address").
+   170→        pr_number: Linked PR number. None if no PR.
+   171→        pr_url: URL to the linked PR. None if no PR.
+   172→        pr_display: Formatted PR cell content (e.g., "#123" or "-").
+   173→        pr_title: PR title. None if no PR.
+   174→        pr_state: PR state ("OPEN", "MERGED", "CLOSED"). None if no PR linked.
+   175→        title_display: Truncated title for table display.
+   176→        submitted_display: Formatted submission time (e.g., "03-09 14:30").
+   177→        created_at: UTC datetime when run was created. None if unavailable.
+   178→        checks_display: Formatted checks cell content.
+   179→        run_id_display: Formatted run ID for display.
+
+... [30 lines omitted] ...
+  </tool_result>
+  <assistant>Everything needed is already in place. `pr_state` is already a field on `RunRowData` and is already populated. The only changes needed are in `run_table.py` to add the column and include it in the row values. Let me also check if there's an `is_draft` field available.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1076" cache_read_input_tokens="34036" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1076}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_013qGE7tUUKSLSyjKxGK8o6A">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/tui/data/real_provider.py</param>
+    <param name="offset">310</param>
+    <param name="limit">40</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1076" cache_read_input_tokens="34036" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1076}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013qGE7tUUKSLSyjKxGK8o6A">
+   310→
+   311→            if pr_num is not None:
+   312→                pr_info = pr_info_map.get(pr_num)
+   313→                if pr_info is not None:
+   314→                    graphite_url = self._ctx.graphite.get_graphite_url(
+   315→                        GitHubRepoId(pr_info.owner, pr_info.repo), pr_info.number
+   316→                    )
+   317→                    pr_url = graphite_url if use_graphite and graphite_url else pr_info.url
+   318→                    pr_display = f"#{pr_info.number}"
+   319→                    pr_title = pr_info.title
+   320→                    title = pr_info.title or "-"
+   321→                    if len(title) &gt; _MAX_TITLE_LENGTH:
+   322→                        title = title[: _MAX_TITLE_LENGTH - 3] + "..."
+   323→                    title_display = title
+   324→                    checks_display = strip_rich_markup(format_checks_cell(pr_info))
+   325→                    pr_state = pr_info.state
+   326→                else:
+   327→                    # Have PR number but no details
+   328→                    pr_url = (
+   329→                        f"https://github.com/{self._location.repo_id.owner}/"
+   330→                        f"{self._location.repo_id.repo}/pull/{pr_num}"
+   331→                    )
+   332→                    pr_display = f"#{pr_num}"
+   333→
+   334→            # Format branch column: prefer PR's head_branch (original feature branch)
+   335→            # over run.branch, which becomes "master" after merge+branch deletion
+   336→            pr_info_for_branch = pr_info_map.get(pr_num) if pr_num is not None else None
+   337→            if pr_info_for_branch is not None and pr_info_for_branch.head_branch is not None:
+   338→                branch_name = pr_info_for_branch.head_branch
+   339→            elif run.branch != "master" and run.branch != "main":
+
+... [10 lines omitted] ...
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01XoSTV8KKQseXRYfzL2YbbL">
+    <param name="pattern">is_draft</param>
+    <param name="path">/Users/schrockn/code/erk/src/erk/tui/data</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1076" cache_read_input_tokens="34036" output_tokens="277" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1076, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01XoSTV8KKQseXRYfzL2YbbL">
+src/erk/tui/data/real_provider.py:594:        pr_is_draft: bool | None = None
+src/erk/tui/data/real_provider.py:620:                pr_is_draft = selected_pr.is_draft
+src/erk/tui/data/real_provider.py:753:            is_draft=pr_is_draft,
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="1099" cache_read_input_tokens="35112" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1099}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>I have everything I need. The change is straightforward — `pr_state` is already populated, and emoji formatting exists. Let me write the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1099" cache_read_input_tokens="35112" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1099}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_012oQfGhuBKwx22ZmkSGLtL5">
+    <param name="file_path">/Users/schrockn/.claude/plans/iridescent-soaring-feather.md</param>
+    <param name="content"># Add PR Status Column to Runs Tab
+
+## Context
+
+The TUI Runs tab (`erk dash` → tab 4) show...[truncated 1484 chars]...i` to verify tests pass
+- Run `erk dash -i` and check the Runs tab shows PR status emojis
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1099" cache_read_input_tokens="35112" output_tokens="1101" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1099, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_012oQfGhuBKwx22ZmkSGLtL5">
+File created successfully at: /Users/schrockn/.claude/plans/iridescent-soaring-feather.md
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_01AzLfY9nmGRSELDat8aG7xS">
+    <param name="query">select:ExitPlanMode</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1346" cache_read_input_tokens="36211" output_tokens="78" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1346, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01AzLfY9nmGRSELDat8aG7xS">
+
+  </tool_result>
+  <assistant>
+
+4 files, all mechanical. The `pr_state` data is already fetched — just needs a column to display it.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="738" cache_read_input_tokens="37557" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 738}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ExitPlanMode" id="toolu_01Ur5k9fvkdKhXQQmwwdpGFH">
+    <param name="plan"># Add PR Status Column to Runs Tab
+
+## Context
+
+The TUI Runs tab (`erk dash` → tab 4) show...[truncated 1484 chars]...i` to verify tests pass
+- Run `erk dash -i` and check the Runs tab shows PR status emojis
+</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="738" cache_read_input_tokens="37557" output_tokens="67" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 738, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Ur5k9fvkdKhXQQmwwdpGFH">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/iridescent-soaring-feather.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Add PR Status Column to Runs Tab
+Current context: (wt:erk) (br:master)\n\nWhat would you like to do with this plan?"
+  header: "br:master"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create new branch and planned PR. Stays on current branch." - Create a new branch, save plan as draft PR.
+  2. "Implement without saving" - Implement directly on the current branch without saving a plan PR.
+  3. "View/Edit the Plan" - Open plan in editor to review or modify before deciding.
+
+⚠️  WARNING: Currently on 'master'. We strongly discourage implementing directly on the trunk branch. Consider saving the plan and implementing in a dedicated worktree instead.
+
+If user chooses 'Create new branch and planned PR':
+  1. Run /erk:plan-save
+  2. Call ExitPlanMode to end the planning session.
+
+If user chooses 'Implement without saving':
+  1. Create implement-now marker:
+     erk exec marker create --session-id 740f237d-e83f-4b5c-8c77-80b681ccfab4 \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly on the current branch.
+     Do NOT run 'erk exec setup-impl' or create a new branch.
+
+... [8 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01EX2YrMWXhYRR9GzTVRGdAQ">
+    <param name="file_path">/Users/schrockn/.claude/plans/iridescent-soaring-feather.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="714" cache_read_input_tokens="38295" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 714}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01EX2YrMWXhYRR9GzTVRGdAQ">
+     1→# Add PR Status Column to Runs Tab
+     2→
+     3→## Context
+     4→
+     5→The TUI Runs tab (`erk dash` → tab 4) shows workflow runs but doesn't display the PR's status (open, draft, merged, closed). The data is already fetched — `RunRowData.pr_state` is populated from `PullRequestInfo.state` — it's just not shown in the table.
+     6→
+     7→## Plan
+     8→
+     9→### 1. Add `pr_status_display` field to `RunRowData` (`src/erk/tui/data/types.py`)
+    10→
+    11→Add a pre-formatted display string field (e.g., "👀", "🚧", "🎉", "⛔", or "-"):
+    12→
+    13→```python
+    14→pr_status_display: str
+    15→```
+    16→
+    17→### 2. Populate `pr_status_display` in `real_provider.py` (~line 348)
+    18→
+    19→When building `RunRowData`, use `get_pr_status_emoji(pr_info)` from `erk_shared.gateway.github.emoji` when `pr_info` is available. Default to `"-"` when no PR info. Strip rich markup (though emojis shouldn't have any).
+    20→
+    21→### 3. Add column in `run_table.py` `_setup_columns()`
+    22→
+    23→Add a `"pr-st"` column (width 6) after the `pr` column. Update `_pr_column_index` tracking if needed (column indices shift).
+    24→
+    25→### 4. Add value in `run_table.py` `_row_to_values()`
+    26→
+    27→Include `row.pr_status_display` in the returned tuple at the correct position (after `pr_cell`).
+    28→
+    29→### 5. Update `make_run_row()` test helper (`tests/fakes/tests/tui_plan_data_provider.py`)
+    30→
+
+... [14 lines omitted] ...
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_01YLEPTE713CfUUYRBkWH7kR">
+    <param name="query">select:AskUserQuestion</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="817" cache_read_input_tokens="39009" output_tokens="77" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 817, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01YLEPTE713CfUUYRBkWH7kR">
+
+  </tool_result>
+  <tool_use name="AskUserQuestion" id="toolu_01S1aDnH4rU2gbZuuLt7JMgN">
+    <param name="questions">[{'question': '📋 Add PR Status Column to Runs Tab\nCurrent context: (wt:erk) (br:master)\n...[truncated 383 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1430" cache_read_input_tokens="39826" output_tokens="212" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1430, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01S1aDnH4rU2gbZuuLt7JMgN">
+User has answered your questions: "📋 Add PR Status Column to Runs Tab
+Current context: (wt:erk) (br:master)
+
+What would you like to do with this plan?"="Create new branch and planned PR". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="Skill" id="toolu_01W6d46ddZ3iADK71qs3md9d">
+    <param name="skill">erk:plan-save</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="294" cache_read_input_tokens="41256" output_tokens="57" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 294, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01W6d46ddZ3iADK71qs3md9d">
+Launching skill: erk:plan-save
+  </tool_result>
+  <user># /erk:plan-save
+
+Save the current session's plan to GitHub with session context.
+
+## Usage
+
+```bash
+/erk:plan-save                           # Standalone plan
+/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+/erk:plan-save --objective=123           # Explicit objective link (overrides marker)
+/erk:plan-save --current-branch          # Use current branch instead of creating new plnd/ branch
+```
+
+Objective linking: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command. Use `--objective=&lt;number&gt;` to override the marker or provide the link when no marker exists (e.g., during replan).
+
+## Plan Storage
+
+The plan is saved using the configured backend:
+
+- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+  The JSON output contract includes `plan_number`, `plan_url`, `title`, `branch_name`, `plan_backend`.
+
+## Agent Instructions
+
+### Step 1: Parse Arguments
+
+Check `` for the `--plan-type`, `--objective`, and `--current-branch` flags:
+
+```
+If  contains "--plan-type=&lt;type&gt;":
+  - Extract the type (standard or learn)
+  - Store as PLAN_TYPE variable
+  - Set PLAN_TYPE_FLAG to "--plan-type=&lt;type&gt;"
+Else:
+  - Set PLAN_TYPE_FLAG to empty string
+
+If  contains "--objective=&lt;number&gt;":
+  - Extract the number
+  - Set OBJECTIVE_FLAG to "--objective=&lt;number&gt;"
+Else:
+  - Set OBJECTIVE_FLAG to empty string
+
+If  contains "--current-branch":
+  - Set CURRENT_BRANCH_FLAG to "--current-branch"
+Else:
+  - Set CURRENT_BRANCH_FLAG to empty string
+```
+
+### Step 2: Generate Branch Slug
+
+**Skip this step if `--current-branch` was passed.** The current branch is used directly.
+
+Before saving, generate a branch slug from the plan title. Read the plan title from the plan file you wrote in plan mode (the first `# ` heading).
+
+Generate a branch slug from the title:
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+
+Store the result as `BRANCH_SLUG`.
+
+### Step 3: Generate Plan Summary
+
+Write a concise 2-3 sentence summary of the plan. This summary will be visible
+at the top of the PR description (above the collapsed full plan).
+
+Guidelines:
+
+- Focus on WHAT the plan does and WHY
+- Do not repeat the title
+- Plain text, no markdown headers or formatting
+- Avoid special shell characters (backticks, dollar signs)
+- Store as PLAN_SUMMARY
+
+### Step 4: Run Save Command
+
+Run this command with the session ID, summary, and optional flags.
+
+If CURRENT_BRANCH_FLAG is set, pass `--current-branch` (no branch slug needed):
+
+```bash
+erk exec plan-save --format json --session-id="740f237d-e83f-4b5c-8c77-80b681ccfab4" --current-branch --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Otherwise, pass the branch slug:
+
+```bash
+erk exec plan-save --format json --session-id="740f237d-e83f-4b5c-8c77-80b681ccfab4" --branch-slug="${BRANCH_SLUG}" --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Parse the JSON output to extract `plan_number` for verification in Step 5.
+
+If the command fails, display the error and stop.
+
+### Step 5: Verify Objective Link (if applicable)
+
+**Only run this step if `objective_issue` is non-null in the JSON output from Step 4.**
+
+Verify the objective link was saved correctly:
+
+```bash
+erk exec get-plan-metadata &lt;plan_number&gt; objective_issue
+```
+
+Parse the JSON response:
+
+- If `success: true` and `value` matches the expected objective number: verification passed
+- If `success: false` or value doesn't match: verification failed
+
+**On verification success:**
+
+Display: `Verified objective link: #&lt;objective-number&gt;`
+
+**On verification failure:**
+
+Display error and remediation steps:
+
+```
+ERROR: Objective link verification failed
+Expected objective: #&lt;expected&gt;
+Actual: &lt;actual-or-null&gt;
+
+The plan was saved but without the correct objective link.
+Fix: Close draft PR #&lt;plan_number&gt;,
+ensure the objective-context marker exists, and re-run /erk:plan-save.
+```
+
+Exit without creating the plan-saved marker. The session continues so the user can retry.
+
+### Step 6: Update Objective Roadmap (if objective linked)
+
+**Only run this step if `objective_issue` was non-null in JSON output and verification passed.**
+
+Update the objective's roadmap table to show that a plan has been created for this node:
+
+1. **Read the roadmap node marker** to get the node ID:
+
+```bash
+step_id=$(erk exec marker read --session-id "740f237d-e83f-4b5c-8c77-80b681ccfab4" roadmap-step)
+```
+
+If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-plan`.
+
+2. **Update the roadmap table** using the dedicated command:
+
+```bash
+erk exec update-objective-node &lt;objective-issue&gt; --node "$step_id" --pr "#&lt;plan_number&gt;" --status in_progress
+```
+
+This atomically fetches the objective body, finds the matching node row, sets the Status cell to `in-progress`, and writes the updated body back.
+
+3. **Report the update:**
+
+Display: `Updated objective #&lt;objective-issue&gt; roadmap: node &lt;step_id&gt; → plan #&lt;plan_number&gt;`
+
+**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+
+### Step 7: Display Results
+
+**If JSON contains `skipped_duplicate: true`:**
+
+Display: `Plan already saved as #&lt;plan_number&gt; (duplicate skipped)`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options.
+
+**Otherwise, on success**, display:
+
+```
+Plan "&lt;title&gt;" saved as draft PR #&lt;plan_number&gt;
+URL: &lt;issue_url&gt;
+```
+
+If objective was verified, also display: `Verified objective link: #&lt;objective-number&gt;`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options
+(implement in current worktree, implement in new worktree, or done).
+
+On failure, display the error message and suggest:
+
+- Checking that a plan exists (enter Plan mode and exit it first)
+- Verifying GitHub CLI authentication (`gh auth status`)
+- Checking network connectivity
+
+### Step 5: Push Planning Session
+
+After saving successfully, push the planning session for cross-machine learning.
+This captures the in-progress session state so it's available even if implementation
+happens on a different machine.
+
+Run `erk exec capture-session-info` to get the session file path, then push it:
+
+```bash
+erk exec upload-impl-session --session-id "740f237d-e83f-4b5c-8c77-80b681ccfab4" 2&gt;/dev/null || true
+```
+
+If the plan was saved successfully and `plan_number` is known, use push-session directly
+for better stage tracking:
+
+```bash
+erk exec push-session \
+    --session-file "&lt;session_file_path&gt;" \
+    --session-id "740f237d-e83f-4b5c-8c77-80b681ccfab4" \
+    --stage planning \
+    --source local \
+    --pr-number &lt;plan_number&gt; \
+    2&gt;/dev/null || true
+```
+
+Where `&lt;session_file_path&gt;` is obtained from `erk exec capture-session-info` output
+and `&lt;plan_number&gt;` is from Step 2's JSON output.
+
+**Note:** This is non-critical. If it fails, the plan was still saved successfully.
+The `2&gt;/dev/null || true` ensures graceful degradation.
+
+## Session Tracking
+
+After successfully saving a plan, the plan number is stored in a marker file that enables automatic plan updates in the same session.
+
+**To read the saved plan number:**
+
+```bash
+erk exec marker read --session-id "740f237d-e83f-4b5c-8c77-80b681ccfab4" plan-saved-issue
+```
+
+This returns the plan number (exit code 0) or exits with code 1 if no plan was saved in this session.
+</user>
+  <assistant>
+
+**Branch slug:** `add-pr-status-runs-tab`
+
+**Plan summary:** Surfaces PR status (open, draft, merged, closed) as a new column in the TUI Runs tab. The data is already fetched via pr_state on RunRowData — this adds the column display and emoji formatting using existing infrastructure.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="2289" cache_read_input_tokens="41550" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2289}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01WrwCMRMuS7YgViwdMerjL5">
+    <param name="command">erk exec plan-save --format json --session-id="740f237d-e83f-4b5c-8c77-80b681ccfab4" --bra...[truncated 159 chars]...owData — this adds the column display and emoji formatting using existing infrastructure."</param>
+    <param name="description">Save plan as draft PR</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2289" cache_read_input_tokens="41550" output_tokens="288" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2289, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01WrwCMRMuS7YgViwdMerjL5">
+{"success": true, "pr_number": 9164, "pr_url": "https://github.com/dagster-io/erk/pull/9164", "title": "[erk-pr] Add PR Status Column to Runs Tab", "branch_name": "plnd/add-pr-status-runs-tab-03-10-1038", "plan_backend": "planned_pr", "objective_issue": null, "archived_to": "/Users/schrockn/code/erk/.erk/scratch/sessions/740f237d-e83f-4b5c-8c77-80b681ccfab4/plan_snapshots/000001-a1792b1f"}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01Ugj2urpHo1FX3aUYi5jAry">
+    <param name="command">erk exec capture-session-info 2&gt;/dev/null | head -5</param>
+    <param name="description">Get session file path</param>
+    <param name="timeout">10000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="454" cache_read_input_tokens="43839" output_tokens="107" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 454, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Ugj2urpHo1FX3aUYi5jAry">
+SESSION_ID=740f237d-e83f-4b5c-8c77-80b681ccfab4
+SESSION_FILE=/Users/schrockn/.claude/projects/-Users-schrockn-code-erk/740f237d-e83f-4b5c-8c77-80b681ccfab4.jsonl
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01PbFeTYpyq84ndTUrNyn7YQ">
+    <param name="command">erk exec push-session --session-file "/Users/schrockn/.claude/projects/-Users-schrockn-cod...[truncated 60 chars]...5c-8c77-80b681ccfab4" --stage planning --source local --pr-number 9164 2&gt;/dev/null || true</param>
+    <param name="description">Push planning session</param>
+    <param name="timeout">15000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="413" cache_read_input_tokens="44293" output_tokens="203" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 413, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+</session>
