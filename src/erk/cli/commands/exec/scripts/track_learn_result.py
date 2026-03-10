@@ -169,7 +169,7 @@ def track_learn_result(
         error = TrackLearnResultError(
             success=False,
             error="no-metadata-block",
-            message=(f"PR {pr_id} has no plan-header metadata block — cannot update learn status"),
+            message=f"PR {pr_id} has no plan-header metadata block — cannot update learn status",
         )
         click.echo(json.dumps(asdict(error)), err=True)
         raise SystemExit(1) from None
