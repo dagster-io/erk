@@ -6,8 +6,8 @@ from erk.cli.commands.pr.submit_pipeline import (
     SubmitState,
     label_code_pr,
 )
-from erk.core.context import context_for_test
-from erk_shared.gateway.github.fake import FakeLocalGitHub
+from tests.fakes.gateway.github import FakeLocalGitHub
+from tests.test_utils.test_context import context_for_test
 
 
 def _make_state(

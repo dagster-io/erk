@@ -5,8 +5,8 @@ from click.testing import CliRunner
 from erk.cli.commands.pr import pr_group
 from erk_shared.context.types import GlobalConfig
 from erk_shared.gateway.git.abc import RebaseResult
-from erk_shared.gateway.git.fake import FakeGit
-from tests.fakes.prompt_executor import FakePromptExecutor
+from tests.fakes.gateway.git import FakeGit
+from tests.fakes.tests.prompt_executor import FakePromptExecutor
 from tests.test_utils.context_builders import (
     build_graphite_test_context,
     build_workspace_test_context,

@@ -5,14 +5,14 @@ from pathlib import Path
 import pytest
 
 from erk.cli.graphite import find_worktrees_containing_branch
-from erk.core.context import context_for_test
 from erk_shared.context.types import GlobalConfig
 from erk_shared.gateway.git.abc import WorktreeInfo, find_worktree_for_branch
-from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.graphite.real import RealGraphite
-from tests.fakes.shell import FakeShell
+from tests.fakes.gateway.git import FakeGit
+from tests.fakes.gateway.github import FakeLocalGitHub
+from tests.fakes.gateway.shell import FakeShell
 from tests.test_utils.graphite_helpers import setup_graphite_stack
+from tests.test_utils.test_context import context_for_test
 
 
 def test_find_worktrees_containing_branch_no_match(tmp_path: Path) -> None:

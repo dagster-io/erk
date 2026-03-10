@@ -8,12 +8,12 @@ from erk.cli.commands.land_pipeline import (
     LandState,
     resolve_plan_id,
 )
-from erk.core.context import context_for_test
-from erk_shared.gateway.github.fake import FakeLocalGitHub
-from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.types import PRDetails
-from erk_shared.gateway.time.fake import FakeTime
 from erk_shared.plan_store.planned_pr import PlannedPRBackend
+from tests.fakes.gateway.github import FakeLocalGitHub
+from tests.fakes.gateway.github_issues import FakeGitHubIssues
+from tests.fakes.gateway.time import FakeTime
+from tests.test_utils.test_context import context_for_test
 
 
 def _make_pr_details(*, pr_number: int, branch: str) -> PRDetails:

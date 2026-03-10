@@ -11,11 +11,11 @@ from click.testing import CliRunner
 
 from erk.cli.commands.exec.scripts.get_pr_feedback import get_pr_feedback
 from erk_shared.context.context import ErkContext
-from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeLocalGitHub
-from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueComment
 from erk_shared.gateway.github.types import PRDetails, PRReviewComment, PRReviewThread
+from tests.fakes.gateway.git import FakeGit
+from tests.fakes.gateway.github import FakeLocalGitHub
+from tests.fakes.gateway.github_issues import FakeGitHubIssues
 
 
 def make_pr_details(pr_number: int, *, branch: str) -> PRDetails:

@@ -3,6 +3,5 @@
 Import from submodules:
 - abc: GitHubAdmin
 - real: RealGitHubAdmin
-- fake: FakeGitHubAdmin
 - noop: NoopGitHubAdmin
 """

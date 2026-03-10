@@ -6,11 +6,11 @@ import pytest
 from erk.cli.commands.init.main import create_and_save_global_config
 from erk.cli.commands.wt.create_cmd import make_env_content
 from erk.cli.config import load_config
-from erk.core.context import context_for_test
 from erk_shared.context.types import GlobalConfig, InteractiveAgentConfig
-from erk_shared.gateway.erk_installation.fake import FakeErkInstallation
 from erk_shared.gateway.erk_installation.real import RealErkInstallation
-from tests.fakes.shell import FakeShell
+from tests.fakes.gateway.erk_installation import FakeErkInstallation
+from tests.fakes.gateway.shell import FakeShell
+from tests.test_utils.test_context import context_for_test
 
 
 def test_global_config_test_factory_method(tmp_path: Path) -> None:

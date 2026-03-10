@@ -5,7 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from erk.core.fallback_prompt_executor import FallbackPromptExecutor
-from tests.fakes.prompt_executor import FakePromptExecutor
+from tests.fakes.tests.prompt_executor import FakePromptExecutor
 
 
 def _make_executor(

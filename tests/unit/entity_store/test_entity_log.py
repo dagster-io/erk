@@ -10,13 +10,13 @@ from erk_shared.entity_store.log import (
     entity_log_append,
     entity_log_append_content,
 )
-from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.metadata.core import (
     create_metadata_block,
     render_erk_issue_event,
 )
 from erk_shared.gateway.github.metadata.types import MetadataBlockSchema
+from tests.fakes.gateway.github_issues import FakeGitHubIssues
 
 REPO_ROOT = Path("/fake/repo")
 NOW = datetime(2024, 1, 1, tzinfo=UTC)

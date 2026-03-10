@@ -7,7 +7,6 @@ providing reliable test doubles for CLI tests.
 from datetime import UTC, datetime
 from pathlib import Path
 
-from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.types import (
     GitHubRepoId,
@@ -19,6 +18,7 @@ from erk_shared.gateway.github.types import (
     PullRequestInfo,
     WorkflowRun,
 )
+from tests.fakes.gateway.github import FakeLocalGitHub
 from tests.test_utils.paths import sentinel_path
 
 TEST_LOCATION = GitHubRepoLocation(root=sentinel_path(), repo_id=GitHubRepoId("owner", "repo"))

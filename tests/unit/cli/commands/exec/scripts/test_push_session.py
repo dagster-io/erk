@@ -8,7 +8,7 @@ from click.testing import CliRunner
 
 from erk.cli.commands.exec.scripts.push_session import push_session
 from erk_shared.context.context import ErkContext
-from erk_shared.gateway.git.fake import FakeGit
+from tests.fakes.gateway.git import FakeGit
 
 
 def _write_session_file(tmp_path: Path) -> Path:

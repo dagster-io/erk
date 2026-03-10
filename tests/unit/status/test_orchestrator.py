@@ -30,11 +30,11 @@ from erk.status.collectors.impl import PlanFileCollector
 from erk.status.models.status_data import GitStatus, PlanStatus
 from erk.status.orchestrator import StatusOrchestrator
 from erk_shared.gateway.git.abc import WorktreeInfo
-from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.gateway.parallel.real import RealParallelTaskRunner
 from erk_shared.impl_folder import get_impl_dir
-from tests.fakes.context import create_test_context
-from tests.fakes.parallel_task_runner import FakeParallelTaskRunner
+from tests.fakes.gateway.git import FakeGit
+from tests.fakes.tests.context import create_test_context
+from tests.fakes.tests.parallel_task_runner import FakeParallelTaskRunner
 
 BRANCH = "test/branch"
 """Test branch name used across tests."""

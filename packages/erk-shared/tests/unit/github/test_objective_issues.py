@@ -4,19 +4,19 @@ from pathlib import Path
 
 import pytest
 
-from erk_shared.gateway.branch_manager.fake import FakeBranchManager
-from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeLocalGitHub
-from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.objective_issues import (
     CreateObjectiveIssueResult,
     create_objective_issue,
 )
-from erk_shared.gateway.time.fake import FakeTime
 from erk_shared.plan_store.create_plan_draft_pr import (
     CreatePlanDraftPRResult,
     create_plan_draft_pr,
 )
+from tests.fakes.gateway.branch_manager import FakeBranchManager
+from tests.fakes.gateway.git import FakeGit
+from tests.fakes.gateway.github import FakeLocalGitHub
+from tests.fakes.gateway.github_issues import FakeGitHubIssues
+from tests.fakes.gateway.time import FakeTime
 
 
 def _create_plan(

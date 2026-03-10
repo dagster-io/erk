@@ -3,7 +3,7 @@
 import pytest
 
 from erk_shared.context.types import InteractiveAgentConfig
-from erk_shared.gateway.agent_launcher.fake import AgentLaunchCall, FakeAgentLauncher
+from tests.fakes.gateway.agent_launcher import AgentLaunchCall, FakeAgentLauncher
 
 
 class TestFakeAgentLauncherLaunchInteractive:

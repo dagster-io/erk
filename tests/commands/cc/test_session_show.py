@@ -6,7 +6,7 @@ import time
 from click.testing import CliRunner
 
 from erk.cli.commands.cc.session.show_cmd import show_session
-from erk_shared.gateway.claude_installation.fake import (
+from tests.fakes.gateway.claude_installation import (
     FakeClaudeInstallation,
     FakeProject,
     FakeSessionData,

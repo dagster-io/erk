@@ -13,15 +13,15 @@ from erk.cli.commands.exec.scripts.setup_impl_from_pr import (
     setup_impl_from_pr,
 )
 from erk_shared.context.context import ErkContext
-from erk_shared.context.testing import context_for_test
-from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.gateway.git.remote_ops.types import PullRebaseError
-from erk_shared.gateway.github.fake import FakeLocalGitHub
-from erk_shared.gateway.graphite.fake import FakeGraphite
-from erk_shared.gateway.time.fake import FakeTime
 from erk_shared.impl_folder import get_impl_dir, save_plan_ref
 from erk_shared.plan_store.planned_pr import PlannedPRBackend
 from erk_shared.plan_store.planned_pr_lifecycle import IMPL_CONTEXT_DIR
+from tests.fakes.gateway.git import FakeGit
+from tests.fakes.gateway.github import FakeLocalGitHub
+from tests.fakes.gateway.graphite import FakeGraphite
+from tests.fakes.gateway.time import FakeTime
+from tests.fakes.tests.shared_context import context_for_test
 
 BRANCH = "test/branch"
 """Test branch name used across tests."""

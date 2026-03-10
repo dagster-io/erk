@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from erk_shared.gateway.git.status_ops.fake import FakeGitStatusOps
+from tests.fakes.gateway.git_status_ops import FakeGitStatusOps
 
 
 class TestHasStagedChanges:

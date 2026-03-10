@@ -8,22 +8,22 @@ from click.testing import CliRunner
 
 from erk.cli.cli import cli
 from erk.cli.commands.learn.learn_cmd import LearnResult, _display_human_readable
-from erk.core.context import context_for_test
 from erk.core.repo_discovery import RepoContext
 from erk_shared.context.types import GlobalConfig
-from erk_shared.gateway.claude_installation.fake import (
+from erk_shared.gateway.github.issues.types import IssueInfo
+from erk_shared.gateway.github.metadata.core import render_metadata_block
+from erk_shared.gateway.github.metadata.types import MetadataBlock
+from tests.fakes.gateway.claude_installation import (
     FakeClaudeInstallation,
     FakeProject,
     FakeSessionData,
 )
-from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeLocalGitHub
-from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
-from erk_shared.gateway.github.issues.types import IssueInfo
-from erk_shared.gateway.github.metadata.core import render_metadata_block
-from erk_shared.gateway.github.metadata.types import MetadataBlock
-from tests.fakes.prompt_executor import FakePromptExecutor
+from tests.fakes.gateway.git import FakeGit
+from tests.fakes.gateway.github import FakeLocalGitHub
+from tests.fakes.gateway.github_issues import FakeGitHubIssues
+from tests.fakes.tests.prompt_executor import FakePromptExecutor
 from tests.test_utils.plan_helpers import issue_info_to_pr_details
+from tests.test_utils.test_context import context_for_test
 
 
 def test_display_shows_remote_impl_message_when_set(capsys: pytest.CaptureFixture[str]) -> None:

@@ -8,7 +8,7 @@ from erk.tui.commands.registry import (
 )
 from erk.tui.commands.types import CommandCategory, CommandContext
 from erk.tui.views.types import ViewMode
-from erk_shared.gateway.plan_data_provider.fake import make_plan_row
+from tests.fakes.gateway.plan_data_provider import make_plan_row
 
 
 def test_all_commands_have_unique_ids() -> None:

@@ -17,11 +17,11 @@ from erk.cli.commands.exec.scripts.rebase_with_conflict_resolution import (
     rebase_with_conflict_resolution,
 )
 from erk_shared.context.context import ErkContext
-from erk_shared.core.fakes import FakePromptExecutor
 from erk_shared.core.prompt_executor import PromptResult
 from erk_shared.gateway.git.abc import RebaseResult
-from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.gateway.git.remote_ops.types import PushError
+from tests.fakes.gateway.core import FakePromptExecutor
+from tests.fakes.gateway.git import FakeGit
 
 
 def test_build_summary_prompt_no_conflicts() -> None:

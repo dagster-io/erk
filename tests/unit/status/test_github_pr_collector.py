@@ -7,11 +7,11 @@ import pytest
 
 from erk.status.collectors.github import GitHubPRCollector
 from erk_shared.context.types import GlobalConfig
-from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.types import PullRequestInfo
-from erk_shared.gateway.graphite.fake import FakeGraphite
-from tests.fakes.context import create_test_context
+from tests.fakes.gateway.git import FakeGit
+from tests.fakes.gateway.github import FakeLocalGitHub
+from tests.fakes.gateway.graphite import FakeGraphite
+from tests.fakes.tests.context import create_test_context
 
 
 def make_pr(

@@ -10,7 +10,7 @@ from erk_shared.gateway.github.retry import (
     RetryRequested,
     with_retries,
 )
-from erk_shared.gateway.time.fake import FakeTime
+from tests.fakes.gateway.time import FakeTime
 
 
 def test_success_on_first_attempt():

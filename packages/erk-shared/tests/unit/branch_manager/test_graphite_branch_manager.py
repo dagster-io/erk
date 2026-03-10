@@ -9,11 +9,11 @@ Tests branch operations including:
 from pathlib import Path
 
 from erk_shared.gateway.branch_manager.graphite import GraphiteBranchManager
-from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
-from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.gateway.graphite.types import BranchMetadata
+from tests.fakes.gateway.git import FakeGit
+from tests.fakes.gateway.github import FakeLocalGitHub
+from tests.fakes.gateway.graphite import FakeGraphite
 
 
 def test_delete_branch_uses_graphite_when_tracked_and_not_diverged() -> None:

@@ -92,7 +92,7 @@ tests/
 
 ### FakeGit
 
-See `FakeGit` class in `packages/erk-shared/src/erk_shared/gateway/git/fake.py`.
+See `FakeGit` class in `tests/fakes/gateway/git.py`.
 
 FakeGit provides top-level properties for test assertions:
 
@@ -155,10 +155,10 @@ On macOS, `/tmp` and `/var` are symlinks to `/private/tmp` and `/private/var`. W
 
 #### FakeWorktree Error Injection
 
-FakeWorktree (in `packages/erk-shared/src/erk_shared/gateway/git/worktree/fake.py`) uses string-based error injection via constructor parameters. Errors raise `RuntimeError`:
+FakeWorktree (in `tests/fakes/gateway/git_worktree.py`) uses string-based error injection via constructor parameters. Errors raise `RuntimeError`:
 
 ```python
-from erk_shared.gateway.git.worktree.fake import FakeWorktree
+from tests.fakes.gateway.git_worktree import FakeWorktree
 
 # Inject error for add_worktree
 fake_worktree = FakeWorktree(
@@ -180,26 +180,26 @@ git = FakeGit(
 
 ### FakeGitHub
 
-See `FakeGitHub` class in `packages/erk-shared/src/erk_shared/gateway/github/fake.py`.
+See `FakeGitHub` class in `tests/fakes/gateway/github.py`.
 
 **Important: Dual-mapping for branch lookups** - `get_pr_for_branch()` requires BOTH `prs` AND `pr_details` to be configured. If only `prs` is configured, the method returns `PRNotFound` because the second lookup fails.
 
 ### FakeGraphite
 
-See `FakeGraphite` class in `packages/erk-shared/src/erk_shared/gateway/graphite/fake.py`.
+See `FakeGraphite` class in `tests/fakes/gateway/graphite.py`.
 
 ### FakeShell
 
-See `FakeShell` class in `packages/erk-shared/src/erk_shared/gateway/shell/fake.py`.
+See `FakeShell` class in `tests/fakes/gateway/shell.py`.
 
 ### FakeGitBranchOps
 
-See `FakeGitBranchOps` class in `packages/erk-shared/src/erk_shared/gateway/git/branch_ops/fake.py`.
+See `FakeGitBranchOps` class in `tests/fakes/gateway/git_branch_ops.py`.
 
 This fake supports error injection via the `create_branch_error` constructor parameter, which accepts a `BranchAlreadyExists` instance:
 
 ```python
-from erk_shared.gateway.git.branch_ops.fake import FakeGitBranchOps
+from tests.fakes.gateway.git_branch_ops import FakeGitBranchOps
 from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists
 
 fake = FakeGitBranchOps(
@@ -262,7 +262,7 @@ This is a convenience wrapper around `context_for_test()` from `erk.core.context
 ### context_for_test()
 
 ```python
-from erk.core.context import context_for_test
+from tests.test_utils.test_context import context_for_test
 
 test_ctx = context_for_test(
     git=git,
@@ -412,14 +412,14 @@ assert str(worktree_path) in script
 
 FakeConsole enables testing code that uses `ctx.console.confirm()` for user prompts.
 
-Source: `packages/erk-shared/src/erk_shared/gateway/console/fake.py`
+Source: `tests/fakes/gateway/console.py`
 
 ### Constructor Parameters
 
 All parameters are required keyword-only arguments:
 
 ```python
-from erk_shared.gateway.console.fake import FakeConsole
+from tests.fakes.gateway.console import FakeConsole
 
 FakeConsole(
     is_interactive=True,        # Whether stdin is TTY
@@ -483,10 +483,10 @@ class GraphiteBranchManager(BranchManager):
 ### Test Setup Pattern
 
 ```python
-from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.graphite.fake import FakeGraphite
-from erk_shared.gateway.graphite.branch_ops.fake import FakeGraphiteBranchOps
-from erk_shared.gateway.github.fake import FakeGitHub
+from tests.fakes.gateway.git import FakeGit
+from tests.fakes.gateway.graphite import FakeGraphite
+from tests.fakes.gateway.graphite_branch_ops import FakeGraphiteBranchOps
+from tests.fakes.gateway.github import FakeGitHub
 from erk_shared.gateway.branch_manager.graphite import GraphiteBranchManager
 
 branch_manager = GraphiteBranchManager(

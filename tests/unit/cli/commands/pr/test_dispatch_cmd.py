@@ -3,10 +3,10 @@
 from pathlib import Path
 
 from erk.cli.commands.pr.dispatch_cmd import _detect_plan_number_from_context
-from erk_shared.context.testing import context_for_test
 from erk_shared.context.types import RepoContext
-from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.types import PRDetails
+from tests.fakes.gateway.github import FakeLocalGitHub
+from tests.fakes.tests.shared_context import context_for_test
 
 
 def _repo_context(tmp_path: Path) -> RepoContext:

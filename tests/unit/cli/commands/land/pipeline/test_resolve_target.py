@@ -11,12 +11,12 @@ from erk.cli.commands.land_pipeline import (
     resolve_target,
 )
 from erk.cli.ensure import UserFacingCliError
-from erk.core.context import context_for_test
 from erk_shared.gateway.git.abc import WorktreeInfo
-from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.types import PRDetails
 from erk_shared.gateway.graphite.disabled import GraphiteDisabled, GraphiteDisabledReason
+from tests.fakes.gateway.git import FakeGit
+from tests.fakes.gateway.github import FakeLocalGitHub
+from tests.test_utils.test_context import context_for_test
 
 
 def _make_pr_details(

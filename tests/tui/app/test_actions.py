@@ -8,9 +8,9 @@ from erk.tui.screens.launch_screen import LaunchScreen
 from erk.tui.screens.objective_nodes_screen import ObjectiveNodesScreen
 from erk.tui.screens.unresolved_comments_screen import UnresolvedCommentsScreen
 from erk.tui.widgets.status_bar import StatusBar
-from erk_shared.gateway.clipboard.fake import FakeClipboard
-from erk_shared.gateway.plan_data_provider.fake import FakePlanDataProvider, make_plan_row
-from erk_shared.gateway.pr_service.fake import FakePrService
+from tests.fakes.gateway.clipboard import FakeClipboard
+from tests.fakes.gateway.plan_data_provider import FakePlanDataProvider, make_plan_row
+from tests.fakes.gateway.pr_service import FakePrService
 
 
 class TestActionViewComments:

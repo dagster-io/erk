@@ -9,9 +9,9 @@ from erk.cli.commands.reconcile_pipeline import (
     process_merged_branch,
 )
 from erk_shared.gateway.git.abc import BranchSyncInfo, WorktreeInfo
-from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.types import PRDetails
+from tests.fakes.gateway.git import FakeGit
+from tests.fakes.gateway.github import FakeLocalGitHub
 from tests.test_utils.env_helpers import erk_inmem_env
 
 

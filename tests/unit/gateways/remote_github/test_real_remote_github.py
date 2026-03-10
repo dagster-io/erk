@@ -9,10 +9,10 @@ import base64
 import pytest
 
 from erk_shared.gateway.http.abc import HttpError
-from erk_shared.gateway.http.fake import FakeHttpClient
 from erk_shared.gateway.remote_github.real import RealRemoteGitHub, _parse_pr_response
 from erk_shared.gateway.remote_github.types import RemotePRInfo, RemotePRNotFound
-from erk_shared.gateway.time.fake import FakeTime
+from tests.fakes.gateway.http import FakeHttpClient
+from tests.fakes.gateway.time import FakeTime
 
 
 def _make_remote(

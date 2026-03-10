@@ -9,22 +9,22 @@ from erk.cli.commands.pr.submit_pipeline import (
     SubmitState,
     finalize_pr,
 )
-from erk.core.context import context_for_test
 from erk.core.plan_context_provider import PlanContext
 from erk_shared.context.types import GlobalConfig
-from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeLocalGitHub
-from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.types import PRDetails
-from erk_shared.gateway.time.fake import FakeTime
 from erk_shared.impl_folder import get_impl_dir
 from erk_shared.plan_store.planned_pr import PlannedPRBackend
 from erk_shared.plan_store.planned_pr_lifecycle import build_plan_stage_body
+from tests.fakes.gateway.git import FakeGit
+from tests.fakes.gateway.github import FakeLocalGitHub
+from tests.fakes.gateway.github_issues import FakeGitHubIssues
+from tests.fakes.gateway.time import FakeTime
 from tests.test_utils.plan_helpers import (
     create_backend_from_issues,
     format_plan_header_body_for_test,
 )
+from tests.test_utils.test_context import context_for_test
 
 BRANCH = "test/branch"
 """Test branch name used across tests."""

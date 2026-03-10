@@ -6,7 +6,7 @@ from erk.core.display_utils import strip_rich_markup
 from erk.tui.data.types import PlanFilters
 from erk.tui.views.types import ViewMode
 from erk.tui.widgets.plan_table import PlanDataTable
-from erk_shared.gateway.plan_data_provider.fake import make_plan_row
+from tests.fakes.gateway.plan_data_provider import make_plan_row
 
 
 def _text_to_str(value: str | Text) -> str:

@@ -6,9 +6,9 @@ from erk.cli.commands.pr.submit_pipeline import (
     SubmitState,
     capture_existing_pr_body,
 )
-from erk.core.context import context_for_test
-from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.types import PRDetails
+from tests.fakes.gateway.github import FakeLocalGitHub
+from tests.test_utils.test_context import context_for_test
 
 _PR_BODY_WITH_METADATA = (
     "<!-- erk:metadata-block:start -->\n"

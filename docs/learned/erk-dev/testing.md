@@ -25,8 +25,8 @@ Always invoke commands via the CLI group with context injection:
 from click.testing import CliRunner
 from erk_dev.cli import cli
 from erk_dev.context import ErkDevContext
-from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeGitHub
+from tests.fakes.gateway.git import FakeGit
+from tests.fakes.gateway.github import FakeGitHub
 
 def test_my_command(tmp_path: Path) -> None:
     fake_git = FakeGit()

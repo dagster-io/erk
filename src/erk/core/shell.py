@@ -4,15 +4,14 @@ This module provides abstraction over shell-specific operations like detecting
 the current shell and checking if command-line tools are installed. This abstraction
 enables dependency injection for testing without mock.patch.
 
-The Shell ABC and implementations (RealShell, FakeShell) are defined in erk_shared
-and re-exported here. Erk-specific helper functions remain in this module.
+The Shell ABC and implementations are defined in erk_shared and re-exported here.
+Erk-specific helper functions remain in this module.
 """
 
 import json
 
 from erk_shared.gateway.shell.abc import Shell as Shell
 from erk_shared.gateway.shell.abc import detect_shell_from_env as detect_shell_from_env
-from erk_shared.gateway.shell.fake import FakeShell as FakeShell
 from erk_shared.gateway.shell.real import RealShell as RealShell
 from erk_shared.subprocess_utils import (
     run_subprocess_with_context as run_subprocess_with_context,

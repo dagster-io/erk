@@ -117,33 +117,6 @@ class RealLocalGitHub(LocalGitHub):
         self._issues = issues
         self._default_branch_cache: dict[Path, str] = {}
 
-    @classmethod
-    def for_test(
-        cls,
-        time: Time | None = None,
-        repo_info: RepoInfo | None = None,
-    ) -> "RealLocalGitHub":
-        """Create RealLocalGitHub with test defaults.
-
-        Convenience factory for tests that need RealLocalGitHub but don't care
-        about the issues gateway configuration.
-
-        Args:
-            time: Time implementation (defaults to FakeTime)
-            repo_info: Repository info (defaults to None)
-
-        Returns:
-            RealLocalGitHub configured with FakeGitHubIssues
-        """
-        from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
-        from erk_shared.gateway.time.fake import FakeTime
-
-        return cls(
-            time=time if time is not None else FakeTime(),
-            repo_info=repo_info,
-            issues=FakeGitHubIssues(),
-        )
-
     @property
     def issues(self) -> GitHubIssues:
         """Access to issue operations."""

@@ -268,7 +268,7 @@ def test_real_database_with_mocking(monkeypatch) -> None:
 Constructor injection only - NO mutation methods like `add_issue()`.
 
 ```python
-from erk_shared.gateway.github.issues import FakeGitHubIssues
+from tests.fakes.gateway.github import FakeGitHubIssues
 from tests.test_utils.github_helpers import create_test_issue
 
 # Empty fake
@@ -292,7 +292,7 @@ assert fake_issues.created_issues[0][0] == "Expected Title"
 Use `for_test()` factory method - constructor requires all params.
 
 ```python
-from erk_shared.learn.extraction.claude_installation.fake import (
+from tests.fakes.tests.claude_installation import (
     FakeClaudeInstallation,
     FakeProject,
     FakeSessionData,
@@ -327,7 +327,7 @@ fake_claude = FakeClaudeInstallation.for_test(
 Constructor injection with path-keyed dicts.
 
 ```python
-from erk_shared.gateway.git.fake import FakeGit
+from tests.fakes.gateway.git import FakeGit
 
 # Minimal setup
 fake_git = FakeGit()

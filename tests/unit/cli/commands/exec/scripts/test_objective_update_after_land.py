@@ -10,7 +10,7 @@ after a PR has been merged. Tests verify:
 from click.testing import CliRunner
 
 from erk.cli.cli import cli
-from tests.fakes.prompt_executor import FakePromptExecutor
+from tests.fakes.tests.prompt_executor import FakePromptExecutor
 from tests.test_utils.env_helpers import erk_inmem_env
 
 

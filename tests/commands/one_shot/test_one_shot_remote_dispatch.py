@@ -8,8 +8,8 @@ from erk.cli.commands.one_shot_remote_dispatch import (
     OneShotDryRunResult,
     dispatch_one_shot_remote,
 )
-from erk_shared.gateway.remote_github.fake import FakeRemoteGitHub
-from erk_shared.gateway.time.fake import FakeTime
+from tests.fakes.gateway.remote_github import FakeRemoteGitHub
+from tests.fakes.gateway.time import FakeTime
 
 
 def test_remote_dispatch_happy_path() -> None:
@@ -248,8 +248,8 @@ def test_remote_dispatch_with_plan_only() -> None:
 
 def test_cli_repo_flag_rejects_invalid_format() -> None:
     """Test --repo flag rejects invalid owner/repo format."""
-    from erk_shared.gateway.git.fake import FakeGit
-    from erk_shared.gateway.github.fake import FakeLocalGitHub
+    from tests.fakes.gateway.git import FakeGit
+    from tests.fakes.gateway.github import FakeLocalGitHub
     from tests.test_utils.context_builders import build_workspace_test_context
     from tests.test_utils.env_helpers import erk_isolated_fs_env
 
@@ -277,8 +277,8 @@ def test_cli_repo_flag_rejects_invalid_format() -> None:
 
 def test_cli_repo_flag_rejects_ref_current() -> None:
     """Test --repo + --ref-current is rejected."""
-    from erk_shared.gateway.git.fake import FakeGit
-    from erk_shared.gateway.github.fake import FakeLocalGitHub
+    from tests.fakes.gateway.git import FakeGit
+    from tests.fakes.gateway.github import FakeLocalGitHub
     from tests.test_utils.context_builders import build_workspace_test_context
     from tests.test_utils.env_helpers import erk_isolated_fs_env
 

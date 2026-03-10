@@ -8,9 +8,9 @@ from click.testing import CliRunner
 from erk.cli.cli import cli
 from erk.core.repo_discovery import RepoContext
 from erk.core.worktree_pool import PoolState, SlotAssignment
-from erk_shared.gateway.erk_installation.fake import FakeErkInstallation
 from erk_shared.gateway.git.abc import WorktreeInfo
-from erk_shared.gateway.git.fake import FakeGit
+from tests.fakes.gateway.erk_installation import FakeErkInstallation
+from tests.fakes.gateway.git import FakeGit
 from tests.test_utils.env_helpers import erk_isolated_fs_env
 
 
@@ -613,8 +613,8 @@ def test_slot_repair_dry_run_branch_mismatch() -> None:
 
 def test_slot_repair_repairs_closed_pr() -> None:
     """Test repair fixes closed-pr issues by removing the assignment."""
-    from erk_shared.gateway.github.fake import FakeLocalGitHub
     from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
+    from tests.fakes.gateway.github import FakeLocalGitHub
 
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
@@ -699,8 +699,8 @@ def test_slot_repair_repairs_closed_pr() -> None:
 
 def test_slot_repair_repairs_merged_pr() -> None:
     """Test repair fixes merged-pr issues by removing the assignment."""
-    from erk_shared.gateway.github.fake import FakeLocalGitHub
     from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
+    from tests.fakes.gateway.github import FakeLocalGitHub
 
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
@@ -785,8 +785,8 @@ def test_slot_repair_repairs_merged_pr() -> None:
 
 def test_slot_repair_skips_open_pr() -> None:
     """Test repair does NOT flag slots with open PRs."""
-    from erk_shared.gateway.github.fake import FakeLocalGitHub
     from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
+    from tests.fakes.gateway.github import FakeLocalGitHub
 
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
@@ -869,7 +869,7 @@ def test_slot_repair_skips_open_pr() -> None:
 
 def test_slot_repair_skips_branch_without_pr() -> None:
     """Test repair does NOT flag slots where no PR exists."""
-    from erk_shared.gateway.github.fake import FakeLocalGitHub
+    from tests.fakes.gateway.github import FakeLocalGitHub
 
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:

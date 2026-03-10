@@ -1,6 +1,6 @@
 """Tests for FakeCommandExecutor."""
 
-from erk_shared.gateway.command_executor.fake import FakeCommandExecutor
+from tests.fakes.gateway.command_executor import FakeCommandExecutor
 
 
 def test_tracks_opened_urls() -> None:

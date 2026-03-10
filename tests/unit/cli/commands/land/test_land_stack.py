@@ -6,15 +6,16 @@ import pytest
 
 from erk.cli.commands.land_stack import execute_land_stack
 from erk.cli.ensure import UserFacingCliError
-from erk.core.context import ErkContext, context_for_test
+from erk.core.context import ErkContext
 from erk.core.repo_discovery import RepoContext
 from erk_shared.context.types import GlobalConfig
 from erk_shared.gateway.git.abc import RebaseResult, WorktreeInfo
-from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
-from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.gateway.graphite.types import BranchMetadata
+from tests.fakes.gateway.git import FakeGit
+from tests.fakes.gateway.github import FakeLocalGitHub
+from tests.fakes.gateway.graphite import FakeGraphite
+from tests.test_utils.test_context import context_for_test
 
 
 def _make_pr_details(*, pr_number: int, branch: str, base_ref_name: str) -> PRDetails:

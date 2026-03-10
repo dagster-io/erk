@@ -3,7 +3,6 @@ from pathlib import Path
 
 import pytest
 
-from erk_shared.gateway.time.fake import DEFAULT_FAKE_TIME
 from erk_shared.naming import (
     WORKTREE_DATE_SUFFIX_FORMAT,
     InvalidObjectiveSlug,
@@ -24,6 +23,7 @@ from erk_shared.naming import (
     validate_plan_title,
     validate_worktree_name,
 )
+from tests.fakes.gateway.time import DEFAULT_FAKE_TIME
 
 # Deterministic date suffix for tests that call ensure_unique_worktree_name with now=
 _FAKE_DATE_SUFFIX = DEFAULT_FAKE_TIME.strftime(WORKTREE_DATE_SUFFIX_FORMAT)

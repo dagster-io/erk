@@ -6,13 +6,13 @@ from pathlib import Path
 from click.testing import CliRunner
 
 from erk.cli.cli import cli
-from erk.core.context import context_for_test
 from erk.core.repo_discovery import RepoContext
 from erk_shared.context.types import LoadedConfig
-from erk_shared.gateway.codespace.fake import FakeCodespace
 from erk_shared.gateway.codespace_registry.abc import RegisteredCodespace
-from erk_shared.gateway.codespace_registry.fake import FakeCodespaceRegistry
-from erk_shared.gateway.git.fake import FakeGit
+from tests.fakes.gateway.codespace import FakeCodespace
+from tests.fakes.gateway.codespace_registry import FakeCodespaceRegistry
+from tests.fakes.gateway.git import FakeGit
+from tests.test_utils.test_context import context_for_test
 
 
 def test_connect_shows_error_when_no_codespaces() -> None:

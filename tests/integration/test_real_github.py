@@ -12,10 +12,10 @@ from pathlib import Path
 import pytest
 from pytest import MonkeyPatch
 
-from erk_shared.gateway.github.real import RealLocalGitHub
 from erk_shared.gateway.github.types import MergeError, MergeResult
-from erk_shared.gateway.time.fake import FakeTime
+from tests.fakes.gateway.time import FakeTime
 from tests.integration.test_helpers import mock_subprocess_run
+from tests.test_utils.context_builders import real_github_for_test
 
 # ============================================================================
 # update_pr_base_branch() Tests
@@ -36,7 +36,7 @@ def test_update_pr_base_branch_success(monkeypatch: MonkeyPatch) -> None:
         )
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        ops = RealLocalGitHub.for_test()
+        ops = real_github_for_test()
         ops.update_pr_base_branch(Path("/repo"), 123, "new-base")
 
         # Verify REST API command format
@@ -57,7 +57,7 @@ def test_update_pr_base_branch_command_failure(monkeypatch: MonkeyPatch) -> None
         raise RuntimeError("Failed to execute gh command")
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        ops = RealLocalGitHub.for_test()
+        ops = real_github_for_test()
         # Gracefully degrades - silently fails without raising
         ops.update_pr_base_branch(Path("/repo"), 123, "new-base")
         # Verify the command was attempted
@@ -73,7 +73,7 @@ def test_update_pr_base_branch_file_not_found(monkeypatch: MonkeyPatch) -> None:
         raise FileNotFoundError("gh command not found")
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        ops = RealLocalGitHub.for_test()
+        ops = real_github_for_test()
         # Gracefully degrades - silently fails when gh not found
         ops.update_pr_base_branch(Path("/repo"), 123, "new-base")
         # Verify the command was attempted
@@ -114,7 +114,7 @@ def test_merge_pr_with_squash() -> None:
     try:
         subprocess.run = mock_run
 
-        ops = RealLocalGitHub.for_test()
+        ops = real_github_for_test()
         result = ops.merge_pr(repo_root, pr_number, squash=True, verbose=False)
         assert isinstance(result, MergeResult)
         assert result.pr_number == 123
@@ -146,7 +146,7 @@ def test_merge_pr_without_squash() -> None:
     try:
         subprocess.run = mock_run
 
-        ops = RealLocalGitHub.for_test()
+        ops = real_github_for_test()
         ops.merge_pr(repo_root, pr_number, squash=False, verbose=False)
     finally:
         subprocess.run = original_run
@@ -164,7 +164,7 @@ def test_merge_pr_returns_merge_error_on_failure() -> None:
     try:
         subprocess.run = mock_run
 
-        ops = RealLocalGitHub.for_test()
+        ops = real_github_for_test()
 
         result = ops.merge_pr(repo_root, pr_number, squash=True, verbose=False)
         assert isinstance(result, MergeError)
@@ -210,7 +210,7 @@ def test_create_pr_success() -> None:
     try:
         subprocess.run = mock_run
 
-        ops = RealLocalGitHub.for_test()
+        ops = real_github_for_test()
         pr_number = ops.create_pr(
             repo_root=repo_root,
             branch="feat-test",
@@ -251,7 +251,7 @@ def test_create_pr_without_base() -> None:
     try:
         subprocess.run = mock_run
 
-        ops = RealLocalGitHub.for_test()
+        ops = real_github_for_test()
         pr_number = ops.create_pr(
             repo_root=repo_root,
             branch="feat-test",
@@ -276,7 +276,7 @@ def test_create_pr_failure() -> None:
     try:
         subprocess.run = mock_run
 
-        ops = RealLocalGitHub.for_test()
+        ops = real_github_for_test()
 
         # Should raise RuntimeError (from run_subprocess_with_context wrapper)
         with pytest.raises(RuntimeError) as exc_info:
@@ -349,7 +349,7 @@ def test_list_workflow_runs_success() -> None:
     try:
         subprocess.run = mock_run
 
-        ops = RealLocalGitHub.for_test()
+        ops = real_github_for_test()
         result = ops.list_workflow_runs(repo_root, "implement-plan.yml", limit=50)
 
         assert len(result) == 3
@@ -383,7 +383,7 @@ def test_list_workflow_runs_custom_limit() -> None:
     try:
         subprocess.run = mock_run
 
-        ops = RealLocalGitHub.for_test()
+        ops = real_github_for_test()
         result = ops.list_workflow_runs(repo_root, "test.yml", limit=10)
 
         assert result == []
@@ -402,7 +402,7 @@ def test_list_workflow_runs_command_failure() -> None:
     try:
         subprocess.run = mock_run
 
-        ops = RealLocalGitHub.for_test()
+        ops = real_github_for_test()
 
         # Should raise RuntimeError with helpful message instead of silently failing
         with pytest.raises(RuntimeError, match="gh not authenticated"):
@@ -424,7 +424,7 @@ def test_list_workflow_runs_json_decode_error() -> None:
     try:
         subprocess.run = mock_run
 
-        ops = RealLocalGitHub.for_test()
+        ops = real_github_for_test()
 
         # Should raise JSONDecodeError instead of silently failing
         with pytest.raises(json.JSONDecodeError):
@@ -459,7 +459,7 @@ def test_list_workflow_runs_missing_fields() -> None:
     try:
         subprocess.run = mock_run
 
-        ops = RealLocalGitHub.for_test()
+        ops = real_github_for_test()
 
         # Should raise KeyError instead of silently failing
         with pytest.raises(KeyError, match="head_branch"):
@@ -534,7 +534,7 @@ def test_trigger_workflow_handles_empty_list_during_polling(monkeypatch: MonkeyP
         )
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        ops = RealLocalGitHub.for_test()
+        ops = real_github_for_test()
         run_id = ops.trigger_workflow(
             repo_root=repo_root,
             workflow="test-workflow.yml",
@@ -581,7 +581,7 @@ def test_trigger_workflow_errors_on_invalid_json_structure(monkeypatch: MonkeyPa
         )
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        ops = RealLocalGitHub.for_test()
+        ops = real_github_for_test()
 
         # Should raise error for invalid response format
         with pytest.raises(RuntimeError) as exc_info:
@@ -633,7 +633,7 @@ def test_trigger_workflow_timeout_after_max_attempts(monkeypatch: MonkeyPatch) -
     with mock_subprocess_run(monkeypatch, mock_run):
         # Use FakeTime that never sleeps
         fake_time = FakeTime()
-        ops = RealLocalGitHub.for_test(time=fake_time)
+        ops = real_github_for_test(time=fake_time)
 
         # Should raise error after max attempts
         with pytest.raises(RuntimeError) as exc_info:
@@ -700,7 +700,7 @@ def test_trigger_workflow_raises_on_skipped_cancelled_runs(monkeypatch: MonkeyPa
         )
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        ops = RealLocalGitHub.for_test()
+        ops = real_github_for_test()
         with pytest.raises(RuntimeError, match="run was skipped"):
             ops.trigger_workflow(
                 repo_root=repo_root,
@@ -731,7 +731,7 @@ def test_has_pr_label_uses_rest_api(monkeypatch: MonkeyPatch) -> None:
         )
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        ops = RealLocalGitHub.for_test()
+        ops = real_github_for_test()
         result = ops.has_pr_label(Path("/repo"), 101, "bug")
 
         assert result is True
@@ -756,7 +756,7 @@ def test_has_pr_label_returns_false_when_label_not_present(monkeypatch: MonkeyPa
         )
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        ops = RealLocalGitHub.for_test()
+        ops = real_github_for_test()
         result = ops.has_pr_label(Path("/repo"), 101, "urgent")
 
         assert result is False
@@ -782,7 +782,7 @@ def test_get_pr_changed_files_success(monkeypatch: MonkeyPatch) -> None:
         )
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        ops = RealLocalGitHub.for_test()
+        ops = real_github_for_test()
         result = ops.get_pr_changed_files(Path("/repo"), 123)
 
         # Verify REST API format: gh api repos/.../pulls/123/files --paginate -q .[].filename
@@ -810,7 +810,7 @@ def test_get_pr_changed_files_empty_pr(monkeypatch: MonkeyPatch) -> None:
         )
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        ops = RealLocalGitHub.for_test()
+        ops = real_github_for_test()
         result = ops.get_pr_changed_files(Path("/repo"), 456)
 
         assert result == []
@@ -823,7 +823,7 @@ def test_get_pr_changed_files_api_failure(monkeypatch: MonkeyPatch) -> None:
         raise subprocess.CalledProcessError(1, cmd, stderr="PR not found")
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        ops = RealLocalGitHub.for_test()
+        ops = real_github_for_test()
 
         with pytest.raises(RuntimeError, match="PR not found"):
             ops.get_pr_changed_files(Path("/repo"), 999)
@@ -849,7 +849,7 @@ def test_delete_remote_branch_success(monkeypatch: MonkeyPatch) -> None:
         )
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        ops = RealLocalGitHub.for_test()
+        ops = real_github_for_test()
         result = ops.delete_remote_branch(Path("/repo"), "feature-branch")
 
         assert result is True
@@ -868,7 +868,7 @@ def test_delete_remote_branch_not_found_returns_true(monkeypatch: MonkeyPatch) -
         raise subprocess.CalledProcessError(1, cmd, stderr="Reference does not exist")
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        ops = RealLocalGitHub.for_test()
+        ops = real_github_for_test()
         # Should return True even for 404 (branch already deleted)
         result = ops.delete_remote_branch(Path("/repo"), "nonexistent-branch")
 
@@ -883,7 +883,7 @@ def test_delete_remote_branch_other_error_returns_false(monkeypatch: MonkeyPatch
         raise subprocess.CalledProcessError(1, cmd, stderr="Cannot delete protected branch")
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        ops = RealLocalGitHub.for_test()
+        ops = real_github_for_test()
         # Should return False for errors other than 404
         result = ops.delete_remote_branch(Path("/repo"), "protected-branch")
 
@@ -932,7 +932,7 @@ def test_list_prs_success(monkeypatch: MonkeyPatch) -> None:
     with mock_subprocess_run(monkeypatch, mock_run):
         from erk_shared.gateway.github.types import RepoInfo
 
-        ops = RealLocalGitHub.for_test(repo_info=RepoInfo(owner="owner", name="repo"))
+        ops = real_github_for_test(repo_info=RepoInfo(owner="owner", name="repo"))
         result = ops.list_prs(Path("/repo"), state="open")
 
         # Verify REST API command format
@@ -984,7 +984,7 @@ def test_list_prs_with_closed_state(monkeypatch: MonkeyPatch) -> None:
     with mock_subprocess_run(monkeypatch, mock_run):
         from erk_shared.gateway.github.types import RepoInfo
 
-        ops = RealLocalGitHub.for_test(repo_info=RepoInfo(owner="owner", name="repo"))
+        ops = real_github_for_test(repo_info=RepoInfo(owner="owner", name="repo"))
         result = ops.list_prs(Path("/repo"), state="closed")
 
         # Verify state parameter passed
@@ -1023,7 +1023,7 @@ def test_list_prs_merged_state(monkeypatch: MonkeyPatch) -> None:
     with mock_subprocess_run(monkeypatch, mock_run):
         from erk_shared.gateway.github.types import RepoInfo
 
-        ops = RealLocalGitHub.for_test(repo_info=RepoInfo(owner="owner", name="repo"))
+        ops = real_github_for_test(repo_info=RepoInfo(owner="owner", name="repo"))
         result = ops.list_prs(Path("/repo"), state="all")
 
         assert result["merged-branch"].state == "MERGED"
@@ -1038,7 +1038,7 @@ def test_list_prs_api_failure_returns_empty(monkeypatch: MonkeyPatch) -> None:
     with mock_subprocess_run(monkeypatch, mock_run):
         from erk_shared.gateway.github.types import RepoInfo
 
-        ops = RealLocalGitHub.for_test(repo_info=RepoInfo(owner="owner", name="repo"))
+        ops = real_github_for_test(repo_info=RepoInfo(owner="owner", name="repo"))
         result = ops.list_prs(Path("/repo"), state="open")
 
         # Should return empty dict, not raise
@@ -1087,7 +1087,7 @@ def test_get_open_prs_with_base_branch_success(monkeypatch: MonkeyPatch) -> None
     with mock_subprocess_run(monkeypatch, mock_run):
         from erk_shared.gateway.github.types import RepoInfo
 
-        ops = RealLocalGitHub.for_test(repo_info=RepoInfo(owner="owner", name="repo"))
+        ops = real_github_for_test(repo_info=RepoInfo(owner="owner", name="repo"))
         result = ops.get_open_prs_with_base_branch(Path("/repo"), "main")
 
         # Verify REST API command format
@@ -1121,7 +1121,7 @@ def test_get_open_prs_with_base_branch_empty_result(monkeypatch: MonkeyPatch) ->
     with mock_subprocess_run(monkeypatch, mock_run):
         from erk_shared.gateway.github.types import RepoInfo
 
-        ops = RealLocalGitHub.for_test(repo_info=RepoInfo(owner="owner", name="repo"))
+        ops = real_github_for_test(repo_info=RepoInfo(owner="owner", name="repo"))
         result = ops.get_open_prs_with_base_branch(Path("/repo"), "feature-1")
 
         assert result == []
@@ -1138,7 +1138,7 @@ def test_get_open_prs_with_base_branch_api_failure_returns_empty(
     with mock_subprocess_run(monkeypatch, mock_run):
         from erk_shared.gateway.github.types import RepoInfo
 
-        ops = RealLocalGitHub.for_test(repo_info=RepoInfo(owner="owner", name="repo"))
+        ops = real_github_for_test(repo_info=RepoInfo(owner="owner", name="repo"))
         result = ops.get_open_prs_with_base_branch(Path("/repo"), "main")
 
         # Should return empty list, not raise
@@ -1197,7 +1197,7 @@ def test_get_pr_check_runs_success(monkeypatch: MonkeyPatch) -> None:
     with mock_subprocess_run(monkeypatch, mock_run):
         from erk_shared.gateway.github.types import RepoInfo
 
-        ops = RealLocalGitHub.for_test(repo_info=RepoInfo(owner="owner", name="repo"))
+        ops = real_github_for_test(repo_info=RepoInfo(owner="owner", name="repo"))
         result = ops.get_pr_check_runs(Path("/repo"), 42)
 
         # Verify GraphQL command construction
@@ -1239,7 +1239,7 @@ def test_get_pr_check_runs_empty_rollup(monkeypatch: MonkeyPatch) -> None:
     with mock_subprocess_run(monkeypatch, mock_run):
         from erk_shared.gateway.github.types import RepoInfo
 
-        ops = RealLocalGitHub.for_test(repo_info=RepoInfo(owner="owner", name="repo"))
+        ops = real_github_for_test(repo_info=RepoInfo(owner="owner", name="repo"))
         result = ops.get_pr_check_runs(Path("/repo"), 42)
 
         assert result == []
@@ -1264,7 +1264,7 @@ def test_get_pr_comment_success(monkeypatch: MonkeyPatch) -> None:
         )
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        ops = RealLocalGitHub.for_test()
+        ops = real_github_for_test()
         result = ops.get_pr_comment(Path("/repo"), 99999)
 
         assert result == "This is the comment body"
@@ -1288,7 +1288,7 @@ def test_get_pr_comment_returns_none_on_failure(monkeypatch: MonkeyPatch) -> Non
         )
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        ops = RealLocalGitHub.for_test()
+        ops = real_github_for_test()
         result = ops.get_pr_comment(Path("/repo"), 99999)
 
         assert result is None
@@ -1306,7 +1306,7 @@ def test_get_pr_comment_returns_none_on_empty_body(monkeypatch: MonkeyPatch) -> 
         )
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        ops = RealLocalGitHub.for_test()
+        ops = real_github_for_test()
         result = ops.get_pr_comment(Path("/repo"), 99999)
 
         assert result is None

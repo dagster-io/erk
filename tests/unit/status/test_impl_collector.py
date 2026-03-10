@@ -6,10 +6,10 @@ including issue references for status display.
 
 from pathlib import Path
 
-from erk.core.context import minimal_context
 from erk.status.collectors.impl import PlanFileCollector
-from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.impl_folder import create_impl_folder, save_plan_ref
+from tests.fakes.gateway.git import FakeGit
+from tests.test_utils.test_context import minimal_context
 
 BRANCH = "feature/test-branch"
 """Test branch name used across tests."""

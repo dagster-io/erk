@@ -5,14 +5,14 @@ from pathlib import Path
 
 from erk.cli.commands.pr.shared import assemble_pr_body, recover_plan_header
 from erk.core.plan_context_provider import PlanContext
-from erk_shared.context.testing import context_for_test
-from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.metadata.core import find_metadata_block, render_metadata_block
 from erk_shared.gateway.github.metadata.types import MetadataBlock
 from erk_shared.gateway.github.types import PRDetails
-from erk_shared.gateway.time.fake import FakeTime
 from erk_shared.plan_store.planned_pr import PlannedPRBackend
 from erk_shared.plan_store.planned_pr_lifecycle import build_plan_stage_body
+from tests.fakes.gateway.github import FakeLocalGitHub
+from tests.fakes.gateway.time import FakeTime
+from tests.fakes.tests.shared_context import context_for_test
 from tests.test_utils.plan_helpers import format_plan_header_body_for_test
 
 # ---------------------------------------------------------------------------

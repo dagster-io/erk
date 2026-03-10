@@ -13,8 +13,8 @@ from click.testing import CliRunner
 
 from erk.cli.commands.exec.scripts.ci_fetch_summaries import ci_fetch_summaries
 from erk_shared.context.context import ErkContext
-from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.types import PRDetails, WorkflowRun
+from tests.fakes.gateway.github import FakeLocalGitHub
 
 
 def _make_pr_details(*, head_ref_name: str = "feature-branch") -> PRDetails:

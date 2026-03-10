@@ -423,8 +423,8 @@ class RealLocalGitHub(LocalGitHub):
     @classmethod
     def for_test(cls, time: Time | None = None, repo_info: RepoInfo | None = None) -> "RealLocalGitHub":
         """Factory for tests that need Real implementation with sensible defaults."""
-        from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
-        from erk_shared.gateway.time.fake import FakeTime
+        from tests.fakes.gateway.github import FakeGitHubIssues
+        from tests.fakes.gateway.time import FakeTime
         return cls(
             time=time if time is not None else FakeTime(),
             repo_info=repo_info,

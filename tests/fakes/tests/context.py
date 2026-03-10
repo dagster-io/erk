@@ -8,16 +8,16 @@ from erk.core.context import (
     LoadedConfig,
     NoRepoSentinel,
     RepoContext,
-    context_for_test,
 )
 from erk.core.prompt_executor import PromptExecutor
 from erk.core.script_writer import ScriptWriter
-from erk_shared.gateway.completion.fake import FakeCompletion
-from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.issues.abc import GitHubIssues
-from erk_shared.gateway.graphite.fake import FakeGraphite
-from erk_shared.gateway.shell.fake import FakeShell
+from tests.fakes.gateway.completion import FakeCompletion
+from tests.fakes.gateway.git import FakeGit
+from tests.fakes.gateway.github import FakeLocalGitHub
+from tests.fakes.gateway.graphite import FakeGraphite
+from tests.fakes.gateway.shell import FakeShell
+from tests.test_utils.test_context import context_for_test
 
 
 def create_test_context(
