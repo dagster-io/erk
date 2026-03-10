@@ -18,6 +18,7 @@ from erk_shared.context.factories import get_repo_info
 from erk_shared.gateway.git.abc import Git
 from erk_shared.gateway.git.real import RealGit
 from erk_shared.gateway.github.abc import LocalGitHub
+from erk_shared.gateway.github.actions.real import RealGitHubActions
 from erk_shared.gateway.github.issues.real import RealGitHubIssues
 from erk_shared.gateway.github.real import RealLocalGitHub
 from erk_shared.gateway.graphite.abc import Graphite
@@ -57,5 +58,8 @@ class RealGtKit:
 
         # Create issues first, then compose into github
         issues = RealGitHubIssues(target_repo=None, time=self.time)
-        self.github = RealLocalGitHub(time=self.time, repo_info=repo_info, issues=issues)
+        actions = RealGitHubActions(target_repo=None)
+        self.github = RealLocalGitHub(
+            time=self.time, repo_info=repo_info, issues=issues, actions=actions
+        )
         self.graphite = RealGraphite()

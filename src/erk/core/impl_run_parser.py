@@ -43,11 +43,24 @@ class ImplRunSummary:
     assistant_messages: list[str]
 
 
+@dataclass(frozen=True)
+class ParseMetrics:
+    """Diagnostic metrics from parsing."""
+
+    raw_log_lines: int
+    json_lines_extracted: int
+    used_group_detection: bool
+    system_messages: int
+    assistant_messages: int
+    tool_result_messages: int
+    result_message_found: bool
+
+
 # Regex matching GH Actions timestamp prefix: "2026-01-15T10:30:45.1234567Z "
 _GH_TIMESTAMP_RE = re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d+Z\s")
 
 
-def extract_stream_json_lines(job_log: str) -> list[str]:
+def extract_stream_json_lines(job_log: str) -> tuple[list[str], bool]:
     """Extract stream-json lines from a GitHub Actions job log.
 
     Strips GitHub Actions timestamp prefixes, finds the implementation step
@@ -58,11 +71,14 @@ def extract_stream_json_lines(job_log: str) -> list[str]:
         job_log: Full text of the job log from the GitHub REST API
 
     Returns:
-        List of JSON-line strings (without timestamp prefix)
+        Tuple of (json_lines, used_group_detection)
+        - json_lines: List of JSON-line strings (without timestamp prefix)
+        - used_group_detection: True if ##[group] markers were used, False if fallback was used
     """
     lines = job_log.splitlines()
     stripped: list[str] = []
     in_impl_section = False
+    used_group_detection = False
 
     for line in lines:
         # Strip GH Actions timestamp prefix
@@ -71,6 +87,7 @@ def extract_stream_json_lines(job_log: str) -> list[str]:
         # Detect start of implementation step via group markers
         if cleaned.startswith("##[group]") and _is_impl_step_marker(cleaned):
             in_impl_section = True
+            used_group_detection = True
             continue
 
         # Detect end of section
@@ -89,8 +106,9 @@ def extract_stream_json_lines(job_log: str) -> list[str]:
     # Fallback: if no group markers found, scan all lines for JSON
     if not stripped:
         stripped = _extract_json_lines_from_all(lines)
+        used_group_detection = False
 
-    return stripped
+    return stripped, used_group_detection
 
 
 def _is_impl_step_marker(group_line: str) -> bool:
@@ -109,7 +127,11 @@ def _extract_json_lines_from_all(lines: list[str]) -> list[str]:
     return result
 
 
-def parse_impl_run_summary(lines: list[str]) -> ImplRunSummary:
+def parse_impl_run_summary(
+    lines: list[str],
+    *,
+    track_metrics: bool = False,
+) -> ImplRunSummary | tuple[ImplRunSummary, ParseMetrics]:
     """Parse stream-json lines into a structured summary.
 
     Walks through JSONL lines from a Claude CLI session, extracting:
@@ -120,9 +142,10 @@ def parse_impl_run_summary(lines: list[str]) -> ImplRunSummary:
 
     Args:
         lines: List of JSON strings (one per line) from Claude CLI stream-json
+        track_metrics: If True, return tuple of (summary, metrics); else return just summary
 
     Returns:
-        Structured summary of the implementation run
+        ImplRunSummary, or tuple of (ImplRunSummary, ParseMetrics) if track_metrics=True
     """
     session_id: str | None = None
     model: str | None = None
@@ -141,6 +164,12 @@ def parse_impl_run_summary(lines: list[str]) -> ImplRunSummary:
     files_read_set: set[str] = set()
     files_modified_set: set[str] = set()
 
+    # Track message counts for metrics
+    system_count = 0
+    assistant_count = 0
+    tool_result_count = 0
+    result_found = False
+
     for line in lines:
         parsed = _safe_json_loads(line)
         if parsed is None:
@@ -151,10 +180,12 @@ def parse_impl_run_summary(lines: list[str]) -> ImplRunSummary:
             continue
 
         if msg_type == "system" and parsed.get("subtype") == "init":
+            system_count += 1
             session_id = _extract_str(parsed, "session_id")
             model = _extract_str(parsed, "model")
 
         elif msg_type == "assistant":
+            assistant_count += 1
             _process_assistant_message(
                 parsed,
                 tool_actions=tool_actions,
@@ -166,16 +197,18 @@ def parse_impl_run_summary(lines: list[str]) -> ImplRunSummary:
             )
 
         elif msg_type == "tool_result":
+            tool_result_count += 1
             _process_tool_result(parsed, error_messages=error_messages)
 
         elif msg_type == "result":
+            result_found = True
             duration_ms = _extract_int(parsed, "duration_ms")
             num_turns = _extract_int(parsed, "num_turns")
             is_error = _extract_bool(parsed, "is_error")
             exit_code = _extract_int(parsed, "exit_code")
             cost_usd = _extract_float(parsed, "cost_usd")
 
-    return ImplRunSummary(
+    summary = ImplRunSummary(
         session_id=session_id,
         model=model,
         duration_ms=duration_ms,
@@ -189,6 +222,20 @@ def parse_impl_run_summary(lines: list[str]) -> ImplRunSummary:
         files_modified=files_modified,
         assistant_messages=assistant_messages,
     )
+
+    if track_metrics:
+        metrics = ParseMetrics(
+            raw_log_lines=0,  # Filled in by caller
+            json_lines_extracted=len(lines),
+            used_group_detection=False,  # Filled in by caller
+            system_messages=system_count,
+            assistant_messages=assistant_count,
+            tool_result_messages=tool_result_count,
+            result_message_found=result_found,
+        )
+        return summary, metrics
+
+    return summary
 
 
 def format_summary(summary: ImplRunSummary) -> str:
@@ -265,7 +312,8 @@ def format_summary(summary: ImplRunSummary) -> str:
 
 def _safe_json_loads(line: str) -> dict | None:
     """Parse a JSON line, returning None on failure."""
-    if not line.strip():
+    stripped = line.strip()
+    if not stripped:
         return None
     try:
         parsed = json.loads(line)

@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Any
 
 from erk_shared.gateway.github.abc import LocalGitHub
+from erk_shared.gateway.github.actions.abc import GitHubActions
 from erk_shared.gateway.github.issues.abc import GitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.types import (
@@ -57,6 +58,7 @@ class FakeLocalGitHub(LocalGitHub):
         authenticated: bool = True,
         auth_username: str | None = "test-user",
         auth_hostname: str | None = "github.com",
+        actions_gateway: GitHubActions | None = None,
         issues_gateway: GitHubIssues | None = None,
         issues_data: list[IssueInfo] | None = None,
         pr_titles: dict[int, str] | None = None,
@@ -142,6 +144,13 @@ class FakeLocalGitHub(LocalGitHub):
         self._authenticated = authenticated
         self._auth_username = auth_username
         self._auth_hostname = auth_hostname
+        # Actions gateway composition - create FakeGitHubActions if not provided
+        if actions_gateway is not None:
+            self._actions_gateway = actions_gateway
+        else:
+            from tests.fakes.gateway.github_actions import FakeGitHubActions
+
+            self._actions_gateway = FakeGitHubActions()
         # Issues gateway composition - create FakeGitHubIssues if not provided
         if issues_gateway is not None:
             self._issues_gateway = issues_gateway
@@ -198,6 +207,11 @@ class FakeLocalGitHub(LocalGitHub):
         self._pr_head_branches = pr_head_branches or {}
         self._cancelled_run_ids: list[str] = []
         self._rerun_run_ids: list[tuple[str, bool]] = []
+
+    @property
+    def actions(self) -> GitHubActions:
+        """Access to GitHub Actions operations."""
+        return self._actions_gateway
 
     @property
     def issues(self) -> GitHubIssues:

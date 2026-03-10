@@ -26,10 +26,11 @@ class TestExtractStreamJsonLines:
                 _make_gh_log_line("##[endgroup]"),
             ]
         )
-        result = extract_stream_json_lines(log)
+        result, used_group = extract_stream_json_lines(log)
         assert len(result) == 2
         assert '{"type": "system", "subtype": "init"}' in result
         assert '{"type": "assistant", "content": []}' in result
+        assert used_group is True
 
     def test_finds_implementation_step_section(self) -> None:
         log = "\n".join(
@@ -42,9 +43,10 @@ class TestExtractStreamJsonLines:
                 _make_gh_log_line("##[endgroup]"),
             ]
         )
-        result = extract_stream_json_lines(log)
+        result, used_group = extract_stream_json_lines(log)
         assert len(result) == 1
         assert '"subtype": "init"' in result[0]
+        assert used_group is True
 
     def test_skips_non_json_lines(self) -> None:
         log = "\n".join(
@@ -56,9 +58,10 @@ class TestExtractStreamJsonLines:
                 _make_gh_log_line("##[endgroup]"),
             ]
         )
-        result = extract_stream_json_lines(log)
+        result, used_group = extract_stream_json_lines(log)
         assert len(result) == 1
         assert '{"type": "system"}' in result
+        assert used_group is True
 
     def test_fallback_when_no_group_markers(self) -> None:
         log = "\n".join(
@@ -68,12 +71,14 @@ class TestExtractStreamJsonLines:
                 _make_gh_log_line('{"type": "result", "exit_code": 0}'),
             ]
         )
-        result = extract_stream_json_lines(log)
+        result, used_group = extract_stream_json_lines(log)
         assert len(result) == 2
+        assert used_group is False
 
     def test_empty_log(self) -> None:
-        result = extract_stream_json_lines("")
+        result, used_group = extract_stream_json_lines("")
         assert result == []
+        assert used_group is False
 
     def test_handles_lines_without_timestamps(self) -> None:
         log = "\n".join(
@@ -83,8 +88,9 @@ class TestExtractStreamJsonLines:
                 "##[endgroup]",
             ]
         )
-        result = extract_stream_json_lines(log)
+        result, used_group = extract_stream_json_lines(log)
         assert len(result) == 1
+        assert used_group is True
 
 
 class TestParseImplRunSummary:

@@ -13,6 +13,7 @@ from erk_shared.gateway.git.abc import Git
 from erk_shared.gateway.git.dry_run import DryRunGit
 from erk_shared.gateway.git.real import RealGit
 from erk_shared.gateway.github.abc import LocalGitHub
+from erk_shared.gateway.github.actions.real import RealGitHubActions
 from erk_shared.gateway.github.issues.real import RealGitHubIssues
 from erk_shared.gateway.github.real import RealLocalGitHub
 from erk_shared.gateway.time.real import RealTime
@@ -54,6 +55,9 @@ def create_context(*, dry_run: bool = False) -> ErkDevContext:
     repo_info = get_repo_info(git, repo_root)
     time = RealTime()
     github_issues = RealGitHubIssues(target_repo=None, time=time)
-    github: LocalGitHub = RealLocalGitHub(time=time, repo_info=repo_info, issues=github_issues)
+    github_actions = RealGitHubActions(target_repo=None)
+    github: LocalGitHub = RealLocalGitHub(
+        time=time, repo_info=repo_info, issues=github_issues, actions=github_actions
+    )
 
     return ErkDevContext(git=git, github=github, repo_root=repo_root)

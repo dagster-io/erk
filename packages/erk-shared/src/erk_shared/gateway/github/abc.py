@@ -23,6 +23,7 @@ from erk_shared.gateway.github.types import (
 )
 
 if TYPE_CHECKING:
+    from erk_shared.gateway.github.actions.abc import GitHubActions
     from erk_shared.gateway.github.issues.abc import GitHubIssues
 
 
@@ -31,6 +32,16 @@ class LocalGitHub(ABC):
 
     All implementations (real and fake) must implement this interface.
     """
+
+    @property
+    @abstractmethod
+    def actions(self) -> GitHubActions:
+        """Access to GitHub Actions operations.
+
+        Returns the composed GitHubActions gateway for Actions-related operations.
+        All Actions operations should be accessed via ctx.github.actions.
+        """
+        ...
 
     @property
     @abstractmethod

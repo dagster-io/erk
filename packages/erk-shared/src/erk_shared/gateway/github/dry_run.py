@@ -4,6 +4,8 @@ from pathlib import Path
 from typing import Any
 
 from erk_shared.gateway.github.abc import LocalGitHub
+from erk_shared.gateway.github.actions.abc import GitHubActions
+from erk_shared.gateway.github.actions.dry_run import DryRunGitHubActions
 from erk_shared.gateway.github.issues.abc import GitHubIssues
 from erk_shared.gateway.github.issues.dry_run import DryRunGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
@@ -35,13 +37,20 @@ class DryRunLocalGitHub(LocalGitHub):
     def __init__(self, wrapped: LocalGitHub) -> None:
         """Initialize dry-run wrapper with a real implementation.
 
-        Composes DryRunGitHubIssues wrapping the wrapped.issues internally.
+        Composes DryRunGitHubIssues and DryRunGitHubActions wrapping
+        the wrapped sub-gateways internally.
 
         Args:
             wrapped: The real GitHub operations implementation to wrap
         """
         self._wrapped = wrapped
+        self._dry_run_actions = DryRunGitHubActions(wrapped.actions)
         self._dry_run_issues = DryRunGitHubIssues(wrapped.issues)
+
+    @property
+    def actions(self) -> GitHubActions:
+        """Access to GitHub Actions operations (wrapped with dry-run behavior)."""
+        return self._dry_run_actions
 
     @property
     def issues(self) -> GitHubIssues:
