@@ -1,0 +1,567 @@
+<session>
+  <meta branch="master" />
+  <meta model="claude-opus-4-6" />
+  <user>❯ Change the RoadmapNode field from reason to comment, which makes in the objective yaml</user>
+  <usage input_tokens="3" cache_creation_input_tokens="10637" cache_read_input_tokens="12753" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 10637}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01SLZyMbYkgagVKw9eeFTii1">
+    <param name="subagent_type">Explore</param>
+    <param name="description">Explore RoadmapNode and reason field</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 565 chars]...tand every place that references `reason` on RoadmapNode so we can rename it to `comment`.</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="10637" cache_read_input_tokens="12753" output_tokens="367" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 10637, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01SLZyMbYkgagVKw9eeFTii1">
+Perfect! Now let me compile my comprehensive findings. Let me create a summary document of all the places where `reason` is used:
+
+## Summary of RoadmapNode `reason` Field Usage
+
+Based on my thorough exploration of the codebase, here is a comprehensive inventory of all places where the `reason` field on `RoadmapNode` is referenced:
+
+### 1. **Core Definition**
+- **File**: `/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py`
+  - **Line 40**: Field definition in `RoadmapNode` dataclass
+    ```python
+    reason: str | None  # None = not specified, or reason text (e.g., why skipped)
+    ```
+
+### 2. **YAML Validation (Frontmatter)**
+- **File**: `/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py`
+  - **Lines 152-155**: Validation of `reason` field in YAML frontmatter
+    ```python
+    raw_reason = step_dict.get("reason")
+    if raw_reason is not None and not isinstance(raw_reason, str):
+        errors.append(f"Step {i} field 'reason' must be a string or null")
+    ```
+  - **Line 165**: Assignment during node construction
+    ```python
+    reason=raw_reason,
+    ```
+
+### 3. **YAML Serialization (Rendering)**
+- **File**: `/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py`
+  - **Line 220**: Check if any nodes have `reason` set
+    ```python
+
+... [132 lines omitted] ...
+
+  - **Line 425**: Error message includes `--reason` flag
+  </tool_result>
+  <assistant>Good, comprehensive inventory. Let me read the key source file to verify the details.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2459" cache_read_input_tokens="23390" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2459}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Hm1S8a6Etjk3LvC2jwmju7">
+    <param name="file_path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py</param>
+    <param name="offset">30</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2459" cache_read_input_tokens="23390" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2459}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Hm1S8a6Etjk3LvC2jwmju7">
+    30→@dataclass(frozen=True)
+    31→class RoadmapNode:
+    32→    """A single node in a roadmap phase."""
+    33→
+    34→    id: str
+    35→    description: str
+    36→    status: RoadmapNodeStatus
+    37→    pr: str | None  # None or "#456" (PR number)
+    38→    depends_on: tuple[str, ...] | None  # None = not specified, () = no deps
+    39→    slug: str | None  # None = not yet generated, or kebab-case slug
+    40→    reason: str | None  # None = not specified, or reason text (e.g., why skipped)
+    41→
+    42→
+    43→@dataclass(frozen=True)
+    44→class RoadmapPhase:
+    45→    """A phase in the objective roadmap."""
+    46→
+    47→    number: int
+    48→    suffix: str  # Letter suffix, e.g. "A" for "Phase 1A", "" for "Phase 1"
+    49→    name: str
+    50→    nodes: list[RoadmapNode]
+    51→
+    52→
+    53→# ---------------------------------------------------------------------------
+    54→# Frontmatter validation and parsing
+    55→# ---------------------------------------------------------------------------
+    56→
+    57→
+    58→def validate_roadmap_frontmatter(
+    59→    data: Mapping[str, object],
+  </tool_result>
+  <tool_use name="Read" id="toolu_01YRtCADZ2H2GGEJSWeq53WT">
+    <param name="file_path">/Users/schrockn/code/erk/docs/learned/objectives/roadmap-parser-api.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2459" cache_read_input_tokens="23390" output_tokens="203" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2459, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01YRtCADZ2H2GGEJSWeq53WT">
+     1→---
+     2→title: Roadmap Shared Parser Architecture
+     3→read_when:
+     4→  - "adding a new consumer of roadmap.py in erk_shared"
+     5→  - "extending the roadmap data model with new fields"
+     6→  - "understanding why the shared parser exists separately from its consumers"
+     7→tripwires:
+     8→  - action: "creating a new roadmap data type without using frozen dataclass"
+     9→    warning: "RoadmapNode and RoadmapPhase are frozen dataclasses. New roadmap types must follow this pattern."
+    10→  - action: "accessing node_id on a RoadmapNode"
+    11→    warning: "The field is named 'id', not 'node_id'. This is a common mistake — check the actual dataclass definition."
+    12→  - action: "importing parse_roadmap into a new consumer"
+    13→    warning: "The shared module lives in erk_shared.gateway.github.metadata.roadmap and is consumed by both exec scripts and CLI commands. Import from this shared location."
+    14→  - action: "using parse_roadmap() when strict v2 validation is needed"
+    15→    warning: "Use parse_v2_roadmap() for commands that should reject legacy format. parse_roadmap() returns a legacy error string; parse_v2_roadmap() returns None for non-v2 content."
+    16→last_audited: "2026-02-08 10:24 PT"
+    17→audit_result: edited
+    18→---
+    19→
+    20→# Roadmap Shared Parser Architecture
+    21→
+    22→The roadmap parser is a shared module consumed by two commands with fundamentally different usage patterns. This document explains **why** the shared module exists, how its consumers differ, and the non-obvious design choices in the data model.
+    23→
+    24→## Why a Shared Module?
+    25→
+    26→&lt;!-- Source: packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py --&gt;
+    27→
+    28→The `roadmap.py` module in `erk_shared.gateway.github.metadata` exists because two commands need the same parsing logic but use different subsets of it. Both `check_cmd.py` (erk objective check) and `update_objective_node.py` consume the shared parser, but differ in scope: `check_cmd` imports 2 functions (`parse_roadmap`, `serialize_phases`) for validation workflow, while `update_objective_node` imports 3 functions and 1 type (`RoadmapNodeStatus`, `parse_roadmap`, `rerender_comment_roadmap`, `update_node_in_frontmatter`) for surgical node updates.
+    29→
+    30→&lt;!-- Source: src/erk/cli/commands/objective/check_cmd.py, validate_objective --&gt;
+
+... [90 lines omitted] ...
+
+    45→### Parser returns warnings, not errors
+    47→`parse_roadmap` returns `(phases, validation_errors)` where validation_errors are warning strings, not exceptions. The parser extracts whatever it can and reports problems alongside results. This matters because a partially-parsed roadmap is more useful than a crashed parse — `check_cmd` displays both the parsed phases and the warnings.
+    89→Returns `(phases, validation_errors)`. Always returns a tuple. For v2 YAML frontmatter, parses and returns phases. For non-v2 content, returns `([], [legacy_format_error])`. This is the standard parser used by most consumers.
+    93→Returns `(phases, validation_errors) | None`. Returns `None` when the body is not in v2+ format (no metadata block, no `&lt;details&gt;` wrapper, or schema version not in v2/v3/v4). Use this when the caller needs to distinguish "not v2+ format" from "v2+ format with errors" — for example, commands that should reject legacy format explicitly rather than receiving an error string.
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="3485" cache_read_input_tokens="25849" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3485}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>I have a thorough understanding of all the locations. Let me write the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3485" cache_read_input_tokens="25849" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3485}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_0118xwTuVttP5mMeeJFTsffF">
+    <param name="file_path">/Users/schrockn/.claude/plans/jaunty-baking-valiant.md</param>
+    <param name="content"># Rename RoadmapNode `reason` field to `comment`
+
+## Context
+
+The `RoadmapNode` dataclass ...[truncated 2879 chars]...nit tests for affected test files via devrun agent
+3. Run `make fast-ci` via devrun agent
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3485" cache_read_input_tokens="25849" output_tokens="1122" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3485, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0118xwTuVttP5mMeeJFTsffF">
+File created successfully at: /Users/schrockn/.claude/plans/jaunty-baking-valiant.md
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_01QKSD9TJG6VjkVB6txFJs3j">
+    <param name="query">select:AskUserQuestion</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1260" cache_read_input_tokens="29334" output_tokens="77" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1260, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01QKSD9TJG6VjkVB6txFJs3j">
+
+  </tool_result>
+  <tool_use name="AskUserQuestion" id="toolu_01H3LfEZ5CJC4gXoyrgZk4o5">
+    <param name="questions">[{'question': 'Existing objective issues on GitHub may have `reason:` in their YAML frontm...[truncated 447 chars]...L, but always serialize as `comment`. Allows gradual migration.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1333" cache_read_input_tokens="30594" output_tokens="207" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1333, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01H3LfEZ5CJC4gXoyrgZk4o5">
+User has answered your questions: "Existing objective issues on GitHub may have `reason:` in their YAML frontmatter. Should we add backwards compatibility to also accept `reason` as an alias during parsing, or just do a hard rename (breaking existing objectives)?"="Accept both during parsing" user notes: hard rename and then we will backfill. You can now continue with the user's answers in mind.
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="307" cache_read_input_tokens="31927" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 307}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>Got it — hard rename to `comment` only, and you'll backfill existing objectives separately. Let me finalize the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="307" cache_read_input_tokens="31927" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 307}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_011K92CE8Xw6GtZwJtrmz8m1">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.claude/plans/jaunty-baking-valiant.md</param>
+    <param name="old_string">**Note**: Existing objective issues on GitHub with `reason:` in their YAML will need the p...[truncated 25 chars]...nsition period, OR all existing objectives need to be migrated. Need to clarify with user.</param>
+    <param name="new_string">**Note**: Hard rename only — no backwards compatibility for `reason`. Existing objectives with `reason:` in YAML will need manual backfill (user will handle separately).</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="307" cache_read_input_tokens="31927" output_tokens="306" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 307, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_011K92CE8Xw6GtZwJtrmz8m1">
+The file /Users/schrockn/.claude/plans/jaunty-baking-valiant.md has been updated successfully.
+  </tool_result>
+  <user>[Request interrupted by user]</user>
+  <user>continue</user>
+  <tool_use name="ToolSearch" id="toolu_01Jhxm7naVn8oU5xHxUzkDaP">
+    <param name="query">select:ExitPlanMode</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="642" cache_read_input_tokens="32234" output_tokens="79" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 642, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Jhxm7naVn8oU5xHxUzkDaP">
+
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_011s211fbtVRjDRzE6Y7B4Uk">
+    <param name="plan"># Rename RoadmapNode `reason` field to `comment`
+
+## Context
+
+The `RoadmapNode` dataclass ...[truncated 2823 chars]...nit tests for affected test files via devrun agent
+3. Run `make fast-ci` via devrun agent
+</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="838" cache_read_input_tokens="32876" output_tokens="39" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 838, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_011s211fbtVRjDRzE6Y7B4Uk">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/jaunty-baking-valiant.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Rename RoadmapNode `reason` field to `comment`
+Current context: (wt:erk) (br:master)\n\nWhat would you like to do with this plan?"
+  header: "br:master"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create new branch and planned PR. Stays on current branch." - Create a new branch, save plan as draft PR.
+  2. "Implement without saving" - Implement directly on the current branch without saving a plan PR.
+  3. "View/Edit the Plan" - Open plan in editor to review or modify before deciding.
+
+⚠️  WARNING: Currently on 'master'. We strongly discourage implementing directly on the trunk branch. Consider saving the plan and implementing in a dedicated worktree instead.
+
+If user chooses 'Create new branch and planned PR':
+  1. Run /erk:plan-save
+  2. Call ExitPlanMode to end the planning session.
+
+If user chooses 'Implement without saving':
+  1. Create implement-now marker:
+     erk exec marker create --session-id ca46757e-889d-437d-a0c5-d0aac2597c08 \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly on the current branch.
+     Do NOT run 'erk exec setup-impl' or create a new branch.
+
+... [8 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_012dVkZMcrEbgETyGyhkSVwf">
+    <param name="file_path">/Users/schrockn/.claude/plans/jaunty-baking-valiant.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="690" cache_read_input_tokens="33714" output_tokens="75" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 690, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_012dVkZMcrEbgETyGyhkSVwf">
+     1→# Rename RoadmapNode `reason` field to `comment`
+     2→
+     3→## Context
+     4→
+     5→The `RoadmapNode` dataclass has a field called `reason` that holds optional text explaining why a node is in a particular state. The user wants to rename this to `comment` to better reflect its purpose in the objective YAML.
+     6→
+     7→This is a mechanical rename across ~30 locations in production code, CLI commands, tests, and documentation.
+     8→
+     9→## Files to Modify
+    10→
+    11→### 1. Core dataclass &amp; parser — `packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py`
+    12→- **Line 40**: Rename field `reason` → `comment` in `RoadmapNode` dataclass
+    13→- **Line 152-155**: Rename `raw_reason` → `raw_comment`, update validation string `'reason'` → `'comment'`
+    14→- **Line 165**: `reason=raw_reason` → `comment=raw_comment`
+    15→- **Line 220**: `any_has_reason` → `any_has_comment`, `s.reason` → `s.comment`
+    16→- **Lines 232-233**: `"reason"` key → `"comment"`, `s.reason` → `s.comment`
+    17→- **Line 330**: `update_node_in_frontmatter()` parameter `reason:` → `comment:`
+    18→- **Line 341**: Update docstring
+    19→- **Lines 379-380**: `reason` → `comment` in replacements dict
+    20→- **Line 401**: `add_node_to_frontmatter()` parameter `reason:` → `comment:`
+    21→- **Line 415**: Update docstring
+    22→- **Line 455**: `reason=reason` → `comment=comment`
+    23→- **Line 701**: `serialize_phases()` — `"reason": step.reason` → `"comment": step.comment`
+    24→
+    25→### 2. Dependency graph — `packages/erk-shared/src/erk_shared/gateway/github/metadata/dependency_graph.py`
+    26→- **Line 204**: `reason=None` → `comment=None`
+    27→
+    28→### 3. Update objective node CLI — `src/erk/cli/commands/exec/scripts/update_objective_node.py`
+    29→- CLI option `--reason` → `--comment`, dest `new_reason` → `new_comment`
+    30→- Function parameters and calls: `reason=` → `comment=`
+
+... [28 lines omitted] ...
+
+    31→- Help text and error messages
+  </tool_result>
+  <assistant>Here's the plan:
+
+# Rename RoadmapNode `reason` field to `comment`
+
+## Context
+The `RoadmapNode` dataclass has a field called `reason` that holds optional text explaining why a node is in a particular state. Renaming to `comment` to better reflect its purpose in the objective YAML. Hard rename — no backwards compatibility; existing objectives will be backfilled separately.
+
+## Files to Modify (~30 locations)
+1. **Core dataclass &amp; parser** — `packages/erk-shared/.../roadmap.py` — field definition, validation, serialization, `update_node_in_frontmatter()`, `add_node_to_frontmatter()`, `serialize_phases()`
+2. **Dependency graph** — `packages/erk-shared/.../dependency_graph.py` — node construction
+3. **Update objective node CLI** — `src/erk/cli/.../update_objective_node.py` — `--reason` → `--comment` flag, parameters, calls
+4. **Add objective node CLI** — `src/erk/cli/.../add_objective_node.py` — `--reason` → `--comment` flag
+5. **Objective render roadmap** — `src/erk/cli/.../objective_render_roadmap.py` — node construction
+6. **Tests** — `test_update_objective_node.py`, `test_add_objective_node.py`
+7. **Documentation** — `docs/learned/objectives/roadmap-parser-api.md`
+
+## Verification
+Run `ruff check`, `ty`, unit tests, and `make fast-ci` via devrun agent.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1215" cache_read_input_tokens="34404" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1215}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_01Qd34e85MGwXE5ZBEbkWR8z">
+    <param name="questions">[{'question': '📋 Rename RoadmapNode `reason` field to `comment`\nCurrent context: (wt:erk)...[truncated 374 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1215" cache_read_input_tokens="34404" output_tokens="605" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1215, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Qd34e85MGwXE5ZBEbkWR8z">
+User has answered your questions: "📋 Rename RoadmapNode `reason` field to `comment`
+Current context: (wt:erk) (br:master)
+
+What would you like to do with this plan?"="Create new branch and planned PR". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="Skill" id="toolu_01CkBpfLDdkvdZ4LHYeS3Ss9">
+    <param name="skill">erk:plan-save</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="688" cache_read_input_tokens="35619" output_tokens="57" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 688, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01CkBpfLDdkvdZ4LHYeS3Ss9">
+Launching skill: erk:plan-save
+  </tool_result>
+  <user># /erk:plan-save
+
+Save the current session's plan to GitHub with session context.
+
+## Usage
+
+```bash
+/erk:plan-save                           # Standalone plan
+/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+/erk:plan-save --objective=123           # Explicit objective link (overrides marker)
+/erk:plan-save --current-branch          # Use current branch instead of creating new plnd/ branch
+```
+
+Objective linking: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command. Use `--objective=&lt;number&gt;` to override the marker or provide the link when no marker exists (e.g., during replan).
+
+## Plan Storage
+
+The plan is saved using the configured backend:
+
+- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+  The JSON output contract includes `pr_number`, `pr_url`, `title`, `branch_name`, `plan_backend`.
+
+## Agent Instructions
+
+### Step 1: Parse Arguments
+
+Check `` for the `--plan-type`, `--objective`, and `--current-branch` flags:
+
+```
+If  contains "--plan-type=&lt;type&gt;":
+  - Extract the type (standard or learn)
+  - Store as PLAN_TYPE variable
+  - Set PLAN_TYPE_FLAG to "--plan-type=&lt;type&gt;"
+Else:
+  - Set PLAN_TYPE_FLAG to empty string
+
+If  contains "--objective=&lt;number&gt;":
+  - Extract the number
+  - Set OBJECTIVE_FLAG to "--objective=&lt;number&gt;"
+Else:
+  - Set OBJECTIVE_FLAG to empty string
+
+If  contains "--current-branch":
+  - Set CURRENT_BRANCH_FLAG to "--current-branch"
+Else:
+  - Set CURRENT_BRANCH_FLAG to empty string
+```
+
+### Step 2: Generate Branch Slug
+
+**Skip this step if `--current-branch` was passed.** The current branch is used directly.
+
+Before saving, generate a branch slug from the plan title. Read the plan title from the plan file you wrote in plan mode (the first `# ` heading).
+
+Generate a branch slug from the title:
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+
+Store the result as `BRANCH_SLUG`.
+
+### Step 3: Generate Plan Summary
+
+Write a concise 2-3 sentence summary of the plan. This summary will be visible
+at the top of the PR description (above the collapsed full plan).
+
+Guidelines:
+
+- Focus on WHAT the plan does and WHY
+- Do not repeat the title
+- Plain text, no markdown headers or formatting
+- Avoid special shell characters (backticks, dollar signs)
+- Store as PLAN_SUMMARY
+
+### Step 4: Run Save Command
+
+Run this command with the session ID, summary, and optional flags.
+
+If CURRENT_BRANCH_FLAG is set, pass `--current-branch` (no branch slug needed):
+
+```bash
+erk exec plan-save --format json --session-id="ca46757e-889d-437d-a0c5-d0aac2597c08" --current-branch --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Otherwise, pass the branch slug:
+
+```bash
+erk exec plan-save --format json --session-id="ca46757e-889d-437d-a0c5-d0aac2597c08" --branch-slug="${BRANCH_SLUG}" --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Parse the JSON output to extract `pr_number` for verification in Step 5.
+
+If the command fails, display the error and stop.
+
+### Step 5: Verify Objective Link (if applicable)
+
+**Only run this step if `objective_issue` is non-null in the JSON output from Step 4.**
+
+Verify the objective link was saved correctly:
+
+```bash
+erk exec get-plan-metadata &lt;pr_number&gt; objective_issue
+```
+
+Parse the JSON response:
+
+- If `success: true` and `value` matches the expected objective number: verification passed
+- If `success: false` or value doesn't match: verification failed
+
+**On verification success:**
+
+Display: `Verified objective link: #&lt;objective-number&gt;`
+
+**On verification failure:**
+
+Display error and remediation steps:
+
+```
+ERROR: Objective link verification failed
+Expected objective: #&lt;expected&gt;
+Actual: &lt;actual-or-null&gt;
+
+The plan was saved but without the correct objective link.
+Fix: Close draft PR #&lt;pr_number&gt;,
+ensure the objective-context marker exists, and re-run /erk:plan-save.
+```
+
+Exit without creating the plan-saved marker. The session continues so the user can retry.
+
+### Step 6: Update Objective Roadmap (if objective linked)
+
+**Only run this step if `objective_issue` was non-null in JSON output and verification passed.**
+
+Update the objective's roadmap table to show that a plan has been created for this node:
+
+1. **Read the roadmap node marker** to get the node ID:
+
+```bash
+step_id=$(erk exec marker read --session-id "ca46757e-889d-437d-a0c5-d0aac2597c08" roadmap-step)
+```
+
+If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-plan`.
+
+2. **Update the roadmap table** using the dedicated command:
+
+```bash
+erk exec update-objective-node &lt;objective-issue&gt; --node "$step_id" --pr "#&lt;pr_number&gt;" --status in_progress
+```
+
+This atomically fetches the objective body, finds the matching node row, sets the Status cell to `in-progress`, and writes the updated body back.
+
+3. **Report the update:**
+
+Display: `Updated objective #&lt;objective-issue&gt; roadmap: node &lt;step_id&gt; → PR #&lt;pr_number&gt;`
+
+**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+
+### Step 7: Display Results
+
+**If JSON contains `skipped_duplicate: true`:**
+
+Display: `Plan already saved as PR #&lt;pr_number&gt; (duplicate skipped)`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options.
+
+**Otherwise, on success**, display:
+
+```
+Plan "&lt;title&gt;" saved as draft PR #&lt;pr_number&gt;
+URL: &lt;issue_url&gt;
+```
+
+If objective was verified, also display: `Verified objective link: #&lt;objective-number&gt;`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options
+(implement in current worktree, implement in new worktree, or done).
+
+On failure, display the error message and suggest:
+
+- Checking that a plan exists (enter Plan mode and exit it first)
+- Verifying GitHub CLI authentication (`gh auth status`)
+- Checking network connectivity
+
+### Step 5: Push Planning Session
+
+After saving successfully, push the planning session for cross-machine learning.
+This captures the in-progress session state so it's available even if implementation
+happens on a different machine.
+
+Run `erk exec capture-session-info` to get the session file path, then push it:
+
+```bash
+erk exec upload-impl-session --session-id "ca46757e-889d-437d-a0c5-d0aac2597c08" 2&gt;/dev/null || true
+```
+
+If the plan was saved successfully and `pr_number` is known, use push-session directly
+for better stage tracking:
+
+```bash
+erk exec push-session \
+    --session-file "&lt;session_file_path&gt;" \
+    --session-id "ca46757e-889d-437d-a0c5-d0aac2597c08" \
+    --stage planning \
+    --source local \
+    --pr-number &lt;pr_number&gt; \
+    2&gt;/dev/null || true
+```
+
+Where `&lt;session_file_path&gt;` is obtained from `erk exec capture-session-info` output
+and `&lt;pr_number&gt;` is from Step 2's JSON output.
+
+**Note:** This is non-critical. If it fails, the plan was still saved successfully.
+The `2&gt;/dev/null || true` ensures graceful degradation.
+
+## Session Tracking
+
+After successfully saving a plan, the plan number is stored in a marker file that enables automatic plan updates in the same session.
+
+**To read the saved plan number:**
+
+```bash
+erk exec marker read --session-id "ca46757e-889d-437d-a0c5-d0aac2597c08" plan-saved-issue
+```
+
+This returns the plan number (exit code 0) or exits with code 1 if no plan was saved in this session.
+</user>
+  <assistant>
+
+**Branch slug:** `rename-reason-to-comment`
+
+**Plan summary:** Renames the RoadmapNode field from reason to comment across the codebase, including the dataclass definition, YAML parser and serializer, CLI options, tests, and documentation. This is a hard rename with no backwards compatibility — existing objectives will be backfilled separately.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="2382" cache_read_input_tokens="36307" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2382}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01JkL5NyWND3PtAfxWC883pY">
+    <param name="command">erk exec plan-save --format json --session-id="ca46757e-889d-437d-a0c5-d0aac2597c08" --bra...[truncated 222 chars]...ame with no backwards compatibility -- existing objectives will be backfilled separately."</param>
+    <param name="description">Save plan as draft PR via erk</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2382" cache_read_input_tokens="36307" output_tokens="288" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2382, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01JkL5NyWND3PtAfxWC883pY">
+{"success": true, "pr_number": 9182, "pr_url": "https://github.com/dagster-io/erk/pull/9182", "title": "[erk-pr] Rename RoadmapNode `reason` field to `comment`", "branch_name": "plnd/rename-reason-to-comment-03-10-1342", "plan_backend": "planned_pr", "objective_issue": null, "archived_to": "/Users/schrockn/code/erk/.erk/scratch/sessions/ca46757e-889d-437d-a0c5-d0aac2597c08/plan_snapshots/000001-1cdd23b1"}
+  </tool_result>
+  <assistant>Plan "Rename RoadmapNode `reason` field to `comment`" saved as draft PR #9182
+URL: https://github.com/dagster-io/erk/pull/9182</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="472" cache_read_input_tokens="38689" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 472}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01GVVCANcDPSXUz7vH4maPRE">
+    <param name="command">erk exec capture-session-info 2&gt;/dev/null | head -5</param>
+    <param name="description">Get session file path for push</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="472" cache_read_input_tokens="38689" output_tokens="138" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 472, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01GVVCANcDPSXUz7vH4maPRE">
+SESSION_ID=ca46757e-889d-437d-a0c5-d0aac2597c08
+SESSION_FILE=/Users/schrockn/.claude/projects/-Users-schrockn-code-erk/ca46757e-889d-437d-a0c5-d0aac2597c08.jsonl
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01FjuSKRsX9LmXywpXTrUTJL">
+    <param name="command">erk exec push-session --session-file "/Users/schrockn/.claude/projects/-Users-schrockn-cod...[truncated 60 chars]...7d-a0c5-d0aac2597c08" --stage planning --source local --pr-number 9182 2&gt;/dev/null || true</param>
+    <param name="description">Push planning session for cross-machine learning</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="343" cache_read_input_tokens="39161" output_tokens="188" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 343, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+</session>
