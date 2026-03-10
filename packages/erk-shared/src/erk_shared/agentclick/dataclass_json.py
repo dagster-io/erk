@@ -7,9 +7,10 @@ import dataclasses
 import json
 import sys
 import types
-import click
 from dataclasses import fields
 from typing import Any, Literal, Union, get_args, get_origin
+
+import click
 
 # --- Constants ---
 

@@ -58,6 +58,7 @@ Quick reference for all `erk exec` subcommands.
 | `get-pr-for-plan`                 | Get PR details for a plan.                                                        |
 | `get-pr-review-comments`          | Fetch PR review comments for agent context injection.                             |
 | `get-pr-view`                     | Fetch PR details using REST API (avoids GraphQL rate limits).                     |
+| `get-review-activity-log`         | Fetch the activity log from an existing review summary comment.                   |
 | `handle-no-changes`               | Handle no-changes scenario gracefully.                                            |
 | `impl-init`                       | Initialize implementation by validating .erk/impl-context/ folder.                |
 | `impl-signal`                     | Signal implementation events to GitHub.                                           |
@@ -634,6 +635,19 @@ Fetch PR details using REST API (avoids GraphQL rate limits).
 | Flag       | Type | Required | Default | Description                   |
 | ---------- | ---- | -------- | ------- | ----------------------------- |
 | `--branch` | TEXT | No       | -       | Branch name to look up PR for |
+
+### get-review-activity-log
+
+Fetch the activity log from an existing review summary comment.
+
+**Usage:** `erk exec get-review-activity-log`
+
+**Options:**
+
+| Flag          | Type    | Required | Default        | Description                                |
+| ------------- | ------- | -------- | -------------- | ------------------------------------------ |
+| `--pr-number` | INTEGER | Yes      | Sentinel.UNSET | PR number to search                        |
+| `--marker`    | TEXT    | Yes      | Sentinel.UNSET | HTML marker identifying the review comment |
 
 ### handle-no-changes
 
