@@ -20,15 +20,18 @@ Exit Codes:
 
 from __future__ import annotations
 
-import json
 from dataclasses import dataclass
 from pathlib import Path
 
 import click
 
 from erk.artifacts.paths import get_bundled_github_dir
-from erk.cli.commands.exec.scripts.preprocess_session import generate_compressed_xml
 from erk_shared.context.helpers import require_cwd, require_prompt_executor
+from erk_shared.learn.extraction.session_preprocessing import (
+    deduplicate_assistant_messages,
+    generate_compressed_xml,
+    process_log_content,
+)
 from erk_shared.subprocess_utils import run_subprocess_with_context
 
 
@@ -44,6 +47,9 @@ class SessionTail:
 def _extract_session_tail(session_file: Path, *, max_entries: int) -> SessionTail | None:
     """Read JSONL session file and extract the last N entries as compressed XML.
 
+    Uses the erk_shared session preprocessing pipeline (Stage 1 mechanical
+    reduction) — same as the learn sessions workflow.
+
     Args:
         session_file: Path to session JSONL file
         max_entries: Maximum number of entries to include from the tail
@@ -55,36 +61,28 @@ def _extract_session_tail(session_file: Path, *, max_entries: int) -> SessionTai
         return None
 
     text = session_file.read_text(encoding="utf-8")
-    lines = [line for line in text.splitlines() if line.strip()]
-    if not lines:
+    if not text.strip():
         return None
 
-    entries: list[dict] = [json.loads(line) for line in lines]
+    # Stage 1: mechanical reduction via erk_shared pipeline
+    reduced_entries, total_entries, _ = process_log_content(text)
+    if not reduced_entries:
+        return None
 
-    total_events = len(entries)
-    tail_entries = entries[-max_entries:]
+    # Deduplicate assistant messages (deterministic)
+    reduced_entries = deduplicate_assistant_messages(reduced_entries)
+
+    # Take the tail for failure diagnosis
+    tail_entries = reduced_entries[-max_entries:]
 
     # Check if session has a result event (indicates natural completion)
     has_result_event = any(entry.get("type") == "result" for entry in tail_entries)
 
-    # Convert to compressed XML
-    # Keep minimal fields for each entry (same as preprocess_session.process_log_file)
-    filtered = []
-    for entry in tail_entries:
-        item: dict = {
-            "type": entry.get("type", "unknown"),
-            "message": entry.get("message", {}),
-        }
-        if "gitBranch" in entry:
-            item["gitBranch"] = entry["gitBranch"]
-        if "model" in entry.get("message", {}):
-            item["model"] = entry["message"]["model"]
-        filtered.append(item)
-
-    last_entries_xml = generate_compressed_xml(filtered, enable_pruning=True)
+    # Generate XML via erk_shared pipeline
+    last_entries_xml = generate_compressed_xml(tail_entries)
 
     return SessionTail(
-        total_events=total_events,
+        total_events=total_entries,
         last_entries_xml=last_entries_xml,
         has_result_event=has_result_event,
     )
