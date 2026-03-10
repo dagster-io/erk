@@ -2247,10 +2247,8 @@ query {{
         response = json.loads(stdout)
         return response["id"]
 
-    def _fetch_pr_comments(self, repo_root: Path, pr_number: int) -> list[dict[str, str]]:
+    def fetch_pr_comments(self, repo_root: Path, pr_number: int) -> list[dict[str, str]]:
         """Fetch all issue/PR comments as a list of dicts.
-
-        Shared helper for find_pr_comment_by_marker and get_pr_comment_body_by_marker.
 
         Returns:
             List of comment dicts from the GitHub API, or empty list on failure.
@@ -2267,22 +2265,8 @@ query {{
             stdout = execute_gh_command_with_retry(cmd, repo_root, self._time)
             return json.loads(stdout)
         except RuntimeError as e:
-            debug_log(f"_fetch_pr_comments failed: {e}")
+            debug_log(f"fetch_pr_comments failed: {e}")
             return []
-
-    def get_pr_comment_body_by_marker(
-        self,
-        repo_root: Path,
-        pr_number: int,
-        marker: str,
-    ) -> str | None:
-        """Return body of first PR comment containing marker, or None."""
-        comments = self._fetch_pr_comments(repo_root, pr_number)
-        for comment in comments:
-            body = comment.get("body", "")
-            if marker in body:
-                return body
-        return None
 
     def find_pr_comment_by_marker(
         self,
@@ -2297,7 +2281,7 @@ query {{
         Fetches all comments as JSON and searches in Python to avoid
         shell escaping issues with special characters in markers.
         """
-        comments = self._fetch_pr_comments(repo_root, pr_number)
+        comments = self.fetch_pr_comments(repo_root, pr_number)
         for comment in comments:
             body = comment.get("body", "")
             if marker in body:

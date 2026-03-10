@@ -62,7 +62,12 @@ def get_review_activity_log(
     repo_root = require_repo_root(ctx)
     github = require_github(ctx)
 
-    comment_body = github.get_pr_comment_body_by_marker(repo_root, pr_number, marker)
+    comments = github.fetch_pr_comments(repo_root, pr_number)
+    comment_body = None
+    for comment in comments:
+        if marker in comment.get("body", ""):
+            comment_body = comment["body"]
+            break
 
     if comment_body is None:
         result = {"success": True, "found": False, "activity_log": ""}

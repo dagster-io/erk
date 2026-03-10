@@ -1028,20 +1028,20 @@ class FakeLocalGitHub(LocalGitHub):
         """
         return self._pr_review_comments
 
-    def get_pr_comment_body_by_marker(
+    def fetch_pr_comments(
         self,
         repo_root: Path,
         pr_number: int,
-        marker: str,
-    ) -> str | None:
-        """Return body of first PR comment containing marker, or None.
+    ) -> list[dict[str, Any]]:
+        """Return all comments for a PR as list of dicts.
 
-        Searches _pr_comments for a comment on the given PR containing the marker.
+        Mirrors the real implementation's return format with "id" and "body" keys.
         """
-        for stored_pr, body in self._pr_comments:
-            if stored_pr == pr_number and marker in body:
-                return body
-        return None
+        result: list[dict[str, Any]] = []
+        for i, (stored_pr, body) in enumerate(self._pr_comments):
+            if stored_pr == pr_number:
+                result.append({"id": 1000000 + i, "body": body})
+        return result
 
     def find_pr_comment_by_marker(
         self,

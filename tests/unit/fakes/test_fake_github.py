@@ -926,39 +926,41 @@ def test_fake_github_create_pr_comment_tracks_mutation() -> None:
     assert ops.pr_comments == [(123, "Summary comment body")]
 
 
-# Tests for get_pr_comment_body_by_marker
+# Tests for fetch_pr_comments
 
 
-def test_fake_github_get_pr_comment_body_by_marker_returns_none_when_not_found() -> None:
-    """Test get_pr_comment_body_by_marker returns None when no matching comment."""
+def test_fake_github_fetch_pr_comments_returns_empty_when_none() -> None:
+    """Test fetch_pr_comments returns empty list when no comments."""
     ops = FakeLocalGitHub()
 
-    result = ops.get_pr_comment_body_by_marker(sentinel_path(), 123, "<!-- my-marker -->")
+    result = ops.fetch_pr_comments(sentinel_path(), 123)
 
-    assert result is None
+    assert result == []
 
 
-def test_fake_github_get_pr_comment_body_by_marker_returns_body() -> None:
-    """Test get_pr_comment_body_by_marker returns full comment body."""
+def test_fake_github_fetch_pr_comments_returns_comment_dicts() -> None:
+    """Test fetch_pr_comments returns list of dicts with id and body."""
     ops = FakeLocalGitHub()
 
     body = "Header\n\n<!-- my-marker -->\n\n### Activity Log\n- entry 1"
     ops.create_pr_comment(sentinel_path(), 123, body)
 
-    result = ops.get_pr_comment_body_by_marker(sentinel_path(), 123, "<!-- my-marker -->")
+    result = ops.fetch_pr_comments(sentinel_path(), 123)
 
-    assert result == body
+    assert len(result) == 1
+    assert result[0]["body"] == body
+    assert "id" in result[0]
 
 
-def test_fake_github_get_pr_comment_body_by_marker_ignores_different_pr() -> None:
-    """Test get_pr_comment_body_by_marker only searches specified PR."""
+def test_fake_github_fetch_pr_comments_filters_by_pr_number() -> None:
+    """Test fetch_pr_comments only returns comments for specified PR."""
     ops = FakeLocalGitHub()
 
     ops.create_pr_comment(sentinel_path(), 123, "<!-- marker -->\nOn PR 123")
 
-    result = ops.get_pr_comment_body_by_marker(sentinel_path(), 456, "<!-- marker -->")
+    result = ops.fetch_pr_comments(sentinel_path(), 456)
 
-    assert result is None
+    assert result == []
 
 
 # Tests for find_pr_comment_by_marker

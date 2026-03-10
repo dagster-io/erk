@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.types import (
@@ -693,24 +693,22 @@ class LocalGitHub(ABC):
         ...
 
     @abstractmethod
-    def get_pr_comment_body_by_marker(
+    def fetch_pr_comments(
         self,
         repo_root: Path,
         pr_number: int,
-        marker: str,
-    ) -> str | None:
-        """Return body of first PR comment containing marker, or None.
+    ) -> list[dict[str, Any]]:
+        """Fetch all issue/PR comments as a list of dicts.
 
-        Uses the same comment search as find_pr_comment_by_marker but
-        returns the full comment body text instead of the comment ID.
+        Returns raw comment data from the GitHub API. Each dict contains
+        at minimum "id" and "body" keys.
 
         Args:
             repo_root: Repository root (for gh CLI context)
-            pr_number: PR number to search comments in
-            marker: String to search for in comment body
+            pr_number: PR number to fetch comments for
 
         Returns:
-            Comment body text if found, None otherwise
+            List of comment dicts, or empty list on failure
         """
         ...
 
