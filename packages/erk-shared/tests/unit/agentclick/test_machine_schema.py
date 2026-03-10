@@ -3,9 +3,9 @@
 from dataclasses import dataclass
 from typing import Any
 
+from erk_shared.agentclick.dataclass_json import ERROR_SCHEMA
 from erk_shared.agentclick.machine_command import MachineCommandMeta
 from erk_shared.agentclick.machine_schema import (
-    ERROR_SCHEMA,
     build_machine_schema_document,
     request_schema,
     result_schema,

@@ -11,13 +11,19 @@ Unlike @json_command (which adds --json/--schema to human commands),
 Click-based input parsing. The request type IS the input schema.
 """
 
-import dataclasses
 import json
-import sys
-from dataclasses import dataclass, fields
-from typing import Any, Literal, get_args, get_origin
+from dataclasses import dataclass
+from typing import Any
 
 import click
+
+from erk_shared.agentclick.dataclass_json import (
+    emit_json_error,
+    emit_json_success,
+    parse_dataclass_from_json,
+    read_json_stdin,
+    serialize_to_json_dict,
+)
 
 
 @dataclass(frozen=True)
@@ -73,15 +79,7 @@ def read_machine_command_input() -> dict[str, Any] | None:
         json.JSONDecodeError: If stdin contains invalid JSON
         ValueError: If stdin JSON is not an object
     """
-    if sys.stdin.isatty():
-        return None
-    raw = sys.stdin.read()
-    if not raw.strip():
-        return None
-    data = json.loads(raw)
-    if not isinstance(data, dict):
-        raise ValueError("JSON input must be an object")
-    return data
+    return read_json_stdin()
 
 
 def parse_machine_request(request_type: type, data: dict[str, Any]) -> Any:
@@ -100,134 +98,18 @@ def parse_machine_request(request_type: type, data: dict[str, Any]) -> Any:
     Raises:
         ValueError: On validation errors (unknown fields, missing required, type mismatch)
     """
-    from_json = getattr(request_type, "from_json_dict", None)
-    if from_json is not None:
-        return from_json(data)
-    return _build_dataclass_request(request_type, data)
-
-
-def _build_dataclass_request(request_type: type, data: dict[str, Any]) -> Any:
-    """Build a dataclass from JSON dict with strict validation.
-
-    - Rejects unknown keys
-    - Applies type coercion
-    - Fills in defaults for missing fields
-    """
-    valid_fields = {f.name: f for f in fields(request_type)}
-
-    # Reject unknown keys
-    for key in data:
-        if key not in valid_fields:
-            raise ValueError(f"Unknown field: {key}")
-
-    kwargs: dict[str, Any] = {}
-    for name, field in valid_fields.items():
-        if name in data:
-            kwargs[name] = _coerce_value(data[name], field.type)
-        elif field.default is not dataclasses.MISSING:
-            kwargs[name] = field.default
-        elif field.default_factory is not dataclasses.MISSING:
-            kwargs[name] = field.default_factory()
-        else:
-            raise ValueError(f"Missing required field: {name}")
-
-    return request_type(**kwargs)
-
-
-def _coerce_value(value: Any, target_type: Any) -> Any:
-    """Coerce a JSON value to the expected Python type.
-
-    Handles: Literal, tuple, list, dict, bool, int, float, str,
-    X | None unions, and passes through unrecognized types.
-    """
-    origin = get_origin(target_type)
-    args = get_args(target_type)
-
-    # Literal validation
-    if origin is Literal:
-        if value not in args:
-            raise ValueError(f"Invalid value {value!r}, expected one of {args}")
-        return value
-
-    # tuple[X, ...] from JSON arrays
-    if origin is tuple and len(args) == 2 and args[1] is Ellipsis:
-        if isinstance(value, list):
-            return tuple(_coerce_value(v, args[0]) for v in value)
-        return value
-
-    # list[X]
-    if origin is list and len(args) == 1:
-        if isinstance(value, list):
-            return [_coerce_value(v, args[0]) for v in value]
-        return value
-
-    # dict[K, V]
-    if origin is dict:
-        return value
-
-    # Union types (X | None)
-    import types
-
-    if origin is types.UnionType:
-        if value is None and type(None) in args:
-            return None
-        non_none = [a for a in args if a is not type(None)]
-        if len(non_none) == 1:
-            return _coerce_value(value, non_none[0])
-        return value
-
-    # bool must be checked before int (bool is subclass of int)
-    if target_type is bool:
-        if isinstance(value, bool):
-            return value
-        raise ValueError(f"Expected boolean, got {type(value).__name__}")
-
-    if target_type is int:
-        if isinstance(value, bool):
-            raise ValueError("Expected integer, got boolean")
-        if isinstance(value, int):
-            return value
-        return value
-
-    if target_type is float:
-        if isinstance(value, (int, float)):
-            return float(value)
-        return value
-
-    if target_type is str:
-        if isinstance(value, str):
-            return value
-        return value
-
-    return value
-
-
-def _serialize_machine_result(result: Any) -> dict[str, Any]:
-    """Serialize a result to a JSON-compatible dict.
-
-    Checks for to_json_dict() protocol first, falls back to
-    dataclasses.asdict() for plain dataclasses.
-    """
-    if hasattr(result, "to_json_dict"):
-        return result.to_json_dict()
-    if dataclasses.is_dataclass(result) and not isinstance(result, type):
-        return dataclasses.asdict(result)
-    raise TypeError(
-        f"Cannot serialize {type(result).__name__}: no to_json_dict() and not a dataclass"
-    )
+    return parse_dataclass_from_json(request_type, data)
 
 
 def emit_machine_error(error: MachineCommandError) -> None:
     """Emit a structured error to stdout."""
-    data = {"success": False, "error_type": error.error_type, "message": error.message}
-    click.echo(json.dumps(data, indent=2))
+    emit_json_error(error_type=error.error_type, message=error.message)
 
 
 def emit_machine_result(result: Any) -> None:
     """Emit a structured success result to stdout."""
-    data = _serialize_machine_result(result)
-    data["success"] = True
-    click.echo(json.dumps(data, indent=2))
+    data = serialize_to_json_dict(result)
+    emit_json_success(data)
 
 
 def _apply_machine_command(

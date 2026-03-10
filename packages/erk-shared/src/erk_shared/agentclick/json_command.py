@@ -17,13 +17,17 @@ the decorator auto-serializes it via emit_json_result() when --json is active.
 Commands may also call emit_json()/emit_json_result() inline and return None.
 """
 
-import dataclasses
 import json
-import sys
 from dataclasses import dataclass
 from typing import Any, overload
 
 import click
+
+from erk_shared.agentclick.dataclass_json import (
+    emit_json_success,
+    read_json_stdin,
+    serialize_to_json_dict,
+)
 
 
 @dataclass(frozen=True)
@@ -102,15 +106,7 @@ def read_stdin_json() -> dict[str, Any] | None:
         json.JSONDecodeError: If stdin contains invalid JSON
         ValueError: If stdin JSON is not an object
     """
-    if sys.stdin.isatty():
-        return None
-    raw = sys.stdin.read()
-    if not raw.strip():
-        return None
-    data = json.loads(raw)
-    if not isinstance(data, dict):
-        raise ValueError("JSON input must be an object")
-    return data
+    return read_json_stdin()
 
 
 def _apply_json_command(
@@ -240,8 +236,7 @@ def _apply_json_command(
 
 def emit_json(data: dict[str, Any]) -> None:
     """Emit a JSON success result to stdout. Adds success=True automatically."""
-    data["success"] = True
-    click.echo(json.dumps(data, indent=2))
+    emit_json_success(data)
 
 
 def emit_json_result(result: Any) -> None:
@@ -253,11 +248,5 @@ def emit_json_result(result: Any) -> None:
     Raises:
         TypeError: If result has no to_json_dict() and is not a dataclass
     """
-    if hasattr(result, "to_json_dict"):
-        data = result.to_json_dict()
-    elif dataclasses.is_dataclass(result) and not isinstance(result, type):
-        data = dataclasses.asdict(result)
-    else:
-        type_name = type(result).__name__
-        raise TypeError(f"Cannot serialize {type_name}: no to_json_dict() and not a dataclass")
+    data = serialize_to_json_dict(result)
     emit_json(data)

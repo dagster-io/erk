@@ -8,10 +8,10 @@ from unittest.mock import patch
 import click
 from click.testing import CliRunner
 
+from erk_shared.agentclick.dataclass_json import coerce_json_value
 from erk_shared.agentclick.machine_command import (
     MachineCommandError,
     MachineCommandMeta,
-    _coerce_value,
     emit_machine_error,
     emit_machine_result,
     machine_command,
@@ -186,15 +186,15 @@ def test_parse_machine_request_happy_path() -> None:
 
 
 def test_coerce_bool() -> None:
-    """_coerce_value validates booleans strictly."""
-    assert _coerce_value(True, bool) is True
-    assert _coerce_value(False, bool) is False
+    """coerce_json_value validates booleans strictly."""
+    assert coerce_json_value(True, bool) is True
+    assert coerce_json_value(False, bool) is False
 
 
 def test_coerce_optional_none() -> None:
-    """_coerce_value handles None for optional types."""
+    """coerce_json_value handles None for optional types."""
     optional_str = str | None
-    result = _coerce_value(None, optional_str)
+    result = coerce_json_value(None, optional_str)
     assert result is None
 
 
