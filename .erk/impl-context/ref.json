@@ -1,0 +1,8 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Plan: Create `erk json objective view` and `erk json objective check` machine commands",
+  "objective_id": 9009,
+  "node_ids": [
+    "3.2"
+  ]
+}
