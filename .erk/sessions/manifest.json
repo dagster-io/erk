@@ -1,0 +1,33 @@
+{
+  "version": 1,
+  "pr_number": 9161,
+  "sessions": [
+    {
+      "session_id": "b7463828-bcad-4185-9229-037dea655516",
+      "stage": "impl",
+      "source": "remote",
+      "uploaded_at": "2026-03-10T13:32:37.838337+00:00",
+      "files": [
+        "impl-b7463828-bcad-4185-9229-037dea655516-b7463828-bcad-4185-9229-037dea655516-part1.xml",
+        "impl-b7463828-bcad-4185-9229-037dea655516-b7463828-bcad-4185-9229-037dea655516-part10.xml",
+        "impl-b7463828-bcad-4185-9229-037dea655516-b7463828-bcad-4185-9229-037dea655516-part11.xml",
+        "impl-b7463828-bcad-4185-9229-037dea655516-b7463828-bcad-4185-9229-037dea655516-part12.xml",
+        "impl-b7463828-bcad-4185-9229-037dea655516-b7463828-bcad-4185-9229-037dea655516-part13.xml",
+        "impl-b7463828-bcad-4185-9229-037dea655516-b7463828-bcad-4185-9229-037dea655516-part14.xml",
+        "impl-b7463828-bcad-4185-9229-037dea655516-b7463828-bcad-4185-9229-037dea655516-part2.xml",
+        "impl-b7463828-bcad-4185-9229-037dea655516-b7463828-bcad-4185-9229-037dea655516-part3.xml",
+        "impl-b7463828-bcad-4185-9229-037dea655516-b7463828-bcad-4185-9229-037dea655516-part4.xml",
+        "impl-b7463828-bcad-4185-9229-037dea655516-b7463828-bcad-4185-9229-037dea655516-part5.xml",
+        "impl-b7463828-bcad-4185-9229-037dea655516-b7463828-bcad-4185-9229-037dea655516-part6.xml",
+        "impl-b7463828-bcad-4185-9229-037dea655516-b7463828-bcad-4185-9229-037dea655516-part7.xml",
+        "impl-b7463828-bcad-4185-9229-037dea655516-b7463828-bcad-4185-9229-037dea655516-part8.xml",
+        "impl-b7463828-bcad-4185-9229-037dea655516-b7463828-bcad-4185-9229-037dea655516-part9.xml"
+      ],
+      "user_turns": 3,
+      "duration_minutes": 7,
+      "raw_size_kb": 1790,
+      "xml_size_kb": 543,
+      "git_branch": "plnd/O9109-sweep-remaining-plan-03-10-1321"
+    }
+  ]
+}

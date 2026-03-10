@@ -1,0 +1,1380 @@
+<session>
+  <meta branch="plnd/O9109-sweep-remaining-plan-03-10-1321" />
+  <meta model="claude-opus-4-6" />
+  <user>&lt;command-message&gt;erk:plan-implement is running…&lt;/command-message&gt;
+&lt;command-name&gt;/erk:plan-implement&lt;/command-name&gt;
+&lt;command-args&gt;9161&lt;/command-args&gt;</user>
+  <user># /erk:plan-implement
+
+Implement a plan - either from GitHub, a markdown file, an existing impl directory under `.erk/impl-context/`, or by saving the current plan first.
+
+This is the primary implementation workflow - it orchestrates:
+
+1. Setting up the impl directory under `.erk/impl-context/&lt;branch&gt;/` (from issue, file, existing folder, or fresh plan)
+2. Executing the implementation
+3. Running CI and submitting the PR
+
+## Prerequisites
+
+- Must be in a git repository managed by erk
+- GitHub CLI (`gh`) must be authenticated
+- One of:
+  - A plan number, URL, or file path argument
+  - An existing impl directory under `.erk/impl-context/`
+  - A plan branch checked out (e.g., `plnd/...` or `P{number}-...`)
+  - A plan in `~/.claude/plans/` (from plan mode)
+
+## Usage
+
+```bash
+/erk:plan-implement                    # Use impl directory, detect from branch, or save current plan
+/erk:plan-implement 2521               # Fetch and implement plan #2521
+/erk:plan-implement https://github.com/owner/repo/pull/2521   # URL form
+/erk:plan-implement ./my-plan.md       # Implement from local markdown file
+```
+
+---
+
+## CRITICAL: PR Operations
+
+**NEVER** run direct GitHub CLI commands for PR operations during implementation:
+
+- `gh pr edit` — destroys plan-header metadata block
+- `gh pr ready` — bypasses lifecycle tracking
+- `gh pr close` / `gh pr merge`
+
+All PR operations are handled by `erk pr submit` in Step 13. It automatically:
+
+- Generates the PR title and body
+- Preserves the plan-header metadata block
+- Marks draft PRs as ready for review
+- Updates lifecycle stage
+
+## Agent Instructions
+
+### Step 1: Set Up Implementation
+
+Parse `9161` and run the consolidated setup command:
+
+- **If numeric** (e.g., `2521`): `erk exec setup-impl --issue 2521`
+- **If GitHub URL** (e.g., `https://github.com/.../issues/2521`): Extract number, `erk exec setup-impl --issue 2521`
+- **If path to file** (anything else non-empty): `erk exec setup-impl --file &lt;path&gt;`
+- **If empty**: `erk exec setup-impl` (auto-detects from `.erk/impl-context/`, branch, or fails)
+
+```bash
+erk exec setup-impl [--issue &lt;N&gt; | --file &lt;path&gt;]
+```
+
+This single command handles:
+
+- Fetching plan from GitHub (draft PR)
+- Setting up from a local markdown file
+- Auto-detecting from existing impl directory under `.erk/impl-context/`
+- Auto-detecting plan number from branch name (P{number}-... or PR lookup)
+- Creating/checking out the feature branch
+- Creating impl directory under `.erk/impl-context/&lt;branch&gt;/` with plan content
+- Running impl-init validation
+- Cleaning up `.erk/impl-context/` staging directory (git rm + commit + push)
+
+Otherwise, generate a branch slug and set up from the specified issue:
+
+1. Fetch the title: `gh pr view &lt;ISSUE_ARG&gt; --json title -q .title`
+2. Generate a branch slug from the title:
+   - 2-4 hyphenated lowercase words, max 30 characters
+   - Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+   - Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+   - Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+3. Store as `BRANCH_SLUG`.
+
+```bash
+erk exec setup-impl --issue &lt;ISSUE_ARG&gt; --branch-slug="${BRANCH_SLUG}"
+```
+
+If `setup-impl` exits with code 1 and `error: "no_plan_found"`, fall back to saving the current plan:
+
+Generate a branch slug from the plan title (the first `# ` heading in the plan file):
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Store as `BRANCH_SLUG`
+
+Save the current plan to GitHub and capture the plan number:
+
+```bash
+erk exec plan-save --format json --session-id="${CLAUDE_SESSION_ID}" --branch-slug="${BRANCH_SLUG}"
+```
+
+Parse the JSON output to get `plan_number`, then:
+
+```bash
+erk exec setup-impl --issue &lt;plan_number&gt;
+```
+
+The `setup-impl` output includes `related_docs` (skills and docs to load) and `has_plan_tracking` (whether GitHub issue tracking is active).
+
+If this fails, display the error and stop.
+
+### Step 2: Read Plan and Load Context
+
+Read `plan.md` from the impl directory set up in Step 1 to understand:
+
+- Overall goal and context
+- Context &amp; Understanding sections (API quirks, architectural insights, pitfalls)
+- Implementation phases and dependencies
+- Success criteria
+
+**Context Consumption**: Plans contain expensive discoveries. Ignoring `[CRITICAL:]` tags, "Related Context:" subsections, or "DO NOT" items causes repeated mistakes.
+
+### Step 3: Load Related Documentation
+
+If plan contains "Related Documentation" section, load listed skills via Skill tool and read listed docs.
+
+### Step 4: Create TodoWrite Entries
+
+Create todo entries for each phase from the plan.
+
+### Step 5: Signal GitHub Started
+
+```bash
+erk exec impl-signal started --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This also deletes the Claude plan file (from `~/.claude/plans/`) since:
+
+- The content has been saved to GitHub
+- The content has been snapshotted to `.erk/scratch/`
+- Keeping it could cause confusion if the user tries to re-save
+
+### Step 6: Execute Each Phase Sequentially
+
+For each phase:
+
+1. **Mark phase as in_progress** (in TodoWrite)
+2. **Read task requirements** carefully
+3. **Implement code AND tests together**:
+   - Load `dignified-python-313` skill for coding standards
+   - Load `fake-driven-testing` skill for test patterns
+   - Follow project AGENTS.md standards
+4. **Mark phase as completed** (in TodoWrite)
+5. **Report progress**: changes made, what's next
+
+**Important:** `plan.md` is immutable - NEVER edit during implementation
+
+### Step 7: Report Progress
+
+After each phase: report changes made and what's next.
+
+### Step 8: Final Verification
+
+Confirm all tasks executed, success criteria met, note deviations, summarize changes.
+
+### Step 9: Signal GitHub Ended
+
+```bash
+erk exec impl-signal ended --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+### Step 10: Upload Session for Async Learn
+
+```bash
+erk exec upload-impl-session --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This reads plan reference from the impl directory, captures session info, and uploads for async learn processing.
+
+### Step 11: Clean Up Impl Context
+
+Remove the `.erk/impl-context/` directory from the repo:
+
+```bash
+erk exec cleanup-impl-context
+```
+
+This removes `.erk/impl-context/`, stages the deletion, commits, and pushes — all idempotent.
+
+### Step 12: Run CI Iteratively
+
+1. If `.erk/prompt-hooks/post-plan-implement-ci.md` exists: follow its instructions
+2. Otherwise: check CLAUDE.md/AGENTS.md for CI commands
+
+### Step 13: Submit PR
+
+Push the branch and create or update the PR using the Graphite-aware submit pipeline:
+
+```bash
+erk pr submit
+```
+
+This handles pushing commits, creating/updating the PR, generating the PR description, and enhancing with Graphite stack metadata when available.
+
+After successful submission, signal lifecycle transition:
+
+```bash
+erk exec impl-signal submitted 2&gt;/dev/null || true
+```
+
+Then validate PR completion invariants:
+
+```bash
+erk pr check --stage=impl
+```
+
+This validates PR submission readiness including implementation-specific checks
+(e.g., `.erk/impl-context/` must be cleaned up). If checks fail, display output and warn user.
+
+### Step 14: Output Format
+
+- **Start**: "Setting up implementation..." or "Fetching plan #X..."
+- **After setup**: "Implementation environment ready, reading plan..."
+- **Each phase**: "Phase X: [brief description]" with code changes
+- **End**: "Plan execution complete. [Summary]"
+
+---
+
+## Related Commands
+
+- `/erk:plan-save` - Save plan only, don't implement (for defer-to-later workflow)
+- `/erk:replan` - Re-plan an existing plan with current codebase state
+</user>
+  <assistant>
+
+I'll start by setting up the implementation for plan #9161.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="11288" cache_read_input_tokens="17332" cache_creation="{'ephemeral_5m_input_tokens': 11288, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01P2hJyFy5AwepZGTibMFpRh">
+    <param name="command">erk exec setup-impl --issue 9161</param>
+    <param name="description">Set up implementation for plan #9161</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="11288" cache_read_input_tokens="17332" cache_creation="{'ephemeral_5m_input_tokens': 11288, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01P2hJyFy5AwepZGTibMFpRh">
+{"success": true, "impl_path": "/home/runner/work/erk/erk/.erk/impl-context/plnd--O9109-sweep-remaining-plan-03-10-1321", "pr_number": 9161, "pr_url": "https://github.com/dagster-io/erk/pull/9161", "branch": "plnd/O9109-sweep-remaining-plan-03-10-1321", "pr_title": "[erk-pr] Plan: Sweep remaining plan_number/plan_id references in src/", "no_impl": false}
+{"success": true, "source": "issue", "pr_number": 9161, "has_plan_tracking": true, "valid": true, "related_docs": {"skills": [], "docs": []}}
+Already on PR branch 'plnd/O9109-sweep-remaining-plan-03-10-1321', teleporting from remote...
+  </tool_result>
+  <assistant>Implementation environment is set up. Let me read the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="357" cache_read_input_tokens="28620" cache_creation="{'ephemeral_5m_input_tokens': 357, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_014pQXQNDeNCHSH2u8ubEmX7">
+    <param name="file_path">/home/runner/work/erk/erk/.erk/impl-context/plnd--O9109-sweep-remaining-plan-03-10-1321/plan.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="357" cache_read_input_tokens="28620" cache_creation="{'ephemeral_5m_input_tokens': 357, 'ephemeral_1h_input_tokens': 0}" output_tokens="108" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_014pQXQNDeNCHSH2u8ubEmX7">
+     1→# Plan: Sweep remaining plan_number/plan_id references in src/
+     2→
+     3→**Part of Objective #9109, Node 3.6**
+     4→
+     5→## Context
+     6→
+     7→Objective #9109 renames "plan" terminology to "pr" across all APIs. Phases 1-2 are complete (PRs #9110, #9120, #9130, #9140, #9144, #9146 merged). Phase 3 nodes 3.1-3.5 are in progress (#9152 covers TUI layer). Node 3.6 sweeps for any remaining `plan_number`, `plan_id`, `plan_url`, `plan_title` references in `src/erk/` that should have been renamed.
+     8→
+     9→**Key distinction**: Only rename fields/params where "plan_number" means "the PR number of an erk-plan". Do NOT rename conceptual references to "plan" (plan mode, plan files, plan save workflow, plan labels).
+    10→
+    11→## Scope
+    12→
+    13→86 files in `src/erk/` still contain `plan_number|plan_id|plan_url|plan_title`. After excluding TUI files (covered by #9152), ~70 files remain. Many are intentional (plan-as-concept). The sweep must categorize each and rename only the "PR identifier" uses.
+    14→
+    15→## Rename Rules
+    16→
+    17→| Old | New | When to rename |
+    18→|-----|-----|----------------|
+    19→| `plan_number` (param/field) | `pr_number` | When it holds a GitHub issue/PR number |
+    20→| `plan_id` (param/field) | `pr_id` | When it's a string plan identifier (resolves to PR number) |
+    21→| `plan_url` (param/field) | `pr_url` | When it holds a GitHub URL |
+    22→| `plan_title` (param/field) | `pr_title` | When it holds a PR/issue title |
+    23→| `"plan_number"` (string literal) | `"pr_number"` | Target type discriminators |
+    24→| `"plan_url"` (string literal) | `"pr_url"` | Target type discriminators |
+    25→
+    26→**DO NOT rename:**
+    27→- File/module names (e.g., `plan_save.py`, `plan_context_provider.py`)
+    28→- Class names for plan concepts (`PlanContext`, `PlanValidationSuccess`)
+    29→- Functions operating on plan.md files (`extract_plan_title()` in exit_plan_mode_hook.py)
+    30→- Plan label operations (`add_plan_label`, `add_plan_labels`)
+
+... [113 lines omitted] ...
+
+   130→1. Run `ruff check src/` - no lint errors
+   131→2. Run `ty check src/` - no type errors
+  </tool_result>
+  <assistant>This is a large-scale rename operation across ~50-60 files. Let me load the required skills and documentation, then set up the implementation.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3033" cache_read_input_tokens="28977" cache_creation="{'ephemeral_5m_input_tokens': 3033, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Skill" id="toolu_014qb5wLy6FJxkkXjeQr7xLv">
+    <param name="skill">dignified-python</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3033" cache_read_input_tokens="28977" cache_creation="{'ephemeral_5m_input_tokens': 3033, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_014qb5wLy6FJxkkXjeQr7xLv">
+Launching skill: dignified-python
+  </tool_result>
+  <user>Base directory for this skill: /home/runner/work/erk/erk/.claude/skills/dignified-python
+
+# Dignified Python Coding Standards
+
+## Core Knowledge (ALWAYS Loaded)
+
+@dignified-python-core.md
+
+## Version Detection
+
+**Identify the project's minimum Python version** by checking (in order):
+
+1. `pyproject.toml` - Look for `requires-python` field (e.g., `requires-python = "&gt;=3.12"`)
+2. `setup.py` or `setup.cfg` - Look for `python_requires`
+3. `.python-version` file - Contains version like `3.12` or `3.12.0`
+4. Default to Python 3.12 if no version specifier found
+
+**Once identified, load the appropriate version-specific file:**
+
+- Python 3.10: Load `versions/python-3.10.md`
+- Python 3.11: Load `versions/python-3.11.md`
+- Python 3.12: Load `versions/python-3.12.md`
+- Python 3.13: Load `versions/python-3.13.md`
+
+## Conditional Loading (Load Based on Task Patterns)
+
+Core files above cover 80%+ of Python code patterns. Only load these additional files when you detect specific patterns:
+
+Pattern detection examples:
+
+- If task mentions "click" or "CLI" -&gt; Load `cli-patterns.md`
+- If task mentions "subprocess" -&gt; Load `subprocess.md`
+
+## When to Read Each Reference Document
+
+The `references/` directory contains detailed guidance for specialized topics. Load these on-demand when you encounter relevant patterns:
+
+### `references/exception-handling.md`
+
+**Read when**:
+
+- Writing try/except blocks
+- Wrapping third-party APIs that may raise
+- Seeing or writing `from e` or `from None`
+- Unsure if LBYL alternative exists
+
+### `references/interfaces.md`
+
+**Read when**:
+
+- Creating ABC or Protocol classes
+- Writing @abstractmethod decorators
+- Designing gateway layer interfaces
+- Choosing between ABC and Protocol
+
+### `references/typing-advanced.md`
+
+**Read when**:
+
+- Using typing.cast()
+- Creating Literal type aliases
+- Narrowing types in conditional blocks
+
+### `references/module-design.md`
+
+**Read when**:
+
+- Creating new Python modules
+- Adding module-level code (beyond simple constants)
+- Using @cache decorator at module level
+- Seeing Path() or computation at module level
+- Considering inline imports
+
+### `references/api-design.md`
+
+**Read when**:
+
+- Adding default parameter values to functions
+- Defining functions with 5 or more parameters
+- Using ThreadPoolExecutor.submit()
+- Reviewing function signatures
+
+### `references/checklists.md`
+
+**Read when**:
+
+- Final review before committing Python code
+- Unsure if you've followed all rules
+- Need a quick lookup of requirements
+
+## How to Use This Skill
+
+1. **Core knowledge** is loaded automatically (LBYL, pathlib, basic imports, anti-patterns)
+2. **Version detection** happens once - identify the minimum Python version and load the appropriate version file
+3. **Reference documents** are loaded on-demand based on the triggers above
+4. **Additional patterns** may require extra loading (CLI patterns, subprocess)
+5. **Each file is self-contained** with complete guidance for its domain
+</user>
+  <assistant>
+
+Now let me load the core standards and detect the Python version:</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="907" cache_read_input_tokens="32010" cache_creation="{'ephemeral_5m_input_tokens': 907, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01CNNpSpZ2bpDgXcsMDezAEp">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/skills/dignified-python/dignified-python-core.md</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="907" cache_read_input_tokens="32010" cache_creation="{'ephemeral_5m_input_tokens': 907, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01L1CUZArwKjQcHkC7Drzdqc">
+    <param name="file_path">/home/runner/work/erk/erk/pyproject.toml</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="907" cache_read_input_tokens="32010" cache_creation="{'ephemeral_5m_input_tokens': 907, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01CNNpSpZ2bpDgXcsMDezAEp">
+     1→---
+     2→---
+     3→
+     4→# Dignified Python - Core Standards
+     5→
+     6→This document contains the core Python coding standards that apply to 80%+ of Python code. These principles are loaded with every skill invocation.
+     7→
+     8→For conditional loading of specialized patterns:
+     9→
+    10→- CLI development -&gt; Load `cli-patterns.md`
+    11→- Subprocess operations -&gt; Load `subprocess.md`
+    12→
+    13→For detailed reference material, see the "When to Read Each Reference" section in SKILL.md.
+    14→
+    15→---
+    16→
+    17→## The Cornerstone: LBYL Over EAFP
+    18→
+    19→**Look Before You Leap: Check conditions proactively, NEVER use exceptions for control flow.**
+    20→
+    21→This is the single most important rule in dignified Python. Every pattern below flows from this principle.
+    22→
+    23→```python
+    24→# CORRECT: Check first
+    25→if key in mapping:
+    26→    value = mapping[key]
+    27→    process(value)
+    28→
+    29→# WRONG: Exception as control flow
+    30→try:
+
+... [502 lines omitted] ...
+
+    33→except KeyError:
+    39→## Exception Handling Basics
+    45→LBYL means checking conditions before acting. EAFP (Easier to Ask for Forgiveness than Permission) means trying operations and catching exceptions. In dignified Python, we strongly prefer LBYL.
+    65→# WRONG: KeyError as control flow
+    68→except KeyError:
+    72→### When Exceptions ARE Acceptable
+    74→Exceptions are ONLY acceptable at:
+    76→1. **Error boundaries** (CLI/API level)
+    80→**Default: Let exceptions bubble up**
+    82→**When you must use try-except: scope the try block to the single operation that raises.** Don't wrap multiple operations in one try block — each handler should know exactly what failed. Use early returns to keep subsequent code flat.
+    84→For detailed exception handling patterns including minimal exception scope, B904 chaining, third-party API examples, and anti-patterns, see `references/exception-handling.md`.
+   118→- `.resolve()` raises `OSError` for non-existent paths
+   119→- `.is_relative_to()` raises `ValueError` for invalid comparisons
+   120→- Checking `.exists()` first avoids exceptions entirely (LBYL!)
+   135→# WRONG: Using exceptions for path validation
+   140→except (OSError, ValueError):
+   180→3. **Inline imports only for specific exceptions** (circular deps, TYPE_CHECKING, conditional features)
+   211→**Acceptable exceptions:**
+   480→    log.warning("Non-numeric plan_id")
+   494→- **Raise exception**: When invalid data indicates a programming error or corrupt state
+   521→- **Exception chaining (B904), minimal exception scope**: `references/exception-handling.md`
+  </tool_result>
+  <tool_result tool="toolu_01L1CUZArwKjQcHkC7Drzdqc">
+     1→[tool.uv.workspace]
+     2→members = ["packages/*"]
+     3→
+     4→[tool.uv.sources]
+     5→erk-dev = { workspace = true }
+     6→erk-mcp = { workspace = true }
+     7→erk-shared = { workspace = true }
+     8→erk-statusline = { workspace = true }
+     9→
+    10→[project]
+    11→name = "erk"
+    12→version = "0.9.11"
+    13→description = "Add your description here"
+    14→readme = "README.md"
+    15→authors = [
+    16→    { name = "Dagster Labs", email = "hello@dagsterlabs.com" }
+    17→]
+    18→requires-python = "&gt;=3.11"
+    19→dependencies = [
+    20→    "anthropic&gt;=0.40.0",
+    21→    "click&gt;=8.1.7",
+    22→    "erk-shared",
+    23→    "erk-statusline",
+    24→    "packaging&gt;=21.0",
+    25→    "pathspec&gt;=0.12.0",
+    26→    "pydantic&gt;=2.0",
+    27→    "pyyaml&gt;=6.0",
+    28→    "python-frontmatter&gt;=1.0.0",
+    29→    "rich&gt;=13.0",
+    30→    "tomlkit&gt;=0.12.0",
+
+... [5 lines omitted] ...
+  </tool_result>
+  <assistant>Python &gt;= 3.11. This is a massive renaming task across ~50-60 files. Given the mechanical nature of this operation, I'll use LibCST for systematic batch renames where possible, and handle the rest file-by-file. Let me first create the todo list and signal the start.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="6784" cache_read_input_tokens="32917" cache_creation="{'ephemeral_5m_input_tokens': 6784, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01WkzK7g46GrVxmuYpJG8MsW">
+    <param name="todos">[{'content': 'Signal GitHub implementation started', 'status': 'in_progress', 'activeForm'...[truncated 1107 chars]...lifecycle'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6784" cache_read_input_tokens="32917" cache_creation="{'ephemeral_5m_input_tokens': 6784, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01WkzK7g46GrVxmuYpJG8MsW">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="Bash" id="toolu_018Ph3T3vsUsb8PbuUffkBdy">
+    <param name="command">erk exec impl-signal started --session-id "b7463828-bcad-4185-9229-037dea655516" 2&gt;/dev/null || true</param>
+    <param name="description">Signal implementation started</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="504" cache_read_input_tokens="39701" cache_creation="{'ephemeral_5m_input_tokens': 504, 'ephemeral_1h_input_tokens': 0}" output_tokens="26" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_018Ph3T3vsUsb8PbuUffkBdy">
+{
+  "success": true,
+  "event": "started",
+  "pr_number": 9161
+}
+  </tool_result>
+  <assistant>Now let me do a comprehensive sweep to understand the scope. I'll search for all occurrences of the target patterns across `src/erk/` (excluding TUI).</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="148" cache_read_input_tokens="40205" cache_creation="{'ephemeral_5m_input_tokens': 148, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01EJWoEb7BJRAgLEYptbGstS">
+    <param name="todos">[{'content': 'Signal GitHub implementation started', 'status': 'completed', 'activeForm': ...[truncated 1109 chars]...lifecycle'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="148" cache_read_input_tokens="40205" cache_creation="{'ephemeral_5m_input_tokens': 148, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01EJWoEb7BJRAgLEYptbGstS">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Let me start by reading all the Phase A files to understand the current state:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="475" cache_read_input_tokens="40353" cache_creation="{'ephemeral_5m_input_tokens': 475, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01PGSDx6TU3CjPxE21E3nS5U">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/implement_shared.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="475" cache_read_input_tokens="40353" cache_creation="{'ephemeral_5m_input_tokens': 475, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01Fv8v4E2vNXKupNEhRuPDxz">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/land_pipeline.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="475" cache_read_input_tokens="40353" cache_creation="{'ephemeral_5m_input_tokens': 475, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_014vC4Z7XqFZyevvCgHZdn7o">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/submit_pipeline.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="475" cache_read_input_tokens="40353" cache_creation="{'ephemeral_5m_input_tokens': 475, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01EHNZe3Mrraf3KnriMdGV8B">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/dispatch_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="475" cache_read_input_tokens="40353" cache_creation="{'ephemeral_5m_input_tokens': 475, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01PGSDx6TU3CjPxE21E3nS5U">
+     1→"""Shared utilities for implement commands.
+     2→
+     3→This module contains the common logic for erk implement.
+     4→"""
+     5→
+     6→import re
+     7→import shlex
+     8→from collections.abc import Callable
+     9→from dataclasses import dataclass
+    10→from pathlib import Path
+    11→from typing import NamedTuple, TypeVar
+    12→
+    13→import click
+    14→
+    15→from erk.cli.activation import render_activation_script
+    16→from erk.cli.help_formatter import script_option
+    17→from erk.core.context import ErkContext
+    18→from erk.core.prompt_executor import PromptExecutor
+    19→from erk_shared.naming import (
+    20→    sanitize_worktree_name,
+    21→    strip_plan_from_filename,
+    22→)
+    23→from erk_shared.output.output import user_output
+    24→
+    25→# Valid model names and their aliases
+    26→_MODEL_ALIASES: dict[str, str] = {
+    27→    "h": "haiku",
+    28→    "s": "sonnet",
+    29→    "o": "opus",
+    30→}
+
+... [577 lines omitted] ...
+
+   121→        click.ClickException: If model name is invalid
+   131→        raise click.ClickException(f"Invalid model: '{model}'\nValid options: {valid_options}")
+   168→    """Validate flag combinations and raise ClickException if invalid.
+   176→        click.ClickException: If flag combination is invalid
+   181→        raise click.ClickException(
+   188→        raise click.ClickException(
+   272→        click.ClickException: If Claude CLI not found
+   287→    except RuntimeError as e:
+   288→        raise click.ClickException(str(e)) from e
+   311→        click.ClickException: If Claude CLI not found or command fails
+   322→        raise click.ClickException(
+   355→        # Stop on first failure
+   365→    # Raise exception if any command failed
+   367→        raise click.ClickException("One or more commands failed")
+   498→        ctx.console.error(f"Error: PR file not found: {plan_file}")
+  </tool_result>
+  <tool_result tool="toolu_01Fv8v4E2vNXKupNEhRuPDxz">
+     1→"""Linear pipelines for the land command.
+     2→
+     3→Two pipelines bridge the shell script serialization boundary:
+     4→- Validation pipeline: runs in `erk land` CLI, gathers all state and confirmations
+     5→- Execution pipeline: runs in `erk exec land-execute`, performs mutations
+     6→
+     7→Each step: (ErkContext, LandState) -&gt; LandState | LandError
+     8→"""
+     9→
+    10→import dataclasses
+    11→from collections.abc import Callable
+    12→from dataclasses import dataclass
+    13→from functools import cache
+    14→from pathlib import Path
+    15→
+    16→import click
+    17→
+    18→from erk.cli.commands.land_learn import _create_learn_pr_with_sessions
+    19→from erk.cli.commands.navigation_helpers import check_clean_working_tree
+    20→from erk.cli.commands.objective_helpers import get_objective_for_branch
+    21→from erk.cli.core import discover_repo_context
+    22→from erk.cli.ensure import Ensure
+    23→from erk.cli.ensure_ideal import EnsureIdeal
+    24→from erk.core.context import ErkContext
+    25→from erk_shared.gateway.github.types import MergeError, PRDetails
+    26→from erk_shared.gateway.gt.cli import render_events
+    27→from erk_shared.gateway.gt.operations.land_pr import execute_land_pr
+    28→from erk_shared.gateway.gt.types import LandPrError
+    29→from erk_shared.output.output import user_output
+    30→from erk_shared.stack.validation import validate_parent_is_trunk
+
+... [601 lines omitted] ...
+
+    71→class LandError:
+    72→    """Error result from a pipeline step."""
+    75→    error_type: str
+    84→LandStep = Callable[[ErkContext, LandState], LandState | LandError]
+    92→def resolve_target(ctx: ErkContext, state: LandState) -&gt; LandState | LandError:
+   128→        return LandError(
+   130→            error_type="invalid_target",
+   145→) -&gt; LandState | LandError:
+   187→        validation_error = validate_parent_is_trunk(
+   193→            validation_error is None,
+   194→            validation_error.message if validation_error else "",
+   225→) -&gt; LandState | LandError:
+   230→        return LandError(
+   232→            error_type="up_with_pr",
+   268→) -&gt; LandState | LandError:
+   294→def validate_pr(ctx: ErkContext, state: LandState) -&gt; LandState | LandError:
+   307→        return LandError(
+   309→            error_type="no_pr_details",
+   341→def resolve_plan_id(ctx: ErkContext, state: LandState) -&gt; LandState | LandError:
+   354→def gather_confirmations(ctx: ErkContext, state: LandState) -&gt; LandState | LandError:
+   383→def resolve_objective(ctx: ErkContext, state: LandState) -&gt; LandState | LandError:
+   399→def merge_pr(ctx: ErkContext, state: LandState) -&gt; LandState | LandError:
+   406→        if isinstance(result, LandPrError):
+   407→            return LandError(
+   409→                error_type="graphite_merge_failed",
+   430→        if isinstance(merge_result, MergeError):
+   431→            return LandError(
+   433→                error_type="github_merge_failed",
+   434→                message=f"Failed to merge PR #{state.pr_number}\n\n{merge_result.message}",
+   443→def create_learn_pr(ctx: ErkContext, state: LandState) -&gt; LandState | LandError:
+   454→def cleanup_and_navigate(ctx: ErkContext, state: LandState) -&gt; LandState | LandError:
+   506→def run_validation_pipeline(ctx: ErkContext, state: LandState) -&gt; LandState | LandError:
+   507→    """Run the validation pipeline, returning final state or first error."""
+   510→        if isinstance(result, LandError):
+   516→def run_execution_pipeline(ctx: ErkContext, state: LandState) -&gt; LandState | LandError:
+   517→    """Run the execution pipeline, returning final state or first error."""
+   520→        if isinstance(result, LandError):
+  </tool_result>
+  <tool_result tool="toolu_01EHNZe3Mrraf3KnriMdGV8B">
+     1→"""Dispatch plans for remote AI implementation via GitHub Actions."""
+     2→
+     3→import logging
+     4→import tomllib
+     5→from dataclasses import dataclass
+     6→from datetime import UTC, datetime
+     7→from pathlib import Path
+     8→
+     9→import click
+    10→
+    11→from erk.cli.commands.pr.dispatch_helpers import ensure_trunk_synced, sync_branch_to_sha
+    12→from erk.cli.commands.pr.metadata_helpers import write_dispatch_metadata
+    13→from erk.cli.commands.ref_resolution import resolve_dispatch_ref
+    14→from erk.cli.commands.slot.common import is_placeholder_branch
+    15→from erk.cli.constants import (
+    16→    DISPATCH_WORKFLOW_METADATA_NAME,
+    17→    DISPATCH_WORKFLOW_NAME,
+    18→    ERK_PR_TITLE_PREFIX,
+    19→)
+    20→from erk.cli.core import discover_repo_context
+    21→from erk.cli.ensure import Ensure, UserFacingCliError
+    22→from erk.cli.repo_resolution import get_remote_github, repo_option, resolve_owner_repo
+    23→from erk.core.context import ErkContext
+    24→from erk.core.repo_discovery import RepoContext
+    25→from erk_shared.context.types import NoRepoSentinel
+    26→from erk_shared.gateway.git.remote_ops.types import PushError
+    27→from erk_shared.gateway.github.issues.types import IssueNotFound
+    28→from erk_shared.gateway.github.metadata.core import (
+    29→    create_submission_queued_block,
+    30→    render_erk_issue_event,
+
+... [897 lines omitted] ...
+
+   163→        user_output(click.style("Error: ", fg="red") + f"PR #{pr_number} not found")
+   169→            click.style("Error: ", fg="red")
+   178→            click.style("Error: ", fg="red") + f"PR #{pr_number} is {pr_result.state}\n\n"
+   224→        user_output(click.style("Error: ", fg="red") + f"PR #{pr_number}: plan content not found")
+   266→        except Exception:
+   267→            logger.warning("Failed to sync index after plumbing commit", exc_info=True)
+   272→    if isinstance(push_result, PushError):
+   273→        raise UserFacingCliError(push_result.message, error_type="cli_error")
+   319→    except Exception as e:
+   321→            click.style("Warning: ", fg="yellow") + f"Failed to update dispatch metadata: {e}"
+   331→    except Exception as e:
+   332→        logger.warning("Failed to update PR body with workflow run link: %s", e)
+   363→    except Exception as e:
+   365→            click.style("Warning: ", fg="yellow")
+   366→            + f"Failed to post queued comment: {e}\n"
+   407→        user_output(click.style("Error: ", fg="red") + f"PR #{pr_number} not found")
+   412→            click.style("Error: ", fg="red")
+   420→            click.style("Error: ", fg="red") + f"PR #{pr_number} is {issue.state}\n\n"
+   429→            click.style("Error: ", fg="red")
+   480→        user_output(click.style("Error: ", fg="red") + f"PR #{pr_number}: plan content not found")
+   545→    except Exception as e:
+   546→        logger.warning("Failed to update PR body with workflow run link: %s", e)
+   578→    except Exception as e:
+   580→            click.style("Warning: ", fg="yellow")
+   581→            + f"Failed to post queued comment: {e}\n"
+   651→            click.style("Error: ", fg="red") + "PR number(s) required in remote mode.\n\n"
+   744→            click.style("Error: ", fg="red")
+   754→                click.style("Error: ", fg="red")
+   767→                click.style("Error: ", fg="red") + f"Base branch '{base}' does not exist on remote"
+  </tool_result>
+  <tool_result tool="toolu_014vC4Z7XqFZyevvCgHZdn7o">
+     1→"""Linear pipeline for PR submission.
+     2→
+     3→Replaces the dual-path branching orchestration with a sequence of plain
+     4→functions transforming a frozen SubmitState dataclass.
+     5→
+     6→Each step: (ErkContext, SubmitState) -&gt; SubmitState | SubmitError
+     7→"""
+     8→
+     9→import concurrent.futures
+    10→import dataclasses
+    11→import sys
+    12→import uuid
+    13→from collections.abc import Callable
+    14→from dataclasses import dataclass
+    15→from functools import cache
+    16→from pathlib import Path
+    17→
+    18→import click
+    19→
+    20→from erk.cli.commands.pr.shared import (
+    21→    assemble_pr_body,
+    22→    echo_plan_context_status,
+    23→    maybe_advance_lifecycle_to_impl,
+    24→    recover_plan_header,
+    25→    run_commit_message_generation,
+    26→)
+    27→from erk.cli.constants import ERK_PR_LABEL, PLANNED_PR_TITLE_PREFIX
+    28→from erk.cli.ensure import UserFacingCliError
+    29→from erk.cli.repo_resolution import get_remote_github
+    30→from erk.core.commit_message_generator import CommitMessageGenerator
+
+... [1097 lines omitted] ...
+
+    34→from erk_shared.gateway.git.remote_ops.types import PullRebaseError, PushError
+   120→class SubmitError:
+   121→    """Error result from a pipeline step."""
+   124→    error_type: str
+   133→SubmitStep = Callable[[ErkContext, SubmitState], SubmitState | SubmitError]
+   136→def prepare_state(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   149→        return SubmitError(
+   151→            error_type="no_branch",
+   165→        except ValueError as e:
+   166→            return SubmitError(
+   168→                error_type="issue_linkage_mismatch",
+   211→def cleanup_impl_for_submit(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   231→def commit_wip(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   241→def capture_existing_pr_body(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   253→def push_and_create_pr(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   270→def _graphite_first_flow(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   277→    # but the first submit attempt failed before pushing.
+   299→            return SubmitError(
+   301→                error_type="remote_diverged",
+   331→    except RuntimeError as e:
+   332→        error_str = str(e)
+   333→        if "restack" in error_str.lower():
+   334→            return SubmitError(
+   336→                error_type="graphite_restack_required",
+   345→        return SubmitError(
+   347→            error_type="graphite_submit_failed",
+   348→            message=f"Graphite submit failed: {e}",
+   360→        return SubmitError(
+   362→            error_type="pr_not_found",
+   391→def _core_submit_flow(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   399→        return SubmitError(
+   401→            error_type="github_auth_failed",
+   411→        return SubmitError(
+   413→            error_type="no_commits",
+   431→        if isinstance(pull_result, PullRebaseError):
+   432→            return SubmitError(
+   434→                error_type="rebase_failed",
+   436→                    f"Failed to rebase '{state.branch_name}' on origin.\n"
+   437→                    f"Error: {pull_result.message}\n\n"
+   447→        return SubmitError(
+   449→            error_type="branch_diverged",
+   468→    if isinstance(push_result, PushError):
+   470→            return SubmitError(
+   472→                error_type="branch_diverged",
+   481→        raise UserFacingCliError(push_result.message, error_type="cli_error")
+   491→                return SubmitError(
+   493→                    error_type="parent_branch_no_pr",
+   565→def label_code_pr(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   581→def extract_diff(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   587→        return SubmitError(
+   589→            error_type="no_base_branch",
+   617→def fetch_plan_context(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   627→        return SubmitError(
+   629→            error_type="no_repo",
+   648→) -&gt; SubmitState | SubmitError:
+   661→    if isinstance(diff_result, SubmitError):
+   663→    if isinstance(plan_result, SubmitError):
+   675→def generate_description(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   682→        return SubmitError(
+   684→            error_type="no_diff_file",
+   685→            message="Failed to extract diff for AI analysis",
+   706→        return SubmitError(
+   708→            error_type="ai_generation_failed",
+   709→            message=f"Failed to generate message: {msg_result.error_message}",
+   722→def enhance_with_graphite(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   764→    except RuntimeError as e:
+   765→        error_msg = str(e).lower()
+   766→        if "nothing to submit" in error_msg or "no changes" in error_msg:
+   770→        return SubmitError(
+   772→            error_type="graphite_enhance_failed",
+   773→            message=f"Graphite enhancement failed: {e}",
+   790→def finalize_pr(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   797→        return SubmitError(
+   799→            error_type="no_pr_number",
+   872→        except OSError as e:
+   874→                click.echo(click.style(f"   Failed to clean up diff file: {e}", dim=True))
+   902→def link_pr_to_objective_nodes(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   928→                f"   Warning: Objective #{objective_id} not found, skipping node linking",
+   969→            except ValueError:
+  1024→def run_push_and_create_pipeline(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+  1029→        except Exception as e:
+  1031→            return SubmitError(
+  1033→                error_type="unhandled_exception",
+  1034→                message=f"Unexpected error in {step_name}: {e}",
+  1038→        if isinstance(result, SubmitError):
+  1061→def run_submit_pipeline(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+  1062→    """Run the submit pipeline, returning final state or first error."""
+  1066→        except Exception as e:
+  1068→            return SubmitError(
+  1070→                error_type="unhandled_exception",
+  1071→                message=f"Unexpected error in {step_name}: {e}",
+  1075→        if isinstance(result, SubmitError):
+  </tool_result>
+  <assistant>Now I have a good understanding of the Phase A files. Let me analyze what needs to change in each:
+
+**implement_shared.py**: 
+- `TargetInfo.plan_number` → `pr_number`
+- `target_type="plan_number"` → `"pr_number"` 
+- `target_type="plan_url"` → `"pr_url"`
+
+**land_pipeline.py**: 
+- `LandState.plan_id` → `pr_id` (it stores a plan identifier that resolves to PR number)
+- `resolve_plan_id()` → `resolve_pr_id()`
+
+**submit_pipeline.py**:
+- `SubmitState.plan_id` → `pr_id`
+
+**dispatch_cmd.py**:
+- `DispatchResult.plan_title` → `pr_title`
+- `DispatchResult.plan_url` → `pr_url`
+- `_build_workflow_run_url(plan_url=...)` → `pr_url`
+- `_build_pr_url(plan_url=...)` → `pr_url`
+- `_detect_plan_number_from_context()` → `_detect_pr_number_from_context()`
+- Dispatch dict keys `"plan_id"`, `"plan_title"` → `"pr_number"`, `"pr_title"`
+
+This is a massive rename operation. Given the scale (~50-60 files), I'll use LibCST for systematic batch renames. Let me first do a comprehensive grep to identify all files that need changes, then work through them systematically.</assistant>
+  <usage input_tokens="12376" cache_creation_input_tokens="30897" cache_read_input_tokens="40828" cache_creation="{'ephemeral_5m_input_tokens': 30897, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01WaU7k7HmFKUwBxr8ZS7VYA">
+    <param name="pattern">plan_number|plan_id|plan_url|plan_title</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk</param>
+    <param name="type">py</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="12376" cache_creation_input_tokens="30897" cache_read_input_tokens="40828" cache_creation="{'ephemeral_5m_input_tokens': 30897, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01WaU7k7HmFKUwBxr8ZS7VYA">
+Found 85 files
+src/erk/tui/widgets/plan_table.py
+src/erk/tui/screens/objective_nodes_screen.py
+src/erk/tui/screens/plan_body_screen.py
+src/erk/tui/screens/plan_detail_screen.py
+src/erk/tui/sorting/logic.py
+src/erk/tui/data/provider_abc.py
+src/erk/tui/data/real_provider.py
+src/erk/tui/data/types.py
+src/erk/tui/filtering/logic.py
+src/erk/tui/operations/logic.py
+src/erk/tui/operations/workers.py
+src/erk/tui/actions/navigation.py
+src/erk/tui/actions/palette.py
+src/erk/tui/app.py
+src/erk/tui/commands/registry.py
+src/erk/core/plan_context_provider.py
+src/erk/core/plan_duplicate_checker.py
+src/erk/core/commit_message_generator.py
+src/erk/core/display_utils.py
+src/erk/core/file_utils.py
+src/erk/cli/github_parsing.py
+src/erk/cli/commands/wt/create_cmd.py
+src/erk/cli/commands/wt/delete_cmd.py
+src/erk/cli/commands/pr/view/cli.py
+src/erk/cli/commands/pr/view/operation.py
+src/erk/cli/commands/reconcile_cmd.py
+src/erk/cli/commands/reconcile_pipeline.py
+src/erk/cli/commands/run/list_cmd.py
+src/erk/cli/commands/run/shared.py
+
+... [56 lines omitted] ...
+  </tool_result>
+  <assistant>85 files total, about 15 TUI files to exclude. That's ~70 files. Given the massive scale, I'll use LibCST agents for batch renames across the codebase, excluding TUI files. Let me organize the renames into batches.
+
+First, let me understand which references are "plan as concept" vs "plan as PR identifier" more carefully. Let me check files that might have ambiguous references:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="14712" cache_read_input_tokens="71725" cache_creation="{'ephemeral_5m_input_tokens': 14712, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01U6ap4YHkqBApXgjebCLwys">
+    <param name="pattern">plan_id|plan_number|plan_url|plan_title</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/add_plan_label.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="14712" cache_read_input_tokens="71725" cache_creation="{'ephemeral_5m_input_tokens': 14712, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_014EsYmm3y6ZB2P9CP1dRzm4">
+    <param name="pattern">plan_id|plan_number|plan_url|plan_title</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/add_plan_labels.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="14712" cache_read_input_tokens="71725" cache_creation="{'ephemeral_5m_input_tokens': 14712, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01VCaadRy2KTpYto5a7NHA9Y">
+    <param name="pattern">plan_number|plan_id|plan_url|plan_title</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="14712" cache_read_input_tokens="71725" cache_creation="{'ephemeral_5m_input_tokens': 14712, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01U6ap4YHkqBApXgjebCLwys">
+7:    JSON with {success, plan_number, label}
+40:    plan_id = str(pr_number)
+43:        backend.add_label(repo_root, plan_id, label)
+  </tool_result>
+  <tool_result tool="toolu_01VCaadRy2KTpYto5a7NHA9Y">
+137:    plan_saved_plan_number: int | None  # Plan number read from plan-saved marker
+142:    plan_title: str | None  # Title extracted from plan file for display
+147:    plan_number: int | None  # Plan number from .erk/impl-context/plan-ref.json
+158:        plan_saved_plan_number: int | None = None,
+163:        plan_title: str | None = None,
+168:        plan_number: int | None = None,
+177:        - plan_saved_plan_number: None
+180:        - plan_title: None
+185:        - plan_number: None
+193:            plan_saved_plan_number=plan_saved_plan_number,
+198:            plan_title=plan_title,
+203:            plan_number=plan_number,
+225:def extract_plan_title(plan_file_path: Path | None) -&gt; str | None:
+261:    plan_number: int,
+272:        plan_number: The plan PR number that was just saved.
+275:    next_steps = format_plan_next_steps_plain(plan_number, url=url)
+278:        f"PR #{plan_number} saved successfully.",
+297:    plan_title: str | None,
+300:    plan_number: int | None,
+312:        plan_title: Title extracted from plan file, if available.
+315:        plan_number: Plan number from .erk/impl-context/plan-ref.json.
+322:    if plan_title:
+323:        context_lines.append(f"📋 {plan_title}")
+333:    if plan_number is not None:
+334:        statusline_parts.append(f"plan:#{plan_number}")
+511:        plan_num = hook_input.plan_saved_plan_number
+514:                plan_number=plan_num,
+546:            plan_title=hook_input.plan_title,
+549:            plan_number=hook_input.plan_number,
+727:    plan_saved_plan_number: int | None = None
+
+... [8 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_014EsYmm3y6ZB2P9CP1dRzm4">
+89:        plan_number = item_dict["pr_number"]
+90:        if not isinstance(plan_number, int):
+112:        validated_items.append({"pr_number": plan_number, "label": label})
+156:        plan_number = item["pr_number"]
+158:        plan_id = str(plan_number)
+161:            backend.add_label(repo_root, plan_id, label)
+165:                    "pr_number": plan_number,
+174:                "pr_number": plan_number,
+  </tool_result>
+  <assistant>The exit_plan_mode_hook.py is complex - `plan_title` there extracts from plan.md file (should KEEP), but `plan_saved_plan_number`, `plan_number` refer to PR numbers and should be renamed.
+
+Given the massive scale of this change (70+ files), I'll use a strategic approach: use LibCST batch rename agents for the mechanical renames across all files, then manually handle the edge cases. Let me launch multiple agents to handle different file groups in parallel.
+
+But first, let me carefully categorize which files should NOT be renamed (plan-as-concept files):</assistant>
+  <usage input_tokens="655" cache_creation_input_tokens="987" cache_read_input_tokens="86437" cache_creation="{'ephemeral_5m_input_tokens': 987, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_018kt8RnhYh22QRtM1nGsZi2">
+    <param name="pattern">add_plan_label|add_plan_labels</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk</param>
+    <param name="output_mode">content</param>
+    <param name="type">py</param>
+    <param name="head_limit">20</param>
+  </tool_use>
+  <usage input_tokens="655" cache_creation_input_tokens="987" cache_read_input_tokens="86437" cache_creation="{'ephemeral_5m_input_tokens': 987, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_018kt8RnhYh22QRtM1nGsZi2">
+src/erk/cli/commands/exec/group.py:11:from erk.cli.commands.exec.scripts.add_plan_label import add_plan_label
+src/erk/cli/commands/exec/group.py:12:from erk.cli.commands.exec.scripts.add_plan_labels import add_plan_labels
+src/erk/cli/commands/exec/group.py:197:exec_group.add_command(add_plan_label, name="add-plan-label")
+src/erk/cli/commands/exec/group.py:198:exec_group.add_command(add_plan_labels, name="add-plan-labels")
+src/erk/cli/commands/exec/scripts/add_plan_labels.py:119:def add_plan_labels(ctx: click.Context) -&gt; None:
+src/erk/cli/commands/exec/scripts/add_plan_label.py:30:def add_plan_label(
+
+[Showing results with pagination = limit: 20, offset: 0]
+  </tool_result>
+  <assistant>Good - `add_plan_label` and `add_plan_labels` are CLI command names that reference "plan" as a concept (adding labels to plan PRs). The `plan_id` inside them refers to the PR identifier though - need to rename those.
+
+Let me take a more efficient approach. I'll work through the files systematically using direct edits, starting with Phase A core files. Given the scale, I'll process files in parallel batches using task agents.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1201" cache_read_input_tokens="87424" cache_creation="{'ephemeral_5m_input_tokens': 1201, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01HFbBUWPvs2YvL14dQGAVnp">
+    <param name="description">Rename Phase A: implement_shared</param>
+    <param name="subagent_type">libcst-refactor</param>
+    <param name="prompt">Perform the following renames in `/home/runner/work/erk/erk/src/erk/cli/commands/implement...[truncated 919 chars]...name` import
+
+Use the Edit tool to make targeted string replacements. Read the file first.</param>
+    <param name="run_in_background">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1201" cache_read_input_tokens="87424" cache_creation="{'ephemeral_5m_input_tokens': 1201, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01MCqm3EWzNTjP2XhKt129Qn">
+    <param name="description">Rename Phase A: land_pipeline</param>
+    <param name="subagent_type">libcst-refactor</param>
+    <param name="prompt">Perform the following renames in `/home/runner/work/erk/erk/src/erk/cli/commands/land_pipe...[truncated 763 chars]...pr_id=pr_id`
+
+Use the Edit tool to make targeted string replacements. Read the file first.</param>
+    <param name="run_in_background">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1201" cache_read_input_tokens="87424" cache_creation="{'ephemeral_5m_input_tokens': 1201, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01XPzaaMymJJn5Y2Bn9VQa2L">
+    <param name="description">Rename Phase A: submit_pipeline</param>
+    <param name="subagent_type">libcst-refactor</param>
+    <param name="prompt">Perform the following renames in `/home/runner/work/erk/erk/src/erk/cli/commands/pr/submit...[truncated 918 chars]...'s a different module)
+
+Read the file first, then use Edit tool for targeted replacements.</param>
+    <param name="run_in_background">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1201" cache_read_input_tokens="87424" cache_creation="{'ephemeral_5m_input_tokens': 1201, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01MmR3eLsUDhzQiniv4M5rac">
+    <param name="description">Rename Phase A: dispatch_cmd</param>
+    <param name="subagent_type">libcst-refactor</param>
+    <param name="prompt">Perform the following renames in `/home/runner/work/erk/erk/src/erk/cli/commands/pr/dispat...[truncated 1720 chars]... `plan_backend` on ctx
+
+Read the file first, then use Edit tool for targeted replacements.</param>
+    <param name="run_in_background">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1201" cache_read_input_tokens="87424" cache_creation="{'ephemeral_5m_input_tokens': 1201, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01HFbBUWPvs2YvL14dQGAVnp">
+Async agent launched successfully.
+agentId: ab6b3e0 (This is an internal ID for your use, do not mention it to the user. Use this ID to retrieve results with TaskOutput when the agent finishes).
+The agent is currently working in the background. If you have other tasks you you should continue working on them now. Wait to call TaskOutput until either:
+- If you want to check on the agent's progress - call TaskOutput with block=false to get an immediate update on the agent's status
+- If you run out of things to do and the agent is still running - call TaskOutput with block=true to idle and wait for the agent's result (do not use block=true unless you completely run out of things to do as it will waste time).
+  </tool_result>
+  <tool_result tool="toolu_01MCqm3EWzNTjP2XhKt129Qn">
+Async agent launched successfully.
+agentId: aa28b4c (This is an internal ID for your use, do not mention it to the user. Use this ID to retrieve results with TaskOutput when the agent finishes).
+The agent is currently working in the background. If you have other tasks you you should continue working on them now. Wait to call TaskOutput until either:
+- If you want to check on the agent's progress - call TaskOutput with block=false to get an immediate update on the agent's status
+- If you run out of things to do and the agent is still running - call TaskOutput with block=true to idle and wait for the agent's result (do not use block=true unless you completely run out of things to do as it will waste time).
+  </tool_result>
+  <tool_result tool="toolu_01XPzaaMymJJn5Y2Bn9VQa2L">
+Async agent launched successfully.
+agentId: ad61bd8 (This is an internal ID for your use, do not mention it to the user. Use this ID to retrieve results with TaskOutput when the agent finishes).
+The agent is currently working in the background. If you have other tasks you you should continue working on them now. Wait to call TaskOutput until either:
+- If you want to check on the agent's progress - call TaskOutput with block=false to get an immediate update on the agent's status
+- If you run out of things to do and the agent is still running - call TaskOutput with block=true to idle and wait for the agent's result (do not use block=true unless you completely run out of things to do as it will waste time).
+  </tool_result>
+  <tool_result tool="toolu_01MmR3eLsUDhzQiniv4M5rac">
+Async agent launched successfully.
+agentId: ad172e7 (This is an internal ID for your use, do not mention it to the user. Use this ID to retrieve results with TaskOutput when the agent finishes).
+The agent is currently working in the background. If you have other tasks you you should continue working on them now. Wait to call TaskOutput until either:
+- If you want to check on the agent's progress - call TaskOutput with block=false to get an immediate update on the agent's status
+- If you run out of things to do and the agent is still running - call TaskOutput with block=true to idle and wait for the agent's result (do not use block=true unless you completely run out of things to do as it will waste time).
+  </tool_result>
+  <assistant>While Phase A agents are running, let me start reading the Phase B files to prepare for the next batch:</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="3430" cache_read_input_tokens="88625" cache_creation="{'ephemeral_5m_input_tokens': 3430, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01JoEvFd2vPM6rY9SfUVD9gW">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/implement.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="3430" cache_read_input_tokens="88625" cache_creation="{'ephemeral_5m_input_tokens': 3430, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01JZCviQhr6U5yn2ffBjnok5">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/land_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="3430" cache_read_input_tokens="88625" cache_creation="{'ephemeral_5m_input_tokens': 3430, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01RSm2XREPq6JbPkJNfofjwF">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/objective_helpers.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="3430" cache_read_input_tokens="88625" cache_creation="{'ephemeral_5m_input_tokens': 3430, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_012QdWnyUACnNbw63S7WJm3H">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="3430" cache_read_input_tokens="88625" cache_creation="{'ephemeral_5m_input_tokens': 3430, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01JoEvFd2vPM6rY9SfUVD9gW">
+     1→"""Command to implement features from plans or plan files.
+     2→
+     3→This command runs implementation in the current directory using Claude.
+     4→It creates an impl folder (under .erk/impl-context/&lt;branch&gt;/) with the plan
+     5→content and invokes Claude for execution.
+     6→
+     7→Usage:
+     8→- Plan number mode: erk implement 123 or erk implement &lt;URL&gt;
+     9→- Plan file mode: erk implement path/to/plan.md
+    10→- Auto-detect mode: erk implement (on plan branch with plan-ref.json)
+    11→"""
+    12→
+    13→from pathlib import Path
+    14→
+    15→import click
+    16→
+    17→from erk.cli.alias import alias
+    18→from erk.cli.commands.completions import complete_plan_files
+    19→from erk.cli.commands.implement_shared import (
+    20→    PlanSource,
+    21→    build_claude_args,
+    22→    build_command_sequence,
+    23→    detect_target_type,
+    24→    execute_interactive_mode,
+    25→    execute_non_interactive_mode,
+    26→    extract_plan_from_current_branch,
+    27→    implement_common_options,
+    28→    normalize_model_name,
+    29→    output_activation_instructions,
+    30→    prepare_plan_source_from_file,
+
+... [465 lines omitted] ...
+
+   169→        user_output(click.style("Error: ", fg="red") + f"Plan #{plan_number} not found")
+   176→            click.style("Error: ", fg="red")
+   389→            raise click.ClickException("--yolo and --safe are mutually exclusive")
+   439→            raise click.ClickException(
+   460→                click.style("Error: ", fg="red") + "Failed to extract plan number from target"
+  </tool_result>
+  <tool_result tool="toolu_01RSm2XREPq6JbPkJNfofjwF">
+     1→"""Shared helpers for objective tracking in land commands.
+     2→
+     3→These helpers are used by `erk land` to check for linked objectives
+     4→and prompt users to update them after landing.
+     5→"""
+     6→
+     7→import logging
+     8→from pathlib import Path
+     9→
+    10→import click
+    11→
+    12→from erk.cli.output import stream_command_with_feedback
+    13→from erk.core.context import ErkContext
+    14→from erk_shared.naming import extract_objective_number
+    15→from erk_shared.output.output import user_output
+    16→from erk_shared.plan_store.types import PlanNotFound, PlanState
+    17→
+    18→logger = logging.getLogger(__name__)
+    19→
+    20→
+    21→def check_and_display_plan_issue_closure(
+    22→    ctx: ErkContext,
+    23→    repo_root: Path,
+    24→    branch: str,
+    25→) -&gt; int | None:
+    26→    """Check and display plan issue closure status after landing.
+    27→
+    28→    Since PRs no longer contain "Closes #N", this always closes the plan
+    29→    issue directly via the API.
+    30→
+
+... [126 lines omitted] ...
+
+    67→    except RuntimeError:
+    84→    This is fail-open: catches all errors and never raises, because the
+   107→            click.style("⚠", fg="yellow") + f" Objective update failed: {result.error_message}"
+   122→    This is fail-open: catches all errors and never raises, because the
+   148→            click.style("⚠", fg="yellow") + f" Objective update failed: {result.error_message}"
+  </tool_result>
+  <tool_result tool="toolu_012QdWnyUACnNbw63S7WJm3H">
+     1→#!/usr/bin/env python3
+     2→"""Exit Plan Mode Hook.
+     3→
+     4→Prompts user before exiting plan mode when a plan exists. This hook intercepts
+     5→the ExitPlanMode tool via PreToolUse lifecycle to ask whether to save to GitHub
+     6→or implement immediately.
+     7→
+     8→Exit codes:
+     9→    0: Success (allow exit - no plan, implement-now marker present, or no session)
+    10→    2: Block (plan exists, no implement-now marker - prompt user)
+    11→
+    12→This command is invoked via:
+    13→    erk exec exit-plan-mode-hook
+    14→
+    15→Marker File State Machine
+    16→=========================
+    17→
+    18→This hook uses marker files in .erk/scratch/sessions/&lt;session-id&gt;/ for state management.
+    19→Marker files are self-describing: their names indicate their purpose and their contents
+    20→explain their effect.
+    21→
+    22→Marker Files:
+    23→    exit-plan-mode-hook.implement-now.marker
+    24→        Created by: Agent (when user chooses "Implement without saving")
+    25→        Effect: Next ExitPlanMode call is ALLOWED (exit plan mode, proceed to implementation)
+    26→        Lifecycle: Deleted after being read by next hook invocation
+    27→
+    28→    exit-plan-mode-hook.plan-saved.marker
+    29→        Created by: /erk:plan-save command (both new-branch and current-branch paths)
+    30→        Content: First line is the plan PR number
+
+... [866 lines omitted] ...
+
+   403→                f"⚠️  WARNING: Currently on '{current_branch}'. "
+  </tool_result>
+  <tool_result tool="toolu_01JZCviQhr6U5yn2ffBjnok5">
+     1→"""Unified land command for PRs.
+     2→
+     3→This command merges a PR and cleans up the worktree/branch.
+     4→It accepts a branch name, PR number, or PR URL as argument.
+     5→
+     6→Usage:
+     7→    erk land              # Land current branch's PR
+     8→    erk land --stack      # Land the current Graphite stack
+     9→    erk land 123          # Land PR by number
+    10→    erk land &lt;url&gt;        # Land PR by URL
+    11→    erk land &lt;branch&gt;     # Land PR for branch
+    12→"""
+    13→
+    14→import re
+    15→from dataclasses import dataclass, replace
+    16→from enum import Enum, auto
+    17→from pathlib import Path
+    18→from typing import Literal, NamedTuple, assert_never
+    19→
+    20→import click
+    21→
+    22→from erk.cli.activation import print_temp_script_instructions, render_activation_script
+    23→from erk.cli.commands.checkout_helpers import ensure_branch_has_worktree
+    24→from erk.cli.commands.land_pipeline import (
+    25→    LandError,
+    26→    make_execution_state,
+    27→    make_initial_state,
+    28→    run_execution_pipeline,
+    29→    run_validation_pipeline,
+    30→)
+
+... [1661 lines omitted] ...
+
+   239→                click.style("Warning:", fg="yellow")
+   609→    # Handle rate limit errors gracefully - this is an advisory check.
+   614→    except RuntimeError as e:
+   615→        error_str = str(e)
+   616→        if "RATE_LIMIT" in error_str or "rate limit" in error_str.lower():
+   622→        raise  # Re-raise other errors
+   667→        SystemExit(1) on validation failure
+   721→        SystemExit(1) on validation failure
+   766→        validation_error = validate_parent_is_trunk(
+   772→            validation_error is None,
+   773→            validation_error.message if validation_error else "",
+   814→        SystemExit(1) on validation failure
+   869→        SystemExit(1) on validation failure
+   962→        if isinstance(result, LandError):
+   963→            user_output(click.style("Error: ", fg="red") + result.message)
+  1047→        SystemExit(1) on validation failure
+  1237→        # Use --downstack to only restack the current branch, avoiding errors if
+  1271→                    click.style("Warning: ", fg="yellow")
+  1281→                except RuntimeError:
+  1284→                        click.style("Warning: ", fg="yellow")
+  1285→                        + "git pull failed (try running manually)"
+  1367→    # Silence unused parameter warnings - these are still needed for the function
+  1398→PR_NUMBER="${{1:?Error: PR number required}}"
+  1399→BRANCH="${{2:?Error: Branch name required}}"
+  1476→    if isinstance(result, LandError):
+  1477→        user_output(click.style("Error: ", fg="red") + result.message)
+  1645→    if isinstance(result, LandError):
+  1647→    # Type narrowing: Ensure.invariant exits on failure, so result is LandState here
+  1648→    assert not isinstance(result, LandError)
+  </tool_result>
+  <assistant>Now I have a clear picture. Let me check on the Phase A agents and start Phase B while they finish:</assistant>
+  <usage input_tokens="13927" cache_creation_input_tokens="29958" cache_read_input_tokens="92055" cache_creation="{'ephemeral_5m_input_tokens': 29958, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="global" />
+  <tool_use name="TaskOutput" id="toolu_01PZCzgdWKcTCP5xYEPbupRL">
+    <param name="task_id">ab6b3e0</param>
+    <param name="block">False</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="13927" cache_creation_input_tokens="29958" cache_read_input_tokens="92055" cache_creation="{'ephemeral_5m_input_tokens': 29958, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="global" />
+  <tool_use name="TaskOutput" id="toolu_015YgsAKHfaXCf7pct43Rxry">
+    <param name="task_id">aa28b4c</param>
+    <param name="block">False</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="13927" cache_creation_input_tokens="29958" cache_read_input_tokens="92055" cache_creation="{'ephemeral_5m_input_tokens': 29958, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="global" />
+  <tool_use name="TaskOutput" id="toolu_01SkxkMv458n9ywSm6zmhNTV">
+    <param name="task_id">ad61bd8</param>
+    <param name="block">False</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="13927" cache_creation_input_tokens="29958" cache_read_input_tokens="92055" cache_creation="{'ephemeral_5m_input_tokens': 29958, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="global" />
+  <tool_use name="TaskOutput" id="toolu_016hM4D2ET6jRD3T4YSxWM4C">
+    <param name="task_id">ad172e7</param>
+    <param name="block">False</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="13927" cache_creation_input_tokens="29958" cache_read_input_tokens="92055" cache_creation="{'ephemeral_5m_input_tokens': 29958, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01PZCzgdWKcTCP5xYEPbupRL">
+&lt;retrieval_status&gt;not_ready&lt;/retrieval_status&gt;
+
+&lt;task_id&gt;ab6b3e0&lt;/task_id&gt;
+
+&lt;task_type&gt;local_agent&lt;/task_type&gt;
+
+&lt;status&gt;running&lt;/status&gt;
+
+&lt;output&gt;
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/implement_shared.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/implement_shared.py"}
+&lt;/output&gt;
+  </tool_result>
+  <tool_result tool="toolu_015YgsAKHfaXCf7pct43Rxry">
+&lt;retrieval_status&gt;not_ready&lt;/retrieval_status&gt;
+
+&lt;task_id&gt;aa28b4c&lt;/task_id&gt;
+
+&lt;task_type&gt;local_agent&lt;/task_type&gt;
+
+&lt;status&gt;running&lt;/status&gt;
+
+&lt;output&gt;
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/land_pipeline.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/land_pipeline.py"}
+&lt;/output&gt;
+  </tool_result>
+  <tool_result tool="toolu_01SkxkMv458n9ywSm6zmhNTV">
+&lt;retrieval_status&gt;not_ready&lt;/retrieval_status&gt;
+
+&lt;task_id&gt;ad61bd8&lt;/task_id&gt;
+
+&lt;task_type&gt;local_agent&lt;/task_type&gt;
+
+&lt;status&gt;running&lt;/status&gt;
+
+&lt;output&gt;
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/pr/submit_pipeline.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/pr/submit_pipeline.py"}
+[Tool: Bash] {"command":"python -m erk_editor --file src/erk/cli/commands/pr/submit_pipeline.py --operation replace --match \"    plan_id: str | None\" --replace \"    pr_id: str | None\"","description":"Rename field plan_id to pr_id in SubmitState dataclass"}
+&lt;/output&gt;
+  </tool_result>
+  <tool_result tool="toolu_016hM4D2ET6jRD3T4YSxWM4C">
+&lt;retrieval_status&gt;not_ready&lt;/retrieval_status&gt;
+
+&lt;task_id&gt;ad172e7&lt;/task_id&gt;
+
+&lt;task_type&gt;local_agent&lt;/task_type&gt;
+
+&lt;status&gt;running&lt;/status&gt;
+
+&lt;output&gt;
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/pr/dispatch_cmd.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/pr/dispatch_cmd.py"}
+[Tool: Bash] {"command":"python -m pytest tests/ -xvs -k \"test_dispatch\" 2&gt;&amp;1 | head -50","description":"Check if there are any dispatch tests to validate changes"}
+[Tool: Bash] {"command":"python -m pytest tests/ -xvs -k \"test_dispatch\" 2&gt;&amp;1 | head -50","description":"Check if there are any dispatch tests to validate changes"}
+&lt;/output&gt;
+  </tool_result>
+</session>
