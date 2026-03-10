@@ -75,7 +75,7 @@ def test_plan_update_success() -> None:
 
     result = runner.invoke(
         plan_update,
-        ["--plan-number", "42", "--format", "json"],
+        ["--pr-number", "42", "--format", "json"],
         obj=ErkContext.for_test(
             github=fake_github,
             plan_store=PlannedPRBackend(fake_github, fake_gh, time=FakeTime()),
@@ -122,7 +122,7 @@ def test_plan_update_display_format() -> None:
 
     result = runner.invoke(
         plan_update,
-        ["--plan-number", "99", "--format", "display"],
+        ["--pr-number", "99", "--format", "display"],
         obj=ErkContext.for_test(
             github=fake_github,
             plan_store=PlannedPRBackend(fake_github, fake_gh, time=FakeTime()),
@@ -154,7 +154,7 @@ def test_plan_update_no_plan_found() -> None:
 
     result = runner.invoke(
         plan_update,
-        ["--plan-number", "42", "--format", "json"],
+        ["--pr-number", "42", "--format", "json"],
         obj=ErkContext.for_test(
             github=fake_github,
             plan_store=PlannedPRBackend(fake_github, fake_gh, time=FakeTime()),
@@ -181,7 +181,7 @@ def test_plan_update_issue_not_found() -> None:
 
     result = runner.invoke(
         plan_update,
-        ["--plan-number", "999", "--format", "json"],
+        ["--pr-number", "999", "--format", "json"],
         obj=ErkContext.for_test(
             github=fake_github,
             plan_store=PlannedPRBackend(fake_github, fake_gh, time=FakeTime()),
@@ -215,7 +215,7 @@ def test_plan_update_formats_plan_content() -> None:
 
     result = runner.invoke(
         plan_update,
-        ["--plan-number", "42"],
+        ["--pr-number", "42"],
         obj=ErkContext.for_test(
             github=fake_github,
             plan_store=PlannedPRBackend(fake_github, fake_gh, time=FakeTime()),
@@ -255,7 +255,7 @@ def test_plan_update_updates_title_from_plan() -> None:
 
     result = runner.invoke(
         plan_update,
-        ["--plan-number", "42", "--format", "json"],
+        ["--pr-number", "42", "--format", "json"],
         obj=ErkContext.for_test(
             github=fake_github,
             plan_store=PlannedPRBackend(fake_github, fake_gh, time=FakeTime()),
@@ -304,7 +304,7 @@ def test_plan_update_learn_plan_gets_learn_tag() -> None:
 
     result = runner.invoke(
         plan_update,
-        ["--plan-number", "42", "--format", "json"],
+        ["--pr-number", "42", "--format", "json"],
         obj=ErkContext.for_test(
             github=fake_github,
             plan_store=PlannedPRBackend(fake_github, fake_gh, time=FakeTime()),
@@ -339,7 +339,7 @@ def test_plan_update_strips_plan_prefix_from_title() -> None:
 
     result = runner.invoke(
         plan_update,
-        ["--plan-number", "42", "--format", "json"],
+        ["--pr-number", "42", "--format", "json"],
         obj=ErkContext.for_test(
             github=fake_github,
             plan_store=PlannedPRBackend(fake_github, fake_gh, time=FakeTime()),
@@ -372,7 +372,7 @@ def test_plan_update_display_format_shows_new_title() -> None:
 
     result = runner.invoke(
         plan_update,
-        ["--plan-number", "42", "--format", "display"],
+        ["--pr-number", "42", "--format", "display"],
         obj=ErkContext.for_test(
             github=fake_github,
             plan_store=PlannedPRBackend(fake_github, fake_gh, time=FakeTime()),
@@ -436,7 +436,7 @@ def test_plan_update_pushes_to_branch() -> None:
 
     result = runner.invoke(
         plan_update,
-        ["--plan-number", "42", "--format", "json"],
+        ["--pr-number", "42", "--format", "json"],
         obj=ErkContext.for_test(
             github=fake_github,
             git=fake_git,
@@ -482,7 +482,7 @@ def test_plan_update_branch_push_failure_still_succeeds() -> None:
 
     result = runner.invoke(
         plan_update,
-        ["--plan-number", "42", "--format", "json"],
+        ["--pr-number", "42", "--format", "json"],
         obj=ErkContext.for_test(
             github=fake_github,
             git=fake_git,
@@ -522,7 +522,7 @@ def test_plan_update_no_branch_skips_push() -> None:
 
     result = runner.invoke(
         plan_update,
-        ["--plan-number", "42", "--format", "json"],
+        ["--pr-number", "42", "--format", "json"],
         obj=ErkContext.for_test(
             github=fake_github,
             git=fake_git,

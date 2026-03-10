@@ -18,11 +18,11 @@ from tests.test_utils.plan_helpers import issue_info_to_pr_details
 
 RUN_URL = "https://github.com/test-owner/test-repo/actions/runs/99999"
 CLI_ARGS = [
-    "--plan-number",
+    "--pr-number",
     "123",
     "--run-id",
     "99999",
-    "--pr-number",
+    "--impl-pr-number",
     "42",
     "--submitted-by",
     "alice",
@@ -119,11 +119,11 @@ def test_all_fail_when_issue_and_pr_missing(tmp_path: Path) -> None:
     result = CliRunner().invoke(
         register_one_shot_plan,
         [
-            "--plan-number",
+            "--pr-number",
             "999",
             "--run-id",
             "99999",
-            "--pr-number",
+            "--impl-pr-number",
             "998",
             "--submitted-by",
             "alice",

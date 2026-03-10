@@ -190,9 +190,9 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           erk exec post-workflow-started-comment \
-            --plan-number "$PLAN_ID" \
+            --pr-number "$PLAN_ID" \
             --branch-name "$BRANCH_NAME" \
-            --pr-number "$PR_NUMBER" \
+            --impl-pr-number "$PR_NUMBER" \
             --run-id "${{ github.run_id }}" \
             --run-url "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
             --repository "${{ github.repository }}"
@@ -293,7 +293,7 @@ jobs:
             --session-id "$SESSION_ID" \
             --stage impl \
             --source remote \
-            --plan-id "$PLAN_ID"
+            --pr-number "$PLAN_ID"
 
       - name: Update plan header with remote impl info
         if: always() && steps.session.outputs.session_id
@@ -346,7 +346,6 @@ jobs:
             # Call exec command to handle no-changes scenario
             erk exec handle-no-changes \
               --pr-number "$PR_NUMBER" \
-              --plan-id "$PLAN_ID" \
               --behind-count "$BEHIND_COUNT" \
               --base-branch "$BASE_BRANCH" \
               --original-title "$PLAN_TITLE" \
@@ -443,7 +442,7 @@ jobs:
             PLANNED_PR_FLAG="--planned-pr"
           fi
           erk exec ci-update-pr-body \
-            --plan-id "${{ inputs.plan_id }}" \
+            --pr-number "${{ inputs.plan_id }}" \
             --run-id "${{ github.run_id }}" \
             --run-url "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
             $PLANNED_PR_FLAG

@@ -61,7 +61,7 @@ def _fetch_file_from_branch(
 
 @click.command(name="fetch-sessions")
 @click.option(
-    "--plan-id",
+    "--pr-number",
     required=True,
     type=int,
     help="Plan identifier to fetch sessions for",
@@ -75,18 +75,18 @@ def _fetch_file_from_branch(
 @click.pass_context
 def fetch_sessions(
     ctx: click.Context,
-    plan_id: int,
+    pr_number: int,
     output_dir: Path,
 ) -> None:
     """Fetch preprocessed sessions from a planned-pr-context branch.
 
-    Reads the manifest from the planned-pr-context/{plan_id} branch and downloads
+    Reads the manifest from the planned-pr-context/{pr_number} branch and downloads
     all XML files to the output directory.
     """
     repo_root = require_repo_root(ctx)
     git = require_git(ctx)
 
-    session_branch = f"planned-pr-context/{plan_id}"
+    session_branch = f"planned-pr-context/{pr_number}"
 
     # Check if branch exists on remote
     if not git.branch.branch_exists_on_remote(repo_root, "origin", session_branch):
@@ -122,7 +122,7 @@ def fetch_sessions(
 
     result: dict[str, object] = {
         "success": True,
-        "pr_number": plan_id,
+        "pr_number": pr_number,
         "session_branch": session_branch,
         "manifest": manifest,
         "files": downloaded_files,

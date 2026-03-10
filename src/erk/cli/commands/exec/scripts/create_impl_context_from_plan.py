@@ -36,11 +36,11 @@ from erk_shared.plan_store.types import PlanNotFound
 
 
 @click.command(name="create-impl-context-from-plan")
-@click.argument("plan_id", type=int)
+@click.argument("pr_number", type=int)
 @click.pass_context
 def create_impl_context_from_plan(
     ctx: click.Context,
-    plan_id: int,
+    pr_number: int,
 ) -> None:
     """Create .erk/impl-context/ folder from plan content.
 
@@ -52,16 +52,16 @@ def create_impl_context_from_plan(
     backend = require_plan_backend(ctx)
     repo_root = require_repo_root(ctx)
     time = require_time(ctx)
-    plan_id_str = str(plan_id)
+    plan_id = str(pr_number)
     provider = backend.get_provider_name()
 
     # Fetch plan via PlanBackend
-    result = backend.get_plan(repo_root, plan_id_str)
+    result = backend.get_plan(repo_root, plan_id)
     if isinstance(result, PlanNotFound):
         error_output = {
             "success": False,
             "error": "plan_not_found",
-            "message": f"Could not fetch plan for #{plan_id}: Not found. "
+            "message": f"Could not fetch plan for #{pr_number}: Not found. "
             f"Ensure plan has erk-plan label and plan content.",
         }
         click.echo(json.dumps(error_output), err=True)
@@ -72,7 +72,7 @@ def create_impl_context_from_plan(
     impl_context_path = repo_root / IMPL_CONTEXT_DIR
     create_impl_context(
         plan_content=plan.body,
-        plan_id=plan_id_str,
+        plan_id=plan_id,
         url=plan.url,
         repo_root=repo_root,
         provider=provider,
@@ -85,7 +85,7 @@ def create_impl_context_from_plan(
     output = {
         "success": True,
         "impl_context_path": str(impl_context_path),
-        "pr_number": plan_id,
+        "pr_number": pr_number,
         "pr_url": plan.url,
     }
     click.echo(json.dumps(output))

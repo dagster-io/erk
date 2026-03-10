@@ -76,7 +76,7 @@ def test_update_single_field() -> None:
     assert result.exit_code == 0
     output = json.loads(result.output)
     assert output["success"] is True
-    assert output["plan_id"] == "123"
+    assert output["pr_id"] == "123"
     assert output["fields_updated"] == ["objective_issue"]
 
     # Verify metadata was actually updated

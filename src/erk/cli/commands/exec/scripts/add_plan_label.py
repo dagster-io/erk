@@ -20,7 +20,7 @@ from erk_shared.context.helpers import require_plan_backend, require_repo_root
 
 
 @click.command(name="add-plan-label")
-@click.argument("plan_number", type=int)
+@click.argument("pr_number", type=int)
 @click.option(
     "--label",
     required=True,
@@ -29,7 +29,7 @@ from erk_shared.context.helpers import require_plan_backend, require_repo_root
 @click.pass_context
 def add_plan_label(
     ctx: click.Context,
-    plan_number: int,
+    pr_number: int,
     *,
     label: str,
 ) -> None:
@@ -37,7 +37,7 @@ def add_plan_label(
     backend = require_plan_backend(ctx)
     repo_root = require_repo_root(ctx)
 
-    plan_id = str(plan_number)
+    plan_id = str(pr_number)
 
     try:
         backend.add_label(repo_root, plan_id, label)
@@ -46,7 +46,7 @@ def add_plan_label(
             json.dumps(
                 {
                     "success": False,
-                    "error": f"Failed to add label to plan #{plan_number}: {e}",
+                    "error": f"Failed to add label to plan #{pr_number}: {e}",
                 }
             )
         )
@@ -56,7 +56,7 @@ def add_plan_label(
         json.dumps(
             {
                 "success": True,
-                "pr_number": plan_number,
+                "pr_number": pr_number,
                 "label": label,
             }
         )

@@ -76,7 +76,7 @@ def upload_impl_session(ctx: click.Context, session_id: str) -> None:
         _output_not_uploaded("non_numeric_plan_id")
         return
 
-    plan_id = int(plan_ref.pr_id)
+    pr_number = int(plan_ref.pr_id)
 
     # Capture session info
     installation = require_claude_installation(ctx)
@@ -107,8 +107,8 @@ def upload_impl_session(ctx: click.Context, session_id: str) -> None:
             "impl",
             "--source",
             "local",
-            "--plan-id",
-            str(plan_id),
+            "--pr-number",
+            str(pr_number),
         ],
         cwd=str(repo_root),
         capture_output=True,
@@ -118,7 +118,7 @@ def upload_impl_session(ctx: click.Context, session_id: str) -> None:
     if result.returncode == 0 and result.stdout.strip():
         push_output = json.loads(result.stdout.strip())
         if push_output.get("uploaded"):
-            click.echo(json.dumps({"uploaded": True, "pr_number": plan_id}))
+            click.echo(json.dumps({"uploaded": True, "pr_number": pr_number}))
             return
 
     # push-session failed or returned not-uploaded — report gracefully

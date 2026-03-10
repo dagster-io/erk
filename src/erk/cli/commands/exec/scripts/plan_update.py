@@ -43,7 +43,7 @@ from erk_shared.plan_utils import extract_title_from_plan, get_title_tag_from_la
 
 @click.command(name="plan-update")
 @click.option(
-    "--plan-number",
+    "--pr-number",
     type=int,
     required=True,
     help="Plan number to update",
@@ -72,7 +72,7 @@ from erk_shared.plan_utils import extract_title_from_plan, get_title_tag_from_la
 def plan_update(
     ctx: click.Context,
     *,
-    plan_number: int,
+    pr_number: int,
     output_format: str,
     plan_path: Path | None,
     session_id: str | None,
@@ -109,10 +109,10 @@ def plan_update(
     assert plan_content is not None
 
     # Step 2: Check plan exists via PlanBackend
-    plan_id = str(plan_number)
+    plan_id = str(pr_number)
     plan_result = backend.get_plan(repo_root, plan_id)
     if isinstance(plan_result, PlanNotFound):
-        _handle_update_error(f"Plan #{plan_number} not found")
+        _handle_update_error(f"Plan #{pr_number} not found")
 
     # Narrow type for type checker (PlanNotFound case exits above)
     assert not isinstance(plan_result, PlanNotFound)
@@ -153,7 +153,7 @@ def plan_update(
 
     # Step 6: Output success
     if output_format == "display":
-        click.echo(f"Plan #{plan_number} updated")
+        click.echo(f"Plan #{pr_number} updated")
         click.echo(f"Title: {full_title}")
         click.echo(f"URL: {plan_result.url}")
         if branch_updated:
@@ -165,7 +165,7 @@ def plan_update(
             json.dumps(
                 {
                     "success": True,
-                    "pr_number": plan_number,
+                    "pr_number": pr_number,
                     "pr_url": plan_result.url,
                     "title": full_title,
                     "branch_name": branch_name,

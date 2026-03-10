@@ -22,7 +22,7 @@ from erk_shared.context.helpers import (
 
 
 @click.command(name="close-pr")
-@click.argument("plan_number", type=int)
+@click.argument("pr_number", type=int)
 @click.option(
     "--comment",
     required=True,
@@ -31,14 +31,14 @@ from erk_shared.context.helpers import (
 @click.pass_context
 def close_pr(
     ctx: click.Context,
-    plan_number: int,
+    pr_number: int,
     *,
     comment: str,
 ) -> None:
     """Close a plan with a comment."""
     backend = require_plan_backend(ctx)
     repo_root = require_repo_root(ctx)
-    plan_id = str(plan_number)
+    plan_id = str(pr_number)
 
     # Add the comment first
     try:
@@ -48,7 +48,7 @@ def close_pr(
             json.dumps(
                 {
                     "success": False,
-                    "error": f"Failed to add comment to plan #{plan_number}: {e}",
+                    "error": f"Failed to add comment to plan #{pr_number}: {e}",
                 }
             )
         )
@@ -62,7 +62,7 @@ def close_pr(
             json.dumps(
                 {
                     "success": False,
-                    "error": f"Failed to close plan #{plan_number}: {e}",
+                    "error": f"Failed to close plan #{pr_number}: {e}",
                     "comment_id": comment_id,
                 }
             )
@@ -73,7 +73,7 @@ def close_pr(
         json.dumps(
             {
                 "success": True,
-                "pr_number": plan_number,
+                "pr_number": pr_number,
                 "comment_id": comment_id,
             }
         )

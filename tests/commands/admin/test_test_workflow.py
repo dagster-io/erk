@@ -73,7 +73,7 @@ def test_empty_commit_created_before_pr_creation() -> None:
 
         result = runner.invoke(
             cli,
-            ["admin", "test-plan-implement-gh-workflow", "--plan", "123"],
+            ["admin", "test-plan-implement-gh-workflow", "--pr", "123"],
             obj=test_ctx,
         )
 

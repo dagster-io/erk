@@ -43,7 +43,7 @@ def test_track_learn_result_completed_no_plan(tmp_path: Path) -> None:
         cwd = Path.cwd()
         result = runner.invoke(
             track_learn_result,
-            ["--plan-id", "42", "--status", "completed_no_plan"],
+            ["--pr-id", "42", "--status", "completed_no_plan"],
             obj=ErkContext.for_test(
                 github=fake_github,
                 plan_store=PlannedPRBackend(fake_github, fake_issues, time=FakeTime()),
@@ -83,7 +83,7 @@ def test_track_learn_result_completed_with_plan(tmp_path: Path) -> None:
         cwd = Path.cwd()
         result = runner.invoke(
             track_learn_result,
-            ["--plan-id", "42", "--status", "completed_with_plan", "--learn-plan", "456"],
+            ["--pr-id", "42", "--status", "completed_with_plan", "--learn-plan", "456"],
             obj=ErkContext.for_test(
                 github=fake_github,
                 plan_store=PlannedPRBackend(fake_github, fake_issues, time=FakeTime()),
@@ -128,7 +128,7 @@ def test_track_learn_result_requires_plan_issue_for_completed_with_plan(tmp_path
         cwd = Path.cwd()
         result = runner.invoke(
             track_learn_result,
-            ["--plan-id", "42", "--status", "completed_with_plan"],
+            ["--pr-id", "42", "--status", "completed_with_plan"],
             obj=ErkContext.for_test(
                 github=fake_github,
                 plan_store=PlannedPRBackend(fake_github, fake_issues, time=FakeTime()),
@@ -158,7 +158,7 @@ def test_track_learn_result_rejects_plan_issue_for_completed_no_plan(tmp_path: P
         cwd = Path.cwd()
         result = runner.invoke(
             track_learn_result,
-            ["--plan-id", "42", "--status", "completed_no_plan", "--learn-plan", "456"],
+            ["--pr-id", "42", "--status", "completed_no_plan", "--learn-plan", "456"],
             obj=ErkContext.for_test(
                 github=fake_github,
                 plan_store=PlannedPRBackend(fake_github, fake_issues, time=FakeTime()),
@@ -193,7 +193,7 @@ def test_track_learn_result_pending_review_with_plan_pr(tmp_path: Path) -> None:
         cwd = Path.cwd()
         result = runner.invoke(
             track_learn_result,
-            ["--plan-id", "42", "--status", "pending_review", "--plan-pr", "789"],
+            ["--pr-id", "42", "--status", "pending_review", "--plan-pr", "789"],
             obj=ErkContext.for_test(
                 github=fake_github,
                 plan_store=PlannedPRBackend(fake_github, fake_issues, time=FakeTime()),
@@ -234,7 +234,7 @@ def test_track_learn_result_pending_review_requires_plan_pr(tmp_path: Path) -> N
         cwd = Path.cwd()
         result = runner.invoke(
             track_learn_result,
-            ["--plan-id", "42", "--status", "pending_review"],
+            ["--pr-id", "42", "--status", "pending_review"],
             obj=ErkContext.for_test(
                 github=fake_github,
                 plan_store=PlannedPRBackend(fake_github, fake_issues, time=FakeTime()),
@@ -265,7 +265,7 @@ def test_track_learn_result_pending_review_rejects_plan_issue(tmp_path: Path) ->
         result = runner.invoke(
             track_learn_result,
             [
-                "--plan-id",
+                "--pr-id",
                 "42",
                 "--status",
                 "pending_review",
@@ -304,7 +304,7 @@ def test_track_learn_result_completed_with_plan_rejects_plan_pr(tmp_path: Path) 
         result = runner.invoke(
             track_learn_result,
             [
-                "--plan-id",
+                "--pr-id",
                 "42",
                 "--status",
                 "completed_with_plan",

@@ -27,7 +27,7 @@ class UpdateSuccess:
     """Success response for plan-header update."""
 
     success: bool
-    plan_id: str
+    pr_id: str
     fields_updated: list[str]
 
 
@@ -95,13 +95,13 @@ def _parse_fields(fields: tuple[str, ...]) -> dict[str, str | None | int]:
 
 
 @click.command(name="update-plan-header")
-@click.argument("plan_id", type=str)
+@click.argument("pr_id", type=str)
 @click.argument("fields", nargs=-1)
 @click.pass_context
 def update_plan_header(
     ctx: click.Context,
     *,
-    plan_id: str,
+    pr_id: str,
     fields: tuple[str, ...],
 ) -> None:
     """Update plan-header metadata fields on a plan.
@@ -127,11 +127,11 @@ def update_plan_header(
     repo_root = require_repo_root(ctx)
 
     try:
-        backend.update_metadata(repo_root, plan_id, metadata=parsed)
+        backend.update_metadata(repo_root, pr_id, metadata=parsed)
     except PlanHeaderNotFoundError:
         _fail(
             error="no_plan_header",
-            message=f"Plan {plan_id} has no plan-header metadata block.",
+            message=f"Plan {pr_id} has no plan-header metadata block.",
         )
     except RuntimeError as e:
         _fail(error="update_failed", message=f"Failed to update plan header: {e}")
@@ -140,7 +140,7 @@ def update_plan_header(
 
     result = UpdateSuccess(
         success=True,
-        plan_id=plan_id,
+        pr_id=pr_id,
         fields_updated=list(parsed.keys()),
     )
     click.echo(json.dumps(asdict(result)))

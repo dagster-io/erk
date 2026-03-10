@@ -316,14 +316,14 @@ def _update_pr_body_impl(
 
 
 @click.command(name="ci-update-pr-body")
-@click.option("--plan-id", type=int, required=True, help="Plan identifier (for context)")
+@click.option("--pr-number", type=int, required=True, help="Plan identifier (for context)")
 @click.option("--run-id", type=str, default=None, help="Optional workflow run ID")
 @click.option("--run-url", type=str, default=None, help="Optional workflow run URL")
 @click.option("--planned-pr", is_flag=True, default=False, help="Planned-PR plan")
 @click.pass_context
 def ci_update_pr_body(
     ctx: click.Context,
-    plan_id: int,
+    pr_number: int,
     run_id: str | None,
     run_url: str | None,
     planned_pr: bool,

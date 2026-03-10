@@ -28,7 +28,7 @@ class TestFetchSessionsBranchNotFound:
         result = runner.invoke(
             fetch_sessions,
             [
-                "--plan-id",
+                "--pr-number",
                 "42",
                 "--output-dir",
                 str(output_dir),
@@ -102,7 +102,7 @@ class TestFetchSessionsSuccess:
         result = runner.invoke(
             fetch_sessions,
             [
-                "--plan-id",
+                "--pr-number",
                 "42",
                 "--output-dir",
                 str(output_dir),
@@ -142,7 +142,7 @@ class TestFetchSessionsManifestNotFound:
         result = runner.invoke(
             fetch_sessions,
             [
-                "--plan-id",
+                "--pr-number",
                 "42",
                 "--output-dir",
                 str(output_dir),

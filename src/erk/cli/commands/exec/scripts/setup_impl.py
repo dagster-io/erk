@@ -148,7 +148,7 @@ def _setup_from_file(
 
 
 @click.command(name="setup-impl")
-@click.option("--issue", "plan_number", type=int, default=None, help="Plan number to set up from")
+@click.option("--issue", "pr_number", type=int, default=None, help="Plan number to set up from")
 @click.option(
     "--file",
     "file_path",
@@ -157,7 +157,7 @@ def _setup_from_file(
     help="Markdown file to set up from",
 )
 @click.pass_context
-def setup_impl(ctx: click.Context, plan_number: int | None, file_path: Path | None) -> None:
+def setup_impl(ctx: click.Context, pr_number: int | None, file_path: Path | None) -> None:
     """Consolidated implementation setup.
 
     Handles all setup paths for plan-implement:
@@ -171,8 +171,8 @@ def setup_impl(ctx: click.Context, plan_number: int | None, file_path: Path | No
     cwd = require_cwd(ctx)
 
     # Path 1: --issue provided
-    if plan_number is not None:
-        _handle_issue_setup(ctx, plan_number=plan_number)
+    if pr_number is not None:
+        _handle_issue_setup(ctx, pr_number=pr_number)
         return
 
     # Path 2: --file provided
@@ -206,7 +206,7 @@ def setup_impl(ctx: click.Context, plan_number: int | None, file_path: Path | No
             else:
                 plan_id = None
             if plan_id is not None:
-                _handle_issue_setup(ctx, plan_number=plan_id)
+                _handle_issue_setup(ctx, pr_number=plan_id)
                 return
 
         # File-based plan (no tracking) - just validate
@@ -243,7 +243,7 @@ def setup_impl(ctx: click.Context, plan_number: int | None, file_path: Path | No
         detected_number = detection["pr_number"]
         if isinstance(detected_number, int):
             click.echo(f"Auto-detected plan #{detected_number} from branch", err=True)
-            _handle_issue_setup(ctx, plan_number=detected_number)
+            _handle_issue_setup(ctx, pr_number=detected_number)
             return
 
     # 3c: No plan found
@@ -259,7 +259,7 @@ def setup_impl(ctx: click.Context, plan_number: int | None, file_path: Path | No
     raise SystemExit(1)
 
 
-def _handle_issue_setup(ctx: click.Context, *, plan_number: int) -> None:
+def _handle_issue_setup(ctx: click.Context, *, pr_number: int) -> None:
     """Handle setup from a plan number (shared by explicit --issue and auto-detect).
 
     Delegates to setup-impl-from-pr, runs impl-init, runs cleanup,
@@ -267,7 +267,7 @@ def _handle_issue_setup(ctx: click.Context, *, plan_number: int) -> None:
 
     Args:
         ctx: Click context.
-        plan_number: The plan/PR number to set up from.
+        pr_number: The plan/PR number to set up from.
     """
     from erk.cli.commands.exec.scripts.setup_impl_from_pr import setup_impl_from_pr
 
@@ -278,7 +278,7 @@ def _handle_issue_setup(ctx: click.Context, *, plan_number: int) -> None:
     # Run setup-impl-from-pr
     ctx.invoke(
         setup_impl_from_pr,
-        plan_number=plan_number,
+        pr_number=pr_number,
         session_id=None,
         no_impl=False,
     )
@@ -304,7 +304,7 @@ def _handle_issue_setup(ctx: click.Context, *, plan_number: int) -> None:
             {
                 "success": True,
                 "source": "issue",
-                "pr_number": plan_number,
+                "pr_number": pr_number,
                 "has_plan_tracking": True,
                 **init_result,
             }

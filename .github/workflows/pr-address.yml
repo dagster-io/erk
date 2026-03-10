@@ -146,7 +146,7 @@ jobs:
             --session-id "$SESSION_ID" \
             --stage address \
             --source remote \
-            --plan-id "$PLAN_ID"
+            --pr-number "$PLAN_ID"
 
       - name: Update plan header with remote impl info
         if: always() && steps.plan_info.outputs.plan_id

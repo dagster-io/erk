@@ -88,11 +88,11 @@ def load_workflow_config(repo_root: Path, workflow_name: str) -> dict[str, str]:
 class DispatchResult:
     """Result of dispatching a single plan."""
 
-    plan_number: int
+    pr_number: int
     plan_title: str
     plan_url: str
-    pr_number: int | None
-    pr_url: str | None
+    impl_pr_number: int | None
+    impl_pr_url: str | None
     workflow_run_id: str
     workflow_url: str
 
@@ -144,7 +144,7 @@ class ValidatedPlannedPR:
 def _validate_planned_pr_for_dispatch(
     ctx: ErkContext,
     repo: RepoContext,
-    plan_number: int,
+    pr_number: int,
 ) -> ValidatedPlannedPR:
     """Validate a planned PR plan for dispatch.
 
@@ -153,21 +153,21 @@ def _validate_planned_pr_for_dispatch(
     Args:
         ctx: ErkContext with git operations
         repo: Repository context
-        plan_number: PR number to validate
+        pr_number: PR number to validate
 
     Raises:
         SystemExit: If PR doesn't exist, missing label, or not OPEN.
     """
-    pr_result = ctx.github.get_pr(repo.root, plan_number)
+    pr_result = ctx.github.get_pr(repo.root, pr_number)
     if isinstance(pr_result, PRNotFound):
-        user_output(click.style("Error: ", fg="red") + f"PR #{plan_number} not found")
+        user_output(click.style("Error: ", fg="red") + f"PR #{pr_number} not found")
         raise SystemExit(1)
 
     # Validate: must have erk-plan label
     if ERK_PLAN_LABEL not in pr_result.labels:
         user_output(
             click.style("Error: ", fg="red")
-            + f"PR #{plan_number} does not have {ERK_PLAN_LABEL} label\n\n"
+            + f"PR #{pr_number} does not have {ERK_PLAN_LABEL} label\n\n"
             "Cannot dispatch non-plan PRs for automated implementation."
         )
         raise SystemExit(1)
@@ -175,13 +175,13 @@ def _validate_planned_pr_for_dispatch(
     # Validate: must be OPEN
     if pr_result.state != "OPEN":
         user_output(
-            click.style("Error: ", fg="red") + f"PR #{plan_number} is {pr_result.state}\n\n"
+            click.style("Error: ", fg="red") + f"PR #{pr_number} is {pr_result.state}\n\n"
             "Cannot dispatch closed PRs for automated implementation."
         )
         raise SystemExit(1)
 
     return ValidatedPlannedPR(
-        number=plan_number,
+        number=pr_number,
         title=pr_result.title,
         url=pr_result.url,
         branch_name=pr_result.head_ref_name,
@@ -214,14 +214,14 @@ def _dispatch_planned_pr_plan(
     Returns:
         DispatchResult with URLs and identifiers.
     """
-    plan_number = validated.number
+    pr_number = validated.number
     branch_name = validated.branch_name
 
     # Fetch plan content via PlanBackend
     user_output("Fetching plan content...")
-    result = ctx.plan_store.get_plan(repo.root, str(plan_number))
+    result = ctx.plan_store.get_plan(repo.root, str(pr_number))
     if isinstance(result, PlanNotFound):
-        user_output(click.style("Error: ", fg="red") + f"PR #{plan_number}: plan content not found")
+        user_output(click.style("Error: ", fg="red") + f"PR #{pr_number}: plan content not found")
         raise SystemExit(1)
     plan = result
 
@@ -240,7 +240,7 @@ def _dispatch_planned_pr_plan(
     user_output("Committing plan to branch...")
     files = build_impl_context_files(
         plan_content=plan.body,
-        plan_id=str(plan_number),
+        plan_id=str(pr_number),
         url=validated.url,
         provider="github-draft-pr",
         objective_id=plan.objective_id,
@@ -251,7 +251,7 @@ def _dispatch_planned_pr_plan(
         repo.root,
         branch=branch_name,
         files=files,
-        message=f"Add plan for PR #{plan_number}",
+        message=f"Add plan for PR #{pr_number}",
     )
 
     # If branch is checked out, sync index for committed files to avoid stale staged changes
@@ -284,11 +284,11 @@ def _dispatch_planned_pr_plan(
     user_output(f"Dispatching workflow: {click.style(DISPATCH_WORKFLOW_NAME, fg='cyan')}")
 
     inputs = {
-        "plan_id": str(plan_number),
+        "plan_id": str(pr_number),
         "submitted_by": submitted_by,
         "plan_title": validated.title,
         "branch_name": branch_name,
-        "pr_number": str(plan_number),
+        "pr_number": str(pr_number),
         "base_branch": base_branch,
         "plan_backend": "planned_pr",
         **workflow_config,
@@ -311,7 +311,7 @@ def _dispatch_planned_pr_plan(
             plan_backend=ctx.plan_backend,
             github=ctx.github,
             repo_root=repo.root,
-            plan_number=plan_number,
+            plan_number=pr_number,
             run_id=run_id,
             dispatched_at=queued_at,
         )
@@ -324,10 +324,10 @@ def _dispatch_planned_pr_plan(
     # Update PR body with workflow run link (best-effort)
     # Guard: only append if body is non-empty to avoid overwriting metadata block
     try:
-        pr_details = ctx.github.get_pr(repo.root, plan_number)
+        pr_details = ctx.github.get_pr(repo.root, pr_number)
         if not isinstance(pr_details, PRNotFound) and pr_details.body:
             updated_body = pr_details.body + f"\n\n**Workflow run:** {workflow_url}"
-            ctx.github.update_pr_body(repo.root, plan_number, updated_body)
+            ctx.github.update_pr_body(repo.root, pr_number, updated_body)
     except Exception as e:
         logger.warning("Failed to update PR body with workflow run link: %s", e)
 
@@ -341,7 +341,7 @@ def _dispatch_planned_pr_plan(
         metadata_block = create_submission_queued_block(
             queued_at=queued_at,
             submitted_by=submitted_by,
-            plan_number=plan_number,
+            plan_number=pr_number,
             validation_results=validation_results,
             expected_workflow=DISPATCH_WORKFLOW_METADATA_NAME,
         )
@@ -358,7 +358,7 @@ def _dispatch_planned_pr_plan(
         )
 
         user_output("Posting queued event comment...")
-        ctx.plan_backend.add_comment(repo.root, str(plan_number), comment_body)
+        ctx.plan_backend.add_comment(repo.root, str(pr_number), comment_body)
         user_output(click.style("✓", fg="green") + " Queued event comment posted")
     except Exception as e:
         user_output(
@@ -367,14 +367,14 @@ def _dispatch_planned_pr_plan(
             + "Workflow is already running."
         )
 
-    pr_url = _build_pr_url(validated.url, plan_number)
+    impl_pr_url = _build_pr_url(validated.url, pr_number)
 
     return DispatchResult(
-        plan_number=plan_number,
+        pr_number=pr_number,
         plan_title=validated.title,
         plan_url=validated.url,
-        pr_number=plan_number,
-        pr_url=pr_url,
+        impl_pr_number=pr_number,
+        impl_pr_url=impl_pr_url,
         workflow_run_id=run_id,
         workflow_url=workflow_url,
     )
@@ -385,7 +385,7 @@ def _validate_planned_pr_for_dispatch_remote(
     *,
     owner: str,
     repo_name: str,
-    plan_number: int,
+    pr_number: int,
 ) -> ValidatedPlannedPR:
     """Validate a planned PR for remote dispatch (no local git repo required).
 
@@ -396,28 +396,28 @@ def _validate_planned_pr_for_dispatch_remote(
         remote: RemoteGitHub gateway
         owner: Repository owner
         repo_name: Repository name
-        plan_number: PR number to validate
+        pr_number: PR number to validate
 
     Raises:
         SystemExit: If PR doesn't exist, missing label, not OPEN,
             or branch name cannot be determined.
     """
-    issue = remote.get_issue(owner=owner, repo=repo_name, number=plan_number)
+    issue = remote.get_issue(owner=owner, repo=repo_name, number=pr_number)
     if isinstance(issue, IssueNotFound):
-        user_output(click.style("Error: ", fg="red") + f"Plan #{plan_number} not found")
+        user_output(click.style("Error: ", fg="red") + f"Plan #{pr_number} not found")
         raise SystemExit(1)
 
     if ERK_PLAN_LABEL not in issue.labels:
         user_output(
             click.style("Error: ", fg="red")
-            + f"PR #{plan_number} does not have {ERK_PLAN_LABEL} label\n\n"
+            + f"PR #{pr_number} does not have {ERK_PLAN_LABEL} label\n\n"
             "Cannot dispatch non-plan PRs for automated implementation."
         )
         raise SystemExit(1)
 
     if issue.state != "OPEN":
         user_output(
-            click.style("Error: ", fg="red") + f"PR #{plan_number} is {issue.state}\n\n"
+            click.style("Error: ", fg="red") + f"PR #{pr_number} is {issue.state}\n\n"
             "Cannot dispatch closed PRs for automated implementation."
         )
         raise SystemExit(1)
@@ -427,13 +427,13 @@ def _validate_planned_pr_for_dispatch_remote(
     if branch_name is None:
         user_output(
             click.style("Error: ", fg="red")
-            + f"PR #{plan_number}: cannot determine branch name from plan metadata.\n\n"
+            + f"PR #{pr_number}: cannot determine branch name from plan metadata.\n\n"
             "The PR body must contain a plan-header metadata block with a branch_name field."
         )
         raise SystemExit(1)
 
     return ValidatedPlannedPR(
-        number=plan_number,
+        number=pr_number,
         title=issue.title,
         url=issue.url,
         branch_name=branch_name,
@@ -470,14 +470,14 @@ def _dispatch_planned_pr_plan_remote(
     Returns:
         DispatchResult with URLs and identifiers.
     """
-    plan_number = validated.number
+    pr_number = validated.number
     branch_name = validated.branch_name
 
     # Fetch plan content from the PR body
     user_output("Fetching plan content...")
-    issue = remote.get_issue(owner=owner, repo=repo_name, number=plan_number)
+    issue = remote.get_issue(owner=owner, repo=repo_name, number=pr_number)
     if isinstance(issue, IssueNotFound):
-        user_output(click.style("Error: ", fg="red") + f"PR #{plan_number}: plan content not found")
+        user_output(click.style("Error: ", fg="red") + f"PR #{pr_number}: plan content not found")
         raise SystemExit(1)
     plan_content = extract_plan_content(issue.body) if issue.body else ""
 
@@ -486,7 +486,7 @@ def _dispatch_planned_pr_plan_remote(
     now_iso = time_gateway.now().isoformat()
     files = build_impl_context_files(
         plan_content=plan_content,
-        plan_id=str(plan_number),
+        plan_id=str(pr_number),
         url=validated.url,
         provider="github-draft-pr",
         objective_id=None,
@@ -499,7 +499,7 @@ def _dispatch_planned_pr_plan_remote(
             repo=repo_name,
             path=file_path,
             content=content,
-            message=f"Add plan for PR #{plan_number}",
+            message=f"Add plan for PR #{pr_number}",
             branch=branch_name,
         )
     user_output(click.style("\u2713", fg="green") + " Plan committed to branch")
@@ -511,11 +511,11 @@ def _dispatch_planned_pr_plan_remote(
         ref if ref is not None else remote.get_default_branch_name(owner=owner, repo=repo_name)
     )
     inputs = {
-        "plan_id": str(plan_number),
+        "plan_id": str(pr_number),
         "submitted_by": submitted_by,
         "plan_title": validated.title,
         "branch_name": branch_name,
-        "pr_number": str(plan_number),
+        "pr_number": str(pr_number),
         "base_branch": base_branch,
         "plan_backend": "planned_pr",
     }
@@ -530,7 +530,7 @@ def _dispatch_planned_pr_plan_remote(
 
     # Compute URLs
     workflow_url = construct_workflow_run_url(owner, repo_name, run_id)
-    pr_url = construct_pr_url(owner, repo_name, plan_number)
+    impl_pr_url = construct_pr_url(owner, repo_name, pr_number)
 
     # Update PR body with workflow run link (best-effort)
     try:
@@ -539,7 +539,7 @@ def _dispatch_planned_pr_plan_remote(
             remote.update_pull_request_body(
                 owner=owner,
                 repo=repo_name,
-                pr_number=plan_number,
+                pr_number=pr_number,
                 body=updated_body,
             )
     except Exception as e:
@@ -550,7 +550,7 @@ def _dispatch_planned_pr_plan_remote(
         metadata_block = create_submission_queued_block(
             queued_at=queued_at,
             submitted_by=submitted_by,
-            plan_number=plan_number,
+            plan_number=pr_number,
             validation_results={
                 "pr_is_open": True,
                 "has_erk_plan_label": True,
@@ -571,7 +571,7 @@ def _dispatch_planned_pr_plan_remote(
         remote.add_issue_comment(
             owner=owner,
             repo=repo_name,
-            issue_number=plan_number,
+            issue_number=pr_number,
             body=comment_body,
         )
         user_output(click.style("\u2713", fg="green") + " Queued event comment posted")
@@ -583,11 +583,11 @@ def _dispatch_planned_pr_plan_remote(
         )
 
     return DispatchResult(
-        plan_number=plan_number,
+        pr_number=pr_number,
         plan_title=validated.title,
         plan_url=validated.url,
-        pr_number=plan_number,
-        pr_url=pr_url,
+        impl_pr_number=pr_number,
+        impl_pr_url=impl_pr_url,
         workflow_run_id=run_id,
         workflow_url=workflow_url,
     )
@@ -629,7 +629,7 @@ def _detect_plan_number_from_context(
 def _dispatch_remote(
     ctx: ErkContext,
     *,
-    plan_numbers: tuple[int, ...],
+    pr_numbers: tuple[int, ...],
     target_repo: str | None,
     base: str | None,
     ref: str | None,
@@ -638,7 +638,7 @@ def _dispatch_remote(
 
     Args:
         ctx: ErkContext
-        plan_numbers: Plan numbers to dispatch
+        pr_numbers: Plan numbers to dispatch
         target_repo: Target repo string from --repo flag
         base: Base branch override, or None
         ref: Workflow dispatch ref override, or None
@@ -646,7 +646,7 @@ def _dispatch_remote(
     owner, repo_name = resolve_owner_repo(ctx, target_repo=target_repo)
     remote = get_remote_github(ctx)
 
-    if not plan_numbers:
+    if not pr_numbers:
         user_output(
             click.style("Error: ", fg="red") + "Plan number(s) required in remote mode.\n\n"
             "Usage: erk pr dispatch <number> --repo owner/repo"
@@ -662,17 +662,17 @@ def _dispatch_remote(
     submitted_by = remote.get_authenticated_user()
 
     # Validate all plans
-    user_output(f"Validating {len(plan_numbers)} plan(s)...")
+    user_output(f"Validating {len(pr_numbers)} plan(s)...")
     user_output("")
 
     validated_prs: list[ValidatedPlannedPR] = []
-    for plan_number in plan_numbers:
-        user_output(f"Validating PR #{plan_number}...")
+    for pr_number in pr_numbers:
+        user_output(f"Validating PR #{pr_number}...")
         validated = _validate_planned_pr_for_dispatch_remote(
             remote,
             owner=owner,
             repo_name=repo_name,
-            plan_number=plan_number,
+            pr_number=pr_number,
         )
         validated_prs.append(validated)
 
@@ -711,7 +711,7 @@ def _dispatch_remote(
 def _dispatch_local(
     ctx: ErkContext,
     *,
-    plan_numbers: tuple[int, ...],
+    pr_numbers: tuple[int, ...],
     base: str | None,
     ref: str | None,
 ) -> None:
@@ -719,7 +719,7 @@ def _dispatch_local(
 
     Args:
         ctx: ErkContext
-        plan_numbers: Plan numbers to dispatch
+        pr_numbers: Plan numbers to dispatch
         base: Base branch override, or None
         ref: Workflow dispatch ref override, or None
     """
@@ -747,7 +747,7 @@ def _dispatch_local(
         raise SystemExit(1)
 
     # If no arguments given, try to auto-detect from context
-    if not plan_numbers:
+    if not pr_numbers:
         detected = _detect_plan_number_from_context(ctx, repo, branch_name=original_branch)
         if detected is None:
             user_output(
@@ -758,7 +758,7 @@ def _dispatch_local(
             )
             raise SystemExit(1)
         user_output(f"Auto-detected PR #{detected} from context")
-        plan_numbers = (detected,)
+        pr_numbers = (detected,)
 
     # Validate base branch if provided, otherwise default to current branch (LBYL)
     if base is not None:
@@ -784,13 +784,13 @@ def _dispatch_local(
     submitted_by = username or "unknown"
 
     # Validate all planned-PR plans upfront
-    user_output(f"Validating {len(plan_numbers)} planned-PR plan(s)...")
+    user_output(f"Validating {len(pr_numbers)} planned-PR plan(s)...")
     user_output("")
 
     validated_planned_prs: list[ValidatedPlannedPR] = []
-    for plan_number in plan_numbers:
-        user_output(f"Validating PR #{plan_number}...")
-        validated_pr = _validate_planned_pr_for_dispatch(ctx, repo, plan_number)
+    for pr_number in pr_numbers:
+        user_output(f"Validating PR #{pr_number}...")
+        validated_pr = _validate_planned_pr_for_dispatch(ctx, repo, pr_number)
         validated_planned_prs.append(validated_pr)
 
     user_output("")
@@ -834,15 +834,15 @@ def _print_dispatch_summary(results: list[DispatchResult]) -> None:
     user_output("")
     user_output("Dispatched plans:")
     for r in results:
-        user_output(f"  #{r.plan_number}: {r.plan_title}")
+        user_output(f"  #{r.pr_number}: {r.plan_title}")
         user_output(f"    Plan: {r.plan_url}")
-        if r.pr_url:
-            user_output(f"    PR: {r.pr_url}")
+        if r.impl_pr_url:
+            user_output(f"    PR: {r.impl_pr_url}")
         user_output(f"    Workflow: {r.workflow_url}")
 
 
 @click.command("dispatch")
-@click.argument("plan_numbers", type=int, nargs=-1, required=False)
+@click.argument("pr_numbers", type=int, nargs=-1, required=False)
 @click.option(
     "--base",
     type=str,
@@ -866,7 +866,7 @@ def _print_dispatch_summary(results: list[DispatchResult]) -> None:
 @click.pass_obj
 def pr_dispatch(
     ctx: ErkContext,
-    plan_numbers: tuple[int, ...],
+    pr_numbers: tuple[int, ...],
     base: str | None,
     dispatch_ref: str | None,
     ref_current: bool,
@@ -906,7 +906,7 @@ def pr_dispatch(
         ref = dispatch_ref
         _dispatch_remote(
             ctx,
-            plan_numbers=plan_numbers,
+            pr_numbers=pr_numbers,
             target_repo=target_repo,
             base=base,
             ref=ref,
@@ -915,7 +915,7 @@ def pr_dispatch(
         ref = resolve_dispatch_ref(ctx, dispatch_ref=dispatch_ref, ref_current=ref_current)
         _dispatch_local(
             ctx,
-            plan_numbers=plan_numbers,
+            pr_numbers=pr_numbers,
             base=base,
             ref=ref,
         )

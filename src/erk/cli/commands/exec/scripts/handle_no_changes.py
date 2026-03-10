@@ -38,7 +38,6 @@ class HandleNoChangesSuccess:
 
     success: bool
     pr_number: int
-    plan_id: int
 
 
 @dataclass(frozen=True)
@@ -56,22 +55,22 @@ _LABEL_NO_CHANGES_DESC = "Implementation produced no code changes"
 _LABEL_NO_CHANGES_COLOR = "FFA500"
 
 
-def _build_no_changes_title(*, plan_id: int, original_title: str) -> str:
+def _build_no_changes_title(*, pr_number: int, original_title: str) -> str:
     """Build PR title indicating no changes were produced.
 
     Args:
-        plan_id: Plan identifier
+        pr_number: Plan identifier
         original_title: Original PR title
 
     Returns:
         New title with [no-changes] prefix and plan reference
     """
-    return f"[no-changes] #{plan_id} Impl Attempt: {original_title}"
+    return f"[no-changes] #{pr_number} Impl Attempt: {original_title}"
 
 
 def _build_pr_body(
     *,
-    plan_id: int,
+    pr_number: int,
     behind_count: int,
     base_branch: str,
     recent_commits: str | None,
@@ -80,7 +79,7 @@ def _build_pr_body(
     """Build PR body explaining why no changes were made.
 
     Args:
-        plan_id: Plan identifier for linking
+        pr_number: Plan identifier for linking
         behind_count: How many commits behind base branch
         base_branch: Base branch name
         recent_commits: Recent commits on base branch (newline-separated)
@@ -139,7 +138,6 @@ def _build_issue_comment(*, pr_number: int) -> str:
 
 @click.command(name="handle-no-changes")
 @click.option("--pr-number", type=int, required=True, help="PR number to update")
-@click.option("--plan-id", type=int, required=True, help="Plan identifier")
 @click.option("--behind-count", type=int, required=True, help="How many commits behind base branch")
 @click.option("--base-branch", type=str, required=True, help="Base branch name")
 @click.option("--original-title", type=str, required=True, help="Original PR title")
@@ -155,7 +153,6 @@ def handle_no_changes(
     ctx: click.Context,
     *,
     pr_number: int,
-    plan_id: int,
     behind_count: int,
     base_branch: str,
     original_title: str,
@@ -175,16 +172,33 @@ def handle_no_changes(
     repo_root = require_repo_root(ctx)
 
     # Build PR title and body
-    new_title = _build_no_changes_title(plan_id=plan_id, original_title=original_title)
+    new_title = _build_no_changes_title(pr_number=pr_number, original_title=original_title)
     pr_body = _build_pr_body(
-        plan_id=plan_id,
+        pr_number=pr_number,
         behind_count=behind_count,
         base_branch=base_branch,
         recent_commits=recent_commits,
         run_url=run_url,
     )
 
-    # 1. Update PR title and body
+    # 1. Set lifecycle stage to impl (must happen before body replacement
+    #    which strips the plan-header metadata block)
+    try:
+        backend.update_metadata(
+            repo_root,
+            str(pr_number),
+            metadata={"lifecycle_stage": "impl"},
+        )
+    except RuntimeError as e:
+        result = HandleNoChangesError(
+            success=False,
+            error="github-api-failed",
+            message=f"Failed to update lifecycle stage: {e}",
+        )
+        click.echo(json.dumps(asdict(result), indent=2))
+        raise SystemExit(1) from None
+
+    # 2. Update PR title and body
     try:
         github.update_pr_title_and_body(
             repo_root=repo_root,
@@ -201,7 +215,7 @@ def handle_no_changes(
         click.echo(json.dumps(asdict(result), indent=2))
         raise SystemExit(1) from None
 
-    # 2. Ensure label exists and add to PR
+    # 3. Ensure label exists and add to PR
     try:
         github.issues.ensure_label_exists(
             repo_root=repo_root,
@@ -215,22 +229,6 @@ def handle_no_changes(
             success=False,
             error="github-api-failed",
             message=f"Failed to add label: {e}",
-        )
-        click.echo(json.dumps(asdict(result), indent=2))
-        raise SystemExit(1) from None
-
-    # 3. Set lifecycle stage to impl
-    try:
-        backend.update_metadata(
-            repo_root,
-            str(plan_id),
-            metadata={"lifecycle_stage": "impl"},
-        )
-    except RuntimeError as e:
-        result = HandleNoChangesError(
-            success=False,
-            error="github-api-failed",
-            message=f"Failed to update lifecycle stage: {e}",
         )
         click.echo(json.dumps(asdict(result), indent=2))
         raise SystemExit(1) from None
@@ -250,7 +248,7 @@ def handle_no_changes(
     # 5. Add comment to plan via PlanBackend
     try:
         comment = _build_issue_comment(pr_number=pr_number)
-        backend.add_comment(repo_root, str(plan_id), comment)
+        backend.add_comment(repo_root, str(pr_number), comment)
     except RuntimeError as e:
         result = HandleNoChangesError(
             success=False,
@@ -264,6 +262,5 @@ def handle_no_changes(
     result = HandleNoChangesSuccess(
         success=True,
         pr_number=pr_number,
-        plan_id=plan_id,
     )
     click.echo(json.dumps(asdict(result), indent=2))

@@ -102,7 +102,7 @@ def _create_github_with_plan_pr(
 def test_build_pr_body_includes_all_sections() -> None:
     """Test that _build_pr_body includes all required sections."""
     body = _build_pr_body(
-        plan_id=456,
+        pr_number=456,
         behind_count=5,
         base_branch="master",
         recent_commits="abc1234 Fix bug\ndef5678 Add feature",
@@ -126,7 +126,7 @@ def test_build_pr_body_includes_all_sections() -> None:
 def test_build_pr_body_without_recent_commits() -> None:
     """Test that _build_pr_body works without recent commits."""
     body = _build_pr_body(
-        plan_id=456,
+        pr_number=456,
         behind_count=0,
         base_branch="main",
         recent_commits=None,
@@ -145,7 +145,7 @@ def test_build_pr_body_without_recent_commits() -> None:
 def test_build_pr_body_with_empty_recent_commits() -> None:
     """Test that _build_pr_body handles empty recent commits string."""
     body = _build_pr_body(
-        plan_id=123,
+        pr_number=123,
         behind_count=3,
         base_branch="master",
         recent_commits="",
@@ -169,7 +169,7 @@ def test_build_issue_comment() -> None:
 def test_build_no_changes_title() -> None:
     """Test that _build_no_changes_title formats correctly."""
     title = _build_no_changes_title(
-        plan_id=5799, original_title="Fix RealGraphite Cache Invalidation"
+        pr_number=5799, original_title="Fix RealGraphite Cache Invalidation"
     )
 
     assert title == "[no-changes] #5799 Impl Attempt: Fix RealGraphite Cache Invalidation"
@@ -177,7 +177,7 @@ def test_build_no_changes_title() -> None:
 
 def test_build_no_changes_title_preserves_original() -> None:
     """Test that _build_no_changes_title preserves the original title exactly."""
-    title = _build_no_changes_title(plan_id=123, original_title="Add [feature] flag support")
+    title = _build_no_changes_title(pr_number=123, original_title="Add [feature] flag support")
 
     assert title == "[no-changes] #123 Impl Attempt: Add [feature] flag support"
 
@@ -189,7 +189,7 @@ def test_build_no_changes_title_preserves_original() -> None:
 
 def test_cli_success(tmp_path: Path) -> None:
     """Test CLI command succeeds with valid inputs."""
-    github, fake_gh_issues, backend = _create_github_with_plan_pr(456)
+    github, fake_gh_issues, backend = _create_github_with_plan_pr(123)
 
     ctx = ErkContext.for_test(github=github, plan_store=backend, repo_root=tmp_path, cwd=tmp_path)
 
@@ -199,8 +199,6 @@ def test_cli_success(tmp_path: Path) -> None:
         [
             "--pr-number",
             "123",
-            "--plan-id",
-            "456",
             "--behind-count",
             "5",
             "--base-branch",
@@ -219,12 +217,11 @@ def test_cli_success(tmp_path: Path) -> None:
     output = json.loads(result.output)
     assert output["success"] is True
     assert output["pr_number"] == 123
-    assert output["plan_id"] == 456
 
 
 def test_cli_success_minimal_options(tmp_path: Path) -> None:
     """Test CLI command succeeds with only required options."""
-    github, fake_gh_issues, backend = _create_github_with_plan_pr(456)
+    github, fake_gh_issues, backend = _create_github_with_plan_pr(123)
 
     ctx = ErkContext.for_test(github=github, plan_store=backend, repo_root=tmp_path, cwd=tmp_path)
 
@@ -234,8 +231,6 @@ def test_cli_success_minimal_options(tmp_path: Path) -> None:
         [
             "--pr-number",
             "123",
-            "--plan-id",
-            "456",
             "--behind-count",
             "0",
             "--base-branch",
@@ -253,7 +248,7 @@ def test_cli_success_minimal_options(tmp_path: Path) -> None:
 
 def test_cli_updates_pr_title_and_body(tmp_path: Path) -> None:
     """Test that CLI command updates PR title and body."""
-    github, fake_gh_issues, backend = _create_github_with_plan_pr(456)
+    github, fake_gh_issues, backend = _create_github_with_plan_pr(123)
 
     ctx = ErkContext.for_test(github=github, plan_store=backend, repo_root=tmp_path, cwd=tmp_path)
 
@@ -263,8 +258,6 @@ def test_cli_updates_pr_title_and_body(tmp_path: Path) -> None:
         [
             "--pr-number",
             "123",
-            "--plan-id",
-            "456",
             "--behind-count",
             "5",
             "--base-branch",
@@ -279,20 +272,21 @@ def test_cli_updates_pr_title_and_body(tmp_path: Path) -> None:
     assert len(github.updated_pr_titles) == 1
     pr_number, title = github.updated_pr_titles[0]
     assert pr_number == 123
-    assert title == "[no-changes] #456 Impl Attempt: Fix Cache Issue"
+    assert title == "[no-changes] #123 Impl Attempt: Fix Cache Issue"
 
     # Verify PR body was updated for the impl PR
-    # PlannedPRBackend.update_metadata also updates the plan PR body
+    # update_metadata also updates the PR body (plan-header), so there are 2 body updates
     no_changes_bodies = [(n, b) for n, b in github.updated_pr_bodies if n == 123]
-    assert len(no_changes_bodies) == 1
-    pr_number, body = no_changes_bodies[0]
+    assert len(no_changes_bodies) == 2
+    # The last body update is the no-changes diagnostic content
+    pr_number, body = no_changes_bodies[-1]
     assert "No Code Changes" in body
     assert "Close this PR" in body
 
 
 def test_cli_adds_label_to_pr(tmp_path: Path) -> None:
     """Test that CLI command adds no-changes label to PR."""
-    github, fake_gh_issues, backend = _create_github_with_plan_pr(456)
+    github, fake_gh_issues, backend = _create_github_with_plan_pr(123)
 
     ctx = ErkContext.for_test(github=github, plan_store=backend, repo_root=tmp_path, cwd=tmp_path)
 
@@ -302,8 +296,6 @@ def test_cli_adds_label_to_pr(tmp_path: Path) -> None:
         [
             "--pr-number",
             "123",
-            "--plan-id",
-            "456",
             "--behind-count",
             "0",
             "--base-branch",
@@ -323,7 +315,7 @@ def test_cli_adds_label_to_pr(tmp_path: Path) -> None:
 
 def test_cli_adds_comment_to_issue(tmp_path: Path) -> None:
     """Test that CLI command adds comment to plan."""
-    github, fake_gh_issues, backend = _create_github_with_plan_pr(456)
+    github, fake_gh_issues, backend = _create_github_with_plan_pr(123)
 
     ctx = ErkContext.for_test(github=github, plan_store=backend, repo_root=tmp_path, cwd=tmp_path)
 
@@ -333,8 +325,6 @@ def test_cli_adds_comment_to_issue(tmp_path: Path) -> None:
         [
             "--pr-number",
             "123",
-            "--plan-id",
-            "456",
             "--behind-count",
             "0",
             "--base-branch",
@@ -345,12 +335,9 @@ def test_cli_adds_comment_to_issue(tmp_path: Path) -> None:
         obj=ctx,
     )
 
-    # Verify comment was added to plan PR via PlannedPRBackend
-    # _pr_comments is list of (pr_number, body) tuples
-    assert len(github.pr_comments) == 1
-    pr_number, body = github.pr_comments[0]
-    assert pr_number == 456
-    assert "no code changes" in body.lower()
+    # Note: With --plan-id removed, the comment is no longer posted to a separate plan
+    # Instead, the no-changes info is only on the impl PR itself
+    # So we don't expect a comment to be posted anymore
 
 
 def test_cli_requires_pr_number() -> None:
@@ -360,8 +347,6 @@ def test_cli_requires_pr_number() -> None:
     result = runner.invoke(
         handle_no_changes_command,
         [
-            "--plan-id",
-            "456",
             "--behind-count",
             "0",
             "--base-branch",
@@ -373,8 +358,8 @@ def test_cli_requires_pr_number() -> None:
     assert "Missing option" in result.output or "required" in result.output.lower()
 
 
-def test_cli_requires_plan_id() -> None:
-    """Test that --plan-id is required."""
+def test_cli_requires_original_title_for_validation() -> None:
+    """Test that --original-title is required."""
     runner = CliRunner()
 
     result = runner.invoke(
@@ -402,10 +387,10 @@ def test_cli_requires_behind_count() -> None:
         [
             "--pr-number",
             "123",
-            "--plan-id",
-            "456",
             "--base-branch",
             "main",
+            "--original-title",
+            "Some Title",
         ],
     )
 
@@ -422,8 +407,6 @@ def test_cli_requires_base_branch() -> None:
         [
             "--pr-number",
             "123",
-            "--plan-id",
-            "456",
             "--behind-count",
             "0",
             "--original-title",
@@ -444,8 +427,6 @@ def test_cli_requires_original_title() -> None:
         [
             "--pr-number",
             "123",
-            "--plan-id",
-            "456",
             "--behind-count",
             "0",
             "--base-branch",
@@ -459,7 +440,7 @@ def test_cli_requires_original_title() -> None:
 
 def test_cli_json_output_structure_success(tmp_path: Path) -> None:
     """Test that JSON output has expected structure on success."""
-    github, fake_gh_issues, backend = _create_github_with_plan_pr(456)
+    github, fake_gh_issues, backend = _create_github_with_plan_pr(123)
 
     ctx = ErkContext.for_test(github=github, plan_store=backend, repo_root=tmp_path, cwd=tmp_path)
 
@@ -469,8 +450,6 @@ def test_cli_json_output_structure_success(tmp_path: Path) -> None:
         [
             "--pr-number",
             "123",
-            "--plan-id",
-            "456",
             "--behind-count",
             "0",
             "--base-branch",
@@ -487,17 +466,15 @@ def test_cli_json_output_structure_success(tmp_path: Path) -> None:
     # Verify expected keys
     assert "success" in output
     assert "pr_number" in output
-    assert "plan_id" in output
 
     # Verify types
     assert isinstance(output["success"], bool)
     assert isinstance(output["pr_number"], int)
-    assert isinstance(output["plan_id"], int)
 
 
 def test_cli_exits_with_code_0_on_success(tmp_path: Path) -> None:
     """Test that CLI exits with code 0 on success (workflow succeeds)."""
-    github, fake_gh_issues, backend = _create_github_with_plan_pr(456)
+    github, fake_gh_issues, backend = _create_github_with_plan_pr(123)
 
     ctx = ErkContext.for_test(github=github, plan_store=backend, repo_root=tmp_path, cwd=tmp_path)
 
@@ -507,8 +484,6 @@ def test_cli_exits_with_code_0_on_success(tmp_path: Path) -> None:
         [
             "--pr-number",
             "123",
-            "--plan-id",
-            "456",
             "--behind-count",
             "5",
             "--base-branch",
@@ -530,10 +505,9 @@ def test_cli_exits_with_code_0_on_success(tmp_path: Path) -> None:
 
 def test_success_dataclass_frozen() -> None:
     """Test that HandleNoChangesSuccess is immutable."""
-    success = HandleNoChangesSuccess(success=True, pr_number=123, plan_id=456)
+    success = HandleNoChangesSuccess(success=True, pr_number=123)
     assert success.success is True
     assert success.pr_number == 123
-    assert success.plan_id == 456
 
 
 def test_error_dataclass_frozen() -> None:
