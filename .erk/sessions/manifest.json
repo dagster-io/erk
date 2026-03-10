@@ -5,8 +5,8 @@
     {
       "session_id": "69fb417f-6e08-4df6-bcc0-6a2e71ce805a",
       "stage": "impl",
-      "source": "local",
-      "uploaded_at": "2026-03-10T12:59:35.335329+00:00",
+      "source": "remote",
+      "uploaded_at": "2026-03-10T13:01:00.149137+00:00",
       "files": [
         "impl-69fb417f-6e08-4df6-bcc0-6a2e71ce805a-69fb417f-6e08-4df6-bcc0-6a2e71ce805a-part1.xml",
         "impl-69fb417f-6e08-4df6-bcc0-6a2e71ce805a-69fb417f-6e08-4df6-bcc0-6a2e71ce805a-part2.xml",
@@ -16,9 +16,9 @@
         "impl-69fb417f-6e08-4df6-bcc0-6a2e71ce805a-69fb417f-6e08-4df6-bcc0-6a2e71ce805a-part6.xml"
       ],
       "user_turns": 3,
-      "duration_minutes": 5,
-      "raw_size_kb": 680,
-      "xml_size_kb": 99,
+      "duration_minutes": 6,
+      "raw_size_kb": 709,
+      "xml_size_kb": 109,
       "git_branch": "plnd/O9109-automate-obj-node-up-03-10-1252"
     }
   ]
