@@ -15,6 +15,25 @@
       "raw_size_kb": 936,
       "xml_size_kb": 59,
       "git_branch": "plnd/show-planning-run-id-03-10-1209"
+    },
+    {
+      "session_id": "",
+      "stage": "impl",
+      "source": "local",
+      "uploaded_at": "2026-03-10T18:04:20.476247+00:00",
+      "files": [
+        "impl--e4b5e1e4-140c-49e9-b83b-075ca563ba29-part1.xml",
+        "impl--e4b5e1e4-140c-49e9-b83b-075ca563ba29-part2.xml",
+        "impl--e4b5e1e4-140c-49e9-b83b-075ca563ba29-part3.xml",
+        "impl--e4b5e1e4-140c-49e9-b83b-075ca563ba29-part4.xml",
+        "impl--e4b5e1e4-140c-49e9-b83b-075ca563ba29-part5.xml",
+        "impl--e4b5e1e4-140c-49e9-b83b-075ca563ba29-part6.xml"
+      ],
+      "user_turns": 3,
+      "duration_minutes": 13,
+      "raw_size_kb": 2224,
+      "xml_size_kb": 219,
+      "git_branch": "plnd/store-planning-run-id-fiel-03-10-1348"
     }
   ]
 }
