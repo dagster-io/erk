@@ -20,8 +20,8 @@
     {
       "session_id": "ceacc7ec-72c2-4493-99f0-b742e2fa2ca1",
       "stage": "impl",
-      "source": "local",
-      "uploaded_at": "2026-03-10T08:36:53.081835+00:00",
+      "source": "remote",
+      "uploaded_at": "2026-03-10T08:38:11.368617+00:00",
       "files": [
         "impl-ceacc7ec-72c2-4493-99f0-b742e2fa2ca1-ceacc7ec-72c2-4493-99f0-b742e2fa2ca1-part1.xml",
         "impl-ceacc7ec-72c2-4493-99f0-b742e2fa2ca1-ceacc7ec-72c2-4493-99f0-b742e2fa2ca1-part10.xml",
@@ -39,9 +39,9 @@
         "impl-ceacc7ec-72c2-4493-99f0-b742e2fa2ca1-ceacc7ec-72c2-4493-99f0-b742e2fa2ca1-part9.xml"
       ],
       "user_turns": 2,
-      "duration_minutes": 12,
-      "raw_size_kb": 670,
-      "xml_size_kb": 449,
+      "duration_minutes": 13,
+      "raw_size_kb": 698,
+      "xml_size_kb": 459,
       "git_branch": "plnd/create-erk-tui-skill-03-10-0421"
     }
   ]
