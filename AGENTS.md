@@ -168,14 +168,14 @@ Before launching Plan or Explore agents, search for relevant documentation:
 
 This grep step is mandatory for ALL coding tasks. It costs milliseconds and prevents re-learning lessons already documented.
 
-| Topic Area                   | Check First                                  |
-| ---------------------------- | -------------------------------------------- |
-| Session logs, ~/.claude/     | `docs/learned/sessions/`                     |
-| CLI commands, Click          | `docs/learned/cli/`                          |
-| Testing patterns             | `docs/learned/testing/`                      |
-| Hooks                        | `docs/learned/hooks/`                        |
-| Planning, .erk/impl-context/ | `docs/learned/planning/`                     |
-| Architecture patterns        | `docs/learned/architecture/`                 |
+| Topic Area                   | Check First                  |
+| ---------------------------- | ---------------------------- |
+| Session logs, ~/.claude/     | `docs/learned/sessions/`     |
+| CLI commands, Click          | `docs/learned/cli/`          |
+| Testing patterns             | `docs/learned/testing/`      |
+| Hooks                        | `docs/learned/hooks/`        |
+| Planning, .erk/impl-context/ | `docs/learned/planning/`     |
+| Architecture patterns        | `docs/learned/architecture/` |
 
 **Anti-pattern:** Skipping the grep because the task "seems simple"
 **Anti-pattern:** Going straight to source files without checking docs/learned/

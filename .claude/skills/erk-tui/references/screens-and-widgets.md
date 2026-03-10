@@ -70,15 +70,15 @@ The `launch_key` field on `CommandDefinition` is the single source of truth. Onl
 
 **Indicator logic table**:
 
-| Emoji | Meaning | When Shown |
-| --- | --- | --- |
-| 🥞 | Stacked PR | Any stage when `is_stacked=True` (informational, doesn't block 🚀) |
-| 🚧 | Draft PR | Active stages when `is_draft=True` |
-| 👀 | Published PR | Active stages when `is_draft=False` |
-| 💥 | Merge conflicts | impl/review when `has_conflicts=True` |
-| ✔ | Approved | Review stage when `review_decision="APPROVED"` |
-| ❌ | Changes requested | Review stage when `review_decision="CHANGES_REQUESTED"` |
-| 🚀 | Ready to merge | impl stage when checks pass, no unresolved comments, no conflicts, no blocking indicators |
+| Emoji | Meaning           | When Shown                                                                                |
+| ----- | ----------------- | ----------------------------------------------------------------------------------------- |
+| 🥞    | Stacked PR        | Any stage when `is_stacked=True` (informational, doesn't block 🚀)                        |
+| 🚧    | Draft PR          | Active stages when `is_draft=True`                                                        |
+| 👀    | Published PR      | Active stages when `is_draft=False`                                                       |
+| 💥    | Merge conflicts   | impl/review when `has_conflicts=True`                                                     |
+| ✔    | Approved          | Review stage when `review_decision="APPROVED"`                                            |
+| ❌    | Changes requested | Review stage when `review_decision="CHANGES_REQUESTED"`                                   |
+| 🚀    | Ready to merge    | impl stage when checks pass, no unresolved comments, no conflicts, no blocking indicators |
 
 **Safe emoji** (tested in terminals): 🥞 🚧 👀 💥 ✔ ❌ 🚀
 
@@ -89,24 +89,24 @@ The `launch_key` field on `CommandDefinition` is the single source of truth. Onl
 **Stage inference** (in `compute_lifecycle_display()`): Reads `lifecycle_stage` from plan header. If absent, infers from PR state:
 
 | `is_draft` | `pr_state` | Inferred Stage |
-| --- | --- | --- |
-| `True` | `"OPEN"` | `planned` |
-| `False` | `"OPEN"` | `impl` |
-| `False` | `"MERGED"` | `merged` |
-| `False` | `"CLOSED"` | `closed` |
+| ---------- | ---------- | -------------- |
+| `True`     | `"OPEN"`   | `planned`      |
+| `False`    | `"OPEN"`   | `impl`         |
+| `False`    | `"MERGED"` | `merged`       |
+| `False`    | `"CLOSED"` | `closed`       |
 
 When resolved stage is `planned` and a workflow run exists, upgrades to `impl`.
 
 **Abbreviation/color map** (8-char column width):
 
-| Stage | Color | Markup |
-| --- | --- | --- |
+| Stage      | Color   | Markup                        |
+| ---------- | ------- | ----------------------------- |
 | `prompted` | magenta | `[magenta]prompted[/magenta]` |
 | `planning` | magenta | `[magenta]planning[/magenta]` |
-| `planned` | dim | `[dim]planned[/dim]` |
-| `impl` | yellow | `[yellow]impl[/yellow]` |
-| `merged` | green | `[green]merged[/green]` |
-| `closed` | dim red | `[dim red]closed[/dim red]` |
+| `planned`  | dim     | `[dim]planned[/dim]`          |
+| `impl`     | yellow  | `[yellow]impl[/yellow]`       |
+| `merged`   | green   | `[green]merged[/green]`       |
+| `closed`   | dim red | `[dim red]closed[/dim red]`   |
 
 **Stage detection**: Uses substring matching on `lifecycle_display` content, not color markup.
 
@@ -147,13 +147,13 @@ When reusing complex widgets (like `PlanDataTable`) inside modal screens:
 
 ## Reference Implementations
 
-| Screen | Pattern | Key Features |
-| --- | --- | --- |
-| `UnresolvedCommentsScreen` | Standard modal | Fetches PR review comments |
-| `PlanBodyScreen` | Content display | `content_type` parameterization |
-| `PlanDetailScreen` | Detail + commands | Markdown rendering, command execution |
-| `ObjectiveNodesScreen` | Complex modal | Async loading, phase separators, PR enrichment, next-node highlighting |
-| `LaunchScreen` | Command dispatch | Dynamic key map, dismisses on unmapped keys |
+| Screen                     | Pattern           | Key Features                                                           |
+| -------------------------- | ----------------- | ---------------------------------------------------------------------- |
+| `UnresolvedCommentsScreen` | Standard modal    | Fetches PR review comments                                             |
+| `PlanBodyScreen`           | Content display   | `content_type` parameterization                                        |
+| `PlanDetailScreen`         | Detail + commands | Markdown rendering, command execution                                  |
+| `ObjectiveNodesScreen`     | Complex modal     | Async loading, phase separators, PR enrichment, next-node highlighting |
+| `LaunchScreen`             | Command dispatch  | Dynamic key map, dismisses on unmapped keys                            |
 
 ## One-Shot Prompt Modal
 

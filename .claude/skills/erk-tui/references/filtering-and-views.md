@@ -77,13 +77,13 @@ Every `ViewMode` must have a corresponding `ViewConfig` in `VIEW_CONFIGS`. Missi
 
 **VIEW_CONFIGS**:
 
-| View | Labels | Exclude Labels | Key |
-| --- | --- | --- | --- |
-| Plans | `("erk-plan",)` | `("erk-learn",)` | `1` |
-| Learn | `("erk-learn",)` | `()` | `2` |
-| Objectives | `("erk-objective",)` | `()` | `3` |
+| View       | Labels               | Exclude Labels   | Key |
+| ---------- | -------------------- | ---------------- | --- |
+| Plans      | `("erk-plan",)`      | `("erk-learn",)` | `1` |
+| Learn      | `("erk-learn",)`     | `()`             | `2` |
+| Objectives | `("erk-objective",)` | `()`             | `3` |
 
-## _switch_view() Orchestration
+## \_switch_view() Orchestration
 
 1. Skip if already on the requested view
 2. Update `_view_mode` and notify ViewBar

@@ -92,11 +92,11 @@ Display name generators on `CommandDefinition` are canonical. `get_copy_text()` 
 
 Despite sharing command definitions, the two contexts have critical differences:
 
-| Aspect | MainListCommandProvider | PlanCommandProvider |
-| --- | --- | --- |
-| Context resolution | Returns `CommandContext \| None` (no row selected) | Returns `CommandContext` (always has `_row`) |
-| Dispatch target | `ErkDashApp.execute_palette_command()` via `self._provider` | `PlanDetailScreen.execute_command()` via injected `CommandExecutor` |
-| ViewMode | Reads `_view_mode` dynamically (supports Objectives) | Hardcodes `ViewMode.PLANS` (detail is always plan context) |
+| Aspect             | MainListCommandProvider                                     | PlanCommandProvider                                                 |
+| ------------------ | ----------------------------------------------------------- | ------------------------------------------------------------------- |
+| Context resolution | Returns `CommandContext \| None` (no row selected)          | Returns `CommandContext` (always has `_row`)                        |
+| Dispatch target    | `ErkDashApp.execute_palette_command()` via `self._provider` | `PlanDetailScreen.execute_command()` via injected `CommandExecutor` |
+| ViewMode           | Reads `_view_mode` dynamically (supports Objectives)        | Hardcodes `ViewMode.PLANS` (detail is always plan context)          |
 
 The dispatch duplication is intentional — app-level concerns (managing screens, toasts) differ from modal-level concerns (using executor, dismissing).
 
@@ -106,12 +106,12 @@ The dispatch duplication is intentional — app-level concerns (managing screens
 
 Two execution strategies, chosen by `repo_root` availability:
 
-| Context | Strategy | Reason |
-| --- | --- | --- |
+| Context              | Strategy             | Reason                       |
+| -------------------- | -------------------- | ---------------------------- |
 | TUI with `repo_root` | Streaming subprocess | User needs progress feedback |
-| TUI without context | Disabled/notify | Cannot execute safely |
-| Unit tests | FakeCommandExecutor | Fast, deterministic |
-| Script mode | Executor pattern | Simpler, no UI |
+| TUI without context  | Disabled/notify      | Cannot execute safely        |
+| Unit tests           | FakeCommandExecutor  | Fast, deterministic          |
+| Script mode          | Executor pattern     | Simpler, no UI               |
 
 `repo_root` acts as a capability marker on `PlanDetailScreen.__init__()`. Present → streaming execution available. Absent → commands disabled.
 
@@ -142,6 +142,7 @@ Key groups in `ErkDashApp.BINDINGS` (`src/erk/tui/app.py`):
 - **System**: ctrl+p (command palette), r (refresh), ? (help), q/escape (quit)
 
 **Launch keys** (ACTION commands only, from `CommandDefinition.launch_key` in registry.py):
+
 - Plans: c (close), d (dispatch), l (land), r (rebase), a (address), w (rewrite), m (cmux)
 - Objectives: c (close), s (one-shot), k (check)
 
