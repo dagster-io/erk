@@ -401,17 +401,16 @@ def dispatch_one_shot_remote(
         if len(params.prompt) > max_input_len:
             truncated_prompt += "... (full prompt committed to .erk/impl-context/prompt.md)"
 
-        workflow_pr_number = str(pr_number)
         inputs: dict[str, str] = {
             "prompt": truncated_prompt,
             "branch_name": branch_name,
-            "pr_number": workflow_pr_number,
+            "pr_number": str(pr_number),
             "submitted_by": submitted_by,
             "plan_backend": "planned_pr",
         }
         if params.model is not None:
             inputs["model_name"] = params.model
-        inputs["plan_issue_number"] = workflow_pr_number
+        inputs["plan_issue_number"] = str(pr_number)
         inputs.update(params.extra_workflow_inputs)
 
         # Dispatch workflow
