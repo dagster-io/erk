@@ -88,7 +88,7 @@ def get_pr_context(ctx: click.Context, *, debug: bool) -> None:
     plan_context_data: dict[str, str | None] | None = None
     if plan_context is not None:
         plan_context_data = {
-            "plan_id": plan_context.plan_id,
+            "pr_number": plan_context.plan_id,
             "plan_content": plan_context.plan_content,
             "objective_summary": plan_context.objective_summary,
         }

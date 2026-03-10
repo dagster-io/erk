@@ -344,8 +344,8 @@ def _save_as_planned_pr(
     else:
         output_data: dict[str, str | int | bool | None] = {
             "success": True,
-            "plan_number": plan_number,
-            "plan_url": result.url,
+            "pr_number": plan_number,
+            "pr_url": result.url,
             "title": prefixed_title,
             "branch_name": branch_name,
             "plan_backend": "planned_pr",
@@ -438,7 +438,7 @@ def _save_plan_via_planned_pr(
             else:
                 dedup_response = {
                     "success": True,
-                    "plan_number": existing_issue,
+                    "pr_number": existing_issue,
                     "skipped_duplicate": True,
                     "message": f"Session already saved plan #{existing_issue}",
                     "plan_backend": "planned_pr",

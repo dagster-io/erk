@@ -142,4 +142,4 @@ def test_issue_setup_invokes_setup_impl_from_issue(tmp_path: Path) -> None:
     assert json_lines, "Expected JSON output"
     output = json.loads(json_lines[0])
     assert output["success"] is True
-    assert output["plan_number"] == pr_number
+    assert output["pr_number"] == pr_number

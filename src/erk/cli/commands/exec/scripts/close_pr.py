@@ -73,7 +73,7 @@ def close_pr(
         json.dumps(
             {
                 "success": True,
-                "plan_number": plan_number,
+                "pr_number": plan_number,
                 "comment_id": comment_id,
             }
         )

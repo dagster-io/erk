@@ -6,7 +6,7 @@ Usage:
 
 Output:
     JSON with plan info fields:
-    {"success": true, "plan_id": "42", "title": "...", "state": "OPEN",
+    {"success": true, "pr_number": "42", "title": "...", "state": "OPEN",
      "labels": [...], "url": "...", "objective_id": null, "backend": "github"}
 
     With --include-body, adds "body": "..." containing plan content.
@@ -60,7 +60,7 @@ def get_plan_info(
 
     result: dict[str, object] = {
         "success": True,
-        "plan_id": plan.pr_identifier,
+        "pr_number": plan.pr_identifier,
         "title": plan.title,
         "state": plan.state.value,
         "labels": plan.labels,

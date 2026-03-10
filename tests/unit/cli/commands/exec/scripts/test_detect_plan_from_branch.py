@@ -44,7 +44,7 @@ def test_detect_impl_pr_lookup_fallback() -> None:
         current_branch="plnd/fix-auth-bug-01-15-1430",
         pr_lookup=lambda: 7890,
     )
-    assert result == {"found": True, "plan_number": 7890, "detection_method": "pr_lookup"}
+    assert result == {"found": True, "pr_number": 7890, "detection_method": "pr_lookup"}
 
 
 def test_detect_impl_not_found() -> None:
@@ -71,7 +71,7 @@ def test_detect_impl_branch_name_takes_priority() -> None:
         current_branch="P100-feature",
         pr_lookup=lambda: 200,
     )
-    assert result["plan_number"] == 200
+    assert result["pr_number"] == 200
     assert result["detection_method"] == "pr_lookup"
 
 

@@ -86,7 +86,7 @@ def test_plan_update_success() -> None:
     assert result.exit_code == 0, f"Failed: {result.output}"
     output = json.loads(result.output)
     assert output["success"] is True
-    assert output["plan_number"] == 42
+    assert output["pr_number"] == 42
 
     assert output["title"] == "[erk-plan] Updated Plan"
 

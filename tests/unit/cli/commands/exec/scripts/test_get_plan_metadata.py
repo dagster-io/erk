@@ -99,7 +99,7 @@ def test_get_plan_metadata_returns_existing_field() -> None:
     output = json.loads(result.output)
     assert output["success"] is True
     assert output["value"] == 3400
-    assert output["plan_number"] == 3509
+    assert output["pr_number"] == 3509
     assert output["field"] == "objective_issue"
 
 
@@ -267,17 +267,17 @@ def test_json_output_structure_success() -> None:
     # Verify expected keys
     assert "success" in output
     assert "value" in output
-    assert "plan_number" in output
+    assert "pr_number" in output
     assert "field" in output
 
     # Verify types
     assert isinstance(output["success"], bool)
-    assert isinstance(output["plan_number"], int)
+    assert isinstance(output["pr_number"], int)
     assert isinstance(output["field"], str)
 
     # Verify values
     assert output["success"] is True
-    assert output["plan_number"] == 321
+    assert output["pr_number"] == 321
     assert output["field"] == "objective_issue"
     assert output["value"] == 3400
 

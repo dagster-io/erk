@@ -61,7 +61,7 @@ def test_planned_pr_success_json(tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     assert result.exit_code == 0, f"Failed: {result.output}"
     output = json.loads(result.output)
     assert output["success"] is True
-    assert "plan_number" in output
+    assert "pr_number" in output
     assert "branch_name" in output
     assert output["branch_name"].startswith("plnd/")
     assert output["plan_backend"] == "planned_pr"
@@ -912,7 +912,7 @@ def test_current_branch_creates_unified_plan_saved_marker(
     assert plan_saved_marker.exists(), "plan-saved marker should exist"
     marker_content = plan_saved_marker.read_text(encoding="utf-8")
     first_line = marker_content.split("\n")[0].strip()
-    assert first_line == str(output["plan_number"]), "first line should be plan number"
+    assert first_line == str(output["pr_number"]), "first line should be plan number"
     # Old current-branch marker should NOT exist
     old_marker = marker_dir / "exit-plan-mode-hook.plan-saved-current-branch.marker"
     assert not old_marker.exists(), "plan-saved-current-branch marker should NOT exist"

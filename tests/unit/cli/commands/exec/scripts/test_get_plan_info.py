@@ -59,7 +59,7 @@ def test_get_plan_info_success() -> None:
     assert result.exit_code == 0
     output = json.loads(result.output)
     assert output["success"] is True
-    assert output["plan_id"] == plan_id
+    assert output["pr_number"] == plan_id
     assert "Test Plan Title" in output["title"]
     assert output["state"] == "OPEN"
     assert "erk-plan" in output["labels"]

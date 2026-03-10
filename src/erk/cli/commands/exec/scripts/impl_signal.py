@@ -22,13 +22,13 @@ Exit Codes:
 
 Examples:
     $ erk exec impl-signal started
-    {"success": true, "event": "started", "plan_number": 123}
+    {"success": true, "event": "started", "pr_number": 123}
 
     $ erk exec impl-signal ended
-    {"success": true, "event": "ended", "plan_number": 123}
+    {"success": true, "event": "ended", "pr_number": 123}
 
     $ erk exec impl-signal submitted
-    {"success": true, "event": "submitted", "plan_number": 123}
+    {"success": true, "event": "submitted", "pr_number": 123}
 """
 
 import getpass
@@ -63,7 +63,7 @@ class SignalSuccess:
 
     success: bool
     event: str
-    plan_number: int
+    pr_number: int
 
 
 @dataclass(frozen=True)
@@ -276,7 +276,7 @@ def _signal_started(ctx: click.Context, session_id: str | None) -> None:
     result = SignalSuccess(
         success=True,
         event=event,
-        plan_number=int(plan_ref.pr_id),
+        pr_number=int(plan_ref.pr_id),
     )
     click.echo(json.dumps(asdict(result), indent=2))
     raise SystemExit(0)
@@ -355,7 +355,7 @@ def _signal_ended(ctx: click.Context, session_id: str | None) -> None:
     result = SignalSuccess(
         success=True,
         event=event,
-        plan_number=int(plan_ref.pr_id),
+        pr_number=int(plan_ref.pr_id),
     )
     click.echo(json.dumps(asdict(result), indent=2))
     raise SystemExit(0)
@@ -418,7 +418,7 @@ def _signal_submitted(ctx: click.Context, session_id: str | None) -> None:
     result = SignalSuccess(
         success=True,
         event=event,
-        plan_number=int(plan_ref.pr_id),
+        pr_number=int(plan_ref.pr_id),
     )
     click.echo(json.dumps(asdict(result), indent=2))
     raise SystemExit(0)

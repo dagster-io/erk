@@ -85,6 +85,6 @@ def push_and_create_pr(
             "was_created": result.was_created,
         },
         "graphite_url": result.graphite_url,
-        "plan_id": result.plan_id,
+        "pr_number": result.plan_id,
     }
     click.echo(json.dumps(output, indent=2))

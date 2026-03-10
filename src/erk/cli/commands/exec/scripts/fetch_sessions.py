@@ -8,7 +8,7 @@ Usage:
 
 Output:
     Structured JSON output:
-    {"success": true, "plan_id": 2521, "manifest": {...}, "files": [...]}
+    {"success": true, "pr_number": 2521, "manifest": {...}, "files": [...]}
     {"success": false, "error": "branch_not_found"}
 
 Exit Codes:
@@ -122,7 +122,7 @@ def fetch_sessions(
 
     result: dict[str, object] = {
         "success": True,
-        "plan_id": plan_id,
+        "pr_number": plan_id,
         "session_branch": session_branch,
         "manifest": manifest,
         "files": downloaded_files,

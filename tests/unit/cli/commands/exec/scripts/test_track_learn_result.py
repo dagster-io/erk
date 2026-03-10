@@ -55,7 +55,7 @@ def test_track_learn_result_completed_no_plan(tmp_path: Path) -> None:
     assert result.exit_code == 0, result.output
     output = json.loads(result.output)
     assert output["success"] is True
-    assert output["plan_id"] == "42"
+    assert output["pr_number"] == "42"
     assert output["learn_status"] == "completed_no_plan"
     assert output["learn_plan_issue"] is None
 
@@ -95,7 +95,7 @@ def test_track_learn_result_completed_with_plan(tmp_path: Path) -> None:
     assert result.exit_code == 0, result.output
     output = json.loads(result.output)
     assert output["success"] is True
-    assert output["plan_id"] == "42"
+    assert output["pr_number"] == "42"
     assert output["learn_status"] == "completed_with_plan"
     assert output["learn_plan_issue"] == 456
 
@@ -205,7 +205,7 @@ def test_track_learn_result_pending_review_with_plan_pr(tmp_path: Path) -> None:
     assert result.exit_code == 0, result.output
     output = json.loads(result.output)
     assert output["success"] is True
-    assert output["plan_id"] == "42"
+    assert output["pr_number"] == "42"
     assert output["learn_status"] == "pending_review"
     assert output["learn_plan_issue"] is None
     assert output["learn_plan_pr"] == 789

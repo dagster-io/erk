@@ -12,7 +12,7 @@ Output:
     JSON object with tracking result:
     {
         "success": true,
-        "plan_id": "123",
+        "pr_number": "123",
         "learn_status": "completed_no_plan"
     }
 
@@ -36,7 +36,7 @@ class TrackLearnResultSuccess:
     """Result of successful track-learn-result command."""
 
     success: bool
-    plan_id: str
+    pr_number: str
     learn_status: str
     learn_plan_issue: int | None
     learn_plan_pr: int | None
@@ -186,7 +186,7 @@ def track_learn_result(
 
     result = TrackLearnResultSuccess(
         success=True,
-        plan_id=plan_id,
+        pr_number=plan_id,
         learn_status=status,
         learn_plan_issue=learn_plan,
         learn_plan_pr=plan_pr,

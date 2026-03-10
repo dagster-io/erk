@@ -53,7 +53,7 @@ This is a comprehensive objective that includes all the necessary details.
     assert result.exit_code == 0, f"Failed: {result.output}"
     output = json.loads(result.output)
     assert output["success"] is True
-    assert output["plan_number"] == 1
+    assert output["pr_number"] == 1
     assert output["title"] == "My Objective"
 
     # v2: body should contain objective-header metadata block (details format)
@@ -318,7 +318,7 @@ This objective should only be created once.
         assert result1.exit_code == 0, f"First call failed: {result1.output}"
         output1 = json.loads(result1.output)
         assert output1["success"] is True
-        assert output1["plan_number"] == 1
+        assert output1["pr_number"] == 1
         assert output1.get("skipped_duplicate") is not True
 
         # Second call - should return existing issue (not create duplicate)
@@ -331,7 +331,7 @@ This objective should only be created once.
         assert result2.exit_code == 0, f"Second call failed: {result2.output}"
         output2 = json.loads(result2.output)
         assert output2["success"] is True
-        assert output2["plan_number"] == 1  # Same plan number
+        assert output2["pr_number"] == 1  # Same plan number
         assert output2["skipped_duplicate"] is True
         assert "already saved objective #1" in output2["message"]
 
@@ -462,6 +462,7 @@ def test_objective_save_to_issue_with_roadmap_creates_frontmatter() -> None:
     assert result.exit_code == 0, f"Failed: {result.output}"
     output = json.loads(result.output)
     assert output["success"] is True
+    assert output["pr_number"] == 1
 
     # Body should contain both header and roadmap metadata blocks
     created_body = fake_gh.created_issues[0][1]
@@ -500,7 +501,7 @@ def test_objective_save_to_issue_validate_flag_json() -> None:
     assert result.exit_code == 0, f"Failed: {result.output}"
     output = json.loads(result.output)
     assert output["success"] is True
-    assert output["plan_number"] == 1
+    assert output["pr_number"] == 1
     assert "validation" in output
     assert isinstance(output["validation"]["passed"], bool)
     assert isinstance(output["validation"]["checks"], list)

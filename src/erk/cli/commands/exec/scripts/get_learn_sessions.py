@@ -12,7 +12,7 @@ Output:
     JSON object with session information:
     {
         "success": true,
-        "plan_id": "123",
+        "pr_number": "123",
         "planning_session_id": "abc-123" | null,
         "implementation_session_ids": [...],
         "learn_session_ids": [...],
@@ -118,7 +118,7 @@ def _build_result(
     """Build the result dict from session data."""
     return GetLearnSessionsResultDict(
         success=True,
-        plan_id=plan_id,
+        pr_number=plan_id,
         planning_session_id=sessions_for_plan.planning_session_id,
         implementation_session_ids=sessions_for_plan.implementation_session_ids,
         learn_session_ids=sessions_for_plan.learn_session_ids,

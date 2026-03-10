@@ -15,7 +15,7 @@ class GetLearnSessionsResultDict(TypedDict):
     """Successful result from get-learn-sessions command."""
 
     success: bool
-    plan_id: str
+    pr_number: str
     planning_session_id: str | None
     implementation_session_ids: list[str]
     learn_session_ids: list[str]

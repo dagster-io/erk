@@ -8,7 +8,7 @@ Usage:
 
 Output:
     JSON with upload result:
-    {"uploaded": true, "plan_id": 2521}
+    {"uploaded": true, "pr_number": 2521}
     {"uploaded": false, "reason": "no_plan_tracking"}
     {"uploaded": false, "reason": "no_session_found"}
 
@@ -17,7 +17,7 @@ Exit Codes:
 
 Examples:
     $ erk exec upload-impl-session --session-id abc-123
-    {"uploaded": true, "plan_id": 2521}
+    {"uploaded": true, "pr_number": 2521}
 """
 
 import json
@@ -118,7 +118,7 @@ def upload_impl_session(ctx: click.Context, session_id: str) -> None:
     if result.returncode == 0 and result.stdout.strip():
         push_output = json.loads(result.stdout.strip())
         if push_output.get("uploaded"):
-            click.echo(json.dumps({"uploaded": True, "plan_id": plan_id}))
+            click.echo(json.dumps({"uploaded": True, "pr_number": plan_id}))
             return
 
     # push-session failed or returned not-uploaded — report gracefully

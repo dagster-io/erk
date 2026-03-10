@@ -162,9 +162,8 @@ def incremental_dispatch(
     workflow_config = load_workflow_config(repo_root, DISPATCH_WORKFLOW_NAME)
 
     inputs = {
-        "plan_id": str(pr_number),
         "submitted_by": submitted_by,
-        "plan_title": pr_result.title,
+        "pr_title": pr_result.title,
         "branch_name": branch_name,
         "pr_number": str(pr_number),
         "base_branch": trunk,

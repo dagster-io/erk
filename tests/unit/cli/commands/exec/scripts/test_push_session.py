@@ -127,7 +127,7 @@ class TestPushSessionNewBranch:
         assert output["uploaded"] is True
         assert output["session_branch"] == "planned-pr-context/42"
         assert output["session_id"] == "test-session-abc"
-        assert output["plan_id"] == 42
+        assert output["pr_number"] == 42
         assert output["stage"] == "planning"
         assert len(output["files"]) == 1
         assert "planning-test-session-abc.xml" in output["files"]
@@ -150,7 +150,7 @@ class TestPushSessionNewBranch:
         # Verify manifest content
         manifest = json.loads(bc.files[".erk/sessions/manifest.json"])
         assert manifest["version"] == 1
-        assert manifest["plan_id"] == 42
+        assert manifest["pr_number"] == 42
         assert len(manifest["sessions"]) == 1
         entry = manifest["sessions"][0]
         assert entry["session_id"] == "test-session-abc"
@@ -184,7 +184,7 @@ class TestPushSessionAccumulation:
         existing_manifest = json.dumps(
             {
                 "version": 1,
-                "plan_id": 42,
+                "pr_number": 42,
                 "sessions": [
                     {
                         "session_id": "planning-session-xyz",
@@ -264,7 +264,7 @@ class TestPushSessionIdempotency:
         existing_manifest = json.dumps(
             {
                 "version": 1,
-                "plan_id": 42,
+                "pr_number": 42,
                 "sessions": [
                     {
                         "session_id": "same-session",

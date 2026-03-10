@@ -1,10 +1,10 @@
 """Batch add labels to multiple plans.
 
 Usage:
-    echo '[{"plan_number": 42, "label": "erk-learn"}]' | erk exec add-plan-labels
+    echo '[{"pr_number": 42, "label": "erk-learn"}]' | erk exec add-plan-labels
 
 Input:
-    JSON array from stdin, each item: {"plan_number": int, "label": str}
+    JSON array from stdin, each item: {"pr_number": int, "label": str}
 
 Output:
     JSON with batch results
@@ -31,7 +31,7 @@ if TYPE_CHECKING:
 class PlanLabelItem(TypedDict):
     """Type definition for a plan label item from stdin."""
 
-    plan_number: int
+    pr_number: int
     label: str
 
 
@@ -79,14 +79,14 @@ def _validate_batch_input(data: object) -> list[PlanLabelItem] | BatchLabelError
 
         item_dict = cast("dict[str, Any]", item)
 
-        if "plan_number" not in item_dict:
+        if "pr_number" not in item_dict:
             return BatchLabelError(
                 success=False,
                 error_type="invalid-input",
                 message=f"Item at index {idx} missing required 'plan_number' field",
             )
 
-        plan_number = item_dict["plan_number"]
+        plan_number = item_dict["pr_number"]
         if not isinstance(plan_number, int):
             return BatchLabelError(
                 success=False,
@@ -109,7 +109,7 @@ def _validate_batch_input(data: object) -> list[PlanLabelItem] | BatchLabelError
                 message=f"Item at index {idx} has non-string 'label'",
             )
 
-        validated_items.append({"plan_number": plan_number, "label": label})
+        validated_items.append({"pr_number": plan_number, "label": label})
 
     return validated_items
 
@@ -120,7 +120,7 @@ def add_plan_labels(ctx: click.Context) -> None:
     """Batch add labels to multiple plans from JSON stdin.
 
     Reads a JSON array from stdin where each item has:
-    - plan_number (required): Plan PR number
+    - pr_number (required): Plan PR number
     - label (required): Label to add
 
     Processes each plan sequentially and outputs batch results.
@@ -153,7 +153,7 @@ def add_plan_labels(ctx: click.Context) -> None:
     results: list[dict[str, object]] = []
 
     for item in validated:
-        plan_number = item["plan_number"]
+        plan_number = item["pr_number"]
         label = item["label"]
         plan_id = str(plan_number)
 
@@ -162,7 +162,7 @@ def add_plan_labels(ctx: click.Context) -> None:
         except RuntimeError as e:
             results.append(
                 {
-                    "plan_number": plan_number,
+                    "pr_number": plan_number,
                     "success": False,
                     "error": f"Failed to add label: {e}",
                 }
@@ -171,7 +171,7 @@ def add_plan_labels(ctx: click.Context) -> None:
 
         results.append(
             {
-                "plan_number": plan_number,
+                "pr_number": plan_number,
                 "success": True,
                 "label": label,
             }

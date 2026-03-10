@@ -109,7 +109,7 @@ def test_impl_init_with_issue_tracking(tmp_path: Path) -> None:
     assert result.exit_code == 0
     data = json.loads(result.output)
     assert data["has_plan_tracking"] is True
-    assert data["plan_number"] == 123
+    assert data["pr_number"] == 123
 
 
 def test_impl_init_detects_branch_scoped_impl(tmp_path: Path) -> None:

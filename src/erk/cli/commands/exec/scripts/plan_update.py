@@ -165,8 +165,8 @@ def plan_update(
             json.dumps(
                 {
                     "success": True,
-                    "plan_number": plan_number,
-                    "plan_url": plan_result.url,
+                    "pr_number": plan_number,
+                    "pr_url": plan_result.url,
                     "title": full_title,
                     "branch_name": branch_name,
                     "branch_updated": branch_updated,

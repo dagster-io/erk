@@ -33,7 +33,7 @@ Examples:
         --repository acme/app
     {
       "success": true,
-      "plan_number": 123
+      "pr_number": 123
     }
 """
 
@@ -55,7 +55,7 @@ class PostSuccess:
     """Success result when comment is posted."""
 
     success: bool
-    plan_number: int
+    pr_number: int
 
 
 @dataclass(frozen=True)
@@ -163,7 +163,7 @@ def post_workflow_started_comment(
     # Post comment via PlanBackend (handles both issue and planned-PR plans)
     try:
         backend.add_comment(repo_root, str(plan_number), comment_body)
-        result = PostSuccess(success=True, plan_number=plan_number)
+        result = PostSuccess(success=True, pr_number=plan_number)
         click.echo(json.dumps(asdict(result), indent=2))
     except RuntimeError as e:
         result = PostError(

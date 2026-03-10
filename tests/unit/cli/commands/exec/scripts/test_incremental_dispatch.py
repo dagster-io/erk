@@ -85,7 +85,7 @@ def test_incremental_dispatch_success(tmp_path: Path) -> None:
     assert len(fake_github.triggered_workflows) == 1
     workflow, inputs, _ref = fake_github.triggered_workflows[0]
     assert workflow == "plan-implement.yml"
-    assert inputs["plan_id"] == "42"
+    assert inputs["pr_number"] == "42"
     assert inputs["branch_name"] == "feature/my-feature"
     assert inputs["plan_backend"] == "planned_pr"
 

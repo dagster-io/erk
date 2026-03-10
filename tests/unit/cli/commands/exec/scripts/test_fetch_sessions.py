@@ -53,7 +53,7 @@ class TestFetchSessionsSuccess:
 
         manifest = {
             "version": 1,
-            "plan_id": 42,
+            "pr_number": 42,
             "sessions": [
                 {
                     "session_id": "abc-123",
@@ -113,7 +113,7 @@ class TestFetchSessionsSuccess:
         assert result.exit_code == 0, f"Failed: {result.output}"
         output = json.loads(result.output)
         assert output["success"] is True
-        assert output["plan_id"] == 42
+        assert output["pr_number"] == 42
         assert output["session_branch"] == "planned-pr-context/42"
         assert len(output["files"]) == 3
         assert output["manifest"]["version"] == 1

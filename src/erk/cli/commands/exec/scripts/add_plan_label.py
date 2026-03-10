@@ -56,7 +56,7 @@ def add_plan_label(
         json.dumps(
             {
                 "success": True,
-                "plan_number": plan_number,
+                "pr_number": plan_number,
                 "label": label,
             }
         )
