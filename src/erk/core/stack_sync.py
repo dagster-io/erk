@@ -11,7 +11,6 @@ Provides mechanical stack-wide divergence resolution:
 
 from __future__ import annotations
 
-import subprocess
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
@@ -108,7 +107,7 @@ def sync_stack(ctx: ErkContext, *, repo_root: Path, cwd: Path) -> StackSyncResul
         ctx.branch_manager.retrack_branch(repo_root, branch)
 
     # Phase 4: Restack
-    restack_success, restack_error = _run_restack(cwd)
+    restack_success, restack_error = ctx.graphite.restack(cwd)
 
     # Phase 5: Return to original branch if needed
     actual_branch = ctx.git.branch.get_current_branch(cwd)
@@ -292,21 +291,3 @@ def _rebase_current_branch(
             ctx.git.rebase.rebase_abort(cwd)
         return BranchSyncResult(branch=branch, action=BranchSyncAction.CONFLICT, detail=detail)
     return BranchSyncResult(branch=branch, action=BranchSyncAction.REBASED, detail=detail)
-
-
-def _run_restack(cwd: Path) -> tuple[bool, str | None]:
-    """Run gt restack --no-interactive.
-
-    Returns:
-        Tuple of (success, error_message).
-    """
-    result = subprocess.run(
-        ["gt", "restack", "--no-interactive"],
-        cwd=cwd,
-        capture_output=True,
-        text=True,
-        check=False,
-    )
-    if result.returncode == 0:
-        return (True, None)
-    return (False, result.stderr.strip() or "gt restack failed")

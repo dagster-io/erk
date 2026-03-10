@@ -247,6 +247,19 @@ class Graphite(ABC):
         return None
 
     @abstractmethod
+    def restack(self, repo_root: Path) -> tuple[bool, str | None]:
+        """Restack the current stack using gt restack.
+
+        Args:
+            repo_root: Repository root directory (used as cwd)
+
+        Returns:
+            Tuple of (success, error_message).
+            (True, None) on success, (False, error_msg) on failure.
+        """
+        ...
+
+    @abstractmethod
     def is_branch_tracked(self, repo_root: Path, branch: str) -> bool:
         """Check if a branch is tracked by Graphite.
 

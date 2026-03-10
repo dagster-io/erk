@@ -1,37 +1,19 @@
 """Tests for erk stack sync command."""
 
-from unittest.mock import patch
-
 from click.testing import CliRunner
 
 from erk.cli.cli import cli
 from erk.core.repo_discovery import RepoContext
 from erk_shared.gateway.git.abc import BranchDivergence
-from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.gateway.git.remote_ops.types import PullRebaseError
 from erk_shared.gateway.graphite.disabled import (
     GraphiteDisabled,
     GraphiteDisabledReason,
 )
 from erk_shared.gateway.graphite.types import BranchMetadata
+from tests.fakes.gateway.git import FakeGit
 from tests.test_utils.cli_helpers import assert_cli_error
 from tests.test_utils.env_helpers import erk_inmem_env
-
-
-def _patch_restack(returncode: int = 0, stderr: str = ""):
-    """Patch subprocess.run for gt restack calls."""
-    mock_result = type(
-        "MockResult",
-        (),
-        {
-            "returncode": returncode,
-            "stderr": stderr,
-        },
-    )()
-    return patch(
-        "erk.core.stack_sync.subprocess.run",
-        return_value=mock_result,
-    )
 
 
 def test_sync_graphite_not_enabled() -> None:
@@ -129,13 +111,12 @@ def test_sync_all_branches_in_sync() -> None:
             use_graphite=True,
         )
 
-        with _patch_restack():
-            result = runner.invoke(
-                cli,
-                ["stack", "sync"],
-                obj=test_ctx,
-                catch_exceptions=False,
-            )
+        result = runner.invoke(
+            cli,
+            ["stack", "sync"],
+            obj=test_ctx,
+            catch_exceptions=False,
+        )
 
         assert result.exit_code == 0
         assert "already in sync" in result.output
@@ -170,13 +151,12 @@ def test_sync_branch_behind_fast_forward_not_checked_out() -> None:
             use_graphite=True,
         )
 
-        with _patch_restack():
-            result = runner.invoke(
-                cli,
-                ["stack", "sync"],
-                obj=test_ctx,
-                catch_exceptions=False,
-            )
+        result = runner.invoke(
+            cli,
+            ["stack", "sync"],
+            obj=test_ctx,
+            catch_exceptions=False,
+        )
 
         assert result.exit_code == 0
         assert "fast-forwarded" in result.output
@@ -212,13 +192,12 @@ def test_sync_branch_behind_fast_forward_current() -> None:
             use_graphite=True,
         )
 
-        with _patch_restack():
-            result = runner.invoke(
-                cli,
-                ["stack", "sync"],
-                obj=test_ctx,
-                catch_exceptions=False,
-            )
+        result = runner.invoke(
+            cli,
+            ["stack", "sync"],
+            obj=test_ctx,
+            catch_exceptions=False,
+        )
 
         assert result.exit_code == 0
         assert "fast-forwarded" in result.output
@@ -253,13 +232,12 @@ def test_sync_branch_diverged_rebase() -> None:
             use_graphite=True,
         )
 
-        with _patch_restack():
-            result = runner.invoke(
-                cli,
-                ["stack", "sync"],
-                obj=test_ctx,
-                catch_exceptions=False,
-            )
+        result = runner.invoke(
+            cli,
+            ["stack", "sync"],
+            obj=test_ctx,
+            catch_exceptions=False,
+        )
 
         assert result.exit_code == 0
         assert "rebased" in result.output
@@ -289,13 +267,12 @@ def test_sync_branch_no_remote_skipped() -> None:
             use_graphite=True,
         )
 
-        with _patch_restack():
-            result = runner.invoke(
-                cli,
-                ["stack", "sync"],
-                obj=test_ctx,
-                catch_exceptions=False,
-            )
+        result = runner.invoke(
+            cli,
+            ["stack", "sync"],
+            obj=test_ctx,
+            catch_exceptions=False,
+        )
 
         assert result.exit_code == 0
         assert "skipped (no remote)" in result.output
@@ -340,13 +317,12 @@ def test_sync_branch_checked_out_elsewhere_skipped() -> None:
             use_graphite=True,
         )
 
-        with _patch_restack():
-            result = runner.invoke(
-                cli,
-                ["stack", "sync"],
-                obj=test_ctx,
-                catch_exceptions=False,
-            )
+        result = runner.invoke(
+            cli,
+            ["stack", "sync"],
+            obj=test_ctx,
+            catch_exceptions=False,
+        )
 
         assert result.exit_code == 0
         assert "skipped" in result.output
@@ -384,13 +360,12 @@ def test_sync_conflict_aborts_rebase() -> None:
             use_graphite=True,
         )
 
-        with _patch_restack():
-            result = runner.invoke(
-                cli,
-                ["stack", "sync"],
-                obj=test_ctx,
-                catch_exceptions=False,
-            )
+        result = runner.invoke(
+            cli,
+            ["stack", "sync"],
+            obj=test_ctx,
+            catch_exceptions=False,
+        )
 
         assert result.exit_code == 0
         assert "CONFLICT" in result.output
@@ -420,19 +395,27 @@ def test_sync_restack_failure_reported() -> None:
             is_diverged=False, ahead=0, behind=0
         )
 
+        # Override graphite with restack failure
+        from tests.fakes.gateway.graphite import FakeGraphite
+
+        graphite_with_failure = FakeGraphite(
+            branches=graphite._branches,
+            stacks=graphite._stacks,
+            restack_result=(False, "merge conflict"),
+        )
+
         test_ctx = env.build_context(
             git=git,
-            graphite=graphite,
+            graphite=graphite_with_failure,
             use_graphite=True,
         )
 
-        with _patch_restack(returncode=1, stderr="merge conflict"):
-            result = runner.invoke(
-                cli,
-                ["stack", "sync"],
-                obj=test_ctx,
-                catch_exceptions=False,
-            )
+        result = runner.invoke(
+            cli,
+            ["stack", "sync"],
+            obj=test_ctx,
+            catch_exceptions=False,
+        )
 
         assert result.exit_code == 0
         assert "failed" in result.output
@@ -464,13 +447,12 @@ def test_sync_branch_ahead_only_no_action() -> None:
             use_graphite=True,
         )
 
-        with _patch_restack():
-            result = runner.invoke(
-                cli,
-                ["stack", "sync"],
-                obj=test_ctx,
-                catch_exceptions=False,
-            )
+        result = runner.invoke(
+            cli,
+            ["stack", "sync"],
+            obj=test_ctx,
+            catch_exceptions=False,
+        )
 
         assert result.exit_code == 0
         assert "already in sync" in result.output
@@ -504,13 +486,12 @@ def test_sync_calls_fetch_prune() -> None:
             use_graphite=True,
         )
 
-        with _patch_restack():
-            result = runner.invoke(
-                cli,
-                ["stack", "sync"],
-                obj=test_ctx,
-                catch_exceptions=False,
-            )
+        result = runner.invoke(
+            cli,
+            ["stack", "sync"],
+            obj=test_ctx,
+            catch_exceptions=False,
+        )
 
         assert result.exit_code == 0
         # Verify fetch_prune was called via FakeGit's remote subgateway

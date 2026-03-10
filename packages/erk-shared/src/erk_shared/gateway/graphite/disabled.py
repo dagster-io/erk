@@ -93,6 +93,10 @@ class GraphiteDisabled(Graphite):
         """Raise error - submit_stack is a mutating operation."""
         raise GraphiteDisabledError(self.reason)
 
+    def restack(self, repo_root: Path) -> tuple[bool, str | None]:
+        """Raise error - restack is a mutating operation."""
+        raise GraphiteDisabledError(self.reason)
+
     def is_branch_tracked(self, repo_root: Path, branch: str) -> bool:
         """Return False - no branches tracked when disabled."""
         return False
