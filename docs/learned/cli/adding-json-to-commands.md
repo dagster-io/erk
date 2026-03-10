@@ -88,15 +88,7 @@ No additional decorator needed — just `@machine_command` is sufficient.
 
 ## Command Group Structure
 
-```
-src/erk/cli/commands/json/
-├── __init__.py          # json_group, registers subcommands
-├── one_shot.py          # erk json one-shot
-└── pr/
-    ├── __init__.py      # json_pr_group, registers pr subcommands
-    ├── list_cmd.py      # erk json pr list
-    └── view_cmd.py      # erk json pr view
-```
+Machine commands live under `src/erk/cli/commands/json/`. Run `erk json --help` to see the current list of available machine commands.
 
 ## Worked Examples
 

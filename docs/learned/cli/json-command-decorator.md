@@ -35,16 +35,18 @@ Machine commands are JSON-in (stdin) / JSON-out (stdout). Input schema is derive
 
 ```python
 @machine_command(
-    request_type=OneShotRequest,
-    result_types=(OneShotDispatchResult, OneShotDryRunResult),
-    name="one_shot",
-    description="Submit a task for autonomous remote execution",
+    request_type=MyRequest,
+    result_types=(MyResult,),
+    name="my_tool",
+    description="Does something useful",
 )
-@click.command("one-shot")
+@click.command("my-tool")
 @click.pass_obj
-def json_one_shot(ctx: ErkContext, *, request: OneShotRequest) -> ...:
-    return run_one_shot(request, ctx=ctx)
+def json_my_tool(ctx: ErkContext, *, request: MyRequest) -> MyResult:
+    return run_my_operation(request, ctx=ctx)
 ```
+
+See `src/erk/cli/commands/json/` for working examples.
 
 ### Decorator Parameters
 
@@ -66,7 +68,7 @@ def json_one_shot(ctx: ErkContext, *, request: OneShotRequest) -> ...:
 
 ### Metadata
 
-Stores `MachineCommandMeta` on the command object as `cmd._machine_command_meta`.
+Stores a `MachineCommandMeta` frozen dataclass on each decorated command. The MCP server and discovery utilities use this metadata to auto-register tools. See `MachineCommandMeta` in `machine_command.py` for the public API.
 
 ## Utility Functions (Legacy)
 

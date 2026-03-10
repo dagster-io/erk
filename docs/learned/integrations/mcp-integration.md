@@ -76,13 +76,7 @@ Hand-written tools:
 | `plan_list` | `erk exec dash-data`     | List plans with status, labels, metadata |
 | `plan_view` | `erk exec get-plan-info` | View a specific plan's metadata and body |
 
-Auto-discovered tools (via `@machine_command`):
-
-| Tool       | CLI Path            | Purpose                                       |
-| ---------- | ------------------- | --------------------------------------------- |
-| `one_shot` | `erk json one-shot` | Submit a task for autonomous remote execution |
-| `pr_list`  | `erk json pr list`  | List plans filtered by state and labels       |
-| `pr_view`  | `erk json pr view`  | View a specific plan's details                |
+Auto-discovered tools are registered from any `@machine_command`-decorated command under `erk json ...`. Run `erk json --help` to see the current list. The parity tests in `tests/unit/cli/test_mcp_cli_sync.py` enforce that every `@machine_command` has a corresponding MCP tool and vice versa.
 
 ## Configuration
 
