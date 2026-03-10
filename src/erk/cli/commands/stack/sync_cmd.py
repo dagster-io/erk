@@ -49,21 +49,23 @@ def _print_branch_results(result: StackSyncResult) -> None:
 
 def _format_action(action: BranchSyncAction, detail: str) -> str:
     """Format a sync action for display."""
-    if action == BranchSyncAction.ALREADY_SYNCED:
-        return "already in sync"
-    if action == BranchSyncAction.FAST_FORWARDED:
-        return f"fast-forwarded ({detail})"
-    if action == BranchSyncAction.REBASED:
-        return f"rebased ({detail})"
-    if action == BranchSyncAction.SKIPPED_NO_REMOTE:
-        return "skipped (no remote)"
-    if action == BranchSyncAction.SKIPPED_OTHER_WORKTREE:
-        return f"skipped ({detail})"
-    if action == BranchSyncAction.CONFLICT:
-        return click.style("CONFLICT", fg="red") + " — run: erk pr diverge-fix"
-    if action == BranchSyncAction.ERROR:
-        return click.style(f"error: {detail}", fg="red")
-    return detail
+    match action:
+        case BranchSyncAction.ALREADY_SYNCED:
+            return "already in sync"
+        case BranchSyncAction.FAST_FORWARDED:
+            return f"fast-forwarded ({detail})"
+        case BranchSyncAction.REBASED:
+            return f"rebased ({detail})"
+        case BranchSyncAction.SKIPPED_NO_REMOTE:
+            return "skipped (no remote)"
+        case BranchSyncAction.SKIPPED_OTHER_WORKTREE:
+            return f"skipped ({detail})"
+        case BranchSyncAction.CONFLICT:
+            return click.style("CONFLICT", fg="red") + " — run: erk pr diverge-fix"
+        case BranchSyncAction.ERROR:
+            return click.style(f"error: {detail}", fg="red")
+        case _:
+            return detail
 
 
 def _print_restack_status(result: StackSyncResult) -> None:
@@ -78,27 +80,26 @@ def _print_restack_status(result: StackSyncResult) -> None:
 
 def _print_summary(result: StackSyncResult) -> None:
     """Print summary line."""
-    fixed = sum(
-        1
-        for r in result.branch_results
-        if r.action in (BranchSyncAction.FAST_FORWARDED, BranchSyncAction.REBASED)
-    )
-    in_sync = sum(1 for r in result.branch_results if r.action == BranchSyncAction.ALREADY_SYNCED)
-    conflicts = sum(1 for r in result.branch_results if r.action == BranchSyncAction.CONFLICT)
-    skipped = sum(
-        1
-        for r in result.branch_results
-        if r.action in (BranchSyncAction.SKIPPED_NO_REMOTE, BranchSyncAction.SKIPPED_OTHER_WORKTREE)
-    )
+    counts: dict[str, int] = {"fixed": 0, "in_sync": 0, "conflicts": 0, "skipped": 0}
+    for r in result.branch_results:
+        match r.action:
+            case BranchSyncAction.FAST_FORWARDED | BranchSyncAction.REBASED:
+                counts["fixed"] += 1
+            case BranchSyncAction.ALREADY_SYNCED:
+                counts["in_sync"] += 1
+            case BranchSyncAction.CONFLICT:
+                counts["conflicts"] += 1
+            case BranchSyncAction.SKIPPED_NO_REMOTE | BranchSyncAction.SKIPPED_OTHER_WORKTREE:
+                counts["skipped"] += 1
 
     parts = []
-    if fixed:
-        parts.append(f"{fixed} fixed")
-    if in_sync:
-        parts.append(f"{in_sync} in sync")
-    if conflicts:
-        parts.append(f"{conflicts} conflict{'s' if conflicts > 1 else ''}")
-    if skipped:
-        parts.append(f"{skipped} skipped")
+    if counts["fixed"]:
+        parts.append(f"{counts['fixed']} fixed")
+    if counts["in_sync"]:
+        parts.append(f"{counts['in_sync']} in sync")
+    if counts["conflicts"]:
+        parts.append(f"{counts['conflicts']} conflict{'s' if counts['conflicts'] > 1 else ''}")
+    if counts["skipped"]:
+        parts.append(f"{counts['skipped']} skipped")
 
     click.echo(f"Stack synced: {', '.join(parts)}")
