@@ -98,15 +98,9 @@ See `OneShotRequest` in `src/erk/cli/commands/one_shot/operation.py` for the can
 
 Result dataclasses implement `to_json_dict()` for custom serialization:
 
-```python
-@dataclass(frozen=True)
-class OneShotDispatchResult:
-    pr_number: int
-    pr_url: str
-    ...
-    def to_json_dict(self) -> dict[str, Any]:
-        return {"pr_number": self.pr_number, ...}
-```
+<!-- Source: src/erk/cli/commands/one_shot_remote_dispatch.py, OneShotDispatchResult -->
+
+See `OneShotDispatchResult` in `src/erk/cli/commands/one_shot_remote_dispatch.py` for the canonical example — a frozen dataclass with a `to_json_dict()` method that controls which fields appear in JSON output and how they're serialized.
 
 Falls back to `dataclasses.asdict()` if no `to_json_dict()` is defined.
 
