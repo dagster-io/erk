@@ -106,28 +106,27 @@ def read_objective_context_marker(session_id: str, repo_root: Path) -> int | Non
     return int(content)
 
 
-def read_roadmap_step_marker(session_id: str, repo_root: Path) -> str | None:
-    """Read roadmap node ID from session's roadmap-step marker.
+def read_roadmap_step_marker(session_id: str, repo_root: Path) -> list[str]:
+    """Read roadmap node IDs from session's roadmap-step marker.
 
-    This reads the marker created by /erk:system:objective-plan-node to determine
-    which objective node a plan targets. Used by plan-save to persist node_ids
-    into ref.json for later PR-to-node linking.
+    Supports both single-node markers (legacy) and multi-node markers
+    (newline-delimited). Returns empty list if marker doesn't exist.
 
     Args:
         session_id: The session ID for the scratch directory.
         repo_root: The repository root path.
 
     Returns:
-        The node ID string if marker exists and is non-empty, None otherwise.
+        List of node ID strings. Empty list if marker doesn't exist or is empty.
     """
     marker_dir = get_scratch_dir(session_id, repo_root=repo_root)
     marker_file = marker_dir / "roadmap-step.marker"
     if not marker_file.exists():
-        return None
+        return []
     content = marker_file.read_text(encoding="utf-8").strip()
     if not content:
-        return None
-    return content
+        return []
+    return [line.strip() for line in content.split("\n") if line.strip()]
 
 
 def create_plan_saved_branch_marker(session_id: str, repo_root: Path, branch_name: str) -> None:

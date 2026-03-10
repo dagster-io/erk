@@ -225,8 +225,8 @@ def test_branch_marker_roundtrip(tmp_path: Path) -> None:
 # read_roadmap_step_marker tests
 
 
-def test_read_roadmap_step_marker_returns_node_id(tmp_path: Path) -> None:
-    """Verify stored node ID is returned."""
+def test_read_roadmap_step_marker_returns_single_node_as_list(tmp_path: Path) -> None:
+    """Verify single node ID is returned as a one-element list."""
     session_id = "test-session-123"
     marker_dir = tmp_path / ".erk" / "scratch" / "sessions" / session_id
     marker_dir.mkdir(parents=True)
@@ -235,18 +235,18 @@ def test_read_roadmap_step_marker_returns_node_id(tmp_path: Path) -> None:
 
     result = read_roadmap_step_marker(session_id, tmp_path)
 
-    assert result == "phase1.step2"
+    assert result == ["phase1.step2"]
 
 
-def test_read_roadmap_step_marker_returns_none_when_no_marker(tmp_path: Path) -> None:
-    """Verify None is returned when no marker exists."""
+def test_read_roadmap_step_marker_returns_empty_list_when_no_marker(tmp_path: Path) -> None:
+    """Verify empty list is returned when no marker exists."""
     result = read_roadmap_step_marker("nonexistent-session", tmp_path)
 
-    assert result is None
+    assert result == []
 
 
-def test_read_roadmap_step_marker_returns_none_for_empty_content(tmp_path: Path) -> None:
-    """Verify None is returned when marker contains empty content."""
+def test_read_roadmap_step_marker_returns_empty_list_for_empty_content(tmp_path: Path) -> None:
+    """Verify empty list is returned when marker contains empty content."""
     session_id = "test-session-123"
     marker_dir = tmp_path / ".erk" / "scratch" / "sessions" / session_id
     marker_dir.mkdir(parents=True)
@@ -255,7 +255,7 @@ def test_read_roadmap_step_marker_returns_none_for_empty_content(tmp_path: Path)
 
     result = read_roadmap_step_marker(session_id, tmp_path)
 
-    assert result is None
+    assert result == []
 
 
 def test_read_roadmap_step_marker_strips_whitespace(tmp_path: Path) -> None:
@@ -268,7 +268,33 @@ def test_read_roadmap_step_marker_strips_whitespace(tmp_path: Path) -> None:
 
     result = read_roadmap_step_marker(session_id, tmp_path)
 
-    assert result == "phase1.step2"
+    assert result == ["phase1.step2"]
+
+
+def test_read_roadmap_step_marker_returns_multiple_nodes(tmp_path: Path) -> None:
+    """Verify newline-delimited multi-node marker is parsed into a list."""
+    session_id = "test-session-123"
+    marker_dir = tmp_path / ".erk" / "scratch" / "sessions" / session_id
+    marker_dir.mkdir(parents=True)
+    marker_file = marker_dir / "roadmap-step.marker"
+    marker_file.write_text("1.1\n1.2\n1.3", encoding="utf-8")
+
+    result = read_roadmap_step_marker(session_id, tmp_path)
+
+    assert result == ["1.1", "1.2", "1.3"]
+
+
+def test_read_roadmap_step_marker_skips_blank_lines(tmp_path: Path) -> None:
+    """Verify blank lines in multi-node marker are ignored."""
+    session_id = "test-session-123"
+    marker_dir = tmp_path / ".erk" / "scratch" / "sessions" / session_id
+    marker_dir.mkdir(parents=True)
+    marker_file = marker_dir / "roadmap-step.marker"
+    marker_file.write_text("1.1\n\n1.2\n  \n1.3\n", encoding="utf-8")
+
+    result = read_roadmap_step_marker(session_id, tmp_path)
+
+    assert result == ["1.1", "1.2", "1.3"]
 
 
 def test_marker_roundtrip(tmp_path: Path) -> None:

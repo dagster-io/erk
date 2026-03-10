@@ -77,11 +77,12 @@ Display the roadmap table from the `roadmap.phases` data in the JSON output.
 Then use AskUserQuestion to ask which node to plan:
 
 ```
-Which node should I create a plan for?
+Which node(s) should I create a plan for?
 - Node 1A.1: <description> (Recommended) ← first pending node without plan in progress
 - Node 1A.2: <description>
 - Node 2B.1: <description> (plan in progress, #456) ← shown but not recommended
-- (Other - specify node number or description)
+- All of Phase 1 (nodes 1A.1, 1A.2) ← if phase has multiple pending nodes
+- (Other - specify node number(s) or description)
 ```
 
 **Filtering rules (based on node `status` field from phases):**
@@ -90,6 +91,8 @@ Which node should I create a plan for?
 - **Show but deprioritize:** Nodes with status `"in_progress"` - still selectable via "Other" but not recommended
 - **Hide from options:** Nodes with status `"done"`, `"blocked"`, or `"skipped"`
 
+**Phase-level options:** For each phase that has 2+ pending nodes, show an "All of Phase X" option listing the pending node IDs.
+
 **Recommendation rule:** Use `roadmap.next_node` from the JSON as the recommended option. If `next_node` is null, no node is recommended.
 
 If all nodes are complete or have plans in progress, report appropriately:
@@ -97,15 +100,42 @@ If all nodes are complete or have plans in progress, report appropriately:
 - All complete: "All roadmap nodes are complete! Consider closing the objective."
 - All have plans: "All pending nodes have plans in progress. You can still select one via 'Other' to create a parallel plan."
 
-### Step 5: Invoke Inner Skill
+### Step 5: Invoke Inner Skill or Handle Multi-Node Inline
 
-After the user selects a node, invoke the inner skill via the Skill tool:
+**Single node selected:** Delegate to the inner skill as before:
 
 ```
 /erk:system:objective-plan-node <objective-number> --node <selected-node-id>
 ```
 
 The inner skill handles marker creation, marking as planning, context gathering, plan mode, and saving. **STOP here** — the inner skill takes over.
+
+**Multiple nodes selected** (phase-level or explicit multi-select): Handle inline instead of delegating:
+
+1. **Create objective-context marker:**
+
+```bash
+erk exec marker create --session-id "${CLAUDE_SESSION_ID}" --associated-objective <objective-number> objective-context
+```
+
+2. **Create multi-node roadmap-step marker** (newline-delimited node IDs):
+
+```bash
+erk exec marker create --session-id "${CLAUDE_SESSION_ID}" \
+  --content "<node-id-1>
+<node-id-2>
+<node-id-3>" roadmap-step
+```
+
+3. **Mark all nodes as planning:**
+
+```bash
+erk exec update-objective-node <objective-number> --node <node-id-1> --node <node-id-2> --status planning
+```
+
+4. **Enter plan mode** using EnterPlanMode. The plan should cover all selected nodes and reference the parent objective.
+
+5. **Save as PR** via `/erk:plan-save` when plan mode exits. The multi-node marker created in step 2 is read by plan-save automatically, linking all nodes to the plan.
 
 ---
 
@@ -135,7 +165,7 @@ The inner skill handles marker creation, marking as planning, context gathering,
 ## Important Notes
 
 - **Objective context matters:** Read the full objective for design decisions and lessons learned
-- **One node at a time:** Each plan should focus on a single roadmap node
+- **Single or multi-node:** Each plan can focus on a single node or multiple related nodes (e.g., all nodes in a phase)
 - **Link back:** Always reference the parent objective in the plan
 - **Steelthread pattern:** If planning a Phase A node, focus on minimal vertical slice
 
