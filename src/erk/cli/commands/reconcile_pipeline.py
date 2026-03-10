@@ -39,7 +39,7 @@ class ReconcileBranchInfo:
     pr_number: int
     pr_title: str | None
     worktree_path: Path | None
-    plan_id: str | None
+    pr_id: str | None
     objective_number: int | None
 
 
@@ -104,7 +104,7 @@ def detect_merged_branches(
             continue
 
         # 5. Resolve metadata
-        plan_id = ctx.plan_backend.resolve_plan_id_for_branch(main_repo_root, info.branch)
+        pr_id = ctx.plan_backend.resolve_plan_id_for_branch(main_repo_root, info.branch)
         objective_number = get_objective_for_branch(ctx, main_repo_root, info.branch)
         worktree_path = ctx.git.worktree.find_worktree_for_branch(repo_root, info.branch)
 
@@ -114,7 +114,7 @@ def detect_merged_branches(
                 pr_number=pr_result.number,
                 pr_title=pr_result.title,
                 worktree_path=worktree_path,
-                plan_id=plan_id,
+                pr_id=pr_id,
                 objective_number=objective_number,
             )
         )
@@ -163,11 +163,11 @@ def process_merged_branch(
         )
 
     # 1. Learn PR (fail-open)
-    if not skip_learn and info.plan_id is not None:
+    if not skip_learn and info.pr_id is not None:
         try:
             _create_learn_pr_for_merged_branch(
                 ctx,
-                plan_id=info.plan_id,
+                pr_id=info.pr_id,
                 merged_pr_number=info.pr_number,
                 main_repo_root=main_repo_root,
                 cwd=cwd,

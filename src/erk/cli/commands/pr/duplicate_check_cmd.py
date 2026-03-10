@@ -149,7 +149,7 @@ def duplicate_check_plan(
             user_output(click.style("Potential duplicate(s) found:", fg="yellow"))
             user_output("")
             for match in dup_result.matches:
-                user_output(f'  #{match.plan_id}: "{match.title}"')
+                user_output(f'  #{match.pr_id}: "{match.title}"')
                 user_output(f"    {match.explanation}")
                 user_output(f"    {match.url}")
                 user_output("")

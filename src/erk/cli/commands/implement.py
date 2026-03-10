@@ -448,14 +448,14 @@ def implement(
     target_info = detect_target_type(target)
 
     # Output target detection diagnostic
-    if target_info.target_type in ("plan_number", "plan_url"):
-        ctx.console.info(f"Detected plan #{target_info.plan_number}")
+    if target_info.target_type in ("pr_number", "pr_url"):
+        ctx.console.info(f"Detected plan #{target_info.pr_number}")
     elif target_info.target_type == "file_path":
         ctx.console.info(f"Detected plan file: {target}")
 
     # Dispatch based on target type
-    if target_info.target_type in ("plan_number", "plan_url"):
-        if target_info.plan_number is None:
+    if target_info.target_type in ("pr_number", "pr_url"):
+        if target_info.pr_number is None:
             user_output(
                 click.style("Error: ", fg="red") + "Failed to extract plan number from target"
             )
@@ -463,7 +463,7 @@ def implement(
 
         _implement_from_issue(
             ctx,
-            plan_number=target_info.plan_number,
+            plan_number=target_info.pr_number,
             dry_run=dry_run,
             submit=submit,
             dangerous=effective_dangerous,

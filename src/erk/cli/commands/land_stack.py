@@ -43,7 +43,7 @@ class StackLandEntry:
     branch: str
     pr_number: int
     worktree_path: Path | None
-    plan_id: str | None
+    pr_id: str | None
     objective_number: int | None
 
 
@@ -283,7 +283,7 @@ def _validate_stack_entries(
                 branch=branch,
                 pr_number=pr_details.number,
                 worktree_path=worktree_path,
-                plan_id=ctx.plan_backend.resolve_plan_id_for_branch(main_repo_root, branch),
+                pr_id=ctx.plan_backend.resolve_plan_id_for_branch(main_repo_root, branch),
                 objective_number=get_objective_for_branch(ctx, main_repo_root, branch),
             )
         )
@@ -525,11 +525,11 @@ def _run_post_merge_hooks(
     main_repo_root: Path,
     skip_learn: bool,
 ) -> None:
-    if not skip_learn and entry.plan_id is not None:
+    if not skip_learn and entry.pr_id is not None:
         try:
             _create_learn_pr_for_merged_branch(
                 ctx,
-                plan_id=entry.plan_id,
+                pr_id=entry.pr_id,
                 merged_pr_number=entry.pr_number,
                 main_repo_root=main_repo_root,
                 cwd=ctx.cwd,

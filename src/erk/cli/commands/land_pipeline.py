@@ -62,7 +62,7 @@ class LandState:
 
     # Derived (populated by later steps)
     objective_number: int | None
-    plan_id: str | None
+    pr_id: str | None
     cleanup_confirmed: bool
     merged_pr_number: int | None
 
@@ -338,17 +338,17 @@ def validate_pr(ctx: ErkContext, state: LandState) -> LandState | LandError:
     return state
 
 
-def resolve_plan_id(ctx: ErkContext, state: LandState) -> LandState | LandError:
-    """Resolve plan ID for branch (used by create_learn_pr execution step).
+def resolve_pr_id(ctx: ErkContext, state: LandState) -> LandState | LandError:
+    """Resolve PR ID for branch (used by create_learn_pr execution step).
 
-    Populates: plan_id.
+    Populates: pr_id.
     """
-    plan_id = ctx.plan_backend.resolve_plan_id_for_branch(state.main_repo_root, state.branch)
-    if plan_id is not None:
+    pr_id = ctx.plan_backend.resolve_plan_id_for_branch(state.main_repo_root, state.branch)
+    if pr_id is not None:
         user_output(click.style("  ✓", fg="green") + " Plan context resolved")
     else:
         user_output(click.style("  No linked plan", dim=True))
-    return dataclasses.replace(state, plan_id=plan_id)
+    return dataclasses.replace(state, pr_id=pr_id)
 
 
 def gather_confirmations(ctx: ErkContext, state: LandState) -> LandState | LandError:
@@ -442,7 +442,7 @@ def merge_pr(ctx: ErkContext, state: LandState) -> LandState | LandError:
 
 def create_learn_pr(ctx: ErkContext, state: LandState) -> LandState | LandError:
     """Create a learn plan as a draft PR with preprocessed sessions for the landed plan."""
-    if state.plan_id is None or state.merged_pr_number is None:
+    if state.pr_id is None or state.merged_pr_number is None:
         return state
     if state.skip_learn:
         return state
@@ -483,7 +483,7 @@ def _validation_pipeline() -> tuple[LandStep, ...]:
     return (
         resolve_target,
         validate_pr,
-        resolve_plan_id,
+        resolve_pr_id,
         gather_confirmations,
         resolve_objective,
     )
@@ -569,7 +569,7 @@ def make_initial_state(
         target_child_branch=None,
         # Derived (populated by later steps)
         objective_number=None,
-        plan_id=None,
+        pr_id=None,
         cleanup_confirmed=False,
         merged_pr_number=None,
     )
@@ -588,12 +588,12 @@ def make_execution_state(
     no_cleanup: bool,
     script: bool,
     target_child_branch: str | None,
-    plan_id: str | None,
+    pr_id: str | None,
     skip_learn: bool,
 ) -> LandState:
     """Create LandState for the execution pipeline from exec script args.
 
-    Re-derives repo_root, main_repo_root, plan_id from the args
+    Re-derives repo_root, main_repo_root, pr_id from the args
     passed through the shell script serialization boundary.
     """
 
@@ -619,7 +619,7 @@ def make_execution_state(
         target_child_branch=target_child_branch,
         # Derived
         objective_number=None,  # Only used in validation pipeline path
-        plan_id=plan_id,
+        pr_id=pr_id,
         cleanup_confirmed=not no_cleanup,
         merged_pr_number=None,
     )

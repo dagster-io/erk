@@ -425,7 +425,7 @@ def test_dry_run_no_mutations() -> None:
             pr_number=100,
             pr_title="Test",
             worktree_path=None,
-            plan_id=None,
+            pr_id=None,
             objective_number=None,
         )
         result = process_merged_branch(
@@ -466,7 +466,7 @@ def test_cleans_up_branch() -> None:
             pr_number=100,
             pr_title="Test",
             worktree_path=None,
-            plan_id=None,
+            pr_id=None,
             objective_number=None,
         )
         result = process_merged_branch(
@@ -509,7 +509,7 @@ def test_cleans_up_worktree() -> None:
             pr_number=100,
             pr_title="Test",
             worktree_path=wt_path,
-            plan_id=None,
+            pr_id=None,
             objective_number=None,
         )
         result = process_merged_branch(
@@ -544,7 +544,7 @@ def test_cleanup_skips_branch_not_in_local() -> None:
             pr_number=100,
             pr_title="Test",
             worktree_path=None,
-            plan_id=None,
+            pr_id=None,
             objective_number=None,
         )
         result = process_merged_branch(
@@ -582,7 +582,7 @@ def test_skip_learn_flag() -> None:
             pr_number=100,
             pr_title="Test",
             worktree_path=None,
-            plan_id="999",
+            pr_id="999",
             objective_number=None,
         )
         result = process_merged_branch(

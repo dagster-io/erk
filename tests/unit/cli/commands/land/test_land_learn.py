@@ -67,7 +67,7 @@ def _make_pr_details(
 def _land_state(
     tmp_path: Path,
     *,
-    plan_id: str | None = None,
+    pr_id: str | None = None,
     merged_pr_number: int | None = None,
 ) -> LandState:
     return LandState(
@@ -90,7 +90,7 @@ def _land_state(
         use_graphite=False,
         target_child_branch=None,
         objective_number=None,
-        plan_id=plan_id,
+        pr_id=pr_id,
         cleanup_confirmed=True,
         merged_pr_number=merged_pr_number,
     )
@@ -141,7 +141,7 @@ def test_returns_early_when_plan_id_is_none(tmp_path: Path) -> None:
     fake_issues = FakeGitHubIssues(username="testuser")
     fake_github = FakeLocalGitHub(issues_gateway=fake_issues)
     ctx = context_for_test(github=fake_github, issues=fake_issues, cwd=tmp_path)
-    state = _land_state(tmp_path, plan_id=None, merged_pr_number=99)
+    state = _land_state(tmp_path, pr_id=None, merged_pr_number=99)
 
     _create_learn_pr_with_sessions(ctx, state=state)
 
@@ -153,7 +153,7 @@ def test_returns_early_when_merged_pr_number_is_none(tmp_path: Path) -> None:
     fake_issues = FakeGitHubIssues(username="testuser")
     fake_github = FakeLocalGitHub(issues_gateway=fake_issues)
     ctx = context_for_test(github=fake_github, issues=fake_issues, cwd=tmp_path)
-    state = _land_state(tmp_path, plan_id="100", merged_pr_number=None)
+    state = _land_state(tmp_path, pr_id="100", merged_pr_number=None)
 
     _create_learn_pr_with_sessions(ctx, state=state)
 
@@ -174,7 +174,7 @@ def test_shows_warning_on_exception(
     monkeypatch.setattr(learn_mod, "_create_learn_pr_impl", _raise)
 
     ctx = context_for_test(cwd=tmp_path)
-    state = _land_state(tmp_path, plan_id="100", merged_pr_number=99)
+    state = _land_state(tmp_path, pr_id="100", merged_pr_number=99)
 
     # Should NOT raise — exception is caught
     _create_learn_pr_with_sessions(ctx, state=state)
@@ -194,7 +194,7 @@ def test_create_learn_pr_skips_when_skip_learn_is_set(tmp_path: Path) -> None:
     fake_issues = FakeGitHubIssues(username="testuser")
     fake_github = FakeLocalGitHub(issues_gateway=fake_issues)
     ctx = context_for_test(github=fake_github, issues=fake_issues, cwd=tmp_path)
-    state = _land_state(tmp_path, plan_id="100", merged_pr_number=99)
+    state = _land_state(tmp_path, pr_id="100", merged_pr_number=99)
     state = replace(state, skip_learn=True)
 
     result = create_learn_pr(ctx, state)
@@ -217,7 +217,7 @@ def test_skips_when_config_disabled(tmp_path: Path) -> None:
         local_config=LoadedConfig.test(prompt_learn_on_land=False),
         cwd=tmp_path,
     )
-    state = _land_state(tmp_path, plan_id="100", merged_pr_number=99)
+    state = _land_state(tmp_path, pr_id="100", merged_pr_number=99)
 
     _create_learn_pr_impl(ctx, state=state)
 
@@ -243,7 +243,7 @@ def test_skips_for_erk_learn_plan(tmp_path: Path) -> None:
         plan_store=plan_store,
         cwd=tmp_path,
     )
-    state = _land_state(tmp_path, plan_id="100", merged_pr_number=99)
+    state = _land_state(tmp_path, pr_id="100", merged_pr_number=99)
 
     _create_learn_pr_impl(ctx, state=state)
 
@@ -264,7 +264,7 @@ def test_skips_when_plan_not_found(tmp_path: Path) -> None:
         cwd=tmp_path,
     )
     # plan_id "999" has no PR configured in FakeGitHub
-    state = _land_state(tmp_path, plan_id="999", merged_pr_number=99)
+    state = _land_state(tmp_path, pr_id="999", merged_pr_number=99)
 
     _create_learn_pr_impl(ctx, state=state)
 
@@ -294,7 +294,7 @@ def test_skips_when_no_xml_files_and_no_sessions(
         time=fake_time,
         cwd=tmp_path,
     )
-    state = _land_state(tmp_path, plan_id="100", merged_pr_number=42)
+    state = _land_state(tmp_path, pr_id="100", merged_pr_number=42)
 
     _create_learn_pr_impl(ctx, state=state)
 
@@ -333,7 +333,7 @@ def test_skips_when_sessions_exist_but_no_xml_extracted(
         time=fake_time,
         cwd=tmp_path,
     )
-    state = _land_state(tmp_path, plan_id="100", merged_pr_number=42)
+    state = _land_state(tmp_path, pr_id="100", merged_pr_number=42)
 
     # Patch _log_session_discovery to return empty xml_files
     # even though sessions exist (simulating extraction failure)
@@ -399,7 +399,7 @@ def test_creates_pr_and_shows_success(
         time=fake_time,
         cwd=tmp_path,
     )
-    state = _land_state(tmp_path, plan_id="100", merged_pr_number=42)
+    state = _land_state(tmp_path, pr_id="100", merged_pr_number=42)
 
     # Patch _log_session_discovery to return non-empty xml_files
     # so the early-return guard is not triggered
@@ -450,7 +450,7 @@ def test_skips_when_no_sessions_discovered(
         time=fake_time,
         cwd=tmp_path,
     )
-    state = _land_state(tmp_path, plan_id="100", merged_pr_number=42)
+    state = _land_state(tmp_path, pr_id="100", merged_pr_number=42)
 
     _create_learn_pr_impl(ctx, state=state)
 
@@ -822,7 +822,7 @@ def test_log_session_summary_from_manifest_shows_per_file_sizes(
         ".erk/impl-context/sessions/impl-aaaa1111-part2.xml": "x" * 68_000,
     }
 
-    _log_session_summary_from_manifest(manifest, xml_files=xml_files, plan_id="8953")
+    _log_session_summary_from_manifest(manifest, xml_files=xml_files, pr_id="8953")
 
     captured = capsys.readouterr()
     # Manifest source line
@@ -844,7 +844,7 @@ def test_log_session_summary_from_manifest_empty_sessions(
     """No output when manifest has no sessions."""
     manifest: dict = {"sessions": []}
 
-    _log_session_summary_from_manifest(manifest, xml_files={}, plan_id="100")
+    _log_session_summary_from_manifest(manifest, xml_files={}, pr_id="100")
 
     captured = capsys.readouterr()
     assert captured.err == ""
@@ -946,9 +946,7 @@ def test_fetch_xmls_returns_empty_when_no_branch(tmp_path: Path) -> None:
     """Returns empty dict and None manifest when planned-pr-context branch does not exist."""
     fake_git = FakeGit(trunk_branches={tmp_path: "main"})
 
-    xml_files, manifest = _fetch_xmls_from_context_branch(
-        fake_git, repo_root=tmp_path, plan_id="100"
-    )
+    xml_files, manifest = _fetch_xmls_from_context_branch(fake_git, repo_root=tmp_path, pr_id="100")
 
     assert xml_files == {}
     assert manifest is None
@@ -976,9 +974,7 @@ def test_fetch_xmls_returns_xml_content_from_manifest(tmp_path: Path) -> None:
         },
     )
 
-    xml_files, manifest = _fetch_xmls_from_context_branch(
-        fake_git, repo_root=tmp_path, plan_id="100"
-    )
+    xml_files, manifest = _fetch_xmls_from_context_branch(fake_git, repo_root=tmp_path, pr_id="100")
 
     assert len(xml_files) == 1
     path = ".erk/impl-context/sessions/impl-aaaa1111.xml"
@@ -995,9 +991,7 @@ def test_fetch_xmls_returns_empty_when_manifest_missing(tmp_path: Path) -> None:
         remote_branches={tmp_path: ["origin/planned-pr-context/100"]},
     )
 
-    xml_files, manifest = _fetch_xmls_from_context_branch(
-        fake_git, repo_root=tmp_path, plan_id="100"
-    )
+    xml_files, manifest = _fetch_xmls_from_context_branch(fake_git, repo_root=tmp_path, pr_id="100")
 
     assert xml_files == {}
     assert manifest is None
@@ -1033,9 +1027,7 @@ def test_fetch_xmls_handles_multiple_sessions(tmp_path: Path) -> None:
         },
     )
 
-    xml_files, manifest = _fetch_xmls_from_context_branch(
-        fake_git, repo_root=tmp_path, plan_id="200"
-    )
+    xml_files, manifest = _fetch_xmls_from_context_branch(fake_git, repo_root=tmp_path, pr_id="200")
 
     assert len(xml_files) == 3
     assert ".erk/impl-context/sessions/impl-aaaa1111.xml" in xml_files
@@ -1097,7 +1089,7 @@ def test_fetches_from_context_branch_when_local_not_found(
         time=fake_time,
         cwd=tmp_path,
     )
-    state = _land_state(tmp_path, plan_id="100", merged_pr_number=42)
+    state = _land_state(tmp_path, pr_id="100", merged_pr_number=42)
 
     # Patch _log_session_discovery to return empty (simulating no local sessions)
     # but ensure all_session_ids is non-empty so the fallback triggers
@@ -1158,7 +1150,7 @@ def test_skips_when_context_branch_not_found(
         time=fake_time,
         cwd=tmp_path,
     )
-    state = _land_state(tmp_path, plan_id="100", merged_pr_number=42)
+    state = _land_state(tmp_path, pr_id="100", merged_pr_number=42)
 
     # Sessions exist but no local XML
     sessions_with_ids = _make_sessions(

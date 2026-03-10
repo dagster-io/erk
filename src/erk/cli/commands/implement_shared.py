@@ -408,40 +408,40 @@ class TargetInfo(NamedTuple):
     """Information about detected target type.
 
     Attributes:
-        target_type: Type of target - "plan_number", "plan_url", or "file_path"
-        plan_number: Extracted plan number for GitHub targets, None for file paths
+        target_type: Type of target - "pr_number", "pr_url", or "file_path"
+        pr_number: Extracted PR number for GitHub targets, None for file paths
     """
 
     target_type: str
-    plan_number: str | None
+    pr_number: str | None
 
 
 def detect_target_type(target: str) -> TargetInfo:
-    """Detect whether target is a plan number, plan URL, or file path.
+    """Detect whether target is a PR number, PR URL, or file path.
 
     Args:
         target: User-provided target argument
 
     Returns:
-        TargetInfo with target type and extracted plan number (if applicable)
+        TargetInfo with target type and extracted PR number (if applicable)
     """
-    # Check if starts with # followed by digits (plan number)
+    # Check if starts with # followed by digits (PR number)
     if target.startswith("#") and target[1:].isdigit():
-        return TargetInfo(target_type="plan_number", plan_number=target[1:])
+        return TargetInfo(target_type="pr_number", pr_number=target[1:])
 
     # Check if GitHub issue URL
     github_issue_pattern = r"github\.com/[^/]+/[^/]+/issues/(\d+)"
     match = re.search(github_issue_pattern, target)
     if match:
-        plan_number = match.group(1)
-        return TargetInfo(target_type="plan_url", plan_number=plan_number)
+        pr_number = match.group(1)
+        return TargetInfo(target_type="pr_url", pr_number=pr_number)
 
-    # Check if plain digits (plan number without # prefix)
+    # Check if plain digits (PR number without # prefix)
     if target.isdigit():
-        return TargetInfo(target_type="plan_number", plan_number=target)
+        return TargetInfo(target_type="pr_number", pr_number=target)
 
     # Otherwise, treat as file path
-    return TargetInfo(target_type="file_path", plan_number=None)
+    return TargetInfo(target_type="file_path", pr_number=None)
 
 
 def extract_plan_from_current_branch(ctx: ErkContext) -> str | None:
