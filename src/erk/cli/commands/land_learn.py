@@ -49,24 +49,24 @@ def _fetch_xmls_from_context_branch(
     git: Git,
     *,
     repo_root: Path,
-    plan_id: str,
+    pr_id: str,
 ) -> tuple[dict[str, str], dict | None]:
     """Fetch preprocessed session XMLs from the planned-pr-context branch.
 
-    Remote implementations upload session data to planned-pr-context/{plan_id} branches.
+    Remote implementations upload session data to planned-pr-context/{pr_id} branches.
     This function fetches the manifest and downloads each XML file, returning
     them as a dict suitable for embedding in a learn plan PR.
 
     Args:
         git: Git gateway instance.
         repo_root: Repository root path.
-        plan_id: Plan identifier string.
+        pr_id: PR identifier string.
 
     Returns:
         Tuple of (xml_files, manifest). xml_files is empty and manifest is None
         if branch not found or manifest is missing.
     """
-    session_branch = f"planned-pr-context/{plan_id}"
+    session_branch = f"planned-pr-context/{pr_id}"
 
     if not git.branch.branch_exists_on_remote(repo_root, "origin", session_branch):
         return {}, None
@@ -104,7 +104,7 @@ def _log_session_summary_from_manifest(
     manifest: dict,
     *,
     xml_files: dict[str, str],
-    plan_id: str,
+    pr_id: str,
 ) -> None:
     """Print session summary from manifest metadata with per-file sizes."""
     sessions = manifest.get("sessions", [])
@@ -149,7 +149,7 @@ def _log_session_summary_from_manifest(
             table.add_row(padded_content, "", "", "", "", "")
 
     user_output(
-        f"  Manifest: planned-pr-context/{plan_id}"
+        f"  Manifest: planned-pr-context/{pr_id}"
         f" :: .erk/sessions/manifest.json ({len(sessions)} session(s))"
     )
     console = Console(stderr=True, force_terminal=True)
@@ -168,7 +168,7 @@ def _collect_session_material(
     ctx: ErkContext,
     *,
     repo_root: Path,
-    plan_id: str,
+    pr_id: str,
 ) -> tuple[list[str], dict[str, str]] | None:
     """Fetch session material from planned-pr-context branch.
 
@@ -176,23 +176,23 @@ def _collect_session_material(
     """
     # Primary path: fetch from planned-pr-context branch
     xml_files, manifest = _fetch_xmls_from_context_branch(
-        ctx.git, repo_root=repo_root, plan_id=plan_id
+        ctx.git, repo_root=repo_root, pr_id=pr_id
     )
 
     if xml_files:
         if manifest is not None:
-            _log_session_summary_from_manifest(manifest, xml_files=xml_files, plan_id=plan_id)
+            _log_session_summary_from_manifest(manifest, xml_files=xml_files, pr_id=pr_id)
             all_session_ids = _extract_session_ids_from_manifest(manifest)
         else:
             all_session_ids = []
         user_output(
             click.style("\u2713", fg="green")
-            + f" Fetched {len(xml_files)} file(s) from planned-pr-context/{plan_id}"
+            + f" Fetched {len(xml_files)} file(s) from planned-pr-context/{pr_id}"
         )
         return all_session_ids, xml_files
 
     # Deprecated fallback: try local JSONL reprocessing
-    sessions = ctx.plan_backend.find_sessions_for_plan(repo_root, plan_id)
+    sessions = ctx.plan_backend.find_sessions_for_plan(repo_root, pr_id)
     all_session_ids = sessions.all_session_ids()
     xml_files = _log_session_discovery(ctx, sessions=sessions, all_session_ids=all_session_ids)
     if xml_files:
@@ -205,7 +205,7 @@ def _collect_session_material(
         detail = " (sessions found but no XML could be extracted)"
     user_output(
         click.style("\u2139", fg="blue")
-        + f" Skipping learn plan for #{plan_id}: no session material found"
+        + f" Skipping learn plan for #{pr_id}: no session material found"
         + detail
     )
     return None
@@ -215,7 +215,7 @@ def _create_learn_pr_core(
     ctx: ErkContext,
     *,
     repo_root: Path,
-    plan_id: str,
+    pr_id: str,
     merged_pr_number: int,
     cwd: Path,
 ) -> None:
@@ -225,14 +225,14 @@ def _create_learn_pr_core(
     Shared by both the merged-branch and land-pipeline callers.
     """
     # Fetch plan to check labels — skip learn plans (cycle prevention)
-    plan_result = ctx.plan_store.get_plan(repo_root, plan_id)
+    plan_result = ctx.plan_store.get_plan(repo_root, pr_id)
     if isinstance(plan_result, PlanNotFound):
         return
     if "erk-learn" in plan_result.labels:
         return
 
     # Collect session material (context branch first, local fallback)
-    result = _collect_session_material(ctx, repo_root=repo_root, plan_id=plan_id)
+    result = _collect_session_material(ctx, repo_root=repo_root, pr_id=pr_id)
     if result is None:
         return
     all_session_ids, xml_files = result
@@ -242,7 +242,7 @@ def _create_learn_pr_core(
     session_section = "\n".join(session_lines)
     plan_content = (
         f"# Learn: {plan_result.title}\n\n"
-        f"Source plan: #{plan_id}\n"
+        f"Source plan: #{pr_id}\n"
         f"Merged PR: #{merged_pr_number}\n\n"
         f"## Sessions\n\n{session_section}"
     )
@@ -275,7 +275,7 @@ def _create_learn_pr_core(
         objective_id=None,
         created_from_session=None,
         created_from_workflow_run_url=None,
-        learned_from_issue=int(plan_id),
+        learned_from_issue=int(pr_id),
         summary=summary,
         extra_files=xml_files or None,
     )
@@ -283,7 +283,7 @@ def _create_learn_pr_core(
     if pr_result.success:
         user_output(
             click.style("\u2713", fg="green")
-            + f" Created learn plan #{pr_result.pr_number} for plan #{plan_id}"
+            + f" Created learn plan #{pr_result.pr_number} for plan #{pr_id}"
         )
         if pr_result.pr_url:
             user_output(f"  {pr_result.pr_url}")
@@ -299,7 +299,7 @@ def _create_learn_pr_core(
 def _create_learn_pr_for_merged_branch(
     ctx: ErkContext,
     *,
-    plan_id: str,
+    pr_id: str,
     merged_pr_number: int,
     main_repo_root: Path,
     cwd: Path,
@@ -317,7 +317,7 @@ def _create_learn_pr_for_merged_branch(
     _create_learn_pr_core(
         ctx,
         repo_root=main_repo_root,
-        plan_id=plan_id,
+        pr_id=pr_id,
         merged_pr_number=merged_pr_number,
         cwd=cwd,
     )
@@ -433,9 +433,9 @@ def _create_learn_pr_with_sessions(
 
     Args:
         ctx: ErkContext
-        state: LandState with plan_id and merged_pr_number populated
+        state: LandState with pr_id and merged_pr_number populated
     """
-    if state.plan_id is None or state.merged_pr_number is None:
+    if state.pr_id is None or state.merged_pr_number is None:
         return
 
     try:
@@ -605,8 +605,8 @@ def _create_learn_pr_impl(
 
     Thin wrapper around _create_learn_pr_core that extracts params from LandState.
     """
-    plan_id = state.plan_id
-    if plan_id is None:
+    pr_id = state.pr_id
+    if pr_id is None:
         return
 
     if state.merged_pr_number is None:
@@ -618,7 +618,7 @@ def _create_learn_pr_impl(
     _create_learn_pr_core(
         ctx,
         repo_root=state.main_repo_root,
-        plan_id=plan_id,
+        pr_id=pr_id,
         merged_pr_number=state.merged_pr_number,
         cwd=state.cwd,
     )

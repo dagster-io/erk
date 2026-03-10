@@ -415,12 +415,12 @@ def format_worktree_line(
 
 
 def format_plan_display(
-    *, plan_identifier: str, state: str, title: str, labels: list[str], url: str | None = None
+    *, pr_identifier: str, state: str, title: str, labels: list[str], url: str | None = None
 ) -> str:
     """Format a plan for display in lists.
 
     Args:
-        plan_identifier: Plan identifier (e.g., "42", "PROJ-123")
+        pr_identifier: PR identifier (e.g., "42", "PROJ-123")
         state: Plan state ("OPEN" or "CLOSED")
         title: Plan title
         labels: List of label names
@@ -434,7 +434,7 @@ def format_plan_display(
     state_str = click.style(state, fg=state_color)
 
     # Format identifier
-    id_text = f"#{plan_identifier}"
+    id_text = f"#{pr_identifier}"
 
     # If we have a URL, make it clickable using OSC 8
     if url:

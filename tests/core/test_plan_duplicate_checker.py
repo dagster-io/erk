@@ -61,7 +61,7 @@ def test_duplicate_detected() -> None:
 
     assert result.has_duplicates is True
     assert len(result.matches) == 1
-    assert result.matches[0].plan_id == "100"
+    assert result.matches[0].pr_id == "100"
     assert result.matches[0].title == "Dark mode support"
     assert result.matches[0].url == "https://github.com/owner/repo/issues/100"
     assert result.matches[0].explanation == "Both plans add dark mode support"
@@ -182,7 +182,7 @@ def test_json_wrapped_in_code_fence() -> None:
 
     assert result.has_duplicates is True
     assert len(result.matches) == 1
-    assert result.matches[0].plan_id == "100"
+    assert result.matches[0].pr_id == "100"
 
 
 def test_code_fence_with_trailing_text() -> None:
@@ -229,7 +229,7 @@ def test_code_fence_with_trailing_text_and_duplicate() -> None:
 
     assert result.has_duplicates is True
     assert len(result.matches) == 1
-    assert result.matches[0].plan_id == "100"
+    assert result.matches[0].pr_id == "100"
     assert result.error is None
 
 
@@ -255,5 +255,5 @@ def test_multiple_duplicates() -> None:
 
     assert result.has_duplicates is True
     assert len(result.matches) == 2
-    assert result.matches[0].plan_id == "100"
-    assert result.matches[1].plan_id == "200"
+    assert result.matches[0].pr_id == "100"
+    assert result.matches[1].pr_id == "200"

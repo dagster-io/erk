@@ -126,7 +126,7 @@ def _display_candidates(candidates: list[ReconcileBranchInfo], *, dry_run: bool)
             info.branch,
             f"#{info.pr_number}",
             info.pr_title or "",
-            f"#{info.plan_id}" if info.plan_id else "-",
+            f"#{info.pr_id}" if info.pr_id else "-",
             f"#{info.objective_number}" if info.objective_number else "-",
             str(info.worktree_path) if info.worktree_path else "-",
         )

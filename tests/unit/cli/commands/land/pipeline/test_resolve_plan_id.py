@@ -6,7 +6,7 @@ from pathlib import Path
 from erk.cli.commands.land_pipeline import (
     LandError,
     LandState,
-    resolve_plan_id,
+    resolve_pr_id,
 )
 from erk_shared.gateway.github.types import PRDetails
 from erk_shared.plan_store.planned_pr import PlannedPRBackend
@@ -59,7 +59,7 @@ def _validation_state(tmp_path: Path, *, branch: str) -> LandState:
         use_graphite=False,
         target_child_branch=None,
         objective_number=None,
-        plan_id=None,
+        pr_id=None,
         cleanup_confirmed=False,
         merged_pr_number=None,
     )
@@ -83,14 +83,14 @@ def test_sets_plan_id_when_branch_has_plan(tmp_path: Path) -> None:
     )
 
     state = _validation_state(tmp_path, branch=branch)
-    result = resolve_plan_id(ctx, state)
+    result = resolve_pr_id(ctx, state)
 
     assert not isinstance(result, LandError)
-    assert result.plan_id == "200"
+    assert result.pr_id == "200"
 
 
-def test_sets_plan_id_none_when_no_plan(tmp_path: Path) -> None:
-    """Branch has no PR → plan_id is None."""
+def test_sets_pr_id_none_when_no_plan(tmp_path: Path) -> None:
+    """Branch has no PR → pr_id is None."""
     fake_issues = FakeGitHubIssues(username="testuser")
     fake_github = FakeLocalGitHub(issues_gateway=fake_issues)
     fake_time = FakeTime()
@@ -104,7 +104,7 @@ def test_sets_plan_id_none_when_no_plan(tmp_path: Path) -> None:
     )
 
     state = _validation_state(tmp_path, branch="no-pr-branch")
-    result = resolve_plan_id(ctx, state)
+    result = resolve_pr_id(ctx, state)
 
     assert not isinstance(result, LandError)
-    assert result.plan_id is None
+    assert result.pr_id is None

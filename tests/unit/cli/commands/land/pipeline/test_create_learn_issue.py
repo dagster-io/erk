@@ -23,7 +23,7 @@ from tests.test_utils.test_context import context_for_test
 def _execution_state(
     tmp_path: Path,
     *,
-    plan_id: str | None = None,
+    pr_id: str | None = None,
     merged_pr_number: int | None = None,
 ) -> LandState:
     """Create LandState as if in execution pipeline."""
@@ -47,7 +47,7 @@ def _execution_state(
         use_graphite=False,
         target_child_branch=None,
         objective_number=None,
-        plan_id=plan_id,
+        pr_id=pr_id,
         cleanup_confirmed=True,
         merged_pr_number=merged_pr_number,
     )
@@ -58,7 +58,7 @@ def test_returns_state_unchanged_when_plan_id_none(tmp_path: Path) -> None:
     fake_issues = FakeGitHubIssues(username="testuser")
     fake_github = FakeLocalGitHub(issues_gateway=fake_issues)
     ctx = context_for_test(github=fake_github, issues=fake_issues, cwd=tmp_path)
-    state = _execution_state(tmp_path, plan_id=None, merged_pr_number=99)
+    state = _execution_state(tmp_path, pr_id=None, merged_pr_number=99)
 
     result = create_learn_pr(ctx, state)
 
@@ -72,7 +72,7 @@ def test_returns_state_unchanged_when_merged_pr_none(tmp_path: Path) -> None:
     fake_issues = FakeGitHubIssues(username="testuser")
     fake_github = FakeLocalGitHub(issues_gateway=fake_issues)
     ctx = context_for_test(github=fake_github, issues=fake_issues, cwd=tmp_path)
-    state = _execution_state(tmp_path, plan_id="100", merged_pr_number=None)
+    state = _execution_state(tmp_path, pr_id="100", merged_pr_number=None)
 
     result = create_learn_pr(ctx, state)
 
@@ -123,7 +123,7 @@ def test_returns_state_after_creating_pr(
         time=fake_time,
         cwd=tmp_path,
     )
-    state = _execution_state(tmp_path, plan_id="100", merged_pr_number=42)
+    state = _execution_state(tmp_path, pr_id="100", merged_pr_number=42)
 
     # Patch _log_session_discovery to return non-empty xml_files
     # so the skip-empty-sessions guard is not triggered

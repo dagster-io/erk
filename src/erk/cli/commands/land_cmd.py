@@ -932,7 +932,7 @@ def _execute_land_directly(
     main_repo_root = repo.main_repo_root if repo.main_repo_root else repo.root
 
     # Capture plan context BEFORE execution pipeline (which deletes the branch)
-    plan_id = ctx.plan_backend.resolve_plan_id_for_branch(main_repo_root, branch)
+    pr_id = ctx.plan_backend.resolve_plan_id_for_branch(main_repo_root, branch)
     objective_number = get_objective_for_branch(ctx, main_repo_root, branch)
 
     # Build execution state and run the pipeline directly
@@ -948,7 +948,7 @@ def _execute_land_directly(
         no_cleanup=not cleanup_confirmed,
         script=script,
         target_child_branch=None,
-        plan_id=plan_id,
+        pr_id=pr_id,
         skip_learn=skip_learn,
     )
 
@@ -1051,7 +1051,7 @@ def _land_target(
     branch = target.branch
 
     # Step 1: Look up plan and objective for branch (needed for script generation)
-    plan_id = ctx.plan_backend.resolve_plan_id_for_branch(main_repo_root, branch)
+    pr_id = ctx.plan_backend.resolve_plan_id_for_branch(main_repo_root, branch)
     objective_number = get_objective_for_branch(ctx, main_repo_root, branch)
 
     # Step 2: Look up slot assignment (needed for dry-run output)
@@ -1095,7 +1095,7 @@ def _land_target(
         worktree_path=worktree_path,
         is_current_branch=target.is_current_branch,
         objective_number=objective_number,
-        plan_number=int(plan_id) if plan_id is not None else None,
+        plan_number=int(pr_id) if pr_id is not None else None,
         use_graphite=target.use_graphite,
         skip_learn=skip_learn,
         cleanup_confirmed=cleanup_confirmed,
@@ -1463,7 +1463,7 @@ def _execute_land(
         no_cleanup=no_cleanup,
         script=script,
         target_child_branch=target_child_branch,
-        plan_id=str(plan_number) if plan_number is not None else None,
+        pr_id=str(plan_number) if plan_number is not None else None,
         skip_learn=skip_learn,
     )
 

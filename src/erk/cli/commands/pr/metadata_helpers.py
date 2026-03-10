@@ -40,15 +40,15 @@ def write_dispatch_metadata(
         raise RuntimeError(f"Could not get node_id for run {run_id}")
 
     # LBYL: Check plan exists before updating metadata
-    plan_id = str(plan_number)
-    plan_result = plan_backend.get_plan(repo_root, plan_id)
+    pr_id = str(plan_number)
+    plan_result = plan_backend.get_plan(repo_root, pr_id)
     if isinstance(plan_result, PlanNotFound):
         raise RuntimeError(f"Plan #{plan_number} not found")
 
-    plan_backend.ensure_plan_header(repo_root, plan_id)
+    plan_backend.ensure_plan_header(repo_root, pr_id)
     plan_backend.update_metadata(
         repo_root,
-        plan_id,
+        pr_id,
         {
             "last_dispatched_run_id": run_id,
             "last_dispatched_node_id": node_id,
@@ -82,18 +82,18 @@ def maybe_update_plan_dispatch_metadata(
         branch_name: Branch name to extract issue number from
         run_id: Workflow run ID from trigger response
     """
-    plan_id = ctx.plan_backend.resolve_plan_id_for_branch(repo.root, branch_name)
-    if plan_id is None:
+    pr_id = ctx.plan_backend.resolve_plan_id_for_branch(repo.root, branch_name)
+    if pr_id is None:
         return
 
     node_id = ctx.github.get_workflow_run_node_id(repo.root, run_id)
     if node_id is None:
         return
 
-    ctx.plan_backend.ensure_plan_header(repo.root, plan_id)
+    ctx.plan_backend.ensure_plan_header(repo.root, pr_id)
     ctx.plan_backend.update_metadata(
         repo.root,
-        plan_id,
+        pr_id,
         {
             "last_dispatched_run_id": run_id,
             "last_dispatched_node_id": node_id,
@@ -101,5 +101,5 @@ def maybe_update_plan_dispatch_metadata(
         },
     )
     user_output(
-        click.style("\u2713", fg="green") + f" Updated dispatch metadata on plan #{plan_id}"
+        click.style("\u2713", fg="green") + f" Updated dispatch metadata on plan #{pr_id}"
     )

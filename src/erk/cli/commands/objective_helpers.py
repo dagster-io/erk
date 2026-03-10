@@ -31,13 +31,13 @@ def check_and_display_plan_issue_closure(
     Returns the plan issue number if found, None otherwise.
     This is fail-open: returns None silently if the issue doesn't exist.
     """
-    plan_id = ctx.plan_backend.resolve_plan_id_for_branch(repo_root, branch)
-    if plan_id is None:
+    pr_id = ctx.plan_backend.resolve_plan_id_for_branch(repo_root, branch)
+    if pr_id is None:
         return None
 
-    plan_number = int(plan_id)
+    plan_number = int(pr_id)
 
-    result = ctx.plan_store.get_plan(repo_root, plan_id)
+    result = ctx.plan_store.get_plan(repo_root, pr_id)
     if isinstance(result, PlanNotFound):
         logger.debug("Plan #%d not found, skipping closure check", plan_number)
         return None
@@ -47,7 +47,7 @@ def check_and_display_plan_issue_closure(
         return plan_number
 
     # Issue is open — close it directly (no more "Closes #N" auto-close)
-    ctx.plan_store.close_plan(repo_root, plan_id)
+    ctx.plan_store.close_plan(repo_root, pr_id)
     user_output(click.style("✓", fg="green") + f" Closed plan #{plan_number}")
 
     return plan_number

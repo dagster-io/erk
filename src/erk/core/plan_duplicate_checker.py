@@ -44,7 +44,7 @@ _MAX_EXISTING_PLAN_BODY_CHARS = 500
 class DuplicateMatch:
     """A single duplicate match between new and existing plan."""
 
-    plan_id: str
+    pr_id: str
     title: str
     url: str
     explanation: str
@@ -177,7 +177,7 @@ def _parse_response(
             plan = plan_map[plan_id]
             matches.append(
                 DuplicateMatch(
-                    plan_id=plan_id,
+                    pr_id=plan_id,
                     title=plan.title,
                     url=plan.url,
                     explanation=explanation,
