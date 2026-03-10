@@ -55,7 +55,10 @@ class TestAssemblePrPrompt:
         assert "gh pr diff 123" in prompt
         assert "post-pr-inline-comment" in prompt
         assert "post-or-update-pr-summary" in prompt
+        assert "get-review-activity-log" in prompt
         assert "Activity Log" in prompt
+        # Must NOT contain the old raw jq pipeline
+        assert "gh pr view" not in prompt
 
     def test_prompt_includes_review_name_in_inline_comment_format(self) -> None:
         """Prompt includes review name in inline comment format."""

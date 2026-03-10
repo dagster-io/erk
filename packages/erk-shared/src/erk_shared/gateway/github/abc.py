@@ -693,6 +693,28 @@ class LocalGitHub(ABC):
         ...
 
     @abstractmethod
+    def get_pr_comment_body_by_marker(
+        self,
+        repo_root: Path,
+        pr_number: int,
+        marker: str,
+    ) -> str | None:
+        """Return body of first PR comment containing marker, or None.
+
+        Uses the same comment search as find_pr_comment_by_marker but
+        returns the full comment body text instead of the comment ID.
+
+        Args:
+            repo_root: Repository root (for gh CLI context)
+            pr_number: PR number to search comments in
+            marker: String to search for in comment body
+
+        Returns:
+            Comment body text if found, None otherwise
+        """
+        ...
+
+    @abstractmethod
     def find_pr_comment_by_marker(
         self,
         repo_root: Path,

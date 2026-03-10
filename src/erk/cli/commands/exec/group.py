@@ -61,6 +61,9 @@ from erk.cli.commands.exec.scripts.get_plans_for_objective import (
 )
 from erk.cli.commands.exec.scripts.get_pr_body_footer import get_pr_body_footer
 from erk.cli.commands.exec.scripts.get_pr_commits import get_pr_commits
+from erk.cli.commands.exec.scripts.get_review_activity_log import (
+    get_review_activity_log,
+)
 from erk.cli.commands.exec.scripts.get_pr_context import get_pr_context
 from erk.cli.commands.exec.scripts.get_pr_discussion_comments import (
     get_pr_discussion_comments,
@@ -225,6 +228,7 @@ exec_group.add_command(get_pr_commits, name="get-pr-commits")
 exec_group.add_command(get_pr_discussion_comments, name="get-pr-discussion-comments")
 exec_group.add_command(get_pr_feedback, name="get-pr-feedback")
 exec_group.add_command(get_pr_review_comments, name="get-pr-review-comments")
+exec_group.add_command(get_review_activity_log, name="get-review-activity-log")
 exec_group.add_command(incremental_dispatch, name="incremental-dispatch")
 exec_group.add_command(impl_init, name="impl-init")
 exec_group.add_command(impl_signal, name="impl-signal")

@@ -1028,6 +1028,21 @@ class FakeLocalGitHub(LocalGitHub):
         """
         return self._pr_review_comments
 
+    def get_pr_comment_body_by_marker(
+        self,
+        repo_root: Path,
+        pr_number: int,
+        marker: str,
+    ) -> str | None:
+        """Return body of first PR comment containing marker, or None.
+
+        Searches _pr_comments for a comment on the given PR containing the marker.
+        """
+        for stored_pr, body in self._pr_comments:
+            if stored_pr == pr_number and marker in body:
+                return body
+        return None
+
     def find_pr_comment_by_marker(
         self,
         repo_root: Path,

@@ -314,6 +314,15 @@ class DryRunLocalGitHub(LocalGitHub):
         """
         return 1234567890
 
+    def get_pr_comment_body_by_marker(
+        self,
+        repo_root: Path,
+        pr_number: int,
+        marker: str,
+    ) -> str | None:
+        """Delegate read operation to wrapped implementation."""
+        return self._wrapped.get_pr_comment_body_by_marker(repo_root, pr_number, marker)
+
     def find_pr_comment_by_marker(
         self,
         repo_root: Path,
