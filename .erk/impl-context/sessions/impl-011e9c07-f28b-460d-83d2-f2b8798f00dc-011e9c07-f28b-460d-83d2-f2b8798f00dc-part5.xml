@@ -1,0 +1,799 @@
+<session>
+  <meta source="agent-a99ca2b" />
+  <meta branch="plnd/add-run-cancel-retry-03-10-0757" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>Find test files for:
+1. CLI commands under `tests/` for `run` commands (e.g., tests for list_cmd.py or logs_cmd.py)
+2. TUI command availability tests (tests for the command registry/palette)
+
+Search in /home/runner/work/erk/erk/tests/
+
+FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant docs before exploring raw files. Then explore codebase as necessary.
+
+Report the file paths and the key patterns used (how tests are structured, what fixtures they use).</user>
+  <assistant>I'll help you find test files for CLI commands and TUI command availability. Let me start by checking the documentation first, then explore the codebase.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="19000" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 19000, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Juc3mHnHUEyGteYpCF8djJ">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/index.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="19000" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 19000, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_013RDsdyTRKV1TJHdo3HjBm3">
+    <param name="pattern">**/tests/**</param>
+    <param name="path">/home/runner/work/erk/erk</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="19000" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 19000, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Juc3mHnHUEyGteYpCF8djJ">
+     1→&lt;!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY --&gt;
+     2→&lt;!-- Edit source frontmatter, then run 'erk docs sync' to regenerate. --&gt;
+     3→
+     4→# Agent Documentation
+     5→
+     6→Before starting work, scan the read-when conditions below.
+     7→If your current task matches, read the linked document **before writing code**.
+     8→
+     9→## Categories
+    10→
+    11→- [architecture/](architecture/) — Explore when working on core patterns (dry-run, gateways, subprocess, shell integration). Add docs here for cross-cutting technical patterns.
+    12→- [capabilities/](capabilities/)
+    13→- [changelog/](changelog/)
+    14→- [checklists/](checklists/)
+    15→- [ci/](ci/)
+    16→- [claude-code/](claude-code/)
+    17→- [cli/](cli/) — Explore when building CLI commands or output formatting. Add docs here for Click patterns and terminal UX.
+    18→- [commands/](commands/) — Explore when creating or optimizing slash commands. Add docs here for command authoring patterns.
+    19→- [config/](config/)
+    20→- [configuration/](configuration/)
+    21→- [documentation/](documentation/) — Explore when structuring or writing documentation. Add docs here for documentation methodology and best practices.
+    22→- [erk/](erk/) — Explore when working with erk-specific workflows (worktrees, PR sync, Graphite). Add docs here for erk user-facing features.
+    23→- [erk-dev/](erk-dev/)
+    24→- [gateway/](gateway/)
+    25→- [hooks/](hooks/) — Explore when creating or debugging hooks. Add docs here for hook development patterns.
+    26→- [integrations/](integrations/)
+    27→- [objectives/](objectives/)
+    28→- [planning/](planning/) — Explore when working with plans, .erk/impl-context/ folders, or agent delegation. Add docs here for planning workflow patterns.
+    29→- [pr-operations/](pr-operations/)
+    30→- [refactoring/](refactoring/)
+
+... [22 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_013RDsdyTRKV1TJHdo3HjBm3">
+/home/runner/work/erk/erk/packages/erk-dev/tests/test_bump_version.py
+/home/runner/work/erk/erk/packages/erk-dev/tests/test_completion.py
+/home/runner/work/erk/erk/packages/erk-dev/tests/test_create_agents_symlinks.py
+/home/runner/work/erk/erk/packages/erk-dev/tests/test_release_update.py
+/home/runner/work/erk/erk/packages/erk-dev/tests/unit/__init__.py
+/home/runner/work/erk/erk/packages/erk-dev/tests/test_reserve_pypi_name.py
+/home/runner/work/erk/erk/packages/erk-dev/tests/test_changelog_commits.py
+/home/runner/work/erk/erk/packages/erk-dev/tests/test_commands.py
+/home/runner/work/erk/erk/packages/erk-dev/tests/test_changelog_format.py
+/home/runner/work/erk/erk/packages/erk-dev/tests/test_release_check.py
+/home/runner/work/erk/erk/packages/erk-dev/tests/test_release_tag.py
+/home/runner/work/erk/erk/packages/erk-dev/tests/test_release_info.py
+/home/runner/work/erk/erk/packages/erk-dev/tests/unit/exec_reference/__init__.py
+/home/runner/work/erk/erk/packages/erk-dev/tests/unit/exec_reference/test_generate.py
+/home/runner/work/erk/erk/packages/erk-mcp/tests/test_main.py
+/home/runner/work/erk/erk/packages/erk-mcp/tests/test_server.py
+/home/runner/work/erk/erk/packages/erk-shared/tests/__init__.py
+/home/runner/work/erk/erk/packages/erk-shared/tests/integration/__init__.py
+/home/runner/work/erk/erk/packages/erk-shared/tests/integration/git/__init__.py
+/home/runner/work/erk/erk/packages/erk-shared/tests/unit/__init__.py
+/home/runner/work/erk/erk/packages/erk-shared/tests/integration/git/test_real_divergence.py
+/home/runner/work/erk/erk/packages/erk-shared/tests/unit/agentclick/__init__.py
+/home/runner/work/erk/erk/packages/erk-shared/tests/unit/branch_manager/__init__.py
+/home/runner/work/erk/erk/packages/erk-shared/tests/unit/agentclick/test_json_schema.py
+/home/runner/work/erk/erk/packages/erk-shared/tests/unit/agentclick/test_json_command.py
+/home/runner/work/erk/erk/packages/erk-shared/tests/unit/branch_manager/test_graphite_branch_manager.py
+/home/runner/work/erk/erk/packages/erk-shared/tests/unit/config/__init__.py
+/home/runner/work/erk/erk/packages/erk-shared/tests/unit/config/test_schema.py
+/home/runner/work/erk/erk/packages/erk-shared/tests/unit/core/__init__.py
+/home/runner/work/erk/erk/packages/erk-shared/tests/unit/gateway/__init__.py
+
+... [71 lines omitted] ...
+
+/home/runner/work/erk/erk/packages/erk-shared/tests/unit/github/test_transient_errors.py
+  </tool_result>
+  <assistant>Now let me check the testing documentation to understand the test patterns used in this project:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="4633" cache_read_input_tokens="19000" cache_creation="{'ephemeral_5m_input_tokens': 4633, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01TJJBUW1KVNqJaS2mkUZH94">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/testing</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="4633" cache_read_input_tokens="19000" cache_creation="{'ephemeral_5m_input_tokens': 4633, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_011PZdRWmDWvTAqxJ4rySS4t">
+    <param name="pattern">tests/**/*cmd*.py</param>
+    <param name="path">/home/runner/work/erk/erk</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="4633" cache_read_input_tokens="19000" cache_creation="{'ephemeral_5m_input_tokens': 4633, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01TJJBUW1KVNqJaS2mkUZH94">
+EISDIR: illegal operation on a directory, read
+  </tool_result>
+  <tool_result tool="toolu_011PZdRWmDWvTAqxJ4rySS4t">
+/home/runner/work/erk/erk/tests/commands/branch/test_delete_cmd.py
+/home/runner/work/erk/erk/tests/commands/branch/test_checkout_cmd.py
+/home/runner/work/erk/erk/tests/commands/launch/test_launch_cmd.py
+/home/runner/work/erk/erk/tests/commands/pr/test_address_remote_cmd.py
+/home/runner/work/erk/erk/tests/commands/stack/test_consolidate_cmd.py
+/home/runner/work/erk/erk/tests/commands/stack/test_split_cmd.py
+/home/runner/work/erk/erk/tests/commands/stack/test_list_cmd.py
+/home/runner/work/erk/erk/tests/commands/stack/test_sync_cmd.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/branch/test_create_cmd.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/branch/test_list_cmd.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/codespace/test_remove_cmd.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/codespace/test_set_default_cmd.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/codespace/test_connect_cmd.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/codespace/test_list_cmd.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/codespace/test_setup_cmd.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/codespace/run/objective/test_plan_cmd.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/docs/test_check_cmd.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/docs/test_validate_cmd.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/docs/test_sync_cmd.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_add_pr_labels_cmd.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/init/capability/test_check_cmd.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/init/capability/test_remove_cmd.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/init/capability/test_add_cmd.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/init/capability/test_list_cmd.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_check_cmd.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_view_cmd.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_plan_cmd.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_list_cmd_helpers.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/pr/test_dispatch_cmd.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/slot/test_init_pool_cmd.py
+
+... [7 lines omitted] ...
+  </tool_result>
+  <assistant>Great! Now let me search for tests related to "run" commands and TUI command registry:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="1409" cache_read_input_tokens="23633" cache_creation="{'ephemeral_5m_input_tokens': 1409, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01XkLgpnQShSXZPtgAbPsX6E">
+    <param name="pattern">tests/**/*run*.py</param>
+    <param name="path">/home/runner/work/erk/erk</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1409" cache_read_input_tokens="23633" cache_creation="{'ephemeral_5m_input_tokens': 1409, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_014y484Gwjct2ZbNRmLWRUer">
+    <param name="pattern">tests/**/*logs*.py</param>
+    <param name="path">/home/runner/work/erk/erk</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1409" cache_read_input_tokens="23633" cache_creation="{'ephemeral_5m_input_tokens': 1409, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01PZ24m9eAp4jUukVZR1NbCj">
+    <param name="pattern">tests/**/*palette*.py</param>
+    <param name="path">/home/runner/work/erk/erk</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1409" cache_read_input_tokens="23633" cache_creation="{'ephemeral_5m_input_tokens': 1409, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01Mx4pq3XwtD47NNR7ApAdj7">
+    <param name="pattern">tests/**/*registry*.py</param>
+    <param name="path">/home/runner/work/erk/erk</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1409" cache_read_input_tokens="23633" cache_creation="{'ephemeral_5m_input_tokens': 1409, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01PZ24m9eAp4jUukVZR1NbCj">
+/home/runner/work/erk/erk/tests/tui/app/test_command_palette.py
+  </tool_result>
+  <tool_result tool="toolu_01Mx4pq3XwtD47NNR7ApAdj7">
+/home/runner/work/erk/erk/tests/fakes/gateway/codespace_registry.py
+/home/runner/work/erk/erk/tests/tui/commands/test_registry.py
+/home/runner/work/erk/erk/tests/unit/core/capabilities/test_registry.py
+/home/runner/work/erk/erk/tests/unit/core/codespace/test_registry_fake.py
+/home/runner/work/erk/erk/tests/unit/core/codespace/test_registry_real.py
+/home/runner/work/erk/erk/tests/unit/gateways/github/metadata_blocks/test_block_type_registry.py
+  </tool_result>
+  <tool_result tool="toolu_01XkLgpnQShSXZPtgAbPsX6E">
+/home/runner/work/erk/erk/tests/commands/dash/test_workflow_run_state.py
+/home/runner/work/erk/erk/tests/commands/display/list/test_trunk_detection.py
+/home/runner/work/erk/erk/tests/commands/test_dash_workflow_runs.py
+/home/runner/work/erk/erk/tests/core/utils/worktree/test_filter_non_trunk_branches.py
+/home/runner/work/erk/erk/tests/fakes/gateway/ci_runner.py
+/home/runner/work/erk/erk/tests/fakes/tests/health_check_runner.py
+/home/runner/work/erk/erk/tests/fakes/tests/parallel_task_runner.py
+/home/runner/work/erk/erk/tests/integration/test_dryrun_integration.py
+/home/runner/work/erk/erk/tests/integration/test_real_ci_runner.py
+/home/runner/work/erk/erk/tests/tui/app/test_app_runs.py
+/home/runner/work/erk/erk/tests/tui/data/test_real_provider_runs.py
+/home/runner/work/erk/erk/tests/tui/test_run_table.py
+/home/runner/work/erk/erk/tests/tui/screens/test_check_runs_screen.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_detect_trunk_branch.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_run_review.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/land/test_dry_run.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/land/pipeline/test_run_execution_pipeline.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/land/pipeline/test_run_validation_pipeline.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_run_pipeline.py
+/home/runner/work/erk/erk/tests/unit/core/codespace/test_codespace_run.py
+/home/runner/work/erk/erk/tests/unit/fakes/test_fake_ci_runner.py
+/home/runner/work/erk/erk/tests/unit/gateways/agent_docs/test_dry_run_agent_docs.py
+/home/runner/work/erk/erk/tests/unit/gateways/github/test_parse_check_runs.py
+  </tool_result>
+  <tool_result tool="toolu_014y484Gwjct2ZbNRmLWRUer">
+/home/runner/work/erk/erk/tests/commands/run/test_logs.py
+  </tool_result>
+  <assistant>Perfect! I found the relevant test files. Let me read the key test files to understand the patterns:</assistant>
+  <usage input_tokens="256" cache_creation_input_tokens="1236" cache_read_input_tokens="25042" cache_creation="{'ephemeral_5m_input_tokens': 1236, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01QxgrixAtGmMjWpj5fhke2G">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/run/test_logs.py</param>
+  </tool_use>
+  <usage input_tokens="256" cache_creation_input_tokens="1236" cache_read_input_tokens="25042" cache_creation="{'ephemeral_5m_input_tokens': 1236, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01DmZ5rCeMfAysfDcZJQei3G">
+    <param name="file_path">/home/runner/work/erk/erk/tests/tui/app/test_command_palette.py</param>
+  </tool_use>
+  <usage input_tokens="256" cache_creation_input_tokens="1236" cache_read_input_tokens="25042" cache_creation="{'ephemeral_5m_input_tokens': 1236, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_015qMtahdszXcq8SdnGcq3hS">
+    <param name="file_path">/home/runner/work/erk/erk/tests/tui/commands/test_registry.py</param>
+  </tool_use>
+  <usage input_tokens="256" cache_creation_input_tokens="1236" cache_read_input_tokens="25042" cache_creation="{'ephemeral_5m_input_tokens': 1236, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01F48Xy71YHcjF7BoVCUPhoH">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/stack/test_list_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="256" cache_creation_input_tokens="1236" cache_read_input_tokens="25042" cache_creation="{'ephemeral_5m_input_tokens': 1236, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01QxgrixAtGmMjWpj5fhke2G">
+     1→"""CLI tests for erk run logs command.
+     2→
+     3→Tests viewing logs for workflow runs with explicit run ID or auto-detection.
+     4→"""
+     5→
+     6→from pathlib import Path
+     7→
+     8→from click.testing import CliRunner
+     9→
+    10→from erk.cli.commands.run.logs_cmd import logs_run
+    11→from erk_shared.gateway.git.abc import WorktreeInfo
+    12→from erk_shared.gateway.github.types import WorkflowRun
+    13→from tests.fakes.gateway.git import FakeGit
+    14→from tests.fakes.gateway.github import FakeLocalGitHub
+    15→from tests.fakes.tests.context import create_test_context
+    16→
+    17→
+    18→def test_logs_explicit_run_id(tmp_path: Path) -&gt; None:
+    19→    """Test viewing logs with explicit run ID."""
+    20→    # Arrange
+    21→    repo_root = tmp_path / "repo"
+    22→    repo_root.mkdir()
+    23→    (repo_root / ".git").mkdir()
+    24→    git_ops = FakeGit(
+    25→        worktrees={repo_root: [WorktreeInfo(path=repo_root, branch="main")]},
+    26→        current_branches={repo_root: "main"},
+    27→        git_common_dirs={repo_root: repo_root / ".git"},
+    28→    )
+    29→    github_ops = FakeLocalGitHub(run_logs={"12345": "Step 1: Setup\nStep 2: Tests\n"})
+    30→    ctx = create_test_context(git=git_ops, github=github_ops, cwd=repo_root)
+
+... [119 lines omitted] ...
+
+    35→    result = runner.invoke(logs_run, ["12345"], obj=ctx, catch_exceptions=False)
+    80→    result = runner.invoke(logs_run, obj=ctx, catch_exceptions=False)
+    89→    """Test error handling when run doesn't exist."""
+   105→    result = runner.invoke(logs_run, ["99999"], obj=ctx, catch_exceptions=False)
+   109→    assert "Error:" in result.output
+   139→    result = runner.invoke(logs_run, obj=ctx, catch_exceptions=False)
+  </tool_result>
+  <tool_result tool="toolu_01DmZ5rCeMfAysfDcZJQei3G">
+     1→"""Tests for command palette functionality."""
+     2→
+     3→from pathlib import Path
+     4→
+     5→import pytest
+     6→
+     7→from erk.tui.app import ErkDashApp
+     8→from erk.tui.data.types import PlanFilters
+     9→from erk.tui.screens.plan_detail_screen import PlanDetailScreen
+    10→from tests.fakes.gateway.clipboard import FakeClipboard
+    11→from tests.fakes.gateway.plan_data_provider import FakePlanDataProvider, make_plan_row
+    12→from tests.fakes.gateway.pr_service import FakePrService
+    13→
+    14→
+    15→class TestClosePlanViaCommandPalette:
+    16→    """Tests for close plan functionality via command palette.
+    17→
+    18→    Note: The top-level 'c' binding was removed. Close plan is now accessible
+    19→    via the command palette in the plan detail modal (Space → Ctrl+P → "Close Plan").
+    20→    The execute_command tests in tests/tui/commands/test_execute_command.py
+    21→    cover the close_plan command execution. These tests verify the integration.
+    22→    """
+    23→
+    24→    @pytest.mark.asyncio
+    25→    async def test_close_plan_not_accessible_via_c_key(self) -&gt; None:
+    26→        """Top-level 'c' key should no longer close plans."""
+    27→        provider = FakePlanDataProvider(
+    28→            plans=[
+    29→                make_plan_row(123, "Feature A"),
+    30→                make_plan_row(456, "Feature B"),
+
+... [349 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01F48Xy71YHcjF7BoVCUPhoH">
+     1→"""Tests for erk stack list command."""
+     2→
+     3→from click.testing import CliRunner
+     4→
+     5→from erk.cli.cli import cli
+     6→from erk_shared.gateway.git.abc import WorktreeInfo
+     7→from erk_shared.gateway.graphite.types import BranchMetadata
+     8→from tests.fakes.gateway.git import FakeGit
+     9→from tests.fakes.gateway.graphite import FakeGraphite
+    10→from tests.test_utils.env_helpers import erk_inmem_env
+    11→from tests.test_utils.output_helpers import strip_ansi
+    12→
+    13→
+    14→def test_list_stack_shows_branches_with_worktrees() -&gt; None:
+    15→    """Test that list shows stack branches that have worktrees."""
+    16→    runner = CliRunner()
+    17→    with erk_inmem_env(runner) as env:
+    18→        repo_dir = env.erk_root / env.cwd.name
+    19→
+    20→        # Create FakeGit with worktrees
+    21→        git = FakeGit(
+    22→            worktrees={
+    23→                env.cwd: [
+    24→                    WorktreeInfo(path=env.cwd, branch="main", is_root=True),
+    25→                    WorktreeInfo(path=repo_dir / "feat-1", branch="feat-1", is_root=False),
+    26→                    WorktreeInfo(path=repo_dir / "feat-2", branch="feat-2", is_root=False),
+    27→                ],
+    28→            },
+    29→            current_branches={env.cwd: "feat-2"},
+    30→            git_common_dirs={env.cwd: env.git_dir},
+
+... [402 lines omitted] ...
+
+   208→    """Test error when branch is not tracked by Graphite."""
+  </tool_result>
+  <tool_result tool="toolu_015qMtahdszXcq8SdnGcq3hS">
+     1→"""Tests for command palette registry."""
+     2→
+     3→from erk.tui.commands.registry import (
+     4→    get_all_commands,
+     5→    get_available_commands,
+     6→    get_copy_text,
+     7→    get_display_name,
+     8→)
+     9→from erk.tui.commands.types import CommandCategory, CommandContext
+    10→from erk.tui.views.types import ViewMode
+    11→from tests.fakes.gateway.plan_data_provider import make_plan_row
+    12→
+    13→
+    14→def test_all_commands_have_unique_ids() -&gt; None:
+    15→    """All commands should have unique IDs."""
+    16→    commands = get_all_commands()
+    17→    ids = [cmd.id for cmd in commands]
+    18→    assert len(ids) == len(set(ids)), "Command IDs must be unique"
+    19→
+    20→
+    21→def test_all_commands_have_required_fields() -&gt; None:
+    22→    """All commands should have required fields populated."""
+    23→    commands = get_all_commands()
+    24→    for cmd in commands:
+    25→        assert cmd.id, f"Command missing id: {cmd}"
+    26→        assert cmd.name, f"Command {cmd.id} missing name"
+    27→        assert cmd.description, f"Command {cmd.id} missing description"
+    28→        assert isinstance(cmd.category, CommandCategory), f"Command {cmd.id} missing valid category"
+    29→        assert callable(cmd.is_available), f"Command {cmd.id} missing is_available"
+    30→
+
+... [1011 lines omitted] ...
+  </tool_result>
+  <assistant>Perfect! Now let me search for more test files related to "run" commands and check for cancel/retry commands:</assistant>
+  <usage input_tokens="6199" cache_creation_input_tokens="30649" cache_read_input_tokens="26278" cache_creation="{'ephemeral_5m_input_tokens': 30649, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01PA6Q49dTiZSishZ96ZA7aU">
+    <param name="command">find /home/runner/work/erk/erk/tests -type f -name "*.py" | grep -E "(run|cancel|retry)" | head -20</param>
+  </tool_use>
+  <usage input_tokens="6199" cache_creation_input_tokens="30649" cache_read_input_tokens="26278" cache_creation="{'ephemeral_5m_input_tokens': 30649, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01RVH5bqMTAxXHctDEXNGqWt">
+    <param name="pattern">src/erk/cli/commands/run/**/*.py</param>
+    <param name="path">/home/runner/work/erk/erk</param>
+  </tool_use>
+  <usage input_tokens="6199" cache_creation_input_tokens="30649" cache_read_input_tokens="26278" cache_creation="{'ephemeral_5m_input_tokens': 30649, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01Jy6Q3273FVAhVB6Gs6K28E">
+    <param name="pattern">tests/**/*cancel*.py</param>
+    <param name="path">/home/runner/work/erk/erk</param>
+  </tool_use>
+  <usage input_tokens="6199" cache_creation_input_tokens="30649" cache_read_input_tokens="26278" cache_creation="{'ephemeral_5m_input_tokens': 30649, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01RVH5bqMTAxXHctDEXNGqWt">
+/home/runner/work/erk/erk/src/erk/cli/commands/run/logs_cmd.py
+/home/runner/work/erk/erk/src/erk/cli/commands/run/list_cmd.py
+/home/runner/work/erk/erk/src/erk/cli/commands/run/shared.py
+/home/runner/work/erk/erk/src/erk/cli/commands/run/cancel_cmd.py
+/home/runner/work/erk/erk/src/erk/cli/commands/run/retry_cmd.py
+/home/runner/work/erk/erk/src/erk/cli/commands/run/__init__.py
+  </tool_result>
+  <tool_result tool="toolu_01Jy6Q3273FVAhVB6Gs6K28E">
+No files found
+  </tool_result>
+  <tool_result tool="toolu_01PA6Q49dTiZSishZ96ZA7aU">
+/home/runner/work/erk/erk/tests/erk_shared/gateway/plan_data_provider/test_real_routing.py
+/home/runner/work/erk/erk/tests/erk_shared/gateway/plan_data_provider/__init__.py
+/home/runner/work/erk/erk/tests/erk_shared/gateway/__init__.py
+/home/runner/work/erk/erk/tests/erk_shared/gateway/http/__init__.py
+/home/runner/work/erk/erk/tests/erk_shared/gateway/http/test_fake_http_client.py
+/home/runner/work/erk/erk/tests/erk_shared/__init__.py
+/home/runner/work/erk/erk/tests/cli/commands/__init__.py
+/home/runner/work/erk/erk/tests/cli/commands/split/test_plan.py
+/home/runner/work/erk/erk/tests/cli/commands/split/__init__.py
+/home/runner/work/erk/erk/tests/cli/__init__.py
+/home/runner/work/erk/erk/tests/unit/test_forward_reference_detection.py
+/home/runner/work/erk/erk/tests/unit/context/test_permission_mode_codex.py
+/home/runner/work/erk/erk/tests/unit/context/test_require_context.py
+/home/runner/work/erk/erk/tests/unit/context/__init__.py
+/home/runner/work/erk/erk/tests/unit/test_pr_footer.py
+/home/runner/work/erk/erk/tests/unit/hierarchy/__init__.py
+/home/runner/work/erk/erk/tests/unit/test_graphite_parsing.py
+/home/runner/work/erk/erk/tests/unit/cli/test_pr_json.py
+/home/runner/work/erk/erk/tests/unit/cli/test_capability_check.py
+/home/runner/work/erk/erk/tests/unit/cli/test_ensure.py
+  </tool_result>
+  <assistant>Excellent! I found the run commands. Now let me search for their corresponding tests:</assistant>
+  <usage input_tokens="232" cache_creation_input_tokens="7160" cache_read_input_tokens="56927" cache_creation="{'ephemeral_5m_input_tokens': 7160, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01WmQA3Jf3QJGW774hsytdLv">
+    <param name="pattern">tests/**/run/**/*.py</param>
+    <param name="path">/home/runner/work/erk/erk</param>
+  </tool_use>
+  <usage input_tokens="232" cache_creation_input_tokens="7160" cache_read_input_tokens="56927" cache_creation="{'ephemeral_5m_input_tokens': 7160, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_015kNgCfHWvtMEWCAnaUuxqL">
+    <param name="command">find /home/runner/work/erk/erk/tests -type d -name "run" 2&gt;/dev/null</param>
+  </tool_use>
+  <usage input_tokens="232" cache_creation_input_tokens="7160" cache_read_input_tokens="56927" cache_creation="{'ephemeral_5m_input_tokens': 7160, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01WmQA3Jf3QJGW774hsytdLv">
+/home/runner/work/erk/erk/tests/commands/run/__init__.py
+/home/runner/work/erk/erk/tests/commands/run/test_list.py
+/home/runner/work/erk/erk/tests/commands/run/test_logs.py
+/home/runner/work/erk/erk/tests/commands/run/test_shared.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/codespace/run/__init__.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/codespace/run/objective/__init__.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/codespace/run/objective/test_plan_cmd.py
+  </tool_result>
+  <tool_result tool="toolu_015kNgCfHWvtMEWCAnaUuxqL">
+/home/runner/work/erk/erk/tests/unit/cli/commands/codespace/run
+/home/runner/work/erk/erk/tests/commands/run
+  </tool_result>
+  <assistant>Great! Now let me read the run command tests to understand the patterns:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="830" cache_read_input_tokens="64087" cache_creation="{'ephemeral_5m_input_tokens': 830, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01RGurFGbqzb2fPfkEnxNmTa">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/run/test_list.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="830" cache_read_input_tokens="64087" cache_creation="{'ephemeral_5m_input_tokens': 830, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Rf1qX1FcHNUH2rTVq1PutZ">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/run/test_shared.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="830" cache_read_input_tokens="64087" cache_creation="{'ephemeral_5m_input_tokens': 830, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Vq3pcedNdEBUnrj9Fo1s25">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/run/__init__.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="830" cache_read_input_tokens="64087" cache_creation="{'ephemeral_5m_input_tokens': 830, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01RGurFGbqzb2fPfkEnxNmTa">
+     1→"""CLI tests for erk workflow run list command.
+     2→
+     3→This file focuses on CLI-specific concerns for the list runs command:
+     4→- Command execution and exit codes
+     5→- Output formatting and display (status indicators, Rich table)
+     6→- PR-centric view with direct PR extraction and plan→PR fallback
+     7→
+     8→The integration layer (list_workflow_runs) is tested in:
+     9→- tests/unit/fakes/test_fake_github.py - Fake infrastructure tests
+    10→- tests/integration/test_real_github.py - Real implementation tests
+    11→
+    12→This file trusts that unit layer and only tests CLI integration.
+    13→"""
+    14→
+    15→from __future__ import annotations
+    16→
+    17→from datetime import UTC, datetime
+    18→from pathlib import Path
+    19→
+    20→from click.testing import CliRunner
+    21→
+    22→from erk.cli.commands.run.list_cmd import list_runs
+    23→from erk.cli.constants import DISPATCH_WORKFLOW_NAME, PR_ADDRESS_WORKFLOW_NAME
+    24→from erk.core.context import ErkContext
+    25→from erk_shared.gateway.git.abc import WorktreeInfo
+    26→from erk_shared.gateway.github.issues.types import IssueInfo
+    27→from erk_shared.gateway.github.types import PullRequestInfo, WorkflowRun
+    28→from tests.fakes.gateway.git import FakeGit
+    29→from tests.fakes.gateway.github import FakeLocalGitHub
+    30→from tests.fakes.gateway.github_issues import FakeGitHubIssues
+
+... [480 lines omitted] ...
+
+   103→    result = runner.invoke(list_runs, obj=ctx, catch_exceptions=False)
+   125→    result = runner.invoke(list_runs, obj=ctx, catch_exceptions=False)
+   150→    result = runner.invoke(list_runs, obj=ctx, catch_exceptions=False)
+   197→    result = runner.invoke(list_runs, obj=ctx, catch_exceptions=False)
+   221→    result = runner.invoke(list_runs, obj=ctx, catch_exceptions=False)
+   262→    result = runner.invoke(list_runs, obj=ctx, catch_exceptions=False)
+   287→            conclusion="failure",
+   306→    result = runner.invoke(list_runs, obj=ctx, catch_exceptions=False)
+   359→    result = runner.invoke(list_runs, obj=ctx, catch_exceptions=False)
+   385→    result = runner.invoke(list_runs, obj=ctx, catch_exceptions=False)
+   409→    result = runner.invoke(list_runs, obj=ctx, catch_exceptions=False)
+   431→    result = runner.invoke(list_runs, obj=ctx, catch_exceptions=False)
+   456→    result = runner.invoke(list_runs, obj=ctx, catch_exceptions=False)
+   478→    result = runner.invoke(list_runs, obj=ctx, catch_exceptions=False)
+   500→    result = runner.invoke(list_runs, obj=ctx, catch_exceptions=False)
+  </tool_result>
+  <tool_result tool="toolu_01Rf1qX1FcHNUH2rTVq1PutZ">
+     1→"""Unit tests for run command shared utilities.
+     2→
+     3→Tests the extract_plan_number and extract_pr_number helper functions
+     4→for parsing display_title formats.
+     5→"""
+     6→
+     7→from erk.cli.commands.run.shared import extract_plan_number, extract_pr_number
+     8→
+     9→
+    10→def test_extract_plan_number_new_format() -&gt; None:
+    11→    """Test parsing new format: '123:abc456' → 123."""
+    12→    assert extract_plan_number("123:abc456") == 123
+    13→    assert extract_plan_number("1:x") == 1
+    14→    assert extract_plan_number("999:distinct-id-here") == 999
+    15→
+    16→
+    17→def test_extract_plan_number_old_format_returns_none() -&gt; None:
+    18→    """Test old format: 'Issue title [abc123]' → None."""
+    19→    # Old format has title first, then distinct_id in brackets
+    20→    assert extract_plan_number("Add user authentication [abc123]") is None
+    21→    assert extract_plan_number("Fix bug in parser [xyz789]") is None
+    22→
+    23→
+    24→def test_extract_plan_number_with_colon_in_title_returns_none() -&gt; None:
+    25→    """Test titles with colons but non-numeric prefix → None."""
+    26→    # These look like they have colons but the prefix isn't a number
+    27→    assert extract_plan_number("Feature: Add caching [abc]") is None
+    28→    assert extract_plan_number("Bug fix: memory leak [xyz]") is None
+    29→
+    30→
+
+... [81 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01Vq3pcedNdEBUnrj9Fo1s25">
+     1→"""Tests for run commands."""
+     2→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>Perfect! Now let me also check for tests related to cancel and retry commands, and look at the TUI testing patterns more closely:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="8604" cache_read_input_tokens="64917" cache_creation="{'ephemeral_5m_input_tokens': 8604, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_011gkxwW4PS8Jp39fbHbEhVs">
+    <param name="command">find /home/runner/work/erk/erk/tests -name "*test*.py" -type f | xargs grep -l "cancel\|retry" 2&gt;/dev/null | head -10</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="8604" cache_read_input_tokens="64917" cache_creation="{'ephemeral_5m_input_tokens': 8604, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_017X3Sw3SwRDXr3vse25uUvc">
+    <param name="command">ls -la /home/runner/work/erk/erk/tests/tui/commands/</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="8604" cache_read_input_tokens="64917" cache_creation="{'ephemeral_5m_input_tokens': 8604, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017X3Sw3SwRDXr3vse25uUvc">
+total 76
+drwxr-xr-x  2 runner runner  4096 Mar 10 12:00 .
+drwxr-xr-x 10 runner runner  4096 Mar 10 12:00 ..
+-rw-r--r--  1 runner runner     0 Mar 10 12:00 __init__.py
+-rw-r--r--  1 runner runner 17895 Mar 10 12:00 test_execute_command.py
+-rw-r--r--  1 runner runner  2614 Mar 10 12:00 test_node_command_provider.py
+-rw-r--r--  1 runner runner 41974 Mar 10 12:00 test_registry.py
+  </tool_result>
+  <tool_result tool="toolu_011gkxwW4PS8Jp39fbHbEhVs">
+/home/runner/work/erk/erk/tests/unit/cli/commands/codespace/test_setup_cmd.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/land/test_land_stack.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_graphite_first_flow.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_rebase_with_conflict_resolution.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_objective_update_after_land.py
+/home/runner/work/erk/erk/tests/unit/gateways/github/test_real.py
+/home/runner/work/erk/erk/tests/unit/gateways/github/metadata_blocks/test_round_trip.py
+/home/runner/work/erk/erk/tests/unit/gateways/github/metadata_blocks/test_block_type_registry.py
+/home/runner/work/erk/erk/tests/unit/gateways/github/test_label_ops.py
+/home/runner/work/erk/erk/tests/unit/core/test_display_utils.py
+  </tool_result>
+  <assistant>Now let me look at the TUI command execution test to understand the patterns better:</assistant>
+  <usage input_tokens="218" cache_creation_input_tokens="692" cache_read_input_tokens="73521" cache_creation="{'ephemeral_5m_input_tokens': 692, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01NSVcHyYe1LKsddbJArzfVe">
+    <param name="file_path">/home/runner/work/erk/erk/tests/tui/commands/test_execute_command.py</param>
+    <param name="limit">150</param>
+  </tool_use>
+  <usage input_tokens="218" cache_creation_input_tokens="692" cache_read_input_tokens="73521" cache_creation="{'ephemeral_5m_input_tokens': 692, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01NSVcHyYe1LKsddbJArzfVe">
+     1→"""Tests for PlanDetailScreen.execute_command."""
+     2→
+     3→from datetime import UTC, datetime
+     4→
+     5→from erk.tui.data.types import PlanRowData
+     6→from erk.tui.screens.plan_detail_screen import PlanDetailScreen
+     7→from erk.tui.views.types import ViewMode
+     8→from tests.fakes.gateway.command_executor import FakeCommandExecutor
+     9→from tests.fakes.gateway.plan_data_provider import make_plan_row
+    10→
+    11→
+    12→class TestExecuteCommandBrowserCommands:
+    13→    """Tests for browser-related commands."""
+    14→
+    15→    def test_open_browser_opens_pr_url_when_available(self) -&gt; None:
+    16→        """open_browser opens PR URL when PR is available."""
+    17→        row = make_plan_row(
+    18→            123,
+    19→            "Test",
+    20→            pr_url="https://github.com/test/repo/pull/456",
+    21→            plan_url="https://github.com/test/repo/issues/123",
+    22→        )
+    23→        executor = FakeCommandExecutor()
+    24→        screen = PlanDetailScreen(row=row, executor=executor, view_mode=ViewMode.PLANS)
+    25→        screen.execute_command("open_browser")
+    26→        assert executor.opened_urls == ["https://github.com/test/repo/pull/456"]
+    27→
+    28→    def test_open_browser_opens_issue_url_when_no_pr(self) -&gt; None:
+    29→        """open_browser opens issue URL when no PR is available."""
+    30→        row = make_plan_row(123, "Test", plan_url="https://github.com/test/repo/issues/123")
+
+... [125 lines omitted] ...
+  </tool_result>
+  <assistant>Perfect! Now let me create a comprehensive report with all the findings:
+
+## Summary
+
+I've successfully explored the test structure for CLI commands and TUI command availability in the erk codebase. Here's a comprehensive report:
+
+---
+
+## CLI Tests for Run Commands
+
+### Test Files Location
+
+**Primary test file:** `/home/runner/work/erk/erk/tests/commands/run/`
+
+**Key test files:**
+- `/home/runner/work/erk/erk/tests/commands/run/test_logs.py` - Tests for `logs_cmd.py`
+- `/home/runner/work/erk/erk/tests/commands/run/test_list.py` - Tests for `list_cmd.py`
+- `/home/runner/work/erk/erk/tests/commands/run/test_shared.py` - Tests for shared utility functions
+
+### Test Structure Patterns for Run Commands
+
+**1. Test Pattern (test_logs.py):**
+- Uses `Click.testing.CliRunner` for command execution
+- Uses dependency injection with fake gateways (`FakeGit`, `FakeLocalGitHub`)
+- Uses `create_test_context()` helper to construct test context
+- Uses `pytest` fixtures with `tmp_path` for filesystem isolation
+- Arrange-Act-Assert pattern
+
+**Key pattern example:**
+```python
+def test_logs_explicit_run_id(tmp_path: Path) -&gt; None:
+    # Arrange: Set up fakes
+    repo_root = tmp_path / "repo"
+    git_ops = FakeGit(...)
+    github_ops = FakeLocalGitHub(run_logs={"12345": "logs"})
+    ctx = create_test_context(git=git_ops, github=github_ops, cwd=repo_root)
+    
+    runner = CliRunner()
+    
+    # Act: Execute command
+    result = runner.invoke(logs_run, ["12345"], obj=ctx, catch_exceptions=False)
+    
+    # Assert: Verify behavior
+    assert result.exit_code == 0
+    assert "Step 1: Setup" in result.output
+```
+
+**2. Fixtures Used:**
+- `FakeGit` - Mocks git operations with `WorktreeInfo`, `current_branches`, `git_common_dirs`
+- `FakeLocalGitHub` - Mocks GitHub operations with `run_logs`, `workflow_runs`, `pr_plan_linkages`
+- `FakeGitHubIssues` - Mocks GitHub issues operations
+- `create_test_context()` - Helper to build ErkContext for testing
+
+**3. Assertions:**
+- Exit codes (0 for success, 1 for errors, 2 for validation errors)
+- Output verification using `assert "text" in result.output`
+- Mutation tracking via fake's read-only properties
+
+---
+
+## TUI Command Availability Tests
+
+### Test Files Location
+
+**TUI command tests:** `/home/runner/work/erk/erk/tests/tui/commands/`
+
+**Key test files:**
+- `/home/runner/work/erk/erk/tests/tui/commands/test_registry.py` - Command registry and availability tests (~1036 lines)
+- `/home/runner/work/erk/erk/tests/tui/commands/test_execute_command.py` - Command execution tests
+- `/home/runner/work/erk/erk/tests/tui/app/test_command_palette.py` - Command palette integration tests
+
+### Test Structure Patterns for TUI Commands
+
+**1. Registry Tests (test_registry.py) - Core Pattern:**
+```python
+def test_all_commands_have_unique_ids() -&gt; None:
+    """All commands should have unique IDs."""
+    commands = get_all_commands()
+    ids = [cmd.id for cmd in commands]
+    assert len(ids) == len(set(ids)), "Command IDs must be unique"
+```
+
+**Key functions tested:**
+- `get_all_commands()` - Returns complete list of all commands
+- `get_available_commands(ctx)` - Returns commands available in context
+- `get_display_name(cmd, ctx)` - Returns display name with context-specific values
+- `get_copy_text(cmd_id, ctx)` - Returns text to copy (or None if unavailable)
+
+**2. Command Availability Tests:**
+The registry tests extensively validate availability conditions:
+```python
+def test_open_pr_available_when_pr_url_exists() -&gt; None:
+    """open_pr should be available when PR URL exists."""
+    row = make_plan_row(123, "Test", pr_url="https://github.com/test/repo/pull/456")
+    ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
+    commands = get_available_commands(ctx)
+    cmd_ids = [cmd.id for cmd in commands]
+    assert "open_pr" in cmd_ids
+
+def test_open_pr_not_available_when_no_pr() -&gt; None:
+    """open_pr should not be available when no PR URL."""
+    row = make_plan_row(123, "Test")  # No PR URL
+    ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
+    commands = get_available_commands(ctx)
+    cmd_ids = [cmd.id for cmd in commands]
+    assert "open_pr" not in cmd_ids
+```
+
+**3. Fixtures Used:**
+- `make_plan_row()` - Factory function creating `PlanRowData` with optional fields
+- `CommandContext` - Context object with `row`, `view_mode`, `cmux_integration` flag
+- `ViewMode.PLANS` / `ViewMode.OBJECTIVES` / `ViewMode.LEARN` - View mode enum
+- `CommandCategory` - Category type (ACTION, COPY, etc.)
+
+**4. Test Organization:**
+- Uses plain `def test_*()` functions (not test classes)
+- Organized by domain: availability tests, display name tests, shortcut safety, view mode filtering
+- ~1000+ lines of comprehensive test coverage
+
+**5. Key Assertions:**
+```python
+# Availability assertions
+assert "command_id" in cmd_ids
+assert "command_id" not in cmd_ids
+
+# Display name assertions
+assert get_display_name(cmd, ctx) == "erk pr close 5831"
+
+# Required field assertions
+assert cmd.id, f"Command missing id"
+assert cmd.name, f"Command {cmd.id} missing name"
+assert callable(cmd.is_available), f"Command {cmd.id} missing is_available"
+
+# Shortcut uniqueness
+shortcuts = [cmd.shortcut for cmd in commands if cmd.shortcut is not None]
+assert len(shortcuts) == len(set(shortcuts))
+```
+
+---
+
+## General Test Patterns Across Both
+
+### Common Testing Infrastructure
+
+**Key helpers:**
+- `erk_inmem_env()` context manager - Sets up in-memory test environment
+- `env.build_context()` - Constructs ErkContext with defaults and overrides
+- `strip_ansi()` - Removes ANSI codes from output for assertions
+
+**Fixture Parameters:**
+- `tmp_path: Path` - pytest fixture for temporary directories
+- `monkeypatch: pytest.MonkeyPatch` - For mocking/patching
+
+### Exit Code Conventions
+- `0` = Success
+- `1` = Runtime error (git failure, data not found)
+- `2` = Validation error (invalid arguments)
+
+### Organization Principles
+- Plain functions over test classes (unless testing class itself)
+- Single-file per command tests (unless 10+ tests justify splitting)
+- No raw `mock.patch` - use fake implementations instead
+- Constructor injection for all test state
+- Read-only properties for assertions on mutations
+
+---
+
+## Files for Cancel/Retry Commands
+
+Based on the current branch (`plnd/add-run-cancel-retry-03-10-0757`), these commands are being added:
+- `/home/runner/work/erk/erk/src/erk/cli/commands/run/cancel_cmd.py`
+- `/home/runner/work/erk/erk/src/erk/cli/commands/run/retry_cmd.py`
+
+You'll likely need to create corresponding test files following the same patterns:
+- `/home/runner/work/erk/erk/tests/commands/run/test_cancel.py`
+- `/home/runner/work/erk/erk/tests/commands/run/test_retry.py`
+
+These should follow the exact pattern of `test_logs.py` and `test_list.py`.</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="2984" cache_read_input_tokens="74213" cache_creation="{'ephemeral_5m_input_tokens': 2984, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>
