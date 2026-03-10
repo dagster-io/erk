@@ -20,7 +20,7 @@ from erk.core.context import ErkContext
 from erk_shared.output.output import user_output
 
 
-@click.command("reconcile")
+@click.command("reconcile", hidden=True)
 @click.option("--force", is_flag=True, help="Skip confirmation prompts")
 @click.option("--dry-run", is_flag=True, help="Preview without making changes")
 @click.option("--skip-learn", is_flag=True, help="Skip creating learn plans")
