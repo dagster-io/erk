@@ -4,7 +4,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from enum import Enum, auto
 
-from erk.tui.data.types import PlanRowData
+from erk.tui.data.types import PlanRowData, RunRowData
 from erk.tui.views.types import ViewMode
 
 
@@ -31,6 +31,19 @@ class CommandContext:
     row: PlanRowData
     view_mode: ViewMode
     cmux_integration: bool = False
+
+
+@dataclass(frozen=True)
+class RunCommandContext:
+    """Context available to run commands.
+
+    Attributes:
+        row: The run row data for the selected workflow run
+        view_mode: The active view mode (always RUNS)
+    """
+
+    row: RunRowData
+    view_mode: ViewMode
 
 
 @dataclass(frozen=True)

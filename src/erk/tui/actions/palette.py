@@ -270,6 +270,53 @@ class PaletteActionsMixin:
             self._service.clipboard.copy(cmd)
             self.notify(f"Copied: {cmd}")
 
+    def execute_run_palette_command(self: ErkDashApp, command_id: str) -> None:
+        """Execute a run command from the palette on the selected run row.
+
+        Args:
+            command_id: The ID of the run command to execute
+        """
+        row = self._get_selected_run_row()
+        if row is None:
+            return
+
+        if command_id == "cancel_run":
+            op_id = f"cancel-run-{row.run_id}"
+            self._start_operation(op_id=op_id, label=f"Cancelling run {row.run_id_display}...")
+            self._cancel_run_async(op_id, row.run_id)
+
+        elif command_id == "retry_run":
+            op_id = f"retry-run-{row.run_id}"
+            self._start_operation(op_id=op_id, label=f"Retrying run {row.run_id_display}...")
+            self._retry_run_async(op_id, row.run_id, failed_only=False)
+
+        elif command_id == "retry_failed_run":
+            op_id = f"retry-failed-run-{row.run_id}"
+            self._start_operation(
+                op_id=op_id, label=f"Retrying failed jobs of run {row.run_id_display}..."
+            )
+            self._retry_run_async(op_id, row.run_id, failed_only=True)
+
+        elif command_id == "open_run_url":
+            if row.run_url:
+                self._service.browser.launch(row.run_url)
+                self.notify(f"Opened run {row.run_id_display}")
+
+        elif command_id == "open_run_pr":
+            if row.pr_url:
+                self._service.browser.launch(row.pr_url)
+                self.notify(f"Opened PR {row.pr_display}")
+
+        elif command_id == "copy_cancel_cmd":
+            cmd = f"erk run cancel {row.run_id}"
+            self._service.clipboard.copy(cmd)
+            self.notify(f"Copied: {cmd}")
+
+        elif command_id == "copy_retry_cmd":
+            cmd = f"erk run retry {row.run_id}"
+            self._service.clipboard.copy(cmd)
+            self.notify(f"Copied: {cmd}")
+
     def action_one_shot_prompt(self: ErkDashApp) -> None:
         """Open the one-shot prompt modal (global -- no row selection required)."""
         self.push_screen(OneShotPromptScreen(), self._on_one_shot_prompt_result)
