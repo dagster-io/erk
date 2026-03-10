@@ -60,8 +60,8 @@ def _print_summary(result: SubmitState) -> None:
     if result.graphite_url:
         click.echo(_format_field("Graphite", _make_clickable(result.graphite_url)))
 
-    if result.plan_id:
-        click.echo(_format_field("Plan", f"#{result.plan_id}"))
+    if result.pr_id:
+        click.echo(_format_field("Plan", f"#{result.pr_id}"))
 
 
 @click.command("submit")

@@ -125,7 +125,7 @@ def echo_plan_context_status(plan_context: PlanContext | None) -> None:
     if plan_context is not None:
         click.echo(
             click.style(
-                f"   Incorporating plan #{plan_context.plan_id}",
+                f"   Incorporating plan #{plan_context.pr_id}",
                 fg="green",
             )
         )
@@ -147,7 +147,7 @@ def maybe_advance_lifecycle_to_impl(
     ctx: ErkContext,
     *,
     repo_root: Path,
-    plan_id: str,
+    pr_id: str,
     quiet: bool,
 ) -> None:
     """Advance a linked plan's lifecycle_stage to "impl" if not already there.
@@ -158,7 +158,7 @@ def maybe_advance_lifecycle_to_impl(
 
     Silently returns on any failure — lifecycle updates must never block submission.
     """
-    plan_result = ctx.plan_backend.get_plan(repo_root, plan_id)
+    plan_result = ctx.plan_backend.get_plan(repo_root, pr_id)
     if isinstance(plan_result, PlanNotFound):
         return
 
@@ -167,7 +167,7 @@ def maybe_advance_lifecycle_to_impl(
         return
 
     try:
-        ctx.plan_backend.update_metadata(repo_root, plan_id, {"lifecycle_stage": "impl"})
+        ctx.plan_backend.update_metadata(repo_root, pr_id, {"lifecycle_stage": "impl"})
     except RuntimeError as e:
         if not quiet:
             msg = f"   Warning: failed to update lifecycle stage: {e}"
@@ -187,7 +187,7 @@ def recover_plan_header(
     ctx: ErkContext,
     *,
     repo_root: Path,
-    plan_id: str,
+    pr_id: str,
 ) -> MetadataBlock | None:
     """Attempt to recover a plan-header metadata block from the plan backend.
 
@@ -198,7 +198,7 @@ def recover_plan_header(
     Returns None if the plan cannot be found, allowing callers to proceed
     without a plan-header (current behavior).
     """
-    plan_result = ctx.plan_backend.get_plan(repo_root, plan_id)
+    plan_result = ctx.plan_backend.get_plan(repo_root, pr_id)
     if isinstance(plan_result, PlanNotFound):
         return None
 
@@ -245,7 +245,7 @@ def cleanup_diff_file(diff_file: Path | None) -> None:
 
 def build_plan_details_section(plan_context: PlanContext) -> str:
     """Build a collapsed <details> section embedding the plan in the PR body."""
-    issue_num = plan_context.plan_id
+    issue_num = plan_context.pr_id
     parts = [
         "",
         "## Implementation Plan",

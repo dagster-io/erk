@@ -14,7 +14,7 @@ def _make_state(
     *,
     cwd: Path,
     repo_root: Path | None = None,
-    plan_id: str | None = None,
+    pr_id: str | None = None,
     pr_number: int | None = None,
 ) -> SubmitState:
     return SubmitState(
@@ -29,7 +29,7 @@ def _make_state(
         session_id="test-session",
         skip_description=False,
         quiet=False,
-        plan_id=plan_id,
+        pr_id=pr_id,
         pr_number=pr_number,
         pr_url=None,
         was_created=False,
@@ -61,7 +61,7 @@ def test_skips_plan_prs(tmp_path: Path) -> None:
     """Skips labeling when the PR is linked to a plan."""
     fake_local_github = FakeLocalGitHub()
     ctx = context_for_test(github=fake_local_github, cwd=tmp_path)
-    state = _make_state(cwd=tmp_path, plan_id="123", pr_number=42)
+    state = _make_state(cwd=tmp_path, pr_id="123", pr_number=42)
 
     result = label_code_pr(ctx, state)
 

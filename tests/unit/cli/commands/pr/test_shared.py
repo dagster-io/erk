@@ -94,7 +94,7 @@ def test_recover_returns_none_for_missing_plan(tmp_path: Path) -> None:
     """Returns None when the plan does not exist in the backend."""
     ctx = context_for_test(cwd=tmp_path)
 
-    result = recover_plan_header(ctx, repo_root=tmp_path, plan_id="999")
+    result = recover_plan_header(ctx, repo_root=tmp_path, pr_id="999")
 
     assert result is None
 
@@ -105,7 +105,7 @@ def test_recover_uses_header_fields_when_present(tmp_path: Path) -> None:
     backend, _fg = _backend_from_pr(pr)
     ctx = context_for_test(cwd=tmp_path, plan_store=backend)
 
-    result = recover_plan_header(ctx, repo_root=tmp_path, plan_id="100")
+    result = recover_plan_header(ctx, repo_root=tmp_path, pr_id="100")
 
     assert result is not None
     assert result.key == "plan-header"
@@ -120,7 +120,7 @@ def test_recover_constructs_minimal_header_when_destroyed(tmp_path: Path) -> Non
     backend, _fg = _backend_from_pr(pr)
     ctx = context_for_test(cwd=tmp_path, plan_store=backend)
 
-    result = recover_plan_header(ctx, repo_root=tmp_path, plan_id="100")
+    result = recover_plan_header(ctx, repo_root=tmp_path, pr_id="100")
 
     assert result is not None
     assert result.key == "plan-header"
@@ -135,7 +135,7 @@ def test_recover_uses_unknown_when_author_empty(tmp_path: Path) -> None:
     backend, _fg = _backend_from_pr(pr)
     ctx = context_for_test(cwd=tmp_path, plan_store=backend)
 
-    result = recover_plan_header(ctx, repo_root=tmp_path, plan_id="100")
+    result = recover_plan_header(ctx, repo_root=tmp_path, pr_id="100")
 
     assert result is not None
     assert result.data["created_by"] == "unknown"
@@ -228,7 +228,7 @@ def test_no_header_no_recovery_produces_no_plan_header() -> None:
 def _plan_context(*, objective_summary: str | None = None) -> PlanContext:
     """Create a minimal PlanContext for objective link tests."""
     return PlanContext(
-        plan_id="100",
+        pr_id="100",
         plan_content="# Plan\n\nDo the thing.",
         objective_summary=objective_summary,
     )

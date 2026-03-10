@@ -38,7 +38,7 @@ def test_advances_planned_to_impl(tmp_path: Path) -> None:
     backend, fake_github = create_plan_store_with_plans({"100": plan})
     ctx = context_for_test(cwd=tmp_path, github=fake_github, plan_store=backend)
 
-    maybe_advance_lifecycle_to_impl(ctx, repo_root=tmp_path, plan_id="100", quiet=False)
+    maybe_advance_lifecycle_to_impl(ctx, repo_root=tmp_path, pr_id="100", quiet=False)
 
     # Verify metadata was updated via PR body
     pr = fake_github.get_pr(Path("/repo"), 100)
@@ -51,7 +51,7 @@ def test_advances_none_stage_to_impl(tmp_path: Path) -> None:
     backend, fake_github = create_plan_store_with_plans({"100": plan})
     ctx = context_for_test(cwd=tmp_path, github=fake_github, plan_store=backend)
 
-    maybe_advance_lifecycle_to_impl(ctx, repo_root=tmp_path, plan_id="100", quiet=False)
+    maybe_advance_lifecycle_to_impl(ctx, repo_root=tmp_path, pr_id="100", quiet=False)
 
     pr = fake_github.get_pr(Path("/repo"), 100)
     assert "lifecycle_stage: impl" in pr.body
@@ -63,7 +63,7 @@ def test_skips_when_already_impl(tmp_path: Path) -> None:
     backend, fake_github = create_plan_store_with_plans({"100": plan})
     ctx = context_for_test(cwd=tmp_path, github=fake_github, plan_store=backend)
 
-    maybe_advance_lifecycle_to_impl(ctx, repo_root=tmp_path, plan_id="100", quiet=False)
+    maybe_advance_lifecycle_to_impl(ctx, repo_root=tmp_path, pr_id="100", quiet=False)
 
     # No body update should have been made - PR body should still have original lifecycle
     # The function should be idempotent and not issue update calls
@@ -77,7 +77,7 @@ def test_skips_when_plan_not_found(tmp_path: Path) -> None:
     ctx = context_for_test(cwd=tmp_path)
 
     # Should not raise
-    maybe_advance_lifecycle_to_impl(ctx, repo_root=tmp_path, plan_id="999", quiet=False)
+    maybe_advance_lifecycle_to_impl(ctx, repo_root=tmp_path, pr_id="999", quiet=False)
 
 
 def test_advances_planning_stage_to_impl(tmp_path: Path) -> None:
@@ -86,7 +86,7 @@ def test_advances_planning_stage_to_impl(tmp_path: Path) -> None:
     backend, fake_github = create_plan_store_with_plans({"100": plan})
     ctx = context_for_test(cwd=tmp_path, github=fake_github, plan_store=backend)
 
-    maybe_advance_lifecycle_to_impl(ctx, repo_root=tmp_path, plan_id="100", quiet=False)
+    maybe_advance_lifecycle_to_impl(ctx, repo_root=tmp_path, pr_id="100", quiet=False)
 
     pr = fake_github.get_pr(Path("/repo"), 100)
     assert "lifecycle_stage: impl" in pr.body

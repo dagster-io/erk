@@ -191,7 +191,7 @@ def _execute_pr_rewrite(ctx: ErkContext, *, debug: bool) -> None:
         maybe_advance_lifecycle_to_impl(
             ctx,
             repo_root=discovery.repo_root,
-            plan_id=plan_context.plan_id,
+            pr_id=plan_context.pr_id,
             quiet=False,
         )
 
