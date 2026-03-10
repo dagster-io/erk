@@ -59,7 +59,7 @@ def _extract_plan_number(identifier: str) -> int | None:
     return None
 
 
-@click.command("learn")
+@click.command("learn", hidden=True)
 @click.argument("plan", type=str, required=False)
 @click.option(
     "-i",
