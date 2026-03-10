@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "pr_number": 9184,
+  "sessions": [
+    {
+      "session_id": "7d0970d8-ec63-41c0-94d6-d63ed79fa1a3",
+      "stage": "planning",
+      "source": "local",
+      "uploaded_at": "2026-03-10T13:48:44.332848+00:00",
+      "files": [
+        "planning-7d0970d8-ec63-41c0-94d6-d63ed79fa1a3-7d0970d8-ec63-41c0-94d6-d63ed79fa1a3.xml"
+      ],
+      "user_turns": 2,
+      "duration_minutes": 9,
+      "raw_size_kb": 936,
+      "xml_size_kb": 59,
+      "git_branch": "plnd/show-planning-run-id-03-10-1209"
+    }
+  ]
+}

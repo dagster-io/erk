@@ -1,0 +1,964 @@
+<session>
+  <meta branch="plnd/show-planning-run-id-03-10-1209" />
+  <meta model="claude-opus-4-6" />
+  <user>I do not like the proposed fix in this PR. I think that instead the remote planning process should put in a proper run ID rather than do this parsing stuff</user>
+  <usage input_tokens="3" cache_creation_input_tokens="14283" cache_read_input_tokens="9131" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 14283}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me understand the current PR's approach and then explore how the remote planning process works.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="14283" cache_read_input_tokens="9131" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 14283}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_018tDJTkMCbKFZbGmpud99Pk">
+    <param name="command">git log --oneline master..HEAD</param>
+    <param name="description">Show commits in this PR</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="14283" cache_read_input_tokens="9131" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 14283}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_018tDJTkMCbKFZbGmpud99Pk">
+3e2b02eaf Trigger CI workflows
+d466d6ed1 Show planning run ID in TUI dashboard
+4af704e2d Remove plan staging dirs before implementation
+71f63f4a1 Add plan for PR #9175
+06871dea8 Add plan: Show planning run ID in TUI dashboard
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01MdXhcQqjqM8MPMdCVqQ2gg">
+    <param name="command">git diff master..HEAD --stat</param>
+    <param name="description">Show files changed in PR</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="14283" cache_read_input_tokens="9131" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 14283}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01MdXhcQqjqM8MPMdCVqQ2gg">
+ src/erk/tui/data/real_provider.py |  11 +++
+ tests/tui/data/test_provider.py   | 150 ++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 161 insertions(+)
+  </tool_result>
+  <tool_use name="Bash" id="toolu_0143wk82ev84eKd935GJwfn6">
+    <param name="command">git diff master..HEAD</param>
+    <param name="description">Show full diff of PR</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="459" cache_read_input_tokens="23414" output_tokens="77" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 459, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0143wk82ev84eKd935GJwfn6">
+diff --git a/src/erk/tui/data/real_provider.py b/src/erk/tui/data/real_provider.py
+index 7a549543f..a311a19c4 100644
+--- a/src/erk/tui/data/real_provider.py
++++ b/src/erk/tui/data/real_provider.py
+@@ -34,6 +34,7 @@ from erk_shared.gateway.github.metadata.roadmap import (
+ )
+ from erk_shared.gateway.github.metadata.schemas import (
+     CI_SUMMARY_COMMENT_ID,
++    CREATED_FROM_WORKFLOW_RUN_URL,
+     LAST_LOCAL_IMPL_AT,
+     LAST_REMOTE_IMPL_AT,
+     LEARN_PLAN_ISSUE,
+@@ -660,6 +661,16 @@ class RealPrDataProvider(PrDataProvider):
+                     )
+             run_id_display = format_workflow_run_id(workflow_run, run_url)
+             run_state_display = format_workflow_outcome(workflow_run)
++        else:
++            # Fallback: extract run ID from created_from_workflow_run_url metadata
++            # Planning-stage PRs store this URL but have no dispatched workflow run
++            created_run_url = header_str(plan.header_fields, CREATED_FROM_WORKFLOW_RUN_URL)
++            if created_run_url is not None:
++                url_parts = created_run_url.rstrip("/").split("/")
++                if len(url_parts) &gt;= 1 and url_parts[-1].isdigit():
++                    run_id = url_parts[-1]
++                    run_url = created_run_url
++                    run_id_display = run_id
+ 
+         log_entries: tuple[tuple[str, str, str], ...] = ()
+ 
+diff --git a/tests/tui/data/test_provider.py b/tests/tui/data/test_provider.py
+
+... [166 lines omitted] ...
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="2401" cache_read_input_tokens="23873" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2401}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now let me explore the remote planning process to understand where it stores this URL and how we could store a proper run ID instead.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2401" cache_read_input_tokens="23873" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2401}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01SVe1hb6rjiPymNAWnw9hzo">
+    <param name="subagent_type">Explore</param>
+    <param name="description">Explore planning run ID flow</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 709 chars]...ry thorough - trace the full flow from CI workflow trigger through to PR metadata storage.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2401" cache_read_input_tokens="23873" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2401}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01PzLnrHFhcmEFwiM3TLn2cX">
+    <param name="subagent_type">Explore</param>
+    <param name="description">Explore plan header field patterns</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 658 chars]... how run IDs are formatted for display
+
+Be thorough in tracing the header field lifecycle.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2401" cache_read_input_tokens="23873" output_tokens="809" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2401, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01PzLnrHFhcmEFwiM3TLn2cX">
+Perfect! Now I have a comprehensive understanding. Let me create a complete summary document for you:
+
+## Summary: Plan Header Fields Lifecycle in Erk
+
+I've traced through the entire plan header field system. Here's the complete picture:
+
+### 1. Schema Constants (Field Names)
+
+**Location:** `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-42/packages/erk-shared/src/erk_shared/gateway/github/metadata/schemas.py` (lines 335-419)
+
+The naming pattern for schema constants follows a simple rule:
+- Constants are named `UPPER_SNAKE_CASE` (e.g., `CREATED_FROM_WORKFLOW_RUN_URL`)
+- The value is a `Literal` type matching the constant name converted to `lower_snake_case`
+- Example: `CREATED_FROM_WORKFLOW_RUN_URL: Literal["created_from_workflow_run_url"] = "created_from_workflow_run_url"`
+
+**All field name constants defined:**
+- Required fields: `SCHEMA_VERSION`, `CREATED_AT`, `CREATED_BY`
+- Optional fields (30+ total):
+  - Workflow dispatch: `LAST_DISPATCHED_RUN_ID`, `LAST_DISPATCHED_NODE_ID`, `LAST_DISPATCHED_AT`
+  - Local impl: `LAST_LOCAL_IMPL_AT`, `LAST_LOCAL_IMPL_EVENT`, `LAST_LOCAL_IMPL_SESSION`, `LAST_LOCAL_IMPL_USER`
+  - Remote impl: `LAST_REMOTE_IMPL_AT`, `LAST_REMOTE_IMPL_RUN_ID`, `LAST_REMOTE_IMPL_SESSION_ID`
+  - Learn workflow: `LEARN_STATUS`, `LEARN_RUN_ID`, `LAST_LEARN_SESSION`, `LAST_LEARN_AT`, `LEARN_PLAN_ISSUE`, `LEARN_PLAN_PR`, `LEARNED_FROM_ISSUE`
+  - Session tracking: `LAST_SESSION_BRANCH`, `LAST_SESSION_ID`, `LAST_SESSION_AT`, `LAST_SESSION_SOURCE`
+  - Other: `WORKTREE_NAME`, `BRANCH_NAME`, `PLAN_COMMENT_ID`, `CI_SUMMARY_COMMENT_ID`, `SOURCE_REPO`, `OBJECTIVE_ISSUE`, `CREATED_FROM_SESSION`, `CREATED_FROM_WORKFLOW_RUN_URL`, `LEARN_MATERIALS_BRANCH`, `LIFECYCLE_STAGE`
+
+### 2. Schema Validation
+
+**Location:** `packages/erk-shared/src/erk_shared/gateway/github/metadata/schemas.py` (lines 462-827)
+
+**`PlanHeaderSchema` class validates:**
+
+... [92 lines omitted] ...
+
+- Type checking with sensible coercion (e.g., int run IDs can be coerced to strings with a warning)
+  </tool_result>
+  <tool_result tool="toolu_01SVe1hb6rjiPymNAWnw9hzo">
+Perfect! Now I have all the information I need. Let me compile a comprehensive summary of my findings:
+
+## Summary: Complete Flow of `CREATED_FROM_WORKFLOW_RUN_URL` Metadata Field
+
+Based on my thorough code tracing, here's the comprehensive documentation of how the remote planning process stores the `CREATED_FROM_WORKFLOW_RUN_URL` metadata field:
+
+### 1. **Schema Definition** (Defined, not generated)
+
+**Location:** `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-42/packages/erk-shared/src/erk_shared/gateway/github/metadata/schemas.py`
+
+- **Line 396-398:** Field constant defined:
+```python
+CREATED_FROM_WORKFLOW_RUN_URL: Literal["created_from_workflow_run_url"] = (
+    "created_from_workflow_run_url"
+)
+```
+
+- **Line 355-356:** Included in `PlanHeaderFieldName` union type (the comprehensive type of all valid plan-header fields)
+- **Line 486:** Documented in `PlanHeaderSchema` docstring as: "Workflow run URL that created this plan (nullable)"
+- **Line 526:** Included in `optional_fields` of `PlanHeaderSchema.validate()`
+- **Lines 687-694:** Validation logic checks it's a non-empty string or null
+
+### 2. **Creation Path** (How headers are built)
+
+**Location:** `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-42/packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py`
+
+**Function:** `create_plan_header_block()` - Lines 67-203
+- **Parameter:** `created_from_workflow_run_url: str | None` (Line 87)
+- **Logic:** Lines 168-169 conditionally include the field:
+```python
+
+... [113 lines omitted] ...
+  </tool_result>
+  <usage input_tokens="3" cache_creation_input_tokens="5325" cache_read_input_tokens="26274" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5325}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Good, I have a thorough understanding. Let me read a few critical files to verify the exact changes needed.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="5325" cache_read_input_tokens="26274" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5325}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01DCJsuzDEnJeeWmeRBGo8v9">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-42/packages/erk-shared/src/erk_shared/gateway/github/metadata/schemas.py</param>
+    <param name="offset">390</param>
+    <param name="limit">40</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="5325" cache_read_input_tokens="26274" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5325}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01DCJsuzDEnJeeWmeRBGo8v9">
+   390→LAST_REMOTE_IMPL_AT: Literal["last_remote_impl_at"] = "last_remote_impl_at"
+   391→LAST_REMOTE_IMPL_RUN_ID: Literal["last_remote_impl_run_id"] = "last_remote_impl_run_id"
+   392→LAST_REMOTE_IMPL_SESSION_ID: Literal["last_remote_impl_session_id"] = "last_remote_impl_session_id"
+   393→SOURCE_REPO: Literal["source_repo"] = "source_repo"
+   394→OBJECTIVE_ISSUE: Literal["objective_issue"] = "objective_issue"
+   395→CREATED_FROM_SESSION: Literal["created_from_session"] = "created_from_session"
+   396→CREATED_FROM_WORKFLOW_RUN_URL: Literal["created_from_workflow_run_url"] = (
+   397→    "created_from_workflow_run_url"
+   398→)
+   399→LAST_LEARN_SESSION: Literal["last_learn_session"] = "last_learn_session"
+   400→LAST_LEARN_AT: Literal["last_learn_at"] = "last_learn_at"
+   401→LEARN_STATUS: Literal["learn_status"] = "learn_status"
+   402→LEARN_RUN_ID: Literal["learn_run_id"] = "learn_run_id"
+   403→
+   404→# Session branch fields (unified for local and remote)
+   405→LAST_SESSION_BRANCH: Literal["last_session_branch"] = "last_session_branch"
+   406→LAST_SESSION_ID: Literal["last_session_id"] = "last_session_id"
+   407→LAST_SESSION_AT: Literal["last_session_at"] = "last_session_at"
+   408→LAST_SESSION_SOURCE: Literal["last_session_source"] = "last_session_source"
+   409→
+   410→# Learn plan tracking fields
+   411→LEARN_PLAN_ISSUE: Literal["learn_plan_issue"] = "learn_plan_issue"
+   412→LEARN_PLAN_PR: Literal["learn_plan_pr"] = "learn_plan_pr"
+   413→LEARNED_FROM_ISSUE: Literal["learned_from_issue"] = "learned_from_issue"
+   414→
+   415→# Learn materials branch (preprocessed learn materials committed to a branch)
+   416→LEARN_MATERIALS_BRANCH: Literal["learn_materials_branch"] = "learn_materials_branch"
+   417→
+   418→# Lifecycle stage field
+   419→LIFECYCLE_STAGE: Literal["lifecycle_stage"] = "lifecycle_stage"
+
+... [10 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01WuEzrjHMvSD44a9WUhuyR2">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-42/src/erk/cli/commands/exec/scripts/plan_save.py</param>
+    <param name="offset">110</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="5325" cache_read_input_tokens="26274" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5325}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01WuEzrjHMvSD44a9WUhuyR2">
+   110→def _save_as_planned_pr(
+   111→    ctx: click.Context,
+   112→    *,
+   113→    plan_content: str,
+   114→    session_id: str | None,
+   115→    objective_issue: int | None,
+   116→    plan_type: str | None,
+   117→    output_format: str,
+   118→    plan_file: Path | None,
+   119→    learned_from_issue: int | None,
+   120→    created_from_workflow_run_url: str | None,
+   121→    branch_slug: str | None,
+   122→    node_ids: tuple[str, ...] | None,
+   123→    summary: str | None,
+   124→    session_xml_dir: Path | None,
+   125→    current_branch_flag: bool,
+   126→) -&gt; None:
+   127→    """Save plan as a planned PR.
+   128→
+   129→    Creates a branch, pushes it, then creates a planned PR with plan content.
+   130→
+   131→    Args:
+   132→        ctx: Click context
+   133→        plan_content: Validated plan content
+   134→        session_id: Session ID for markers
+   135→        objective_issue: Optional objective issue number
+   136→        plan_type: Plan type (standard or learn)
+   137→        output_format: Output format (json or display)
+   138→        plan_file: Original plan file path (for snapshot)
+   139→        learned_from_issue: Parent plan number (for learn plans)
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01Gf6tbQWXVBwuEDCkrfR4dM">
+    <param name="pattern">WORKFLOW_RUN_URL</param>
+    <param name="glob">*.yml</param>
+    <param name="output_mode">content</param>
+    <param name="-C">3</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="5325" cache_read_input_tokens="26274" output_tokens="636" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 5325, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Gf6tbQWXVBwuEDCkrfR4dM">
+.github/workflows/learn.yml-64-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+.github/workflows/learn.yml-65-          GH_TOKEN: ${{ secrets.ERK_QUEUE_GH_PAT }}
+.github/workflows/learn.yml-66-          PLAN_ID: ${{ inputs.pr_number }}
+.github/workflows/learn.yml:67:          WORKFLOW_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+.github/workflows/learn.yml-68-        run: |
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-42/.github/workflows/learn.yml-69-          claude --print \
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-42/.github/workflows/learn.yml-70-            --verbose \
+--
+.github/workflows/one-shot.yml-152-          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+.github/workflows/one-shot.yml-153-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+.github/workflows/one-shot.yml-154-          GH_TOKEN: ${{ secrets.ERK_QUEUE_GH_PAT }}
+.github/workflows/one-shot.yml:155:          WORKFLOW_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+.github/workflows/one-shot.yml-156-          OBJECTIVE_ISSUE: ${{ inputs.objective_issue }}
+.github/workflows/one-shot.yml-157-          NODE_ID: ${{ inputs.node_id }}
+.github/workflows/one-shot.yml-158-          PLAN_ISSUE_NUMBER: ${{ inputs.plan_issue_number }}
+--
+.github/workflows/plan-implement.yml-202-          PR_NUMBER: ${{ inputs.pr_number }}
+.github/workflows/plan-implement.yml-203-          GH_TOKEN: ${{ github.token }}
+.github/workflows/plan-implement.yml-204-          WORKFLOW_RUN_ID: ${{ github.run_id }}
+.github/workflows/plan-implement.yml:205:          WORKFLOW_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+.github/workflows/plan-implement.yml-206-        run: |
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-42/.github/workflows/plan-implement.yml-207-          erk exec add-remote-execution-note \
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-42/.github/workflows/plan-implement.yml-208-            --pr-number "$PR_NUMBER" \
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-42/.github/workflows/plan-implement.yml-209-            --run-id "$WORKFLOW_RUN_ID" \
+.github/workflows/plan-implement.yml:210:            --run-url "$WORKFLOW_RUN_URL"
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-42/.github/workflows/plan-implement.yml-211-
+.github/workflows/plan-implement.yml-212-      - name: Write run metadata to impl-context
+.github/workflows/plan-implement.yml-213-        run: |
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="3671" cache_read_input_tokens="31599" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3671}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01AqknV24u5bN3TLrv4JohyV">
+    <param name="pattern">created-from-workflow-run-url</param>
+    <param name="output_mode">content</param>
+    <param name="-C">2</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3671" cache_read_input_tokens="31599" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3671}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01AqknV24u5bN3TLrv4JohyV">
+src/erk/cli/commands/exec/scripts/plan_save.py-10-    --plan-type standard|learn: Plan type (default: standard)
+src/erk/cli/commands/exec/scripts/plan_save.py-11-    --learned-from-issue INT: Parent plan (for learn plans)
+src/erk/cli/commands/exec/scripts/plan_save.py:12:    --created-from-workflow-run-url URL: Workflow run URL
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-42/src/erk/cli/commands/exec/scripts/plan_save.py-13-
+src/erk/cli/commands/exec/scripts/plan_save.py-14-Objective linking: use --objective to pass directly, or rely on
+--
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-42/src/erk/cli/commands/exec/scripts/plan_save.py-515-)
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-42/src/erk/cli/commands/exec/scripts/plan_save.py-516-@click.option(
+src/erk/cli/commands/exec/scripts/plan_save.py:517:    "--created-from-workflow-run-url",
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-42/src/erk/cli/commands/exec/scripts/plan_save.py-518-    default=None,
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-42/src/erk/cli/commands/exec/scripts/plan_save.py-519-    help="GitHub Actions workflow run URL",
+--
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-42/docs/learned/planning/learn-plan-metadata-fields.md-52-
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-42/docs/learned/planning/learn-plan-metadata-fields.md-53-```bash
+docs/learned/planning/learn-plan-metadata-fields.md:54:erk exec plan-save --created-from-workflow-run-url "$WORKFLOW_RUN_URL" ...
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-42/docs/learned/planning/learn-plan-metadata-fields.md-55-```
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-42/docs/learned/planning/learn-plan-metadata-fields.md-56-
+--
+.claude/skills/erk-exec/reference.md-987-| `--plan-type`                     | CHOICE    | No       | -       | PR type: standard (default) or learn                                   |
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-42/.claude/skills/erk-exec/reference.md-988-| `--learned-from-issue`            | INTEGER   | No       | -       | Parent PR number (for learn plans)                                     |
+.claude/skills/erk-exec/reference.md:989:| `--created-from-workflow-run-url` | TEXT      | No       | -       | GitHub Actions workflow run URL                                        |
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-42/.claude/skills/erk-exec/reference.md-990-| `--branch-slug`                   | TEXT      | No       | -       | Pre-generated branch slug (skips LLM call when provided)               |
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-42/.claude/skills/erk-exec/reference.md-991-| `--objective`                     | INTEGER   | No       | -       | Objective issue number (overrides session marker)                      |
+--
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-42/.claude/commands/erk/system/one-shot-plan.md-71-
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-42/.claude/commands/erk/system/one-shot-plan.md-72-```bash
+.claude/commands/erk/system/one-shot-plan.md:73:erk exec plan-save --plan-file .erk/impl-context/plan.md --format json --session-id="${CLAUDE_SESSION_ID}" --created-from-workflow-run-url "$WORKFLOW_RUN_URL"
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-42/.claude/commands/erk/system/one-shot-plan.md-74-```
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-42/.claude/commands/erk/system/one-shot-plan.md-75-
+.claude/commands/erk/system/one-shot-plan.md:76:If the `WORKFLOW_RUN_URL` environment variable is not set, omit the `--created-from-workflow-run-url` flag.
+
+... [8 lines omitted] ...
+
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-42/.claude/commands/erk/system/one-shot-plan.md-78-Parse the JSON output. If `success` is not `true`, stop and report the error. Otherwise, extract `pr_number` and `title` from the output.
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Wzd5ZuMhtbuAT5TYCiBcd7">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-42/src/erk/cli/commands/exec/scripts/plan_save.py</param>
+    <param name="offset">280</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3671" cache_read_input_tokens="31599" output_tokens="330" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3671, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Wzd5ZuMhtbuAT5TYCiBcd7">
+   280→    if objective_issue is not None:
+   281→        metadata["objective_issue"] = objective_issue
+   282→
+   283→    if session_id is not None:
+   284→        metadata["created_from_session"] = session_id
+   285→
+   286→    if learned_from_issue is not None:
+   287→        metadata["learned_from_issue"] = learned_from_issue
+   288→
+   289→    if created_from_workflow_run_url is not None:
+   290→        metadata["created_from_workflow_run_url"] = created_from_workflow_run_url
+   291→
+   292→    # Build labels
+   293→    labels = ["erk-pr"]
+   294→    if plan_type == "learn":
+   295→        labels.append("erk-learn")
+   296→
+   297→    # Prefix title with [erk-pr] or [erk-learn] for GitHub visibility
+   298→    title_tag = get_title_tag_from_labels(labels)
+   299→    prefixed_title = f"{title_tag} {title}"
+   300→
+   301→    # Create draft PR via backend
+   302→    backend = PlannedPRBackend(github, github_issues, time=RealTime())
+   303→    result = backend.create_plan(
+   304→        repo_root=repo_root,
+   305→        title=prefixed_title,
+   306→        content=plan_content,
+   307→        labels=tuple(labels),
+   308→        metadata=metadata,
+   309→        summary=summary or "",
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="2583" cache_read_input_tokens="35270" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2583}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Li4ptRvixtErBMqefZKpqC">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-42/src/erk/tui/data/real_provider.py</param>
+    <param name="offset">640</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2583" cache_read_input_tokens="35270" output_tokens="432" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2583, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Li4ptRvixtErBMqefZKpqC">
+   640→                    pr_has_unresolved_comments = False
+   641→
+   642→        # Workflow run info
+   643→        run_id: str | None = None
+   644→        run_status: str | None = None
+   645→        run_conclusion: str | None = None
+   646→        run_id_display = "-"
+   647→        run_state_display = "-"
+   648→        run_url: str | None = None
+   649→
+   650→        if workflow_run is not None:
+   651→            run_id = str(workflow_run.run_id)
+   652→            run_status = workflow_run.status
+   653→            run_conclusion = workflow_run.conclusion
+   654→            if plan.url:
+   655→                parts = plan.url.split("/")
+   656→                if len(parts) &gt;= 5:
+   657→                    owner = parts[-4]
+   658→                    repo_name = parts[-3]
+   659→                    run_url = (
+   660→                        f"https://github.com/{owner}/{repo_name}/actions/runs/{workflow_run.run_id}"
+   661→                    )
+   662→            run_id_display = format_workflow_run_id(workflow_run, run_url)
+   663→            run_state_display = format_workflow_outcome(workflow_run)
+   664→        else:
+   665→            # Fallback: extract run ID from created_from_workflow_run_url metadata
+   666→            # Planning-stage PRs store this URL but have no dispatched workflow run
+   667→            created_run_url = header_str(plan.header_fields, CREATED_FROM_WORKFLOW_RUN_URL)
+   668→            if created_run_url is not None:
+   669→                url_parts = created_run_url.rstrip("/").split("/")
+
+... [20 lines omitted] ...
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="3129" cache_read_input_tokens="37853" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3129}" output_tokens="12" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I have full understanding. Let me design the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3129" cache_read_input_tokens="37853" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3129}" output_tokens="12" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01FVA3j4EKeej8pCf7NnZBxo">
+    <param name="subagent_type">Plan</param>
+    <param name="description">Plan run ID field addition</param>
+    <param name="prompt">Design an implementation plan for adding a `CREATED_FROM_WORKFLOW_RUN_ID` plan header meta...[truncated 3072 chars]...ting patterns in PlanHeaderSchema
+
+Please provide a detailed, ordered implementation plan.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3129" cache_read_input_tokens="37853" output_tokens="1640" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3129, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01FVA3j4EKeej8pCf7NnZBxo">
+Now I have a complete picture of every file involved. Let me provide the detailed implementation plan.
+
+---
+
+## Implementation Plan: Add `CREATED_FROM_WORKFLOW_RUN_ID` Plan Header Field
+
+### Overview
+
+This plan threads a new `created_from_workflow_run_id` field through the entire pipeline: from CI workflow environment variables, through Claude Code commands/skills, through the CLI, into the plan header metadata schema, and finally consumed by the TUI for direct display without URL parsing.
+
+### Step 1: Schema Definition (schemas.py)
+
+**File:** `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-42/packages/erk-shared/src/erk_shared/gateway/github/metadata/schemas.py`
+
+**Changes:**
+
+1. Add `"created_from_workflow_run_id"` to the `PlanHeaderFieldName` Literal union type (after `"created_from_workflow_run_url"` at line 356).
+
+2. Add the constant definition after `CREATED_FROM_WORKFLOW_RUN_URL` (after line 398):
+   ```python
+   CREATED_FROM_WORKFLOW_RUN_ID: Literal["created_from_workflow_run_id"] = (
+       "created_from_workflow_run_id"
+   )
+   ```
+
+3. Add `CREATED_FROM_WORKFLOW_RUN_ID` to the `optional_fields` set in `PlanHeaderSchema.validate()` (after `CREATED_FROM_WORKFLOW_RUN_URL` at line 526).
+
+4. Add validation logic after the `created_from_workflow_run_url` validation (after line 694). Follow the same string-or-null pattern:
+   ```python
+   # Validate optional created_from_workflow_run_id field
+
+... [217 lines omitted] ...
+
+           raise ValueError("created_from_workflow_run_id must be a string or null")
+           raise ValueError("created_from_workflow_run_id must not be empty when provided")
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="5751" cache_read_input_tokens="40982" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5751}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me verify the planned_pr.py flow and check for any other call sites of `format_plan_header_body`.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="5751" cache_read_input_tokens="40982" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5751}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01CaW5ovHm8wVu8CyAi3W9Gw">
+    <param name="pattern">format_plan_header_body\(</param>
+    <param name="output_mode">content</param>
+    <param name="-C">2</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5751" cache_read_input_tokens="40982" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5751}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01CaW5ovHm8wVu8CyAi3W9Gw">
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-42/src/erk/cli/commands/consolidate_learn_plans_dispatch.py-139-        user_output("Creating draft PR...")
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-42/src/erk/cli/commands/consolidate_learn_plans_dispatch.py-140-        created_at = time_gateway.now().replace(tzinfo=UTC).isoformat()
+src/erk/cli/commands/consolidate_learn_plans_dispatch.py:141:        metadata_body = format_plan_header_body(
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-42/src/erk/cli/commands/consolidate_learn_plans_dispatch.py-142-            created_at=created_at,
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-42/src/erk/cli/commands/consolidate_learn_plans_dispatch.py-143-            created_by=submitted_by,
+--
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-42/src/erk/cli/commands/one_shot_remote_dispatch.py-335-        user_output("Creating draft PR...")
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-42/src/erk/cli/commands/one_shot_remote_dispatch.py-336-        created_at = time_gateway.now().replace(tzinfo=UTC).isoformat()
+src/erk/cli/commands/one_shot_remote_dispatch.py:337:        metadata_body = format_plan_header_body(
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-42/src/erk/cli/commands/one_shot_remote_dispatch.py-338-            created_at=created_at,
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-42/src/erk/cli/commands/one_shot_remote_dispatch.py-339-            created_by=submitted_by,
+--
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-42/tests/core/test_plan_context_provider.py-121-    be resolved to plan IDs.
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-42/tests/core/test_plan_context_provider.py-122-    """
+tests/core/test_plan_context_provider.py:123:    body = format_plan_header_body(
+tests/core/test_plan_context_provider.py-124-        created_at="2024-01-01T00:00:00Z",
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-42/tests/core/test_plan_context_provider.py-125-        created_by="testuser",
+--
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-42/tests/core/test_plan_context_provider.py-179-    comment_body = format_plan_content_comment(plan_content)
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-42/tests/core/test_plan_context_provider.py-180-
+tests/core/test_plan_context_provider.py:181:    body = format_plan_header_body(
+tests/core/test_plan_context_provider.py-182-        created_at="2024-01-01T00:00:00Z",
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-42/tests/core/test_plan_context_provider.py-183-        created_by="testuser",
+--
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-42/tests/core/test_plan_context_provider.py-242-    comment_body = format_plan_content_comment(plan_content)
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-42/tests/core/test_plan_context_provider.py-243-
+tests/core/test_plan_context_provider.py:244:    plan_body = format_plan_header_body(
+tests/core/test_plan_context_provider.py-245-        created_at="2024-01-01T00:00:00Z",
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-42/tests/core/test_plan_context_provider.py-246-        created_by="testuser",
+--
+
+... [59 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01CpBvkW6srsdmqvb4emNa5E">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-42/packages/erk-shared/src/erk_shared/plan_store/planned_pr.py</param>
+    <param name="offset">310</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5751" cache_read_input_tokens="40982" output_tokens="318" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 5751, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01CpBvkW6srsdmqvb4emNa5E">
+   310→        learned_from_issue_raw = metadata.get(LEARNED_FROM_ISSUE)
+   311→        learned_from_issue_val: int | None = (
+   312→            int(learned_from_issue_raw)
+   313→            if learned_from_issue_raw is not None and isinstance(learned_from_issue_raw, (int, str))
+   314→            else None
+   315→        )
+   316→
+   317→        created_from_workflow_run_url_raw = metadata.get(CREATED_FROM_WORKFLOW_RUN_URL)
+   318→        created_from_workflow_run_url_val: str | None = (
+   319→            str(created_from_workflow_run_url_raw)
+   320→            if created_from_workflow_run_url_raw is not None
+   321→            else None
+   322→        )
+   323→
+   324→        created_at = self._time.now().replace(tzinfo=UTC).isoformat()
+   325→        metadata_body = format_plan_header_body(
+   326→            created_at=created_at,
+   327→            created_by=username,
+   328→            worktree_name=None,
+   329→            branch_name=branch_name,
+   330→            plan_comment_id=None,
+   331→            last_dispatched_run_id=None,
+   332→            last_dispatched_node_id=None,
+   333→            last_dispatched_at=None,
+   334→            last_local_impl_at=None,
+   335→            last_local_impl_event=None,
+   336→            last_local_impl_session=None,
+   337→            last_local_impl_user=None,
+   338→            last_remote_impl_at=None,
+   339→            last_remote_impl_run_id=None,
+  </tool_result>
+  <tool_use name="Read" id="toolu_01FjpEV8xWNYv1XWdxwEZ2VZ">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-42/packages/erk-shared/src/erk_shared/plan_store/planned_pr.py</param>
+    <param name="offset">339</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4662" cache_read_input_tokens="46733" output_tokens="136" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 4662, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01FjpEV8xWNYv1XWdxwEZ2VZ">
+   339→            last_remote_impl_run_id=None,
+   340→            last_remote_impl_session_id=None,
+   341→            source_repo=source_repo_str,
+   342→            objective_issue=objective_id,
+   343→            created_from_session=created_from_session_str,
+   344→            created_from_workflow_run_url=created_from_workflow_run_url_val,
+   345→            last_learn_session=None,
+   346→            last_learn_at=None,
+   347→            learn_status=None,
+   348→            learn_plan_issue=None,
+   349→            learn_plan_pr=None,
+   350→            learned_from_issue=learned_from_issue_val,
+   351→            lifecycle_stage="planned",
+   352→        )
+   353→
+   354→        pr_body = build_plan_stage_body(metadata_body, content, summary=summary)
+   355→
+   356→        base_ref_raw = metadata.get("base_ref_name")
+   357→        base = base_ref_raw if isinstance(base_ref_raw, str) else "master"
+   358→
+   359→        pr_number = self._github.create_pr(
+   360→            repo_root,
+   361→            branch=branch_name,
+   362→            title=title,
+   363→            body=pr_body,
+   364→            base=base,
+   365→            draft=True,
+   366→        )
+   367→
+   368→        # Append checkout footer now that we have the PR number.
+  </tool_result>
+  <assistant>Good. I now have the complete picture. Let me write the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="543" cache_read_input_tokens="51395" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 543}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01Jprv7dsSQcGB5wQo4tVFni">
+    <param name="file_path">/Users/schrockn/.claude/plans/crystalline-floating-mochi.md</param>
+    <param name="content"># Plan: Store planning run ID as a proper metadata field
+
+## Context
+
+The current PR (`pln...[truncated 4723 chars]...ith the new approach
+3. Verify the schema validates correctly with the new optional field
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="543" cache_read_input_tokens="51395" output_tokens="1727" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 543, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Jprv7dsSQcGB5wQo4tVFni">
+File created successfully at: /Users/schrockn/.claude/plans/crystalline-floating-mochi.md
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_01PDy38Us5UDkeciJxZnZJ5X">
+    <param name="query">select:ExitPlanMode</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1875" cache_read_input_tokens="51938" output_tokens="78" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1875, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01PDy38Us5UDkeciJxZnZJ5X">
+
+  </tool_result>
+  <assistant>
+
+The plan is ready. The key insight: CI already has `github.run_id` available, constructs a URL from it, and the current PR parses it back out. Instead, we store the run ID directly as `CREATED_FROM_WORKFLOW_RUN_ID` and read it in the TUI without parsing. Backward compatibility is preserved for older plans that only have the URL.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="738" cache_read_input_tokens="53813" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 738}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ExitPlanMode" id="toolu_018wCboNCfnipxwn2J4jF1KS">
+    <param name="plan"># Plan: Store planning run ID as a proper metadata field
+
+## Context
+
+The current PR (`pln...[truncated 4723 chars]...ith the new approach
+3. Verify the schema validates correctly with the new optional field
+</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="738" cache_read_input_tokens="53813" output_tokens="125" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 738, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_018wCboNCfnipxwn2J4jF1KS">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/crystalline-floating-mochi.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Plan: Store planning run ID as a proper metadata field
+Current context: (wt:erk-slot-42) (br:plnd/show-planning-run-id-03-10-1209) (pr:#9175)\n\nWhat would you like to do with this plan?"
+  header: "br:plnd/show"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create new branch and planned PR. Stays on current branch." - Create a new branch, save plan as draft PR.
+  2. "Implement without saving" - Implement directly on the current branch without saving a plan PR.
+  3. "View/Edit the Plan" - Open plan in editor to review or modify before deciding.
+
+If user chooses 'Create new branch and planned PR':
+  1. Run /erk:plan-save
+  2. Call ExitPlanMode to end the planning session.
+
+If user chooses 'Implement without saving':
+  1. Create implement-now marker:
+     erk exec marker create --session-id 7d0970d8-ec63-41c0-94d6-d63ed79fa1a3 \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly on the current branch.
+     Do NOT run 'erk exec setup-impl' or create a new branch.
+     Read the plan from: /Users/schrockn/.claude/plans/crystalline-floating-mochi.md
+     Implement changes, run CI, and optionally 'erk pr submit' when done.
+
+... [6 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Peq4cJxcwhM7CqjA8Xfvx3">
+    <param name="file_path">/Users/schrockn/.claude/plans/crystalline-floating-mochi.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="855" cache_read_input_tokens="54551" output_tokens="73" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 855, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Peq4cJxcwhM7CqjA8Xfvx3">
+     1→# Plan: Store planning run ID as a proper metadata field
+     2→
+     3→## Context
+     4→
+     5→The current PR (`plnd/show-planning-run-id-03-10-1209`) adds URL-parsing logic in the TUI to extract a GitHub Actions run ID from the `created_from_workflow_run_url` field. This is backwards — the remote planning process already has the run ID available as `github.run_id` in CI, constructs a URL from it, and then the TUI has to parse it back out. Instead, the planning process should store the run ID directly as a first-class metadata field.
+     6→
+     7→## Approach
+     8→
+     9→Add a new `CREATED_FROM_WORKFLOW_RUN_ID` plan header field. Pass `github.run_id` from CI alongside the existing URL. The TUI reads the run ID directly — no parsing.
+    10→
+    11→## Changes
+    12→
+    13→### 1. Schema — `packages/erk-shared/src/erk_shared/gateway/github/metadata/schemas.py`
+    14→
+    15→- Add `"created_from_workflow_run_id"` to `PlanHeaderFieldName` union
+    16→- Add constant: `CREATED_FROM_WORKFLOW_RUN_ID: Literal["created_from_workflow_run_id"] = "created_from_workflow_run_id"` (after `CREATED_FROM_WORKFLOW_RUN_URL`, ~line 398)
+    17→- Add to `optional_fields` in `PlanHeaderSchema.validate()`
+    18→- Add string-or-null validation (same pattern as `created_from_workflow_run_url`)
+    19→- Update docstring
+    20→
+    21→### 2. Plan header functions — `packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py`
+    22→
+    23→- Import `CREATED_FROM_WORKFLOW_RUN_ID`
+    24→- Add `created_from_workflow_run_id: str | None` param to both `create_plan_header_block()` and `format_plan_header_body()`
+    25→- Add conditional inclusion: `if created_from_workflow_run_id is not None: data[CREATED_FROM_WORKFLOW_RUN_ID] = created_from_workflow_run_id`
+    26→
+    27→### 3. PlannedPR backend — `packages/erk-shared/src/erk_shared/plan_store/planned_pr.py`
+    28→
+    29→- Import `CREATED_FROM_WORKFLOW_RUN_ID`
+    30→- In `create_plan()` (~line 317): extract `created_from_workflow_run_id` from metadata dict (same pattern as `created_from_workflow_run_url_raw`)
+
+... [69 lines omitted] ...
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_01X85E8Qh1RXazJoh9kA3MwY">
+    <param name="query">select:AskUserQuestion</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2034" cache_read_input_tokens="55406" output_tokens="77" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2034, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01X85E8Qh1RXazJoh9kA3MwY">
+
+  </tool_result>
+  <tool_use name="AskUserQuestion" id="toolu_01VyztEHH9s8sGnwnsEkskq9">
+    <param name="questions">[{'question': '📋 Plan: Store planning run ID as a proper metadata field\nCurrent context: ...[truncated 432 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1333" cache_read_input_tokens="57440" output_tokens="244" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1333, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01VyztEHH9s8sGnwnsEkskq9">
+User has answered your questions: "📋 Plan: Store planning run ID as a proper metadata field
+Current context: (wt:erk-slot-42) (br:plnd/show-planning-run-id-03-10-1209) (pr:#9175)
+
+What would you like to do with this plan?"="Create new branch and planned PR". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="Skill" id="toolu_01Gc3sJkTn56L9RQcaGEZCD3">
+    <param name="skill">erk:plan-save</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="352" cache_read_input_tokens="58773" output_tokens="57" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 352, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Gc3sJkTn56L9RQcaGEZCD3">
+Launching skill: erk:plan-save
+  </tool_result>
+  <user># /erk:plan-save
+
+Save the current session's plan to GitHub with session context.
+
+## Usage
+
+```bash
+/erk:plan-save                           # Standalone plan
+/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+/erk:plan-save --objective=123           # Explicit objective link (overrides marker)
+/erk:plan-save --current-branch          # Use current branch instead of creating new plnd/ branch
+```
+
+Objective linking: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command. Use `--objective=&lt;number&gt;` to override the marker or provide the link when no marker exists (e.g., during replan).
+
+## Plan Storage
+
+The plan is saved using the configured backend:
+
+- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+  The JSON output contract includes `pr_number`, `pr_url`, `title`, `branch_name`, `plan_backend`.
+
+## Agent Instructions
+
+### Step 1: Parse Arguments
+
+Check `` for the `--plan-type`, `--objective`, and `--current-branch` flags:
+
+```
+If  contains "--plan-type=&lt;type&gt;":
+  - Extract the type (standard or learn)
+  - Store as PLAN_TYPE variable
+  - Set PLAN_TYPE_FLAG to "--plan-type=&lt;type&gt;"
+Else:
+  - Set PLAN_TYPE_FLAG to empty string
+
+If  contains "--objective=&lt;number&gt;":
+  - Extract the number
+  - Set OBJECTIVE_FLAG to "--objective=&lt;number&gt;"
+Else:
+  - Set OBJECTIVE_FLAG to empty string
+
+If  contains "--current-branch":
+  - Set CURRENT_BRANCH_FLAG to "--current-branch"
+Else:
+  - Set CURRENT_BRANCH_FLAG to empty string
+```
+
+### Step 2: Generate Branch Slug
+
+**Skip this step if `--current-branch` was passed.** The current branch is used directly.
+
+Before saving, generate a branch slug from the plan title. Read the plan title from the plan file you wrote in plan mode (the first `# ` heading).
+
+Generate a branch slug from the title:
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+
+Store the result as `BRANCH_SLUG`.
+
+### Step 3: Generate Plan Summary
+
+Write a concise 2-3 sentence summary of the plan. This summary will be visible
+at the top of the PR description (above the collapsed full plan).
+
+Guidelines:
+
+- Focus on WHAT the plan does and WHY
+- Do not repeat the title
+- Plain text, no markdown headers or formatting
+- Avoid special shell characters (backticks, dollar signs)
+- Store as PLAN_SUMMARY
+
+### Step 4: Run Save Command
+
+Run this command with the session ID, summary, and optional flags.
+
+If CURRENT_BRANCH_FLAG is set, pass `--current-branch` (no branch slug needed):
+
+```bash
+erk exec plan-save --format json --session-id="7d0970d8-ec63-41c0-94d6-d63ed79fa1a3" --current-branch --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Otherwise, pass the branch slug:
+
+```bash
+erk exec plan-save --format json --session-id="7d0970d8-ec63-41c0-94d6-d63ed79fa1a3" --branch-slug="${BRANCH_SLUG}" --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Parse the JSON output to extract `pr_number` for verification in Step 5.
+
+If the command fails, display the error and stop.
+
+### Step 5: Verify Objective Link (if applicable)
+
+**Only run this step if `objective_issue` is non-null in the JSON output from Step 4.**
+
+Verify the objective link was saved correctly:
+
+```bash
+erk exec get-plan-metadata &lt;pr_number&gt; objective_issue
+```
+
+Parse the JSON response:
+
+- If `success: true` and `value` matches the expected objective number: verification passed
+- If `success: false` or value doesn't match: verification failed
+
+**On verification success:**
+
+Display: `Verified objective link: #&lt;objective-number&gt;`
+
+**On verification failure:**
+
+Display error and remediation steps:
+
+```
+ERROR: Objective link verification failed
+Expected objective: #&lt;expected&gt;
+Actual: &lt;actual-or-null&gt;
+
+The plan was saved but without the correct objective link.
+Fix: Close draft PR #&lt;pr_number&gt;,
+ensure the objective-context marker exists, and re-run /erk:plan-save.
+```
+
+Exit without creating the plan-saved marker. The session continues so the user can retry.
+
+### Step 6: Update Objective Roadmap (if objective linked)
+
+**Only run this step if `objective_issue` was non-null in JSON output and verification passed.**
+
+Update the objective's roadmap table to show that a plan has been created for this node:
+
+1. **Read the roadmap node marker** to get the node ID:
+
+```bash
+step_id=$(erk exec marker read --session-id "7d0970d8-ec63-41c0-94d6-d63ed79fa1a3" roadmap-step)
+```
+
+If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-plan`.
+
+2. **Update the roadmap table** using the dedicated command:
+
+```bash
+erk exec update-objective-node &lt;objective-issue&gt; --node "$step_id" --pr "#&lt;pr_number&gt;" --status in_progress
+```
+
+This atomically fetches the objective body, finds the matching node row, sets the Status cell to `in-progress`, and writes the updated body back.
+
+3. **Report the update:**
+
+Display: `Updated objective #&lt;objective-issue&gt; roadmap: node &lt;step_id&gt; → PR #&lt;pr_number&gt;`
+
+**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+
+### Step 7: Display Results
+
+**If JSON contains `skipped_duplicate: true`:**
+
+Display: `Plan already saved as PR #&lt;pr_number&gt; (duplicate skipped)`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options.
+
+**Otherwise, on success**, display:
+
+```
+Plan "&lt;title&gt;" saved as draft PR #&lt;pr_number&gt;
+URL: &lt;issue_url&gt;
+```
+
+If objective was verified, also display: `Verified objective link: #&lt;objective-number&gt;`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options
+(implement in current worktree, implement in new worktree, or done).
+
+On failure, display the error message and suggest:
+
+- Checking that a plan exists (enter Plan mode and exit it first)
+- Verifying GitHub CLI authentication (`gh auth status`)
+- Checking network connectivity
+
+### Step 5: Push Planning Session
+
+After saving successfully, push the planning session for cross-machine learning.
+This captures the in-progress session state so it's available even if implementation
+happens on a different machine.
+
+Run `erk exec capture-session-info` to get the session file path, then push it:
+
+```bash
+erk exec upload-impl-session --session-id "7d0970d8-ec63-41c0-94d6-d63ed79fa1a3" 2&gt;/dev/null || true
+```
+
+If the plan was saved successfully and `pr_number` is known, use push-session directly
+for better stage tracking:
+
+```bash
+erk exec push-session \
+    --session-file "&lt;session_file_path&gt;" \
+    --session-id "7d0970d8-ec63-41c0-94d6-d63ed79fa1a3" \
+    --stage planning \
+    --source local \
+    --pr-number &lt;pr_number&gt; \
+    2&gt;/dev/null || true
+```
+
+Where `&lt;session_file_path&gt;` is obtained from `erk exec capture-session-info` output
+and `&lt;pr_number&gt;` is from Step 2's JSON output.
+
+**Note:** This is non-critical. If it fails, the plan was still saved successfully.
+The `2&gt;/dev/null || true` ensures graceful degradation.
+
+## Session Tracking
+
+After successfully saving a plan, the plan number is stored in a marker file that enables automatic plan updates in the same session.
+
+**To read the saved plan number:**
+
+```bash
+erk exec marker read --session-id "7d0970d8-ec63-41c0-94d6-d63ed79fa1a3" plan-saved-issue
+```
+
+This returns the plan number (exit code 0) or exits with code 1 if no plan was saved in this session.
+</user>
+  <assistant>
+
+Let me execute the plan save steps.
+
+**Branch slug:** `store-planning-run-id-field`
+
+**Plan summary:** Instead of parsing the GitHub Actions run ID from the created_from_workflow_run_url field in the TUI, store it as a proper created_from_workflow_run_id metadata field. The remote planning process already has the run ID available and constructs the URL from it, so storing it directly eliminates unnecessary URL parsing while maintaining backward compatibility.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="2296" cache_read_input_tokens="59125" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2296}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01PcHKeDFudjvCNKhXuP5bna">
+    <param name="command">erk exec plan-save --format json --session-id="7d0970d8-ec63-41c0-94d6-d63ed79fa1a3" --bra...[truncated 301 chars]... it directly eliminates unnecessary URL parsing while maintaining backward compatibility."</param>
+    <param name="description">Save plan as draft PR</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2296" cache_read_input_tokens="59125" output_tokens="328" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2296, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01PcHKeDFudjvCNKhXuP5bna">
+{"success": true, "pr_number": 9184, "pr_url": "https://github.com/dagster-io/erk/pull/9184", "title": "[erk-pr] Plan: Store planning run ID as a proper metadata field", "branch_name": "plnd/store-planning-run-id-fiel-03-10-1348", "plan_backend": "planned_pr", "objective_issue": null, "archived_to": "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-42/.erk/scratch/sessions/7d0970d8-ec63-41c0-94d6-d63ed79fa1a3/plan_snapshots/000001-757e5efb"}
+  </tool_result>
+  <assistant>Plan saved as draft PR #9184: https://github.com/dagster-io/erk/pull/9184
+
+Now pushing the planning session.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1724" cache_read_input_tokens="61421" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1724}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01UieFCxT4tgREgs48JqGc3c">
+    <param name="command">erk exec capture-session-info 2&gt;/dev/null</param>
+    <param name="description">Get session file path</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1724" cache_read_input_tokens="61421" output_tokens="120" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1724, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01UieFCxT4tgREgs48JqGc3c">
+SESSION_ID=7d0970d8-ec63-41c0-94d6-d63ed79fa1a3
+SESSION_FILE=/Users/schrockn/.claude/projects/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-42/7d0970d8-ec63-41c0-94d6-d63ed79fa1a3.jsonl
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01YDdpmo7Lfx4ENoGKh5iNii">
+    <param name="command">erk exec push-session --session-file "/Users/schrockn/.claude/projects/-Users-schrockn--er...[truncated 88 chars]...c0-94d6-d63ed79fa1a3" --stage planning --source local --pr-number 9184 2&gt;/dev/null || true</param>
+    <param name="description">Push planning session</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="343" cache_read_input_tokens="63145" output_tokens="219" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 343, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+</session>
