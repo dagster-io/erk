@@ -16,6 +16,7 @@ tripwires:
     warning: "All fields must be explicitly copied in _load_data() PlanFilters construction. Missing fields (like creator) cause silent filtering failures."
 last_audited: "2026-02-16 14:20 PT"
 audit_result: edited
+curated_in: erk-tui
 ---
 
 # TUI Data Contract

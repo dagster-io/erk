@@ -6,6 +6,7 @@ read_when:
   - "overriding Screen actions"
   - "working with async/await in Textual"
   - "testing async TUI code"
+curated_in: erk-tui
 ---
 
 # Textual Async Best Practices

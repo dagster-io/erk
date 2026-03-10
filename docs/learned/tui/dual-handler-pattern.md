@@ -13,6 +13,7 @@ tripwires:
     warning: "Call self.dismiss() before app-level toasts. Modal blocks the correct z-layer, so toasts must render at app level after modal dismissal."
 last_audited: "2026-02-16 14:20 PT"
 audit_result: clean
+curated_in: erk-tui
 ---
 
 # Dual Provider Pattern for Context-Agnostic Commands

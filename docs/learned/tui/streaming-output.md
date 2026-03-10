@@ -13,6 +13,7 @@ tripwires:
     warning: "Use bufsize=1 with text=True for line-buffered streaming Popen output. Without it, output may be block-buffered."
   - action: "displaying subprocess output in plain text widgets without stripping ANSI"
     warning: "Use click.unstyle() before displaying subprocess output in plain text widgets. Raw ANSI codes render as garbage."
+curated_in: erk-tui
 ---
 
 # TUI Streaming Output Patterns

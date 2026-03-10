@@ -12,6 +12,7 @@ tripwires:
     score: 6
 last_audited: "2026-02-16 08:00 PT"
 audit_result: clean
+curated_in: erk-tui
 ---
 
 # Column Addition Pattern

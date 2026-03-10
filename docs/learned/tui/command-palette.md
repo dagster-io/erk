@@ -9,6 +9,7 @@ read_when:
   - "using CommandCategory for command categorization"
 last_audited: "2026-02-05 00:00 PT"
 audit_result: edited
+curated_in: erk-tui
 ---
 
 # Textual CommandPalette Guide

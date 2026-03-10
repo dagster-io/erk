@@ -7,6 +7,7 @@ read_when:
 tripwires:
   - action: "adding a filter toggle to the TUI dashboard"
     warning: "Server-side filters (like author) must clear _data_cache on toggle. Client-side filters (like stack, objective) only re-filter cached rows. Follow the 6-component pattern in filter-toggle-pattern.md."
+curated_in: erk-tui
 ---
 
 # TUI Filter Toggle Pattern

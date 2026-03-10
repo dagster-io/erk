@@ -9,6 +9,7 @@ tripwires:
     warning: "Implement three-layer validation: registry predicate, handler guard, app-level helper. Never rely on registry predicate alone."
 last_audited: "2026-02-05 00:00 PT"
 audit_result: edited
+curated_in: erk-tui
 ---
 
 # Adding Commands to TUI

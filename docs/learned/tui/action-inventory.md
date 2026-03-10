@@ -11,6 +11,7 @@ tripwires:
     warning: "ACTION category implies mutative operations. Instant operations belong in OPEN or COPY categories."
 last_audited: "2026-02-08 00:00 PT"
 audit_result: edited
+curated_in: erk-tui
 ---
 
 # TUI Command Architecture

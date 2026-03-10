@@ -7,6 +7,7 @@ read_when:
 tripwires:
   - action: "adding stage column outside planned_pr backend check"
     warning: "stage column is planned_pr-only. It appears before obj in the column order. Check _setup_columns() for the backend conditional block."
+curated_in: erk-tui
 ---
 
 # Dashboard Column Inventory

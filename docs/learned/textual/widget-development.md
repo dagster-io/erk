@@ -7,6 +7,7 @@ read_when:
   - "writing Textual CSS styles"
 last_audited: "2026-02-05 00:00 PT"
 audit_result: edited
+curated_in: erk-tui
 ---
 
 # Textual Widget Development

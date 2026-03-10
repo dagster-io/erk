@@ -6,6 +6,7 @@ read_when:
   - "implementing title truncation in TUI"
   - "troubleshooting truncated titles showing only prefix"
   - "working with title display lengths"
+curated_in: erk-tui
 ---
 
 # Title Truncation Edge Cases

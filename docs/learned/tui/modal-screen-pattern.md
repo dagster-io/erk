@@ -12,6 +12,7 @@ tripwires:
   - action: "using inverted key check in on_key() modal dismiss logic"
     warning: "if event.key not in (...) is WRONG for dismiss logic — it swallows dismiss keys. Use if event.key in (...) to check for positive dismiss. Regression caused by stacked PR merge order."
     score: 7
+curated_in: erk-tui
 ---
 
 # TUI Modal Screen Pattern

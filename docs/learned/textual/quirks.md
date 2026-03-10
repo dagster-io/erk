@@ -6,6 +6,7 @@ read_when:
   - "writing tests for Textual applications"
 last_audited: "2026-02-16 14:30 PT"
 audit_result: edited
+curated_in: erk-tui
 ---
 
 # Textual API Quirks and Workarounds

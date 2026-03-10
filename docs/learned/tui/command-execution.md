@@ -9,6 +9,7 @@ tripwires:
     warning: "Child processes inherit stdin from parent; in TUI context this creates deadlocks when child prompts for user input. Always set `stdin=subprocess.DEVNULL` for TUI subprocess calls."
 last_audited: "2026-02-16 08:00 PT"
 audit_result: clean
+curated_in: erk-tui
 ---
 
 # Command Execution Strategies

@@ -20,6 +20,7 @@ _UNBUNDLED_SKILLS: frozenset[str] = frozenset(
         "cli-skill-creator",
         "cmux",
         "command-creator",
+        "erk-tui",
         "learned-docs",  # has its own capability class (LearnedDocsCapability)
         "refac-cli-push-down",
         "refac-mock-to-fake",

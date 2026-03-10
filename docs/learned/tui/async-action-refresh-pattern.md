@@ -11,6 +11,7 @@ tripwires:
   - action: "passing --no-wait in worker thread subprocess calls"
     warning: "Never pass --no-wait in worker threads — it defeats the polling purpose. The thread exists to wait for the operation to complete before refreshing."
     score: 5
+curated_in: erk-tui
 ---
 
 # Async Action Refresh Pattern

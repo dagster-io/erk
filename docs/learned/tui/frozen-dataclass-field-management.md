@@ -9,6 +9,7 @@ tripwires:
     warning: "Grep for the class name across ALL constructor sites. Frozen dataclasses have 5+ places to update: field definition, real provider, fake provider, test helpers, and filtering/display logic. Missing one causes runtime TypeError."
   - action: "using positional arguments when constructing PlanRowData"
     warning: "Always use keyword arguments for frozen dataclass construction. Positional arguments break silently when fields are reordered. Use make_plan_row() helper in tests."
+curated_in: erk-tui
 ---
 
 # Frozen Dataclass Field Management

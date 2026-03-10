@@ -11,6 +11,7 @@ tripwires:
     warning: "Filter order is intentional: objective → stack → text → sort. Objective is broadest (cross-stack), stack is mid-level, text is narrowest. Changing order produces unexpected results."
   - action: "using a mutable set for _stack_filter_branches"
     warning: "Stack filter branches use frozenset[str] for immutability and efficient membership testing. Do not use set or list."
+curated_in: erk-tui
 ---
 
 # TUI Filter Pipeline Pattern

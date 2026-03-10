@@ -7,6 +7,7 @@ read_when:
   - "using Pilot API for async tests"
 last_audited: "2026-02-16 14:20 PT"
 audit_result: clean
+curated_in: erk-tui
 ---
 
 # Textual TUI Testing Patterns

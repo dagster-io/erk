@@ -4,6 +4,7 @@ read_when:
   - "modifying the TUI help screen"
   - "adding view-specific actions to the TUI"
   - "understanding ViewMode-conditional rendering"
+curated_in: erk-tui
 ---
 
 # View-Mode-Aware Help Screen

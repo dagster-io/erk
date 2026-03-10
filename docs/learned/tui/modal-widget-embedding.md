@@ -13,6 +13,7 @@ tripwires:
     warning: "Modal on_key() must call event.prevent_default() and event.stop() BEFORE any logic. Without this, keystrokes leak to the underlying view and trigger unintended actions."
   - action: "implementing modal dismiss with an inverted key check condition"
     warning: "Dismiss-on-unhandled pattern: if event.key not in (bound_keys): self.dismiss(). Using the inverted condition (if key in bound_keys: dismiss) is a common bug that dismisses on valid keys instead of unrecognized ones."
+curated_in: erk-tui
 ---
 
 # Modal Widget Embedding Pattern

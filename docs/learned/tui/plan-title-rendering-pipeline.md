@@ -11,6 +11,7 @@ tripwires:
     warning: "Ensure `[erk-learn]` prefix is added BEFORE any filtering/sorting stages."
   - action: "using title-stripping functions"
     warning: "Distinguish `_strip_plan_prefixes` (PR creation) vs `_strip_plan_markers` (plan creation) vs `strip_plan_from_filename` (filename handling)."
+curated_in: erk-tui
 ---
 
 # TUI Plan Title Rendering Pipeline

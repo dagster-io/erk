@@ -8,6 +8,7 @@ tripwires:
   - action: "adding a new key binding without checking existing bindings"
     warning: "Check this document and ErkDashApp.BINDINGS in app.py for conflicts. Some keys are hidden but still active."
     score: 4
+curated_in: erk-tui
 ---
 
 # TUI Keyboard Shortcuts Inventory

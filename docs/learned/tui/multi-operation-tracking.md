@@ -13,6 +13,7 @@ tripwires:
     warning: "TUI background operations must use _run_streaming_operation() for live progress. subprocess.run() blocks without streaming and produces no status bar updates."
   - action: "calling self.notify() or self._finish_operation() directly from a background thread"
     warning: "Use self.call_from_thread() for all UI updates from @work(thread=True) methods. Direct calls cause thread-safety violations."
+curated_in: erk-tui
 ---
 
 # TUI Multi-Operation Tracking

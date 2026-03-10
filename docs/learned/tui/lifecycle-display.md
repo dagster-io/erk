@@ -8,6 +8,7 @@ read_when:
 tripwires:
   - action: "adding a new lifecycle stage without updating abbreviation map"
     warning: "The stage column is 8 chars wide. New stages longer than 8 chars need abbreviations in compute_lifecycle_display(). Also update format_lifecycle_with_status() stage detection."
+curated_in: erk-tui
 ---
 
 # Lifecycle and PR Status Display

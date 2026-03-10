@@ -10,6 +10,7 @@ tripwires:
     warning: "Snapshot at fetch start with fetched_mode = self._view_mode. Read this doc."
   - action: "caching fetched data under self._view_mode after an async operation"
     warning: "Cache under fetched_mode (snapshot at start), not self._view_mode (may have changed during fetch)."
+curated_in: erk-tui
 ---
 
 # TUI Async State Snapshot Pattern

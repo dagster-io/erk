@@ -45,6 +45,7 @@ Before editing files, load relevant category tripwires.
 
 - **Python code** → `dignified-python` skill (LBYL, modern types, ABC interfaces)
 - **Test code** → `fake-driven-testing` skill (5-layer architecture, test placement)
+- **TUI code** → `erk-tui` skill (architecture, commands, data layer, Textual quirks)
 - **Dev tools** → Use `devrun` agent (NOT direct Bash for pytest/ty/ruff/prettier/make/gt)
 
 ## Core Architecture

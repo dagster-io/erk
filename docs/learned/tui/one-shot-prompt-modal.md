@@ -4,6 +4,7 @@ read_when:
   - "adding a new modal or input screen to the TUI"
   - "working with the one-shot dispatch workflow in erk dash"
   - "adding global keybindings that trigger modals"
+curated_in: erk-tui
 ---
 
 # One-Shot Prompt Modal

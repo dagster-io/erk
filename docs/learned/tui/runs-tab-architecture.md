@@ -10,6 +10,7 @@ tripwires:
     warning: "After merge+deletion, run.branch becomes master/main. Use PR head_branch as primary source, falling back to run.branch only if not master/main."
   - action: "adding a new column to RunDataTable without updating RunRowData"
     warning: "RunDataTable columns are populated from RunRowData fields. Add the field to RunRowData first, then add the column in _setup_columns."
+curated_in: erk-tui
 ---
 
 # Runs Tab Architecture

@@ -8,6 +8,7 @@ tripwires:
   - action: "duplicating display name logic for clipboard text"
     warning: "Use get_copy_text() from registry.py as the single source of truth for clipboard text. Display name generators in command definitions are the canonical source. Do not duplicate this logic in app.py or detail screens."
     score: 5
+curated_in: erk-tui
 ---
 
 # Clipboard Text Generation

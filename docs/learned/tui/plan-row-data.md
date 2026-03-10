@@ -6,6 +6,7 @@ read_when:
   - "checking which PlanRowData fields are nullable"
 last_audited: "2026-02-23 00:15 PT"
 audit_result: edited
+curated_in: erk-tui
 ---
 
 # PlanRowData Field Reference

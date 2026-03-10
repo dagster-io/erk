@@ -3,6 +3,7 @@ title: Derived Display Columns
 read_when:
   - "adding a TUI column that uses an existing PlanRowData field"
   - "deciding whether a new column needs gateway/query changes"
+curated_in: erk-tui
 ---
 
 # Derived Display Columns

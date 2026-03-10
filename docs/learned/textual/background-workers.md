@@ -6,6 +6,7 @@ read_when:
   - "using run_worker for async operations"
 last_audited: "2026-02-16 14:20 PT"
 audit_result: clean
+curated_in: erk-tui
 ---
 
 # Textual Background Workers

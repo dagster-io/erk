@@ -9,6 +9,7 @@ read_when:
 tripwires:
   - action: "adding cell values to Textual DataTable"
     warning: "Always wrap in `Text(value)` if strings contain user data with brackets. Otherwise `[anything]` will be interpreted as Rich markup."
+curated_in: erk-tui
 ---
 
 # DataTable Rich Markup Escaping

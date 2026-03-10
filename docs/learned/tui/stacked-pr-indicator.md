@@ -4,6 +4,7 @@ read_when:
   - "adding or modifying PR indicators in the TUI dashboard"
   - "understanding blocking vs. informational indicators"
   - "working with stacked PR detection"
+curated_in: erk-tui
 ---
 
 # Stacked PR Indicator

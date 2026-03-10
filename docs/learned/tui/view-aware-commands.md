@@ -10,6 +10,7 @@ tripwires:
     warning: "Every command must use _is_plan_view() or _is_objectives_view() to prevent it from appearing in the wrong view. Commands without view predicates appear in all views."
   - action: "adding streaming commands without using the streaming operation pattern"
     warning: "Streaming ACTION commands need the streaming operation wrapper with status bar tracking. See streaming-output.md for the current pattern."
+curated_in: erk-tui
 ---
 
 # View-Aware Command Filtering

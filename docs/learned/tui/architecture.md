@@ -19,6 +19,7 @@ tripwires:
     warning: "Use src/erk/tui/formatting/ci_checks.py shared module (format_check_line, format_summary_blockquote, format_check_runs) instead of duplicating formatting logic."
 last_audited: "2026-02-17 18:30 PT"
 audit_result: clean
+curated_in: erk-tui
 ---
 
 # TUI Architecture Overview

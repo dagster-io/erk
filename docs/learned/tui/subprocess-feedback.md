@@ -7,6 +7,7 @@ read_when:
 tripwires:
   - action: "adding a subprocess call to the TUI without stderr inspection"
     warning: "TUI subprocess calls should inspect stderr for known success/failure markers. See subprocess-feedback.md for the pattern."
+curated_in: erk-tui
 ---
 
 # TUI Subprocess Feedback Patterns

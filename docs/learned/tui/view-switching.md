@@ -18,6 +18,7 @@ tripwires:
     warning: "Without exclude_labels, items matching the shared label appear in multiple views. Use exclude_labels for defense-in-depth deduplication (Plans view excludes erk-learn)."
 last_audited: "2026-02-17 00:00 PT"
 audit_result: edited
+curated_in: erk-tui
 ---
 
 # TUI View Switching
