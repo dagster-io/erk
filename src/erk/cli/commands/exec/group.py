@@ -76,6 +76,7 @@ from erk.cli.commands.exec.scripts.get_review_activity_log import (
 )
 from erk.cli.commands.exec.scripts.handle_no_changes import handle_no_changes
 from erk.cli.commands.exec.scripts.impl_init import impl_init
+from erk.cli.commands.exec.scripts.impl_reset import impl_reset
 from erk.cli.commands.exec.scripts.impl_signal import impl_signal
 from erk.cli.commands.exec.scripts.impl_verify import impl_verify
 from erk.cli.commands.exec.scripts.incremental_dispatch import (
@@ -231,6 +232,7 @@ exec_group.add_command(get_pr_review_comments, name="get-pr-review-comments")
 exec_group.add_command(get_review_activity_log, name="get-review-activity-log")
 exec_group.add_command(incremental_dispatch, name="incremental-dispatch")
 exec_group.add_command(impl_init, name="impl-init")
+exec_group.add_command(impl_reset, name="impl-reset")
 exec_group.add_command(impl_signal, name="impl-signal")
 exec_group.add_command(impl_verify, name="impl-verify")
 exec_group.add_command(land_execute, name="land-execute")

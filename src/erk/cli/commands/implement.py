@@ -37,9 +37,98 @@ from erk.core.context import ErkContext
 from erk.core.prompt_executor import PromptExecutor
 from erk.core.repo_discovery import ensure_erk_metadata_dir
 from erk_shared.context.types import RepoContext
+from erk_shared.gateway.git.remote_ops.types import PushError
+from erk_shared.gateway.github.metadata.core import render_erk_issue_event
 from erk_shared.impl_folder import create_impl_folder, get_impl_dir, resolve_impl_dir, save_plan_ref
 from erk_shared.output.output import user_output
 from erk_shared.plan_store.types import PlanNotFound
+
+
+def _is_retry(ctx: ErkContext, plan_number: str) -> bool:
+    """Check if the current branch has commits beyond its merge-base with the base branch.
+
+    This indicates a previous implementation attempt that left partial commits.
+
+    Args:
+        ctx: Erk context
+        plan_number: Plan number as string
+
+    Returns:
+        True if the branch has commits ahead of the base branch, False otherwise.
+    """
+    plan_result = ctx.plan_store.get_plan(ctx.cwd, plan_number)
+    if isinstance(plan_result, PlanNotFound):
+        return False
+
+    base_ref_raw = plan_result.metadata.get("base_ref_name")
+    trunk = ctx.git.branch.detect_trunk_branch(ctx.cwd)
+    base_ref = base_ref_raw if isinstance(base_ref_raw, str) else trunk
+
+    commits_ahead = ctx.git.analysis.count_commits_ahead(ctx.cwd, f"origin/{base_ref}")
+    return commits_ahead > 0
+
+
+def _auto_reset(ctx: ErkContext, plan_number: str) -> None:
+    """Reset the branch to its merge-base for retry.
+
+    Args:
+        ctx: Erk context
+        plan_number: Plan number as string
+    """
+    user_output(click.style("Previous implementation detected, resetting branch...", fg="yellow"))
+
+    plan_result = ctx.plan_store.get_plan(ctx.cwd, plan_number)
+    if isinstance(plan_result, PlanNotFound):
+        user_output(
+            click.style("Warning: ", fg="yellow") + f"Plan #{plan_number} not found, skipping reset"
+        )
+        return
+
+    base_ref_raw = plan_result.metadata.get("base_ref_name")
+    trunk = ctx.git.branch.detect_trunk_branch(ctx.cwd)
+    base_ref = base_ref_raw if isinstance(base_ref_raw, str) else trunk
+
+    # Fetch origin for up-to-date refs
+    ctx.git.remote.fetch_branch(ctx.cwd, "origin", base_ref)
+
+    # Get merge-base
+    merge_base = ctx.git.analysis.get_merge_base(ctx.cwd, f"origin/{base_ref}", "HEAD")
+    if merge_base is None:
+        user_output(
+            click.style("Warning: ", fg="yellow")
+            + f"Could not compute merge-base with {base_ref}, skipping reset"
+        )
+        return
+
+    # Reset branch to merge-base
+    ctx.git.branch.reset_hard(ctx.cwd, merge_base)
+
+    # Force-push the reset
+    current_branch = ctx.git.branch.get_current_branch(ctx.cwd) or "unknown"
+    push_result = ctx.git.remote.push_to_remote(
+        ctx.cwd, "origin", current_branch, set_upstream=False, force=True
+    )
+    if isinstance(push_result, PushError):
+        user_output(
+            click.style("Warning: ", fg="yellow")
+            + f"Force push failed: {push_result.message}, continuing anyway"
+        )
+
+    # Reset lifecycle_stage to "planned"
+    reset_comment = render_erk_issue_event(
+        title="\U0001f504 Branch reset for retry",
+        metadata=None,
+        description=f"Branch reset to `{merge_base[:8]}` (merge-base with `{base_ref}`).",
+    )
+
+    ctx.plan_store.post_event(
+        ctx.cwd,
+        plan_number,
+        metadata={"lifecycle_stage": "planned"},
+        comment=reset_comment,
+    )
+
+    user_output(click.style("✓ ", fg="green") + f"Branch reset to {merge_base[:8]}")
 
 
 def _execute(
@@ -432,6 +521,9 @@ def implement(
         # Strategy 2: Extract plan number from GitHub PR
         detected_plan = extract_plan_from_current_branch(ctx)
         if detected_plan is not None:
+            # Check for retry: branch has commits beyond merge-base
+            if _is_retry(ctx, detected_plan):
+                _auto_reset(ctx, detected_plan)
             target = detected_plan
             user_output(f"Auto-detected plan #{target} from branch")
         else:
