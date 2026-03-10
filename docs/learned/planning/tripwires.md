@@ -108,7 +108,7 @@ Rules triggered by matching actions in code.
 
 **creating a new plan-generating command without a pre-plan gathering step** → Read [Context Preservation Prompting Patterns](context-preservation-prompting.md) first. Without explicit context materialization before EnterPlanMode, agents produce sparse plans. Apply the two-phase pattern from this document.
 
-**creating erk-learn plan for an issue that already has erk-learn label** → Read [Learn Plan Validation](learn-plan-validation.md) first. Validate target issue has erk-plan label, NOT erk-learn. Learn plans analyze implementation plans, not other learn plans (cycle prevention).
+**creating erk-learn plan for an issue that already has erk-learn label** → Read [Learn Plan Validation](learn-plan-validation.md) first. Validate target issue has erk-pr label, NOT erk-learn. Learn plans analyze implementation plans, not other learn plans (cycle prevention).
 
 **creating temp files for AI workflows** → Read [Scratch Storage](scratch-storage.md) first. Use worktree-scoped scratch storage for session-specific data.
 
@@ -160,7 +160,7 @@ Rules triggered by matching actions in code.
 
 **making objective-update-after-land exit non-zero** → Read [Objective Update After Land](objective-update-after-land.md) first. This script uses fail-open design. Failures must not block landing. See objective-update-after-land.md.
 
-**manually creating an erk-plan with gh issue create** → Read [Plan Lifecycle](lifecycle.md) first. Use `erk exec plan-save --plan-file <path>` instead. Manual creation requires complex metadata block format (see Metadata Block Reference section).
+**manually creating an erk-pr with gh issue create** → Read [Plan Lifecycle](lifecycle.md) first. Use `erk exec plan-save --plan-file <path>` instead. Manual creation requires complex metadata block format (see Metadata Block Reference section).
 
 **manually setting the base branch for a learn plan submission** → Read [Learn Plans vs. Implementation Plans](learn-vs-implementation-plans.md) first. Learn plan base branch is auto-detected from learned_from_issue → parent branch. Only use --base to override if the parent branch is missing from the remote.
 
