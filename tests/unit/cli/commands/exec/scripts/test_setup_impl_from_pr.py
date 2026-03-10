@@ -232,7 +232,7 @@ def test_planned_pr_plan_already_on_plan_branch(tmp_path: Path) -> None:
     # Pull-rebase was called to sync
     assert fake_git.pull_rebase_calls == [(tmp_path, "origin", plan_branch)]
 
-    assert f"Already on plan branch '{plan_branch}'" in result.output
+    assert f"Already on PR branch '{plan_branch}'" in result.output
 
 
 def test_planned_pr_plan_skips_checkout_when_impl_exists(tmp_path: Path) -> None:
@@ -288,7 +288,7 @@ def test_planned_pr_plan_skips_checkout_when_impl_exists(tmp_path: Path) -> None
     assert len(fake_git.pull_rebase_calls) == 0
 
     # Output should indicate we skipped branch setup
-    assert f"Found existing impl dir for plan #{pr_number}, skipping branch setup" in result.output
+    assert f"Found existing impl dir for PR #{pr_number}, skipping branch setup" in result.output
 
     # JSON output should have the CI branch, not the plan branch
     output_lines = result.output.strip().split("\n")

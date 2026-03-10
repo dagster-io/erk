@@ -42,7 +42,7 @@ from erk_shared.plan_store.create_plan_draft_pr import create_plan_draft_pr
 )
 @click.option(
     "--summary",
-    help="AI-generated summary to display above the collapsed plan in the PR body",
+    help="AI-generated summary to display above the collapsed PR in the PR body",
 )
 @click.option(
     "--branch-slug",

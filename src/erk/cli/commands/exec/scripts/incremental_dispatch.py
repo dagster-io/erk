@@ -43,7 +43,7 @@ from erk_shared.output.output import user_output
     "--plan-file",
     type=click.Path(exists=True, path_type=Path),
     required=True,
-    help="Path to plan markdown file",
+    help="Path to PR markdown file",
 )
 @click.option("--pr", "pr_number", type=int, required=True, help="PR number to dispatch against")
 @click.option("--ref", "dispatch_ref", default=None, help="Branch to dispatch workflow from")
@@ -113,7 +113,7 @@ def incremental_dispatch(
             sync_branch_to_sha(erk_ctx, repo_root, branch_name, remote_sha)
 
     # Build and commit impl-context files to branch
-    user_output("Committing plan to branch...")
+    user_output("Committing PR to branch...")
     files = build_impl_context_files(
         plan_content=plan_content,
         plan_id=str(pr_number),

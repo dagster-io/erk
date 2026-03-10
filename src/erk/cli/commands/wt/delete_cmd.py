@@ -136,13 +136,11 @@ def _close_plan_for_worktree(
 
     plan_number, state = plan_info
     if state == PlanState.CLOSED:
-        user_output(
-            click.style("ℹ️  ", fg="blue", bold=True) + f"Plan #{plan_number} already closed"
-        )
+        user_output(click.style("ℹ️  ", fg="blue", bold=True) + f"PR #{plan_number} already closed")
         return None
 
     ctx.plan_store.close_plan(repo_root, str(plan_number))
-    user_output(click.style("ℹ️  ", fg="blue", bold=True) + f"Closed plan #{plan_number}")
+    user_output(click.style("ℹ️  ", fg="blue", bold=True) + f"Closed PR #{plan_number}")
     return plan_number
 
 
@@ -531,7 +529,7 @@ def _delete_worktree(
     "--all",
     "close_all",  # Use different name to avoid shadowing builtin
     is_flag=True,
-    help="Delete branch, close associated PR and plan.",
+    help="Delete branch, close associated PRs.",
 )
 @click.option(
     "--dry-run",

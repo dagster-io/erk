@@ -255,4 +255,4 @@ def test_plan_list_run_state_filter_no_matches() -> None:
 
         # Assert
         assert result.exit_code == 0
-        assert "No plans found matching the criteria" in result.output
+        assert "No PRs found matching the criteria" in result.output

@@ -136,7 +136,7 @@ class TestDetermineExitAction:
             )
         )
         assert result.action == ExitAction.BLOCK
-        assert "Plan #42 saved" in result.message
+        assert "PR #42 saved" in result.message
         assert "erk br co --for-plan 42" in result.message
         assert "erk pr dispatch 42" in result.message
         assert "Session complete" in result.message
@@ -153,7 +153,7 @@ class TestDetermineExitAction:
             )
         )
         assert result.action == ExitAction.BLOCK
-        assert "Plan PR saved" in result.message
+        assert "PR saved" in result.message
         assert "Planning session complete" in result.message
         assert result.delete_plan_saved_marker is True
 
@@ -985,7 +985,7 @@ class TestBuildStep2Message:
     def test_contains_plan_number(self) -> None:
         """Step 2 message includes the plan number."""
         message = build_step2_message(plan_number=42, url="")
-        assert "Plan #42 saved" in message
+        assert "PR #42 saved" in message
 
     def test_contains_implement_current_wt_command(self) -> None:
         """Step 2 shows implement-in-current-worktree command."""
@@ -1007,7 +1007,7 @@ class TestBuildStep2Message:
         message = build_step2_message(plan_number=42, url="")
         assert "erk pr dispatch 42" in message
         assert "/erk:pr-dispatch" in message
-        assert "Dispatch plan #42:" in message
+        assert "Dispatch PR #42:" in message
 
     def test_session_complete_no_exit_plan_mode(self) -> None:
         """Step 2 tells Claude not to call ExitPlanMode again."""
@@ -1088,7 +1088,7 @@ class TestHookIntegration:
         result = runner.invoke(exit_plan_mode_hook, input=stdin_data, obj=ctx)
 
         assert result.exit_code == 2
-        assert "Plan #42 saved" in result.output
+        assert "PR #42 saved" in result.output
         assert "erk pr dispatch 42" in result.output
         assert not plan_saved_marker.exists()  # Marker deleted after session ends
 
@@ -1192,7 +1192,7 @@ class TestHookIntegration:
         result = runner.invoke(exit_plan_mode_hook, input=stdin_data, obj=ctx)
 
         assert result.exit_code == 2
-        assert "Plan #42 saved" in result.output
+        assert "PR #42 saved" in result.output
         assert not plan_saved_marker.exists()  # Marker deleted
         assert not objective_context_marker.exists()  # Objective marker also deleted
 

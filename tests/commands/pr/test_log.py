@@ -132,7 +132,7 @@ def test_log_displays_timeline_chronologically() -> None:
 
         # Assert
         assert result.exit_code == 0
-        assert "Plan #42 Event Timeline" in result.output
+        assert "PR #42 Event Timeline" in result.output
 
         # Verify chronological order (plan created → queued → workflow started)
         output_lines = result.output.split("\n")
@@ -253,7 +253,7 @@ def test_log_with_no_events() -> None:
 
         # Assert
         assert result.exit_code == 0
-        assert "No events found for plan #42" in result.output
+        assert "No events found for PR #42" in result.output
 
 
 def test_log_with_all_event_types() -> None:
@@ -334,7 +334,7 @@ def test_log_with_all_event_types() -> None:
         assert result.exit_code == 0
 
         # Verify all event types are displayed
-        assert "Plan created" in result.output
+        assert "PR created" in result.output
         assert "Queued for execution" in result.output
         assert "GitHub Actions workflow started" in result.output
         assert "Implementation in progress" in result.output

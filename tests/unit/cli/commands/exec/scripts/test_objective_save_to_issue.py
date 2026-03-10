@@ -93,7 +93,7 @@ def test_objective_save_to_issue_no_plan() -> None:
     assert result.exit_code == 1
     output = json.loads(result.output)
     assert output["success"] is False
-    assert "No plan found" in output["error"]
+    assert "No PR found" in output["error"]
 
 
 def test_objective_save_to_issue_display_format() -> None:

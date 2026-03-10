@@ -99,7 +99,7 @@ def _get_existing_saved_objective(session_id: str, repo_root: Path) -> int | Non
 @click.option(
     "--session-id",
     default=None,
-    help="Session ID for scoped plan lookup",
+    help="Session ID for scoped PR lookup",
 )
 @click.option(
     "--slug",
@@ -176,13 +176,13 @@ def objective_save_to_issue(
 
     if not plan:
         if output_format == "display":
-            click.echo("Error: No plan found in ~/.claude/plans/", err=True)
+            click.echo("Error: No PR found in ~/.claude/plans/", err=True)
             click.echo("\nTo fix:", err=True)
             click.echo("1. Create a plan (enter Plan mode if needed)", err=True)
             click.echo("2. Exit Plan mode using ExitPlanMode tool", err=True)
             click.echo("3. Run this command again", err=True)
         else:
-            click.echo(json.dumps({"success": False, "error": "No plan found in ~/.claude/plans/"}))
+            click.echo(json.dumps({"success": False, "error": "No PR found in ~/.claude/plans/"}))
         raise SystemExit(1)
 
     # Create objective issue

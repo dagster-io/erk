@@ -122,7 +122,7 @@ def _build_workflow_started_comment(
 
 
 @click.command(name="post-workflow-started-comment")
-@click.option("--pr-number", type=int, required=True, help="Plan identifier")
+@click.option("--pr-number", type=int, required=True, help="PR identifier")
 @click.option("--branch-name", type=str, required=True, help="Git branch name")
 @click.option("--impl-pr-number", type=int, required=True, help="Pull request number")
 @click.option("--run-id", type=str, required=True, help="GitHub Actions workflow run ID")

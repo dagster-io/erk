@@ -1528,7 +1528,7 @@ def _execute_land(
     "--skip-learn",
     "skip_learn",
     is_flag=True,
-    help="Skip creating a learn plan after landing.",
+    help="Skip creating a learn PR after landing.",
 )
 @click.pass_obj
 def land(

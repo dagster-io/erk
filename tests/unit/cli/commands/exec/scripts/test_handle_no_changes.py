@@ -112,7 +112,7 @@ def test_build_pr_body_includes_all_sections() -> None:
     assert "## No Code Changes" in body
     assert "Implementation completed but produced no code changes" in body
     assert "### Diagnosis" in body
-    assert "Duplicate plan" in body
+    assert "Duplicate PR" in body
     assert "5 commits" in body
     assert "master" in body
     assert "Recent commits" in body

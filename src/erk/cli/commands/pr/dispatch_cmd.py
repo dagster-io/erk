@@ -404,7 +404,7 @@ def _validate_planned_pr_for_dispatch_remote(
     """
     issue = remote.get_issue(owner=owner, repo=repo_name, number=pr_number)
     if isinstance(issue, IssueNotFound):
-        user_output(click.style("Error: ", fg="red") + f"Plan #{pr_number} not found")
+        user_output(click.style("Error: ", fg="red") + f"PR #{pr_number} not found")
         raise SystemExit(1)
 
     if ERK_PLAN_LABEL not in issue.labels:
@@ -648,7 +648,7 @@ def _dispatch_remote(
 
     if not pr_numbers:
         user_output(
-            click.style("Error: ", fg="red") + "Plan number(s) required in remote mode.\n\n"
+            click.style("Error: ", fg="red") + "PR number(s) required in remote mode.\n\n"
             "Usage: erk pr dispatch <number> --repo owner/repo"
         )
         raise SystemExit(1)
@@ -662,7 +662,7 @@ def _dispatch_remote(
     submitted_by = remote.get_authenticated_user()
 
     # Validate all plans
-    user_output(f"Validating {len(pr_numbers)} plan(s)...")
+    user_output(f"Validating {len(pr_numbers)} PR(s)...")
     user_output("")
 
     validated_prs: list[ValidatedPlannedPR] = []
@@ -677,7 +677,7 @@ def _dispatch_remote(
         validated_prs.append(validated)
 
     user_output("")
-    user_output(click.style("\u2713", fg="green") + f" All {len(validated_prs)} plan(s) validated")
+    user_output(click.style("\u2713", fg="green") + f" All {len(validated_prs)} PR(s) validated")
     user_output("")
 
     for v in validated_prs:
@@ -784,7 +784,7 @@ def _dispatch_local(
     submitted_by = username or "unknown"
 
     # Validate all planned-PR plans upfront
-    user_output(f"Validating {len(pr_numbers)} planned-PR plan(s)...")
+    user_output(f"Validating {len(pr_numbers)} planned-PR(s)...")
     user_output("")
 
     validated_planned_prs: list[ValidatedPlannedPR] = []
@@ -795,7 +795,7 @@ def _dispatch_local(
 
     user_output("")
     user_output(
-        click.style("\u2713", fg="green") + f" All {len(validated_planned_prs)} plan(s) validated"
+        click.style("\u2713", fg="green") + f" All {len(validated_planned_prs)} PR(s) validated"
     )
     user_output("")
 
@@ -830,9 +830,9 @@ def _print_dispatch_summary(results: list[DispatchResult]) -> None:
     """Print summary of all dispatched plans."""
     user_output("")
     count = len(results)
-    user_output(click.style("\u2713", fg="green") + f" {count} plan(s) dispatched successfully!")
+    user_output(click.style("\u2713", fg="green") + f" {count} PR(s) dispatched successfully!")
     user_output("")
-    user_output("Dispatched plans:")
+    user_output("Dispatched PRs:")
     for r in results:
         user_output(f"  #{r.pr_number}: {r.plan_title}")
         user_output(f"    Plan: {r.plan_url}")

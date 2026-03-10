@@ -266,7 +266,7 @@ def _format_header_section(header_info: dict[str, object], *, plan_url: str | No
                 lines.append(_format_field("Workflow", workflow_url))
 
     if CREATED_FROM_SESSION in header_info:
-        lines.append(_format_field("Plan session", str(header_info[CREATED_FROM_SESSION])))
+        lines.append(_format_field("PR session", str(header_info[CREATED_FROM_SESSION])))
     if LAST_LEARN_SESSION in header_info:
         lines.append(_format_field("Learn session", str(header_info[LAST_LEARN_SESSION])))
 
@@ -277,13 +277,13 @@ def _format_header_section(header_info: dict[str, object], *, plan_url: str | No
     name="pr_view",
     description=(
         "View a specific plan's metadata, header info, and body content."
-        " Returns plan title, state, labels, timestamps, and header metadata."
+        " Returns PR title, state, labels, timestamps, and header metadata."
     ),
 )
 @json_command(exclude_json_input=frozenset({"repo_id"}), output_types=(PrViewResult,))
 @click.command("view")
 @click.argument("identifier", type=str, required=False, default=None)
-@click.option("--full", "-f", is_flag=True, help="Show full plan body")
+@click.option("--full", "-f", is_flag=True, help="Show full PR body")
 @resolved_repo_option
 @click.pass_obj
 def pr_view(
@@ -353,7 +353,7 @@ def pr_view(
 
     issue = remote.get_issue(owner=repo_id.owner, repo=repo_id.repo, number=plan_number)
     if isinstance(issue, IssueNotFound):
-        user_output(click.style("Error: ", fg="red") + f"Plan #{plan_id} not found")
+        user_output(click.style("Error: ", fg="red") + f"PR #{plan_id} not found")
         raise SystemExit(1)
 
     plan = github_issue_to_plan(issue)

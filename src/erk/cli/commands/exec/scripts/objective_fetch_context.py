@@ -154,7 +154,7 @@ def _fetch_objective_content(
     "plan_number",
     type=int,
     default=None,
-    help="Plan number (direct lookup, skips branch-based discovery)",
+    help="PR number (direct lookup, skips branch-based discovery)",
 )
 @click.pass_context
 def objective_fetch_context(
@@ -183,7 +183,7 @@ def objective_fetch_context(
     if plan_number is not None:
         plan_result = plan_backend.get_plan(repo_root, str(plan_number))
         if isinstance(plan_result, PlanNotFound):
-            click.echo(_error_json(f"Plan #{plan_number} not found"))
+            click.echo(_error_json(f"PR #{plan_number} not found"))
             raise SystemExit(1)
         plan_id = plan_result.pr_identifier
     else:
@@ -199,7 +199,7 @@ def objective_fetch_context(
         # Resolve plan from branch via backend (works for both P<number>- and plan-... branches)
         plan_result = plan_backend.get_plan_for_branch(repo_root, branch_name)
         if isinstance(plan_result, PlanNotFound):
-            click.echo(_error_json(f"No plan found for branch '{branch_name}'"))
+            click.echo(_error_json(f"No PR found for branch '{branch_name}'"))
             raise SystemExit(1)
         plan_id = plan_result.pr_identifier
 

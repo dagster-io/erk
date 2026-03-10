@@ -371,7 +371,7 @@ def _setup_impl_for_plan(
             worktree_path=worktree_path,
             target_subpath=None,
             post_cd_commands=None,
-            final_message=f'echo "Prepared plan #{setup.plan_number} at $(pwd)"',
+            final_message=f'echo "Prepared PR #{setup.plan_number} at $(pwd)"',
             comment="erk branch checkout --for-plan activation script",
         )
         result = ctx.script_writer.write_activation_script(
@@ -382,7 +382,7 @@ def _setup_impl_for_plan(
         result.output_for_script_handler()
         sys.exit(0)
 
-    user_output(f"Created .erk/impl-context/ folder from plan #{setup.plan_number}")
+    user_output(f"Created .erk/impl-context/ folder from PR #{setup.plan_number}")
 
 
 def _rebase_and_track_for_plan(
@@ -450,7 +450,7 @@ def _rebase_and_track_for_plan(
     "for_plan",
     type=str,
     default=None,
-    help="Plan number or PR with erk-plan label",
+    help="PR number or URL with erk-plan label",
 )
 @click.option("--no-slot", is_flag=True, help="Create worktree without slot assignment")
 @click.option(
@@ -479,7 +479,7 @@ def branch_checkout(
     a worktree is automatically created. If the branch exists on origin but
     not locally, a tracking branch and worktree are created automatically.
 
-    Use --for-plan to resolve a plan and set up .erk/impl-context/ after checkout.
+    Use --for-plan to resolve a PR and set up .erk/impl-context/ after checkout.
 
     Examples:
 
@@ -487,7 +487,7 @@ def branch_checkout(
 
         erk br co unchecked-branch       # Auto-create worktree
 
-        erk br co --for-plan 123         # Checkout plan branch with .erk/impl-context/ setup
+        erk br co --for-plan 123         # Checkout PR branch with .erk/impl-context/ setup
 
     If multiple worktrees contain the branch, all options are shown.
     """
@@ -519,7 +519,7 @@ def _branch_checkout_impl(
     if for_plan is not None and branch is not None:
         user_output(
             "Error: Cannot specify both BRANCH and --for-plan.\n"
-            "Use --for-plan to derive branch name from plan, or provide BRANCH directly."
+            "Use --for-plan to derive branch name from PR, or provide BRANCH directly."
         )
         raise SystemExit(1) from None
 
@@ -546,7 +546,7 @@ def _branch_checkout_impl(
         plan_number = parse_issue_identifier(for_plan)
         result = ctx.plan_store.get_plan(repo.root, str(plan_number))
         if isinstance(result, PlanNotFound):
-            raise click.ClickException(f"Plan #{plan_number} not found")
+            raise click.ClickException(f"PR #{plan_number} not found")
         plan = result
 
         plan_result = prepare_plan_for_worktree(plan, ctx.time.now(), warn_non_open=True)
@@ -575,7 +575,7 @@ def _branch_checkout_impl(
 
         # Plan branch was created by plan-save
         if branch_exists_locally:
-            user_output(f"Checking out plan branch: {branch}")
+            user_output(f"Checking out PR branch: {branch}")
         else:
             ctx.git.remote.fetch_branch(repo.root, "origin", branch)
             ctx.branch_manager.create_tracking_branch(repo.root, branch, f"origin/{branch}")

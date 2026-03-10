@@ -18,9 +18,9 @@ from erk_shared.plan_store.types import PlanNotFound
 @resolved_repo_option
 @click.pass_obj
 def pr_close(ctx: ErkContext, identifier: str, *, repo_id: GitHubRepoId) -> None:
-    """Close a plan by plan number or GitHub URL.
+    """Close a PR by PR number or GitHub URL.
 
-    Closes all OPEN PRs linked to the plan in addition to closing the plan itself.
+    Closes all OPEN PRs linked to the issue in addition to closing the issue itself.
 
     Examples:
         erk pr close 42
@@ -33,7 +33,7 @@ def pr_close(ctx: ErkContext, identifier: str, *, repo_id: GitHubRepoId) -> None
     # Verify plan exists
     issue = remote.get_issue(owner=repo_id.owner, repo=repo_id.repo, number=number)
     if isinstance(issue, IssueNotFound):
-        raise click.ClickException(f"Plan #{number} not found")
+        raise click.ClickException(f"PR #{number} not found")
 
     # Close all OPEN PRs linked to this plan (unified via RemoteGitHub)
     linked_prs = remote.get_prs_referencing_issue(
@@ -65,7 +65,7 @@ def pr_close(ctx: ErkContext, identifier: str, *, repo_id: GitHubRepoId) -> None
         )
 
     # Output
-    user_output(f"Closed plan #{number}")
+    user_output(f"Closed PR #{number}")
     if closed_prs:
         pr_list_str = ", ".join(f"#{pr}" for pr in closed_prs)
         user_output(f"Closed {len(closed_prs)} linked PR(s): {pr_list_str}")

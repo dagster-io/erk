@@ -143,7 +143,7 @@ def pr_log(
 
         issue = remote.get_issue(owner=repo_id.owner, repo=repo_id.repo, number=plan_number)
         if isinstance(issue, IssueNotFound):
-            user_output(click.style("Error: ", fg="red") + f"Plan '{identifier}' not found")
+            user_output(click.style("Error: ", fg="red") + f"PR '{identifier}' not found")
             raise SystemExit(1)
 
         comment_bodies = remote.get_issue_comments(
@@ -353,10 +353,10 @@ def _output_timeline(events: list[Event], plan_number: int) -> None:
         plan_number: GitHub issue number for the plan
     """
     if not events:
-        user_output(f"No events found for plan #{plan_number}")
+        user_output(f"No events found for PR #{plan_number}")
         return
 
-    user_output(f"Plan #{plan_number} Event Timeline\n")
+    user_output(f"PR #{plan_number} Event Timeline\n")
 
     for event in events:
         # Format timestamp as human-readable
@@ -400,7 +400,7 @@ def _format_event_description(event: Event) -> str:
 
     if event_type == "plan-created":
         worktree = metadata.get("worktree_name", "unknown")
-        return f"Plan created: worktree '{worktree}' assigned"
+        return f"PR created: worktree '{worktree}' assigned"
 
     if event_type == "submission-queued":
         submitted_by = metadata.get("submitted_by", "unknown")

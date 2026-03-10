@@ -365,8 +365,8 @@ def _checkout_plan(
 
     if len(open_prs) == 0:
         user_output(
-            f"No open PR found for plan #{plan_number}\n\n"
-            "This plan has not been implemented yet. To prepare it:\n"
+            f"No open PR found for PR #{plan_number}\n\n"
+            "This PR has not been implemented yet. To prepare it:\n"
             f"  erk br co --for-plan {plan_number}\n\n"
             "Or if you've already checked out the branch:\n"
             f"  erk pr prepare {plan_number}"
@@ -425,9 +425,9 @@ def _checkout_plan_pr(
             script=script,
             command_name="plan-checkout",
             already_existed=True,
-            existing_message=f"Plan #{plan_number} already checked out at {{styled_path}}",
+            existing_message=f"PR #{plan_number} already checked out at {{styled_path}}",
             new_message="",  # Not used when already_existed=True
-            script_message_existing=f'echo "Went to worktree for plan #{plan_number}"',
+            script_message_existing=f'echo "Went to worktree for PR #{plan_number}"',
             script_message_new="",  # Not used when already_existed=True
             post_cd_commands=None,
         )
@@ -441,7 +441,7 @@ def _checkout_plan_pr(
         ctx, repo, branch_name=branch_name, no_slot=no_slot, force=force
     )
 
-    new_msg = f"Created worktree for plan #{plan_number} (PR #{pr_number}) at {{styled_path}}"
+    new_msg = f"Created worktree for PR #{plan_number} (PR #{pr_number}) at {{styled_path}}"
     navigate_and_display_checkout(
         ctx,
         worktree_path=worktree_path,
@@ -449,10 +449,10 @@ def _checkout_plan_pr(
         script=script,
         command_name="plan-checkout",
         already_existed=already_existed,
-        existing_message=f"Plan #{plan_number} already checked out at {{styled_path}}",
+        existing_message=f"PR #{plan_number} already checked out at {{styled_path}}",
         new_message=new_msg,
-        script_message_existing=f'echo "Went to worktree for plan #{plan_number}"',
-        script_message_new=f'echo "Checked out plan #{plan_number} (PR #{pr_number}) at $(pwd)"',
+        script_message_existing=f'echo "Went to worktree for PR #{plan_number}"',
+        script_message_new=f'echo "Checked out PR #{plan_number} (PR #{pr_number}) at $(pwd)"',
         post_cd_commands=None,
     )
 

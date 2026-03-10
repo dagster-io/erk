@@ -77,7 +77,7 @@ def test_planned_pr_success_display(tmp_path: Path, monkeypatch: pytest.MonkeyPa
     )
 
     assert result.exit_code == 0, f"Failed: {result.output}"
-    assert "Plan saved as planned PR" in result.output
+    assert "PR saved as planned PR" in result.output
     assert "Title: [erk-plan] Feature Plan" in result.output
     assert "Branch: plnd/" in result.output
     assert "erk br co" in result.output

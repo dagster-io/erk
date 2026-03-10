@@ -85,7 +85,7 @@ def _validate_plan_content(content: str) -> tuple[bool, str | None, dict[str, bo
 @click.option(
     "--plan-file",
     type=click.Path(exists=True, path_type=Path),
-    help="Path to plan file. If not provided, reads from stdin.",
+    help="Path to PR file. If not provided, reads from stdin.",
 )
 def validate_plan_content(*, plan_file: Path | None) -> None:
     """Validate plan content from file or stdin.

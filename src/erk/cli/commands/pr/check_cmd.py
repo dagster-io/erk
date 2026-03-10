@@ -98,7 +98,7 @@ def validate_plan_format(
 
     issue = remote.get_issue(owner=owner, repo=repo, number=plan_number)
     if isinstance(issue, IssueNotFound):
-        return PlanValidationError(error=f"Plan #{plan_number} not found")
+        return PlanValidationError(error=f"PR #{plan_number} not found")
 
     issue_body = issue.body if issue.body else ""
 
@@ -221,13 +221,13 @@ def _check_plan_format(
 
     plan_number = parse_issue_identifier(identifier)
 
-    user_output(f"Validating plan #{plan_number}...")
+    user_output(f"Validating PR #{plan_number}...")
     user_output("")
 
     result = validate_plan_format(remote, owner=owner, repo=repo_name, plan_number=plan_number)
 
     if isinstance(result, PlanValidationError):
-        user_output(click.style("Error: ", fg="red") + f"Failed to validate plan: {result.error}")
+        user_output(click.style("Error: ", fg="red") + f"Failed to validate PR: {result.error}")
         raise SystemExit(1)
 
     for passed, description in result.checks:
@@ -237,13 +237,13 @@ def _check_plan_format(
     user_output("")
 
     if result.passed:
-        user_output(click.style("Plan validation passed", fg="green"))
+        user_output(click.style("PR validation passed", fg="green"))
         raise SystemExit(0)
     else:
         check_word = "checks" if result.failed_count > 1 else "check"
         user_output(
             click.style(
-                f"Plan validation failed ({result.failed_count} {check_word} failed)", fg="red"
+                f"PR validation failed ({result.failed_count} {check_word} failed)", fg="red"
             )
         )
         raise SystemExit(1)

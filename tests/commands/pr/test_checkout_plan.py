@@ -143,7 +143,7 @@ def test_checkout_with_plain_number() -> None:
             result = runner.invoke(cli, ["pr", "checkout", "P456"], obj=ctx)
 
         assert result.exit_code == 0
-        assert "Created worktree for plan #456 (PR #200)" in result.output
+        assert "Created worktree for PR #456 (PR #200)" in result.output
 
 
 def test_checkout_branch_already_in_worktree() -> None:
@@ -218,7 +218,7 @@ def test_checkout_no_local_branch_fetches_pr() -> None:
             result = runner.invoke(cli, ["pr", "checkout", "P42"], obj=ctx)
 
         assert result.exit_code == 0
-        assert "Created worktree for plan #42 (PR #200)" in result.output
+        assert "Created worktree for PR #42 (PR #200)" in result.output
         # Verify fetch was called
         assert ("origin", "plnd/from-pr-04-15-1400") in git.fetched_branches
 
@@ -294,7 +294,7 @@ def test_checkout_filters_to_open_prs_only() -> None:
 
         # Should checkout the single OPEN PR, not show table
         assert result.exit_code == 0
-        assert "Created worktree for plan #60 (PR #400)" in result.output
+        assert "Created worktree for PR #60 (PR #400)" in result.output
 
 
 def test_checkout_no_branch_no_pr_shows_help() -> None:
@@ -316,7 +316,7 @@ def test_checkout_no_branch_no_pr_shows_help() -> None:
         result = runner.invoke(cli, ["pr", "checkout", "P999"], obj=ctx)
 
         assert result.exit_code == 1
-        assert "No open PR found for plan #999" in result.output
+        assert "No open PR found for PR #999" in result.output
         assert "erk br co --for-plan 999" in result.output
 
 

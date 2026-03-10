@@ -64,7 +64,7 @@ def _fetch_file_from_branch(
     "--pr-number",
     required=True,
     type=int,
-    help="Plan identifier to fetch sessions for",
+    help="PR identifier to fetch sessions for",
 )
 @click.option(
     "--output-dir",

@@ -638,7 +638,7 @@ def test_delete_all_shows_closed_plan_status() -> None:
 
         assert_cli_success(result)
         # Should show that plan was already closed
-        assert "Plan #456 already closed" in result.output
+        assert "PR #456 already closed" in result.output
         # Plan should NOT have been closed again (it was already closed)
         assert 456 not in fake_github.closed_prs
 

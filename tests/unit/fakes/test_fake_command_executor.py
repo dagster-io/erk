@@ -34,10 +34,10 @@ def test_tracks_notifications() -> None:
     """Fake executor tracks notifications shown."""
     executor = FakeCommandExecutor()
     executor.notify("Copied: erk implement 123", severity=None)
-    executor.notify("Closed plan #456", severity=None)
+    executor.notify("Closed PR #456", severity=None)
     assert executor.notifications == [
         "Copied: erk implement 123",
-        "Closed plan #456",
+        "Closed PR #456",
     ]
 
 

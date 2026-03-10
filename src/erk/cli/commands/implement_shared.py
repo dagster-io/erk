@@ -495,11 +495,11 @@ def prepare_plan_source_from_file(ctx: ErkContext, plan_file: Path) -> PlanSourc
     """
     # Validate plan file exists
     if not plan_file.exists():
-        ctx.console.error(f"Error: Plan file not found: {plan_file}")
+        ctx.console.error(f"Error: PR file not found: {plan_file}")
         raise SystemExit(1) from None
 
     # Output reading diagnostic
-    ctx.console.info("Reading plan file...")
+    ctx.console.info("Reading PR file...")
 
     # Read plan content
     plan_content = plan_file.read_text(encoding="utf-8")

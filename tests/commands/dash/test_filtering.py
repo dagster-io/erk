@@ -64,7 +64,7 @@ def test_plan_list_no_filters() -> None:
 
         # Assert
         assert result.exit_code == 0
-        assert "Found 2 plan(s)" in result.output
+        assert "Found 2 PR(s)" in result.output
         assert "#1" in result.output
         assert "#2" in result.output
 
@@ -115,7 +115,7 @@ def test_plan_list_filter_by_state() -> None:
 
         # Assert
         assert result.exit_code == 0
-        assert "Found 1 plan(s)" in result.output
+        assert "Found 1 PR(s)" in result.output
         assert "#1" in result.output
         assert "#2" not in result.output
 
@@ -172,7 +172,7 @@ def test_plan_list_filter_by_labels() -> None:
 
         # Assert
         assert result.exit_code == 0
-        assert "Found 1 plan(s)" in result.output
+        assert "Found 1 PR(s)" in result.output
         assert "#1" in result.output
         assert "#2" not in result.output
 
@@ -216,7 +216,7 @@ def test_plan_list_with_limit() -> None:
 
         # Assert
         assert result.exit_code == 0
-        assert "Found 2 plan(s)" in result.output
+        assert "Found 2 PR(s)" in result.output
 
 
 def test_plan_list_combined_filters() -> None:
@@ -303,7 +303,7 @@ def test_plan_list_combined_filters() -> None:
 
         # Assert
         assert result.exit_code == 0
-        assert "Found 1 plan(s)" in result.output
+        assert "Found 1 PR(s)" in result.output
         assert "#1" in result.output
 
 
@@ -338,4 +338,4 @@ def test_plan_list_empty_results() -> None:
 
         # Assert
         assert result.exit_code == 0
-        assert "No plans found matching the criteria" in result.output
+        assert "No PRs found matching the criteria" in result.output

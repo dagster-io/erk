@@ -776,7 +776,7 @@ def test_checkout_for_plan_creates_impl_folder() -> None:
             result = runner.invoke(branch_group, ["checkout", "--for-plan", "500"], obj=ctx)
 
         assert result.exit_code == 0, f"Failed: {result.output}"
-        assert "Created .erk/impl-context/ folder from plan #500" in result.output
+        assert "Created .erk/impl-context/ folder from PR #500" in result.output
 
         # No slot allocation should occur (checkout in current worktree)
         pool_state = load_pool_state(env.repo.pool_json_path)
@@ -848,7 +848,7 @@ def test_checkout_for_plan_prints_activation_when_sync_status_fails() -> None:
             result = runner.invoke(branch_group, ["checkout", "--for-plan", "600"], obj=ctx)
 
         assert result.exit_code == 0, f"Failed: {result.output}"
-        assert "Created .erk/impl-context/ folder from plan #600" in result.output
+        assert "Created .erk/impl-context/ folder from PR #600" in result.output
 
 
 def test_checkout_stacks_in_place_for_plan_outputs_activation_script() -> None:
@@ -905,7 +905,7 @@ def test_checkout_stacks_in_place_for_plan_outputs_activation_script() -> None:
 
         assert result.exit_code == 0, f"Failed: {result.output}"
         assert "Stacked" in result.output
-        assert "Created .erk/impl-context/ folder from plan #700" in result.output
+        assert "Created .erk/impl-context/ folder from PR #700" in result.output
         # Stack-in-place now auto-executes via script output (not interactive instructions)
         assert "To activate the worktree environment:" not in result.output
         # The activation script path is emitted to stdout for shell integration

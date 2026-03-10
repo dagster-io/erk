@@ -89,9 +89,9 @@ def _checkout_plan_branch(
     needs_teleport = True
 
     if current_branch == branch_name:
-        click.echo(f"Already on plan branch '{branch_name}', teleporting from remote...", err=True)
+        click.echo(f"Already on PR branch '{branch_name}', teleporting from remote...", err=True)
     elif branch_name in local_branches:
-        click.echo(f"Checking out plan branch '{branch_name}'...", err=True)
+        click.echo(f"Checking out PR branch '{branch_name}'...", err=True)
         branch_manager.checkout_branch(cwd, branch_name)
     else:
         click.echo(f"Creating local tracking branch for '{branch_name}' from remote...", err=True)
@@ -146,7 +146,7 @@ def create_impl_context_from_pr(
         error_output = {
             "success": False,
             "error": "plan_not_found",
-            "message": f"Could not fetch plan for PR #{pr_number}: PR not found.",
+            "message": f"Could not fetch PR for PR #{pr_number}: PR not found.",
         }
         click.echo(json.dumps(error_output), err=True)
         raise SystemExit(1)
@@ -246,7 +246,7 @@ def _setup_planned_pr_plan(
         existing_ref = read_plan_ref(impl_dir)
         if existing_ref is not None and existing_ref.pr_id == str(pr_number):
             click.echo(
-                f"Found existing impl dir for plan #{pr_number}, skipping branch setup",
+                f"Found existing impl dir for PR #{pr_number}, skipping branch setup",
                 err=True,
             )
             impl_path_str = str(impl_dir) if not no_impl else None
@@ -270,7 +270,7 @@ def _setup_planned_pr_plan(
         error_output = {
             "success": False,
             "error": "plan_not_found",
-            "message": f"Could not fetch plan for PR #{pr_number}: PR not found.",
+            "message": f"Could not fetch PR for PR #{pr_number}: PR not found.",
         }
         click.echo(json.dumps(error_output), err=True)
         raise SystemExit(1)

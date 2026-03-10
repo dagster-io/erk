@@ -119,13 +119,13 @@ def pr_filter_options(f: Callable[P, T]) -> Callable[P, T]:
         "-A",
         is_flag=True,
         default=False,
-        help="Show plans from all users (default: show only your plans)",
+        help="Show PRs from all users (default: show only your PRs)",
     )(f)
     f = click.option(
         "--sort",
-        type=click.Choice(["plan", "activity"], case_sensitive=False),
-        default="plan",
-        help="Sort order: by plan number (default) or recent branch activity",
+        type=click.Choice(["pr", "activity"], case_sensitive=False),
+        default="pr",
+        help="Sort order: by PR number (default) or recent branch activity",
     )(f)
     return f
 
@@ -324,7 +324,7 @@ def _pr_list_impl(
     if not rows:
         if json_mode:
             return PrListResult(plans=[], count=0)
-        user_output("No plans found matching the criteria.")
+        user_output("No PRs found matching the criteria.")
         return None
 
     # Sort: branch activity only available with local repo
@@ -342,7 +342,7 @@ def _pr_list_impl(
 
     table = _build_static_table(rows, show_pr_column=False)
 
-    user_output(f"\nFound {len(rows)} plan(s):\n")
+    user_output(f"\nFound {len(rows)} PR(s):\n")
     console = Console(stderr=True, width=200, force_terminal=True)
     console.print(table)
     console.print()
@@ -376,7 +376,7 @@ def _run_interactive_mode(
         limit: Maximum number of results
         interval: Refresh interval in seconds
         all_users: If True, show plans from all users; if False, filter to authenticated user
-        sort: Sort order ("plan" or "activity")
+        sort: Sort order ("pr" or "activity")
     """
     repo = discover_repo_context(ctx, ctx.cwd)
     ensure_erk_metadata_dir(repo)

@@ -360,7 +360,7 @@ def offer_plans_repo_label_setup(repo_root: Path, plans_repo: str) -> None:
         repo_root: Path to the working repository root (used for gh CLI context)
         plans_repo: Target repository in "owner/repo" format
     """
-    user_output(f"\nPlans repo configured: {plans_repo}")
+    user_output(f"\nPRs repo configured: {plans_repo}")
     user_output("Erk uses labels (erk-plan, erk-extraction, erk-objective) to organize issues.")
 
     if not _console.confirm(f"Set up erk labels in {plans_repo}?", default=True):

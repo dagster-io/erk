@@ -124,7 +124,7 @@ def _do_track(
             success=False,
             error="no-metadata-block",
             message=(
-                f"Plan #{plan_number} has no plan-header metadata block"
+                f"PR #{plan_number} has no plan-header metadata block"
                 " — cannot update learn evaluation"
             ),
         )
@@ -134,7 +134,7 @@ def _do_track(
         error = TrackLearnError(
             success=False,
             error="github-api-failed",
-            message=f"Failed to track learn evaluation on plan #{plan_number}: {e}",
+            message=f"Failed to track learn evaluation on PR #{plan_number}: {e}",
         )
         click.echo(json.dumps(asdict(error)), err=True)
         raise SystemExit(1) from None
@@ -187,7 +187,7 @@ def track_learn_evaluation(ctx: click.Context, issue: str | None, session_id: st
         error = TrackLearnError(
             success=False,
             error="no-plan-specified",
-            message="No plan specified and could not infer from branch name",
+            message="No PR specified and could not infer from branch name",
         )
         click.echo(json.dumps(asdict(error)))
         raise SystemExit(1)

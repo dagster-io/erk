@@ -63,7 +63,7 @@ def test_dispatch_happy_path() -> None:
     pr = remote.created_pull_requests[0]
     assert pr.draft is True
     assert pr.base == "main"
-    assert pr.title == "Consolidate learn plans"
+    assert pr.title == "Consolidate learn PRs"
     assert "plan-header" in pr.body
 
     # Verify erk-pr, erk-plan, and erk-learn labels added

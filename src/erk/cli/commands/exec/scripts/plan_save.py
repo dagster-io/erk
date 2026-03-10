@@ -333,7 +333,7 @@ def _save_as_planned_pr(
 
     # Output
     if output_format == "display":
-        click.echo(f"Plan saved as planned PR #{plan_number}")
+        click.echo(f"PR saved as planned PR #{plan_number}")
         click.echo(f"Title: {prefixed_title}")
         click.echo(f"URL: {result.url}")
         click.echo(f"Branch: {branch_name}")
@@ -431,7 +431,7 @@ def _save_plan_via_planned_pr(
             existing_branch = get_existing_saved_branch(session_id, repo_root)
             if output_format == "display":
                 click.echo(
-                    f"This session already saved plan #{existing_issue}. "
+                    f"This session already saved PR #{existing_issue}. "
                     "Skipping duplicate creation.",
                     err=True,
                 )
@@ -440,7 +440,7 @@ def _save_plan_via_planned_pr(
                     "success": True,
                     "pr_number": existing_issue,
                     "skipped_duplicate": True,
-                    "message": f"Session already saved plan #{existing_issue}",
+                    "message": f"Session already saved PR #{existing_issue}",
                     "plan_backend": "planned_pr",
                 }
                 if existing_branch is not None:
@@ -496,24 +496,24 @@ def _save_plan_via_planned_pr(
     "--plan-file",
     type=click.Path(exists=True, path_type=Path),
     default=None,
-    help="Path to specific plan file (highest priority)",
+    help="Path to specific PR file (highest priority)",
 )
 @click.option(
     "--session-id",
     default=None,
-    help="Session ID for scoped plan lookup",
+    help="Session ID for scoped PR lookup",
 )
 @click.option(
     "--plan-type",
     type=click.Choice(["standard", "learn"]),
     default=None,
-    help="Plan type: standard (default) or learn",
+    help="PR type: standard (default) or learn",
 )
 @click.option(
     "--learned-from-issue",
     type=int,
     default=None,
-    help="Parent plan number (for learn plans)",
+    help="Parent PR number (for learn plans)",
 )
 @click.option(
     "--created-from-workflow-run-url",
@@ -534,7 +534,7 @@ def _save_plan_via_planned_pr(
 @click.option(
     "--summary",
     default=None,
-    help="AI-generated plan summary for PR description",
+    help="AI-generated PR summary for PR description",
 )
 @click.option(
     "--session-xml-dir",
