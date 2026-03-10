@@ -129,7 +129,7 @@ Rules: one line per bullet, backticks for paths/commands, no fix suggestions, no
 The `ci-summarize` job in `ci.yml`:
 
 - **`needs`**: All CI check jobs (see `ci.yml` for current list)
-- **Conditions**: Only on PRs, only when at least one job fails, skips plan review PRs, requires `CLAUDE_ENABLED != 'false'`
+- **Conditions**: Only on PRs, only when at least one job fails, requires `CLAUDE_ENABLED != 'false'`
 - **Uses `always()`**: Runs even when dependency jobs fail (otherwise GitHub skips it)
 - **Timeout**: 10 minutes
 

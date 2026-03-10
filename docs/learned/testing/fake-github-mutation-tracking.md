@@ -31,7 +31,7 @@ Every tracking list uses a typed tuple with a specific field order. The conventi
 | `_triggered_workflows`     | `(workflow, inputs)`                              | `("ci.yml", {"ref": "main"})`                    |
 | `_poll_attempts`           | `(workflow, branch_name, timeout, poll_interval)` | `("ci.yml", "feat", 300, 10)`                    |
 | `_created_prs`             | `(branch, title, body, base, draft)`              | `("feat", "Add X", "body", None, False)`         |
-| `_added_labels`            | `(pr_number, label)`                              | `(42, "erk-plan-review")`                        |
+| `_added_labels`            | `(pr_number, label)`                              | `(42, "erk-pr")`                                 |
 | `_thread_replies`          | `(thread_id, body)`                               | `("T_123", "reply")`                             |
 | `_pr_review_comments`      | `(pr_number, body, commit_sha, path, line)`       | `(42, "fix", "abc123", "src/foo.py", 10)`        |
 | `_pr_comments`             | `(pr_number, body)`                               | `(42, "comment")`                                |
@@ -79,7 +79,7 @@ assert fake_github.created_prs == [
 ]
 
 # Assert label was added
-assert fake_github.added_labels == [(42, "erk-plan-review")]
+assert fake_github.added_labels == [(42, "erk-pr")]
 ```
 
 ## Related Documentation

@@ -54,53 +54,6 @@ erk br co my-feature
 - You want interactive control over changes
 - You want to review changes before committing
 
-### Plan Review Mode
-
-When the PR has the `erk-plan-review` label, `/erk:pr-address` automatically switches to **Plan Review Mode**. This mode is designed for addressing feedback on plan-only PRs (no code changes).
-
-#### How it's triggered
-
-The `erk-plan-review` label is applied automatically by `erk exec plan-create-review-pr`. The `/erk:pr-address` command detects this label in Phase 0 and switches modes.
-
-See [Phase 0 Detection Pattern](../architecture/phase-zero-detection-pattern.md) for the detection mechanism.
-
-#### What's different in Plan Review Mode
-
-| Aspect                | Code Review Mode       | Plan Review Mode               |
-| --------------------- | ---------------------- | ------------------------------ |
-| **File modified**     | Source code files      | `PLAN-REVIEW-{plan_number}.md` |
-| **Sync mechanism**    | Git push only          | Git push + plan sync to plan   |
-| **Thread resolution** | Generic acknowledgment | Plan-specific messages         |
-| **Target audience**   | Code reviewers         | Plan reviewers                 |
-
-#### Plan Review Workflow
-
-1. **Fetch feedback**: Get unresolved review comments from PR
-2. **Edit plan file**: Make changes to `PLAN-REVIEW-{plan_number}.md` based on feedback
-3. **Commit changes**: Commit the edited plan file
-4. **Sync to plan**: Sync changes back to the plan
-5. **Resolve threads**: Mark review threads as resolved with plan-specific messages
-
-Plan changes to the local file require `erk exec plan-update` to propagate to the plan.
-
-#### Why separate sync is needed
-
-Plan review PRs maintain plan content in two locations:
-
-- **PR branch**: `PLAN-REVIEW-{plan_number}.md` file (for version control)
-- **Plan PR**: Plan-body comment (for structured review)
-
-The git push updates the PR, but doesn't update the plan. Running `erk exec plan-update` ensures reviewers see changes in both locations.
-
-#### When Plan Review Mode is used
-
-- User runs `erk exec plan-create-review-pr` to create a review PR
-- PR gets `erk-plan-review` label automatically
-- User runs `/erk:pr-address` on that PR branch
-- Mode is detected automatically, no manual selection needed
-
-See [PR-Based Plan Review Workflow](../planning/pr-review-workflow.md) for the complete plan review process.
-
 ### Plan File Mode
 
 When the PR's diff consists of a git-tracked `.erk/impl-context/plan.md`, `/erk:pr-address` automatically enters **Plan File Mode**. This mode handles feedback on plan-only PRs (created by the plan save workflow).
@@ -109,17 +62,16 @@ When the PR's diff consists of a git-tracked `.erk/impl-context/plan.md`, `/erk:
 
 <!-- Source: .claude/commands/erk/pr-address.md, Phase 0 section -->
 
-Phase 0 uses a file-based detection check (see Phase 0 in `pr-address.md`) to determine if `.erk/impl-context/plan.md` is git-tracked. If the file is tracked, Plan File Mode activates. This check runs after the `erk-plan-review` label check, so label-based Plan Review Mode takes priority if both conditions are present.
+Phase 0 uses a file-based detection check (see Phase 0 in `pr-address.md`) to determine if `.erk/impl-context/plan.md` is git-tracked. If the file is tracked, Plan File Mode activates.
 
 See [Phase 0 Detection Pattern](../architecture/phase-zero-detection-pattern.md) for the detection mechanism.
 
-#### How it differs from Plan Review Mode
+#### What's different in Plan File Mode
 
-| Aspect             | Plan Review Mode                    | Plan File Mode                          |
+| Aspect             | Code Review Mode                    | Plan File Mode                          |
 | ------------------ | ----------------------------------- | --------------------------------------- |
-| **Trigger**        | `erk-plan-review` label             | Git-tracked `.erk/impl-context/plan.md` |
-| **File modified**  | `PLAN-REVIEW-{plan_number}.md`      | `.erk/impl-context/plan.md`             |
-| **Sync mechanism** | Git push + plan sync to plan        | Git push only (no plan sync)            |
+| **Trigger**        | Default                             | Git-tracked `.erk/impl-context/plan.md` |
+| **File modified**  | Source code files                   | `.erk/impl-context/plan.md`             |
 | **PR description** | Updated via `update-pr-description` | Skipped (plan PRs have own format)      |
 | **Push method**    | Graphite submit                     | `git push` directly                     |
 

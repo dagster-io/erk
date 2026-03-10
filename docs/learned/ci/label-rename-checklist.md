@@ -27,9 +27,7 @@ The problem: **labels connect Python constants, YAML workflow conditions, and pr
 
 ## The Coordination Challenge
 
-<!-- Source: src/erk/cli/constants.py, PLAN_REVIEW_LABEL -->
-
-Label definitions start in Python constants (see `PLAN_REVIEW_LABEL` in `src/erk/cli/constants.py`) but cannot be interpolated into GitHub Actions YAML. The disconnect between definition and use creates drift:
+Label definitions may start in Python constants but cannot be interpolated into GitHub Actions YAML. The disconnect between definition and use creates drift:
 
 1. **Python layer**: Constants define canonical label names
 2. **YAML layer**: Workflows check label strings directly in `if:` conditions and `grep` commands
@@ -109,10 +107,10 @@ The only validation is grep + manual review. Future improvement: Add a CI check 
 
 ## Historical Context
 
-This checklist was created after PR #6400 fixed a `plan-review` → `erk-plan-review` mismatch that caused CI to run on PRs that should have been skipped. The label was renamed in the constant but not updated in workflow files, creating silent divergence.
+This checklist was created after PR #6400 fixed a label name mismatch that caused CI to run on PRs that should have been skipped. The label was renamed in the constant but not updated in workflow files, creating silent divergence.
 
 ## Related Documentation
 
 - [GitHub Actions Label Queries](github-actions-label-queries.md) — Step-level API query pattern
 - [GitHub Actions Workflow Gating Patterns](workflow-gating-patterns.md) — How label checks gate CI
-- [Phase Zero Detection Pattern](../architecture/phase-zero-detection-pattern.md) — Uses label checks for plan review mode
+- [Phase Zero Detection Pattern](../architecture/phase-zero-detection-pattern.md) — Phase 0 detection patterns

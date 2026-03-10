@@ -16,7 +16,7 @@ audit_result: clean
 
 ## Why Phase 0 Exists
 
-Multi-phase commands often support fundamentally different operational modes (code review vs plan review, interactive vs batch, local vs remote). **The timing of mode detection determines code clarity**: detect early and branch cleanly, or detect late and scatter `if mode == X` checks across every phase.
+Multi-phase commands often support fundamentally different operational modes (code review vs plan file editing, interactive vs batch, local vs remote). **The timing of mode detection determines code clarity**: detect early and branch cleanly, or detect late and scatter `if mode == X` checks across every phase.
 
 Phase 0 detection solves this by **deciding the execution path before any work begins**, preventing wasted effort and keeping mode-specific logic consolidated.
 
@@ -29,7 +29,7 @@ Without upfront detection, commands suffer from:
 3. **Unclear execution flow** — difficult to understand which code runs in which mode
 4. **Wasted computation** — execute phases irrelevant to the current mode
 
-The symptom: "Wait, this is plan review mode? But I already classified the feedback as code comments..."
+The symptom: "Wait, this is plan file mode? But I already classified the feedback as code comments..."
 
 ## The Solution: Detect Before Execute
 
@@ -45,21 +45,14 @@ This creates a decision tree at the entry point rather than conditionals scatter
 
 <!-- Source: .claude/commands/erk/pr-address.md, Phase 0 section -->
 
-The `/erk:pr-address` command uses Phase 0 detection with a two-step cascade to determine which workflow to follow:
+The `/erk:pr-address` command uses Phase 0 detection to determine which workflow to follow:
 
-1. **Label-based detection** — checks for `erk-plan-review` label → Plan Review Mode
-2. **File-based detection** — checks if `.erk/impl-context/plan.md` is git-tracked → Plan File Mode
-3. **Default** → Code Review Mode (Phases 1-6)
-
-### Label-Based: Plan Review Mode
-
-PR labels applied by the plan review workflow signal that the PR is a plan review. Detection uses `gh pr view --json labels`.
+1. **File-based detection** — checks if `.erk/impl-context/plan.md` is git-tracked → Plan File Mode
+2. **Default** → Code Review Mode (Phases 1-6)
 
 ### File-Based: Plan File Mode
 
 Plan-only PRs (created by the plan save workflow) have `.erk/impl-context/plan.md` committed to the branch. Detection uses `git ls-files --error-unmatch`.
-
-This is a distinct mode from Plan Review Mode — it targets a different file (`.erk/impl-context/plan.md` vs `PLAN-REVIEW-{issue}.md`) and uses a simpler push workflow (no issue sync, no graphite submit).
 
 ### Why This Works
 
@@ -68,8 +61,6 @@ This is a distinct mode from Plan Review Mode — it targets a different file (`
 **Complete separation**: The command document has distinct sections for each mode. Anyone reading the command knows exactly which phases run in which mode without tracking conditionals.
 
 **No mode leakage**: Each mode's phases never see another mode's context or logic.
-
-**Ordered cascade**: Label check runs first (higher priority), then file check, then default. The order matters because a PR could theoretically match both, but label-based mode is the intended signal from the plan review workflow.
 
 ## Detection Mechanisms
 
@@ -152,7 +143,7 @@ Skip Phase 0 when:
 
 1. Fetch feedback
 2. Parse comments
-3. Check if plan review mode
+3. Check if plan file mode
 4. ERROR: Should have checked this before Phase 1 started
 ```
 
@@ -165,15 +156,15 @@ Skip Phase 0 when:
 ```markdown
 ### Phase 1: Classify
 
-- If plan review: classify differently
+- If plan file: classify differently
 
 ### Phase 2: Generate
 
-- If plan review: generate differently
+- If plan file: generate differently
 
 ### Phase 3: Apply
 
-- If plan review: apply differently
+- If plan file: apply differently
 ```
 
 **Why wrong**: Mode logic duplicated across every phase. Hard to understand the two execution paths.
@@ -186,27 +177,21 @@ Skip Phase 0 when:
 ### Phase 2: Generate Fixes
 
 1. Try to generate code fixes
-2. Realize the PR has a plan review label
+2. Realize the PR is a plan-only PR
 3. Abort with error
 ```
 
 **Why wrong**: Phase 2 is too late to discover mode. Should have detected in Phase 0 and never entered Phase 1.
 
-**Correct approach**: Phase 0 detects label and branches to plan review flow immediately.
+**Correct approach**: Phase 0 detects plan file and branches to plan file flow immediately.
 
 ## Related Patterns
-
-### Label-Driven Branching
-
-Phase 0 detection often uses GitHub PR labels as feature switches. Labels represent mode variants and are applied automatically by workflows.
-
-**Why labels**: They're durable (don't change during PR lifecycle) and workflow-controlled (no user decision needed).
 
 ### State Machine Entry Point
 
 Phase 0 detection is a state machine entry point:
 
-- **State**: The detected mode (code review, plan review)
+- **State**: The detected mode (code review, plan file)
 - **Transitions**: Moving through phases within that mode
 - **Guards**: The detection logic determines initial state
 
