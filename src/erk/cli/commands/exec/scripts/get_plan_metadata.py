@@ -27,7 +27,7 @@ class MetadataSuccess:
 
     success: bool
     value: Any
-    plan_number: int
+    pr_number: int
     field: str
 
 
@@ -74,7 +74,7 @@ def get_plan_metadata(
     result_success = MetadataSuccess(
         success=True,
         value=result,
-        plan_number=plan_number,
+        pr_number=plan_number,
         field=field_name,
     )
     click.echo(json.dumps(asdict(result_success)))

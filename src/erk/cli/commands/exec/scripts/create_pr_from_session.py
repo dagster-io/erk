@@ -9,7 +9,7 @@ commits the plan, and creates a draft PR.
 
 Output:
     JSON result on stdout:
-        {"success": true, "plan_number": N, "plan_url": "...", "branch_name": "..."}
+        {"success": true, "pr_number": N, "pr_url": "...", "branch_name": "..."}
     Error messages on stderr with exit code 1 on failure
 
 Exit Codes:
@@ -120,8 +120,8 @@ def create_pr_from_session(
     # Return success result
     output = {
         "success": True,
-        "plan_number": result.pr_number,
-        "plan_url": result.pr_url,
+        "pr_number": result.pr_number,
+        "pr_url": result.pr_url,
         "branch_name": result.branch_name,
         "title": result.title,
     }

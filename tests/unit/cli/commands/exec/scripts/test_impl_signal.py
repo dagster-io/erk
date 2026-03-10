@@ -296,7 +296,7 @@ def test_started_posts_comment_and_updates_metadata(tmp_path: Path) -> None:
     data = json.loads(result.output)
     assert data["success"] is True
     assert data["event"] == "started"
-    assert data["plan_number"] == 123
+    assert data["pr_number"] == 123
 
     # Verify comment was posted (via FakeLocalGitHub.create_pr_comment)
     assert len(fake_github.pr_comments) == 1
@@ -337,7 +337,7 @@ def test_ended_updates_metadata(tmp_path: Path) -> None:
     data = json.loads(result.output)
     assert data["success"] is True
     assert data["event"] == "ended"
-    assert data["plan_number"] == 456
+    assert data["pr_number"] == 456
 
     # No comment for ended events
     assert len(fake_github.pr_comments) == 0
@@ -446,7 +446,7 @@ def test_submitted_updates_lifecycle_stage(tmp_path: Path) -> None:
     data = json.loads(result.output)
     assert data["success"] is True
     assert data["event"] == "submitted"
-    assert data["plan_number"] == 100
+    assert data["pr_number"] == 100
 
     # No comment for submitted events
     assert len(fake_github.pr_comments) == 0
@@ -504,7 +504,7 @@ def test_submitted_no_session_id_ok(tmp_path: Path) -> None:
     data = json.loads(result.output)
     assert data["success"] is True
     assert data["event"] == "submitted"
-    assert data["plan_number"] == 200
+    assert data["pr_number"] == 200
 
 
 def test_submitted_issue_not_found(tmp_path: Path) -> None:

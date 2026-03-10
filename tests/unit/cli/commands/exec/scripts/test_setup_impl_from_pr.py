@@ -373,7 +373,7 @@ def test_planned_pr_reads_from_impl_context_when_present(tmp_path: Path) -> None
     json_line = next(line for line in reversed(output_lines) if line.startswith("{"))
     output = json.loads(json_line)
     assert output["success"] is True
-    assert output["plan_title"] == "Local Plan"
+    assert output["pr_title"] == "Local Plan"
 
 
 def test_planned_pr_reads_objective_id_from_ref_json(tmp_path: Path) -> None:
@@ -559,7 +559,7 @@ def test_create_impl_context_ref_json_non_string_title(tmp_path: Path) -> None:
     )
     assert result["success"] is True
     # Non-string title falls back to PR title
-    assert result["plan_title"] == "Test Plan Title"
+    assert result["pr_title"] == "Test Plan Title"
 
 
 def test_create_impl_context_ref_json_non_list_node_ids(tmp_path: Path) -> None:
@@ -588,7 +588,7 @@ def test_create_impl_context_ref_json_missing_fields(tmp_path: Path) -> None:
         },
     )
     assert result["success"] is True
-    assert result["plan_title"] == "Test Plan Title"  # Falls back to PR title
+    assert result["pr_title"] == "Test Plan Title"  # Falls back to PR title
     ref_data = json.loads((impl_path / "ref.json").read_text(encoding="utf-8"))
     assert ref_data["objective_id"] is None
     assert ref_data.get("node_ids") is None
@@ -611,7 +611,7 @@ def test_create_impl_context_valid_ref_json(tmp_path: Path) -> None:
         },
     )
     assert result["success"] is True
-    assert result["plan_title"] == "Custom Title"
+    assert result["pr_title"] == "Custom Title"
     ref_data = json.loads((impl_path / "ref.json").read_text(encoding="utf-8"))
     assert ref_data["objective_id"] == 42
     assert ref_data["node_ids"] == ["node-1", "node-2"]

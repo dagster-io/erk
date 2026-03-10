@@ -46,7 +46,7 @@ def test_add_plan_label_success() -> None:
     assert result.exit_code == 0
     output = json.loads(result.output)
     assert output["success"] is True
-    assert output["plan_number"] == int(create_result.pr_id)
+    assert output["pr_number"] == int(create_result.pr_id)
     assert output["label"] == "erk-consolidated"
 
     # Verify label was added via the fake GitHub PR label tracking

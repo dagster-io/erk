@@ -15,7 +15,7 @@ Exit Codes:
 
 Examples:
     $ erk exec create-impl-context-from-plan 1028
-    {"success": true, "impl_context_path": "/path/to/.erk/impl-context", "plan_id": 1028}
+    {"success": true, "impl_context_path": "/path/to/.erk/impl-context", "pr_number": 1028}
 
     $ erk exec create-impl-context-from-plan 999
     {"success": false, "error": "plan_not_found", "message": "..."}
@@ -85,7 +85,7 @@ def create_impl_context_from_plan(
     output = {
         "success": True,
         "impl_context_path": str(impl_context_path),
-        "plan_id": plan_id,
-        "plan_url": plan.url,
+        "pr_number": plan_id,
+        "pr_url": plan.url,
     }
     click.echo(json.dumps(output))

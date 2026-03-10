@@ -9,7 +9,7 @@ Usage:
 
 Output:
     JSON with detection result:
-    {"found": true, "plan_number": 2521, "detection_method": "pr_lookup"}
+    {"found": true, "pr_number": 2521, "detection_method": "pr_lookup"}
     {"found": false}
 
 Exit Codes:
@@ -17,7 +17,7 @@ Exit Codes:
 
 Examples:
     $ erk exec detect-plan-from-branch
-    {"found": true, "plan_number": 2521, "detection_method": "pr_lookup"}
+    {"found": true, "pr_number": 2521, "detection_method": "pr_lookup"}
 """
 
 import json
@@ -50,7 +50,7 @@ def _detect_plan_from_branch_impl(
     # Look up associated PR for the current branch
     pr_number = pr_lookup()
     if pr_number is not None:
-        return {"found": True, "plan_number": pr_number, "detection_method": "pr_lookup"}
+        return {"found": True, "pr_number": pr_number, "detection_method": "pr_lookup"}
 
     return {"found": False}
 

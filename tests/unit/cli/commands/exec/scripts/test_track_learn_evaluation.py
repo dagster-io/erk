@@ -58,7 +58,7 @@ def test_track_learn_evaluation_posts_comment_and_updates_header(tmp_path: Path)
     assert result.exit_code == 0, result.output
     output = json.loads(result.output)
     assert output["success"] is True
-    assert output["plan_number"] == 42
+    assert output["pr_number"] == 42
     assert output["tracked"] is True
 
     # Verify comment was posted
@@ -106,7 +106,7 @@ def test_track_learn_evaluation_without_session_id(tmp_path: Path) -> None:
     assert result.exit_code == 0, result.output
     output = json.loads(result.output)
     assert output["success"] is True
-    assert output["plan_number"] == 100
+    assert output["pr_number"] == 100
 
     # Verify comment was posted
     assert len(fake_github.pr_comments) == 1
@@ -184,7 +184,7 @@ def test_track_learn_evaluation_with_url_format(tmp_path: Path) -> None:
     assert result.exit_code == 0, result.output
     output = json.loads(result.output)
     assert output["success"] is True
-    assert output["plan_number"] == 789
+    assert output["pr_number"] == 789
 
 
 # ============================================================================
@@ -285,12 +285,12 @@ def test_json_output_structure_success(tmp_path: Path) -> None:
 
     # Verify required fields
     assert "success" in output
-    assert "plan_number" in output
+    assert "pr_number" in output
     assert "tracked" in output
 
     # Verify types
     assert isinstance(output["success"], bool)
-    assert isinstance(output["plan_number"], int)
+    assert isinstance(output["pr_number"], int)
     assert isinstance(output["tracked"], bool)
 
 

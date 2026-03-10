@@ -16,7 +16,7 @@ Exit Codes:
 Examples:
     $ erk exec setup-impl-from-pr 1028
     {"success": true, "impl_path": "/path/to/.erk/impl-context",
-     "plan_number": 1028, "branch": "P1028-..."}
+     "pr_number": 1028, "branch": "P1028-..."}
 """
 
 import json
@@ -207,10 +207,10 @@ def create_impl_context_from_pr(
     return {
         "success": True,
         "impl_path": str(impl_path),
-        "plan_number": plan_number,
-        "plan_url": pr_url,
+        "pr_number": plan_number,
+        "pr_url": pr_url,
         "branch": branch_name,
-        "plan_title": plan_title,
+        "pr_title": plan_title,
     }
 
 
@@ -253,10 +253,10 @@ def _setup_planned_pr_plan(
             return {
                 "success": True,
                 "impl_path": impl_path_str,
-                "plan_number": plan_number,
-                "plan_url": existing_ref.url,
+                "pr_number": plan_number,
+                "pr_url": existing_ref.url,
                 "branch": current_branch,
-                "plan_title": "",
+                "pr_title": "",
                 "no_impl": no_impl,
             }
 
@@ -294,10 +294,10 @@ def _setup_planned_pr_plan(
         return {
             "success": True,
             "impl_path": None,
-            "plan_number": plan_number,
-            "plan_url": pr_url,
+            "pr_number": plan_number,
+            "pr_url": pr_url,
             "branch": branch_name,
-            "plan_title": pr_result.title,
+            "pr_title": pr_result.title,
             "no_impl": True,
         }
 

@@ -18,10 +18,10 @@ Exit Codes:
 
 Examples:
     $ erk exec setup-impl --issue 2521
-    {"success": true, "plan_number": 2521, "source": "issue_arg", ...}
+    {"success": true, "pr_number": 2521, "source": "issue_arg", ...}
 
     $ erk exec setup-impl
-    {"success": true, "plan_number": 2521, "source": "branch_detection", ...}
+    {"success": true, "pr_number": 2521, "source": "branch_detection", ...}
 
     $ erk exec setup-impl
     {"success": false, "error": "no_plan_found", ...}
@@ -74,7 +74,7 @@ def _run_impl_init(ctx: click.Context) -> dict[str, object]:
         "related_docs": related_docs,
     }
     if plan_number is not None:
-        result["plan_number"] = plan_number
+        result["pr_number"] = plan_number
     return result
 
 
@@ -240,7 +240,7 @@ def setup_impl(ctx: click.Context, plan_number: int | None, file_path: Path | No
     )
 
     if detection.get("found"):
-        detected_number = detection["plan_number"]
+        detected_number = detection["pr_number"]
         if isinstance(detected_number, int):
             click.echo(f"Auto-detected plan #{detected_number} from branch", err=True)
             _handle_issue_setup(ctx, plan_number=detected_number)
@@ -304,7 +304,7 @@ def _handle_issue_setup(ctx: click.Context, *, plan_number: int) -> None:
             {
                 "success": True,
                 "source": "issue",
-                "plan_number": plan_number,
+                "pr_number": plan_number,
                 "has_plan_tracking": True,
                 **init_result,
             }

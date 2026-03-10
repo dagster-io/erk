@@ -152,7 +152,7 @@ def objective_save_to_issue(
                 json.dumps(
                     {
                         "success": True,
-                        "plan_number": existing_issue,
+                        "pr_number": existing_issue,
                         "skipped_duplicate": True,
                         "message": f"Session already saved objective #{existing_issue}",
                     }
@@ -262,7 +262,7 @@ def objective_save_to_issue(
     else:
         output_data: dict[str, object] = {
             "success": True,
-            "plan_number": result.plan_number,
+            "pr_number": result.plan_number,
             "issue_url": result.plan_url,
             "title": result.title,
         }

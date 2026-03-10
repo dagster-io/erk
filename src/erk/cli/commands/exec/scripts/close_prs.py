@@ -1,10 +1,10 @@
 """Batch close multiple plan PRs with comments.
 
 Usage:
-    echo '[{"plan_number": 42, "comment": "Superseded"}]' | erk exec close-prs
+    echo '[{"pr_number": 42, "comment": "Superseded"}]' | erk exec close-prs
 
 Input:
-    JSON array from stdin, each item: {"plan_number": int, "comment": str}
+    JSON array from stdin, each item: {"pr_number": int, "comment": str}
 
 Output:
     JSON with batch results
@@ -31,7 +31,7 @@ if TYPE_CHECKING:
 class PlanCloseItem(TypedDict):
     """Type definition for a plan close item from stdin."""
 
-    plan_number: int
+    pr_number: int
     comment: str
 
 
@@ -79,19 +79,19 @@ def _validate_batch_input(data: object) -> list[PlanCloseItem] | BatchCloseError
 
         item_dict = cast("dict[str, Any]", item)
 
-        if "plan_number" not in item_dict:
+        if "pr_number" not in item_dict:
             return BatchCloseError(
                 success=False,
                 error_type="invalid-input",
-                message=f"Item at index {idx} missing required 'plan_number' field",
+                message=f"Item at index {idx} missing required 'pr_number' field",
             )
 
-        plan_number = item_dict["plan_number"]
+        plan_number = item_dict["pr_number"]
         if not isinstance(plan_number, int):
             return BatchCloseError(
                 success=False,
                 error_type="invalid-input",
-                message=f"Item at index {idx} has non-integer 'plan_number'",
+                message=f"Item at index {idx} has non-integer 'pr_number'",
             )
 
         if "comment" not in item_dict:
@@ -109,7 +109,7 @@ def _validate_batch_input(data: object) -> list[PlanCloseItem] | BatchCloseError
                 message=f"Item at index {idx} has non-string 'comment'",
             )
 
-        validated_items.append({"plan_number": plan_number, "comment": comment})
+        validated_items.append({"pr_number": plan_number, "comment": comment})
 
     return validated_items
 
@@ -120,7 +120,7 @@ def close_prs(ctx: click.Context) -> None:
     """Batch close multiple plan PRs with comments from JSON stdin.
 
     Reads a JSON array from stdin where each item has:
-    - plan_number (required): Plan PR number
+    - pr_number (required): Plan PR number
     - comment (required): Comment to add before closing
 
     Processes each plan sequentially and outputs batch results.
@@ -153,7 +153,7 @@ def close_prs(ctx: click.Context) -> None:
     results: list[dict[str, object]] = []
 
     for item in validated:
-        plan_number = item["plan_number"]
+        plan_number = item["pr_number"]
         comment = item["comment"]
         plan_id = str(plan_number)
 
@@ -162,7 +162,7 @@ def close_prs(ctx: click.Context) -> None:
         except RuntimeError as e:
             results.append(
                 {
-                    "plan_number": plan_number,
+                    "pr_number": plan_number,
                     "success": False,
                     "error": f"Failed to add comment: {e}",
                 }
@@ -174,7 +174,7 @@ def close_prs(ctx: click.Context) -> None:
         except RuntimeError as e:
             results.append(
                 {
-                    "plan_number": plan_number,
+                    "pr_number": plan_number,
                     "success": False,
                     "error": f"Failed to close plan: {e}",
                     "comment_id": comment_id,
@@ -184,7 +184,7 @@ def close_prs(ctx: click.Context) -> None:
 
         results.append(
             {
-                "plan_number": plan_number,
+                "pr_number": plan_number,
                 "success": True,
                 "comment_id": comment_id,
             }

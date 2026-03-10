@@ -65,7 +65,7 @@ def test_close_pr_success() -> None:
     assert result.exit_code == 0, f"Failed: {result.output}"
     output = json.loads(result.output)
     assert output["success"] is True
-    assert output["plan_number"] == 42
+    assert output["pr_number"] == 42
     # PlannedPRBackend.add_comment returns string ID from FakeLocalGitHub (starts at 1000000)
     assert output["comment_id"] == "1000000"
 
@@ -135,7 +135,7 @@ See #1234 for details."""
     assert result.exit_code == 0
     output = json.loads(result.output)
     assert output["success"] is True
-    assert output["plan_number"] == 100
+    assert output["pr_number"] == 100
 
     # Verify the full comment was preserved (via FakeLocalGitHub.create_pr_comment)
     pr_number, comment_body = fake_github.pr_comments[0]

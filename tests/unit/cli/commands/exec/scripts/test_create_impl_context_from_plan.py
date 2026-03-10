@@ -75,9 +75,9 @@ def test_success_creates_impl_context(tmp_path: Path) -> None:
     assert result.exit_code == 0, f"Command failed: {result.output}"
     output = json.loads(result.output)
     assert output["success"] is True
-    assert output["plan_id"] == 123
+    assert output["pr_number"] == 123
     # PlannedPRBackend uses PR URLs (issue_info_to_pr_details converts /issues/ to /pull/)
-    assert "test-owner/test-repo/pull/123" in output["plan_url"]
+    assert "test-owner/test-repo/pull/123" in output["pr_url"]
 
     # Verify .erk/impl-context/ folder was created with correct files
     impl_context_dir = tmp_path / ".erk" / "impl-context"

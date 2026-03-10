@@ -13,7 +13,8 @@ Usage:
 
 Output:
     Structured JSON output with upload status:
-    {"uploaded": true, "plan_id": 2521, "session_branch": "planned-pr-context/2521", "files": [...]}
+    {"uploaded": true, "pr_number": 2521, "session_branch": "planned-pr-context/2521",
+     "files": [...]}
     {"uploaded": false, "reason": "preprocessing_failed"}
 
 Exit Codes:
@@ -142,7 +143,7 @@ def _update_manifest(
     if existing_manifest is None:
         manifest: dict = {
             "version": 1,
-            "plan_id": plan_id,
+            "pr_number": plan_id,
             "sessions": [],
         }
     else:
@@ -312,7 +313,7 @@ def push_session(
 
     result_output: dict[str, object] = {
         "uploaded": True,
-        "plan_id": plan_id,
+        "pr_number": plan_id,
         "session_branch": session_branch,
         "session_id": session_id,
         "stage": stage,

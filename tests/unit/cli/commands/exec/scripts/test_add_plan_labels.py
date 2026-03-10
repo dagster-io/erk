@@ -52,8 +52,8 @@ def test_add_plan_labels_batch_success() -> None:
 
     batch_input = json.dumps(
         [
-            {"plan_number": 42, "label": "erk-learn"},
-            {"plan_number": 43, "label": "erk-stale"},
+            {"pr_number": 42, "label": "erk-learn"},
+            {"pr_number": 43, "label": "erk-stale"},
         ]
     )
 
@@ -70,10 +70,10 @@ def test_add_plan_labels_batch_success() -> None:
     output = json.loads(result.output)
     assert output["success"] is True
     assert len(output["results"]) == 2
-    assert output["results"][0]["plan_number"] == 42
+    assert output["results"][0]["pr_number"] == 42
     assert output["results"][0]["success"] is True
     assert output["results"][0]["label"] == "erk-learn"
-    assert output["results"][1]["plan_number"] == 43
+    assert output["results"][1]["pr_number"] == 43
     assert output["results"][1]["success"] is True
 
 
@@ -89,8 +89,8 @@ def test_add_plan_labels_partial_failure() -> None:
 
     batch_input = json.dumps(
         [
-            {"plan_number": 42, "label": "erk-learn"},
-            {"plan_number": 999, "label": "erk-stale"},
+            {"pr_number": 42, "label": "erk-learn"},
+            {"pr_number": 999, "label": "erk-stale"},
         ]
     )
 
@@ -138,7 +138,7 @@ def test_add_plan_labels_missing_field() -> None:
     fake_github = FakeLocalGitHub(issues_gateway=fake_gh)
     runner = CliRunner()
 
-    batch_input = json.dumps([{"plan_number": 42}])  # Missing 'label'
+    batch_input = json.dumps([{"pr_number": 42}])  # Missing 'label'
 
     result = runner.invoke(
         add_plan_labels,

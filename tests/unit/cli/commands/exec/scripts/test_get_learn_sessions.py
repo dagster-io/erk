@@ -68,7 +68,7 @@ def test_get_learn_sessions_with_explicit_issue(tmp_path: Path) -> None:
     assert result.exit_code == 0, result.output
     output = json.loads(result.output)
     assert output["success"] is True
-    assert output["plan_id"] == "123"
+    assert output["pr_number"] == "123"
 
 
 def test_get_learn_sessions_infers_from_branch(tmp_path: Path) -> None:
@@ -137,7 +137,7 @@ def test_get_learn_sessions_with_url_format(tmp_path: Path) -> None:
     assert result.exit_code == 0, result.output
     output = json.loads(result.output)
     assert output["success"] is True
-    assert output["plan_id"] == "789"
+    assert output["pr_number"] == "789"
 
 
 # ============================================================================
@@ -243,7 +243,7 @@ def test_json_output_structure(tmp_path: Path) -> None:
 
     # Verify all expected fields exist
     assert "success" in output
-    assert "plan_id" in output
+    assert "pr_number" in output
     assert "planning_session_id" in output
     assert "implementation_session_ids" in output
     assert "learn_session_ids" in output
@@ -255,7 +255,7 @@ def test_json_output_structure(tmp_path: Path) -> None:
 
     # Verify types
     assert isinstance(output["success"], bool)
-    assert isinstance(output["plan_id"], str)
+    assert isinstance(output["pr_number"], str)
     assert isinstance(output["implementation_session_ids"], list)
     assert isinstance(output["session_paths"], list)
     assert isinstance(output["session_sources"], list)
@@ -662,7 +662,7 @@ def test_preprocessed_manifest_returns_data_on_success(tmp_path: Path) -> None:
 
         manifest = {
             "version": 1,
-            "plan_id": 700,
+            "pr_number": 700,
             "sessions": [
                 {
                     "session_id": "test-session-1",
@@ -707,6 +707,6 @@ def test_preprocessed_manifest_returns_data_on_success(tmp_path: Path) -> None:
     output = json.loads(result.output)
     assert output["preprocessed_manifest"] is not None
     assert output["preprocessed_manifest"]["version"] == 1
-    assert output["preprocessed_manifest"]["plan_id"] == 700
+    assert output["preprocessed_manifest"]["pr_number"] == 700
     assert len(output["preprocessed_manifest"]["sessions"]) == 1
     assert output["preprocessed_manifest"]["sessions"][0]["session_id"] == "test-session-1"

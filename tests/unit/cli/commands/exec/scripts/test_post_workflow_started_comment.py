@@ -216,7 +216,7 @@ def test_cli_success(tmp_path: Path) -> None:
     assert result.exit_code == 0
     output = json.loads(result.output)
     assert output["success"] is True
-    assert output["plan_number"] == 123
+    assert output["pr_number"] == 123
 
     # Verify comment was added via mutation tracking
     assert len(fake_github.pr_comments) == 1

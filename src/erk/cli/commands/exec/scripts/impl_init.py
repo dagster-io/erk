@@ -158,6 +158,6 @@ def impl_init(ctx: click.Context, json_output: bool) -> None:
     }
 
     if plan_number is not None:
-        result["plan_number"] = plan_number
+        result["pr_number"] = plan_number
 
     click.echo(json.dumps(result))

@@ -11,7 +11,7 @@ Output:
     JSON object with tracking result:
     {
         "success": true,
-        "plan_number": 123,
+        "pr_number": 123,
         "tracked": true
     }
 
@@ -44,7 +44,7 @@ class TrackLearnResult:
     """Result of track-learn-evaluation command."""
 
     success: bool
-    plan_number: int
+    pr_number: int
     tracked: bool
 
 
@@ -203,7 +203,7 @@ def track_learn_evaluation(ctx: click.Context, issue: str | None, session_id: st
 
     result = TrackLearnResult(
         success=True,
-        plan_number=plan_number,
+        pr_number=plan_number,
         tracked=True,
     )
 

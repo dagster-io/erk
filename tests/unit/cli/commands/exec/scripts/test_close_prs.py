@@ -52,8 +52,8 @@ def test_close_prs_batch_success() -> None:
 
     batch_input = json.dumps(
         [
-            {"plan_number": 42, "comment": "Closing plan A"},
-            {"plan_number": 43, "comment": "Closing plan B"},
+            {"pr_number": 42, "comment": "Closing plan A"},
+            {"pr_number": 43, "comment": "Closing plan B"},
         ]
     )
 
@@ -70,9 +70,9 @@ def test_close_prs_batch_success() -> None:
     output = json.loads(result.output)
     assert output["success"] is True
     assert len(output["results"]) == 2
-    assert output["results"][0]["plan_number"] == 42
+    assert output["results"][0]["pr_number"] == 42
     assert output["results"][0]["success"] is True
-    assert output["results"][1]["plan_number"] == 43
+    assert output["results"][1]["pr_number"] == 43
     assert output["results"][1]["success"] is True
 
     # Verify both PRs were closed
@@ -92,8 +92,8 @@ def test_close_prs_partial_failure() -> None:
 
     batch_input = json.dumps(
         [
-            {"plan_number": 42, "comment": "Closing plan A"},
-            {"plan_number": 999, "comment": "This should fail"},
+            {"pr_number": 42, "comment": "Closing plan A"},
+            {"pr_number": 999, "comment": "This should fail"},
         ]
     )
 
@@ -142,7 +142,7 @@ def test_close_prs_missing_field() -> None:
     fake_github = FakeLocalGitHub(issues_gateway=fake_gh)
     runner = CliRunner()
 
-    batch_input = json.dumps([{"plan_number": 42}])  # Missing 'comment'
+    batch_input = json.dumps([{"pr_number": 42}])  # Missing 'comment'
 
     result = runner.invoke(
         close_prs,
