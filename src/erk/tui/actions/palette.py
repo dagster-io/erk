@@ -308,12 +308,12 @@ class PaletteActionsMixin:
                 self.notify(f"Opened PR {row.pr_display}")
 
         elif command_id == "copy_cancel_cmd":
-            cmd = f"erk run cancel {row.run_id}"
+            cmd = f"erk workflow run cancel {row.run_id}"
             self._service.clipboard.copy(cmd)
             self.notify(f"Copied: {cmd}")
 
         elif command_id == "copy_retry_cmd":
-            cmd = f"erk run retry {row.run_id}"
+            cmd = f"erk workflow run retry {row.run_id}"
             self._service.clipboard.copy(cmd)
             self.notify(f"Copied: {cmd}")
 
