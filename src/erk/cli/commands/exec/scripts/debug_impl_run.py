@@ -211,7 +211,8 @@ def debug_impl_run(ctx: click.Context, *, run_id: str, output_json: bool) -> Non
 
     # Log diagnostics to stderr
     click.echo(
-        f"Diagnostics: {metrics.raw_log_lines} raw lines, {metrics.json_lines_extracted} JSON lines, "
+        "Diagnostics: "
+        f"{metrics.raw_log_lines} raw lines, {metrics.json_lines_extracted} JSON lines, "
         f"{metrics.system_messages} system, {metrics.assistant_messages} assistant, "
         f"{metrics.tool_result_messages} tool_result",
         err=True,

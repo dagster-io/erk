@@ -127,7 +127,11 @@ def _extract_json_lines_from_all(lines: list[str]) -> list[str]:
     return result
 
 
-def parse_impl_run_summary(lines: list[str], *, track_metrics: bool = False) -> ImplRunSummary | tuple[ImplRunSummary, ParseMetrics]:
+def parse_impl_run_summary(
+    lines: list[str],
+    *,
+    track_metrics: bool = False,
+) -> ImplRunSummary | tuple[ImplRunSummary, ParseMetrics]:
     """Parse stream-json lines into a structured summary.
 
     Walks through JSONL lines from a Claude CLI session, extracting:

@@ -410,8 +410,12 @@ class TestDebugImplRunCli:
         # Verify files were tracked
         files_read = data.get("files_read", [])
         files_modified = data.get("files_modified", [])
-        assert any("main.py" in f for f in files_read), f"Expected main.py in files_read, got {files_read}"
-        assert any("main.py" in f for f in files_modified), f"Expected main.py in files_modified, got {files_modified}"
+        assert any("main.py" in f for f in files_read), (
+            f"Expected main.py in files_read, got {files_read}"
+        )
+        assert any("main.py" in f for f in files_modified), (
+            f"Expected main.py in files_modified, got {files_modified}"
+        )
 
         # Verify error messages were captured
         error_messages = data.get("error_messages", [])
