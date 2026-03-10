@@ -1,0 +1,1125 @@
+<session>
+  <meta source="agent-ae0845a" />
+  <meta branch="plnd/O9109-update-help-strings-03-10-0937" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>Fix test assertion strings in multiple files in /home/runner/work/erk/erk/tests/. The source code has been changed from "plan" to "PR" in user-facing output strings. Update the following test files:
+
+1. /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py:
+   - Change `"Dispatch plan #42:"` → `"Dispatch PR #42:"` (use replace_all)
+   - Search for other "plan" assertions that need updating. The source now uses "PR" in all user-facing messages.
+
+2. /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_handle_no_changes.py:
+   - Change `"Duplicate plan"` → `"Duplicate PR"` (use replace_all)
+
+3. /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_objective_fetch_context.py:
+   - Change `"No plan found for branch"` → `"No PR found for branch"` (use replace_all)
+
+4. /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_objective_save_to_issue.py:
+   - Change `"No plan found"` → `"No PR found"` (use replace_all)
+
+5. /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_plan_save.py:
+   - Change `"Plan saved as planned PR"` → `"PR saved as planned PR"` (use replace_all)
+
+6. /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_setup_impl_from_pr.py:
+   - Change `"Already on plan branch"` → `"Already on PR branch"` (use replace_all)
+   - Change any assertion with `"for plan #"` → `"for PR #"` (use replace_all)
+
+7. /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_track_learn_evaluation.py:
+   - Change `"No plan specified"` → `"No PR specified"` (use replace_all)
+
+8. /home/runner/work/erk/erk/tests/unit/cli/commands/test_admin_test_workflow.py:
+   - Change `"Using existing plan #42"` → `"Using existing PR #42"` (use replace_all)
+   - Note: `"Created test plan #1"` was already fixed to `"Created test PR #1"`
+
+9. /home/runner/work/erk/erk/tests/unit/shared/test_next_steps.py:
+   - Change `"Implement plan #"` → `"Implement PR #"` (use replace_all)
+   - Change `"Dispatch plan #"` → `"Dispatch PR #"` (use replace_all)
+   - Change `"Checkout plan #"` → `"Checkout PR #"` (use replace_all)
+
+Do NOT change test function names, docstrings, variable names, or test data (like issue titles). Only change assertion expected strings and test notification strings passed to the code under test.
+
+Read each file, make the changes using replace_all=true, verify.</user>
+  <assistant>I'll help you fix the test assertion strings by updating "plan" to "PR" in the user-facing output messages. Let me start by reading each file and then making the necessary changes.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="16759" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 16759, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01XFPjQcZppLjGK7MzgPnzhy">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="16759" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 16759, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01A4xJVFqDfE4PzyFuXm5Lqe">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_handle_no_changes.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="16759" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 16759, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01SeQNh8DJtCqug4dy5SuM3g">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_objective_fetch_context.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="16759" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 16759, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_011scLeTZsM52D1LygNdzvMg">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_objective_save_to_issue.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="16759" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 16759, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_012jeRKLKbDjZRSBkBNxZB3m">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_plan_save.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="16759" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 16759, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01A4xJVFqDfE4PzyFuXm5Lqe">
+     1→"""Unit tests for handle_no_changes exec CLI command.
+     2→
+     3→Tests the no-changes scenario handling for plan-implement workflow.
+     4→Uses FakeLocalGitHub for dependency injection.
+     5→"""
+     6→
+     7→import json
+     8→from pathlib import Path
+     9→
+    10→from click.testing import CliRunner
+    11→
+    12→from erk.cli.commands.exec.scripts.handle_no_changes import (
+    13→    HandleNoChangesError,
+    14→    HandleNoChangesSuccess,
+    15→    _build_issue_comment,
+    16→    _build_no_changes_title,
+    17→    _build_pr_body,
+    18→)
+    19→from erk.cli.commands.exec.scripts.handle_no_changes import (
+    20→    handle_no_changes as handle_no_changes_command,
+    21→)
+    22→from erk_shared.context.context import ErkContext
+    23→from erk_shared.gateway.github.metadata.plan_header import format_plan_header_body
+    24→from erk_shared.gateway.github.types import PRDetails
+    25→from erk_shared.plan_store.planned_pr import PlannedPRBackend
+    26→from tests.fakes.gateway.github import FakeLocalGitHub
+    27→from tests.fakes.gateway.github_issues import FakeGitHubIssues
+    28→from tests.fakes.gateway.time import FakeTime
+    29→
+    30→
+
+... [496 lines omitted] ...
+
+   513→def test_error_dataclass_frozen() -&gt; None:
+   514→    """Test that HandleNoChangesError is immutable."""
+   515→    error = HandleNoChangesError(
+   516→        success=False, error="github-api-failed", message="Failed to update PR"
+   518→    assert error.success is False
+   519→    assert error.error == "github-api-failed"
+   520→    assert error.message == "Failed to update PR"
+  </tool_result>
+  <tool_result tool="toolu_011scLeTZsM52D1LygNdzvMg">
+     1→"""Unit tests for objective-save-to-issue command."""
+     2→
+     3→import json
+     4→from pathlib import Path
+     5→
+     6→from click.testing import CliRunner
+     7→
+     8→from erk.cli.commands.exec.scripts.objective_save_to_issue import (
+     9→    objective_save_to_issue,
+    10→)
+    11→from erk_shared.context.context import ErkContext
+    12→from erk_shared.gateway.github.metadata.roadmap import rerender_comment_roadmap
+    13→from erk_shared.gateway.github.objective_issues import create_objective_issue
+    14→from tests.fakes.gateway.claude_installation import (
+    15→    FakeClaudeInstallation,
+    16→)
+    17→from tests.fakes.gateway.git import FakeGit
+    18→from tests.fakes.gateway.github import FakeLocalGitHub
+    19→from tests.fakes.gateway.github_issues import FakeGitHubIssues
+    20→from tests.fakes.gateway.time import FakeTime
+    21→
+    22→# Valid plan content that passes validation (100+ chars with structure)
+    23→VALID_PLAN_CONTENT = """# Feature Objective
+    24→
+    25→This objective describes the implementation of a new feature.
+    26→
+    27→- Step 1: Set up the environment
+    28→- Step 2: Implement the core logic
+    29→- Step 3: Add tests and documentation"""
+    30→
+
+... [657 lines omitted] ...
+
+    53→    assert result.exit_code == 0, f"Failed: {result.output}"
+    78→    """Test error when no plan found."""
+    96→    assert "No plan found" in output["error"]
+   186→        assert result.exit_code == 0, f"Failed: {result.output}"
+   237→        assert result.exit_code == 0, f"Failed: {result.output}"
+   268→    assert result.exit_code == 0, f"Failed: {result.output}"
+   318→        assert result1.exit_code == 0, f"First call failed: {result1.output}"
+   331→        assert result2.exit_code == 0, f"Second call failed: {result2.output}"
+   415→&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+   462→    assert result.exit_code == 0, f"Failed: {result.output}"
+   501→    assert result.exit_code == 0, f"Failed: {result.output}"
+   525→    assert result.exit_code == 0, f"Failed: {result.output}"
+   547→    assert result.exit_code == 0, f"Failed: {result.output}"
+   577→    assert result.exit_code == 0, f"Failed: {result.output}"
+   586→def test_objective_save_to_issue_invalid_slug_returns_error() -&gt; None:
+   587→    """Test that an invalid slug returns exit code 1 with error in JSON output."""
+   610→    assert "Invalid objective slug" in output["error"]
+   636→    assert result.exit_code == 0, f"Failed: {result.output}"
+  </tool_result>
+  <tool_result tool="toolu_01SeQNh8DJtCqug4dy5SuM3g">
+     1→"""Tests for erk exec objective-fetch-context."""
+     2→
+     3→import json
+     4→import textwrap
+     5→from datetime import UTC, datetime
+     6→from pathlib import Path
+     7→
+     8→from click.testing import CliRunner
+     9→
+    10→from erk.cli.commands.exec.scripts.objective_fetch_context import objective_fetch_context
+    11→from erk_shared.gateway.github.issues.types import IssueComment, IssueInfo
+    12→from erk_shared.gateway.github.types import PRDetails, PRNotFound, RepoInfo
+    13→from erk_shared.plan_store.planned_pr import PlannedPRBackend
+    14→from tests.fakes.gateway.git import FakeGit
+    15→from tests.fakes.gateway.github import FakeLocalGitHub
+    16→from tests.fakes.gateway.github_issues import FakeGitHubIssues
+    17→from tests.fakes.gateway.remote_github import FakeRemoteGitHub
+    18→from tests.fakes.gateway.time import FakeTime
+    19→from tests.fakes.tests.shared_context import context_for_test
+    20→from tests.test_utils.plan_helpers import issue_info_to_pr_details
+    21→
+    22→_TEST_REPO_INFO = RepoInfo(owner="test-owner", name="test-repo")
+    23→
+    24→
+    25→def _make_remote(
+    26→    issues: dict[int, IssueInfo] | None = None,
+    27→    *,
+    28→    comments_by_id: dict[int, str] | None = None,
+    29→) -&gt; FakeRemoteGitHub:
+    30→    return FakeRemoteGitHub(
+
+... [1084 lines omitted] ...
+
+   186→    &lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+   390→        """Returns error JSON when objective issue not found."""
+   424→        assert "9999" in data["error"]
+   427→        """Returns error JSON when PR not found."""
+   460→        assert "9999" in data["error"]
+   463→        """Returns error JSON when branch doesn't match any plan pattern."""
+   481→        assert "No plan found for branch" in data["error"]
+   482→        assert "feature-branch" in data["error"]
+   485→        """Returns error JSON when plan not found."""
+   510→        assert "No plan found for branch" in data["error"]
+   699→    def test_discover_branch_detached_head_error(self, tmp_path: Path) -&gt; None:
+   700→        """Returns error when branch discovery finds detached HEAD."""
+   720→        assert "detached HEAD" in data["error"]
+   722→    def test_discover_objective_no_metadata_error(self, tmp_path: Path) -&gt; None:
+   723→        """Returns error when plan has no objective_issue in metadata."""
+   755→        assert "objective_issue" in data["error"]
+   757→    def test_discover_pr_not_found_error(self, tmp_path: Path) -&gt; None:
+   758→        """Returns error when no PR found for the branch."""
+   804→        fail_msg = f"Unexpected exit code. Output: {result.output}, Exception: {result.exception}"
+   806→        assert result.output, f"Empty output. Exception: {result.exception}"
+   809→        assert "No PR found" in data["error"]
+   903→        """Returns error when no PR exists for a plan-... branch."""
+   924→        assert "No plan found for branch" in data["error"]
+   961→        """Returns error when --plan references a non-existent plan."""
+   981→        assert "9999" in data["error"]
+   983→    def test_plan_flag_without_pr_and_branch_errors(self, tmp_path: Path) -&gt; None:
+   984→        """Returns error when --plan used without --pr and --branch (can't auto-discover PR)."""
+   993→        # No branch set, no PR provided - should error
+  1013→        assert "Cannot auto-discover PR" in data["error"]
+  </tool_result>
+  <tool_result tool="toolu_012jeRKLKbDjZRSBkBNxZB3m">
+     1→"""Unit tests for plan-save command (draft PR creation)."""
+     2→
+     3→import json
+     4→from pathlib import Path
+     5→
+     6→import pytest
+     7→from click.testing import CliRunner
+     8→
+     9→from erk.cli.commands.exec.scripts.plan_save import plan_save
+    10→from erk_shared.context.context import ErkContext
+    11→from erk_shared.plan_store.planned_pr_lifecycle import IMPL_CONTEXT_DIR
+    12→from tests.fakes.gateway.claude_installation import FakeClaudeInstallation
+    13→from tests.fakes.gateway.git import FakeGit
+    14→from tests.fakes.gateway.github import FakeLocalGitHub
+    15→from tests.fakes.gateway.graphite import FakeGraphite
+    16→from tests.fakes.tests.shared_context import context_for_test
+    17→
+    18→# Valid plan content that passes validation (100+ chars with structure)
+    19→VALID_PLAN_CONTENT = """# Feature Plan
+    20→
+    21→This plan describes the implementation of a new feature.
+    22→
+    23→- Step 1: Set up the environment
+    24→- Step 2: Implement the core logic
+    25→- Step 3: Add tests and documentation"""
+    26→
+    27→
+    28→def _planned_pr_context(
+    29→    *,
+    30→    tmp_path: Path,
+
+... [897 lines omitted] ...
+
+    61→    assert result.exit_code == 0, f"Failed: {result.output}"
+    79→    assert result.exit_code == 0, f"Failed: {result.output}"
+   101→    assert "No plan found" in output["error"]
+   104→def test_planned_pr_validation_failure(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -&gt; None:
+   105→    """Short plan: exit code 2, error_type='validation_failed'."""
+   119→    assert output["error_type"] == "validation_failed"
+   134→    assert result1.exit_code == 0, f"First call failed: {result1.output}"
+   145→    assert result2.exit_code == 0, f"Second call failed: {result2.output}"
+   189→    assert result1.exit_code == 0, f"First call failed: {result1.output}"
+   205→    assert result2.exit_code == 0, f"Second call failed: {result2.output}"
+   229→    assert result.exit_code == 0, f"Failed: {result.output}"
+   255→    assert result.exit_code == 0, f"Failed: {result.output}"
+   279→    assert result.exit_code == 0, f"Failed: {result.output}"
+   298→    assert result.exit_code == 0, f"Failed: {result.output}"
+   312→    assert result.exit_code == 0, f"Failed: {result.output}"
+   347→    assert result.exit_code == 0, f"Failed: {result.output}"
+   370→    assert result.exit_code == 0, f"Failed: {result.output}"
+   411→    assert result.exit_code == 0, f"Failed: {result.output}"
+   451→    assert result.exit_code == 0, f"Failed: {result.output}"
+   479→    assert result.exit_code == 0, f"Failed: {result.output}"
+   515→    assert result.exit_code == 0, f"Failed: {result.output}"
+   559→    assert output["error_type"] == "validation_failed"
+   579→    assert output["error_type"] == "validation_failed"
+   585→    """Planned-PR save shows error message for invalid title in display format."""
+   610→    assert result.exit_code == 0, f"Failed: {result.output}"
+   628→    assert result.exit_code == 0, f"Failed: {result.output}"
+   669→    assert result.exit_code == 0, f"Failed: {result.output}"
+   680→def test_planned_pr_branch_slug_missing_errors(
+   683→    """When --branch-slug is not provided, exits with error and remediation message."""
+   712→    assert result.exit_code == 0, f"Failed: {result.output}"
+   745→    assert result.exit_code == 0, f"Failed: {result.output}"
+   762→    assert result.exit_code == 0, f"Failed: {result.output}"
+   786→    assert result.exit_code == 0, f"Failed: {result.output}"
+   809→    assert result.exit_code == 0, f"Failed: {result.output}"
+   835→    assert result.exit_code == 0, f"Failed: {result.output}"
+   861→    assert result.exit_code == 0, f"Failed: {result.output}"
+   880→    assert result.exit_code == 0, f"Failed: {result.output}"
+   907→    assert result.exit_code == 0, f"Failed: {result.output}"
+  </tool_result>
+  <tool_result tool="toolu_01XFPjQcZppLjGK7MzgPnzhy">
+     1→"""Unit tests for exit-plan-mode-hook command.
+     2→
+     3→This test file uses the pure logic extraction pattern. Most tests call the
+     4→`determine_exit_action()` pure function directly with no mocking required.
+     5→Only a few integration tests use CliRunner to verify the full hook works.
+     6→"""
+     7→
+     8→import json
+     9→from pathlib import Path
+    10→
+    11→from click.testing import CliRunner
+    12→
+    13→from erk.cli.commands.exec.scripts.exit_plan_mode_hook import (
+    14→    ExitAction,
+    15→    HookInput,
+    16→    _gather_inputs,
+    17→    abbreviate_for_header,
+    18→    build_blocking_message,
+    19→    build_step2_message,
+    20→    determine_exit_action,
+    21→    exit_plan_mode_hook,
+    22→    extract_plan_title,
+    23→    is_terminal_editor,
+    24→)
+    25→from erk_shared.context.context import ErkContext
+    26→from tests.fakes.gateway.branch_manager import FakeBranchManager
+    27→from tests.fakes.gateway.claude_installation import FakeClaudeInstallation
+    28→from tests.fakes.gateway.git import FakeGit
+    29→from tests.fakes.tests.shared_context import context_for_test
+    30→
+
+... [1328 lines omitted] ...
+
+   469→    def test_trunk_branch_main_shows_warning(self) -&gt; None:
+   470→        """Warning shown when on main branch."""
+   483→        assert "WARNING" in message
+   488→    def test_trunk_branch_master_shows_warning(self) -&gt; None:
+   489→        """Warning shown when on master branch."""
+   502→        assert "WARNING" in message
+   506→    def test_feature_branch_no_warning(self) -&gt; None:
+   507→        """No warning when on feature branch."""
+   520→        assert "WARNING" not in message
+   523→    def test_none_branch_no_warning(self) -&gt; None:
+   524→        """No warning when branch is None."""
+   537→        assert "WARNING" not in message
+   769→        # Should NOT have the TUI editor warning
+   789→        # Should NOT have the TUI editor warning
+  1204→        AttributeError: 'RealLocalGitHub' object has no attribute 'get_prs_from_graphite'.
+  1250→        # The key assertion is that we didn't crash with AttributeError
+  </tool_result>
+  <assistant>Now let me read the remaining files:</assistant>
+  <usage input_tokens="45678" cache_creation_input_tokens="24822" cache_read_input_tokens="16759" cache_creation="{'ephemeral_5m_input_tokens': 24822, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01DuT3bUJxuJ5rtLss52RkQA">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_setup_impl_from_pr.py</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="45678" cache_creation_input_tokens="24822" cache_read_input_tokens="16759" cache_creation="{'ephemeral_5m_input_tokens': 24822, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01W5Pwr6QiqGEVG6pG3yVo6e">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_track_learn_evaluation.py</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="45678" cache_creation_input_tokens="24822" cache_read_input_tokens="16759" cache_creation="{'ephemeral_5m_input_tokens': 24822, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01MVKcD2B3iGnQvVn1X8Bmgz">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/test_admin_test_workflow.py</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="45678" cache_creation_input_tokens="24822" cache_read_input_tokens="16759" cache_creation="{'ephemeral_5m_input_tokens': 24822, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01CtFtwsQzEiYHPdg49sRgR3">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/shared/test_next_steps.py</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="45678" cache_creation_input_tokens="24822" cache_read_input_tokens="16759" cache_creation="{'ephemeral_5m_input_tokens': 24822, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01DuT3bUJxuJ5rtLss52RkQA">
+     1→"""Tests for erk exec setup-impl-from-pr command."""
+     2→
+     3→import json
+     4→from pathlib import Path
+     5→
+     6→import click
+     7→import pytest
+     8→from click.testing import CliRunner
+     9→
+    10→from erk.cli.commands.exec.scripts.setup_impl_from_pr import (
+    11→    _get_current_branch,
+    12→    create_impl_context_from_pr,
+    13→    setup_impl_from_pr,
+    14→)
+    15→from erk_shared.context.context import ErkContext
+    16→from erk_shared.gateway.git.remote_ops.types import PullRebaseError
+    17→from erk_shared.impl_folder import get_impl_dir, save_plan_ref
+    18→from erk_shared.plan_store.planned_pr import PlannedPRBackend
+    19→from erk_shared.plan_store.planned_pr_lifecycle import IMPL_CONTEXT_DIR
+    20→from tests.fakes.gateway.git import FakeGit
+    21→from tests.fakes.gateway.github import FakeLocalGitHub
+    22→from tests.fakes.gateway.graphite import FakeGraphite
+    23→from tests.fakes.gateway.time import FakeTime
+    24→from tests.fakes.tests.shared_context import context_for_test
+    25→
+    26→BRANCH = "test/branch"
+    27→"""Test branch name used across tests."""
+    28→
+    29→
+    30→class TestGetCurrentBranch:
+
+... [75 lines omitted] ...
+
+    40→        """Raises ClickException when in detached HEAD state."""
+    42→        with pytest.raises(click.ClickException) as exc_info:
+    50→    def test_missing_issue_shows_error(self, tmp_path: Path) -&gt; None:
+    58→        # This test verifies the error handling for missing issues
+    63→            catch_exceptions=False,
+    69→        assert result.exit_code != 0 or "error" in result.output.lower()
+    80→        just verifies the flag is accepted without syntax errors.
+    88→        # but we verify the flag is accepted without a click.UsageError
+    95→        # Verify no usage error (flag was accepted)
+    97→        assert "Error: No such option:" not in result.output, "--no-impl should be a valid option"
+  </tool_result>
+  <tool_result tool="toolu_01W5Pwr6QiqGEVG6pG3yVo6e">
+     1→"""Unit tests for track-learn-evaluation exec script.
+     2→
+     3→Tests learn evaluation tracking on plans.
+     4→Uses fakes for fast, reliable testing without subprocess calls.
+     5→"""
+     6→
+     7→import json
+     8→from pathlib import Path
+     9→
+    10→from click.testing import CliRunner
+    11→
+    12→from erk.cli.commands.exec.scripts.track_learn_evaluation import track_learn_evaluation
+    13→from erk_shared.context.context import ErkContext
+    14→from erk_shared.gateway.github.metadata.core import find_metadata_block
+    15→from erk_shared.gateway.github.types import PRNotFound
+    16→from erk_shared.plan_store.planned_pr import PlannedPRBackend
+    17→from tests.fakes.gateway.git import FakeGit
+    18→from tests.fakes.gateway.github import FakeLocalGitHub
+    19→from tests.fakes.gateway.github_issues import FakeGitHubIssues
+    20→from tests.fakes.gateway.time import FakeTime
+    21→from tests.test_utils.github_helpers import create_test_issue
+    22→from tests.test_utils.plan_helpers import (
+    23→    format_plan_header_body_for_test,
+    24→    issue_info_to_pr_details,
+    25→)
+    26→
+    27→# ============================================================================
+    28→# Success Cases (Layer 4: Business Logic over Fakes)
+    29→# ============================================================================
+    30→
+
+... [75 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01MVKcD2B3iGnQvVn1X8Bmgz">
+     1→"""Unit tests for admin test-plan-implement-gh-workflow command."""
+     2→
+     3→from click.testing import CliRunner
+     4→
+     5→from erk.cli.cli import cli
+     6→from tests.fakes.gateway.git import FakeGit
+     7→from tests.fakes.gateway.github import FakeLocalGitHub
+     8→from tests.fakes.gateway.github_issues import FakeGitHubIssues
+     9→from tests.test_utils.env_helpers import erk_isolated_fs_env
+    10→
+    11→
+    12→def test_happy_path_with_existing_issue() -&gt; None:
+    13→    """Command succeeds with --pr flag, using existing plan number."""
+    14→    runner = CliRunner()
+    15→    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+    16→        fake_github = FakeLocalGitHub()
+    17→        fake_issues = FakeGitHubIssues()
+    18→        ctx = env.build_context(
+    19→            current_branch="my-feature",
+    20→            github=fake_github,
+    21→            issues=fake_issues,
+    22→        )
+    23→
+    24→        result = runner.invoke(
+    25→            cli, ["admin", "test-plan-implement-gh-workflow", "--pr", "42"], obj=ctx
+    26→        )
+    27→
+    28→        assert result.exit_code == 0, f"Command failed: {result.output}"
+    29→        # Verify plan 42 was used
+    30→        assert "Using existing plan #42" in result.output
+
+... [75 lines omitted] ...
+
+    61→        assert result.exit_code == 0, f"Command failed: {result.output}"
+    98→        assert result.exit_code == 0, f"Command failed: {result.output}"
+  </tool_result>
+  <tool_result tool="toolu_01CtFtwsQzEiYHPdg49sRgR3">
+     1→"""Tests for next_steps formatting functions."""
+     2→
+     3→from erk_shared.output.next_steps import (
+     4→    PlanNextSteps,
+     5→    format_plan_next_steps_plain,
+     6→)
+     7→
+     8→
+     9→class TestPlanNextSteps:
+    10→    def test_construction(self) -&gt; None:
+    11→        steps = PlanNextSteps(
+    12→            pr_number=42,
+    13→            url="https://github.com/org/repo/pull/42",
+    14→        )
+    15→        assert steps.pr_number == 42
+    16→
+    17→    def test_view_returns_url(self) -&gt; None:
+    18→        steps = PlanNextSteps(
+    19→            pr_number=42,
+    20→            url="https://github.com/org/repo/pull/42",
+    21→        )
+    22→        assert steps.view == "https://github.com/org/repo/pull/42"
+    23→
+    24→    def test_dispatch_uses_plan_number(self) -&gt; None:
+    25→        steps = PlanNextSteps(
+    26→            pr_number=42,
+    27→            url="https://github.com/org/repo/pull/42",
+    28→        )
+    29→        assert steps.dispatch == "erk pr dispatch 42"
+    30→
+
+... [75 lines omitted] ...
+  </tool_result>
+  <assistant>Perfect! Now I have all the information I need. Let me make the replacements in each file:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="52328" cache_read_input_tokens="41581" cache_creation="{'ephemeral_5m_input_tokens': 52328, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01Up62isgXhVAugvU9v4bUCj">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py</param>
+    <param name="old_string">    def test_contains_dispatch_command(self) -&gt; None:
+        """Step 2 shows dispatch com...[truncated 124 chars]...       assert "/erk:pr-dispatch" in message
+        assert "Dispatch plan #42:" in message</param>
+    <param name="new_string">    def test_contains_dispatch_command(self) -&gt; None:
+        """Step 2 shows dispatch com...[truncated 122 chars]...
+        assert "/erk:pr-dispatch" in message
+        assert "Dispatch PR #42:" in message</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="52328" cache_read_input_tokens="41581" cache_creation="{'ephemeral_5m_input_tokens': 52328, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Up62isgXhVAugvU9v4bUCj">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_019Yq7YuB7aAwE2mfM7P6W8H">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_handle_no_changes.py</param>
+    <param name="old_string">    assert "## No Code Changes" in body
+    assert "Implementation completed but produced no code changes" in body
+    assert "### Diagnosis" in body
+    assert "Duplicate plan" in body</param>
+    <param name="new_string">    assert "## No Code Changes" in body
+    assert "Implementation completed but produced no code changes" in body
+    assert "### Diagnosis" in body
+    assert "Duplicate PR" in body</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="382" cache_read_input_tokens="93909" cache_creation="{'ephemeral_5m_input_tokens': 382, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019Yq7YuB7aAwE2mfM7P6W8H">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_handle_no_changes.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_012RyMn2J85ykzuUCn2XQmY5">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_objective_fetch_context.py</param>
+    <param name="old_string">        assert result.exit_code == 1
+        data = json.loads(result.output)
+        asse...[truncated 25 chars]...o plan found for branch" in data["error"]
+        assert "feature-branch" in data["error"]</param>
+    <param name="new_string">        assert result.exit_code == 1
+        data = json.loads(result.output)
+        asse...[truncated 23 chars]..."No PR found for branch" in data["error"]
+        assert "feature-branch" in data["error"]</param>
+  </tool_use>
+  <usage input_tokens="4" cache_creation_input_tokens="367" cache_read_input_tokens="94291" cache_creation="{'ephemeral_5m_input_tokens': 367, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012RyMn2J85ykzuUCn2XQmY5">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_objective_fetch_context.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_013B5RJ5LzGYt3wrERb7f6fz">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_objective_fetch_context.py</param>
+    <param name="old_string">        assert result.exit_code == 1
+        data = json.loads(result.output)
+        assert data["success"] is False
+        assert "No plan found for branch" in data["error"]</param>
+    <param name="new_string">        assert result.exit_code == 1
+        data = json.loads(result.output)
+        assert data["success"] is False
+        assert "No PR found for branch" in data["error"]</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="293" cache_read_input_tokens="94658" cache_creation="{'ephemeral_5m_input_tokens': 293, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013B5RJ5LzGYt3wrERb7f6fz">
+&lt;tool_use_error&gt;Found 2 matches of the string to replace, but replace_all is false. To replace all occurrences, set replace_all to true. To replace only one occurrence, please provide more context to uniquely identify the instance.
+String:         assert result.exit_code == 1
+        data = json.loads(result.output)
+        assert data["success"] is False
+        assert "No plan found for branch" in data["error"]&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01JSExKXgs1pCtd95J9obfwu">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_objective_fetch_context.py</param>
+    <param name="old_string">    def test_plan_not_found(self, tmp_path: Path) -&gt; None:
+        """Returns error JSON w...[truncated 1022 chars]...assert data["success"] is False
+        assert "No plan found for branch" in data["error"]</param>
+    <param name="new_string">    def test_plan_not_found(self, tmp_path: Path) -&gt; None:
+        """Returns error JSON w...[truncated 1020 chars]...  assert data["success"] is False
+        assert "No PR found for branch" in data["error"]</param>
+  </tool_use>
+  <usage input_tokens="4" cache_creation_input_tokens="343" cache_read_input_tokens="94951" cache_creation="{'ephemeral_5m_input_tokens': 343, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01JSExKXgs1pCtd95J9obfwu">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_objective_fetch_context.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01Uq8KCHrqKyrjipEWK444US">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_objective_fetch_context.py</param>
+    <param name="old_string">    def test_planned_pr_plan_not_found(self, tmp_path: Path) -&gt; None:
+        """Returns e...[truncated 722 chars]...assert data["success"] is False
+        assert "No plan found for branch" in data["error"]</param>
+    <param name="new_string">    def test_planned_pr_plan_not_found(self, tmp_path: Path) -&gt; None:
+        """Returns e...[truncated 720 chars]...  assert data["success"] is False
+        assert "No PR found for branch" in data["error"]</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="996" cache_read_input_tokens="95294" cache_creation="{'ephemeral_5m_input_tokens': 996, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Uq8KCHrqKyrjipEWK444US">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_objective_fetch_context.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01FuThWwdDZXAC6AnE4m85iR">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_objective_save_to_issue.py</param>
+    <param name="old_string">    assert result.exit_code == 1
+    output = json.loads(result.output)
+    assert output["success"] is False
+    assert "No plan found" in output["error"]</param>
+    <param name="new_string">    assert result.exit_code == 1
+    output = json.loads(result.output)
+    assert output["success"] is False
+    assert "No PR found" in output["error"]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="713" cache_read_input_tokens="96290" cache_creation="{'ephemeral_5m_input_tokens': 713, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01FuThWwdDZXAC6AnE4m85iR">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_objective_save_to_issue.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01SErcAsUibcqicJX6Vsr554">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_plan_save.py</param>
+    <param name="old_string">    assert result.exit_code == 0, f"Failed: {result.output}"
+    assert "Plan saved as planned PR" in result.output
+    assert "Title: [erk-plan] Feature Plan" in result.output</param>
+    <param name="new_string">    assert result.exit_code == 0, f"Failed: {result.output}"
+    assert "PR saved as planned PR" in result.output
+    assert "Title: [erk-plan] Feature Plan" in result.output</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="267" cache_read_input_tokens="97003" cache_creation="{'ephemeral_5m_input_tokens': 267, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01SErcAsUibcqicJX6Vsr554">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_plan_save.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me search for the remaining files with "plan" assertions to update:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="380" cache_read_input_tokens="97270" cache_creation="{'ephemeral_5m_input_tokens': 380, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_019pCHD8B4BNbBctRA2KboyP">
+    <param name="pattern">Already on plan branch|for plan #</param>
+    <param name="path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_setup_impl_from_pr.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="380" cache_read_input_tokens="97270" cache_creation="{'ephemeral_5m_input_tokens': 380, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_017UKQUqatboNcWQKSQiYpGn">
+    <param name="pattern">No plan specified</param>
+    <param name="path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_track_learn_evaluation.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="380" cache_read_input_tokens="97270" cache_creation="{'ephemeral_5m_input_tokens': 380, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_017ZAg6m8wnc8VRV3SEFLkAT">
+    <param name="pattern">Using existing plan #42|Created test plan</param>
+    <param name="path">/home/runner/work/erk/erk/tests/unit/cli/commands/test_admin_test_workflow.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="380" cache_read_input_tokens="97270" cache_creation="{'ephemeral_5m_input_tokens': 380, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01DZD2UmdpYXLPyF6qYjPnTz">
+    <param name="pattern">Implement plan #|Dispatch plan #|Checkout plan #</param>
+    <param name="path">/home/runner/work/erk/erk/tests/unit/shared/test_next_steps.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="380" cache_read_input_tokens="97270" cache_creation="{'ephemeral_5m_input_tokens': 380, 'ephemeral_1h_input_tokens': 0}" output_tokens="470" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017ZAg6m8wnc8VRV3SEFLkAT">
+30:        assert "Using existing plan #42" in result.output
+  </tool_result>
+  <tool_result tool="toolu_019pCHD8B4BNbBctRA2KboyP">
+235:    assert f"Already on plan branch '{plan_branch}'" in result.output
+291:    assert f"Found existing impl dir for plan #{pr_number}, skipping branch setup" in result.output
+  </tool_result>
+  <tool_result tool="toolu_01DZD2UmdpYXLPyF6qYjPnTz">
+92:        assert "Implement plan #42:" in output
+105:        assert "Dispatch plan #42:" in output
+  </tool_result>
+  <tool_result tool="toolu_017UKQUqatboNcWQKSQiYpGn">
+155:    assert "No plan specified" in output["message"]
+222:    assert "No plan specified" in output["message"]
+  </tool_result>
+  <assistant>Now let me make the remaining changes. Let me start with test_setup_impl_from_pr.py - I need to read more context to see the "Already on plan branch" message:</assistant>
+  <usage input_tokens="91" cache_creation_input_tokens="709" cache_read_input_tokens="97650" cache_creation="{'ephemeral_5m_input_tokens': 709, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01WxrYjLxHuBz9GG5e6J5ruU">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_setup_impl_from_pr.py</param>
+    <param name="offset">220</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="91" cache_creation_input_tokens="709" cache_read_input_tokens="97650" cache_creation="{'ephemeral_5m_input_tokens': 709, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01WxrYjLxHuBz9GG5e6J5ruU">
+   220→        [str(pr_number), "--no-impl"],
+   221→        obj=ctx,
+   222→    )
+   223→
+   224→    assert result.exit_code == 0, f"Command failed: {result.output}"
+   225→
+   226→    # Fetch was called
+   227→    assert fake_git.fetched_branches == [("origin", plan_branch)]
+   228→
+   229→    # No checkout (already on the plan branch)
+   230→    assert all(b != plan_branch for _, b in fake_git.checked_out_branches)
+   231→
+   232→    # Pull-rebase was called to sync
+   233→    assert fake_git.pull_rebase_calls == [(tmp_path, "origin", plan_branch)]
+   234→
+   235→    assert f"Already on plan branch '{plan_branch}'" in result.output
+   236→
+   237→
+   238→def test_planned_pr_plan_skips_checkout_when_impl_exists(tmp_path: Path) -&gt; None:
+   239→    """When .impl/ already has a matching plan_id, skip branch switching.
+   240→
+   241→    In CI, the workflow checks out an implementation branch and pre-populates
+   242→    .impl/ with plan-ref.json. setup-impl-from-pr should detect this and
+   243→    stay on the current branch instead of switching to the plan branch.
+   244→    """
+   245→    plan_branch = "plan-my-feature-02-19"
+   246→    ci_branch = "P100-my-feature-impl-02-19-1430"
+   247→    backend, pr_number = _make_planned_pr_backend(tmp_path, plan_branch)
+   248→
+   249→    fake_git = FakeGit(
+
+... [25 lines omitted] ...
+  </tool_result>
+  <tool_use name="Edit" id="toolu_012j5A1ikqCfXUXDvz9fdDP8">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_setup_impl_from_pr.py</param>
+    <param name="old_string">    # Pull-rebase was called to sync
+    assert fake_git.pull_rebase_calls == [(tmp_path, "origin", plan_branch)]
+
+    assert f"Already on plan branch '{plan_branch}'" in result.output</param>
+    <param name="new_string">    # Pull-rebase was called to sync
+    assert fake_git.pull_rebase_calls == [(tmp_path, "origin", plan_branch)]
+
+    assert f"Already on PR branch '{plan_branch}'" in result.output</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="1065" cache_read_input_tokens="98359" cache_creation="{'ephemeral_5m_input_tokens': 1065, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012j5A1ikqCfXUXDvz9fdDP8">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_setup_impl_from_pr.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Read" id="toolu_01WpztZx6iGVEe2LN5563qS3">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_track_learn_evaluation.py</param>
+    <param name="offset">100</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="392" cache_read_input_tokens="99424" cache_creation="{'ephemeral_5m_input_tokens': 392, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01WpztZx6iGVEe2LN5563qS3">
+   100→                plan_store=PlannedPRBackend(fake_github, fake_issues, time=FakeTime()),
+   101→                cwd=cwd,
+   102→                repo_root=cwd,
+   103→            ),
+   104→        )
+   105→
+   106→    assert result.exit_code == 0, result.output
+   107→    output = json.loads(result.output)
+   108→    assert output["success"] is True
+   109→    assert output["pr_number"] == 100
+   110→
+   111→    # Verify comment was posted
+   112→    assert len(fake_github.pr_comments) == 1
+   113→
+   114→    # Verify plan-header was updated (session is None)
+   115→    updated_pr = fake_github.get_pr(cwd, 100)
+   116→    assert not isinstance(updated_pr, PRNotFound)
+   117→    block = find_metadata_block(updated_pr.body, "plan-header")
+   118→    assert block is not None
+   119→    assert block.data.get("last_learn_session") is None
+   120→    assert block.data.get("last_learn_at") is not None
+   121→
+   122→
+   123→def test_track_learn_evaluation_infers_from_branch(tmp_path: Path) -&gt; None:
+   124→    """Test tracking fails when branch doesn't resolve."""
+   125→    runner = CliRunner()
+   126→    plan_body = format_plan_header_body_for_test()
+   127→    with runner.isolated_filesystem(temp_dir=tmp_path):
+   128→        cwd = Path.cwd()
+   129→
+
+... [75 lines omitted] ...
+
+   191→# Error Cases (Layer 4: Business Logic over Fakes)
+   196→    """Test error when no issue provided and can't infer from branch."""
+  </tool_result>
+  <tool_use name="Read" id="toolu_01QEJWEJHzQkzSNyGTDsPq8W">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_track_learn_evaluation.py</param>
+    <param name="offset">210</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="1586" cache_read_input_tokens="99816" cache_creation="{'ephemeral_5m_input_tokens': 1586, 'ephemeral_1h_input_tokens': 0}" output_tokens="18" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01QEJWEJHzQkzSNyGTDsPq8W">
+   210→            obj=ErkContext.for_test(
+   211→                git=fake_git,
+   212→                github=fake_github,
+   213→                plan_store=PlannedPRBackend(fake_github, fake_issues, time=FakeTime()),
+   214→                cwd=cwd,
+   215→                repo_root=cwd,
+   216→            ),
+   217→        )
+   218→
+   219→    assert result.exit_code == 1
+   220→    output = json.loads(result.output)
+   221→    assert output["success"] is False
+   222→    assert "No plan specified" in output["message"]
+   223→
+   224→
+   225→def test_track_learn_evaluation_fails_with_invalid_issue(tmp_path: Path) -&gt; None:
+   226→    """Test error with invalid plan identifier."""
+   227→    fake_git = FakeGit()
+   228→    fake_issues = FakeGitHubIssues()
+   229→    fake_github = FakeLocalGitHub(issues_gateway=fake_issues)
+   230→
+   231→    runner = CliRunner()
+   232→    with runner.isolated_filesystem(temp_dir=tmp_path):
+   233→        cwd = Path.cwd()
+   234→        result = runner.invoke(
+   235→            track_learn_evaluation,
+   236→            ["not-a-number"],
+   237→            obj=ErkContext.for_test(
+   238→                git=fake_git,
+   239→                github=fake_github,
+
+... [25 lines omitted] ...
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01JMoTWQoovnZP6G6F1U7doZ">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_track_learn_evaluation.py</param>
+    <param name="old_string">    assert result.exit_code == 1
+    output = json.loads(result.output)
+    assert output[...[truncated 36 chars]...tput["message"]
+
+
+def test_track_learn_evaluation_with_url_format(tmp_path: Path) -&gt; None:</param>
+    <param name="new_string">    assert result.exit_code == 1
+    output = json.loads(result.output)
+    assert output[...[truncated 34 chars]...tput["message"]
+
+
+def test_track_learn_evaluation_with_url_format(tmp_path: Path) -&gt; None:</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="821" cache_read_input_tokens="101402" cache_creation="{'ephemeral_5m_input_tokens': 821, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01JMoTWQoovnZP6G6F1U7doZ">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_track_learn_evaluation.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_014DSuiLECp1D9yNXzQc4XEH">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_track_learn_evaluation.py</param>
+    <param name="old_string">    assert result.exit_code == 1
+    output = json.loads(result.output)
+    assert output[...[truncated 45 chars]...sage"]
+
+
+def test_track_learn_evaluation_fails_with_invalid_issue(tmp_path: Path) -&gt; None:</param>
+    <param name="new_string">    assert result.exit_code == 1
+    output = json.loads(result.output)
+    assert output[...[truncated 43 chars]...sage"]
+
+
+def test_track_learn_evaluation_fails_with_invalid_issue(tmp_path: Path) -&gt; None:</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="414" cache_read_input_tokens="102223" cache_creation="{'ephemeral_5m_input_tokens': 414, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014DSuiLECp1D9yNXzQc4XEH">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_track_learn_evaluation.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_013GaedUBViEr9RawABMkun4">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/test_admin_test_workflow.py</param>
+    <param name="old_string">        assert result.exit_code == 0, f"Command failed: {result.output}"
+        # Verify plan 42 was used
+        assert "Using existing plan #42" in result.output</param>
+    <param name="new_string">        assert result.exit_code == 0, f"Command failed: {result.output}"
+        # Verify plan 42 was used
+        assert "Using existing PR #42" in result.output</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="314" cache_read_input_tokens="102637" cache_creation="{'ephemeral_5m_input_tokens': 314, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013GaedUBViEr9RawABMkun4">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/test_admin_test_workflow.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01RxVFjYrFeek88SDPLn53pR">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/shared/test_next_steps.py</param>
+    <param name="old_string">    def test_hierarchical_format(self) -&gt; None:
+        output = format_plan_next_steps_pl...[truncated 67 chars]... in output
+        assert "In current wt:" in output
+        assert "In new wt:" in output</param>
+    <param name="new_string">    def test_hierarchical_format(self) -&gt; None:
+        output = format_plan_next_steps_pl...[truncated 65 chars]... in output
+        assert "In current wt:" in output
+        assert "In new wt:" in output</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="258" cache_read_input_tokens="102951" cache_creation="{'ephemeral_5m_input_tokens': 258, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01RxVFjYrFeek88SDPLn53pR">
+The file /home/runner/work/erk/erk/tests/unit/shared/test_next_steps.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Read" id="toolu_01XxkdZXT5UriuYaUNXcWoZD">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/shared/test_next_steps.py</param>
+    <param name="offset">100</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="422" cache_read_input_tokens="103209" cache_creation="{'ephemeral_5m_input_tokens': 422, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01XxkdZXT5UriuYaUNXcWoZD">
+   100→
+   101→    def test_contains_dispatch(self) -&gt; None:
+   102→        output = format_plan_next_steps_plain(42, url="https://github.com/org/repo/pull/42")
+   103→        assert "erk pr dispatch 42" in output
+   104→        assert "/erk:pr-dispatch" in output
+   105→        assert "Dispatch plan #42:" in output
+   106→
+   107→    def test_contains_checkout_new_slot(self) -&gt; None:
+   108→        output = format_plan_next_steps_plain(42, url="https://github.com/org/repo/pull/42")
+   109→        assert "erk br co --new-slot --for-plan 42" in output
+   110→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01LDmJtzgAxNUaH7UNtekzQd">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/shared/test_next_steps.py</param>
+    <param name="old_string">    def test_contains_dispatch(self) -&gt; None:
+        output = format_plan_next_steps_plai...[truncated 74 chars]...
+        assert "/erk:pr-dispatch" in output
+        assert "Dispatch plan #42:" in output</param>
+    <param name="new_string">    def test_contains_dispatch(self) -&gt; None:
+        output = format_plan_next_steps_plai...[truncated 72 chars]...ut
+        assert "/erk:pr-dispatch" in output
+        assert "Dispatch PR #42:" in output</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="394" cache_read_input_tokens="103631" cache_creation="{'ephemeral_5m_input_tokens': 394, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01LDmJtzgAxNUaH7UNtekzQd">
+The file /home/runner/work/erk/erk/tests/unit/shared/test_next_steps.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me verify the changes by checking each file:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="324" cache_read_input_tokens="104025" cache_creation="{'ephemeral_5m_input_tokens': 324, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01GeT7SdDpFdCR8FiS85jtGC">
+    <param name="command">git diff --stat</param>
+    <param name="description">Show statistics of changed files</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="324" cache_read_input_tokens="104025" cache_creation="{'ephemeral_5m_input_tokens': 324, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01GeT7SdDpFdCR8FiS85jtGC">
+ .claude/skills/erk-exec/reference.md               | 199 ++++++++++-----------
+ .../learned/integrations/github-review-decision.md |   2 +-
+ docs/learned/tui/status-indicators.md              |   2 +-
+ .../erk-shared/src/erk_shared/output/next_steps.py |   8 +-
+ src/erk/cli/commands/admin.py                      |   6 +-
+ src/erk/cli/commands/branch/checkout_cmd.py        |  16 +-
+ src/erk/cli/commands/branch/create_cmd.py          |  12 +-
+ src/erk/cli/commands/branch/delete_cmd.py          |   8 +-
+ .../commands/consolidate_learn_plans_dispatch.py   |   8 +-
+ .../cli/commands/exec/scripts/add_plan_label.py    |   2 +-
+ .../commands/exec/scripts/ci_generate_summaries.py |  12 +-
+ .../cli/commands/exec/scripts/ci_update_pr_body.py |   4 +-
+ src/erk/cli/commands/exec/scripts/close_pr.py      |   4 +-
+ src/erk/cli/commands/exec/scripts/close_prs.py     |   2 +-
+ .../exec/scripts/create_impl_context_from_plan.py  |   4 +-
+ .../exec/scripts/create_pr_from_session.py         |   2 +-
+ .../commands/exec/scripts/exit_plan_mode_hook.py   |   4 +-
+ .../commands/exec/scripts/extract_latest_plan.py   |   2 +-
+ .../cli/commands/exec/scripts/fetch_sessions.py    |   2 +-
+ src/erk/cli/commands/exec/scripts/get_plan_info.py |   4 +-
+ .../cli/commands/exec/scripts/get_plan_metadata.py |   2 +-
+ .../cli/commands/exec/scripts/handle_no_changes.py |   4 +-
+ src/erk/cli/commands/exec/scripts/impl_signal.py   |   8 +-
+ .../commands/exec/scripts/incremental_dispatch.py  |   4 +-
+ src/erk/cli/commands/exec/scripts/land_execute.py  |   4 +-
+ .../exec/scripts/objective_apply_landed_update.py  |   2 +-
+ .../exec/scripts/objective_fetch_context.py        |   6 +-
+ .../exec/scripts/objective_save_to_issue.py        |   6 +-
+ src/erk/cli/commands/exec/scripts/plan_save.py     |  16 +-
+ src/erk/cli/commands/exec/scripts/plan_update.py   |  12 +-
+
+... [58 lines omitted] ...
+  </tool_result>
+  <assistant>Good! Let me verify the specific test files have been updated correctly:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="2333" cache_read_input_tokens="104349" cache_creation="{'ephemeral_5m_input_tokens': 2333, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01QNeVXwFZbzQtXb4umRJk8f">
+    <param name="command">git diff tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py tests/unit/cli/c...[truncated 350 chars]...y tests/unit/cli/commands/test_admin_test_workflow.py tests/unit/shared/test_next_steps.py</param>
+    <param name="description">Show diff for the test files we modified</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="2333" cache_read_input_tokens="104349" cache_creation="{'ephemeral_5m_input_tokens': 2333, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01QNeVXwFZbzQtXb4umRJk8f">
+diff --git a/tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py b/tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py
+index bec8d7b5e..53493bf45 100644
+--- a/tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py
++++ b/tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py
+@@ -136,7 +136,7 @@ class TestDetermineExitAction:
+             )
+         )
+         assert result.action == ExitAction.BLOCK
+-        assert "Plan #42 saved" in result.message
++        assert "PR #42 saved" in result.message
+         assert "erk br co --for-plan 42" in result.message
+         assert "erk pr dispatch 42" in result.message
+         assert "Session complete" in result.message
+@@ -985,7 +985,7 @@ class TestBuildStep2Message:
+     def test_contains_plan_number(self) -&gt; None:
+         """Step 2 message includes the plan number."""
+         message = build_step2_message(plan_number=42, url="")
+-        assert "Plan #42 saved" in message
++        assert "PR #42 saved" in message
+ 
+     def test_contains_implement_current_wt_command(self) -&gt; None:
+         """Step 2 shows implement-in-current-worktree command."""
+@@ -1007,7 +1007,7 @@ class TestBuildStep2Message:
+         message = build_step2_message(plan_number=42, url="")
+         assert "erk pr dispatch 42" in message
+         assert "/erk:pr-dispatch" in message
+-        assert "Dispatch plan #42:" in message
++        assert "Dispatch PR #42:" in message
+ 
+     def test_session_complete_no_exit_plan_mode(self) -&gt; None:
+
+... [168 lines omitted] ...
+
+-        assert "No plan found for branch" in data["error"]
++        assert "No PR found for branch" in data["error"]
+         assert "feature-branch" in data["error"]
+-        assert "No plan found for branch" in data["error"]
++        assert "No PR found for branch" in data["error"]
+-        assert "No plan found for branch" in data["error"]
++        assert "No PR found for branch" in data["error"]
+-    assert "No plan found" in output["error"]
++    assert "No PR found" in output["error"]
+     assert result.exit_code == 0, f"Failed: {result.output}"
+         assert result.exit_code == 0, f"Command failed: {result.output}"
+  </tool_result>
+  <assistant>Perfect! I can see there are actually some additional changes that were made to other test files as well (test_admin_test_workflow.py line 67 shows "Created test PR #1" instead of the expected "Created test plan #1"). Let me verify those changes:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="3688" cache_read_input_tokens="106682" cache_creation="{'ephemeral_5m_input_tokens': 3688, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01DN2M71v5Nai943b9ziWB8H">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/test_admin_test_workflow.py</param>
+    <param name="offset">60</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="3688" cache_read_input_tokens="106682" cache_creation="{'ephemeral_5m_input_tokens': 3688, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01DN2M71v5Nai943b9ziWB8H">
+    60→
+    61→        assert result.exit_code == 0, f"Command failed: {result.output}"
+    62→        # Verify issue was created
+    63→        assert len(fake_issues.created_issues) == 1
+    64→        title, _body, labels = fake_issues.created_issues[0]
+    65→        assert title == "Test workflow run"
+    66→        assert "test" in labels
+    67→        assert "Created test PR #1" in result.output
+    68→        # Verify workflow was triggered with the new plan number
+    69→        assert len(fake_github.triggered_workflows) == 1
+    70→        _, inputs, _ref = fake_github.triggered_workflows[0]
+    71→        assert inputs["plan_id"] == "1"
+    72→
+    73→
+    74→def test_happy_path_uses_detected_trunk_branch() -&gt; None:
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>I see the issue. The user said in the instructions for test_admin_test_workflow.py: "Note: `"Created test plan #1"` was already fixed to `"Created test PR #1"`" - meaning this change was already made. Let me verify that my changes match what was requested. Let me check the git diff more carefully to see if there are some unexpected changes in test_admin_test_workflow.py:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="592" cache_read_input_tokens="110370" cache_creation="{'ephemeral_5m_input_tokens': 592, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01TUTYLXEidBWJZoSW2TLEaf">
+    <param name="command">git diff tests/unit/cli/commands/test_admin_test_workflow.py</param>
+    <param name="description">Show full diff for test_admin_test_workflow.py</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="592" cache_read_input_tokens="110370" cache_creation="{'ephemeral_5m_input_tokens': 592, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01TUTYLXEidBWJZoSW2TLEaf">
+diff --git a/tests/unit/cli/commands/test_admin_test_workflow.py b/tests/unit/cli/commands/test_admin_test_workflow.py
+index f6c0bcaaf..c10093610 100644
+--- a/tests/unit/cli/commands/test_admin_test_workflow.py
++++ b/tests/unit/cli/commands/test_admin_test_workflow.py
+@@ -27,7 +27,7 @@ def test_happy_path_with_existing_issue() -&gt; None:
+ 
+         assert result.exit_code == 0, f"Command failed: {result.output}"
+         # Verify plan 42 was used
+-        assert "Using existing plan #42" in result.output
++        assert "Using existing PR #42" in result.output
+         # Verify PR was created as draft
+         assert len(fake_github.created_prs) == 1
+         branch, title, _body, base, draft = fake_github.created_prs[0]
+@@ -64,7 +64,7 @@ def test_happy_path_creating_new_issue() -&gt; None:
+         title, _body, labels = fake_issues.created_issues[0]
+         assert title == "Test workflow run"
+         assert "test" in labels
+-        assert "Created test plan #1" in result.output
++        assert "Created test PR #1" in result.output
+         # Verify workflow was triggered with the new plan number
+         assert len(fake_github.triggered_workflows) == 1
+         _, inputs, _ref = fake_github.triggered_workflows[0]
+  </tool_result>
+  <assistant>Good! I see that line 67 shows "Created test PR #1" - this is actually from my edit because I hadn't finished reading the file before I made the first edit. Let me verify what the user's instructions actually were. Looking back at the original request:
+
+The user said for test_admin_test_workflow.py:
+- Change `"Using existing plan #42"` → `"Using existing PR #42"` (use replace_all)
+- Note: `"Created test plan #1"` was already fixed to `"Created test PR #1"`
+
+This means the "Created test PR #1" change was already done in the source code, but my first edit didn't change it. Looking at the diff, it shows that the file is being changed from "Created test plan #1" to "Created test PR #1" on line 67. This must mean that in the original file it still said "Created test plan #1" and I needed to fix it. The user's note was saying it HAD BEEN fixed in the SOURCE CODE, so I need to update the test to match.
+
+Let me verify the exact instructions one more time to ensure I've done everything correctly. Let me create a summary of all the changes I made:
+
+## Summary of Changes Made
+
+I have successfully updated the test assertion strings in 9 test files to change "plan" to "PR" in user-facing output strings. Here's what was changed:
+
+### 1. `/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py`
+- Changed `"Plan #42 saved"` → `"PR #42 saved"` (appears in multiple test assertions)
+- Changed `"Dispatch plan #42:"` → `"Dispatch PR #42:"`
+
+### 2. `/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_handle_no_changes.py`
+- Changed `"Duplicate plan"` → `"Duplicate PR"`
+
+### 3. `/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_objective_fetch_context.py`
+- Changed `"No plan found for branch"` → `"No PR found for branch"` (appears in 3 test cases)
+
+### 4. `/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_objective_save_to_issue.py`
+- Changed `"No plan found"` → `"No PR found"`
+
+### 5. `/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_plan_save.py`
+- Changed `"Plan saved as planned PR"` → `"PR saved as planned PR"`
+
+### 6. `/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_setup_impl_from_pr.py`
+- Changed `"Already on plan branch"` → `"Already on PR branch"`
+
+### 7. `/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_track_learn_evaluation.py`
+- Changed `"No plan specified"` → `"No PR specified"` (appears in 2 test cases)
+
+### 8. `/home/runner/work/erk/erk/tests/unit/cli/commands/test_admin_test_workflow.py`
+- Changed `"Using existing plan #42"` → `"Using existing PR #42"`
+- Changed `"Created test plan #1"` → `"Created test PR #1"` (this was the fix mentioned in the instructions)
+
+### 9. `/home/runner/work/erk/erk/tests/unit/shared/test_next_steps.py`
+- Changed `"Implement plan #42:"` → `"Implement PR #42:"`
+- Changed `"Dispatch plan #42:"` → `"Dispatch PR #42:"`
+
+All changes use the expected assertion strings and were made using the replace functionality without modifying test function names, docstrings, variable names, or test data as requested.</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="598" cache_read_input_tokens="110962" cache_creation="{'ephemeral_5m_input_tokens': 598, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>
