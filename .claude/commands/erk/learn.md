@@ -149,7 +149,7 @@ This returns JSON with PR details (`number`, `title`, `state`, `url`, `head_ref_
 2. **NEW: If `get-learn-sessions` returned `preprocessed_manifest` (non-null):** Download the preprocessed XMLs directly from the planned-pr-context branch — skip raw session preprocessing:
 
 ```bash
-erk exec fetch-sessions --plan-id <plan-number> \
+erk exec fetch-sessions --pr-number <plan-number> \
     --output-dir .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn
 ```
 

@@ -47,11 +47,11 @@ def _exit_with_error(*, error: str, message: str) -> NoReturn:
 
 
 @click.command(name="get-pr-for-plan")
-@click.argument("plan_number", type=int)
+@click.argument("pr_number", type=int)
 @click.pass_context
 def get_pr_for_plan(
     ctx: click.Context,
-    plan_number: int,
+    pr_number: int,
 ) -> None:
     """Get PR details for a plan.
 
@@ -61,9 +61,9 @@ def get_pr_for_plan(
     repo_root = require_repo_root(ctx)
 
     # Plan ID is the PR number — look up directly
-    pr_result = github.get_pr(repo_root, plan_number)
+    pr_result = github.get_pr(repo_root, pr_number)
     if isinstance(pr_result, PRNotFound):
-        return _exit_with_error(error="no-pr-for-branch", message=f"PR #{plan_number} not found")
+        return _exit_with_error(error="no-pr-for-branch", message=f"PR #{pr_number} not found")
     pr_data = {
         "number": pr_result.number,
         "title": pr_result.title,

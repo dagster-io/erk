@@ -41,12 +41,12 @@ class MetadataError:
 
 
 @click.command(name="get-plan-metadata")
-@click.argument("plan_number", type=int)
+@click.argument("pr_number", type=int)
 @click.argument("field_name")
 @click.pass_context
 def get_plan_metadata(
     ctx: click.Context,
-    plan_number: int,
+    pr_number: int,
     field_name: str,
 ) -> None:
     """Extract a metadata field from a plan's plan-header block.
@@ -57,7 +57,7 @@ def get_plan_metadata(
     backend = require_plan_backend(ctx)
     repo_root = require_repo_root(ctx)
 
-    plan_id = str(plan_number)
+    plan_id = str(pr_number)
 
     # Get metadata field via PlanBackend
     result = backend.get_metadata_field(repo_root, plan_id, field_name)
@@ -65,7 +65,7 @@ def get_plan_metadata(
         error_result = MetadataError(
             success=False,
             error="issue_not_found",
-            message=f"Plan #{plan_number} not found",
+            message=f"Plan #{pr_number} not found",
         )
         click.echo(json.dumps(asdict(error_result)), err=True)
         raise SystemExit(1)
@@ -74,7 +74,7 @@ def get_plan_metadata(
     result_success = MetadataSuccess(
         success=True,
         value=result,
-        pr_number=plan_number,
+        pr_number=pr_number,
         field=field_name,
     )
     click.echo(json.dumps(asdict(result_success)))

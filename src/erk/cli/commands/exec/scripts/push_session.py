@@ -133,7 +133,7 @@ def _build_manifest_entry(
 def _update_manifest(
     *,
     existing_manifest: dict | None,
-    plan_id: int,
+    pr_number: int,
     new_entry: dict,
 ) -> dict:
     """Update manifest with a new session entry (idempotent).
@@ -143,7 +143,7 @@ def _update_manifest(
     if existing_manifest is None:
         manifest: dict = {
             "version": 1,
-            "pr_number": plan_id,
+            "pr_number": pr_number,
             "sessions": [],
         }
     else:
@@ -182,7 +182,7 @@ def _update_manifest(
     help="Session source: 'local' or 'remote'",
 )
 @click.option(
-    "--plan-id",
+    "--pr-number",
     required=True,
     type=int,
     help="Plan identifier for the planned-pr-context branch",
@@ -194,12 +194,12 @@ def push_session(
     session_id: str,
     stage: Literal["planning", "impl", "address"],
     source: Literal["local", "remote"],
-    plan_id: int,
+    pr_number: int,
 ) -> None:
     """Preprocess and push a session to the planned-pr-context branch with accumulation.
 
     Preprocesses the session JSONL to compressed XML, then pushes the XML files
-    to the planned-pr-context/{plan_id} branch, accumulating across lifecycle stages.
+    to the planned-pr-context/{pr_number} branch, accumulating across lifecycle stages.
     Updates the manifest and plan metadata.
 
     Always exits with code 0 (non-critical operation).
@@ -229,7 +229,7 @@ def push_session(
     # Get the current git branch for provenance
     git_branch = git.branch.get_current_branch(repo_root)
 
-    session_branch = f"planned-pr-context/{plan_id}"
+    session_branch = f"planned-pr-context/{pr_number}"
     timestamp = time.now().replace(tzinfo=UTC).isoformat()
 
     # Step 2: Fetch or create branch
@@ -271,7 +271,7 @@ def push_session(
     )
     manifest = _update_manifest(
         existing_manifest=existing_manifest,
-        plan_id=plan_id,
+        pr_number=pr_number,
         new_entry=manifest_entry,
     )
     files_to_commit[".erk/sessions/manifest.json"] = json.dumps(manifest, indent=2)
@@ -281,7 +281,7 @@ def push_session(
         repo_root,
         branch=session_branch,
         files=files_to_commit,
-        message=f"Push {stage} session {session_id} for plan #{plan_id}",
+        message=f"Push {stage} session {session_id} for plan #{pr_number}",
     )
 
     # Step 6: Force-push
@@ -289,7 +289,7 @@ def push_session(
 
     # Step 7: Update plan metadata
     backend = require_plan_backend(ctx)
-    plan_id_str = str(plan_id)
+    pr_number_str = str(pr_number)
     metadata: dict[str, object] = {
         "last_session_branch": session_branch,
         "last_session_id": session_id,
@@ -297,10 +297,10 @@ def push_session(
         "last_session_source": source,
     }
 
-    plan_result = backend.get_plan(repo_root, plan_id_str)
+    plan_result = backend.get_plan(repo_root, pr_number_str)
     if not isinstance(plan_result, PlanNotFound):
         try:
-            backend.update_metadata(repo_root, plan_id_str, metadata)
+            backend.update_metadata(repo_root, pr_number_str, metadata)
         except RuntimeError:
             pass  # Non-critical: session branch was still created
 
@@ -313,7 +313,7 @@ def push_session(
 
     result_output: dict[str, object] = {
         "uploaded": True,
-        "pr_number": plan_id,
+        "pr_number": pr_number,
         "session_branch": session_branch,
         "session_id": session_id,
         "stage": stage,

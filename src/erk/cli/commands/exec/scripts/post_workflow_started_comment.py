@@ -69,9 +69,9 @@ class PostError:
 
 def _build_workflow_started_comment(
     *,
-    plan_number: int,
-    branch_name: str,
     pr_number: int,
+    branch_name: str,
+    impl_pr_number: int,
     run_id: str,
     run_url: str,
     repository: str,
@@ -100,7 +100,7 @@ def _build_workflow_started_comment(
         started_at=started_at,
         workflow_run_id=run_id,
         workflow_run_url=run_url,
-        plan_number=plan_number,
+        plan_number=pr_number,
         branch_name=branch_name,
     )
 
@@ -108,7 +108,7 @@ def _build_workflow_started_comment(
         f"Setup completed successfully.\n"
         f"\n"
         f"**Branch:** `{branch_name}`\n"
-        f"**PR:** [#{pr_number}](https://github.com/{repository}/pull/{pr_number})\n"
+        f"**PR:** [#{impl_pr_number}](https://github.com/{repository}/pull/{impl_pr_number})\n"
         f"**Status:** Ready for implementation\n"
         f"\n"
         f"[View workflow run]({run_url})"
@@ -122,9 +122,9 @@ def _build_workflow_started_comment(
 
 
 @click.command(name="post-workflow-started-comment")
-@click.option("--plan-number", type=int, required=True, help="Plan identifier")
+@click.option("--pr-number", type=int, required=True, help="Plan identifier")
 @click.option("--branch-name", type=str, required=True, help="Git branch name")
-@click.option("--pr-number", type=int, required=True, help="Pull request number")
+@click.option("--impl-pr-number", type=int, required=True, help="Pull request number")
 @click.option("--run-id", type=str, required=True, help="GitHub Actions workflow run ID")
 @click.option("--run-url", type=str, required=True, help="Full URL to workflow run")
 @click.option("--repository", type=str, required=True, help="Repository in owner/repo format")
@@ -132,9 +132,9 @@ def _build_workflow_started_comment(
 def post_workflow_started_comment(
     ctx: click.Context,
     *,
-    plan_number: int,
-    branch_name: str,
     pr_number: int,
+    branch_name: str,
+    impl_pr_number: int,
     run_id: str,
     run_url: str,
     repository: str,
@@ -151,9 +151,9 @@ def post_workflow_started_comment(
     # Build comment body
     now_iso = time.now().replace(tzinfo=UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
     comment_body = _build_workflow_started_comment(
-        plan_number=plan_number,
-        branch_name=branch_name,
         pr_number=pr_number,
+        branch_name=branch_name,
+        impl_pr_number=impl_pr_number,
         run_id=run_id,
         run_url=run_url,
         repository=repository,
@@ -162,8 +162,8 @@ def post_workflow_started_comment(
 
     # Post comment via PlanBackend (handles both issue and planned-PR plans)
     try:
-        backend.add_comment(repo_root, str(plan_number), comment_body)
-        result = PostSuccess(success=True, pr_number=plan_number)
+        backend.add_comment(repo_root, str(pr_number), comment_body)
+        result = PostSuccess(success=True, pr_number=pr_number)
         click.echo(json.dumps(asdict(result), indent=2))
     except RuntimeError as e:
         result = PostError(

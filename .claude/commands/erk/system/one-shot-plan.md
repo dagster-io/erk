@@ -54,7 +54,7 @@ Check the `$PLAN_ISSUE_NUMBER` environment variable:
 **If `$PLAN_ISSUE_NUMBER` is set (non-empty):** A skeleton plan was pre-created at dispatch time. Update it with the real plan content:
 
 ```bash
-erk exec plan-update --plan-number $PLAN_ISSUE_NUMBER --plan-path .erk/impl-context/plan.md --format json --summary="${PLAN_SUMMARY}"
+erk exec plan-update --pr-number $PLAN_ISSUE_NUMBER --plan-path .erk/impl-context/plan.md --format json --summary="${PLAN_SUMMARY}"
 ```
 
 Parse the JSON output. If `success` is not `true`, stop and report the error. Otherwise, use `$PLAN_ISSUE_NUMBER` as the `plan_number`. To get the `title`, extract the first `# ` heading from `.erk/impl-context/plan.md`.

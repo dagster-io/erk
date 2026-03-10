@@ -116,7 +116,7 @@ def _checkout_plan_branch(
 def create_impl_context_from_pr(
     ctx: click.Context,
     *,
-    plan_number: int,
+    pr_number: int,
     cwd: Path,
     branch_name: str,
 ) -> dict[str, str | int | bool | None]:
@@ -130,23 +130,23 @@ def create_impl_context_from_pr(
 
     Args:
         ctx: Click context (for gateway access)
-        plan_number: PR number containing the plan
+        pr_number: PR number containing the plan
         cwd: Working directory (worktree root)
         branch_name: Branch name for impl-context scoping
 
     Returns:
-        Dict with success status, impl_path, plan_number, plan_url, branch,
+        Dict with success status, impl_path, pr_number, plan_url, branch,
         and plan_title.
     """
     repo_root = require_repo_root(ctx)
     github = require_github(ctx)
 
-    pr_result = github.get_pr(repo_root, plan_number)
+    pr_result = github.get_pr(repo_root, pr_number)
     if isinstance(pr_result, PRNotFound):
         error_output = {
             "success": False,
             "error": "plan_not_found",
-            "message": f"Could not fetch plan for PR #{plan_number}: PR not found.",
+            "message": f"Could not fetch plan for PR #{pr_number}: PR not found.",
         }
         click.echo(json.dumps(error_output), err=True)
         raise SystemExit(1)
@@ -197,7 +197,7 @@ def create_impl_context_from_pr(
     save_plan_ref(
         impl_path,
         provider="github-draft-pr",
-        plan_id=str(plan_number),
+        plan_id=str(pr_number),
         url=pr_url,
         labels=(),
         objective_id=objective_id,
@@ -207,7 +207,7 @@ def create_impl_context_from_pr(
     return {
         "success": True,
         "impl_path": str(impl_path),
-        "pr_number": plan_number,
+        "pr_number": pr_number,
         "pr_url": pr_url,
         "branch": branch_name,
         "pr_title": plan_title,
@@ -217,7 +217,7 @@ def create_impl_context_from_pr(
 def _setup_planned_pr_plan(
     ctx: click.Context,
     *,
-    plan_number: int,
+    pr_number: int,
     no_impl: bool,
 ) -> dict[str, str | int | bool | None]:
     """Set up implementation from a planned-PR plan.
@@ -227,7 +227,7 @@ def _setup_planned_pr_plan(
 
     Args:
         ctx: Click context
-        plan_number: PR number for the planned-PR plan
+        pr_number: PR number for the planned-PR plan
         no_impl: Skip .erk/impl-context/ folder creation
 
     Returns:
@@ -244,16 +244,16 @@ def _setup_planned_pr_plan(
     impl_dir = resolve_impl_dir(cwd, branch_name=current_branch)
     if impl_dir is not None:
         existing_ref = read_plan_ref(impl_dir)
-        if existing_ref is not None and existing_ref.pr_id == str(plan_number):
+        if existing_ref is not None and existing_ref.pr_id == str(pr_number):
             click.echo(
-                f"Found existing impl dir for plan #{plan_number}, skipping branch setup",
+                f"Found existing impl dir for plan #{pr_number}, skipping branch setup",
                 err=True,
             )
             impl_path_str = str(impl_dir) if not no_impl else None
             return {
                 "success": True,
                 "impl_path": impl_path_str,
-                "pr_number": plan_number,
+                "pr_number": pr_number,
                 "pr_url": existing_ref.url,
                 "branch": current_branch,
                 "pr_title": "",
@@ -265,12 +265,12 @@ def _setup_planned_pr_plan(
     branch_manager = require_branch_manager(ctx)
 
     # Phase A: Lightweight PR query for branch name only
-    pr_result = github.get_pr(repo_root, plan_number)
+    pr_result = github.get_pr(repo_root, pr_number)
     if isinstance(pr_result, PRNotFound):
         error_output = {
             "success": False,
             "error": "plan_not_found",
-            "message": f"Could not fetch plan for PR #{plan_number}: PR not found.",
+            "message": f"Could not fetch plan for PR #{pr_number}: PR not found.",
         }
         click.echo(json.dumps(error_output), err=True)
         raise SystemExit(1)
@@ -294,7 +294,7 @@ def _setup_planned_pr_plan(
         return {
             "success": True,
             "impl_path": None,
-            "pr_number": plan_number,
+            "pr_number": pr_number,
             "pr_url": pr_url,
             "branch": branch_name,
             "pr_title": pr_result.title,
@@ -303,7 +303,7 @@ def _setup_planned_pr_plan(
 
     result = create_impl_context_from_pr(
         ctx,
-        plan_number=plan_number,
+        pr_number=pr_number,
         cwd=cwd,
         branch_name=branch_name,
     )
@@ -312,7 +312,7 @@ def _setup_planned_pr_plan(
 
 
 @click.command(name="setup-impl-from-pr")
-@click.argument("plan_number", type=int)
+@click.argument("pr_number", type=int)
 @click.option(
     "--session-id",
     default=None,
@@ -326,7 +326,7 @@ def _setup_planned_pr_plan(
 @click.pass_context
 def setup_impl_from_pr(
     ctx: click.Context,
-    plan_number: int,
+    pr_number: int,
     session_id: str | None,
     no_impl: bool,
 ) -> None:
@@ -344,5 +344,5 @@ def setup_impl_from_pr(
     4. Creates .erk/impl-context/ folder with plan content
     5. Saves plan reference for PR linking
     """
-    output = _setup_planned_pr_plan(ctx, plan_number=plan_number, no_impl=no_impl)
+    output = _setup_planned_pr_plan(ctx, pr_number=pr_number, no_impl=no_impl)
     click.echo(json.dumps(output))

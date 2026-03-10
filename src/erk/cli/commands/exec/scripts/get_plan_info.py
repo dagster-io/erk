@@ -25,7 +25,7 @@ from erk_shared.plan_store.types import PlanNotFound
 
 
 @click.command(name="get-plan-info")
-@click.argument("plan_number", type=int)
+@click.argument("pr_number", type=int)
 @click.option(
     "--include-body",
     is_flag=True,
@@ -34,7 +34,7 @@ from erk_shared.plan_store.types import PlanNotFound
 @click.pass_context
 def get_plan_info(
     ctx: click.Context,
-    plan_number: int,
+    pr_number: int,
     *,
     include_body: bool,
 ) -> None:
@@ -42,7 +42,7 @@ def get_plan_info(
     backend = require_plan_backend(ctx)
     repo_root = require_repo_root(ctx)
 
-    plan_id = str(plan_number)
+    plan_id = str(pr_number)
 
     plan = backend.get_plan(repo_root, plan_id)
     if isinstance(plan, PlanNotFound):
@@ -51,7 +51,7 @@ def get_plan_info(
                 {
                     "success": False,
                     "error": "plan_not_found",
-                    "message": f"Plan #{plan_number} not found",
+                    "message": f"Plan #{pr_number} not found",
                 }
             ),
             err=True,

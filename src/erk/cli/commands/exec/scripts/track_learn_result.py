@@ -61,7 +61,7 @@ VALID_RESULT_STATUSES: set[LearnStatusValue] = {
 
 @click.command(name="track-learn-result")
 @click.option(
-    "--plan-id",
+    "--pr-id",
     required=True,
     type=str,
     help="Plan identifier (e.g., issue number)",
@@ -86,7 +86,7 @@ VALID_RESULT_STATUSES: set[LearnStatusValue] = {
 def track_learn_result(
     ctx: click.Context,
     *,
-    plan_id: str,
+    pr_id: str,
     status: str,
     learn_plan: int | None,
     plan_pr: int | None,
@@ -158,7 +158,7 @@ def track_learn_result(
     try:
         backend.update_metadata(
             repo_root,
-            plan_id,
+            pr_id,
             metadata={
                 "learn_status": learn_status,
                 "learn_plan_issue": learn_plan,
@@ -170,7 +170,7 @@ def track_learn_result(
             success=False,
             error="no-metadata-block",
             message=(
-                f"Plan {plan_id} has no plan-header metadata block — cannot update learn status"
+                f"Plan {pr_id} has no plan-header metadata block — cannot update learn status"
             ),
         )
         click.echo(json.dumps(asdict(error)), err=True)
@@ -179,14 +179,14 @@ def track_learn_result(
         error = TrackLearnResultError(
             success=False,
             error="github-api-failed",
-            message=f"Failed to update learn status on plan {plan_id}: {e}",
+            message=f"Failed to update learn status on plan {pr_id}: {e}",
         )
         click.echo(json.dumps(asdict(error)), err=True)
         raise SystemExit(1) from None
 
     result = TrackLearnResultSuccess(
         success=True,
-        pr_number=plan_id,
+        pr_number=pr_id,
         learn_status=status,
         learn_plan_issue=learn_plan,
         learn_plan_pr=plan_pr,

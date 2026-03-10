@@ -10,7 +10,7 @@ from tests.test_utils.env_helpers import erk_isolated_fs_env
 
 
 def test_happy_path_with_existing_issue() -> None:
-    """Command succeeds with --plan flag, using existing plan number."""
+    """Command succeeds with --pr flag, using existing plan number."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         fake_github = FakeLocalGitHub()
@@ -22,7 +22,7 @@ def test_happy_path_with_existing_issue() -> None:
         )
 
         result = runner.invoke(
-            cli, ["admin", "test-plan-implement-gh-workflow", "--plan", "42"], obj=ctx
+            cli, ["admin", "test-plan-implement-gh-workflow", "--pr", "42"], obj=ctx
         )
 
         assert result.exit_code == 0, f"Command failed: {result.output}"
@@ -45,7 +45,7 @@ def test_happy_path_with_existing_issue() -> None:
 
 
 def test_happy_path_creating_new_issue() -> None:
-    """Command succeeds without --plan, creating a new plan."""
+    """Command succeeds without --pr, creating a new plan."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         fake_github = FakeLocalGitHub()
@@ -92,7 +92,7 @@ def test_happy_path_uses_detected_trunk_branch() -> None:
         )
 
         result = runner.invoke(
-            cli, ["admin", "test-plan-implement-gh-workflow", "--plan", "42"], obj=ctx
+            cli, ["admin", "test-plan-implement-gh-workflow", "--pr", "42"], obj=ctx
         )
 
         assert result.exit_code == 0, f"Command failed: {result.output}"

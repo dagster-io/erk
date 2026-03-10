@@ -21,18 +21,18 @@ from erk_shared.gateway.github.issues.types import IssueNotFound
 
 
 @click.command(name="register-one-shot-plan")
-@click.option("--plan-number", type=int, required=True)
-@click.option("--run-id", type=str, required=True)
 @click.option("--pr-number", type=int, required=True)
+@click.option("--run-id", type=str, required=True)
+@click.option("--impl-pr-number", "impl_pr_number", type=int, required=True)
 @click.option("--submitted-by", type=str, required=True)
 @click.option("--run-url", type=str, required=True)
 @click.pass_context
 def register_one_shot_plan(
     ctx: click.Context,
     *,
-    plan_number: int,
-    run_id: str,
     pr_number: int,
+    run_id: str,
+    impl_pr_number: int,
     submitted_by: str,
     run_url: str,
 ) -> None:
@@ -49,7 +49,7 @@ def register_one_shot_plan(
             plan_backend=plan_backend,
             github=github,
             repo_root=repo_root,
-            plan_number=plan_number,
+            plan_number=pr_number,
             run_id=run_id,
             dispatched_at=datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
         )
@@ -59,9 +59,9 @@ def register_one_shot_plan(
 
     # Op 2: queued comment
     try:
-        issue = issues.get_issue(repo_root, plan_number)
+        issue = issues.get_issue(repo_root, pr_number)
         if isinstance(issue, IssueNotFound):
-            raise RuntimeError(f"Plan #{plan_number} not found")
+            raise RuntimeError(f"Plan #{pr_number} not found")
         # Extract owner/repo from run_url for the PR link
         url_parts = run_url.split("/")
         repo_slug = next(
@@ -74,10 +74,10 @@ def register_one_shot_plan(
         )
         issues.add_comment(
             repo_root,
-            plan_number,
+            pr_number,
             f"\U0001f504 **Queued for Implementation**\n\n"
             f"**Submitted by:** @{submitted_by}\n"
-            f"**PR:** [#{pr_number}](https://github.com/{repo_slug}/pull/{pr_number})\n"
+            f"**PR:** [#{impl_pr_number}](https://github.com/{repo_slug}/pull/{impl_pr_number})\n"
             f"**Workflow run:** [View run]({run_url})\n",
         )
         results["queued_comment"] = {"success": True}
@@ -88,7 +88,7 @@ def register_one_shot_plan(
     try:
         plan_backend.update_metadata(
             repo_root,
-            str(plan_number),
+            str(pr_number),
             metadata={"lifecycle_stage": "planned"},
         )
         results["lifecycle_stage"] = {"success": True}

@@ -36,7 +36,7 @@ Generate a 2-3 sentence summary of the plan content. Focus on WHAT the plan does
 ### Step 3: Run Update Command
 
 ```bash
-erk exec plan-update --plan-number <plan> --format display --session-id="${CLAUDE_SESSION_ID}" --summary="${PLAN_SUMMARY}"
+erk exec plan-update --pr-number <plan> --format display --session-id="${CLAUDE_SESSION_ID}" --summary="${PLAN_SUMMARY}"
 ```
 
 ### Step 4: Display Results

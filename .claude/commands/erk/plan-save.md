@@ -209,7 +209,7 @@ erk exec push-session \
     --session-id "${CLAUDE_SESSION_ID}" \
     --stage planning \
     --source local \
-    --plan-id <plan_number> \
+    --pr-number <plan_number> \
     2>/dev/null || true
 ```
 

@@ -91,7 +91,7 @@ Generate a 2-3 sentence summary of the plan. Then update the plan:
 Check the `$PR_NUMBER` environment variable. If set:
 
 ```bash
-erk exec plan-update --plan-number $PR_NUMBER --plan-path .erk/impl-context/plan.md --format json --summary="${PLAN_SUMMARY}"
+erk exec plan-update --pr-number $PR_NUMBER --plan-path .erk/impl-context/plan.md --format json --summary="${PLAN_SUMMARY}"
 ```
 
 Parse the JSON output. If `success` is `true`, use `$PR_NUMBER` as the plan number.

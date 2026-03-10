@@ -489,7 +489,7 @@ def _invoke_create_impl_context(
     def _wrapper(click_ctx: click.Context) -> None:
         result = create_impl_context_from_pr(
             click_ctx,
-            plan_number=pr_number,
+            pr_number=pr_number,
             cwd=tmp_path,
             branch_name=plan_branch,
         )
@@ -521,7 +521,7 @@ def test_create_impl_context_pr_not_found(tmp_path: Path) -> None:
     def _wrapper(click_ctx: click.Context) -> None:
         create_impl_context_from_pr(
             click_ctx,
-            plan_number=9999,
+            pr_number=9999,
             cwd=tmp_path,
             branch_name="some-branch",
         )
