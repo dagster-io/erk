@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "plan_id": 9123,
+  "sessions": [
+    {
+      "session_id": "bed62dea-41d1-432b-899a-b06a62d035b9",
+      "stage": "planning",
+      "source": "local",
+      "uploaded_at": "2026-03-09T22:04:25.902980+00:00",
+      "files": [
+        "planning-bed62dea-41d1-432b-899a-b06a62d035b9-bed62dea-41d1-432b-899a-b06a62d035b9.xml"
+      ],
+      "user_turns": 2,
+      "duration_minutes": 7,
+      "raw_size_kb": 684,
+      "xml_size_kb": 35,
+      "git_branch": "agentclick-machine-cli-plan.md"
+    }
+  ]
+}

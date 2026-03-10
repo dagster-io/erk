@@ -1,0 +1,634 @@
+<session>
+  <meta branch="agentclick-machine-cli-plan.md" />
+  <meta model="claude-opus-4-6" />
+  <user>read agentclick-machine-cli-plan.md and plan</user>
+  <usage input_tokens="3" cache_creation_input_tokens="23555" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 23555}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01MsrhQdpEiVpjP12pSqAfqF">
+    <param name="command">find /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-17 -name "agentclick-machine-cli-plan.md" -maxdepth 3 2&gt;/dev/null</param>
+    <param name="description">Find the plan file</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="23555" cache_read_input_tokens="0" output_tokens="166" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 23555, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01MsrhQdpEiVpjP12pSqAfqF">
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-17/agentclick-machine-cli-plan.md
+  </tool_result>
+  <tool_use name="Read" id="toolu_012MG15RQvD2FGzDGwDLLK5s">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-17/agentclick-machine-cli-plan.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="216" cache_read_input_tokens="23555" output_tokens="90" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 216, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_012MG15RQvD2FGzDGwDLLK5s">
+     1→# Replace `@json_command` With Separate Human and Machine CLI Adapters
+     2→
+     3→## Summary
+     4→
+     5→This plan converts `agentclick` from the current mixed transport model into a three-layer architecture:
+     6→
+     7→1. Core operations that accept structured request objects and return structured result objects
+     8→2. Human-facing Click commands under the existing `erk ...` tree
+     9→3. Machine-facing commands under a new `erk json ...` tree
+    10→
+    11→This is a flag-day migration. Convert all current `@json_command` consumers at once:
+    12→
+    13→- `erk one-shot`
+    14→- `erk pr list`
+    15→- `erk pr view`
+    16→
+    17→Do not preserve the current `--json`, `--stdin-json`, or mixed-input behavior.
+    18→
+    19→## Locked Decisions
+    20→
+    21→These decisions are already made. Do not reopen them during implementation.
+    22→
+    23→- No mixed-source input. A command invocation is either human mode or machine mode, never both.
+    24→- Human commands remain under the existing `erk ...` tree and stay optimized for humans.
+    25→- Machine commands live under a top-level `erk json ...` tree.
+    26→- The true canonical layer is the in-process operation contract: request dataclass -&gt; result dataclass.
+    27→- `erk json ...` is a machine transport adapter over that core contract, not the core itself.
+    28→- MCP maps to machine commands, not human commands.
+    29→- This is an all-at-once migration for the current `@json_command` users. Do not carry a transitional dual model.
+    30→- No backwards-compatibility shims for the old mixed transport design.
+
+... [492 lines omitted] ...
+
+   131→- Machine adapters parse stdin JSON, construct request dataclasses, call the core function, serialize results, and emit structured errors
+   171→- error: `{"success": false, "error_type": "...", "message": "..."}`
+   261→  - structured error output
+   274→- JSON stdin parser and result/error emitter helpers
+   446→- structured success/error envelopes
+   502→- The biggest risk is accidentally preserving old concepts under new names. If a new machine decorator still derives its contract from human Click params, the refactor has failed.
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="6292" cache_read_input_tokens="23771" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6292}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Good, I've read the plan. Now let me explore the current codebase to understand the existing code before creating the implementation plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="6292" cache_read_input_tokens="23771" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6292}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01DxyXgqkMWsQC2PaFSAEiC4">
+    <param name="subagent_type">Explore</param>
+    <param name="description">Explore agentclick infrastructure</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 760 chars]...ach
+- Any existing request/result patterns
+
+Be very thorough - read every file completely.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6292" cache_read_input_tokens="23771" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6292}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01RULdT7ZCCcXhHznzz7XxPv">
+    <param name="subagent_type">Explore</param>
+    <param name="description">Explore command implementations</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 777 chars]... existing core logic that can be extracted
+
+Be very thorough - read every file completely.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6292" cache_read_input_tokens="23771" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6292}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01RMxR8ZTMsGogZ9Uv5tJwDK">
+    <param name="subagent_type">Explore</param>
+    <param name="description">Explore existing tests</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 651 chars]... runner, mocking, fakes)
+- What will need to change for the new architecture
+
+Be thorough.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6292" cache_read_input_tokens="23771" output_tokens="1130" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 6292, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01DxyXgqkMWsQC2PaFSAEiC4">
+Perfect! Now I have thoroughly explored the agentclick infrastructure. Let me compile a comprehensive report.
+
+## Thorough Exploration Report: Agentclick Infrastructure
+
+I have completely explored the agentclick module, MCP integration, and related infrastructure. Here's the comprehensive report:
+
+---
+
+### **1. AGENTCLICK MODULE FILES**
+
+#### `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-17/packages/erk-shared/src/erk_shared/agentclick/__init__.py`
+- Empty module (re-exports handled elsewhere)
+
+#### `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-17/packages/erk-shared/src/erk_shared/agentclick/errors.py`
+**Key Classes/Functions:**
+- `AgentCliError(click.ClickException)` - Base error class with `error_type: str` parameter
+  - Extends Click's exception system for JSON serialization
+  - Required fields: `message`, `error_type`
+  - Used with `@json_command` decorator to emit structured JSON errors
+
+#### `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-17/packages/erk-shared/src/erk_shared/agentclick/mcp_exposed.py`
+**Key Classes/Functions:**
+- `McpMeta(frozen=True)` - Dataclass storing MCP metadata
+  - Fields: `name: str`, `description: str`
+  - Applied by `@mcp_exposed` decorator
+
+- `_MCP_REGISTRY: dict[click.Command, McpMeta]` - Global registry of MCP-exposed commands
+  - Registry is a module-level dict mapping Click Commands to their MCP metadata
+
+- `mcp_exposed(*, name: str, description: str) -&gt; Callable` - Decorator
+
+... [319 lines omitted] ...
+
+  - Validates JSON is a dict object, raises ValueError otherwise
+    3. Else raises TypeError
+  - Exceptions with `error_type` attribute caught and serialized as JSON with `success: false`
+  - Exit code 0 on JSON errors (errors communicated in JSON body)
+  - Exit code 1 on non-JSON exceptions
+  - Input validation errors raised as `click.UsageError` (non-JSON format)
+  - Input validation errors serialized as JSON with `error_type: "invalid_json_input"`
+    - Else raises TypeError
+    - `"error_schema"` - fixed schema for errors with `success: false`, `error_type`, `message`
+- `ERROR_SCHEMA` - Fixed error schema
+      "error_type": {"type": "string"},
+    "required": ["success", "error_type", "message"]
+  - Raises RuntimeError on non-zero exit
+  - Relies on `--json` guarantee of structured error output in stdout
+- `--json` controls OUTPUT (results and errors serialized to JSON)
+   - Exceptions with `error_type` caught and serialized as `{"success": false, "error_type": "...", "message": "..."}`
+   - Exit code 0 for JSON errors, 1 for non-JSON exceptions
+  - `error_schema` - Fixed contract
+- Validation errors for JSON input report as:
+  - `{"success": false, "error_type": "invalid_json_input", "message": "..."}` when `--json` active
+  - `click.UsageError` when `--json` not active
+**Error Response Format:**
+  "error_type": "snake_case_category",
+  </tool_result>
+  <tool_result tool="toolu_01RMxR8ZTMsGogZ9Uv5tJwDK">
+Perfect! I've read all 6 test files. Let me now compile a comprehensive exploration report:
+
+## Exploration Report: Test Files for Replacement
+
+Based on my thorough examination of the 6 test files, here is what will need replacement:
+
+---
+
+### 1. **File: `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-17/packages/erk-shared/tests/unit/agentclick/test_json_command.py`**
+
+**What it tests:**
+- The `@json_command` decorator, `emit_json()`, `emit_json_result()` functions, and `--schema` flag
+- JSON output mode with `--json` flag
+- JSON input mode with `--stdin-json` flag
+- Error handling (AgentCliError serialization)
+- Return value serialization
+- Schema generation for commands
+
+**Key test functions (157 total, spanning 601 lines):**
+- `test_adds_json_flag()` - Verifies decorator adds both `--json` and `--stdin-json` params
+- `test_json_flag_emits_json()` - Basic JSON output
+- `test_catches_agent_cli_error()` - Error JSON serialization
+- `test_json_input_from_stdin()` - Stdin JSON parsing with `--stdin-json --json`
+- `test_exclude_json_input()` - Parameter exclusion lists
+- `test_required_json_input_present()` - Required field enforcement
+- `test_emit_json_result_with_to_json_dict()` - Custom serialization via protocol
+- `test_return_value_auto_serialized_in_json_stdout()` - Auto serialization
+- `test_schema_flag_exists()` - Schema generation
+- `test_schema_output_structure()` - Schema document structure
+- `test_json_without_stdin_json_does_not_read_stdin()` - **CRITICAL decoupling test** - verifies `--json` alone does NOT read stdin
+
+... [231 lines omitted] ...
+
+  - `test_stdin_json_error_without_json_raises_usage_error()` - **Must be preserved/adapted**
+- `test_error_schema_structure()` - Error schema validation
+- Error schema should remain unchanged
+  - `test_nonzero_exit_raises_runtime_error()` - Error handling
+  - `test_error_message_includes_all_args()` - Error formatting
+- Error cases (empty prompt, invalid repo format)
+- `test_json_error_empty_prompt()` - Validation error JSON
+- `test_json_error_invalid_repo()` - Invalid --repo format error
+- Error message assertions may need updates if error handling changes
+| `tests/commands/one_shot/test_one_shot_json.py` | 227 | 6 | End-to-end JSON I/O, stdin piping, error cases | Integration test - depends on command maintaining JSON structure |
+  </tool_result>
+  <tool_result tool="toolu_01RULdT7ZCCcXhHznzz7XxPv">
+Perfect! Now I have all the information I need. Let me compile a comprehensive exploration report:
+
+## COMPREHENSIVE EXPLORATION REPORT: Three Commands Migration Analysis
+
+### 1. ONE-SHOT COMMAND (`one_shot.py`)
+
+**File:** `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-17/src/erk/cli/commands/one_shot.py`  
+**Line count:** 233 lines
+
+**Click Decorators &amp; Parameters:**
+```python
+@mcp_exposed(name="one_shot", description="...")
+@json_command(
+    exclude_json_input=frozenset({"file_path"}),
+    required_json_input=frozenset({"prompt"}),
+    output_types=(OneShotDispatchResult, OneShotDryRunResult),
+)
+@click.command("one-shot")
+@click.argument("prompt", required=False, default=None)
+@click.option("-f", "--file", "file_path", type=click.Path(exists=True, dir_okay=False), default=None, ...)
+@click.option("-m", "--model", type=str, default=None, ...)
+@click.option("--dry-run", is_flag=True, ...)
+@click.option("--plan-only", is_flag=True, ...)
+@click.option("--slug", type=str, default=None, ...)
+@click.option("--ref", "dispatch_ref", type=str, default=None, ...)
+@click.option("--ref-current", is_flag=True, default=False, ...)
+@click.option("--repo", "target_repo", type=str, default=None, ...)
+@click.pass_obj
+```
+
+
+... [454 lines omitted] ...
+
+   - Catches exceptions and reports failures with current step
+- Comprehensive error handling with `current_step` tracking
+     - Catches `click.ClickException` with `error_type` and serializes as JSON
+     - Raises `TypeError` if neither available
+  </tool_result>
+  <usage input_tokens="3" cache_creation_input_tokens="15466" cache_read_input_tokens="30063" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 15466}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Good, I have a thorough understanding of the codebase. Let me write the implementation plan.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="15466" cache_read_input_tokens="30063" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 15466}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01VWWeCKL993sVeARZPPf9rX">
+    <param name="file_path">/Users/schrockn/.claude/plans/fancy-drifting-pnueli.md</param>
+    <param name="content"># Plan: Replace @json_command With Separate Human and Machine CLI Adapters
+
+## Context
+
+Th...[truncated 9216 chars]...ed | `@json_command` decorator, `command_input_schema()`, `exclude/required_json_input` |
+</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15466" cache_read_input_tokens="30063" output_tokens="3444" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 15466, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01VWWeCKL993sVeARZPPf9rX">
+File created successfully at: /Users/schrockn/.claude/plans/fancy-drifting-pnueli.md
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_01GzLceXvE58ZUDxNYbjc6c6">
+    <param name="query">select:ExitPlanMode</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3481" cache_read_input_tokens="45529" output_tokens="78" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3481, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01GzLceXvE58ZUDxNYbjc6c6">
+
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_01CH7SK7nYJJKtM9KGD5NkqB">
+    <param name="plan"># Plan: Replace @json_command With Separate Human and Machine CLI Adapters
+
+## Context
+
+Th...[truncated 9216 chars]...ed | `@json_command` decorator, `command_input_schema()`, `exclude/required_json_input` |
+</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="738" cache_read_input_tokens="49010" output_tokens="38" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 738, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01CH7SK7nYJJKtM9KGD5NkqB">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/fancy-drifting-pnueli.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Plan: Replace @json_command With Separate Human and Machine CLI Adapters
+Current context: (wt:erk-slot-17) (br:agentclick-machine-cli-plan.md)\n\nWhat would you like to do with this plan?"
+  header: "br:agentclic"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create new branch and planned PR. Stays on current branch." - Create a new branch, save plan as draft PR.
+  2. "Implement without saving" - Implement directly on the current branch without saving a plan PR.
+  3. "View/Edit the Plan" - Open plan in editor to review or modify before deciding.
+
+If user chooses 'Create new branch and planned PR':
+  1. Run /erk:plan-save
+  2. Call ExitPlanMode to end the planning session.
+
+If user chooses 'Implement without saving':
+  1. Create implement-now marker:
+     erk exec marker create --session-id bed62dea-41d1-432b-899a-b06a62d035b9 \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly on the current branch.
+     Do NOT run 'erk exec setup-impl' or create a new branch.
+     Read the plan from: /Users/schrockn/.claude/plans/fancy-drifting-pnueli.md
+     Implement changes, run CI, and optionally 'erk pr submit' when done.
+
+... [6 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_018yXd6T2inCtYLK5e7N9zK7">
+    <param name="file_path">/Users/schrockn/.claude/plans/fancy-drifting-pnueli.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="781" cache_read_input_tokens="49748" output_tokens="76" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 781, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_018yXd6T2inCtYLK5e7N9zK7">
+     1→# Plan: Replace @json_command With Separate Human and Machine CLI Adapters
+     2→
+     3→## Context
+     4→
+     5→The current `@json_command` decorator mixes human CLI parsing, machine JSON transport, and MCP discovery in one abstraction. JSON input is merged into Click kwargs, JSON values can override CLI values, and MCP schemas are derived from Click params rather than the actual machine contract. This refactor splits into three clean layers: core operations (request/result dataclasses), human CLI adapters, and machine CLI adapters under `erk json ...`.
+     6→
+     7→Source spec: `agentclick-machine-cli-plan.md` (on current branch).
+     8→
+     9→## Step 1: Create the machine command infrastructure
+    10→
+    11→Replace `@json_command` with a new `@machine_command` decorator in `packages/erk-shared/src/erk_shared/agentclick/`.
+    12→
+    13→**New/modified files:**
+    14→- `packages/erk-shared/src/erk_shared/agentclick/machine_command.py` (NEW)
+    15→  - `MachineCommandMeta(frozen=True)` — stores `request_type`, `result_types`, `name`, `description`
+    16→  - `@machine_command(request_type=..., result_types=..., name=..., description=...)` decorator
+    17→  - Wraps a Click command that: reads stdin JSON, deserializes to request dataclass, calls core op, serializes result
+    18→  - Adds `--schema` flag (short-circuits to emit schema doc)
+    19→  - No `--json` or `--stdin-json` flags — machine commands are always JSON in/out
+    20→  - Error handling: catches `AgentCliError`, emits `{"success": false, "error_type": ..., "message": ...}`
+    21→
+    22→- `packages/erk-shared/src/erk_shared/agentclick/machine_schema.py` (NEW or rename `json_schema.py`)
+    23→  - `request_schema(request_type)` — generates input schema from frozen dataclass fields (NOT Click params)
+    24→  - `result_schema(result_types)` — reuse existing `output_type_schema()` logic
+    25→  - `build_schema_document(meta: MachineCommandMeta)` — combines input/output/error schemas
+    26→  - Keep `dataclass_to_json_schema()` utility (already works well)
+    27→
+    28→- Keep `packages/erk-shared/src/erk_shared/agentclick/errors.py` — `AgentCliError` unchanged
+    29→- Keep `packages/erk-shared/src/erk_shared/agentclick/json_command.py` helpers: `emit_json()`, `emit_json_result()`, `read_stdin_json()` — move to a shared `io.py` or keep in place
+    30→
+
+... [140 lines omitted] ...
+
+   123→  - Test machine command decorator: stdin JSON parsing, result serialization, error envelopes, `--schema`
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_01X4neaFrqmP5ibMpRytofjX">
+    <param name="query">select:AskUserQuestion</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3749" cache_read_input_tokens="50529" output_tokens="77" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3749, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01X4neaFrqmP5ibMpRytofjX">
+
+  </tool_result>
+  <tool_use name="AskUserQuestion" id="toolu_014px3tTWtu74gF8XDU9eRTE">
+    <param name="questions">[{'question': 'What would you like to do with this plan?', 'header': 'br:agentclic', 'opti...[truncated 286 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1333" cache_read_input_tokens="54278" output_tokens="179" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1333, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_014px3tTWtu74gF8XDU9eRTE">
+User has answered your questions: "What would you like to do with this plan?"="Create new branch and planned PR". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="Skill" id="toolu_01FpD3LRKsQdwqF87HYkhtFn">
+    <param name="skill">erk:plan-save</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="229" cache_read_input_tokens="55611" output_tokens="57" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 229, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01FpD3LRKsQdwqF87HYkhtFn">
+Launching skill: erk:plan-save
+  </tool_result>
+  <user># /erk:plan-save
+
+Save the current session's plan to GitHub with session context.
+
+## Usage
+
+```bash
+/erk:plan-save                           # Standalone plan
+/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+/erk:plan-save --objective=123           # Explicit objective link (overrides marker)
+/erk:plan-save --current-branch          # Use current branch instead of creating new plnd/ branch
+```
+
+Objective linking: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command. Use `--objective=&lt;number&gt;` to override the marker or provide the link when no marker exists (e.g., during replan).
+
+## Plan Storage
+
+The plan is saved using the configured backend:
+
+- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+  The JSON output contract includes `plan_number`, `plan_url`, `title`, `branch_name`, `plan_backend`.
+
+## Agent Instructions
+
+### Step 1: Parse Arguments
+
+Check `` for the `--plan-type`, `--objective`, and `--current-branch` flags:
+
+```
+If  contains "--plan-type=&lt;type&gt;":
+  - Extract the type (standard or learn)
+  - Store as PLAN_TYPE variable
+  - Set PLAN_TYPE_FLAG to "--plan-type=&lt;type&gt;"
+Else:
+  - Set PLAN_TYPE_FLAG to empty string
+
+If  contains "--objective=&lt;number&gt;":
+  - Extract the number
+  - Set OBJECTIVE_FLAG to "--objective=&lt;number&gt;"
+Else:
+  - Set OBJECTIVE_FLAG to empty string
+
+If  contains "--current-branch":
+  - Set CURRENT_BRANCH_FLAG to "--current-branch"
+Else:
+  - Set CURRENT_BRANCH_FLAG to empty string
+```
+
+### Step 2: Generate Branch Slug
+
+**Skip this step if `--current-branch` was passed.** The current branch is used directly.
+
+Before saving, generate a branch slug from the plan title. Read the plan title from the plan file you wrote in plan mode (the first `# ` heading).
+
+Generate a branch slug from the title:
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+
+Store the result as `BRANCH_SLUG`.
+
+### Step 3: Generate Plan Summary
+
+Write a concise 2-3 sentence summary of the plan. This summary will be visible
+at the top of the PR description (above the collapsed full plan).
+
+Guidelines:
+
+- Focus on WHAT the plan does and WHY
+- Do not repeat the title
+- Plain text, no markdown headers or formatting
+- Avoid special shell characters (backticks, dollar signs)
+- Store as PLAN_SUMMARY
+
+### Step 4: Run Save Command
+
+Run this command with the session ID, summary, and optional flags.
+
+If CURRENT_BRANCH_FLAG is set, pass `--current-branch` (no branch slug needed):
+
+```bash
+erk exec plan-save --format json --session-id="bed62dea-41d1-432b-899a-b06a62d035b9" --current-branch --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Otherwise, pass the branch slug:
+
+```bash
+erk exec plan-save --format json --session-id="bed62dea-41d1-432b-899a-b06a62d035b9" --branch-slug="${BRANCH_SLUG}" --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Parse the JSON output to extract `plan_number` for verification in Step 5.
+
+If the command fails, display the error and stop.
+
+### Step 5: Verify Objective Link (if applicable)
+
+**Only run this step if `objective_issue` is non-null in the JSON output from Step 4.**
+
+Verify the objective link was saved correctly:
+
+```bash
+erk exec get-plan-metadata &lt;plan_number&gt; objective_issue
+```
+
+Parse the JSON response:
+
+- If `success: true` and `value` matches the expected objective number: verification passed
+- If `success: false` or value doesn't match: verification failed
+
+**On verification success:**
+
+Display: `Verified objective link: #&lt;objective-number&gt;`
+
+**On verification failure:**
+
+Display error and remediation steps:
+
+```
+ERROR: Objective link verification failed
+Expected objective: #&lt;expected&gt;
+Actual: &lt;actual-or-null&gt;
+
+The plan was saved but without the correct objective link.
+Fix: Close draft PR #&lt;plan_number&gt;,
+ensure the objective-context marker exists, and re-run /erk:plan-save.
+```
+
+Exit without creating the plan-saved marker. The session continues so the user can retry.
+
+### Step 6: Update Objective Roadmap (if objective linked)
+
+**Only run this step if `objective_issue` was non-null in JSON output and verification passed.**
+
+Update the objective's roadmap table to show that a plan has been created for this node:
+
+1. **Read the roadmap node marker** to get the node ID:
+
+```bash
+step_id=$(erk exec marker read --session-id "bed62dea-41d1-432b-899a-b06a62d035b9" roadmap-step)
+```
+
+If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-plan`.
+
+2. **Update the roadmap table** using the dedicated command:
+
+```bash
+erk exec update-objective-node &lt;objective-issue&gt; --node "$step_id" --pr "#&lt;plan_number&gt;" --status in_progress
+```
+
+This atomically fetches the objective body, finds the matching node row, sets the Status cell to `in-progress`, and writes the updated body back.
+
+3. **Report the update:**
+
+Display: `Updated objective #&lt;objective-issue&gt; roadmap: node &lt;step_id&gt; → plan #&lt;plan_number&gt;`
+
+**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+
+### Step 7: Display Results
+
+**If JSON contains `skipped_duplicate: true`:**
+
+Display: `Plan already saved as #&lt;plan_number&gt; (duplicate skipped)`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options.
+
+**Otherwise, on success**, display:
+
+```
+Plan "&lt;title&gt;" saved as draft PR #&lt;plan_number&gt;
+URL: &lt;issue_url&gt;
+```
+
+If objective was verified, also display: `Verified objective link: #&lt;objective-number&gt;`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options
+(implement in current worktree, implement in new worktree, or done).
+
+On failure, display the error message and suggest:
+
+- Checking that a plan exists (enter Plan mode and exit it first)
+- Verifying GitHub CLI authentication (`gh auth status`)
+- Checking network connectivity
+
+### Step 5: Push Planning Session
+
+After saving successfully, push the planning session for cross-machine learning.
+This captures the in-progress session state so it's available even if implementation
+happens on a different machine.
+
+Run `erk exec capture-session-info` to get the session file path, then push it:
+
+```bash
+erk exec upload-impl-session --session-id "bed62dea-41d1-432b-899a-b06a62d035b9" 2&gt;/dev/null || true
+```
+
+If the plan was saved successfully and `plan_number` is known, use push-session directly
+for better stage tracking:
+
+```bash
+erk exec push-session \
+    --session-file "&lt;session_file_path&gt;" \
+    --session-id "bed62dea-41d1-432b-899a-b06a62d035b9" \
+    --stage planning \
+    --source local \
+    --plan-id &lt;plan_number&gt; \
+    2&gt;/dev/null || true
+```
+
+Where `&lt;session_file_path&gt;` is obtained from `erk exec capture-session-info` output
+and `&lt;plan_number&gt;` is from Step 2's JSON output.
+
+**Note:** This is non-critical. If it fails, the plan was still saved successfully.
+The `2&gt;/dev/null || true` ensures graceful degradation.
+
+## Session Tracking
+
+After successfully saving a plan, the plan number is stored in a marker file that enables automatic plan updates in the same session.
+
+**To read the saved plan number:**
+
+```bash
+erk exec marker read --session-id "bed62dea-41d1-432b-899a-b06a62d035b9" plan-saved-issue
+```
+
+This returns the plan number (exit code 0) or exits with code 1 if no plan was saved in this session.
+</user>
+  <assistant>
+
+Let me execute the plan save workflow.
+
+**Branch slug:** `machine-cli-adapters`
+
+**Plan summary:** Replaces the mixed @json_command decorator with a three-layer architecture separating core operations (request/result dataclasses), human CLI adapters, and machine CLI adapters under a new erk json command tree. MCP discovery and execution shifts to target the machine command surface instead of deriving schemas from Click parameters.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="2277" cache_read_input_tokens="55840" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2277}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01AbVTVWGaffxy4xvd1mRfu9">
+    <param name="command">erk exec plan-save --format json --session-id="bed62dea-41d1-432b-899a-b06a62d035b9" --bra...[truncated 269 chars]... to target the machine command surface instead of deriving schemas from Click parameters."</param>
+    <param name="description">Save plan as draft PR on GitHub</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2277" cache_read_input_tokens="55840" output_tokens="309" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2277, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01AbVTVWGaffxy4xvd1mRfu9">
+{"success": true, "plan_number": 9123, "plan_url": "https://github.com/dagster-io/erk/pull/9123", "title": "[erk-plan] Plan: Replace @json_command With Separate Human and Machine CLI Adapters", "branch_name": "plnd/machine-cli-adapters-03-09-2204", "plan_backend": "planned_pr", "objective_issue": null, "archived_to": "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-17/.erk/scratch/sessions/bed62dea-41d1-432b-899a-b06a62d035b9/plan_snapshots/000001-1737146c"}
+  </tool_result>
+  <assistant>Plan saved successfully. Now let me push the planning session.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="604" cache_read_input_tokens="58117" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 604}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01H6A7DjMm4qyeBemYFufGhM">
+    <param name="command">erk exec capture-session-info 2&gt;/dev/null</param>
+    <param name="description">Get session file path for push</param>
+    <param name="timeout">10000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="604" cache_read_input_tokens="58117" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 604}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01P57tMtZ9ji2jTLR4ASSqUW">
+    <param name="command">erk exec upload-impl-session --session-id "bed62dea-41d1-432b-899a-b06a62d035b9" 2&gt;/dev/null || true</param>
+    <param name="description">Push planning session</param>
+    <param name="timeout">15000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="604" cache_read_input_tokens="58117" output_tokens="234" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 604, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01H6A7DjMm4qyeBemYFufGhM">
+SESSION_ID=bed62dea-41d1-432b-899a-b06a62d035b9
+SESSION_FILE=/Users/schrockn/.claude/projects/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-17/bed62dea-41d1-432b-899a-b06a62d035b9.jsonl
+  </tool_result>
+  <tool_result tool="toolu_01P57tMtZ9ji2jTLR4ASSqUW">
+{"uploaded": false, "reason": "no_impl_folder"}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01Tmy3kjBiDHuQmU5MvzU1zj">
+    <param name="command">erk exec push-session --session-file "/Users/schrockn/.claude/projects/-Users-schrockn--er...[truncated 86 chars]...432b-899a-b06a62d035b9" --stage planning --source local --plan-id 9123 2&gt;/dev/null || true</param>
+    <param name="description">Push session with plan context</param>
+    <param name="timeout">15000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="405" cache_read_input_tokens="58721" output_tokens="215" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 405, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+</session>
