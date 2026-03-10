@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "pr_number": 9133,
+  "sessions": [
+    {
+      "session_id": "a4a02ef0-d1dd-48d6-bf17-fbedce0147a3",
+      "stage": "impl",
+      "source": "local",
+      "uploaded_at": "2026-03-10T04:57:38.760940+00:00",
+      "files": [
+        "impl-a4a02ef0-d1dd-48d6-bf17-fbedce0147a3-a4a02ef0-d1dd-48d6-bf17-fbedce0147a3-part1.xml",
+        "impl-a4a02ef0-d1dd-48d6-bf17-fbedce0147a3-a4a02ef0-d1dd-48d6-bf17-fbedce0147a3-part2.xml",
+        "impl-a4a02ef0-d1dd-48d6-bf17-fbedce0147a3-a4a02ef0-d1dd-48d6-bf17-fbedce0147a3-part3.xml"
+      ],
+      "user_turns": 3,
+      "duration_minutes": 11,
+      "raw_size_kb": 1513,
+      "xml_size_kb": 185,
+      "git_branch": "plnd/optimize-runs-tab-perf-03-10-0444"
+    }
+  ]
+}

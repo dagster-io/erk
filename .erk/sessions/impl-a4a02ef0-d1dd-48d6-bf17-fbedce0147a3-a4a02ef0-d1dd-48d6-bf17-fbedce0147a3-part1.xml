@@ -1,0 +1,1439 @@
+<session>
+  <meta branch="plnd/optimize-runs-tab-perf-03-10-0444" />
+  <meta model="claude-opus-4-6" />
+  <user>&lt;command-message&gt;erk:plan-implement&lt;/command-message&gt;
+&lt;command-name&gt;/erk:plan-implement&lt;/command-name&gt;</user>
+  <user># /erk:plan-implement
+
+Implement a plan - either from GitHub, a markdown file, an existing impl directory under `.erk/impl-context/`, or by saving the current plan first.
+
+This is the primary implementation workflow - it orchestrates:
+
+1. Setting up the impl directory under `.erk/impl-context/&lt;branch&gt;/` (from issue, file, existing folder, or fresh plan)
+2. Executing the implementation
+3. Running CI and submitting the PR
+
+## Prerequisites
+
+- Must be in a git repository managed by erk
+- GitHub CLI (`gh`) must be authenticated
+- One of:
+  - A plan number, URL, or file path argument
+  - An existing impl directory under `.erk/impl-context/`
+  - A plan branch checked out (e.g., `plnd/...` or `P{number}-...`)
+  - A plan in `~/.claude/plans/` (from plan mode)
+
+## Usage
+
+```bash
+/erk:plan-implement                    # Use impl directory, detect from branch, or save current plan
+/erk:plan-implement 2521               # Fetch and implement plan #2521
+/erk:plan-implement https://github.com/owner/repo/pull/2521   # URL form
+/erk:plan-implement ./my-plan.md       # Implement from local markdown file
+```
+
+---
+
+## CRITICAL: PR Operations
+
+**NEVER** run direct GitHub CLI commands for PR operations during implementation:
+
+- `gh pr edit` — destroys plan-header metadata block
+- `gh pr ready` — bypasses lifecycle tracking
+- `gh pr close` / `gh pr merge`
+
+All PR operations are handled by `erk pr submit` in Step 13. It automatically:
+
+- Generates the PR title and body
+- Preserves the plan-header metadata block
+- Marks draft PRs as ready for review
+- Updates lifecycle stage
+
+## Agent Instructions
+
+### Step 1: Set Up Implementation
+
+Parse `` and run the consolidated setup command:
+
+- **If numeric** (e.g., `2521`): `erk exec setup-impl --issue 2521`
+- **If GitHub URL** (e.g., `https://github.com/.../issues/2521`): Extract number, `erk exec setup-impl --issue 2521`
+- **If path to file** (anything else non-empty): `erk exec setup-impl --file &lt;path&gt;`
+- **If empty**: `erk exec setup-impl` (auto-detects from `.erk/impl-context/`, branch, or fails)
+
+```bash
+erk exec setup-impl [--issue &lt;N&gt; | --file &lt;path&gt;]
+```
+
+This single command handles:
+
+- Fetching plan from GitHub (draft PR)
+- Setting up from a local markdown file
+- Auto-detecting from existing impl directory under `.erk/impl-context/`
+- Auto-detecting plan number from branch name (P{number}-... or PR lookup)
+- Creating/checking out the feature branch
+- Creating impl directory under `.erk/impl-context/&lt;branch&gt;/` with plan content
+- Running impl-init validation
+- Cleaning up `.erk/impl-context/` staging directory (git rm + commit + push)
+
+Otherwise, generate a branch slug and set up from the specified issue:
+
+1. Fetch the title: `gh pr view &lt;ISSUE_ARG&gt; --json title -q .title`
+2. Generate a branch slug from the title:
+   - 2-4 hyphenated lowercase words, max 30 characters
+   - Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+   - Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+   - Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+3. Store as `BRANCH_SLUG`.
+
+```bash
+erk exec setup-impl --issue &lt;ISSUE_ARG&gt; --branch-slug="${BRANCH_SLUG}"
+```
+
+If `setup-impl` exits with code 1 and `error: "no_plan_found"`, fall back to saving the current plan:
+
+Generate a branch slug from the plan title (the first `# ` heading in the plan file):
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Store as `BRANCH_SLUG`
+
+Save the current plan to GitHub and capture the plan number:
+
+```bash
+erk exec plan-save --format json --session-id="a4a02ef0-d1dd-48d6-bf17-fbedce0147a3" --branch-slug="${BRANCH_SLUG}"
+```
+
+Parse the JSON output to get `plan_number`, then:
+
+```bash
+erk exec setup-impl --issue &lt;plan_number&gt;
+```
+
+The `setup-impl` output includes `related_docs` (skills and docs to load) and `has_plan_tracking` (whether GitHub issue tracking is active).
+
+If this fails, display the error and stop.
+
+### Step 2: Read Plan and Load Context
+
+Read `plan.md` from the impl directory set up in Step 1 to understand:
+
+- Overall goal and context
+- Context &amp; Understanding sections (API quirks, architectural insights, pitfalls)
+- Implementation phases and dependencies
+- Success criteria
+
+**Context Consumption**: Plans contain expensive discoveries. Ignoring `[CRITICAL:]` tags, "Related Context:" subsections, or "DO NOT" items causes repeated mistakes.
+
+### Step 3: Load Related Documentation
+
+If plan contains "Related Documentation" section, load listed skills via Skill tool and read listed docs.
+
+### Step 4: Create TodoWrite Entries
+
+Create todo entries for each phase from the plan.
+
+### Step 5: Signal GitHub Started
+
+```bash
+erk exec impl-signal started --session-id="a4a02ef0-d1dd-48d6-bf17-fbedce0147a3" 2&gt;/dev/null || true
+```
+
+This also deletes the Claude plan file (from `~/.claude/plans/`) since:
+
+- The content has been saved to GitHub
+- The content has been snapshotted to `.erk/scratch/`
+- Keeping it could cause confusion if the user tries to re-save
+
+### Step 6: Execute Each Phase Sequentially
+
+For each phase:
+
+1. **Mark phase as in_progress** (in TodoWrite)
+2. **Read task requirements** carefully
+3. **Implement code AND tests together**:
+   - Load `dignified-python-313` skill for coding standards
+   - Load `fake-driven-testing` skill for test patterns
+   - Follow project AGENTS.md standards
+4. **Mark phase as completed** (in TodoWrite)
+5. **Report progress**: changes made, what's next
+
+**Important:** `plan.md` is immutable - NEVER edit during implementation
+
+### Step 7: Report Progress
+
+After each phase: report changes made and what's next.
+
+### Step 8: Final Verification
+
+Confirm all tasks executed, success criteria met, note deviations, summarize changes.
+
+### Step 9: Signal GitHub Ended
+
+```bash
+erk exec impl-signal ended --session-id="a4a02ef0-d1dd-48d6-bf17-fbedce0147a3" 2&gt;/dev/null || true
+```
+
+### Step 10: Upload Session for Async Learn
+
+```bash
+erk exec upload-impl-session --session-id="a4a02ef0-d1dd-48d6-bf17-fbedce0147a3" 2&gt;/dev/null || true
+```
+
+This reads plan reference from the impl directory, captures session info, and uploads for async learn processing.
+
+### Step 11: Clean Up Impl Context
+
+Remove the `.erk/impl-context/` directory from the repo:
+
+```bash
+erk exec cleanup-impl-context
+```
+
+This removes `.erk/impl-context/`, stages the deletion, commits, and pushes — all idempotent.
+
+### Step 12: Run CI Iteratively
+
+1. If `.erk/prompt-hooks/post-plan-implement-ci.md` exists: follow its instructions
+2. Otherwise: check CLAUDE.md/AGENTS.md for CI commands
+
+### Step 13: Submit PR
+
+Push the branch and create or update the PR using the Graphite-aware submit pipeline:
+
+```bash
+erk pr submit
+```
+
+This handles pushing commits, creating/updating the PR, generating the PR description, and enhancing with Graphite stack metadata when available.
+
+After successful submission, signal lifecycle transition:
+
+```bash
+erk exec impl-signal submitted 2&gt;/dev/null || true
+```
+
+Then validate PR completion invariants:
+
+```bash
+erk pr check --stage=impl
+```
+
+This validates PR submission readiness including implementation-specific checks
+(e.g., `.erk/impl-context/` must be cleaned up). If checks fail, display output and warn user.
+
+### Step 14: Output Format
+
+- **Start**: "Setting up implementation..." or "Fetching plan #X..."
+- **After setup**: "Implementation environment ready, reading plan..."
+- **Each phase**: "Phase X: [brief description]" with code changes
+- **End**: "Plan execution complete. [Summary]"
+
+---
+
+## Related Commands
+
+- `/erk:plan-save` - Save plan only, don't implement (for defer-to-later workflow)
+- `/erk:replan` - Re-plan an existing plan with current codebase state
+</user>
+  <usage input_tokens="2" cache_creation_input_tokens="15390" cache_read_input_tokens="9131" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 15390}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Setting up implementation...</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="15390" cache_read_input_tokens="9131" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 15390}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01JXEhsEnRp73avRUWRzuXNc">
+    <param name="command">erk exec setup-impl</param>
+    <param name="description">Set up implementation from current branch</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="15390" cache_read_input_tokens="9131" output_tokens="200" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 15390, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01JXEhsEnRp73avRUWRzuXNc">
+Found existing impl dir for plan #9133, skipping branch setup
+{"success": true, "impl_path": "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-16/.erk/impl-context/plnd--optimize-runs-tab-perf-03-10-0444", "pr_number": 9133, "pr_url": "https://github.com/dagster-io/erk/pull/9133", "branch": "plnd/optimize-runs-tab-perf-03-10-0444", "pr_title": "", "no_impl": false}
+{"success": true, "source": "issue", "pr_number": 9133, "has_plan_tracking": true, "valid": true, "related_docs": {"skills": [], "docs": []}}
+  </tool_result>
+  <tool_use name="Read" id="toolu_01RMpTGu9vaPYeE9K6wRj5Ah">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-16/.erk/impl-context/plnd--optimize-runs-tab-perf-03-10-0444/plan.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="380" cache_read_input_tokens="24521" output_tokens="108" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 380, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01RMpTGu9vaPYeE9K6wRj5Ah">
+     1→# Improve Runs Tab Initial Load Performance
+     2→
+     3→## Context
+     4→
+     5→The `erk dash` Runs tab (tab 4) is slow on initial load. The root cause is **7 sequential `gh api` subprocess calls** that execute one after another, each blocking on network I/O:
+     6→
+     7→1. **7 sequential `list_workflow_runs` calls** — one per workflow in `WORKFLOW_COMMAND_MAP` (plan-implement, pr-rebase, pr-address, pr-rewrite, learn, one-shot, consolidate-learn-plans). Each spawns a `gh api` subprocess. ~150-300ms each = **~1-2s total**.
+     8→
+     9→2. **`list_prs(state="all")`** — fetches ALL PRs (up to 100) via REST API just to look up ~5-10 specific PR numbers. Wasteful.
+    10→
+    11→3. **`get_prs_linked_to_issues`** — batch GraphQL, already efficient.
+    12→
+    13→Calls 1, 2, and 3 are all sequential. Total latency: ~2-3s on a good network.
+    14→
+    15→## Plan
+    16→
+    17→### Step 1: Replace per-workflow loop with single GitHub REST API call
+    18→
+    19→GitHub's REST API supports `GET /repos/{owner}/{repo}/actions/runs` (no workflow filter) which returns runs across ALL workflows. This replaces 7 subprocess calls with 1.
+    20→
+    21→- **File**: `packages/erk-shared/src/erk_shared/gateway/github/abc.py`
+    22→  - Add new abstract method `list_all_workflow_runs(repo_root, limit) -&gt; list[WorkflowRun]`
+    23→
+    24→- **File**: `packages/erk-shared/src/erk_shared/gateway/github/real.py`
+    25→  - Implement `list_all_workflow_runs` using `GET /repos/{owner}/{repo}/actions/runs?per_page={limit}`
+    26→  - Parse response similarly to existing `list_workflow_runs`
+    27→  - The response includes `workflow_id` and `path` fields we can use to map back to command names
+    28→
+    29→- **File**: `packages/erk-shared/src/erk_shared/gateway/github/dry_run.py`
+    30→  - Delegate to wrapped implementation
+
+... [56 lines omitted] ...
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="1876" cache_read_input_tokens="24901" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1876}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Implementation environment ready, reading plan... Let me load the relevant source files.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1876" cache_read_input_tokens="24901" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1876}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01G3veP7XunWwRXD3xoSpdf6">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-16/packages/erk-shared/src/erk_shared/gateway/github/abc.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1876" cache_read_input_tokens="24901" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1876}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01G3veP7XunWwRXD3xoSpdf6">
+     1→"""Abstract base class for GitHub operations."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→from abc import ABC, abstractmethod
+     6→from pathlib import Path
+     7→from typing import TYPE_CHECKING
+     8→
+     9→from erk_shared.gateway.github.issues.types import IssueInfo
+    10→from erk_shared.gateway.github.types import (
+    11→    BodyContent,
+    12→    GitHubRepoLocation,
+    13→    IssueFilterState,
+    14→    MergeError,
+    15→    MergeResult,
+    16→    PRCheckRun,
+    17→    PRDetails,
+    18→    PRListState,
+    19→    PRNotFound,
+    20→    PRReviewThread,
+    21→    PullRequestInfo,
+    22→    WorkflowRun,
+    23→)
+    24→
+    25→if TYPE_CHECKING:
+    26→    from erk_shared.gateway.github.issues.abc import GitHubIssues
+    27→
+    28→
+    29→class LocalGitHub(ABC):
+    30→    """Abstract interface for GitHub operations.
+
+... [838 lines omitted] ...
+
+    77→    ) -&gt; MergeResult | MergeError:
+    91→            MergeResult on success, MergeError on failure
+   190→            RuntimeError: If gh CLI command fails
+   277→        2. Failed completed runs (failures are more actionable than successes)
+   462→            Empty dict if no PRs match or on API failure.
+   514→            RuntimeError: If gh command fails
+   527→            RuntimeError: If gh command fails
+   543→            RuntimeError: If gh command fails
+   562→            RuntimeError: If gh command fails
+   576→            RuntimeError: If gh command fails
+   732→            RuntimeError: If update fails
+   772→            False if deletion failed (e.g., protected branch)
+   791→            Empty list if no PRs match or on API failure.
+   860→            state: Status state - one of "success", "failure", "pending", "error"
+   865→            True on success, False on failure
+  </tool_result>
+  <tool_use name="Read" id="toolu_014e5R91ZNnMtBxja96JfqRk">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-16/packages/erk-shared/src/erk_shared/gateway/github/real.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1876" cache_read_input_tokens="24901" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1876}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014e5R91ZNnMtBxja96JfqRk">
+File content (25510 tokens) exceeds maximum allowed tokens (25000). Use offset and limit parameters to read specific portions of the file, or search for specific content instead of reading the whole file.
+  </tool_result>
+  <tool_use name="Read" id="toolu_012Qm4bThNR2yRHmDdrDSbW3">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-16/src/erk/tui/data/real_provider.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1876" cache_read_input_tokens="24901" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1876}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012Qm4bThNR2yRHmDdrDSbW3">
+     1→"""Real implementation of PlanDataProvider for TUI data assembly."""
+     2→
+     3→import logging
+     4→from datetime import UTC, datetime
+     5→
+     6→from erk.cli.constants import WORKFLOW_COMMAND_MAP
+     7→from erk.core.context import ErkContext
+     8→from erk.core.display_utils import (
+     9→    format_relative_time,
+    10→    format_submission_time,
+    11→    format_workflow_outcome,
+    12→    format_workflow_run_id,
+    13→    get_workflow_run_state,
+    14→    strip_rich_markup,
+    15→)
+    16→from erk.core.pr_utils import select_display_pr
+    17→from erk.core.repo_discovery import NoRepoSentinel, RepoContext, ensure_erk_metadata_dir
+    18→from erk.tui.data.provider_abc import PlanDataProvider
+    19→from erk.tui.data.types import FetchTimings, PlanFilters, PlanRowData, RunRowData
+    20→from erk.tui.sorting.types import BranchActivity
+    21→from erk_shared.gateway.github.emoji import format_checks_cell, get_pr_status_emoji
+    22→from erk_shared.gateway.github.metadata.core import (
+    23→    extract_objective_slug,
+    24→)
+    25→from erk_shared.gateway.github.metadata.dependency_graph import (
+    26→    _TERMINAL_STATUSES,
+    27→    build_graph,
+    28→    build_state_sparkline,
+    29→    compute_graph_summary,
+    30→    find_graph_next_node,
+
+... [840 lines omitted] ...
+
+   171→            warnings=plan_data.warnings,
+   469→        except Exception:
+   470→            logger.debug("Failed to write timing log", exc_info=True)
+   685→            phases, _errors = parse_roadmap(plan.body)
+  </tool_result>
+  <tool_use name="Read" id="toolu_01RaYQqJqsmZ1fEPNqg2jRd9">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-16/packages/erk-shared/src/erk_shared/gateway/github/dry_run.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1876" cache_read_input_tokens="24901" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1876}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01RaYQqJqsmZ1fEPNqg2jRd9">
+     1→"""No-op wrapper for GitHub operations."""
+     2→
+     3→from pathlib import Path
+     4→
+     5→from erk_shared.gateway.github.abc import LocalGitHub
+     6→from erk_shared.gateway.github.issues.abc import GitHubIssues
+     7→from erk_shared.gateway.github.issues.dry_run import DryRunGitHubIssues
+     8→from erk_shared.gateway.github.issues.types import IssueInfo
+     9→from erk_shared.gateway.github.types import (
+    10→    BodyContent,
+    11→    GitHubRepoLocation,
+    12→    IssueFilterState,
+    13→    MergeResult,
+    14→    PRCheckRun,
+    15→    PRDetails,
+    16→    PRListState,
+    17→    PRNotFound,
+    18→    PRReviewThread,
+    19→    PullRequestInfo,
+    20→    WorkflowRun,
+    21→)
+    22→
+    23→
+    24→class DryRunLocalGitHub(LocalGitHub):
+    25→    """No-op wrapper for GitHub operations.
+    26→
+    27→    Read operations are delegated to the wrapped implementation.
+    28→    Write operations return without executing (no-op behavior).
+    29→
+    30→    This wrapper prevents destructive GitHub operations from executing in dry-run mode,
+
+... [365 lines omitted] ...
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="30020" cache_read_input_tokens="26777" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 30020}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me now read the key parts I need - the real GitHub gateway implementation and the WORKFLOW_COMMAND_MAP constant.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="30020" cache_read_input_tokens="26777" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 30020}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01RcqnBLnu3PNXKJWtyHiWk5">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-16/packages/erk-shared/src/erk_shared/gateway/github/real.py</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="30020" cache_read_input_tokens="26777" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 30020}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01RcqnBLnu3PNXKJWtyHiWk5">
+     1→"""Production implementation of GitHub operations.
+     2→
+     3→Error Handling Philosophy:
+     4→    gh CLI invocations should let exceptions bubble by default. Callers are
+     5→    responsible for handling failures appropriately. Don't swallow exceptions
+     6→    and return None/False/default values - this masks real errors and makes
+     7→    debugging difficult.
+     8→
+     9→    Legitimate "not found" cases (e.g., no PR exists for a branch) are handled
+    10→    by checking the response data, not by catching exceptions.
+    11→"""
+    12→
+    13→import json
+    14→import logging
+    15→import secrets
+    16→import string
+    17→from datetime import UTC, datetime, timedelta
+    18→from pathlib import Path
+    19→from typing import Any
+    20→
+    21→from erk_shared.debug import debug_log
+    22→from erk_shared.gateway.github.abc import LocalGitHub
+    23→from erk_shared.gateway.github.graphql_queries import (
+    24→    ADD_REVIEW_THREAD_REPLY_MUTATION,
+    25→    GET_ISSUES_WITH_PR_LINKAGES_QUERY,
+    26→    GET_PR_CHECK_RUNS_QUERY,
+    27→    GET_PR_REVIEW_THREADS_QUERY,
+    28→    GET_WORKFLOW_RUNS_BY_NODE_IDS_QUERY,
+    29→    ISSUE_PR_LINKAGE_FRAGMENT,
+    30→    RESOLVE_REVIEW_THREAD_MUTATION,
+
+... [70 lines omitted] ...
+
+    54→    MergeError,
+    90→# (error: "master already used by worktree"). Instead, we delete the remote
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01XnLGAXnVFCmH5Ep1KG9M7W">
+    <param name="pattern">WORKFLOW_COMMAND_MAP</param>
+    <param name="output_mode">content</param>
+    <param name="-A">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="30020" cache_read_input_tokens="26777" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 30020}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01XnLGAXnVFCmH5Ep1KG9M7W">
+&lt;persisted-output&gt;
+Output too large (71.2KB). Full output saved to: /Users/schrockn/.claude/projects/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-16/a4a02ef0-d1dd-48d6-bf17-fbedce0147a3/tool-results/toolu_01XnLGAXnVFCmH5Ep1KG9M7W.txt
+
+Preview (first 2KB):
+src/erk/cli/constants.py:36:WORKFLOW_COMMAND_MAP: dict[str, str] = {
+src/erk/cli/constants.py-37-    "plan-implement": DISPATCH_WORKFLOW_NAME,  # plan-implement.yml
+src/erk/cli/constants.py-38-    "pr-rebase": REBASE_WORKFLOW_NAME,  # pr-rebase.yml
+src/erk/cli/constants.py-39-    "pr-address": PR_ADDRESS_WORKFLOW_NAME,  # pr-address.yml
+src/erk/cli/constants.py-40-    "pr-rewrite": PR_REWRITE_WORKFLOW_NAME,  # pr-rewrite.yml
+src/erk/cli/constants.py-41-    "learn": "learn.yml",
+src/erk/cli/constants.py-42-    "one-shot": ONE_SHOT_WORKFLOW_NAME,  # one-shot.yml
+src/erk/cli/constants.py-43-    "consolidate-learn-plans": CONSOLIDATE_LEARN_PLANS_WORKFLOW_NAME,
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-16/src/erk/cli/constants.py-44-}
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-16/src/erk/cli/constants.py-45-
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-16/src/erk/cli/constants.py-46-# Workflow names that trigger the autofix workflow
+src/erk/cli/constants.py-47-# Must match the `name:` field in each .yml file (which should match filename without .yml)
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-16/src/erk/cli/constants.py-48-AUTOFIX_TRIGGER_WORKFLOWS = frozenset(
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-16/src/erk/cli/constants.py-49-    {
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-16/src/erk/cli/constants.py-50-        "python-format",
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-16/src/erk/cli/constants.py-51-        "lint",
+--
+src/erk/tui/data/real_provider.py:6:from erk.cli.constants import WORKFLOW_COMMAND_MAP
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-16/src/erk/tui/data/real_provider.py-7-from erk.core.context import ErkContext
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-16/src/erk/tui/data/real_provider.py-8-from erk.core.display_utils import (
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-16/src/erk/tui/data/real_provider.py-9-    format_relative_time,
+...
+&lt;/persisted-output&gt;
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01GVYB7uXzhdXPjoju98h9yc">
+    <param name="pattern">def list_workflow_runs</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-16/packages/erk-shared/src/erk_shared/gateway/github/real.py</param>
+    <param name="output_mode">content</param>
+    <param name="-A">50</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="30020" cache_read_input_tokens="26777" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 30020}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01GVYB7uXzhdXPjoju98h9yc">
+546:    def list_workflow_runs(
+547-        self, repo_root: Path, workflow: str, limit: int = 50, *, user: str | None = None
+548-    ) -&gt; list[WorkflowRun]:
+549-        """List workflow runs for a specific workflow."""
+550-        # GH-API-AUDIT: REST - GET actions/workflows/{id}/runs
+551-        query_params = f"per_page={limit}"
+552-        if user is not None:
+553-            query_params += f"&amp;actor={user}"
+554-
+555-        cmd = [
+556-            "gh",
+557-            "api",
+558-            f"repos/{{owner}}/{{repo}}/actions/workflows/{workflow}/runs?{query_params}",
+559-            "--jq",
+560-            ".workflow_runs",
+561-        ]
+562-
+563-        stdout = execute_gh_command_with_retry(cmd, repo_root, self._time)
+564-
+565-        # Parse JSON response
+566-        data = json.loads(stdout)
+567-
+568-        # Map to WorkflowRun dataclasses
+569-        runs = []
+570-        for run in data:
+571-            # Parse created_at timestamp if present
+572-            created_at = None
+573-            created_at_str = run.get("created_at")
+574-            if created_at_str:
+575-                created_at = datetime.fromisoformat(created_at_str.replace("Z", "+00:00"))
+
+... [21 lines omitted] ...
+  </tool_result>
+  <tool_use name="Grep" id="toolu_012WTfLq83yLvuEKnXYo7nsT">
+    <param name="pattern">class FakeLocalGitHub</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="30020" cache_read_input_tokens="26777" output_tokens="503" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 30020, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_012WTfLq83yLvuEKnXYo7nsT">
+Found 4 files
+tests/fakes/gateway/github.py
+docs/learned/architecture/gateway-abc-implementation.md
+docs/learned/architecture/gateway-error-boundaries.md
+.claude/skills/dignified-python/references/api-design.md
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Rv1owyZWBu8PLUf8Zh6tky">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-16/tests/fakes/gateway/github.py</param>
+    <param name="limit">80</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3686" cache_read_input_tokens="56797" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3686}" output_tokens="21" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Rv1owyZWBu8PLUf8Zh6tky">
+     1→"""Fake GitHub operations for testing.
+     2→
+     3→FakeLocalGitHub is an in-memory implementation that accepts pre-configured state
+     4→in its constructor. Construct instances directly with keyword arguments.
+     5→"""
+     6→
+     7→import dataclasses
+     8→from collections.abc import Callable
+     9→from datetime import UTC
+    10→from pathlib import Path
+    11→from typing import Any
+    12→
+    13→from erk_shared.gateway.github.abc import LocalGitHub
+    14→from erk_shared.gateway.github.issues.abc import GitHubIssues
+    15→from erk_shared.gateway.github.issues.types import IssueInfo
+    16→from erk_shared.gateway.github.types import (
+    17→    BodyContent,
+    18→    BodyFile,
+    19→    BodyText,
+    20→    GitHubRepoLocation,
+    21→    IssueFilterState,
+    22→    MergeError,
+    23→    MergeResult,
+    24→    PRCheckRun,
+    25→    PRDetails,
+    26→    PRListState,
+    27→    PRNotFound,
+    28→    PRReviewThread,
+    29→    PullRequestInfo,
+    30→    RepoInfo,
+
+... [50 lines omitted] ...
+
+    72→        resolve_thread_failures: set[str] | None = None,
+    73→        pr_diff_error: str | None = None,
+    74→        workflow_runs_error: str | None = None,
+  </tool_result>
+  <tool_use name="Grep" id="toolu_014vQkymmmEaHYwNmCw3PmhM">
+    <param name="pattern">def list_workflow_runs|def list_prs|def get_prs_linked_to_issues</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-16/tests/fakes/gateway/github.py</param>
+    <param name="output_mode">content</param>
+    <param name="-A">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3686" cache_read_input_tokens="56797" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3686}" output_tokens="21" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014vQkymmmEaHYwNmCw3PmhM">
+406:    def list_workflow_runs(
+407-        self, repo_root: Path, workflow: str, limit: int = 50, *, user: str | None = None
+408-    ) -&gt; list[WorkflowRun]:
+409-        """List workflow runs for a specific workflow (returns pre-configured data).
+410-
+411-        Returns the pre-configured list of workflow runs. The workflow, limit and user
+412-        parameters are accepted but ignored - fake returns all pre-configured runs.
+413-        """
+414-        return self._workflow_runs
+415-
+416-    def get_workflow_run(self, repo_root: Path, run_id: str) -&gt; WorkflowRun | None:
+417-        """Get details for a specific workflow run by ID (returns pre-configured data).
+418-
+419-        Args:
+420-            repo_root: Repository root directory (ignored in fake)
+421-            run_id: GitHub Actions run ID to lookup
+422-
+423-        Returns:
+424-            WorkflowRun if found in pre-configured data, None otherwise
+425-        """
+426-        for run in self._workflow_runs:
+--
+464:    def get_prs_linked_to_issues(
+465-        self,
+466-        location: GitHubRepoLocation,
+467-        plan_numbers: list[int],
+468-    ) -&gt; dict[int, list[PullRequestInfo]]:
+469-        """Get PRs linked to plans (returns pre-configured data).
+470-
+471-        Returns only the mappings for plans in plan_numbers that have
+
+... [35 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01BsqX2DcAcYuBq4ptCPHLDs">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-16/packages/erk-shared/src/erk_shared/gateway/github/types.py</param>
+    <param name="limit">50</param>
+    <param name="offset">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3686" cache_read_input_tokens="56797" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3686}" output_tokens="21" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01BsqX2DcAcYuBq4ptCPHLDs">
+     1→"""Type definitions for GitHub operations."""
+     2→
+     3→from dataclasses import dataclass, field
+     4→from datetime import UTC, datetime
+     5→from pathlib import Path
+     6→from typing import Any, Literal, TypedDict
+     7→
+     8→from erk_shared.non_ideal_state import EnsurableResult
+     9→
+    10→PRState = Literal["OPEN", "MERGED", "CLOSED"]
+    11→
+    12→MergeableStatus = Literal["MERGEABLE", "CONFLICTING", "UNKNOWN"]
+    13→
+    14→
+    15→class StatusCheckRollupData(TypedDict, total=False):
+    16→    state: str
+    17→    contexts: dict[str, Any]
+    18→
+    19→
+    20→def _epoch_sentinel() -&gt; datetime:
+    21→    """Return the epoch sentinel datetime used as default for missing PR timestamps."""
+    22→    return datetime(2000, 1, 1, tzinfo=UTC)
+    23→
+    24→
+    25→@dataclass(frozen=True)
+    26→class BodyText:
+    27→    """Body content as inline text.
+    28→
+    29→    Used when the body content is a string that should be passed directly
+    30→    to the GitHub API using -f body={content} syntax.
+
+... [20 lines omitted] ...
+  </tool_result>
+  <tool_use name="Grep" id="toolu_0198mRsaQaGcVsrKknYUgc3V">
+    <param name="pattern">class WorkflowRun</param>
+    <param name="output_mode">content</param>
+    <param name="-A">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3686" cache_read_input_tokens="56797" output_tokens="448" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3686, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0198mRsaQaGcVsrKknYUgc3V">
+packages/erk-shared/src/erk_shared/gateway/github/types.py:271:class WorkflowRun:
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-16/packages/erk-shared/src/erk_shared/gateway/github/types.py-272-    """Information about a GitHub Actions workflow run.
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-16/packages/erk-shared/src/erk_shared/gateway/github/types.py-273-
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-16/packages/erk-shared/src/erk_shared/gateway/github/types.py-274-    Immutable class representing workflow run data. Some fields may not be
+packages/erk-shared/src/erk_shared/gateway/github/types.py-275-    available depending on the API query used to fetch the data:
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-16/packages/erk-shared/src/erk_shared/gateway/github/types.py-276-
+packages/erk-shared/src/erk_shared/gateway/github/types.py-277-    - branch: Not available from GraphQL nodes() query
+packages/erk-shared/src/erk_shared/gateway/github/types.py-278-    - display_title: Not available from GraphQL nodes() query
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-16/packages/erk-shared/src/erk_shared/gateway/github/types.py-279-
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-16/packages/erk-shared/src/erk_shared/gateway/github/types.py-280-    Accessing unavailable fields raises AttributeError.
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-16/packages/erk-shared/src/erk_shared/gateway/github/types.py-281-    """
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-16/packages/erk-shared/src/erk_shared/gateway/github/types.py-282-
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-16/packages/erk-shared/src/erk_shared/gateway/github/types.py-283-    __slots__ = (
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-16/packages/erk-shared/src/erk_shared/gateway/github/types.py-284-        "_run_id",
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-16/packages/erk-shared/src/erk_shared/gateway/github/types.py-285-        "_node_id",
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-16/packages/erk-shared/src/erk_shared/gateway/github/types.py-286-        "_status",
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-16/packages/erk-shared/src/erk_shared/gateway/github/types.py-287-        "_conclusion",
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-16/packages/erk-shared/src/erk_shared/gateway/github/types.py-288-        "_branch",
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-16/packages/erk-shared/src/erk_shared/gateway/github/types.py-289-        "_head_sha",
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-16/packages/erk-shared/src/erk_shared/gateway/github/types.py-290-        "_display_title",
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-16/packages/erk-shared/src/erk_shared/gateway/github/types.py-291-        "_created_at",
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="6968" cache_read_input_tokens="60483" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6968}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me load the required skills and check for existing tests.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="6968" cache_read_input_tokens="60483" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6968}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Skill" id="toolu_01MBdLLPLARSgwrqxcSrC6kh">
+    <param name="skill">fake-driven-testing</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6968" cache_read_input_tokens="60483" output_tokens="132" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 6968, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01MBdLLPLARSgwrqxcSrC6kh">
+Launching skill: fake-driven-testing
+  </tool_result>
+  <user>Base directory for this skill: /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-16/.claude/skills/fake-driven-testing
+
+# Fake-Driven Testing Architecture for Python
+
+**Use this skill when**: Writing tests, fixing bugs, adding features, or modifying gateway layers in Python projects.
+
+**Prerequisites**: For Python code standards, load the `dignified-python-313` skill first. This skill focuses on testing architecture, not Python syntax.
+
+## Overview
+
+This skill provides a **defense-in-depth testing strategy** with five layers for Python applications:
+
+```
+┌─────────────────────────────────────────────────┐
+│  Layer 5 "smoke": Business Logic Integration Tests (5%)  │  ← Smoke tests over real system
+├─────────────────────────────────────────────────┤
+│  Layer 4 "logic": Business Logic Tests (70%)             │  ← Tests over fakes (MOST TESTS)
+├─────────────────────────────────────────────────┤
+│  Layer 3 "pure": Pure Unit Tests (10%)                   │  ← Zero dependencies, isolated testing
+├─────────────────────────────────────────────────┤
+│  Layer 2 "real-sanity": Integration Sanity Tests (10%)   │  ← Fast validation with mocking
+├─────────────────────────────────────────────────┤
+│  Layer 1 "fake-check": Fake Infrastructure Tests (5%)    │  ← Verify test doubles work
+└─────────────────────────────────────────────────┘
+```
+
+**Philosophy**: Test business logic extensively over fast in-memory fakes. Use real implementations sparingly for integration validation.
+
+**Terminology note**: The "gateway layer" (also called adapters/providers) refers to thin wrappers around heavyweight external APIs (databases, filesystems, HTTP APIs, message queues, etc.). The pattern matters more than the name.
+
+## Quick Decision: What Should I Read?
+
+**Adding a feature or fixing a bug?**
+→ Read `quick-reference.md` first, then `workflows.md#adding-a-new-feature`
+
+**Need to understand where to put a test?**
+→ Read `testing-strategy.md`
+
+**Working with Python-specific patterns?**
+→ Read `python-specific.md`
+
+**Adding/changing a gateway interface?**
+→ Read `gateway-architecture.md`, then `workflows.md#adding-a-gateway-method`
+
+**Creating a backend (higher-level abstraction over gateways)?**
+→ Read `gateway-architecture.md#gateways-vs-backends` - backends compose gateways and do NOT have fakes
+
+**Need to implement a specific pattern (CliRunner, builders, etc.)?**
+→ Read `patterns.md`
+
+**Not sure if I'm doing it right?**
+→ Read `anti-patterns.md`
+
+**Just need a quick lookup?**
+→ Read `quick-reference.md`
+
+## When to Read Each Reference Document
+
+### 📖 `gateway-architecture.md`
+
+**Read when**:
+
+- Adding or changing gateway/ABC interfaces
+- Understanding the ABC/Real/Fake/DryRun pattern
+- Need examples of gateway implementations
+- Want to understand what gateways are (and why they're thin)
+- **Creating a backend** (higher-level abstraction that composes gateways)
+
+**Contents**:
+
+- What are gateway classes? (naming: gateways/adapters/providers)
+- The four implementations (ABC, Real, Fake, DryRun)
+- Code examples for each
+- When to add/change gateway methods
+- Design principles (keep gateways thin)
+- Common gateway types (Database, API, FileSystem, MessageQueue)
+- **Gateways vs Backends** - critical distinction for DI boundaries
+
+### 📖 `testing-strategy.md`
+
+**Read when**:
+
+- Deciding where to put a test
+- Understanding the five testing layers
+- Need test distribution guidance (5/70/10/10/5 rule)
+- Want to know which layer tests what
+
+**Contents**:
+
+- Layer 1 "fake-check": Unit tests of fakes (verify test infrastructure)
+- Layer 2 "real-sanity": Integration sanity tests with mocking (quick validation)
+- Layer 3 "pure": Pure unit tests (zero dependencies, isolated testing)
+- Layer 4 "logic": Business logic over fakes (majority of tests)
+- Layer 5 "smoke": Business logic integration tests (smoke tests over real systems)
+- Decision tree: where should my test go?
+- Test distribution examples
+
+### 📖 `python-specific.md`
+
+**Read when**:
+
+- Working with pytest fixtures
+- Need Python mocking patterns
+- Testing Flask/FastAPI/Django applications
+- Understanding Python testing tools
+- Need Python-specific commands
+
+**Contents**:
+
+- pytest fixtures and parametrization
+- Mocking with unittest.mock and pytest-mock
+- Testing web frameworks (Flask, FastAPI, Django)
+- Python testing commands
+- Type hints in tests
+- Python packaging for test utilities
+
+### 📖 `workflows.md`
+
+**Read when**:
+
+- Adding a new feature (step-by-step)
+- Fixing a bug (step-by-step)
+- Adding a gateway method (complete checklist)
+- Changing an interface (what to update)
+- Managing dry-run features
+
+**Contents**:
+
+- Adding a new feature (TDD workflow)
+- Fixing a bug (reproduce → fix → regression test)
+- Adding a gateway method (8-step checklist with examples)
+- Changing an interface (update all layers)
+- Managing dry-run features (wrapping pattern)
+- Testing with builder patterns
+
+### 📖 `patterns.md`
+
+**Read when**:
+
+- Implementing constructor injection for fakes
+- Adding mutation tracking to fakes
+- Using CliRunner for CLI tests
+- Building complex test scenarios with builders
+- Testing dry-run behavior
+- Need code examples of specific patterns
+
+**Contents**:
+
+- Constructor injection (how and why)
+- Mutation tracking properties (read-only access)
+- Using CliRunner (not subprocess)
+- Builder patterns for complex scenarios
+- Simulated environment pattern
+- Error injection pattern
+- Dry-run testing pattern
+
+### 📖 `anti-patterns.md`
+
+**Read when**:
+
+- Unsure if your approach is correct
+- Want to avoid common mistakes
+- Reviewing code for bad patterns
+- Debugging why tests are slow/brittle
+
+**Contents**:
+
+- ❌ Testing speculative features
+- ❌ Hardcoded paths in tests (catastrophic)
+- ❌ Not updating all layers
+- ❌ Using subprocess in unit tests
+- ❌ Complex logic in gateway classes
+- ❌ Fakes with I/O operations
+- ❌ Testing implementation details
+- ❌ Incomplete test coverage for gateways
+
+### 📖 `quick-reference.md`
+
+**Read when**:
+
+- Quick lookup for file locations
+- Finding example tests to reference
+- Looking up common fixtures
+- Need command reference
+- Want test distribution guidelines
+
+**Contents**:
+
+- Decision tree (where to add test)
+- File location map (source + tests)
+- Common fixtures (tmp_path, CliRunner, etc.)
+- Common test patterns (code snippets)
+- Example tests to reference
+- Useful commands (pytest, ty, etc.)
+- Quick checklist for adding gateway methods
+
+## Quick Navigation by Task
+
+### I'm adding a new feature
+
+1. **Quick start**: `quick-reference.md` → Decision tree
+2. **Step-by-step**: `workflows.md#adding-a-new-feature`
+3. **Patterns**: `patterns.md` (CliRunner, builders)
+4. **Avoid**: `anti-patterns.md` (speculative tests, hardcoded paths)
+
+### I'm fixing a bug
+
+1. **Step-by-step**: `workflows.md#fixing-a-bug`
+2. **Patterns**: `patterns.md#constructor-injection-for-fakes`
+3. **Examples**: `quick-reference.md#example-tests-to-reference`
+
+### I'm adding/changing a gateway method
+
+1. **Understanding**: `gateway-architecture.md`
+2. **Step-by-step**: `workflows.md#adding-a-gateway-method`
+3. **Checklist**: `quick-reference.md#quick-checklist-adding-a-new-gateway-method`
+4. **Avoid**: `anti-patterns.md#not-updating-all-layers`
+
+### I don't know where my test should go
+
+1. **Decision tree**: `quick-reference.md#decision-tree`
+2. **Detailed guide**: `testing-strategy.md`
+3. **Examples**: `quick-reference.md#example-tests-to-reference`
+
+### I need to implement a pattern
+
+1. **All patterns**: `patterns.md`
+2. **Examples**: `quick-reference.md#common-test-patterns`
+
+### I think I'm doing something wrong
+
+1. **Anti-patterns**: `anti-patterns.md`
+2. **Correct approach**: `workflows.md`
+
+## Visual Layer Guide
+
+```
+┌──────────────────────────────────────────────────────────────┐
+│ Layer 5 "smoke": Business Logic Integration Tests (5%)       │
+│ ┌──────────────────────────────────────────────────────────┐ │
+│ │ Real database, filesystem, APIs, actual subprocess        │ │
+│ │ Purpose: Smoke tests, catch integration issues           │ │
+│ │ When: Sparingly, for critical workflows                  │ │
+│ │ Speed: Seconds per test                                   │ │
+│ │ Location: tests/e2e/ or tests/integration/               │ │
+│ └──────────────────────────────────────────────────────────┘ │
+└──────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────┐
+│ Layer 4 "logic": Business Logic Tests (70%) ← MOST TESTS    │
+│ ┌──────────────────────────────────────────────────────────┐ │
+│ │ FakeDatabase, FakeApiClient, FakeFileSystem              │ │
+│ │ Purpose: Test features and business logic extensively    │ │
+│ │ When: For EVERY feature and bug fix                      │ │
+│ │ Speed: Milliseconds per test                              │ │
+│ │ Location: tests/unit/, tests/services/, tests/commands/  │ │
+│ └──────────────────────────────────────────────────────────┘ │
+└──────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────┐
+│ Layer 3 "pure": Pure Unit Tests (10%)                        │
+│ ┌──────────────────────────────────────────────────────────┐ │
+│ │ Zero dependencies, no fakes, no mocks                    │ │
+│ │ Purpose: Test isolated utilities and helpers             │ │
+│ │ When: For pure functions, data structures, parsers       │ │
+│ │ Speed: Milliseconds per test                              │ │
+│ │ Location: tests/unit/                                     │ │
+│ └──────────────────────────────────────────────────────────┘ │
+└──────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────┐
+│ Layer 2 "real-sanity": Integration Sanity Tests (10%)        │
+│ ┌──────────────────────────────────────────────────────────┐ │
+│ │ RealDatabase with mocked connections                     │ │
+│ │ Purpose: Quick validation, catch syntax errors           │ │
+│ │ When: When adding/changing real implementation           │ │
+│ │ Speed: Fast (mocked)                                      │ │
+│ │ Location: tests/integration/test_real_*.py               │ │
+│ └──────────────────────────────────────────────────────────┘ │
+└──────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────┐
+│ Layer 1 "fake-check": Fake Infrastructure Tests (5%)         │
+│ ┌──────────────────────────────────────────────────────────┐ │
+│ │ Test FakeDatabase itself                                 │ │
+│ │ Purpose: Verify test infrastructure is reliable          │ │
+│ │ When: When adding/changing fake implementation           │ │
+│ │ Speed: Milliseconds per test                              │ │
+│ │ Location: tests/unit/fakes/test_fake_*.py               │ │
+│ └──────────────────────────────────────────────────────────┘ │
+└──────────────────────────────────────────────────────────────┘
+```
+
+## Key Principles
+
+1. **Thin gateway layer**: Wrap external state, push complexity to business logic
+2. **Fast tests over fakes**: 70% of tests should use in-memory fakes
+3. **Defense in depth**: Fakes → sanity tests → pure unit → business logic → integration
+4. **Test what you're building**: No speculative tests, only active work
+5. **Update all layers**: When changing interfaces, update ABC/real/fake/dry-run
+6. **Gateways vs Backends**: Gateways have fakes; backends compose gateways and do NOT have fakes
+
+## Layer Selection Guide
+
+**Distinguishing Layer 3 "pure" from Layer 4 "logic":**
+
+- **Layer 3 "pure" (Pure Unit Tests)**: ZERO dependencies - no fakes, no mocks, no external state
+  - Testing string utilities: `sanitize_branch_name("feat/FOO")` → `"feat-foo"`
+  - Testing parsers: `parse_git_status("## main")` → `{"branch": "main"}`
+  - Testing data structures: `LinkedList.append()` without any external dependencies
+
+- **Layer 4 "logic" (Business Logic Tests)**: Uses fakes for external dependencies
+  - Testing commands: `create_worktree(fake_git, name="feature")`
+  - Testing workflows: `submit_pr(fake_gh, fake_git, ...)`
+  - Testing business logic that coordinates multiple integrations
+
+**If your test imports a Fake\*, it belongs in Layer 4 "logic", not Layer 3 "pure".**
+
+## Default Testing Strategy
+
+**When in doubt**:
+
+- Write test over fakes (Layer 4 "logic") for business logic
+- Write pure unit test (Layer 3 "pure") for utilities/helpers with no dependencies
+- Use `pytest` with fixtures
+- Use `tmp_path` fixture (not hardcoded paths)
+- Follow examples in `quick-reference.md`
+
+## Summary
+
+**For quick tasks**: Start with `quick-reference.md`
+
+**For understanding**: Start with `testing-strategy.md` or `gateway-architecture.md`
+
+**For step-by-step guidance**: Use `workflows.md`
+
+**For implementation details**: Use `patterns.md`
+
+**For validation**: Check `anti-patterns.md`
+
+**For Python specifics**: Check `python-specific.md`
+</user>
+  <usage input_tokens="2" cache_creation_input_tokens="3910" cache_read_input_tokens="67451" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3910}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now let me find existing tests and understand the full WorkflowRun type and the fake plan data provider.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="3910" cache_read_input_tokens="67451" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3910}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_0173QMcFh3LeHymogJ8AgosS">
+    <param name="pattern">fetch_runs</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-16/tests</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="3910" cache_read_input_tokens="67451" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3910}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0173QMcFh3LeHymogJ8AgosS">
+Found 4 files
+tests/fakes/tests/tui_plan_data_provider.py
+tests/fakes/gateway/plan_data_provider.py
+tests/tui/data/test_real_provider_runs.py
+tests/tui/test_run_table.py
+  </tool_result>
+  <tool_use name="Read" id="toolu_01SSBssTnvWAvnum2yjFgwHk">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-16/packages/erk-shared/src/erk_shared/gateway/github/types.py</param>
+    <param name="offset">270</param>
+    <param name="limit">80</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="3910" cache_read_input_tokens="67451" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3910}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01SSBssTnvWAvnum2yjFgwHk">
+   270→
+   271→class WorkflowRun:
+   272→    """Information about a GitHub Actions workflow run.
+   273→
+   274→    Immutable class representing workflow run data. Some fields may not be
+   275→    available depending on the API query used to fetch the data:
+   276→
+   277→    - branch: Not available from GraphQL nodes() query
+   278→    - display_title: Not available from GraphQL nodes() query
+   279→
+   280→    Accessing unavailable fields raises AttributeError.
+   281→    """
+   282→
+   283→    __slots__ = (
+   284→        "_run_id",
+   285→        "_node_id",
+   286→        "_status",
+   287→        "_conclusion",
+   288→        "_branch",
+   289→        "_head_sha",
+   290→        "_display_title",
+   291→        "_created_at",
+   292→    )
+   293→
+   294→    _run_id: str
+   295→    _node_id: str | None
+   296→    _status: WorkflowRunStatus
+   297→    _conclusion: WorkflowRunConclusion | None
+   298→    _branch: str | _NotAvailable
+   299→    _head_sha: str
+
+... [50 lines omitted] ...
+
+   326→        raise AttributeError(msg)
+   330→        raise AttributeError(msg)
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01PBs6w2dawm4BTLWRGYvfov">
+    <param name="pattern">class FakePlanDataProvider</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="3910" cache_read_input_tokens="67451" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3910}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01PBs6w2dawm4BTLWRGYvfov">
+Found 2 files
+tests/fakes/tests/tui_plan_data_provider.py
+tests/fakes/gateway/plan_data_provider.py
+  </tool_result>
+  <tool_use name="Read" id="toolu_01EqotEALSqy6Kc6WX3uCFwE">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-16/src/erk/cli/constants.py</param>
+    <param name="limit">60</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="3910" cache_read_input_tokens="67451" output_tokens="469" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3910, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01EqotEALSqy6Kc6WX3uCFwE">
+     1→"""Shared constants for erk CLI commands."""
+     2→
+     3→# GitHub issue label for erk plans
+     4→ERK_PLAN_LABEL = "erk-plan"
+     5→
+     6→# Title prefix for erk-plan issues (with trailing space for easy stripping)
+     7→ERK_PLAN_TITLE_PREFIX = "[erk-plan] "
+     8→
+     9→# Plan markdown heading prefix (with trailing space for easy stripping)
+    10→PLAN_HEADING_PREFIX = "Plan: "
+    11→
+    12→# PR title prefix for plan-originated PRs
+    13→PLANNED_PR_TITLE_PREFIX = "plnd/"
+    14→
+    15→# GitHub Actions workflow for remote implementation dispatch
+    16→DISPATCH_WORKFLOW_NAME = "plan-implement.yml"
+    17→DISPATCH_WORKFLOW_METADATA_NAME = "plan-implement"
+    18→
+    19→# GitHub Actions workflow for remote rebase with conflict resolution
+    20→REBASE_WORKFLOW_NAME = "pr-rebase.yml"
+    21→
+    22→# GitHub Actions workflow for remote PR comment addressing
+    23→PR_ADDRESS_WORKFLOW_NAME = "pr-address.yml"
+    24→
+    25→# GitHub Actions workflow for remote PR rewrite (rebase + AI PR summary)
+    26→PR_REWRITE_WORKFLOW_NAME = "pr-rewrite.yml"
+    27→
+    28→# GitHub Actions workflow for one-shot autonomous execution
+    29→ONE_SHOT_WORKFLOW_NAME = "one-shot.yml"
+    30→
+
+... [30 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Mn8LwiaL1JNwmj3p2NTHzw">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-16/tests/tui/data/test_real_provider_runs.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2577" cache_read_input_tokens="71361" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2577}" output_tokens="18" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Mn8LwiaL1JNwmj3p2NTHzw">
+     1→"""Integration tests for RealPlanDataProvider.fetch_runs().
+     2→
+     3→Tests the fetch_runs() method which aggregates workflow runs from
+     4→multiple registered workflows, deduplicates, links to PRs, and
+     5→builds RunRowData objects for the TUI Runs tab.
+     6→"""
+     7→
+     8→from datetime import UTC, datetime
+     9→from pathlib import Path
+    10→
+    11→from erk.core.context import GlobalConfig
+    12→from erk.core.repo_discovery import RepoContext
+    13→from erk.tui.data.real_provider import RealPlanDataProvider
+    14→from erk_shared.gateway.git.abc import WorktreeInfo
+    15→from erk_shared.gateway.git.fake import FakeGit
+    16→from erk_shared.gateway.github.fake import FakeLocalGitHub
+    17→from erk_shared.gateway.github.types import (
+    18→    GitHubRepoId,
+    19→    GitHubRepoLocation,
+    20→    PullRequestInfo,
+    21→    WorkflowRun,
+    22→)
+    23→from erk_shared.gateway.graphite.fake import FakeGraphite
+    24→from erk_shared.gateway.http.fake import FakeHttpClient
+    25→from tests.fakes.context import create_test_context
+    26→
+    27→
+    28→def _make_repo_context(repo_root: Path, tmp_path: Path) -&gt; RepoContext:
+    29→    """Create a RepoContext for testing."""
+    30→    erk_dir = tmp_path / ".erk"
+
+... [490 lines omitted] ...
+
+   287→            conclusion="failure",
+   296→    assert rows[0].conclusion == "failure"
+  </tool_result>
+  <tool_use name="Read" id="toolu_012sxoFrBAryaQ63vyxFR57P">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-16/tests/fakes/gateway/github.py</param>
+    <param name="offset">80</param>
+    <param name="limit">60</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2577" cache_read_input_tokens="71361" output_tokens="201" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2577, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_012sxoFrBAryaQ63vyxFR57P">
+    80→        comments_by_id: dict[int, str] | None = None,
+    81→        time: Time | None = None,
+    82→        add_label_errors: dict[str, str] | None = None,
+    83→        pr_head_branches: dict[int, str] | None = None,
+    84→    ) -&gt; None:
+    85→        """Create FakeLocalGitHub with pre-configured state.
+    86→
+    87→        Args:
+    88→            repo_info: Repository owner/name info (defaults to test-owner/test-repo)
+    89→            prs: Mapping of branch name -&gt; PullRequestInfo
+    90→            pr_bases: Mapping of pr_number -&gt; base_branch
+    91→            pr_details: Mapping of pr_number -&gt; PRDetails for get_pr() and get_pr_for_branch()
+    92→            prs_by_branch: Mapping of branch name -&gt; PRDetails (simpler than prs + pr_details)
+    93→            workflow_runs: List of WorkflowRun objects to return from list_workflow_runs
+    94→            workflow_runs_by_node_id: Mapping of GraphQL node_id -&gt; WorkflowRun for
+    95→                                     get_workflow_runs_by_node_ids()
+    96→            run_logs: Mapping of run_id -&gt; log string
+    97→            pr_plan_linkages: Mapping of plan_number -&gt; list[PullRequestInfo]
+    98→            polled_run_id: Run ID to return from poll_for_workflow_run (None for timeout)
+    99→            authenticated: Whether gh CLI is authenticated (default True for test convenience)
+   100→            auth_username: Username returned by check_auth_status() (default "test-user")
+   101→            auth_hostname: Hostname returned by check_auth_status() (default "github.com")
+   102→            issues_gateway: Optional GitHubIssues implementation. If None, creates
+   103→                           FakeGitHubIssues with default empty state.
+   104→            issues_data: List of IssueInfo objects for get_issues_with_pr_linkages()
+   105→            pr_titles: Mapping of pr_number -&gt; title for explicit title storage
+   106→            pr_bodies_by_number: Mapping of pr_number -&gt; body for explicit body storage
+   107→            pr_diffs: Mapping of pr_number -&gt; diff content
+   108→            pr_changed_files: Mapping of pr_number -&gt; list of changed file paths
+   109→            merge_should_succeed: Whether merge_pr() should succeed (default True)
+
+... [30 lines omitted] ...
+
+   116→                RuntimeError simulating GraphQL rate limit
+   117→            resolve_thread_failures: Set of thread IDs that should fail when resolved
+   118→            pr_diff_error: If set, get_pr_diff() raises RuntimeError with this message.
+   119→                Use to simulate HTTP 406 "diff too large" errors.
+   120→            workflow_runs_error: If set, get_workflow_runs_by_node_ids() raises
+   121→                RuntimeError with this message. Use to simulate API failures.
+   125→                False or raise to simulate failure.
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="8494" cache_read_input_tokens="73938" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 8494}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me read the GraphQL patterns and the `get_pr_head_branches` implementation for reference.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="8494" cache_read_input_tokens="73938" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 8494}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01YGvUZZbCyLP8R1jG72S5Pm">
+    <param name="pattern">def get_pr_head_branches</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-16/packages/erk-shared/src/erk_shared/gateway/github/real.py</param>
+    <param name="output_mode">content</param>
+    <param name="-A">80</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="8494" cache_read_input_tokens="73938" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 8494}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01YGvUZZbCyLP8R1jG72S5Pm">
+905:    def get_pr_head_branches(
+906-        self, location: GitHubRepoLocation, pr_numbers: list[int]
+907-    ) -&gt; dict[int, str]:
+908-        """Get head branch names for PRs via batch GraphQL query."""
+909-        if not pr_numbers:
+910-            return {}
+911-
+912-        # Build aliased PR queries
+913-        pr_queries = []
+914-        for pr_num in pr_numbers:
+915-            pr_queries.append(f"    pr_{pr_num}: pullRequest(number: {pr_num}) {{ headRefName }}")
+916-
+917-        query = f"""query {{
+918-  repository(owner: "{location.repo_id.owner}", name: "{location.repo_id.repo}") {{
+919-{chr(10).join(pr_queries)}
+920-  }}
+921-}}"""
+922-
+923-        try:
+924-            response = self._execute_batch_pr_query(query, location.root)
+925-        except (RuntimeError, FileNotFoundError, json.JSONDecodeError):
+926-            return {}
+927-
+928-        result: dict[int, str] = {}
+929-        repo_data = response.get("data", {}).get("repository", {})
+930-        for key, pr_data in repo_data.items():
+931-            if not key.startswith("pr_") or pr_data is None:
+932-                continue
+933-            pr_num = int(key.removeprefix("pr_"))
+934-            head_ref = pr_data.get("headRefName")
+
+... [51 lines omitted] ...
+
+948-        2. Failed completed runs (failures are more actionable than successes)
+952-        errors gracefully.
+983-            # Priority 2: failed completed runs
+984-            failed_runs = [
+985-                r for r in branch_runs if r.status == "completed" and r.conclusion == "failure"
+  </tool_result>
+  <tool_use name="Read" id="toolu_01X3o8ZRXeHJydphk4XXZ6ua">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-16/packages/erk-shared/src/erk_shared/gateway/github/real.py</param>
+    <param name="offset">95</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="8494" cache_read_input_tokens="73938" output_tokens="672" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 8494, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01X3o8ZRXeHJydphk4XXZ6ua">
+    95→class RealLocalGitHub(LocalGitHub):
+    96→    """Production implementation using gh CLI.
+    97→
+    98→    All GitHub operations execute actual gh commands via subprocess.
+    99→    """
+   100→
+   101→    def __init__(
+   102→        self,
+   103→        time: Time,
+   104→        repo_info: RepoInfo | None,
+   105→        *,
+   106→        issues: GitHubIssues,
+   107→    ):
+   108→        """Initialize RealLocalGitHub.
+   109→
+   110→        Args:
+   111→            time: Time abstraction for sleep operations
+   112→            repo_info: Repository owner/name info (None if not in a GitHub repo)
+   113→            issues: GitHubIssues gateway for issue operations
+   114→        """
+   115→        self._time = time
+   116→        self._repo_info = repo_info
+   117→        self._issues = issues
+   118→        self._default_branch_cache: dict[Path, str] = {}
+   119→
+   120→    @property
+   121→    def issues(self) -&gt; GitHubIssues:
+   122→        """Access to issue operations."""
+   123→        return self._issues
+   124→
+  </tool_result>
+  <assistant>Now let me also check the `_execute_batch_pr_query` method and see how `FakeLocalGitHub` handles `get_pr_head_branches`.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2060" cache_read_input_tokens="82432" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2060}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01GMcxbJ7dBRRk7mWxuxpd3z">
+    <param name="pattern">def _execute_batch_pr_query</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-16/packages/erk-shared/src/erk_shared/gateway/github/real.py</param>
+    <param name="output_mode">content</param>
+    <param name="-A">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2060" cache_read_input_tokens="82432" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2060}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01GMcxbJ7dBRRk7mWxuxpd3z">
+187:    def _execute_batch_pr_query(self, query: str, repo_root: Path) -&gt; dict[str, Any]:
+188-        """Execute batched GraphQL query via gh CLI.
+189-
+190-        Args:
+191-            query: GraphQL query string
+192-            repo_root: Repository root directory
+193-
+194-        Returns:
+195-            Parsed JSON response
+196-        """
+197-        # GH-API-AUDIT: GraphQL - explicit graphql query
+198-        # WHY GRAPHQL: Used by get_prs_linked_to_issues for erk dash batch queries
+199-        cmd = ["gh", "api", "graphql", "-f", f"query={query}"]
+200-        stdout = execute_gh_command_with_retry(cmd, repo_root, self._time)
+201-        return json.loads(stdout)
+202-
+203-    def merge_pr(
+204-        self,
+205-        repo_root: Path,
+206-        pr_number: int,
+207-        *,
+208-        squash: bool,
+209-        verbose: bool,
+210-        subject: str | None = None,
+211-        body: str | None = None,
+212-    ) -&gt; MergeResult | MergeError:
+213-        """Merge a pull request on GitHub.
+214-
+215-        When USE_GH_PR_MERGE_FOR_LANDING is True, uses gh pr merge.
+216-        Note: Does NOT use --delete-branch because it attempts local branch
+
+... [1 lines omitted] ...
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01BpUry5TD1akecHioK4vyqG">
+    <param name="pattern">def get_pr_head_branches</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-16/tests/fakes/gateway/github.py</param>
+    <param name="output_mode">content</param>
+    <param name="-A">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2060" cache_read_input_tokens="82432" output_tokens="332" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2060, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01BpUry5TD1akecHioK4vyqG">
+483:    def get_pr_head_branches(
+484-        self, location: GitHubRepoLocation, pr_numbers: list[int]
+485-    ) -&gt; dict[int, str]:
+486-        """Get head branch names for PRs (returns from pre-configured data)."""
+487-        result: dict[int, str] = {}
+488-        for pr_num in pr_numbers:
+489-            # Check explicit pr_head_branches first
+490-            if pr_num in self._pr_head_branches:
+491-                result[pr_num] = self._pr_head_branches[pr_num]
+492-            # Then check pr_details (keyed by PR number)
+493-            elif pr_num in self._pr_details:
+494-                result[pr_num] = self._pr_details[pr_num].head_ref_name
+495-        return result
+496-
+497-    def get_workflow_runs_by_branches(
+498-        self, repo_root: Path, workflow: str, branches: list[str]
+499-    ) -&gt; dict[str, WorkflowRun | None]:
+500-        """Get the most relevant workflow run for each branch.
+501-
+502-        Returns a mapping of branch name -&gt; WorkflowRun for branches that have
+503-        matching workflow runs. Uses priority: in_progress/queued &gt; failed &gt; success &gt; other.
+  </tool_result>
+  <assistant>Good, I now have a clear picture. Let me also check the architecture tripwires since I'm modifying gateways, and the `FakeLocalGitHub.__init__` more fully to understand all constructor params.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1115" cache_read_input_tokens="84492" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1115}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_014gctjyfkXWfQziJJ4mH1Z6">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-16/docs/learned/architecture/gateway-abc-implementation.md</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1115" cache_read_input_tokens="84492" output_tokens="158" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1115, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+</session>
