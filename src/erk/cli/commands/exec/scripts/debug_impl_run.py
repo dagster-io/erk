@@ -29,7 +29,7 @@ Examples:
 
 import json
 import re
-from dataclasses import asdict
+from dataclasses import asdict, replace
 from pathlib import Path
 
 import click
@@ -186,7 +186,7 @@ def debug_impl_run(ctx: click.Context, *, run_id: str, output_json: bool) -> Non
         raise SystemExit(1)
 
     click.echo("Parsing stream-json output...", err=True)
-    json_lines = extract_stream_json_lines(logs)
+    json_lines, used_group_detection = extract_stream_json_lines(logs)
     if not json_lines:
         click.echo(
             json.dumps(
@@ -199,7 +199,23 @@ def debug_impl_run(ctx: click.Context, *, run_id: str, output_json: bool) -> Non
         )
         raise SystemExit(1)
 
-    summary = parse_impl_run_summary(json_lines)
+    result_with_metrics = parse_impl_run_summary(json_lines, track_metrics=True)
+    summary, metrics = result_with_metrics  # type: ignore
+
+    # Update metrics with information from this invocation
+    metrics = replace(
+        metrics,
+        raw_log_lines=len(logs.splitlines()),
+        used_group_detection=used_group_detection,
+    )
+
+    # Log diagnostics to stderr
+    click.echo(
+        f"Diagnostics: {metrics.raw_log_lines} raw lines, {metrics.json_lines_extracted} JSON lines, "
+        f"{metrics.system_messages} system, {metrics.assistant_messages} assistant, "
+        f"{metrics.tool_result_messages} tool_result",
+        err=True,
+    )
 
     if output_json:
         click.echo(json.dumps({"success": True, **asdict(summary)}, indent=2))
