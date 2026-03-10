@@ -19,6 +19,24 @@
       "raw_size_kb": 449,
       "xml_size_kb": 84,
       "git_branch": "plnd/fix-pr-list-exclude-learn-03-09-1854"
+    },
+    {
+      "session_id": "61ae37bc-a25c-463b-898d-9f98419d6b1f",
+      "stage": "address",
+      "source": "remote",
+      "uploaded_at": "2026-03-10T02:23:23.324061+00:00",
+      "files": [
+        "address-61ae37bc-a25c-463b-898d-9f98419d6b1f-61ae37bc-a25c-463b-898d-9f98419d6b1f-part1.xml",
+        "address-61ae37bc-a25c-463b-898d-9f98419d6b1f-61ae37bc-a25c-463b-898d-9f98419d6b1f-part2.xml",
+        "address-61ae37bc-a25c-463b-898d-9f98419d6b1f-61ae37bc-a25c-463b-898d-9f98419d6b1f-part3.xml",
+        "address-61ae37bc-a25c-463b-898d-9f98419d6b1f-61ae37bc-a25c-463b-898d-9f98419d6b1f-part4.xml",
+        "address-61ae37bc-a25c-463b-898d-9f98419d6b1f-61ae37bc-a25c-463b-898d-9f98419d6b1f-part5.xml"
+      ],
+      "user_turns": 3,
+      "duration_minutes": 6,
+      "raw_size_kb": 400,
+      "xml_size_kb": 129,
+      "git_branch": "plnd/fix-pr-list-exclude-learn-03-09-1854"
     }
   ]
 }
