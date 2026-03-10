@@ -35,6 +35,7 @@ Quick reference for all `erk exec` subcommands.
 | `create-impl-context-from-plan`   | Create .erk/impl-context/ folder from plan content.                               |
 | `create-pr-from-session`          | Extract plan from Claude session and create GitHub draft PR.                      |
 | `dash-data`                       | Serialize plan dashboard data to JSON.                                            |
+| `debug-impl-run`                  | Debug a failed plan-implement workflow run.                                       |
 | `detect-plan-from-branch`         | Detect plan number from the current git branch.                                   |
 | `detect-trunk-branch`             | Detect whether repo uses main or master as trunk branch.                          |
 | `discover-reviews`                | Discover code reviews matching PR changed files.                                  |
@@ -348,6 +349,24 @@ Serialize plan dashboard data to JSON.
 | `--show-runs` | FLAG    | No       | -           | -           |
 | `--run-state` | TEXT    | No       | -           | -           |
 | `--creator`   | TEXT    | No       | -           | -           |
+
+### debug-impl-run
+
+Debug a failed plan-implement workflow run.
+
+**Usage:** `erk exec debug-impl-run` <run_id>
+
+**Arguments:**
+
+| Name     | Required | Description |
+| -------- | -------- | ----------- |
+| `RUN_ID` | Yes      | -           |
+
+**Options:**
+
+| Flag     | Type | Required | Default | Description    |
+| -------- | ---- | -------- | ------- | -------------- |
+| `--json` | FLAG | No       | -       | Output as JSON |
 
 ### detect-plan-from-branch
 
