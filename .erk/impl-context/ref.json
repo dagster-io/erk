@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Fix missing GH_TOKEN in consolidate-learn-plans ci-address job"
+}
