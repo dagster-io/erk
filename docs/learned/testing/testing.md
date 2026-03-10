@@ -178,9 +178,9 @@ git = FakeGit(
 )
 ```
 
-### FakeGitHub
+### FakeLocalGitHub
 
-See `FakeGitHub` class in `tests/fakes/gateway/github.py`.
+See `FakeLocalGitHub` class in `tests/fakes/gateway/github.py`.
 
 **Important: Dual-mapping for branch lookups** - `get_pr_for_branch()` requires BOTH `prs` AND `pr_details` to be configured. If only `prs` is configured, the method returns `PRNotFound` because the second lookup fails.
 
@@ -486,14 +486,14 @@ class GraphiteBranchManager(BranchManager):
 from tests.fakes.gateway.git import FakeGit
 from tests.fakes.gateway.graphite import FakeGraphite
 from tests.fakes.gateway.graphite_branch_ops import FakeGraphiteBranchOps
-from tests.fakes.gateway.github import FakeGitHub
+from tests.fakes.gateway.github import FakeLocalGitHub
 from erk_shared.gateway.branch_manager.graphite import GraphiteBranchManager
 
 branch_manager = GraphiteBranchManager(
     git=FakeGit(...),
     graphite=FakeGraphite(...),
     graphite_branch_ops=FakeGraphiteBranchOps(),
-    github=FakeGitHub(...),
+    github=FakeLocalGitHub(...),
 )
 ```
 
