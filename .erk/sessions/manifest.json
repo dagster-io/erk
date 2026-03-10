@@ -16,6 +16,21 @@
       "raw_size_kb": 531,
       "xml_size_kb": 81,
       "git_branch": "plnd/best-of-both-machine-cli-03-10-0835"
+    },
+    {
+      "session_id": "35037224-a752-4c63-9d83-31c293ae2972",
+      "stage": "impl",
+      "source": "local",
+      "uploaded_at": "2026-03-10T08:00:18.508185+00:00",
+      "files": [
+        "impl-35037224-a752-4c63-9d83-31c293ae2972-35037224-a752-4c63-9d83-31c293ae2972-part1.xml",
+        "impl-35037224-a752-4c63-9d83-31c293ae2972-35037224-a752-4c63-9d83-31c293ae2972-part2.xml"
+      ],
+      "user_turns": 3,
+      "duration_minutes": 8,
+      "raw_size_kb": 664,
+      "xml_size_kb": 100,
+      "git_branch": "plnd/consolidate-dataclass-json-03-10-0751"
     }
   ]
 }
