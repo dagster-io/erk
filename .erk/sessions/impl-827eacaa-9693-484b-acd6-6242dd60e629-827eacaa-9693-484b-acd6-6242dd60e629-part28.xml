@@ -1,0 +1,245 @@
+<session>
+  <meta source="agent-ae1075f" />
+  <meta branch="plnd/O9109-sweep-exec-leaf-cmd-03-10-1757" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>Read these files and return their complete contents:
+1. src/erk/cli/commands/run/shared.py
+2. src/erk/core/file_utils.py
+
+Focus on any functions named extract_plan_number, extract_plan_title, or containing plan_number/plan_id in their signatures.</user>
+  <assistant>I'll read both files to find functions related to plan extraction and plan_number/plan_id.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="15086" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15086, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01CQxeCTqatvUNkJTyoF2pRF">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/run/shared.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15086" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15086, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01PpSUGeD1FDXWGv8vC87qWP">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/core/file_utils.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15086" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15086, 'ephemeral_1h_input_tokens': 0}" output_tokens="161" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01CQxeCTqatvUNkJTyoF2pRF">
+     1→"""Shared utilities for run commands."""
+     2→
+     3→import re
+     4→
+     5→
+     6→def extract_pr_number(display_title: str | None) -&gt; int | None:
+     7→    """Extract PR number from display_title containing '#NNN'.
+     8→
+     9→    Handles:
+    10→    - "pr-address:#456:abc123" → 456
+    11→    - "8559:#460:abc123" → 460
+    12→    - "one-shot:#458:abc123" → 458
+    13→    - "rebase:#456:abc123" → 456
+    14→    - "8559:abc123" (old format, no #) → None
+    15→    - "Some title [abc123]" (legacy) → None
+    16→    - None or empty → None
+    17→    """
+    18→    if not display_title:
+    19→        return None
+    20→    match = re.search(r"#(\d+)", display_title)
+    21→    if match is None:
+    22→        return None
+    23→    return int(match.group(1))
+    24→
+    25→
+    26→def extract_plan_number(display_title: str | None) -&gt; int | None:
+    27→    """Extract plan number from display_title format '123:abc456'.
+    28→
+    29→    Handles:
+    30→    - Legacy format: "123:abc456" → 123 (plan_id at start, no #pr_number)
+
+... [19 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01PpSUGeD1FDXWGv8vC87qWP">
+     1→"""File operation utilities."""
+     2→
+     3→from pathlib import Path
+     4→
+     5→import frontmatter
+     6→
+     7→from erk_shared.gateway.git.abc import Git
+     8→
+     9→
+    10→def extract_plan_title(plan_path: Path, git_ops: Git | None = None) -&gt; str | None:
+    11→    """Extract the first heading from a markdown plan file.
+    12→
+    13→    Uses python-frontmatter library to properly parse YAML frontmatter,
+    14→    then extracts the first line starting with # from the content.
+    15→    Common prefixes like "Plan: " and "Implementation Plan: " are stripped from the title.
+    16→
+    17→    Args:
+    18→        plan_path: Path to the plan markdown file (e.g., .plan/plan.md)
+    19→        git_ops: Optional Git interface for path checking (uses .exists() if None)
+    20→
+    21→    Returns:
+    22→        The heading text (without the # prefix and common prefixes), or None if
+    23→        not found or file doesn't exist
+    24→    """
+    25→    if git_ops is not None:
+    26→        path_exists = git_ops.worktree.path_exists(plan_path)
+    27→    else:
+    28→        path_exists = plan_path.exists()
+    29→    if not path_exists:
+    30→        return None
+
+... [66 lines omitted] ...
+  </tool_result>
+  <assistant>Here are the complete contents of both files:
+
+## 1. src/erk/cli/commands/run/shared.py
+
+```python
+"""Shared utilities for run commands."""
+
+import re
+
+
+def extract_pr_number(display_title: str | None) -&gt; int | None:
+    """Extract PR number from display_title containing '#NNN'.
+
+    Handles:
+    - "pr-address:#456:abc123" → 456
+    - "8559:#460:abc123" → 460
+    - "one-shot:#458:abc123" → 458
+    - "rebase:#456:abc123" → 456
+    - "8559:abc123" (old format, no #) → None
+    - "Some title [abc123]" (legacy) → None
+    - None or empty → None
+    """
+    if not display_title:
+        return None
+    match = re.search(r"#(\d+)", display_title)
+    if match is None:
+        return None
+    return int(match.group(1))
+
+
+def extract_plan_number(display_title: str | None) -&gt; int | None:
+    """Extract plan number from display_title format '123:abc456'.
+
+    Handles:
+    - Legacy format: "123:abc456" → 123 (plan_id at start, no #pr_number)
+    - New plan-implement format: "branch-name (#460):abc456" → None
+      (handled by extract_pr_number instead, since plan_id == pr_number)
+    - Old format: "Issue title [abc123]" → None (no colon at start)
+    - None or empty → None
+    """
+    if not display_title or ":" not in display_title:
+        return None
+    parts = display_title.split(":", 1)
+    # Validate that the first part is a number
+    first_part = parts[0].strip()
+    if not first_part.isdigit():
+        return None
+    return int(first_part)
+```
+
+## 2. src/erk/core/file_utils.py
+
+```python
+"""File operation utilities."""
+
+from pathlib import Path
+
+import frontmatter
+
+from erk_shared.gateway.git.abc import Git
+
+
+def extract_plan_title(plan_path: Path, git_ops: Git | None = None) -&gt; str | None:
+    """Extract the first heading from a markdown plan file.
+
+    Uses python-frontmatter library to properly parse YAML frontmatter,
+    then extracts the first line starting with # from the content.
+    Common prefixes like "Plan: " and "Implementation Plan: " are stripped from the title.
+
+    Args:
+        plan_path: Path to the plan markdown file (e.g., .plan/plan.md)
+        git_ops: Optional Git interface for path checking (uses .exists() if None)
+
+    Returns:
+        The heading text (without the # prefix and common prefixes), or None if
+        not found or file doesn't exist
+    """
+    if git_ops is not None:
+        path_exists = git_ops.worktree.path_exists(plan_path)
+    else:
+        path_exists = plan_path.exists()
+    if not path_exists:
+        return None
+
+    # Parse file with frontmatter library (handles YAML frontmatter properly)
+    post = frontmatter.load(str(plan_path))
+
+    # Get the content (without frontmatter)
+    content = post.content
+    lines = content.splitlines()
+
+    # Common prefixes to strip from plan titles
+    COMMON_PREFIXES = [
+        "Plan: ",
+        "Implementation Plan: ",
+        "Implementation Plan - ",
+    ]
+
+    # Find first heading
+    for line in lines:
+        stripped = line.strip()
+        if stripped.startswith("#"):
+            # Remove all # symbols and strip whitespace
+            title = stripped.lstrip("#").strip()
+            if title:
+                # Strip common prefixes (case-insensitive)
+                for prefix in COMMON_PREFIXES:
+                    if title.lower().startswith(prefix.lower()):
+                        title = title[len(prefix) :].strip()
+                        break
+                return title
+
+    return None
+
+
+def extract_plan_title_from_folder(folder_path: Path, git_ops: Git | None = None) -&gt; str | None:
+    """Extract the first heading from plan.md within a .plan/ folder.
+
+    Args:
+        folder_path: Path to the .plan/ directory
+        git_ops: Optional Git interface for path checking (uses .exists() if None)
+
+    Returns:
+        The heading text (without the # prefix and common prefixes), or None if
+        not found or folder/file doesn't exist
+    """
+    if git_ops is not None:
+        folder_exists = git_ops.worktree.path_exists(folder_path)
+    else:
+        folder_exists = folder_path.exists()
+    if not folder_exists:
+        return None
+
+    plan_file = folder_path / "plan.md"
+    if git_ops is not None:
+        plan_file_exists = git_ops.worktree.path_exists(plan_file)
+    else:
+        plan_file_exists = plan_file.exists()
+    if not plan_file_exists:
+        return None
+
+    # Delegate to existing title extraction logic
+    return extract_plan_title(plan_file, git_ops)
+```
+
+### Summary of relevant functions:
+
+**In shared.py:**
+- `extract_pr_number(display_title: str | None) -&gt; int | None` - Extracts PR number from display titles containing '#NNN'
+- `extract_plan_number(display_title: str | None) -&gt; int | None` - Extracts plan number from legacy format '123:abc456' (plan_id at start)
+
+**In file_utils.py:**
+- `extract_plan_title(plan_path: Path, git_ops: Git | None = None) -&gt; str | None` - Extracts the first markdown heading from a plan file, with frontmatter support
+- `extract_plan_title_from_folder(folder_path: Path, git_ops: Git | None = None) -&gt; str | None` - Helper that finds and extracts title from plan.md within a .plan/ directory
+
+None of these functions currently reference `plan_id` parameters, but they reference plan-related concepts in their logic (display titles, plan files, and folder structures).</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="2081" cache_read_input_tokens="15086" cache_creation="{'ephemeral_5m_input_tokens': 2081, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>

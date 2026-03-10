@@ -1,0 +1,48 @@
+{
+  "version": 1,
+  "pr_number": 9186,
+  "sessions": [
+    {
+      "session_id": "827eacaa-9693-484b-acd6-6242dd60e629",
+      "stage": "impl",
+      "source": "remote",
+      "uploaded_at": "2026-03-10T18:36:06.581972+00:00",
+      "files": [
+        "impl-827eacaa-9693-484b-acd6-6242dd60e629-827eacaa-9693-484b-acd6-6242dd60e629-part1.xml",
+        "impl-827eacaa-9693-484b-acd6-6242dd60e629-827eacaa-9693-484b-acd6-6242dd60e629-part10.xml",
+        "impl-827eacaa-9693-484b-acd6-6242dd60e629-827eacaa-9693-484b-acd6-6242dd60e629-part11.xml",
+        "impl-827eacaa-9693-484b-acd6-6242dd60e629-827eacaa-9693-484b-acd6-6242dd60e629-part12.xml",
+        "impl-827eacaa-9693-484b-acd6-6242dd60e629-827eacaa-9693-484b-acd6-6242dd60e629-part13.xml",
+        "impl-827eacaa-9693-484b-acd6-6242dd60e629-827eacaa-9693-484b-acd6-6242dd60e629-part14.xml",
+        "impl-827eacaa-9693-484b-acd6-6242dd60e629-827eacaa-9693-484b-acd6-6242dd60e629-part15.xml",
+        "impl-827eacaa-9693-484b-acd6-6242dd60e629-827eacaa-9693-484b-acd6-6242dd60e629-part16.xml",
+        "impl-827eacaa-9693-484b-acd6-6242dd60e629-827eacaa-9693-484b-acd6-6242dd60e629-part17.xml",
+        "impl-827eacaa-9693-484b-acd6-6242dd60e629-827eacaa-9693-484b-acd6-6242dd60e629-part18.xml",
+        "impl-827eacaa-9693-484b-acd6-6242dd60e629-827eacaa-9693-484b-acd6-6242dd60e629-part19.xml",
+        "impl-827eacaa-9693-484b-acd6-6242dd60e629-827eacaa-9693-484b-acd6-6242dd60e629-part2.xml",
+        "impl-827eacaa-9693-484b-acd6-6242dd60e629-827eacaa-9693-484b-acd6-6242dd60e629-part20.xml",
+        "impl-827eacaa-9693-484b-acd6-6242dd60e629-827eacaa-9693-484b-acd6-6242dd60e629-part21.xml",
+        "impl-827eacaa-9693-484b-acd6-6242dd60e629-827eacaa-9693-484b-acd6-6242dd60e629-part22.xml",
+        "impl-827eacaa-9693-484b-acd6-6242dd60e629-827eacaa-9693-484b-acd6-6242dd60e629-part23.xml",
+        "impl-827eacaa-9693-484b-acd6-6242dd60e629-827eacaa-9693-484b-acd6-6242dd60e629-part24.xml",
+        "impl-827eacaa-9693-484b-acd6-6242dd60e629-827eacaa-9693-484b-acd6-6242dd60e629-part25.xml",
+        "impl-827eacaa-9693-484b-acd6-6242dd60e629-827eacaa-9693-484b-acd6-6242dd60e629-part26.xml",
+        "impl-827eacaa-9693-484b-acd6-6242dd60e629-827eacaa-9693-484b-acd6-6242dd60e629-part27.xml",
+        "impl-827eacaa-9693-484b-acd6-6242dd60e629-827eacaa-9693-484b-acd6-6242dd60e629-part28.xml",
+        "impl-827eacaa-9693-484b-acd6-6242dd60e629-827eacaa-9693-484b-acd6-6242dd60e629-part29.xml",
+        "impl-827eacaa-9693-484b-acd6-6242dd60e629-827eacaa-9693-484b-acd6-6242dd60e629-part3.xml",
+        "impl-827eacaa-9693-484b-acd6-6242dd60e629-827eacaa-9693-484b-acd6-6242dd60e629-part4.xml",
+        "impl-827eacaa-9693-484b-acd6-6242dd60e629-827eacaa-9693-484b-acd6-6242dd60e629-part5.xml",
+        "impl-827eacaa-9693-484b-acd6-6242dd60e629-827eacaa-9693-484b-acd6-6242dd60e629-part6.xml",
+        "impl-827eacaa-9693-484b-acd6-6242dd60e629-827eacaa-9693-484b-acd6-6242dd60e629-part7.xml",
+        "impl-827eacaa-9693-484b-acd6-6242dd60e629-827eacaa-9693-484b-acd6-6242dd60e629-part8.xml",
+        "impl-827eacaa-9693-484b-acd6-6242dd60e629-827eacaa-9693-484b-acd6-6242dd60e629-part9.xml"
+      ],
+      "user_turns": 4,
+      "duration_minutes": 36,
+      "raw_size_kb": 2519,
+      "xml_size_kb": 1273,
+      "git_branch": "plnd/O9109-sweep-exec-leaf-cmd-03-10-1757"
+    }
+  ]
+}

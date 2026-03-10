@@ -1,0 +1,995 @@
+<session>
+  <meta source="agent-a110b3a" />
+  <meta branch="plnd/O9109-sweep-exec-leaf-cmd-03-10-1757" />
+  <meta model="claude-sonnet-4-5-20250929" />
+  <user>You are performing a systematic rename across multiple Python files. For each file listed below, read the file, then use Edit tool with replace_all where appropriate, or targeted edits for specific renames.
+
+## Rename Mapping
+- `plan_number` (local vars, params, dataclass fields) → `pr_number`
+- `plan_id` (local vars, params) → `pr_id`  
+- `plan_url` → `pr_url`
+- `plan_title` → `pr_title`
+
+## CRITICAL EXCEPTIONS - DO NOT RENAME:
+1. erk_shared API kwargs: `plan_id=` when passed as keyword argument to erk_shared functions — only rename the VALUE variable, not the keyword. E.g., `save_plan_ref(plan_id=plan_id)` → `save_plan_ref(plan_id=pr_id)`
+2. Do NOT rename `parse_plan_number_from_url` - that's an erk_shared import
+3. Do NOT rename imports from erk_shared packages
+4. Keep docstring references to "plan" as a concept (e.g., "plan file", "plan mode") - only rename identifier-like references
+5. String literals in docstrings that just describe what the function does can have plan_number/plan_id references updated in a natural way
+
+## Files to Process (Batch 2 - Medium occurrence exec scripts):
+
+1. `src/erk/cli/commands/exec/scripts/plan_save.py` — `plan_number` local vars
+2. `src/erk/cli/commands/exec/scripts/setup_impl.py` — `plan_number` and `plan_id` local vars
+3. `src/erk/cli/commands/exec/scripts/add_plan_labels.py` — `plan_number` from dict, `plan_id` conversions
+4. `src/erk/cli/commands/exec/scripts/setup_impl_from_pr.py` — `plan_title` local var, `plan_id` arg to erk_shared
+5. `src/erk/cli/commands/exec/scripts/objective_apply_landed_update.py` — `plan_id` from result, `_build_roadmap_context` param
+6. `src/erk/cli/commands/exec/scripts/plan_update.py` — `plan_id` local var, backend calls  
+7. `src/erk/cli/commands/exec/scripts/close_pr.py` — `plan_id` local var, backend calls
+8. `src/erk/cli/commands/exec/scripts/close_prs.py` — `plan_number` from dict, `plan_id` conversions
+9. `src/erk/cli/commands/exec/scripts/create_impl_context_from_plan.py` — `plan_id` local var, `plan_title` var
+10. `src/erk/cli/commands/exec/scripts/add_plan_label.py` — `plan_id` local var
+11. `src/erk/cli/commands/exec/scripts/impl_init.py` — `plan_number` local var
+
+For each file:
+1. Read the full file
+2. Identify ALL occurrences of plan_number, plan_id, plan_url, plan_title (excluding exceptions above)
+3. Apply the renames using Edit tool
+4. Report what was changed
+
+IMPORTANT: When a variable named plan_id is passed to an erk_shared function as plan_id=plan_id, you need to rename the VALUE (the second plan_id) to pr_id, making it plan_id=pr_id. The keyword name stays as plan_id=.</user>
+  <assistant>I'll process each file systematically, reading it first and then applying the necessary renames while respecting the critical exceptions.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="7438" cache_read_input_tokens="9380" cache_creation="{'ephemeral_5m_input_tokens': 7438, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_018jF4zaAPLRPpUCDojbt3Un">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/plan_save.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="7438" cache_read_input_tokens="9380" cache_creation="{'ephemeral_5m_input_tokens': 7438, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01UDGdPWpRgph3JMYXx7TSLQ">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/setup_impl.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="7438" cache_read_input_tokens="9380" cache_creation="{'ephemeral_5m_input_tokens': 7438, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01GVYbTdjZMcaShmv281BjUh">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/add_plan_labels.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="7438" cache_read_input_tokens="9380" cache_creation="{'ephemeral_5m_input_tokens': 7438, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01MLvedfLTUf5GUh3ej5U2dz">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/setup_impl_from_pr.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="7438" cache_read_input_tokens="9380" cache_creation="{'ephemeral_5m_input_tokens': 7438, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01BLmbMPfYCeEKCRjM74nRN4">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/objective_apply_landed_update.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="7438" cache_read_input_tokens="9380" cache_creation="{'ephemeral_5m_input_tokens': 7438, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_0177SXTxYutWRbMwCCVq8sNn">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/plan_update.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="7438" cache_read_input_tokens="9380" cache_creation="{'ephemeral_5m_input_tokens': 7438, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01TzfTkrCDTsXE9v3VSF9u7J">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/close_pr.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="7438" cache_read_input_tokens="9380" cache_creation="{'ephemeral_5m_input_tokens': 7438, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_012oGhSbZzZ9BgzSuougq191">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/close_prs.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="7438" cache_read_input_tokens="9380" cache_creation="{'ephemeral_5m_input_tokens': 7438, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01CLuDsLfHu9FuQEULghxnuY">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/create_impl_context_from_plan.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="7438" cache_read_input_tokens="9380" cache_creation="{'ephemeral_5m_input_tokens': 7438, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01K4Ny8VyYfmRvxHkVRLQGwr">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/add_plan_label.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="7438" cache_read_input_tokens="9380" cache_creation="{'ephemeral_5m_input_tokens': 7438, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_019ASknymaEhkE9HQtvrxiee">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/impl_init.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="7438" cache_read_input_tokens="9380" cache_creation="{'ephemeral_5m_input_tokens': 7438, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_018jF4zaAPLRPpUCDojbt3Un">
+     1→"""Plan save: creates a draft PR with the plan content.
+     2→
+     3→Usage:
+     4→    erk exec plan-save [OPTIONS]
+     5→
+     6→Options:
+     7→    --format json|display: Output format (default: json)
+     8→    --plan-file PATH: Use specific plan file (highest priority)
+     9→    --session-id ID: Session ID for scoped plan lookup
+    10→    --plan-type standard|learn: Plan type (default: standard)
+    11→    --learned-from-issue INT: Parent plan (for learn plans)
+    12→    --created-from-workflow-run-url URL: Workflow run URL
+    13→
+    14→Objective linking: use --objective to pass directly, or rely on
+    15→automatic linking via the objective-context session marker
+    16→(created by /erk:objective-plan). The --objective flag takes
+    17→precedence over the session marker.
+    18→
+    19→Exit Codes:
+    20→    0: Success
+    21→    1: Error
+    22→    2: Validation failed
+    23→"""
+    24→
+    25→import json
+    26→from pathlib import Path
+    27→
+    28→import click
+    29→
+    30→from erk.cli.commands.exec.scripts.validate_plan_content import _validate_plan_content
+
+... [556 lines omitted] ...
+
+   162→            click.echo(f"Error: {title_validation.message}", err=True)
+   168→                        "error": f"Plan title validation failed: {title_validation.reason}",
+   169→                        "error_type": "validation_failed",
+   183→            click.echo("Error: --current-branch requires a checked-out branch.", err=True)
+   190→                "Error: --branch-slug is required. "
+   222→            click.echo(f"Error: {create_result.message}", err=True)
+   314→        raise RuntimeError(msg)
+   418→            click.echo("Error: No plan found in ~/.claude/plans/", err=True)
+   420→            click.echo(json.dumps({"success": False, "error": "No plan found in ~/.claude/plans/"}))
+   450→    valid, error, details = _validate_plan_content(plan)
+   453→            click.echo(f"Error: Plan validation failed: {error}", err=True)
+   459→                        "error": f"Plan validation failed: {error}",
+   460→                        "error_type": "validation_failed",
+  </tool_result>
+  <tool_result tool="toolu_01UDGdPWpRgph3JMYXx7TSLQ">
+     1→"""Consolidated implementation setup command for plan-implement.
+     2→
+     3→Replaces the entire Steps 0-2d decision tree in plan-implement.md with a
+     4→single command. Handles argument parsing, source detection, branch creation,
+     5→.erk/impl-context/ setup, and impl-context cleanup.
+     6→
+     7→Usage:
+     8→    erk exec setup-impl                              # Auto-detect from .erk/impl-context/ or branch
+     9→    erk exec setup-impl --issue 2521                 # Set up from issue #2521
+    10→    erk exec setup-impl --file ./my-plan.md          # Set up from local file
+    11→
+    12→Output:
+    13→    JSON with setup result including plan metadata and related docs.
+    14→
+    15→Exit Codes:
+    16→    0: Success
+    17→    1: Error (plan not found, git operation failed, etc.)
+    18→
+    19→Examples:
+    20→    $ erk exec setup-impl --issue 2521
+    21→    {"success": true, "pr_number": 2521, "source": "issue_arg", ...}
+    22→
+    23→    $ erk exec setup-impl
+    24→    {"success": true, "pr_number": 2521, "source": "branch_detection", ...}
+    25→
+    26→    $ erk exec setup-impl
+    27→    {"success": false, "error": "no_plan_found", ...}
+    28→"""
+    29→
+    30→import json
+
+... [288 lines omitted] ...
+
+   105→            "error": "file_not_found",
+   126→            "error": "detached_head",
+   254→                "error": "no_plan_found",
+   294→                    "error": "impl_init_failed",
+   295→                    "message": "Implementation setup succeeded but init validation failed.",
+  </tool_result>
+  <tool_result tool="toolu_01GVYbTdjZMcaShmv281BjUh">
+     1→"""Batch add labels to multiple plans.
+     2→
+     3→Usage:
+     4→    echo '[{"pr_number": 42, "label": "erk-learn"}]' | erk exec add-plan-labels
+     5→
+     6→Input:
+     7→    JSON array from stdin, each item: {"pr_number": int, "label": str}
+     8→
+     9→Output:
+    10→    JSON with batch results
+    11→
+    12→Exit Codes:
+    13→    0: Always (even on error, to support batch contract)
+    14→    1: Context not initialized
+    15→"""
+    16→
+    17→from __future__ import annotations
+    18→
+    19→import json
+    20→from dataclasses import asdict, dataclass
+    21→from typing import TYPE_CHECKING, TypedDict, cast
+    22→
+    23→import click
+    24→
+    25→from erk_shared.context.helpers import require_plan_backend, require_repo_root
+    26→
+    27→if TYPE_CHECKING:
+    28→    from typing import Any
+    29→
+    30→
+
+... [162 lines omitted] ...
+
+    47→class BatchLabelError:
+    48→    """Error response for batch label addition."""
+    51→    error_type: str
+    55→def _validate_batch_input(data: object) -&gt; list[PlanLabelItem] | BatchLabelError:
+    62→        List of validated items, or BatchLabelError on validation failure
+    65→        return BatchLabelError(
+    67→            error_type="invalid-input",
+    74→            return BatchLabelError(
+    76→                error_type="invalid-input",
+    83→            return BatchLabelError(
+    85→                error_type="invalid-input",
+    91→            return BatchLabelError(
+    93→                error_type="invalid-input",
+    98→            return BatchLabelError(
+   100→                error_type="invalid-input",
+   106→            return BatchLabelError(
+   108→                error_type="invalid-input",
+   137→    except json.JSONDecodeError as e:
+   138→        result = BatchLabelError(
+   140→            error_type="invalid-json",
+   141→            message=f"Failed to parse JSON: {e}",
+   148→    if isinstance(validated, BatchLabelError):
+   162→        except RuntimeError as e:
+   167→                    "error": f"Failed to add label: {e}",
+  </tool_result>
+  <tool_result tool="toolu_01MLvedfLTUf5GUh3ej5U2dz">
+     1→"""Set up .erk/impl-context/ folder from GitHub PR in current worktree.
+     2→
+     3→This exec command fetches a plan from a GitHub PR, creates a feature branch,
+     4→checks it out, and creates the .erk/impl-context/ folder structure for implementation.
+     5→
+     6→Usage:
+     7→    erk exec setup-impl-from-pr &lt;plan-number&gt; [--session-id &lt;id&gt;]
+     8→
+     9→Output:
+    10→    Structured JSON output with success status and folder details
+    11→
+    12→Exit Codes:
+    13→    0: Success (.erk/impl-context/ folder created, branch checked out)
+    14→    1: Error (PR not found, plan fetch failed, git operations failed)
+    15→
+    16→Examples:
+    17→    $ erk exec setup-impl-from-pr 1028
+    18→    {"success": true, "impl_path": "/path/to/.erk/impl-context",
+    19→     "pr_number": 1028, "branch": "P1028-..."}
+    20→"""
+    21→
+    22→import json
+    23→from pathlib import Path
+    24→
+    25→import click
+    26→
+    27→from erk_shared.context.helpers import (
+    28→    require_branch_manager,
+    29→    require_cwd,
+    30→    require_git,
+
+... [324 lines omitted] ...
+
+    36→from erk_shared.gateway.git.remote_ops.types import PullRebaseError
+    59→        raise click.ClickException(msg)
+   104→        if isinstance(pull_result, PullRebaseError):
+   105→            error_output = {
+   107→                "error": "pull_rebase_failed",
+   109→                    f"Failed to teleport branch '{branch_name}' from remote: {pull_result.message}"
+   112→            click.echo(json.dumps(error_output), err=True)
+   146→        error_output = {
+   148→            "error": "plan_not_found",
+   151→        click.echo(json.dumps(error_output), err=True)
+   270→        error_output = {
+   272→            "error": "plan_not_found",
+   275→        click.echo(json.dumps(error_output), err=True)
+  </tool_result>
+  <tool_result tool="toolu_01BLmbMPfYCeEKCRjM74nRN4">
+     1→"""Apply mechanical updates to an objective after landing a PR.
+     2→
+     3→Combines the fetch-context, update-nodes, and post-action-comment steps into
+     4→a single call, eliminating 5+ sequential agent commands.  Only prose
+     5→reconciliation (which requires LLM judgment) is left to the calling skill.
+     6→
+     7→The PR number doubles as the plan number (in erk, the PR IS the plan).
+     8→
+     9→Usage:
+    10→    erk exec objective-apply-landed-update --pr 6517 --objective 6423 --branch P6517-...
+    11→    erk exec objective-apply-landed-update  # auto-discovers all arguments
+    12→
+    13→Output:
+    14→    JSON with {success, objective, plan, pr, roadmap, node_updates,
+    15→    action_comment_id} or {success, error}
+    16→
+    17→Exit Codes:
+    18→    0: Success - all mechanical updates applied
+    19→    1: Error - missing data or API failure
+    20→"""
+    21→
+    22→import json
+    23→
+    24→import click
+    25→
+    26→from erk.cli.commands.exec.scripts.objective_fetch_context import (
+    27→    _build_roadmap_context,
+    28→    _fetch_objective_content,
+    29→)
+    30→from erk.cli.commands.exec.scripts.objective_post_action_comment import (
+
+... [318 lines omitted] ...
+
+    57→    ApplyLandedUpdateErrorDict,
+    69→def _error_json(error: str) -&gt; str:
+    70→    result: ApplyLandedUpdateErrorDict = {"success": False, "error": error}
+   194→        click.echo(_error_json("Cannot determine owner/repo from current context"))
+   206→            click.echo(_error_json("Could not determine current branch (detached HEAD?)"))
+   213→            click.echo(_error_json(f"No PR found for branch '{branch_name}'"))
+   220→        click.echo(_error_json(f"PR #{pr_number} not found"))
+   229→            click.echo(_error_json(msg))
+   236→        click.echo(_error_json(f"Objective #{objective_number} not found"))
+   242→        click.echo(_error_json(f"PR #{pr_number} not found"))
+  </tool_result>
+  <tool_result tool="toolu_0177SXTxYutWRbMwCCVq8sNn">
+     1→"""Update an existing plan's content.
+     2→
+     3→Usage:
+     4→    erk exec plan-update --plan-number N [OPTIONS]
+     5→
+     6→This command updates the plan content comment on an existing GitHub issue:
+     7→1. Find plan file (from session scratch, --plan-path, or ~/.claude/plans/)
+     8→2. Update plan content via PlanBackend
+     9→3. Update issue title from plan H1 heading
+    10→
+    11→Options:
+    12→    --plan-number N: Plan number to update (required)
+    13→    --session-id ID: Session ID to find plan file in scratch storage
+    14→    --plan-path PATH: Direct path to plan file (overrides session lookup)
+    15→
+    16→Output:
+    17→    --format json (default): {"success": true, ...}
+    18→    --format display: Formatted text
+    19→
+    20→Exit Codes:
+    21→    0: Success - plan comment updated
+    22→    1: Error - plan not found, no plan found, etc.
+    23→"""
+    24→
+    25→import json
+    26→from pathlib import Path
+    27→
+    28→import click
+    29→
+    30→from erk_shared.context.helpers import (
+
+... [151 lines omitted] ...
+
+    37→from erk_shared.gateway.git.remote_ops.types import PushError
+    83→    def _handle_update_error(error_msg: str, cause: Exception | None = None) -&gt; None:
+    84→        """Output error message and exit with code 1."""
+    86→            click.echo(f"Error: {error_msg}", err=True)
+    88→            click.echo(json.dumps({"success": False, "error": error_msg}))
+   106→        _handle_update_error("No plan found in ~/.claude/plans/")
+   115→        _handle_update_error(f"PR #{pr_number} not found")
+   123→    except RuntimeError as e:
+   124→        _handle_update_error(f"Failed to update comment: {e}", cause=e)
+   133→    except RuntimeError as e:
+   134→        _handle_update_error(f"Failed to update title: {e}", cause=e)
+   152→        branch_updated = not isinstance(push_result, PushError)
+   162→            click.echo(f"Warning: branch push to {branch_name} failed")
+  </tool_result>
+  <tool_result tool="toolu_01TzfTkrCDTsXE9v3VSF9u7J">
+     1→"""Close a plan with a comment.
+     2→
+     3→Usage:
+     4→    erk exec close-pr &lt;PLAN_NUMBER&gt; --comment "Closing because..."
+     5→
+     6→Output:
+     7→    JSON with {success, plan_number, comment_id}
+     8→
+     9→Exit Codes:
+    10→    0: Success - plan closed with comment
+    11→    1: Error - plan not found or API error
+    12→"""
+    13→
+    14→import json
+    15→
+    16→import click
+    17→
+    18→from erk_shared.context.helpers import (
+    19→    require_plan_backend,
+    20→    require_repo_root,
+    21→)
+    22→
+    23→
+    24→@click.command(name="close-pr")
+    25→@click.argument("pr_number", type=int)
+    26→@click.option(
+    27→    "--comment",
+    28→    required=True,
+    29→    help="Comment body to add before closing",
+    30→)
+
+... [56 lines omitted] ...
+
+    46→    except RuntimeError as e:
+    51→                    "error": f"Failed to add comment to PR #{pr_number}: {e}",
+    60→    except RuntimeError as e:
+    65→                    "error": f"Failed to close PR #{pr_number}: {e}",
+  </tool_result>
+  <tool_result tool="toolu_012oGhSbZzZ9BgzSuougq191">
+     1→"""Batch close multiple plan PRs with comments.
+     2→
+     3→Usage:
+     4→    echo '[{"pr_number": 42, "comment": "Superseded"}]' | erk exec close-prs
+     5→
+     6→Input:
+     7→    JSON array from stdin, each item: {"pr_number": int, "comment": str}
+     8→
+     9→Output:
+    10→    JSON with batch results
+    11→
+    12→Exit Codes:
+    13→    0: Always (even on error, to support batch contract)
+    14→    1: Context not initialized
+    15→"""
+    16→
+    17→from __future__ import annotations
+    18→
+    19→import json
+    20→from dataclasses import asdict, dataclass
+    21→from typing import TYPE_CHECKING, TypedDict, cast
+    22→
+    23→import click
+    24→
+    25→from erk_shared.context.helpers import require_plan_backend, require_repo_root
+    26→
+    27→if TYPE_CHECKING:
+    28→    from typing import Any
+    29→
+    30→
+
+... [175 lines omitted] ...
+
+    47→class BatchCloseError:
+    48→    """Error response for batch close."""
+    51→    error_type: str
+    55→def _validate_batch_input(data: object) -&gt; list[PlanCloseItem] | BatchCloseError:
+    62→        List of validated items, or BatchCloseError on validation failure
+    65→        return BatchCloseError(
+    67→            error_type="invalid-input",
+    74→            return BatchCloseError(
+    76→                error_type="invalid-input",
+    83→            return BatchCloseError(
+    85→                error_type="invalid-input",
+    91→            return BatchCloseError(
+    93→                error_type="invalid-input",
+    98→            return BatchCloseError(
+   100→                error_type="invalid-input",
+   106→            return BatchCloseError(
+   108→                error_type="invalid-input",
+   137→    except json.JSONDecodeError as e:
+   138→        result = BatchCloseError(
+   140→            error_type="invalid-json",
+   141→            message=f"Failed to parse JSON: {e}",
+   148→    if isinstance(validated, BatchCloseError):
+   162→        except RuntimeError as e:
+   167→                    "error": f"Failed to add comment: {e}",
+   174→        except RuntimeError as e:
+   179→                    "error": f"Failed to close PR: {e}",
+  </tool_result>
+  <tool_result tool="toolu_01CLuDsLfHu9FuQEULghxnuY">
+     1→"""Create .erk/impl-context/ folder from plan content.
+     2→
+     3→This exec command fetches a plan via PlanBackend and creates the .erk/impl-context/
+     4→folder structure, providing a testable alternative to inline workflow scripts.
+     5→
+     6→Usage:
+     7→    erk exec create-impl-context-from-plan &lt;plan-id&gt;
+     8→
+     9→Output:
+    10→    Structured JSON output with success status and folder details
+    11→
+    12→Exit Codes:
+    13→    0: Success (.erk/impl-context/ folder created)
+    14→    1: Error (plan not found, fetch failed, folder creation failed)
+    15→
+    16→Examples:
+    17→    $ erk exec create-impl-context-from-plan 1028
+    18→    {"success": true, "impl_context_path": "/path/to/.erk/impl-context", "pr_number": 1028}
+    19→
+    20→    $ erk exec create-impl-context-from-plan 999
+    21→    {"success": false, "error": "plan_not_found", "message": "..."}
+    22→"""
+    23→
+    24→import json
+    25→
+    26→import click
+    27→
+    28→from erk_shared.context.helpers import (
+    29→    require_plan_backend,
+    30→    require_repo_root,
+
+... [67 lines omitted] ...
+
+    61→        error_output = {
+    63→            "error": "plan_not_found",
+    67→        click.echo(json.dumps(error_output), err=True)
+  </tool_result>
+  <tool_result tool="toolu_01K4Ny8VyYfmRvxHkVRLQGwr">
+     1→"""Backend-aware label addition for plans.
+     2→
+     3→Usage:
+     4→    erk exec add-plan-label &lt;plan-number&gt; --label &lt;label&gt;
+     5→
+     6→Output:
+     7→    JSON with {success, plan_number, label}
+     8→
+     9→Exit Codes:
+    10→    0: Success - label added
+    11→    1: Error - plan not found or API error
+    12→    2: Usage error - missing required --label flag
+    13→"""
+    14→
+    15→import json
+    16→
+    17→import click
+    18→
+    19→from erk_shared.context.helpers import require_plan_backend, require_repo_root
+    20→
+    21→
+    22→@click.command(name="add-plan-label")
+    23→@click.argument("pr_number", type=int)
+    24→@click.option(
+    25→    "--label",
+    26→    required=True,
+    27→    help="Label to add to the PR",
+    28→)
+    29→@click.pass_context
+    30→def add_plan_label(
+
+... [39 lines omitted] ...
+
+    44→    except RuntimeError as e:
+    49→                    "error": f"Failed to add label to plan #{pr_number}: {e}",
+  </tool_result>
+  <tool_result tool="toolu_019ASknymaEhkE9HQtvrxiee">
+     1→"""Initialize implementation by validating .erk/impl-context/ folder.
+     2→
+     3→This exec command validates .erk/impl-context/ folder for /erk:plan-implement:
+     4→- Validates .erk/impl-context/ folder structure (plan.md exists)
+     5→- Checks for GitHub issue tracking (plan-ref.json)
+     6→- Parses "Related Documentation" section for skills and docs
+     7→
+     8→Usage:
+     9→    erk exec impl-init --json
+    10→
+    11→Output:
+    12→    JSON with validation status and related docs
+    13→    Always outputs JSON (for machine parsing by slash command)
+    14→
+    15→Exit Codes:
+    16→    0: Success
+    17→    1: Validation error
+    18→
+    19→Examples:
+    20→    $ erk exec impl-init --json
+    21→    {"valid": true, "has_plan_tracking": true, ...}
+    22→"""
+    23→
+    24→import json
+    25→import re
+    26→from pathlib import Path
+    27→from typing import NoReturn
+    28→
+    29→import click
+    30→
+
+... [139 lines omitted] ...
+
+    35→def _error_json(error_type: str, message: str) -&gt; NoReturn:
+    36→    """Output error as JSON and exit with code 1."""
+    37→    result = {"valid": False, "error_type": error_type, "message": message}
+    65→            "error_type": "no_impl_folder",
+    73→        _error_json("no_plan_file", f"No plan.md found in {impl_dir.name}/ folder")
+  </tool_result>
+  <assistant>Now I'll apply the renames to each file systematically. Let me start with the edits:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="34339" cache_read_input_tokens="16818" cache_creation="{'ephemeral_5m_input_tokens': 34339, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01D9L9JKezFs6WKFjV5uXCrD">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/plan_save.py</param>
+    <param name="old_string">    plan_number = int(result.pr_id)
+
+    # Create markers and snapshot
+    snapshot_result...[truncated 182 chars]..., title=title)
+        create_plan_saved_branch_marker(session_id, repo_root, branch_name)</param>
+    <param name="new_string">    pr_number = int(result.pr_id)
+
+    # Create markers and snapshot
+    snapshot_result: ...[truncated 176 chars]..., title=title)
+        create_plan_saved_branch_marker(session_id, repo_root, branch_name)</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="34339" cache_read_input_tokens="16818" cache_creation="{'ephemeral_5m_input_tokens': 34339, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_0158E8PGGsvfwGMnnZrr4jgk">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/plan_save.py</param>
+    <param name="old_string">    # Output
+    if output_format == "display":
+        click.echo(f"PR saved as planned P...[truncated 596 chars]...   "plan_backend": "planned_pr",
+            "objective_issue": objective_issue,
+        }</param>
+    <param name="new_string">    # Output
+    if output_format == "display":
+        click.echo(f"PR saved as planned P...[truncated 590 chars]...   "plan_backend": "planned_pr",
+            "objective_issue": objective_issue,
+        }</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="34339" cache_read_input_tokens="16818" cache_creation="{'ephemeral_5m_input_tokens': 34339, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_017gByKwEJ4iHNFRA5KiqCLA">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/setup_impl.py</param>
+    <param name="old_string">    impl_dir = _validate_impl_folder(ctx)
+    plan_ref = read_plan_ref(impl_dir)
+    has_p...[truncated 412 chars]...   if plan_number is not None:
+        result["pr_number"] = plan_number
+    return result</param>
+    <param name="new_string">    impl_dir = _validate_impl_folder(ctx)
+    plan_ref = read_plan_ref(impl_dir)
+    has_p...[truncated 404 chars]... }
+    if pr_number is not None:
+        result["pr_number"] = pr_number
+    return result</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="34339" cache_read_input_tokens="16818" cache_creation="{'ephemeral_5m_input_tokens': 34339, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01VT1NxvwKXkRz1ruGyoxC6H">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/setup_impl.py</param>
+    <param name="old_string">    impl_dir = resolve_impl_dir(cwd, branch_name=current_branch)
+    if impl_dir is not No...[truncated 287 chars]...t None:
+                _handle_issue_setup(ctx, pr_number=plan_id)
+                return</param>
+    <param name="new_string">    impl_dir = resolve_impl_dir(cwd, branch_name=current_branch)
+    if impl_dir is not No...[truncated 279 chars]...not None:
+                _handle_issue_setup(ctx, pr_number=pr_id)
+                return</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="34339" cache_read_input_tokens="16818" cache_creation="{'ephemeral_5m_input_tokens': 34339, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01Hxcj6tNJUYStHARLiBxYZ9">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/add_plan_labels.py</param>
+    <param name="old_string">        plan_number = item_dict["pr_number"]
+        if not isinstance(plan_number, int):
+...[truncated 90 chars]...
+                message=f"Item at index {idx} has non-integer 'pr_number'",
+            )</param>
+    <param name="new_string">        pr_number = item_dict["pr_number"]
+        if not isinstance(pr_number, int):
+    ...[truncated 86 chars]...
+                message=f"Item at index {idx} has non-integer 'pr_number'",
+            )</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="34339" cache_read_input_tokens="16818" cache_creation="{'ephemeral_5m_input_tokens': 34339, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01BLHn8zKjYWPGu9CtZixUtE">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/add_plan_labels.py</param>
+    <param name="old_string">        validated_items.append({"pr_number": plan_number, "label": label})</param>
+    <param name="new_string">        validated_items.append({"pr_number": pr_number, "label": label})</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="34339" cache_read_input_tokens="16818" cache_creation="{'ephemeral_5m_input_tokens': 34339, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01AoeuwgeQSa9Yrd8ZkF7Chb">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/add_plan_labels.py</param>
+    <param name="old_string">    for item in validated:
+        plan_number = item["pr_number"]
+        label = item["l...[truncated 447 chars]...,
+                "success": True,
+                "label": label,
+            }
+        )</param>
+    <param name="new_string">    for item in validated:
+        pr_number = item["pr_number"]
+        label = item["lab...[truncated 435 chars]...,
+                "success": True,
+                "label": label,
+            }
+        )</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="34339" cache_read_input_tokens="16818" cache_creation="{'ephemeral_5m_input_tokens': 34339, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01WjPECdZJzQrzVa3B43HZ5w">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/setup_impl_from_pr.py</param>
+    <param name="old_string">    pr_url = pr_result.url
+
+    # Read plan content from committed .erk/impl-context/ file...[truncated 1925 chars]...    "pr_url": pr_url,
+        "branch": branch_name,
+        "pr_title": plan_title,
+    }</param>
+    <param name="new_string">    pr_url = pr_result.url
+
+    # Read plan content from committed .erk/impl-context/ file...[truncated 1917 chars]...      "pr_url": pr_url,
+        "branch": branch_name,
+        "pr_title": pr_title,
+    }</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="34339" cache_read_input_tokens="16818" cache_creation="{'ephemeral_5m_input_tokens': 34339, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01Feq1vmtV6K5mhXAHYFdsaY">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/objective_apply_landed_update.py</param>
+    <param name="old_string">    # --- Resolve plan using PR number (the PR IS the plan) ---
+    plan_result = plan_bac...[truncated 107 chars]..._number} not found"))
+        raise SystemExit(1)
+
+    plan_id = plan_result.pr_identifier</param>
+    <param name="new_string">    # --- Resolve plan using PR number (the PR IS the plan) ---
+    plan_result = plan_bac...[truncated 105 chars]...pr_number} not found"))
+        raise SystemExit(1)
+
+    pr_id = plan_result.pr_identifier</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="34339" cache_read_input_tokens="16818" cache_creation="{'ephemeral_5m_input_tokens': 34339, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01UDZ884fQpk26NS6zzz3aYR">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/objective_apply_landed_update.py</param>
+    <param name="old_string">    # --- Discovery: auto-fill objective from plan metadata ---
+    if objective_number is...[truncated 150 chars]...(msg))
+            raise SystemExit(1)
+        objective_number = plan_result.objective_id</param>
+    <param name="new_string">    # --- Discovery: auto-fill objective from plan metadata ---
+    if objective_number is...[truncated 148 chars]...(msg))
+            raise SystemExit(1)
+        objective_number = plan_result.objective_id</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="34339" cache_read_input_tokens="16818" cache_creation="{'ephemeral_5m_input_tokens': 34339, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01Uui4DmUZYhpDz5ZjF23cSW">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/objective_apply_landed_update.py</param>
+    <param name="old_string">    # --- Build roadmap context ---
+    roadmap = _build_roadmap_context(objective.body, plan_id)
+    pr_ref = f"#{pr_number}"</param>
+    <param name="new_string">    # --- Build roadmap context ---
+    roadmap = _build_roadmap_context(objective.body, pr_id)
+    pr_ref = f"#{pr_number}"</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="34339" cache_read_input_tokens="16818" cache_creation="{'ephemeral_5m_input_tokens': 34339, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_013BYmxiN6Ny1XNZ86Nvzjg5">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/objective_apply_landed_update.py</param>
+    <param name="old_string">        # Re-render v2 comment table from updated YAML
+        _update_comment_table(remot...[truncated 61 chars]...dmap from the updated body
+        roadmap = _build_roadmap_context(updated_body, plan_id)</param>
+    <param name="new_string">        # Re-render v2 comment table from updated YAML
+        _update_comment_table(remot...[truncated 59 chars]...oadmap from the updated body
+        roadmap = _build_roadmap_context(updated_body, pr_id)</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="34339" cache_read_input_tokens="16818" cache_creation="{'ephemeral_5m_input_tokens': 34339, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01XzTRYqJCQswW7wYYWZNMZC">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/objective_apply_landed_update.py</param>
+    <param name="old_string">    # --- Emit result ---
+    objective_info: ObjectiveInfoDict = {
+        "number": obje...[truncated 258 chars]...ber": plan_id,
+        "title": plan_result.title,
+        "body": plan_result.body,
+    }</param>
+    <param name="new_string">    # --- Emit result ---
+    objective_info: ObjectiveInfoDict = {
+        "number": obje...[truncated 256 chars]...umber": pr_id,
+        "title": plan_result.title,
+        "body": plan_result.body,
+    }</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="34339" cache_read_input_tokens="16818" cache_creation="{'ephemeral_5m_input_tokens': 34339, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01Qtsr61RD1Wf6PPk7qeQSkZ">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/plan_update.py</param>
+    <param name="old_string">    # Step 2: Check plan exists via PlanBackend
+    plan_id = str(pr_number)
+    plan_resu...[truncated 808 chars]...t RuntimeError as e:
+        _handle_update_error(f"Failed to update title: {e}", cause=e)</param>
+    <param name="new_string">    # Step 2: Check plan exists via PlanBackend
+    pr_id = str(pr_number)
+    plan_result...[truncated 800 chars]...t RuntimeError as e:
+        _handle_update_error(f"Failed to update title: {e}", cause=e)</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="34339" cache_read_input_tokens="16818" cache_creation="{'ephemeral_5m_input_tokens': 34339, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01AqS1hwDvnMRd1cEERVvs6i">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/close_pr.py</param>
+    <param name="old_string">    """Close a plan with a comment."""
+    backend = require_plan_backend(ctx)
+    repo_ro...[truncated 746 chars]...: comment_id,
+                }
+            )
+        )
+        raise SystemExit(1) from e</param>
+    <param name="new_string">    """Close a plan with a comment."""
+    backend = require_plan_backend(ctx)
+    repo_ro...[truncated 740 chars]...: comment_id,
+                }
+            )
+        )
+        raise SystemExit(1) from e</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="34339" cache_read_input_tokens="16818" cache_creation="{'ephemeral_5m_input_tokens': 34339, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01MaWx5M2PWkXW6bJvfj4huN">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/close_prs.py</param>
+    <param name="old_string">        plan_number = item_dict["pr_number"]
+        if not isinstance(plan_number, int):
+...[truncated 90 chars]...
+                message=f"Item at index {idx} has non-integer 'pr_number'",
+            )</param>
+    <param name="new_string">        pr_number = item_dict["pr_number"]
+        if not isinstance(pr_number, int):
+    ...[truncated 86 chars]...
+                message=f"Item at index {idx} has non-integer 'pr_number'",
+            )</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="34339" cache_read_input_tokens="16818" cache_creation="{'ephemeral_5m_input_tokens': 34339, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01Fb5D7cVCM2V2Waz6TrRJXE">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/close_prs.py</param>
+    <param name="old_string">        validated_items.append({"pr_number": plan_number, "comment": comment})</param>
+    <param name="new_string">        validated_items.append({"pr_number": pr_number, "comment": comment})</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="34339" cache_read_input_tokens="16818" cache_creation="{'ephemeral_5m_input_tokens': 34339, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01Ljsn5gfBepSCez2XMPgmA1">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/close_prs.py</param>
+    <param name="old_string">    for item in validated:
+        plan_number = item["pr_number"]
+        comment = item[...[truncated 865 chars]...        "success": True,
+                "comment_id": comment_id,
+            }
+        )</param>
+    <param name="new_string">    for item in validated:
+        pr_number = item["pr_number"]
+        comment = item["c...[truncated 849 chars]...        "success": True,
+                "comment_id": comment_id,
+            }
+        )</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="34339" cache_read_input_tokens="16818" cache_creation="{'ephemeral_5m_input_tokens': 34339, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01PHwdtZTCGEHncCkbmGZvSb">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/create_impl_context_from_plan.py</param>
+    <param name="old_string">    backend = require_plan_backend(ctx)
+    repo_root = require_repo_root(ctx)
+    time = ...[truncated 825 chars]...id=plan.objective_id,
+        now_iso=time.now().isoformat(),
+        node_ids=None,
+    )</param>
+    <param name="new_string">    backend = require_plan_backend(ctx)
+    repo_root = require_repo_root(ctx)
+    time = ...[truncated 819 chars]...id=plan.objective_id,
+        now_iso=time.now().isoformat(),
+        node_ids=None,
+    )</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="34339" cache_read_input_tokens="16818" cache_creation="{'ephemeral_5m_input_tokens': 34339, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_019ezAWsBkw8Bzs56GmY3jG4">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/add_plan_label.py</param>
+    <param name="old_string">    """Add a label to a plan via the appropriate backend."""
+    backend = require_plan_ba...[truncated 318 chars]...umber}: {e}",
+                }
+            )
+        )
+        raise SystemExit(1) from e</param>
+    <param name="new_string">    """Add a label to a plan via the appropriate backend."""
+    backend = require_plan_ba...[truncated 314 chars]...umber}: {e}",
+                }
+            )
+        )
+        raise SystemExit(1) from e</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="34339" cache_read_input_tokens="16818" cache_creation="{'ephemeral_5m_input_tokens': 34339, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01XaJxSv9a1UpDNynmrsTpde">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/impl_init.py</param>
+    <param name="old_string">    # Get plan reference info
+    plan_ref = read_plan_ref(impl_dir)
+    has_plan_tracking...[truncated 415 chars]...ted_docs,
+    }
+
+    if plan_number is not None:
+        result["pr_number"] = plan_number</param>
+    <param name="new_string">    # Get plan reference info
+    plan_ref = read_plan_ref(impl_dir)
+    has_plan_tracking...[truncated 409 chars]...related_docs,
+    }
+
+    if pr_number is not None:
+        result["pr_number"] = pr_number</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="34339" cache_read_input_tokens="16818" cache_creation="{'ephemeral_5m_input_tokens': 34339, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01D9L9JKezFs6WKFjV5uXCrD">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/plan_save.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_0158E8PGGsvfwGMnnZrr4jgk">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/plan_save.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_017gByKwEJ4iHNFRA5KiqCLA">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/setup_impl.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01VT1NxvwKXkRz1ruGyoxC6H">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/setup_impl.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01Hxcj6tNJUYStHARLiBxYZ9">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/add_plan_labels.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01BLHn8zKjYWPGu9CtZixUtE">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/add_plan_labels.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01AoeuwgeQSa9Yrd8ZkF7Chb">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/add_plan_labels.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01WjPECdZJzQrzVa3B43HZ5w">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/setup_impl_from_pr.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01Feq1vmtV6K5mhXAHYFdsaY">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/objective_apply_landed_update.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01UDZ884fQpk26NS6zzz3aYR">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/objective_apply_landed_update.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01Uui4DmUZYhpDz5ZjF23cSW">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/objective_apply_landed_update.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_013BYmxiN6Ny1XNZ86Nvzjg5">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/objective_apply_landed_update.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01XzTRYqJCQswW7wYYWZNMZC">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/objective_apply_landed_update.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01Qtsr61RD1Wf6PPk7qeQSkZ">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/plan_update.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01AqS1hwDvnMRd1cEERVvs6i">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/close_pr.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01MaWx5M2PWkXW6bJvfj4huN">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/close_prs.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01Fb5D7cVCM2V2Waz6TrRJXE">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/close_prs.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01Ljsn5gfBepSCez2XMPgmA1">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/close_prs.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01PHwdtZTCGEHncCkbmGZvSb">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/create_impl_context_from_plan.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_019ezAWsBkw8Bzs56GmY3jG4">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/add_plan_label.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01XaJxSv9a1UpDNynmrsTpde">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/impl_init.py has been updated successfully.
+  </tool_result>
+  <assistant>Perfect! All the renames have been successfully applied across all 11 files in Batch 2. Let me provide a summary of what was changed:
+
+## Summary of Changes - Batch 2 (Medium occurrence exec scripts)
+
+Successfully renamed `plan_number`, `plan_id`, `plan_url`, and `plan_title` variables to their `pr_*` equivalents across 11 exec script files:
+
+### 1. **plan_save.py**
+- `plan_number` → `pr_number` (local variable, 5 occurrences in output formatting)
+
+### 2. **setup_impl.py**
+- `plan_number` → `pr_number` (local variable in `_run_impl_init()`)
+- `plan_id` → `pr_id` (local variable in auto-detect logic)
+
+### 3. **add_plan_labels.py**
+- `plan_number` → `pr_number` (local variable in validation and processing loop)
+- `plan_id` → `pr_id` (string conversion for backend call, kept `plan_id=` keyword argument)
+
+### 4. **setup_impl_from_pr.py**
+- `plan_title` → `pr_title` (local variable storing PR title from ref.json or PR result)
+
+### 5. **objective_apply_landed_update.py**
+- `plan_id` → `pr_id` (local variable storing PR identifier, 5 occurrences)
+- Note: Kept `plan_id=` keyword argument in `save_plan_ref()` calls per exception rules
+
+### 6. **plan_update.py**
+- `plan_id` → `pr_id` (string conversion for backend calls, 4 occurrences)
+
+### 7. **close_pr.py**
+- `plan_id` → `pr_id` (string conversion for backend calls)
+
+### 8. **close_prs.py**
+- `plan_number` → `pr_number` (local variable in validation and processing)
+- `plan_id` → `pr_id` (string conversion for backend calls)
+
+### 9. **create_impl_context_from_plan.py**
+- `plan_id` → `pr_id` (local variable and backend parameter, 3 occurrences)
+- Note: Kept `plan_id=` keyword argument in `create_impl_context()` call
+
+### 10. **add_plan_label.py**
+- `plan_id` → `pr_id` (string conversion for backend call)
+
+### 11. **impl_init.py**
+- `plan_number` → `pr_number` (local variable storing plan reference number)
+
+### Key Points:
+- All changes respect the critical exceptions: kept `plan_id=` keyword arguments when passing to erk_shared functions
+- Did NOT rename any erk_shared imports or function names
+- Did NOT rename string literals that describe plan concepts in docstrings/comments
+- All variable renames follow the mapping: `plan_number` → `pr_number`, `plan_id` → `pr_id`, `plan_title` → `pr_title`
+- Changes maintain consistency with the broader rename initiative to standardize on PR terminology
+
+All files have been successfully updated and are ready for testing.</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="52006" cache_read_input_tokens="10119" cache_creation="{'ephemeral_5m_input_tokens': 52006, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>
