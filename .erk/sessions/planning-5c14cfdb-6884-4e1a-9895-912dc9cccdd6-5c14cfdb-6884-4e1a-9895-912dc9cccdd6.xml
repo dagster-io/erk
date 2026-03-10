@@ -1,0 +1,818 @@
+<session>
+  <meta branch="plnd/consolidate-dataclass-json-03-10-0751" />
+  <meta model="claude-opus-4-6" />
+  <user>look in the rest of the codebase. are there other places where we replicate the logic in packages/erk-shared/src/erk_shared/agentclick/dataclass_json.py</user>
+  <usage input_tokens="3" cache_creation_input_tokens="14362" cache_read_input_tokens="9131" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 14362}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me first read the file to understand what logic it contains, then search for duplicates.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="14362" cache_read_input_tokens="9131" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 14362}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_012mCuYx5dWUAuSn96dCNoVL">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-16/packages/erk-shared/src/erk_shared/agentclick/dataclass_json.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="14362" cache_read_input_tokens="9131" output_tokens="202" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 14362, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_012mCuYx5dWUAuSn96dCNoVL">
+     1→"""Generic JSON &lt;-&gt; frozen-dataclass utilities.
+     2→
+     3→No Click dependency. Shared by both @json_command and @machine_command.
+     4→"""
+     5→
+     6→import dataclasses
+     7→import json
+     8→import sys
+     9→import types
+    10→from dataclasses import fields
+    11→from typing import Any, Literal, Union, get_args, get_origin
+    12→
+    13→# --- Constants ---
+    14→
+    15→ERROR_SCHEMA: dict[str, Any] = {
+    16→    "type": "object",
+    17→    "properties": {
+    18→        "success": {"type": "boolean", "const": False},
+    19→        "error_type": {"type": "string"},
+    20→        "message": {"type": "string"},
+    21→    },
+    22→    "required": ["error_type", "message", "success"],
+    23→}
+    24→
+    25→PYTHON_TYPE_MAP: dict[type, str] = {
+    26→    str: "string",
+    27→    int: "integer",
+    28→    float: "number",
+    29→    bool: "boolean",
+    30→}
+
+... [277 lines omitted] ...
+
+   140→            raise ValueError(f"Invalid value {value!r}, expected one of {args}")
+   172→        raise ValueError(f"Expected boolean, got {type(value).__name__}")
+   176→            raise ValueError("Expected integer, got boolean")
+   219→    raise TypeError(
+   233→        json.JSONDecodeError: If stdin contains invalid JSON
+   234→        ValueError: If stdin JSON is not an object
+   243→        raise ValueError("JSON input must be an object")
+   255→def emit_json_error(*, error_type: str, message: str) -&gt; None:
+   256→    """Emit a structured error to stdout."""
+   259→    data = {"success": False, "error_type": error_type, "message": message}
+   275→    raise TypeError(
+   293→            raise ValueError(f"Unknown field: {key}")
+   304→            raise ValueError(f"Missing required field: {name}")
+  </tool_result>
+  <assistant>Now let me search for duplicated logic patterns across the codebase.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3893" cache_read_input_tokens="23493" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3893}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01EjXSGdnrYQLKnjtBNVLbKG">
+    <param name="subagent_type">Explore</param>
+    <param name="description">Find duplicated dataclass JSON logic</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 2065 chars]... patterns like `get_origin`, `dataclasses.asdict`, `json.dumps`, `PYTHON_TYPE_MAP`, etc.).</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3893" cache_read_input_tokens="23493" output_tokens="752" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3893, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01EjXSGdnrYQLKnjtBNVLbKG">
+Now I have a comprehensive picture. Let me compile a final summary of all findings:
+
+Here is a complete report of all places in the codebase that replicate logic similar to `dataclass_json.py`, organized by pattern.
+
+---
+
+## Summary of Findings
+
+### 1. `python_type_to_json_schema` / Schema Generation from Type Hints
+
+**Direct callers** (these import and call into `dataclass_json.py`, they are not duplications but consumers):
+
+- `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-16/packages/erk-shared/src/erk_shared/agentclick/json_schema.py` — imports `python_type_to_json_schema` and `output_schema`, wraps them in `_python_type_to_schema` and `output_type_schema`. Also has its own `_click_type_to_schema` which does a parallel Click-type-to-JSON-Schema mapping (handles IntParamType, FloatParamType, BoolParamType, Path, Choice) separately from the Python-type-based one.
+- `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-16/packages/erk-shared/src/erk_shared/agentclick/machine_schema.py` — imports `python_type_to_json_schema`, `is_optional_type`, `output_schema`. Contains its own `request_schema()` function that iterates `dataclasses.fields()` and calls `python_type_to_json_schema()` — essentially re-implementing `dataclass_result_schema` but without the `success: true` field.
+
+**Related `get_args` usage for type introspection (NOT for JSON schema, but same mechanism):**
+
+- `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-16/packages/erk-shared/src/erk_shared/core/typing_utils.py` — uses `get_args()` to validate Literal type values at runtime (a `narrow_to_literal` utility).
+- `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-16/src/erk/agent_docs/operations.py` — uses `get_args` on a Literal type for Click choice generation.
+- `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-16/src/erk/cli/commands/exec/scripts/update_objective_node.py` — uses `get_args` on a Literal type for Click choices.
+
+### 2. Manual `json_schema()` classmethod (custom schema building by hand)
+
+These classes implement the `json_schema()` classmethod protocol recognized by `output_schema()`, instead of using the auto-generation. They hand-build their own JSON Schema dicts:
+
+- `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-16/src/erk/cli/commands/one_shot_remote_dispatch.py` — `OneShotDispatchResult.json_schema()` and `OneShotDryRunResult.json_schema()` both build complete JSON schema objects manually.
+
+### 3. `serialize_to_json_dict` / `to_json_dict` Protocol
+
+**Callers of `serialize_to_json_dict` from `dataclass_json.py`:**
+
+... [62 lines omitted] ...
+
+These files hand-build the `{"success": True/False, ...}` dict and call `json.dumps()` + `click.echo()` directly — the same pattern as `emit_json_success`/`emit_json_error` — but do NOT import from `dataclass_json.py`. Key examples:
+- `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-16/src/erk/cli/commands/exec/scripts/get_plan_info.py` — `{"success": False, "error": "plan_not_found", ...}` and `{"success": True, ...}`
+- `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-16/src/erk/cli/commands/exec/scripts/setup_impl.py` — extensive hand-built success/error dicts
+The main duplication is the **`asdict` + `json.dumps` pattern** in the 27+ exec scripts, which replicates what `serialize_to_json_dict` does. The exec scripts also hand-build `{"success": True/False}` envelopes that replicate `emit_json_success`/`emit_json_error`. The `machine_schema.py` file also partially replicates `dataclass_result_schema` in its `request_schema()` function, though it deliberately omits the `success: true` field injection.
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="21650" cache_read_input_tokens="9048" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 21650}" output_tokens="12" service_tier="standard" inference_geo="not_available" />
+  <assistant>Here's what the codebase search found:
+
+## Replicated Logic in `dataclass_json.py`
+
+### 1. `machine_schema.py` — Partial `dataclass_result_schema` duplication
+`packages/erk-shared/src/erk_shared/agentclick/machine_schema.py` has a `request_schema()` function that iterates `dataclasses.fields()` and calls `python_type_to_json_schema()` — essentially reimplementing `dataclass_result_schema` but without the `success: true` injection.
+
+### 2. 27+ exec scripts — `dataclasses.asdict` + `json.dumps` (replaces `serialize_to_json_dict`)
+All scripts in `src/erk/cli/commands/exec/scripts/` do `json.dumps(asdict(result))` directly instead of using `serialize_to_json_dict`.
+
+### 3. 45+ exec scripts — Hand-built `{"success": True/False, ...}` (replaces `emit_json_success`/`emit_json_error`)
+Same exec scripts hand-build the JSON envelope instead of using `emit_json_success`/`emit_json_error`.
+
+### 4. `one_shot_remote_dispatch.py` — Manual `json_schema()` classmethods
+`OneShotDispatchResult` and `OneShotDryRunResult` implement `json_schema()` by hand rather than relying on `dataclass_result_schema` auto-generation.
+
+### Minor/Intentional (not real duplication)
+- `erk_statusline` and hooks read stdin with `json.load(sys.stdin)` — different use case
+- Classes with `to_json_dict()` — those are custom serialization for types with datetimes/nested structures that `dataclasses.asdict` can't handle automatically
+
+---
+
+The biggest consolidation opportunity is the exec scripts (items 2 &amp; 3). Do you want me to write a plan to consolidate all of this, or focus on a specific area?</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="21650" cache_read_input_tokens="9048" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 21650}" output_tokens="12" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_01BfmJB4mRQuExWAJM4G47Mf">
+    <param name="query">AskUserQuestion</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="21650" cache_read_input_tokens="9048" output_tokens="1543" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 21650, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01BfmJB4mRQuExWAJM4G47Mf">
+
+  </tool_result>
+  <usage input_tokens="3" cache_creation_input_tokens="2879" cache_read_input_tokens="30698" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2879}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_01EmQcwqaEGt2UByim5wwSBi">
+    <param name="questions">[{'question': 'What scope of consolidation do you want to tackle?', 'header': 'Scope', 'mu...[truncated 435 chars]...f the above plus the manual json_schema() classmethods in one_shot_remote_dispatch.py'}]}]</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="2879" cache_read_input_tokens="30698" output_tokens="272" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2879, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01EmQcwqaEGt2UByim5wwSBi">
+User has answered your questions: "What scope of consolidation do you want to tackle?"="first just 2" user notes: first just 2. You can now continue with the user's answers in mind.
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="329" cache_read_input_tokens="33577" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 329}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me read the key files to understand the current state before writing the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="329" cache_read_input_tokens="33577" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 329}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_0197bAaCU8poqtSJSc45vfUR">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-16/packages/erk-shared/src/erk_shared/agentclick/machine_schema.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="329" cache_read_input_tokens="33577" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 329}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0197bAaCU8poqtSJSc45vfUR">
+     1→"""Schema generation for @machine_command decorators.
+     2→
+     3→Generates JSON Schema documents from frozen dataclass request types
+     4→and result types, independent of Click parameters.
+     5→"""
+     6→
+     7→import dataclasses
+     8→from typing import Any
+     9→
+    10→from erk_shared.agentclick.dataclass_json import (
+    11→    ERROR_SCHEMA,
+    12→    is_optional_type,
+    13→    output_schema,
+    14→    python_type_to_json_schema,
+    15→)
+    16→from erk_shared.agentclick.machine_command import MachineCommandMeta
+    17→
+    18→
+    19→def request_schema(request_type: type) -&gt; dict[str, Any]:
+    20→    """Generate JSON Schema for a machine command's input (request dataclass).
+    21→
+    22→    Args:
+    23→        request_type: Frozen dataclass type
+    24→
+    25→    Returns:
+    26→        JSON Schema object with properties and required arrays
+    27→    """
+    28→    properties: dict[str, Any] = {}
+    29→    required: list[str] = []
+    30→
+
+... [55 lines omitted] ...
+
+    67→    Returns a dict with input_schema, output_schema, and error_schema.
+    78→        "error_schema": ERROR_SCHEMA,
+  </tool_result>
+  <tool_use name="Read" id="toolu_01KZoXpCeQxr7UxAfw9gou7A">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-16/src/erk/cli/commands/exec/scripts/add_plan_labels.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="329" cache_read_input_tokens="33577" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 329}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01KZoXpCeQxr7UxAfw9gou7A">
+     1→"""Batch add labels to multiple plans.
+     2→
+     3→Usage:
+     4→    echo '[{"pr_number": 42, "label": "erk-learn"}]' | erk exec add-plan-labels
+     5→
+     6→Input:
+     7→    JSON array from stdin, each item: {"pr_number": int, "label": str}
+     8→
+     9→Output:
+    10→    JSON with batch results
+    11→
+    12→Exit Codes:
+    13→    0: Always (even on error, to support batch contract)
+    14→    1: Context not initialized
+    15→"""
+    16→
+    17→from __future__ import annotations
+    18→
+    19→import json
+    20→from dataclasses import asdict, dataclass
+    21→from typing import TYPE_CHECKING, TypedDict, cast
+    22→
+    23→import click
+    24→
+    25→from erk_shared.context.helpers import require_plan_backend, require_repo_root
+    26→
+    27→if TYPE_CHECKING:
+    28→    from typing import Any
+    29→
+    30→
+
+... [162 lines omitted] ...
+
+    47→class BatchLabelError:
+    48→    """Error response for batch label addition."""
+    51→    error_type: str
+    55→def _validate_batch_input(data: object) -&gt; list[PlanLabelItem] | BatchLabelError:
+    62→        List of validated items, or BatchLabelError on validation failure
+    65→        return BatchLabelError(
+    67→            error_type="invalid-input",
+    74→            return BatchLabelError(
+    76→                error_type="invalid-input",
+    83→            return BatchLabelError(
+    85→                error_type="invalid-input",
+    91→            return BatchLabelError(
+    93→                error_type="invalid-input",
+    98→            return BatchLabelError(
+   100→                error_type="invalid-input",
+   106→            return BatchLabelError(
+   108→                error_type="invalid-input",
+   137→    except json.JSONDecodeError as e:
+   138→        result = BatchLabelError(
+   140→            error_type="invalid-json",
+   141→            message=f"Failed to parse JSON: {e}",
+   148→    if isinstance(validated, BatchLabelError):
+   162→        except RuntimeError as e:
+   167→                    "error": f"Failed to add label: {e}",
+  </tool_result>
+  <tool_use name="Read" id="toolu_01WnoRxQySyheVtYVuDfjsTM">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-16/src/erk/cli/commands/exec/scripts/detect_trunk_branch.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="329" cache_read_input_tokens="33577" output_tokens="975" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 329, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01WnoRxQySyheVtYVuDfjsTM">
+     1→#!/usr/bin/env python3
+     2→"""Detect whether repo uses `main` or `master` as trunk branch.
+     3→
+     4→This command checks the remote (origin) for the existence of trunk branches,
+     5→suitable for CI environments where local branches may not be available.
+     6→
+     7→This replaces bash-based detection in GitHub Actions workflows:
+     8→```bash
+     9→if git ls-remote --heads origin main | grep -q main; then
+    10→  echo "trunk_branch=main"
+    11→elif git ls-remote --heads origin master | grep -q master; then
+    12→  echo "trunk_branch=master"
+    13→else
+    14→  exit 1
+    15→fi
+    16→```
+    17→
+    18→Usage:
+    19→    erk exec detect-trunk-branch
+    20→
+    21→Output:
+    22→    JSON object with success status and detected trunk branch
+    23→
+    24→Exit Codes:
+    25→    0: Success (trunk branch detected)
+    26→    1: Error (neither main nor master exists on remote)
+    27→
+    28→Examples:
+    29→    $ erk exec detect-trunk-branch
+    30→    {
+
+... [97 lines omitted] ...
+
+    44→      "error": "trunk_not_found",
+    69→class DetectionError:
+    70→    """Error result when trunk branch cannot be detected."""
+    73→    error: Literal["trunk-not-found", "git-error"]
+    77→def _detect_trunk_branch_impl(git: Git, repo_root: Path) -&gt; DetectedTrunk | DetectionError:
+    80→    Checks origin remote for 'main' first, then 'master'. Returns error
+    88→        DetectedTrunk on success, DetectionError if neither branch found
+    96→    return DetectionError(
+    98→        error="trunk-not-found",
+   109→    Checks for 'main' first, then 'master'. Exits with error if neither exists.
+   119→    # Exit with error code if detection failed
+   120→    if isinstance(result, DetectionError):
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="6540" cache_read_input_tokens="33906" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6540}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I have enough context. Let me check one more thing — the full list of exec scripts using `asdict`.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="6540" cache_read_input_tokens="33906" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6540}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01CuUBYo2Wy9z2n2dWdHhKaX">
+    <param name="pattern">from dataclasses import.*asdict|asdict\(</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-16/src/erk/cli/commands/exec/scripts</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6540" cache_read_input_tokens="33906" output_tokens="4936" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 6540, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01CuUBYo2Wy9z2n2dWdHhKaX">
+Found 27 files
+src/erk/cli/commands/exec/scripts/store_tripwire_candidates.py
+src/erk/cli/commands/exec/scripts/track_learn_evaluation.py
+src/erk/cli/commands/exec/scripts/track_learn_result.py
+src/erk/cli/commands/exec/scripts/update_plan_header.py
+src/erk/cli/commands/exec/scripts/post_workflow_started_comment.py
+src/erk/cli/commands/exec/scripts/impl_signal.py
+src/erk/cli/commands/exec/scripts/get_plan_metadata.py
+src/erk/cli/commands/exec/scripts/handle_no_changes.py
+src/erk/cli/commands/exec/scripts/ci_update_pr_body.py
+src/erk/cli/commands/exec/scripts/close_prs.py
+src/erk/cli/commands/exec/scripts/get_pr_for_plan.py
+src/erk/cli/commands/exec/scripts/add_plan_labels.py
+src/erk/cli/commands/exec/scripts/update_objective_node.py
+src/erk/cli/commands/exec/scripts/validate_claude_credentials.py
+src/erk/cli/commands/exec/scripts/resolve_review_thread.py
+src/erk/cli/commands/exec/scripts/resolve_review_threads.py
+src/erk/cli/commands/exec/scripts/post_pr_inline_comment.py
+src/erk/cli/commands/exec/scripts/pr_sync_commit.py
+src/erk/cli/commands/exec/scripts/list_sessions.py
+src/erk/cli/commands/exec/scripts/normalize_tripwire_candidates.py
+src/erk/cli/commands/exec/scripts/get_pr_review_comments.py
+src/erk/cli/commands/exec/scripts/detect_trunk_branch.py
+src/erk/cli/commands/exec/scripts/add_pr_labels_cmd.py
+src/erk/cli/commands/exec/scripts/ci_verify_autofix.py
+src/erk/cli/commands/exec/scripts/cmux_checkout_workspace.py
+src/erk/cli/commands/exec/scripts/quick_submit.py
+src/erk/cli/commands/exec/scripts/post_or_update_pr_summary.py
+  </tool_result>
+  <tool_use name="Grep" id="toolu_014iyxLD87DsyRCgKNc7tWUP">
+    <param name="pattern">click\.echo\(json\.dumps\(asdict\(</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-16/src/erk/cli/commands/exec/scripts</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="18606" cache_read_input_tokens="27386" output_tokens="139" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 18606, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_014iyxLD87DsyRCgKNc7tWUP">
+src/erk/cli/commands/exec/scripts/update_plan_header.py:46:    click.echo(json.dumps(asdict(payload)), err=True)
+src/erk/cli/commands/exec/scripts/update_plan_header.py:146:    click.echo(json.dumps(asdict(result)))
+src/erk/cli/commands/exec/scripts/pr_sync_commit.py:181:        click.echo(json.dumps(asdict(result), indent=2))
+src/erk/cli/commands/exec/scripts/post_workflow_started_comment.py:167:        click.echo(json.dumps(asdict(result), indent=2))
+src/erk/cli/commands/exec/scripts/post_workflow_started_comment.py:174:        click.echo(json.dumps(asdict(result), indent=2))
+src/erk/cli/commands/exec/scripts/resolve_review_thread.py:92:        click.echo(json.dumps(asdict(result), indent=2))
+src/erk/cli/commands/exec/scripts/resolve_review_thread.py:191:    click.echo(json.dumps(asdict(result), indent=2))
+src/erk/cli/commands/exec/scripts/get_pr_review_comments.py:157:    click.echo(json.dumps(asdict(result_success), indent=2))
+src/erk/cli/commands/exec/scripts/list_sessions.py:295:        click.echo(json.dumps(asdict(error), indent=2))
+src/erk/cli/commands/exec/scripts/list_sessions.py:324:    click.echo(json.dumps(asdict(result), indent=2))
+src/erk/cli/commands/exec/scripts/resolve_review_threads.py:150:        click.echo(json.dumps(asdict(result), indent=2))
+src/erk/cli/commands/exec/scripts/resolve_review_threads.py:156:        click.echo(json.dumps(asdict(validated), indent=2))
+src/erk/cli/commands/exec/scripts/resolve_review_threads.py:171:    click.echo(json.dumps(asdict(batch_result), indent=2))
+src/erk/cli/commands/exec/scripts/post_or_update_pr_summary.py:83:        click.echo(json.dumps(asdict(result), indent=2))
+src/erk/cli/commands/exec/scripts/post_or_update_pr_summary.py:95:        click.echo(json.dumps(asdict(result), indent=2))
+src/erk/cli/commands/exec/scripts/post_or_update_pr_summary.py:107:            click.echo(json.dumps(asdict(result_success), indent=2))
+src/erk/cli/commands/exec/scripts/post_or_update_pr_summary.py:114:            click.echo(json.dumps(asdict(result), indent=2))
+src/erk/cli/commands/exec/scripts/post_or_update_pr_summary.py:124:            click.echo(json.dumps(asdict(result_success), indent=2))
+src/erk/cli/commands/exec/scripts/post_or_update_pr_summary.py:131:            click.echo(json.dumps(asdict(result), indent=2))
+src/erk/cli/commands/exec/scripts/handle_no_changes.py:198:        click.echo(json.dumps(asdict(result), indent=2))
+src/erk/cli/commands/exec/scripts/handle_no_changes.py:215:        click.echo(json.dumps(asdict(result), indent=2))
+src/erk/cli/commands/exec/scripts/handle_no_changes.py:233:        click.echo(json.dumps(asdict(result), indent=2))
+src/erk/cli/commands/exec/scripts/handle_no_changes.py:245:        click.echo(json.dumps(asdict(result), indent=2))
+src/erk/cli/commands/exec/scripts/handle_no_changes.py:258:        click.echo(json.dumps(asdict(result), indent=2))
+src/erk/cli/commands/exec/scripts/handle_no_changes.py:266:    click.echo(json.dumps(asdict(result), indent=2))
+src/erk/cli/commands/exec/scripts/quick_submit.py:30:    click.echo(json.dumps(asdict(result), indent=2))
+src/erk/cli/commands/exec/scripts/normalize_tripwire_candidates.py:154:        click.echo(json.dumps(asdict(error_response)), err=True)
+src/erk/cli/commands/exec/scripts/normalize_tripwire_candidates.py:162:        click.echo(json.dumps(asdict(error_response)), err=True)
+src/erk/cli/commands/exec/scripts/normalize_tripwire_candidates.py:168:        click.echo(json.dumps(asdict(error_response)), err=True)
+src/erk/cli/commands/exec/scripts/normalize_tripwire_candidates.py:177:        click.echo(json.dumps(asdict(error_response)), err=True)
+
+... [41 lines omitted] ...
+
+src/erk/cli/commands/exec/scripts/get_plan_metadata.py:70:        click.echo(json.dumps(asdict(error_result)), err=True)
+src/erk/cli/commands/exec/scripts/track_learn_evaluation.py:131:        click.echo(json.dumps(asdict(error)), err=True)
+src/erk/cli/commands/exec/scripts/track_learn_evaluation.py:139:        click.echo(json.dumps(asdict(error)), err=True)
+src/erk/cli/commands/exec/scripts/track_learn_evaluation.py:176:            click.echo(json.dumps(asdict(error)))
+src/erk/cli/commands/exec/scripts/track_learn_evaluation.py:192:        click.echo(json.dumps(asdict(error)))
+src/erk/cli/commands/exec/scripts/track_learn_result.py:107:        click.echo(json.dumps(asdict(error)))
+src/erk/cli/commands/exec/scripts/track_learn_result.py:117:        click.echo(json.dumps(asdict(error)))
+src/erk/cli/commands/exec/scripts/track_learn_result.py:127:        click.echo(json.dumps(asdict(error)))
+src/erk/cli/commands/exec/scripts/track_learn_result.py:137:        click.echo(json.dumps(asdict(error)))
+src/erk/cli/commands/exec/scripts/track_learn_result.py:147:        click.echo(json.dumps(asdict(error)))
+src/erk/cli/commands/exec/scripts/track_learn_result.py:174:        click.echo(json.dumps(asdict(error)), err=True)
+src/erk/cli/commands/exec/scripts/track_learn_result.py:182:        click.echo(json.dumps(asdict(error)), err=True)
+src/erk/cli/commands/exec/scripts/store_tripwire_candidates.py:67:        click.echo(json.dumps(asdict(error_response)), err=True)
+src/erk/cli/commands/exec/scripts/store_tripwire_candidates.py:75:        click.echo(json.dumps(asdict(error_response)), err=True)
+src/erk/cli/commands/exec/scripts/store_tripwire_candidates.py:82:        click.echo(json.dumps(asdict(error_response)), err=True)
+src/erk/cli/commands/exec/scripts/store_tripwire_candidates.py:89:        click.echo(json.dumps(asdict(error_response)), err=True)
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="3167" cache_read_input_tokens="45992" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3167}" output_tokens="11" service_tier="standard" inference_geo="not_available" />
+  <assistant>Good, I have a clear picture now. Let me write the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3167" cache_read_input_tokens="45992" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3167}" output_tokens="11" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01Jf28GZnLSZ9gWvqgfy69jd">
+    <param name="file_path">/Users/schrockn/.claude/plans/pure-mapping-hippo.md</param>
+    <param name="content"># Consolidate dataclass JSON serialization in exec scripts
+
+## Context
+
+`packages/erk-shar...[truncated 3686 chars]...remaining `from dataclasses import.*asdict` in exec scripts to confirm complete migration
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3167" cache_read_input_tokens="45992" output_tokens="2901" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3167, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Jf28GZnLSZ9gWvqgfy69jd">
+File created successfully at: /Users/schrockn/.claude/plans/pure-mapping-hippo.md
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_01UBzsVuCNMDVKFizmgFeEpt">
+    <param name="query">ExitPlanMode</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3004" cache_read_input_tokens="49159" output_tokens="76" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3004, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01UBzsVuCNMDVKFizmgFeEpt">
+
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_0128eAsNfvt7BidveUa5jZ1Z">
+    <param name="allowedPrompts">[{'tool': 'Bash', 'prompt': 'run ruff check and format'}, {'tool': 'Bash', 'prompt': 'run ty type checker'}, {'tool': 'Bash', 'prompt': 'run pytest tests'}]</param>
+    <param name="plan"># Consolidate dataclass JSON serialization in exec scripts
+
+## Context
+
+`packages/erk-shar...[truncated 3686 chars]...remaining `from dataclasses import.*asdict` in exec scripts to confirm complete migration
+</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="736" cache_read_input_tokens="52163" output_tokens="111" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 736, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0128eAsNfvt7BidveUa5jZ1Z">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/pure-mapping-hippo.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Consolidate dataclass JSON serialization in exec scripts
+Current context: (wt:erk-slot-16) (br:plnd/consolidate-dataclass-json-03-10-0751) (pr:#9149)\n\nWhat would you like to do with this plan?"
+  header: "br:plnd/cons"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create new branch and planned PR. Stays on current branch." - Create a new branch, save plan as draft PR.
+  2. "Implement without saving" - Implement directly on the current branch without saving a plan PR.
+  3. "View/Edit the Plan" - Open plan in editor to review or modify before deciding.
+
+If user chooses 'Create new branch and planned PR':
+  1. Run /erk:plan-save
+  2. Call ExitPlanMode to end the planning session.
+
+If user chooses 'Implement without saving':
+  1. Create implement-now marker:
+     erk exec marker create --session-id 5c14cfdb-6884-4e1a-9895-912dc9cccdd6 \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly on the current branch.
+     Do NOT run 'erk exec setup-impl' or create a new branch.
+     Read the plan from: /Users/schrockn/.claude/plans/pure-mapping-hippo.md
+     Implement changes, run CI, and optionally 'erk pr submit' when done.
+
+... [6 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01BD3XvpCAA7hwTJhfMY3FsK">
+    <param name="file_path">/Users/schrockn/.claude/plans/pure-mapping-hippo.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="740" cache_read_input_tokens="52899" output_tokens="72" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 740, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01BD3XvpCAA7hwTJhfMY3FsK">
+     1→# Consolidate dataclass JSON serialization in exec scripts
+     2→
+     3→## Context
+     4→
+     5→`packages/erk-shared/src/erk_shared/agentclick/dataclass_json.py` provides centralized utilities for dataclass-to-JSON serialization (`serialize_to_json_dict`) and JSON emission (`emit_json_success`, `emit_json_error`). However, 27 exec scripts in `src/erk/cli/commands/exec/scripts/` bypass these utilities and hand-roll the same pattern: `click.echo(json.dumps(asdict(result), indent=2))`. This creates 70+ call sites of duplicated serialization logic.
+     6→
+     7→`machine_schema.py` was also identified but already properly delegates to `dataclass_json.py` — its `request_schema()` function serves a fundamentally different purpose (input schema with optional fields, no `success` injection) from `dataclass_result_schema()` (output schema, all required, adds `success: true`). No changes needed there.
+     8→
+     9→## Plan
+    10→
+    11→### Step 1: Add `emit_json_result` to `dataclass_json.py`
+    12→
+    13→**File:** `packages/erk-shared/src/erk_shared/agentclick/dataclass_json.py`
+    14→
+    15→Add a new function that handles the most common exec script pattern (stdout, indent=2):
+    16→
+    17→```python
+    18→def emit_json_result(result: Any) -&gt; None:
+    19→    """Emit a serialized dataclass as indented JSON to stdout."""
+    20→    import click
+    21→    click.echo(json.dumps(serialize_to_json_dict(result), indent=2))
+    22→```
+    23→
+    24→This replaces the 3-import, 1-line pattern (`from dataclasses import asdict` + `import json` + `import click` + `click.echo(json.dumps(asdict(result), indent=2))`) with a single import and call.
+    25→
+    26→### Step 2: Migrate 27 exec scripts
+    27→
+    28→For each of the 27 exec scripts, apply this mechanical transformation:
+    29→
+    30→**Before:**
+
+... [45 lines omitted] ...
+
+    50→- **`err=True` to stderr** (e.g., `store_tripwire_candidates.py`): Replace `asdict(error)` with `serialize_to_json_dict(error)`, keep `click.echo(..., err=True)`
+  </tool_result>
+  <assistant>Here's the plan:
+
+---
+
+# Consolidate dataclass JSON serialization in exec scripts
+
+## Context
+`dataclass_json.py` provides centralized JSON utilities, but 27 exec scripts bypass them with hand-rolled `click.echo(json.dumps(asdict(result), indent=2))` across 70+ call sites.
+
+`machine_schema.py` already properly delegates to `dataclass_json.py` — no changes needed.
+
+## Plan
+
+**Step 1:** Add `emit_json_result(result)` to `dataclass_json.py` — wraps `serialize_to_json_dict` + `click.echo` with indent=2
+
+**Step 2:** Migrate 27 exec scripts:
+- Replace `click.echo(json.dumps(asdict(result), indent=2))` → `emit_json_result(result)`
+- For stderr/no-indent variants: use `serialize_to_json_dict(result)` instead of `asdict(result)`
+- Remove unused `asdict` and `json` imports
+
+**Step 3:** No changes to `machine_schema.py` (already properly factored)
+
+## Verification
+Run ruff, ty, and pytest to confirm no regressions.
+
+---</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1534" cache_read_input_tokens="53639" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1534}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_01MXNNdf7DUJEuMKRNUWv9oq">
+    <param name="questions">[{'question': 'Consolidate dataclass JSON serialization in exec scripts\nCurrent context: ...[truncated 440 chars]...t the Plan', 'description': 'Open plan in editor to review or modify before deciding.'}]}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1534" cache_read_input_tokens="53639" output_tokens="523" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1534, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01MXNNdf7DUJEuMKRNUWv9oq">
+The user doesn't want to proceed with this tool use. The tool use was rejected (eg. if it was a file edit, the new_string was NOT written to the file). STOP what you are doing and wait for the user to tell you how to proceed.
+  </tool_result>
+  <assistant>Understood, waiting for your direction.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="805" cache_read_input_tokens="55173" output_tokens="11" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 805, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;command-message&gt;erk:plan-save&lt;/command-message&gt;
+&lt;command-name&gt;/erk:plan-save&lt;/command-name&gt;</user>
+  <user># /erk:plan-save
+
+Save the current session's plan to GitHub with session context.
+
+## Usage
+
+```bash
+/erk:plan-save                           # Standalone plan
+/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+/erk:plan-save --objective=123           # Explicit objective link (overrides marker)
+/erk:plan-save --current-branch          # Use current branch instead of creating new plnd/ branch
+```
+
+Objective linking: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command. Use `--objective=&lt;number&gt;` to override the marker or provide the link when no marker exists (e.g., during replan).
+
+## Plan Storage
+
+The plan is saved using the configured backend:
+
+- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+  The JSON output contract includes `plan_number`, `plan_url`, `title`, `branch_name`, `plan_backend`.
+
+## Agent Instructions
+
+### Step 1: Parse Arguments
+
+Check `` for the `--plan-type`, `--objective`, and `--current-branch` flags:
+
+```
+If  contains "--plan-type=&lt;type&gt;":
+  - Extract the type (standard or learn)
+  - Store as PLAN_TYPE variable
+  - Set PLAN_TYPE_FLAG to "--plan-type=&lt;type&gt;"
+Else:
+  - Set PLAN_TYPE_FLAG to empty string
+
+If  contains "--objective=&lt;number&gt;":
+  - Extract the number
+  - Set OBJECTIVE_FLAG to "--objective=&lt;number&gt;"
+Else:
+  - Set OBJECTIVE_FLAG to empty string
+
+If  contains "--current-branch":
+  - Set CURRENT_BRANCH_FLAG to "--current-branch"
+Else:
+  - Set CURRENT_BRANCH_FLAG to empty string
+```
+
+### Step 2: Generate Branch Slug
+
+**Skip this step if `--current-branch` was passed.** The current branch is used directly.
+
+Before saving, generate a branch slug from the plan title. Read the plan title from the plan file you wrote in plan mode (the first `# ` heading).
+
+Generate a branch slug from the title:
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+
+Store the result as `BRANCH_SLUG`.
+
+### Step 3: Generate Plan Summary
+
+Write a concise 2-3 sentence summary of the plan. This summary will be visible
+at the top of the PR description (above the collapsed full plan).
+
+Guidelines:
+
+- Focus on WHAT the plan does and WHY
+- Do not repeat the title
+- Plain text, no markdown headers or formatting
+- Avoid special shell characters (backticks, dollar signs)
+- Store as PLAN_SUMMARY
+
+### Step 4: Run Save Command
+
+Run this command with the session ID, summary, and optional flags.
+
+If CURRENT_BRANCH_FLAG is set, pass `--current-branch` (no branch slug needed):
+
+```bash
+erk exec plan-save --format json --session-id="5c14cfdb-6884-4e1a-9895-912dc9cccdd6" --current-branch --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Otherwise, pass the branch slug:
+
+```bash
+erk exec plan-save --format json --session-id="5c14cfdb-6884-4e1a-9895-912dc9cccdd6" --branch-slug="${BRANCH_SLUG}" --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Parse the JSON output to extract `plan_number` for verification in Step 5.
+
+If the command fails, display the error and stop.
+
+### Step 5: Verify Objective Link (if applicable)
+
+**Only run this step if `objective_issue` is non-null in the JSON output from Step 4.**
+
+Verify the objective link was saved correctly:
+
+```bash
+erk exec get-plan-metadata &lt;plan_number&gt; objective_issue
+```
+
+Parse the JSON response:
+
+- If `success: true` and `value` matches the expected objective number: verification passed
+- If `success: false` or value doesn't match: verification failed
+
+**On verification success:**
+
+Display: `Verified objective link: #&lt;objective-number&gt;`
+
+**On verification failure:**
+
+Display error and remediation steps:
+
+```
+ERROR: Objective link verification failed
+Expected objective: #&lt;expected&gt;
+Actual: &lt;actual-or-null&gt;
+
+The plan was saved but without the correct objective link.
+Fix: Close draft PR #&lt;plan_number&gt;,
+ensure the objective-context marker exists, and re-run /erk:plan-save.
+```
+
+Exit without creating the plan-saved marker. The session continues so the user can retry.
+
+### Step 6: Update Objective Roadmap (if objective linked)
+
+**Only run this step if `objective_issue` was non-null in JSON output and verification passed.**
+
+Update the objective's roadmap table to show that a plan has been created for this node:
+
+1. **Read the roadmap node marker** to get the node ID:
+
+```bash
+step_id=$(erk exec marker read --session-id "5c14cfdb-6884-4e1a-9895-912dc9cccdd6" roadmap-step)
+```
+
+If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-plan`.
+
+2. **Update the roadmap table** using the dedicated command:
+
+```bash
+erk exec update-objective-node &lt;objective-issue&gt; --node "$step_id" --pr "#&lt;plan_number&gt;" --status in_progress
+```
+
+This atomically fetches the objective body, finds the matching node row, sets the Status cell to `in-progress`, and writes the updated body back.
+
+3. **Report the update:**
+
+Display: `Updated objective #&lt;objective-issue&gt; roadmap: node &lt;step_id&gt; → plan #&lt;plan_number&gt;`
+
+**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+
+### Step 7: Display Results
+
+**If JSON contains `skipped_duplicate: true`:**
+
+Display: `Plan already saved as #&lt;plan_number&gt; (duplicate skipped)`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options.
+
+**Otherwise, on success**, display:
+
+```
+Plan "&lt;title&gt;" saved as draft PR #&lt;plan_number&gt;
+URL: &lt;issue_url&gt;
+```
+
+If objective was verified, also display: `Verified objective link: #&lt;objective-number&gt;`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options
+(implement in current worktree, implement in new worktree, or done).
+
+On failure, display the error message and suggest:
+
+- Checking that a plan exists (enter Plan mode and exit it first)
+- Verifying GitHub CLI authentication (`gh auth status`)
+- Checking network connectivity
+
+### Step 5: Push Planning Session
+
+After saving successfully, push the planning session for cross-machine learning.
+This captures the in-progress session state so it's available even if implementation
+happens on a different machine.
+
+Run `erk exec capture-session-info` to get the session file path, then push it:
+
+```bash
+erk exec upload-impl-session --session-id "5c14cfdb-6884-4e1a-9895-912dc9cccdd6" 2&gt;/dev/null || true
+```
+
+If the plan was saved successfully and `plan_number` is known, use push-session directly
+for better stage tracking:
+
+```bash
+erk exec push-session \
+    --session-file "&lt;session_file_path&gt;" \
+    --session-id "5c14cfdb-6884-4e1a-9895-912dc9cccdd6" \
+    --stage planning \
+    --source local \
+    --pr-number &lt;plan_number&gt; \
+    2&gt;/dev/null || true
+```
+
+Where `&lt;session_file_path&gt;` is obtained from `erk exec capture-session-info` output
+and `&lt;plan_number&gt;` is from Step 2's JSON output.
+
+**Note:** This is non-critical. If it fails, the plan was still saved successfully.
+The `2&gt;/dev/null || true` ensures graceful degradation.
+
+## Session Tracking
+
+After successfully saving a plan, the plan number is stored in a marker file that enables automatic plan updates in the same session.
+
+**To read the saved plan number:**
+
+```bash
+erk exec marker read --session-id "5c14cfdb-6884-4e1a-9895-912dc9cccdd6" plan-saved-issue
+```
+
+This returns the plan number (exit code 0) or exits with code 1 if no plan was saved in this session.
+</user>
+  <usage input_tokens="2" cache_creation_input_tokens="2399" cache_read_input_tokens="55978" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2399}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <assistant>Following the plan-save workflow.
+
+**Step 1:** No flags passed — standard plan type, no objective, no current-branch.
+
+**Step 2:** Plan title is "Consolidate dataclass JSON serialization in exec scripts". Branch slug: `consolidate-dataclass-json`
+
+**Step 3:** Summary: "Adds an emit_json_result helper to dataclass_json.py and migrates 27 exec scripts from hand-rolled asdict plus json.dumps patterns to use the centralized serialization utility, eliminating 70+ duplicated call sites."
+
+**Step 4:** Running save command.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="2399" cache_read_input_tokens="55978" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2399}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01TpRt3ApwK6Vnd8aEuJqXW4">
+    <param name="command">erk exec plan-save --format json --session-id="5c14cfdb-6884-4e1a-9895-912dc9cccdd6" --bra...[truncated 155 chars]...erns to use the centralized serialization utility, eliminating 70+ duplicated call sites."</param>
+    <param name="description">Save plan as draft PR via erk</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2399" cache_read_input_tokens="55978" output_tokens="471" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2399, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01TpRt3ApwK6Vnd8aEuJqXW4">
+{"success": true, "pr_number": 9154, "pr_url": "https://github.com/dagster-io/erk/pull/9154", "title": "[erk-plan] Consolidate dataclass JSON serialization in exec scripts", "branch_name": "plnd/consolidate-dataclass-json-03-10-0826", "plan_backend": "planned_pr", "objective_issue": null, "archived_to": "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-16/.erk/scratch/sessions/5c14cfdb-6884-4e1a-9895-912dc9cccdd6/plan_snapshots/000001-eb723439"}
+  </tool_result>
+  <assistant>**Step 5:** No objective linked — skipping verification and roadmap update.
+
+**Pushing planning session:**</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="628" cache_read_input_tokens="58377" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 628}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_013xXjXhBc6vxPWSZ6cWqzH5">
+    <param name="command">erk exec capture-session-info 2&gt;/dev/null</param>
+    <param name="description">Get session file path</param>
+    <param name="timeout">10000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="628" cache_read_input_tokens="58377" output_tokens="128" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 628, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_013xXjXhBc6vxPWSZ6cWqzH5">
+SESSION_ID=5c14cfdb-6884-4e1a-9895-912dc9cccdd6
+SESSION_FILE=/Users/schrockn/.claude/projects/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-16/5c14cfdb-6884-4e1a-9895-912dc9cccdd6.jsonl
+  </tool_result>
+  <tool_use name="Bash" id="toolu_012CNDKZu72vfHWJqdWSYbYV">
+    <param name="command">erk exec push-session --session-file "/Users/schrockn/.claude/projects/-Users-schrockn--er...[truncated 88 chars]...1a-9895-912dc9cccdd6" --stage planning --source local --pr-number 9154 2&gt;/dev/null || true</param>
+    <param name="description">Push planning session for cross-machine learning</param>
+    <param name="timeout">15000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1434" cache_read_input_tokens="59005" output_tokens="220" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1434, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+</session>

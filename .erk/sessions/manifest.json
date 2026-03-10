@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "pr_number": 9154,
+  "sessions": [
+    {
+      "session_id": "5c14cfdb-6884-4e1a-9895-912dc9cccdd6",
+      "stage": "planning",
+      "source": "local",
+      "uploaded_at": "2026-03-10T08:27:06.296397+00:00",
+      "files": [
+        "planning-5c14cfdb-6884-4e1a-9895-912dc9cccdd6-5c14cfdb-6884-4e1a-9895-912dc9cccdd6.xml"
+      ],
+      "user_turns": 3,
+      "duration_minutes": 9,
+      "raw_size_kb": 478,
+      "xml_size_kb": 50,
+      "git_branch": "plnd/consolidate-dataclass-json-03-10-0751"
+    }
+  ]
+}
