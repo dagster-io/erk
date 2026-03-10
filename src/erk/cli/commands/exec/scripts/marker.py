@@ -111,7 +111,7 @@ def marker_create(
 def marker_read(ctx: click.Context, name: str, session_id: str | None) -> None:
     """Read content from a marker file.
 
-    NAME is the marker name (e.g., 'plan-saved-issue').
+    NAME is the marker name (e.g., 'plan-saved').
     Outputs the marker content to stdout (no JSON wrapper).
     Exit code 0 if marker exists, 1 if it doesn't exist or error.
     """

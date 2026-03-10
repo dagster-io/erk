@@ -7,7 +7,7 @@ markers in markers.py.
 Markers:
     exit-plan-mode-hook.plan-saved.marker: Signals plan was saved to GitHub.
         Content: plan number on first line. Triggers Step 2 "what next?" prompt.
-    plan-saved-issue.marker: Stores the issue/PR number of the saved plan
+    plan-saved.marker: Stores the PR number of the saved plan
         (persists for session deduplication, not consumed by hook).
 """
 
@@ -60,14 +60,14 @@ def read_plan_saved_marker(session_id: str, repo_root: Path) -> int | None:
     return int(first_line)
 
 
-def create_plan_saved_issue_marker(
+def create_plan_saved_pr_marker(
     session_id: str, repo_root: Path, plan_number: int, *, title: str
 ) -> None:
-    """Create marker file storing the issue number and title of the saved plan.
+    """Create marker file storing the PR number and title of the saved plan.
 
     This marker enables automatic plan updates and per-title deduplication.
     When user says "update plan", Claude can read this marker to find the
-    issue number and invoke /local:plan-update. The title enables saving
+    PR number and invoke /local:plan-update. The title enables saving
     multiple distinct plans in the same session while still blocking true
     duplicates (same title saved twice).
 
@@ -78,7 +78,7 @@ def create_plan_saved_issue_marker(
         title: The plan title (used for per-title dedup).
     """
     marker_dir = get_scratch_dir(session_id, repo_root=repo_root)
-    marker_file = marker_dir / "plan-saved-issue.marker"
+    marker_file = marker_dir / "plan-saved.marker"
     marker_file.write_text(f"{plan_number}\n{title}", encoding="utf-8")
 
 
@@ -166,7 +166,7 @@ def get_existing_saved_branch(session_id: str, repo_root: Path) -> str | None:
     return content
 
 
-def get_existing_saved_issue(session_id: str, repo_root: Path, *, title: str) -> int | None:
+def get_existing_saved_pr(session_id: str, repo_root: Path, *, title: str) -> int | None:
     """Check if this session already saved a plan with the same title.
 
     This prevents duplicate plan creation when the agent calls plan-save multiple times
@@ -179,10 +179,10 @@ def get_existing_saved_issue(session_id: str, repo_root: Path, *, title: str) ->
         title: The plan title to match against the stored title.
 
     Returns:
-        The issue number if a plan with the same title was already saved, None otherwise.
+        The PR number if a plan with the same title was already saved, None otherwise.
     """
     marker_dir = get_scratch_dir(session_id, repo_root=repo_root)
-    marker_file = marker_dir / "plan-saved-issue.marker"
+    marker_file = marker_dir / "plan-saved.marker"
     if not marker_file.exists():
         return None
     content = marker_file.read_text(encoding="utf-8").strip()

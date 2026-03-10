@@ -917,5 +917,5 @@ def test_current_branch_creates_unified_plan_saved_marker(
     old_marker = marker_dir / "exit-plan-mode-hook.plan-saved-current-branch.marker"
     assert not old_marker.exists(), "plan-saved-current-branch marker should NOT exist"
     # Issue and branch markers should still exist
-    assert (marker_dir / "plan-saved-issue.marker").exists()
+    assert (marker_dir / "plan-saved.marker").exists()
     assert (marker_dir / "plan-saved-branch.marker").exists()

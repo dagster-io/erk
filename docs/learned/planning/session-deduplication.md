@@ -44,11 +44,11 @@ The `exit-plan-mode-hook` uses markers to track state:
 
 ### Layer 2: Command-Level Deduplication
 
-Even if hooks fail, `plan-save` checks for existing saved issues:
+Even if hooks fail, `plan-save` checks for existing saved PRs:
 
-1. Before creating an issue, check if this session already saved a plan
-2. Use `_get_existing_saved_issue()` helper to query GitHub
-3. If found, return existing issue instead of creating duplicate
+1. Before creating a PR, check if this session already saved a plan
+2. Use `get_existing_saved_pr()` helper to check session markers
+3. If found, return existing PR instead of creating duplicate
 
 ## Marker Lifecycle
 
@@ -82,15 +82,15 @@ The `plan-saved` marker persists because it represents a state ("plan has been s
 
 The `plan-saved` marker is only relevant for the hook's decision-making. It doesn't prevent the user from creating a new plan in a new session.
 
-## \_get_existing_saved_issue() Pattern
+## get_existing_saved_pr() Pattern
 
 The command-level deduplication uses this pattern:
 
 ```
 1. Extract session ID from request
-2. Query GitHub for issues created in this session
-3. Check plan-header metadata for session_id match
-4. Return existing issue number if found, None otherwise
+2. Check session scratch for plan-saved marker
+3. Compare stored title against current plan title
+4. Return existing PR number if found, None otherwise
 ```
 
 This provides a safety net even if marker state becomes corrupted.

@@ -35,7 +35,7 @@ erk pr dispatch <pr_number>
 If the command succeeds, clear the session marker to allow creating new plans in this session:
 
 ```bash
-erk exec marker delete --session-id "${CLAUDE_SESSION_ID}" plan-saved-issue
+erk exec marker delete --session-id "${CLAUDE_SESSION_ID}" plan-saved
 ```
 
 Display the command output to the user. The `erk pr dispatch` command handles all validation (plan existence, labels, state).

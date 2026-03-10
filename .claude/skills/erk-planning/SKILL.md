@@ -18,9 +18,9 @@ Load this skill when user mentions:
 
 **When these triggers fire and a plan was saved in this session:**
 
-1. Check for `plan-saved-issue.marker` in session scratch:
+1. Check for `plan-saved.marker` in session scratch:
    ```bash
-   erk exec marker read --session-id <session-id> plan-saved-issue
+   erk exec marker read --session-id <session-id> plan-saved
    ```
 2. If found (exit code 0), invoke `/local:plan-update <issue-number>` with the marker content
 3. If not found (exit code 1), ask user for issue number

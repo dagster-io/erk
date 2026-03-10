@@ -56,10 +56,10 @@ from erk_shared.plan_utils import get_title_tag_from_labels
 from erk_shared.scratch.plan_snapshots import PlanSnapshot, snapshot_plan_for_session
 from erk_shared.scratch.session_markers import (
     create_plan_saved_branch_marker,
-    create_plan_saved_issue_marker,
     create_plan_saved_marker,
+    create_plan_saved_pr_marker,
     get_existing_saved_branch,
-    get_existing_saved_issue,
+    get_existing_saved_pr,
     read_objective_context_marker,
     read_roadmap_step_marker,
 )
@@ -318,7 +318,7 @@ def _save_as_planned_pr(
     snapshot_result: PlanSnapshot | None = None
     if session_id is not None:
         create_plan_saved_marker(session_id, repo_root, plan_number)
-        create_plan_saved_issue_marker(session_id, repo_root, plan_number, title=title)
+        create_plan_saved_pr_marker(session_id, repo_root, plan_number, title=title)
         create_plan_saved_branch_marker(session_id, repo_root, branch_name)
 
         snapshot_result = _get_snapshot_result(
@@ -424,7 +424,7 @@ def _save_plan_via_planned_pr(
 
     # Session deduplication check (keyed by plan title)
     if session_id is not None:
-        existing_issue = get_existing_saved_issue(session_id, repo_root, title=title)
+        existing_issue = get_existing_saved_pr(session_id, repo_root, title=title)
         if existing_issue is not None:
             existing_branch = get_existing_saved_branch(session_id, repo_root)
             if output_format == "display":

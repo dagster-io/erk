@@ -34,20 +34,20 @@ The `objective-context` marker is the PRIMARY mechanism for objective linking â€
 
 ### Plan Tracking
 
-When saving a plan to GitHub, markers communicate the issue number between commands:
+When saving a plan to GitHub, markers communicate the PR number between commands:
 
 ```bash
 # Created by /erk:plan-save
-erk exec marker create --name plan-saved-issue --value "6425"
+erk exec marker create --name plan-saved --value "6425"
 
 # Read by subsequent commands to reference the saved plan
-ISSUE_NUM=$(erk exec marker read --name plan-saved-issue)
+PR_NUM=$(erk exec marker read --name plan-saved)
 ```
 
 Lifecycle:
 
-1. `/erk:plan-save` saves plan to GitHub, creates issue, writes `plan-saved-issue` marker
-2. User (or automation) reads marker to get issue number
+1. `/erk:plan-save` saves plan to GitHub, creates PR, writes `plan-saved` marker
+2. User (or automation) reads marker to get PR number
 3. Marker persists for the session, enabling subsequent operations on the saved plan
 
 ### Workflow State
