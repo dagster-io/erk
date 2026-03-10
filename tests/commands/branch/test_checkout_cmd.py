@@ -124,8 +124,8 @@ def test_checkout_succeeds_when_graphite_not_installed() -> None:
 # --- Slot allocation tests ---
 
 
-def test_branch_checkout_creates_slot_assignment_by_default() -> None:
-    """Test that branch checkout creates a slot assignment by default."""
+def test_branch_checkout_checks_out_in_current_worktree_by_default() -> None:
+    """Test that branch checkout checks out in the current worktree by default (no slot)."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
@@ -140,6 +140,40 @@ def test_branch_checkout_creates_slot_assignment_by_default() -> None:
 
         with patch.dict(os.environ, {"ERK_SHELL": "zsh"}):
             result = runner.invoke(branch_group, ["checkout", "feature-branch"], obj=ctx)
+
+        assert result.exit_code == 0, f"Failed: {result.output}"
+        # No slot allocation — default is checkout in current worktree
+        assert "Assigned" not in result.output
+
+        # Verify checkout_branch was called on the root worktree (cwd)
+        assert len(git.checked_out_branches) == 1
+        checkout_path, checkout_branch = git.checked_out_branches[0]
+        assert checkout_path == env.cwd
+        assert checkout_branch == "feature-branch"
+
+        # Verify NO pool state was created
+        state = load_pool_state(env.repo.pool_json_path)
+        assert state is None
+
+
+def test_branch_checkout_new_slot_creates_slot_assignment() -> None:
+    """Test that --new-slot creates a slot assignment."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+        env.setup_repo_structure()
+
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            default_branches={env.cwd: "main"},
+            local_branches={env.cwd: ["main", "feature-branch"]},
+            existing_paths={env.cwd, env.repo.worktrees_dir},
+        )
+        ctx = build_workspace_test_context(env, git=git)
+
+        with patch.dict(os.environ, {"ERK_SHELL": "zsh"}):
+            result = runner.invoke(
+                branch_group, ["checkout", "--new-slot", "feature-branch"], obj=ctx
+            )
 
         assert result.exit_code == 0, f"Failed: {result.output}"
         assert "Assigned feature-branch to erk-slot-01" in result.output
@@ -222,7 +256,9 @@ def test_branch_checkout_reuses_inactive_slot() -> None:
         ctx = build_workspace_test_context(env, git=git)
 
         with patch.dict(os.environ, {"ERK_SHELL": "zsh"}):
-            result = runner.invoke(branch_group, ["checkout", "reuse-slot-branch"], obj=ctx)
+            result = runner.invoke(
+                branch_group, ["checkout", "--new-slot", "reuse-slot-branch"], obj=ctx
+            )
 
         assert result.exit_code == 0, f"Failed: {result.output}"
         assert "Assigned reuse-slot-branch to erk-slot-01" in result.output
@@ -238,7 +274,10 @@ def test_branch_checkout_reuses_inactive_slot() -> None:
 
 
 def test_branch_checkout_creates_tracking_branch_for_remote() -> None:
-    """Test that checkout creates a tracking branch for a remote-only branch."""
+    """Test that checkout creates a tracking branch for a remote-only branch.
+
+    Default behavior is to checkout in the current worktree (no slot allocation).
+    """
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
@@ -257,7 +296,8 @@ def test_branch_checkout_creates_tracking_branch_for_remote() -> None:
 
         assert result.exit_code == 0, f"Failed: {result.output}"
         assert "creating local tracking branch" in result.output
-        assert "Assigned remote-branch to erk-slot-01" in result.output
+        # No slot allocation — default is checkout in current worktree
+        assert "Assigned" not in result.output
 
         # Verify fetch and tracking branch creation
         assert ("origin", "remote-branch") in git.fetched_branches
@@ -306,7 +346,11 @@ def test_branch_checkout_force_unassigns_oldest() -> None:
         ctx = build_workspace_test_context(env, git=git, local_config=local_config)
 
         with patch.dict(os.environ, {"ERK_SHELL": "zsh"}):
-            result = runner.invoke(branch_group, ["checkout", "--force", "force-branch"], obj=ctx)
+            result = runner.invoke(
+                branch_group,
+                ["checkout", "--new-slot", "--force", "force-branch"],
+                obj=ctx,
+            )
 
         assert result.exit_code == 0, f"Failed: {result.output}"
         assert "Unassigned" in result.output
@@ -327,7 +371,7 @@ def test_branch_checkout_force_unassigns_oldest() -> None:
 
 
 def test_branch_checkout_pool_full_no_force_fails() -> None:
-    """Test that pool-full without --force fails in non-interactive mode."""
+    """Test that --new-slot with pool-full without --force fails in non-interactive mode."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
@@ -368,7 +412,7 @@ def test_branch_checkout_pool_full_no_force_fails() -> None:
         ctx = build_workspace_test_context(env, git=git, local_config=local_config)
 
         # CliRunner runs in non-interactive mode by default
-        result = runner.invoke(branch_group, ["checkout", "blocked-branch"], obj=ctx)
+        result = runner.invoke(branch_group, ["checkout", "--new-slot", "blocked-branch"], obj=ctx)
 
         assert result.exit_code == 1
         assert "Pool is full" in result.output
@@ -451,7 +495,10 @@ def test_branch_checkout_already_assigned_returns_existing() -> None:
 
 
 def test_branch_checkout_stale_assignment_worktree_missing() -> None:
-    """Test that stale assignment with missing worktree is removed and proceeds."""
+    """Test that stale assignment with missing worktree is removed and proceeds.
+
+    Uses --new-slot to trigger slot allocation path where stale detection occurs.
+    """
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
@@ -484,7 +531,9 @@ def test_branch_checkout_stale_assignment_worktree_missing() -> None:
         ctx = build_workspace_test_context(env, git=git)
 
         with patch.dict(os.environ, {"ERK_SHELL": "zsh"}):
-            result = runner.invoke(branch_group, ["checkout", "stale-branch"], obj=ctx)
+            result = runner.invoke(
+                branch_group, ["checkout", "--new-slot", "stale-branch"], obj=ctx
+            )
 
         assert result.exit_code == 0, f"Failed: {result.output}"
         # Should warn about removing stale assignment
@@ -497,9 +546,9 @@ def test_branch_checkout_stale_assignment_worktree_missing() -> None:
 def test_branch_checkout_stale_assignment_wrong_branch() -> None:
     """Test that stale assignment with wrong branch is synced and target gets a new slot.
 
-    With lazy tip sync, the pool state is corrected before allocation decisions.
-    The assignment updates from target-branch to different-branch (what's actually
-    checked out), and target-branch gets a fresh slot allocation.
+    With --new-slot and lazy tip sync, the pool state is corrected before allocation
+    decisions. The assignment updates from target-branch to different-branch (what's
+    actually checked out), and target-branch gets a fresh slot allocation.
     """
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
@@ -540,7 +589,9 @@ def test_branch_checkout_stale_assignment_wrong_branch() -> None:
         ctx = build_workspace_test_context(env, git=git)
 
         with patch.dict(os.environ, {"ERK_SHELL": "zsh"}):
-            result = runner.invoke(branch_group, ["checkout", "target-branch"], obj=ctx)
+            result = runner.invoke(
+                branch_group, ["checkout", "--new-slot", "target-branch"], obj=ctx
+            )
 
         assert result.exit_code == 0, f"Failed: {result.output}"
         # Lazy tip sync corrects the assignment, then target-branch gets a new slot.
@@ -555,10 +606,10 @@ def test_branch_checkout_stale_assignment_wrong_branch() -> None:
 def test_branch_checkout_stale_assignment_wrong_branch_with_uncommitted_changes() -> None:
     """Test that stale assignment with uncommitted changes doesn't block target branch.
 
-    With lazy tip sync, the assignment is corrected to reflect the actual branch
-    (different-branch). The dirty slot-01 is now assigned to different-branch,
-    and target-branch gets a fresh slot allocation — the uncommitted changes
-    in slot-01 are irrelevant since we don't touch that slot.
+    With --new-slot and lazy tip sync, the assignment is corrected to reflect the
+    actual branch (different-branch). The dirty slot-01 is now assigned to
+    different-branch, and target-branch gets a fresh slot allocation — the
+    uncommitted changes in slot-01 are irrelevant since we don't touch that slot.
     """
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
@@ -600,7 +651,9 @@ def test_branch_checkout_stale_assignment_wrong_branch_with_uncommitted_changes(
         ctx = build_workspace_test_context(env, git=git)
 
         with patch.dict(os.environ, {"ERK_SHELL": "zsh"}):
-            result = runner.invoke(branch_group, ["checkout", "target-branch"], obj=ctx)
+            result = runner.invoke(
+                branch_group, ["checkout", "--new-slot", "target-branch"], obj=ctx
+            )
 
         # Sync corrects the assignment, target-branch gets a fresh slot.
         # Dirty slot-01 is untouched — no error.
@@ -614,9 +667,10 @@ def test_branch_checkout_stale_assignment_wrong_branch_with_uncommitted_changes(
 def test_branch_checkout_internal_state_mismatch_allocated_but_not_checked_out() -> None:
     """Test that internal state mismatch error when branch allocated but no worktree has it.
 
-    This tests the edge case where pool.json says a branch is assigned to a slot,
-    but when we query git for worktrees, no worktree has that branch checked out.
-    This indicates corrupted pool state that needs manual intervention.
+    Uses --new-slot to trigger slot allocation path. This tests the edge case where
+    pool.json says a branch is assigned to a slot, but when we query git for
+    worktrees, no worktree has that branch checked out. This indicates corrupted
+    pool state that needs manual intervention.
     """
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
@@ -671,12 +725,13 @@ def test_branch_checkout_internal_state_mismatch_allocated_but_not_checked_out()
 
         ctx = build_workspace_test_context(env, git=git)
 
-        result = runner.invoke(branch_group, ["checkout", "orphaned-branch"], obj=ctx)
+        result = runner.invoke(branch_group, ["checkout", "--new-slot", "orphaned-branch"], obj=ctx)
 
         assert result.exit_code == 1
-        assert "Internal state mismatch" in result.output
         assert "orphaned-branch" in result.output
-        assert "no worktree has it checked out" in result.output
+        # With --new-slot, the slot allocation succeeds (already_assigned=True) but
+        # the worktree refresh finds no match, triggering the multiple-worktrees guard
+        assert "Cannot create a new slot" in result.output
 
 
 # --- --for-plan tests ---
