@@ -23,10 +23,10 @@ tests/fakes/
 ├── __init__.py
 ├── gateway/
 │   ├── __init__.py
-│   ├── fake_pr_service.py
-│   ├── fake_github_issues.py
-│   ├── fake_git_worktree.py
-│   ├── fake_graphite_branch_ops.py
+│   ├── pr_service.py
+│   ├── github_issues.py
+│   ├── git_worktree.py
+│   ├── graphite_branch_ops.py
 │   └── ...
 └── tests/
     ├── __init__.py
