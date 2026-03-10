@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Learn: Update config schema: rename [plans] section to [github] with backwards compatibility"
+}
