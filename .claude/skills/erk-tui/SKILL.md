@@ -155,4 +155,4 @@ These are the highest-impact gotchas. Violating any causes bugs that are hard to
 
 ## Source Documents
 
-This skill distills content from 40 documents in `docs/learned/tui/` and `docs/learned/textual/`. Raw docs continue to receive new insights via `/erk:learn`. This skill is periodically harvested from those raw docs.
+This skill is the authoritative reference for TUI development patterns. Originally distilled from 40 documents that have since been consolidated into this skill.

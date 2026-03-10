@@ -73,11 +73,26 @@ Three views with instant switching via cache:
 
 Every `ViewMode` must have a corresponding `ViewConfig` in `VIEW_CONFIGS`. Missing configs cause `KeyError` at runtime.
 
-`ViewConfig` contains:
+`ViewConfig` frozen dataclass fields: `mode` (ViewMode), `display_name` (str), `labels` (tuple[str, ...]), `key_hint` (str), `exclude_labels` (tuple[str, ...]).
 
-- `labels`: GitHub label query (AND semantics)
-- `exclude_labels`: Labels to exclude from results
-- `display_name`: Human-readable name for ViewBar
+**VIEW_CONFIGS**:
+
+| View | Labels | Exclude Labels | Key |
+| --- | --- | --- | --- |
+| Plans | `("erk-plan",)` | `("erk-learn",)` | `1` |
+| Learn | `("erk-learn",)` | `()` | `2` |
+| Objectives | `("erk-objective",)` | `()` | `3` |
+
+## _switch_view() Orchestration
+
+1. Skip if already on the requested view
+2. Update `_view_mode` and notify ViewBar
+3. Call `PlanDataTable.reconfigure()` — clears columns, rebuilds for new view via `_setup_columns()`
+4. Check cache for new view's labels
+5. If cached: filter rows, populate table, update status bar
+6. If not cached: launch async `_load_data()` worker
+
+**Arrow key cycling**: `PlanDataTable` overrides `action_cursor_left`/`action_cursor_right` to delegate to app's `action_previous_view()`/`action_next_view()` with wrapping.
 
 ## ViewBar Widget
 

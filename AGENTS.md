@@ -176,7 +176,6 @@ This grep step is mandatory for ALL coding tasks. It costs milliseconds and prev
 | Hooks                        | `docs/learned/hooks/`                        |
 | Planning, .erk/impl-context/ | `docs/learned/planning/`                     |
 | Architecture patterns        | `docs/learned/architecture/`                 |
-| TUI, Textual                 | `docs/learned/tui/`, `docs/learned/textual/` |
 
 **Anti-pattern:** Skipping the grep because the task "seems simple"
 **Anti-pattern:** Going straight to source files without checking docs/learned/

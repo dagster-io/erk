@@ -52,7 +52,7 @@ The `launch_key` field on `CommandDefinition` is the single source of truth. Onl
 **Before adding new shortcuts**:
 
 1. Check `ErkDashApp.BINDINGS` in `app.py` for conflicts
-2. Check `keyboard-shortcuts.md` in docs/learned/tui/
+2. Check the Keyboard Shortcut Inventory in `commands.md` (this skill)
 3. Some keys are hidden but still active
 
 **Naming convention**: `action_<verb>_<noun>` (e.g., `action_close_plan`, `action_open_pr`)
@@ -61,12 +61,24 @@ The `launch_key` field on `CommandDefinition` is the single source of truth. Onl
 
 ## Status Indicators
 
-**Two rendering functions**:
+**Two rendering functions** in `packages/erk-shared/.../plan_data_provider/lifecycle.py`:
 
-- `compute_status_indicators()`: Standalone "sts" column display
-- `format_lifecycle_with_status()`: Inline display with lifecycle
+- `compute_status_indicators()`: Standalone "sts" column display (4-char width, planned_pr view only)
+- `format_lifecycle_with_status()`: Inline display — appends indicators inside Rich markup tags
 
 **Rule**: Indicators are computed from RAW PR state fields (`is_draft`, `has_conflicts`, `review_decision`), NOT extracted from the lifecycle display string.
+
+**Indicator logic table**:
+
+| Emoji | Meaning | When Shown |
+| --- | --- | --- |
+| 🥞 | Stacked PR | Any stage when `is_stacked=True` (informational, doesn't block 🚀) |
+| 🚧 | Draft PR | Active stages when `is_draft=True` |
+| 👀 | Published PR | Active stages when `is_draft=False` |
+| 💥 | Merge conflicts | impl/review when `has_conflicts=True` |
+| ✔ | Approved | Review stage when `review_decision="APPROVED"` |
+| ❌ | Changes requested | Review stage when `review_decision="CHANGES_REQUESTED"` |
+| 🚀 | Ready to merge | impl stage when checks pass, no unresolved comments, no conflicts, no blocking indicators |
 
 **Safe emoji** (tested in terminals): 🥞 🚧 👀 💥 ✔ ❌ 🚀
 
@@ -74,21 +86,38 @@ The `launch_key` field on `CommandDefinition` is the single source of truth. Onl
 
 ## Lifecycle Display
 
-Stages are 8 chars max: `planned`, `impl`, `merged`, `closed`, `prompted`, `planning`.
+**Stage inference** (in `compute_lifecycle_display()`): Reads `lifecycle_stage` from plan header. If absent, infers from PR state:
+
+| `is_draft` | `pr_state` | Inferred Stage |
+| --- | --- | --- |
+| `True` | `"OPEN"` | `planned` |
+| `False` | `"OPEN"` | `impl` |
+| `False` | `"MERGED"` | `merged` |
+| `False` | `"CLOSED"` | `closed` |
+
+When resolved stage is `planned` and a workflow run exists, upgrades to `impl`.
+
+**Abbreviation/color map** (8-char column width):
+
+| Stage | Color | Markup |
+| --- | --- | --- |
+| `prompted` | magenta | `[magenta]prompted[/magenta]` |
+| `planning` | magenta | `[magenta]planning[/magenta]` |
+| `planned` | dim | `[dim]planned[/dim]` |
+| `impl` | yellow | `[yellow]impl[/yellow]` |
+| `merged` | green | `[green]merged[/green]` |
+| `closed` | dim red | `[dim red]closed[/dim red]` |
 
 **Stage detection**: Uses substring matching on `lifecycle_display` content, not color markup.
 
-**Adding new stages**: Must update:
-
-1. Abbreviation map (if stage > 8 chars)
-2. `format_lifecycle_with_status()` stage detection
-3. `compute_lifecycle_display()` stage-to-color mapping
+**Adding new stages**: Must update: (1) abbreviation map if > 8 chars, (2) `format_lifecycle_with_status()` stage detection, (3) `compute_lifecycle_display()` stage-to-color mapping.
 
 ## Stacked PR Indicator
 
 - Pancake emoji (🥞) is informational — doesn't block rocket (🚀)
-- Graphite `get_parent_branch()` is authoritative for stacked detection
-- Falls back to GitHub `base_ref_name`
+- **Primary**: Graphite `get_parent_branch()` (authoritative, reflects actual stack topology)
+- **Fallback**: GitHub `base_ref_name` (only when Graphite returns None — branch not tracked locally)
+- Graphite preferred because GitHub's `base_ref_name` can become stale after parent PR merges
 
 ## Plan Title Rendering Pipeline
 
@@ -105,6 +134,26 @@ Stages are 8 chars max: `planned`, `impl`, `merged`, `closed`, `prompted`, `plan
 Calculate available space: `MAX_DISPLAY - PREFIX_LEN` (e.g., 50 - 12 for "[erk-learn] " = 38 for content)
 
 Use `len(Text.from_markup(s).plain)` for visible character count vs string length.
+
+**Three strip functions** (don't confuse them): `_strip_plan_prefixes` (PR creation), `_strip_plan_markers` (plan creation), `strip_plan_from_filename` (filename handling).
+
+## Modal Widget Embedding
+
+When reusing complex widgets (like `PlanDataTable`) inside modal screens:
+
+- `PlanDataTable` does NOT accept `id=` kwarg — use `self.query_one(PlanDataTable)` instead of `self.query_one("#my-table")`
+- Always guard optional gateway fields (`plan_body`, `objective_content`) with null checks before accessing in event handlers — modals often operate on partially-loaded data
+- Reference implementation: `ObjectivePlansScreen` embeds `PlanDataTable` in a modal
+
+## Reference Implementations
+
+| Screen | Pattern | Key Features |
+| --- | --- | --- |
+| `UnresolvedCommentsScreen` | Standard modal | Fetches PR review comments |
+| `PlanBodyScreen` | Content display | `content_type` parameterization |
+| `PlanDetailScreen` | Detail + commands | Markdown rendering, command execution |
+| `ObjectiveNodesScreen` | Complex modal | Async loading, phase separators, PR enrichment, next-node highlighting |
+| `LaunchScreen` | Command dispatch | Dynamic key map, dismisses on unmapped keys |
 
 ## One-Shot Prompt Modal
 

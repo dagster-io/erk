@@ -21,7 +21,7 @@ For comprehensive coverage, read these category tripwire files based on the diff
 - Changes in `src/erk/cli/` → Read `docs/learned/cli/tripwires.md`
 - Changes in `tests/` → Read `docs/learned/testing/tripwires.md`
 - Changes in `.github/` → Read `docs/learned/ci/tripwires.md`
-- Changes in `src/erk/tui/` → Read `docs/learned/tui/tripwires.md`
+- Changes in `src/erk/tui/` → Load `erk-tui` skill
 - Planning-related changes → Read `docs/learned/planning/tripwires.md`
 
 Tripwires come in two formats:

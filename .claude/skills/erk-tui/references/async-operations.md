@@ -136,10 +136,26 @@ async def _load_data(self) -> None:
 
 **Never pass `--no-wait` in worker threads** — it defeats the polling purpose. The thread exists to wait for the operation to complete before refreshing.
 
+## When to Make Actions Async
+
+Actions (`action_*` methods) can be sync or async:
+
+- **Sync**: Immediate, non-blocking operations (toggle filter, update state)
+- **Async**: I/O operations, calling other async methods, or using Textual's async APIs (`push_screen`, `pop_screen`, `action_dismiss`)
+
+**Screen action overrides must match base class signature**:
+
+```python
+# WRONG — base is async, override must be too
+def action_dismiss(self) -> None: ...
+
+# CORRECT
+async def action_dismiss(self) -> None:
+    await super().action_dismiss()
+```
+
+Common async Screen methods: `action_dismiss()`, `push_screen()`, `pop_screen()`, `_flush_next_callbacks()`.
+
 ## Approved EAFP Exception
 
 `@work(thread=True)` workers are the ONE place where try/except for error boundaries is approved (normally erk uses LBYL). The error boundary catches unexpected failures and reports them to the UI via `call_from_thread()` instead of crashing silently.
-
-## Source Documents
-
-Distilled from: `tui/streaming-output`, `tui/subprocess-feedback`, `tui/multi-operation-tracking`, `tui/async-action-refresh-pattern`, `tui/async-state-snapshot`, `tui/textual-async`

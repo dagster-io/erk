@@ -38,7 +38,5 @@ Load **first** for any code area: [universal-tripwires.md](universal-tripwires.m
 | [reviews](reviews/tripwires.md)             | 4         | `reviews/` code                          |
 | [sessions](sessions/tripwires.md)           | 12        | `~/.claude/projects/`, session analysis  |
 | [testing](testing/tripwires.md)             | 67        | `tests/`                                 |
-| [textual](textual/tripwires.md)             | 1         | Textual framework code                   |
-| [tui](tui/tripwires.md)                     | 63        | `src/erk/tui/`                           |
 | [uncategorized](uncategorized/tripwires.md) | 15        | `uncategorized/` code                    |
 | [workflows](workflows/tripwires.md)         | 6         | `workflows/` code                        |

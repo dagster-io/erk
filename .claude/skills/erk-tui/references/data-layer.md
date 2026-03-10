@@ -114,6 +114,48 @@ row = PlanRowData(plan_id=123, plan_url=None, ...)
 row = make_plan_row(123, "Title", pr_number=456)
 ```
 
-## Source Documents
+## PlanRowData Field Reference
 
-Distilled from: `tui/column-addition-pattern`, `tui/plan-row-data`, `tui/dashboard-columns`, `tui/data-contract`, `tui/derived-display-columns`, `tui/frozen-dataclass-field-management`
+`PlanRowData` has 48+ fields organized by category. See `src/erk/tui/data/types.py` for the full definition.
+
+**Key categories**: Identifiers (plan_id, plan_url, pr_number, pr_url), Title (title, full_title, pr_title), Metadata (author, created_at, created_display), Display Strings (10 `*_display` fields), Worktree (worktree_name, exists_locally, worktree_branch, pr_head_branch), Timestamps, GitHub Actions (run_id, run_status, run_conclusion, run_url, log_entries), PR State (pr_state, resolved/total_comment_count), Learn Status (5 fields), Objective (objective_issue + 10 display fields).
+
+**Availability predicate patterns**:
+
+```python
+is_available=lambda ctx: ctx.row.pr_number is not None   # Needs PR
+is_available=lambda ctx: ctx.row.plan_url is not None     # Needs plan URL
+is_available=lambda ctx: ctx.row.exists_locally           # Needs local worktree
+is_available=lambda _: True                               # Always available
+```
+
+**Rule**: Use raw fields in predicates (for `None` checks), display fields for rendering.
+
+## PlanDataProvider ABC
+
+Located in `packages/erk-shared/.../plan_data_provider/abc.py`. 3 abstract properties (`repo_root`, `clipboard`, `browser`) and 7 abstract methods (`fetch_plans`, `close_plan`, `dispatch_to_queue`, `fetch_branch_activity`, `fetch_plan_content`, `fetch_objective_content`, `fetch_unresolved_comments`).
+
+## PlanFilters Field Reference
+
+Frozen dataclass in `src/erk/tui/data/types.py` with 7 fields: `labels` (tuple[str, ...]), `state` (str | None), `run_state` (str | None), `limit` (int | None), `show_prs` (bool), `show_runs` (bool), `creator` (str | None). Use `PlanFilters.default()` for standard open erk-plan queries.
+
+## Dashboard Column Inventory
+
+See `PlanDataTable._setup_columns()` in `src/erk/tui/widgets/plan_table.py` for the full column layout. Key facts:
+
+- **Backend-conditional columns**: `stage` (8-char lifecycle) and `sts` (status indicators) only appear in `planned_pr` mode
+- **`plan`/`pr` header**: Shows `plan` for issue-based, `pr` for planned_pr backend
+- **`created` column position**: After `sts` in planned_pr mode, after `run` in issue mode
+- **Objectives view**: Completely different column set (issue, slug, prog, state, deps-state, deps, next, updated, created by)
+
+## RunRowData
+
+Frozen dataclass for the Runs tab. See `src/erk/tui/data/types.py` for fields and `src/erk/tui/widgets/run_table.py` for columns.
+
+**Branch resolution priority**: PR `head_branch` first (from `get_pr_head_branches()` batch query), then `run.branch` (if not master/main), then `"-"`. After merge+deletion, `run.branch` becomes the default branch, so PR head_branch is the reliable source.
+
+## Column Reordering Warning
+
+Reordering columns changes index-based value positions in `_row_to_values()`. This invalidates ALL test assertions referencing columns by index (`row[N]`, `values[N]`, `cells[N]`). Before reordering, grep test files for these patterns and update every reference after.
+
+**View-specific columns**: If `_row_to_values()` has branching logic (plans vs objectives), verify both branches produce matching column counts. Mismatches cause silent DataTable rendering errors.
