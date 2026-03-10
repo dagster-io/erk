@@ -5,10 +5,10 @@ from datetime import UTC, datetime
 
 from click.testing import CliRunner
 
-from erk.cli.commands.objective.check_cmd import (
+from erk.cli.commands.objective.check.cli import check_objective
+from erk.cli.commands.objective.check.validation import (
     ObjectiveValidationError,
     ObjectiveValidationSuccess,
-    check_objective,
     validate_objective,
 )
 from erk_shared.context.context import ErkContext

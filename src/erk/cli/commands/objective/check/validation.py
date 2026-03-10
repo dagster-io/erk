@@ -1,14 +1,11 @@
-"""Validate an objective's format and roadmap consistency."""
+"""Pure validation logic for objective check.
 
-import json
+Contains validate_objective() and its helper functions, along with
+the ObjectiveValidationSuccess and ObjectiveValidationError types.
+"""
+
 from dataclasses import dataclass
 
-import click
-
-from erk.cli.alias import alias
-from erk.cli.github_parsing import parse_issue_identifier
-from erk.cli.repo_resolution import get_remote_github, resolved_repo_option
-from erk.core.context import ErkContext
 from erk_shared.gateway.github.issues.types import IssueNotFound
 from erk_shared.gateway.github.metadata.core import (
     find_metadata_block,
@@ -19,20 +16,13 @@ from erk_shared.gateway.github.metadata.dependency_graph import (
     build_graph,
     compute_graph_summary,
     find_graph_next_node,
-    phases_from_graph,
 )
 from erk_shared.gateway.github.metadata.plan_header import (
     extract_plan_header_objective_issue,
 )
-from erk_shared.gateway.github.metadata.roadmap import (
-    parse_roadmap,
-    rerender_comment_roadmap,
-    serialize_phases,
-)
+from erk_shared.gateway.github.metadata.roadmap import parse_roadmap
 from erk_shared.gateway.github.metadata.types import BlockKeys, MetadataBlock
-from erk_shared.gateway.github.types import GitHubRepoId
 from erk_shared.gateway.remote_github.abc import RemoteGitHub
-from erk_shared.output.output import user_output
 
 ERK_OBJECTIVE_LABEL = "erk-objective"
 
@@ -47,7 +37,7 @@ class ObjectiveValidationSuccess:
         failed_count: Number of failed checks
         graph: Dependency graph of roadmap nodes (empty if parsing failed)
         summary: Step count summary (empty if no graph nodes)
-        next_step: First pending step or None
+        next_node: First pending step or None
         validation_errors: Parser-level warnings from roadmap parsing
         issue_body: Raw issue body text (for phase name enrichment)
     """
@@ -96,6 +86,8 @@ def _check_roadmap_table_sync(
     if not comment_body:
         return None
 
+    from erk_shared.gateway.github.metadata.roadmap import rerender_comment_roadmap
+
     rerendered = rerender_comment_roadmap(issue_body, comment_body)
     if rerendered is None:
         return None
@@ -115,10 +107,6 @@ def _check_pr_backlinks(
 ) -> tuple[bool, str] | None:
     """Check that plan PRs have objective_issue backlinks to this objective.
 
-    For each node with a PR reference (pr: "#NNN"), fetch the PR and verify
-    its plan-header metadata has objective_issue matching this objective.
-    PRs without a plan-header block are skipped (not all PRs are erk plans).
-
     Returns a (passed, description) check tuple, or None if no PR references found.
     """
     pr_nodes = [node for node in graph.nodes if node.pr and node.pr.startswith("#")]
@@ -135,7 +123,6 @@ def _check_pr_backlinks(
 
         objective_ref = extract_plan_header_objective_issue(pr_issue.body)
         if objective_ref is None:
-            # Check if it even has a plan-header block — if not, skip (not an erk plan)
             if has_metadata_block(pr_issue.body, BlockKeys.PLAN_HEADER):
                 backlink_issues.append(
                     f"Step {node.id} PR {node.pr} missing objective_issue backlink"
@@ -195,9 +182,7 @@ def validate_objective(
     has_roadmap = has_metadata_block(issue.body, BlockKeys.OBJECTIVE_ROADMAP)
 
     if not has_roadmap:
-        # No roadmap block — valid roadmap-free objective
         checks.append((True, "Roadmap: none (objective has no roadmap)"))
-        # Skip checks 3-7 (all roadmap-dependent)
         failed_count = sum(1 for passed, _ in checks if not passed)
         return ObjectiveValidationSuccess(
             passed=failed_count == 0,
@@ -213,7 +198,6 @@ def validate_objective(
     if phases:
         checks.append((True, "Roadmap parses successfully"))
     else:
-        # Block exists but failed to parse
         checks.append((False, f"Roadmap parses successfully ({'; '.join(validation_errors)})"))
         failed_count = sum(1 for passed, _ in checks if not passed)
         return ObjectiveValidationSuccess(
@@ -229,10 +213,9 @@ def validate_objective(
 
     graph = build_graph(phases)
 
-    # Check 3: Status/PR consistency (iterate graph nodes)
+    # Check 3: Status/PR consistency
     consistency_issues: list[str] = []
     for node in graph.nodes:
-        # Steps with PR #NNN should be in_progress or done (or planning/skipped)
         if (
             node.pr
             and node.pr.startswith("#")
@@ -248,7 +231,7 @@ def validate_objective(
     else:
         checks.append((False, f"Status/PR consistency: {consistency_issues[0]}"))
 
-    # Check 4: No orphaned done statuses (done steps should have PR reference)
+    # Check 4: No orphaned done statuses
     orphaned: list[str] = []
     for node in graph.nodes:
         if node.status == "done" and node.pr is None:
@@ -259,7 +242,7 @@ def validate_objective(
     else:
         checks.append((False, f"Done step without PR reference: {', '.join(orphaned)}"))
 
-    # Check 5: Phase numbering is sequential (sub-phases like 1A, 1B, 1C are OK)
+    # Check 5: Phase numbering is sequential
     phase_keys = [(p.number, p.suffix) for p in phases]
     is_sequential = all(phase_keys[i] < phase_keys[i + 1] for i in range(len(phase_keys) - 1))
     if is_sequential:
@@ -268,7 +251,7 @@ def validate_objective(
         phase_labels = [f"{n}{s}" for n, s in phase_keys]
         checks.append((False, f"Phase numbering is not sequential: {phase_labels}"))
 
-    # Check 6: v2 format integrity (if objective-header present, verify objective_comment_id)
+    # Check 6: v2 format integrity
     header_block = find_metadata_block(issue.body, BlockKeys.OBJECTIVE_HEADER)
     if header_block is not None:
         comment_id = header_block.data.get("objective_comment_id")
@@ -277,7 +260,7 @@ def validate_objective(
         else:
             checks.append((False, "objective-header missing objective_comment_id"))
 
-    # Check 7: PR references use # prefix (e.g., "#7146" not "7146")
+    # Check 7: PR references use # prefix
     invalid_refs: list[str] = []
     for node in graph.nodes:
         if node.pr and not node.pr.startswith("#"):
@@ -288,14 +271,14 @@ def validate_objective(
     else:
         checks.append((False, f"Invalid reference format: {invalid_refs[0]}"))
 
-    # Check 8: Roadmap table in comment matches YAML source of truth
+    # Check 8: Roadmap table sync
     check8 = _check_roadmap_table_sync(
         remote, owner=owner, repo=repo, issue_body=issue.body, header_block=header_block
     )
     if check8 is not None:
         checks.append(check8)
 
-    # Check 9: PR backlink consistency — plan PRs should have objective_issue backlinks
+    # Check 9: PR backlink consistency
     check9 = _check_pr_backlinks(
         remote, owner=owner, repo=repo, issue_number=issue_number, graph=graph
     )
@@ -316,116 +299,3 @@ def validate_objective(
         validation_errors=validation_errors,
         issue_body=issue.body,
     )
-
-
-@alias("ch")
-@click.command("check")
-@click.argument("objective_ref", type=str)
-@click.option(
-    "--json-output", "json_mode", is_flag=True, help="Output structured JSON (for programmatic use)"
-)
-@resolved_repo_option
-@click.pass_obj
-def check_objective(
-    ctx: ErkContext,
-    objective_ref: str,
-    *,
-    json_mode: bool,
-    repo_id: GitHubRepoId,
-) -> None:
-    """Validate an objective's format and roadmap consistency.
-
-    OBJECTIVE_REF can be an issue number (42) or a full GitHub URL.
-
-    Checks: erk-objective label, roadmap parsing, status/PR consistency,
-    orphaned statuses, phase numbering, v2 format integrity, PR reference
-    format, and roadmap table sync.
-
-    Use --json-output for structured JSON output (replaces erk exec objective-roadmap-check).
-    """
-    remote = get_remote_github(ctx)
-    issue_number = parse_issue_identifier(objective_ref)
-
-    result = validate_objective(
-        remote,
-        owner=repo_id.owner,
-        repo=repo_id.repo,
-        issue_number=issue_number,
-    )
-
-    if json_mode:
-        _output_json(result, issue_number)
-    else:
-        _output_human(result, issue_number)
-
-
-def _output_json(result: ObjectiveValidationResult, issue_number: int) -> None:
-    """Output structured JSON for programmatic consumption."""
-    if isinstance(result, ObjectiveValidationError):
-        click.echo(
-            json.dumps(
-                {
-                    "success": False,
-                    "error": result.error,
-                }
-            )
-        )
-        raise SystemExit(1)
-
-    phases = phases_from_graph(result.graph)
-
-    click.echo(
-        json.dumps(
-            {
-                "success": result.passed,
-                "issue_number": issue_number,
-                "checks": [
-                    {"passed": passed, "description": desc} for passed, desc in result.checks
-                ],
-                "phases": serialize_phases(phases),
-                "summary": result.summary,
-                "next_node": result.next_node,
-                "validation_errors": result.validation_errors,
-                "all_complete": result.graph.is_complete(),
-            }
-        )
-    )
-    if not result.passed:
-        raise SystemExit(1)
-
-
-def _output_human(result: ObjectiveValidationResult, issue_number: int) -> None:
-    """Output human-readable [PASS]/[FAIL] format."""
-    if isinstance(result, ObjectiveValidationError):
-        user_output(
-            click.style("Error: ", fg="red") + f"Failed to validate objective: {result.error}"
-        )
-        raise SystemExit(1)
-
-    user_output(f"Validating objective #{issue_number}...")
-    user_output("")
-
-    for passed, description in result.checks:
-        status = click.style("[PASS]", fg="green") if passed else click.style("[FAIL]", fg="red")
-        user_output(f"{status} {description}")
-
-    user_output("")
-
-    if result.passed:
-        summary = result.summary
-        if summary:
-            user_output(
-                click.style("Objective validation passed", fg="green")
-                + f" ({summary.get('done', 0)}/{summary.get('total_nodes', 0)} done)"
-            )
-        else:
-            user_output(click.style("Objective validation passed", fg="green"))
-        raise SystemExit(0)
-    else:
-        check_word = "checks" if result.failed_count > 1 else "check"
-        user_output(
-            click.style(
-                f"Objective validation failed ({result.failed_count} {check_word} failed)", fg="red"
-            )
-        )
-        raise SystemExit(1)

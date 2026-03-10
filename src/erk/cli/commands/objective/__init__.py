@@ -3,11 +3,11 @@
 import click
 
 from erk.cli.alias import register_with_aliases
-from erk.cli.commands.objective.check_cmd import check_objective
+from erk.cli.commands.objective.check.cli import check_objective
 from erk.cli.commands.objective.close_cmd import close_objective
 from erk.cli.commands.objective.list_cmd import list_objectives
 from erk.cli.commands.objective.plan_cmd import plan_objective
-from erk.cli.commands.objective.view_cmd import view_objective
+from erk.cli.commands.objective.view.cli import view_objective
 from erk.cli.help_formatter import ErkCommandGroup
 
 

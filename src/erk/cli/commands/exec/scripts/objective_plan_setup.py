@@ -19,7 +19,7 @@ from pathlib import Path
 
 import click
 
-from erk.cli.commands.objective.check_cmd import (
+from erk.cli.commands.objective.check.validation import (
     ERK_OBJECTIVE_LABEL,
     ObjectiveValidationError,
     validate_objective,
