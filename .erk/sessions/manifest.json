@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "plan_id": 9121,
+  "sessions": [
+    {
+      "session_id": "96f916bb-df81-4b2f-9c65-5ff37acde1ff",
+      "stage": "impl",
+      "source": "remote",
+      "uploaded_at": "2026-03-10T00:45:38.087693+00:00",
+      "files": [
+        "impl-96f916bb-df81-4b2f-9c65-5ff37acde1ff-96f916bb-df81-4b2f-9c65-5ff37acde1ff-part1.xml",
+        "impl-96f916bb-df81-4b2f-9c65-5ff37acde1ff-96f916bb-df81-4b2f-9c65-5ff37acde1ff-part2.xml",
+        "impl-96f916bb-df81-4b2f-9c65-5ff37acde1ff-96f916bb-df81-4b2f-9c65-5ff37acde1ff-part3.xml"
+      ],
+      "user_turns": 2,
+      "duration_minutes": 4,
+      "raw_size_kb": 116,
+      "xml_size_kb": 113,
+      "git_branch": "plnd/hide-erk-reconcile-03-09-2038"
+    }
+  ]
+}

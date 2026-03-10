@@ -1,0 +1,1108 @@
+<session>
+  <meta source="agent-abe84e4" />
+  <meta branch="plnd/hide-erk-reconcile-03-09-2038" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant docs before exploring raw files. Then explore codebase as necessary.
+
+I'm getting "No commits ahead of main. Nothing to submit." from `erk pr submit` even though `git log --oneline origin/master..HEAD` shows 4 commits ahead. The branch is `plnd/hide-erk-reconcile-03-09-2038` and there's already a draft PR #9121.
+
+Investigate the `erk pr submit` command to understand how it determines "commits ahead of main" and why it might fail despite having commits. Look at the submit pipeline code, especially how it resolves the main branch reference. Check src/erk/cli/ for the submit implementation.</user>
+  <assistant>I'll help you investigate the `erk pr submit` command and understand why it's not detecting commits ahead of main. Let me start by checking the documentation and then exploring the codebase.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="19036" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 19036, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01DMdz7KhHJfkQjUJYe825RT">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/index.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="19036" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 19036, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01Q4kPUwQ8ZJw1Vcp3qdWcnL">
+    <param name="pattern">docs/learned/cli/*.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="19036" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 19036, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01HEuED4vExbc4SjChRh6HAY">
+    <param name="pattern">docs/learned/pr-operations/*.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="19036" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 19036, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01DMdz7KhHJfkQjUJYe825RT">
+     1→&lt;!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY --&gt;
+     2→&lt;!-- Edit source frontmatter, then run 'erk docs sync' to regenerate. --&gt;
+     3→
+     4→# Agent Documentation
+     5→
+     6→Before starting work, scan the read-when conditions below.
+     7→If your current task matches, read the linked document **before writing code**.
+     8→
+     9→## Categories
+    10→
+    11→- [architecture/](architecture/) — Explore when working on core patterns (dry-run, gateways, subprocess, shell integration). Add docs here for cross-cutting technical patterns.
+    12→- [capabilities/](capabilities/)
+    13→- [changelog/](changelog/)
+    14→- [checklists/](checklists/)
+    15→- [ci/](ci/)
+    16→- [claude-code/](claude-code/)
+    17→- [cli/](cli/) — Explore when building CLI commands or output formatting. Add docs here for Click patterns and terminal UX.
+    18→- [commands/](commands/) — Explore when creating or optimizing slash commands. Add docs here for command authoring patterns.
+    19→- [config/](config/)
+    20→- [configuration/](configuration/)
+    21→- [documentation/](documentation/) — Explore when structuring or writing documentation. Add docs here for documentation methodology and best practices.
+    22→- [erk/](erk/) — Explore when working with erk-specific workflows (worktrees, PR sync, Graphite). Add docs here for erk user-facing features.
+    23→- [erk-dev/](erk-dev/)
+    24→- [gateway/](gateway/)
+    25→- [hooks/](hooks/) — Explore when creating or debugging hooks. Add docs here for hook development patterns.
+    26→- [integrations/](integrations/)
+    27→- [objectives/](objectives/)
+    28→- [planning/](planning/) — Explore when working with plans, .erk/impl-context/ folders, or agent delegation. Add docs here for planning workflow patterns.
+    29→- [pr-operations/](pr-operations/)
+    30→- [refactoring/](refactoring/)
+
+... [22 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01HEuED4vExbc4SjChRh6HAY">
+/home/runner/work/erk/erk/docs/learned/pr-operations/automated-review-handling.md
+/home/runner/work/erk/erk/docs/learned/pr-operations/draft-pr-handling.md
+/home/runner/work/erk/erk/docs/learned/pr-operations/checkout-footer-syntax.md
+/home/runner/work/erk/erk/docs/learned/pr-operations/large-diff-recovery.md
+/home/runner/work/erk/erk/docs/learned/pr-operations/index.md
+/home/runner/work/erk/erk/docs/learned/pr-operations/feedback-classification.md
+/home/runner/work/erk/erk/docs/learned/pr-operations/commit-message-generation.md
+/home/runner/work/erk/erk/docs/learned/pr-operations/tripwires.md
+/home/runner/work/erk/erk/docs/learned/pr-operations/pr-body-section-ordering.md
+/home/runner/work/erk/erk/docs/learned/pr-operations/pr-submit-phases.md
+/home/runner/work/erk/erk/docs/learned/pr-operations/pr-validation-rules.md
+/home/runner/work/erk/erk/docs/learned/pr-operations/pre-existing-detection.md
+/home/runner/work/erk/erk/docs/learned/pr-operations/template-synchronization.md
+/home/runner/work/erk/erk/docs/learned/pr-operations/plan-implementation-auto-force.md
+/home/runner/work/erk/erk/docs/learned/pr-operations/resolve-review-threads-format.md
+/home/runner/work/erk/erk/docs/learned/pr-operations/plan-embedding-in-pr.md
+/home/runner/work/erk/erk/docs/learned/pr-operations/resubmission-workflows.md
+/home/runner/work/erk/erk/docs/learned/pr-operations/pr-submission-workflow.md
+/home/runner/work/erk/erk/docs/learned/pr-operations/pr-creation-patterns.md
+/home/runner/work/erk/erk/docs/learned/pr-operations/stub-pr-workflow-link.md
+  </tool_result>
+  <tool_result tool="toolu_01Q4kPUwQ8ZJw1Vcp3qdWcnL">
+/home/runner/work/erk/erk/docs/learned/cli/activation-scripts.md
+/home/runner/work/erk/erk/docs/learned/cli/checkout-helpers.md
+/home/runner/work/erk/erk/docs/learned/cli/batch-exec-commands.md
+/home/runner/work/erk/erk/docs/learned/cli/click-framework-conventions.md
+/home/runner/work/erk/erk/docs/learned/cli/ambiguity-resolution.md
+/home/runner/work/erk/erk/docs/learned/cli/ci-aware-commands.md
+/home/runner/work/erk/erk/docs/learned/cli/checkout-teleport-split.md
+/home/runner/work/erk/erk/docs/learned/cli/agent-friendly-cli.md
+/home/runner/work/erk/erk/docs/learned/cli/auto-generated-reference-docs.md
+/home/runner/work/erk/erk/docs/learned/cli/adding-json-to-commands.md
+/home/runner/work/erk/erk/docs/learned/cli/checkout-three-path-logic.md
+/home/runner/work/erk/erk/docs/learned/cli/backend-aware-display.md
+/home/runner/work/erk/erk/docs/learned/cli/cli-options-validation.md
+/home/runner/work/erk/erk/docs/learned/cli/code-review-filtering.md
+/home/runner/work/erk/erk/docs/learned/cli/codespace-patterns.md
+/home/runner/work/erk/erk/docs/learned/cli/command-deletion-patterns.md
+/home/runner/work/erk/erk/docs/learned/cli/command-promotion.md
+/home/runner/work/erk/erk/docs/learned/cli/command-rename-checklist.md
+/home/runner/work/erk/erk/docs/learned/cli/command-group-structure.md
+/home/runner/work/erk/erk/docs/learned/cli/click-patterns.md
+/home/runner/work/erk/erk/docs/learned/cli/command-organization.md
+/home/runner/work/erk/erk/docs/learned/cli/error-detection-patterns.md
+/home/runner/work/erk/erk/docs/learned/cli/error-handling-antipatterns.md
+/home/runner/work/erk/erk/docs/learned/cli/erk-docs-check.md
+/home/runner/work/erk/erk/docs/learned/cli/dependency-injection-patterns.md
+/home/runner/work/erk/erk/docs/learned/cli/ensure-ideal-pattern.md
+/home/runner/work/erk/erk/docs/learned/cli/doctor-workflow.md
+/home/runner/work/erk/erk/docs/learned/cli/erk-exec-commands.md
+/home/runner/work/erk/erk/docs/learned/cli/exec-script-schema-patterns.md
+/home/runner/work/erk/erk/docs/learned/cli/exec-script-discovery.md
+
+... [44 lines omitted] ...
+  </tool_result>
+  <assistant>Now let me read the PR submission documentation:</assistant>
+  <usage input_tokens="611" cache_creation_input_tokens="3337" cache_read_input_tokens="19036" cache_creation="{'ephemeral_5m_input_tokens': 3337, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01GfQoR8XXyQ2ZfEgQnA5dxz">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/pr-submit-pipeline.md</param>
+  </tool_use>
+  <usage input_tokens="611" cache_creation_input_tokens="3337" cache_read_input_tokens="19036" cache_creation="{'ephemeral_5m_input_tokens': 3337, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01KjEEajrHmkczN7WtNSYdpw">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/pr-submission.md</param>
+  </tool_use>
+  <usage input_tokens="611" cache_creation_input_tokens="3337" cache_read_input_tokens="19036" cache_creation="{'ephemeral_5m_input_tokens': 3337, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_013k3KrcnVGCCuPNaqHwWEkk">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/pr-operations/pr-submit-phases.md</param>
+  </tool_use>
+  <usage input_tokens="611" cache_creation_input_tokens="3337" cache_read_input_tokens="19036" cache_creation="{'ephemeral_5m_input_tokens': 3337, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01GfQoR8XXyQ2ZfEgQnA5dxz">
+     1→---
+     2→title: PR Submit Pipeline Architecture
+     3→read_when:
+     4→  - "modifying the PR submit workflow"
+     5→  - "adding new steps to the submit pipeline"
+     6→  - "debugging PR submission failures"
+     7→  - "understanding the Graphite-first vs core submit dispatch"
+     8→tripwires:
+     9→  - action: "adding a new step to the submit pipeline"
+    10→    warning: "Each step must return SubmitState | SubmitError. Use dataclasses.replace() for state updates. Add the step to _submit_pipeline() tuple."
+    11→  - action: "mutating SubmitState fields directly"
+    12→    warning: "SubmitState is frozen. Use dataclasses.replace(state, field=value) to create new state."
+    13→  - action: "adding discovery logic outside prepare_state()"
+    14→    warning: "All discovery (branch name, plan number, parent branch, etc.) must happen in prepare_state() to prevent duplication. Later steps assume these fields are populated."
+    15→  - action: "using ctx.invoke() with kwargs that don't match target function parameter names"
+    16→    warning: "Click ctx.invoke() forwards kwargs directly — any name mismatch causes runtime TypeError. Verify all parameter names exactly match the target function signature."
+    17→  - action: "calling an external tool that overwrites state without capturing it first"
+    18→    warning: "Save state BEFORE calling external tools that may overwrite it. Reference: capture_existing_pr_body() in submit_pipeline.py captures the PR body before gt submit overwrites it."
+    19→last_audited: "2026-02-16 14:20 PT"
+    20→audit_result: clean
+    21→---
+    22→
+    23→# PR Submit Pipeline Architecture
+    24→
+    25→The PR submit pipeline is erk's reference implementation of the state threading pattern. This document explains **why** the architecture choices matter, not what the code does (read the source for that).
+    26→
+    27→## Why Linear Pipelines: The Dual-Path Problem
+    28→
+    29→Before the linear pipeline refactor, PR submission used branching orchestration with two paths (Graphite-first vs core). **The problem:** discovery code was duplicated between paths, plan linkage validation happened in multiple places, and error handling varied between branches.
+    30→
+
+... [152 lines omitted] ...
+
+    31→Linear pipelines solve this by **deferring the dispatch decision**. Discovery happens once in step 1, then step 3 dispatches internally to Graphite or core flow. Both paths share the same state type and error handling.
+    43→3. **Type narrowing** — Later steps assume `branch_name` is `str`, not `str | None`, because step 1 checks and errors if unresolved
+    67→- **Shared error handling** — Both return `SubmitState | SubmitError`, uniform consumption at CLI layer
+    84→**Why not fewer steps?** Merging "extract diff + generate description" would make testing harder (can't test diff extraction without running AI generation). Each step represents a **failure boundary** — a distinct phase where errors need different handling.
+    88→**Decision test:** If the step can fail independently and that failure requires distinct error handling, it deserves to be a separate step.
+    96→**Why auto-repair instead of erroring?** Early erk workflows created `.erk/impl-context/` but not a reference file. Erroring would break existing worktrees. Auto-repair maintains forward compatibility while migrating to the new structure.
+   145→## Why dict[str, str] for SubmitError.details
+   147→&lt;!-- Source: src/erk/cli/commands/pr/submit_pipeline.py, SubmitError --&gt;
+   149→`SubmitError.details` is `dict[str, str]`, not `dict[str, str] | None` or `dict[str, Any]`.
+   151→**Why always present, never None?** Every error has details, even if empty `{}`. Making it optional adds ceremony (callers must check `if details is not None`) for no benefit.
+   153→**Why `str` values, not `Any`?** Error details are for logging and debugging. String values enable consistent serialization (JSON, log files) without type uncertainty. If you need structured data, that belongs in a dedicated error type, not in `details`.
+   157→The pipeline detects plan implementations via `state.plan_id is not None or state.branch_name.startswith("plnd/")`. The branch-prefix fallback handles the case where `.erk/impl-context/` cleanup occurred before a failed push attempt, leaving `plan_id` as `None` but the branch name still indicating a plan implementation. This drives two auto-behaviors:
+   168→- [Discriminated Union Error Handling](../architecture/discriminated-union-error-handling.md) — SubmitError as discriminated union
+  </tool_result>
+  <tool_result tool="toolu_01KjEEajrHmkczN7WtNSYdpw">
+     1→---
+     2→title: PR Submission Decision Framework
+     3→read_when:
+     4→  - "choosing between git-pr-push and pr-submit commands"
+     5→  - "understanding PR submission workflows"
+     6→  - "deciding whether to use Graphite or plain git"
+     7→last_audited: "2026-02-16 14:20 PT"
+     8→audit_result: edited
+     9→tripwires:
+    10→  - action: "submitting PRs"
+    11→    warning: "Before creating PRs, understand the workflow tradeoffs"
+    12→  - action: "validating PRs in workflows"
+    13→    warning: "PR validation rules apply to both workflows"
+    14→---
+    15→
+    16→# PR Submission Decision Framework
+    17→
+    18→Erk provides two PR submission workflows with fundamentally different design goals. Choosing the wrong one creates friction.
+    19→
+    20→## The Core Question
+    21→
+    22→**Do you need stack management?** Not "do you have stacks?" but "does this work benefit from Graphite's stack operations?"
+    23→
+    24→### Use `/erk:git-pr-push` When
+    25→
+    26→- **Remote execution context** — GitHub Actions workflows, CI environments where Graphite isn't available
+    27→- **Single-branch PRs** — no dependencies on other PRs, simple merge to main
+    28→- **Commit history preservation matters** — you want to keep granular commit messages intact
+    29→- **Graphite isn't installed** — bare git repos, lightweight environments
+    30→
+
+... [108 lines omitted] ...
+
+    98→- Agent re-runs the command after a failure
+   100→- Remote execution retries due to transient failures
+   102→**Without this check:** `gh pr create` would fail with "PR already exists for branch", requiring manual error recovery.
+   113→- Issue reference extraction failures (`.erk/impl-context/plan-ref.json` wasn't read correctly)
+   116→**Anti-pattern:** Treating validation failures as user errors — these are system bugs. If `erk pr check` fails after a workflow completes, the workflow's PR construction logic is broken.
+  </tool_result>
+  <tool_result tool="toolu_013k3KrcnVGCCuPNaqHwWEkk">
+     1→---
+     2→title: PR Submit Workflow Phases
+     3→read_when:
+     4→  - "understanding the erk pr submit workflow"
+     5→  - "debugging PR submission issues"
+     6→  - "working with AI-generated PR descriptions"
+     7→  - "understanding plan context integration in PRs"
+     8→last_audited: "2026-02-16 14:20 PT"
+     9→audit_result: clean
+    10→---
+    11→
+    12→# PR Submit Workflow Phases
+    13→
+    14→The `erk pr submit` command uses a 5-phase workflow to submit PRs with AI-generated descriptions. This document explains each phase and the two-layer architecture.
+    15→
+    16→## Two-Layer Architecture
+    17→
+    18→The workflow has two layers:
+    19→
+    20→1. **Core layer (always runs)**: `git push` + `gh pr create` - works without Graphite
+    21→2. **Graphite layer (optional)**: `gt submit` for stack metadata - runs when Graphite is available and branch is tracked
+    22→
+    23→## Workflow Phases
+    24→
+    25→| Phase | Name                          | Description                                   |
+    26→| ----- | ----------------------------- | --------------------------------------------- |
+    27→| 1     | Creating or Updating PR       | Push changes and create/find PR               |
+    28→| 2     | Getting diff and plan context | Extract diff and fetch plan concurrently      |
+    29→| 3     | Generating PR description     | AI generates title and body via Anthropic API |
+    30→| 4     | Graphite enhancement          | Add stack metadata (if available)             |
+
+... [106 lines omitted] ...
+
+    89→This phase is non-fatal - errors are warnings, not failures.
+  </tool_result>
+  <assistant>Now let me look at the actual implementation of `erk pr submit`:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="9350" cache_read_input_tokens="22373" cache_creation="{'ephemeral_5m_input_tokens': 9350, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01FUnUVyRavw4MJ2VZBSoBbK">
+    <param name="pattern">src/erk/cli/commands/pr/*.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="9350" cache_read_input_tokens="22373" cache_creation="{'ephemeral_5m_input_tokens': 9350, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01FUnUVyRavw4MJ2VZBSoBbK">
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/__init__.py
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/duplicate_check_cmd.py
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/check_cmd.py
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/address_cmd.py
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/list_cmd.py
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/create_cmd.py
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/checkout_cmd.py
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/dispatch_cmd.py
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/dispatch_helpers.py
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/diverge_fix_cmd.py
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/close_cmd.py
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/submit_pipeline.py
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/log_cmd.py
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/parse_pr_reference.py
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/view_cmd.py
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/replan_cmd.py
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/shared.py
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/rebase_cmd.py
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/teleport_cmd.py
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/submit_cmd.py
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/prepare_cmd.py
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/metadata_helpers.py
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/rewrite_cmd.py
+  </tool_result>
+  <assistant>Let me examine the submit command and pipeline:</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="823" cache_read_input_tokens="31723" cache_creation="{'ephemeral_5m_input_tokens': 823, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01WuMCa6rWPWdVCYnWm4jnrZ">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/submit_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="823" cache_read_input_tokens="31723" cache_creation="{'ephemeral_5m_input_tokens': 823, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01126NSDcAwQ5u43tqqBNmWR">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/submit_pipeline.py</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="823" cache_read_input_tokens="31723" cache_creation="{'ephemeral_5m_input_tokens': 823, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01WuMCa6rWPWdVCYnWm4jnrZ">
+     1→"""Submit current branch as a pull request.
+     2→
+     3→Runs a linear pipeline of functions transforming a frozen SubmitState:
+     4→1. Prepare state (resolve repo, branch, parent, issue)
+     5→2. Commit WIP changes
+     6→3. Push and create/find PR (Graphite-first or core path)
+     7→4. Extract diff for AI
+     8→5. Fetch plan context
+     9→6. Generate AI PR description
+    10→7. Enhance with Graphite (if applicable)
+    11→8. Finalize PR metadata
+    12→"""
+    13→
+    14→import sys
+    15→from pathlib import Path
+    16→
+    17→import click
+    18→
+    19→from erk.cli.commands.pr.shared import require_claude_available
+    20→from erk.cli.commands.pr.submit_pipeline import (
+    21→    SubmitError,
+    22→    SubmitState,
+    23→    make_initial_state,
+    24→    run_submit_pipeline,
+    25→)
+    26→from erk.core.context import ErkContext
+    27→
+    28→
+    29→def _make_clickable(url: str) -&gt; str:
+    30→    """Wrap a URL in terminal hyperlink escape sequences."""
+
+... [127 lines omitted] ...
+
+   148→    if isinstance(result, SubmitError):
+   149→        raise click.ClickException(result.message)
+  </tool_result>
+  <tool_result tool="toolu_01126NSDcAwQ5u43tqqBNmWR">
+     1→"""Linear pipeline for PR submission.
+     2→
+     3→Replaces the dual-path branching orchestration with a sequence of plain
+     4→functions transforming a frozen SubmitState dataclass.
+     5→
+     6→Each step: (ErkContext, SubmitState) -&gt; SubmitState | SubmitError
+     7→"""
+     8→
+     9→import concurrent.futures
+    10→import dataclasses
+    11→import sys
+    12→import uuid
+    13→from collections.abc import Callable
+    14→from dataclasses import dataclass
+    15→from functools import cache
+    16→from pathlib import Path
+    17→
+    18→import click
+    19→
+    20→from erk.cli.commands.pr.shared import (
+    21→    assemble_pr_body,
+    22→    echo_plan_context_status,
+    23→    maybe_advance_lifecycle_to_impl,
+    24→    recover_plan_header,
+    25→    run_commit_message_generation,
+    26→)
+    27→from erk.cli.constants import ERK_PR_LABEL, PLANNED_PR_TITLE_PREFIX
+    28→from erk.cli.ensure import UserFacingCliError
+    29→from erk.cli.repo_resolution import get_remote_github
+    30→from erk.core.commit_message_generator import CommitMessageGenerator
+
+... [75 lines omitted] ...
+
+    34→from erk_shared.gateway.git.remote_ops.types import PullRebaseError, PushError
+  </tool_result>
+  <assistant>Let me read more of the submit_pipeline.py to find the actual check for commits ahead:</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="3608" cache_read_input_tokens="32546" cache_creation="{'ephemeral_5m_input_tokens': 3608, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Ng6aZLuSQvMMLdG2izSbzY">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/submit_pipeline.py</param>
+    <param name="offset">100</param>
+    <param name="limit">300</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="3608" cache_read_input_tokens="32546" cache_creation="{'ephemeral_5m_input_tokens': 3608, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Ng6aZLuSQvMMLdG2izSbzY">
+   100→    debug: bool
+   101→    session_id: str
+   102→    skip_description: bool
+   103→    quiet: bool
+   104→    plan_id: str | None
+   105→    pr_number: int | None
+   106→    pr_url: str | None
+   107→    was_created: bool
+   108→    base_branch: str | None
+   109→    graphite_url: str | None
+   110→    diff_file: Path | None
+   111→    plan_context: PlanContext | None
+   112→    title: str | None
+   113→    body: str | None
+   114→    existing_pr_body: str
+   115→    graphite_is_authed: bool | None
+   116→    graphite_branch_tracked: bool | None
+   117→
+   118→
+   119→@dataclass(frozen=True)
+   120→class SubmitError:
+   121→    """Error result from a pipeline step."""
+   122→
+   123→    phase: str
+   124→    error_type: str
+   125→    message: str
+   126→    details: dict[str, str]
+   127→
+   128→
+   129→# ---------------------------------------------------------------------------
+
+... [275 lines omitted] ...
+
+   133→SubmitStep = Callable[[ErkContext, SubmitState], SubmitState | SubmitError]
+   136→def prepare_state(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   149→        return SubmitError(
+   151→            error_type="no_branch",
+   165→        except ValueError as e:
+   166→            return SubmitError(
+   168→                error_type="issue_linkage_mismatch",
+   211→def cleanup_impl_for_submit(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   231→def commit_wip(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   241→def capture_existing_pr_body(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   253→def push_and_create_pr(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   270→def _graphite_first_flow(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   277→    # but the first submit attempt failed before pushing.
+   299→            return SubmitError(
+   301→                error_type="remote_diverged",
+   331→    except RuntimeError as e:
+   332→        error_str = str(e)
+   333→        if "restack" in error_str.lower():
+   334→            return SubmitError(
+   336→                error_type="graphite_restack_required",
+   345→        return SubmitError(
+   347→            error_type="graphite_submit_failed",
+   348→            message=f"Graphite submit failed: {e}",
+   360→        return SubmitError(
+   362→            error_type="pr_not_found",
+   391→def _core_submit_flow(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   399→        return SubmitError(
+  </tool_result>
+  <assistant>Let me continue reading to find where the "commits ahead" check happens:</assistant>
+  <usage input_tokens="4" cache_creation_input_tokens="4620" cache_read_input_tokens="36154" cache_creation="{'ephemeral_5m_input_tokens': 4620, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01CtdDKnW7m8iexEgFsHv2XD">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/submit_pipeline.py</param>
+    <param name="offset">390</param>
+    <param name="limit">200</param>
+  </tool_use>
+  <usage input_tokens="4" cache_creation_input_tokens="4620" cache_read_input_tokens="36154" cache_creation="{'ephemeral_5m_input_tokens': 4620, 'ephemeral_1h_input_tokens': 0}" output_tokens="131" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01CtdDKnW7m8iexEgFsHv2XD">
+   390→
+   391→def _core_submit_flow(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   392→    """Core submit flow: git push + gh pr create."""
+   393→    if not state.quiet:
+   394→        click.echo(click.style("Phase 1: Creating or Updating PR", bold=True))
+   395→
+   396→    # Check GitHub authentication
+   397→    is_gh_authed, gh_username, _ = ctx.github.check_auth_status()
+   398→    if not is_gh_authed:
+   399→        return SubmitError(
+   400→            phase="push_and_create_pr",
+   401→            error_type="github_auth_failed",
+   402→            message="GitHub CLI is not authenticated. Run 'gh auth login'.",
+   403→            details={},
+   404→        )
+   405→    if state.debug and not state.quiet:
+   406→        click.echo(click.style(f"   Authenticated as {gh_username}", dim=True))
+   407→
+   408→    # Verify commits to push
+   409→    commit_count = ctx.git.analysis.count_commits_ahead(state.cwd, state.parent_branch)
+   410→    if commit_count == 0:
+   411→        return SubmitError(
+   412→            phase="push_and_create_pr",
+   413→            error_type="no_commits",
+   414→            message=f"No commits ahead of {state.parent_branch}. Nothing to submit.",
+   415→            details={"parent_branch": state.parent_branch, "branch": state.branch_name},
+   416→        )
+   417→
+   418→    # Divergence check and auto-rebase
+   419→    divergence = ctx.git.branch.is_branch_diverged_from_remote(
+
+... [175 lines omitted] ...
+
+   431→        if isinstance(pull_result, PullRebaseError):
+   432→            return SubmitError(
+   434→                error_type="rebase_failed",
+   436→                    f"Failed to rebase '{state.branch_name}' on origin.\n"
+   437→                    f"Error: {pull_result.message}\n\n"
+   447→        return SubmitError(
+   449→            error_type="branch_diverged",
+   468→    if isinstance(push_result, PushError):
+   470→            return SubmitError(
+   472→                error_type="branch_diverged",
+   481→        raise UserFacingCliError(push_result.message, error_type="cli_error")
+   491→                return SubmitError(
+   493→                    error_type="parent_branch_no_pr",
+   565→def label_code_pr(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   581→def extract_diff(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   587→        return SubmitError(
+   589→            error_type="no_base_branch",
+  </tool_result>
+  <assistant>Perfect! I found it. The issue is on line 409-416. Let me check what `count_commits_ahead` does:</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="3270" cache_read_input_tokens="40774" cache_creation="{'ephemeral_5m_input_tokens': 3270, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01W22Uko6dSGKNogUVSnjj8Z">
+    <param name="pattern">src/erk/**/*analysis*.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="3270" cache_read_input_tokens="40774" cache_creation="{'ephemeral_5m_input_tokens': 3270, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01VMrtKmHneHthBXF2WPYjs3">
+    <param name="command">find /home/runner/work/erk/erk/src -name "*analysis*" -type f</param>
+    <param name="description">Find analysis-related files in src</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="3270" cache_read_input_tokens="40774" cache_creation="{'ephemeral_5m_input_tokens': 3270, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01VMrtKmHneHthBXF2WPYjs3">
+
+  </tool_result>
+  <tool_result tool="toolu_01W22Uko6dSGKNogUVSnjj8Z">
+No files found
+  </tool_result>
+  <assistant>Let me search for count_commits_ahead:</assistant>
+  <usage input_tokens="34" cache_creation_input_tokens="349" cache_read_input_tokens="44044" cache_creation="{'ephemeral_5m_input_tokens': 349, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01E3fnbxhNL74dEETdGaPh6s">
+    <param name="pattern">count_commits_ahead</param>
+    <param name="path">/home/runner/work/erk/erk/src</param>
+  </tool_use>
+  <usage input_tokens="34" cache_creation_input_tokens="349" cache_read_input_tokens="44044" cache_creation="{'ephemeral_5m_input_tokens': 349, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01E3fnbxhNL74dEETdGaPh6s">
+Found 3 files
+src/erk/cli/commands/pr/submit_pipeline.py
+src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py
+src/erk/cli/commands/exec/scripts/generate_pr_address_summary.py
+  </tool_result>
+  <assistant>Let me search for where count_commits_ahead is defined:</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="244" cache_read_input_tokens="44393" cache_creation="{'ephemeral_5m_input_tokens': 244, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_0122LAB9gcwgJHcPPe5vw9kT">
+    <param name="pattern">def count_commits_ahead</param>
+    <param name="path">/home/runner/work/erk/erk</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="244" cache_read_input_tokens="44393" cache_creation="{'ephemeral_5m_input_tokens': 244, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0122LAB9gcwgJHcPPe5vw9kT">
+Found 4 files
+packages/erk-shared/src/erk_shared/gateway/git/analysis_ops/abc.py
+packages/erk-shared/src/erk_shared/gateway/git/analysis_ops/dry_run.py
+packages/erk-shared/src/erk_shared/gateway/git/analysis_ops/fake.py
+packages/erk-shared/src/erk_shared/gateway/git/analysis_ops/real.py
+  </tool_result>
+  <assistant>Let me read the real implementation:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="362" cache_read_input_tokens="44637" cache_creation="{'ephemeral_5m_input_tokens': 362, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01P4joq3D98e94yeuMSs2TJr">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/analysis_ops/real.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="362" cache_read_input_tokens="44637" cache_creation="{'ephemeral_5m_input_tokens': 362, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01P4joq3D98e94yeuMSs2TJr">
+     1→"""Real implementation of git analysis operations."""
+     2→
+     3→import subprocess
+     4→from pathlib import Path
+     5→
+     6→from erk_shared.gateway.git.analysis_ops.abc import GitAnalysisOps
+     7→from erk_shared.subprocess_utils import run_subprocess_with_context
+     8→
+     9→
+    10→class RealGitAnalysisOps(GitAnalysisOps):
+    11→    """Real implementation of Git analysis operations using subprocess."""
+    12→
+    13→    # ============================================================================
+    14→    # Query Operations
+    15→    # ============================================================================
+    16→
+    17→    def count_commits_ahead(self, cwd: Path, base_branch: str) -&gt; int:
+    18→        """Count commits in HEAD that are not in base_branch."""
+    19→        result = subprocess.run(
+    20→            ["git", "rev-list", "--count", f"{base_branch}..HEAD"],
+    21→            cwd=cwd,
+    22→            capture_output=True,
+    23→            text=True,
+    24→            check=False,
+    25→        )
+    26→        if result.returncode != 0:
+    27→            return 0
+    28→        count_str = result.stdout.strip()
+    29→        if not count_str:
+    30→            return 0
+
+... [51 lines omitted] ...
+  </tool_result>
+  <assistant>Excellent! Now I can see the problem. Let me verify the parent_branch detection logic and check what's happening with the main branch reference:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="1158" cache_read_input_tokens="44999" cache_creation="{'ephemeral_5m_input_tokens': 1158, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01BZ1e8Kdoy6gNmiVsanrZ3f">
+    <param name="command">git log --oneline -1</param>
+    <param name="description">Show current branch and recent commits</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="1158" cache_read_input_tokens="44999" cache_creation="{'ephemeral_5m_input_tokens': 1158, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01BZ1e8Kdoy6gNmiVsanrZ3f">
+b8ddb5aa6 WIP: Prepare for PR submission
+  </tool_result>
+  <assistant>Let me check the parent branch detection:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="278" cache_read_input_tokens="46157" cache_creation="{'ephemeral_5m_input_tokens': 278, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01FVENmTodZcvqkDnw6U7UtY">
+    <param name="command">git branch -vv &amp;&amp; echo "---" &amp;&amp; git log --oneline origin/master..HEAD</param>
+    <param name="description">Show branch tracking and commits ahead of master</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="278" cache_read_input_tokens="46157" cache_creation="{'ephemeral_5m_input_tokens': 278, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01FVENmTodZcvqkDnw6U7UtY">
+* plnd/hide-erk-reconcile-03-09-2038 b8ddb5aa6 [origin/plnd/hide-erk-reconcile-03-09-2038] WIP: Prepare for PR submission
+---
+b8ddb5aa6 WIP: Prepare for PR submission
+3bcfea65e Remove plan staging dirs before implementation
+249cfa526 Update plan: Make erk reconcile a Hidden Command
+733792deb One-shot: make erk reconcile a hidden command
+  </tool_result>
+  <assistant>Perfect! Now I can see the problem. Let me check how parent_branch is detected:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="274" cache_read_input_tokens="46435" cache_creation="{'ephemeral_5m_input_tokens': 274, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01GA5fwTeDrXiys7a7mcDXHL">
+    <param name="pattern">get_parent_branch</param>
+    <param name="path">/home/runner/work/erk/erk/src</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="274" cache_read_input_tokens="46435" cache_creation="{'ephemeral_5m_input_tokens': 274, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01GA5fwTeDrXiys7a7mcDXHL">
+Found 12 files
+src/erk/tui/data/real_provider.py
+src/erk/cli/commands/wt/create_cmd.py
+src/erk/cli/ensure.py
+src/erk/cli/commands/slot/assign_cmd.py
+src/erk/cli/commands/pr/checkout_cmd.py
+src/erk/cli/commands/pr/shared.py
+src/erk/cli/commands/pr/submit_pipeline.py
+src/erk/cli/commands/pr/teleport_cmd.py
+src/erk/cli/commands/navigation_helpers.py
+src/erk/cli/commands/land_cmd.py
+src/erk/cli/commands/land_pipeline.py
+src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py
+  </tool_result>
+  <assistant>Let me search for the branch_manager class:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="482" cache_read_input_tokens="46709" cache_creation="{'ephemeral_5m_input_tokens': 482, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01QmZUfqZuDsiu4GjfedB5wz">
+    <param name="pattern">def get_parent_branch</param>
+    <param name="path">/home/runner/work/erk/erk</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="482" cache_read_input_tokens="46709" cache_creation="{'ephemeral_5m_input_tokens': 482, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01QmZUfqZuDsiu4GjfedB5wz">
+Found 5 files
+packages/erk-shared/src/erk_shared/gateway/graphite/abc.py
+packages/erk-shared/src/erk_shared/gateway/branch_manager/abc.py
+packages/erk-shared/src/erk_shared/gateway/branch_manager/fake.py
+packages/erk-shared/src/erk_shared/gateway/branch_manager/git.py
+packages/erk-shared/src/erk_shared/gateway/branch_manager/graphite.py
+  </tool_result>
+  <assistant>Let me examine the git branch manager:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="268" cache_read_input_tokens="47191" cache_creation="{'ephemeral_5m_input_tokens': 268, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_017HScK5Bcntphc4KCWL6fbs">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/branch_manager/git.py</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="268" cache_read_input_tokens="47191" cache_creation="{'ephemeral_5m_input_tokens': 268, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017HScK5Bcntphc4KCWL6fbs">
+     1→"""Git-based BranchManager implementation (no Graphite)."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→from dataclasses import dataclass
+     6→from pathlib import Path
+     7→
+     8→from erk_shared.gateway.branch_manager.abc import BranchManager
+     9→from erk_shared.gateway.branch_manager.types import PrInfo, SubmitBranchError, SubmitBranchResult
+    10→from erk_shared.gateway.git.abc import Git
+    11→from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists, BranchCreated
+    12→from erk_shared.gateway.git.remote_ops.types import PushError
+    13→from erk_shared.gateway.github.abc import LocalGitHub
+    14→from erk_shared.gateway.github.types import PRNotFound
+    15→
+    16→
+    17→@dataclass(frozen=True)
+    18→class GitBranchManager(BranchManager):
+    19→    """BranchManager implementation using plain Git and GitHub.
+    20→
+    21→    Falls back to GitHub REST API for PR lookups when Graphite
+    22→    is not available or not configured.
+    23→    """
+    24→
+    25→    git: Git
+    26→    github: LocalGitHub
+    27→
+    28→    def get_pr_for_branch(self, repo_root: Path, branch: str) -&gt; PrInfo | None:
+    29→        """Get PR info from GitHub REST API.
+    30→
+
+... [174 lines omitted] ...
+
+    82→    def submit_branch(self, repo_root: Path, branch: str) -&gt; SubmitBranchResult | SubmitBranchError:
+    94→            SubmitBranchResult on success, SubmitBranchError on failure.
+    99→        if isinstance(push_result, PushError):
+   100→            return SubmitBranchError(message=push_result.message)
+  </tool_result>
+  <assistant>Perfect! Now let me check what branch manager is being used and examine the Graphite version:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="2796" cache_read_input_tokens="47459" cache_creation="{'ephemeral_5m_input_tokens': 2796, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_017xhXbbiymEbzjaTbrLgAVJ">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/branch_manager/graphite.py</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="2796" cache_read_input_tokens="47459" cache_creation="{'ephemeral_5m_input_tokens': 2796, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017xhXbbiymEbzjaTbrLgAVJ">
+     1→"""Graphite-based BranchManager implementation."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→from dataclasses import dataclass
+     6→from pathlib import Path
+     7→
+     8→from erk_shared.gateway.branch_manager.abc import BranchManager
+     9→from erk_shared.gateway.branch_manager.types import PrInfo, SubmitBranchError, SubmitBranchResult
+    10→from erk_shared.gateway.git.abc import Git
+    11→from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists, BranchCreated
+    12→from erk_shared.gateway.github.abc import LocalGitHub
+    13→from erk_shared.gateway.github.types import PRNotFound
+    14→from erk_shared.gateway.graphite.abc import Graphite
+    15→from erk_shared.gateway.graphite.branch_ops.abc import GraphiteBranchOps
+    16→
+    17→
+    18→@dataclass(frozen=True)
+    19→class GraphiteBranchManager(BranchManager):
+    20→    """BranchManager implementation using Graphite.
+    21→
+    22→    Uses Graphite's local cache for fast PR lookups and `gt create`
+    23→    for branch creation with parent tracking. Falls back to GitHub API
+    24→    when PR info is not in Graphite cache.
+    25→    """
+    26→
+    27→    git: Git
+    28→    graphite: Graphite
+    29→    graphite_branch_ops: GraphiteBranchOps
+    30→    github: LocalGitHub
+
+... [271 lines omitted] ...
+
+   172→    def submit_branch(self, repo_root: Path, branch: str) -&gt; SubmitBranchResult | SubmitBranchError:
+   182→            SubmitBranchResult on success, SubmitBranchError on failure.
+   189→        except RuntimeError as e:
+   190→            return SubmitBranchError(message=str(e))
+  </tool_result>
+  <assistant>Now let me check what's on the current branch according to Graphite:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="4368" cache_read_input_tokens="50255" cache_creation="{'ephemeral_5m_input_tokens': 4368, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01PHX5vNEQc1LPAGmNar2ixU">
+    <param name="command">gt log --all | head -20</param>
+    <param name="description">Show Graphite branch stack information</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="4368" cache_read_input_tokens="50255" cache_creation="{'ephemeral_5m_input_tokens': 4368, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01PHX5vNEQc1LPAGmNar2ixU">
+/bin/bash: line 1: gt: command not found
+  </tool_result>
+  <assistant>Let me check what the current configuration is:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="263" cache_read_input_tokens="54623" cache_creation="{'ephemeral_5m_input_tokens': 263, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01H6xPjwCo18WoZUF3HM5AQS">
+    <param name="command">git config --local --list | grep -i "branch\|parent" || echo "No branch config found"</param>
+    <param name="description">Check git branch configuration</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="263" cache_read_input_tokens="54623" cache_creation="{'ephemeral_5m_input_tokens': 263, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01H6xPjwCo18WoZUF3HM5AQS">
+branch.plnd/hide-erk-reconcile-03-09-2038.remote=origin
+branch.plnd/hide-erk-reconcile-03-09-2038.merge=refs/heads/plnd/hide-erk-reconcile-03-09-2038
+  </tool_result>
+  <assistant>Now let me simulate what count_commits_ahead would do:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="219" cache_read_input_tokens="54886" cache_creation="{'ephemeral_5m_input_tokens': 219, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_013ACdLMSyxLeC48eoe5g8cS">
+    <param name="command">
+# Test with different base branches
+echo "=== Testing commits ahead calculations ==="
+ech...[truncated 324 chars]...origin/master doesn't exist)"
+echo ""
+echo "=== Actual remote branches ==="
+git branch -r
+</param>
+    <param name="description">Test commit counting with different base branches</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="219" cache_read_input_tokens="54886" cache_creation="{'ephemeral_5m_input_tokens': 219, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013ACdLMSyxLeC48eoe5g8cS">
+=== Testing commits ahead calculations ===
+
+Against 'main' (if exists):
+fatal: ambiguous argument 'main..HEAD': unknown revision or path not in the working tree.
+Use '--' to separate paths from revisions, like this:
+'git &lt;command&gt; [&lt;revision&gt;...] -- [&lt;file&gt;...]'
+(main doesn't exist locally)
+
+Against 'origin/main' (if exists):
+fatal: ambiguous argument 'origin/main..HEAD': unknown revision or path not in the working tree.
+Use '--' to separate paths from revisions, like this:
+'git &lt;command&gt; [&lt;revision&gt;...] -- [&lt;file&gt;...]'
+(origin/main doesn't exist)
+
+Against 'origin/master':
+4
+
+=== Actual remote branches ===
+  origin/02-08-batch-regen-01-scripts
+  origin/02-08-batch-regen-02
+  origin/02-08-batch-regen-03
+  origin/02-08-batch-regen-04
+  origin/02-08-batch-regen-05
+  origin/02-08-batch-regen-06
+  origin/02-08-batch-regen-07
+  origin/02-08-batch-regen-08
+  origin/02-08-batch-regen-09
+  origin/02-08-batch-regen-10
+  origin/02-08-batch-regen-11
+  origin/02-08-batch-regen-12
+
+... [714 lines omitted] ...
+
+  origin/P4598-reduce-index-lock-errors-01-11-0340
+  </tool_result>
+  <assistant>Perfect! Now let me verify what the actual parent branch should be:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="13961" cache_read_input_tokens="55105" cache_creation="{'ephemeral_5m_input_tokens': 13961, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01KdbjcHQCQChbCxGcfLKvT7">
+    <param name="command">
+# Check what trunk/main branch is detected
+git log -1 --oneline master 2&gt;/dev/null &amp;&amp; ech...[truncated 92 chars]...echo "main doesn't exist"
+echo ""
+echo "Current local branches:"
+git branch -l | head -10
+</param>
+    <param name="description">Check which main branch is configured</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="13961" cache_read_input_tokens="55105" cache_creation="{'ephemeral_5m_input_tokens': 13961, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01KdbjcHQCQChbCxGcfLKvT7">
+master doesn't exist
+main doesn't exist
+
+Current local branches:
+* plnd/hide-erk-reconcile-03-09-2038
+  </tool_result>
+  <assistant>Excellent! Now I've found the root cause. Let me check how trunk_branch is detected:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="258" cache_read_input_tokens="69066" cache_creation="{'ephemeral_5m_input_tokens': 258, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_014rYJVmvzKpmURaENoSCc9a">
+    <param name="command">find /home/runner/work/erk/erk/src -name "*trunk*" -type f</param>
+    <param name="description">Search for trunk branch detection code</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="258" cache_read_input_tokens="69066" cache_creation="{'ephemeral_5m_input_tokens': 258, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014rYJVmvzKpmURaENoSCc9a">
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/__pycache__/detect_trunk_branch.cpython-313.pyc
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/__pycache__/detect_trunk_branch.cpython-312.pyc
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/detect_trunk_branch.py
+  </tool_result>
+  <assistant>Let me also search for detect_trunk_branch:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="392" cache_read_input_tokens="69324" cache_creation="{'ephemeral_5m_input_tokens': 392, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01QCS5Bg4deGgdy7gBG39QWE">
+    <param name="pattern">def detect_trunk_branch</param>
+    <param name="path">/home/runner/work/erk/erk</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="392" cache_read_input_tokens="69324" cache_creation="{'ephemeral_5m_input_tokens': 392, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01QCS5Bg4deGgdy7gBG39QWE">
+Found 5 files
+src/erk/cli/commands/exec/scripts/detect_trunk_branch.py
+packages/erk-shared/src/erk_shared/gateway/git/branch_ops/abc.py
+packages/erk-shared/src/erk_shared/gateway/git/branch_ops/dry_run.py
+packages/erk-shared/src/erk_shared/gateway/git/branch_ops/fake.py
+packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py
+  </tool_result>
+  <tool_use name="Read" id="toolu_018cCAWWAef5v7zyshXNFDwR">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py</param>
+    <param name="limit">150</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="276" cache_read_input_tokens="69716" cache_creation="{'ephemeral_5m_input_tokens': 276, 'ephemeral_1h_input_tokens': 0}" output_tokens="18" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_018cCAWWAef5v7zyshXNFDwR">
+     1→"""Production implementation of Git branch operations using subprocess."""
+     2→
+     3→import re
+     4→import subprocess
+     5→from pathlib import Path
+     6→
+     7→from erk_shared.gateway.git.abc import BranchDivergence, BranchSyncInfo
+     8→from erk_shared.gateway.git.branch_ops.abc import GitBranchOps
+     9→from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists, BranchCreated
+    10→from erk_shared.gateway.git.lock import wait_for_index_lock
+    11→from erk_shared.gateway.time.abc import Time
+    12→from erk_shared.gateway.time.real import RealTime
+    13→from erk_shared.subprocess_utils import run_subprocess_with_context
+    14→
+    15→
+    16→class RealGitBranchOps(GitBranchOps):
+    17→    """Production implementation of branch operations using subprocess.
+    18→
+    19→    All git operations execute actual git commands via subprocess.
+    20→    """
+    21→
+    22→    def __init__(self, time: Time | None = None) -&gt; None:
+    23→        """Initialize RealGitBranchOps with optional Time provider.
+    24→
+    25→        Args:
+    26→            time: Time provider for lock waiting. Defaults to RealTime().
+    27→        """
+    28→        self._time = time if time is not None else RealTime()
+    29→
+    30→    def create_branch(
+
+... [125 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Vs9SeSSMmcBoCZZCtxVjuY">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py</param>
+    <param name="offset">150</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="2376" cache_read_input_tokens="69992" cache_creation="{'ephemeral_5m_input_tokens': 2376, 'ephemeral_1h_input_tokens': 0}" output_tokens="18" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Vs9SeSSMmcBoCZZCtxVjuY">
+   150→    def get_branch_head(self, repo_root: Path, branch: str) -&gt; str | None:
+   151→        """Get the commit SHA at the head of a branch."""
+   152→        result = subprocess.run(
+   153→            ["git", "rev-parse", branch],
+   154→            cwd=repo_root,
+   155→            capture_output=True,
+   156→            text=True,
+   157→            check=False,
+   158→        )
+   159→        if result.returncode != 0:
+   160→            return None
+   161→
+   162→        return result.stdout.strip()
+   163→
+   164→    def get_all_branch_heads(self, repo_root: Path) -&gt; dict[str, str]:
+   165→        """Get commit SHAs for all local branches in a single call."""
+   166→        fmt = "%(refname:short)\t%(objectname:short)"
+   167→        result = run_subprocess_with_context(
+   168→            cmd=["git", "for-each-ref", f"--format={fmt}", "refs/heads/"],
+   169→            operation_context="get all branch heads",
+   170→            cwd=repo_root,
+   171→            check=False,
+   172→        )
+   173→        if result.returncode != 0:
+   174→            return {}
+   175→        return {
+   176→            branch: sha
+   177→            for line in result.stdout.strip().split("\n")
+   178→            if "\t" in line
+   179→            for branch, sha in [line.split("\t", 1)]
+
+... [75 lines omitted] ...
+
+   228→            RuntimeError: If the specified branch doesn't exist
+   239→        error_msg = (
+   240→            f"Error: Configured trunk branch '{name}' does not exist in repository.\n"
+   243→        raise RuntimeError(error_msg)
+  </tool_result>
+  <assistant>Perfect! Now I understand the complete issue. Let me verify it with a test:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="1519" cache_read_input_tokens="72368" cache_creation="{'ephemeral_5m_input_tokens': 1519, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_014BzKSUBNKHqYoLzzyYNFmG">
+    <param name="command">
+# Simulate what detect_trunk_branch does
+echo "Step 1: Check git symbolic-ref refs/remote...[truncated 428 chars]...cks: main..HEAD"
+git rev-list --count main..HEAD 2&gt;&amp;1 || echo "Error: main doesn't exist"
+</param>
+    <param name="description">Trace through the trunk branch detection and commit counting</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="1519" cache_read_input_tokens="72368" cache_creation="{'ephemeral_5m_input_tokens': 1519, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014BzKSUBNKHqYoLzzyYNFmG">
+Step 1: Check git symbolic-ref refs/remotes/origin/HEAD
+fatal: ref refs/remotes/origin/HEAD is not a symbolic ref
+No symbolic-ref
+
+Step 2: Check if main exists locally:
+fatal: 'refs/heads/main' - not a valid ref
+main doesn't exist
+
+Step 3: Check if master exists locally:
+fatal: 'refs/heads/master' - not a valid ref
+master doesn't exist
+
+So detect_trunk_branch will return: 'main'
+
+Then count_commits_ahead checks: main..HEAD
+fatal: ambiguous argument 'main..HEAD': unknown revision or path not in the working tree.
+Use '--' to separate paths from revisions, like this:
+'git &lt;command&gt; [&lt;revision&gt;...] -- [&lt;file&gt;...]'
+Error: main doesn't exist
+  </tool_result>
+  <assistant>Perfect! Now let me create a comprehensive investigation report. Let me also check how count_commits_ahead handles errors:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="640" cache_read_input_tokens="73887" cache_creation="{'ephemeral_5m_input_tokens': 640, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01JPBcdAnWrgmiYon1tqfa3n">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/analysis_ops/real.py</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="640" cache_read_input_tokens="73887" cache_creation="{'ephemeral_5m_input_tokens': 640, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01JPBcdAnWrgmiYon1tqfa3n">
+     1→"""Real implementation of git analysis operations."""
+     2→
+     3→import subprocess
+     4→from pathlib import Path
+     5→
+     6→from erk_shared.gateway.git.analysis_ops.abc import GitAnalysisOps
+     7→from erk_shared.subprocess_utils import run_subprocess_with_context
+     8→
+     9→
+    10→class RealGitAnalysisOps(GitAnalysisOps):
+    11→    """Real implementation of Git analysis operations using subprocess."""
+    12→
+    13→    # ============================================================================
+    14→    # Query Operations
+    15→    # ============================================================================
+    16→
+    17→    def count_commits_ahead(self, cwd: Path, base_branch: str) -&gt; int:
+    18→        """Count commits in HEAD that are not in base_branch."""
+    19→        result = subprocess.run(
+    20→            ["git", "rev-list", "--count", f"{base_branch}..HEAD"],
+    21→            cwd=cwd,
+    22→            capture_output=True,
+    23→            text=True,
+    24→            check=False,
+    25→        )
+    26→        if result.returncode != 0:
+    27→            return 0
+    28→        count_str = result.stdout.strip()
+    29→        if not count_str:
+    30→            return 0
+
+... [51 lines omitted] ...
+  </tool_result>
+  <assistant>Perfect. Now I have the complete picture. Let me compile the findings:
+
+## Investigation Report: `erk pr submit` "No commits ahead" Error
+
+I've identified the root cause of your issue. The problem is a **chain of silent failures in branch resolution** that causes the submit command to check for commits against a non-existent branch.
+
+### Root Cause
+
+The `erk pr submit` command fails at line 409-416 of `/home/runner/work/erk/erk/src/erk/cli/commands/pr/submit_pipeline.py` in the `_core_submit_flow()` function:
+
+```python
+commit_count = ctx.git.analysis.count_commits_ahead(state.cwd, state.parent_branch)
+if commit_count == 0:
+    return SubmitError(
+        phase="push_and_create_pr",
+        error_type="no_commits",
+        message=f"No commits ahead of {state.parent_branch}. Nothing to submit.",
+        details={"parent_branch": state.parent_branch, "branch": state.branch_name},
+    )
+```
+
+The issue is that `state.parent_branch` is being set to a branch name that **doesn't exist locally**, so when `count_commits_ahead()` tries to count commits, it silently returns 0 instead of detecting commits.
+
+### The Silent Failure Chain
+
+**Step 1: Trunk branch detection fails silently** (`prepare_state()`, line 156)
+- Calls `ctx.git.branch.detect_trunk_branch(repo_root)`
+- This tries: `git symbolic-ref refs/remotes/origin/HEAD` (fails - no symbolic ref)
+- Then tries: `git show-ref --verify refs/heads/main` (fails - main doesn't exist locally)
+- Then tries: `git show-ref --verify refs/heads/master` (fails - master doesn't exist locally)
+- **Final fallback: returns hardcoded string "main"** (line 215 of `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py`)
+
+**Step 2: Parent branch detection returns the non-existent trunk branch** (`prepare_state()`, line 157)
+- Calls `ctx.branch_manager.get_parent_branch(repo_root, branch_name)`
+- Your branch manager is `GitBranchManager` (no Graphite tracking), which returns `None` (line 154 of `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/branch_manager/git.py`)
+- The code then uses: `parent_branch = ... or trunk_branch`
+- So `parent_branch = "main"`
+
+**Step 3: Commit counting against non-existent branch returns 0** (`count_commits_ahead()`, line 17-31)
+- Calls `git rev-list --count main..HEAD`
+- This fails because "main" doesn't exist locally
+- The error is silently caught and returns 0 (line 26-27)
+
+**Step 4: The error message you see**
+- The pipeline checks if `commit_count == 0` and returns the "No commits ahead" error
+
+### Why This Happens on Your Branch
+
+Your repository situation:
+- **Local branches**: Only `plnd/hide-erk-reconcile-03-09-2038` exists (your current branch)
+- **Remote branch**: `origin/plnd/hide-erk-reconcile-03-09-2038` exists
+- **Remote trunk**: `origin/master` exists
+- **Local trunk**: Neither `main` nor `master` exist locally
+- **Git symbolic ref**: Not set (no `refs/remotes/origin/HEAD`)
+
+Your branch tracks `origin/plnd/hide-erk-reconcile-03-09-2038` (set up by git push), but there's no local `main` or `master` branch to serve as parent/trunk.
+
+### The Bug
+
+The real problem is in the `count_commits_ahead()` function. When `git rev-list --count &lt;nonexistent-branch&gt;..HEAD` fails, it silently returns 0 instead of:
+1. Distinguishing between "0 commits" and "branch doesn't exist"
+2. Using the remote trunk branch as a fallback when the local trunk doesn't exist
+
+### Correct Behavior
+
+The command should:
+1. Detect that `origin/master` exists (the actual remote trunk)
+2. Count commits against `origin/master` when the local `main`/`master` doesn't exist
+3. Return "4 commits ahead" (as your manual `git log origin/master..HEAD` shows)
+
+### Supporting Evidence
+
+From your environment:
+```
+$ git log --oneline origin/master..HEAD
+b8ddb5aa6 WIP: Prepare for PR submission
+3bcfea65e Remove plan staging dirs before implementation
+249cfa526 Update plan: Make erk reconcile a Hidden Command
+733792deb One-shot: make erk reconcile a hidden command
+```
+
+All 4 commits are ahead of `origin/master`, but the command checks against the non-existent local "main" branch and finds 0 commits.
+
+### Files Involved
+
+- **Primary bug**: `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/analysis_ops/real.py` (lines 17-31) - `count_commits_ahead()` silently returns 0 on git error
+- **Secondary issue**: `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py` (lines 182-215) - `detect_trunk_branch()` has a hardcoded fallback to "main" that may not exist
+- **Tertiary issue**: `/home/runner/work/erk/erk/src/erk/cli/commands/pr/submit_pipeline.py` (lines 409-416) - Doesn't handle the case where the parent branch doesn't exist
+
+### Workaround
+
+Until this is fixed, you can work around it by creating a local `master` branch that tracks `origin/master`:
+
+```bash
+git branch --track master origin/master
+```
+
+Then `erk pr submit` will count commits against your local `master` branch (which exists and is synced with remote).</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="1174" cache_read_input_tokens="74527" cache_creation="{'ephemeral_5m_input_tokens': 1174, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>
