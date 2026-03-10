@@ -1,8 +1,10 @@
 {
   "provider": "github-draft-pr",
-  "title": "Plan: Sweep remaining plan_number/plan_id references in src/",
+  "plan_id": "9161",
+  "url": "https://github.com/dagster-io/erk/pull/9161",
+  "created_at": "2026-03-10T13:24:24.175355",
+  "synced_at": "2026-03-10T13:24:24.175355",
+  "labels": [],
   "objective_id": 9109,
-  "node_ids": [
-    "3.6"
-  ]
+  "node_ids": null
 }
