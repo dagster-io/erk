@@ -119,7 +119,6 @@ def select_prompt_executor(
     return cli_executor
 
 
-
 def write_trunk_to_pyproject(repo_root: Path, trunk: str, git: Git | None = None) -> None:
     """Write trunk branch configuration to pyproject.toml.
 

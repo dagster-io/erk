@@ -5,7 +5,7 @@ from unittest.mock import patch
 
 from tests.fakes.gateway.console import FakeConsole
 from tests.fakes.gateway.git import FakeGit
-from tests.fakes.prompt_executor import FakePromptExecutor
+from tests.fakes.tests.prompt_executor import FakePromptExecutor
 from tests.test_utils.test_context import context_for_test
 
 from erk.core.codex_prompt_executor import CodexCliPromptExecutor
