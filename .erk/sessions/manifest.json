@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "pr_number": 9169,
+  "sessions": [
+    {
+      "session_id": "",
+      "stage": "impl",
+      "source": "local",
+      "uploaded_at": "2026-03-10T15:29:40.145389+00:00",
+      "files": [
+        "impl--f0bc70b6-3bf6-4b6b-854e-3b71e9d32316-part1.xml",
+        "impl--f0bc70b6-3bf6-4b6b-854e-3b71e9d32316-part2.xml",
+        "impl--f0bc70b6-3bf6-4b6b-854e-3b71e9d32316-part3.xml"
+      ],
+      "user_turns": 2,
+      "duration_minutes": 18,
+      "raw_size_kb": 848,
+      "xml_size_kb": 134,
+      "git_branch": "plnd/remove-plan-review-refs-03-10-1109"
+    }
+  ]
+}
