@@ -1,84 +1,566 @@
 <session>
-  <meta source="agent-a5b78b8" />
+  <meta source="agent-a38ebc6" />
   <meta branch="plnd/add-erk-core-label-03-09-1959" />
   <meta model="claude-haiku-4-5-20251001" />
-  <user>Run `make fast-ci` from the repository root /home/runner/work/erk/erk and report all results. Do NOT fix anything, just report.</user>
-  <assistant>I'll run `make fast-ci` from the repository root and report the results.</assistant>
-  <usage input_tokens="3" cache_creation_input_tokens="0" cache_read_input_tokens="12331" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
-  <tool_use name="Bash" id="toolu_01XtQnbhMw2Eqde9QhwWHhb7">
-    <param name="command">make fast-ci</param>
-    <param name="description">Run fast-ci target from Makefile</param>
+  <user>Search for test files that test the `pr list` and `dash` commands and may be failing because they use `("erk-pr",)` as default labels. Look at:
+1. tests/commands/pr/test_list.py - search for label references like "erk-pr" or "erk-core"
+2. tests/commands/test_dash_workflow_runs.py - search for label references
+
+FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant docs before exploring raw files. Then explore codebase as necessary.
+
+Return the exact lines that need to change and why the tests are failing (is it that the fake data has "erk-pr" labels but the query now searches for "erk-core"?).</user>
+  <assistant>I'll help you search for test files that may be failing due to label changes. Let me start by checking the documentation, then explore the relevant test files.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="6003" cache_read_input_tokens="13037" cache_creation="{'ephemeral_5m_input_tokens': 6003, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01TohsnSoxEiL1yHPrH6fCie">
+    <param name="pattern">erk-pr|erk-core|label</param>
+    <param name="path">/home/runner/work/erk/erk/docs/learned</param>
+    <param name="output_mode">files_with_matches</param>
   </tool_use>
-  <usage input_tokens="3" cache_creation_input_tokens="0" cache_read_input_tokens="12331" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
-  <tool_result tool="toolu_01XtQnbhMw2Eqde9QhwWHhb7">
-=== Fast CI ===
+  <usage input_tokens="3" cache_creation_input_tokens="6003" cache_read_input_tokens="13037" cache_creation="{'ephemeral_5m_input_tokens': 6003, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01KpkWJdYdWxtDGhykhnriaN">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/index.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6003" cache_read_input_tokens="13037" cache_creation="{'ephemeral_5m_input_tokens': 6003, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01KpkWJdYdWxtDGhykhnriaN">
+     1→&lt;!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY --&gt;
+     2→&lt;!-- Edit source frontmatter, then run 'erk docs sync' to regenerate. --&gt;
+     3→
+     4→# Agent Documentation
+     5→
+     6→Before starting work, scan the read-when conditions below.
+     7→If your current task matches, read the linked document **before writing code**.
+     8→
+     9→## Categories
+    10→
+    11→- [architecture/](architecture/) — Explore when working on core patterns (dry-run, gateways, subprocess, shell integration). Add docs here for cross-cutting technical patterns.
+    12→- [capabilities/](capabilities/)
+    13→- [changelog/](changelog/)
+    14→- [checklists/](checklists/)
+    15→- [ci/](ci/)
+    16→- [claude-code/](claude-code/)
+    17→- [cli/](cli/) — Explore when building CLI commands or output formatting. Add docs here for Click patterns and terminal UX.
+    18→- [commands/](commands/) — Explore when creating or optimizing slash commands. Add docs here for command authoring patterns.
+    19→- [config/](config/)
+    20→- [configuration/](configuration/)
+    21→- [documentation/](documentation/) — Explore when structuring or writing documentation. Add docs here for documentation methodology and best practices.
+    22→- [erk/](erk/) — Explore when working with erk-specific workflows (worktrees, PR sync, Graphite). Add docs here for erk user-facing features.
+    23→- [erk-dev/](erk-dev/)
+    24→- [gateway/](gateway/)
+    25→- [hooks/](hooks/) — Explore when creating or debugging hooks. Add docs here for hook development patterns.
+    26→- [integrations/](integrations/)
+    27→- [objectives/](objectives/)
+    28→- [planning/](planning/) — Explore when working with plans, .erk/impl-context/ folders, or agent delegation. Add docs here for planning workflow patterns.
+    29→- [pr-operations/](pr-operations/)
+    30→- [refactoring/](refactoring/)
 
---- Lint ---
-All checks passed!
-
---- Format Check ---
-1689 files already formatted
-
---- Prettier Check ---
-Checking formatting...
-All matched files use Prettier code style!
-
---- Markdown Check ---
-
---- Exec Reference Check ---
-OK: .claude/skills/erk-exec/reference.md is up to date
-
---- ty ---
-All checks passed!
-
---- Unit Tests (erk) ---
-bringing up nodes...
-bringing up nodes...
-
-........................................................................ [  1%]
-........................................................................ [  2%]
-........................................................................ [  3%]
-........................................................................ [  4%]
-........................................................................ [  6%]
-........................................................................ [  7%]
-
-... [111 lines omitted] ...
-
-=============================== warnings summary ===============================
-  /home/runner/work/erk/erk/tests/unit/cli/test_json_command.py:16: DeprecationWarning: 'BaseCommand' is deprecated and will be removed in Click 9.0. Use 'Command' instead.
--- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
-5984 passed, 2 warnings in 14.33s
+... [22 lines omitted] ...
   </tool_result>
-  <assistant>All checks passed! Here is a summary of the `make fast-ci` results:
+  <tool_result tool="toolu_01TohsnSoxEiL1yHPrH6fCie">
+Found 94 files
+docs/learned/planning/label-scheme.md
+docs/learned/testing/tripwires.md
+docs/learned/tui/architecture.md
+docs/learned/tui/tripwires.md
+docs/learned/testing/cli-testing.md
+docs/learned/objectives/objective-lifecycle.md
+docs/learned/cli/tripwires.md
+docs/learned/tui/plan-title-rendering-pipeline.md
+docs/learned/tui/view-switching.md
+docs/learned/tui/action-inventory.md
+docs/learned/tui/async-state-snapshot.md
+docs/learned/tui/clipboard-text-generation.md
+docs/learned/tui/data-contract.md
+docs/learned/tui/filter-pipeline.md
+docs/learned/tui/filter-toggle-pattern.md
+docs/learned/tui/multi-operation-tracking.md
+docs/learned/testing/submit-pipeline-tests.md
+docs/learned/testing/backend-testing-composition.md
+docs/learned/testing/dual-backend-testing.md
+docs/learned/testing/fake-github-api-reference.md
+docs/learned/testing/fake-github-mutation-tracking.md
+docs/learned/testing/frozen-dataclass-test-doubles.md
+docs/learned/review/inline-comment-deduplication.md
+docs/learned/sessions/index.md
+docs/learned/sessions/raw-session-processing.md
+docs/learned/reference/gastown-analysis.md
+docs/learned/reference/github-actions-api.md
+docs/learned/reference/objective-summary-format.md
+docs/learned/pr-operations/resubmission-workflows.md
 
-## Summary: All CI Checks Passed
+... [65 lines omitted] ...
+  </tool_result>
+  <assistant>Good! I found references to label-related documentation. Let me read the label scheme document:</assistant>
+  <usage input_tokens="1083" cache_creation_input_tokens="1582" cache_read_input_tokens="19040" cache_creation="{'ephemeral_5m_input_tokens': 1582, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01STwfF8opEtMDvinGbpZhhe">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/label-scheme.md</param>
+  </tool_use>
+  <usage input_tokens="1083" cache_creation_input_tokens="1582" cache_read_input_tokens="19040" cache_creation="{'ephemeral_5m_input_tokens': 1582, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01ERN3hHohrr6UJqwN5yrtXs">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/ci/label-rename-checklist.md</param>
+  </tool_use>
+  <usage input_tokens="1083" cache_creation_input_tokens="1582" cache_read_input_tokens="19040" cache_creation="{'ephemeral_5m_input_tokens': 1582, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01STwfF8opEtMDvinGbpZhhe">
+     1→---
+     2→title: PR and Plan Label Assignment Scheme
+     3→read_when:
+     4→  - "understanding how plans, code PRs, and learn issues are labeled"
+     5→  - "working with erk-pr, erk-plan, erk-core, or erk-learn labels"
+     6→  - "debugging label filtering in TUI or CLI views"
+     7→tripwires:
+     8→  - action: "querying core erk PRs without using the erk-core label"
+     9→    warning: "Use erk-core to query non-learn PRs (plans + code). Use erk-pr for ALL erk-submitted PRs including learn. Use type-specific labels (erk-plan, erk-learn) only when you need to filter to a specific type."
+    10→  - action: "backfilling labels on existing issues without considering updated_at side effects"
+    11→    warning: "GitHub label operations change the issue's updated_at timestamp. This affects sort order in list views and may confuse users."
+    12→---
+    13→
+    14→# PR and Plan Label Assignment Scheme
+    15→
+    16→Erk uses `erk-pr` as the **universal base label** on all erk-submitted PRs, with `erk-core` for non-learn PRs and **type-specific labels** for filtering.
+    17→
+    18→## Label Taxonomy
+    19→
+    20→| Label              | Purpose                              | Applied To                                        |
+    21→| ------------------ | ------------------------------------ | ------------------------------------------------- |
+    22→| `erk-pr`           | Base label — all erk-submitted PRs   | All plans, learn plans, and code PRs              |
+    23→| `erk-core`         | Core work label — non-learn PRs      | Plan PRs and code PRs (NOT learn PRs)             |
+    24→| `erk-planned-pr`   | Legacy base label — identifies plans | Historical plans only (no longer applied by code) |
+    25→| `erk-plan`         | Type label — implementation plans    | Regular plans                                     |
+    26→| `erk-learn`        | Type label — documentation plans     | Learn plans                                       |
+    27→| `erk-objective`    | Separate system — objectives         | Objective issues                                  |
+    28→| `erk-consolidated` | Consolidation marker                 | Consolidated learn plans                          |
+    29→
+    30→## Label Assignment
 
-### Lint Checks
-- **ruff**: All checks passed!
+... [49 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01ERN3hHohrr6UJqwN5yrtXs">
+     1→---
+     2→title: CI Label Rename Checklist
+     3→read_when:
+     4→  - renaming a GitHub label used in CI automation
+     5→  - updating label references across the codebase
+     6→  - debugging why CI label checks aren't working after a rename
+     7→tripwires:
+     8→  - action: "Renaming a GitHub label used in CI automation"
+     9→    warning: "Labels are referenced in multiple places: (1) Job-level if: conditions in all workflow files, (2) Step name descriptions and comments, (3) Documentation examples showing the label check. Missing any location will cause CI behavior to diverge from intent. Use the CI Label Rename Checklist to ensure comprehensive updates."
+    10→    score: 6
+    11→last_audited: "2026-02-16 14:20 PT"
+    12→audit_result: clean
+    13→---
+    14→
+    15→# CI Label Rename Checklist
+    16→
+    17→## Why Label Renames Are Dangerous
+    18→
+    19→GitHub Actions label checks use **string literals in YAML that cannot be validated statically**. Unlike code references that fail at compile time, label mismatches fail silently:
+    20→
+    21→- Boolean expressions evaluate to `false` when label names don't match
+    22→- No errors are thrown at workflow parse time or runtime
+    23→- PRs with the label run CI when they should skip (or vice versa)
+    24→- No obvious indicators point to the mismatch
+    25→
+    26→The problem: **labels connect Python constants, YAML workflow conditions, and prose documentation across three different file formats with zero static validation**.
+    27→
+    28→## The Coordination Challenge
+    29→
+    30→&lt;!-- Source: src/erk/cli/constants.py, PLAN_REVIEW_LABEL --&gt;
 
-### Format Checks
-- **Format verification**: 1689 files already formatted
-- **Prettier**: All matched files use Prettier code style!
-- **Markdown**: OK
+... [94 lines omitted] ...
+  </tool_result>
+  <assistant>Perfect! Now I understand the context. Let me search for the test files mentioned and look for "erk-pr" references:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="4515" cache_read_input_tokens="20622" cache_creation="{'ephemeral_5m_input_tokens': 4515, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01B32JZWZQNdrjSpUDUChoa4">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_list.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="4515" cache_read_input_tokens="20622" cache_creation="{'ephemeral_5m_input_tokens': 4515, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_018Wjbtm1swNPZwLkFaUvgQa">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/test_dash_workflow_runs.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="4515" cache_read_input_tokens="20622" cache_creation="{'ephemeral_5m_input_tokens': 4515, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_018Wjbtm1swNPZwLkFaUvgQa">
+     1→"""Tests for workflow run ID display in erk dash command."""
+     2→
+     3→from datetime import UTC, datetime
+     4→
+     5→from click.testing import CliRunner
+     6→
+     7→from erk.cli.cli import cli
+     8→from erk_shared.gateway.git.abc import WorktreeInfo
+     9→from erk_shared.gateway.git.fake import FakeGit
+    10→from erk_shared.gateway.github.fake import FakeLocalGitHub
+    11→from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+    12→from erk_shared.gateway.github.issues.types import IssueInfo
+    13→from erk_shared.gateway.github.types import WorkflowRun
+    14→from erk_shared.plan_store.types import Plan, PlanState
+    15→from tests.test_utils.context_builders import (
+    16→    build_fake_plan_list_service,
+    17→    build_workspace_test_context,
+    18→)
+    19→from tests.test_utils.env_helpers import erk_isolated_fs_env
+    20→from tests.test_utils.output_helpers import strip_ansi
+    21→
+    22→
+    23→def plan_to_issue(plan: Plan) -&gt; IssueInfo:
+    24→    """Convert Plan to IssueInfo for test setup."""
+    25→    return IssueInfo(
+    26→        number=int(plan.pr_identifier),
+    27→        title=plan.title,
+    28→        body=plan.body,
+    29→        state="OPEN" if plan.state == PlanState.OPEN else "CLOSED",
+    30→        url=plan.url or "",
 
-### Type Checking
-- **ty**: All checks passed!
+... [656 lines omitted] ...
 
-### Reference Documentation
-- **Exec reference**: .claude/skills/erk-exec/reference.md is up to date
+   303→            conclusion="failure",
+   408→def test_plan_list_handles_batch_query_failure() -&gt; None:
+   435→            title="Plan with API failure",
+   457→        # No workflow runs configured (simulates API failure or no runs found)
+   471→        # Command should succeed despite API failure
+  </tool_result>
+  <tool_result tool="toolu_01B32JZWZQNdrjSpUDUChoa4">
+     1→"""Tests for erk pr list command."""
+     2→
+     3→from datetime import UTC, datetime
+     4→
+     5→from click.testing import CliRunner
+     6→
+     7→from erk.cli.cli import cli
+     8→from erk_shared.gateway.github.fake import FakeLocalGitHub
+     9→from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+    10→from erk_shared.gateway.github.issues.types import IssueInfo
+    11→from erk_shared.plan_store.types import Plan, PlanState
+    12→from tests.test_utils.context_builders import (
+    13→    build_fake_plan_list_service,
+    14→    build_workspace_test_context,
+    15→)
+    16→from tests.test_utils.env_helpers import erk_inmem_env
+    17→
+    18→
+    19→def plan_to_issue(plan: Plan) -&gt; IssueInfo:
+    20→    """Convert Plan to IssueInfo for test setup."""
+    21→    return IssueInfo(
+    22→        number=int(plan.pr_identifier),
+    23→        title=plan.title,
+    24→        body=plan.body,
+    25→        state="OPEN" if plan.state == PlanState.OPEN else "CLOSED",
+    26→        url=plan.url,
+    27→        labels=plan.labels,
+    28→        assignees=plan.assignees,
+    29→        created_at=plan.created_at,
+    30→        updated_at=plan.updated_at,
 
-### Unit Tests
-- **erk tests**: 5984 passed with 2 deprecation warnings (in 14.33s)
-  - Warnings: `'BaseCommand' is deprecated` in Click (non-critical)
-- **erk-dev tests**: 136 passed (in 5.84s)
-- **erk-statusline tests**: 115 passed (in 0.79s)
-- **erk-mcp tests**: 31 passed
+... [711 lines omitted] ...
 
-### Metadata Verification
-- **AGENTS.md standard**: PASSED
-- **CLAUDE.md pairing**: All 19 CLAUDE.md files properly paired with AGENTS.md
-- **Violations**: 0
+   669→def test_pr_list_displays_enrichment_warnings() -&gt; None:
+   670→    """Test that enrichment warnings from PlanListData are displayed to the user."""
+   691→            warnings=(
+   692→                "GraphQL enrichment failed for 2/5 PRs "
+   703→        assert "Warning:" in result.output
+   704→        assert "GraphQL enrichment failed for 2/5 PRs" in result.output
+   707→def test_pr_list_no_warnings_when_enrichment_succeeds() -&gt; None:
+   708→    """Test that no warnings are displayed when enrichment succeeds fully."""
+   735→        assert "Warning:" not in result.output
+  </tool_result>
+  <assistant>Perfect! I found both test files. Now let me search for where the actual query happens to understand what changed from "erk-pr" to "erk-core":</assistant>
+  <usage input_tokens="9334" cache_creation_input_tokens="16001" cache_read_input_tokens="25137" cache_creation="{'ephemeral_5m_input_tokens': 16001, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01NW1v4KsJHwthJRDF1YDcZT">
+    <param name="pattern">erk-core|erk-pr</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk</param>
+    <param name="glob">**/*.py</param>
+    <param name="output_mode">files_with_matches</param>
+    <param name="head_limit">20</param>
+  </tool_use>
+  <usage input_tokens="9334" cache_creation_input_tokens="16001" cache_read_input_tokens="25137" cache_creation="{'ephemeral_5m_input_tokens': 16001, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_015WV2tZWBPtoQsPxxiy86MN">
+    <param name="pattern">query.*label|label.*query</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk</param>
+    <param name="glob">**/*.py</param>
+    <param name="output_mode">files_with_matches</param>
+    <param name="head_limit">10</param>
+  </tool_use>
+  <usage input_tokens="9334" cache_creation_input_tokens="16001" cache_read_input_tokens="25137" cache_creation="{'ephemeral_5m_input_tokens': 16001, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01NW1v4KsJHwthJRDF1YDcZT">
+Found 15 files limit: 20, offset: 0
+src/erk/cli/commands/exec/scripts/dash_data.py
+src/erk/cli/commands/pr/list_cmd.py
+src/erk/tui/views/types.py
+src/erk/cli/commands/pr/submit_pipeline.py
+src/erk/cli/commands/one_shot_remote_dispatch.py
+src/erk/cli/commands/exec/scripts/create_pr_from_session.py
+src/erk/cli/commands/pr/create_cmd.py
+src/erk/cli/commands/exec/scripts/plan_save.py
+src/erk/cli/constants.py
+src/erk/cli/commands/wt/delete_cmd.py
+src/erk/cli/commands/run/list_cmd.py
+src/erk/cli/commands/pr/duplicate_check_cmd.py
+src/erk/cli/commands/land_learn.py
+src/erk/cli/commands/exec/scripts/get_plans_for_objective.py
+src/erk/cli/commands/consolidate_learn_plans_dispatch.py
+  </tool_result>
+  <tool_result tool="toolu_015WV2tZWBPtoQsPxxiy86MN">
+Found 4 files limit: 10, offset: 0
+src/erk/core/services/plan_list_service.py
+src/erk/tui/screens/plan_body_screen.py
+src/erk/tui/app.py
+src/erk/cli/commands/wt/delete_cmd.py
+  </tool_result>
+  <assistant>Let me check the plan list service and the constants file:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="10214" cache_read_input_tokens="41138" cache_creation="{'ephemeral_5m_input_tokens': 10214, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01LbX6S445hxULry7TRAKwiG">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/constants.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="10214" cache_read_input_tokens="41138" cache_creation="{'ephemeral_5m_input_tokens': 10214, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01UscycqL1c5Vh7perbDdNmT">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/core/services/plan_list_service.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="10214" cache_read_input_tokens="41138" cache_creation="{'ephemeral_5m_input_tokens': 10214, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01LbX6S445hxULry7TRAKwiG">
+     1→"""Shared constants for erk CLI commands."""
+     2→
+     3→# GitHub issue label for erk plans
+     4→ERK_PLAN_LABEL = "erk-plan"
+     5→
+     6→# Title prefix for erk-plan issues (with trailing space for easy stripping)
+     7→ERK_PLAN_TITLE_PREFIX = "[erk-plan] "
+     8→
+     9→# Plan markdown heading prefix (with trailing space for easy stripping)
+    10→PLAN_HEADING_PREFIX = "Plan: "
+    11→
+    12→# PR title prefix for plan-originated PRs
+    13→PLANNED_PR_TITLE_PREFIX = "plnd/"
+    14→
+    15→# GitHub Actions workflow for remote implementation dispatch
+    16→DISPATCH_WORKFLOW_NAME = "plan-implement.yml"
+    17→DISPATCH_WORKFLOW_METADATA_NAME = "plan-implement"
+    18→
+    19→# GitHub Actions workflow for remote rebase with conflict resolution
+    20→REBASE_WORKFLOW_NAME = "pr-rebase.yml"
+    21→
+    22→# GitHub Actions workflow for remote PR comment addressing
+    23→PR_ADDRESS_WORKFLOW_NAME = "pr-address.yml"
+    24→
+    25→# GitHub Actions workflow for remote PR rewrite (rebase + AI PR summary)
+    26→PR_REWRITE_WORKFLOW_NAME = "pr-rewrite.yml"
+    27→
+    28→# GitHub Actions workflow for one-shot autonomous execution
+    29→ONE_SHOT_WORKFLOW_NAME = "one-shot.yml"
+    30→
 
-**Overall Status**: All tests passed, all formatting correct, no violations detected.</assistant>
-  <usage input_tokens="6" cache_creation_input_tokens="1234" cache_read_input_tokens="12424" cache_creation="{'ephemeral_5m_input_tokens': 1234, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+... [43 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01UscycqL1c5Vh7perbDdNmT">
+     1→"""Service for efficiently fetching plan list data via batched API calls.
+     2→
+     3→Uses GraphQL nodes(ids: [...]) for O(1) batch lookup of workflow runs (~200ms for any N).
+     4→All plans store last_dispatched_node_id in the plan-header metadata block.
+     5→
+     6→Performance optimization: When PR linkages are needed, uses unified GraphQL query via
+     7→get_issues_with_pr_linkages() to fetch issues + PR linkages in a single API call (~600ms),
+     8→instead of separate calls for issues (~500ms) and PR linkages (~1500ms).
+     9→"""
+    10→
+    11→from __future__ import annotations
+    12→
+    13→import logging
+    14→from typing import TYPE_CHECKING, Any
+    15→
+    16→from erk_shared.core.plan_list_service import PlanListData as PlanListData
+    17→from erk_shared.core.plan_list_service import PlanListService
+    18→from erk_shared.gateway.github.abc import LocalGitHub
+    19→from erk_shared.gateway.github.graphql_queries import GET_WORKFLOW_RUNS_BY_NODE_IDS_QUERY
+    20→from erk_shared.gateway.github.issues.abc import GitHubIssues
+    21→from erk_shared.gateway.github.metadata.plan_header import extract_plan_header_dispatch_info
+    22→from erk_shared.gateway.github.pr_data_parsing import (
+    23→    merge_rest_graphql_pr_data,
+    24→    parse_workflow_runs_nodes_response,
+    25→)
+    26→from erk_shared.gateway.github.types import (
+    27→    GitHubRepoLocation,
+    28→    IssueFilterState,
+    29→    WorkflowRun,
+    30→)
+
+... [408 lines omitted] ...
+
+   177→        warnings = _build_enrichment_warnings(unenriched_count, len(pr_details_list))
+   186→            warnings=warnings,
+   265→        except Exception as e:
+   266→            logging.warning("Failed to fetch workflow runs via HTTP: %s", e)
+   308→            except RuntimeError as e:
+   309→                logging.warning("Failed to fetch workflow runs: %s", e)
+   313→def _build_enrichment_warnings(unenriched_count: int, total_count: int) -&gt; tuple[str, ...]:
+   314→    """Build warning messages for degraded GraphQL enrichment data.
+   321→        Tuple of warning strings (empty if no warnings)
+   326→        f"GraphQL enrichment failed for {unenriched_count}/{total_count} PRs "
+   415→                except Exception as e:
+   416→                    # Network/API failure - continue without workflow run data
+   418→                    logging.warning("Failed to fetch workflow runs: %s", e)
+  </tool_result>
+  <assistant>Now let me check the pr list command to see what labels it queries with:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="7325" cache_read_input_tokens="51352" cache_creation="{'ephemeral_5m_input_tokens': 7325, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01K95rnLweRZurpFE9rGeGbJ">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/list_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="7325" cache_read_input_tokens="51352" cache_creation="{'ephemeral_5m_input_tokens': 7325, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_011kjpPtZ2vyH214pZpQ4diM">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/dash_data.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="7325" cache_read_input_tokens="51352" cache_creation="{'ephemeral_5m_input_tokens': 7325, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01K95rnLweRZurpFE9rGeGbJ">
+     1→"""Command to list plans with filtering."""
+     2→
+     3→import tempfile
+     4→from collections.abc import Callable
+     5→from dataclasses import dataclass
+     6→from pathlib import Path
+     7→from typing import Any, ParamSpec, TypeVar
+     8→
+     9→import click
+    10→from rich.console import Console
+    11→from rich.table import Table
+    12→from rich.text import Text
+    13→
+    14→from erk.cli.core import discover_repo_context
+    15→from erk.cli.repo_resolution import get_remote_github, resolved_repo_option
+    16→from erk.core.context import ErkContext
+    17→from erk.core.display_utils import strip_rich_markup
+    18→from erk.core.repo_discovery import ensure_erk_metadata_dir
+    19→from erk.tui.app import ErkDashApp
+    20→from erk.tui.data.real_provider import RealPlanDataProvider
+    21→from erk.tui.data.types import PlanFilters, PlanRowData, serialize_plan_row
+    22→from erk.tui.sorting.logic import sort_plans
+    23→from erk.tui.sorting.types import SortKey, SortState
+    24→from erk_shared.agentclick.json_command import json_command
+    25→from erk_shared.agentclick.mcp_exposed import mcp_exposed
+    26→from erk_shared.context.types import NoRepoSentinel
+    27→from erk_shared.gateway.browser.real import RealBrowserLauncher
+    28→from erk_shared.gateway.clipboard.real import RealClipboard
+    29→from erk_shared.gateway.github.emoji import get_pr_status_emoji
+    30→from erk_shared.gateway.github.types import (
+
+... [544 lines omitted] ...
+
+   100→            ["queued", "in_progress", "success", "failure", "cancelled"], case_sensitive=False
+   270→        user_output(click.style("Error: ", fg="red") + "GitHub authentication not available")
+   317→    if timings is not None and timings.warnings:
+   318→        for warning in timings.warnings:
+   319→            user_output(click.style("Warning: ", fg="yellow") + warning)
+   387→        user_output(click.style("Error: ", fg="red") + "Could not determine repository owner/name")
+   409→        user_output(click.style("Error: ", fg="red") + "GitHub authentication not available")
+  </tool_result>
+  <tool_result tool="toolu_011kjpPtZ2vyH214pZpQ4diM">
+     1→"""Serialize plan dashboard data to JSON for external consumers.
+     2→
+     3→Usage:
+     4→    erk exec dash-data [--state open|closed] [--label LABEL] [--limit N]
+     5→        [--show-prs/--no-show-prs] [--show-runs/--no-show-runs]
+     6→        [--run-state STATE] [--creator USER]
+     7→
+     8→Output:
+     9→    JSON with {success, plans, count}
+    10→
+    11→Exit Codes:
+    12→    0: Success
+    13→    1: Error (missing repo info, API error)
+    14→"""
+    15→
+    16→import json
+    17→
+    18→import click
+    19→
+    20→from erk.cli.core import discover_repo_context
+    21→from erk.core.repo_discovery import ensure_erk_metadata_dir
+    22→from erk.tui.data.real_provider import RealPlanDataProvider
+    23→from erk.tui.data.types import PlanFilters, serialize_plan_row
+    24→from erk_shared.context.helpers import require_context
+    25→from erk_shared.gateway.github.types import GitHubRepoId, GitHubRepoLocation, IssueFilterState
+    26→
+    27→
+    28→@click.command(name="dash-data")
+    29→@click.option("--state", type=click.Choice(["open", "closed"]), default=None)
+    30→@click.option("--label", multiple=True, default=("erk-core",))
+
+... [68 lines omitted] ...
+
+    56→            json.dumps({"success": False, "error": "Could not determine repository owner/name"})
+    67→        click.echo(json.dumps({"success": False, "error": "GitHub authentication not available"}))
+  </tool_result>
+  <assistant>Perfect! Now I have all the information I need. Let me create a comprehensive report:
+
+## Analysis Report: Test Files with Label Mismatch
+
+I've found the issue causing the test failures. The code has changed from querying with **"erk-pr"** (the universal base label) to querying with **"erk-core"** (the non-learn label), but the test fake data hasn't been updated accordingly.
+
+### Documentation Context
+According to `/home/runner/work/erk/erk/docs/learned/planning/label-scheme.md`, the new label scheme is:
+- **`erk-pr`**: Universal base label applied to ALL erk-submitted PRs (plans + learn plans + code PRs)
+- **`erk-core`**: Core work label for non-learn PRs only (plans + code PRs, NOT learn PRs)
+- **`erk-plan`**: Type-specific label for regular implementation plans
+- **`erk-learn`**: Type-specific label for learn plans
+
+### The Issue: Default Labels Changed
+
+**Files Affected:**
+
+1. **`/home/runner/work/erk/erk/src/erk/cli/commands/pr/list_cmd.py`** (lines 281, 400)
+   - Line 281: `labels = label if label else ("erk-core",)` 
+   - Line 400: `labels = label if label else ("erk-core",)`
+   - **Changed from**: Default should have been `"erk-pr"` to query all plans
+   - **Changed to**: Now defaults to `"erk-core"` to query only non-learn plans
+
+2. **`/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/dash_data.py`** (line 30)
+   - Line 30: `@click.option("--label", multiple=True, default=("erk-core",))`
+   - **Changed to**: Defaults to `"erk-core"` instead of `"erk-pr"`
+
+### Test Files with Failing Fake Data
+
+**`/home/runner/work/erk/erk/tests/commands/pr/test_list.py`**
+
+This file creates Plan objects with hardcoded label tuples. All 12 test functions use:
+- Line 43: `labels=["erk-pr", "erk-plan"]`
+- Line 56: `labels=["erk-pr", "erk-plan"]`
+- Line 89: `labels=["erk-pr", "erk-plan"]`
+- Line 102: `labels=["erk-pr", "erk-plan"]`
+- Line 137: `labels=["erk-pr", "erk-plan", "erk-queue"]`
+- Line 150: `labels=["erk-pr", "erk-plan"]`
+- Line 195: `labels=["erk-pr", "erk-plan"]`
+- Line 230: `labels=["erk-pr", "erk-plan"]`
+- Line 275: `labels=["erk-pr", "erk-plan"]`
+- Line 321: `labels=["erk-pr", "erk-plan"]`
+- Line 334: `labels=["erk-pr", "erk-plan"]`
+- Line 363: `labels=["erk-pr", "erk-plan"]`
+
+**Why tests fail:** The code now queries for `erk-core` label, but the fake Plan data only has `["erk-pr", "erk-plan"]` labels. Since `erk-core` label is not present in the fake data, the label filter returns zero results.
+
+**`/home/runner/work/erk/erk/tests/commands/test_dash_workflow_runs.py`**
+
+This file also has the same pattern across multiple test functions:
+- Line 85: `labels=["erk-pr", "erk-plan"]`
+- Line 181: `labels=["erk-pr", "erk-plan"]`
+- Line 281: `labels=["erk-pr", "erk-plan"]`
+- Line 363: `labels=["erk-pr", "erk-plan"]`
+- Line 439: `labels=["erk-pr", "erk-plan"]`
+- Line 550: `labels=["erk-pr", "erk-plan"]`
+- Line 564: `labels=["erk-pr", "erk-plan"]`
+- Line 636: `labels=["erk-pr", "erk-plan"]`
+
+Same issue: fake data has `erk-pr` but query is for `erk-core`.
+
+### Lines That Need to Change
+
+All fake Plan objects in both test files need to have `"erk-core"` added to their labels tuple:
+
+**Before:**
+```python
+labels=["erk-pr", "erk-plan"]
+```
+
+**After:**
+```python
+labels=["erk-pr", "erk-core", "erk-plan"]
+```
+
+This change needs to be applied to every Plan instantiation in both test files to match the new query behavior where the `pr list` and `dash` commands default to filtering by `erk-core` label.</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="9683" cache_read_input_tokens="58677" cache_creation="{'ephemeral_5m_input_tokens': 9683, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
 </session>

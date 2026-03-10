@@ -2,48 +2,597 @@
   <meta source="agent-a6dba5c" />
   <meta branch="plnd/add-erk-core-label-03-09-1959" />
   <meta model="claude-haiku-4-5-20251001" />
-  <tool_result tool="toolu_01URukqRnphzrb9wMqSpL72P">
-/home/runner/work/erk/erk/tests/commands/branch/test_checkout_cmd.py
-/home/runner/work/erk/erk/tests/commands/dash/test_action_state.py
-/home/runner/work/erk/erk/tests/commands/dash/test_filtering.py
-/home/runner/work/erk/erk/tests/commands/dash/test_impl_columns.py
-/home/runner/work/erk/erk/tests/commands/dash/test_pr_columns.py
-/home/runner/work/erk/erk/tests/commands/dash/test_workflow_run_state.py
-/home/runner/work/erk/erk/tests/commands/land/test_objective_update.py
-/home/runner/work/erk/erk/tests/commands/learn/test_display.py
-/home/runner/work/erk/erk/tests/commands/objective/test_plan.py
-/home/runner/work/erk/erk/tests/commands/objective/test_plan_one_shot.py
-/home/runner/work/erk/erk/tests/commands/pr/test_check_plan.py
-/home/runner/work/erk/erk/tests/commands/pr/test_close.py
-/home/runner/work/erk/erk/tests/commands/pr/test_duplicate_check.py
-/home/runner/work/erk/erk/tests/commands/pr/test_log.py
-/home/runner/work/erk/erk/tests/commands/pr/test_remote_paths.py
-/home/runner/work/erk/erk/tests/commands/pr/test_rewrite.py
-/home/runner/work/erk/erk/tests/commands/pr/test_submit.py
-/home/runner/work/erk/erk/tests/commands/pr/test_view.py
-/home/runner/work/erk/erk/tests/commands/run/test_list.py
-/home/runner/work/erk/erk/tests/commands/test_top_level_commands.py
-/home/runner/work/erk/erk/tests/commands/workspace/test_delete.py
-  </tool_result>
-  <assistant>Perfect! Now let me also check if any of these test files invoke CLI commands without --label flags. Let me start with the dash test files and PR test files:</assistant>
-  <usage input_tokens="0" cache_creation_input_tokens="892" cache_read_input_tokens="56725" cache_creation="{'ephemeral_5m_input_tokens': 892, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
-  <tool_use name="Bash" id="toolu_01B6KdvXH52VYXojpKTzVFQy">
-    <param name="command">grep -n "runner.invoke.*pr list\|invoke.*pr\|invoke.*dashboard" /home/runner/work/erk/erk/tests/commands/dash/test_filtering.py | head -15</param>
-    <param name="description">Find CLI invocations in test_filtering.py</param>
+  <user>In /home/runner/work/erk/erk/tests/commands/, search for tests that:
+1. Create Plan objects with labels=["erk-pr", "erk-plan"] and then invoke CLI commands without explicit --label flags (which would use the new default "erk-core")
+2. Any test files in tests/commands/pr/ besides test_list.py that might fail
+
+Also check tests/commands/test_dash_workflow_runs.py if there are Plan objects with only "erk-pr" labels (not "erk-plan").
+
+FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant docs before exploring raw files. Then explore codebase as necessary.
+
+Report any remaining files with label mismatches.</user>
+  <assistant>I'll help you search for tests with potential label mismatches related to the erk-core label change. Let me start by checking the documentation as instructed.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="6004" cache_read_input_tokens="13037" cache_creation="{'ephemeral_5m_input_tokens': 6004, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_0164drZPjxohh8NoF9b4RvQj">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/index.md</param>
   </tool_use>
-  <usage input_tokens="0" cache_creation_input_tokens="892" cache_read_input_tokens="56725" cache_creation="{'ephemeral_5m_input_tokens': 892, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
-  <tool_use name="Bash" id="toolu_01VpdqPKJ2QtD5Ap4aENRWh5">
-    <param name="command">grep -n "runner.invoke.*pr list\|invoke.*pr\|invoke.*dashboard" /home/runner/work/erk/erk/tests/commands/pr/test_view.py | head -15</param>
+  <usage input_tokens="3" cache_creation_input_tokens="6004" cache_read_input_tokens="13037" cache_creation="{'ephemeral_5m_input_tokens': 6004, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_017pcdPhAu7yjKzEhZZLpiCP">
+    <param name="pattern">tests/commands/**/*.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6004" cache_read_input_tokens="13037" cache_creation="{'ephemeral_5m_input_tokens': 6004, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0164drZPjxohh8NoF9b4RvQj">
+     1→&lt;!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY --&gt;
+     2→&lt;!-- Edit source frontmatter, then run 'erk docs sync' to regenerate. --&gt;
+     3→
+     4→# Agent Documentation
+     5→
+     6→Before starting work, scan the read-when conditions below.
+     7→If your current task matches, read the linked document **before writing code**.
+     8→
+     9→## Categories
+    10→
+    11→- [architecture/](architecture/) — Explore when working on core patterns (dry-run, gateways, subprocess, shell integration). Add docs here for cross-cutting technical patterns.
+    12→- [capabilities/](capabilities/)
+    13→- [changelog/](changelog/)
+    14→- [checklists/](checklists/)
+    15→- [ci/](ci/)
+    16→- [claude-code/](claude-code/)
+    17→- [cli/](cli/) — Explore when building CLI commands or output formatting. Add docs here for Click patterns and terminal UX.
+    18→- [commands/](commands/) — Explore when creating or optimizing slash commands. Add docs here for command authoring patterns.
+    19→- [config/](config/)
+    20→- [configuration/](configuration/)
+    21→- [documentation/](documentation/) — Explore when structuring or writing documentation. Add docs here for documentation methodology and best practices.
+    22→- [erk/](erk/) — Explore when working with erk-specific workflows (worktrees, PR sync, Graphite). Add docs here for erk user-facing features.
+    23→- [erk-dev/](erk-dev/)
+    24→- [gateway/](gateway/)
+    25→- [hooks/](hooks/) — Explore when creating or debugging hooks. Add docs here for hook development patterns.
+    26→- [integrations/](integrations/)
+    27→- [objectives/](objectives/)
+    28→- [planning/](planning/) — Explore when working with plans, .erk/impl-context/ folders, or agent delegation. Add docs here for planning workflow patterns.
+    29→- [pr-operations/](pr-operations/)
+    30→- [refactoring/](refactoring/)
+
+... [22 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_017pcdPhAu7yjKzEhZZLpiCP">
+/home/runner/work/erk/erk/tests/commands/__init__.py
+/home/runner/work/erk/erk/tests/commands/admin/__init__.py
+/home/runner/work/erk/erk/tests/commands/branch/__init__.py
+/home/runner/work/erk/erk/tests/commands/cc/__init__.py
+/home/runner/work/erk/erk/tests/commands/consolidate_learn_plans/__init__.py
+/home/runner/work/erk/erk/tests/commands/dash/__init__.py
+/home/runner/work/erk/erk/tests/commands/dash/conftest.py
+/home/runner/work/erk/erk/tests/commands/dispatch/__init__.py
+/home/runner/work/erk/erk/tests/commands/dispatch/test_workflow_config.py
+/home/runner/work/erk/erk/tests/commands/display/__init__.py
+/home/runner/work/erk/erk/tests/commands/display/list/__init__.py
+/home/runner/work/erk/erk/tests/commands/doctor/__init__.py
+/home/runner/work/erk/erk/tests/commands/doctor/dogfooder/__init__.py
+/home/runner/work/erk/erk/tests/commands/graphite/__init__.py
+/home/runner/work/erk/erk/tests/commands/doctor/dogfooder/test_legacy_erk_kits_folder.py
+/home/runner/work/erk/erk/tests/commands/doctor/dogfooder/test_legacy_claude_docs.py
+/home/runner/work/erk/erk/tests/commands/doctor/dogfooder/test_legacy_config_locations.py
+/home/runner/work/erk/erk/tests/commands/doctor/dogfooder/test_legacy_kits_toml.py
+/home/runner/work/erk/erk/tests/commands/doctor/dogfooder/test_legacy_hook_settings.py
+/home/runner/work/erk/erk/tests/commands/doctor/dogfooder/test_deprecated_dot_agent_config.py
+/home/runner/work/erk/erk/tests/commands/doctor/dogfooder/test_legacy_erk_docs_agent.py
+/home/runner/work/erk/erk/tests/commands/doctor/dogfooder/test_outdated_erk_skill.py
+/home/runner/work/erk/erk/tests/commands/doctor/dogfooder/test_legacy_kit_yaml.py
+/home/runner/work/erk/erk/tests/commands/implement/__init__.py
+/home/runner/work/erk/erk/tests/commands/land/__init__.py
+/home/runner/work/erk/erk/tests/commands/implement/conftest.py
+/home/runner/work/erk/erk/tests/commands/implement/test_target_detection.py
+/home/runner/work/erk/erk/tests/commands/learn/__init__.py
+/home/runner/work/erk/erk/tests/commands/management/__init__.py
+/home/runner/work/erk/erk/tests/commands/navigation/__init__.py
+
+... [71 lines omitted] ...
+
+/home/runner/work/erk/erk/tests/commands/land/test_branch_errors.py
+  </tool_result>
+  <assistant>Now let me search for documentation specifically about testing and label-related changes:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="3985" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 3985, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_019wvN4HcYACEoxP75wqmTMu">
+    <param name="pattern">erk-core|erk-plan|erk-pr</param>
+    <param name="path">/home/runner/work/erk/erk/docs/learned</param>
+    <param name="glob">*.md</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="3985" cache_read_input_tokens="19041" cache_creation="{'ephemeral_5m_input_tokens': 3985, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019wvN4HcYACEoxP75wqmTMu">
+Found 45 files
+docs/learned/planning/label-scheme.md
+docs/learned/tui/architecture.md
+docs/learned/tui/plan-title-rendering-pipeline.md
+docs/learned/tui/view-switching.md
+docs/learned/textual/datatable-markup-escaping.md
+docs/learned/tui/data-contract.md
+docs/learned/testing/dual-backend-testing.md
+docs/learned/testing/fake-github-api-reference.md
+docs/learned/testing/fake-github-mutation-tracking.md
+docs/learned/sessions/raw-session-processing.md
+docs/learned/planning/tripwires.md
+docs/learned/planning/workflow.md
+docs/learned/planning/plan-creation-pathways.md
+docs/learned/planning/plan-title-prefix-system.md
+docs/learned/planning/planned-pr-backend.md
+docs/learned/planning/index.md
+docs/learned/planning/learn-plan-validation.md
+docs/learned/planning/learn-vs-implementation-plans.md
+docs/learned/planning/learn-workflow.md
+docs/learned/planning/lifecycle.md
+docs/learned/planning/metadata-block-fallback.md
+docs/learned/planning/consolidation-labels.md
+docs/learned/planning/incremental-dispatch.md
+docs/learned/objectives/objective-storage-format.md
+docs/learned/integrations/codex/codex-skills-system.md
+docs/learned/integrations/linear-erk-mapping.md
+docs/learned/glossary.md
+docs/learned/erk/issue-pr-linkage-storage.md
+docs/learned/erk/pr-address-workflows.md
+
+... [16 lines omitted] ...
+  </tool_result>
+  <assistant>Perfect! There's a label-scheme.md document. Let me read that:</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="837" cache_read_input_tokens="23026" cache_creation="{'ephemeral_5m_input_tokens': 837, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01TeozgwgQds4A6JJogbxWAq">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/label-scheme.md</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="837" cache_read_input_tokens="23026" cache_creation="{'ephemeral_5m_input_tokens': 837, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01TeozgwgQds4A6JJogbxWAq">
+     1→---
+     2→title: PR and Plan Label Assignment Scheme
+     3→read_when:
+     4→  - "understanding how plans, code PRs, and learn issues are labeled"
+     5→  - "working with erk-pr, erk-plan, erk-core, or erk-learn labels"
+     6→  - "debugging label filtering in TUI or CLI views"
+     7→tripwires:
+     8→  - action: "querying core erk PRs without using the erk-core label"
+     9→    warning: "Use erk-core to query non-learn PRs (plans + code). Use erk-pr for ALL erk-submitted PRs including learn. Use type-specific labels (erk-plan, erk-learn) only when you need to filter to a specific type."
+    10→  - action: "backfilling labels on existing issues without considering updated_at side effects"
+    11→    warning: "GitHub label operations change the issue's updated_at timestamp. This affects sort order in list views and may confuse users."
+    12→---
+    13→
+    14→# PR and Plan Label Assignment Scheme
+    15→
+    16→Erk uses `erk-pr` as the **universal base label** on all erk-submitted PRs, with `erk-core` for non-learn PRs and **type-specific labels** for filtering.
+    17→
+    18→## Label Taxonomy
+    19→
+    20→| Label              | Purpose                              | Applied To                                        |
+    21→| ------------------ | ------------------------------------ | ------------------------------------------------- |
+    22→| `erk-pr`           | Base label — all erk-submitted PRs   | All plans, learn plans, and code PRs              |
+    23→| `erk-core`         | Core work label — non-learn PRs      | Plan PRs and code PRs (NOT learn PRs)             |
+    24→| `erk-planned-pr`   | Legacy base label — identifies plans | Historical plans only (no longer applied by code) |
+    25→| `erk-plan`         | Type label — implementation plans    | Regular plans                                     |
+    26→| `erk-learn`        | Type label — documentation plans     | Learn plans                                       |
+    27→| `erk-objective`    | Separate system — objectives         | Objective issues                                  |
+    28→| `erk-consolidated` | Consolidation marker                 | Consolidated learn plans                          |
+    29→
+    30→## Label Assignment
+
+... [49 lines omitted] ...
+  </tool_result>
+  <assistant>Excellent! Now I understand the label scheme. Let me search for tests in the specific areas mentioned:</assistant>
+  <usage input_tokens="4" cache_creation_input_tokens="1618" cache_read_input_tokens="23863" cache_creation="{'ephemeral_5m_input_tokens': 1618, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01XsT3s2Wj2iHQ5KjFmkvUXm">
+    <param name="pattern">labels\s*=\s*\["erk-pr"\s*,\s*"erk-plan"\]</param>
+    <param name="path">/home/runner/work/erk/erk/tests/commands</param>
+    <param name="glob">*.py</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="4" cache_creation_input_tokens="1618" cache_read_input_tokens="23863" cache_creation="{'ephemeral_5m_input_tokens': 1618, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01W8BKTJYkUzsz71yKkJFcmf">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr</param>
+  </tool_use>
+  <usage input_tokens="4" cache_creation_input_tokens="1618" cache_read_input_tokens="23863" cache_creation="{'ephemeral_5m_input_tokens': 1618, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01W8BKTJYkUzsz71yKkJFcmf">
+EISDIR: illegal operation on a directory, read
+  </tool_result>
+  <tool_result tool="toolu_01XsT3s2Wj2iHQ5KjFmkvUXm">
+Found 21 files
+tests/commands/workspace/test_delete.py
+tests/commands/test_top_level_commands.py
+tests/commands/pr/test_submit.py
+tests/commands/pr/test_view.py
+tests/commands/run/test_list.py
+tests/commands/pr/test_remote_paths.py
+tests/commands/pr/test_rewrite.py
+tests/commands/pr/test_log.py
+tests/commands/pr/test_close.py
+tests/commands/pr/test_duplicate_check.py
+tests/commands/pr/test_check_plan.py
+tests/commands/objective/test_plan_one_shot.py
+tests/commands/objective/test_plan.py
+tests/commands/land/test_objective_update.py
+tests/commands/learn/test_display.py
+tests/commands/dash/test_action_state.py
+tests/commands/dash/test_filtering.py
+tests/commands/dash/test_impl_columns.py
+tests/commands/dash/test_pr_columns.py
+tests/commands/dash/test_workflow_run_state.py
+tests/commands/branch/test_checkout_cmd.py
+  </tool_result>
+  <assistant>Let me check the PR test files specifically:</assistant>
+  <usage input_tokens="39" cache_creation_input_tokens="686" cache_read_input_tokens="25481" cache_creation="{'ephemeral_5m_input_tokens': 686, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01HNuZYUuDubM4Jwichu6GNx">
+    <param name="command">ls -la /home/runner/work/erk/erk/tests/commands/pr/</param>
+    <param name="description">List PR test files</param>
+  </tool_use>
+  <usage input_tokens="39" cache_creation_input_tokens="686" cache_read_input_tokens="25481" cache_creation="{'ephemeral_5m_input_tokens': 686, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01SN3rjjxQwZw9i8nD6Bg2hL">
+    <param name="command">ls /home/runner/work/erk/erk/tests/commands/dash/ | grep -E 'test_.*\.py$'</param>
+    <param name="description">List dash test files</param>
+  </tool_use>
+  <usage input_tokens="39" cache_creation_input_tokens="686" cache_read_input_tokens="25481" cache_creation="{'ephemeral_5m_input_tokens': 686, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01SN3rjjxQwZw9i8nD6Bg2hL">
+test_action_state.py
+test_filtering.py
+test_impl_columns.py
+test_pr_columns.py
+test_workflow_run_state.py
+  </tool_result>
+  <tool_result tool="toolu_01HNuZYUuDubM4Jwichu6GNx">
+total 492
+drwxr-xr-x  3 runner runner  4096 Mar 10 08:00 .
+drwxr-xr-x 28 runner runner  4096 Mar 10 08:00 ..
+-rw-r--r--  1 runner runner    38 Mar 10 07:50 __init__.py
+drwxr-xr-x  2 runner runner  4096 Mar 10 07:58 __pycache__
+-rw-r--r--  1 runner runner  7428 Mar 10 07:51 test_address.py
+-rw-r--r--  1 runner runner   428 Mar 10 07:50 test_address_remote_cmd.py
+-rw-r--r--  1 runner runner 20703 Mar 10 07:51 test_check.py
+-rw-r--r--  1 runner runner 22583 Mar 10 07:51 test_check_plan.py
+-rw-r--r--  1 runner runner 38346 Mar 10 07:51 test_checkout.py
+-rw-r--r--  1 runner runner 20915 Mar 10 07:51 test_checkout_graphite_linking.py
+-rw-r--r--  1 runner runner 16958 Mar 10 07:51 test_checkout_plan.py
+-rw-r--r--  1 runner runner 22143 Mar 10 07:51 test_close.py
+-rw-r--r--  1 runner runner 13541 Mar 10 07:51 test_create.py
+-rw-r--r--  1 runner runner 23756 Mar 10 07:51 test_dispatch.py
+-rw-r--r--  1 runner runner 16368 Mar 10 07:51 test_diverge_fix.py
+-rw-r--r--  1 runner runner 11249 Mar 10 07:51 test_duplicate_check.py
+-rw-r--r--  1 runner runner 26481 Mar 10 08:00 test_list.py
+-rw-r--r--  1 runner runner 15528 Mar 10 07:51 test_log.py
+-rw-r--r--  1 runner runner  2996 Mar 10 07:50 test_parse_pr_reference.py
+-rw-r--r--  1 runner runner  5656 Mar 10 07:51 test_prepare.py
+-rw-r--r--  1 runner runner 14519 Mar 10 07:51 test_rebase.py
+-rw-r--r--  1 runner runner   437 Mar 10 07:50 test_rebase_remote.py
+-rw-r--r--  1 runner runner 20480 Mar 10 07:51 test_remote_paths.py
+-rw-r--r--  1 runner runner  2131 Mar 10 07:51 test_replan.py
+-rw-r--r--  1 runner runner 14689 Mar 10 07:51 test_rewrite.py
+-rw-r--r--  1 runner runner 67649 Mar 10 07:51 test_submit.py
+-rw-r--r--  1 runner runner  5892 Mar 10 07:51 test_submit_graphite_disabled.py
+-rw-r--r--  1 runner runner 19487 Mar 10 07:51 test_teleport.py
+-rw-r--r--  1 runner runner 25598 Mar 10 07:51 test_view.py
+  </tool_result>
+  <assistant>Now let me read the test files that were identified as containing the label pattern. Let me start with the PR test files besides test_list.py:</assistant>
+  <usage input_tokens="68" cache_creation_input_tokens="1329" cache_read_input_tokens="26167" cache_creation="{'ephemeral_5m_input_tokens': 1329, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_011qQEUyVqRuMhmmgCz6Cs3z">
+    <param name="pattern">labels\s*=\s*\[.*erk-pr.*erk-plan</param>
+    <param name="path">/home/runner/work/erk/erk/tests/commands/pr/test_submit.py</param>
+    <param name="output_mode">content</param>
+    <param name="context">3</param>
+  </tool_use>
+  <usage input_tokens="68" cache_creation_input_tokens="1329" cache_read_input_tokens="26167" cache_creation="{'ephemeral_5m_input_tokens': 1329, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_015dYgRYAZNQSc4r1dDPNoq6">
+    <param name="pattern">labels\s*=\s*\[.*erk-pr.*erk-plan</param>
+    <param name="path">/home/runner/work/erk/erk/tests/commands/pr/test_view.py</param>
+    <param name="output_mode">content</param>
+    <param name="context">3</param>
+  </tool_use>
+  <usage input_tokens="68" cache_creation_input_tokens="1329" cache_read_input_tokens="26167" cache_creation="{'ephemeral_5m_input_tokens': 1329, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01JM8fWjrkzeECaj63qVceXP">
+    <param name="pattern">labels\s*=\s*\[.*erk-pr.*erk-plan</param>
+    <param name="path">/home/runner/work/erk/erk/tests/commands/pr/test_checkout_plan.py</param>
+    <param name="output_mode">content</param>
+    <param name="context">3</param>
+  </tool_use>
+  <usage input_tokens="68" cache_creation_input_tokens="1329" cache_read_input_tokens="26167" cache_creation="{'ephemeral_5m_input_tokens': 1329, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011qQEUyVqRuMhmmgCz6Cs3z">
+&lt;tool_use_error&gt;InputValidationError: Grep failed due to the following issue:
+An unexpected parameter `context` was provided&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_result tool="toolu_015dYgRYAZNQSc4r1dDPNoq6">
+&lt;tool_use_error&gt;InputValidationError: Grep failed due to the following issue:
+An unexpected parameter `context` was provided&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_result tool="toolu_01JM8fWjrkzeECaj63qVceXP">
+&lt;tool_use_error&gt;InputValidationError: Grep failed due to the following issue:
+An unexpected parameter `context` was provided&lt;/tool_use_error&gt;
+  </tool_result>
+  <assistant>Let me fix the grep command:</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="834" cache_read_input_tokens="27496" cache_creation="{'ephemeral_5m_input_tokens': 834, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01KAunsmGMqKCrV9xsvubrDb">
+    <param name="pattern">labels\s*=\s*\[.*erk-pr.*erk-plan</param>
+    <param name="path">/home/runner/work/erk/erk/tests/commands/pr/test_submit.py</param>
+    <param name="output_mode">content</param>
+    <param name="-B">3</param>
+    <param name="-A">3</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="834" cache_read_input_tokens="27496" cache_creation="{'ephemeral_5m_input_tokens': 834, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01HLKzivLoBbFDf8evj42nqB">
+    <param name="pattern">labels\s*=\s*\[.*erk-pr.*erk-plan</param>
+    <param name="path">/home/runner/work/erk/erk/tests/commands/pr/test_view.py</param>
+    <param name="output_mode">content</param>
+    <param name="-B">3</param>
+    <param name="-A">3</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="834" cache_read_input_tokens="27496" cache_creation="{'ephemeral_5m_input_tokens': 834, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01QjgQ52BpXXX9HAeHkuKXim">
+    <param name="pattern">labels\s*=\s*\[.*erk-pr.*erk-plan</param>
+    <param name="path">/home/runner/work/erk/erk/tests/commands/pr/test_checkout_plan.py</param>
+    <param name="output_mode">content</param>
+    <param name="-B">3</param>
+    <param name="-A">3</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="834" cache_read_input_tokens="27496" cache_creation="{'ephemeral_5m_input_tokens': 834, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01KAunsmGMqKCrV9xsvubrDb">
+1366-            body=issue_body,
+1367-            state="OPEN",
+1368-            url="https://github.com/owner/repo/issues/5823",
+1369:            labels=["erk-pr", "erk-plan"],
+1370-            assignees=[],
+1371-            created_at=now,
+1372-            updated_at=now,
+--
+1516-            body=issue_body,
+1517-            state="OPEN",
+1518-            url="https://github.com/owner/repo/issues/5823",
+1519:            labels=["erk-pr", "erk-plan"],
+1520-            assignees=[],
+1521-            created_at=now,
+1522-            updated_at=now,
+  </tool_result>
+  <tool_result tool="toolu_01QjgQ52BpXXX9HAeHkuKXim">
+No matches found
+  </tool_result>
+  <tool_result tool="toolu_01HLKzivLoBbFDf8evj42nqB">
+91-        body="Plan content",
+92-        state=PlanState.OPEN,
+93-        url="https://github.com/owner/repo/issues/123",
+94:        labels=["erk-pr", "erk-plan"],
+95-        assignees=[],
+96-        created_at=datetime(2024, 1, 1, tzinfo=UTC),
+97-        updated_at=datetime(2024, 1, 2, tzinfo=UTC),
+--
+153-        body="This is a test issue description",
+154-        state=PlanState.OPEN,
+155-        url="https://github.com/owner/repo/issues/42",
+156:        labels=["erk-pr", "erk-plan"],
+157-        assignees=[],
+158-        created_at=datetime(2024, 1, 1, tzinfo=UTC),
+159-        updated_at=datetime(2024, 1, 2, tzinfo=UTC),
+--
+188-        body="This is a test issue description",
+189-        state=PlanState.OPEN,
+190-        url="https://github.com/owner/repo/issues/42",
+191:        labels=["erk-pr", "erk-plan"],
+192-        assignees=[],
+193-        created_at=datetime(2024, 1, 1, tzinfo=UTC),
+194-        updated_at=datetime(2024, 1, 2, tzinfo=UTC),
+--
+271-        body="Issue from URL",
+272-        state=PlanState.OPEN,
+273-        url="https://github.com/owner/repo/issues/123",
+274:        labels=["erk-pr", "erk-plan"],
+275-        assignees=[],
+276-        created_at=datetime(2024, 1, 1, tzinfo=UTC),
+
+... [81 lines omitted] ...
+  </tool_result>
+  <assistant>Good! Now let me check the remaining PR test files and also look for any without --label flags:</assistant>
+  <usage input_tokens="32" cache_creation_input_tokens="2541" cache_read_input_tokens="28330" cache_creation="{'ephemeral_5m_input_tokens': 2541, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01N7KXkTEEhooSQF526y88KQ">
+    <param name="pattern">labels\s*=\s*\[.*erk-pr.*erk-plan</param>
+    <param name="path">/home/runner/work/erk/erk/tests/commands/pr/test_checkout.py</param>
+    <param name="output_mode">content</param>
+    <param name="-B">3</param>
+    <param name="-A">3</param>
+  </tool_use>
+  <usage input_tokens="32" cache_creation_input_tokens="2541" cache_read_input_tokens="28330" cache_creation="{'ephemeral_5m_input_tokens': 2541, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01HqQEyfEiM7mmj5CrowUSAv">
+    <param name="pattern">labels\s*=\s*\[.*erk-pr.*erk-plan</param>
+    <param name="path">/home/runner/work/erk/erk/tests/commands/pr/test_check.py</param>
+    <param name="output_mode">content</param>
+    <param name="-B">3</param>
+    <param name="-A">3</param>
+  </tool_use>
+  <usage input_tokens="32" cache_creation_input_tokens="2541" cache_read_input_tokens="28330" cache_creation="{'ephemeral_5m_input_tokens': 2541, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01RP3qdoXYteecKdppf43ziS">
+    <param name="pattern">labels\s*=\s*\[.*erk-pr.*erk-plan</param>
+    <param name="path">/home/runner/work/erk/erk/tests/commands/pr/test_check_plan.py</param>
+    <param name="output_mode">content</param>
+    <param name="-B">3</param>
+    <param name="-A">3</param>
+  </tool_use>
+  <usage input_tokens="32" cache_creation_input_tokens="2541" cache_read_input_tokens="28330" cache_creation="{'ephemeral_5m_input_tokens': 2541, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01N7KXkTEEhooSQF526y88KQ">
+No matches found
+  </tool_result>
+  <tool_result tool="toolu_01HqQEyfEiM7mmj5CrowUSAv">
+No matches found
+  </tool_result>
+  <tool_result tool="toolu_01RP3qdoXYteecKdppf43ziS">
+40-        body=plan_header_block,
+41-        state="OPEN",
+42-        url="https://github.com/owner/repo/issues/42",
+43:        labels=["erk-pr", "erk-plan"],
+44-        assignees=[],
+45-        created_at=datetime(2024, 1, 1, tzinfo=UTC),
+46-        updated_at=datetime(2024, 1, 2, tzinfo=UTC),
+--
+83-        body="No metadata block here",
+84-        state="OPEN",
+85-        url="https://github.com/owner/repo/issues/42",
+86:        labels=["erk-pr", "erk-plan"],
+87-        assignees=[],
+88-        created_at=datetime(2024, 1, 1, tzinfo=UTC),
+89-        updated_at=datetime(2024, 1, 2, tzinfo=UTC),
+--
+130-        body=plan_header_block,
+131-        state="OPEN",
+132-        url="https://github.com/owner/repo/issues/42",
+133:        labels=["erk-pr", "erk-plan"],
+134-        assignees=[],
+135-        created_at=datetime(2024, 1, 1, tzinfo=UTC),
+136-        updated_at=datetime(2024, 1, 2, tzinfo=UTC),
+--
+179-        body=plan_header_block,
+180-        state="OPEN",
+181-        url="https://github.com/owner/repo/issues/42",
+182:        labels=["erk-pr", "erk-plan"],
+183-        assignees=[],
+184-        created_at=datetime(2024, 1, 1, tzinfo=UTC),
+
+... [65 lines omitted] ...
+  </tool_result>
+  <assistant>Now let me check the remaining PR test files and search in test_dash_workflow_runs.py for Plan objects with only "erk-pr" labels:</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="2140" cache_read_input_tokens="30871" cache_creation="{'ephemeral_5m_input_tokens': 2140, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_013TXderRgUbkXW9WVfv9Hid">
+    <param name="pattern">labels\s*=\s*\[.*erk-pr.*erk-plan</param>
+    <param name="path">/home/runner/work/erk/erk/tests/commands/pr/test_create.py</param>
+    <param name="output_mode">content</param>
+    <param name="-B">3</param>
+    <param name="-A">3</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="2140" cache_read_input_tokens="30871" cache_creation="{'ephemeral_5m_input_tokens': 2140, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01Tgj4LdJeiL3g9qrEnHSf1Z">
+    <param name="pattern">labels\s*=\s*\[.*erk-pr.*erk-plan</param>
+    <param name="path">/home/runner/work/erk/erk/tests/commands/pr/test_dispatch.py</param>
+    <param name="output_mode">content</param>
+    <param name="-B">3</param>
+    <param name="-A">3</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="2140" cache_read_input_tokens="30871" cache_creation="{'ephemeral_5m_input_tokens': 2140, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_015hesoNcTnaGsudch4H7r5d">
+    <param name="command">find /home/runner/work/erk/erk/tests/commands -name "*test_dash_workflow_runs*" -type f</param>
+    <param name="description">Find test_dash_workflow_runs files</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="2140" cache_read_input_tokens="30871" cache_creation="{'ephemeral_5m_input_tokens': 2140, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013TXderRgUbkXW9WVfv9Hid">
+No matches found
+  </tool_result>
+  <tool_result tool="toolu_01Tgj4LdJeiL3g9qrEnHSf1Z">
+No matches found
+  </tool_result>
+  <tool_result tool="toolu_015hesoNcTnaGsudch4H7r5d">
+/home/runner/work/erk/erk/tests/commands/__pycache__/test_dash_workflow_runs.cpython-313-pytest-9.0.2.pyc
+/home/runner/work/erk/erk/tests/commands/test_dash_workflow_runs.py
+  </tool_result>
+  <assistant>Now let me search for Plan objects in test_dash_workflow_runs.py with only "erk-pr" labels:</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="742" cache_read_input_tokens="33011" cache_creation="{'ephemeral_5m_input_tokens': 742, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01WJ24mmBdDHxWzNZacKfFZT">
+    <param name="pattern">labels\s*=\s*\[\s*"erk-pr"\s*\]</param>
+    <param name="path">/home/runner/work/erk/erk/tests/commands/test_dash_workflow_runs.py</param>
+    <param name="output_mode">content</param>
+    <param name="-B">3</param>
+    <param name="-A">3</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="742" cache_read_input_tokens="33011" cache_creation="{'ephemeral_5m_input_tokens': 742, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01WJ24mmBdDHxWzNZacKfFZT">
+No matches found
+  </tool_result>
+  <assistant>Let me now look for all instances where we invoke CLI commands without --label flags in the files we've identified:</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="250" cache_read_input_tokens="33753" cache_creation="{'ephemeral_5m_input_tokens': 250, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Usj8yAardxyxuH8MkCZnFX">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_submit.py</param>
+    <param name="offset">1360</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="250" cache_read_input_tokens="33753" cache_creation="{'ephemeral_5m_input_tokens': 250, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01ECfDpv8cuM5efBiyMB6mNs">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_submit.py</param>
+    <param name="offset">1510</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="250" cache_read_input_tokens="33753" cache_creation="{'ephemeral_5m_input_tokens': 250, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Usj8yAardxyxuH8MkCZnFX">
+  1360→
+  1361→&lt;/details&gt;
+  1362→&lt;!-- /erk:metadata-block:plan-header --&gt;"""
+  1363→        plan_issue = IssueInfo(
+  1364→            number=5823,
+  1365→            title="[erk-plan] Add feature",
+  1366→            body=issue_body,
+  1367→            state="OPEN",
+  1368→            url="https://github.com/owner/repo/issues/5823",
+  1369→            labels=["erk-pr", "erk-plan"],
+  1370→            assignees=[],
+  1371→            created_at=now,
+  1372→            updated_at=now,
+  1373→            author="testuser",
+  1374→        )
+  1375→
+  1376→        # Comment containing the plan content (using old format for backward compatibility)
+  1377→        plan_body = (
+  1378→            "&lt;!-- erk:plan-content --&gt;\n"
+  1379→            "# Plan\n"
+  1380→            "Add the feature implementation.\n"
+  1381→            "&lt;!-- /erk:plan-content --&gt;"
+  1382→        )
+  1383→        plan_comment = IssueComment(
+  1384→            id=1000,
+  1385→            body=plan_body,
+  1386→            url="https://github.com/owner/repo/issues/5823#issuecomment-1000",
+  1387→            author="testuser",
+  1388→        )
+  1389→
+
+... [25 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01ECfDpv8cuM5efBiyMB6mNs">
+  1510→
+  1511→&lt;/details&gt;
+  1512→&lt;!-- /erk:metadata-block:plan-header --&gt;"""
+  1513→        plan_issue = IssueInfo(
+  1514→            number=5823,
+  1515→            title="[erk-plan] Add feature",
+  1516→            body=issue_body,
+  1517→            state="OPEN",
+  1518→            url="https://github.com/owner/repo/issues/5823",
+  1519→            labels=["erk-pr", "erk-plan"],
+  1520→            assignees=[],
+  1521→            created_at=now,
+  1522→            updated_at=now,
+  1523→            author="testuser",
+  1524→        )
+  1525→
+  1526→        # Objective issue
+  1527→        objective_issue = IssueInfo(
+  1528→            number=5000,
+  1529→            title="Improve PR workflow",
+  1530→            body="Objective body",
+  1531→            state="OPEN",
+  1532→            url="https://github.com/owner/repo/issues/5000",
+  1533→            labels=["erk-objective"],
+  1534→            assignees=[],
+  1535→            created_at=now,
+  1536→            updated_at=now,
+  1537→            author="testuser",
+  1538→        )
+  1539→
+
+... [25 lines omitted] ...
+  </tool_result>
+  <assistant>Now let me search for CLI invocations that don't have --label flags in the identified test files:</assistant>
+  <usage input_tokens="4" cache_creation_input_tokens="6722" cache_read_input_tokens="34003" cache_creation="{'ephemeral_5m_input_tokens': 6722, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01R4ZQgPsjVR22y3aLCwZsbc">
+    <param name="command">grep -n "invoke.*pr\|runner.invoke" /home/runner/work/erk/erk/tests/commands/pr/test_submit.py | head -40</param>
+    <param name="description">Find CLI invocations in test_submit.py</param>
+  </tool_use>
+  <usage input_tokens="4" cache_creation_input_tokens="6722" cache_read_input_tokens="34003" cache_creation="{'ephemeral_5m_input_tokens': 6722, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01M7qNskDGPGKbTUHtZo1o8v">
+    <param name="command">grep -n "invoke.*pr\|runner.invoke" /home/runner/work/erk/erk/tests/commands/pr/test_view.py | head -40</param>
     <param name="description">Find CLI invocations in test_view.py</param>
   </tool_use>
-  <usage input_tokens="0" cache_creation_input_tokens="892" cache_read_input_tokens="56725" cache_creation="{'ephemeral_5m_input_tokens': 892, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
-  <tool_result tool="toolu_01B6KdvXH52VYXojpKTzVFQy">
-63:        result = runner.invoke(cli, ["pr", "list"], obj=ctx)
-114:        result = runner.invoke(cli, ["pr", "list", "--state", "open"], obj=ctx)
-215:        result = runner.invoke(cli, ["pr", "list", "--limit", "2"], obj=ctx)
-337:        result = runner.invoke(cli, ["pr", "list", "--state", "closed"], obj=ctx)
-  </tool_result>
-  <tool_result tool="toolu_01VpdqPKJ2QtD5Ap4aENRWh5">
+  <usage input_tokens="4" cache_creation_input_tokens="6722" cache_read_input_tokens="34003" cache_creation="{'ephemeral_5m_input_tokens': 6722, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_016HrZ3Np9SsTGFqF8siHQ4a">
+    <param name="command">grep -n "invoke.*pr\|runner.invoke" /home/runner/work/erk/erk/tests/commands/pr/test_check_plan.py | head -40</param>
+    <param name="description">Find CLI invocations in test_check_plan.py</param>
+  </tool_use>
+  <usage input_tokens="4" cache_creation_input_tokens="6722" cache_read_input_tokens="34003" cache_creation="{'ephemeral_5m_input_tokens': 6722, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01M7qNskDGPGKbTUHtZo1o8v">
 72:        result = runner.invoke(cli, ["pr", "view", "42"], obj=ctx)
 119:        result = runner.invoke(cli, ["pr", "view"], obj=ctx)
 138:        result = runner.invoke(cli, ["pr", "view"], obj=ctx)
@@ -51,6 +600,7 @@
 207:        result = runner.invoke(cli, ["pr", "view", "42", "-f"], obj=ctx)
 224:        result = runner.invoke(cli, ["pr", "view", "999"], obj=ctx)
 257:        result = runner.invoke(cli, ["pr", "view", "1"], obj=ctx)
+290:        result = runner.invoke(
 308:        result = runner.invoke(cli, ["pr", "view", "invalid-input"], obj=ctx)
 367:        result = runner.invoke(cli, ["pr", "view", "42"], obj=ctx)
 424:        result = runner.invoke(cli, ["pr", "view", "42"], obj=ctx)
@@ -59,201 +609,496 @@
 569:        result = runner.invoke(cli, ["pr", "view", "42"], obj=ctx)
 618:        result = runner.invoke(cli, ["pr", "view", "42"], obj=ctx)
 663:        result = runner.invoke(cli, ["pr", "view", "42"], obj=ctx)
+708:        result = runner.invoke(cli, ["pr", "view", "42"], obj=ctx)
+753:        result = runner.invoke(cli, ["pr", "view", "42"], obj=ctx)
+799:        result = runner.invoke(cli, ["pr", "view", "42"], obj=ctx)
   </tool_result>
-  <assistant>Now let me check test_filtering.py more carefully to see what it expects:</assistant>
-  <usage input_tokens="1" cache_creation_input_tokens="951" cache_read_input_tokens="57617" cache_creation="{'ephemeral_5m_input_tokens': 951, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
-  <tool_use name="Read" id="toolu_01EkHkTYmqSAco7aRAr2srEA">
-    <param name="file_path">/home/runner/work/erk/erk/tests/commands/dash/test_filtering.py</param>
-    <param name="offset">1</param>
+  <tool_result tool="toolu_01R4ZQgPsjVR22y3aLCwZsbc">
+39:        result = runner.invoke(pr_group, ["submit"], obj=ctx)
+133:        result = runner.invoke(pr_group, ["submit", "--skip-description"], obj=ctx)
+214:        result = runner.invoke(pr_group, ["submit"], obj=ctx)
+247:        result = runner.invoke(pr_group, ["submit"], obj=ctx)
+301:        result = runner.invoke(pr_group, ["submit", "--no-graphite"], obj=ctx)
+391:        result = runner.invoke(pr_group, ["submit"], obj=ctx)
+482:        result = runner.invoke(pr_group, ["submit"], obj=ctx)
+575:        result = runner.invoke(pr_group, ["submit"], obj=ctx)
+709:        result = runner.invoke(pr_group, ["submit"], obj=ctx)
+810:        result = runner.invoke(pr_group, ["submit", "--force", "--no-graphite"], obj=ctx)
+907:        result = runner.invoke(pr_group, ["submit", "-f", "--no-graphite"], obj=ctx)
+1001:        result = runner.invoke(pr_group, ["submit"], obj=ctx)
+1088:        result = runner.invoke(pr_group, ["submit", "--no-graphite"], obj=ctx)
+1173:        result = runner.invoke(pr_group, ["submit", "--no-graphite"], obj=ctx)
+1266:        result = runner.invoke(pr_group, ["submit", "--no-graphite"], obj=ctx)
+1417:        result = runner.invoke(pr_group, ["submit", "--no-graphite"], obj=ctx)
+1581:        result = runner.invoke(pr_group, ["submit", "--no-graphite"], obj=ctx)
+1679:        result = runner.invoke(pr_group, ["submit"], obj=ctx)
+1747:        result = runner.invoke(pr_group, ["submit"], obj=ctx)
+1848:        result = runner.invoke(pr_group, ["submit", "--force"], obj=ctx)
+1944:        result = runner.invoke(pr_group, ["submit"], obj=ctx)
+  </tool_result>
+  <tool_result tool="toolu_016HrZ3Np9SsTGFqF8siHQ4a">
+65:        result = runner.invoke(cli, ["pr", "check", "42"], obj=ctx)
+108:        result = runner.invoke(cli, ["pr", "check", "42"], obj=ctx)
+155:        result = runner.invoke(cli, ["pr", "check", "42"], obj=ctx)
+204:        result = runner.invoke(cli, ["pr", "check", "42"], obj=ctx)
+252:        result = runner.invoke(cli, ["pr", "check", "42"], obj=ctx)
+306:        result = runner.invoke(
+367:        result = runner.invoke(cli, ["pr", "check", "42"], obj=ctx)
+395:        result = runner.invoke(cli, ["pr", "check", "not-a-valid-identifier"], obj=ctx)
+  </tool_result>
+  <assistant>Let me now look at specific invocations to understand the context better. Let me read test_view.py around line 72 where it invokes `pr view`:</assistant>
+  <usage input_tokens="4" cache_creation_input_tokens="1735" cache_read_input_tokens="40725" cache_creation="{'ephemeral_5m_input_tokens': 1735, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01XxXjV4S1tcC1C7fW5zx63q">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_view.py</param>
+    <param name="offset">40</param>
     <param name="limit">120</param>
   </tool_use>
-  <usage input_tokens="1" cache_creation_input_tokens="951" cache_read_input_tokens="57617" cache_creation="{'ephemeral_5m_input_tokens': 951, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
-  <tool_result tool="toolu_01EkHkTYmqSAco7aRAr2srEA">
-     1→"""Tests for plan list filtering functionality.
-     2→
-     3→Tests state, labels, limit, and combined filters for plan list command.
-     4→"""
-     5→
-     6→from datetime import UTC, datetime
-     7→
-     8→from click.testing import CliRunner
-     9→
-    10→from erk.cli.cli import cli
-    11→from erk_shared.gateway.github.fake import FakeLocalGitHub
-    12→from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
-    13→from erk_shared.gateway.github.issues.types import IssueInfo
-    14→from erk_shared.plan_store.types import Plan, PlanState
-    15→from tests.commands.dash.conftest import plan_to_issue
-    16→from tests.test_utils.context_builders import (
-    17→    build_fake_plan_list_service,
-    18→    build_workspace_test_context,
-    19→)
-    20→from tests.test_utils.env_helpers import erk_inmem_env
-    21→
-    22→
-    23→def test_plan_list_no_filters() -&gt; None:
-    24→    """Test listing all plan issues with no filters (defaults to open plans only)."""
-    25→    # Arrange - Create two OPEN plans (no filter defaults to open state)
-    26→    plan1 = Plan(
-    27→        pr_identifier="1",
-    28→        title="Issue 1",
-    29→        body="",
-    30→        state=PlanState.OPEN,
+  <usage input_tokens="4" cache_creation_input_tokens="1735" cache_read_input_tokens="40725" cache_creation="{'ephemeral_5m_input_tokens': 1735, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01XxXjV4S1tcC1C7fW5zx63q">
+    40→        dispatch_run_id="run-1",
+    41→        issues=issues,
+    42→        issue_comments=None,
+    43→        pr_references=None,
+    44→    )
+    45→
+    46→
+    47→def test_view_plan_displays_issue() -&gt; None:
+    48→    """Test fetching and displaying a plan issue."""
+    49→    # Arrange
+    50→    plan_issue = Plan(
+    51→        pr_identifier="42",
+    52→        title="Test Issue",
+    53→        body="This is a test issue description",
+    54→        state=PlanState.OPEN,
+    55→        url="https://github.com/owner/repo/issues/42",
+    56→        labels=["erk-plan", "bug"],
+    57→        assignees=["alice"],
+    58→        created_at=datetime(2024, 1, 1, tzinfo=UTC),
+    59→        updated_at=datetime(2024, 1, 2, tzinfo=UTC),
+    60→        metadata={},
+    61→        objective_id=None,
+    62→    )
+    63→
+    64→    runner = CliRunner()
+    65→    with erk_inmem_env(runner) as env:
+    66→        store, _ = create_plan_store_with_plans({"42": plan_issue})
+    67→        ctx = build_workspace_test_context(
+    68→            env, plan_store=store, remote_github=_make_fake_remote(plan_issue)
+    69→        )
 
 ... [95 lines omitted] ...
+
+   127→def test_view_plan_error_when_cannot_infer_from_branch() -&gt; None:
+   128→    """Test error message when on non-plan branch without identifier."""
+   142→        assert "Error" in result.output
   </tool_result>
-  <assistant>Now let me check what the comment says. It seems like the tests are expecting erk-plan label to be returned by default. Let me search for how the default label filtering works in the command implementation:</assistant>
-  <usage input_tokens="0" cache_creation_input_tokens="1991" cache_read_input_tokens="58568" cache_creation="{'ephemeral_5m_input_tokens': 1991, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
-  <tool_use name="Read" id="toolu_012vJEKWimQWRcYAViX97Qza">
-    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/list_cmd.py</param>
+  <assistant>Now let me check how the pr view command itself filters by labels. Let me search for the command implementation:</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="1924" cache_read_input_tokens="42460" cache_creation="{'ephemeral_5m_input_tokens': 1924, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01BQ7oNneTNkxXS7eGoNJUhg">
+    <param name="command">grep -r "def view" /home/runner/work/erk/erk/src/erk/commands/pr/ --include="*.py" | head -5</param>
+    <param name="description">Find view command definition</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="1924" cache_read_input_tokens="42460" cache_creation="{'ephemeral_5m_input_tokens': 1924, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_013VpZsAzGWwPr7ciKn5YLvt">
+    <param name="pattern">--label|labels</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/commands/pr</param>
+    <param name="glob">*.py</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="1924" cache_read_input_tokens="42460" cache_creation="{'ephemeral_5m_input_tokens': 1924, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013VpZsAzGWwPr7ciKn5YLvt">
+&lt;tool_use_error&gt;Path does not exist: /home/runner/work/erk/erk/src/erk/commands/pr&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_result tool="toolu_01BQ7oNneTNkxXS7eGoNJUhg">
+grep: /home/runner/work/erk/erk/src/erk/commands/pr/: No such file or directory
+  </tool_result>
+  <assistant>Let me find where the commands are located:</assistant>
+  <usage input_tokens="65" cache_creation_input_tokens="454" cache_read_input_tokens="44384" cache_creation="{'ephemeral_5m_input_tokens': 454, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_014VZwNAfJY6YVgVTe39AgbU">
+    <param name="command">find /home/runner/work/erk/erk -name "pr.py" -o -name "pr" -type d | grep -v __pycache__ | head -10</param>
+    <param name="description">Find PR command directory</param>
+  </tool_use>
+  <usage input_tokens="65" cache_creation_input_tokens="454" cache_read_input_tokens="44384" cache_creation="{'ephemeral_5m_input_tokens': 454, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014VZwNAfJY6YVgVTe39AgbU">
+/home/runner/work/erk/erk/tests/unit/cli/commands/pr
+/home/runner/work/erk/erk/tests/commands/pr
+/home/runner/work/erk/erk/packages/erk-shared/tests/unit/integrations/pr
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/pr
+/home/runner/work/erk/erk/src/erk/cli/commands/pr
+  </tool_result>
+  <assistant>Now let me check tests that have labels without both "erk-pr" and "erk-plan". Let me search more comprehensively:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="359" cache_read_input_tokens="44838" cache_creation="{'ephemeral_5m_input_tokens': 359, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01DUD21sPNq3Y2y1aaa3SkmM">
+    <param name="pattern">labels\s*=\s*\[.*erk-pr</param>
+    <param name="path">/home/runner/work/erk/erk/tests/commands</param>
+    <param name="glob">**/*.py</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="359" cache_read_input_tokens="44838" cache_creation="{'ephemeral_5m_input_tokens': 359, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01DUD21sPNq3Y2y1aaa3SkmM">
+Found 23 files
+tests/commands/test_dash_workflow_runs.py
+tests/commands/pr/test_list.py
+tests/commands/workspace/test_delete.py
+tests/commands/test_top_level_commands.py
+tests/commands/pr/test_submit.py
+tests/commands/pr/test_view.py
+tests/commands/run/test_list.py
+tests/commands/pr/test_remote_paths.py
+tests/commands/pr/test_rewrite.py
+tests/commands/pr/test_log.py
+tests/commands/pr/test_close.py
+tests/commands/pr/test_duplicate_check.py
+tests/commands/pr/test_check_plan.py
+tests/commands/objective/test_plan_one_shot.py
+tests/commands/objective/test_plan.py
+tests/commands/land/test_objective_update.py
+tests/commands/learn/test_display.py
+tests/commands/dash/test_action_state.py
+tests/commands/dash/test_filtering.py
+tests/commands/dash/test_impl_columns.py
+tests/commands/dash/test_pr_columns.py
+tests/commands/dash/test_workflow_run_state.py
+tests/commands/branch/test_checkout_cmd.py
+  </tool_result>
+  <assistant>Now let me check all the other tests besides test_list.py in the PR directory to see if they all have the pattern with ["erk-pr", "erk-plan"]:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="634" cache_read_input_tokens="45197" cache_creation="{'ephemeral_5m_input_tokens': 634, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01EbZ4Ys4iB8HZCR1SFw6i8U">
+    <param name="command">for file in /home/runner/work/erk/erk/tests/commands/pr/test_*.py; do
+  if [[ "$(basename ...[truncated 55 chars]... grep -c 'labels\s*=\s*\[.*"erk-pr".*"erk-plan"' "$file" 2&gt;/dev/null || echo "0"
+  fi
+done</param>
+    <param name="description">Count label patterns in PR test files</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="634" cache_read_input_tokens="45197" cache_creation="{'ephemeral_5m_input_tokens': 634, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01EbZ4Ys4iB8HZCR1SFw6i8U">
+Exit code 2
+/bin/bash: eval: line 7: conditional binary operator expected
+/bin/bash: eval: line 7: syntax error near `\!='
+/bin/bash: eval: line 7: `  if [[ "$(basename $file)" \!= "test_list.py" ]]; then'
+  </tool_result>
+  <assistant>Let me fix the script:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="359" cache_read_input_tokens="45831" cache_creation="{'ephemeral_5m_input_tokens': 359, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01QmzQF5aPFFvrCnVc6wBUZM">
+    <param name="command">for file in /home/runner/work/erk/erk/tests/commands/pr/test_*.py; do
+  filename=$(basenam...[truncated 55 chars]...name ==="
+    grep -c 'labels.*erk-pr.*erk-plan' "$file" 2&gt;/dev/null || echo "0"
+  fi
+done</param>
+    <param name="description">Count label patterns in PR test files</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="359" cache_read_input_tokens="45831" cache_creation="{'ephemeral_5m_input_tokens': 359, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01QmzQF5aPFFvrCnVc6wBUZM">
+=== test_address.py ===
+0
+0
+=== test_address_remote_cmd.py ===
+0
+0
+=== test_check.py ===
+0
+0
+=== test_check_plan.py ===
+12
+=== test_checkout.py ===
+0
+0
+=== test_checkout_graphite_linking.py ===
+0
+0
+=== test_checkout_plan.py ===
+0
+0
+=== test_close.py ===
+12
+=== test_create.py ===
+1
+=== test_dispatch.py ===
+0
+0
+=== test_diverge_fix.py ===
+0
+0
+
+... [33 lines omitted] ...
+  </tool_result>
+  <assistant>Good! Now let me check some of these files to see what they're testing:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="687" cache_read_input_tokens="46190" cache_creation="{'ephemeral_5m_input_tokens': 687, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01GB7T7KKn53svJr7RwUuEGL">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_close.py</param>
     <param name="offset">1</param>
     <param name="limit">100</param>
   </tool_use>
-  <usage input_tokens="0" cache_creation_input_tokens="1991" cache_read_input_tokens="58568" cache_creation="{'ephemeral_5m_input_tokens': 1991, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
-  <tool_result tool="toolu_012vJEKWimQWRcYAViX97Qza">
-     1→"""Command to list plans with filtering."""
+  <usage input_tokens="0" cache_creation_input_tokens="687" cache_read_input_tokens="46190" cache_creation="{'ephemeral_5m_input_tokens': 687, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01N4uig7XR45szFXZL9gquDk">
+    <param name="command">grep -n "def test" /home/runner/work/erk/erk/tests/commands/pr/test_close.py | head -20</param>
+    <param name="description">List test functions in test_close.py</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="687" cache_read_input_tokens="46190" cache_creation="{'ephemeral_5m_input_tokens': 687, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01GB7T7KKn53svJr7RwUuEGL">
+     1→"""Tests for plan close command."""
      2→
-     3→import tempfile
-     4→from collections.abc import Callable
-     5→from dataclasses import dataclass
-     6→from pathlib import Path
-     7→from typing import Any, ParamSpec, TypeVar
-     8→
-     9→import click
-    10→from rich.console import Console
-    11→from rich.table import Table
-    12→from rich.text import Text
-    13→
-    14→from erk.cli.core import discover_repo_context
-    15→from erk.cli.repo_resolution import get_remote_github, resolved_repo_option
-    16→from erk.core.context import ErkContext
-    17→from erk.core.display_utils import strip_rich_markup
-    18→from erk.core.repo_discovery import ensure_erk_metadata_dir
-    19→from erk.tui.app import ErkDashApp
-    20→from erk.tui.data.real_provider import RealPlanDataProvider
-    21→from erk.tui.data.types import PlanFilters, PlanRowData, serialize_plan_row
-    22→from erk.tui.sorting.logic import sort_plans
-    23→from erk.tui.sorting.types import SortKey, SortState
-    24→from erk_shared.agentclick.json_command import json_command
-    25→from erk_shared.agentclick.mcp_exposed import mcp_exposed
-    26→from erk_shared.context.types import NoRepoSentinel
-    27→from erk_shared.gateway.browser.real import RealBrowserLauncher
-    28→from erk_shared.gateway.clipboard.real import RealClipboard
-    29→from erk_shared.gateway.github.emoji import get_pr_status_emoji
-    30→from erk_shared.gateway.github.types import (
+     3→from datetime import UTC, datetime
+     4→
+     5→from click.testing import CliRunner
+     6→
+     7→from erk.cli.cli import cli
+     8→from erk_shared.gateway.github.fake import FakeLocalGitHub
+     9→from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+    10→from erk_shared.gateway.github.issues.types import IssueInfo, PRReference
+    11→from erk_shared.gateway.remote_github.fake import FakeRemoteGitHub
+    12→from erk_shared.gateway.time.fake import FakeTime
+    13→from erk_shared.plan_store.planned_pr import PlannedPRBackend
+    14→from erk_shared.plan_store.types import Plan, PlanState
+    15→from tests.fakes.prompt_executor import FakePromptExecutor
+    16→from tests.test_utils.context_builders import build_workspace_test_context
+    17→from tests.test_utils.env_helpers import erk_inmem_env
+    18→from tests.test_utils.plan_helpers import (
+    19→    create_plan_store_with_plans,
+    20→    format_plan_header_body_for_test,
+    21→    issue_info_to_pr_details,
+    22→)
+    23→
+    24→
+    25→def test_close_plan_with_plan_number() -&gt; None:
+    26→    """Test closing a plan with plan number."""
+    27→    # Arrange
+    28→    plan_issue = Plan(
+    29→        pr_identifier="42",
+    30→        title="Test Issue",
 
 ... [75 lines omitted] ...
-
-   100→            ["queued", "in_progress", "success", "failure", "cancelled"], case_sensitive=False
   </tool_result>
-  <assistant>Let me search for where the default label is set in the command:</assistant>
-  <usage input_tokens="0" cache_creation_input_tokens="1750" cache_read_input_tokens="60559" cache_creation="{'ephemeral_5m_input_tokens': 1750, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
-  <tool_use name="Bash" id="toolu_014H5qqcBcAoksxgAKALVh1c">
-    <param name="command">grep -n "erk-core" /home/runner/work/erk/erk/src/erk/cli/commands/pr/list_cmd.py</param>
-    <param name="description">Find erk-core in list_cmd.py</param>
+  <tool_result tool="toolu_01N4uig7XR45szFXZL9gquDk">
+25:def test_close_plan_with_plan_number() -&gt; None:
+83:def test_close_plan_not_found() -&gt; None:
+127:def test_close_plan_closes_linked_open_prs() -&gt; None:
+187:def test_close_plan_skips_closed_and_merged_prs() -&gt; None:
+248:def test_close_plan_no_linked_prs() -&gt; None:
+301:def test_close_plan_invalid_identifier() -&gt; None:
+328:def test_close_plan_invalid_url_format() -&gt; None:
+357:def test_close_plan_reports_closed_prs() -&gt; None:
+413:def test_close_plan_with_objective_invokes_update() -&gt; None:
+481:def test_close_plan_without_objective_skips_update() -&gt; None:
+543:def test_close_plan_objective_update_failure_does_not_break_close() -&gt; None:
+  </tool_result>
+  <assistant>Now let me check test_dashboard_workflow_runs.py for any Plan objects with only "erk-pr" labels:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2136" cache_read_input_tokens="46877" cache_creation="{'ephemeral_5m_input_tokens': 2136, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01EZMXxWZvEn32U3k4wvgH4Y">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/test_dash_workflow_runs.py</param>
+    <param name="offset">1</param>
+    <param name="limit">150</param>
   </tool_use>
-  <usage input_tokens="0" cache_creation_input_tokens="1750" cache_read_input_tokens="60559" cache_creation="{'ephemeral_5m_input_tokens': 1750, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
-  <tool_result tool="toolu_014H5qqcBcAoksxgAKALVh1c">
-281:    labels = label if label else ("erk-core",)
-399:    # Build labels - default to ["erk-core"]
-400:    labels = label if label else ("erk-core",)
-  </tool_result>
-  <assistant>Perfect! Now I understand the complete picture. The issue is that test Plans with labels=["erk-pr", "erk-plan"] without "erk-core" will NOT be returned by default when the command invokes `pr list` without explicit --label flags, because the default is now ("erk-core",).
+  <usage input_tokens="1" cache_creation_input_tokens="2136" cache_read_input_tokens="46877" cache_creation="{'ephemeral_5m_input_tokens': 2136, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01EZMXxWZvEn32U3k4wvgH4Y">
+     1→"""Tests for workflow run ID display in erk dash command."""
+     2→
+     3→from datetime import UTC, datetime
+     4→
+     5→from click.testing import CliRunner
+     6→
+     7→from erk.cli.cli import cli
+     8→from erk_shared.gateway.git.abc import WorktreeInfo
+     9→from erk_shared.gateway.git.fake import FakeGit
+    10→from erk_shared.gateway.github.fake import FakeLocalGitHub
+    11→from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+    12→from erk_shared.gateway.github.issues.types import IssueInfo
+    13→from erk_shared.gateway.github.types import WorkflowRun
+    14→from erk_shared.plan_store.types import Plan, PlanState
+    15→from tests.test_utils.context_builders import (
+    16→    build_fake_plan_list_service,
+    17→    build_workspace_test_context,
+    18→)
+    19→from tests.test_utils.env_helpers import erk_isolated_fs_env
+    20→from tests.test_utils.output_helpers import strip_ansi
+    21→
+    22→
+    23→def plan_to_issue(plan: Plan) -&gt; IssueInfo:
+    24→    """Convert Plan to IssueInfo for test setup."""
+    25→    return IssueInfo(
+    26→        number=int(plan.pr_identifier),
+    27→        title=plan.title,
+    28→        body=plan.body,
+    29→        state="OPEN" if plan.state == PlanState.OPEN else "CLOSED",
+    30→        url=plan.url or "",
 
-Let me now create a comprehensive report by summarizing my findings:</assistant>
-  <usage input_tokens="0" cache_creation_input_tokens="227" cache_read_input_tokens="62309" cache_creation="{'ephemeral_5m_input_tokens': 227, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
-  <tool_use name="Bash" id="toolu_012EmetDDpjdSpXcmHQpU3Qj">
-    <param name="command">wc -l /home/runner/work/erk/erk/tests/commands/pr/test_view.py /home/runner/work/erk/erk/t...[truncated 47 chars].../commands/pr/test_close.py /home/runner/work/erk/erk/tests/commands/dash/test_filtering.py</param>
-    <param name="description">Get line counts for main affected files</param>
+... [125 lines omitted] ...
+  </tool_result>
+  <assistant>Excellent! I found one. Let me continue reading to find more:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="2369" cache_read_input_tokens="49013" cache_creation="{'ephemeral_5m_input_tokens': 2369, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_0173fCou88aXPLsqv42xNHQG">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/test_dash_workflow_runs.py</param>
+    <param name="offset">150</param>
+    <param name="limit">150</param>
   </tool_use>
-  <usage input_tokens="0" cache_creation_input_tokens="227" cache_read_input_tokens="62309" cache_creation="{'ephemeral_5m_input_tokens': 227, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
-  <tool_result tool="toolu_012EmetDDpjdSpXcmHQpU3Qj">
-  804 /home/runner/work/erk/erk/tests/commands/pr/test_view.py
-  663 /home/runner/work/erk/erk/tests/commands/pr/test_check_plan.py
-  603 /home/runner/work/erk/erk/tests/commands/pr/test_close.py
-  341 /home/runner/work/erk/erk/tests/commands/dash/test_filtering.py
- 2411 total
+  <usage input_tokens="0" cache_creation_input_tokens="2369" cache_read_input_tokens="49013" cache_creation="{'ephemeral_5m_input_tokens': 2369, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0173fCou88aXPLsqv42xNHQG">
+   150→        impl_dir = get_impl_dir(feature_wt, branch_name="feature-branch")
+   151→        impl_dir.mkdir(parents=True, exist_ok=True)
+   152→        save_plan_ref(
+   153→            impl_dir,
+   154→            provider="github",
+   155→            plan_id="456",
+   156→            url="https://github.com/testowner/testrepo/issues/456",
+   157→            labels=(),
+   158→            objective_id=None,
+   159→            node_ids=None,
+   160→        )
+   161→
+   162→        # Create plan with workflow run node_id in plan-header
+   163→        plan_body = """&lt;!-- erk:metadata-block:plan-header --&gt;
+   164→&lt;details&gt;
+   165→&lt;summary&gt;&lt;code&gt;plan-header&lt;/code&gt;&lt;/summary&gt;
+   166→
+   167→```yaml
+   168→schema_version: '2'
+   169→last_dispatched_run_id: '87654321'
+   170→last_dispatched_node_id: 'WFR_def456'
+   171→```
+   172→&lt;/details&gt;
+   173→&lt;!-- /erk:metadata-block:plan-header --&gt;"""
+   174→
+   175→        plan = Plan(
+   176→            pr_identifier="456",
+   177→            title="Test with URL",
+   178→            body=plan_body,
+   179→            state=PlanState.OPEN,
+
+... [125 lines omitted] ...
   </tool_result>
-  <assistant>Perfect! Now let me create my final comprehensive report:
-
-## Summary Report: Label Mismatch Analysis for erk-core Label Change
-
-Based on my thorough search and analysis of the test suite, I have identified all test files with potential label mismatches related to the new "erk-core" label default.
-
-### Key Documentation Reference
-From `/home/runner/work/erk/erk/docs/learned/planning/label-scheme.md`:
-- **erk-core** is the new label for core work (non-learn PRs)
-- **erk-plan** is the type label for implementation plans
-- **erk-pr** is the universal base label for all erk-submitted PRs
-- Default label filter for `pr list` command is now **("erk-core",)** (set at line 281 and 400 in list_cmd.py)
-
-### Critical Finding: test_dash_workflow_runs.py
-
-**File:** `/home/runner/work/erk/erk/tests/commands/test_dash_workflow_runs.py`
-
-This file has Plan objects that already include "erk-core" in their labels, which is correct:
-- Line 85: `labels=["erk-pr", "erk-plan", "erk-core"]`
-- Line 181: `labels=["erk-pr", "erk-plan", "erk-core"]`
-- Line 281: `labels=["erk-pr", "erk-plan", "erk-core"]`
-
-These tests are already properly updated and will work correctly with the new default.
-
-### Remaining Test Files Needing Updates
-
-All the following test files create Plan objects with `labels=["erk-pr", "erk-plan"]` (missing "erk-core"):
-
-**PR Command Tests (tests/commands/pr/):**
-1. `/home/runner/work/erk/erk/tests/commands/pr/test_view.py` - 14 occurrences
-2. `/home/runner/work/erk/erk/tests/commands/pr/test_check_plan.py` - 12 occurrences
-3. `/home/runner/work/erk/erk/tests/commands/pr/test_close.py` - 12 occurrences
-4. `/home/runner/work/erk/erk/tests/commands/pr/test_log.py` - 6 occurrences
-5. `/home/runner/work/erk/erk/tests/commands/pr/test_remote_paths.py` - 4 occurrences
-6. `/home/runner/work/erk/erk/tests/commands/pr/test_duplicate_check.py` - 2 occurrences
-7. `/home/runner/work/erk/erk/tests/commands/pr/test_submit.py` - 2 occurrences
-8. `/home/runner/work/erk/erk/tests/commands/pr/test_rewrite.py` - 1 occurrence
-
-**Dashboard/Filtering Tests (tests/commands/dash/):**
-9. `/home/runner/work/erk/erk/tests/commands/dash/test_filtering.py` - Plans with only ["erk-pr", "erk-plan"] at lines 32, 45, 81, 94
-10. `/home/runner/work/erk/erk/tests/commands/dash/test_pr_columns.py`
-11. `/home/runner/work/erk/erk/tests/commands/dash/test_impl_columns.py`
-12. `/home/runner/work/erk/erk/tests/commands/dash/test_action_state.py`
-13. `/home/runner/work/erk/erk/tests/commands/dash/test_workflow_run_state.py`
-
-**Other Test Files:**
-14. `/home/runner/work/erk/erk/tests/commands/branch/test_checkout_cmd.py`
-15. `/home/runner/work/erk/erk/tests/commands/land/test_objective_update.py`
-16. `/home/runner/work/erk/erk/tests/commands/learn/test_display.py`
-17. `/home/runner/work/erk/erk/tests/commands/objective/test_plan.py`
-18. `/home/runner/work/erk/erk/tests/commands/objective/test_plan_one_shot.py`
-19. `/home/runner/work/erk/erk/tests/commands/run/test_list.py`
-20. `/home/runner/work/erk/erk/tests/commands/test_top_level_commands.py`
-21. `/home/runner/work/erk/erk/tests/commands/workspace/test_delete.py`
-
-### Test Impact Analysis
-
-**Risk Categories:**
-
-1. **HIGH RISK - Tests that invoke `pr list` without explicit --label flags:**
-   - `/home/runner/work/erk/erk/tests/commands/dash/test_filtering.py` (lines 63, 114, 215, 337)
-     - Creates plans with `labels=["erk-pr", "erk-plan"]` then calls `runner.invoke(cli, ["pr", "list"], obj=ctx)`
-     - These plans will NOT be returned by default because the command filters by "erk-core"
-     
-2. **MEDIUM RISK - Tests that display or check plan details without filtering:**
-   - `test_view.py` - Displays plan details for plans without erk-core
-   - `test_check_plan.py` - Checks plan status
-   - `test_close.py` - Closes plans without erk-core label
-   - These use `pr view &lt;number&gt;` and `pr check &lt;number&gt;` which may directly fetch by ID rather than filtering
-
-3. **LOW RISK - Tests that set up plans but may not rely on label filtering:**
-   - Commands like `pr log`, `pr remote-paths`, `pr rewrite` that don't use default filtering
-
-### Reference: Already Updated File
-
-**File:** `/home/runner/work/erk/erk/tests/commands/pr/test_list.py`
-
-This file has already been properly updated with all Plan objects containing the "erk-core" label:
-- Lines 43, 56, 89, 102, etc.: `labels=["erk-pr", "erk-plan", "erk-core"]`
-
-This is the correct pattern that other test files should follow.</assistant>
-  <usage input_tokens="0" cache_creation_input_tokens="530" cache_read_input_tokens="62536" cache_creation="{'ephemeral_5m_input_tokens': 530, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <assistant>Good! I'm seeing plans with labels ["erk-pr", "erk-plan", "erk-core"]. Now let me check what the expected default is. Let me look for the CLI command implementation that might set a default label:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="2364" cache_read_input_tokens="51382" cache_creation="{'ephemeral_5m_input_tokens': 2364, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01EgB6aJoX4sfakna7BY3rbR">
+    <param name="command">grep -r "label.*erk-core\|--label" /home/runner/work/erk/erk/src/erk/cli/commands/pr/*.py 2&gt;/dev/null | head -20</param>
+    <param name="description">Search for label flags in PR commands</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="2364" cache_read_input_tokens="51382" cache_creation="{'ephemeral_5m_input_tokens': 2364, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01EgB6aJoX4sfakna7BY3rbR">
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/create_cmd.py:@click.option("--label", "-l", multiple=True, help="Additional labels")
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/create_cmd.py:        erk pr create --file plan.md --label bug --label urgent
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/create_cmd.py:    # Build labels: erk-pr + erk-plan + erk-core + any extra
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/create_cmd.py:    labels = ["erk-pr", "erk-plan", "erk-core"]
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/list_cmd.py:        "--label",
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/list_cmd.py:    labels = label if label else ("erk-core",)
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/list_cmd.py:    # Build labels - default to ["erk-core"]
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/list_cmd.py:    labels = label if label else ("erk-core",)
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/list_cmd.py:        erk pr list --label erk-plan --label bug
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/list_cmd.py:        erk dash --label erk-plan --state open
+  </tool_result>
+  <assistant>Perfect! Now I understand the issue. The default label is now "erk-core". Let me search for all the other PR test files that use the labels pattern:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="683" cache_read_input_tokens="53746" cache_creation="{'ephemeral_5m_input_tokens': 683, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01UnW1EQp6Afn1ZFS1b3vtfx">
+    <param name="command">grep -n "labels.*erk-pr" /home/runner/work/erk/erk/tests/commands/pr/test_log.py | head -20</param>
+    <param name="description">Show label patterns in test_log.py</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="683" cache_read_input_tokens="53746" cache_creation="{'ephemeral_5m_input_tokens': 683, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01WacaGbbB8wtoPMZ2kX7JkT">
+    <param name="command">grep -n "labels.*erk-pr" /home/runner/work/erk/erk/tests/commands/pr/test_remote_paths.py | head -20</param>
+    <param name="description">Show label patterns in test_remote_paths.py</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="683" cache_read_input_tokens="53746" cache_creation="{'ephemeral_5m_input_tokens': 683, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01YMPn9hRsYAv4fqZ7eC2tSD">
+    <param name="command">grep -n "labels.*erk-pr" /home/runner/work/erk/erk/tests/commands/pr/test_duplicate_check.py</param>
+    <param name="description">Show label patterns in test_duplicate_check.py</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="683" cache_read_input_tokens="53746" cache_creation="{'ephemeral_5m_input_tokens': 683, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01UnW1EQp6Afn1ZFS1b3vtfx">
+75:        labels=["erk-pr", "erk-plan"],
+160:        labels=["erk-pr", "erk-plan"],
+223:        labels=["erk-pr", "erk-plan"],
+268:        labels=["erk-pr", "erk-plan"],
+368:        labels=["erk-pr", "erk-plan"],
+438:        labels=["erk-pr", "erk-plan"],
+  </tool_result>
+  <tool_result tool="toolu_01YMPn9hRsYAv4fqZ7eC2tSD">
+32:        labels=["erk-pr", "erk-plan"],
+209:        labels=["erk-pr", "erk-plan"],
+  </tool_result>
+  <tool_result tool="toolu_01WacaGbbB8wtoPMZ2kX7JkT">
+48:        labels=["erk-pr", "erk-plan"],
+94:        labels=["erk-pr", "erk-plan"],
+306:        labels=["erk-pr", "erk-plan"],
+476:        labels=labels if labels is not None else ["erk-pr", "erk-plan"],
+  </tool_result>
+  <assistant>Now let me check test_rewrite.py and test_create.py to see their pattern:</assistant>
+  <usage input_tokens="60" cache_creation_input_tokens="735" cache_read_input_tokens="54429" cache_creation="{'ephemeral_5m_input_tokens': 735, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_013tpga8des8vmt7tDCKcuf9">
+    <param name="command">grep -n -B5 -A5 "labels.*erk-pr.*erk-plan" /home/runner/work/erk/erk/tests/commands/pr/test_rewrite.py</param>
+    <param name="description">Show context for label pattern in test_rewrite.py</param>
+  </tool_use>
+  <usage input_tokens="60" cache_creation_input_tokens="735" cache_read_input_tokens="54429" cache_creation="{'ephemeral_5m_input_tokens': 735, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01QjFgp5rCtEnvRNryTaM1FC">
+    <param name="command">grep -n -B5 -A5 "labels.*erk-pr.*erk-plan" /home/runner/work/erk/erk/tests/commands/pr/test_create.py</param>
+    <param name="description">Show context for label pattern in test_create.py</param>
+  </tool_use>
+  <usage input_tokens="60" cache_creation_input_tokens="735" cache_read_input_tokens="54429" cache_creation="{'ephemeral_5m_input_tokens': 735, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01QjFgp5rCtEnvRNryTaM1FC">
+240-        result = runner.invoke(cli, ["pr", "create", "--file", str(plan_file)], obj=ctx)
+241-
+242-        # Assert
+243-        assert result.exit_code == 0
+244-
+245:        # Verify labels were added to PR (erk-pr + erk-plan)
+246-        label_names = [label for _pr_num, label in fake_github.added_labels]
+247-        assert "erk-pr" in label_names
+248-        assert "erk-plan" in label_names
+249-
+250-
+  </tool_result>
+  <tool_result tool="toolu_013tpga8des8vmt7tDCKcuf9">
+386-            number=100,
+387-            title="Plan #100",
+388-            body=plan_body,
+389-            state="OPEN",
+390-            url="https://github.com/owner/repo/issues/100",
+391:            labels=["erk-pr", "erk-plan"],
+392-            assignees=[],
+393-            created_at=datetime(2024, 1, 15, 10, 30, tzinfo=UTC),
+394-            updated_at=datetime(2024, 1, 15, 10, 30, tzinfo=UTC),
+395-            author="test-user",
+396-        )
+  </tool_result>
+  <assistant>Good! Now let me check test_list.py to see what it expects:</assistant>
+  <usage input_tokens="166" cache_creation_input_tokens="651" cache_read_input_tokens="55164" cache_creation="{'ephemeral_5m_input_tokens': 651, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01E2GcQtB3FbV3Ya7LvQ8TTc">
+    <param name="command">grep -n "labels\|--label" /home/runner/work/erk/erk/tests/commands/pr/test_list.py | head -40</param>
+    <param name="description">Show label patterns in test_list.py</param>
+  </tool_use>
+  <usage input_tokens="166" cache_creation_input_tokens="651" cache_read_input_tokens="55164" cache_creation="{'ephemeral_5m_input_tokens': 651, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01E2GcQtB3FbV3Ya7LvQ8TTc">
+27:        labels=plan.labels,
+43:        labels=["erk-pr", "erk-plan", "erk-core"],
+56:        labels=["erk-pr", "erk-plan", "erk-core"],
+89:        labels=["erk-pr", "erk-plan", "erk-core"],
+102:        labels=["erk-pr", "erk-plan", "erk-core"],
+129:def test_plan_list_filter_by_labels() -&gt; None:
+130:    """Test filtering plan issues by labels with AND logic."""
+133:        title="Issue with both labels",
+137:        labels=["erk-pr", "erk-plan", "erk-core", "erk-queue"],
+150:        labels=["erk-pr", "erk-plan", "erk-core"],
+173:            ["pr", "list", "--label", "erk-plan", "--label", "erk-queue"],
+195:            labels=["erk-pr", "erk-plan", "erk-core"],
+230:        labels=["erk-pr", "erk-plan", "erk-core"],
+275:        labels=["erk-pr", "erk-plan", "erk-core"],
+321:        labels=["erk-pr", "erk-plan", "erk-core"],
+334:        labels=["erk-pr", "erk-plan", "erk-core"],
+373:        labels=["erk-pr", "erk-plan", "erk-core"],
+387:        labels=["erk-pr", "erk-plan", "erk-core"],
+414:            labels=(),
+480:        labels=["erk-pr", "erk-plan", "erk-core"],
+494:        labels=["erk-pr", "erk-plan", "erk-core"],
+520:            labels=(),
+536:            labels=(),
+623:        labels=["erk-pr", "erk-plan", "erk-core"],
+638:        labels=["erk-pr", "erk-plan", "erk-core"],
+677:        labels=["erk-pr", "erk-plan", "erk-core"],
+715:        labels=["erk-pr", "erk-plan", "erk-core"],
+  </tool_result>
+  <assistant>Excellent! I can see test_list.py has updated the labels to include "erk-core". Now let me do a comprehensive search for all test Plan objects with labels that are missing "erk-core":</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="910" cache_read_input_tokens="55815" cache_creation="{'ephemeral_5m_input_tokens': 910, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01URukqRnphzrb9wMqSpL72P">
+    <param name="command">grep -r 'labels\s*=\s*\["erk-pr"' /home/runner/work/erk/erk/tests/commands --include="*.py" | grep -v "erk-core" | cut -d: -f1 | sort -u</param>
+    <param name="description">Find all test files with labels missing erk-core</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="910" cache_read_input_tokens="55815" cache_creation="{'ephemeral_5m_input_tokens': 910, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
 </session>

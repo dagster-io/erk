@@ -5,8 +5,8 @@
     {
       "session_id": "85e439fe-b5ba-4640-b558-2ad1f5edbad2",
       "stage": "impl",
-      "source": "local",
-      "uploaded_at": "2026-03-10T08:08:28.595172+00:00",
+      "source": "remote",
+      "uploaded_at": "2026-03-10T08:10:03.903100+00:00",
       "files": [
         "impl-85e439fe-b5ba-4640-b558-2ad1f5edbad2-85e439fe-b5ba-4640-b558-2ad1f5edbad2-part1.xml",
         "impl-85e439fe-b5ba-4640-b558-2ad1f5edbad2-85e439fe-b5ba-4640-b558-2ad1f5edbad2-part10.xml",
@@ -15,6 +15,7 @@
         "impl-85e439fe-b5ba-4640-b558-2ad1f5edbad2-85e439fe-b5ba-4640-b558-2ad1f5edbad2-part13.xml",
         "impl-85e439fe-b5ba-4640-b558-2ad1f5edbad2-85e439fe-b5ba-4640-b558-2ad1f5edbad2-part14.xml",
         "impl-85e439fe-b5ba-4640-b558-2ad1f5edbad2-85e439fe-b5ba-4640-b558-2ad1f5edbad2-part15.xml",
+        "impl-85e439fe-b5ba-4640-b558-2ad1f5edbad2-85e439fe-b5ba-4640-b558-2ad1f5edbad2-part16.xml",
         "impl-85e439fe-b5ba-4640-b558-2ad1f5edbad2-85e439fe-b5ba-4640-b558-2ad1f5edbad2-part2.xml",
         "impl-85e439fe-b5ba-4640-b558-2ad1f5edbad2-85e439fe-b5ba-4640-b558-2ad1f5edbad2-part3.xml",
         "impl-85e439fe-b5ba-4640-b558-2ad1f5edbad2-85e439fe-b5ba-4640-b558-2ad1f5edbad2-part4.xml",
@@ -25,9 +26,9 @@
         "impl-85e439fe-b5ba-4640-b558-2ad1f5edbad2-85e439fe-b5ba-4640-b558-2ad1f5edbad2-part9.xml"
       ],
       "user_turns": 3,
-      "duration_minutes": 17,
-      "raw_size_kb": 1547,
-      "xml_size_kb": 448,
+      "duration_minutes": 19,
+      "raw_size_kb": 1581,
+      "xml_size_kb": 460,
       "git_branch": "plnd/add-erk-core-label-03-09-1959"
     }
   ]
