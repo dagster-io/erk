@@ -1505,6 +1505,7 @@ def _execute_land(
     "--stack",
     "stack_flag",
     is_flag=True,
+    hidden=True,
     help="Land the current Graphite stack bottom-up.",
 )
 @click.option(
