@@ -51,6 +51,22 @@
       "raw_size_kb": 1207,
       "xml_size_kb": 312,
       "git_branch": "plnd/O9009-objective-json-machi-03-10-1328"
+    },
+    {
+      "session_id": "a6843f1d-89ea-427e-a407-9182c6af85d8",
+      "stage": "address",
+      "source": "remote",
+      "uploaded_at": "2026-03-10T14:33:15.582849+00:00",
+      "files": [
+        "address-a6843f1d-89ea-427e-a407-9182c6af85d8-a6843f1d-89ea-427e-a407-9182c6af85d8-part1.xml",
+        "address-a6843f1d-89ea-427e-a407-9182c6af85d8-a6843f1d-89ea-427e-a407-9182c6af85d8-part2.xml",
+        "address-a6843f1d-89ea-427e-a407-9182c6af85d8-a6843f1d-89ea-427e-a407-9182c6af85d8-part3.xml"
+      ],
+      "user_turns": 3,
+      "duration_minutes": 3,
+      "raw_size_kb": 87,
+      "xml_size_kb": 81,
+      "git_branch": "plnd/O9009-objective-json-machi-03-10-1328"
     }
   ]
 }
