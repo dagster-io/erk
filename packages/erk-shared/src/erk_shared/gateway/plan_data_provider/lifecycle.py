@@ -9,20 +9,17 @@ from erk_shared.plan_store.conversion import header_str
 from erk_shared.plan_store.types import Plan
 
 
-def compute_lifecycle_display(
+def resolve_lifecycle_stage(
     plan: Plan,
     *,
-    has_workflow_run: bool,
-    linked_pr_state: str | None,
-) -> str:
-    """Compute lifecycle stage display string for a plan.
+    has_workflow_run: bool = False,
+    linked_pr_state: str | None = None,
+) -> str | None:
+    """Resolve the lifecycle stage for a plan.
 
-    Reads lifecycle_stage from plan header fields if present, otherwise
-    infers from is_draft and pr_state in plan metadata. Returns a
-    color-coded Rich markup string for table display.
-
-    When the resolved stage is "planned" and a workflow run exists,
-    upgrades to "impl" since the plan is actively being worked on.
+    Reads lifecycle_stage from plan header fields if present, otherwise infers from
+    is_draft and pr_state in plan metadata. When the resolved stage is "planned" and
+    has_workflow_run is True, upgrades to "impl".
 
     Args:
         plan: Plan with header_fields and metadata populated
@@ -31,9 +28,9 @@ def compute_lifecycle_display(
             Used for issue-backed plans where pr_state is not in plan.metadata.
 
     Returns:
-        Display string (may contain Rich markup for color)
+        Stage string (e.g., "planned", "impl", "merged"), or None if stage
+        cannot be determined.
     """
-    # Read from header fields first
     stage = header_str(plan.header_fields, LIFECYCLE_STAGE)
 
     # Terminal PR states override header field (header may be stale).
@@ -63,12 +60,38 @@ def compute_lifecycle_display(
             elif not is_draft and pr_state == "CLOSED":
                 stage = "closed"
 
-    if stage is None:
-        return "-"
-
-    # Upgrade "planned" to "impl" when a workflow run exists
     if stage == "planned" and has_workflow_run:
         stage = "impl"
+
+    return stage
+
+
+def compute_lifecycle_display(
+    plan: Plan,
+    *,
+    has_workflow_run: bool,
+    linked_pr_state: str | None = None,
+) -> str:
+    """Compute lifecycle stage display string for a plan.
+
+    Delegates to resolve_lifecycle_stage for detection, then applies
+    color-coded Rich markup for table display.
+
+    Args:
+        plan: Plan with header_fields and metadata populated
+        has_workflow_run: Whether the plan has an associated workflow run
+        linked_pr_state: PR state from linked PR (e.g. "MERGED", "CLOSED", "OPEN").
+            Used for issue-backed plans where pr_state is not in plan.metadata.
+
+    Returns:
+        Display string (may contain Rich markup for color)
+    """
+    stage = resolve_lifecycle_stage(
+        plan, has_workflow_run=has_workflow_run, linked_pr_state=linked_pr_state
+    )
+
+    if stage is None:
+        return "-"
 
     # Color-code by stage
     if stage in ("prompted", "planning"):
