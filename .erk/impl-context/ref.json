@@ -1,8 +1,10 @@
 {
   "provider": "github-draft-pr",
-  "title": "Plan: Sweep plan_number/plan_id refs in land pipeline, implement, and core modules",
+  "plan_id": "9178",
+  "url": "https://github.com/dagster-io/erk/pull/9178",
+  "created_at": "2026-03-10T17:29:52.313014",
+  "synced_at": "2026-03-10T17:29:52.313014",
+  "labels": [],
   "objective_id": 9109,
-  "node_ids": [
-    "3.6.1"
-  ]
+  "node_ids": null
 }
