@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "pr_number": 9138,
+  "sessions": [
+    {
+      "session_id": "",
+      "stage": "impl",
+      "source": "local",
+      "uploaded_at": "2026-03-10T09:27:28.390743+00:00",
+      "files": [
+        "impl--c518287f-4565-4b8c-ab54-6a5a60b47d5a-part1.xml",
+        "impl--c518287f-4565-4b8c-ab54-6a5a60b47d5a-part2.xml",
+        "impl--c518287f-4565-4b8c-ab54-6a5a60b47d5a-part3.xml",
+        "impl--c518287f-4565-4b8c-ab54-6a5a60b47d5a-part4.xml",
+        "impl--c518287f-4565-4b8c-ab54-6a5a60b47d5a-part5.xml"
+      ],
+      "user_turns": 2,
+      "duration_minutes": 1,
+      "raw_size_kb": 105,
+      "xml_size_kb": 38,
+      "git_branch": "plnd/hide-learn-command-03-10-0523"
+    }
+  ]
+}
