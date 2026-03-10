@@ -1,0 +1,1153 @@
+<session>
+  <meta branch="consolidate-learn-plans-03-10-1056" />
+  <meta model="claude-opus-4-6" />
+  <user>&lt;command-message&gt;erk:plan-implement is running…&lt;/command-message&gt;
+&lt;command-name&gt;/erk:plan-implement&lt;/command-name&gt;
+&lt;command-args&gt;9167&lt;/command-args&gt;</user>
+  <user># /erk:plan-implement
+
+Implement a plan - either from GitHub, a markdown file, an existing impl directory under `.erk/impl-context/`, or by saving the current plan first.
+
+This is the primary implementation workflow - it orchestrates:
+
+1. Setting up the impl directory under `.erk/impl-context/&lt;branch&gt;/` (from issue, file, existing folder, or fresh plan)
+2. Executing the implementation
+3. Running CI and submitting the PR
+
+## Prerequisites
+
+- Must be in a git repository managed by erk
+- GitHub CLI (`gh`) must be authenticated
+- One of:
+  - A plan number, URL, or file path argument
+  - An existing impl directory under `.erk/impl-context/`
+  - A plan branch checked out (e.g., `plnd/...` or `P{number}-...`)
+  - A plan in `~/.claude/plans/` (from plan mode)
+
+## Usage
+
+```bash
+/erk:plan-implement                    # Use impl directory, detect from branch, or save current plan
+/erk:plan-implement 2521               # Fetch and implement plan #2521
+/erk:plan-implement https://github.com/owner/repo/pull/2521   # URL form
+/erk:plan-implement ./my-plan.md       # Implement from local markdown file
+```
+
+---
+
+## CRITICAL: PR Operations
+
+**NEVER** run direct GitHub CLI commands for PR operations during implementation:
+
+- `gh pr edit` — destroys plan-header metadata block
+- `gh pr ready` — bypasses lifecycle tracking
+- `gh pr close` / `gh pr merge`
+
+All PR operations are handled by `erk pr submit` in Step 13. It automatically:
+
+- Generates the PR title and body
+- Preserves the plan-header metadata block
+- Marks draft PRs as ready for review
+- Updates lifecycle stage
+
+## Agent Instructions
+
+### Step 1: Set Up Implementation
+
+Parse `9167` and run the consolidated setup command:
+
+- **If numeric** (e.g., `2521`): `erk exec setup-impl --issue 2521`
+- **If GitHub URL** (e.g., `https://github.com/.../issues/2521`): Extract number, `erk exec setup-impl --issue 2521`
+- **If path to file** (anything else non-empty): `erk exec setup-impl --file &lt;path&gt;`
+- **If empty**: `erk exec setup-impl` (auto-detects from `.erk/impl-context/`, branch, or fails)
+
+```bash
+erk exec setup-impl [--issue &lt;N&gt; | --file &lt;path&gt;]
+```
+
+This single command handles:
+
+- Fetching plan from GitHub (draft PR)
+- Setting up from a local markdown file
+- Auto-detecting from existing impl directory under `.erk/impl-context/`
+- Auto-detecting plan number from branch name (P{number}-... or PR lookup)
+- Creating/checking out the feature branch
+- Creating impl directory under `.erk/impl-context/&lt;branch&gt;/` with plan content
+- Running impl-init validation
+- Cleaning up `.erk/impl-context/` staging directory (git rm + commit + push)
+
+Otherwise, generate a branch slug and set up from the specified issue:
+
+1. Fetch the title: `gh pr view &lt;ISSUE_ARG&gt; --json title -q .title`
+2. Generate a branch slug from the title:
+   - 2-4 hyphenated lowercase words, max 30 characters
+   - Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+   - Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+   - Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+3. Store as `BRANCH_SLUG`.
+
+```bash
+erk exec setup-impl --issue &lt;ISSUE_ARG&gt; --branch-slug="${BRANCH_SLUG}"
+```
+
+If `setup-impl` exits with code 1 and `error: "no_plan_found"`, fall back to saving the current plan:
+
+Generate a branch slug from the plan title (the first `# ` heading in the plan file):
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Store as `BRANCH_SLUG`
+
+Save the current plan to GitHub and capture the plan number:
+
+```bash
+erk exec plan-save --format json --session-id="${CLAUDE_SESSION_ID}" --branch-slug="${BRANCH_SLUG}"
+```
+
+Parse the JSON output to get `plan_number`, then:
+
+```bash
+erk exec setup-impl --issue &lt;plan_number&gt;
+```
+
+The `setup-impl` output includes `related_docs` (skills and docs to load) and `has_plan_tracking` (whether GitHub issue tracking is active).
+
+If this fails, display the error and stop.
+
+### Step 2: Read Plan and Load Context
+
+Read `plan.md` from the impl directory set up in Step 1 to understand:
+
+- Overall goal and context
+- Context &amp; Understanding sections (API quirks, architectural insights, pitfalls)
+- Implementation phases and dependencies
+- Success criteria
+
+**Context Consumption**: Plans contain expensive discoveries. Ignoring `[CRITICAL:]` tags, "Related Context:" subsections, or "DO NOT" items causes repeated mistakes.
+
+### Step 3: Load Related Documentation
+
+If plan contains "Related Documentation" section, load listed skills via Skill tool and read listed docs.
+
+### Step 4: Create TodoWrite Entries
+
+Create todo entries for each phase from the plan.
+
+### Step 5: Signal GitHub Started
+
+```bash
+erk exec impl-signal started --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This also deletes the Claude plan file (from `~/.claude/plans/`) since:
+
+- The content has been saved to GitHub
+- The content has been snapshotted to `.erk/scratch/`
+- Keeping it could cause confusion if the user tries to re-save
+
+### Step 6: Execute Each Phase Sequentially
+
+For each phase:
+
+1. **Mark phase as in_progress** (in TodoWrite)
+2. **Read task requirements** carefully
+3. **Implement code AND tests together**:
+   - Load `dignified-python-313` skill for coding standards
+   - Load `fake-driven-testing` skill for test patterns
+   - Follow project AGENTS.md standards
+4. **Mark phase as completed** (in TodoWrite)
+5. **Report progress**: changes made, what's next
+
+**Important:** `plan.md` is immutable - NEVER edit during implementation
+
+### Step 7: Report Progress
+
+After each phase: report changes made and what's next.
+
+### Step 8: Final Verification
+
+Confirm all tasks executed, success criteria met, note deviations, summarize changes.
+
+### Step 9: Signal GitHub Ended
+
+```bash
+erk exec impl-signal ended --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+### Step 10: Upload Session for Async Learn
+
+```bash
+erk exec upload-impl-session --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This reads plan reference from the impl directory, captures session info, and uploads for async learn processing.
+
+### Step 11: Clean Up Impl Context
+
+Remove the `.erk/impl-context/` directory from the repo:
+
+```bash
+erk exec cleanup-impl-context
+```
+
+This removes `.erk/impl-context/`, stages the deletion, commits, and pushes — all idempotent.
+
+### Step 12: Run CI Iteratively
+
+1. If `.erk/prompt-hooks/post-plan-implement-ci.md` exists: follow its instructions
+2. Otherwise: check CLAUDE.md/AGENTS.md for CI commands
+
+### Step 13: Submit PR
+
+Push the branch and create or update the PR using the Graphite-aware submit pipeline:
+
+```bash
+erk pr submit
+```
+
+This handles pushing commits, creating/updating the PR, generating the PR description, and enhancing with Graphite stack metadata when available.
+
+After successful submission, signal lifecycle transition:
+
+```bash
+erk exec impl-signal submitted 2&gt;/dev/null || true
+```
+
+Then validate PR completion invariants:
+
+```bash
+erk pr check --stage=impl
+```
+
+This validates PR submission readiness including implementation-specific checks
+(e.g., `.erk/impl-context/` must be cleaned up). If checks fail, display output and warn user.
+
+### Step 14: Output Format
+
+- **Start**: "Setting up implementation..." or "Fetching plan #X..."
+- **After setup**: "Implementation environment ready, reading plan..."
+- **Each phase**: "Phase X: [brief description]" with code changes
+- **End**: "Plan execution complete. [Summary]"
+
+---
+
+## Related Commands
+
+- `/erk:plan-save` - Save plan only, don't implement (for defer-to-later workflow)
+- `/erk:replan` - Re-plan an existing plan with current codebase state
+</user>
+  <assistant>
+
+I'll start by setting up the implementation for plan #9167.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="11284" cache_read_input_tokens="17332" cache_creation="{'ephemeral_5m_input_tokens': 11284, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_018rvbFmKT8nzHnaczxxjfGu">
+    <param name="command">erk exec setup-impl --issue 9167</param>
+    <param name="description">Set up impl for plan #9167</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="11284" cache_read_input_tokens="17332" cache_creation="{'ephemeral_5m_input_tokens': 11284, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_018rvbFmKT8nzHnaczxxjfGu">
+{"success": true, "impl_path": "/home/runner/work/erk/erk/.erk/impl-context/consolidate-learn-plans-03-10-1056", "pr_number": 9167, "pr_url": "https://github.com/dagster-io/erk/pull/9167", "branch": "consolidate-learn-plans-03-10-1056", "pr_title": "[erk-learn] Consolidated Learn Plan: Documentation Updates from 18 Learn Plans", "no_impl": false}
+{"success": true, "source": "issue", "pr_number": 9167, "has_plan_tracking": true, "valid": true, "related_docs": {"skills": [], "docs": []}}
+Already on PR branch 'consolidate-learn-plans-03-10-1056', teleporting from remote...
+  </tool_result>
+  <assistant>Setup complete. Let me read the plan to understand what needs to be implemented.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="336" cache_read_input_tokens="28616" cache_creation="{'ephemeral_5m_input_tokens': 336, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_0174hwDtcHtdrSHYFZTJ7xuw">
+    <param name="file_path">/home/runner/work/erk/erk/.erk/impl-context/consolidate-learn-plans-03-10-1056/plan.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="336" cache_read_input_tokens="28616" cache_creation="{'ephemeral_5m_input_tokens': 336, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_0174hwDtcHtdrSHYFZTJ7xuw">
+     1→# Consolidated Learn Plan: Documentation Updates from 18 Learn Plans
+     2→
+     3→## Source Plans
+     4→
+     5→| # | Title | Category |
+     6→|---|-------|----------|
+     7→| 9118 | Rename "plan" terminology to "pr" — Phase 1 (Core Types &amp; Gateway) | plan→PR rename |
+     8→| 9128 | Rename JSON output fields in exec scripts: plan → pr | plan→PR rename |
+     9→| 9139 | Rename Click arguments/options: plan → pr | plan→PR rename |
+    10→| 9145 | Update user-facing help strings and error messages: plan → PR | plan→PR rename |
+    11→| 9147 | Consolidate workflow dispatch inputs: rename plan_number to pr_number | plan→PR rename |
+    12→| 9148 | Update config schema: rename [plans] section to [github] | plan→PR rename |
+    13→| 9153 | Simplify plan identification from labels to title prefix | plan→PR rename |
+    14→| 9124 | Move test fakes from production packages to tests/fakes/ | testing |
+    15→| 9125 | Make `erk reconcile` a hidden command | CLI |
+    16→| 9136 | Rename PlanBranchSetup to PlannedBranchSetup | architecture |
+    17→| 9137 | Add `erk stack sync` command | CLI/erk |
+    18→| 9141 | Push down: Review activity log fetch via new CLI command | CLI |
+    19→| 9142 | Hide `learn` command from default CLI help output | CLI |
+    20→| 9143 | Optimize Runs Tab Initial Load: parallel batch queries | TUI |
+    21→| 9151 | Implement best-of-both-worlds machine command architecture | architecture/CLI |
+    22→| 9155 | Consolidate JSON ↔ dataclass utilities into shared module | architecture |
+    23→| 9158 | Add cancel and retry commands for workflow runs | CLI |
+    24→| 9166 | Create `erk json objective view` and `erk json objective check` machine commands | objectives |
+    25→
+    26→## Phase 1: Update Stale Config Documentation (plan→PR rename)
+    27→
+    28→These files reference the old `[plans]` config section that was renamed to `[github]`.
+    29→
+    30→### Step 1.1: Edit `docs/learned/configuration/config-layers.md`
+
+... [295 lines omitted] ...
+
+   137→runs and retry failed/completed runs.
+   144→### erk workflow run retry &lt;run_id&gt; [--failed]
+   146→- `--failed` flag: Only re-run failed jobs (not all jobs)
+  </tool_result>
+  <assistant>Now let me set up the todo list and signal that implementation has started, then begin reading the files that need to be modified.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="4386" cache_read_input_tokens="28952" cache_creation="{'ephemeral_5m_input_tokens': 4386, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01NuU385HgX1hoQucfqCiQvY">
+    <param name="todos">[{'content': 'Phase 1: Update stale config docs (plan→PR rename)', 'status': 'pending', 'a...[truncated 577 chars]... and submit PR', 'status': 'pending', 'activeForm': 'Signaling GitHub and submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4386" cache_read_input_tokens="28952" cache_creation="{'ephemeral_5m_input_tokens': 4386, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01NuU385HgX1hoQucfqCiQvY">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="Bash" id="toolu_0193hoLhMjJfCSYKWaUstPCZ">
+    <param name="command">erk exec impl-signal started --session-id "${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true</param>
+    <param name="description">Signal GitHub implementation started</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="332" cache_read_input_tokens="33338" cache_creation="{'ephemeral_5m_input_tokens': 332, 'ephemeral_1h_input_tokens': 0}" output_tokens="26" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_0193hoLhMjJfCSYKWaUstPCZ">
+{
+  "success": false,
+  "event": "started",
+  "error_type": "session-id-required",
+  "message": "Session ID required for impl-signal started. Ensure ${CLAUDE_SESSION_ID} is available in the command context."
+}
+  </tool_result>
+  <assistant>Let me read all the files that need to be modified in Phase 1 in parallel.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="172" cache_read_input_tokens="33670" cache_creation="{'ephemeral_5m_input_tokens': 172, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01XUpHX28nUSt8VNEUarJm1Q">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/configuration/config-layers.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="172" cache_read_input_tokens="33670" cache_creation="{'ephemeral_5m_input_tokens': 172, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_013jzBkiighcVWMjEzEiS2Xx">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/configuration/issues-repo.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="172" cache_read_input_tokens="33670" cache_creation="{'ephemeral_5m_input_tokens': 172, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01CX2hZvyQFwqEWc8cGf2qvT">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/cross-repo-plans.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="172" cache_read_input_tokens="33670" cache_creation="{'ephemeral_5m_input_tokens': 172, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01358F7XJFJwFjsf47vHbBAm">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/glossary.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="172" cache_read_input_tokens="33670" cache_creation="{'ephemeral_5m_input_tokens': 172, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01DtfKX6XJhcYayMaYs9v89D">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/configuration/index.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="172" cache_read_input_tokens="33670" cache_creation="{'ephemeral_5m_input_tokens': 172, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01Y5Z3W1Nv7YtgnnJLqhwHNo">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/index.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="172" cache_read_input_tokens="33670" cache_creation="{'ephemeral_5m_input_tokens': 172, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01XUpHX28nUSt8VNEUarJm1Q">
+     1→---
+     2→title: Configuration Layers
+     3→last_audited: "2026-02-17 09:00 PT"
+     4→audit_result: clean
+     5→read_when:
+     6→  - "understanding the configuration system"
+     7→  - "deciding where to put a configuration setting"
+     8→  - "debugging why a config value isn't taking effect"
+     9→  - "working with LoadedConfig or merge_configs"
+    10→---
+    11→
+    12→# Configuration Layers
+    13→
+    14→Erk uses a layered configuration system where settings are merged from multiple sources.
+    15→
+    16→## Overview
+    17→
+    18→| Layer  | Location                 | Scope       | Versioned | Merge Order |
+    19→| ------ | ------------------------ | ----------- | --------- | ----------- |
+    20→| Global | `~/.erk/config.toml`     | All repos   | No        | N/A         |
+    21→| Repo   | `.erk/config.toml`       | All users   | Yes       | 1st         |
+    22→| Local  | `.erk/config.local.toml` | Single user | No        | 2nd         |
+    23→
+    24→## Layer Details
+    25→
+    26→### Global Config (`~/.erk/config.toml`)
+    27→
+    28→User-wide settings that apply across all repositories.
+    29→
+    30→**Contains:**
+
+... [112 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_013jzBkiighcVWMjEzEiS2Xx">
+     1→---
+     2→title: External Plans Repository Configuration
+     3→last_audited: "2026-02-17 09:00 PT"
+     4→audit_result: clean
+     5→read_when:
+     6→  - "configuring plans to be stored in a separate repository"
+     7→  - "setting up plans.repo in config.toml"
+     8→---
+     9→
+    10→# External Plans Repository Configuration
+    11→
+    12→Configure erk to store plans in a separate repository from your working repository.
+    13→
+    14→## Configuration
+    15→
+    16→In `.erk/config.toml`:
+    17→
+    18→```toml
+    19→[plans]
+    20→repo = "owner/repo"
+    21→```
+    22→
+    23→**Format:** `"owner/repo"` - the GitHub repository where plans will be created.
+    24→
+    25→**Example:**
+    26→
+    27→```toml
+    28→[plans]
+    29→repo = "myorg/engineering-plans"
+    30→```
+
+... [54 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01CX2hZvyQFwqEWc8cGf2qvT">
+     1→---
+     2→title: Cross-Repo Plans
+     3→read_when:
+     4→  - "setting up plans in a separate repository"
+     5→  - "configuring [plans] repo in config.toml"
+     6→  - "understanding cross-repo plan closing syntax"
+     7→---
+     8→
+     9→# Cross-Repo Plans
+    10→
+    11→Store plans in a dedicated repository while implementing in another.
+    12→
+    13→## When to Use
+    14→
+    15→- **Private plans**: Keep plans in a private repo while implementing in a public repo
+    16→- **Centralized planning**: Consolidate all plans across multiple implementation repos
+    17→- **Separation of concerns**: Keep implementation repos focused on code, not planning
+    18→
+    19→## Configuration
+    20→
+    21→Add to `{erks_dir}/config.toml`:
+    22→
+    23→```toml
+    24→[plans]
+    25→repo = "owner/plans-repo"
+    26→```
+    27→
+    28→Where `owner/plans-repo` is the GitHub repository that will hold plans.
+    29→
+    30→## Behavior
+
+... [51 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01DtfKX6XJhcYayMaYs9v89D">
+     1→&lt;!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY --&gt;
+     2→&lt;!-- Edit source frontmatter, then run 'erk docs sync' to regenerate. --&gt;
+     3→
+     4→# Configuration Documentation
+     5→
+     6→- **[config-layers.md](config-layers.md)** — understanding the configuration system, deciding where to put a configuration setting, debugging why a config value isn't taking effect, working with LoadedConfig or merge_configs
+     7→- **[issues-repo.md](issues-repo.md)** — configuring plans to be stored in a separate repository, setting up plans.repo in config.toml
+     8→- **[schema-driven-config.md](schema-driven-config.md)** — adding new configuration options to erk, modifying config CLI commands (get, set, list, keys), understanding why config commands don't need manual field lists
+     9→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_01Y5Z3W1Nv7YtgnnJLqhwHNo">
+     1→&lt;!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY --&gt;
+     2→&lt;!-- Edit source frontmatter, then run 'erk docs sync' to regenerate. --&gt;
+     3→
+     4→# Planning Documentation
+     5→
+     6→- **[agent-delegation.md](agent-delegation.md)** — delegating to agents from commands, implementing command-agent pattern, workflow orchestration
+     7→- **[agent-orchestration-safety.md](agent-orchestration-safety.md)** — passing data between agents via files or inline output, designing multi-agent workflows with parallel and sequential tiers, orchestrating subagents that produce markdown, XML, or other large outputs
+     8→- **[agent-orchestration.md](agent-orchestration.md)** — designing agent workflows with parallel and sequential tiers, choosing between parallel and sequential agent execution, adding or modifying agents in the learn pipeline, deciding which model tier to assign an agent
+     9→- **[agent-output-routing-strategies.md](agent-output-routing-strategies.md)** — deciding how agents should receive and produce outputs, designing multi-agent orchestration prompts, choosing between embedded-prompt and agent-file routing
+    10→- **[backend-naming-conventions.md](backend-naming-conventions.md)** — referencing the plan backend by name in code or documentation, confused about draft_pr vs planned_pr vs github-draft-pr naming, adding user-facing output that mentions the backend
+    11→- **[branch-name-inference.md](branch-name-inference.md)** — debugging missing branch_name in plans, implementing PR lookup from plans, modifying branch creation or naming conventions
+    12→- **[branch-plan-resolution.md](branch-plan-resolution.md)** — resolving which plan a branch belongs to, working with branch naming conventions for plans, understanding how get_plan_for_branch works
+    13→- **[complete-inventory-protocol.md](complete-inventory-protocol.md)** — estimating effort or remaining work for a plan or PR, closing a plan as complete, creating a consolidation plan from multiple PRs
+    14→- **[consolidation-labels.md](consolidation-labels.md)** — consolidating multiple learn plans, working with erk-consolidated label, preventing re-consolidation of issues, modifying /local:replan-learn-plans or /erk:replan consolidation behavior
+    15→- **[context-preservation-in-replan.md](context-preservation-in-replan.md)** — implementing or modifying replan workflow steps, debugging why a replanned issue produced a sparse plan, adding new plan-creation workflows that use EnterPlanMode
+    16→- **[context-preservation-prompting.md](context-preservation-prompting.md)** — writing slash commands that create plans, designing any workflow that calls EnterPlanMode, understanding why plans lose investigation context
+    17→- **[cornerstone-enforcement.md](cornerstone-enforcement.md)** — understanding SHOULD_BE_CODE filtering, working on learn pipeline classification, documentation items being classified as code, understanding cornerstone test rules
+    18→- **[cross-artifact-analysis.md](cross-artifact-analysis.md)** — detecting PR and plan relationships, assessing if work supersedes a plan, analyzing overlap between artifacts
+    19→- **[cross-repo-plans.md](cross-repo-plans.md)** — setting up plans in a separate repository, configuring [plans] repo in config.toml, understanding cross-repo plan closing syntax
+    20→- **[debugging-patterns.md](debugging-patterns.md)** — Debugging validation failures after an initial fix attempt fails, Encountering errors where the required format is unclear from the error message alone, Deciding whether to guess at another fix or read the validator source
+    21→- **[exploration-strategies.md](exploration-strategies.md)** — deciding when to use Explore agents vs direct searches, planning a two-stage explore-then-plan workflow, gathering codebase context before entering plan mode
+    22→- **[gateway-consolidation-checklist.md](gateway-consolidation-checklist.md)** — moving a gateway package into the gateway/ directory, extracting a new gateway from existing code, performing large-scale import refactoring across packages
+    23→- **[impl-context.md](impl-context.md)** — working with .erk/impl-context/ files, debugging plan content missing from a draft-PR implementation, reviewing a PR that contains .erk/impl-context/ files, understanding how draft-PR plans transfer content to .erk/impl-context/
+    24→- **[incremental-dispatch.md](incremental-dispatch.md)** — dispatching implementation against an existing PR, adding a local plan to an existing PR for remote implementation, working with incremental-dispatch exec script or slash command
+    25→- **[label-scheme.md](label-scheme.md)** — understanding how plans and learn issues are labeled, working with erk-pr or erk-learn labels, debugging label filtering in TUI or CLI views
+    26→- **[learn-pipeline-workflow.md](learn-pipeline-workflow.md)** — debugging why learn materials are missing or malformed, understanding data flow from sessions to documentation plan, choosing between local learn and async learn modes, adding a new stage to the learn pipeline
+    27→- **[learn-plan-metadata-fields.md](learn-plan-metadata-fields.md)** — working with learn plan metadata, troubleshooting null learn_status or learn_plan_issue, transforming Plan objects in pipelines, understanding created_from_workflow_run_url field, adding workflow run backlinks to plans
+    28→- **[learn-plan-validation.md](learn-plan-validation.md)** — creating or modifying erk-learn plans, working on the learn workflow pipeline, debugging learn-on-learn cycle errors
+    29→- **[learn-session-embedding.md](learn-session-embedding.md)** — embedding session XML files in learn plan PRs, working with session preprocessing in the land or plan-save pipeline, debugging missing session XML in learn plan diffs
+    30→- **[learn-vs-implementation-plans.md](learn-vs-implementation-plans.md)** — choosing between plan types, creating erk-learn plans, understanding how learn plans relate to implementation plans, debugging learn plan base branch selection
+
+... [53 lines omitted] ...
+
+    31→- **[learn-without-pr-context.md](learn-without-pr-context.md)** — debugging learn workflow failures where PR data is missing, implementing new learn pipeline steps that consume PR context, understanding why learn output lacks review feedback
+    35→- **[metadata-block-fallback.md](metadata-block-fallback.md)** — extracting plan content from GitHub issue comments, debugging 'no plan content found' errors in replan or plan-implement, working with older erk-plans that lack metadata blocks
+    39→- **[no-changes-handling.md](no-changes-handling.md)** — implementing erk-impl workflow, debugging no-changes scenarios, understanding erk-impl error handling
+    41→- **[one-shot-workflow.md](one-shot-workflow.md)** — working with erk one-shot dispatch, understanding how plans are autonomously created and implemented, debugging one-shot workflow failures, integrating objectives with one-shot dispatch
+    43→- **[plan-backend-migration.md](plan-backend-migration.md)** — migrating exec scripts from direct GitHubIssues to PlanBackend, implementing LBYL pattern for plan existence checks, handling PlanNotFound vs PlanHeaderNotFoundError
+    47→- **[plan-id-semantics.md](plan-id-semantics.md)** — calling github.get_pr() or github.get_issue() with a plan_id, writing code that handles plan IDs, debugging 404 errors when fetching plan metadata
+    50→- **[plan-schema.md](plan-schema.md)** — understanding plan structure, debugging plan validation errors, working with plan-header or plan-body blocks
+    60→- **[pr-submission-patterns.md](pr-submission-patterns.md)** — creating or updating PRs programmatically in erk, debugging why a duplicate PR or issue was created, fixing erk pr check validation failures, understanding the PR number vs plan number distinction
+    68→- **[session-preprocessing.md](session-preprocessing.md)** — modifying session preprocessing or compression pipeline, understanding why there are two preprocessing implementations, linking sessions to plans for learn workflow, debugging preprocessing failures or empty session output
+    69→- **[stacked-plan-branch-rebase.md](stacked-plan-branch-rebase.md)** — working with stacked plans that have non-trunk parents, debugging gt track failures for plan branches, understanding how plan branches integrate with Graphite stacking
+    70→- **[sub-agent-context-limitations.md](sub-agent-context-limitations.md)** — delegating session-dependent commands to Task tool sub-agents, debugging impl-signal or plan-save failures with empty session IDs, designing workflows that split work between root agent and sub-agents
+  </tool_result>
+  <tool_result tool="toolu_01358F7XJFJwFjsf47vHbBAm">
+     1→---
+     2→title: Erk Glossary
+     3→last_audited: "2026-02-16 00:00 PT"
+     4→audit_result: clean
+     5→read_when:
+     6→  - "understanding project terminology"
+     7→  - "confused about domain-specific terms"
+     8→  - "working with worktrees, plans, or stacks"
+     9→  - "working with objectives or turns"
+    10→tripwires:
+    11→  - action: "parsing objective roadmap PR column status"
+    12→    warning: "Roadmap table uses separate Plan and PR columns: Plan `#XXXX`=in progress (plan PR), PR `#XXXX`=done (merged PR), both empty=pending. Legacy 4-col format with `plan #XXXX` in PR column is auto-migrated."
+    13→---
+    14→
+    15→# Erk Glossary
+    16→
+    17→Definitive terminology reference for the erk project.
+    18→
+    19→**Purpose**: Eliminate confusion about domain-specific terms. When in doubt about terminology, consult this document.
+    20→
+    21→---
+    22→
+    23→## Core Concepts
+    24→
+    25→### activate.sh
+    26→
+    27→A shell script at `.erk/activate.sh` in each worktree that sets up the development environment when sourced.
+    28→
+    29→**Purpose**: Opt-in shell integration. Users explicitly source this script rather than relying on automatic shell manipulation.
+    30→
+
+... [1038 lines omitted] ...
+
+   543→A sentinel class returned when a PR lookup fails, preserving lookup context (branch name, PR number). Uses `isinstance` check (LBYL) instead of exceptions.
+   585→- `style: Literal["info", "success", "warning", "error"]` - Visual style hint (default: "info")
+   737→- `tripwires`: List of action-triggered warnings
+   748→    warning: "Use .erk/scratch/&lt;session-id&gt;/ instead."
+   775→**Format**: Defined in doc frontmatter with `action` (pattern to detect) and `warning` (guidance message).
+   784→    warning: "AI workflow files belong in .erk/scratch/&lt;session-id&gt;/, NOT /tmp/."
+   862→- `erk land` skips the "not learned from" warning for learn plans (they don't need learning)
+   968→- **EAFP**: Easier to Ask for Forgiveness than Permission (exception-based error handling)
+   969→- **LBYL**: Look Before You Leap (check-before-operation error handling)
+  1033→**Purpose**: Break large, complex goals into reviewable, implementable chunks. Instead of tackling "migrate all errors to Ensure class" in one massive PR, an objective evaluates the codebase, identifies a manageable subset of violations, and creates a plan for that subset.
+  </tool_result>
+  <assistant>Now I have all the files loaded. Let me verify the actual current state of the config in the codebase to make sure the rename has already happened before updating docs.</assistant>
+  <usage input_tokens="4486" cache_creation_input_tokens="17566" cache_read_input_tokens="33842" cache_creation="{'ephemeral_5m_input_tokens': 17566, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_019nxsq49M7zAptq5pRP6xnJ">
+    <param name="todos">[{'content': 'Phase 1: Update stale config docs (plan→PR rename)', 'status': 'in_progress'...[truncated 581 chars]... and submit PR', 'status': 'pending', 'activeForm': 'Signaling GitHub and submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="4486" cache_creation_input_tokens="17566" cache_read_input_tokens="33842" cache_creation="{'ephemeral_5m_input_tokens': 17566, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_019nxsq49M7zAptq5pRP6xnJ">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Let me verify the actual config schema to confirm the rename happened:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="4828" cache_read_input_tokens="51408" cache_creation="{'ephemeral_5m_input_tokens': 4828, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01GsEtGk9NQqvKrjQfTKkYJc">
+    <param name="pattern">\[github\]|\[plans\]</param>
+    <param name="path">/home/runner/work/erk/erk/src</param>
+    <param name="output_mode">content</param>
+    <param name="head_limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4828" cache_read_input_tokens="51408" cache_creation="{'ephemeral_5m_input_tokens': 4828, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01HgfAPCf95BpDexjaUoFDFj">
+    <param name="pattern">github\.repo|plans\.repo</param>
+    <param name="path">/home/runner/work/erk/erk/src</param>
+    <param name="output_mode">content</param>
+    <param name="head_limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4828" cache_read_input_tokens="51408" cache_creation="{'ephemeral_5m_input_tokens': 4828, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01HgfAPCf95BpDexjaUoFDFj">
+src/erk/cli/repo_resolution.py:51:    return (ctx.repo.github.owner, ctx.repo.github.repo)
+src/erk/cli/commands/objective/plan_cmd.py:715:            repo=ctx.repo.github.repo,
+src/erk/cli/commands/config.py:306:        # github.repo with source annotation
+src/erk/cli/commands/config.py:309:                f"  github.repo={cfg.github_repo}"
+src/erk/cli/commands/doctor_workflow.py:35:    return (ctx.repo.github.owner, ctx.repo.github.repo)
+src/erk/cli/commands/one_shot/operation.py:105:        owner, repo_name = ctx.repo.github.owner, ctx.repo.github.repo
+src/erk/cli/commands/pr/create_cmd.py:91:        source_repo = f"{repo.github.owner}/{repo.github.repo}"
+src/erk/cli/commands/pr/rewrite_cmd.py:125:        repo=ctx.repo.github.repo,
+src/erk/cli/commands/pr/list/cli.py:311:    repo_name = repo.github.repo
+src/erk/cli/commands/exec/scripts/objective_save_to_issue.py:223:            repo_name = erk_ctx.repo.github.repo
+src/erk/cli/commands/exec/scripts/set_pr_description.py:83:        repo=erk_ctx.repo.github.repo,
+src/erk/cli/commands/exec/scripts/get_pr_context.py:81:        repo=erk_ctx.repo.github.repo,
+src/erk/cli/commands/exec/scripts/objective_fetch_context.py:180:    repo_name = erk_ctx.repo.github.repo
+src/erk/cli/commands/exec/scripts/objective_apply_landed_update.py:198:    repo_name = erk_ctx.repo.github.repo
+src/erk/cli/commands/exec/scripts/dash_data.py:62:        repo_id=GitHubRepoId(repo.github.owner, repo.github.repo),
+src/erk/cli/commands/exec/scripts/objective_plan_setup.py:160:    repo_name = erk_ctx.repo.github.repo
+src/erk/cli/commands/exec/scripts/update_pr_description.py:115:        repo=ctx.repo.github.repo,
+src/erk/core/workflow_smoke_test.py:78:    owner, repo_name = repo.github.owner, repo.github.repo
+
+[Showing results with pagination = limit: 20, offset: 0]
+  </tool_result>
+  <tool_result tool="toolu_01GsEtGk9NQqvKrjQfTKkYJc">
+src/erk/cli/config.py:60:    # Parse [github] section (with [plans] fallback for backwards compat)
+
+[Showing results with pagination = limit: 20, offset: 0]
+  </tool_result>
+  <assistant>Good - the config has been renamed to `[github]` with `[plans]` as a backwards-compatible fallback. Now let me check the config file more closely:</assistant>
+  <usage input_tokens="701" cache_creation_input_tokens="333" cache_read_input_tokens="56236" cache_creation="{'ephemeral_5m_input_tokens': 333, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01C4jMZk4mrxGyCxdHJvixNQ">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/config.py</param>
+    <param name="offset">50</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="701" cache_creation_input_tokens="333" cache_read_input_tokens="56236" cache_creation="{'ephemeral_5m_input_tokens': 333, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01C4jMZk4mrxGyCxdHJvixNQ">
+    50→        LoadedConfig with parsed values
+    51→    """
+    52→    data = tomllib.loads(cfg_path.read_text(encoding="utf-8"))
+    53→    env = {str(k): str(v) for k, v in data.get("env", {}).items()}
+    54→    post = data.get("post_create", {})
+    55→    commands = [str(x) for x in post.get("commands", [])]
+    56→    shell = post.get("shell")
+    57→    if shell is not None:
+    58→        shell = str(shell)
+    59→
+    60→    # Parse [github] section (with [plans] fallback for backwards compat)
+    61→    github_section = data.get("github", {})
+    62→    github_repo = github_section.get("repo")
+    63→    if github_repo is None:
+    64→        plans_section = data.get("plans", {})
+    65→        github_repo = plans_section.get("repo")
+    66→    if github_repo is not None:
+    67→        github_repo = str(github_repo)
+    68→    # Parse [pool] section
+    69→    pool = data.get("pool", {})
+    70→    pool_size = pool.get("max_slots")
+    71→    if pool_size is not None:
+    72→        pool_size = int(pool_size)
+    73→
+    74→    # Parse [pool.checkout] section
+    75→    pool_checkout = pool.get("checkout", {})
+    76→    pool_checkout_commands = [str(x) for x in pool_checkout.get("commands", [])]
+    77→    pool_checkout_shell = pool_checkout.get("shell")
+    78→    if pool_checkout_shell is not None:
+    79→        pool_checkout_shell = str(pool_checkout_shell)
+
+... [5 lines omitted] ...
+  </tool_result>
+  <assistant>Confirmed. The config uses `[github]` section with `[plans]` as a backwards-compat fallback. Now let me make all Phase 1 edits. I'll do them in parallel:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1409" cache_read_input_tokens="56569" cache_creation="{'ephemeral_5m_input_tokens': 1409, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01DEhVF1UBHrcjstvFFe8zxT">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/configuration/config-layers.md</param>
+    <param name="old_string">- `[plans]` - Plan repository settings</param>
+    <param name="new_string">- `[github]` - GitHub repository settings (accepts `[plans]` as backwards-compatible alias)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1409" cache_read_input_tokens="56569" cache_creation="{'ephemeral_5m_input_tokens': 1409, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01JwyUjLMfkKSFu1suScbvaU">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/configuration/config-layers.md</param>
+    <param name="old_string">| `plans.repo`             | Override (local wins if set)           |</param>
+    <param name="new_string">| `github.repo`            | Override (local wins if set)           |</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1409" cache_read_input_tokens="56569" cache_creation="{'ephemeral_5m_input_tokens': 1409, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01DEhVF1UBHrcjstvFFe8zxT">
+The file /home/runner/work/erk/erk/docs/learned/configuration/config-layers.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01JwyUjLMfkKSFu1suScbvaU">
+The file /home/runner/work/erk/erk/docs/learned/configuration/config-layers.md has been updated successfully.
+  </tool_result>
+  <assistant>Now edit the issues-repo.md file:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="658" cache_read_input_tokens="57978" cache_creation="{'ephemeral_5m_input_tokens': 658, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01Kb8jRQ4u9H9LGeVkWG2v5B">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/configuration/issues-repo.md</param>
+    <param name="old_string">read_when:
+  - "configuring plans to be stored in a separate repository"
+  - "setting up plans.repo in config.toml"</param>
+    <param name="new_string">read_when:
+  - "configuring plans to be stored in a separate repository"
+  - "setting up github.repo in config.toml"</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="658" cache_read_input_tokens="57978" cache_creation="{'ephemeral_5m_input_tokens': 658, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_016DLBq8VKTabLWZUxRR2pPH">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/configuration/issues-repo.md</param>
+    <param name="old_string">```toml
+[plans]
+repo = "owner/repo"
+```
+
+**Format:** `"owner/repo"` - the GitHub repository where plans will be created.
+
+**Example:**
+
+```toml
+[plans]
+repo = "myorg/engineering-plans"
+```</param>
+    <param name="new_string">```toml
+[github]
+repo = "owner/repo"
+```
+
+**Format:** `"owner/repo"` - the GitHub repository where plans will be created.
+
+**Example:**
+
+```toml
+[github]
+repo = "myorg/engineering-plans"
+```</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="658" cache_read_input_tokens="57978" cache_creation="{'ephemeral_5m_input_tokens': 658, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01DzbRSEwQqj3rQCZe7xEoFv">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/configuration/issues-repo.md</param>
+    <param name="old_string">When `plans.repo` is set:</param>
+    <param name="new_string">When `github.repo` is set:</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="658" cache_read_input_tokens="57978" cache_creation="{'ephemeral_5m_input_tokens': 658, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_014BtV1LxYbAVDZSKLUQE2W4">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/configuration/issues-repo.md</param>
+    <param name="old_string">When you run `erk init` with `plans.repo` configured</param>
+    <param name="new_string">When you run `erk init` with `github.repo` configured</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="658" cache_read_input_tokens="57978" cache_creation="{'ephemeral_5m_input_tokens': 658, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Kb8jRQ4u9H9LGeVkWG2v5B">
+The file /home/runner/work/erk/erk/docs/learned/configuration/issues-repo.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_016DLBq8VKTabLWZUxRR2pPH">
+The file /home/runner/work/erk/erk/docs/learned/configuration/issues-repo.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01DzbRSEwQqj3rQCZe7xEoFv">
+The file /home/runner/work/erk/erk/docs/learned/configuration/issues-repo.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_014BtV1LxYbAVDZSKLUQE2W4">
+The file /home/runner/work/erk/erk/docs/learned/configuration/issues-repo.md has been updated successfully.
+  </tool_result>
+  <assistant>Now edit cross-repo-plans.md:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1092" cache_read_input_tokens="58636" cache_creation="{'ephemeral_5m_input_tokens': 1092, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01PXUqWWZsWpxrZjVw8B71Vk">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/cross-repo-plans.md</param>
+    <param name="old_string">read_when:
+  - "setting up plans in a separate repository"
+  - "configuring [plans] repo in config.toml"
+  - "understanding cross-repo plan closing syntax"</param>
+    <param name="new_string">read_when:
+  - "setting up plans in a separate repository"
+  - "configuring [github] repo in config.toml"
+  - "understanding cross-repo plan closing syntax"</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1092" cache_read_input_tokens="58636" cache_creation="{'ephemeral_5m_input_tokens': 1092, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01CZsxG4ya5mnoqTQSmPADBK">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/cross-repo-plans.md</param>
+    <param name="old_string">```toml
+[plans]
+repo = "owner/plans-repo"
+```</param>
+    <param name="new_string">```toml
+[github]
+repo = "owner/plans-repo"
+```</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1092" cache_read_input_tokens="58636" cache_creation="{'ephemeral_5m_input_tokens': 1092, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01WnBwEVBeReiAdmG6yt9w8g">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/cross-repo-plans.md</param>
+    <param name="old_string">When `[plans] repo` is configured:</param>
+    <param name="new_string">When `[github] repo` is configured:</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1092" cache_read_input_tokens="58636" cache_creation="{'ephemeral_5m_input_tokens': 1092, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01PXUqWWZsWpxrZjVw8B71Vk">
+The file /home/runner/work/erk/erk/docs/learned/planning/cross-repo-plans.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01CZsxG4ya5mnoqTQSmPADBK">
+The file /home/runner/work/erk/erk/docs/learned/planning/cross-repo-plans.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01WnBwEVBeReiAdmG6yt9w8g">
+The file /home/runner/work/erk/erk/docs/learned/planning/cross-repo-plans.md has been updated successfully.
+  </tool_result>
+  <assistant>Now edit the glossary.md file. The plan references `[plans]` in the Repo Config section:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="860" cache_read_input_tokens="59728" cache_creation="{'ephemeral_5m_input_tokens': 860, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01JQMJMc7Cm24GNaWkRe9fK9">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/glossary.md</param>
+    <param name="old_string">[plans]
+repo = "owner/plans-repo"  # Store plans in separate repo
+```
+
+When `[plans] repo`...[truncated 60 chars]...rent repo. PRs use `Closes owner/plans-repo#N` format to close issues across repositories.</param>
+    <param name="new_string">[github]
+repo = "owner/plans-repo"  # Store plans in separate repo
+```
+
+When `[github] rep...[truncated 62 chars]...rent repo. PRs use `Closes owner/plans-repo#N` format to close issues across repositories.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="860" cache_read_input_tokens="59728" cache_creation="{'ephemeral_5m_input_tokens': 860, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01VdNYqLNyDZXKExfnzwnjcU">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/glossary.md</param>
+    <param name="old_string">- `plans.repo`: Override (local wins if set)</param>
+    <param name="new_string">- `github.repo`: Override (local wins if set)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="860" cache_read_input_tokens="59728" cache_creation="{'ephemeral_5m_input_tokens': 860, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01JQMJMc7Cm24GNaWkRe9fK9">
+The file /home/runner/work/erk/erk/docs/learned/glossary.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01VdNYqLNyDZXKExfnzwnjcU">
+The file /home/runner/work/erk/erk/docs/learned/glossary.md has been updated successfully.
+  </tool_result>
+  <assistant>Now update the configuration index.md and planning index.md. The configuration index is auto-generated so I need to update the frontmatter of the issues-repo.md file (which I already did) and the planning/index.md is also auto-generated. Let me check what the plan says about these:
+
+The configuration/index.md is auto-generated ("Edit source frontmatter, then run 'erk docs sync' to regenerate"). Since I've already updated the frontmatter of issues-repo.md, this will be regenerated by `erk docs sync`. Same for planning/index.md - since I've updated cross-repo-plans.md frontmatter, the index will regenerate.
+
+But let me check the current content to see if there are inline references that need updating:
+
+The configuration/index.md line 7 says: `setting up plans.repo in config.toml` - this comes from the frontmatter of issues-repo.md which I've already updated. It'll be regenerated.
+
+The planning/index.md line 19 says: `configuring [plans] repo in config.toml` - this comes from cross-repo-plans.md frontmatter which I've already updated. It'll be regenerated.
+
+Phase 1 complete. Let me move to Phase 2.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="714" cache_read_input_tokens="60588" cache_creation="{'ephemeral_5m_input_tokens': 714, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01EgYD6zxZHPxLRk987TkUjM">
+    <param name="todos">[{'content': 'Phase 1: Update stale config docs (plan→PR rename)', 'status': 'completed', ...[truncated 583 chars]... and submit PR', 'status': 'pending', 'activeForm': 'Signaling GitHub and submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="714" cache_read_input_tokens="60588" cache_creation="{'ephemeral_5m_input_tokens': 714, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01EgYD6zxZHPxLRk987TkUjM">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>For Phase 2, I need to create new docs but first verify the implementations exist. Let me check all the relevant source files in parallel:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="599" cache_read_input_tokens="61302" cache_creation="{'ephemeral_5m_input_tokens': 599, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Glob" id="toolu_01JAtbgHXVSp1hTtu5wvkRJv">
+    <param name="pattern">src/erk/cli/commands/stack/sync_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="599" cache_read_input_tokens="61302" cache_creation="{'ephemeral_5m_input_tokens': 599, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Glob" id="toolu_01Nw2dXewJnAAJY8TTJTUDfC">
+    <param name="pattern">src/erk/cli/commands/run/cancel_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="599" cache_read_input_tokens="61302" cache_creation="{'ephemeral_5m_input_tokens': 599, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Glob" id="toolu_012dE1ttjY3d21Xb2ttMx7Tb">
+    <param name="pattern">src/erk/cli/commands/run/retry_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="599" cache_read_input_tokens="61302" cache_creation="{'ephemeral_5m_input_tokens': 599, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Glob" id="toolu_017A9ZADdKrUKC7oggpXR65U">
+    <param name="pattern">tests/fakes/**/__init__.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="599" cache_read_input_tokens="61302" cache_creation="{'ephemeral_5m_input_tokens': 599, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_014s4f1TfPoddYrfbRcAQYdV">
+    <param name="pattern">json_utils|json_dataclass|dataclass_to_dict|dict_to_dataclass</param>
+    <param name="path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="599" cache_read_input_tokens="61302" cache_creation="{'ephemeral_5m_input_tokens': 599, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Glob" id="toolu_014iUpspL9nYM2DqfCnQKLGA">
+    <param name="pattern">src/erk/cli/commands/exec/scripts/get_review_activity_log.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="599" cache_read_input_tokens="61302" cache_creation="{'ephemeral_5m_input_tokens': 599, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01JAtbgHXVSp1hTtu5wvkRJv">
+/home/runner/work/erk/erk/src/erk/cli/commands/stack/sync_cmd.py
+  </tool_result>
+  <tool_result tool="toolu_012dE1ttjY3d21Xb2ttMx7Tb">
+/home/runner/work/erk/erk/src/erk/cli/commands/run/retry_cmd.py
+  </tool_result>
+  <tool_result tool="toolu_01Nw2dXewJnAAJY8TTJTUDfC">
+/home/runner/work/erk/erk/src/erk/cli/commands/run/cancel_cmd.py
+  </tool_result>
+  <tool_result tool="toolu_014s4f1TfPoddYrfbRcAQYdV">
+No files found
+  </tool_result>
+  <tool_result tool="toolu_017A9ZADdKrUKC7oggpXR65U">
+/home/runner/work/erk/erk/tests/fakes/__init__.py
+/home/runner/work/erk/erk/tests/fakes/gateway/__init__.py
+/home/runner/work/erk/erk/tests/fakes/tests/__init__.py
+  </tool_result>
+  <tool_result tool="toolu_014iUpspL9nYM2DqfCnQKLGA">
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/get_review_activity_log.py
+  </tool_result>
+  <assistant>Good, most files exist. The JSON/dataclass utilities didn't match - let me search more broadly:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="981" cache_read_input_tokens="61901" cache_creation="{'ephemeral_5m_input_tokens': 981, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01W591Jv6MrgcA6yjcuKzGfx">
+    <param name="pattern">json.*dataclass|dataclass.*json|to_dict|from_dict</param>
+    <param name="path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="981" cache_read_input_tokens="61901" cache_creation="{'ephemeral_5m_input_tokens': 981, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_019hzMxNjmmRFx8zdN5wt3jm">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/stack/sync_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="981" cache_read_input_tokens="61901" cache_creation="{'ephemeral_5m_input_tokens': 981, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01KsWeCAdR5yHyz87XN1c3dd">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/run/cancel_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="981" cache_read_input_tokens="61901" cache_creation="{'ephemeral_5m_input_tokens': 981, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_014jVq8a5e5AbwwjZFS85XxW">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/run/retry_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="981" cache_read_input_tokens="61901" cache_creation="{'ephemeral_5m_input_tokens': 981, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01Bz8oraf4p24apDSMJMpjdE">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/get_review_activity_log.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="981" cache_read_input_tokens="61901" cache_creation="{'ephemeral_5m_input_tokens': 981, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_012b19Mi1z2sy71GCg5pNvR4">
+    <param name="command">ls /home/runner/work/erk/erk/tests/fakes/</param>
+    <param name="description">List fakes directory structure</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="981" cache_read_input_tokens="61901" cache_creation="{'ephemeral_5m_input_tokens': 981, 'ephemeral_1h_input_tokens': 0}" output_tokens="492" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_019hzMxNjmmRFx8zdN5wt3jm">
+     1→"""Sync all stack branches with their remote tracking branches."""
+     2→
+     3→import click
+     4→
+     5→from erk.cli.core import discover_repo_context
+     6→from erk.cli.graphite_command import GraphiteCommand
+     7→from erk.core.context import ErkContext
+     8→from erk.core.stack_sync import BranchSyncAction, StackSyncResult, sync_stack
+     9→
+    10→
+    11→@click.command("sync", cls=GraphiteCommand, hidden=True)
+    12→@click.pass_obj
+    13→def sync_stack_cmd(ctx: ErkContext) -&gt; None:
+    14→    """Sync all stack branches with their remote tracking branches.
+    15→
+    16→    Fetches remote state and resolves divergences across the entire Graphite
+    17→    stack. For each non-trunk branch, checks if the remote has new commits
+    18→    and fast-forwards or rebases as needed. After syncing, restacks the
+    19→    entire stack.
+    20→
+    21→    If a rebase has conflicts, aborts the rebase and suggests using
+    22→    'erk pr diverge-fix' for that specific branch.
+    23→    """
+    24→    repo = discover_repo_context(ctx, ctx.cwd)
+    25→
+    26→    click.echo("Fetching remote state...")
+    27→    click.echo("")
+    28→
+    29→    result = sync_stack(ctx, repo_root=repo.root, cwd=ctx.cwd)
+    30→
+
+... [81 lines omitted] ...
+
+    31→    # Handle fatal errors (detached HEAD, not tracked)
+    32→    if not result.branch_results and result.restack_error is not None:
+    33→        click.echo(f"Error: {result.restack_error}", err=True)
+    65→        case BranchSyncAction.ERROR:
+    66→            return click.style(f"error: {detail}", fg="red")
+    75→    elif result.restack_error is not None:
+    76→        click.echo(f"Restacking... {click.style('failed', fg='red')}: {result.restack_error}")
+  </tool_result>
+  <tool_result tool="toolu_01KsWeCAdR5yHyz87XN1c3dd">
+     1→"""Cancel a workflow run command."""
+     2→
+     3→import click
+     4→
+     5→from erk.cli.core import discover_repo_context
+     6→from erk.cli.ensure import Ensure
+     7→from erk.core.context import ErkContext
+     8→from erk_shared.output.output import user_output
+     9→
+    10→
+    11→@click.command("cancel")
+    12→@click.argument("run_id")
+    13→@click.pass_obj
+    14→def cancel_run(ctx: ErkContext, run_id: str) -&gt; None:
+    15→    """Cancel an in-progress or queued workflow run."""
+    16→    Ensure.gh_authenticated(ctx)
+    17→    repo = discover_repo_context(ctx, ctx.cwd)
+    18→
+    19→    ctx.github.cancel_workflow_run(repo.root, run_id)
+    20→    user_output(f"Cancelled workflow run {click.style(run_id, fg='cyan')}")
+    21→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_014jVq8a5e5AbwwjZFS85XxW">
+     1→"""Retry a workflow run command."""
+     2→
+     3→import click
+     4→
+     5→from erk.cli.core import discover_repo_context
+     6→from erk.cli.ensure import Ensure
+     7→from erk.core.context import ErkContext
+     8→from erk_shared.output.output import user_output
+     9→
+    10→
+    11→@click.command("retry")
+    12→@click.argument("run_id")
+    13→@click.option("--failed", is_flag=True, help="Only re-run failed jobs")
+    14→@click.pass_obj
+    15→def retry_run(ctx: ErkContext, run_id: str, failed: bool) -&gt; None:
+    16→    """Retry a completed workflow run."""
+    17→    Ensure.gh_authenticated(ctx)
+    18→    repo = discover_repo_context(ctx, ctx.cwd)
+    19→
+    20→    ctx.github.rerun_workflow_run(repo.root, run_id, failed_only=failed)
+    21→    label = "failed jobs of " if failed else ""
+    22→    user_output(f"Retried {label}workflow run {click.style(run_id, fg='cyan')}")
+    23→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_01Bz8oraf4p24apDSMJMpjdE">
+     1→"""Fetch the activity log from an existing review summary comment.
+     2→
+     3→This exec command finds the PR comment containing the given marker
+     4→and extracts the Activity Log section from it.
+     5→
+     6→Usage:
+     7→    erk exec get-review-activity-log --pr-number 123 \\
+     8→        --marker "&lt;!-- audit-pr-docs --&gt;"
+     9→
+    10→Output:
+    11→    JSON with found status and activity log text
+    12→
+    13→Exit Codes:
+    14→    0: Always (even on error, to support || true pattern)
+    15→
+    16→Examples:
+    17→    $ erk exec get-review-activity-log --pr-number 123 \\
+    18→        --marker "&lt;!-- audit-pr-docs --&gt;"
+    19→    {"success": true, "found": true, "activity_log": "- [2024-01-01] ..."}
+    20→
+    21→    $ erk exec get-review-activity-log --pr-number 123 \\
+    22→        --marker "&lt;!-- no-such-marker --&gt;"
+    23→    {"success": true, "found": false, "activity_log": ""}
+    24→"""
+    25→
+    26→import json
+    27→
+    28→import click
+    29→
+    30→from erk_shared.context.helpers import require_github, require_repo_root
+
+... [56 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01W591Jv6MrgcA6yjcuKzGfx">
+Found 7 files
+packages/erk-shared/src/erk_shared/learn/extraction/session_source.py
+packages/erk-shared/src/erk_shared/gateway/codespace_registry/real.py
+packages/erk-shared/src/erk_shared/agentclick/dataclass_json.py
+packages/erk-shared/src/erk_shared/agentclick/json_command.py
+packages/erk-shared/src/erk_shared/agentclick/json_schema.py
+packages/erk-shared/src/erk_shared/agentclick/machine_command.py
+packages/erk-shared/src/erk_shared/agentclick/machine_schema.py
+  </tool_result>
+  <tool_result tool="toolu_012b19Mi1z2sy71GCg5pNvR4">
+__init__.py
+gateway
+tests
+  </tool_result>
+  <assistant>Let me also check the fakes directory structure more thoroughly and the JSON dataclass module:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="4479" cache_read_input_tokens="62882" cache_creation="{'ephemeral_5m_input_tokens': 4479, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_011zLYzsCKybvBaj3gAKZ4JX">
+    <param name="command">find /home/runner/work/erk/erk/tests/fakes/ -type f -name "*.py" | head -20</param>
+    <param name="description">List fakes directory files</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4479" cache_read_input_tokens="62882" cache_creation="{'ephemeral_5m_input_tokens': 4479, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01CpkxT7f1i9e436NBN97dB2">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/agentclick/dataclass_json.py</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4479" cache_read_input_tokens="62882" cache_creation="{'ephemeral_5m_input_tokens': 4479, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01CpkxT7f1i9e436NBN97dB2">
+     1→"""Generic JSON &lt;-&gt; frozen-dataclass utilities.
+     2→
+     3→No Click dependency. Shared by both @json_command and @machine_command.
+     4→"""
+     5→
+     6→import dataclasses
+     7→import json
+     8→import sys
+     9→import types
+    10→from dataclasses import fields
+    11→from typing import Any, Literal, Union, get_args, get_origin
+    12→
+    13→import click
+    14→
+    15→# --- Constants ---
+    16→
+    17→ERROR_SCHEMA: dict[str, Any] = {
+    18→    "type": "object",
+    19→    "properties": {
+    20→        "success": {"type": "boolean", "const": False},
+    21→        "error_type": {"type": "string"},
+    22→        "message": {"type": "string"},
+    23→    },
+    24→    "required": ["error_type", "message", "success"],
+    25→}
+    26→
+    27→PYTHON_TYPE_MAP: dict[type, str] = {
+    28→    str: "string",
+    29→    int: "integer",
+    30→    float: "number",
+
+... [25 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_011zLYzsCKybvBaj3gAKZ4JX">
+/home/runner/work/erk/erk/tests/fakes/tests/health_check_runner.py
+/home/runner/work/erk/erk/tests/fakes/tests/parallel_task_runner.py
+/home/runner/work/erk/erk/tests/fakes/tests/tui_plan_data_provider.py
+/home/runner/work/erk/erk/tests/fakes/tests/shared_context.py
+/home/runner/work/erk/erk/tests/fakes/tests/__init__.py
+/home/runner/work/erk/erk/tests/fakes/tests/context.py
+/home/runner/work/erk/erk/tests/fakes/tests/script_writer.py
+/home/runner/work/erk/erk/tests/fakes/tests/prompt_executor.py
+/home/runner/work/erk/erk/tests/fakes/gateway/erk_installation.py
+/home/runner/work/erk/erk/tests/fakes/gateway/browser.py
+/home/runner/work/erk/erk/tests/fakes/gateway/gt.py
+/home/runner/work/erk/erk/tests/fakes/gateway/github_issues.py
+/home/runner/work/erk/erk/tests/fakes/gateway/shell.py
+/home/runner/work/erk/erk/tests/fakes/gateway/core.py
+/home/runner/work/erk/erk/tests/fakes/gateway/git_worktree.py
+/home/runner/work/erk/erk/tests/fakes/gateway/branch_manager.py
+/home/runner/work/erk/erk/tests/fakes/gateway/pr_service.py
+/home/runner/work/erk/erk/tests/fakes/gateway/graphite_branch_ops.py
+/home/runner/work/erk/erk/tests/fakes/gateway/github_issues_label_cache.py
+/home/runner/work/erk/erk/tests/fakes/gateway/remote_github.py
+  </tool_result>
+  <assistant>Now I have enough context to create all the new documentation files. Let me create them all in parallel:</assistant>
+  <usage input_tokens="636" cache_creation_input_tokens="986" cache_read_input_tokens="67361" cache_creation="{'ephemeral_5m_input_tokens': 986, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Write" id="toolu_01RHfs4eGZ3SzFVGXDiTz9ty">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/erk/stack-sync.md</param>
+    <param name="content">---
+title: Stack Sync Command
+read_when:
+  - "working with erk stack sync"
+  - "resolving ...[truncated 973 chars]...tack_sync.py`
+- Hidden command (not shown in `erk --help`)
+- Uses `GraphiteCommand` class
+</param>
+  </tool_use>
+  <usage input_tokens="636" cache_creation_input_tokens="986" cache_read_input_tokens="67361" cache_creation="{'ephemeral_5m_input_tokens': 986, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Write" id="toolu_016TWhVgB7KwEDu1eTJfc4d4">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/workflow-run-management.md</param>
+    <param name="content">---
+title: Workflow Run Management Commands
+read_when:
+  - "canceling or retrying workflow...[truncated 848 chars]...rerun_workflow_run`)
+- Both require GitHub CLI authentication (`Ensure.gh_authenticated`)
+</param>
+  </tool_use>
+  <usage input_tokens="636" cache_creation_input_tokens="986" cache_read_input_tokens="67361" cache_creation="{'ephemeral_5m_input_tokens': 986, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Write" id="toolu_01Pb5NuNKqgVZekWU8fYS6tW">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/testing/fakes-directory-structure.md</param>
+    <param name="content">---
+title: Test Fakes Directory Structure
+read_when:
+  - "creating test fakes"
+  - "moving...[truncated 1082 chars]...Remove old fake files from production packages
+5. Verify no production code imports fakes
+</param>
+  </tool_use>
+  <usage input_tokens="636" cache_creation_input_tokens="986" cache_read_input_tokens="67361" cache_creation="{'ephemeral_5m_input_tokens': 986, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+</session>

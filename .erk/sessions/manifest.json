@@ -18,6 +18,23 @@
       "raw_size_kb": 577,
       "xml_size_kb": 127,
       "git_branch": "consolidate-learn-plans-03-10-1056"
+    },
+    {
+      "session_id": "a95199aa-31eb-4ae2-b250-3b7f4631c59a",
+      "stage": "impl",
+      "source": "remote",
+      "uploaded_at": "2026-03-10T15:13:35.312694+00:00",
+      "files": [
+        "impl-a95199aa-31eb-4ae2-b250-3b7f4631c59a-a95199aa-31eb-4ae2-b250-3b7f4631c59a-part1.xml",
+        "impl-a95199aa-31eb-4ae2-b250-3b7f4631c59a-a95199aa-31eb-4ae2-b250-3b7f4631c59a-part2.xml",
+        "impl-a95199aa-31eb-4ae2-b250-3b7f4631c59a-a95199aa-31eb-4ae2-b250-3b7f4631c59a-part3.xml",
+        "impl-a95199aa-31eb-4ae2-b250-3b7f4631c59a-a95199aa-31eb-4ae2-b250-3b7f4631c59a-part4.xml"
+      ],
+      "user_turns": 2,
+      "duration_minutes": 9,
+      "raw_size_kb": 602,
+      "xml_size_kb": 136,
+      "git_branch": "consolidate-learn-plans-03-10-1056"
     }
   ]
 }
