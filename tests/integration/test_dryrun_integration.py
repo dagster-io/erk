@@ -11,21 +11,22 @@ import pytest
 from click.testing import CliRunner
 
 from erk.cli.cli import cli
-from erk.core.context import context_for_test, create_context
+from erk.core.context import create_context
 from erk_shared.context.types import GlobalConfig
 from erk_shared.gateway.git.abc import WorktreeInfo
 from erk_shared.gateway.git.dry_run import DryRunGit
-from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.gateway.github.dry_run import DryRunLocalGitHub
-from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.issues.dry_run import DryRunGitHubIssues
-from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.types import BodyText, GitHubRepoId
 from erk_shared.gateway.graphite.dry_run import DryRunGraphite
-from erk_shared.gateway.graphite.fake import FakeGraphite
-from tests.fakes.shell import FakeShell
+from tests.fakes.gateway.git import FakeGit
+from tests.fakes.gateway.github import FakeLocalGitHub
+from tests.fakes.gateway.github_issues import FakeGitHubIssues
+from tests.fakes.gateway.graphite import FakeGraphite
+from tests.fakes.gateway.shell import FakeShell
 from tests.test_utils.github_helpers import create_test_issue
 from tests.test_utils.paths import sentinel_path
+from tests.test_utils.test_context import context_for_test
 
 
 def init_git_repo(repo_path: Path, default_branch: str = "main") -> None:

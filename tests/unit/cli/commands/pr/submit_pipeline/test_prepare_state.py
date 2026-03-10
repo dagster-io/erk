@@ -8,9 +8,9 @@ from erk.cli.commands.pr.submit_pipeline import (
     SubmitState,
     prepare_state,
 )
-from erk.core.context import context_for_test
-from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.impl_folder import get_impl_dir
+from tests.fakes.gateway.git import FakeGit
+from tests.test_utils.test_context import context_for_test
 
 BRANCH = "test/branch"
 """Test branch name used across tests."""

@@ -6,14 +6,16 @@ ErkContext with appropriate fake implementations.
 """
 
 from erk.core.context import ErkContext
-from erk_shared.core.fakes import FakePlanListService
 from erk_shared.core.plan_list_service import PlanListData
 from erk_shared.gateway.git.dry_run import DryRunGit
-from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeLocalGitHub
-from erk_shared.gateway.github.types import PullRequestInfo, WorkflowRun
+from erk_shared.gateway.github.real import RealLocalGitHub
+from erk_shared.gateway.github.types import PullRequestInfo, RepoInfo, WorkflowRun
+from erk_shared.gateway.time.abc import Time
 from erk_shared.plan_store.types import Plan
-from tests.fakes.shell import FakeShell
+from tests.fakes.gateway.core import FakePlanListService
+from tests.fakes.gateway.git import FakeGit
+from tests.fakes.gateway.github import FakeLocalGitHub
+from tests.fakes.gateway.shell import FakeShell
 from tests.test_utils.env_helpers import ErkInMemEnv, ErkIsolatedFsEnv
 
 
@@ -144,4 +146,30 @@ def build_fake_plan_list_service(
             workflow_runs=workflow_runs or {},
             warnings=warnings,
         )
+    )
+
+
+def real_github_for_test(
+    *,
+    time: Time | None = None,
+    repo_info: RepoInfo | None = None,
+) -> RealLocalGitHub:
+    """Create RealLocalGitHub with test defaults.
+
+    Replacement for the removed RealLocalGitHub.for_test() classmethod.
+
+    Args:
+        time: Time implementation (defaults to FakeTime)
+        repo_info: Repository info (defaults to None)
+
+    Returns:
+        RealLocalGitHub configured with FakeGitHubIssues
+    """
+    from tests.fakes.gateway.github_issues import FakeGitHubIssues
+    from tests.fakes.gateway.time import FakeTime
+
+    return RealLocalGitHub(
+        time=time if time is not None else FakeTime(),
+        repo_info=repo_info,
+        issues=FakeGitHubIssues(),
     )

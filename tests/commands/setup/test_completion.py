@@ -10,8 +10,8 @@ see tests/integration/test_completion_e2e.py.
 from click.testing import CliRunner
 
 from erk.cli.commands.completion import completion_bash, completion_fish, completion_zsh
-from tests.fakes.completion import FakeCompletion
-from tests.fakes.context import create_test_context
+from tests.fakes.gateway.completion import FakeCompletion
+from tests.fakes.tests.context import create_test_context
 
 # Unit tests using FakeCompletion
 

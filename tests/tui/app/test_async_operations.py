@@ -8,8 +8,8 @@ from erk.tui.app import ErkDashApp
 from erk.tui.data.types import PlanFilters
 from erk.tui.operations.logic import extract_learn_plan_number
 from erk.tui.operations.types import OperationResult
-from erk_shared.gateway.plan_data_provider.fake import FakePlanDataProvider, make_plan_row
-from erk_shared.gateway.pr_service.fake import FakePrService
+from tests.fakes.gateway.plan_data_provider import FakePlanDataProvider, make_plan_row
+from tests.fakes.gateway.pr_service import FakePrService
 
 
 class _FakePopen:

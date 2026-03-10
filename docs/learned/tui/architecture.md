@@ -66,10 +66,10 @@ src/erk/tui/
 └── jsonl_viewer/       # Separate JSONL viewer app
 ```
 
-The `PlanDataProvider` ABC and its fake live in `erk_shared` (not in `src/erk/tui/`):
+The `PlanDataProvider` ABC and its fake:
 
 - ABC: `packages/erk-shared/src/erk_shared/gateway/plan_data_provider/abc.py`
-- Fake: `packages/erk-shared/src/erk_shared/gateway/plan_data_provider/fake.py`
+- Fake: `tests/fakes/gateway/plan_data_provider.py`
 - Command executor ABC/real: `packages/erk-shared/src/erk_shared/gateway/command_executor/`
 
 ## Data Layer
@@ -125,7 +125,7 @@ Shows plan count, sort mode, last update time with fetch duration, countdown to 
 
 ### Unit Testing TUI Components
 
-Use fake providers instead of mocking. `FakePlanDataProvider` lives in `erk_shared.gateway.plan_data_provider.fake` and accepts keyword-only arguments (`plans`, `clipboard`, `browser`, `repo_root`, `fetch_error`). The `make_plan_row()` helper in the same module creates test `PlanRowData` instances with sensible defaults.
+Use fake providers instead of mocking. `FakePlanDataProvider` lives in `tests.fakes.gateway.plan_data_provider` and accepts keyword-only arguments (`plans`, `clipboard`, `browser`, `repo_root`, `fetch_error`). The `make_plan_row()` helper in the same module creates test `PlanRowData` instances with sensible defaults.
 
 ### Testing Async Operations
 

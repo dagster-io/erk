@@ -10,8 +10,8 @@ from click.testing import CliRunner
 
 from erk.cli.commands.exec.scripts.run_review import run_review
 from erk_shared.context.context import ErkContext
-from erk_shared.core.fakes import FakePromptExecutor
-from erk_shared.gateway.git.fake import FakeGit
+from tests.fakes.gateway.core import FakePromptExecutor
+from tests.fakes.gateway.git import FakeGit
 
 
 def _create_review_file(

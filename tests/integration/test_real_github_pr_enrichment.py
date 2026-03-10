@@ -13,9 +13,9 @@ from typing import Any
 from pytest import MonkeyPatch
 
 from erk_shared.gateway.github.pr_data_parsing import merge_rest_graphql_pr_data
-from erk_shared.gateway.github.real import RealLocalGitHub
 from erk_shared.gateway.github.types import GitHubRepoId, GitHubRepoLocation
 from tests.integration.test_helpers import mock_subprocess_run
+from tests.test_utils.context_builders import real_github_for_test
 
 # ============================================================================
 # _enrich_prs_via_graphql() Tests
@@ -74,7 +74,7 @@ def test_enrich_prs_via_graphql_single_pr(monkeypatch: MonkeyPatch) -> None:
         )
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        ops = RealLocalGitHub.for_test()
+        ops = real_github_for_test()
         result = ops._enrich_prs_via_graphql(location, [42])
 
     assert 42 in result
@@ -101,7 +101,7 @@ def test_enrich_prs_via_graphql_multiple_prs(monkeypatch: MonkeyPatch) -> None:
         )
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        ops = RealLocalGitHub.for_test()
+        ops = real_github_for_test()
         result = ops._enrich_prs_via_graphql(location, [10, 20])
 
     # Single API call for both PRs
@@ -123,7 +123,7 @@ def test_enrich_prs_via_graphql_command_failure_returns_empty(monkeypatch: Monke
         raise RuntimeError("gh command failed")
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        ops = RealLocalGitHub.for_test()
+        ops = real_github_for_test()
         result = ops._enrich_prs_via_graphql(location, [42])
 
     assert result == {}
@@ -143,7 +143,7 @@ def test_enrich_prs_via_graphql_empty_pr_list(monkeypatch: MonkeyPatch) -> None:
         )
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        ops = RealLocalGitHub.for_test()
+        ops = real_github_for_test()
         result = ops._enrich_prs_via_graphql(location, [])
 
     assert result == {}
@@ -165,7 +165,7 @@ def test_enrich_prs_via_graphql_partial_response(monkeypatch: MonkeyPatch) -> No
         )
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        ops = RealLocalGitHub.for_test()
+        ops = real_github_for_test()
         result = ops._enrich_prs_via_graphql(location, [42, 99])
 
     assert 42 in result

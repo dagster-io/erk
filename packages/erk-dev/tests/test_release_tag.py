@@ -3,11 +3,11 @@
 from pathlib import Path
 
 from click.testing import CliRunner
+from tests.fakes.gateway.git import FakeGit
+from tests.fakes.gateway.github import FakeLocalGitHub
 
 from erk_dev.cli import cli
 from erk_dev.context import ErkDevContext
-from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeLocalGitHub
 
 
 class TestReleaseTagCommand:

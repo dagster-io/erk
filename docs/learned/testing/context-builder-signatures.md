@@ -15,9 +15,9 @@ Two separate `context_for_test()` functions exist in the codebase. They have dif
 
 ## erk-shared Implementation
 
-<!-- Source: packages/erk-shared/src/erk_shared/context/testing.py, context_for_test -->
+<!-- Source: tests/fakes/tests/shared_context.py, context_for_test -->
 
-**Location:** `packages/erk-shared/src/erk_shared/context/testing.py`
+**Location:** `tests/fakes/tests/shared_context.py`
 
 **Key parameter:** `github_issues=` (not `issues=`)
 
@@ -25,9 +25,9 @@ Always defaults to PlannedPRBackend. Used for isolated unit tests that only need
 
 ## src/erk Implementation
 
-<!-- Source: src/erk/core/context.py, context_for_test -->
+<!-- Source: tests/test_utils/test_context.py, context_for_test -->
 
-**Location:** `src/erk/core/context.py`
+**Location:** `tests/test_utils/test_context.py`
 
 **Key parameter:** `issues=` (not `github_issues=`)
 
@@ -35,11 +35,11 @@ Has additional parameters for CLI-level dependencies (`console`, `shell`, `time`
 
 ## Decision Tree
 
-| Test Type                             | Use                             | Import From                  |
-| ------------------------------------- | ------------------------------- | ---------------------------- |
-| Isolated unit tests (erk-shared only) | erk-shared `context_for_test()` | `erk_shared.context.testing` |
-| CLI/integration tests                 | src/erk `context_for_test()`    | `erk.core.context`           |
-| Tests needing console, shell, time    | src/erk `context_for_test()`    | `erk.core.context`           |
+| Test Type                             | Use                             | Import From                        |
+| ------------------------------------- | ------------------------------- | ---------------------------------- |
+| Isolated unit tests (erk-shared only) | erk-shared `context_for_test()` | `tests.fakes.tests.shared_context` |
+| CLI/integration tests                 | src/erk `context_for_test()`    | `tests.test_utils.test_context`    |
+| Tests needing console, shell, time    | src/erk `context_for_test()`    | `tests.test_utils.test_context`    |
 
 ## Common Mistake
 

@@ -2,8 +2,8 @@
 
 from pathlib import Path
 
-from erk_shared.gateway.claude_installation.fake import FakeClaudeInstallation
 from erk_shared.plan_store.plan_content import extract_title_from_plan, resolve_plan_content
+from tests.fakes.gateway.claude_installation import FakeClaudeInstallation
 
 # extract_title_from_plan tests
 

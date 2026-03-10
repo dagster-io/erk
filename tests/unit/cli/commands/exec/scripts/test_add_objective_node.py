@@ -7,9 +7,9 @@ from click.testing import CliRunner
 
 from erk.cli.commands.exec.scripts.add_objective_node import add_objective_node
 from erk_shared.context.context import ErkContext
-from erk_shared.gateway.github.fake import FakeLocalGitHub
-from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueComment, IssueInfo
+from tests.fakes.gateway.github import FakeLocalGitHub
+from tests.fakes.gateway.github_issues import FakeGitHubIssues
 
 ROADMAP_BODY = """\
 # Objective: Build Feature X

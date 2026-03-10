@@ -3,8 +3,8 @@
 import json
 from pathlib import Path
 
-from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.sessions.manifest import read_session_manifest
+from tests.fakes.gateway.git import FakeGit
 
 
 def test_returns_none_when_ref_not_found(tmp_path: Path) -> None:

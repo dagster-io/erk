@@ -3,12 +3,12 @@
 from pathlib import Path
 
 from click.testing import CliRunner
+from tests.fakes.gateway.remote_github import FakeRemoteGitHub
+from tests.test_utils.test_context import context_for_test
 
 from erk.cli.cli import cli
 from erk.cli.constants import WORKFLOW_COMMAND_MAP
-from erk.core.context import context_for_test
 from erk_shared.context.types import NoRepoSentinel
-from erk_shared.gateway.remote_github.fake import FakeRemoteGitHub
 from erk_shared.gateway.remote_github.types import RemotePRInfo
 
 

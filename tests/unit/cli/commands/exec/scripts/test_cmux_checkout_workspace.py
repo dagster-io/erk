@@ -6,9 +6,9 @@ from click.testing import CliRunner
 
 from erk.cli.commands.exec.scripts.cmux_checkout_workspace import cmux_open_pr
 from erk_shared.context.context import ErkContext
-from erk_shared.gateway.cmux.fake import FakeCmux
-from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.types import PRDetails
+from tests.fakes.gateway.cmux import FakeCmux
+from tests.fakes.gateway.github import FakeLocalGitHub
 
 
 def _make_pr_details(*, pr_number: int, head_ref_name: str) -> PRDetails:

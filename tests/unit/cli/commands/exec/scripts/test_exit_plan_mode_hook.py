@@ -23,10 +23,10 @@ from erk.cli.commands.exec.scripts.exit_plan_mode_hook import (
     is_terminal_editor,
 )
 from erk_shared.context.context import ErkContext
-from erk_shared.context.testing import context_for_test
-from erk_shared.gateway.branch_manager.fake import FakeBranchManager
-from erk_shared.gateway.claude_installation.fake import FakeClaudeInstallation
-from erk_shared.gateway.git.fake import FakeGit
+from tests.fakes.gateway.branch_manager import FakeBranchManager
+from tests.fakes.gateway.claude_installation import FakeClaudeInstallation
+from tests.fakes.gateway.git import FakeGit
+from tests.fakes.tests.shared_context import context_for_test
 
 # ============================================================================
 # Pure Logic Tests for determine_exit_action() - NO MOCKING REQUIRED

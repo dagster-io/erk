@@ -5,9 +5,9 @@ from click.testing import CliRunner
 from erk.cli.cli import cli
 from erk.cli.config import LoadedConfig
 from erk.core.repo_discovery import RepoContext
-from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.time.fake import DEFAULT_FAKE_TIME
 from erk_shared.naming import WORKTREE_DATE_SUFFIX_FORMAT, default_branch_for_worktree
+from tests.fakes.gateway.git import FakeGit
+from tests.fakes.gateway.time import DEFAULT_FAKE_TIME
 from tests.test_utils.env_helpers import erk_isolated_fs_env
 
 # Deterministic date suffix from FakeTime, used by ctx.time.now() in tests

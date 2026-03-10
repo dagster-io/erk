@@ -1,7 +1,7 @@
 """Tests for PlanRelevanceChecker."""
 
 from erk.core.plan_relevance_checker import PlanRelevanceChecker
-from tests.fakes.prompt_executor import FakePromptExecutor
+from tests.fakes.tests.prompt_executor import FakePromptExecutor
 
 
 def _make_commits() -> list[dict[str, str]]:

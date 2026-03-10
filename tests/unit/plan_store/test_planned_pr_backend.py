@@ -8,10 +8,7 @@ from pathlib import Path
 
 import pytest
 
-from erk_shared.gateway.github.fake import FakeLocalGitHub
-from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.types import PRNotFound
-from erk_shared.gateway.time.fake import FakeTime
 from erk_shared.plan_store.planned_pr import PlannedPRBackend
 from erk_shared.plan_store.planned_pr_lifecycle import (
     DETAILS_OPEN,
@@ -19,6 +16,9 @@ from erk_shared.plan_store.planned_pr_lifecycle import (
     extract_plan_content,
 )
 from erk_shared.plan_store.types import PlanNotFound, PlanQuery, PlanState
+from tests.fakes.gateway.github import FakeLocalGitHub
+from tests.fakes.gateway.github_issues import FakeGitHubIssues
+from tests.fakes.gateway.time import FakeTime
 
 # =============================================================================
 # Provider name

@@ -3,5 +3,4 @@
 Import from submodules:
 - abc: CommandExecutor
 - real: RealCommandExecutor
-- fake: FakeCommandExecutor
 """

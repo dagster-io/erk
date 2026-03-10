@@ -4,7 +4,7 @@ from pathlib import Path
 
 from erk_shared.gateway.github.types import GitHubRepoId, GitHubRepoLocation
 from erk_shared.gateway.github_admin.abc import AuthStatus
-from tests.fakes.github_admin import FakeGitHubAdmin
+from tests.fakes.gateway.github_admin import FakeGitHubAdmin
 
 REPO_ROOT = Path("/test/repo")
 LOCATION = GitHubRepoLocation(root=REPO_ROOT, repo_id=GitHubRepoId("test-owner", "test-repo"))

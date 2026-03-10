@@ -2,14 +2,14 @@
 
 from pathlib import Path
 
-from erk_shared.gateway.git.fake import PushedBranch
-from erk_shared.gateway.git.remote_ops.fake import FakeGitRemoteOps
 from erk_shared.gateway.git.remote_ops.types import (
     PullRebaseError,
     PullRebaseResult,
     PushError,
     PushResult,
 )
+from tests.fakes.gateway.git import PushedBranch
+from tests.fakes.gateway.git_remote_ops import FakeGitRemoteOps
 
 
 class TestPushToRemote:

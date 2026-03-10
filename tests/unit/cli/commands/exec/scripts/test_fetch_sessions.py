@@ -7,7 +7,7 @@ from click.testing import CliRunner
 
 from erk.cli.commands.exec.scripts.fetch_sessions import fetch_sessions
 from erk_shared.context.context import ErkContext
-from erk_shared.gateway.git.fake import FakeGit
+from tests.fakes.gateway.git import FakeGit
 
 
 class TestFetchSessionsBranchNotFound:

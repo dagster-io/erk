@@ -23,10 +23,10 @@ from erk.core.health_checks_dogfooder.legacy_config_locations import (
 )
 from erk.core.worktree_pool import PoolState, SlotAssignment, SlotInfo, save_pool_state
 from erk_shared.context.types import RepoContext
-from erk_shared.gateway.claude_installation.fake import FakeClaudeInstallation
-from erk_shared.gateway.git.fake import FakeGit
-from tests.fakes.context import create_test_context
-from tests.fakes.shell import FakeShell
+from tests.fakes.gateway.claude_installation import FakeClaudeInstallation
+from tests.fakes.gateway.git import FakeGit
+from tests.fakes.gateway.shell import FakeShell
+from tests.fakes.tests.context import create_test_context
 
 
 def test_check_result_dataclass() -> None:

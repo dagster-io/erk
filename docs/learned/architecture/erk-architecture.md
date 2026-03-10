@@ -231,14 +231,14 @@ time = RealTime()
 time.sleep(2.0)  # Actually sleeps for 2 seconds
 ```
 
-<!-- Source: packages/erk-shared/src/erk_shared/gateway/time/fake.py -->
+<!-- Source: tests/fakes/gateway/time.py, FakeTime -->
 
-**Testing (FakeTime)**: See `FakeTime` class in `packages/erk-shared/src/erk_shared/gateway/time/fake.py`
+**Testing (FakeTime)**: See `FakeTime` class in `tests/fakes/gateway/time.py`
 
 Usage example:
 
 ```python
-from erk_shared.gateway.time.fake import FakeTime
+from tests.fakes.gateway.time import FakeTime
 
 fake_time = FakeTime()
 fake_time.sleep(2.0)  # Returns immediately, tracks call
@@ -533,7 +533,7 @@ All gateways live under `packages/erk-shared/src/erk_shared/gateway/`:
 # Import ABC from abc.py, implementations from their respective files
 from erk_shared.gateway.git.abc import Git, WorktreeInfo
 from erk_shared.gateway.git.real import RealGit
-from erk_shared.gateway.git.fake import FakeGit
+from tests.fakes.gateway.git import FakeGit
 from erk_shared.gateway.github.abc import LocalGitHub
 ```
 

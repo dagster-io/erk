@@ -9,8 +9,9 @@ from erk.cli.commands.pr.submit_pipeline import (
     make_initial_state,
     run_submit_pipeline,
 )
-from erk.core.context import ErkContext, context_for_test
-from erk_shared.gateway.git.fake import FakeGit
+from erk.core.context import ErkContext
+from tests.fakes.gateway.git import FakeGit
+from tests.test_utils.test_context import context_for_test
 
 
 def test_stops_at_first_error(tmp_path: Path) -> None:

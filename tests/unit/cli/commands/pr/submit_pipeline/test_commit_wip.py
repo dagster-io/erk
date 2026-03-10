@@ -6,8 +6,8 @@ from erk.cli.commands.pr.submit_pipeline import (
     SubmitState,
     commit_wip,
 )
-from erk.core.context import context_for_test
-from erk_shared.gateway.git.fake import FakeGit
+from tests.fakes.gateway.git import FakeGit
+from tests.test_utils.test_context import context_for_test
 
 
 def _make_state(

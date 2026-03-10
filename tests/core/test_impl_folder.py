@@ -6,7 +6,6 @@ from pathlib import Path
 
 import pytest
 
-from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.metadata.core import (
     find_metadata_block,
@@ -27,6 +26,7 @@ from erk_shared.impl_folder import (
     save_plan_ref,
     validate_plan_linkage,
 )
+from tests.fakes.gateway.github_issues import FakeGitHubIssues
 
 BRANCH = "feature/test-branch"
 """Test branch name used across tests."""

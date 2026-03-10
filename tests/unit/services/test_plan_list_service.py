@@ -10,8 +10,6 @@ from erk.core.services.plan_list_service import (
     PlannedPRPlanListService,
     RealPlanListService,
 )
-from erk_shared.gateway.github.fake import FakeLocalGitHub
-from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.types import (
     GitHubRepoId,
@@ -19,9 +17,11 @@ from erk_shared.gateway.github.types import (
     PullRequestInfo,
     WorkflowRun,
 )
-from erk_shared.gateway.http.fake import FakeHttpClient
-from erk_shared.gateway.time.fake import FakeTime
 from erk_shared.plan_store.types import Plan, PlanState
+from tests.fakes.gateway.github import FakeLocalGitHub
+from tests.fakes.gateway.github_issues import FakeGitHubIssues
+from tests.fakes.gateway.http import FakeHttpClient
+from tests.fakes.gateway.time import FakeTime
 
 TEST_LOCATION = GitHubRepoLocation(root=Path("/test/repo"), repo_id=GitHubRepoId("owner", "repo"))
 

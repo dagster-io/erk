@@ -11,8 +11,8 @@ from erk_shared.gateway.github.metadata.dependency_graph import (
     ObjectiveNode,
 )
 from erk_shared.gateway.github.metadata.roadmap import RoadmapNode, RoadmapPhase
-from erk_shared.gateway.time.fake import DEFAULT_FAKE_TIME
 from erk_shared.plan_store.types import Plan, PlanState
+from tests.fakes.gateway.time import DEFAULT_FAKE_TIME
 
 NOW = DEFAULT_FAKE_TIME
 

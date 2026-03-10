@@ -124,7 +124,7 @@ from erk_shared.gateway.time.real import RealTime
 execute_gh_command_with_retry(cmd, cwd, RealTime())
 
 # Test code
-from erk_shared.gateway.time.fake import FakeTime
+from tests.fakes.gateway.time import FakeTime
 fake_time = FakeTime()
 execute_gh_command_with_retry(cmd, cwd, fake_time)
 assert fake_time.sleep_calls == [0.5, 1.0]  # Verify retry delays

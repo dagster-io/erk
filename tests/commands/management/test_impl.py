@@ -4,13 +4,13 @@ from click.testing import CliRunner
 
 from erk.cli.cli import cli
 from erk.cli.shell_utils import render_cd_script
-from erk.core.context import context_for_test
-from erk_shared.gateway.erk_installation.fake import FakeErkInstallation, GlobalConfig
 from erk_shared.gateway.git.abc import WorktreeInfo
-from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.time.fake import DEFAULT_FAKE_TIME
 from erk_shared.naming import WORKTREE_DATE_SUFFIX_FORMAT
+from tests.fakes.gateway.erk_installation import FakeErkInstallation, GlobalConfig
+from tests.fakes.gateway.git import FakeGit
+from tests.fakes.gateway.time import DEFAULT_FAKE_TIME
 from tests.test_utils.env_helpers import erk_isolated_fs_env
+from tests.test_utils.test_context import context_for_test
 
 # Deterministic date suffix from FakeTime, used by ctx.time.now() in tests
 _FAKE_DATE_SUFFIX = DEFAULT_FAKE_TIME.strftime(WORKTREE_DATE_SUFFIX_FORMAT)

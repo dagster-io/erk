@@ -8,9 +8,9 @@ from erk.cli.commands.exec.scripts.get_issue_timeline_prs import (
     get_issue_timeline_prs,
 )
 from erk_shared.context.context import ErkContext
-from erk_shared.gateway.github.fake import FakeLocalGitHub
-from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import PRReference
+from tests.fakes.gateway.github import FakeLocalGitHub
+from tests.fakes.gateway.github_issues import FakeGitHubIssues
 
 
 def test_get_issue_timeline_prs_returns_empty_list() -> None:

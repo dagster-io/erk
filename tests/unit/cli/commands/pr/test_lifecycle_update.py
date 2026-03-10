@@ -4,8 +4,8 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from erk.cli.commands.pr.shared import maybe_advance_lifecycle_to_impl
-from erk_shared.context.testing import context_for_test
 from erk_shared.plan_store.types import Plan, PlanState
+from tests.fakes.tests.shared_context import context_for_test
 from tests.test_utils.plan_helpers import (
     create_plan_store_with_plans,
     format_plan_header_body_for_test,

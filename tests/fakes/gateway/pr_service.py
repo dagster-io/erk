@@ -3,11 +3,11 @@
 from pathlib import Path
 
 from erk_shared.gateway.browser.abc import BrowserLauncher
-from erk_shared.gateway.browser.fake import FakeBrowserLauncher
 from erk_shared.gateway.clipboard.abc import Clipboard
-from erk_shared.gateway.clipboard.fake import FakeClipboard
 from erk_shared.gateway.github.types import PRCheckRun, PRReviewThread
 from erk_shared.gateway.pr_service.abc import PrService
+from tests.fakes.gateway.browser import FakeBrowserLauncher
+from tests.fakes.gateway.clipboard import FakeClipboard
 
 
 class FakePrService(PrService):

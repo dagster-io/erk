@@ -3,15 +3,15 @@
 from pathlib import Path
 
 from click.testing import CliRunner
+from tests.fakes.gateway.git import FakeGit
+from tests.fakes.gateway.github import FakeLocalGitHub
+from tests.fakes.gateway.remote_github import FakeRemoteGitHub
 from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_isolated_fs_env
 
 from erk.cli.cli import cli
 from erk.cli.constants import WORKFLOW_COMMAND_MAP
-from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
-from erk_shared.gateway.remote_github.fake import FakeRemoteGitHub
 from erk_shared.gateway.remote_github.types import RemotePRInfo
 
 

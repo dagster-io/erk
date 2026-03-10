@@ -5,10 +5,10 @@ from pathlib import Path
 import pytest
 
 from erk.cli.commands.pr.dispatch_helpers import ensure_trunk_synced
-from erk_shared.context.testing import context_for_test
 from erk_shared.context.types import RepoContext
 from erk_shared.gateway.git.abc import WorktreeInfo
-from erk_shared.gateway.git.fake import FakeGit
+from tests.fakes.gateway.git import FakeGit
+from tests.fakes.tests.shared_context import context_for_test
 
 LOCAL_SHA = "aaa1111"
 REMOTE_SHA = "bbb2222"

@@ -2,7 +2,10 @@
 
 from pathlib import Path
 
-from tests.fakes.context import create_test_context
+from tests.fakes.gateway.git import FakeGit
+from tests.fakes.gateway.github import FakeLocalGitHub
+from tests.fakes.gateway.remote_github import FakeRemoteGitHub
+from tests.fakes.tests.context import create_test_context
 
 from erk.core.workflow_smoke_test import (
     SMOKE_TEST_BRANCH_PREFIX,
@@ -14,10 +17,7 @@ from erk.core.workflow_smoke_test import (
 )
 from erk_shared.context.context import ErkContext
 from erk_shared.context.types import NoRepoSentinel
-from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.types import PullRequestInfo, RepoInfo
-from erk_shared.gateway.remote_github.fake import FakeRemoteGitHub
 
 
 class TestRunSmokeTest:

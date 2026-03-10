@@ -7,10 +7,11 @@ from erk.cli.commands.pr.submit_pipeline import (
     SubmitState,
     extract_diff_and_fetch_plan_context,
 )
-from erk.core.context import RepoContext, context_for_test
+from erk.core.context import RepoContext
 from erk.core.plan_context_provider import PlanContext
-from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.gateway.github.types import GitHubRepoId
+from tests.fakes.gateway.git import FakeGit
+from tests.test_utils.test_context import context_for_test
 
 
 def _test_repo(tmp_path: Path) -> RepoContext:

@@ -7,11 +7,7 @@ from pathlib import Path
 from erk.core.context import GlobalConfig
 from erk.core.repo_discovery import RepoContext
 from erk.tui.data.types import FetchTimings
-from erk_shared.gateway.browser.fake import FakeBrowserLauncher
-from erk_shared.gateway.clipboard.fake import FakeClipboard
 from erk_shared.gateway.git.abc import WorktreeInfo
-from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.metadata.core import find_metadata_block
 from erk_shared.gateway.github.types import (
@@ -19,12 +15,16 @@ from erk_shared.gateway.github.types import (
     GitHubRepoLocation,
     PullRequestInfo,
 )
-from erk_shared.gateway.graphite.fake import FakeGraphite
-from erk_shared.gateway.http.fake import FakeHttpClient
 from erk_shared.gateway.plan_data_provider.real import RealPlanDataProvider
 from erk_shared.gateway.pr_service.real import RealPrService
 from erk_shared.plan_store.types import Plan, PlanState
-from tests.fakes.context import create_test_context
+from tests.fakes.gateway.browser import FakeBrowserLauncher
+from tests.fakes.gateway.clipboard import FakeClipboard
+from tests.fakes.gateway.git import FakeGit
+from tests.fakes.gateway.github import FakeLocalGitHub
+from tests.fakes.gateway.graphite import FakeGraphite
+from tests.fakes.gateway.http import FakeHttpClient
+from tests.fakes.tests.context import create_test_context
 from tests.test_utils.plan_helpers import format_plan_header_body_for_test
 
 
@@ -502,7 +502,7 @@ class TestClosePlan:
         )
 
         # Configure fake GitHub to return empty PR linkages
-        from erk_shared.gateway.github.fake import FakeLocalGitHub
+        from tests.fakes.gateway.github import FakeLocalGitHub
 
         github = FakeLocalGitHub(pr_plan_linkages={})
 
@@ -558,8 +558,8 @@ class TestClosePlan:
         )
 
         # Configure fake GitHub to return linked PRs
-        from erk_shared.gateway.github.fake import FakeLocalGitHub
         from erk_shared.gateway.github.types import PullRequestInfo
+        from tests.fakes.gateway.github import FakeLocalGitHub
 
         github = FakeLocalGitHub(
             pr_plan_linkages={

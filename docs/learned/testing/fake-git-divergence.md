@@ -29,7 +29,7 @@ class BranchDivergence(NamedTuple):
 Constructor injection via dict with `(repo_path, branch_name, remote_name)` keys:
 
 ```python
-from erk_shared.gateway.git.fake import FakeGit
+from tests.fakes.gateway.git import FakeGit
 from erk_shared.gateway.git.abc import BranchDivergence
 
 fake_git = FakeGit(
@@ -67,7 +67,7 @@ def test_no_commits_ahead_returns_error(tmp_path: Path) -> None:
             )
         },
     )
-    ctx = context_for_test(git=fake_git, cwd=tmp_path)
+    ctx = minimal_context(git=fake_git, cwd=tmp_path)
     state = _make_state(cwd=tmp_path)
 
     result = _core_submit_flow(ctx, state)

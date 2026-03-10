@@ -4,7 +4,7 @@ from datetime import datetime
 
 from erk.core.plan_duplicate_checker import PlanDuplicateChecker
 from erk_shared.plan_store.types import Plan, PlanState
-from tests.fakes.prompt_executor import FakePromptExecutor
+from tests.fakes.tests.prompt_executor import FakePromptExecutor
 
 
 def _make_plan(

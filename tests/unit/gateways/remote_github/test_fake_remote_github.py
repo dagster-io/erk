@@ -1,7 +1,7 @@
 """Tests for FakeRemoteGitHub gateway."""
 
-from erk_shared.gateway.remote_github.fake import FakeRemoteGitHub
 from erk_shared.gateway.remote_github.types import RemotePRInfo, RemotePRNotFound
+from tests.fakes.gateway.remote_github import FakeRemoteGitHub
 
 
 def test_get_authenticated_user_returns_configured_value() -> None:

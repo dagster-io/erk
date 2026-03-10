@@ -11,8 +11,8 @@ from click.testing import CliRunner
 
 from erk.cli.commands.exec.scripts.resolve_review_threads import resolve_review_threads
 from erk_shared.context.context import ErkContext
-from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeLocalGitHub
+from tests.fakes.gateway.git import FakeGit
+from tests.fakes.gateway.github import FakeLocalGitHub
 
 # ============================================================================
 # Success Cases

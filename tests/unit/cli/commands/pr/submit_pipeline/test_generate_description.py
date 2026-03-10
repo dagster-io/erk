@@ -6,7 +6,7 @@ from erk.cli.commands.pr.submit_pipeline import (
     SubmitState,
     generate_description,
 )
-from erk.core.context import context_for_test
+from tests.test_utils.test_context import context_for_test
 
 
 def _make_state(

@@ -12,9 +12,9 @@ import pytest
 
 from erk.cli.commands.branch.checkout_cmd import _perform_checkout
 from erk_shared.gateway.git.abc import WorktreeInfo
-from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.gateway.graphite.types import BranchMetadata
+from tests.fakes.gateway.git import FakeGit
+from tests.fakes.gateway.graphite import FakeGraphite
 from tests.test_utils.env_helpers import erk_inmem_env
 
 

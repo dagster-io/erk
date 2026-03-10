@@ -4,11 +4,11 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from erk.cli.commands.pr.dispatch_cmd import ERK_PLAN_LABEL
-from erk.core.context import context_for_test
 from erk.core.repo_discovery import RepoContext
 from erk_shared.gateway.github.metadata.core import render_metadata_block
 from erk_shared.gateway.github.metadata.types import MetadataBlock
 from erk_shared.plan_store.types import Plan, PlanState
+from tests.test_utils.test_context import context_for_test
 
 
 def make_plan_body(content: str = "Implementation details...") -> str:
@@ -74,10 +74,10 @@ def setup_submit_context(
         where fake_backing is FakeLocalGitHub.
     """
     from erk_shared.context.types import GlobalConfig
-    from erk_shared.gateway.console.fake import FakeConsole
-    from erk_shared.gateway.git.fake import FakeGit
-    from erk_shared.gateway.github.fake import FakeLocalGitHub
-    from erk_shared.gateway.graphite.fake import FakeGraphite
+    from tests.fakes.gateway.console import FakeConsole
+    from tests.fakes.gateway.git import FakeGit
+    from tests.fakes.gateway.github import FakeLocalGitHub
+    from tests.fakes.gateway.graphite import FakeGraphite
     from tests.test_utils.plan_helpers import create_plan_store_with_plans
 
     repo_root = tmp_path / "repo"

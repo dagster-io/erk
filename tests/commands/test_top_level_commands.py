@@ -6,9 +6,9 @@ from click.testing import CliRunner
 
 from erk.cli.cli import cli
 from erk.cli.commands.pr.list_cmd import dash
-from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.plan_store.types import Plan, PlanState
+from tests.fakes.gateway.github_issues import FakeGitHubIssues
 from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_inmem_env
 from tests.test_utils.plan_helpers import create_plan_store_with_plans
@@ -60,7 +60,7 @@ def test_dash_command_routes_to_interactive_mode() -> None:
     """
     from unittest.mock import patch
 
-    from erk_shared.gateway.github.fake import FakeLocalGitHub
+    from tests.fakes.gateway.github import FakeLocalGitHub
 
     # Arrange
     plan1 = Plan(
@@ -102,7 +102,7 @@ def test_dash_command_passes_filters_to_interactive_mode() -> None:
     """
     from unittest.mock import patch
 
-    from erk_shared.gateway.github.fake import FakeLocalGitHub
+    from tests.fakes.gateway.github import FakeLocalGitHub
 
     # Arrange
     open_plan = Plan(
@@ -140,7 +140,7 @@ def test_dash_command_passes_filters_to_interactive_mode() -> None:
 
 def test_top_level_view_command_works() -> None:
     """Test that 'erk pr view' command works."""
-    from erk_shared.gateway.remote_github.fake import FakeRemoteGitHub
+    from tests.fakes.gateway.remote_github import FakeRemoteGitHub
 
     # Arrange
     issue_info = IssueInfo(

@@ -22,12 +22,12 @@ from click.testing import CliRunner
 from erk.cli.commands.run.list_cmd import list_runs
 from erk.core.context import ErkContext
 from erk_shared.gateway.git.abc import WorktreeInfo
-from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeLocalGitHub
-from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.types import PullRequestInfo, WorkflowRun
-from tests.fakes.context import create_test_context
+from tests.fakes.gateway.git import FakeGit
+from tests.fakes.gateway.github import FakeLocalGitHub
+from tests.fakes.gateway.github_issues import FakeGitHubIssues
+from tests.fakes.tests.context import create_test_context
 
 
 def _make_git(tmp_path: Path) -> FakeGit:

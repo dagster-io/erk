@@ -12,9 +12,9 @@ from erk.cli.commands.wt.list_cmd import (
     _get_sync_status,
 )
 from erk_shared.gateway.git.abc import BranchSyncInfo
-from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.gateway.github.types import PullRequestInfo
-from tests.fakes.context import create_test_context
+from tests.fakes.gateway.git import FakeGit
+from tests.fakes.tests.context import create_test_context
 
 
 def test_get_sync_status_current() -> None:

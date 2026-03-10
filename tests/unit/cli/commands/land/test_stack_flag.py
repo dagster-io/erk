@@ -3,8 +3,8 @@
 from click.testing import CliRunner
 
 from erk.cli.cli import cli
-from erk.core.context import context_for_test
 from tests.test_utils.cli_helpers import assert_cli_error
+from tests.test_utils.test_context import context_for_test
 
 
 def test_land_rejects_stack_with_up_flag() -> None:

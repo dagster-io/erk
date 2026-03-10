@@ -10,8 +10,8 @@ from click.testing import CliRunner
 
 from erk.cli.commands.exec.scripts.impl_verify import impl_verify
 from erk_shared.context.context import ErkContext
-from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.impl_folder import create_impl_folder
+from tests.fakes.gateway.git import FakeGit
 
 BRANCH = "feature/test-branch"
 """Test branch name used across tests."""

@@ -6,12 +6,12 @@ from pathlib import Path
 from click.testing import CliRunner
 
 from erk.cli.cli import cli
-from erk.core.context import context_for_test
 from erk_shared.context.types import RepoContext
-from erk_shared.gateway.console.fake import FakeConsole
 from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.types import GitHubRepoId
-from erk_shared.gateway.remote_github.fake import FakeRemoteGitHub
+from tests.fakes.gateway.console import FakeConsole
+from tests.fakes.gateway.remote_github import FakeRemoteGitHub
+from tests.test_utils.test_context import context_for_test
 
 
 def _create_issue(

@@ -7,15 +7,15 @@ from erk.cli.commands.pr.metadata_helpers import (
     maybe_update_plan_dispatch_metadata,
     write_dispatch_metadata,
 )
-from erk.core.context import context_for_test
 from erk.core.repo_discovery import RepoContext
-from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.metadata.core import find_metadata_block
 from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
-from erk_shared.gateway.time.fake import FakeTime
 from erk_shared.plan_store.planned_pr import PlannedPRBackend
 from tests.commands.dispatch.conftest import create_plan, make_plan_body
+from tests.fakes.gateway.github import FakeLocalGitHub
+from tests.fakes.gateway.time import FakeTime
 from tests.test_utils.plan_helpers import create_plan_store_with_plans
+from tests.test_utils.test_context import context_for_test
 
 
 def _register_branch_alias(fake_github: FakeLocalGitHub, plan_id: str, branch: str) -> None:

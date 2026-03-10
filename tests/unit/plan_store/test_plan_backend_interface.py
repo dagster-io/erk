@@ -8,11 +8,11 @@ from pathlib import Path
 
 import pytest
 
-from erk_shared.gateway.github.fake import FakeLocalGitHub
-from erk_shared.gateway.time.fake import FakeTime
 from erk_shared.plan_store.backend import PlanBackend
 from erk_shared.plan_store.planned_pr import PlannedPRBackend
 from erk_shared.plan_store.types import PlanNotFound, PlanQuery, PlanState
+from tests.fakes.gateway.github import FakeLocalGitHub
+from tests.fakes.gateway.time import FakeTime
 
 # =============================================================================
 # Fixtures

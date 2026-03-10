@@ -7,10 +7,10 @@ from erk.tui.data.provider_abc import PlanDataProvider
 from erk.tui.data.types import FetchTimings, PlanFilters, PlanRowData, RunRowData
 from erk.tui.sorting.types import BranchActivity
 from erk_shared.gateway.browser.abc import BrowserLauncher
-from erk_shared.gateway.browser.fake import FakeBrowserLauncher
 from erk_shared.gateway.clipboard.abc import Clipboard
-from erk_shared.gateway.clipboard.fake import FakeClipboard
 from erk_shared.gateway.github.types import PRCheckRun, PRReviewThread
+from tests.fakes.gateway.browser import FakeBrowserLauncher
+from tests.fakes.gateway.clipboard import FakeClipboard
 
 
 class FakePlanDataProvider(PlanDataProvider):

@@ -1,8 +1,7 @@
 """Unit tests for FakeConsole - Layer 1 (Fake Infrastructure Tests)."""
 
 import pytest
-
-from erk_shared.gateway.console.fake import FakeConsole
+from tests.fakes.gateway.console import FakeConsole
 
 
 class TestFakeConsoleTTYState:

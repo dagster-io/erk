@@ -7,11 +7,11 @@ from click.testing import CliRunner
 
 from erk.cli.commands.doctor import doctor_cmd
 from erk.core.health_checks.models import CheckResult
-from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.gateway.github_admin.abc import AuthStatus
-from tests.fakes.github_admin import FakeGitHubAdmin
-from tests.fakes.health_check_runner import FakeHealthCheckRunner
-from tests.fakes.shell import FakeShell
+from tests.fakes.gateway.git import FakeGit
+from tests.fakes.gateway.github_admin import FakeGitHubAdmin
+from tests.fakes.gateway.shell import FakeShell
+from tests.fakes.tests.health_check_runner import FakeHealthCheckRunner
 from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_isolated_fs_env
 

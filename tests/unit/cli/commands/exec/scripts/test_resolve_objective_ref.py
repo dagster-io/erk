@@ -10,7 +10,7 @@ from erk.cli.commands.exec.scripts.resolve_objective_ref import (
     resolve_objective_ref,
 )
 from erk_shared.context.context import ErkContext
-from erk_shared.gateway.git.fake import FakeGit
+from tests.fakes.gateway.git import FakeGit
 
 # --- Implementation Logic Tests ---
 

@@ -5,8 +5,8 @@ from pathlib import Path
 from click.testing import CliRunner
 
 from erk.cli.cli import cli
-from erk.core.context import context_for_test
 from erk_shared.context.types import GlobalConfig
+from tests.test_utils.test_context import context_for_test
 
 
 def test_help_shows_branch_with_alias() -> None:
