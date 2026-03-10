@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "pr_number": 9178,
+  "sessions": [
+    {
+      "session_id": "",
+      "stage": "impl",
+      "source": "local",
+      "uploaded_at": "2026-03-10T17:44:10.386095+00:00",
+      "files": [
+        "impl--255e7903-c170-40d1-aca9-c4f79a0ef000-part1.xml",
+        "impl--255e7903-c170-40d1-aca9-c4f79a0ef000-part2.xml",
+        "impl--255e7903-c170-40d1-aca9-c4f79a0ef000-part3.xml",
+        "impl--255e7903-c170-40d1-aca9-c4f79a0ef000-part4.xml",
+        "impl--255e7903-c170-40d1-aca9-c4f79a0ef000-part5.xml",
+        "impl--255e7903-c170-40d1-aca9-c4f79a0ef000-part6.xml",
+        "impl--255e7903-c170-40d1-aca9-c4f79a0ef000-part7.xml"
+      ],
+      "user_turns": 3,
+      "duration_minutes": 14,
+      "raw_size_kb": 2877,
+      "xml_size_kb": 244,
+      "git_branch": "plnd/O9109-sweep-land-impl-core-03-10-1728"
+    }
+  ]
+}
