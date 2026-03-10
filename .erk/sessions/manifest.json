@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "pr_number": 9189,
+  "sessions": [
+    {
+      "session_id": "e654aa72-d969-4c76-8667-c29855498d1c",
+      "stage": "impl",
+      "source": "local",
+      "uploaded_at": "2026-03-10T18:25:07.867721+00:00",
+      "files": [
+        "impl-e654aa72-d969-4c76-8667-c29855498d1c-e654aa72-d969-4c76-8667-c29855498d1c-part1.xml",
+        "impl-e654aa72-d969-4c76-8667-c29855498d1c-e654aa72-d969-4c76-8667-c29855498d1c-part2.xml"
+      ],
+      "user_turns": 2,
+      "duration_minutes": 2,
+      "raw_size_kb": 103,
+      "xml_size_kb": 39,
+      "git_branch": "plnd/fix-ci-address-gh-token-03-10-1817"
+    }
+  ]
+}
