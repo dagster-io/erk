@@ -946,9 +946,7 @@ def test_fetch_xmls_returns_empty_when_no_branch(tmp_path: Path) -> None:
     """Returns empty dict and None manifest when planned-pr-context branch does not exist."""
     fake_git = FakeGit(trunk_branches={tmp_path: "main"})
 
-    xml_files, manifest = _fetch_xmls_from_context_branch(
-        fake_git, repo_root=tmp_path, pr_id="100"
-    )
+    xml_files, manifest = _fetch_xmls_from_context_branch(fake_git, repo_root=tmp_path, pr_id="100")
 
     assert xml_files == {}
     assert manifest is None
@@ -976,9 +974,7 @@ def test_fetch_xmls_returns_xml_content_from_manifest(tmp_path: Path) -> None:
         },
     )
 
-    xml_files, manifest = _fetch_xmls_from_context_branch(
-        fake_git, repo_root=tmp_path, pr_id="100"
-    )
+    xml_files, manifest = _fetch_xmls_from_context_branch(fake_git, repo_root=tmp_path, pr_id="100")
 
     assert len(xml_files) == 1
     path = ".erk/impl-context/sessions/impl-aaaa1111.xml"
@@ -995,9 +991,7 @@ def test_fetch_xmls_returns_empty_when_manifest_missing(tmp_path: Path) -> None:
         remote_branches={tmp_path: ["origin/planned-pr-context/100"]},
     )
 
-    xml_files, manifest = _fetch_xmls_from_context_branch(
-        fake_git, repo_root=tmp_path, pr_id="100"
-    )
+    xml_files, manifest = _fetch_xmls_from_context_branch(fake_git, repo_root=tmp_path, pr_id="100")
 
     assert xml_files == {}
     assert manifest is None
@@ -1033,9 +1027,7 @@ def test_fetch_xmls_handles_multiple_sessions(tmp_path: Path) -> None:
         },
     )
 
-    xml_files, manifest = _fetch_xmls_from_context_branch(
-        fake_git, repo_root=tmp_path, pr_id="200"
-    )
+    xml_files, manifest = _fetch_xmls_from_context_branch(fake_git, repo_root=tmp_path, pr_id="200")
 
     assert len(xml_files) == 3
     assert ".erk/impl-context/sessions/impl-aaaa1111.xml" in xml_files

@@ -175,9 +175,7 @@ def _collect_session_material(
     Returns (all_session_ids, xml_files) or None if no material found.
     """
     # Primary path: fetch from planned-pr-context branch
-    xml_files, manifest = _fetch_xmls_from_context_branch(
-        ctx.git, repo_root=repo_root, pr_id=pr_id
-    )
+    xml_files, manifest = _fetch_xmls_from_context_branch(ctx.git, repo_root=repo_root, pr_id=pr_id)
 
     if xml_files:
         if manifest is not None:

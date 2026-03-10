@@ -100,6 +100,4 @@ def maybe_update_plan_dispatch_metadata(
             "last_dispatched_at": ctx.time.now().isoformat(),
         },
     )
-    user_output(
-        click.style("\u2713", fg="green") + f" Updated dispatch metadata on plan #{pr_id}"
-    )
+    user_output(click.style("\u2713", fg="green") + f" Updated dispatch metadata on plan #{pr_id}")
