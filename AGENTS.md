@@ -45,6 +45,7 @@ Before editing files, load relevant category tripwires.
 
 - **Python code** → `dignified-python` skill (LBYL, modern types, ABC interfaces)
 - **Test code** → `fake-driven-testing` skill (5-layer architecture, test placement)
+- **TUI code** → `erk-tui` skill (architecture, commands, data layer, Textual quirks)
 - **Dev tools** → Use `devrun` agent (NOT direct Bash for pytest/ty/ruff/prettier/make/gt)
 
 ## Core Architecture
@@ -167,15 +168,14 @@ Before launching Plan or Explore agents, search for relevant documentation:
 
 This grep step is mandatory for ALL coding tasks. It costs milliseconds and prevents re-learning lessons already documented.
 
-| Topic Area                   | Check First                                  |
-| ---------------------------- | -------------------------------------------- |
-| Session logs, ~/.claude/     | `docs/learned/sessions/`                     |
-| CLI commands, Click          | `docs/learned/cli/`                          |
-| Testing patterns             | `docs/learned/testing/`                      |
-| Hooks                        | `docs/learned/hooks/`                        |
-| Planning, .erk/impl-context/ | `docs/learned/planning/`                     |
-| Architecture patterns        | `docs/learned/architecture/`                 |
-| TUI, Textual                 | `docs/learned/tui/`, `docs/learned/textual/` |
+| Topic Area                   | Check First                  |
+| ---------------------------- | ---------------------------- |
+| Session logs, ~/.claude/     | `docs/learned/sessions/`     |
+| CLI commands, Click          | `docs/learned/cli/`          |
+| Testing patterns             | `docs/learned/testing/`      |
+| Hooks                        | `docs/learned/hooks/`        |
+| Planning, .erk/impl-context/ | `docs/learned/planning/`     |
+| Architecture patterns        | `docs/learned/architecture/` |
 
 **Anti-pattern:** Skipping the grep because the task "seems simple"
 **Anti-pattern:** Going straight to source files without checking docs/learned/
