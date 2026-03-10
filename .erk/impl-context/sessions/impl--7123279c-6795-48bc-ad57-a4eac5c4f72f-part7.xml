@@ -1,0 +1,720 @@
+<session>
+  <meta source="agent-a308f43" />
+  <meta branch="plnd/best-of-both-machine-cli-03-10-0835" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <assistant>Perfect! Now I have comprehensive understanding. Let me create a detailed analysis document for the user:
+
+## Comprehensive Analysis: Agentclick Package and JSON Command Refactoring
+
+Based on my thorough exploration of the codebase, I've gathered complete information about the current state of the agentclick package, the three commands that need refactoring, the MCP integration, and the supporting infrastructure. Here's my full analysis:
+
+---
+
+## 1. AGENTCLICK PACKAGE STRUCTURE
+
+### Location
+`packages/erk-shared/src/erk_shared/agentclick/`
+
+### Core Files
+
+#### A. **errors.py** (13 lines)
+```python
+class AgentCliError(click.ClickException):
+    """Exception with error_type for JSON serialization by @json_command."""
+    
+    def __init__(self, message: str, *, error_type: str) -&gt; None:
+        super().__init__(message)
+        self.message = message
+        self.error_type = error_type
+```
+
+**Key Points:**
+- Extends `click.ClickException` 
+- Requires explicit `error_type` parameter
+- Used by `@json_command` for structured error serialization
+- Imported as: `from erk_shared.agentclick.errors import AgentCliError`
+
+#### B. **json_command.py** (258 lines)
+**Core decorator that adds:**
+- `--json` flag: structured JSON output
+- `--schema` flag: JSON Schema document for command
+- `JsonCommandMeta` dataclass: stores decorator configuration
+
+**Three key functions:**
+
+1. **`@json_command` decorator** - Wraps Click commands
+   - Supports bare form: `@json_command`
+   - Supports parametrized form: `@json_command(exclude_json_input=..., output_types=...)`
+   
+   **Parameters:**
+   - `exclude_json_input: frozenset[str]` - params to skip in JSON input
+   - `required_json_input: frozenset[str]` - params that must be present in JSON input
+   - `output_types: tuple[type, ...]` - result types for schema generation
+
+2. **`read_stdin_json()` function** - Reads JSON from stdin when piped
+   - Returns `dict[str, Any] | None`
+   - Raises `json.JSONDecodeError` or `ValueError` if invalid
+   - Returns `None` if stdin is TTY or empty
+
+3. **`emit_json(data)` &amp; `emit_json_result(result)` functions** - Output JSON
+   - `emit_json()`: Takes dict, adds `success: True`, pretty-prints with `indent=2`
+   - `emit_json_result()`: Calls `result.to_json_dict()` OR falls back to `dataclasses.asdict()`
+
+**Error Handling Logic:**
+- Catches `click.ClickException` with `error_type` attribute
+- Serializes as: `{"success": false, "error_type": "...", "message": "..."}`
+- Validation errors use `error_type: "invalid_json_input"`
+- `SystemExit` passes through unchanged
+- Non-Click exceptions pass through unchanged
+
+#### C. **json_schema.py** (256 lines)
+**Generates JSON Schema for commands**
+
+Key functions:
+- `click_param_to_json_schema(param)` - Convert Click param to JSON Schema
+- `command_input_schema(cmd)` - Input schema from Click params
+- `output_type_schema(output_types)` - Output schema from result types
+- `dataclass_to_json_schema(cls)` - Auto-generate schema from dataclass
+- `build_schema_document(cmd)` - Complete schema with input/output/error
+
+**Click Type Mapping:**
+```
+IntParamType → "integer"
+FloatParamType → "number"
+BoolParamType → "boolean"
+click.Path → "string" (format: "path")
+click.Choice → "string" (enum: choices)
+Everything else → "string"
+```
+
+**Output Schema Protocol:**
+1. If type has `json_schema()` classmethod → use it
+2. Else if plain dataclass → auto-generate from fields
+3. Else → raise `TypeError`
+
+**Special Handling:**
+- Internal params filtered: `{json_mode, schema_mode, ctx}`
+- Supports `list[X]` type hints
+- Handles `X | None` (Union types)
+- Includes `success: true` in all output schemas
+
+#### D. **mcp_exposed.py** (66 lines)
+**Decorator for MCP discovery**
+
+```python
+@dataclass(frozen=True)
+class McpMeta:
+    name: str        # MCP tool name
+    description: str # MCP tool description
+```
+
+**Key function:**
+```python
+def mcp_exposed(*, name: str, description: str) -&gt; Callable[[click.Command], click.Command]:
+    """Mark a @json_command for automatic MCP exposure."""
+```
+
+**Discovery:**
+```python
+def discover_mcp_commands(group: click.Command, *, _parent_path: tuple[str, ...]) -&gt; list[tuple[click.Command, McpMeta, tuple[str, ...]]]:
+    """Walk Click tree and return (command, McpMeta, command_path) tuples."""
+```
+
+---
+
+## 2. COMMANDS THAT NEED REFACTORING
+
+### A. **one_shot.py** (233 lines)
+**Full decorator stack (CORRECT ORDER):**
+```python
+@mcp_exposed(name="one_shot", description="...")
+@json_command(
+    exclude_json_input=frozenset({"file_path"}),
+    required_json_input=frozenset({"prompt"}),
+    output_types=(OneShotDispatchResult, OneShotDryRunResult),
+)
+@click.command("one-shot")
+@click.argument("prompt", required=False, default=None)
+@click.option(...) # file_path, model, dry_run, plan_only, slug, ref, ref_current, repo
+@click.pass_obj
+def one_shot(ctx: ErkContext, *, json_mode: bool, ...) -&gt; OneShotDispatchResult | OneShotDryRunResult:
+```
+
+**Result Types:**
+- **`OneShotDispatchResult`** (frozen dataclass):
+  - Fields: `pr_number: int, run_id: str, branch_name: str, pr_url: str, run_url: str`
+  - Has `to_json_dict()` method
+  - Has `json_schema()` classmethod returning complete schema
+  - `to_json_dict()` returns `{"dry_run": False, ...all fields}`
+
+- **`OneShotDryRunResult`** (frozen dataclass):
+  - Fields: `branch_name, prompt, target, pr_title, base_branch, submitted_by, model, workflow`
+  - Has `to_json_dict()` method  
+  - Has `json_schema()` classmethod returning complete schema
+  - `to_json_dict()` returns `{"dry_run": True, ...all fields}`
+
+**Important Notes:**
+- `exclude_json_input=frozenset({"file_path"})` - file path cannot be passed via JSON (security)
+- `required_json_input=frozenset({"prompt"})` - prompt required in JSON input
+- Command returns `OneShotDispatchResult | OneShotDryRunResult` (union type)
+- Function has `json_mode: bool` parameter that controls behavior
+
+### B. **pr/list_cmd.py** (569 lines)
+**Full decorator stack (CORRECT ORDER):**
+```python
+@mcp_exposed(
+    name="pr_list",
+    description="List erk plans with status, labels, and metadata..."
+)
+@json_command(exclude_json_input=frozenset({"repo_id"}), output_types=(PrListResult,))
+@click.command("list")
+@pr_filter_options  # Adds: label, state, run_state, stage, limit, all_users, sort
+@resolved_repo_option  # Adds: repo_id (GitHubRepoId type)
+@click.pass_obj
+def pr_list(
+    ctx: ErkContext,
+    *,
+    label: tuple[str, ...],
+    state: str | None,
+    run_state: str | None,
+    stage: str | None,
+    limit: int | None,
+    all_users: bool,
+    sort: str,
+    repo_id: GitHubRepoId,
+    json_mode: bool,
+) -&gt; PrListResult | None:
+```
+
+**Result Type:**
+- **`PrListResult`** (frozen dataclass, lines 43-51):
+  ```python
+  @dataclass(frozen=True)
+  class PrListResult:
+      plans: list[dict[str, Any]]
+      count: int
+      
+      def to_json_dict(self) -&gt; dict[str, Any]:
+          return {"plans": self.plans, "count": self.count}
+  ```
+  - Simple structure: list of plan dicts + count
+  - No `json_schema()` method → relies on auto-generation from dataclass
+  - JSON output includes `success: true` (added by `emit_json()`)
+
+**Important Notes:**
+- `exclude_json_input=frozenset({"repo_id"})` - repo_id resolved from git context, not user input
+- `output_types=(PrListResult,)` - single type (not union)
+- Command returns `PrListResult | None`:
+  - Returns `PrListResult` in JSON mode
+  - Returns `None` in human mode (prints table to stderr)
+- Has `dash()` subcommand (TUI mode) - NOT decorated with `@json_command`
+
+### C. **pr/view_cmd.py** (452 lines)
+**Full decorator stack (CORRECT ORDER):**
+```python
+@mcp_exposed(
+    name="pr_view",
+    description="View a specific plan's metadata, header info, and body content..."
+)
+@json_command(exclude_json_input=frozenset({"repo_id"}), output_types=(PrViewResult,))
+@click.command("view")
+@click.argument("identifier", type=str, required=False, default=None)
+@click.option("--full", "-f", is_flag=True, help="Show full plan body")
+@resolved_repo_option  # Adds: repo_id (GitHubRepoId type)
+@click.pass_obj
+def pr_view(
+    ctx: ErkContext,
+    identifier: str | None,
+    *,
+    full: bool,
+    repo_id: GitHubRepoId,
+    json_mode: bool,
+) -&gt; PrViewResult | None:
+```
+
+**Result Type:**
+- **`PrViewResult`** (frozen dataclass, lines 49-83):
+  ```python
+  @dataclass(frozen=True)
+  class PrViewResult:
+      plan_id: str
+      title: str
+      state: str
+      url: str | None
+      labels: list[str]
+      assignees: list[str]
+      created_at: str
+      updated_at: str
+      objective_id: int | None
+      branch: str | None
+      header_fields: dict[str, object]
+      body: str | None
+      
+      def to_json_dict(self) -&gt; dict[str, Any]:
+          # Custom serialization: handles datetime, conditionally includes body
+  ```
+  - Uses `_serialize_header_fields()` helper to convert datetime → ISO string
+  - Conditionally includes `body` field (only if not None)
+  - No `json_schema()` method → relies on auto-generation
+
+**Important Notes:**
+- `exclude_json_input=frozenset({"repo_id"})` - same pattern as pr_list
+- `output_types=(PrViewResult,)` - single type
+- Returns `PrViewResult | None`:
+  - Returns `PrViewResult` in JSON mode
+  - Returns `None` in human mode (displays formatted output to user)
+- Complex `to_json_dict()`: demonstrates conditional field inclusion
+
+---
+
+## 3. MCP INTEGRATION
+
+### Location
+`packages/erk-mcp/src/erk_mcp/server.py` (103 lines)
+
+### Architecture
+**Two wrappers for subprocess execution:**
+
+1. **`_run_erk(args: list[str])`** (lines 21-32)
+   - Runs `erk &lt;args&gt;` without `--json`
+   - Raises `RuntimeError` on non-zero exit
+   - Used by hand-written tools (not auto-discovered)
+   - **Return:** `subprocess.CompletedProcess[str]`
+
+2. **`_run_erk_json(command_path: tuple[str, ...], params: dict[str, Any])`** (lines 35-49)
+   - Runs `erk &lt;command_path&gt; --json` with params piped as JSON stdin
+   - **Does NOT raise on non-zero exit** - `--json` guarantees structured error output
+   - Used by auto-discovered tools
+   - **Return:** `result.stdout` (raw JSON string)
+
+### Tool Registration
+
+**`JsonCommandTool` class** (lines 52-69):
+```python
+class JsonCommandTool(Tool):
+    cli_command_path: tuple[str, ...]
+    
+    async def run(self, arguments: dict[str, Any]) -&gt; ToolResult:
+        # Filter out None values
+        params: dict[str, Any] = {}
+        for k, v in arguments.items():
+            if v is not None:
+                params[k] = v
+        # Run with --json
+        result = await to_thread.run_sync(lambda: _run_erk_json(path, params))
+        return self.convert_result(result)
+```
+
+**Key behavior:**
+- Filters `None` values before piping (handles optional params)
+- Keeps `False` boolean values (important distinction!)
+- Command path is tuple: `("pr", "list")` → `erk pr list --json`
+
+### Tool Discovery
+
+**`_build_json_command_tools()` function** (lines 72-87):
+1. Walks Click tree via `discover_mcp_commands(cli, _parent_path=())`
+2. For each `@mcp_exposed` command:
+   - Gets `JsonCommandMeta` for input schema via `command_input_schema(cmd)`
+   - Creates `JsonCommandTool` with:
+     - `name`: from `McpMeta.name`
+     - `cli_command_path`: command path tuple
+     - `description`: from `McpMeta.description`
+     - `parameters`: input schema
+
+**`create_mcp()` function** (lines 90-98):
+- Creates `FastMCP` server instance
+- Registers all discovered tools
+- Returns server ready for `mcp.run()`
+
+### Current MCP Tools
+From test assertions (test_server.py, line 281):
+```python
+assert tool_names == {"pr_list", "pr_view", "one_shot"}
+```
+
+**Tool Details:**
+| Tool | Command Path | Click Params | Source |
+|------|-------------|-------------|--------|
+| `pr_list` | `("pr", "list")` | label, state, run_state, stage, limit, all_users, sort, repo_id | pr/list_cmd.py |
+| `pr_view` | `("pr", "view")` | identifier, full, repo_id | pr/view_cmd.py |
+| `one_shot` | `("one-shot",)` | prompt, file_path, model, dry_run, plan_only, slug, dispatch_ref, ref_current, target_repo | one_shot.py |
+
+---
+
+## 4. CLI REGISTRATION
+
+### File
+`src/erk/cli/cli.py` (233 lines)
+
+**Current Registration (lines 201-205):**
+```python
+cli.add_command(dash)           # Line 201 - from pr/list_cmd.py (TUI)
+cli.add_command(pr_group)       # Line 202 - pr subgroup (contains list_cmd, view_cmd)
+cli.add_command(one_shot)       # Line 205 - one_shot command
+```
+
+**Hierarchy:**
+```
+erk/                    # Root group
+├── dash                # Interactive TUI (from pr/list_cmd.py)
+├── pr/                 # PR subgroup
+│   ├── list            # List plans (from pr/list_cmd.py)
+│   └── view            # View plan (from pr/view_cmd.py)
+└── one-shot            # One-shot dispatch command
+```
+
+**pr_group definition** (need to find in pr/__init__.py or similar):
+- Contains `list_cmd.py` and `view_cmd.py` subcommands
+
+---
+
+## 5. TESTING INFRASTRUCTURE
+
+### Comprehensive Test Coverage
+
+#### A. **Unit Tests: json_command**
+**File:** `tests/unit/cli/test_json_command.py` (63 lines)
+
+Single critical test:
+```python
+def test_output_types_matches_return_annotation() -&gt; None:
+    """Every @json_command's output_types must match its return annotation."""
+    # Walks entire CLI tree
+    # Collects all commands with _json_command_meta
+    # Verifies declared output_types matches return type annotation
+    # Allows type(None) in unions (means "emitted inline")
+```
+
+**This test ensures:**
+- No mismatches between decorator and return annotation
+- CI validation catches inconsistencies early
+
+#### B. **MCP Tests**
+**File:** `packages/erk-mcp/tests/test_server.py` (282 lines)
+
+Three test classes:
+
+1. **`TestRunErk`** - Tests `_run_erk()` wrapper
+   - Success case: returns `CompletedProcess`
+   - Error case: raises `RuntimeError` on non-zero exit
+   - Error message includes all args and stderr
+
+2. **`TestRunErkJson`** - Tests `_run_erk_json()` wrapper
+   - Pipes JSON to stdin with `--json` flag
+   - Returns stdout even on non-zero exit
+   - Handles multi-level command paths
+
+3. **`TestJsonCommandTool`** - Tests MCP tool behavior
+   - Filters `None` values (but keeps `False` booleans)
+   - Discovers tools correctly
+   - Registers all expected tools: `one_shot`, `pr_list`, `pr_view`
+
+#### C. **MCP Parity Tests**
+**File:** `tests/unit/cli/test_mcp_cli_sync.py` (63 lines)
+
+Four critical tests:
+1. `test_every_mcp_exposed_command_is_registered_as_mcp_tool()` - Completeness
+2. `test_mcp_tool_schema_matches_click_derived_schema()` - Schema accuracy
+3. `test_every_mcp_json_command_tool_has_corresponding_mcp_exposed_command()` - No orphans
+4. `test_mcp_exposed_commands_have_json_command_meta()` - Decorator stacking
+
+#### D. **Command JSON Tests**
+**File:** `tests/commands/one_shot/test_one_shot_json.py` (227 lines)
+
+Test cases:
+- `test_json_success()` - Successful dispatch returns all fields
+- `test_json_dry_run()` - Dry-run mode includes preview fields
+- `test_json_error_empty_prompt()` - Validation error with error_type
+- `test_json_error_invalid_repo()` - Invalid repo format error
+- `test_json_no_human_on_stdout()` - Pure JSON output (no human text)
+- `test_json_stdin_input()` - JSON stdin params override CLI args
+
+---
+
+## 6. COMPLETE DECORATOR STACKING PATTERN
+
+### CORRECT ORDER (Top to Bottom = Outer to Inner)
+```python
+@mcp_exposed(name="...", description="...")           # 1. MCP metadata (outermost)
+@json_command(exclude_json_input=..., output_types=...)  # 2. JSON harness
+@click.command("name")                                # 3. Click command definition
+@click.argument(...) or @click.option(...)            # 4. Parameters (can be multiple)
+@click.pass_obj                                       # 5. Context injection (innermost)
+def function_name(ctx: ErkContext, *, json_mode: bool, ...) -&gt; ResultType | None:
+```
+
+### Why This Order Matters
+Decorators are applied **bottom-to-top** in Python:
+1. Click creates `Command` object
+2. `@json_command` wraps the callback and adds flags/options
+3. `@mcp_exposed` attaches metadata to the Command
+4. Click processes command line arguments
+
+### Critical Rules
+- **`@mcp_exposed` MUST be above `@json_command`** (not below!)
+- **`@json_command` MUST be above `@click.command`** (not below!)
+- **All Click parameters MUST come before `@json_command`** (or they won't be in schema)
+- **`@click.pass_obj` is INNERMOST** (always at bottom)
+
+---
+
+## 7. KEY PATTERNS &amp; CONVENTIONS
+
+### JSON Result Classes
+
+**Pattern 1: Simple dataclass (pr_list)**
+```python
+@dataclass(frozen=True)
+class PrListResult:
+    plans: list[dict[str, Any]]
+    count: int
+    
+    def to_json_dict(self) -&gt; dict[str, Any]:
+        return {"plans": self.plans, "count": self.count}
+    
+    # No json_schema() method → auto-generated from dataclass fields
+```
+
+**Pattern 2: Complex with custom serialization (pr_view)**
+```python
+@dataclass(frozen=True)
+class PrViewResult:
+    plan_id: str
+    header_fields: dict[str, object]  # May contain datetime objects
+    body: str | None
+    
+    def to_json_dict(self) -&gt; dict[str, Any]:
+        result = {
+            "plan_id": self.plan_id,
+            "header_fields": _serialize_header_fields(self.header_fields),
+            # ... other fields ...
+        }
+        if self.body is not None:
+            result["body"] = self.body
+        return result
+    
+    # No json_schema() method
+```
+
+**Pattern 3: Complete with json_schema() (one_shot)**
+```python
+@dataclass(frozen=True)
+class OneShotDispatchResult:
+    pr_number: int
+    run_id: str
+    branch_name: str
+    pr_url: str
+    run_url: str
+    
+    def to_json_dict(self) -&gt; dict[str, Any]:
+        return {
+            "dry_run": False,  # Explicit marker
+            "pr_number": self.pr_number,
+            "run_id": self.run_id,
+            "branch_name": self.branch_name,
+            "pr_url": self.pr_url,
+            "run_url": self.run_url,
+        }
+    
+    @classmethod
+    def json_schema(cls) -&gt; dict[str, Any]:
+        return {
+            "type": "object",
+            "properties": {
+                "success": {"type": "boolean", "const": True},
+                "dry_run": {"type": "boolean", "const": False},
+                "pr_number": {"type": "integer"},
+                # ... other fields ...
+            },
+            "required": ["success", "dry_run", "pr_number", ...],
+        }
+```
+
+### Union Return Types
+
+**Correctly declared:**
+```python
+def one_shot(...) -&gt; OneShotDispatchResult | OneShotDryRunResult:
+    if dry_run:
+        return OneShotDryRunResult(...)
+    else:
+        return OneShotDispatchResult(...)
+
+# Decorator must list BOTH:
+@json_command(output_types=(OneShotDispatchResult, OneShotDryRunResult))
+```
+
+**Test validates this** via `test_output_types_matches_return_annotation()`:
+- Extracts return annotation: `OneShotDispatchResult | OneShotDryRunResult`
+- Compares against `output_types=(OneShotDispatchResult, OneShotDryRunResult)`
+- Strips `type(None)` from unions (allowed for inline emission)
+
+### JSON Input Validation
+
+**Exclude parameters that shouldn't come from JSON:**
+```python
+@json_command(
+    exclude_json_input=frozenset({"file_path", "repo_id"}),
+    required_json_input=frozenset({"prompt"}),
+)
+```
+
+**Rules:**
+- `exclude_json_input`: Parameters resolved from context (git, config), not user input
+- `required_json_input`: Parameters that must be present in JSON stdin
+- Missing required fields → `{"success": false, "error_type": "invalid_json_input", "message": "..."}`
+- Unknown keys in JSON → same error
+
+### Error Handling
+
+**Correct pattern:**
+```python
+from erk.cli.ensure import UserFacingCliError  # Extends AgentCliError
+
+def command(...) -&gt; Result:
+    if error_condition:
+        raise UserFacingCliError(
+            "User-friendly message",
+            error_type="domain_specific_error"
+        )
+    return result
+```
+
+**JSON output on error:**
+```json
+{
+  "success": false,
+  "error_type": "domain_specific_error",
+  "message": "User-friendly message"
+}
+```
+
+---
+
+## 8. IMPORTANT IMPLEMENTATION DETAILS
+
+### Context Object Injection
+All commands receive `ctx: ErkContext` via `@click.pass_obj`:
+```python
+def command(ctx: ErkContext, *, json_mode: bool, ...) -&gt; Result | None:
+    # ctx provides access to:
+    # - ctx.http_client: HTTP client for GitHub API
+    # - ctx.git: Git operations
+    # - ctx.github: Local GitHub auth status
+    # - ctx.repo: Repository context (or NoRepoSentinel)
+    # - ctx.remote_github: RemoteGitHub gateway (for tests: injected FakeRemoteGitHub)
+```
+
+### json_mode Parameter
+**Every `@json_command` command must have `json_mode: bool` parameter:**
+```python
+def command(..., json_mode: bool, ...) -&gt; Result | None:
+    if json_mode:
+        # Return structured Result object
+        return PrListResult(plans=[], count=0)
+    else:
+        # Emit human-readable output, return None
+        user_output("Found 0 plans")
+        return None
+```
+
+The decorator:
+1. Adds `--json` flag to Click command
+2. Passes `json_mode=True` when `--json` is provided
+3. Calls `emit_json_result(result)` if result is not None
+4. Handles `--schema` separately
+
+### Nested Commands
+`pr/list_cmd.py` contains TWO commands in same file:
+1. **`pr_list()`** - Decorated with `@json_command` and `@mcp_exposed` (MCP tool)
+2. **`dash()`** - NOT decorated with `@json_command` (TUI mode only)
+
+Both are added to `pr_group` separately.
+
+### Command Path Resolution
+For MCP tools, command path is critical:
+- `one_shot` command → path `("one-shot",)` → CLI: `erk one-shot --json`
+- `pr list` command → path `("pr", "list")` → CLI: `erk pr list --json`
+- `pr view` command → path `("pr", "view")` → CLI: `erk pr view --json`
+
+### Schema Generation Rules
+
+**Input Schema:**
+- Excludes: `json_mode`, `schema_mode`, `ctx`, + items in `exclude_json_input`
+- Includes all Click parameters
+- Maps Click types to JSON Schema types
+- Marks params as required if they have no default
+
+**Output Schema:**
+- If type has `json_schema()` classmethod → use it
+- Else if dataclass → auto-generate from fields
+- Always includes `success: true` field
+- For unions: creates `oneOf` array
+
+**Error Schema:**
+```json
+{
+  "type": "object",
+  "properties": {
+    "success": {"type": "boolean", "const": false},
+    "error_type": {"type": "string"},
+    "message": {"type": "string"}
+  },
+  "required": ["success", "error_type", "message"]
+}
+```
+
+---
+
+## 9. FILE PATHS (ABSOLUTE)
+
+**Agentclick Package:**
+- `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/agentclick/__init__.py`
+- `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/agentclick/errors.py`
+- `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/agentclick/json_command.py`
+- `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/agentclick/json_schema.py`
+- `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/agentclick/mcp_exposed.py`
+
+**Commands:**
+- `/home/runner/work/erk/erk/src/erk/cli/commands/one_shot.py`
+- `/home/runner/work/erk/erk/src/erk/cli/commands/pr/list_cmd.py`
+- `/home/runner/work/erk/erk/src/erk/cli/commands/pr/view_cmd.py`
+- `/home/runner/work/erk/erk/src/erk/cli/commands/one_shot_remote_dispatch.py` (result types)
+
+**MCP Integration:**
+- `/home/runner/work/erk/erk/packages/erk-mcp/src/erk_mcp/server.py`
+- `/home/runner/work/erk/erk/packages/erk-mcp/src/erk_mcp/__main__.py`
+
+**CLI Registration:**
+- `/home/runner/work/erk/erk/src/erk/cli/cli.py`
+
+**Tests:**
+- `/home/runner/work/erk/erk/tests/unit/cli/test_json_command.py`
+- `/home/runner/work/erk/erk/packages/erk-mcp/tests/test_server.py`
+- `/home/runner/work/erk/erk/tests/unit/cli/test_mcp_cli_sync.py`
+- `/home/runner/work/erk/erk/tests/commands/one_shot/test_one_shot_json.py`
+
+**Documentation:**
+- `/home/runner/work/erk/erk/docs/learned/cli/json-command-decorator.md`
+- `/home/runner/work/erk/erk/docs/learned/cli/adding-json-to-commands.md`
+- `/home/runner/work/erk/erk/docs/learned/integrations/mcp-integration.md`
+
+---
+
+## 10. SUMMARY TABLE
+
+| Aspect | Details |
+|--------|---------|
+| **agentclick package** | 5 Python files, 600+ LOC total |
+| **Decorator order** | `@mcp_exposed` → `@json_command` → `@click.command` → params → `@click.pass_obj` |
+| **Error handling** | `AgentCliError(message, error_type="...")` for structured JSON |
+| **Result types** | Frozen dataclasses with optional `to_json_dict()` and `json_schema()` methods |
+| **Commands** | `one_shot`, `pr list`, `pr view` (all decorated, all MCP tools) |
+| **MCP tools** | 3 auto-discovered tools with auto-generated input schemas |
+| **Tests** | Comprehensive: unit tests, MCP tests, parity tests, CLI JSON tests |
+| **Key validation** | `test_output_types_matches_return_annotation()` ensures decorator/return consistency |
+
+This provides a complete, production-ready reference for understanding the current implementation before any refactoring work.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1986" cache_read_input_tokens="70568" cache_creation="{'ephemeral_5m_input_tokens': 1986, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>

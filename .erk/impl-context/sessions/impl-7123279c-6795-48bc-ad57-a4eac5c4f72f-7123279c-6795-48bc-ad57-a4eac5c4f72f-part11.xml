@@ -1,0 +1,309 @@
+<session>
+  <meta source="agent-a94d469" />
+  <meta branch="plnd/best-of-both-machine-cli-03-10-0835" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <assistant>Perfect! Now let me create a comprehensive summary document. Let me compile all the findings:
+
+## COMPREHENSIVE EXPLORATION REPORT: JSON Commands, MCP Integration, and One-Shot Patterns
+
+### DOCUMENTATION STRUCTURE
+
+#### Key Documentation Files Found:
+1. **`docs/learned/cli/json-command-decorator.md`** - Complete reference for `@json_command` decorator
+2. **`docs/learned/cli/adding-json-to-commands.md`** - Step-by-step guide for adding JSON to commands
+3. **`docs/learned/integrations/mcp-integration.md`** - MCP server configuration and tool discovery
+4. **`docs/learned/cli/tripwires.md`** - 224 tripwires covering CLI patterns including JSON commands
+5. **`docs/learned/testing/tripwires.md`** - 148 tripwires for testing patterns
+6. **`docs/learned/planning/one-shot-workflow.md`** - Complete one-shot workflow documentation
+7. **`docs/learned/erk/codespace-machine-types.md`** - Codespace machine configuration documentation
+
+---
+
+### CORE DECORATOR IMPLEMENTATIONS
+
+#### 1. **@json_command Decorator** (`packages/erk-shared/src/erk_shared/agentclick/json_command.py`)
+
+**Purpose**: Adds `--json` and `--schema` flags to Click commands with JSON error serialization, stdin input mapping, and schema generation.
+
+**Key Components**:
+- `JsonCommandMeta` dataclass: stores metadata (exclude_json_input, required_json_input, output_types)
+- `json_command()` function: Two forms - bare (`@json_command`) or parameterized
+- `read_stdin_json()`: Reads JSON from stdin when piped
+- `emit_json()`: Emits JSON success results with `success: True`
+- `emit_json_result()`: Calls `result.to_json_dict()` or falls back to `dataclasses.asdict()`
+
+**Decorator Parameters**:
+```python
+@json_command(
+    exclude_json_input=frozenset({"repo_id"}),      # Params not from JSON stdin
+    required_json_input=frozenset({"prompt"}),      # Required JSON fields
+    output_types=(PrListResult, PrViewResult),      # Result types for schema
+)
+```
+
+**Error Handling**:
+- Catches `click.ClickException` with `error_type` attribute
+- Serializes as: `{"success": false, "error_type": "...", "message": "..."}`
+- Three error categories: validation errors, command errors, passthrough (SystemExit)
+
+#### 2. **@mcp_exposed Decorator** (`packages/erk-shared/src/erk_shared/agentclick/mcp_exposed.py`)
+
+**Purpose**: Marks `@json_command` decorated commands for automatic MCP tool registration.
+
+**Key Components**:
+- `McpMeta` dataclass: stores name and description
+- `mcp_exposed()` decorator: Attaches metadata to Click command
+- `discover_mcp_commands()`: Walks CLI tree to find all `@mcp_exposed` commands
+
+**Usage**:
+```python
+@mcp_exposed(
+    name="one_shot",
+    description="Submit a task for fully autonomous remote execution"
+)
+@json_command(...)
+@click.command("one-shot")
+```
+
+**Decorator Stack Order** (outermost to innermost):
+1. `@mcp_exposed(...)` — MCP exposure
+2. `@json_command(...)` — JSON infrastructure
+3. `@click.command(...)` — Click command
+4. `@click.option(...)` — Options/arguments
+5. `@click.pass_obj` — Context passing
+
+---
+
+### TEST FILES INVENTORY
+
+#### Command Tests (tests/commands/):
+1. **`test_one_shot.py`** - Core one-shot command tests
+2. **`test_one_shot_json.py`** - JSON input/output tests for one-shot
+3. **`test_one_shot_dispatch.py`** - Dispatch behavior tests
+4. **`test_one_shot_remote_dispatch.py`** - Remote dispatch via RemoteGitHub
+5. **`test_plan_one_shot.py`** - Objective plan one-shot tests
+
+#### CLI Unit Tests (tests/unit/cli/):
+1. **`test_json_command.py`** - Meta test validating `output_types` matches return annotations
+2. **`test_pr_json.py`** - JSON serialization tests for PrListResult and PrViewResult
+3. **`test_mcp_cli_sync.py`** - MCP parity tests (discovery, schema validation, no orphans)
+
+#### Core Tests:
+1. **`test_llm_json.py`** - LLM JSON handling tests
+
+---
+
+### WORKING EXAMPLES
+
+#### **One-Shot Command** (`src/erk/cli/commands/one_shot.py`)
+
+Complete working example with both decorators:
+
+```python
+@mcp_exposed(
+    name="one_shot",
+    description="Submit a task for fully autonomous remote execution."
+)
+@json_command(
+    exclude_json_input=frozenset({"file_path"}),
+    required_json_input=frozenset({"prompt"}),
+    output_types=(OneShotDispatchResult, OneShotDryRunResult),
+)
+@click.command("one-shot")
+@click.argument("prompt", required=False, default=None)
+# ... options ...
+@click.pass_obj
+def one_shot(
+    ctx: ErkContext,
+    *,
+    json_mode: bool,
+    prompt: str | None,
+    # ... other params ...
+) -&gt; OneShotDispatchResult | OneShotDryRunResult:
+    """Submit a task for fully autonomous remote execution."""
+    # ... implementation ...
+    return result
+```
+
+#### **Result Classes with JSON Serialization**
+
+`OneShotDispatchResult`:
+```python
+@dataclass(frozen=True)
+class OneShotDispatchResult:
+    pr_number: int
+    run_id: str
+    branch_name: str
+    pr_url: str
+    run_url: str
+
+    def to_json_dict(self) -&gt; dict[str, Any]:
+        return {
+            "dry_run": False,
+            "pr_number": self.pr_number,
+            "run_id": self.run_id,
+            "branch_name": self.branch_name,
+            "pr_url": self.pr_url,
+            "run_url": self.run_url,
+        }
+```
+
+`PrViewResult` with custom serialization:
+```python
+@dataclass(frozen=True)
+class PrViewResult:
+    plan_id: str
+    title: str
+    state: str
+    url: str | None
+    labels: list[str]
+    assignees: list[str]
+    created_at: str
+    updated_at: str
+    objective_id: int | None
+    branch: str | None
+    header_fields: dict[str, object]
+    body: str | None
+
+    def to_json_dict(self) -&gt; dict[str, Any]:
+        result: dict[str, Any] = {
+            "plan_id": self.plan_id,
+            "title": self.title,
+            "state": self.state,
+            "url": self.url,
+            # ... other fields ...
+        }
+        if self.body is not None:
+            result["body"] = self.body  # Conditionally include fields
+        return result
+```
+
+---
+
+### MCP INTEGRATION ARCHITECTURE
+
+**MCP Tools Workflow**:
+
+1. **Tool Registration**: Commands decorated with both `@json_command` and `@mcp_exposed` are auto-discovered
+2. **Schema Generation**: Click parameters automatically converted to JSON Schema
+3. **Tool Execution**: Each tool wraps the command, filters unset parameters, pipes as JSON to CLI
+
+**Three Registered Tools**:
+- `plan_list` - delegates to `erk exec dash-data`
+- `plan_view` - delegates to `erk exec get-plan-info`
+- `one_shot` - delegates to `erk one-shot --json`
+
+**Parity Tests** (tests/unit/cli/test_mcp_cli_sync.py):
+- Every `@mcp_exposed` command is registered as an MCP tool
+- Tool schema matches Click-derived schema
+- No orphaned tools without corresponding `@mcp_exposed` commands
+- Every `@mcp_exposed` command has `@json_command`
+
+---
+
+### KEY PATTERNS AND CONVENTIONS
+
+#### Result Dataclass Rules:
+1. **Always frozen**: `@dataclass(frozen=True)`
+2. **Implement `to_json_dict()`**: For custom serialization
+3. **Conditionally include fields**: Check `if field is not None` before including
+4. **Handle complex types**: Use helper functions like `_serialize_header_fields()` for datetime
+
+#### JSON Input Validation:
+1. Keys must match command parameters
+2. Keys in `exclude_json_input` are rejected from JSON input
+3. Keys in `required_json_input` must be present and non-None
+4. Invalid inputs produce error_type validation errors
+
+#### Error Handling:
+- Use `UserFacingCliError(message, error_type="custom_type")` for expected failures
+- Errors serialize as JSON with success=false when `--json` is active
+- SystemExit and non-Click exceptions pass through unchanged
+
+---
+
+### TESTING PATTERNS
+
+#### JSON Command Tests:
+```python
+# Test JSON output
+result = runner.invoke(cli, ["command", "--json"], obj=ctx)
+data = json.loads(result.output)
+assert data["success"] is True
+
+# Test JSON input from stdin
+result = runner.invoke(cli, ["command", "--json"], 
+                      obj=ctx, 
+                      input='{"prompt": "value"}')
+
+# Test JSON error output
+result = runner.invoke(cli, ["command", "--json"], obj=ctx)
+assert result.exit_code == 1
+data = json.loads(result.output)
+assert data["error_type"] == "validation_error"
+```
+
+#### MCP Parity Tests:
+- Walk CLI tree for `@mcp_exposed` commands
+- Create MCP server and call `list_tools()`
+- Verify command_input_schema matches for each tool
+- Ensure all commands have `_json_command_meta`
+
+---
+
+### NO EXISTING MACHINE_COMMAND OR MACHINE_SCHEMA
+
+**Search Results**: No files matching `machine_command`, `machine_schema`, `MachineCommand`, or `MachineSchema` exist in the codebase. The codespace documentation references "machine types" (hardw are configuration), not a code pattern.
+
+---
+
+### CRITICAL TRIPWIRES (from docs/learned/cli/tripwires.md)
+
+1. **Decorator Stack Order**: `@mcp_exposed` MUST be above `@json_command` (not below)
+2. **output_types Validation**: Test validates output_types against return annotation; mismatches fail CI
+3. **JSON Input Handling**: All keys must match command parameters; reject unknown keys
+4. **Error Types**: Use `AgentCliError(message, error_type=...)` for proper JSON serialization
+5. **Result Serialization**: Call `to_json_dict()` or fallback to `dataclasses.asdict()`
+6. **No Human Output in JSON Mode**: When `--json` is active, stdout is only JSON; user output goes to stderr
+
+---
+
+### CLI TESTING PATTERNS (from tests/commands/AGENTS.md)
+
+- Use `erk_isolated_fs_env(runner)` for filesystem context
+- Use `env.build_context()` helper to construct test context with fakes
+- Never use `monkeypatch` or `@patch` - use gateway fakes instead
+- Use `CliRunner` with dependency injection for all command tests
+- Test both success and error paths
+
+---
+
+### FILE PATHS (Absolute)
+
+**Core Implementation**:
+- `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/agentclick/json_command.py`
+- `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/agentclick/mcp_exposed.py`
+- `/home/runner/work/erk/erk/src/erk/cli/commands/one_shot.py`
+- `/home/runner/work/erk/erk/src/erk/cli/commands/one_shot_remote_dispatch.py`
+- `/home/runner/work/erk/erk/src/erk/cli/commands/pr/list_cmd.py`
+- `/home/runner/work/erk/erk/src/erk/cli/commands/pr/view_cmd.py`
+
+**Test Files**:
+- `/home/runner/work/erk/erk/tests/unit/cli/test_json_command.py`
+- `/home/runner/work/erk/erk/tests/unit/cli/test_pr_json.py`
+- `/home/runner/work/erk/erk/tests/unit/cli/test_mcp_cli_sync.py`
+- `/home/runner/work/erk/erk/tests/commands/one_shot/test_one_shot_json.py`
+
+**Documentation**:
+- `/home/runner/work/erk/erk/docs/learned/cli/json-command-decorator.md`
+- `/home/runner/work/erk/erk/docs/learned/cli/adding-json-to-commands.md`
+- `/home/runner/work/erk/erk/docs/learned/integrations/mcp-integration.md`
+- `/home/runner/work/erk/erk/docs/learned/planning/one-shot-workflow.md`
+- `/home/runner/work/erk/erk/docs/learned/cli/tripwires.md`
+- `/home/runner/work/erk/erk/docs/learned/testing/tripwires.md`
+
+---
+
+This exploration provides a complete picture of the JSON command, MCP, and one-shot command patterns in the erk codebase. All patterns are documented, tested, and follow consistent architectural conventions.</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="7850" cache_read_input_tokens="68392" cache_creation="{'ephemeral_5m_input_tokens': 7850, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>

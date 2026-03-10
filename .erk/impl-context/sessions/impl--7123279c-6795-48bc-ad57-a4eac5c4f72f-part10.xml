@@ -1,0 +1,1040 @@
+<session>
+  <meta source="agent-a94d469" />
+  <meta branch="plnd/best-of-both-machine-cli-03-10-0835" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant docs before exploring raw files. Then explore codebase as necessary.
+
+I need to explore the existing test files and documentation related to the json_command and MCP patterns in this codebase:
+
+1. Find and read all test files related to json commands, MCP, one-shot commands: search in `tests/` for files matching `*json*`, `*mcp*`, `*one_shot*`
+2. Read documentation: `docs/learned/cli/json-command-decorator.md`, `docs/learned/cli/adding-json-to-commands.md`, `docs/learned/integrations/mcp-integration.md`
+3. Read the CLI tripwires: `docs/learned/cli/tripwires.md`
+4. Read the testing tripwires: `docs/learned/testing/tripwires.md`
+5. Look for any existing `machine_command` or `machine_schema` files that might already exist
+
+Provide the FULL contents of each file found.</user>
+  <assistant>I'll systematically explore the codebase to find test files, documentation, and existing patterns related to json commands, MCP, and one-shot commands. Let me start by checking the documentation index and then searching for relevant files.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="15251" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15251, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_016qvwQEyW6mbqdxMWNf4LnS">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/index.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15251" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15251, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01E4pDcfMcX3WpmovvhzmEmn">
+    <param name="pattern">tests/**/*json*</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15251" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15251, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01SbMJWx3LJomAYtBqgWAczY">
+    <param name="pattern">tests/**/*mcp*</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15251" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15251, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_019qmXgtHU5rkErwnDvAPJPB">
+    <param name="pattern">tests/**/*one_shot*</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15251" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15251, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01L6jF4o94wFi9r86x9raBpn">
+    <param name="pattern">docs/learned/cli/*.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15251" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15251, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01PQAypUjwjZrJw1TKptduZF">
+    <param name="pattern">docs/learned/integrations/*.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15251" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15251, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016qvwQEyW6mbqdxMWNf4LnS">
+     1→&lt;!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY --&gt;
+     2→&lt;!-- Edit source frontmatter, then run 'erk docs sync' to regenerate. --&gt;
+     3→
+     4→# Agent Documentation
+     5→
+     6→Before starting work, scan the read-when conditions below.
+     7→If your current task matches, read the linked document **before writing code**.
+     8→
+     9→## Categories
+    10→
+    11→- [architecture/](architecture/) — Explore when working on core patterns (dry-run, gateways, subprocess, shell integration). Add docs here for cross-cutting technical patterns.
+    12→- [capabilities/](capabilities/)
+    13→- [changelog/](changelog/)
+    14→- [checklists/](checklists/)
+    15→- [ci/](ci/)
+    16→- [claude-code/](claude-code/)
+    17→- [cli/](cli/) — Explore when building CLI commands or output formatting. Add docs here for Click patterns and terminal UX.
+    18→- [commands/](commands/) — Explore when creating or optimizing slash commands. Add docs here for command authoring patterns.
+    19→- [config/](config/)
+    20→- [configuration/](configuration/)
+    21→- [documentation/](documentation/) — Explore when structuring or writing documentation. Add docs here for documentation methodology and best practices.
+    22→- [erk/](erk/) — Explore when working with erk-specific workflows (worktrees, PR sync, Graphite). Add docs here for erk user-facing features.
+    23→- [erk-dev/](erk-dev/)
+    24→- [gateway/](gateway/)
+    25→- [hooks/](hooks/) — Explore when creating or debugging hooks. Add docs here for hook development patterns.
+    26→- [integrations/](integrations/)
+    27→- [objectives/](objectives/)
+    28→- [planning/](planning/) — Explore when working with plans, .erk/impl-context/ folders, or agent delegation. Add docs here for planning workflow patterns.
+    29→- [pr-operations/](pr-operations/)
+    30→- [refactoring/](refactoring/)
+
+... [22 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01PQAypUjwjZrJw1TKptduZF">
+/home/runner/work/erk/erk/docs/learned/integrations/bundled-artifacts.md
+/home/runner/work/erk/erk/docs/learned/integrations/codex-integration.md
+/home/runner/work/erk/erk/docs/learned/integrations/cmux-integration.md
+/home/runner/work/erk/erk/docs/learned/integrations/tripwires.md
+/home/runner/work/erk/erk/docs/learned/integrations/multi-agent-portability.md
+/home/runner/work/erk/erk/docs/learned/integrations/index.md
+/home/runner/work/erk/erk/docs/learned/integrations/github-review-decision.md
+/home/runner/work/erk/erk/docs/learned/integrations/linear-erk-mapping.md
+/home/runner/work/erk/erk/docs/learned/integrations/mcp-integration.md
+/home/runner/work/erk/erk/docs/learned/integrations/issue-pr-closing-integration.md
+/home/runner/work/erk/erk/docs/learned/integrations/linear-primitives.md
+  </tool_result>
+  <tool_result tool="toolu_01E4pDcfMcX3WpmovvhzmEmn">
+/home/runner/work/erk/erk/tests/commands/one_shot/test_one_shot_json.py
+/home/runner/work/erk/erk/tests/core/test_llm_json.py
+/home/runner/work/erk/erk/tests/fixtures/github/pr_list_empty.json
+/home/runner/work/erk/erk/tests/fixtures/github/pr_list_with_checks.json
+/home/runner/work/erk/erk/tests/fixtures/github/pr_list_no_checks.json
+/home/runner/work/erk/erk/tests/fixtures/github/pr_status_single.json
+/home/runner/work/erk/erk/tests/fixtures/graphite/graphite_cache_persist.json
+/home/runner/work/erk/erk/tests/fixtures/graphite/graphite_empty.json
+/home/runner/work/erk/erk/tests/fixtures/graphite/graphite_pr_info.json
+/home/runner/work/erk/erk/tests/integration/fixtures/session_logs/project_alpha/session-aaa11111-2222-3333-4444-555555555555.jsonl
+/home/runner/work/erk/erk/tests/integration/fixtures/session_logs/project_beta/session-bbb11111-2222-3333-4444-555555555555.jsonl
+/home/runner/work/erk/erk/tests/integration/fixtures/session_logs/project_delta/session-eee11111-2222-3333-4444-555555555555.jsonl
+/home/runner/work/erk/erk/tests/integration/fixtures/session_logs/project_epsilon/agent-12345678.jsonl
+/home/runner/work/erk/erk/tests/integration/fixtures/session_logs/project_beta/session-ccc11111-2222-3333-4444-555555555555.jsonl
+/home/runner/work/erk/erk/tests/integration/fixtures/session_logs/project_eta/session-eea11111-2222-3333-4444-555555555555.jsonl
+/home/runner/work/erk/erk/tests/integration/fixtures/session_logs/project_zeta/session-zzz11111-2222-3333-4444-555555555555.jsonl
+/home/runner/work/erk/erk/tests/integration/fixtures/session_logs/project_epsilon/session-fff11111-2222-3333-4444-555555555555.jsonl
+/home/runner/work/erk/erk/tests/integration/fixtures/session_logs/project_epsilon/agent-warmup01.jsonl
+/home/runner/work/erk/erk/tests/integration/fixtures/session_logs/project_gamma/session-ddd11111-2222-3333-4444-555555555555.jsonl
+/home/runner/work/erk/erk/tests/unit/cli/test_pr_json.py
+/home/runner/work/erk/erk/tests/unit/cli/test_json_command.py
+  </tool_result>
+  <tool_result tool="toolu_019qmXgtHU5rkErwnDvAPJPB">
+/home/runner/work/erk/erk/tests/commands/objective/test_plan_one_shot.py
+/home/runner/work/erk/erk/tests/commands/one_shot/test_one_shot.py
+/home/runner/work/erk/erk/tests/commands/one_shot/test_one_shot_remote_dispatch.py
+/home/runner/work/erk/erk/tests/commands/one_shot/test_one_shot_json.py
+/home/runner/work/erk/erk/tests/commands/one_shot/test_one_shot_dispatch.py
+/home/runner/work/erk/erk/tests/tui/app/test_one_shot_prompt.py
+/home/runner/work/erk/erk/tests/tui/screens/test_one_shot_prompt_screen.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_register_one_shot_plan.py
+  </tool_result>
+  <tool_result tool="toolu_01SbMJWx3LJomAYtBqgWAczY">
+/home/runner/work/erk/erk/tests/unit/cli/test_mcp_cli_sync.py
+  </tool_result>
+  <tool_result tool="toolu_01L6jF4o94wFi9r86x9raBpn">
+/home/runner/work/erk/erk/docs/learned/cli/activation-scripts.md
+/home/runner/work/erk/erk/docs/learned/cli/code-review-filtering.md
+/home/runner/work/erk/erk/docs/learned/cli/codespace-patterns.md
+/home/runner/work/erk/erk/docs/learned/cli/checkout-helpers.md
+/home/runner/work/erk/erk/docs/learned/cli/batch-exec-commands.md
+/home/runner/work/erk/erk/docs/learned/cli/click-framework-conventions.md
+/home/runner/work/erk/erk/docs/learned/cli/ambiguity-resolution.md
+/home/runner/work/erk/erk/docs/learned/cli/ci-aware-commands.md
+/home/runner/work/erk/erk/docs/learned/cli/checkout-teleport-split.md
+/home/runner/work/erk/erk/docs/learned/cli/click-patterns.md
+/home/runner/work/erk/erk/docs/learned/cli/agent-friendly-cli.md
+/home/runner/work/erk/erk/docs/learned/cli/auto-generated-reference-docs.md
+/home/runner/work/erk/erk/docs/learned/cli/adding-json-to-commands.md
+/home/runner/work/erk/erk/docs/learned/cli/checkout-three-path-logic.md
+/home/runner/work/erk/erk/docs/learned/cli/backend-aware-display.md
+/home/runner/work/erk/erk/docs/learned/cli/cli-options-validation.md
+/home/runner/work/erk/erk/docs/learned/cli/command-deletion-patterns.md
+/home/runner/work/erk/erk/docs/learned/cli/command-promotion.md
+/home/runner/work/erk/erk/docs/learned/cli/command-rename-checklist.md
+/home/runner/work/erk/erk/docs/learned/cli/command-group-structure.md
+/home/runner/work/erk/erk/docs/learned/cli/command-organization.md
+/home/runner/work/erk/erk/docs/learned/cli/exec-script-schema-patterns.md
+/home/runner/work/erk/erk/docs/learned/cli/error-detection-patterns.md
+/home/runner/work/erk/erk/docs/learned/cli/exec-script-discovery.md
+/home/runner/work/erk/erk/docs/learned/cli/exec-script-performance.md
+/home/runner/work/erk/erk/docs/learned/cli/error-handling-antipatterns.md
+/home/runner/work/erk/erk/docs/learned/cli/erk-docs-check.md
+/home/runner/work/erk/erk/docs/learned/cli/implement-command.md
+/home/runner/work/erk/erk/docs/learned/cli/index.md
+/home/runner/work/erk/erk/docs/learned/cli/dependency-injection-patterns.md
+
+... [44 lines omitted] ...
+  </tool_result>
+  <assistant>Great! I found the test files and documentation. Now let me read the key documentation files and test files:</assistant>
+  <usage input_tokens="330" cache_creation_input_tokens="4705" cache_read_input_tokens="15251" cache_creation="{'ephemeral_5m_input_tokens': 4705, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01LYKyP5bPYr2CytxJRYTUYj">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/json-command-decorator.md</param>
+  </tool_use>
+  <usage input_tokens="330" cache_creation_input_tokens="4705" cache_read_input_tokens="15251" cache_creation="{'ephemeral_5m_input_tokens': 4705, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_018KwL2LixAwCMc5QJswgqt7">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/adding-json-to-commands.md</param>
+  </tool_use>
+  <usage input_tokens="330" cache_creation_input_tokens="4705" cache_read_input_tokens="15251" cache_creation="{'ephemeral_5m_input_tokens': 4705, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01ATDutDJa7ycAtTcSMFatNF">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/integrations/mcp-integration.md</param>
+  </tool_use>
+  <usage input_tokens="330" cache_creation_input_tokens="4705" cache_read_input_tokens="15251" cache_creation="{'ephemeral_5m_input_tokens': 4705, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_018PEuHcDB1MKNeQTi2yngum">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/tripwires.md</param>
+  </tool_use>
+  <usage input_tokens="330" cache_creation_input_tokens="4705" cache_read_input_tokens="15251" cache_creation="{'ephemeral_5m_input_tokens': 4705, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_019CxZU3L2ruYR2d27AArQja">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/testing/tripwires.md</param>
+  </tool_use>
+  <usage input_tokens="330" cache_creation_input_tokens="4705" cache_read_input_tokens="15251" cache_creation="{'ephemeral_5m_input_tokens': 4705, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01LYKyP5bPYr2CytxJRYTUYj">
+     1→---
+     2→title: "@json_command Decorator"
+     3→read_when:
+     4→  - "adding @json_command decorator to a CLI command"
+     5→  - "creating structured JSON CLI output"
+     6→  - "understanding emit_json patterns"
+     7→  - "implementing output_types validation"
+     8→  - "working with AgentCliError error handling"
+     9→tripwires:
+    10→  - action: "applying @json_command below @click.command in the decorator stack"
+    11→    warning: "@json_command must be applied ABOVE @click.command. The correct order is @mcp_exposed &gt; @json_command &gt; @click.command."
+    12→  - action: "using json.dumps without indent=2 in a @json_command context"
+    13→    warning: "All json.dumps() calls in @json_command commands use indent=2 for pretty-printing."
+    14→  - action: "raising an exception in a @json_command without using AgentCliError"
+    15→    warning: "Use AgentCliError(message, error_type=...) to ensure errors serialize as JSON when --json is active."
+    16→  - action: "declaring output_types that don't match the return annotation"
+    17→    warning: "test_output_types_matches_return_annotation() validates output_types against return type hints. Mismatches fail CI."
+    18→---
+    19→
+    20→# @json_command Decorator
+    21→
+    22→Universal CLI JSON infrastructure for agent-optimized command output.
+    23→
+    24→**Source**: `packages/erk-shared/src/erk_shared/agentclick/json_command.py`
+    25→
+    26→## Decorator Parameters
+    27→
+    28→```python
+    29→@json_command(
+    30→    exclude_json_input=frozenset({"repo_id"}),
+
+... [94 lines omitted] ...
+
+    67→3. Raises `TypeError` if neither is available
+    69→## Error Handling
+    71→`AgentCliError` extends `click.ClickException` with an `error_type` parameter. See `packages/erk-shared/src/erk_shared/agentclick/errors.py` for the current class definition.
+    73→Import: `from erk_shared.agentclick.errors import AgentCliError`
+    75→When `--json` is active, `AgentCliError` serializes as:
+    78→{ "success": false, "error_type": "invalid_plan", "message": "Plan not found" }
+    81→Three error categories:
+    83→- **Validation errors**: `error_type: "invalid_json_input"` (bad stdin JSON)
+    84→- **Command errors**: Custom `error_type` from `AgentCliError`
+    85→- **Passthrough**: `SystemExit` and non-Click exceptions pass through unchanged
+   102→- Mismatches fail the test with descriptive error messages
+  </tool_result>
+  <tool_result tool="toolu_018KwL2LixAwCMc5QJswgqt7">
+     1→---
+     2→title: "Adding --json to CLI Commands"
+     3→read_when:
+     4→  - "adding --json flag to a CLI command"
+     5→  - "exposing a command via MCP"
+     6→  - "creating result dataclasses for JSON output"
+     7→  - "stacking @mcp_exposed and @json_command decorators"
+     8→tripwires:
+     9→  - action: "placing @mcp_exposed below @json_command in decorator stack"
+    10→    warning: "@mcp_exposed must be ABOVE @json_command. Correct order: @mcp_exposed &gt; @json_command &gt; @click.command."
+    11→  - action: "creating a result dataclass without to_json_dict() method"
+    12→    warning: "Result dataclasses should implement to_json_dict() for custom serialization. Without it, emit_json_result() falls back to dataclasses.asdict() which may not handle complex types correctly."
+    13→---
+    14→
+    15→# Adding --json to CLI Commands
+    16→
+    17→Step-by-step guide to adding structured JSON output to existing Click commands.
+    18→
+    19→## Decorator Stacking Order
+    20→
+    21→The decorators must be stacked in this exact order (outermost to innermost):
+    22→
+    23→1. `@mcp_exposed(...)` — MCP exposure (optional, outermost)
+    24→2. `@json_command(...)` — JSON infrastructure
+    25→3. `@click.command(...)` — Click command
+    26→4. `@click.option(...)` — Options/arguments
+    27→5. `@click.pass_obj` — Context passing (innermost)
+    28→
+    29→See `src/erk/cli/commands/pr/list_cmd.py` for a working example of this stack.
+    30→
+
+... [87 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01ATDutDJa7ycAtTcSMFatNF">
+     1→---
+     2→title: Erk MCP Integration
+     3→read_when:
+     4→  - "adding new MCP tools to erk"
+     5→  - "configuring erk as an MCP server for Claude"
+     6→  - "understanding the erk-mcp package structure"
+     7→  - "debugging MCP tool calls from external clients"
+     8→---
+     9→
+    10→# Erk MCP Integration
+    11→
+    12→Erk exposes its capabilities as an MCP (Model Context Protocol) server via the `erk-mcp` package. This allows external MCP clients (e.g., Claude Desktop, other AI tools) to invoke erk operations.
+    13→
+    14→## Package Structure
+    15→
+    16→&lt;!-- Source: packages/erk-mcp/src/erk_mcp/server.py --&gt;
+    17→
+    18→```
+    19→packages/erk-mcp/
+    20→├── pyproject.toml           # Package definition, depends on fastmcp&gt;=2.0
+    21→└── src/erk_mcp/
+    22→    ├── __init__.py
+    23→    ├── __main__.py          # Entry point: parses --transport/--host/--port, calls create_mcp().run()
+    24→    └── server.py            # Tool definitions and _run_erk() wrapper
+    25→```
+    26→
+    27→The package depends on [FastMCP](https://github.com/jlowin/fastmcp) (`fastmcp&gt;=2.0`) and is a thin wrapper that delegates to the `erk` CLI.
+    28→
+    29→## CLI Wrappers
+    30→
+
+... [110 lines omitted] ...
+
+    35→- **Standard wrapper** — Runs `erk &lt;args&gt;`, raises `RuntimeError` on non-zero exit. Used by hand-written tools (`plan_list`, `plan_view`).
+    36→- **JSON wrapper** — Runs `erk &lt;command&gt; --json`, pipes params as JSON stdin. Does NOT raise on non-zero exit — `--json` guarantees structured error output flows through to the agent. Used by auto-discovered MCP tools.
+    62→Dispatches a task for fully autonomous execution via `erk one-shot --json`. Returns structured JSON indicating success or failure. On success, includes the created PR reference and CI run details. With `dry_run`: preview without executing.
+  </tool_result>
+  <tool_result tool="toolu_019CxZU3L2ruYR2d27AArQja">
+     1→---
+     2→title: Testing Tripwires
+     3→read_when:
+     4→  - "working on testing code"
+     5→---
+     6→
+     7→&lt;!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY --&gt;
+     8→&lt;!-- Edit source frontmatter, then run 'erk docs sync' to regenerate. --&gt;
+     9→&lt;!-- Generated from testing/*.md frontmatter --&gt;
+    10→
+    11→# Testing Tripwires
+    12→
+    13→Rules triggered by matching actions in code.
+    14→
+    15→**Test only success cases for batch commands** → Read [Exec Script Batch Testing](exec-script-batch-testing.md) first. Cover all four categories: success, partial failure, validation errors, and JSON structure. Missing any category leaves a critical gap.
+    16→
+    17→**Use stateful failure injection (\_should_fail_next flags) in fake gateways** → Read [Exec Script Batch Testing](exec-script-batch-testing.md) first. Use set-based constructor injection instead. Stateful flags are order-dependent and brittle. See the set-based pattern below.
+    18→
+    19→**accessing FakeGit properties in tests** → Read [Erk Test Reference](testing.md) first. FakeGit has top-level properties (e.g., `git.staged_files`, `git.deleted_branches`, `git.added_worktrees`). Worktree operations delegate to an internal FakeWorktree sub-gateway.
+    20→
+    21→**adding a force-include entry without registering in codex_portable_skills()** → Read [Artifact Distribution Sync Testing](artifact-distribution-sync.md) first. The skill will be distributed but not recognized by the runtime. Add it to codex_portable_skills() in src/erk/core/capabilities/codex_portable.py.
+    22→
+    23→**adding a skill to codex_portable_skills() without a pyproject.toml force-include entry** → Read [Artifact Distribution Sync Testing](artifact-distribution-sync.md) first. The wheel won't contain the skill. Add a force-include entry in pyproject.toml [tool.hatch.build.targets.wheel.force-include]. test_codex_portable_skills_match_force_include will catch this.
+    24→
+    25→**adding a test for a new pipeline step without creating a dedicated test file** → Read [Submit Pipeline Test Organization](submit-pipeline-tests.md) first. Each pipeline step gets its own test file in tests/unit/cli/commands/pr/submit_pipeline/. Follow the one-file-per-step convention.
+    26→
+    27→**adding a tracking list without documenting the tuple field order** → Read [FakeLocalGitHub Mutation Tracking](fake-github-mutation-tracking.md) first. Every tracking list must have a property docstring specifying the tuple format (e.g., 'Returns list of (pr_number, label) tuples'). Without it, test authors guess field positions wrong.
+    28→
+    29→**adding monkeypatch or @patch to a test** [pattern: `@patch|monkeypatch\.`] → Read [Monkeypatch Elimination Checklist](monkeypatch-elimination-checklist.md) first. Use gateway fakes instead. If no gateway exists for the operation, create one first. See gateway-abc-implementation.md.
+    30→
+
+... [123 lines omitted] ...
+
+    33→**allowing `import X as Y` for internal/project imports because it's convenient** → Read [Import Alias vs Re-Export Detection](alias-verification-pattern.md) first. Erk prohibits gratuitous import aliases for internal/project imports. Exceptions: genuine name collisions and well-known library aliases (pandas as pd, numpy as np, dagster as dg, matplotlib.pyplot as plt).
+    35→**asking devrun agent to fix errors or make tests pass** → Read [Devrun Agent - Read-Only Design](devrun-agent.md) first. Devrun is READ-ONLY. It runs commands and reports results. The parent agent must handle all fixes.
+    59→**creating a fake gateway without constructor-injected error configuration** → Read [Gateway Fake Testing Exemplar](gateway-fake-testing-exemplar.md) first. Fakes must accept error variants at construction time (e.g., push_to_remote_error=PushError(...)) to enable failure injection in tests.
+    67→**creating or modifying a hook** → Read [Hook Testing Patterns](hook-testing.md) first. Hooks fail silently (exit 0, no output) — untested hooks are invisible failures. Read docs/learned/testing/hook-testing.md first.
+    69→**debugging 100+ unexpected test failures with no obvious cause** → Read [Environment Variable Isolation in Tests](environment-variable-isolation.md) first. Check ERK_PLAN_BACKEND first. Although the env var is now obsolete (get_plan_backend() was deleted in PR #7971), legacy code paths in context_for_test() may still read it. Use monkeypatch.delenv('ERK_PLAN_BACKEND', raising=False) or env_overrides={} in fixtures as a defensive measure until full cleanup in objective #7911.
+    77→**implementing interactive prompts with ctx.console.confirm()** → Read [Erk Test Reference](testing.md) first. Ensure FakeConsole in test fixture is configured with `confirm_responses` parameter. Array length must match prompt count exactly — too few causes IndexError, too many indicates a removed prompt. See tests/commands/submit/test_existing_branch_detection.py for examples.
+    95→**renaming a user-facing string in CLI output and updating related test assertions** → Read [CLI Testing Patterns](cli-testing.md) first. Test assertion lag: after renaming display strings (e.g., 'issue' → 'plan'), grep all test files for the old literal before committing. Tests using old string literals against stale snapshots will silently pass — the failure only surfaces in CI on a clean checkout.
+   105→**testing code that reads ERK_PLAN_BACKEND or other environment variables via CliRunner** → Read [CLI Testing Patterns](cli-testing.md) first. CliRunner env var isolation: ambient env vars from the developer shell leak into CliRunner by default and cause intermittent test failures. Use CliRunner(env={'ERK_PLAN_BACKEND': '...'}) to override, or CliRunner(env={}) to isolate completely. Never rely on ambient env being clean. Note: mix_stderr parameter is broken in Click 8.3.1 — do not use it.
+   115→**tracking mutations before checking error configuration in a fake method** → Read [Gateway Fake Testing Exemplar](gateway-fake-testing-exemplar.md) first. Decide deliberately: should this operation track even on failure? push_to_remote skips tracking on error (nothing happened), pull_rebase always tracks (the attempt matters). Match the real operation's semantics.
+   127→**using context_for_test() with wrong parameter name for issues** → Read [context_for_test() Dual Implementations](context-builder-signatures.md) first. erk-shared uses github_issues= parameter, src/erk uses issues= parameter. These are NOT interchangeable — using wrong name causes TypeError.
+   129→**using context_for_test() with wrong parameter name for issues** → Read [Erk Test Reference](testing.md) first. erk-shared uses github_issues= parameter, src/erk uses issues= parameter. These are NOT interchangeable — using wrong name causes TypeError.
+   139→**using monkeypatch.chdir() in exec script tests** [pattern: `monkeypatch\.chdir\(`] → Read [Exec Script Testing Patterns](exec-script-testing.md) first. Use obj=ErkContext.for_test(cwd=tmp_path) instead. monkeypatch.chdir() doesn't inject context, causing 'Context not initialized' errors.
+   141→**using output=, should_fail=, or transient_failures= parameters in FakePromptExecutor** → Read [FakePromptExecutor API Migration - Gateway to Core](fake-api-migration-pattern.md) first. These are the deleted gateway API. Use simulated\_\* parameters (tests/fakes/) or prompt_results/streaming_events (erk_shared/core/fakes.py). See migration table.
+  </tool_result>
+  <tool_result tool="toolu_018PEuHcDB1MKNeQTi2yngum">
+     1→---
+     2→title: Cli Tripwires
+     3→read_when:
+     4→  - "working on cli code"
+     5→---
+     6→
+     7→&lt;!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY --&gt;
+     8→&lt;!-- Edit source frontmatter, then run 'erk docs sync' to regenerate. --&gt;
+     9→&lt;!-- Generated from cli/*.md frontmatter --&gt;
+    10→
+    11→# Cli Tripwires
+    12→
+    13→Rules triggered by matching actions in code.
+    14→
+    15→**Design batch commands that process items despite validation failures** → Read [Batch Exec Commands](batch-exec-commands.md) first. Validate ALL items upfront before processing ANY items. Stop on first validation error.
+    16→
+    17→**Return non-zero exit codes for batch command failures** → Read [Batch Exec Commands](batch-exec-commands.md) first. Always exit 0, encode errors in JSON output with per-item success fields.
+    18→
+    19→**Use OR semantics for batch success (success=true if any item succeeds)** → Read [Batch Exec Commands](batch-exec-commands.md) first. Use AND semantics: top-level success=true only if ALL items succeed.
+    20→
+    21→**Using RuntimeError for expected CLI failures** → Read [CLI Error Handling Anti-Patterns](error-handling-antipatterns.md) first. RuntimeError signals a programmer error (bug in the code), NOT expected user-facing failures. Use UserFacingCliError for expected conditions (missing files, invalid input, precondition violations) that should exit cleanly with an actionable message.
+    22→
+    23→**WORKFLOW_COMMAND_MAP maps command names to .yml filenames** → Read [Workflow Commands](workflow-commands.md) first. command names intentionally diverge from filenames (e.g., pr-rebase → pr-rebase.yml, but plan-implement → plan-implement.yml via DISPATCH_WORKFLOW_NAME constant)
+    24→
+    25→**adding --from-current-branch without handling detached HEAD** → Read [Slot Assign --from-current-branch](slot-assign-from-current-branch.md) first. When the target branch is checked out in another worktree, fall back to detached HEAD checkout. See slot-assign-from-current-branch.md.
+    26→
+    27→**adding --json flag to a command without using @json_output decorator** → Read [Agent-Friendly CLI Design Principles](agent-friendly-cli.md) first. Use the shared @json_output decorator from src/erk/cli/json_output.py. Do not manually implement JSON serialization in individual commands.
+    28→
+    29→**adding --sync to checkout** → Read [Checkout/Teleport Command Split](checkout-teleport-split.md) first. checkout is local-only; use teleport for sync. Checkout preserves local state; teleport force-resets to remote.
+    30→
+
+... [199 lines omitted] ...
+
+    39→**adding a new step to the submit pipeline** → Read [PR Submit Pipeline Architecture](pr-submit-pipeline.md) first. Each step must return SubmitState | SubmitError. Use dataclasses.replace() for state updates. Add the step to \_submit_pipeline() tuple.
+    41→**adding a parameter to erk exec without updating calling command** → Read [Parameter Addition Checklist](parameter-addition-checklist.md) first. 5-step verification required. Parameter additions must thread through skill argument-hint, command invocations, AND exec script. Miss any layer and you get silent failures or discovery problems. See parameter-addition-checklist.md.
+    75→**calling is_learned_docs_available() in CLI code** → Read [erk docs check Command](erk-docs-check.md) first. Function signature requires repo_ops and cwd kwargs: is_learned_docs_available(repo_ops=..., cwd=...). Omitting either kwarg will cause a TypeError.
+    77→**choosing between Ensure and EnsureIdeal** → Read [EnsureIdeal Pattern for Type Narrowing](ensure-ideal-pattern.md) first. Ensure is for invariant checks (preconditions). EnsureIdeal is for type narrowing (handling operations that can return non-ideal states). If the value comes from an operation that returns T | ErrorType, use EnsureIdeal.
+   105→**flagging 5+ parameter violations in code review** → Read [Code Review Filtering](code-review-filtering.md) first. Before flagging, verify NO exception applies (ABC/Protocol/Click)
+   127→**making a separate subprocess call for each item in a batch operation** → Read [Exec Script Performance Patterns](exec-script-performance.md) first. Use batch exec commands pattern (batch-exec-commands.md) to process items in a single invocation with per-item error handling.
+   129→**making session discovery failures block the land command** → Read [Land-Learn Integration](land-learn-integration.md) first. Session discovery uses fire-and-forget error resilience. The entire learn workflow is wrapped in try/except to prevent blocking land. Failures are reported as warnings, never errors.
+   149→**plan-implement exists in WORKFLOW_COMMAND_MAP but erk launch plan-implement always raises UsageError** → Read [Workflow Commands](workflow-commands.md) first. use erk pr submit instead
+   155→**raising an exception in a @json_command without using AgentCliError** → Read [@json_command Decorator](json-command-decorator.md) first. Use AgentCliError(message, error_type=...) to ensure errors serialize as JSON when --json is active.
+   175→**returning non-zero exit code when --json flag is active** → Read [Agent-Friendly CLI Design Principles](agent-friendly-cli.md) first. JSON mode must always exit 0. Errors are communicated via {success: false, error_type, message} in stdout JSON, not via exit codes.
+   185→**testing prompts without matching confirm_responses array length** → Read [Prompt Consolidation Pattern](prompt-consolidation-pattern.md) first. confirm_responses array length must match the number of prompts. Too few causes IndexError; too many indicates a prompt was removed without updating tests.
+   187→**using EnsureIdeal for discriminated union narrowing** → Read [EnsureIdeal Pattern for Type Narrowing](ensure-ideal-pattern.md) first. Only use when the error type implements NonIdealState protocol OR provides a message field. For custom error types without standard fields, add a specific EnsureIdeal method.
+   199→**using ctx.invoke() with kwargs that don't match target function parameter names** → Read [PR Submit Pipeline Architecture](pr-submit-pipeline.md) first. Click ctx.invoke() forwards kwargs directly — any name mismatch causes runtime TypeError. Verify all parameter names exactly match the target function signature.
+   201→**using dict .get() to access fields from exec script JSON output without a TypedDict schema** → Read [Exec Script Schema Patterns](exec-script-schema-patterns.md) first. Silent filtering failures occur when field names are mistyped. Define TypedDict in erk_shared and use cast() in consumers.
+   223→**writing multi-line error messages in Ensure method calls** → Read [CLI Output Styling Guide](output-styling.md) first. Use implicit string concatenation with \n at end of first string. Line 1 is the primary error, line 2+ is remediation context. Do NOT use \n\n (double newline) — Ensure handles spacing.
+  </tool_result>
+  <assistant>Excellent! Now let me read the test files to understand existing patterns:</assistant>
+  <usage input_tokens="5971" cache_creation_input_tokens="14254" cache_read_input_tokens="19956" cache_creation="{'ephemeral_5m_input_tokens': 14254, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01732jny1Zyjubdpz5Mnrv8u">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/test_json_command.py</param>
+  </tool_use>
+  <usage input_tokens="5971" cache_creation_input_tokens="14254" cache_read_input_tokens="19956" cache_creation="{'ephemeral_5m_input_tokens': 14254, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01T8y43MeFNy9Bs3CiSqNnJM">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/test_pr_json.py</param>
+  </tool_use>
+  <usage input_tokens="5971" cache_creation_input_tokens="14254" cache_read_input_tokens="19956" cache_creation="{'ephemeral_5m_input_tokens': 14254, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01GcJrLau668Yr3qmv7h3VUn">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/one_shot/test_one_shot_json.py</param>
+  </tool_use>
+  <usage input_tokens="5971" cache_creation_input_tokens="14254" cache_read_input_tokens="19956" cache_creation="{'ephemeral_5m_input_tokens': 14254, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_016A2drQy8aSGwnVd9464grW">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/test_mcp_cli_sync.py</param>
+  </tool_use>
+  <usage input_tokens="5971" cache_creation_input_tokens="14254" cache_read_input_tokens="19956" cache_creation="{'ephemeral_5m_input_tokens': 14254, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01732jny1Zyjubdpz5Mnrv8u">
+     1→"""Tests for @json_command that depend on the erk CLI tree."""
+     2→
+     3→import types
+     4→import typing
+     5→
+     6→import click
+     7→
+     8→from erk.cli.cli import cli
+     9→
+    10→# -- output_types validation test --
+    11→
+    12→
+    13→def test_output_types_matches_return_annotation() -&gt; None:
+    14→    """Every @json_command's output_types must match its return annotation."""
+    15→
+    16→    def _collect_json_commands(group: click.BaseCommand) -&gt; list[click.BaseCommand]:
+    17→        """Recursively collect all commands with _json_command_meta."""
+    18→        result = []
+    19→        if hasattr(group, "_json_command_meta"):
+    20→            result.append(group)
+    21→        if isinstance(group, click.Group):
+    22→            for cmd in group.commands.values():
+    23→                result.extend(_collect_json_commands(cmd))
+    24→        return result
+    25→
+    26→    def _unwrap_return_types(annotation: typing.Any) -&gt; set[type]:
+    27→        """Decompose A | B unions into member types."""
+    28→        origin = typing.get_origin(annotation)
+    29→        if origin is typing.Union or isinstance(annotation, types.UnionType):
+    30→            return set(typing.get_args(annotation))
+
+... [38 lines omitted] ...
+
+    36→    failures = []
+    49→                failures.append(f"{cmd.name}: return None but output_types={meta.output_types!r}")
+    57→                failures.append(
+    62→    assert not failures, "output_types mismatch:\n" + "\n".join(failures)
+  </tool_result>
+  <tool_result tool="toolu_01T8y43MeFNy9Bs3CiSqNnJM">
+     1→"""Tests for erk pr list/view --json output and --schema."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→from datetime import UTC, datetime
+     6→
+     7→from erk.cli.commands.pr.list_cmd import PrListResult
+     8→from erk.cli.commands.pr.view_cmd import PrViewResult, _serialize_header_fields
+     9→
+    10→
+    11→class TestPrListResult:
+    12→    """Tests for PrListResult JSON serialization."""
+    13→
+    14→    def test_to_json_dict_structure(self) -&gt; None:
+    15→        result = PrListResult(
+    16→            plans=[{"plan_id": 42, "full_title": "My Plan"}],
+    17→            count=1,
+    18→        )
+    19→
+    20→        data = result.to_json_dict()
+    21→
+    22→        assert data == {
+    23→            "plans": [{"plan_id": 42, "full_title": "My Plan"}],
+    24→            "count": 1,
+    25→        }
+    26→
+    27→    def test_empty_plans(self) -&gt; None:
+    28→        result = PrListResult(plans=[], count=0)
+    29→
+    30→        data = result.to_json_dict()
+
+... [114 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01GcJrLau668Yr3qmv7h3VUn">
+     1→"""Tests for erk one-shot --json output and input."""
+     2→
+     3→import json
+     4→
+     5→from click.testing import CliRunner
+     6→
+     7→from erk.cli.cli import cli
+     8→from tests.fakes.gateway.git import FakeGit
+     9→from tests.fakes.gateway.github import FakeLocalGitHub
+    10→from tests.fakes.gateway.remote_github import FakeRemoteGitHub
+    11→from tests.test_utils.context_builders import build_workspace_test_context
+    12→from tests.test_utils.env_helpers import erk_isolated_fs_env
+    13→
+    14→
+    15→def _make_remote() -&gt; FakeRemoteGitHub:
+    16→    """Create a default FakeRemoteGitHub for tests."""
+    17→    return FakeRemoteGitHub(
+    18→        authenticated_user="testuser",
+    19→        default_branch_name="main",
+    20→        default_branch_sha="abc123",
+    21→        next_pr_number=1,
+    22→        dispatch_run_id="run-1",
+    23→        issues=None,
+    24→        issue_comments=None,
+    25→        pr_references=None,
+    26→    )
+    27→
+    28→
+    29→def test_json_success() -&gt; None:
+    30→    """JSON output on successful dispatch includes all expected fields."""
+
+... [202 lines omitted] ...
+
+    50→            catch_exceptions=False,
+    53→        assert result.exit_code == 0, f"Command failed: {result.output}"
+    86→            catch_exceptions=False,
+    89→        assert result.exit_code == 0, f"Command failed: {result.output}"
+   108→def test_json_error_empty_prompt() -&gt; None:
+   109→    """Empty prompt produces JSON error with error_type."""
+   132→        assert data["error_type"] == "invalid_input"
+   136→def test_json_error_invalid_repo() -&gt; None:
+   137→    """Invalid --repo format produces JSON error with error_type."""
+   160→        assert data["error_type"] == "invalid_repo"
+   185→            catch_exceptions=False,
+   221→                catch_exceptions=False,
+   224→        assert result.exit_code == 0, f"Command failed: {result.output}"
+  </tool_result>
+  <tool_result tool="toolu_016A2drQy8aSGwnVd9464grW">
+     1→"""Parity tests: every @mcp_exposed command is discovered and has correct schema."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→import asyncio
+     6→
+     7→from erk.cli.cli import cli
+     8→from erk_mcp.server import _build_json_command_tools, create_mcp
+     9→from erk_shared.agentclick.json_schema import command_input_schema
+    10→from erk_shared.agentclick.mcp_exposed import discover_mcp_commands
+    11→
+    12→
+    13→def test_every_mcp_exposed_command_is_registered_as_mcp_tool() -&gt; None:
+    14→    """Every command with _mcp_meta in the Click tree appears as an MCP tool."""
+    15→    discovered = discover_mcp_commands(cli, _parent_path=())
+    16→    assert len(discovered) &gt; 0, "No @mcp_exposed commands found — check CLI imports"
+    17→
+    18→    server = create_mcp()
+    19→    tools = asyncio.run(server.list_tools())
+    20→    tool_names = {t.name for t in tools}
+    21→
+    22→    for _cmd, meta, _path in discovered:
+    23→        assert meta.name in tool_names, f"@mcp_exposed '{meta.name}' not registered as MCP tool"
+    24→
+    25→
+    26→def test_mcp_tool_schema_matches_click_derived_schema() -&gt; None:
+    27→    """Each MCP tool's schema matches command_input_schema(cmd)."""
+    28→    discovered = discover_mcp_commands(cli, _parent_path=())
+    29→
+    30→    built_tools = _build_json_command_tools()
+
+... [38 lines omitted] ...
+  </tool_result>
+  <assistant>Now let me search for any existing machine command or machine_schema patterns:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="19522" cache_read_input_tokens="34210" cache_creation="{'ephemeral_5m_input_tokens': 19522, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_016rvcayDVmW25C4sp38g7xX">
+    <param name="pattern">machine_command|machine_schema|MachineCommand|MachineSchema</param>
+    <param name="type">py</param>
+    <param name="head_limit">20</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="19522" cache_read_input_tokens="34210" cache_creation="{'ephemeral_5m_input_tokens': 19522, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01YE8fuDD593mp5Y93YVraeF">
+    <param name="pattern">src/**/*machine*</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="19522" cache_read_input_tokens="34210" cache_creation="{'ephemeral_5m_input_tokens': 19522, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01BamPoTw1iXHufb6RTSBris">
+    <param name="pattern">tests/**/*machine*</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="19522" cache_read_input_tokens="34210" cache_creation="{'ephemeral_5m_input_tokens': 19522, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016rvcayDVmW25C4sp38g7xX">
+No files found
+  </tool_result>
+  <tool_result tool="toolu_01YE8fuDD593mp5Y93YVraeF">
+No files found
+  </tool_result>
+  <tool_result tool="toolu_01BamPoTw1iXHufb6RTSBris">
+No files found
+  </tool_result>
+  <assistant>Good! Now let me look at the actual implementation of `@json_command` and `@mcp_exposed` decorators and the one-shot command:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="431" cache_read_input_tokens="53732" cache_creation="{'ephemeral_5m_input_tokens': 431, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_014AYpSZMjUexoLKK8hZtAoE">
+    <param name="command">find /home/runner/work/erk/erk -name "json_command.py" -o -name "mcp_exposed.py" | head -20</param>
+    <param name="description">Find json_command and mcp_exposed implementations</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="431" cache_read_input_tokens="53732" cache_creation="{'ephemeral_5m_input_tokens': 431, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01BFUPwDjFK3CZSu6DXsyfKM">
+    <param name="pattern">src/erk/cli/commands/one_shot.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="431" cache_read_input_tokens="53732" cache_creation="{'ephemeral_5m_input_tokens': 431, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01BFUPwDjFK3CZSu6DXsyfKM">
+/home/runner/work/erk/erk/src/erk/cli/commands/one_shot.py
+  </tool_result>
+  <tool_result tool="toolu_014AYpSZMjUexoLKK8hZtAoE">
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/agentclick/json_command.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/agentclick/mcp_exposed.py
+  </tool_result>
+  <assistant>Perfect! Let me read the core decorator implementations and the one-shot command:</assistant>
+  <usage input_tokens="57" cache_creation_input_tokens="447" cache_read_input_tokens="54163" cache_creation="{'ephemeral_5m_input_tokens': 447, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01BeL3f2LiyMN6HGHQXFMxyY">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/agentclick/json_command.py</param>
+  </tool_use>
+  <usage input_tokens="57" cache_creation_input_tokens="447" cache_read_input_tokens="54163" cache_creation="{'ephemeral_5m_input_tokens': 447, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_015mNkix3EQTUWQGdgzTo4uC">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/agentclick/mcp_exposed.py</param>
+  </tool_use>
+  <usage input_tokens="57" cache_creation_input_tokens="447" cache_read_input_tokens="54163" cache_creation="{'ephemeral_5m_input_tokens': 447, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_016XnQXycYiZKyM9LHfSjR4b">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/one_shot.py</param>
+  </tool_use>
+  <usage input_tokens="57" cache_creation_input_tokens="447" cache_read_input_tokens="54163" cache_creation="{'ephemeral_5m_input_tokens': 447, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01BeL3f2LiyMN6HGHQXFMxyY">
+     1→"""JSON command harness for CLI commands (input + output + schema).
+     2→
+     3→Adds --json and --schema flags to Click commands with:
+     4→- JSON error serialization (catches click.ClickException with error_type attribute)
+     5→- JSON input from stdin (when piped, maps keys to Click params)
+     6→- emit_json_result() for structured output via to_json_dict() protocol
+     7→- --schema flag to output JSON Schema for input/output/error shapes
+     8→
+     9→Commands return a result object with to_json_dict() or as a dataclass;
+    10→the decorator auto-serializes it via emit_json_result() when --json is active.
+    11→Commands may also call emit_json()/emit_json_result() inline and return None.
+    12→"""
+    13→
+    14→import dataclasses
+    15→import json
+    16→import sys
+    17→from dataclasses import dataclass
+    18→from typing import Any, overload
+    19→
+    20→import click
+    21→
+    22→
+    23→@dataclass(frozen=True)
+    24→class JsonCommandMeta:
+    25→    """Metadata stored on Command objects decorated with @json_command."""
+    26→
+    27→    exclude_json_input: frozenset[str]
+    28→    required_json_input: frozenset[str]
+    29→    output_types: tuple[type, ...]
+    30→
+
+... [233 lines omitted] ...
+
+    52→    """Add --json/--schema flags, JSON input mapping, and JSON error handling to a Click command.
+    64→    - Any click.ClickException with an error_type attribute is caught and serialized as JSON
+    65→    - SystemExit and other exceptions pass through unchanged
+    68→    - Outputs JSON Schema document for the command's input/output/error shapes
+    96→        json.JSONDecodeError: If stdin contains invalid JSON
+    97→        ValueError: If stdin JSON is not an object
+   106→        raise ValueError("JSON input must be an object")
+   164→        except json.JSONDecodeError as exc:
+   165→            error_data = {
+   167→                "error_type": "invalid_json_input",
+   170→            click.echo(json.dumps(error_data, indent=2))
+   172→        except ValueError as exc:
+   173→            error_data = {
+   175→                "error_type": "invalid_json_input",
+   178→            click.echo(json.dumps(error_data, indent=2))
+   186→                    error_data = {
+   188→                        "error_type": "invalid_json_input",
+   191→                    click.echo(json.dumps(error_data, indent=2))
+   202→                error_data = {
+   204→                    "error_type": "invalid_json_input",
+   207→                click.echo(json.dumps(error_data, indent=2))
+   215→        except click.ClickException as exc:
+   216→            if not hasattr(exc, "error_type"):
+   218→            error_data = {
+   220→                "error_type": exc.error_type,
+   223→            click.echo(json.dumps(error_data, indent=2))
+   248→        TypeError: If result has no to_json_dict() and is not a dataclass
+   256→        raise TypeError(f"Cannot serialize {type_name}: no to_json_dict() and not a dataclass")
+  </tool_result>
+  <tool_result tool="toolu_015mNkix3EQTUWQGdgzTo4uC">
+     1→"""Decorator and discovery for auto-exposing @json_command CLIs as MCP tools."""
+     2→
+     3→from collections.abc import Callable
+     4→from dataclasses import dataclass
+     5→
+     6→import click
+     7→
+     8→
+     9→@dataclass(frozen=True)
+    10→class McpMeta:
+    11→    """MCP metadata attached to a Click command by @mcp_exposed."""
+    12→
+    13→    name: str
+    14→    description: str
+    15→
+    16→
+    17→_MCP_REGISTRY: dict[click.Command, McpMeta] = {}
+    18→
+    19→
+    20→def mcp_exposed(*, name: str, description: str) -&gt; Callable[[click.Command], click.Command]:
+    21→    """Mark a @json_command for automatic MCP exposure.
+    22→
+    23→    Apply above @json_command in the decorator stack:
+    24→
+    25→        @mcp_exposed(name="one_shot", description="...")
+    26→        @json_command(...)
+    27→        @click.command("one-shot")
+    28→
+    29→    Args:
+    30→        name: MCP tool name
+
+... [41 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_016XnQXycYiZKyM9LHfSjR4b">
+     1→"""Command to dispatch a task for fully autonomous remote execution.
+     2→
+     3→No local planning — the remote Claude explores the codebase, plans the change,
+     4→implements it, and creates a PR.
+     5→
+     6→Usage:
+     7→    erk one-shot "fix the import in config.py"
+     8→    erk one-shot --file prompt.md
+     9→    erk one-shot "add type hints to utils.py" --model opus
+    10→    erk one-shot "fix the typo in README.md" --dry-run
+    11→    erk one-shot "rename issue_number to plan_number in impl_init.py" --plan-only
+    12→    erk one-shot "fix config bug" --repo owner/repo
+    13→"""
+    14→
+    15→from pathlib import Path
+    16→
+    17→import click
+    18→
+    19→from erk.cli.commands.implement_shared import normalize_model_name
+    20→from erk.cli.commands.one_shot_remote_dispatch import (
+    21→    OneShotDispatchParams,
+    22→    OneShotDispatchResult,
+    23→    OneShotDryRunResult,
+    24→    dispatch_one_shot_remote,
+    25→)
+    26→from erk.cli.commands.ref_resolution import resolve_dispatch_ref
+    27→from erk.cli.ensure import Ensure, UserFacingCliError
+    28→from erk.core.context import ErkContext, NoRepoSentinel
+    29→from erk_shared.agentclick.json_command import json_command
+    30→from erk_shared.agentclick.mcp_exposed import mcp_exposed
+
+... [208 lines omitted] ...
+
+    49→        UserFacingCliError: If no http_client is available
+    55→        raise UserFacingCliError(
+    57→            error_type="auth_required",
+    69→        "On error: error_type and message."
+   179→        raise UserFacingCliError("Prompt must not be empty", error_type="invalid_input")
+   196→            raise UserFacingCliError(
+   199→                error_type="invalid_repo",
+   204→            raise UserFacingCliError(
+   207→                error_type="cli_error",
+   213→        raise click.UsageError("--repo and --ref-current are mutually exclusive")
+  </tool_result>
+  <assistant>Now let me look at the result classes for one-shot to understand the pattern:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="7783" cache_read_input_tokens="54610" cache_creation="{'ephemeral_5m_input_tokens': 7783, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01HPoMD3Vxu7w3nXzFcgdxmT">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/one_shot_remote_dispatch.py</param>
+    <param name="limit">150</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="7783" cache_read_input_tokens="54610" cache_creation="{'ephemeral_5m_input_tokens': 7783, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01Xf5BCq3eo1kYhQuJQLWd8N">
+    <param name="command">grep -n "class.*Result\|class.*Params" /home/runner/work/erk/erk/src/erk/cli/commands/one_shot_remote_dispatch.py | head -20</param>
+    <param name="description">Find result and parameter class definitions</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="7783" cache_read_input_tokens="54610" cache_creation="{'ephemeral_5m_input_tokens': 7783, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01HPoMD3Vxu7w3nXzFcgdxmT">
+     1→"""Dispatch logic for one-shot execution via RemoteGitHub REST API.
+     2→
+     3→Uses RemoteGitHub gateway to create branches, commit files, create PRs,
+     4→and dispatch workflows entirely via the GitHub REST API. This is the
+     5→canonical dispatch path for all one-shot commands.
+     6→"""
+     7→
+     8→import time
+     9→from dataclasses import dataclass
+    10→from datetime import UTC
+    11→from typing import Any
+    12→
+    13→import click
+    14→
+    15→from erk.core.branch_slug_generator import generate_branch_slug
+    16→from erk_shared.core.prompt_executor import PromptExecutor
+    17→from erk_shared.gateway.github.metadata.core import (
+    18→    create_submission_queued_block,
+    19→    render_erk_issue_event,
+    20→)
+    21→from erk_shared.gateway.github.metadata.plan_header import format_plan_header_body
+    22→from erk_shared.gateway.github.parsing import construct_workflow_run_url
+    23→from erk_shared.gateway.github.pr_footer import build_pr_body_footer
+    24→from erk_shared.gateway.http.abc import HttpError
+    25→from erk_shared.gateway.remote_github.abc import RemoteGitHub
+    26→from erk_shared.gateway.time.abc import Time
+    27→from erk_shared.naming import (
+    28→    format_branch_timestamp_suffix,
+    29→    generate_planned_pr_branch_name,
+    30→    sanitize_worktree_name,
+
+... [125 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01Xf5BCq3eo1kYhQuJQLWd8N">
+39:class OneShotDispatchParams:
+49:class OneShotDispatchResult:
+94:class OneShotDryRunResult:
+  </tool_result>
+  <assistant>Perfect! Now let me look at the PR view and list commands to see more examples of result classes:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="2283" cache_read_input_tokens="62393" cache_creation="{'ephemeral_5m_input_tokens': 2283, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_018dXiPoz7HgRnd4mYPRyh5E">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/list_cmd.py</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="2283" cache_read_input_tokens="62393" cache_creation="{'ephemeral_5m_input_tokens': 2283, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01LN5xWmjsZLRqQizpszYG5S">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/view_cmd.py</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="2283" cache_read_input_tokens="62393" cache_creation="{'ephemeral_5m_input_tokens': 2283, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_018dXiPoz7HgRnd4mYPRyh5E">
+     1→"""Command to list plans with filtering."""
+     2→
+     3→import tempfile
+     4→from collections.abc import Callable
+     5→from dataclasses import dataclass
+     6→from pathlib import Path
+     7→from typing import Any, ParamSpec, TypeVar
+     8→
+     9→import click
+    10→from rich.console import Console
+    11→from rich.table import Table
+    12→from rich.text import Text
+    13→
+    14→from erk.cli.core import discover_repo_context
+    15→from erk.cli.repo_resolution import get_remote_github, resolved_repo_option
+    16→from erk.core.context import ErkContext
+    17→from erk.core.display_utils import strip_rich_markup
+    18→from erk.core.repo_discovery import ensure_erk_metadata_dir
+    19→from erk.tui.app import ErkDashApp
+    20→from erk.tui.data.real_provider import RealPlanDataProvider
+    21→from erk.tui.data.types import PlanFilters, PlanRowData, serialize_plan_row
+    22→from erk.tui.sorting.logic import sort_plans
+    23→from erk.tui.sorting.types import SortKey, SortState
+    24→from erk_shared.agentclick.json_command import json_command
+    25→from erk_shared.agentclick.mcp_exposed import mcp_exposed
+    26→from erk_shared.context.types import NoRepoSentinel
+    27→from erk_shared.gateway.browser.real import RealBrowserLauncher
+    28→from erk_shared.gateway.clipboard.real import RealClipboard
+    29→from erk_shared.gateway.github.emoji import get_pr_status_emoji
+    30→from erk_shared.gateway.github.types import (
+
+... [75 lines omitted] ...
+
+   100→            ["queued", "in_progress", "success", "failure", "cancelled"], case_sensitive=False
+  </tool_result>
+  <tool_result tool="toolu_01LN5xWmjsZLRqQizpszYG5S">
+     1→"""Command to fetch and display a single plan."""
+     2→
+     3→from dataclasses import dataclass
+     4→from datetime import datetime
+     5→from typing import Any
+     6→
+     7→import click
+     8→
+     9→from erk.cli.github_parsing import parse_issue_identifier
+    10→from erk.cli.repo_resolution import get_remote_github, resolved_repo_option
+    11→from erk.core.context import ErkContext
+    12→from erk_shared.agentclick.json_command import json_command
+    13→from erk_shared.agentclick.mcp_exposed import mcp_exposed
+    14→from erk_shared.context.types import NoRepoSentinel
+    15→from erk_shared.core.typing_utils import narrow_to_literal
+    16→from erk_shared.gateway.github.issues.types import IssueNotFound
+    17→from erk_shared.gateway.github.metadata.schemas import (
+    18→    BRANCH_NAME,
+    19→    CREATED_BY,
+    20→    CREATED_FROM_SESSION,
+    21→    LAST_DISPATCHED_AT,
+    22→    LAST_DISPATCHED_RUN_ID,
+    23→    LAST_LEARN_SESSION,
+    24→    LAST_LOCAL_IMPL_AT,
+    25→    LAST_LOCAL_IMPL_EVENT,
+    26→    LAST_LOCAL_IMPL_SESSION,
+    27→    LAST_LOCAL_IMPL_USER,
+    28→    LAST_REMOTE_IMPL_AT,
+    29→    LEARN_PLAN_ISSUE,
+    30→    LEARN_PLAN_PR,
+
+... [75 lines omitted] ...
+  </tool_result>
+  <assistant>Excellent! Now let me check the documentation structure for MCP and see if there's anything specific about machine vs one-shot patterns:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="3194" cache_read_input_tokens="64676" cache_creation="{'ephemeral_5m_input_tokens': 3194, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01QBBUezUxZfa7FbmptTVYp3">
+    <param name="command">find /home/runner/work/erk/erk/docs/learned -name "*machine*" -o -name "*one*shot*" 2&gt;/dev/null</param>
+    <param name="description">Search for machine or one-shot related documentation</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="3194" cache_read_input_tokens="64676" cache_creation="{'ephemeral_5m_input_tokens': 3194, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01Gtt4YBzY4LvXRPff3SB295">
+    <param name="command">ls -la /home/runner/work/erk/erk/docs/learned/planning/ 2&gt;/dev/null | grep -E "\.md$"</param>
+    <param name="description">List planning documentation files</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="3194" cache_read_input_tokens="64676" cache_creation="{'ephemeral_5m_input_tokens': 3194, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Gtt4YBzY4LvXRPff3SB295">
+-rw-r--r--  1 runner runner 20795 Mar 10 08:37 agent-delegation.md
+-rw-r--r--  1 runner runner  5633 Mar 10 08:37 agent-orchestration-safety.md
+-rw-r--r--  1 runner runner  9242 Mar 10 08:37 agent-orchestration.md
+-rw-r--r--  1 runner runner  2801 Mar 10 08:37 agent-output-routing-strategies.md
+-rw-r--r--  1 runner runner  2293 Mar 10 08:37 backend-naming-conventions.md
+-rw-r--r--  1 runner runner  5971 Mar 10 08:37 branch-name-inference.md
+-rw-r--r--  1 runner runner  2557 Mar 10 08:37 branch-plan-resolution.md
+-rw-r--r--  1 runner runner  4087 Mar 10 08:37 complete-inventory-protocol.md
+-rw-r--r--  1 runner runner  3422 Mar 10 08:37 consolidation-labels.md
+-rw-r--r--  1 runner runner  5627 Mar 10 08:37 context-preservation-in-replan.md
+-rw-r--r--  1 runner runner  7557 Mar 10 08:37 context-preservation-prompting.md
+-rw-r--r--  1 runner runner  4113 Mar 10 08:37 cornerstone-enforcement.md
+-rw-r--r--  1 runner runner  1945 Mar 10 08:37 cross-artifact-analysis.md
+-rw-r--r--  1 runner runner  1906 Mar 10 08:37 cross-repo-plans.md
+-rw-r--r--  1 runner runner  5645 Mar 10 08:37 debugging-patterns.md
+-rw-r--r--  1 runner runner  2121 Mar 10 08:37 exploration-strategies.md
+-rw-r--r--  1 runner runner  6831 Mar 10 08:37 gateway-consolidation-checklist.md
+-rw-r--r--  1 runner runner  7329 Mar 10 08:37 impl-context.md
+-rw-r--r--  1 runner runner  2856 Mar 10 08:37 incremental-dispatch.md
+-rw-r--r--  1 runner runner 16133 Mar 10 08:37 index.md
+-rw-r--r--  1 runner runner  3693 Mar 10 08:37 label-scheme.md
+-rw-r--r--  1 runner runner 10756 Mar 10 08:37 learn-pipeline-workflow.md
+-rw-r--r--  1 runner runner  5682 Mar 10 08:37 learn-plan-metadata-fields.md
+-rw-r--r--  1 runner runner  4151 Mar 10 08:37 learn-plan-validation.md
+-rw-r--r--  1 runner runner  3181 Mar 10 08:37 learn-session-embedding.md
+-rw-r--r--  1 runner runner  7941 Mar 10 08:37 learn-vs-implementation-plans.md
+-rw-r--r--  1 runner runner  4207 Mar 10 08:37 learn-without-pr-context.md
+-rw-r--r--  1 runner runner 14574 Mar 10 08:37 learn-workflow.md
+-rw-r--r--  1 runner runner  3745 Mar 10 08:37 lifecycle-stage-consolidation.md
+-rw-r--r--  1 runner runner 40371 Mar 10 08:37 lifecycle.md
+
+... [44 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01QBBUezUxZfa7FbmptTVYp3">
+/home/runner/work/erk/erk/docs/learned/planning/one-shot-workflow.md
+/home/runner/work/erk/erk/docs/learned/workflows/one-shot-workflow.md
+/home/runner/work/erk/erk/docs/learned/erk/codespace-machine-types.md
+/home/runner/work/erk/erk/docs/learned/tui/one-shot-prompt-modal.md
+  </tool_result>
+  <assistant>Let me read the one-shot workflow documentation:</assistant>
+  <usage input_tokens="2481" cache_creation_input_tokens="522" cache_read_input_tokens="67870" cache_creation="{'ephemeral_5m_input_tokens': 522, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01DAQXnnbfsGupupRP8vStkw">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/one-shot-workflow.md</param>
+  </tool_use>
+  <usage input_tokens="2481" cache_creation_input_tokens="522" cache_read_input_tokens="67870" cache_creation="{'ephemeral_5m_input_tokens': 522, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_014qnF3p1Mu9RrcNzcPbBH5h">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/erk/codespace-machine-types.md</param>
+  </tool_use>
+  <usage input_tokens="2481" cache_creation_input_tokens="522" cache_read_input_tokens="67870" cache_creation="{'ephemeral_5m_input_tokens': 522, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01DAQXnnbfsGupupRP8vStkw">
+     1→---
+     2→title: One-Shot Workflow
+     3→last_audited: "2026-02-24 00:00 PT"
+     4→audit_result: clean
+     5→read_when:
+     6→  - "working with erk one-shot dispatch"
+     7→  - "understanding how plans are autonomously created and implemented"
+     8→  - "debugging one-shot workflow failures"
+     9→  - "integrating objectives with one-shot dispatch"
+    10→tripwires:
+    11→  - action: "adding dry-run support to one-shot commands"
+    12→    warning: "One-shot dry-run mode must NOT create skeleton issues"
+    13→  - action: "modifying register-one-shot-plan exit behavior"
+    14→    warning: "register-one-shot-plan uses best-effort: exit 0 if any operation succeeds"
+    15→  - action: "adding post-dispatch operations without matching dispatch_cmd.py pattern"
+    16→    warning: "dispatch_one_shot() and _dispatch_planned_pr_plan() in dispatch_cmd.py must stay synchronized. Both use write_dispatch_metadata() + create_submission_queued_block(). Changes to one must be mirrored in the other."
+    17→  - action: "writing post-dispatch operations without try/except guards"
+    18→    warning: "Post-dispatch operations (metadata write, queued comment) are best-effort. Wrap in try/except with user-visible warnings. See write_dispatch_metadata() and create_submission_queued_block() in one_shot_dispatch.py."
+    19→  - action: "editing plan body content in plan creation, replan, or one-shot dispatch"
+    20→    warning: "One-shot metadata block preservation: the metadata block in the plan body (HTML comment with erk:metadata-block markers) must survive all edits. Never strip or overwrite HTML comment blocks that contain erk:metadata-block markers."
+    21→    score: 9
+    22→---
+    23→
+    24→# One-Shot Workflow
+    25→
+    26→The one-shot workflow enables fully autonomous planning and implementation from a single CLI command. It dispatches a GitHub Actions workflow that creates a plan and implements it without human intervention.
+    27→
+    28→## End-to-End Pipeline
+    29→
+    30→```
+
+... [202 lines omitted] ...
+
+   104→`src/erk/cli/commands/exec/scripts/register_one_shot_plan.py` performs four independent operations that `erk pr submit` normally handles at submit time. Each operation is best-effort -- failures are logged but don't block others:
+   111→The command outputs JSON results for each operation with success/error details.
+   124→The CLI write is the primary source; CI registration fills gaps when the CLI couldn't complete (e.g., network failure during dispatch).
+   213→2. If `rejected: true`, it extracts the `reason` and logs a GitHub Actions warning
+  </tool_result>
+  <tool_result tool="toolu_014qnF3p1Mu9RrcNzcPbBH5h">
+     1→---
+     2→title: Codespace Machine Types
+     3→read_when:
+     4→  - "creating or configuring codespaces"
+     5→  - "choosing a machine type for codespace setup"
+     6→  - "debugging codespace creation failures"
+     7→tripwires:
+     8→  - action: "using `gh codespace create` to create a codespace"
+     9→    warning: "The machines endpoint returns HTTP 500 for this repo. Use `POST /user/codespaces` REST API directly. See the workaround section below."
+    10→last_audited: "2026-02-17 00:00 PT"
+    11→audit_result: clean
+    12→---
+    13→
+    14→# Codespace Machine Types
+    15→
+    16→## Why `POST /user/codespaces` Instead of `gh codespace create`
+    17→
+    18→&lt;!-- Source: src/erk/cli/commands/codespace/setup_cmd.py, setup_codespace --&gt;
+    19→
+    20→GitHub's REST endpoint `GET /repos/{owner}/{repo}/codespaces/machines` returns HTTP 500 for certain repositories, including the erk repository. Since `gh codespace create` calls that endpoint for machine type validation before creating anything, the entire command fails. This is a server-side GitHub bug — the endpoint works for some repos but not others, with no documented pattern for which ones fail.
+    21→
+    22→The workaround bypasses validation entirely: `erk codespace setup` posts directly to `POST /user/codespaces` with the machine type as a raw string parameter and the repository's database ID. This means invalid machine type names produce a creation-time error rather than a pre-validation error, but in practice the set of valid machine types rarely changes.
+    23→
+    24→This is one instance of a broader pattern where `gh` CLI subcommands make implicit API calls that fail. See [GitHub CLI Limits](../architecture/github-cli-limits.md) for the general pattern and other affected commands.
+    25→
+    26→## Machine Type Selection
+    27→
+    28→Claude Code agent sessions are memory-intensive — smaller machine types cause OOM kills during long sessions with large context windows. The default is `premiumLinux` for this reason.
+    29→
+    30→| Machine Name        | CPUs | RAM   | Storage | When to use                                  |
+
+... [20 lines omitted] ...
+
+    44→- [GitHub CLI Limits](../architecture/github-cli-limits.md) — Broader pattern of `gh` subcommand failures from implicit API calls
+  </tool_result>
+</session>
