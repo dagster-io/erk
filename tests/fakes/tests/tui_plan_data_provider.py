@@ -349,6 +349,7 @@ def make_run_row(
     pr_display: str = "-",
     pr_title: str | None = None,
     pr_state: str | None = None,
+    pr_status_display: str = "-",
     title_display: str = "-",
     branch_display: str = "-",
     submitted_display: str = "03-09 14:30",
@@ -371,6 +372,7 @@ def make_run_row(
         pr_display: Formatted PR cell content
         pr_title: PR title
         pr_state: PR state ("OPEN", "MERGED", "CLOSED", or None)
+        pr_status_display: Pre-formatted PR status emoji (e.g., "👀", "-")
         title_display: Truncated title for display
         branch_display: Branch name for display
         submitted_display: Formatted submission time
@@ -398,6 +400,7 @@ def make_run_row(
         pr_display=pr_display,
         pr_title=pr_title,
         pr_state=pr_state,
+        pr_status_display=pr_status_display,
         title_display=title_display,
         branch_display=branch_display,
         submitted_display=submitted_display,

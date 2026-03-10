@@ -56,7 +56,7 @@ class RunDataTable(DataTable):
     def _setup_columns(self) -> None:
         """Add columns for the runs table.
 
-        Columns: run-id, status, submitted, workflow, pr, branch, chks
+        Columns: run-id, status, submitted, workflow, pr, pr-st, branch, chks
         """
         col_index = 0
         self._run_id_column_index = col_index
@@ -70,6 +70,8 @@ class RunDataTable(DataTable):
         col_index += 1
         self._pr_column_index = col_index
         self.add_column("pr", key="pr", width=8)
+        col_index += 1
+        self.add_column("pr-st", key="pr_st", width=6)
         col_index += 1
         self.add_column("branch", key="branch", width=40)
         col_index += 1
@@ -129,6 +131,7 @@ class RunDataTable(DataTable):
             row.submitted_display,
             row.workflow_name,
             pr_cell,
+            row.pr_status_display,
             row.branch_display,
             row.checks_display,
         )

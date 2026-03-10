@@ -172,6 +172,7 @@ class RunRowData:
         pr_display: Formatted PR cell content (e.g., "#123" or "-").
         pr_title: PR title. None if no PR.
         pr_state: PR state ("OPEN", "MERGED", "CLOSED"). None if no PR linked.
+        pr_status_display: Pre-formatted PR status emoji (e.g., "👀", "🚧", "🎉", "⛔", or "-").
         title_display: Truncated title for table display.
         submitted_display: Formatted submission time (e.g., "03-09 14:30").
         created_at: UTC datetime when run was created. None if unavailable.
@@ -192,6 +193,7 @@ class RunRowData:
     pr_display: str
     pr_title: str | None
     pr_state: str | None
+    pr_status_display: str
     title_display: str
     branch_display: str
     submitted_display: str
