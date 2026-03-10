@@ -1,0 +1,1110 @@
+<session>
+  <meta source="agent-a5edc39" />
+  <meta branch="plnd/add-debug-impl-run-03-10-1308" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant docs before exploring raw files. Then explore codebase as necessary.
+
+I need to understand:
+1. How tests are structured for `src/erk/core/` modules - look at a few examples in `tests/unit/core/` 
+2. Look at the testing tripwires and patterns in docs/learned/testing/
+3. How fakes and fixtures are set up for subprocess/CLI tests
+4. Look at the ErkContext pattern used in exec script tests
+5. What conftest.py fixtures are available
+
+Read the relevant files and report the key patterns.</user>
+  <assistant>I'll help you understand the test structure and patterns for the erk codebase. Let me start by checking the documentation and then examining the actual test implementations.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="15142" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15142, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01AehdQ7LJNcGtUHuotsGJZu">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/index.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15142" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15142, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01GwzxoezU4v7BAp7pM8ED4N">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/testing/testing.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15142" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15142, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01UpDDWZPtZ7zUbCwG8tqGKH">
+    <param name="pattern">docs/learned/testing/**/*.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15142" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15142, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01AehdQ7LJNcGtUHuotsGJZu">
+     1→&lt;!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY --&gt;
+     2→&lt;!-- Edit source frontmatter, then run 'erk docs sync' to regenerate. --&gt;
+     3→
+     4→# Agent Documentation
+     5→
+     6→Before starting work, scan the read-when conditions below.
+     7→If your current task matches, read the linked document **before writing code**.
+     8→
+     9→## Categories
+    10→
+    11→- [architecture/](architecture/) — Explore when working on core patterns (dry-run, gateways, subprocess, shell integration). Add docs here for cross-cutting technical patterns.
+    12→- [capabilities/](capabilities/)
+    13→- [changelog/](changelog/)
+    14→- [checklists/](checklists/)
+    15→- [ci/](ci/)
+    16→- [claude-code/](claude-code/)
+    17→- [cli/](cli/) — Explore when building CLI commands or output formatting. Add docs here for Click patterns and terminal UX.
+    18→- [commands/](commands/) — Explore when creating or optimizing slash commands. Add docs here for command authoring patterns.
+    19→- [config/](config/)
+    20→- [configuration/](configuration/)
+    21→- [documentation/](documentation/) — Explore when structuring or writing documentation. Add docs here for documentation methodology and best practices.
+    22→- [erk/](erk/) — Explore when working with erk-specific workflows (worktrees, PR sync, Graphite). Add docs here for erk user-facing features.
+    23→- [erk-dev/](erk-dev/)
+    24→- [gateway/](gateway/)
+    25→- [hooks/](hooks/) — Explore when creating or debugging hooks. Add docs here for hook development patterns.
+    26→- [integrations/](integrations/)
+    27→- [objectives/](objectives/)
+    28→- [planning/](planning/) — Explore when working with plans, .erk/impl-context/ folders, or agent delegation. Add docs here for planning workflow patterns.
+    29→- [pr-operations/](pr-operations/)
+    30→- [refactoring/](refactoring/)
+
+... [22 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01GwzxoezU4v7BAp7pM8ED4N">
+     1→---
+     2→title: Erk Test Reference
+     3→last_audited: "2026-02-13 00:00 PT"
+     4→audit_result: clean
+     5→read_when:
+     6→  - "writing tests for erk"
+     7→  - "using erk fakes"
+     8→  - "running erk test commands"
+     9→tripwires:
+    10→  - action: "modifying business logic in src/ without adding a test"
+    11→    warning: "Bug fixes require regression tests (fails before, passes after). Features require behavior tests."
+    12→  - action: "implementing interactive prompts with ctx.console.confirm()"
+    13→    warning: "Ensure FakeConsole in test fixture is configured with `confirm_responses` parameter. Array length must match prompt count exactly — too few causes IndexError, too many indicates a removed prompt. See tests/commands/submit/test_existing_branch_detection.py for examples."
+    14→  - action: "accessing FakeGit properties in tests"
+    15→    warning: "FakeGit has top-level properties (e.g., `git.staged_files`, `git.deleted_branches`, `git.added_worktrees`). Worktree operations delegate to an internal FakeWorktree sub-gateway."
+    16→  - action: "asserting on fake-specific properties in tests using `build_workspace_test_context` with `use_graphite=True`"
+    17→    warning: "Production wrappers (e.g., `GraphiteBranchManager`) do not expose fake tracking properties like `submitted_branches`. Assert on observable behavior (CLI output, return values) instead of accessing fake internals through the wrapper."
+    18→  - action: "asserting on YAML metadata field values with exact string matching"
+    19→    warning: 'Assert on key-only format (''field_name:''), not ''field_name: "value"''. YAML serialization differs from Python repr.'
+    20→  - action: "changing cleanup or deletion behavior without updating test assertions"
+    21→    warning: "When behavior changes from 'delete X' to 'preserve X', update test assertions to verify the new behavior (e.g., assert file persists instead of asserting it was deleted). Stale assertions silently validate the old behavior."
+    22→    score: 4
+    23→  - action: "asserting user_output() content against capsys stdout"
+    24→    warning: "user_output() routes to stderr. When testing code that calls user_output(), assert against capsys.readouterr().err, not .out."
+    25→  - action: "using context_for_test() with wrong parameter name for issues"
+    26→    warning: "erk-shared uses github_issues= parameter, src/erk uses issues= parameter. These are NOT interchangeable — using wrong name causes TypeError."
+    27→---
+    28→
+    29→# Erk Test Reference
+    30→
+
+... [547 lines omitted] ...
+
+   154→**If you see path mismatch errors:** Ensure FakeGit's path resolution methods are being used (they handle symlinks), not direct dict lookups.
+   156→#### FakeWorktree Error Injection
+   158→FakeWorktree (in `tests/fakes/gateway/git_worktree.py`) uses string-based error injection via constructor parameters. Errors raise `RuntimeError`:
+   163→# Inject error for add_worktree
+   165→    add_worktree_error="Worktree already exists",
+   166→    remove_worktree_error="Worktree is locked",
+   170→When `add_worktree_error` or `remove_worktree_error` is set, the corresponding method raises `RuntimeError` with that message. Error injection is checked FIRST in the method body, before any success logic executes.
+   172→You can also inject these errors via the top-level `FakeGit` constructor:
+   176→    add_worktree_error="Worktree already exists",
+   177→    remove_worktree_error="Worktree is locked",
+   199→This fake supports error injection via the `create_branch_error` constructor parameter, which accepts a `BranchAlreadyExists` instance:
+   209→# With error injection
+   210→fake_with_error = FakeGitBranchOps(
+   226→### Common Mistake: Sentinel Path Errors
+   459→fake_console.assert_not_contains("Error")
+   462→### Error Behavior
+   464→If `confirm()` is called but no responses remain, FakeConsole raises `AssertionError` with the prompt text. This catches missing test setup.
+   519→When refactoring gateway methods from exception-based to discriminated unions, update test names to reflect the new pattern.
+   521→### Pattern: Exception -&gt; Union
+   523→| Old Test Name (Exception-Based)       | New Test Name (Discriminated Union)      |
+   525→| `test_merge_pr_failure_returns_false` | `test_merge_pr_returns_merge_error`      |
+   528→| `test_get_issue_raises_api_error`     | `test_get_issue_returns_api_error`       |
+   537→**Error Case:**
+   539→- Old: `test_&lt;method&gt;_raises_&lt;error&gt;` or `test_&lt;method&gt;_returns_false`
+   540→- New: `test_&lt;method&gt;_returns_&lt;error_type&gt;`
+   548→3. [ ] Update docstring to describe return type (not exception)
+   549→4. [ ] Verify fake setup returns type (not raises exception)
+   554→When function signatures change (e.g., adding a column to a table, adding a new parameter), **all test fixtures must be updated comprehensively**. Partial updates cause hard-to-debug failures.
+  </tool_result>
+  <tool_result tool="toolu_01UpDDWZPtZ7zUbCwG8tqGKH">
+/home/runner/work/erk/erk/docs/learned/testing/admin-command-testing.md
+/home/runner/work/erk/erk/docs/learned/testing/backend-testing-composition.md
+/home/runner/work/erk/erk/docs/learned/testing/context-builder-signatures.md
+/home/runner/work/erk/erk/docs/learned/testing/devrun-agent.md
+/home/runner/work/erk/erk/docs/learned/testing/cli-testing.md
+/home/runner/work/erk/erk/docs/learned/testing/command-group-testing.md
+/home/runner/work/erk/erk/docs/learned/testing/erk-package-info-pattern.md
+/home/runner/work/erk/erk/docs/learned/testing/env-overrides-pattern.md
+/home/runner/work/erk/erk/docs/learned/testing/dual-backend-testing.md
+/home/runner/work/erk/erk/docs/learned/testing/environment-variable-isolation.md
+/home/runner/work/erk/erk/docs/learned/testing/exec-script-batch-testing.md
+/home/runner/work/erk/erk/docs/learned/testing/alias-verification-pattern.md
+/home/runner/work/erk/erk/docs/learned/testing/artifact-distribution-sync.md
+/home/runner/work/erk/erk/docs/learned/testing/cli-test-error-assertions.md
+/home/runner/work/erk/erk/docs/learned/testing/fake-git-divergence.md
+/home/runner/work/erk/erk/docs/learned/testing/monkeypatch-vs-fakes-decision.md
+/home/runner/work/erk/erk/docs/learned/testing/exec-script-testing.md
+/home/runner/work/erk/erk/docs/learned/testing/fake-github-mutation-tracking.md
+/home/runner/work/erk/erk/docs/learned/testing/parameter-injection-pattern.md
+/home/runner/work/erk/erk/docs/learned/testing/hook-testing.md
+/home/runner/work/erk/erk/docs/learned/testing/fake-github-api-reference.md
+/home/runner/work/erk/erk/docs/learned/testing/fake-github-testing.md
+/home/runner/work/erk/erk/docs/learned/testing/monkeypatch-elimination-checklist.md
+/home/runner/work/erk/erk/docs/learned/testing/index.md
+/home/runner/work/erk/erk/docs/learned/testing/mock-elimination.md
+/home/runner/work/erk/erk/docs/learned/testing/integration-test-speed.md
+/home/runner/work/erk/erk/docs/learned/testing/fake-api-migration-pattern.md
+/home/runner/work/erk/erk/docs/learned/testing/integration-testing-patterns.md
+/home/runner/work/erk/erk/docs/learned/testing/frozen-dataclass-test-doubles.md
+/home/runner/work/erk/erk/docs/learned/testing/gateway-fake-testing-exemplar.md
+
+... [12 lines omitted] ...
+  </tool_result>
+  <assistant>Now let me look at the testing tripwires and then examine actual test examples:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="10373" cache_read_input_tokens="15142" cache_creation="{'ephemeral_5m_input_tokens': 10373, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01SQKGKiNa91ZMJo6LSEcS4N">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/testing/tripwires.md</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="10373" cache_read_input_tokens="15142" cache_creation="{'ephemeral_5m_input_tokens': 10373, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01EbwPPNUvHuShQoSeCFFwAJ">
+    <param name="pattern">tests/unit/core/**/*.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="10373" cache_read_input_tokens="15142" cache_creation="{'ephemeral_5m_input_tokens': 10373, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01JCbxS3Y3hKEqPkEcnhe9HC">
+    <param name="pattern">tests/conftest.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="10373" cache_read_input_tokens="15142" cache_creation="{'ephemeral_5m_input_tokens': 10373, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01SQKGKiNa91ZMJo6LSEcS4N">
+     1→---
+     2→title: Testing Tripwires
+     3→read_when:
+     4→  - "working on testing code"
+     5→---
+     6→
+     7→&lt;!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY --&gt;
+     8→&lt;!-- Edit source frontmatter, then run 'erk docs sync' to regenerate. --&gt;
+     9→&lt;!-- Generated from testing/*.md frontmatter --&gt;
+    10→
+    11→# Testing Tripwires
+    12→
+    13→Rules triggered by matching actions in code.
+    14→
+    15→**Test only success cases for batch commands** → Read [Exec Script Batch Testing](exec-script-batch-testing.md) first. Cover all four categories: success, partial failure, validation errors, and JSON structure. Missing any category leaves a critical gap.
+    16→
+    17→**Use stateful failure injection (\_should_fail_next flags) in fake gateways** → Read [Exec Script Batch Testing](exec-script-batch-testing.md) first. Use set-based constructor injection instead. Stateful flags are order-dependent and brittle. See the set-based pattern below.
+    18→
+    19→**accessing FakeGit properties in tests** → Read [Erk Test Reference](testing.md) first. FakeGit has top-level properties (e.g., `git.staged_files`, `git.deleted_branches`, `git.added_worktrees`). Worktree operations delegate to an internal FakeWorktree sub-gateway.
+    20→
+    21→**adding a force-include entry without registering in codex_portable_skills()** → Read [Artifact Distribution Sync Testing](artifact-distribution-sync.md) first. The skill will be distributed but not recognized by the runtime. Add it to codex_portable_skills() in src/erk/core/capabilities/codex_portable.py.
+    22→
+    23→**adding a skill to codex_portable_skills() without a pyproject.toml force-include entry** → Read [Artifact Distribution Sync Testing](artifact-distribution-sync.md) first. The wheel won't contain the skill. Add a force-include entry in pyproject.toml [tool.hatch.build.targets.wheel.force-include]. test_codex_portable_skills_match_force_include will catch this.
+    24→
+    25→**adding a test for a new pipeline step without creating a dedicated test file** → Read [Submit Pipeline Test Organization](submit-pipeline-tests.md) first. Each pipeline step gets its own test file in tests/unit/cli/commands/pr/submit_pipeline/. Follow the one-file-per-step convention.
+    26→
+    27→**adding a tracking list without documenting the tuple field order** → Read [FakeLocalGitHub Mutation Tracking](fake-github-mutation-tracking.md) first. Every tracking list must have a property docstring specifying the tuple format (e.g., 'Returns list of (pr_number, label) tuples'). Without it, test authors guess field positions wrong.
+    28→
+    29→**adding monkeypatch or @patch to a test** [pattern: `@patch|monkeypatch\.`] → Read [Monkeypatch Elimination Checklist](monkeypatch-elimination-checklist.md) first. Use gateway fakes instead. If no gateway exists for the operation, create one first. See gateway-abc-implementation.md.
+    30→
+
+... [123 lines omitted] ...
+
+    33→**allowing `import X as Y` for internal/project imports because it's convenient** → Read [Import Alias vs Re-Export Detection](alias-verification-pattern.md) first. Erk prohibits gratuitous import aliases for internal/project imports. Exceptions: genuine name collisions and well-known library aliases (pandas as pd, numpy as np, dagster as dg, matplotlib.pyplot as plt).
+    35→**asking devrun agent to fix errors or make tests pass** → Read [Devrun Agent - Read-Only Design](devrun-agent.md) first. Devrun is READ-ONLY. It runs commands and reports results. The parent agent must handle all fixes.
+    59→**creating a fake gateway without constructor-injected error configuration** → Read [Gateway Fake Testing Exemplar](gateway-fake-testing-exemplar.md) first. Fakes must accept error variants at construction time (e.g., push_to_remote_error=PushError(...)) to enable failure injection in tests.
+    67→**creating or modifying a hook** → Read [Hook Testing Patterns](hook-testing.md) first. Hooks fail silently (exit 0, no output) — untested hooks are invisible failures. Read docs/learned/testing/hook-testing.md first.
+    69→**debugging 100+ unexpected test failures with no obvious cause** → Read [Environment Variable Isolation in Tests](environment-variable-isolation.md) first. Check ERK_PLAN_BACKEND first. Although the env var is now obsolete (get_plan_backend() was deleted in PR #7971), legacy code paths in context_for_test() may still read it. Use monkeypatch.delenv('ERK_PLAN_BACKEND', raising=False) or env_overrides={} in fixtures as a defensive measure until full cleanup in objective #7911.
+    77→**implementing interactive prompts with ctx.console.confirm()** → Read [Erk Test Reference](testing.md) first. Ensure FakeConsole in test fixture is configured with `confirm_responses` parameter. Array length must match prompt count exactly — too few causes IndexError, too many indicates a removed prompt. See tests/commands/submit/test_existing_branch_detection.py for examples.
+    95→**renaming a user-facing string in CLI output and updating related test assertions** → Read [CLI Testing Patterns](cli-testing.md) first. Test assertion lag: after renaming display strings (e.g., 'issue' → 'plan'), grep all test files for the old literal before committing. Tests using old string literals against stale snapshots will silently pass — the failure only surfaces in CI on a clean checkout.
+   105→**testing code that reads ERK_PLAN_BACKEND or other environment variables via CliRunner** → Read [CLI Testing Patterns](cli-testing.md) first. CliRunner env var isolation: ambient env vars from the developer shell leak into CliRunner by default and cause intermittent test failures. Use CliRunner(env={'ERK_PLAN_BACKEND': '...'}) to override, or CliRunner(env={}) to isolate completely. Never rely on ambient env being clean. Note: mix_stderr parameter is broken in Click 8.3.1 — do not use it.
+   115→**tracking mutations before checking error configuration in a fake method** → Read [Gateway Fake Testing Exemplar](gateway-fake-testing-exemplar.md) first. Decide deliberately: should this operation track even on failure? push_to_remote skips tracking on error (nothing happened), pull_rebase always tracks (the attempt matters). Match the real operation's semantics.
+   127→**using context_for_test() with wrong parameter name for issues** → Read [context_for_test() Dual Implementations](context-builder-signatures.md) first. erk-shared uses github_issues= parameter, src/erk uses issues= parameter. These are NOT interchangeable — using wrong name causes TypeError.
+   129→**using context_for_test() with wrong parameter name for issues** → Read [Erk Test Reference](testing.md) first. erk-shared uses github_issues= parameter, src/erk uses issues= parameter. These are NOT interchangeable — using wrong name causes TypeError.
+   139→**using monkeypatch.chdir() in exec script tests** [pattern: `monkeypatch\.chdir\(`] → Read [Exec Script Testing Patterns](exec-script-testing.md) first. Use obj=ErkContext.for_test(cwd=tmp_path) instead. monkeypatch.chdir() doesn't inject context, causing 'Context not initialized' errors.
+   141→**using output=, should_fail=, or transient_failures= parameters in FakePromptExecutor** → Read [FakePromptExecutor API Migration - Gateway to Core](fake-api-migration-pattern.md) first. These are the deleted gateway API. Use simulated\_\* parameters (tests/fakes/) or prompt_results/streaming_events (erk_shared/core/fakes.py). See migration table.
+  </tool_result>
+  <tool_result tool="toolu_01EbwPPNUvHuShQoSeCFFwAJ">
+/home/runner/work/erk/erk/tests/unit/core/capabilities/__init__.py
+/home/runner/work/erk/erk/tests/unit/core/capabilities/test_agents.py
+/home/runner/work/erk/erk/tests/unit/core/capabilities/test_code_reviews_system.py
+/home/runner/work/erk/erk/tests/unit/core/capabilities/test_hooks.py
+/home/runner/work/erk/erk/tests/unit/core/capabilities/test_base.py
+/home/runner/work/erk/erk/tests/unit/core/capabilities/test_review_capability.py
+/home/runner/work/erk/erk/tests/unit/core/capabilities/test_managed_artifacts.py
+/home/runner/work/erk/erk/tests/unit/core/capabilities/test_ruff_format.py
+/home/runner/work/erk/erk/tests/unit/core/capabilities/test_permissions.py
+/home/runner/work/erk/erk/tests/unit/core/capabilities/test_reminders.py
+/home/runner/work/erk/erk/tests/unit/core/capabilities/test_registry.py
+/home/runner/work/erk/erk/tests/unit/core/capabilities/test_learned_docs.py
+/home/runner/work/erk/erk/tests/unit/core/capabilities/test_workflows.py
+/home/runner/work/erk/erk/tests/unit/core/capabilities/test_skills.py
+/home/runner/work/erk/erk/tests/unit/core/capabilities/test_statusline.py
+/home/runner/work/erk/erk/tests/unit/core/codespace/__init__.py
+/home/runner/work/erk/erk/tests/unit/core/github/__init__.py
+/home/runner/work/erk/erk/tests/unit/core/codespace/test_codespace_run.py
+/home/runner/work/erk/erk/tests/unit/core/codespace/test_registry_fake.py
+/home/runner/work/erk/erk/tests/unit/core/codespace/test_registry_real.py
+/home/runner/work/erk/erk/tests/unit/core/test_health_checks_statusline.py
+/home/runner/work/erk/erk/tests/unit/core/test_health_checks_required_version.py
+/home/runner/work/erk/erk/tests/unit/core/test_init_utils.py
+/home/runner/work/erk/erk/tests/unit/core/test_command_log.py
+/home/runner/work/erk/erk/tests/unit/core/github/test_fake_github.py
+/home/runner/work/erk/erk/tests/unit/core/github/test_trigger_workflow.py
+/home/runner/work/erk/erk/tests/unit/core/test_codex_prompt_executor.py
+/home/runner/work/erk/erk/tests/unit/core/test_health_checks_exit_plan_hook.py
+/home/runner/work/erk/erk/tests/unit/core/test_health_checks_erk_queue_pat_secret.py
+/home/runner/work/erk/erk/tests/unit/core/test_claude_settings.py
+
+... [17 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01JCbxS3Y3hKEqPkEcnhe9HC">
+/home/runner/work/erk/erk/tests/conftest.py
+  </tool_result>
+  <assistant>Now let me read the conftest and examine a few example test files:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="7708" cache_read_input_tokens="25515" cache_creation="{'ephemeral_5m_input_tokens': 7708, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Dru139pzz3CLEngrQ28MUF">
+    <param name="file_path">/home/runner/work/erk/erk/tests/conftest.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="7708" cache_read_input_tokens="25515" cache_creation="{'ephemeral_5m_input_tokens': 7708, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01S2C2s57H2WnBAQ9sfMsSUD">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/core/test_context.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="7708" cache_read_input_tokens="25515" cache_creation="{'ephemeral_5m_input_tokens': 7708, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01MwTHoFGiUfEEYFCwGsFGc2">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/core/test_worktree_utils.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="7708" cache_read_input_tokens="25515" cache_creation="{'ephemeral_5m_input_tokens': 7708, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Dru139pzz3CLEngrQ28MUF">
+     1→"""Shared test fixtures and configuration."""
+     2→
+     3→import json
+     4→import shutil
+     5→import tarfile
+     6→import tempfile
+     7→from pathlib import Path
+     8→
+     9→import pytest
+    10→
+    11→
+    12→def load_fixture(fixture_path: str) -&gt; str:
+    13→    """Load a fixture file as a string.
+    14→
+    15→    Args:
+    16→        fixture_path: Path relative to tests/fixtures/ directory
+    17→
+    18→    Returns:
+    19→        Content of the fixture file as a string
+    20→    """
+    21→    base_path = Path(__file__).parent / "fixtures" / fixture_path
+    22→    if not base_path.exists():
+    23→        raise FileNotFoundError(f"Fixture not found: {fixture_path}")
+    24→    return base_path.read_text(encoding="utf-8")
+    25→
+    26→
+    27→def load_json_fixture(fixture_path: str) -&gt; dict:
+    28→    """Load a JSON fixture file.
+    29→
+    30→    Args:
+
+... [198 lines omitted] ...
+
+    60→            raise FileNotFoundError(f"Repository fixture not found: {fixture_name}")
+    82→            shutil.rmtree(temp_dir, ignore_errors=True)
+    96→        shutil.rmtree(temp_dir, ignore_errors=True)
+  </tool_result>
+  <tool_result tool="toolu_01S2C2s57H2WnBAQ9sfMsSUD">
+     1→"""Tests for context creation and regeneration."""
+     2→
+     3→from pathlib import Path
+     4→from unittest.mock import patch
+     5→
+     6→from tests.fakes.gateway.console import FakeConsole
+     7→from tests.fakes.gateway.git import FakeGit
+     8→from tests.fakes.tests.prompt_executor import FakePromptExecutor
+     9→from tests.test_utils.test_context import context_for_test
+    10→
+    11→from erk.core.codex_prompt_executor import CodexCliPromptExecutor
+    12→from erk.core.context import (
+    13→    create_prompt_executor,
+    14→    regenerate_context,
+    15→    select_prompt_executor,
+    16→)
+    17→from erk.core.fallback_prompt_executor import FallbackPromptExecutor
+    18→from erk.core.prompt_executor import ClaudeCliPromptExecutor
+    19→from erk_shared.context.types import GlobalConfig, InteractiveAgentConfig
+    20→
+    21→
+    22→def test_regenerate_context_preserves_dry_run(tmp_path: Path) -&gt; None:
+    23→    """Test that regenerate_context preserves dry_run flag."""
+    24→    # Use context_for_test to create a fast test context with dry_run=True
+    25→    ctx1 = context_for_test(git=FakeGit(), cwd=tmp_path, dry_run=True)
+    26→    assert ctx1.dry_run is True
+    27→
+    28→    # Mock create_context to return another test context instead of real one
+    29→    ctx2_mock = context_for_test(git=FakeGit(), cwd=tmp_path, dry_run=True)
+    30→    with patch("erk.core.context.create_context", return_value=ctx2_mock):
+
+... [93 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01MwTHoFGiUfEEYFCwGsFGc2">
+     1→"""Tests for worktree_utils functions."""
+     2→
+     3→from pathlib import Path
+     4→
+     5→from erk.core.worktree_utils import (
+     6→    compute_relative_path_in_worktree,
+     7→    find_worktree_containing_path,
+     8→)
+     9→from erk_shared.gateway.git.abc import WorktreeInfo
+    10→
+    11→
+    12→def test_compute_relative_path_returns_none_when_at_worktree_root() -&gt; None:
+    13→    """Returns None when current_dir is at the worktree root."""
+    14→    worktrees = [
+    15→        WorktreeInfo(path=Path("/repo/worktrees/feat"), branch="feat", is_root=False),
+    16→    ]
+    17→    # When at root, relative path is None
+    18→    result = compute_relative_path_in_worktree(worktrees, Path("/repo/worktrees/feat"))
+    19→    assert result is None
+    20→
+    21→
+    22→def test_compute_relative_path_returns_none_when_not_in_worktree() -&gt; None:
+    23→    """Returns None when current_dir is not in any known worktree."""
+    24→    worktrees = [
+    25→        WorktreeInfo(path=Path("/repo/worktrees/feat"), branch="feat", is_root=False),
+    26→    ]
+    27→    # Path not in any worktree
+    28→    result = compute_relative_path_in_worktree(worktrees, Path("/other/path"))
+    29→    assert result is None
+    30→
+
+... [81 lines omitted] ...
+  </tool_result>
+  <assistant>Now let me look at some test helper files and examine actual test patterns:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="10539" cache_read_input_tokens="33223" cache_creation="{'ephemeral_5m_input_tokens': 10539, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01HySXbaP9TSxcixsEpHVkn5">
+    <param name="pattern">tests/test_utils/**/*.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="10539" cache_read_input_tokens="33223" cache_creation="{'ephemeral_5m_input_tokens': 10539, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01NddiQ5hX44bqwecBP3ids7">
+    <param name="file_path">/home/runner/work/erk/erk/tests/test_utils/test_context.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="10539" cache_read_input_tokens="33223" cache_creation="{'ephemeral_5m_input_tokens': 10539, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01WEzaZkuSUjTh93PVFNqPNo">
+    <param name="file_path">/home/runner/work/erk/erk/tests/test_utils/env_helpers.py</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="10539" cache_read_input_tokens="33223" cache_creation="{'ephemeral_5m_input_tokens': 10539, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01NddiQ5hX44bqwecBP3ids7">
+     1→"""Test context factories for creating ErkContext instances.
+     2→
+     3→This module provides factory functions for creating test contexts with fake
+     4→implementations. These were moved here from src/erk/core/context.py to keep
+     5→fake imports out of production code.
+     6→"""
+     7→
+     8→from __future__ import annotations
+     9→
+    10→from pathlib import Path
+    11→from typing import TYPE_CHECKING
+    12→
+    13→from erk.artifacts.paths import ErkPackageInfo
+    14→from erk.core.services.objective_list_service import RealObjectiveListService
+    15→from erk_shared.context.context import ErkContext
+    16→from erk_shared.context.types import GlobalConfig, LoadedConfig, NoRepoSentinel, RepoContext
+    17→from erk_shared.core.objective_list_service import ObjectiveListService
+    18→from erk_shared.core.plan_list_service import PlanListService
+    19→from erk_shared.core.prompt_executor import PromptExecutor
+    20→from erk_shared.core.script_writer import ScriptWriter
+    21→from erk_shared.gateway.agent_docs.abc import AgentDocs
+    22→from erk_shared.gateway.agent_launcher.abc import AgentLauncher
+    23→from erk_shared.gateway.claude_installation.abc import ClaudeInstallation
+    24→from erk_shared.gateway.cmux.abc import Cmux
+    25→from erk_shared.gateway.codespace.abc import Codespace
+    26→from erk_shared.gateway.codespace_registry.abc import CodespaceRegistry
+    27→from erk_shared.gateway.completion.abc import Completion
+    28→from erk_shared.gateway.console.abc import Console
+    29→from erk_shared.gateway.erk_installation.abc import ErkInstallation
+    30→from erk_shared.gateway.git.abc import Git
+
+... [361 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01WEzaZkuSUjTh93PVFNqPNo">
+     1→"""Centralized test environment helpers for simulating erk scenarios.
+     2→
+     3→This module provides helpers for setting up realistic erk test environments
+     4→with Click's CliRunner. It provides two patterns:
+     5→
+     6→1. erk_isolated_fs_env(): Filesystem-based (uses isolated_filesystem(),
+     7→   creates real directories)
+     8→2. erk_inmem_env(): In-memory (uses fakes only, no filesystem I/O)
+     9→
+    10→Key Components:
+    11→    - ErkIsolatedFsEnv: Helper class for filesystem-based testing
+    12→    - ErkInMemEnv: Helper class for in-memory testing
+    13→    - erk_isolated_fs_env(): Context manager for filesystem-based tests
+    14→    - erk_inmem_env(): Context manager for in-memory tests
+    15→
+    16→Usage Pattern:
+    17→
+    18→    Before (raw isolated_filesystem pattern - 20-30 lines per test):
+    19→    ```python
+    20→    def test_something() -&gt; None:
+    21→        runner = CliRunner()
+    22→        with runner.isolated_filesystem():
+    23→            cwd = Path.cwd()
+    24→            git_dir = cwd / ".git"
+    25→            git_dir.mkdir()
+    26→            erk_root = cwd / "erks"
+    27→            erk_root.mkdir()
+    28→
+    29→            git = FakeGit(git_common_dirs={cwd: git_dir})
+    30→            global_config = GlobalConfig.test(...)
+
+... [75 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01HySXbaP9TSxcixsEpHVkn5">
+/home/runner/work/erk/erk/tests/test_utils/__init__.py
+/home/runner/work/erk/erk/tests/test_utils/builders.py
+/home/runner/work/erk/erk/tests/test_utils/cli_helpers.py
+/home/runner/work/erk/erk/tests/test_utils/context_builders.py
+/home/runner/work/erk/erk/tests/test_utils/github_helpers.py
+/home/runner/work/erk/erk/tests/test_utils/graphite_helpers.py
+/home/runner/work/erk/erk/tests/test_utils/output_helpers.py
+/home/runner/work/erk/erk/tests/test_utils/paths.py
+/home/runner/work/erk/erk/tests/test_utils/test_context.py
+/home/runner/work/erk/erk/tests/test_utils/env_helpers.py
+/home/runner/work/erk/erk/tests/test_utils/plan_helpers.py
+  </tool_result>
+  <assistant>Now let me examine some actual tests using fakes and check the fakes directory structure:</assistant>
+  <usage input_tokens="7552" cache_creation_input_tokens="654" cache_read_input_tokens="43762" cache_creation="{'ephemeral_5m_input_tokens': 654, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_012ik7yW9fZew8hQHZjwuEst">
+    <param name="pattern">tests/fakes/gateway/*.py</param>
+    <param name="path">/home/runner/work/erk/erk</param>
+  </tool_use>
+  <usage input_tokens="7552" cache_creation_input_tokens="654" cache_read_input_tokens="43762" cache_creation="{'ephemeral_5m_input_tokens': 654, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01MTAgc2fw8FUugJwo2ycYXY">
+    <param name="file_path">/home/runner/work/erk/erk/tests/fakes/gateway/git.py</param>
+    <param name="limit">150</param>
+  </tool_use>
+  <usage input_tokens="7552" cache_creation_input_tokens="654" cache_read_input_tokens="43762" cache_creation="{'ephemeral_5m_input_tokens': 654, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01MTAgc2fw8FUugJwo2ycYXY">
+     1→"""Fake git operations for testing.
+     2→
+     3→FakeGit is an in-memory implementation that accepts pre-configured state
+     4→in its constructor. Construct instances directly with keyword arguments.
+     5→"""
+     6→
+     7→from __future__ import annotations
+     8→
+     9→from collections.abc import Callable
+    10→from pathlib import Path
+    11→from typing import NamedTuple
+    12→
+    13→from erk_shared.gateway.git.abc import (
+    14→    BranchDivergence,
+    15→    BranchSyncInfo,
+    16→    Git,
+    17→    RebaseResult,
+    18→    WorktreeInfo,
+    19→)
+    20→from erk_shared.gateway.git.analysis_ops.abc import GitAnalysisOps
+    21→from erk_shared.gateway.git.branch_ops.abc import GitBranchOps
+    22→from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists
+    23→from erk_shared.gateway.git.commit_ops.abc import GitCommitOps
+    24→from erk_shared.gateway.git.config_ops.abc import GitConfigOps
+    25→from erk_shared.gateway.git.rebase_ops.abc import GitRebaseOps
+    26→from erk_shared.gateway.git.remote_ops.abc import GitRemoteOps
+    27→from erk_shared.gateway.git.remote_ops.types import PullRebaseError, PushError
+    28→from erk_shared.gateway.git.repo_ops.abc import GitRepoOps
+    29→from erk_shared.gateway.git.status_ops.abc import GitStatusOps
+    30→from erk_shared.gateway.git.tag_ops.abc import GitTagOps
+
+... [125 lines omitted] ...
+
+   135→        delete_branch_raises: dict[str, Exception] | None = None,
+   138→        tracking_branch_failures: dict[str, str] | None = None,
+   149→        add_all_raises: Exception | None = None,
+   150→        fetch_branch_raises: Exception | None = None,
+  </tool_result>
+  <tool_result tool="toolu_012ik7yW9fZew8hQHZjwuEst">
+/home/runner/work/erk/erk/tests/fakes/gateway/__init__.py
+/home/runner/work/erk/erk/tests/fakes/gateway/erk_installation.py
+/home/runner/work/erk/erk/tests/fakes/gateway/browser.py
+/home/runner/work/erk/erk/tests/fakes/gateway/core.py
+/home/runner/work/erk/erk/tests/fakes/gateway/branch_manager.py
+/home/runner/work/erk/erk/tests/fakes/gateway/codespace_registry.py
+/home/runner/work/erk/erk/tests/fakes/gateway/ci_runner.py
+/home/runner/work/erk/erk/tests/fakes/gateway/agent_docs.py
+/home/runner/work/erk/erk/tests/fakes/gateway/agent_launcher.py
+/home/runner/work/erk/erk/tests/fakes/gateway/command_executor.py
+/home/runner/work/erk/erk/tests/fakes/gateway/completion.py
+/home/runner/work/erk/erk/tests/fakes/gateway/cmux.py
+/home/runner/work/erk/erk/tests/fakes/gateway/console.py
+/home/runner/work/erk/erk/tests/fakes/gateway/codespace.py
+/home/runner/work/erk/erk/tests/fakes/gateway/clipboard.py
+/home/runner/work/erk/erk/tests/fakes/gateway/claude_installation.py
+/home/runner/work/erk/erk/tests/fakes/gateway/git_worktree.py
+/home/runner/work/erk/erk/tests/fakes/gateway/git_config_ops.py
+/home/runner/work/erk/erk/tests/fakes/gateway/git_commit_ops.py
+/home/runner/work/erk/erk/tests/fakes/gateway/git.py
+/home/runner/work/erk/erk/tests/fakes/gateway/git_rebase_ops.py
+/home/runner/work/erk/erk/tests/fakes/gateway/git_remote_ops.py
+/home/runner/work/erk/erk/tests/fakes/gateway/git_tag_ops.py
+/home/runner/work/erk/erk/tests/fakes/gateway/git_status_ops.py
+/home/runner/work/erk/erk/tests/fakes/gateway/git_repo_ops.py
+/home/runner/work/erk/erk/tests/fakes/gateway/git_branch_ops.py
+/home/runner/work/erk/erk/tests/fakes/gateway/git_analysis_ops.py
+/home/runner/work/erk/erk/tests/fakes/gateway/gt.py
+/home/runner/work/erk/erk/tests/fakes/gateway/github_issues.py
+/home/runner/work/erk/erk/tests/fakes/gateway/pr_service.py
+
+... [11 lines omitted] ...
+  </tool_result>
+  <assistant>Let me look at a few more concrete examples:</assistant>
+  <usage input_tokens="2525" cache_creation_input_tokens="8971" cache_read_input_tokens="44416" cache_creation="{'ephemeral_5m_input_tokens': 8971, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01A7bax8MNYPfgwwYBcjJYRb">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/core/capabilities/test_base.py</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="2525" cache_creation_input_tokens="8971" cache_read_input_tokens="44416" cache_creation="{'ephemeral_5m_input_tokens': 8971, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01FytZuKc2V4jos7w55WuhmE">
+    <param name="file_path">/home/runner/work/erk/erk/tests/fakes/gateway/console.py</param>
+    <param name="limit">80</param>
+  </tool_use>
+  <usage input_tokens="2525" cache_creation_input_tokens="8971" cache_read_input_tokens="44416" cache_creation="{'ephemeral_5m_input_tokens': 8971, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01By1JmP26LtxbCCCty91rmk">
+    <param name="file_path">/home/runner/work/erk/erk/tests/test_utils/paths.py</param>
+  </tool_use>
+  <usage input_tokens="2525" cache_creation_input_tokens="8971" cache_read_input_tokens="44416" cache_creation="{'ephemeral_5m_input_tokens': 8971, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01A7bax8MNYPfgwwYBcjJYRb">
+     1→"""Tests for capability base data structures and ABC contract.
+     2→
+     3→Tests CapabilityResult, CapabilityArtifact, CapabilityScope, preflight(),
+     4→and custom capability registration.
+     5→"""
+     6→
+     7→from pathlib import Path
+     8→
+     9→from erk.capabilities.agents.devrun import DevrunAgentCapability
+    10→from erk.capabilities.erk_bash_permissions import ErkBashPermissionsCapability
+    11→from erk.capabilities.learned_docs import LearnedDocsCapability
+    12→from erk.capabilities.skills.bundled import bundled_skills
+    13→from erk.capabilities.statusline import StatuslineCapability
+    14→from erk.capabilities.workflows.erk_impl import ErkImplWorkflowCapability
+    15→from erk.core.capabilities.base import (
+    16→    Capability,
+    17→    CapabilityArtifact,
+    18→    CapabilityResult,
+    19→    CapabilityScope,
+    20→)
+    21→from erk.core.capabilities.registry import get_capability, list_capabilities
+    22→
+    23→# =============================================================================
+    24→# Tests for CapabilityResult
+    25→# =============================================================================
+    26→
+    27→
+    28→def test_capability_result_is_frozen() -&gt; None:
+    29→    """Test that CapabilityResult is immutable."""
+    30→    result = CapabilityResult(success=True, message="test")
+
+... [75 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01FytZuKc2V4jos7w55WuhmE">
+     1→"""Fake Console implementation for testing.
+     2→
+     3→FakeConsole is an in-memory implementation that captures messages and
+     4→returns configurable responses, enabling fast and deterministic tests.
+     5→"""
+     6→
+     7→import click
+     8→
+     9→from erk_shared.gateway.console.abc import Console
+    10→from erk_shared.output.output import user_output
+    11→
+    12→
+    13→class FakeConsole(Console):
+    14→    """In-memory fake implementation for testing.
+    15→
+    16→    Captures messages and confirm prompts for test assertions.
+    17→    Also outputs messages via user_output() so CliRunner can capture them.
+    18→
+    19→    Usage in tests:
+    20→        fake_console = FakeConsole(confirm_responses=[False, True])
+    21→        ctx = context_for_test(console=fake_console, ...)
+    22→
+    23→        # Run command
+    24→        result = runner.invoke(command, obj=ctx)
+    25→
+    26→        # Assert on captured messages
+    27→        assert "INFO: Starting..." in fake_console.messages
+    28→
+    29→        # Assert on confirm prompts shown
+    30→        assert "Close issue #42 now?" in fake_console.confirm_prompts
+
+... [55 lines omitted] ...
+
+    51→                If None or empty when confirm() is called, raises an error.
+  </tool_result>
+  <tool_result tool="toolu_01By1JmP26LtxbCCCty91rmk">
+     1→"""Path utilities for tests.
+     2→
+     3→This module provides utilities for working with paths in tests, particularly
+     4→sentinel paths that allow tests to avoid unnecessary filesystem dependencies.
+     5→"""
+     6→
+     7→from __future__ import annotations
+     8→
+     9→from pathlib import Path
+    10→
+    11→
+    12→class SentinelPath(type(Path())):
+    13→    """Path subclass that throws on filesystem operations.
+    14→
+    15→    This enforces that all filesystem checks go through fake operations
+    16→    (like FakeGit.path_exists()) rather than direct Path methods.
+    17→    This ensures high fidelity between test and production environments.
+    18→
+    19→    File I/O operations (write_text/read_text) are tracked in memory,
+    20→    allowing tests to write and read files without touching the real filesystem.
+    21→
+    22→    Raises:
+    23→        RuntimeError: If .exists() or other filesystem methods are called
+    24→    """
+    25→
+    26→    # Class-level storage for file contents written via write_text()
+    27→    _file_storage: dict[str, str] = {}
+    28→
+    29→    @classmethod
+    30→    def clear_file_storage(cls) -&gt; None:
+
+... [169 lines omitted] ...
+
+    45→        Note: For paths NOT in storage, this returns False (not an error).
+    49→        an error for all exists() calls.
+    76→        """Throw error instead of checking directory."""
+    77→        raise RuntimeError(
+    83→        """Throw error instead of checking file."""
+    84→        raise RuntimeError(
+   129→            raise FileNotFoundError(f"No content stored for sentinel path {self}")
+   135→        errors: str | None = None,
+   150→    def read_text(self, encoding: str | None = None, errors: str | None = None) -&gt; str:
+   157→            FileNotFoundError: If file was never written via write_text()
+   161→            raise FileNotFoundError(f"No content stored for sentinel path {self}")
+   168→    Use this when testing pure logic (CLI exit codes, error messages, validation)
+   172→    The returned SentinelPath throws errors if filesystem operations are attempted,
+  </tool_result>
+  <assistant>Perfect! Now let me create a comprehensive summary report based on all the files I've reviewed.
+
+## Erk Test Structure and Patterns - Comprehensive Report
+
+Based on my analysis of the erk codebase, here's a complete overview of the testing infrastructure for `src/erk/core/` modules:
+
+### 1. **Documentation Foundation**
+
+The primary testing reference is `/home/runner/work/erk/erk/docs/learned/testing/testing.md`, which documents:
+- Test requirements and philosophy
+- Running tests (unit vs integration)
+- Test directory structure and organization
+- Fixture selection guide
+- CLI testing patterns
+- Critical path handling and guidelines
+
+### 2. **Test Organization Structure**
+
+```
+tests/
+├── conftest.py                 # Global fixtures (fixture loaders, scenario builders)
+├── test_utils/                 # Test helper functions and context builders
+│   ├── test_context.py        # context_for_test(), minimal_context() factories
+│   ├── env_helpers.py         # erk_isolated_fs_env(), erk_inmem_env()
+│   ├── paths.py               # sentinel_path(), SentinelPath class
+│   ├── builders.py            # WorktreeScenario, GraphiteCacheBuilder
+│   ├── cli_helpers.py         # CLI testing utilities
+│   ├── github_helpers.py       # GitHub fake setup helpers
+│   └── graphite_helpers.py    # Graphite fake setup helpers
+├── fakes/
+│   ├── gateway/                # Gateway fake implementations
+│   │   ├── git.py             # FakeGit - main git operations fake
+│   │   ├── console.py         # FakeConsole - I/O and user prompts
+│   │   ├── shell.py           # FakeShell - subprocess execution
+│   │   ├── github.py          # FakeLocalGitHub - GitHub API
+│   │   ├── graphite.py        # FakeGraphite - Graphite operations
+│   │   ├── time.py            # FakeTime - for time-injection testing
+│   │   └── [30+ other fakes]  # Full gateway coverage
+│   └── tests/                  # Test-specific fake implementations
+├── unit/core/                  # Unit tests for core modules
+│   ├── capabilities/           # Tests for capabilities system
+│   ├── github/                 # Tests for GitHub integration
+│   ├── codespace/              # Tests for Codespace support
+│   ├── test_context.py        # Tests for context creation/regeneration
+│   ├── test_worktree_utils.py # Tests for worktree utilities
+│   └── [other core modules]
+└── [other test directories]
+```
+
+### 3. **Core Context Helpers: `context_for_test()` and `minimal_context()`**
+
+**File**: `/home/runner/work/erk/erk/tests/test_utils/test_context.py`
+
+#### `context_for_test()` - Full Control Context Builder
+```python
+from tests.test_utils.test_context import context_for_test
+
+# Minimal (uses all test defaults)
+ctx = context_for_test(git=FakeGit(), cwd=Path("/test"))
+
+# Complex (custom fakes for multiple gateways)
+ctx = context_for_test(
+    git=FakeGit(worktrees={...}),
+    github=FakeLocalGitHub(...),
+    graphite=FakeGraphite(...),
+    console=FakeConsole(...),
+    shell=FakeShell(...),
+    time=FakeTime(),
+    cwd=tmp_path,
+    dry_run=True,
+    debug=False,
+)
+```
+
+**Key Parameters** (all keyword-only, default to test-sensible values):
+- `git`, `github`, `issues`, `shell`, `console`, `time` - Gateway implementations
+- `cwd` - Current working directory (defaults to sentinel_path)
+- `dry_run` - Enable dry-run mode (wraps gateways with Dry-Run versions)
+- `global_config`, `local_config` - Configuration objects
+- `repo`, `repo_info` - Repository context
+
+#### `minimal_context()` - Lightweight Context
+```python
+from tests.test_utils.test_context import minimal_context
+
+ctx = minimal_context(git=FakeGit(), cwd=Path("/test"), dry_run=False)
+```
+
+**Use when**: Only git operations are needed, other integrations use defaults.
+
+### 4. **Test Environment Helpers**
+
+**File**: `/home/runner/work/erk/erk/tests/test_utils/env_helpers.py`
+
+#### `erk_isolated_fs_env()` - Recommended for Filesystem Operations
+```python
+from click.testing import CliRunner
+from tests.test_utils.env_helpers import erk_isolated_fs_env
+
+def test_command() -&gt; None:
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        # env provides:
+        # - env.cwd: Current working directory
+        # - env.git_dir: Git directory (.git)
+        # - env.root_worktree: Repository root
+        # - env.erks_root: Erk configuration directory
+        
+        git = FakeGit(git_common_dirs={env.cwd: env.git_dir})
+        ctx = context_for_test(git=git, cwd=env.cwd)
+        
+        result = runner.invoke(cli, ["command"], obj=ctx)
+        assert result.exit_code == 0
+```
+
+**Creates**: Real temp directories in CliRunner's isolated filesystem.
+
+#### `erk_inmem_env()` - For Pure Logic Tests
+```python
+from tests.test_utils.env_helpers import erk_inmem_env
+
+def test_logic() -&gt; None:
+    with erk_inmem_env() as env:
+        # env provides sentinel paths (no real I/O)
+        git = FakeGit(git_common_dirs={env.cwd: env.git_dir})
+        ctx = context_for_test(git=git, cwd=env.cwd)
+        
+        # Run test - no filesystem operations
+        result = runner.invoke(cli, ["command"], obj=ctx)
+```
+
+**Use when**: Testing pure logic without real filesystem operations.
+
+### 5. **Fake Gateway Implementations**
+
+**Location**: `/home/runner/work/erk/erk/tests/fakes/gateway/`
+
+Key fakes for `src/erk/core/` testing:
+
+#### **FakeGit** - Git Operations Fake
+```python
+from tests.fakes.gateway.git import FakeGit
+from erk_shared.gateway.git.abc import WorktreeInfo
+
+git = FakeGit(
+    worktrees={repo: [WorktreeInfo(path=repo, branch="main", is_root=True)]},
+    current_branches={repo: "main"},
+    git_common_dirs={repo: repo / ".git"},
+    default_branches={repo: "main"},
+    branch_heads={"main": "abc123", "feature": "def456"},
+)
+
+# Track mutations for assertions
+assert "new-branch" in git.created_branches
+assert (repo, "feature") in git.checked_out_branches
+assert "old-branch" in git.deleted_branches
+assert len(git.added_worktrees) == 1
+```
+
+**Top-level tracking properties**:
+- `staged_files` - Files staged via add/stage
+- `deleted_branches` - Branches deleted
+- `added_worktrees` - Worktrees added
+- `removed_worktrees` - Worktrees removed
+- `created_branches` - Branches created
+- `pushed_branches` - Branches pushed (includes remote, branch, set_upstream, force)
+- `commits` - Commits made
+
+#### **FakeConsole** - I/O and Prompts
+```python
+from tests.fakes.gateway.console import FakeConsole
+
+console = FakeConsole(
+    is_interactive=True,
+    is_stdout_tty=None,      # Defaults to is_interactive if None
+    is_stderr_tty=None,      # Defaults to is_interactive if None
+    confirm_responses=[True, False],  # For confirm() calls
+)
+
+# Use in context
+ctx = context_for_test(console=console)
+
+# Assert on captured output
+assert "Starting..." in console.messages
+assert "Delete file?" in console.confirm_prompts
+```
+
+**Critical**: `confirm_responses` array length must match prompt count exactly.
+
+#### **FakeShell** - Subprocess Execution
+```python
+from tests.fakes.gateway.shell import FakeShell
+
+shell = FakeShell()
+ctx = context_for_test(shell=shell)
+
+# Track executed commands
+assert any("git" in cmd for cmd in shell.executed_commands)
+```
+
+#### **FakeLocalGitHub** - GitHub API Operations
+```python
+from tests.fakes.gateway.github import FakeLocalGitHub
+from tests.fakes.gateway.github_issues import FakeGitHubIssues
+
+issues = FakeGitHubIssues()
+github = FakeLocalGitHub(issues_gateway=issues)
+ctx = context_for_test(github=github, issues=issues)
+
+# Track PR operations
+assert len(github.created_prs) &gt; 0
+assert len(github.pr_comments) &gt; 0
+```
+
+**Critical**: Dual-mapping for branch lookups - must configure both `prs` and `pr_details`.
+
+#### **FakeTime** - Time Injection
+```python
+from tests.fakes.gateway.time import FakeTime
+from datetime import datetime
+
+fake_time = FakeTime()
+ctx = context_for_test(time=fake_time)
+
+# Default time is datetime(2024, 1, 15, 14, 30, 0)
+# Advance time in test:
+fake_time.advance(seconds=60)
+```
+
+### 6. **Sentinel Paths** - Testing Without Filesystem I/O
+
+**File**: `/home/runner/work/erk/erk/tests/test_utils/paths.py`
+
+```python
+from tests.test_utils.paths import sentinel_path, SentinelPath
+
+# Use sentinel paths for pure logic tests
+cwd = sentinel_path()
+repo_root = sentinel_path("/test/repo")
+
+ctx = context_for_test(cwd=cwd)
+
+# Sentinel paths:
+# - .exists() returns False (safe default)
+# - .resolve() returns self (no-op)
+# - .mkdir() is no-op
+# - .write_text() stores in memory
+# - .read_text() retrieves from memory
+# - Throws on .is_dir() or .is_file() (catch bad checks)
+```
+
+**Why**: Forces code to use fake operations instead of filesystem checks, improving test fidelity.
+
+### 7. **Global Fixtures** - `conftest.py`
+
+**File**: `/home/runner/work/erk/erk/tests/conftest.py`
+
+Key fixtures:
+```python
+# Fixture loaders
+load_fixture(fixture_path)       # Load fixture as string
+load_json_fixture(fixture_path)  # Load fixture as JSON
+
+# Repo extraction
+@pytest.fixture
+def extract_repo_fixture():
+    """Extracts tarred git repositories for testing."""
+
+# Scenario builders
+@pytest.fixture
+def simple_repo(tmp_path):
+    """Repository with just main branch."""
+
+@pytest.fixture
+def repo_with_feature(tmp_path):
+    """Repository with main + one feature branch."""
+
+@pytest.fixture
+def repo_with_pr(tmp_path):
+    """Repository with feature branch and open PR."""
+
+@pytest.fixture
+def graphite_stack_repo(tmp_path):
+    """Repository with worktree stack (3 levels)."""
+
+@pytest.fixture
+def multi_worktree_repo(tmp_path):
+    """Repository with 5 worktrees (stress test)."""
+```
+
+### 8. **Example: Real Test Pattern**
+
+From `/home/runner/work/erk/erk/tests/unit/core/test_context.py`:
+
+```python
+from pathlib import Path
+from tests.fakes.gateway.git import FakeGit
+from tests.test_utils.test_context import context_for_test
+from erk.core.context import regenerate_context
+
+def test_regenerate_context_preserves_dry_run(tmp_path: Path) -&gt; None:
+    """Test that regenerate_context preserves dry_run flag."""
+    # Create context with dry_run=True
+    ctx1 = context_for_test(git=FakeGit(), cwd=tmp_path, dry_run=True)
+    assert ctx1.dry_run is True
+
+    # Regenerate and verify flag preserved
+    ctx2 = regenerate_context(ctx1)
+    assert ctx2.dry_run is True
+```
+
+### 9. **Key Testing Patterns for Core Modules**
+
+**Pattern 1: Simple Function Test**
+```python
+def test_compute_relative_path_returns_none_when_at_worktree_root() -&gt; None:
+    """Returns None when current_dir is at the worktree root."""
+    worktrees = [
+        WorktreeInfo(path=Path("/repo/worktrees/feat"), branch="feat", is_root=False),
+    ]
+    result = compute_relative_path_in_worktree(worktrees, Path("/repo/worktrees/feat"))
+    assert result is None
+```
+
+**Pattern 2: Context-Dependent Test**
+```python
+def test_with_git_operations(tmp_path: Path) -&gt; None:
+    """Test that requires git operations."""
+    git = FakeGit(
+        worktrees={tmp_path: [WorktreeInfo(...)]},
+        current_branches={tmp_path: "main"},
+    )
+    ctx = context_for_test(git=git, cwd=tmp_path)
+    
+    # Call function that uses ctx
+    result = some_function(ctx)
+    assert result.success
+```
+
+**Pattern 3: Capability Test**
+```python
+def test_capability_result_is_frozen() -&gt; None:
+    """Test that CapabilityResult is immutable."""
+    result = CapabilityResult(success=True, message="test")
+    assert result.success is True
+    # Would raise if we try: result.success = False
+```
+
+### 10. **Critical Testing Conventions**
+
+From the tripwires documentation:
+
+**LBYL (Look Before You Leap)**
+```python
+# Check existence before operations
+if key in dict:
+    value = dict[key]
+```
+
+**No default parameters**
+```python
+# NOT: def foo(verbose: bool = False)
+# YES:
+def foo(*, verbose: bool):
+    pass
+```
+
+**Frozen dataclasses**
+```python
+@dataclass(frozen=True)  # Always frozen
+class Config:
+    value: str
+```
+
+**Absolute imports**
+```python
+# NOT: from .config import X
+# YES:
+from erk.config import X
+```
+
+**Never hardcode paths in tests**
+```python
+# NOT: cwd = Path("/test/default/cwd")
+# YES:
+with erk_isolated_fs_env(runner) as env:
+    cwd = env.cwd
+```
+
+### 11. **Test Running Commands**
+
+From documentation:
+```bash
+# Fast unit tests (recommended for development)
+make test
+
+# Integration tests only (slower, real I/O)
+make test-integration
+
+# All tests (unit + integration)
+make test-all
+
+# Scope tests to specific folder
+make test -- tests/unit/core/
+```
+
+### 12. **Test File Organization**
+
+- **Plain functions over test classes** - Use `def test_*()` unless testing a class
+- **Max 500 lines per test file** - Split into subdirectories if larger
+- **One file per pipeline step** (for complex test suites)
+- **Mutation tracking** via read-only properties on fakes
+
+This is the comprehensive testing architecture for erk's core modules. The key insight is that **all testing is driven through dependency injection of fake gateways**, with `context_for_test()` as the primary factory for building realistic test contexts.</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="7965" cache_read_input_tokens="53387" cache_creation="{'ephemeral_5m_input_tokens': 7965, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>
