@@ -1,0 +1,31 @@
+{
+  "version": 1,
+  "pr_number": 9162,
+  "sessions": [
+    {
+      "session_id": "",
+      "stage": "impl",
+      "source": "local",
+      "uploaded_at": "2026-03-10T13:42:52.207466+00:00",
+      "files": [
+        "impl--db46b11e-08b8-43f7-850c-c925e6a8519b-part1.xml",
+        "impl--db46b11e-08b8-43f7-850c-c925e6a8519b-part10.xml",
+        "impl--db46b11e-08b8-43f7-850c-c925e6a8519b-part11.xml",
+        "impl--db46b11e-08b8-43f7-850c-c925e6a8519b-part12.xml",
+        "impl--db46b11e-08b8-43f7-850c-c925e6a8519b-part2.xml",
+        "impl--db46b11e-08b8-43f7-850c-c925e6a8519b-part3.xml",
+        "impl--db46b11e-08b8-43f7-850c-c925e6a8519b-part4.xml",
+        "impl--db46b11e-08b8-43f7-850c-c925e6a8519b-part5.xml",
+        "impl--db46b11e-08b8-43f7-850c-c925e6a8519b-part6.xml",
+        "impl--db46b11e-08b8-43f7-850c-c925e6a8519b-part7.xml",
+        "impl--db46b11e-08b8-43f7-850c-c925e6a8519b-part8.xml",
+        "impl--db46b11e-08b8-43f7-850c-c925e6a8519b-part9.xml"
+      ],
+      "user_turns": 3,
+      "duration_minutes": 12,
+      "raw_size_kb": 1186,
+      "xml_size_kb": 304,
+      "git_branch": "plnd/O9009-objective-json-machi-03-10-1328"
+    }
+  ]
+}

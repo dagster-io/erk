@@ -1,0 +1,421 @@
+<session>
+  <meta source="agent-a8f99f5" />
+  <meta branch="plnd/O9009-objective-json-machi-03-10-1328" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <assistant>Perfect! Now I have all the information needed. Let me create a comprehensive summary document:
+
+## Summary: Codebase Structure for `erk json objective view/check` Implementation
+
+Based on my exploration of the erk codebase, here's the complete picture you need to implement the JSON objective machine commands:
+
+---
+
+### ARCHITECTURE OVERVIEW
+
+The erk project uses a **best-of-both-worlds** architecture that separates human-facing CLI commands from machine-readable JSON commands:
+
+```
+Human Command:          Machine Command:
+src/erk/cli/            src/erk/cli/
+└── commands/           └── commands/
+    └── foo/            └── json/
+        ├── cli.py          └── foo/
+        ├── operation.py        ├── json_cli.py (thin adapter)
+        └── json_cli.py     └── operation.py (shared)
+```
+
+**Key principle**: The `operation.py` is the single source of truth. Both `cli.py` (human) and `json_cli.py` (machine) call the same `run_*()` function.
+
+---
+
+### MACHINE COMMAND DECORATOR STACK
+
+**File**: `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/agentclick/machine_command.py` (lines 1-212)
+
+The decorator order (top to bottom) is **critical**:
+
+```python
+@mcp_exposed(...)        # Optional, outermost
+@machine_command(...)    # MUST be above @click.command
+@click.command(...)      # Click command registration
+@click.pass_obj          # Innermost
+def json_foo(ctx, *, request: FooRequest) -&gt; FooResult | MachineCommandError:
+    return run_foo(ctx, request)
+```
+
+**Key MachineCommandError class** (dataclass at line 37-42):
+```python
+@dataclass(frozen=True)
+class MachineCommandError:
+    error_type: str      # e.g., "invalid_input", "not_found", "auth_required"
+    message: str         # Human-readable error description
+```
+
+The decorator (lines 45-212):
+- Adds `--schema` flag automatically
+- Reads JSON from stdin via `read_machine_command_input()`
+- Validates against `request_type` dataclass
+- Passes constructed request as `request=` kwarg
+- Serializes return value to JSON stdout
+- Handles `MachineCommandError` by emitting JSON and exiting with code 1
+
+---
+
+### EXISTING OBJECTIVE COMMANDS
+
+**Files to migrate**:
+- `/home/runner/work/erk/erk/src/erk/cli/commands/objective/view_cmd.py` (421 lines, full file above)
+- `/home/runner/work/erk/erk/src/erk/cli/commands/objective/check_cmd.py` (432 lines, full file above)
+- `/home/runner/work/erk/erk/src/erk/cli/commands/objective/__init__.py` (25 lines, full file above)
+
+**Current patterns in view_cmd.py**:
+- Uses `@alias("v")` decorator for command aliasing
+- Has `--json-output` flag (legacy pattern to replace)
+- `_display_json()` function (lines 132-167) shows the JSON output structure
+- All helper functions (`_format_*`, `_extract_repo_base_url()`) must move to `cli.py`
+
+**Current patterns in check_cmd.py**:
+- `validate_objective()` function (lines 153-318) - pure logic, no I/O in __init__
+- `ObjectiveValidationSuccess` dataclass (lines 40-62) - frozen, carries validation results
+- `ObjectiveValidationError` dataclass (lines 65-69) - discriminated union for errors
+- `_output_json()` function (lines 362-394) - shows JSON output structure
+- `_output_human()` function (lines 397-431) - shows human output format
+
+---
+
+### REFERENCE IMPLEMENTATIONS
+
+#### 1. PR View Machine Command
+
+**Operation file**: `/home/runner/work/erk/erk/src/erk/cli/commands/pr/view/operation.py`
+
+```python
+@dataclass(frozen=True)
+class PrViewRequest:
+    identifier: str | None = None  # Optional, infers from branch
+    full: bool = False              # Optional field with default
+
+@dataclass(frozen=True)
+class PrViewResult:
+    plan_id: str
+    title: str
+    # ... other fields ...
+    body: str | None
+    
+    def to_json_dict(self) -&gt; dict[str, Any]:
+        result: dict[str, Any] = {
+            "plan_id": self.plan_id,
+            "title": self.title,
+            # ... serialize all fields ...
+        }
+        if self.body is not None:  # Conditional field inclusion
+            result["body"] = self.body
+        return result
+
+def run_pr_view(
+    ctx: ErkContext,
+    request: PrViewRequest,
+    *,
+    repo_id: GitHubRepoId,
+) -&gt; PrViewResult | MachineCommandError:
+    # Validation
+    if identifier is None:
+        if isinstance(ctx.repo, NoRepoSentinel):
+            return MachineCommandError(
+                error_type="missing_identifier",
+                message="A plan identifier is required..."
+            )
+    # Fetch, process, return result or error
+    return PrViewResult(...)
+```
+
+**Machine adapter**: `/home/runner/work/erk/erk/src/erk/cli/commands/pr/view/json_cli.py`
+
+```python
+@mcp_exposed(
+    name="pr_view",
+    description="View a specific plan's metadata..."
+)
+@machine_command(
+    request_type=PrViewRequest,
+    output_types=(PrViewResult,),
+)
+@click.command("view")
+@click.pass_obj
+def json_pr_view(
+    ctx: ErkContext,
+    *,
+    request: PrViewRequest,
+) -&gt; PrViewResult | MachineCommandError:
+    owner, repo_name = resolve_owner_repo(ctx, target_repo=None)
+    repo_id = GitHubRepoId(owner=owner, repo=repo_name)
+    return run_pr_view(ctx, request, repo_id=repo_id)
+```
+
+**Human command**: `/home/runner/work/erk/erk/src/erk/cli/commands/pr/view/cli.py`
+
+```python
+@click.command("view")
+@click.argument(...)
+@click.option(...)
+@resolved_repo_option
+@click.pass_obj
+def pr_view(ctx, identifier, *, full, repo_id):
+    # Marshal Click flags into Request
+    request = PrViewRequest(identifier=identifier, full=full)
+    result = run_pr_view(ctx, request, repo_id=repo_id)
+    
+    if isinstance(result, MachineCommandError):
+        # Handle error with user output
+        raise SystemExit(1)
+    
+    # Rich terminal output from result
+    # Uses result's rich domain objects directly (not serialized dicts)
+```
+
+#### 2. PR List Machine Command
+
+**Operation file**: `/home/runner/work/erk/erk/src/erk/cli/commands/pr/list/operation.py` (lines 1-129)
+
+Shows the pattern where:
+- Request is frozen dataclass with optional fields and defaults
+- Result carries **rich domain objects** (`list[PlanRowData]`), not serialized dicts
+- `to_json_dict()` method handles serialization to JSON-safe types
+
+```python
+@dataclass(frozen=True)
+class PrListRequest:
+    label: tuple[str, ...] = ()  # Empty tuple default
+    state: str | None = None
+    limit: int | None = None
+    all_users: bool = False
+    sort: str = "plan"  # String with default
+
+@dataclass(frozen=True)
+class PrListResult:
+    rows: list[PlanRowData]  # Rich domain objects!
+    warnings: list[str]
+    
+    def to_json_dict(self) -&gt; dict[str, Any]:
+        # Serialize only in to_json_dict()
+        plans = [serialize_plan_row(row) for row in self.rows]
+        return {"plans": plans, "count": len(plans)}
+```
+
+#### 3. One-Shot Machine Command
+
+**Canonical example**: `/home/runner/work/erk/erk/src/erk/cli/commands/one_shot/json_cli.py`
+
+Shows multiple output types in decorator:
+
+```python
+@mcp_exposed(...)
+@machine_command(
+    request_type=OneShotRequest,
+    output_types=(OneShotDispatchResult, OneShotDryRunResult),  # Multiple types
+)
+@click.command("one-shot")
+@click.pass_obj
+def json_one_shot(
+    ctx: ErkContext,
+    *,
+    request: OneShotRequest,
+) -&gt; OneShotDispatchResult | OneShotDryRunResult | MachineCommandError:
+    return run_one_shot(ctx, request)
+```
+
+---
+
+### JSON COMMAND TREE REGISTRATION
+
+**File**: `/home/runner/work/erk/erk/src/erk/cli/commands/json/__init__.py` (lines 1-22)
+
+Shows how to add subgroups:
+
+```python
+@click.group("json")
+def json_group() -&gt; None:
+    """Machine-readable JSON commands."""
+    pass
+
+json_group.add_command(json_one_shot, name="one-shot")
+json_group.add_command(json_pr_group, name="pr")
+# Will add: json_group.add_command(json_objective_group, name="objective")
+```
+
+**PR subgroup pattern**: `/home/runner/work/erk/erk/src/erk/cli/commands/json/pr/__init__.py` (lines 1-17)
+
+```python
+@click.group("pr")
+def json_pr_group() -&gt; None:
+    """Machine-readable PR commands."""
+    pass
+
+json_pr_group.add_command(json_pr_list, name="list")
+json_pr_group.add_command(json_pr_view, name="view")
+```
+
+---
+
+### OBJECTIVE COMMANDS - CURRENT STATE
+
+**view_cmd.py key elements**:
+- Helper functions (lines 42-130): `_format_field()`, `_format_ref_link()`, `_format_node_status()`, `_extract_repo_base_url()`, `_format_timestamp()`
+- JSON output function (lines 132-167): `_display_json()` - shows expected JSON structure
+- Human command (lines 170-421): `view_objective()` - uses Rich tables, Rich markup escaping
+
+**check_cmd.py key elements**:
+- Validation function (lines 153-318): `validate_objective()` - pure logic, returns discriminated union
+- Helper functions (lines 75-150): `_check_roadmap_table_sync()`, `_check_pr_backlinks()` - pure validation logic
+- Human command (lines 329-359): `check_objective()` - routes to `_output_json()` or `_output_human()`
+- JSON output (lines 362-394): `_output_json()` - shows expected structure
+- Human output (lines 397-431): `_output_human()` - shows `[PASS]/[FAIL]` format
+
+---
+
+### KEY IMPLEMENTATION DETAILS
+
+#### 1. Result Dataclass Pattern
+
+Must implement `to_json_dict()` method for custom serialization:
+
+```python
+@dataclass(frozen=True)
+class MyResult:
+    items: list[Item]  # Rich domain objects
+    
+    def to_json_dict(self) -&gt; dict[str, Any]:
+        return {
+            "items": [i.to_dict() for i in self.items],
+            "count": len(self.items)
+        }
+```
+
+The decorator calls `to_json_dict()` if present, otherwise falls back to `dataclasses.asdict()`.
+
+#### 2. Request Dataclass Pattern
+
+Frozen dataclass with optional fields and defaults:
+
+```python
+@dataclass(frozen=True)
+class MyRequest:
+    required_field: str
+    optional_field: str | None = None
+    field_with_default: bool = False
+    tuple_field: tuple[str, ...] = ()
+```
+
+The `@machine_command` decorator:
+- Rejects unknown fields
+- Validates types
+- Coerces where possible (str → bool, int, etc.)
+
+#### 3. Error Handling Pattern
+
+Return `MachineCommandError` instead of raising:
+
+```python
+def run_foo(...) -&gt; FooResult | MachineCommandError:
+    if not request.name.strip():
+        return MachineCommandError(
+            error_type="invalid_input",
+            message="Name required"
+        )
+    # ... success path returns FooResult
+    return FooResult(...)
+```
+
+The decorator catches the error and serializes to:
+```json
+{
+  "success": false,
+  "error_type": "invalid_input",
+  "message": "Name required"
+}
+```
+
+#### 4. Optional Field Inclusion Pattern
+
+Use `to_json_dict()` to control which fields appear:
+
+```python
+@dataclass(frozen=True)
+class PrViewResult:
+    plan_id: str
+    body: str | None
+    
+    def to_json_dict(self) -&gt; dict[str, Any]:
+        result = {"plan_id": self.plan_id}
+        if self.body is not None:
+            result["body"] = self.body  # Only include if present
+        return result
+```
+
+#### 5. DateTime Serialization Pattern
+
+Convert to ISO 8601 strings in `to_json_dict()`:
+
+```python
+def _serialize_header_fields(fields: dict[str, object]) -&gt; dict[str, object]:
+    result: dict[str, object] = {}
+    for key, value in fields.items():
+        if isinstance(value, datetime):
+            result[key] = value.isoformat()  # ISO format string
+        else:
+            result[key] = value
+    return result
+```
+
+---
+
+### TESTING MACHINE COMMANDS
+
+From `json-command-decorator.md`:
+
+```python
+from unittest.mock import patch
+
+with patch(
+    "erk_shared.agentclick.machine_command.read_machine_command_input",
+    return_value={"prompt": "fix bug"},
+):
+    result = runner.invoke(cli, ["json", "one-shot"], obj=ctx)
+    data = json.loads(result.output)
+    assert data["success"] is True
+```
+
+---
+
+### CLI DOCUMENTATION REFERENCES
+
+- **Machine Command Architecture**: `/home/runner/work/erk/erk/docs/learned/cli/json-command-decorator.md`
+- **Adding Machine JSON Commands**: `/home/runner/work/erk/erk/docs/learned/cli/adding-json-to-commands.md`
+- **Objective Commands**: `/home/runner/work/erk/erk/docs/learned/cli/objective-commands.md`
+
+---
+
+### FILE PATHS (ABSOLUTE)
+
+**Full file contents provided above for**:
+
+1. `/home/runner/work/erk/erk/src/erk/cli/commands/objective/view_cmd.py` (421 lines)
+2. `/home/runner/work/erk/erk/src/erk/cli/commands/objective/check_cmd.py` (432 lines)
+3. `/home/runner/work/erk/erk/src/erk/cli/commands/objective/__init__.py` (25 lines)
+4. `/home/runner/work/erk/erk/src/erk/cli/commands/pr/view/json_cli.py` (39 lines)
+5. `/home/runner/work/erk/erk/src/erk/cli/commands/pr/view/operation.py` (164 lines)
+6. `/home/runner/work/erk/erk/src/erk/cli/commands/pr/list/json_cli.py` (40 lines)
+7. `/home/runner/work/erk/erk/src/erk/cli/commands/pr/list/operation.py` (130 lines)
+8. `/home/runner/work/erk/erk/src/erk/cli/commands/json/__init__.py` (22 lines)
+9. `/home/runner/work/erk/erk/src/erk/cli/commands/json/pr/__init__.py` (17 lines)
+10. `/home/runner/work/erk/erk/src/erk/cli/commands/one_shot/json_cli.py` (44 lines)
+11. `/home/runner/work/erk/erk/src/erk/cli/commands/one_shot/operation.py` (100+ lines shown)
+12. `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/agentclick/machine_command.py` (212 lines)
+
+**Implementation plan**: `/home/runner/work/erk/erk/.erk/impl-context/plan.md`
+
+---
+
+This provides everything needed to implement the JSON objective view and check machine commands following the established patterns!</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="1152" cache_read_input_tokens="57661" cache_creation="{'ephemeral_5m_input_tokens': 1152, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>
