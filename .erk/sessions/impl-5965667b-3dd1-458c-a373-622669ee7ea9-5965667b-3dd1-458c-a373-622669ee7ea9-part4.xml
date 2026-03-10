@@ -1,0 +1,778 @@
+<session>
+  <meta branch="plnd/remove-erk-plan-label-03-10-0509" />
+  <meta model="claude-opus-4-6" />
+  <tool_use name="Read" id="toolu_01JfVSVHeXRhhBGhhA9B9ceG">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/packages/erk-shared/src/erk_shared/plan_utils.py</param>
+    <param name="offset">178</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="536" cache_read_input_tokens="96379" output_tokens="174" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 536, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01JfVSVHeXRhhBGhhA9B9ceG">
+   178→def get_title_tag_from_labels(labels: list[str]) -&gt; str:
+   179→    """Return the appropriate title tag based on issue labels.
+   180→
+   181→    Returns "[erk-learn]" if the issue has the "erk-learn" label,
+   182→    otherwise returns "[erk-plan]".
+   183→
+   184→    Args:
+   185→        labels: List of label names on the issue
+   186→
+   187→    Returns:
+   188→        Title tag string: "[erk-learn]" or "[erk-plan]"
+   189→    """
+   190→    return "[erk-learn]" if "erk-learn" in labels else "[erk-plan]"
+   191→
+   192→
+  </tool_result>
+  <assistant>Good — `get_title_tag_from_labels` checks for `"erk-learn"` in labels and defaults to `"[erk-plan]"` title prefix. Since we still pass `"erk-learn"` for learn plans, this logic still works correctly.
+
+Now let me check if there are any remaining `ERK_PLAN_LABEL` imports to clean up:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="602" cache_read_input_tokens="96915" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 602}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_017zuHVQQC5qXQB6rjrQZ5zd">
+    <param name="pattern">ERK_PLAN_LABEL</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39</param>
+    <param name="glob">"*.py"</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="602" cache_read_input_tokens="96915" output_tokens="229" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 602, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_017zuHVQQC5qXQB6rjrQZ5zd">
+No matches found
+  </tool_result>
+  <assistant>Good — all imports cleaned up.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="244" cache_read_input_tokens="97517" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 244}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskUpdate" id="toolu_018Zxuek2BaukNMXNgFY37vK">
+    <param name="taskId">5</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="244" cache_read_input_tokens="97517" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 244}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_018Zxuek2BaukNMXNgFY37vK">
+Updated task #5 status
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_014dJQtCfPaGXZ9uUw7D2mQE">
+    <param name="taskId">6</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="244" cache_read_input_tokens="97517" output_tokens="133" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 244, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_014dJQtCfPaGXZ9uUw7D2mQE">
+Updated task #6 status
+  </tool_result>
+  <assistant>**Phase 7: Update tests.** Let me find all test files referencing `erk-plan`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="206" cache_read_input_tokens="97761" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 206}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_0141YjRUPoZZwr9Fe1xQawAC">
+    <param name="pattern">"erk-plan"</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="206" cache_read_input_tokens="97761" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 206}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0141YjRUPoZZwr9Fe1xQawAC">
+&lt;persisted-output&gt;
+Output too large (37.5KB). Full output saved to: /Users/schrockn/.claude/projects/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-39/5965667b-3dd1-458c-a373-622669ee7ea9/tool-results/toolu_0141YjRUPoZZwr9Fe1xQawAC.txt
+
+Preview (first 2KB):
+tests/erk_shared/gateway/plan_data_provider/test_real_routing.py:87:        # Query filters with "erk-plan" label (NOT objective)
+tests/erk_shared/gateway/plan_data_provider/test_real_routing.py:89:            labels=("erk-plan",),
+tests/erk_shared/gateway/plan_data_provider/test_real_routing.py:198:            labels=("erk-plan",),
+tests/shared/github/test_status_history.py:226:                "erk-plan",
+tests/commands/implement/conftest.py:16:        labels=["erk-plan", "enhancement"],
+tests/integration/real_github_issues/test_target_repo.py:118:        issues.list_issues(repo_root=Path("/repo"), labels=["erk-pr", "erk-plan"])
+tests/commands/test_dash_workflow_runs.py:85:            labels=["erk-pr", "erk-plan", "erk-core"],
+tests/commands/test_dash_workflow_runs.py:181:            labels=["erk-pr", "erk-plan", "erk-core"],
+tests/commands/test_dash_workflow_runs.py:281:            labels=["erk-pr", "erk-plan", "erk-core"],
+tests/commands/test_dash_workflow_runs.py:363:            labels=["erk-pr", "erk-plan", "erk-core"],
+tests/commands/test_dash_workflow_runs.py:439:            labels=["erk-pr", "erk-plan", "erk-core"],
+tests/commands/test_dash_workflow_runs.py:550:            labels=["erk-pr", "erk-plan", "erk-core"],
+tests/commands/test_dash_workflow_runs.py:564:            labels=["erk-pr", "erk-plan", "erk-core"],
+tests/commands/test_dash_workflow_runs.py:636:            labels=["erk-pr", "erk-plan", "erk-core"],
+tests/commands/run/test_list.py:58:        labels=["erk-pr", "erk-plan"],
+tests/commands/pr/test_rewrite.py:391:            labels=["erk-pr", "erk-plan"],
+tests/core/test_plan_duplicate_checker.py:23:        labels=["erk-pr", "erk-plan"],
+tests/integration/real_github_issues/test_ensure_label.py:44:            label="erk-plan",
+tests/integration/real_github_issues/test_ensure_label.py:63:        assert "erk-plan" in create_cmd
+...
+&lt;/persisted-output&gt;
+  </tool_result>
+  <tool_use name="Grep" id="toolu_016gzNiR7rgFLzQ6Dnk8WuHk">
+    <param name="pattern">"erk-plan"</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/packages/erk-shared/tests</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="206" cache_read_input_tokens="97761" output_tokens="254" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 206, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_016gzNiR7rgFLzQ6Dnk8WuHk">
+packages/erk-shared/tests/unit/integrations/gt/operations/test_finalize.py:82:            "labels": ["erk-plan", "bug"],
+packages/erk-shared/tests/unit/github/test_objective_issues.py:48:        labels = ["erk-pr", "erk-plan"]
+packages/erk-shared/tests/unit/github/test_objective_issues.py:213:        assert "erk-plan" not in fake_gh.labels
+packages/erk-shared/tests/unit/github/test_objective_issues.py:331:        assert "erk-plan" not in labels  # objectives don't get erk-plan
+packages/erk-shared/tests/unit/github/test_objective_issues.py:494:            labels=["erk-pr", "erk-plan"],
+packages/erk-shared/tests/unit/github/test_objective_issues.py:599:            labels=["erk-pr", "erk-plan"],
+packages/erk-shared/tests/unit/github/test_objective_issues.py:646:                labels=["erk-pr", "erk-plan"],
+packages/erk-shared/tests/unit/github/test_objective_issues.py:723:            labels=["erk-pr", "erk-plan"],
+  </tool_result>
+  <assistant>This is a large number of test files. Let me handle them systematically using an agent:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1430" cache_read_input_tokens="97967" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1430}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_0144XRHLWrWXKjpD621bcVgu">
+    <param name="description">Update tests removing erk-plan label</param>
+    <param name="subagent_type">general-purpose</param>
+    <param name="prompt">I'm removing the `erk-plan` label from the erk codebase. Plans are now identified by the `...[truncated 2912 chars]... only test files.
+
+Working directory: /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1430" cache_read_input_tokens="97967" output_tokens="1165" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1430, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0144XRHLWrWXKjpD621bcVgu">
+All 12 remaining references are correct:
+- **3 negative assertions** (`not in`) verifying erk-plan label is absent -- correct behavior
+- **6 metadata block key references** -- `ERK_PLAN = "erk-plan"` block key is unchanged per instructions
+- **2 objective issue assertions** -- verifying objectives don't get the erk-plan label -- correct
+
+The update is complete. Here is a summary of what was changed:
+
+**Files modified (test files only):**
+
+Approximately 90 test files were updated across these directories:
+- `tests/commands/` (pr/, dash/, branch/, workspace/, run/, learn/, land/, one_shot/, consolidate_learn_plans/, objective/)
+- `tests/core/`
+- `tests/integration/`
+- `tests/shared/`
+- `tests/erk_shared/`
+- `tests/tui/`
+- `tests/unit/` (fakes/, services/, plan_store/, cli/, gateways/, core/, objective_issues/)
+- `tests/test_utils/`
+- `tests/packages/erk_shared/`
+- `packages/erk-shared/tests/`
+
+**Key changes by pattern:**
+1. `labels=["erk-pr", "erk-plan", "erk-core"]` changed to `labels=["erk-pr", "erk-core"]` (removed redundant erk-plan)
+2. `labels=["erk-pr", "erk-plan"]` changed to `labels=["erk-pr", "erk-core"]` (replaced erk-plan with erk-core)
+3. `labels=("erk-plan",)` changed to `labels=("erk-core",)` (query/tuple patterns)
+4. `labels=["erk-plan", ...]` changed to `labels=["erk-core", ...]` (fixture data where erk-plan was the primary label)
+5. Assertions like `assert "erk-plan" in labels` changed to `assert "erk-core" in labels`
+6. Label definition tests updated: count 6-&gt;5 for definitions, 4-&gt;3 for required labels, erk-plan test converted to exclusion test
+7. Health check tests updated to no longer expect erk-plan in missing/remediation output
+8. Init label creation tests updated to expect 5 labels instead of 6
+
+... [9 lines omitted] ...
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01RZ3Bv6rfDx24hnWtmm1i3i">
+    <param name="taskId">6</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="92173" cache_read_input_tokens="9131" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 92173}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01RZ3Bv6rfDx24hnWtmm1i3i">
+Updated task #6 status
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01RyzaFcbeJvuBGQkm3jL93b">
+    <param name="taskId">7</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="92173" cache_read_input_tokens="9131" output_tokens="125" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 92173, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01RyzaFcbeJvuBGQkm3jL93b">
+Updated task #7 status
+  </tool_result>
+  <assistant>**Phase 7 complete.** Now let me run CI to verify.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="198" cache_read_input_tokens="101304" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 198}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01HzwagX2AytrKJRs1HerLYV">
+    <param name="description">Run fast-ci to verify changes</param>
+    <param name="subagent_type">devrun</param>
+    <param name="prompt">Run `make fast-ci` in /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39 and report results. This runs unit tests, linting, formatting, and type checking.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="198" cache_read_input_tokens="101304" output_tokens="164" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 198, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01HzwagX2AytrKJRs1HerLYV">
+make fast-ci failed due to test failures. Let me continue reading the output to get the full picture.
+
+The command exited with code 2, which indicates test failures. From what I can see in the truncated output:
+
+**Failed checks:**
+
+1. **Prettier formatting check**: 1 file has formatting issues
+   - `docs/learned/planning/label-scheme.md`
+
+2. **Unit tests**: Multiple test failures in the branch creation commands
+   - `tests/unit/cli/commands/branch/test_create_cmd.py`
+   - Several tests related to `--for-plan` functionality are failing (at least 30+ failures visible in the truncated output)
+   - Assertion errors showing `exit_code == 1` when `exit_code == 0` was expected
+
+**Passed checks:**
+
+- Linting: `All checks passed!`
+- Markdown checks: `PASSED`
+- Exec reference check: `OK`
+- Type checking (ty): `All checks passed!`
+- File formatting (ruff): `1690 files already formatted`
+
+**Summary:**
+
+make fast-ci failed: 2 failures found
+
+1. **Prettier formatting issue**: `docs/learned/planning/label-scheme.md` needs formatting
+2. **Unit test failures**: Multiple test failures in branch creation command tests related to plan handling (30+ test failures in the test suite)
+agentId: a0f77c5ba02c859b3 (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 15836
+
+... [2 lines omitted] ...
+  </tool_result>
+  <assistant>Two issues: prettier formatting and test failures. Let me fix both.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2640" cache_read_input_tokens="99397" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2640}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01C2ycWBu33AXYeP8ZDRX82N">
+    <param name="description">Fix prettier formatting</param>
+    <param name="subagent_type">devrun</param>
+    <param name="prompt">Run `npx prettier --write docs/learned/planning/label-scheme.md` in /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39 and report results.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2640" cache_read_input_tokens="99397" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2640}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01YEEyNPcj3Nk1ssNydGWWov">
+    <param name="description">Get branch create test failures</param>
+    <param name="subagent_type">devrun</param>
+    <param name="prompt">Run `uv run pytest tests/unit/cli/commands/branch/test_create_cmd.py -x --tb=short 2&gt;&amp;1 | ...[truncated 21 chars]...erk/worktrees/erk-slot-39 and report the FULL output. I need to understand what's failing.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2640" cache_read_input_tokens="99397" output_tokens="313" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2640, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01C2ycWBu33AXYeP8ZDRX82N">
+prettier passed: File formatted successfully in 30ms
+
+The file `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/docs/learned/planning/label-scheme.md` has been formatted with prettier.
+agentId: a2064caccae511d36 (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 13284
+tool_uses: 1
+duration_ms: 3283&lt;/usage&gt;
+  </tool_result>
+  <tool_result tool="toolu_01YEEyNPcj3Nk1ssNydGWWov">
+Now I have the full picture. **The FULL OUTPUT from running the test shows:**
+
+1. **Test failure**: Exit code 1 instead of expected 0
+2. **Error message**: `Error: Plan #123 must have '[erk-plan]' title prefix.`
+3. **Root cause**: Line 368 has `title="Add feature"` but it should start with `[erk-plan]`
+
+The test plan also needs proper header_fields with the branch name, which is handled by the helper function `_plan_to_pr_details` when converting through `create_plan_store_with_plans`. However, the title prefix validation is still failing.
+
+**Here's the full failure summary:**
+
+```
+FAILED tests/unit/cli/commands/branch/test_create_cmd.py::test_branch_create_for_plan_creates_branch_and_impl_folder
+
+EXIT CODE: 1
+OUTPUT:
+Error: Plan #123 must have '[erk-plan]' title prefix.
+Create a plan using 'erk pr create' to ensure correct formatting.
+```
+
+The test needs to be fixed by changing the plan's title from `"Add feature"` to something like `"[erk-plan] Add feature"` to match the validation requirements in `prepare_plan_for_worktree()`.
+agentId: a43e1aaa512a71dee (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 31667
+tool_uses: 14
+duration_ms: 40324&lt;/usage&gt;
+  </tool_result>
+  <assistant>
+
+The test fixtures need `[erk-plan]` title prefix since we now validate by title. Let me find and fix those tests.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="1397" cache_read_input_tokens="102037" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1397}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01DqudSrycBxNZzfJWf4byay">
+    <param name="pattern">"erk-plan"</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests/unit/cli/commands/branch/test_create_cmd.py</param>
+    <param name="output_mode">content</param>
+    <param name="-C">3</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1397" cache_read_input_tokens="102037" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1397}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01DqudSrycBxNZzfJWf4byay">
+No matches found
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01FEgSztVsVThvidLHi269Sq">
+    <param name="pattern">title.*=</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests/unit/cli/commands/branch/test_create_cmd.py</param>
+    <param name="output_mode">content</param>
+    <param name="-C">2</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1397" cache_read_input_tokens="102037" output_tokens="319" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1397, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01FEgSztVsVThvidLHi269Sq">
+366-        plan = Plan(
+367-            pr_identifier="123",
+368:            title="Add feature",
+369-            body="# Plan\nImplementation details",
+370-            state=PlanState.OPEN,
+--
+443-        plan = Plan(
+444-            pr_identifier="456",
+445:            title="Fix bug",
+446-            body="# Bug fix plan",
+447-            state=PlanState.OPEN,
+--
+505-        plan = Plan(
+506-            pr_identifier="100",
+507:            title="No slot feature",
+508-            body="# Plan",
+509-            state=PlanState.OPEN,
+--
+678-        plan = Plan(
+679-            pr_identifier="200",
+680:            title="Stacked feature",
+681-            body="# Plan\nStacked implementation",
+682-            state=PlanState.OPEN,
+--
+891-        plan = Plan(
+892-            pr_identifier="300",
+893:            title="Stacked plan",
+894-            body="# Plan\nStacked implementation",
+895-            state=PlanState.OPEN,
+  </tool_result>
+  <assistant>These plan fixtures need `[erk-plan]` title prefix. Let me also check the implement conftest and other test files that create Plan objects without the title prefix:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="660" cache_read_input_tokens="103434" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 660}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01LYqSTEVPYxLBkhPh3AnbVC">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests/unit/cli/commands/branch/test_create_cmd.py</param>
+    <param name="offset">364</param>
+    <param name="limit">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="660" cache_read_input_tokens="103434" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 660}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01LYqSTEVPYxLBkhPh3AnbVC">
+   364→        # Create a plan with erk-plan label
+   365→        now = TEST_PLAN_TIMESTAMP
+   366→        plan = Plan(
+   367→            pr_identifier="123",
+   368→            title="Add feature",
+   369→            body="# Plan\nImplementation details",
+   370→            state=PlanState.OPEN,
+   371→            url="https://github.com/owner/repo/issues/123",
+   372→            labels=["erk-pr", "erk-core"],
+   373→            assignees=[],
+  </tool_result>
+  <tool_use name="Read" id="toolu_01LGysz5smqCxCK1ks6BTDNZ">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests/commands/implement/conftest.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="660" cache_read_input_tokens="103434" output_tokens="239" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 660, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01LGysz5smqCxCK1ks6BTDNZ">
+     1→"""Shared test fixtures for implement command tests."""
+     2→
+     3→from datetime import UTC, datetime
+     4→
+     5→from erk_shared.plan_store.types import Plan, PlanState
+     6→
+     7→
+     8→def create_sample_plan_issue(issue_number: str = "42") -&gt; Plan:
+     9→    """Create a sample plan issue for testing."""
+    10→    return Plan(
+    11→        pr_identifier=issue_number,
+    12→        title="Add Authentication Feature",
+    13→        body="# Implementation Plan\n\nAdd user authentication to the application.",
+    14→        state=PlanState.OPEN,
+    15→        url=f"https://github.com/owner/repo/issues/{issue_number}",
+    16→        labels=["erk-core", "enhancement"],
+    17→        assignees=["alice"],
+    18→        created_at=datetime(2024, 1, 1, tzinfo=UTC),
+    19→        updated_at=datetime(2024, 1, 2, tzinfo=UTC),
+    20→        metadata={},
+    21→        objective_id=None,
+    22→    )
+    23→
+  </tool_result>
+  <assistant>The test fixtures create `Plan` objects with titles like `"Add feature"` but now validation requires `[erk-plan]` prefix. Let me also check for other test files that create Plans without the prefix:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="7265" cache_read_input_tokens="104094" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7265}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01EsCHPVFWNkgJoLociSKdzt">
+    <param name="pattern">Plan\(.*\n.*title="(?!\[erk-plan\])</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests</param>
+    <param name="output_mode">content</param>
+    <param name="multiline">True</param>
+    <param name="head_limit">50</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="7265" cache_read_input_tokens="104094" output_tokens="216" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 7265, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01EsCHPVFWNkgJoLociSKdzt">
+No matches found
+
+[Showing results with pagination = limit: 50, offset: 0]
+  </tool_result>
+  <tool_use name="Grep" id="toolu_014FvGDvvcK1ux5wvNpModcX">
+    <param name="pattern">title=".+",</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests/unit/cli/commands/branch/test_create_cmd.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="249" cache_read_input_tokens="111359" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 249}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014FvGDvvcK1ux5wvNpModcX">
+368:            title="Add feature",
+445:            title="Fix bug",
+507:            title="No slot feature",
+680:            title="Stacked feature",
+893:            title="Stacked plan",
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01GGoUa8U5XHUCQ2t2Lp1CJe">
+    <param name="pattern">title=".+",</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests/commands/implement/conftest.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="249" cache_read_input_tokens="111359" output_tokens="246" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 249, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01GGoUa8U5XHUCQ2t2Lp1CJe">
+12:        title="Add Authentication Feature",
+  </tool_result>
+  <assistant>Let me also check for similar patterns in other test files that go through the `prepare_plan_for_worktree` validation path:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="365" cache_read_input_tokens="111608" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 365}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_018yNtRiCah1XUZMSnTS2Wxd">
+    <param name="pattern">prepare_plan_for_worktree</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="365" cache_read_input_tokens="111608" output_tokens="134" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 365, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_018yNtRiCah1XUZMSnTS2Wxd">
+Found 1 file
+tests/unit/shared/test_plan_workflow.py
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01X7SaCC7iKzB97kytnkdcCG">
+    <param name="pattern">title=</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests/unit/shared/test_plan_workflow.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="165" cache_read_input_tokens="111973" output_tokens="128" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 165, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01X7SaCC7iKzB97kytnkdcCG">
+29:        title=title,
+118:        title="Test Issue",
+153:        title="Add New Feature",
+169:        title="Add New Feature",
+184:        title="Add New Feature",
+  </tool_result>
+  <tool_use name="Read" id="toolu_013z78UjFyLfxE7w9orC9XNT">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests/unit/shared/test_plan_workflow.py</param>
+    <param name="offset">1</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="186" cache_read_input_tokens="112138" output_tokens="126" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 186, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_013z78UjFyLfxE7w9orC9XNT">
+     1→"""Unit tests for shared plan workflow helpers.
+     2→
+     3→Tests the shared logic for preparing plans for worktree creation.
+     4→"""
+     5→
+     6→from datetime import datetime
+     7→
+     8→from erk_shared.plan_store.types import Plan, PlanState
+     9→from erk_shared.plan_workflow import (
+    10→    PlanBranchSetup,
+    11→    PlanValidationFailed,
+    12→    prepare_plan_for_worktree,
+    13→)
+    14→
+    15→
+    16→def _make_plan(
+    17→    *,
+    18→    pr_identifier: str = "123",
+    19→    title: str = "Test Issue",
+    20→    body: str = "Plan content",
+    21→    state: PlanState = PlanState.OPEN,
+    22→    url: str = "https://github.com/org/repo/issues/123",
+    23→    labels: list[str] | None = None,
+    24→    header_fields: dict[str, object] | None = None,
+    25→) -&gt; Plan:
+    26→    """Create a minimal Plan for testing."""
+    27→    return Plan(
+    28→        pr_identifier=pr_identifier,
+    29→        title=title,
+    30→        body=body,
+
+... [20 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01MfvDij8sVkyQaW5CJiC4Cn">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests/unit/shared/test_plan_workflow.py</param>
+    <param name="offset">50</param>
+    <param name="limit">150</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="748" cache_read_input_tokens="112324" output_tokens="126" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 748, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01MfvDij8sVkyQaW5CJiC4Cn">
+    50→    )
+    51→    timestamp = datetime(2024, 1, 15, 14, 30)
+    52→
+    53→    result = prepare_plan_for_worktree(plan, timestamp, warn_non_open=True)
+    54→
+    55→    assert isinstance(result, PlanBranchSetup)
+    56→    assert result.warnings == ()
+    57→
+    58→
+    59→def test_prepare_plan_missing_label_returns_failure() -&gt; None:
+    60→    """Plan without erk-plan label returns PlanValidationFailed."""
+    61→    plan = _make_plan(labels=["bug", "enhancement"])
+    62→    timestamp = datetime(2024, 1, 15, 14, 30)
+    63→
+    64→    result = prepare_plan_for_worktree(plan, timestamp, warn_non_open=True)
+    65→
+    66→    assert isinstance(result, PlanValidationFailed)
+    67→    assert "must have 'erk-plan' label" in result.message
+    68→
+    69→
+    70→def test_prepare_plan_non_open_generates_warning() -&gt; None:
+    71→    """Non-OPEN plan generates warning in result."""
+    72→    plan = _make_plan(
+    73→        state=PlanState.CLOSED,
+    74→        labels=["erk-pr", "erk-core"],
+    75→        header_fields={"branch_name": "plan-test-01-15-1430"},
+    76→    )
+    77→    timestamp = datetime(2024, 1, 15, 14, 30)
+    78→
+    79→    result = prepare_plan_for_worktree(plan, timestamp, warn_non_open=True)
+
+... [114 lines omitted] ...
+
+    82→    assert len(result.warnings) == 1
+    83→    assert "is CLOSED" in result.warnings[0]
+    84→    assert "Proceeding anyway" in result.warnings[0]
+   102→def test_prepare_plan_invalid_identifier_returns_failure() -&gt; None:
+   103→    """Non-numeric plan identifier returns PlanValidationFailed."""
+   109→    assert isinstance(result, PlanValidationFailed)
+   165→def test_missing_branch_returns_failure() -&gt; None:
+   166→    """Plan without branch_name in header_fields returns failure."""
+   176→    assert isinstance(result, PlanValidationFailed)
+   180→def test_empty_branch_returns_failure() -&gt; None:
+   181→    """Plan with empty branch_name in header_fields returns failure."""
+   191→    assert isinstance(result, PlanValidationFailed)
+  </tool_result>
+  <assistant>I need to update:
+
+1. `test_plan_workflow.py` — update `_make_plan` default title, update test assertions for title prefix validation
+2. `test_create_cmd.py` — add `[erk-plan]` prefix to plan titles
+3. `conftest.py` — add `[erk-plan]` prefix to plan title</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2181" cache_read_input_tokens="113072" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2181}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01Bad2vd2LKMurbbJ4JPVsV3">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests/unit/shared/test_plan_workflow.py</param>
+    <param name="old_string">    title: str = "Test Issue",</param>
+    <param name="new_string">    title: str = "[erk-plan] Test Issue",</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2181" cache_read_input_tokens="113072" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2181}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Bad2vd2LKMurbbJ4JPVsV3">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests/unit/shared/test_plan_workflow.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_017fsXzokPAAS4L1Fk3derYo">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests/unit/shared/test_plan_workflow.py</param>
+    <param name="old_string">def test_prepare_plan_missing_label_returns_failure() -&gt; None:
+    """Plan without erk-pla...[truncated 217 chars]...ce(result, PlanValidationFailed)
+    assert "must have 'erk-plan' label" in result.message</param>
+    <param name="new_string">def test_prepare_plan_missing_title_prefix_returns_failure() -&gt; None:
+    """Plan without ...[truncated 225 chars]...nce(result, PlanValidationFailed)
+    assert "'[erk-plan]' title prefix" in result.message</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2181" cache_read_input_tokens="113072" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2181}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017fsXzokPAAS4L1Fk3derYo">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests/unit/shared/test_plan_workflow.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_011z2WvbHSj1LRRYgHLnPZzf">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests/unit/shared/test_plan_workflow.py</param>
+    <param name="old_string">    """Valid plan with erk-plan label returns PlanBranchSetup."""</param>
+    <param name="new_string">    """Valid plan with [erk-plan] title prefix returns PlanBranchSetup."""</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2181" cache_read_input_tokens="113072" output_tokens="824" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2181, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_011z2WvbHSj1LRRYgHLnPZzf">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests/unit/shared/test_plan_workflow.py has been updated successfully.
+  </tool_result>
+  <assistant>Also need to update the `title="Test Issue"` in the inline Plan creation (line 118):</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1275" cache_read_input_tokens="115253" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1275}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_018CFTmR7yC8Y1y5cVoTtscX">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests/unit/shared/test_plan_workflow.py</param>
+    <param name="old_string">        title="Test Issue",
+        body="Plan content",
+        state=PlanState.OPEN,
+        url="https://github.com/org/repo/issues/123",
+        labels=["erk-pr", "erk-core"],</param>
+    <param name="new_string">        title="[erk-plan] Test Issue",
+        body="Plan content",
+        state=PlanState.OPEN,
+        url="https://github.com/org/repo/issues/123",
+        labels=["erk-pr", "erk-core"],</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1275" cache_read_input_tokens="115253" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1275}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_018CFTmR7yC8Y1y5cVoTtscX">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests/unit/shared/test_plan_workflow.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01JwQ5y9RaLQshDe6X9bN57L">
+    <param name="replace_all">True</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests/unit/shared/test_plan_workflow.py</param>
+    <param name="old_string">        title="Add New Feature",</param>
+    <param name="new_string">        title="[erk-plan] Add New Feature",</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1275" cache_read_input_tokens="115253" output_tokens="442" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1275, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01JwQ5y9RaLQshDe6X9bN57L">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests/unit/shared/test_plan_workflow.py has been updated. All occurrences of '        title="Add New Feature",' were successfully replaced with '        title="[erk-plan] Add New Feature",'.
+  </tool_result>
+  <assistant>Now update `test_create_cmd.py`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="626" cache_read_input_tokens="116528" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 626}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01HcCb71k9Xs5FiczGnH4wP2">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests/unit/cli/commands/branch/test_create_cmd.py</param>
+    <param name="old_string">            title="Add feature",</param>
+    <param name="new_string">            title="[erk-plan] Add feature",</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="626" cache_read_input_tokens="116528" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 626}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01HcCb71k9Xs5FiczGnH4wP2">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests/unit/cli/commands/branch/test_create_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_011Z3d6a8VVvzs1vCyaiVr6r">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests/unit/cli/commands/branch/test_create_cmd.py</param>
+    <param name="old_string">            title="Fix bug",</param>
+    <param name="new_string">            title="[erk-plan] Fix bug",</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="626" cache_read_input_tokens="116528" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 626}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011Z3d6a8VVvzs1vCyaiVr6r">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests/unit/cli/commands/branch/test_create_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01KV2S72RPjqRY33yir2Ya55">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests/unit/cli/commands/branch/test_create_cmd.py</param>
+    <param name="old_string">            title="No slot feature",</param>
+    <param name="new_string">            title="[erk-plan] No slot feature",</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="626" cache_read_input_tokens="116528" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 626}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01KV2S72RPjqRY33yir2Ya55">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests/unit/cli/commands/branch/test_create_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01V18YGkKx9k2xQP7N6MKux9">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests/unit/cli/commands/branch/test_create_cmd.py</param>
+    <param name="old_string">            title="Stacked feature",</param>
+    <param name="new_string">            title="[erk-plan] Stacked feature",</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="626" cache_read_input_tokens="116528" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 626}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01V18YGkKx9k2xQP7N6MKux9">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests/unit/cli/commands/branch/test_create_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01LUazHxFKUTnu6nw92UCPfp">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests/unit/cli/commands/branch/test_create_cmd.py</param>
+    <param name="old_string">            title="Stacked plan",</param>
+    <param name="new_string">            title="[erk-plan] Stacked plan",</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="626" cache_read_input_tokens="116528" output_tokens="799" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 626, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01LUazHxFKUTnu6nw92UCPfp">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests/unit/cli/commands/branch/test_create_cmd.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update the implement conftest:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1177" cache_read_input_tokens="117154" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1177}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01BtRtyyv8ivbdE7f9DChFED">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests/commands/implement/conftest.py</param>
+    <param name="old_string">        title="Add Authentication Feature",</param>
+    <param name="new_string">        title="[erk-plan] Add Authentication Feature",</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1177" cache_read_input_tokens="117154" output_tokens="172" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1177, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01BtRtyyv8ivbdE7f9DChFED">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests/commands/implement/conftest.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me also find other Plan fixtures and test helpers that might need updating. Let me search broadly:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="458" cache_read_input_tokens="118331" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 458}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_015JkijRiMmTVn1Kjw5t5VjM">
+    <param name="description">Find Plan fixtures missing title prefix</param>
+    <param name="subagent_type">Explore</param>
+    <param name="prompt">Search in /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests for Plan() constructo...[truncated 609 chars]...workflow, and dispatch command paths — these are the paths that validate the title prefix.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="458" cache_read_input_tokens="118331" output_tokens="323" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 458, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_015JkijRiMmTVn1Kjw5t5VjM">
+Perfect. Now I have the full picture. Let me create a comprehensive final report:
+
+## Summary
+
+I've completed a thorough search of the test suite for Plan() constructor calls that may be missing the `[erk-plan]` title prefix. Here are the findings:
+
+### Key Findings
+
+**Critical Issue Found:**
+
+1. **`tests/commands/dispatch/conftest.py` line 43** - The `create_plan()` helper function uses `ERK_PLAN_LABEL` (which no longer exists after the label removal):
+   ```python
+   labels=labels if labels is not None else [ERK_PLAN_LABEL],
+   ```
+   This imports `ERK_PLAN_LABEL` from `erk.cli.commands.pr.dispatch_cmd` at line 6, but that constant was removed in Step 1 of the plan. The dispatch tests now have a broken import dependency.
+
+**Plan Title Prefix Issues:**
+
+2. **`tests/commands/implement/conftest.py` line 12** - CORRECT - Has `[erk-plan]` prefix:
+   ```python
+   title="[erk-plan] Add Authentication Feature",
+   ```
+
+3. **Helper functions creating plans WITHOUT `[erk-plan]` prefix** (these are created with user-provided titles, so they may legitimately vary):
+   - `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests/commands/dash/conftest.py` - `make_plan()` function (line 25-48) - title parameter passed by caller
+   - `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests/commands/dispatch/conftest.py` - `create_plan()` function (line 28-49) - title parameter passed by caller
+   - `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests/commands/pr/test_remote_paths.py` - `_make_plan()` function (line 294-312) - title parameter passed by caller
+   - `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests/commands/pr/test_duplicate_check.py` - `_make_plan()` function (line 20-38) - title parameter passed by caller
+   - `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests/unit/plan_store/test_lifecycle_display.py` - `_make_plan()` function (line 36-55) - title="Test plan" (no prefix)
+   - `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests/unit/shared/test_plan_workflow.py` - `_make_plan()` function (line 16-42) - title parameter has default "[erk-plan] Test Issue" (CORRECT)
+
+... [44 lines omitted] ...
+  </tool_result>
+  <assistant>Critical finding: `tests/commands/dispatch/conftest.py` imports `ERK_PLAN_LABEL` which no longer exists. Let me fix that first, then check if the other plans need prefix too. Most of those don't go through the validation path (dash/lifecycle/duplicate_check plans are just used for display, not validation).</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2164" cache_read_input_tokens="118789" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2164}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01N1sKaavGLohMZUoAGMmFMG">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests/commands/dispatch/conftest.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2164" cache_read_input_tokens="118789" output_tokens="165" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2164, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01N1sKaavGLohMZUoAGMmFMG">
+     1→"""Shared fixtures and helpers for dispatch command tests."""
+     2→
+     3→from datetime import UTC, datetime
+     4→from pathlib import Path
+     5→
+     6→from erk.cli.commands.pr.dispatch_cmd import ERK_PLAN_LABEL
+     7→from erk.core.repo_discovery import RepoContext
+     8→from erk_shared.gateway.github.metadata.core import render_metadata_block
+     9→from erk_shared.gateway.github.metadata.types import MetadataBlock
+    10→from erk_shared.plan_store.types import Plan, PlanState
+    11→from tests.test_utils.test_context import context_for_test
+    12→
+    13→
+    14→def make_plan_body(content: str = "Implementation details...") -&gt; str:
+    15→    """Create a valid issue body with plan-header metadata block.
+    16→
+    17→    The plan-header block is required for `update_plan_header_dispatch` to work.
+    18→    """
+    19→    plan_header_data = {
+    20→        "schema_version": "2",
+    21→        "created_at": "2024-01-01T00:00:00Z",
+    22→        "created_by": "test-user",
+    23→    }
+    24→    header_block = render_metadata_block(MetadataBlock("plan-header", plan_header_data))
+    25→    return f"{header_block}\n\n# Plan\n\n{content}"
+    26→
+    27→
+    28→def create_plan(
+    29→    plan_identifier: str,
+    30→    title: str,
+
+... [112 lines omitted] ...
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01LxQmp32zX9Y3Y6F7fTYtNq">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests/commands/dispatch/conftest.py</param>
+    <param name="old_string">from erk.cli.commands.pr.dispatch_cmd import ERK_PLAN_LABEL
+from erk.core.repo_discovery import RepoContext</param>
+    <param name="new_string">from erk.core.repo_discovery import RepoContext</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2163" cache_read_input_tokens="120953" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2163}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01LxQmp32zX9Y3Y6F7fTYtNq">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests/commands/dispatch/conftest.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01JG3s82E12pZyXyWjmxVHRk">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests/commands/dispatch/conftest.py</param>
+    <param name="old_string">        labels=labels if labels is not None else [ERK_PLAN_LABEL],</param>
+    <param name="new_string">        labels=labels if labels is not None else ["erk-core"],</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2163" cache_read_input_tokens="120953" output_tokens="356" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2163, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01JG3s82E12pZyXyWjmxVHRk">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests/commands/dispatch/conftest.py has been updated successfully.
+  </tool_result>
+  <assistant>Now I need to check if the dispatch tests create plans with `[erk-plan]` title prefix (since dispatch now validates by title):</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="501" cache_read_input_tokens="123116" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 501}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01MH4q6T5upyLhE9gLPVcbd8">
+    <param name="pattern">create_plan\(</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests/commands/dispatch</param>
+    <param name="output_mode">content</param>
+    <param name="-C">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="501" cache_read_input_tokens="123116" output_tokens="172" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 501, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01MH4q6T5upyLhE9gLPVcbd8">
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests/commands/dispatch/conftest.py-26-
+tests/commands/dispatch/conftest.py:27:def create_plan(
+tests/commands/dispatch/conftest.py-28-    plan_identifier: str,
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01Mo1s6ZBJNGK6EWYVMc2Dxi">
+    <param name="pattern">create_plan\(</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests/commands/dispatch</param>
+    <param name="glob">"test_*.py"</param>
+    <param name="output_mode">content</param>
+    <param name="-C">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="263" cache_read_input_tokens="123617" output_tokens="163" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 263, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Mo1s6ZBJNGK6EWYVMc2Dxi">
+No matches found
+  </tool_result>
+</session>

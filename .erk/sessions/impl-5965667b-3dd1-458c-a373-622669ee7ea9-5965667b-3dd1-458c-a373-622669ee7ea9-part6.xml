@@ -1,0 +1,958 @@
+<session>
+  <meta branch="plnd/remove-erk-plan-label-03-10-0509" />
+  <meta model="claude-opus-4-6" />
+  <assistant>
+
+More test fixes needed. Let me fix both issues in parallel.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="896" cache_read_input_tokens="146244" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 896}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01Pwsw81DhTacwvLctwoLiEi">
+    <param name="pattern">erk-plan</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests/unit/gateways/remote_github/test_real_remote_github.py</param>
+    <param name="output_mode">content</param>
+    <param name="-C">3</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="896" cache_read_input_tokens="146244" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 896}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Pwsw81DhTacwvLctwoLiEi">
+524-def test_list_issues_constructs_correct_query() -&gt; None:
+525-    remote, http, _ = _make_remote()
+526-    http.set_list_response(
+527:        "repos/o/r/issues?state=open&amp;labels=erk-pr,erk-plan&amp;per_page=100",
+528-        response=[
+529-            {
+530-                "number": 1,
+--
+551-def test_list_issues_skips_pull_requests() -&gt; None:
+552-    remote, http, _ = _make_remote()
+553-    http.set_list_response(
+554:        "repos/o/r/issues?state=open&amp;labels=erk-plan&amp;per_page=100",
+555-        response=[
+556-            {
+557-                "number": 1,
+--
+591-def test_list_issues_respects_limit() -&gt; None:
+592-    remote, http, _ = _make_remote()
+593-    http.set_list_response(
+594:        "repos/o/r/issues?state=open&amp;labels=erk-plan&amp;per_page=100",
+595-        response=[
+596-            {
+597-                "number": i,
+--
+618-def test_list_issues_includes_creator_param() -&gt; None:
+619-    remote, http, _ = _make_remote()
+620-    http.set_list_response(
+621:        "repos/o/r/issues?state=open&amp;labels=erk-plan&amp;per_page=100&amp;creator=alice",
+622-        response=[],
+623-    )
+
+... [1 lines omitted] ...
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01CuGMhegSMGtPVbRVtjY7e1">
+    <param name="pattern">erk-plan|title=</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests/commands/branch/test_checkout_cmd.py</param>
+    <param name="output_mode">content</param>
+    <param name="head_limit">30</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="896" cache_read_input_tokens="146244" output_tokens="306" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 896, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01CuGMhegSMGtPVbRVtjY7e1">
+697:            title="Add feature",
+753:            title="Test activation output",
+812:            title="Stack in place activation",
+1113:            title="Add feature",
+1178:            title="Stack feature",
+1336:            title="Trunk feature",
+1389:            title="Stacked plan rebase",
+1446:            title="Trunk parent plan",
+1502:            title="Stale parent sync",
+
+[Showing results with pagination = limit: 30, offset: 0]
+  </tool_result>
+  <tool_use name="Read" id="toolu_01UsJRCydUj1mrSJQELvi9HL">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests/unit/gateways/remote_github/test_real_remote_github.py</param>
+    <param name="offset">524</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="883" cache_read_input_tokens="147140" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 883}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01UsJRCydUj1mrSJQELvi9HL">
+   524→def test_list_issues_constructs_correct_query() -&gt; None:
+   525→    remote, http, _ = _make_remote()
+   526→    http.set_list_response(
+   527→        "repos/o/r/issues?state=open&amp;labels=erk-pr,erk-plan&amp;per_page=100",
+   528→        response=[
+   529→            {
+   530→                "number": 1,
+   531→                "title": "Issue 1",
+   532→                "body": "body1",
+   533→                "state": "open",
+   534→                "html_url": "https://github.com/o/r/issues/1",
+   535→                "labels": [],
+   536→                "assignees": [],
+   537→                "user": {"login": "alice"},
+   538→                "created_at": "2024-01-01T00:00:00Z",
+  </tool_result>
+  <tool_use name="Read" id="toolu_01SyaafrUi4CdShVahcMzwVy">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests/unit/gateways/remote_github/test_real_remote_github.py</param>
+    <param name="offset">551</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="883" cache_read_input_tokens="147140" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 883}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01SyaafrUi4CdShVahcMzwVy">
+   551→def test_list_issues_skips_pull_requests() -&gt; None:
+   552→    remote, http, _ = _make_remote()
+   553→    http.set_list_response(
+   554→        "repos/o/r/issues?state=open&amp;labels=erk-plan&amp;per_page=100",
+   555→        response=[
+   556→            {
+   557→                "number": 1,
+   558→                "title": "Issue",
+   559→                "body": "",
+   560→                "state": "open",
+   561→                "html_url": "",
+   562→                "labels": [],
+   563→                "assignees": [],
+   564→                "user": {},
+   565→                "created_at": "2024-01-01T00:00:00Z",
+  </tool_result>
+  <tool_use name="Read" id="toolu_01BAHYQDCs3RKDED4n1g62ky">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests/unit/gateways/remote_github/test_real_remote_github.py</param>
+    <param name="offset">591</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="883" cache_read_input_tokens="147140" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 883}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01BAHYQDCs3RKDED4n1g62ky">
+   591→def test_list_issues_respects_limit() -&gt; None:
+   592→    remote, http, _ = _make_remote()
+   593→    http.set_list_response(
+   594→        "repos/o/r/issues?state=open&amp;labels=erk-plan&amp;per_page=100",
+   595→        response=[
+   596→            {
+   597→                "number": i,
+   598→                "title": f"Issue {i}",
+   599→                "body": "",
+   600→                "state": "open",
+   601→                "html_url": "",
+   602→                "labels": [],
+   603→                "assignees": [],
+   604→                "user": {},
+   605→                "created_at": "2024-01-01T00:00:00Z",
+   606→                "updated_at": "2024-01-01T00:00:00Z",
+   607→            }
+   608→            for i in range(1, 6)
+   609→        ],
+   610→    )
+  </tool_result>
+  <tool_use name="Read" id="toolu_01BtK7NEuSb3sv2au3wQxZFS">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests/unit/gateways/remote_github/test_real_remote_github.py</param>
+    <param name="offset">618</param>
+    <param name="limit">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="883" cache_read_input_tokens="147140" output_tokens="485" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 883, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01BtK7NEuSb3sv2au3wQxZFS">
+   618→def test_list_issues_includes_creator_param() -&gt; None:
+   619→    remote, http, _ = _make_remote()
+   620→    http.set_list_response(
+   621→        "repos/o/r/issues?state=open&amp;labels=erk-plan&amp;per_page=100&amp;creator=alice",
+   622→        response=[],
+   623→    )
+   624→
+   625→    result = remote.list_issues(
+   626→        owner="o", repo="r", labels=("erk-core",), state="open", limit=None, creator="alice"
+   627→    )
+  </tool_result>
+  <assistant>The issue here is that the tests pass `labels=("erk-core",)` to the `list_issues` method, but the mock HTTP endpoint URLs still use `erk-plan`. The URLs must match what the code constructs. Let me check what the code passes:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1429" cache_read_input_tokens="148023" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1429}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_015WxsBSkVTFCstJ3gpqZmkb">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests/unit/gateways/remote_github/test_real_remote_github.py</param>
+    <param name="offset">543</param>
+    <param name="limit">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1429" cache_read_input_tokens="148023" output_tokens="195" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1429, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_015WxsBSkVTFCstJ3gpqZmkb">
+   543→
+   544→    result = remote.list_issues(
+   545→        owner="o", repo="r", labels=("erk-pr", "erk-core"), state="open", limit=None, creator=None
+   546→    )
+   547→    assert len(result) == 1
+   548→    assert result[0].number == 1
+   549→
+   550→
+   551→def test_list_issues_skips_pull_requests() -&gt; None:
+   552→    remote, http, _ = _make_remote()
+  </tool_result>
+  <assistant>So line 545 passes `labels=("erk-pr", "erk-core")` but mock URL has `labels=erk-pr,erk-plan`. And line 580/612 passes `labels=("erk-core",)` but mock URL has `labels=erk-plan`. These mock URLs need to match the actual labels passed:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="339" cache_read_input_tokens="149452" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 339}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01RLCy7c7m4YGVjMFR4zvrQH">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests/unit/gateways/remote_github/test_real_remote_github.py</param>
+    <param name="old_string">        "repos/o/r/issues?state=open&amp;labels=erk-pr,erk-plan&amp;per_page=100",</param>
+    <param name="new_string">        "repos/o/r/issues?state=open&amp;labels=erk-pr,erk-core&amp;per_page=100",</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="339" cache_read_input_tokens="149452" output_tokens="301" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 339, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01RLCy7c7m4YGVjMFR4zvrQH">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests/unit/gateways/remote_github/test_real_remote_github.py has been updated successfully.
+  </tool_result>
+  <assistant>Now I need to check what labels the other 3 tests actually pass to the function:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="598" cache_read_input_tokens="149791" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 598}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01MxcDChkYdLyw4TXmCxYidT">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests/unit/gateways/remote_github/test_real_remote_github.py</param>
+    <param name="offset">573</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="598" cache_read_input_tokens="149791" output_tokens="154" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 598, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01MxcDChkYdLyw4TXmCxYidT">
+   573→                "html_url": "",
+   574→                "labels": [],
+   575→                "assignees": [],
+   576→                "user": {},
+   577→                "pull_request": {"url": "https://api.github.com/repos/o/r/pulls/2"},
+   578→                "created_at": "2024-01-01T00:00:00Z",
+   579→                "updated_at": "2024-01-01T00:00:00Z",
+   580→            },
+   581→        ],
+   582→    )
+   583→
+   584→    result = remote.list_issues(
+   585→        owner="o", repo="r", labels=("erk-core",), state="open", limit=None, creator=None
+   586→    )
+   587→    assert len(result) == 1
+   588→    assert result[0].number == 1
+   589→
+   590→
+   591→def test_list_issues_respects_limit() -&gt; None:
+   592→    remote, http, _ = _make_remote()
+   593→    http.set_list_response(
+   594→        "repos/o/r/issues?state=open&amp;labels=erk-plan&amp;per_page=100",
+   595→        response=[
+   596→            {
+   597→                "number": i,
+   598→                "title": f"Issue {i}",
+   599→                "body": "",
+   600→                "state": "open",
+   601→                "html_url": "",
+   602→                "labels": [],
+
+... [20 lines omitted] ...
+  </tool_result>
+  <assistant>All 3 remaining tests pass `labels=("erk-core",)` but have mock URLs with `labels=erk-plan`. Fix them:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="823" cache_read_input_tokens="150389" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 823}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01BsiPmV8cLNPeumw6cfnWby">
+    <param name="replace_all">True</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests/unit/gateways/remote_github/test_real_remote_github.py</param>
+    <param name="old_string">labels=erk-plan&amp;</param>
+    <param name="new_string">labels=erk-core&amp;</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="823" cache_read_input_tokens="150389" output_tokens="204" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 823, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01BsiPmV8cLNPeumw6cfnWby">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests/unit/gateways/remote_github/test_real_remote_github.py has been updated. All occurrences of 'labels=erk-plan&amp;' were successfully replaced with 'labels=erk-core&amp;'.
+  </tool_result>
+  <assistant>Now fix the checkout cmd tests — same issue, Plan objects need `[erk-plan]` title prefix:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="299" cache_read_input_tokens="151212" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 299}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01VFrAXgJwLaDYSmPHMUJZKK">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests/commands/branch/test_checkout_cmd.py</param>
+    <param name="offset">693</param>
+    <param name="limit">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="299" cache_read_input_tokens="151212" output_tokens="151" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 299, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01VFrAXgJwLaDYSmPHMUJZKK">
+   693→        env.setup_repo_structure()
+   694→
+   695→        plan = Plan(
+   696→            pr_identifier="500",
+   697→            title="Add feature",
+   698→            body="# Plan\nImplementation details",
+   699→            state=PlanState.OPEN,
+   700→            url="https://github.com/owner/repo/issues/500",
+   701→            labels=["erk-pr", "erk-core"],
+   702→            assignees=[],
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01JrQzakd3UHTAs3yXWzDY1w">
+    <param name="replace_all">True</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests/commands/branch/test_checkout_cmd.py</param>
+    <param name="old_string">            title="Add feature",</param>
+    <param name="new_string">            title="[erk-plan] Add feature",</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="287" cache_read_input_tokens="151511" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 287}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01JrQzakd3UHTAs3yXWzDY1w">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests/commands/branch/test_checkout_cmd.py has been updated. All occurrences of '            title="Add feature",' were successfully replaced with '            title="[erk-plan] Add feature",'.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01M9riBi17JS6vaBJSHA8Rbw">
+    <param name="replace_all">True</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests/commands/branch/test_checkout_cmd.py</param>
+    <param name="old_string">            title="Test activation output",</param>
+    <param name="new_string">            title="[erk-plan] Test activation output",</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="287" cache_read_input_tokens="151511" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 287}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01M9riBi17JS6vaBJSHA8Rbw">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests/commands/branch/test_checkout_cmd.py has been updated. All occurrences of '            title="Test activation output",' were successfully replaced with '            title="[erk-plan] Test activation output",'.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01ButwAmEpRLAfg46jKzSHfr">
+    <param name="replace_all">True</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests/commands/branch/test_checkout_cmd.py</param>
+    <param name="old_string">            title="Stack in place activation",</param>
+    <param name="new_string">            title="[erk-plan] Stack in place activation",</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="287" cache_read_input_tokens="151511" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 287}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01ButwAmEpRLAfg46jKzSHfr">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests/commands/branch/test_checkout_cmd.py has been updated. All occurrences of '            title="Stack in place activation",' were successfully replaced with '            title="[erk-plan] Stack in place activation",'.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01FpqkBAY1pU9ApmgptnJiHE">
+    <param name="replace_all">True</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests/commands/branch/test_checkout_cmd.py</param>
+    <param name="old_string">            title="Stack feature",</param>
+    <param name="new_string">            title="[erk-plan] Stack feature",</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="287" cache_read_input_tokens="151511" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 287}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01FpqkBAY1pU9ApmgptnJiHE">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests/commands/branch/test_checkout_cmd.py has been updated. All occurrences of '            title="Stack feature",' were successfully replaced with '            title="[erk-plan] Stack feature",'.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01AJv4ZC8pxYyJVa18zaxfso">
+    <param name="replace_all">True</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests/commands/branch/test_checkout_cmd.py</param>
+    <param name="old_string">            title="Trunk feature",</param>
+    <param name="new_string">            title="[erk-plan] Trunk feature",</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="287" cache_read_input_tokens="151511" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 287}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01AJv4ZC8pxYyJVa18zaxfso">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests/commands/branch/test_checkout_cmd.py has been updated. All occurrences of '            title="Trunk feature",' were successfully replaced with '            title="[erk-plan] Trunk feature",'.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01NTEgDDz67mfNYurEmzphC8">
+    <param name="replace_all">True</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests/commands/branch/test_checkout_cmd.py</param>
+    <param name="old_string">            title="Stacked plan rebase",</param>
+    <param name="new_string">            title="[erk-plan] Stacked plan rebase",</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="287" cache_read_input_tokens="151511" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 287}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01BDhmWqFyfcyk5QRCHxJe6B">
+    <param name="replace_all">True</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests/commands/branch/test_checkout_cmd.py</param>
+    <param name="old_string">            title="Trunk parent plan",</param>
+    <param name="new_string">            title="[erk-plan] Trunk parent plan",</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="287" cache_read_input_tokens="151511" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 287}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01NTEgDDz67mfNYurEmzphC8">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests/commands/branch/test_checkout_cmd.py has been updated. All occurrences of '            title="Stacked plan rebase",' were successfully replaced with '            title="[erk-plan] Stacked plan rebase",'.
+  </tool_result>
+  <tool_result tool="toolu_01BDhmWqFyfcyk5QRCHxJe6B">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests/commands/branch/test_checkout_cmd.py has been updated. All occurrences of '            title="Trunk parent plan",' were successfully replaced with '            title="[erk-plan] Trunk parent plan",'.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01E6TynYgrprsJiqnLC2aZKK">
+    <param name="replace_all">True</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests/commands/branch/test_checkout_cmd.py</param>
+    <param name="old_string">            title="Stale parent sync",</param>
+    <param name="new_string">            title="[erk-plan] Stale parent sync",</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="287" cache_read_input_tokens="151511" output_tokens="1227" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 287, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01E6TynYgrprsJiqnLC2aZKK">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests/commands/branch/test_checkout_cmd.py has been updated. All occurrences of '            title="Stale parent sync",' were successfully replaced with '            title="[erk-plan] Stale parent sync",'.
+  </tool_result>
+  <assistant>Now let me do a broader check — are there any more Plan objects in tests that go through the `prepare_plan_for_worktree` validation path without the `[erk-plan]` prefix? Let me search systematically:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2296" cache_read_input_tokens="151798" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2296}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01MtLLWDr8c652uxGxRaEKtC">
+    <param name="description">Find remaining Plan title prefix issues</param>
+    <param name="subagent_type">Explore</param>
+    <param name="prompt">In /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests, search for Plan() construct...[truncated 681 chars]...an objects and could be called from these test paths, checking their default title values.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2296" cache_read_input_tokens="151798" output_tokens="392" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2296, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01MtLLWDr8c652uxGxRaEKtC">
+Perfect! Let me now provide a comprehensive final report:
+
+## Summary
+
+I've completed a thorough search of Plan() constructor calls in the `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests` directory. Here are my findings:
+
+### Critical Tests - Plans Going Through Validation (All Correct)
+
+The validation check in `prepare_plan_for_worktree()` (called from implement, branch create --for-plan, and branch checkout) requires titles to start with "[erk-plan]". I examined tests for these commands:
+
+1. **tests/unit/cli/commands/branch/test_create_cmd.py** - Lines 366, 443, 505, 678, 891
+   - ALL Plan() objects have `title="[erk-plan] ..."` format ✓
+
+2. **tests/commands/branch/test_checkout_cmd.py**
+   - ALL Plan() objects have `title="[erk-plan] ..."` format ✓
+
+3. **tests/commands/implement/conftest.py** - Line 12
+   - `create_sample_plan_issue()` returns Plan with `title="[erk-plan] Add Authentication Feature"` ✓
+
+### Core Validation Test File
+
+**tests/unit/shared/test_plan_workflow.py**
+- Contains `_make_plan()` helper with default `title="[erk-plan] Test Issue"` ✓
+- Line 61: Intentionally creates plan without prefix in `test_prepare_plan_missing_title_prefix_returns_failure()` to test the validation error case (This is CORRECT - it's a negative test) ✓
+
+### Non-Critical Test Files (Not in Validation Paths)
+
+These files create Plan() objects without "[erk-plan]" prefix, but they don't test paths that call `prepare_plan_for_worktree()`:
+
+- **tests/unit/plan_store/test_lifecycle_display.py** (Line 44): `title="Test plan"`
+
+... [27 lines omitted] ...
+  </tool_result>
+  <assistant>Good — all validation path tests are correct now. The remaining test failures might be from mock URL mismatches. Let me also check for any remaining `"erk-plan"` references in test mock URLs:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1588" cache_read_input_tokens="154094" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1588}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01HJ9yzWB3eF2vY8dzcNKPDA">
+    <param name="pattern">labels=erk-plan</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1588" cache_read_input_tokens="154094" output_tokens="165" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1588, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01HJ9yzWB3eF2vY8dzcNKPDA">
+No matches found
+  </tool_result>
+  <assistant>Good. Now let me run fast-ci again:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="180" cache_read_input_tokens="155682" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 180}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01HSezqcejmf5SX3hqonrpeC">
+    <param name="description">Run fast-ci verification</param>
+    <param name="subagent_type">devrun</param>
+    <param name="prompt">Run `make fast-ci` in /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39 and report results. If there are failures, show the SPECIFIC test names and error messages for each failure.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="180" cache_read_input_tokens="155682" output_tokens="161" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 180, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01HSezqcejmf5SX3hqonrpeC">
+make failed: 13 test failures found in the erk test suite
+
+**Failing Tests:**
+
+1. **tests/unit/plan_store/test_plan_backend_interface.py::test_list_plans_filters_by_state** - Issue with plan state filtering
+
+2. **tests/unit/plan_store/test_planned_pr_backend.py::test_list_plans_includes_only_planned_prs_with_erk_plan_label** - Issue with filtering plans by the `erk-plan` label
+
+3. **tests/commands/consolidate_learn_plans/test_dispatch.py::test_dispatch_happy_path** - Dispatch command happy path failure
+
+4. **tests/commands/pr/test_duplicate_check.py::test_duplicate_detected** - Assertion error in duplicate detection
+
+5. **tests/commands/pr/test_duplicate_check.py::test_llm_error_graceful_degradation** - LLM error handling issue
+
+6. **tests/commands/pr/test_duplicate_check.py::test_plan_flag_fetches_and_excludes_self** - Plan flag filtering issue
+
+7. **tests/commands/pr/test_duplicate_check.py::test_progress_reporting_lists_plans** - Progress reporting issue
+
+8. **tests/commands/pr/test_remote_paths.py::test_duplicate_check_remote_finds_duplicate** - Remote duplicate check failure
+
+9. **tests/commands/pr/test_remote_paths.py::test_dispatch_remote_dispatches_workflow** - Exit code 1 (expected 0): PR #42 validation error - does not have '[erk-plan]' title prefix
+
+10. **tests/commands/pr/test_remote_paths.py::test_dispatch_remote_multiple_plans** - Exit code 1 (expected 0): PRs #10 and #20 missing '[erk-plan]' title prefix
+
+11. **tests/commands/workspace/test_delete.py::test_delete_all_closes_pr_and_plan** - Plan #123 not found in closed_prs (only [456] closed)
+
+12. **tests/commands/workspace/test_delete.py::test_delete_all_shows_closed_plan_status** - Expected "Plan #456 already closed" message not in output
+
+13. **tests/commands/workspace/test_delete.py::test_delete_all_shows_actual_pr_and_plan_numbers_in_confirmation** - Expected "Close plan #789 (currently open)" message not in output
+
+
+... [5 lines omitted] ...
+
+**Summary:** 13 failed, 5971 passed. The failures appear related to changes in plan label handling (removal of `erk-plan` label) and plan state/filtering logic, which aligns with the current branch `plnd/remove-erk-plan-label-03-10-0509`.
+  </tool_result>
+  <assistant>13 failures left. Let me fix them systematically. The issues fall into categories:
+1. `test_planned_pr_backend.py` — plan listing test that uses erk-plan label
+2. `test_plan_backend_interface.py` — plan state filtering 
+3. `test_remote_paths.py` — dispatch tests with title prefix issues
+4. `test_duplicate_check.py` — duplicate check tests
+5. `test_delete.py` — workspace delete tests
+6. `test_dispatch.py` — consolidate learn plans dispatch</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="897" cache_read_input_tokens="155862" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 897}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01UHgWqFncGpqnPe3NWT422v">
+    <param name="pattern">erk.plan|title=</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests/unit/plan_store/test_planned_pr_backend.py</param>
+    <param name="output_mode">content</param>
+    <param name="-C">3</param>
+    <param name="head_limit">40</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="897" cache_read_input_tokens="155862" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 897}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01UHgWqFncGpqnPe3NWT422v">
+43-    with pytest.raises(RuntimeError, match="branch_name is required"):
+44-        backend.create_plan(
+45-            repo_root=Path("/repo"),
+46:            title="Test Plan",
+47-            content="# Plan",
+48-            labels=("erk-core",),
+49-            metadata={},
+--
+58-
+59-    result = backend.create_plan(
+60-        repo_root=Path("/repo"),
+61:        title="Test Plan",
+62-        content="# Plan content",
+63-        labels=("erk-core",),
+64-        metadata={"branch_name": "test-branch"},
+--
+78-
+79-    backend.create_plan(
+80-        repo_root=Path("/repo"),
+81:        title="Test Plan",
+82-        content="# Plan content",
+83-        labels=("erk-core",),
+84-        metadata={"branch_name": "test-branch", "base_ref_name": "main"},
+--
+95-
+96-    backend.create_plan(
+97-        repo_root=Path("/repo"),
+98:        title="Test Plan",
+99-        content="# Plan content",
+100-        labels=("erk-core",),
+
+... [12 lines omitted] ...
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01GZXCxYyktc6p1yzmTLhTdr">
+    <param name="pattern">erk.plan</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests/unit/plan_store/test_plan_backend_interface.py</param>
+    <param name="output_mode">content</param>
+    <param name="-C">3</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="897" cache_read_input_tokens="155862" output_tokens="437" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 897, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01GZXCxYyktc6p1yzmTLhTdr">
+No matches found
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01K6RfWigy9qLBjCx5Y42NjV">
+    <param name="pattern">test_list_plans</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests/unit/plan_store/test_planned_pr_backend.py</param>
+    <param name="output_mode">content</param>
+    <param name="-C">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="922" cache_read_input_tokens="156759" output_tokens="153" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 922, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01K6RfWigy9qLBjCx5Y42NjV">
+253-        repo_root=Path("/repo"),
+254-        title="Plan",
+255-        content="Original content",
+256-        labels=("erk-core",),
+257-        metadata={"branch_name": "test-branch"},
+258-        summary="",
+259-    )
+260-
+261-    backend.update_plan_content(Path("/repo"), result.pr_id, "Updated content", summary="")
+262-
+263-    plan = backend.get_plan(Path("/repo"), result.pr_id)
+264-    assert not isinstance(plan, PlanNotFound)
+265-    assert plan.body == "Updated content"
+266-
+267-
+268-# =============================================================================
+269-# list_plans filtering
+270-# =============================================================================
+271-
+272-
+273:def test_list_plans_includes_only_planned_prs_with_erk_plan_label() -&gt; None:
+274-    """list_plans only returns draft PRs that have the erk-plan label."""
+275-    fake_github = FakeLocalGitHub()
+276-    backend = PlannedPRBackend(fake_github, fake_github.issues, time=FakeTime())
+277-
+278-    # Create a plan (draft with erk-plan label)
+279-    backend.create_plan(
+280-        repo_root=Path("/repo"),
+281-        title="Real Plan",
+282-        content="Plan content",
+
+... [11 lines omitted] ...
+  </tool_result>
+  <assistant>The test creates a plan with `title="Real Plan"` but now `list_plans` filters by `[erk-plan]` title prefix. Fix:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="854" cache_read_input_tokens="157681" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 854}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_011PUC4vFgxCE2fzxogWPQx3">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests/unit/plan_store/test_planned_pr_backend.py</param>
+    <param name="old_string">def test_list_plans_includes_only_planned_prs_with_erk_plan_label() -&gt; None:
+    """list_p...[truncated 486 chars]...state=PlanState.OPEN))
+    assert len(plans) == 1
+    assert plans[0].title == "Real Plan"</param>
+    <param name="new_string">def test_list_plans_includes_only_planned_prs_with_erk_plan_title_prefix() -&gt; None:
+    ""...[truncated 533 chars]...tate.OPEN))
+    assert len(plans) == 1
+    assert plans[0].title == "[erk-plan] Real Plan"</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="854" cache_read_input_tokens="157681" output_tokens="644" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 854, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_011PUC4vFgxCE2fzxogWPQx3">
+&lt;tool_use_error&gt;File has not been read yet. Read it first before writing to it.&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_use name="Read" id="toolu_01ADBk8XLGw7BpiQbmiEQpNB">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests/unit/plan_store/test_planned_pr_backend.py</param>
+    <param name="offset">270</param>
+    <param name="limit">25</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="690" cache_read_input_tokens="158535" output_tokens="130" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 690, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01ADBk8XLGw7BpiQbmiEQpNB">
+   270→# =============================================================================
+   271→
+   272→
+   273→def test_list_plans_includes_only_planned_prs_with_erk_plan_label() -&gt; None:
+   274→    """list_plans only returns draft PRs that have the erk-plan label."""
+   275→    fake_github = FakeLocalGitHub()
+   276→    backend = PlannedPRBackend(fake_github, fake_github.issues, time=FakeTime())
+   277→
+   278→    # Create a plan (draft with erk-plan label)
+   279→    backend.create_plan(
+   280→        repo_root=Path("/repo"),
+   281→        title="Real Plan",
+   282→        content="Plan content",
+   283→        labels=("erk-core",),
+   284→        metadata={"branch_name": "plan-branch"},
+   285→        summary="",
+   286→    )
+   287→
+   288→    plans = backend.list_plans(Path("/repo"), PlanQuery(state=PlanState.OPEN))
+   289→    assert len(plans) == 1
+   290→    assert plans[0].title == "Real Plan"
+   291→
+   292→
+   293→# =============================================================================
+   294→# Body parsing (via lifecycle module)
+  </tool_result>
+  <tool_use name="Edit" id="toolu_0183WszZdUXjQBe1M28v6AMc">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests/unit/plan_store/test_planned_pr_backend.py</param>
+    <param name="old_string">def test_list_plans_includes_only_planned_prs_with_erk_plan_label() -&gt; None:
+    """list_p...[truncated 486 chars]...state=PlanState.OPEN))
+    assert len(plans) == 1
+    assert plans[0].title == "Real Plan"</param>
+    <param name="new_string">def test_list_plans_includes_only_planned_prs_with_erk_plan_title_prefix() -&gt; None:
+    ""...[truncated 533 chars]...tate.OPEN))
+    assert len(plans) == 1
+    assert plans[0].title == "[erk-plan] Real Plan"</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="460" cache_read_input_tokens="159225" output_tokens="608" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 460, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0183WszZdUXjQBe1M28v6AMc">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests/unit/plan_store/test_planned_pr_backend.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me check `test_plan_backend_interface.py`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="670" cache_read_input_tokens="159685" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 670}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01UUgdqXwYAR3gTXBR4oJa36">
+    <param name="pattern">test_list_plans_filters_by_state</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests/unit/plan_store/test_plan_backend_interface.py</param>
+    <param name="output_mode">content</param>
+    <param name="-C">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="670" cache_read_input_tokens="159685" output_tokens="175" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 670, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01UUgdqXwYAR3gTXBR4oJa36">
+100-
+101-    # Verify CreatePlanResult structure
+102-    assert isinstance(result.pr_id, str)
+103-    assert len(result.pr_id) &gt; 0
+104-    assert isinstance(result.url, str)
+105-
+106-    # Retrieve the plan
+107-    plan = plan_backend.get_plan(Path("/repo"), result.pr_id)
+108-    assert not isinstance(plan, PlanNotFound)
+109-
+110-    # Verify Plan structure
+111-    assert plan.pr_identifier == result.pr_id
+112-    assert "Test Plan Title" in plan.title
+113-    assert plan.body == "# Plan Content\n\nThis is the plan body."
+114-    assert plan.state == PlanState.OPEN
+115-    assert isinstance(plan.url, str)
+116-    assert isinstance(plan.labels, list)
+117-    assert isinstance(plan.assignees, list)
+118-    assert isinstance(plan.created_at, datetime)
+119-    assert isinstance(plan.updated_at, datetime)
+120-    assert isinstance(plan.metadata, dict)
+121-
+122-
+123-def test_list_plans_returns_list(plan_backend: PlanBackend) -&gt; None:
+124-    """Backend returns a list from list_plans (empty is valid)."""
+125-    results = plan_backend.list_plans(Path("/repo"), PlanQuery())
+126-
+127-    assert isinstance(results, list)
+128-
+129-
+
+... [31 lines omitted] ...
+  </tool_result>
+  <assistant>Let me check the fixture:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="975" cache_read_input_tokens="160355" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 975}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01LiybqDKDiZvCeiPu69bcx2">
+    <param name="pattern">backend_with_plan|plan_backend</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests/unit/plan_store/test_plan_backend_interface.py</param>
+    <param name="output_mode">content</param>
+    <param name="-C">5</param>
+    <param name="head_limit">40</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="975" cache_read_input_tokens="160355" output_tokens="183" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 975, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01LiybqDKDiZvCeiPu69bcx2">
+40-    PlannedPRBackend requires branch_name metadata.
+41-    """
+42-    return {"branch_name": _next_branch()}
+43-
+44-
+45:def _make_planned_pr_backend_with_plan() -&gt; tuple[PlanBackend, str]:
+46-    """Create PlannedPRBackend with a pre-existing plan by creating one via API."""
+47-    fake_github = FakeLocalGitHub()
+48-    backend = PlannedPRBackend(fake_github, fake_github.issues, time=FakeTime())
+49-
+50-    result = backend.create_plan(
+--
+57-    )
+58-    return backend, result.pr_id
+59-
+60-
+61-@pytest.fixture()
+62:def plan_backend() -&gt; PlanBackend:
+63-    """Provide a PlannedPRBackend instance."""
+64-    return _make_planned_pr_backend()
+65-
+66-
+67-@pytest.fixture()
+68:def backend_with_plan() -&gt; tuple[PlanBackend, str]:
+69-    """Fixture providing PlannedPRBackend with a pre-existing plan.
+70-
+71-    Returns:
+72-        Tuple of (backend, plan_id)
+73-    """
+74:    return _make_planned_pr_backend_with_plan()
+
+... [12 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_017FUAF8xuZZYJXv6oAuUKMX">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests/unit/plan_store/test_plan_backend_interface.py</param>
+    <param name="offset">45</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="639" cache_read_input_tokens="161330" output_tokens="130" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 639, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_017FUAF8xuZZYJXv6oAuUKMX">
+    45→def _make_planned_pr_backend_with_plan() -&gt; tuple[PlanBackend, str]:
+    46→    """Create PlannedPRBackend with a pre-existing plan by creating one via API."""
+    47→    fake_github = FakeLocalGitHub()
+    48→    backend = PlannedPRBackend(fake_github, fake_github.issues, time=FakeTime())
+    49→
+    50→    result = backend.create_plan(
+    51→        repo_root=Path("/repo"),
+    52→        title="Existing Plan",
+    53→        content="Plan content",
+    54→        labels=("erk-core",),
+    55→        metadata={"branch_name": "existing-plan-branch"},
+    56→        summary="",
+    57→    )
+    58→    return backend, result.pr_id
+    59→
+  </tool_result>
+  <assistant>The plan is created with `title="Existing Plan"` which won't pass the title prefix filter in `list_plans`. Fix:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="357" cache_read_input_tokens="161969" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 357}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01A9jaHQt9Nhfk96sSHtn6j3">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests/unit/plan_store/test_plan_backend_interface.py</param>
+    <param name="old_string">        title="Existing Plan",</param>
+    <param name="new_string">        title="[erk-plan] Existing Plan",</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="357" cache_read_input_tokens="161969" output_tokens="201" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 357, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01A9jaHQt9Nhfk96sSHtn6j3">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests/unit/plan_store/test_plan_backend_interface.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me fix the remaining test files. Let me read each one and fix:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="494" cache_read_input_tokens="162326" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 494}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01VeGdvBkMG4gC7LvSSMX6wv">
+    <param name="pattern">test_dispatch_remote_dispatches_workflow|test_dispatch_remote_multiple_plans</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests/commands/pr/test_remote_paths.py</param>
+    <param name="output_mode">content</param>
+    <param name="-C">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="494" cache_read_input_tokens="162326" output_tokens="182" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 494, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01VeGdvBkMG4gC7LvSSMX6wv">
+474-        state=state,
+475-        url=f"https://github.com/owner/repo/pull/{number}",
+476-        labels=labels if labels is not None else ["erk-pr", "erk-core"],
+477-        assignees=[],
+478-        created_at=datetime(2024, 1, 1, tzinfo=UTC),
+479-        updated_at=datetime(2024, 1, 2, tzinfo=UTC),
+480-        author="test-author",
+481-    )
+482-
+483-
+484:def test_dispatch_remote_dispatches_workflow() -&gt; None:
+485-    """Test pr dispatch --repo dispatches workflow via RemoteGitHub."""
+486-    issue = _make_plan_issue(42, title="Remote Dispatch Plan", branch_name="plnd/remote-test")
+487-    fake_remote = _make_fake_remote(issues={42: issue})
+488-    ctx = _build_remote_context(fake_remote)
+489-
+490-    runner = CliRunner()
+491-    result = runner.invoke(
+492-        cli,
+493-        ["pr", "dispatch", "42", "--repo", "owner/repo"],
+494-        obj=ctx,
+--
+570-    result = runner.invoke(
+571-        cli,
+572-        ["pr", "dispatch", "--repo", "owner/repo"],
+573-        obj=ctx,
+574-    )
+575-
+576-    assert result.exit_code != 0
+577-    assert "Plan number(s) required in remote mode" in result.output
+
+... [13 lines omitted] ...
+  </tool_result>
+  <assistant>These tests create issues with titles like `"Remote Dispatch Plan"`, `"Plan A"`, `"Plan B"` which need `[erk-plan]` prefix:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="784" cache_read_input_tokens="162820" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 784}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_017tkWNWzvAQWJoeYKTuJ4Fm">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests/commands/pr/test_remote_paths.py</param>
+    <param name="old_string">    issue = _make_plan_issue(42, title="Remote Dispatch Plan", branch_name="plnd/remote-test")</param>
+    <param name="new_string">    issue = _make_plan_issue(42, title="[erk-plan] Remote Dispatch Plan", branch_name="plnd/remote-test")</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="784" cache_read_input_tokens="162820" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 784}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017tkWNWzvAQWJoeYKTuJ4Fm">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests/commands/pr/test_remote_paths.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_019fgBdmp3LPzq8DC3XzF3FY">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests/commands/pr/test_remote_paths.py</param>
+    <param name="old_string">    issue_1 = _make_plan_issue(10, title="Plan A", branch_name="plnd/plan-a")
+    issue_2 = _make_plan_issue(20, title="Plan B", branch_name="plnd/plan-b")</param>
+    <param name="new_string">    issue_1 = _make_plan_issue(10, title="[erk-plan] Plan A", branch_name="plnd/plan-a")
+    issue_2 = _make_plan_issue(20, title="[erk-plan] Plan B", branch_name="plnd/plan-b")</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="784" cache_read_input_tokens="162820" output_tokens="521" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 784, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_019fgBdmp3LPzq8DC3XzF3FY">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests/commands/pr/test_remote_paths.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me check the duplicate_check and workspace delete tests. Let me look at the duplicate check tests to understand what plan data flows through:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="672" cache_read_input_tokens="163604" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 672}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_019MzzSAwwidqyBi5VJWgDv5">
+    <param name="pattern">erk-plan|labels=.*erk</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests/commands/pr/test_duplicate_check.py</param>
+    <param name="output_mode">content</param>
+    <param name="-C">3</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="672" cache_read_input_tokens="163604" output_tokens="184" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 672, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_019MzzSAwwidqyBi5VJWgDv5">
+29-        body=body,
+30-        state=PlanState.OPEN,
+31-        url=f"https://github.com/owner/repo/issues/{pr_identifier}",
+32:        labels=["erk-pr", "erk-core"],
+33-        assignees=[],
+34-        created_at=datetime(2025, 1, 1),
+35-        updated_at=datetime(2025, 1, 1),
+--
+206-        body="body B for checking",
+207-        state="OPEN",
+208-        url="https://github.com/owner/repo/issues/200",
+209:        labels=["erk-pr", "erk-core"],
+210-        assignees=[],
+211-        created_at=datetime(2025, 1, 1),
+212-        updated_at=datetime(2025, 1, 1),
+  </tool_result>
+  <assistant>The duplicate check test plans have `labels=["erk-pr", "erk-core"]`. The issue is that `duplicate_check_cmd.py` now filters plans by title prefix. Let me check what titles these have:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="411" cache_read_input_tokens="164276" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 411}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01MZs8qEuh5knS93xm8D6nWJ">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests/commands/pr/test_duplicate_check.py</param>
+    <param name="offset">18</param>
+    <param name="limit">25</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="411" cache_read_input_tokens="164276" output_tokens="177" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 411, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01MZs8qEuh5knS93xm8D6nWJ">
+    18→
+    19→
+    20→def _make_plan(
+    21→    *,
+    22→    pr_identifier: str,
+    23→    title: str,
+    24→    body: str,
+    25→) -&gt; Plan:
+    26→    return Plan(
+    27→        pr_identifier=pr_identifier,
+    28→        title=title,
+    29→        body=body,
+    30→        state=PlanState.OPEN,
+    31→        url=f"https://github.com/owner/repo/issues/{pr_identifier}",
+    32→        labels=["erk-pr", "erk-core"],
+    33→        assignees=[],
+    34→        created_at=datetime(2025, 1, 1),
+    35→        updated_at=datetime(2025, 1, 1),
+    36→        metadata={},
+    37→        objective_id=None,
+    38→    )
+    39→
+    40→
+    41→def _make_plan_list_service(plans: list[Plan]) -&gt; FakePlanListService:
+    42→    """Create a FakePlanListService from a list of Plan objects."""
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01PyjES8uuMBTERM4pUdBZ1H">
+    <param name="pattern">_make_plan\(</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests/commands/pr/test_duplicate_check.py</param>
+    <param name="output_mode">content</param>
+    <param name="-C">2</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="479" cache_read_input_tokens="164687" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 479}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01PyjES8uuMBTERM4pUdBZ1H">
+18-
+19-
+20:def _make_plan(
+21-    *,
+22-    pr_identifier: str,
+--
+60-        simulated_prompt_output='{"duplicates": []}',
+61-    )
+62:    existing = _make_plan(pr_identifier="100", title="Refactor auth", body="Restructure auth flow")
+63-    plan_store, _ = create_plan_store_with_plans({"100": existing})
+64-
+--
+90-        simulated_prompt_output=llm_output,
+91-    )
+92:    existing = _make_plan(
+93-        pr_identifier="100", title="Dark mode support", body="Add dark mode to app"
+94-    )
+--
+151-        simulated_prompt_error="LLM unavailable",
+152-    )
+153:    existing = _make_plan(pr_identifier="100", title="Existing plan", body="body")
+154-    plan_store, _ = create_plan_store_with_plans({"100": existing})
+155-
+--
+197-        simulated_prompt_output=llm_output,
+198-    )
+199:    plan_100 = _make_plan(pr_identifier="100", title="Plan A", body="body A")
+200:    plan_200 = _make_plan(pr_identifier="200", title="Plan B", body="body B for checking")
+201-    plan_store, _ = create_plan_store_with_plans({"100": plan_100, "200": plan_200})
+202-
+
+... [7 lines omitted] ...
+  </tool_result>
+  <assistant>I see — these plans go through `duplicate_check_cmd` which now filters by `[erk-plan]` prefix. The titles need the prefix. But wait — the plans are retrieved via `plan_list_service`, not `PlannedPRBackend.list_plans`. Let me check how the duplicate check gets plans:
+
+The code I changed earlier was:
+```python
+existing_plans = [p for p in plan_data.plans if p.title.startswith("[erk-plan]")]
+```
+
+So plans without `[erk-plan]` prefix will be filtered out. I need to add the prefix to test plan titles:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="896" cache_read_input_tokens="165166" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 896}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01E48pKZfVgQCrnAkCC7jh1Y">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests/commands/pr/test_duplicate_check.py</param>
+    <param name="old_string">    existing = _make_plan(pr_identifier="100", title="Refactor auth", body="Restructure auth flow")</param>
+    <param name="new_string">    existing = _make_plan(pr_identifier="100", title="[erk-plan] Refactor auth", body="Restructure auth flow")</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="896" cache_read_input_tokens="165166" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 896}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01E48pKZfVgQCrnAkCC7jh1Y">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests/commands/pr/test_duplicate_check.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01FPyZAzBL5WvZrAdbt6GaWZ">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests/commands/pr/test_duplicate_check.py</param>
+    <param name="old_string">    existing = _make_plan(
+        pr_identifier="100", title="Dark mode support", body="Add dark mode to app"
+    )</param>
+    <param name="new_string">    existing = _make_plan(
+        pr_identifier="100", title="[erk-plan] Dark mode support", body="Add dark mode to app"
+    )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="896" cache_read_input_tokens="165166" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 896}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01FPyZAzBL5WvZrAdbt6GaWZ">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests/commands/pr/test_duplicate_check.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_015kBtiTL4dFP8iSqCQNeqny">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests/commands/pr/test_duplicate_check.py</param>
+    <param name="old_string">    existing = _make_plan(pr_identifier="100", title="Existing plan", body="body")</param>
+    <param name="new_string">    existing = _make_plan(pr_identifier="100", title="[erk-plan] Existing plan", body="body")</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="896" cache_read_input_tokens="165166" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 896}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_015kBtiTL4dFP8iSqCQNeqny">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests/commands/pr/test_duplicate_check.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_015cQiAdSXtGVnkLix7tvp6V">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests/commands/pr/test_duplicate_check.py</param>
+    <param name="old_string">    plan_100 = _make_plan(pr_identifier="100", title="Plan A", body="body A")
+    plan_200 = _make_plan(pr_identifier="200", title="Plan B", body="body B for checking")</param>
+    <param name="new_string">    plan_100 = _make_plan(pr_identifier="100", title="[erk-plan] Plan A", body="body A")
+    plan_200 = _make_plan(pr_identifier="200", title="[erk-plan] Plan B", body="body B for checking")</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="896" cache_read_input_tokens="165166" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 896}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_015cQiAdSXtGVnkLix7tvp6V">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-39/tests/commands/pr/test_duplicate_check.py has been updated successfully.
+  </tool_result>
+</session>
