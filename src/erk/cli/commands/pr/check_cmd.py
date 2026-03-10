@@ -72,7 +72,7 @@ def validate_plan_format(
     *,
     owner: str,
     repo: str,
-    plan_number: int,
+    pr_number: int,
 ) -> PlanValidationResult:
     """Validate plan format programmatically.
 
@@ -88,7 +88,7 @@ def validate_plan_format(
         remote: RemoteGitHub instance
         owner: Repository owner
         repo: Repository name
-        plan_number: GitHub issue number to validate
+        pr_number: GitHub issue number to validate
 
     Returns:
         PlanValidationSuccess if validation completed (may have passed or failed checks)
@@ -96,9 +96,9 @@ def validate_plan_format(
     """
     checks: list[tuple[bool, str]] = []
 
-    issue = remote.get_issue(owner=owner, repo=repo, number=plan_number)
+    issue = remote.get_issue(owner=owner, repo=repo, number=pr_number)
     if isinstance(issue, IssueNotFound):
-        return PlanValidationError(error=f"PR #{plan_number} not found")
+        return PlanValidationError(error=f"PR #{pr_number} not found")
 
     issue_body = issue.body if issue.body else ""
 
@@ -127,7 +127,7 @@ def validate_plan_format(
             checks.append((False, "plan content extractable from body"))
     else:
         # Issue-based format: plan content is in first comment
-        comments = remote.get_issue_comments(owner=owner, repo=repo, number=plan_number)
+        comments = remote.get_issue_comments(owner=owner, repo=repo, number=pr_number)
 
         if not comments:
             checks.append((False, "First comment exists"))
@@ -219,12 +219,12 @@ def _check_plan_format(
     owner, repo_name = resolve_owner_repo(ctx, target_repo=target_repo)
     remote = get_remote_github(ctx)
 
-    plan_number = parse_issue_identifier(identifier)
+    pr_number = parse_issue_identifier(identifier)
 
-    user_output(f"Validating PR #{plan_number}...")
+    user_output(f"Validating PR #{pr_number}...")
     user_output("")
 
-    result = validate_plan_format(remote, owner=owner, repo=repo_name, plan_number=plan_number)
+    result = validate_plan_format(remote, owner=owner, repo=repo_name, pr_number=pr_number)
 
     if isinstance(result, PlanValidationError):
         user_output(click.style("Error: ", fg="red") + f"Failed to validate PR: {result.error}")

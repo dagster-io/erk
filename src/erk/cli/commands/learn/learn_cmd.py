@@ -27,7 +27,7 @@ from erk_shared.sessions.discovery import (
 class LearnResult:
     """Result of learn command."""
 
-    plan_id: str
+    pr_id: str
     planning_session_id: str | None
     implementation_session_ids: list[str]
     learn_session_ids: list[str]
@@ -37,14 +37,14 @@ class LearnResult:
     last_remote_impl_at: str | None
 
 
-def _extract_plan_number(identifier: str) -> int | None:
-    """Extract plan number from identifier (number or URL).
+def _extract_pr_number(identifier: str) -> int | None:
+    """Extract PR number from identifier (number or URL).
 
     Args:
-        identifier: Plan number or GitHub URL
+        identifier: PR number or GitHub URL
 
     Returns:
-        Plan number or None if invalid
+        PR number or None if invalid
     """
     # Try direct number (LBYL: check before converting)
     if identifier.isdigit():
@@ -105,18 +105,18 @@ def learn_cmd(
     # Get current branch for local session filtering
     branch_name = ctx.git.branch.get_current_branch(ctx.cwd)
 
-    # Resolve plan_id: explicit argument or infer from branch
-    plan_id: str | None = None
+    # Resolve pr_id: explicit argument or infer from branch
+    pr_id: str | None = None
     if plan is not None:
-        plan_number = _extract_plan_number(plan)
-        if plan_number is None:
+        pr_number = _extract_pr_number(plan)
+        if pr_number is None:
             user_output(click.style(f"Error: Invalid plan identifier: {plan}", fg="red"))
             raise SystemExit(1)
-        plan_id = str(plan_number)
+        pr_id = str(pr_number)
     elif branch_name is not None:
-        plan_id = ctx.plan_backend.resolve_plan_id_for_branch(ctx.cwd, branch_name)
+        pr_id = ctx.plan_backend.resolve_plan_id_for_branch(ctx.cwd, branch_name)
 
-    if plan_id is None:
+    if pr_id is None:
         user_output(
             click.style("Error: ", fg="red")
             + "No plan specified and could not infer from branch name"
@@ -130,10 +130,10 @@ def learn_cmd(
     repo_root = repo.root
 
     # Check for preprocessed learn materials branch before session discovery
-    learn_branch = _get_learn_materials_branch(ctx, repo_root, plan_id)
+    learn_branch = _get_learn_materials_branch(ctx, repo_root, pr_id)
     if learn_branch is not None:
         user_output(
-            click.style(f"Preprocessed learn materials for plan {plan_id}", bold=True)
+            click.style(f"Preprocessed learn materials for plan {pr_id}", bold=True)
             + f"\n\nBranch: {click.style(learn_branch, fg='cyan')}"
             + "\n\nSessions have been preprocessed and committed to the learn branch."
             + "\nClaude will read materials from .erk/impl-context/ directly."
@@ -141,7 +141,7 @@ def learn_cmd(
         ctx.prompt_executor.execute_interactive(
             worktree_path=repo_root,
             dangerous=dangerous,
-            command=f"/erk:learn {plan_id}",
+            command=f"/erk:learn {pr_id}",
             target_subpath=None,
             permission_mode="edits",
         )
@@ -151,7 +151,7 @@ def learn_cmd(
     # Find sessions for the plan
     sessions_for_plan = ctx.plan_backend.find_sessions_for_plan(
         repo_root,
-        plan_id,
+        plan_id=pr_id,
     )
 
     # Get readable sessions (ones that exist on disk) using global lookup
@@ -179,7 +179,7 @@ def learn_cmd(
 
     # Build result
     result = LearnResult(
-        plan_id=plan_id,
+        pr_id=pr_id,
         planning_session_id=sessions_for_plan.planning_session_id,
         implementation_session_ids=sessions_for_plan.implementation_session_ids,
         learn_session_ids=sessions_for_plan.learn_session_ids,
@@ -205,7 +205,7 @@ def learn_cmd(
         confirm_prompt=(
             "Use Claude to learn from these sessions and produce documentation in docs/learned?"
         ),
-        command=f"/erk:learn {plan_id}",
+        command=f"/erk:learn {pr_id}",
     )
 
 
@@ -237,19 +237,19 @@ def _confirm_and_launch(
 def _get_learn_materials_branch(
     ctx: ErkContext,
     repo_root: Path,
-    plan_id: str,
+    pr_id: str,
 ) -> str | None:
     """Check plan header for a stored learn_materials_branch.
 
     Args:
         ctx: ErkContext
         repo_root: Repository root path
-        plan_id: Plan identifier
+        pr_id: PR identifier
 
     Returns:
         Branch name if found on the plan header, None otherwise
     """
-    result = ctx.plan_backend.get_metadata_field(repo_root, plan_id, "learn_materials_branch")
+    result = ctx.plan_backend.get_metadata_field(repo_root, pr_id, "learn_materials_branch")
     if isinstance(result, PlanNotFound):
         return None
     if not isinstance(result, str):
@@ -259,7 +259,7 @@ def _get_learn_materials_branch(
 
 def _display_human_readable(result: LearnResult) -> None:
     """Display result in human-readable format."""
-    user_output(click.style(f"Sessions for plan {result.plan_id}", bold=True))
+    user_output(click.style(f"Sessions for plan {result.pr_id}", bold=True))
     user_output("")
 
     # Planning session

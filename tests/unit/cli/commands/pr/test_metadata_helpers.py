@@ -200,7 +200,7 @@ def test_write_dispatch_metadata_succeeds_without_plan_header(tmp_path: Path) ->
         plan_backend=plan_store,
         github=fake_github,
         repo_root=repo.root,
-        plan_number=300,
+        pr_number=300,
         run_id="run-55",
         dispatched_at="2024-06-15T12:00:00+00:00",
     )

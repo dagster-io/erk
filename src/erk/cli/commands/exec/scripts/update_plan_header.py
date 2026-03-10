@@ -1,14 +1,14 @@
 """Update plan-header metadata fields generically.
 
 Usage:
-    erk exec update-plan-header <plan_id> key1=value1 key2=value2 ...
+    erk exec update-plan-header <pr_id> key1=value1 key2=value2 ...
 
 Output:
-    JSON with success status, plan_id, and fields_updated
+    JSON with success status, pr_id, and fields_updated
 
 Exit Codes:
     0: Success
-    1: Error (plan not found, no fields provided, invalid field format,
+    1: Error (PR not found, no fields provided, invalid field format,
        schema validation failure, no plan-header block)
 """
 
@@ -104,7 +104,7 @@ def update_plan_header(
     pr_id: str,
     fields: tuple[str, ...],
 ) -> None:
-    """Update plan-header metadata fields on a plan.
+    """Update plan-header metadata fields on a PR.
 
     Generic command to set arbitrary plan-header metadata fields.
     Backend handles merge with existing data, immutable field protection,
@@ -114,7 +114,7 @@ def update_plan_header(
     if not fields:
         _fail(
             error="no_fields",
-            message="No fields provided. Usage: update-plan-header <plan_id> key=value ...",
+            message="No fields provided. Usage: update-plan-header <pr_id> key=value ...",
         )
 
     # Parse key=value pairs

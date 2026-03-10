@@ -67,18 +67,18 @@ def duplicate_check_plan(
         Ensure.invariant(False, "Cannot use both --plan and --file. Choose one input mode.")
 
     # Resolve plan content
-    exclude_plan_id: str | None = None
+    exclude_pr_id: str | None = None
     content: str
 
     if plan is not None:
         remote = get_remote_github(ctx)
-        plan_number = parse_issue_identifier(plan)
-        issue = remote.get_issue(owner=repo_id.owner, repo=repo_id.repo, number=plan_number)
+        pr_number = parse_issue_identifier(plan)
+        issue = remote.get_issue(owner=repo_id.owner, repo=repo_id.repo, number=pr_number)
         if isinstance(issue, IssueNotFound):
-            user_output(click.style("Error: ", fg="red") + f"PR {plan_number} not found.")
+            user_output(click.style("Error: ", fg="red") + f"PR {pr_number} not found.")
             raise SystemExit(1)
         content = issue.body
-        exclude_plan_id = str(issue.number)
+        exclude_pr_id = str(issue.number)
     elif file is not None:
         Ensure.path_exists(ctx, file, f"File not found: {file}")
         try:
@@ -124,8 +124,8 @@ def duplicate_check_plan(
     # Filter to plans only (title prefix check)
     existing_plans = [p for p in plan_data.plans if p.title.startswith("[erk-pr]")]
 
-    if exclude_plan_id is not None:
-        existing_plans = [p for p in existing_plans if p.pr_identifier != exclude_plan_id]
+    if exclude_pr_id is not None:
+        existing_plans = [p for p in existing_plans if p.pr_identifier != exclude_pr_id]
 
     if not existing_plans:
         user_output("No existing open PRs to compare against.")

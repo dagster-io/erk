@@ -311,7 +311,7 @@ def _dispatch_planned_pr_plan(
             plan_backend=ctx.plan_backend,
             github=ctx.github,
             repo_root=repo.root,
-            plan_number=pr_number,
+            pr_number=pr_number,
             run_id=run_id,
             dispatched_at=queued_at,
         )

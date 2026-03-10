@@ -55,7 +55,7 @@ from erk_shared.context.helpers import require_context
     help="Linked objective issue number",
 )
 @click.option(
-    "--plan-number",
+    "--linked-pr-number",
     type=int,
     help="Linked PR number",
 )
@@ -120,7 +120,7 @@ def land_execute(
     is_current_branch: bool,
     target_child: str | None,
     objective_number: int | None,
-    plan_number: int | None,
+    linked_pr_number: int | None,
     use_graphite: bool,
     skip_learn: bool,
     pull_flag: bool,
@@ -182,7 +182,7 @@ def land_execute(
             no_delete=no_delete,
             no_cleanup=no_cleanup,
             script=script,
-            plan_number=plan_number,
+            plan_number=linked_pr_number,
             skip_learn=skip_learn,
         )
     except SystemExit as exc:

@@ -51,7 +51,7 @@ def _output_not_uploaded(reason: str) -> None:
 def upload_impl_session(ctx: click.Context, session_id: str) -> None:
     """Upload current implementation session for async learn.
 
-    Reads plan reference from .erk/impl-context/ to get the plan_id, captures
+    Reads plan reference from .erk/impl-context/ to get the pr_id, captures
     session info from Claude installation, and delegates to push-session
     for preprocessed XML upload with branch accumulation.
 
@@ -73,7 +73,7 @@ def upload_impl_session(ctx: click.Context, session_id: str) -> None:
         return
 
     if not plan_ref.pr_id.isdigit():
-        _output_not_uploaded("non_numeric_plan_id")
+        _output_not_uploaded("non_numeric_pr_id")
         return
 
     pr_number = int(plan_ref.pr_id)

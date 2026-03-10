@@ -133,10 +133,10 @@ def branch_create(
     setup: PlanBranchSetup | None = None
 
     if for_plan is not None:
-        plan_number = parse_issue_identifier(for_plan)
-        result = ctx.plan_store.get_plan(repo.root, str(plan_number))
+        pr_number = parse_issue_identifier(for_plan)
+        result = ctx.plan_store.get_plan(repo.root, str(pr_number))
         if isinstance(result, PlanNotFound):
-            raise click.ClickException(f"PR #{plan_number} not found")
+            raise click.ClickException(f"PR #{pr_number} not found")
         plan = result
 
         result = prepare_plan_for_worktree(plan, ctx.time.now(), warn_non_open=True)

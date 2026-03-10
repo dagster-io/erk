@@ -49,7 +49,7 @@ def register_one_shot_plan(
             plan_backend=plan_backend,
             github=github,
             repo_root=repo_root,
-            plan_number=pr_number,
+            pr_number=pr_number,
             run_id=run_id,
             dispatched_at=datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
         )

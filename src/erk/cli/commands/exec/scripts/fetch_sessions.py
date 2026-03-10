@@ -1,10 +1,10 @@
 """Fetch preprocessed sessions from a planned-pr-context branch.
 
-Downloads the manifest and XML files from the planned-pr-context/{plan_id} branch
+Downloads the manifest and XML files from the planned-pr-context/{pr_number} branch
 for use by the learn pipeline. Returns JSON with file list and manifest metadata.
 
 Usage:
-    erk exec fetch-sessions --plan-id 2521 --output-dir ./learn
+    erk exec fetch-sessions --pr-number 2521 --output-dir ./learn
 
 Output:
     Structured JSON output:

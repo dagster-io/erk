@@ -38,11 +38,11 @@ def close_pr(
     """Close a plan with a comment."""
     backend = require_plan_backend(ctx)
     repo_root = require_repo_root(ctx)
-    plan_id = str(pr_number)
+    pr_id = str(pr_number)
 
     # Add the comment first
     try:
-        comment_id = backend.add_comment(repo_root, plan_id, comment)
+        comment_id = backend.add_comment(repo_root, pr_id, comment)
     except RuntimeError as e:
         click.echo(
             json.dumps(
@@ -56,7 +56,7 @@ def close_pr(
 
     # Then close the plan
     try:
-        backend.close_plan(repo_root, plan_id)
+        backend.close_plan(repo_root, pr_id)
     except RuntimeError as e:
         click.echo(
             json.dumps(

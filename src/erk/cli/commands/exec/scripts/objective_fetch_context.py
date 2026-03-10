@@ -74,7 +74,7 @@ def _empty_roadmap() -> RoadmapContextDict:
     )
 
 
-def _build_roadmap_context(objective_body: str, plan_id: str) -> RoadmapContextDict:
+def _build_roadmap_context(objective_body: str, pr_id: str) -> RoadmapContextDict:
     """Parse roadmap from objective body.
 
     Uses parse_roadmap_frontmatter() + group_nodes_by_phase() directly
@@ -151,7 +151,7 @@ def _fetch_objective_content(
 )
 @click.option(
     "--plan",
-    "plan_number",
+    "pr_number_arg",
     type=int,
     default=None,
     help="PR number (direct lookup, skips branch-based discovery)",
@@ -163,7 +163,7 @@ def objective_fetch_context(
     pr_number: int | None,
     objective_number: int | None,
     branch_name: str | None,
-    plan_number: int | None,
+    pr_number_arg: int | None,
 ) -> None:
     """Fetch all context for objective update in a single call."""
     erk_ctx = require_context(ctx)
@@ -180,12 +180,12 @@ def objective_fetch_context(
     repo_name = erk_ctx.repo.github.repo
 
     # When --plan is provided, do direct plan lookup (skip branch-based discovery)
-    if plan_number is not None:
-        plan_result = plan_backend.get_plan(repo_root, str(plan_number))
+    if pr_number_arg is not None:
+        plan_result = plan_backend.get_plan(repo_root, str(pr_number_arg))
         if isinstance(plan_result, PlanNotFound):
-            click.echo(_error_json(f"PR #{plan_number} not found"))
+            click.echo(_error_json(f"PR #{pr_number_arg} not found"))
             raise SystemExit(1)
-        plan_id = plan_result.pr_identifier
+        pr_id = plan_result.pr_identifier
     else:
         # Discovery: auto-fill branch from git state
         if branch_name is None:
@@ -201,12 +201,12 @@ def objective_fetch_context(
         if isinstance(plan_result, PlanNotFound):
             click.echo(_error_json(f"No PR found for branch '{branch_name}'"))
             raise SystemExit(1)
-        plan_id = plan_result.pr_identifier
+        pr_id = plan_result.pr_identifier
 
     # Discovery: auto-fill objective from plan metadata
     if objective_number is None:
         if plan_result.objective_id is None:
-            msg = f"Plan #{plan_id} has no objective_issue in plan-header metadata"
+            msg = f"Plan #{pr_id} has no objective_issue in plan-header metadata"
             click.echo(_error_json(msg))
             raise SystemExit(1)
         objective_number = plan_result.objective_id
@@ -234,7 +234,7 @@ def objective_fetch_context(
         click.echo(_error_json(f"PR #{pr_number} not found"))
         raise SystemExit(1)
 
-    roadmap = _build_roadmap_context(objective.body, plan_id)
+    roadmap = _build_roadmap_context(objective.body, pr_id)
 
     # Fetch prose content from the first comment's objective-body block
     objective_content = _fetch_objective_content(
@@ -251,7 +251,7 @@ def objective_fetch_context(
         "objective_content": objective_content,
     }
     plan_info: PlanInfoDict = {
-        "number": plan_id,
+        "number": pr_id,
         "title": plan_result.title,
         "body": plan_result.body,
     }

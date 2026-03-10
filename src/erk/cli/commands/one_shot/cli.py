@@ -107,7 +107,7 @@ def one_shot(
       erk one-shot --file prompt.md
       erk one-shot "add type hints to utils.py" --model opus
       erk one-shot "fix the typo in README.md" --dry-run
-      erk one-shot "rename issue_number to plan_number" --plan-only
+      erk one-shot "rename issue_number to pr_number" --plan-only
       erk one-shot "fix config bug" --repo dagster-io/erk
     """
     # Resolve prompt from argument or file

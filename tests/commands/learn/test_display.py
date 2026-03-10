@@ -29,7 +29,7 @@ from tests.test_utils.test_context import context_for_test
 def test_display_shows_remote_impl_message_when_set(capsys: pytest.CaptureFixture[str]) -> None:
     """Display shows remote implementation message when last_remote_impl_at is set."""
     result = LearnResult(
-        plan_id="123",
+        pr_id="123",
         planning_session_id=None,
         implementation_session_ids=[],
         learn_session_ids=[],
@@ -49,7 +49,7 @@ def test_display_shows_remote_impl_message_when_set(capsys: pytest.CaptureFixtur
 def test_display_shows_none_when_no_impl_at_all(capsys: pytest.CaptureFixture[str]) -> None:
     """Display shows (none) when no implementation happened."""
     result = LearnResult(
-        plan_id="123",
+        pr_id="123",
         planning_session_id=None,
         implementation_session_ids=[],
         learn_session_ids=[],
@@ -70,7 +70,7 @@ def test_display_shows_none_when_no_impl_at_all(capsys: pytest.CaptureFixture[st
 def test_display_shows_impl_sessions_when_present(capsys: pytest.CaptureFixture[str]) -> None:
     """Display shows implementation sessions when they exist."""
     result = LearnResult(
-        plan_id="123",
+        pr_id="123",
         planning_session_id=None,
         implementation_session_ids=["impl-session-abc"],
         learn_session_ids=[],

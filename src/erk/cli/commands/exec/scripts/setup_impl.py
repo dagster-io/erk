@@ -62,9 +62,9 @@ def _run_impl_init(ctx: click.Context) -> dict[str, object]:
     plan_ref = read_plan_ref(impl_dir)
     has_plan_tracking = plan_ref is not None
     if plan_ref is not None:
-        plan_number: int | None = int(plan_ref.pr_id)
+        pr_number: int | None = int(plan_ref.pr_id)
     else:
-        plan_number = None
+        pr_number = None
     plan_content = (impl_dir / "plan.md").read_text(encoding="utf-8")
     related_docs = _extract_related_docs(plan_content)
 
@@ -73,8 +73,8 @@ def _run_impl_init(ctx: click.Context) -> dict[str, object]:
         "has_plan_tracking": has_plan_tracking,
         "related_docs": related_docs,
     }
-    if plan_number is not None:
-        result["pr_number"] = plan_number
+    if pr_number is not None:
+        result["pr_number"] = pr_number
     return result
 
 
@@ -202,11 +202,11 @@ def setup_impl(ctx: click.Context, pr_number: int | None, file_path: Path | None
         if plan_ref is not None:
             # Has plan tracking - sync with remote
             if plan_ref.pr_id.isdigit():
-                plan_id: int | None = int(plan_ref.pr_id)
+                pr_id: int | None = int(plan_ref.pr_id)
             else:
-                plan_id = None
-            if plan_id is not None:
-                _handle_issue_setup(ctx, pr_number=plan_id)
+                pr_id = None
+            if pr_id is not None:
+                _handle_issue_setup(ctx, pr_number=pr_id)
                 return
 
         # File-based plan (no tracking) - just validate

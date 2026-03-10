@@ -1,8 +1,8 @@
-"""Tests for file_utils.extract_plan_title."""
+"""Tests for file_utils.extract_pr_title."""
 
 import pytest
 
-from erk.core.file_utils import extract_plan_title
+from erk.core.file_utils import extract_pr_title
 
 PLAN_CASES = [
     pytest.param(
@@ -141,11 +141,11 @@ More content.
     ("description", "filename", "contents", "expected"),
     PLAN_CASES,
 )
-def test_extract_plan_title_cases(tmp_path, description, filename, contents, expected):
-    """Exercise extract_plan_title across the supported input variations."""
+def test_extract_pr_title_cases(tmp_path, description, filename, contents, expected):
+    """Exercise extract_pr_title across the supported input variations."""
     plan = tmp_path / filename
 
     if contents is not None:
         plan.write_text(contents, encoding="utf-8")
 
-    assert extract_plan_title(plan) == expected
+    assert extract_pr_title(plan) == expected

@@ -32,7 +32,7 @@ class PrViewRequest:
 class PrViewResult:
     """JSON result for erk pr view."""
 
-    plan_id: str
+    pr_id: str
     title: str
     state: str
     url: str | None
@@ -47,7 +47,7 @@ class PrViewResult:
 
     def to_json_dict(self) -> dict[str, Any]:
         result: dict[str, Any] = {
-            "plan_id": self.plan_id,
+            "pr_id": self.pr_id,
             "title": self.title,
             "state": self.state,
             "url": self.url,
@@ -92,7 +92,7 @@ def run_pr_view(
         PrViewResult or MachineCommandError
     """
     repo_root = None if isinstance(ctx.repo, NoRepoSentinel) else ctx.repo.root
-    plan_id: str | None = None
+    pr_id: str | None = None
     identifier = request.identifier
 
     # If no identifier, infer from branch (local only)
@@ -113,33 +113,33 @@ def run_pr_view(
                 message="No identifier specified and could not infer from branch name",
             )
 
-        plan_id = ctx.plan_backend.resolve_plan_id_for_branch(ctx.repo.root, branch)
-        if plan_id is None:
+        pr_id = ctx.plan_backend.resolve_plan_id_for_branch(ctx.repo.root, branch)
+        if pr_id is None:
             return MachineCommandError(
                 error_type="missing_identifier",
                 message="No identifier specified and could not infer from branch name",
             )
 
-        identifier = plan_id
+        identifier = pr_id
 
-    plan_number = parse_issue_identifier(identifier)
-    if plan_id is None:
-        plan_id = str(plan_number)
+    pr_number = parse_issue_identifier(identifier)
+    if pr_id is None:
+        pr_id = str(pr_number)
 
     remote = get_remote_github(ctx)
 
-    issue = remote.get_issue(owner=repo_id.owner, repo=repo_id.repo, number=plan_number)
+    issue = remote.get_issue(owner=repo_id.owner, repo=repo_id.repo, number=pr_number)
     if isinstance(issue, IssueNotFound):
         return MachineCommandError(
             error_type="not_found",
-            message=f"PR #{plan_id} not found",
+            message=f"PR #{pr_id} not found",
         )
 
     plan = github_issue_to_plan(issue)
 
     # Optional local enrichment for richer header metadata
     if repo_root is not None:
-        all_meta = ctx.plan_backend.get_all_metadata_fields(repo_root, plan_id)
+        all_meta = ctx.plan_backend.get_all_metadata_fields(repo_root, pr_id)
         if isinstance(all_meta, PlanNotFound):
             header_info: dict[str, object] = plan.header_fields
         else:
@@ -148,7 +148,7 @@ def run_pr_view(
         header_info = plan.header_fields
 
     return PrViewResult(
-        plan_id=plan_id,
+        pr_id=pr_id,
         title=plan.title,
         state=plan.state.value,
         url=plan.url,
