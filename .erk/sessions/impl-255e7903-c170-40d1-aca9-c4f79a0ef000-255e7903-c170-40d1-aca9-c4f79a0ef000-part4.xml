@@ -1,0 +1,316 @@
+<session>
+  <meta branch="plnd/O9109-sweep-land-impl-core-03-10-1728" />
+  <meta model="claude-opus-4-6" />
+  <tool_use name="Grep" id="toolu_01TeeT8w1xybb4yLuR7vaptQ">
+    <param name="pattern">plan_id</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli/commands/reconcile_cmd.py</param>
+    <param name="output_mode">content</param>
+    <param name="-C">2</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1096" cache_read_input_tokens="122222" cache_creation="{'ephemeral_5m_input_tokens': 1096, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01TeeT8w1xybb4yLuR7vaptQ">
+127-            f"#{info.pr_number}",
+128-            info.pr_title or "",
+129:            f"#{info.plan_id}" if info.plan_id else "-",
+130-            f"#{info.objective_number}" if info.objective_number else "-",
+131-            str(info.worktree_path) if info.worktree_path else "-",
+  </tool_result>
+  <tool_use name="Read" id="toolu_01JPZAFVm1o33dFNZyTUcqBv">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/reconcile_cmd.py</param>
+    <param name="offset">125</param>
+    <param name="limit">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="268" cache_read_input_tokens="123318" cache_creation="{'ephemeral_5m_input_tokens': 268, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01JPZAFVm1o33dFNZyTUcqBv">
+   125→        table.add_row(
+   126→            info.branch,
+   127→            f"#{info.pr_number}",
+   128→            info.pr_title or "",
+   129→            f"#{info.plan_id}" if info.plan_id else "-",
+   130→            f"#{info.objective_number}" if info.objective_number else "-",
+   131→            str(info.worktree_path) if info.worktree_path else "-",
+   132→        )
+   133→
+   134→    console = Console(stderr=True, force_terminal=True)
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01Dr3uPtqxozV1uT1uvSAaJ9">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/reconcile_cmd.py</param>
+    <param name="old_string">            f"#{info.plan_id}" if info.plan_id else "-",</param>
+    <param name="new_string">            f"#{info.pr_id}" if info.pr_id else "-",</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="353" cache_read_input_tokens="123586" cache_creation="{'ephemeral_5m_input_tokens': 353, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Dr3uPtqxozV1uT1uvSAaJ9">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/reconcile_cmd.py has been updated successfully.
+  </tool_result>
+  <assistant>Let me also check if there are any other files that reference `ReconcileBranchInfo` fields or `StackLandEntry` fields that I might have missed:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="200" cache_read_input_tokens="123939" cache_creation="{'ephemeral_5m_input_tokens': 200, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_018tMAD3KAQh1WgQmjbm2otv">
+    <param name="pattern">\.plan_id</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="200" cache_read_input_tokens="123939" cache_creation="{'ephemeral_5m_input_tokens': 200, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_018tMAD3KAQh1WgQmjbm2otv">
+src/erk/core/commit_message_generator.py:217:## Implementation Plan (Plan #{plan_context.plan_id})
+src/erk/cli/commands/learn/learn_cmd.py:262:    user_output(click.style(f"Sessions for plan {result.plan_id}", bold=True))
+src/erk/cli/commands/exec/scripts/get_pr_context.py:91:            "pr_number": plan_context.plan_id,
+src/erk/cli/commands/pr/shared.py:128:                f"   Incorporating plan #{plan_context.plan_id}",
+src/erk/cli/commands/pr/shared.py:248:    issue_num = plan_context.plan_id
+src/erk/cli/commands/exec/scripts/push_and_create_pr.py:88:        "pr_number": result.plan_id,
+src/erk/cli/commands/pr/view/cli.py:191:    id_text = f"#{result.plan_id}"
+src/erk/cli/commands/pr/duplicate_check_cmd.py:152:                user_output(f'  #{match.plan_id}: "{match.title}"')
+src/erk/cli/commands/pr/view/operation.py:50:            "plan_id": self.plan_id,
+src/erk/cli/commands/pr/submit_pipeline.py:278:    is_plan_impl = state.plan_id is not None or state.branch_name.startswith("plnd/")
+src/erk/cli/commands/pr/submit_pipeline.py:567:    if state.plan_id is not None:
+src/erk/cli/commands/pr/submit_pipeline.py:819:            ctx, repo_root=state.repo_root, plan_id=state.plan_context.plan_id
+src/erk/cli/commands/pr/submit_pipeline.py:881:        plan_id_for_lifecycle = state.plan_context.plan_id
+src/erk/cli/commands/pr/rewrite_cmd.py:194:            plan_id=plan_context.plan_id,
+src/erk/cli/commands/pr/submit_cmd.py:63:    if result.plan_id:
+src/erk/cli/commands/pr/submit_cmd.py:64:        click.echo(_format_field("Plan", f"#{result.plan_id}"))
+  </tool_result>
+  <assistant>These are all in `erk_shared` types and other modules that are explicitly out of scope for this plan (e.g., `plan_context.plan_id` from `PlanContext`, `state.plan_id` from `SubmitState`, `result.plan_id` from various result types, `match.plan_id` from `DuplicateMatch.pr_id`).
+
+Wait — `match.plan_id` on line 152 of `duplicate_check_cmd.py` should be `match.pr_id` since I renamed that field in `DuplicateMatch`. Let me fix that:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="997" cache_read_input_tokens="124139" cache_creation="{'ephemeral_5m_input_tokens': 997, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01Gg6JGGSXaNitbuS61qbgMD">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/duplicate_check_cmd.py</param>
+    <param name="offset">148</param>
+    <param name="limit">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="997" cache_read_input_tokens="124139" cache_creation="{'ephemeral_5m_input_tokens': 997, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Gg6JGGSXaNitbuS61qbgMD">
+   148→        if dup_result.has_duplicates:
+   149→            user_output(click.style("Potential duplicate(s) found:", fg="yellow"))
+   150→            user_output("")
+   151→            for match in dup_result.matches:
+   152→                user_output(f'  #{match.plan_id}: "{match.title}"')
+   153→                user_output(f"    {match.explanation}")
+   154→                user_output(f"    {match.url}")
+   155→                user_output("")
+   156→            has_problems = True
+   157→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01V4y5MchPcqVmNuc9TVK2yU">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/duplicate_check_cmd.py</param>
+    <param name="old_string">                user_output(f'  #{match.plan_id}: "{match.title}"')</param>
+    <param name="new_string">                user_output(f'  #{match.pr_id}: "{match.title}"')</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="497" cache_read_input_tokens="125136" cache_creation="{'ephemeral_5m_input_tokens': 497, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01V4y5MchPcqVmNuc9TVK2yU">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/pr/duplicate_check_cmd.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me re-run CI to verify everything passes:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="458" cache_read_input_tokens="125633" cache_creation="{'ephemeral_5m_input_tokens': 458, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01M7qghF9pqh22ZLVXP7qB4F">
+    <param name="description">Run CI checks again</param>
+    <param name="prompt">Run fast CI checks on the erk project. Run these in sequence:
+
+1. cd /home/runner/work/erk...[truncated 901 chars]...ile.py tests/commands/pr/test_duplicate_check.py -x -q 2&gt;&amp;1 | tail -30
+
+Report ALL output.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="458" cache_read_input_tokens="125633" cache_creation="{'ephemeral_5m_input_tokens': 458, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01M7qghF9pqh22ZLVXP7qB4F">
+## CI Check Results
+
+All three fast CI checks have passed successfully:
+
+### 1. Ruff (Linting) - PASSED
+```
+All checks passed!
+```
+Checked:
+- `src/erk/cli/commands/`
+- `src/erk/core/plan_duplicate_checker.py`
+- `src/erk/core/display_utils.py`
+
+### 2. Type Checks (ty) - PASSED
+```
+All checks passed!
+```
+Checked 13 files including:
+- Land pipeline, stack, and command modules
+- Plan duplicate checker
+- Implement and reconcile commands
+- Display utilities
+- Metadata helpers
+- Objective helpers
+
+### 3. Pytest Tests - PASSED
+```
+107 tests passed in total
+```
+Test files executed:
+
+... [9 lines omitted] ...
+
+All checks completed successfully with no errors or warnings.
+  </tool_result>
+  <assistant>All 107 tests pass, type checks pass, and linting passes. Let me now also run the broader land tests to make sure nothing else broke:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="834" cache_read_input_tokens="126091" cache_creation="{'ephemeral_5m_input_tokens': 834, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01PdnsGBbReJDMGSYxw85p2T">
+    <param name="description">Run broader land tests</param>
+    <param name="prompt">Run broader test suite for the land and related commands:
+
+cd /home/runner/work/erk/erk &amp;&amp;...[truncated 44 chars].../ tests/commands/pr/ tests/unit/cli/commands/pr/ -x -q 2&gt;&amp;1 | tail -20
+
+Report ALL output.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="834" cache_read_input_tokens="126091" cache_creation="{'ephemeral_5m_input_tokens': 834, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01PdnsGBbReJDMGSYxw85p2T">
+**pytest passed: 592 tests passed in 2.62s**
+
+All tests in the broader test suite for the land and PR commands passed successfully. The test suite covered:
+- `tests/commands/land/` - land command tests
+- `tests/unit/cli/commands/land/` - land CLI unit tests
+- `tests/commands/pr/` - PR command tests  
+- `tests/unit/cli/commands/pr/` - PR CLI unit tests
+agentId: a3e4777 (for resuming to continue this agent's work if needed)
+  </tool_result>
+  <assistant>All 592 tests pass. Let me clean up the implementation context and submit.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="594" cache_read_input_tokens="126925" cache_creation="{'ephemeral_5m_input_tokens': 594, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_015iBRZrbEzQe3SYryay85W2">
+    <param name="todos">[{'content': 'Phase 1: Type definitions - land_pipeline.py, land_stack.py, implement_share...[truncated 592 chars]...ation'}, {'content': 'Submit PR', 'status': 'in_progress', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="594" cache_read_input_tokens="126925" cache_creation="{'ephemeral_5m_input_tokens': 594, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_015iBRZrbEzQe3SYryay85W2">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01TrZA3fFtex7bE8RA5cd1p7">
+    <param name="command">erk exec impl-signal ended --session-id "${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true</param>
+    <param name="description">Signal implementation ended</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="343" cache_read_input_tokens="127519" cache_creation="{'ephemeral_5m_input_tokens': 343, 'ephemeral_1h_input_tokens': 0}" output_tokens="26" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01CLaqhcdA4oLzFaUbjnbRqM">
+    <param name="command">erk exec upload-impl-session --session-id "${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true</param>
+    <param name="description">Upload session for async learn</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="343" cache_read_input_tokens="127519" cache_creation="{'ephemeral_5m_input_tokens': 343, 'ephemeral_1h_input_tokens': 0}" output_tokens="26" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01TrZA3fFtex7bE8RA5cd1p7">
+{
+  "success": true,
+  "event": "ended",
+  "pr_number": 9178
+}
+  </tool_result>
+  <tool_result tool="toolu_01CLaqhcdA4oLzFaUbjnbRqM">
+{"uploaded": false, "reason": "push_session_failed"}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01ABGA3XqhdMUntATRQXmHYf">
+    <param name="command">erk exec cleanup-impl-context</param>
+    <param name="description">Clean up impl context directory</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="282" cache_read_input_tokens="127862" cache_creation="{'ephemeral_5m_input_tokens': 282, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01ABGA3XqhdMUntATRQXmHYf">
+{"cleaned": false, "reason": "not_tracked"}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01DG7kbR4yabKWgzjPF5j1sN">
+    <param name="command">erk pr submit</param>
+    <param name="description">Submit PR via erk</param>
+    <param name="timeout">120000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="105" cache_read_input_tokens="128144" cache_creation="{'ephemeral_5m_input_tokens': 105, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01DG7kbR4yabKWgzjPF5j1sN">
+Exit code 1
+Error: Unexpected error in finalize_pr: Failed to execute gh command
+Command: gh api --method PATCH repos/{owner}/{repo}/pulls/9178 -F draft=false
+Exit code: 1
+stdout: &lt;!DOCTYPE html&gt;
+&lt;!--
+
+Hello future GitHubber! I bet you're here to remove those nasty inline styles,
+DRY up these templates and make 'em nice and re-usable, right?
+
+Please, don't. https://github.com/styleguide/templates/2.0
+
+--&gt;
+&lt;html&gt;
+  &lt;head&gt;
+    &lt;title&gt;Unicorn! &amp;middot; GitHub&lt;/title&gt;
+    &lt;style type="text/css" media="screen"&gt;
+      body {
+        background-color: #f1f1f1;
+        margin: 0;
+        font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+      }
+
+      .container { margin: 50px auto 40px auto; width: 600px; text-align: center; }
+
+      a { color: #4183c4; text-decoration: none; }
+      a:hover { text-decoration: underline; }
+
+      h1 { letter-spacing: -1px; line-height: 60px; font-size: 60px; font-weight: 100; margin: 0px; text-shadow: 0 1px 0 #fff; }
+      p { color: rgba(0, 0, 0, 0.5); margin: 10px 0 10px; font-size: 18px; font-weight: 200; line-height: 1.6em;}
+
+... [79 lines omitted] ...
+  </tool_result>
+  <assistant>GitHub returned a transient 502 error when trying to publish the draft PR. Let me retry:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="7188" cache_read_input_tokens="128249" cache_creation="{'ephemeral_5m_input_tokens': 7188, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01G8jr9ckxshqX6h66pcnjQE">
+    <param name="command">gh api --method PATCH repos/{owner}/{repo}/pulls/9178 -F draft=false 2&gt;&amp;1 || echo "RETRY_NEEDED"</param>
+    <param name="description">Publish draft PR (retry)</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="7188" cache_read_input_tokens="128249" cache_creation="{'ephemeral_5m_input_tokens': 7188, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01G8jr9ckxshqX6h66pcnjQE">
+{"url":"https://api.github.com/repos/dagster-io/erk/pulls/9178","id":3379853054,"node_id":"PR_kwDOPxC3hc7JdHb-","html_url":"https://github.com/dagster-io/erk/pull/9178","diff_url":"https://github.com/dagster-io/erk/pull/9178.diff","patch_url":"https://github.com/dagster-io/erk/pull/9178.patch","issue_url":"https://api.github.com/repos/dagster-io/erk/issues/9178","number":9178,"state":"open","locked":false,"title":"Rename plan_id/plan_number refs to pr_id/pr_number in land pipeline, implement, and core modules","user":{"login":"schrockn","id":28738937,"node_id":"MDQ6VXNlcjI4NzM4OTM3","avatar_url":"https://avatars.githubusercontent.com/u/28738937?v=4","gravatar_id":"","url":"https://api.github.com/users/schrockn","html_url":"https://github.com/schrockn","followers_url":"https://api.github.com/users/schrockn/followers","following_url":"https://api.github.com/users/schrockn/following{/other_user}","gists_url":"https://api.github.com/users/schrockn/gists{/gist_id}","starred_url":"https://api.github.com/users/schrockn/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/schrockn/subscriptions","organizations_url":"https://api.github.com/users/schrockn/orgs","repos_url":"https://api.github.com/users/schrockn/repos","events_url":"https://api.github.com/users/schrockn/events{/privacy}","received_events_url":"https://api.github.com/users/schrockn/received_events","type":"User","user_view_type":"public","site_admin":false},"body":"This commit sweeps remaining internal Python identifiers across the land pipeline, implement commands, and core utility modules as part of the ongoing \"plan → pr\" terminology rename (objective #9109, node 3.6.1).\n\n**Objective #9109:** Objective: Rename \"plan\" terminology to \"pr\" across all APIs\n\n## Key Changes\n\n- Rename `LandState.plan_id` → `pr_id` and function `resolve_plan_id()` → `resolve_pr_id()` to avoid field name collision with existing `pr_number: int`\n- Rename `TargetInfo.plan_number` → `pr_number` and discriminator values `\"plan_number\"/\"plan_url\"` → `\"pr_number\"/\"pr_url\"` in implement pipeline\n- Rename `DuplicateMatch.plan_id` → `pr_id` field in duplicate checker\n- Rename `format_worktree_line(plan_summary=)` → `format_worktree_line(pr_summary=)` parameter in display utils\n- Sweep all local variable renames (`plan_id` → `pr_id`, `plan_number` → `pr_number`) across land_learn, land_cmd, objective_helpers, and metadata_helpers; update 40+ test assertions\n\n&lt;details&gt;\n&lt;summary&gt;Files Changed&lt;/summary&gt;\n\n### Modified (11 files)\n- `src/erk/cli/commands/land_pipeline.py` - LandState field and resolve function rename\n- `src/erk/cli/commands/land_stack.py` - LandStackEntry field rename\n- `src/erk/cli/commands/land_learn.py` - Parameter and local variable sweeps across 7 functions\n- `src/erk/cli/commands/land_cmd.py` - Local variables and parameter updates\n- `src/erk/cli/commands/implement.py` - TargetInfo field and discriminator updates\n- `src/erk/cli/commands/implement_shared.py` - TargetInfo type and detect_target_type function\n- `src/erk/cli/commands/objective_helpers.py` - Local variable renames\n- `src/erk/cli/commands/pr/metadata_helpers.py` - Local variable renames across dispatch metadata functions\n- `src/erk/core/display_utils.py` - format_plan_display parameter rename\n- `src/erk/core/plan_duplicate_checker.py` - DuplicateMatch field rename\n- `src/erk/cli/commands/reconcile_cmd.py` - ReconcileBranchInfo display updates\n- `src/erk/cli/commands/reconcile_pipeline.py` - ReconcileBranchInfo field rename\n- `src/erk/cli/commands/pr/duplicate_check_cmd.py` - Output display update\n\n### Modified (13 test files)\n- `tests/commands/implement/test_target_detection.py` - 12 assertions updated for new discriminators and field names\n- `tests/commands/test_reconcile.py` - 5 ReconcileBranchInfo field updates\n- `tests/core/test_plan_duplicate_checker.py` - 4 assertions for pr_id field\n- `tests/unit/cli/commands/land/pipeline/test_resolve_plan_id.py` - Function and assertion renames\n- `tests/unit/cli/commands/land/pipeline/test_create_learn_issue.py` - Parameter updates\n- `tests/unit/cli/commands/land/pipeline/test_merge_pr.py` - State field updates\n- `tests/unit/cli/commands/land/pipeline/test_validate_pr.py` - State field updates\n- `tests/unit/cli/commands/land/pipeline/test_run_execution_pipeline.py` - 4 state field updates\n- `tests/unit/cli/commands/land/test_land_learn.py` - 30+ parameter and assertion updates\n\n&lt;/details&gt;\n\n&lt;details&gt;\n&lt;summary&gt;original-plan&lt;/summary&gt;\n\n# Plan: Sweep plan_number/plan_id refs in land pipeline, implement, and core modules\n\n**Objective:** #9109, Node 3.6.1\n**Scope:** Rename `plan_id`, `plan_number`, and `plan_summary` field/parameter/variable names to `pr_id`, `pr_number`, and `pr_summary` in land pipeline, implement, and core modules.\n\n## Context\n\nThis is part of the ongoing \"plan → pr\" terminology rename (objective #9109). Prior phases renamed gateway ABCs, JSON output fields, TypedDict fields, Click arguments, help strings, and TUI types. This node sweeps the remaining internal Python identifiers in the land pipeline, implement commands, and core utility modules.\n\n**Out of scope:** Submit pipeline/dispatch/PlanContext (node 3.6.2), exec scripts (node 3.6.3), test fixture updates beyond what's needed to keep CI green (node 4.1).\n\n## Rename Mapping\n\n| Current | New | Type | Rationale |\n|---------|-----|------|-----------|\n| `LandState.plan_id` | `LandState.pr_id` | field (str\\|None) | Avoids conflict with existing `LandState.pr_number: int` |\n| `LandStackEntry.plan_id` | `LandStackEntry.pr_id` | field (str\\|None) | Same pattern |\n| `resolve_plan_id()` | `resolve_pr_id()` | function | Renames with field |\n| `TargetInfo.plan_number` | `TargetInfo.pr_number` | field (str\\|None) | Direct rename |\n| target_type `\"plan_number\"` | `\"pr_number\"` | string literal | Discriminator value |\n| target_type `\"plan_url\"` | `\"pr_url\"` | string literal | Discriminator value |\n| `DuplicateMatch.plan_id` | `DuplicateMatch.pr_id` | field (str) | Direct rename |\n| `format_worktree_line(plan_summary=)` | `format_worktree_line(pr_summary=)` | parameter | Direct rename |\n| `_execute_land(plan_number=)` | `_execute_land(linked_pr_number=)` | parameter (int\\|None) | Avoids conflict with existing `pr_number` param |\n| `render_land_execution_script(plan_number=)` | `render_land_execution_script(linked_pr_number=)` | parameter (int\\|None) | Same |\n| Local `plan_id` variables | `pr_id` | local vars | Throughout all in-scope files |\n| Local `plan_number` variables | `pr_number` or `pr_number_int` | local vars | Where no conflict exists |\n\n## Source Files (11 files)\n\n### Phase 1: Type definitions (4 files)\n\n**1. `src/erk/cli/commands/land_pipeline.py`** (12 occurrences)\n- Rename `LandState.plan_id` field → `pr_id`\n- Rename function `resolve_plan_id` → `resolve_pr_id`\n- Update all local vars, docstrings, and `dataclasses.replace()` calls\n- Lines: 65, 341-351, 445, 486, 572, 591, 596, 622\n\n**2. `src/erk/cli/commands/land_stack.py`** (4 occurrences)\n- Rename `LandStackEntry.plan_id` field → `pr_id`\n- Update constructor call and consumer: lines 46, 286, 528, 532\n\n**3. `src/erk/cli/commands/implement_shared.py`** (8 occurrences)\n- Rename `TargetInfo.plan_number` field → `pr_number`\n- Rename target_type values: `\"plan_number\"` → `\"pr_number\"`, `\"plan_url\"` → `\"pr_url\"`\n- Update `detect_target_type()` local var and all return statements\n- Lines: 411-444\n\n**4. `src/erk/core/plan_duplicate_checker.py`** (5 occurrences)\n- Rename `DuplicateMatch.plan_id` field → `pr_id`\n- Keep `entry.get(\"plan_id\")` as-is (reads LLM JSON output)\n- Update constructor: `DuplicateMatch(pr_id=plan_id, ...)`\n- Lines: 47, 169-180\n\n### Phase 2: Consumer modules (7 files)\n\n**5. `src/erk/cli/commands/land_cmd.py`** (7 occurrences)\n- Local `plan_id` → `pr_id` (lines 935, 951, 1054)\n- Parameter `plan_number: int | None` → `linked_pr_number: int | None` in `_execute_land` and `render_land_execution_script` (lines 1313, 1420)\n- Keep `--plan-number` CLI flag string (exec script scope, node 3.6.3)\n- Update conversion: `plan_id=str(plan_number)` → `pr_id=str(linked_pr_number)` (line 1466)\n- Lines: 935, 951, 1054, 1098, 1313, 1388-1389, 1420, 1445, 1466\n\n**6. `src/erk/cli/commands/land_learn.py`** (25 occurrences)\n- All `plan_id: str` parameters → `pr_id: str` across 7 functions\n- All local `plan_id` variables → `pr_id`\n- Functions: `_fetch_xmls_from_context_branch`, `_log_session_summary_from_manifest`, `_collect_session_material`, `_create_learn_pr_core`, `_create_learn_pr`, `create_learn_pr`, `_create_learn_pr_with_sessions`\n- `state.plan_id` → `state.pr_id` (lines 438, 608)\n- Git branch name `planned-pr-context/{pr_id}` — variable rename only, branch prefix unchanged\n\n**7. `src/erk/cli/commands/implement.py`** (6 occurrences)\n- `target_info.plan_number` → `target_info.pr_number`\n- String literal checks: `\"plan_number\"` → `\"pr_number\"`, `\"plan_url\"` → `\"pr_url\"`\n- Parameter `plan_number: str` → `pr_number: str` in `_implement_from_issue`\n\n**8. `src/erk/core/display_utils.py`** (5 occurrences)\n- Parameter `plan_summary` → `pr_summary` in `format_worktree_line()`\n- Local var `plan_colored` → `pr_colored`\n- Docstring updates\n- Lines: 309, 326, 332, 398-401\n\n**9. `src/erk/cli/commands/objective_helpers.py`** (6 occurrences)\n- Local `plan_id` → `pr_id` (lines 34-35)\n- Local `plan_number` → `pr_number_int` (line 38, avoids conflict with function param on line 79)\n- Lines: 34-53\n\n**10. `src/erk/cli/commands/pr/metadata_helpers.py`** (6 occurrences)\n- Local `plan_id` → `pr_id` throughout both functions\n- Lines: 43-51, 85-104\n\n**11. `src/erk/cli/commands/wt/create_cmd.py`** (1 occurrence)\n- `plan_id=str(setup.plan_number)` → `plan_id=str(setup.pr_number)` if setup field was renamed; otherwise update kwarg name if save_plan_ref accepts `pr_id`\n- Verify what `save_plan_ref` expects before changing\n\n## Test Files (9 files)\n\nTests must be updated to keep CI green after field renames.\n\n**Land pipeline tests:**\n1. `tests/unit/cli/commands/land/pipeline/test_resolve_plan_id.py` — rename file to `test_resolve_pr_id.py`, update all `plan_id=` kwargs and `result.plan_id` assertions\n2. `tests/unit/cli/commands/land/pipeline/test_create_learn_issue.py` — update `plan_id=` kwargs in `_execution_state()`\n3. `tests/unit/cli/commands/land/pipeline/test_validate_pr.py` — update `plan_id=None` in state construction\n4. `tests/unit/cli/commands/land/pipeline/test_merge_pr.py` — update `plan_id=None` in state construction\n5. `tests/unit/cli/commands/land/pipeline/test_run_execution_pipeline.py` — update `plan_id=None` in state construction (4 places)\n6. `tests/unit/cli/commands/land/test_land_learn.py` — update all `plan_id=` kwargs (~30 places)\n\n**Implement tests:**\n7. `tests/commands/implement/test_target_detection.py` — update `.plan_number` → `.pr_number` and target_type string assertions\n\n**Display utils tests:**\n8. `tests/unit/test_display_utils.py` — update `plan_summary=` kwargs (4 places)\n9. `tests/unit/core/test_display_utils.py` — update `plan_summary=` kwargs (4 places)\n\n## Key Decisions\n\n1. **`plan_id` → `pr_id` (not `pr_number`)**: `LandState` already has `pr_number: int`. The `plan_id` field is a `str | None`, so `pr_id` avoids type/name collision.\n2. **`_execute_land(plan_number=)` → `linked_pr_number`**: This function already has a `pr_number: int | None` parameter. Using `linked_pr_number` distinguishes the two.\n3. **Keep `--plan-number` CLI flag string**: The shell script generated by `render_land_execution_script` passes `--plan-number=N` to the exec script. Renaming the CLI flag is node 3.6.3 scope.\n4. **Keep `entry.get(\"plan_id\")` in plan_duplicate_checker**: This parses LLM JSON output where the key is defined in a prompt template. Only the dataclass field renames.\n5. **Target type discriminators rename**: `\"plan_number\"` → `\"pr_number\"` and `\"plan_url\"` → `\"pr_url\"` since these are internal enum-like values.\n\n## Implementation Order\n\n1. `land_pipeline.py` — LandState field + resolve_plan_id function\n2. `land_stack.py` — LandStackEntry field\n3. `land_learn.py` — all plan_id parameters (highest occurrence count)\n4. `land_cmd.py` — local vars + linked_pr_number params\n5. `implement_shared.py` — TargetInfo field + discriminators\n6. `implement.py` — consumer of TargetInfo\n7. `display_utils.py` — plan_summary parameter\n8. `plan_duplicate_checker.py` — DuplicateMatch field\n9. `objective_helpers.py` — local variables\n10. `metadata_helpers.py` — local variables\n11. `wt/create_cmd.py` — verify and update kwarg\n12. All test files — update kwargs and assertions\n13. Verify with CI\n\n## Verification\n\n1. **Unit tests**: `make fast-ci` (runs ruff, ty, unit tests)\n2. **Grep check**: Search for remaining `plan_id`, `plan_number`, `plan_summary` in the 11 source files to confirm completeness\n3. **Full CI**: `make all-ci` for integration tests\n\n\n&lt;/details&gt;\n\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- erk:metadata-block:plan-header --&gt;\n&lt;details&gt;\n&lt;summary&gt;plan-header&lt;/summary&gt;\n\n```yaml\n\nschema_version: '2'\ncreated_at: '2026-03-10T17:28:41.329902+00:00'\ncreated_by: schrockn\nplan_comment_id: null\nlast_dispatched_run_id: '22915626969'\nlast_dispatched_node_id: WFR_kwLOPxC3hc8AAAAFVeC32Q\nlast_dispatched_at: '2026-03-10T17:29:53.213710+00:00'\nlast_local_impl_at: null\nlast_local_impl_event: null\nlast_local_impl_session: null\nlast_local_impl_user: null\nlast_remote_impl_at: '2026-03-10T17:44:04.853900+00:00'\nlast_remote_impl_run_id: null\nlast_remote_impl_session_id: null\nbranch_name: plnd/O9109-sweep-land-impl-core-03-10-1728\nobjective_issue: 9109\ncreated_from_session: 3ca0407e-a558-474a-a12d-8808765ae5b8\nlifecycle_stage: planned\n\n```\n\n&lt;/details&gt;\n&lt;!-- /erk:metadata-block:plan-header --&gt;\n---\n\n\nTo replicate this PR locally, run:\n\n```\nerk pr teleport 9178\n```\n","created_at":"2026-03-10T17:28:41Z","updated_at":"2026-03-10T17:44:39Z","closed_at":null,"merged_at":null,"merge_commit_sha":"592d0abed569a39e3b1c5fb6af1be73764790957","assignees":[],"requested_reviewers":[],"requested_teams":[],"labels":[{"id":10294082107,"node_id":"LA_kwDOPxC3hc8AAAACZZM6Ow","url":"https://api.github.com/repos/dagster-io/erk/labels/erk-pr","name":"erk-pr","color":"1D76DB","default":false,"description":"PR created by erk"}],"milestone":null,"draft":true,"commits_url":"https://api.github.com/repos/dagster-io/erk/pulls/9178/commits","review_comments_url":"https://api.github.com/repos/dagster-io/erk/pulls/9178/comments","review_comment_url":"https://api.github.com/repos/dagster-io/erk/pulls/comments{/number}","comments_url":"https://api.github.com/repos/dagster-io/erk/issues/9178/comments","statuses_url":"https://api.github.com/repos/dagster-io/erk/statuses/b18c737c9f9ba8373bd89c293afc09a9555c030e","head":{"label":"dagster-io:plnd/O9109-sweep-land-impl-core-03-10-1728","ref":"plnd/O9109-sweep-land-impl-core-03-10-1728","sha":"b18c737c9f9ba8373bd89c293afc09a9555c030e","user":{"login":"dagster-io","id":40032576,"node_id":"MDEyOk9yZ2FuaXphdGlvbjQwMDMyNTc2","avatar_url":"https://avatars.githubusercontent.com/u/40032576?v=4","gravatar_id":"","url":"https://api.github.com/users/dagster-io","html_url":"https://github.com/dagster-io","followers_url":"https://api.github.com/users/dagster-io/followers","following_url":"https://api.github.com/users/dagster-io/following{/other_user}","gists_url":"https://api.github.com/users/dagster-io/gists{/gist_id}","starred_url":"https://api.github.com/users/dagster-io/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/dagster-io/subscriptions","organizations_url":"https://api.github.com/users/dagster-io/orgs","repos_url":"https://api.github.com/users/dagster-io/repos","events_url":"https://api.github.com/users/dagster-io/events{/privacy}","received_events_url":"https://api.github.com/users/dagster-io/received_events","type":"Organization","user_view_type":"public","site_admin":false},"repo":{"id":1058060165,"node_id":"R_kgDOPxC3hQ","name":"erk","full_name":"dagster-io/erk","private":false,"owner":{"login":"dagster-io","id":40032576,"node_id":"MDEyOk9yZ2FuaXphdGlvbjQwMDMyNTc2","avatar_url":"https://avatars.githubusercontent.com/u/40032576?v=4","gravatar_id":"","url":"https://api.github.com/users/dagster-io","html_url":"https://github.com/dagster-io","followers_url":"https://api.github.com/users/dagster-io/followers","following_url":"https://api.github.com/users/dagster-io/following{/other_user}","gists_url":"https://api.github.com/users/dagster-io/gists{/gist_id}","starred_url":"https://api.github.com/users/dagster-io/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/dagster-io/subscriptions","organizations_url":"https://api.github.com/users/dagster-io/orgs","repos_url":"https://api.github.com/users/dagster-io/repos","events_url":"https://api.github.com/users/dagster-io/events{/privacy}","received_events_url":"https://api.github.com/users/dagster-io/received_events","type":"Organization","user_view_type":"public","site_admin":false},"html_url":"https://github.com/dagster-io/erk","description":"erk is a tool for the orchestration and management of plan-oriented agentic engineering.","fork":false,"url":"https://api.github.com/repos/dagster-io/erk","forks_url":"https://api.github.com/repos/dagster-io/erk/forks","keys_url":"https://api.github.com/repos/dagster-io/erk/keys{/key_id}","collaborators_url":"https://api.github.com/repos/dagster-io/erk/collaborators{/collaborator}","teams_url":"https://api.github.com/repos/dagster-io/erk/teams","hooks_url":"https://api.github.com/repos/dagster-io/erk/hooks","issue_events_url":"https://api.github.com/repos/dagster-io/erk/issues/events{/number}","events_url":"https://api.github.com/repos/dagster-io/erk/events","assignees_url":"https://api.github.com/repos/dagster-io/erk/assignees{/user}","branches_url":"https://api.github.com/repos/dagster-io/erk/branches{/branch}","tags_url":"https://api.github.com/repos/dagster-io/erk/tags","blobs_url":"https://api.github.com/repos/dagster-io/erk/git/blobs{/sha}","git_tags_url":"https://api.github.com/repos/dagster-io/erk/git/tags{/sha}","git_refs_url":"https://api.github.com/repos/dagster-io/erk/git/refs{/sha}","trees_url":"https://api.github.com/repos/dagster-io/erk/git/trees{/sha}","statuses_url":"https://api.github.com/repos/dagster-io/erk/statuses/{sha}","languages_url":"https://api.github.com/repos/dagster-io/erk/languages","stargazers_url":"https://api.github.com/repos/dagster-io/erk/stargazers","contributors_url":"https://api.github.com/repos/dagster-io/erk/contributors","subscribers_url":"https://api.github.com/repos/dagster-io/erk/subscribers","subscription_url":"https://api.github.com/repos/dagster-io/erk/subscription","commits_url":"https://api.github.com/repos/dagster-io/erk/commits{/sha}","git_commits_url":"https://api.github.com/repos/dagster-io/erk/git/commits{/sha}","comments_url":"https://api.github.com/repos/dagster-io/erk/comments{/number}","issue_comment_url":"https://api.github.com/repos/dagster-io/erk/issues/comments{/number}","contents_url":"https://api.github.com/repos/dagster-io/erk/contents/{+path}","compare_url":"https://api.github.com/repos/dagster-io/erk/compare/{base}...{head}","merges_url":"https://api.github.com/repos/dagster-io/erk/merges","archive_url":"https://api.github.com/repos/dagster-io/erk/{archive_format}{/ref}","downloads_url":"https://api.github.com/repos/dagster-io/erk/downloads","issues_url":"https://api.github.com/repos/dagster-io/erk/issues{/number}","pulls_url":"https://api.github.com/repos/dagster-io/erk/pulls{/number}","milestones_url":"https://api.github.com/repos/dagster-io/erk/milestones{/number}","notifications_url":"https://api.github.com/repos/dagster-io/erk/notifications{?since,all,participating}","labels_url":"https://api.github.com/repos/dagster-io/erk/labels{/name}","releases_url":"https://api.github.com/repos/dagster-io/erk/releases{/id}","deployments_url":"https://api.github.com/repos/dagster-io/erk/deployments","created_at":"2025-09-16T15:09:50Z","updated_at":"2026-03-10T17:38:40Z","pushed_at":"2026-03-10T17:44:25Z","git_url":"git://github.com/dagster-io/erk.git","ssh_url":"git@github.com:dagster-io/erk.git","clone_url":"https://github.com/dagster-io/erk.git","svn_url":"https://github.com/dagster-io/erk","homepage":"","size":93427,"stargazers_count":74,"watchers_count":74,"language":"Python","has_issues":true,"has_projects":true,"has_downloads":true,"has_wiki":false,"has_pages":true,"has_discussions":false,"forks_count":7,"mirror_url":null,"archived":false,"disabled":false,"open_issues_count":65,"license":{"key":"mit","name":"MIT License","spdx_id":"MIT","url":"https://api.github.com/licenses/mit","node_id":"MDc6TGljZW5zZTEz"},"allow_forking":true,"is_template":false,"web_commit_signoff_required":false,"has_pull_requests":true,"pull_request_creation_policy":"all","topics":[],"visibility":"public","forks":7,"open_issues":65,"watchers":74,"default_branch":"master"}},"base":{"label":"dagster-io:master","ref":"master","sha":"82f7c70cf3f15554d0595bcc0579355ff3e68a1d","user":{"login":"dagster-io","id":40032576,"node_id":"MDEyOk9yZ2FuaXphdGlvbjQwMDMyNTc2","avatar_url":"https://avatars.githubusercontent.com/u/40032576?v=4","gravatar_id":"","url":"https://api.github.com/users/dagster-io","html_url":"https://github.com/dagster-io","followers_url":"https://api.github.com/users/dagster-io/followers","following_url":"https://api.github.com/users/dagster-io/following{/other_user}","gists_url":"https://api.github.com/users/dagster-io/gists{/gist_id}","starred_url":"https://api.github.com/users/dagster-io/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/dagster-io/subscriptions","organizations_url":"https://api.github.com/users/dagster-io/orgs","repos_url":"https://api.github.com/users/dagster-io/repos","events_url":"https://api.github.com/users/dagster-io/events{/privacy}","received_events_url":"https://api.github.com/users/dagster-io/received_events","type":"Organization","user_view_type":"public","site_admin":false},"repo":{"id":1058060165,"node_id":"R_kgDOPxC3hQ","name":"erk","full_name":"dagster-io/erk","private":false,"owner":{"login":"dagster-io","id":40032576,"node_id":"MDEyOk9yZ2FuaXphdGlvbjQwMDMyNTc2","avatar_url":"https://avatars.githubusercontent.com/u/40032576?v=4","gravatar_id":"","url":"https://api.github.com/users/dagster-io","html_url":"https://github.com/dagster-io","followers_url":"https://api.github.com/users/dagster-io/followers","following_url":"https://api.github.com/users/dagster-io/following{/other_user}","gists_url":"https://api.github.com/users/dagster-io/gists{/gist_id}","starred_url":"https://api.github.com/users/dagster-io/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/dagster-io/subscriptions","organizations_url":"https://api.github.com/users/dagster-io/orgs","repos_url":"https://api.github.com/users/dagster-io/repos","events_url":"https://api.github.com/users/dagster-io/events{/privacy}","received_events_url":"https://api.github.com/users/dagster-io/received_events","type":"Organization","user_view_type":"public","site_admin":false},"html_url":"https://github.com/dagster-io/erk","description":"erk is a tool for the orchestration and management of plan-oriented agentic engineering.","fork":false,"url":"https://api.github.com/repos/dagster-io/erk","forks_url":"https://api.github.com/repos/dagster-io/erk/forks","keys_url":"https://api.github.com/repos/dagster-io/erk/keys{/key_id}","collaborators_url":"https://api.github.com/repos/dagster-io/erk/collaborators{/collaborator}","teams_url":"https://api.github.com/repos/dagster-io/erk/teams","hooks_url":"https://api.github.com/repos/dagster-io/erk/hooks","issue_events_url":"https://api.github.com/repos/dagster-io/erk/issues/events{/number}","events_url":"https://api.github.com/repos/dagster-io/erk/events","assignees_url":"https://api.github.com/repos/dagster-io/erk/assignees{/user}","branches_url":"https://api.github.com/repos/dagster-io/erk/branches{/branch}","tags_url":"https://api.github.com/repos/dagster-io/erk/tags","blobs_url":"https://api.github.com/repos/dagster-io/erk/git/blobs{/sha}","git_tags_url":"https://api.github.com/repos/dagster-io/erk/git/tags{/sha}","git_refs_url":"https://api.github.com/repos/dagster-io/erk/git/refs{/sha}","trees_url":"https://api.github.com/repos/dagster-io/erk/git/trees{/sha}","statuses_url":"https://api.github.com/repos/dagster-io/erk/statuses/{sha}","languages_url":"https://api.github.com/repos/dagster-io/erk/languages","stargazers_url":"https://api.github.com/repos/dagster-io/erk/stargazers","contributors_url":"https://api.github.com/repos/dagster-io/erk/contributors","subscribers_url":"https://api.github.com/repos/dagster-io/erk/subscribers","subscription_url":"https://api.github.com/repos/dagster-io/erk/subscription","commits_url":"https://api.github.com/repos/dagster-io/erk/commits{/sha}","git_commits_url":"https://api.github.com/repos/dagster-io/erk/git/commits{/sha}","comments_url":"https://api.github.com/repos/dagster-io/erk/comments{/number}","issue_comment_url":"https://api.github.com/repos/dagster-io/erk/issues/comments{/number}","contents_url":"https://api.github.com/repos/dagster-io/erk/contents/{+path}","compare_url":"https://api.github.com/repos/dagster-io/erk/compare/{base}...{head}","merges_url":"https://api.github.com/repos/dagster-io/erk/merges","archive_url":"https://api.github.com/repos/dagster-io/erk/{archive_format}{/ref}","downloads_url":"https://api.github.com/repos/dagster-io/erk/downloads","issues_url":"https://api.github.com/repos/dagster-io/erk/issues{/number}","pulls_url":"https://api.github.com/repos/dagster-io/erk/pulls{/number}","milestones_url":"https://api.github.com/repos/dagster-io/erk/milestones{/number}","notifications_url":"https://api.github.com/repos/dagster-io/erk/notifications{?since,all,participating}","labels_url":"https://api.github.com/repos/dagster-io/erk/labels{/name}","releases_url":"https://api.github.com/repos/dagster-io/erk/releases{/id}","deployments_url":"https://api.github.com/repos/dagster-io/erk/deployments","created_at":"2025-09-16T15:09:50Z","updated_at":"2026-03-10T17:38:40Z","pushed_at":"2026-03-10T17:44:25Z","git_url":"git://github.com/dagster-io/erk.git","ssh_url":"git@github.com:dagster-io/erk.git","clone_url":"https://github.com/dagster-io/erk.git","svn_url":"https://github.com/dagster-io/erk","homepage":"","size":93427,"stargazers_count":74,"watchers_count":74,"language":"Python","has_issues":true,"has_projects":true,"has_downloads":true,"has_wiki":false,"has_pages":true,"has_discussions":false,"forks_count":7,"mirror_url":null,"archived":false,"disabled":false,"open_issues_count":65,"license":{"key":"mit","name":"MIT License","spdx_id":"MIT","url":"https://api.github.com/licenses/mit","node_id":"MDc6TGljZW5zZTEz"},"allow_forking":true,"is_template":false,"web_commit_signoff_required":false,"has_pull_requests":true,"pull_request_creation_policy":"all","topics":[],"visibility":"public","forks":7,"open_issues":65,"watchers":74,"default_branch":"master"}},"_links":{"self":{"href":"https://api.github.com/repos/dagster-io/erk/pulls/9178"},"html":{"href":"https://github.com/dagster-io/erk/pull/9178"},"issue":{"href":"https://api.github.com/repos/dagster-io/erk/issues/9178"},"comments":{"href":"https://api.github.com/repos/dagster-io/erk/issues/9178/comments"},"review_comments":{"href":"https://api.github.com/repos/dagster-io/erk/pulls/9178/comments"},"review_comment":{"href":"https://api.github.com/repos/dagster-io/erk/pulls/comments{/number}"},"commits":{"href":"https://api.github.com/repos/dagster-io/erk/pulls/9178/commits"},"statuses":{"href":"https://api.github.com/repos/dagster-io/erk/statuses/b18c737c9f9ba8373bd89c293afc09a9555c030e"}},"author_association":"MEMBER","auto_merge":null,"assignee":null,"active_lock_reason":null,"merged":false,"mergeable":true,"rebaseable":false,"mergeable_state":"clean","merged_by":null,"comments":2,"review_comments":0,"maintainer_can_modify":false,"commits":4,"additions":153,"deletions":153,"changed_files":22}
+  </tool_result>
+  <assistant>The PR was updated successfully and published. Let me signal completion:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="10691" cache_read_input_tokens="135437" cache_creation="{'ephemeral_5m_input_tokens': 10691, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_0118Uk5GG9kh5AxVrq288L2P">
+    <param name="command">erk exec impl-signal submitted 2&gt;/dev/null || true</param>
+    <param name="description">Signal PR submitted</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="10691" cache_read_input_tokens="135437" cache_creation="{'ephemeral_5m_input_tokens': 10691, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01M1vFJra2BSknygKzn8aoZz">
+    <param name="command">erk pr check --stage=impl 2&gt;/dev/null || true</param>
+    <param name="description">Validate PR completion</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="10691" cache_read_input_tokens="135437" cache_creation="{'ephemeral_5m_input_tokens': 10691, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_0118Uk5GG9kh5AxVrq288L2P">
+{
+  "success": true,
+  "event": "submitted",
+  "pr_number": 9178
+}
+  </tool_result>
+  <tool_result tool="toolu_01M1vFJra2BSknygKzn8aoZz">
+
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01YH88sSCFRFhEFUo3K5RZCG">
+    <param name="todos">[{'content': 'Phase 1: Type definitions - land_pipeline.py, land_stack.py, implement_share...[truncated 590 chars]...ication'}, {'content': 'Submit PR', 'status': 'completed', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="501" cache_read_input_tokens="146128" cache_creation="{'ephemeral_5m_input_tokens': 501, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01YH88sSCFRFhEFUo3K5RZCG">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Plan #9178 implemented and submitted. PR: https://github.com/dagster-io/erk/pull/9178
+
+**Summary of changes:**
+
+- **13 source files** modified across land pipeline, implement commands, and core modules
+- **10 test files** updated (107 tests verified passing, 592 in broader suite)
+- **153 additions, 153 deletions** — pure rename, no behavior changes
+
+**Key renames:**
+- `LandState.plan_id` → `pr_id`, `resolve_plan_id()` → `resolve_pr_id()`
+- `StackLandEntry.plan_id` → `pr_id`
+- `TargetInfo.plan_number` → `pr_number`, discriminators `"plan_number"/"plan_url"` → `"pr_number"/"pr_url"`
+- `DuplicateMatch.plan_id` → `pr_id`
+- `ReconcileBranchInfo.plan_id` → `pr_id`
+- `format_plan_display(plan_identifier=)` → `format_plan_display(pr_identifier=)`
+- Local variable sweeps across `land_learn.py`, `land_cmd.py`, `objective_helpers.py`, `metadata_helpers.py`</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="321" cache_read_input_tokens="146629" cache_creation="{'ephemeral_5m_input_tokens': 321, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+</session>
