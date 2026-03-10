@@ -4,6 +4,7 @@
 # Hooks Documentation
 
 - **[erk.md](erk.md)** — working with erk-specific hooks, understanding context-aware reminders, modifying project hooks, creating project-scoped hooks, using logged_hook or hook_command decorators, creating hooks that only fire in managed projects
+- **[git-pre-push-validation.md](git-pre-push-validation.md)** — setting up git hooks, understanding pre-push validation, bypassing local checks, modifying pre-push checks
 - **[hooks.md](hooks.md)** — creating hooks, modifying hooks, understanding hook lifecycle
 - **[pretooluse-implementation.md](pretooluse-implementation.md)** — creating or modifying a PreToolUse hook, choosing between blocking (exit 2) and informational (exit 0) hooks, understanding capability-gated context injection
 - **[prompt-hooks.md](prompt-hooks.md)** — creating prompt hooks, customizing post-init setup, customizing CI workflow, understanding prompt hooks vs claude hooks

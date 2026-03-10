@@ -123,6 +123,28 @@ Critical ordering dependencies in erk-impl:
 
 **Key insight:** Steps 4-6 must maintain this exact order. Interleaving cleanup with implementation commits causes silent failures.
 
+## Branch State Consistency
+
+### Race Condition
+
+The plan-implement workflow has a timing issue: the plan job may push commits to the branch after the implement job checks it out. This means the implement job's checkout (from `github.sha`) can be behind the remote tip.
+
+### Fix: Reset After Checkout
+
+**Source**: `.github/workflows/plan-implement.yml` (implement job checkout step)
+
+The checkout step follows the Checkout → Fetch → Reset pattern (see source file for current YAML). This is safe because the implement job has no local work to lose at this point — it's the first operation after checkout. The pattern ensures the implement job starts with the exact state the plan job left on the remote.
+
+### Pattern: Checkout → Fetch → Reset
+
+For workflow-dispatched branches where another job may have pushed commits:
+
+1. `git checkout` — switch to the branch
+2. `git fetch origin` — get latest remote state
+3. `git reset --hard origin/$BRANCH` — sync local to remote tip
+
+This pattern only applies at the start of a job, before any local work has been done.
+
 ## Related Documentation
 
 - [GitHub Actions Output Patterns](github-actions-output-patterns.md) - Multi-line outputs and step communication

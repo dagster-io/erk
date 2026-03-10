@@ -60,9 +60,13 @@ Rules triggered by matching actions in code.
 
 **manually parsing objective roadmap markdown** → Read [Objective Check Command — Semantic Validation](objective-roadmap-check.md) first. Use `erk objective check`. It handles structural parsing, status inference, and semantic validation.
 
+**manually setting objective_issue in plan header without using update_plan_header_objective_issue()** → Read [Objective-Plan Backlinks](objective-plan-backlinks.md) first. Use update_plan_header_objective_issue() to set the backlink. It handles metadata block detection and formatting.
+
 **manually writing roadmap YAML or metadata blocks in objective-create** → Read [Objective Create Workflow](objective-create-workflow.md) first. Use erk exec objective-render-roadmap to generate the roadmap block. The skill template must produce valid JSON input for this command.
 
 **modifying roadmap validation without understanding the two-level architecture** → Read [Roadmap Validation Architecture](roadmap-validation.md) first. Validation is split between parse_roadmap() (structural) and validate_objective() (semantic). Read this doc to understand which level your change belongs in.
+
+**overwriting an existing objective_issue backlink with a different value** → Read [Objective-Plan Backlinks](objective-plan-backlinks.md) first. \_set_plan_backlink() refuses to overwrite existing backlinks to prevent accidental plan reuse across objectives. It warns and skips instead.
 
 **passing None for optional discovery flags and assuming defaults** → Read [Objective Exec Command Consolidation](exec-command-consolidation.md) first. Optional discovery flags (--plan, --objective, --pr) have complex fallback chains. Test edge cases where the fallback source is unavailable (branch deleted, plan not found, PR not created).
 

@@ -180,6 +180,45 @@ When the API key is missing or the LLM call fails, the dispatch code falls back 
 | `.github/workflows/one-shot.yml`                              | Two-job pipeline (plan + implement)                                                               |
 | `.claude/commands/erk/system/one-shot-plan.md`                | Claude planning command with skeleton update logic                                                |
 
+## Prompt Validation and Rejection
+
+The one-shot planning command includes a Step 1.5 validation gate that rejects invalid or unactionable prompts before planning begins.
+
+### What Makes a Prompt Invalid
+
+After exploring the codebase, if the planning agent cannot produce an actionable implementation plan (e.g., the prompt is too vague, asks for something impossible, or contradicts the codebase), it rejects the prompt instead of producing a bad plan.
+
+### Rejection Output Format
+
+The agent writes a rejection to `.erk/impl-context/plan-result.json`:
+
+```json
+{
+  "rejected": true,
+  "reason": "The prompt asks for X but the codebase already has Y"
+}
+```
+
+Normal (non-rejected) output:
+
+```json
+{ "plan_number": 1234, "title": "Plan title" }
+```
+
+### Workflow Routing on Rejection
+
+In `.github/workflows/one-shot.yml`, after the plan job completes:
+
+1. The workflow checks `plan-result.json` for the `rejected` field
+2. If `rejected: true`, it extracts the `reason` and logs a GitHub Actions warning
+3. If a `plan_issue_number` was provided, the workflow closes the plan issue with a comment: `"Plan rejected by planning agent: <reason>"`
+4. The implement job is skipped entirely (not triggered)
+
+### Source of Truth
+
+- **Validation logic**: `.claude/commands/erk/system/one-shot-plan.md` (Step 1.5)
+- **Rejection routing**: `.github/workflows/one-shot.yml` (rejection detection step)
+
 ## Related Topics
 
 - [Plan Lifecycle](lifecycle.md) -- plan states and transitions

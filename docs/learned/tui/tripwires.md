@@ -34,6 +34,8 @@ Rules triggered by matching actions in code.
 
 **adding a new ViewMode without updating VIEW_CONFIGS** → Read [TUI View Switching](view-switching.md) first. Every ViewMode must have a corresponding ViewConfig in VIEW_CONFIGS. Missing configs cause KeyError at runtime.
 
+**adding a new column to RunDataTable without updating RunRowData** → Read [Runs Tab Architecture](runs-tab-architecture.md) first. RunDataTable columns are populated from RunRowData fields. Add the field to RunRowData first, then add the column in \_setup_columns.
+
 **adding a new filter without updating the escape chain** → Read [TUI Filter Pipeline Pattern](filter-pipeline.md) first. New filter implementations must add an entry to `action_exit_app()` progressive escape chain. Missing entries leave filters stuck with no way for the user to clear them.
 
 **adding a new key binding without checking existing bindings** → Read [TUI Keyboard Shortcuts Inventory](keyboard-shortcuts.md) first. Check this document and ErkDashApp.BINDINGS in app.py for conflicts. Some keys are hidden but still active.
@@ -125,6 +127,8 @@ Rules triggered by matching actions in code.
 **using inverted key check in on_key() modal dismiss logic** → Read [TUI Modal Screen Pattern](modal-screen-pattern.md) first. if event.key not in (...) is WRONG for dismiss logic — it swallows dismiss keys. Use if event.key in (...) to check for positive dismiss. Regression caused by stacked PR merge order.
 
 **using positional arguments when constructing PlanRowData** → Read [Frozen Dataclass Field Management](frozen-dataclass-field-management.md) first. Always use keyword arguments for frozen dataclass construction. Positional arguments break silently when fields are reordered. Use make_plan_row() helper in tests.
+
+**using run.branch directly for display without checking PR head_branch first** → Read [Runs Tab Architecture](runs-tab-architecture.md) first. After merge+deletion, run.branch becomes master/main. Use PR head_branch as primary source, falling back to run.branch only if not master/main.
 
 **using subprocess.Popen in TUI code without stdin=subprocess.DEVNULL** → Read [Command Execution Strategies](command-execution.md) first. Child processes inherit stdin from parent; in TUI context this creates deadlocks when child prompts for user input. Always set `stdin=subprocess.DEVNULL` for TUI subprocess calls.
 
