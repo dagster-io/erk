@@ -1,0 +1,1026 @@
+<session>
+  <meta source="agent-a8f3c98" />
+  <meta branch="plnd/O9109-rename-exec-json-fie-03-10-0015" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>Update test files that verify JSON output from exec scripts. The exec scripts have been updated to rename JSON output field names. Now the tests need to match.
+
+RULES:
+- Only rename string keys in test assertions/inputs that test JSON output from exec scripts
+- When tests provide INPUT data (like stdin JSON), rename those too since the scripts now expect the new field names
+- Do NOT rename things that are internal to the test infrastructure (like plan_ref fields, test fixture fields)
+
+Files to update (all under /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/):
+
+1. `test_add_plan_label.py` line 49: `output["plan_number"]` → `output["pr_number"]`
+
+2. `test_add_plan_labels.py`:
+   - lines 55-56: Input JSON `"plan_number"` → `"pr_number"`
+   - lines 73, 76: `output["results"][...]["plan_number"]` → `output["results"][...]["pr_number"]`
+   - lines 92-93: Input JSON `"plan_number"` → `"pr_number"` 
+   - line 141: Input JSON `"plan_number"` → `"pr_number"`
+
+3. `test_close_prs.py`:
+   - lines 55-56: Input JSON `"plan_number"` → `"pr_number"`
+   - lines 73, 75: `output["results"][...]["plan_number"]` → `output["results"][...]["pr_number"]`
+   - lines 95-96: Input JSON `"plan_number"` → `"pr_number"`
+   - line 145: Input JSON `"plan_number"` → `"pr_number"`
+
+4. `test_close_pr.py`:
+   - lines 68, 138: `output["plan_number"]` → `output["pr_number"]`
+
+5. `test_detect_plan_from_branch.py`:
+   - line 47: `"plan_number"` → `"pr_number"` in expected dict
+   - line 74: `result["plan_number"]` → `result["pr_number"]`
+
+6. `test_objective_save_to_issue.py`:
+   - lines 56, 321, 334, 503: `output["plan_number"]` → `output["pr_number"]`
+
+7. `test_plan_save.py`:
+   - line 64: `"plan_number" in output` → `"pr_number" in output`
+   - line 915: `output["plan_number"]` → `output["pr_number"]`
+
+8. `test_plan_update.py`:
+   - line 89: `output["plan_number"]` → `output["pr_number"]`
+
+Read each file, then apply the edits. Be precise with old_string to ensure uniqueness.</user>
+  <assistant>I'll start by searching for the relevant test files and reading them to understand their current state, then make the necessary updates.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="6518" cache_read_input_tokens="10086" cache_creation="{'ephemeral_5m_input_tokens': 6518, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_015TCbfrtnQcASzy9xVbxyCk">
+    <param name="pattern">tests/unit/cli/commands/exec/scripts/test_*.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6518" cache_read_input_tokens="10086" cache_creation="{'ephemeral_5m_input_tokens': 6518, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_015TCbfrtnQcASzy9xVbxyCk">
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_capture_session_info.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_add_pr_labels_cmd.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_add_plan_label.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_ci_fetch_summaries.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_add_plan_labels.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_add_remote_execution_note.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_add_objective_node.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_ci_generate_summaries.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_get_embedded_prompt.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_cmux_checkout_workspace.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_create_impl_context_from_plan.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_close_prs.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_discover_reviews.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_cleanup_impl_context.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_ci_verify_autofix.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_detect_trunk_branch.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_fetch_sessions.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_generate_pr_address_summary.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_ci_update_pr_body.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_dash_data.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_close_pr.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_detect_plan_from_branch.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_download_remote_session.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_get_pr_feedback.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_impl_init.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_get_pr_context.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_get_plan_metadata.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_get_plans_for_objective.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_get_pr_view.py
+
+... [56 lines omitted] ...
+  </tool_result>
+  <assistant>Now let me read each of the files that need to be updated:</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="3140" cache_read_input_tokens="16604" cache_creation="{'ephemeral_5m_input_tokens': 3140, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01RuUmSEgwmmM3qjA2Y8jeGp">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_add_plan_label.py</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="3140" cache_read_input_tokens="16604" cache_creation="{'ephemeral_5m_input_tokens': 3140, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01FCo5iKdbS1fLHgxYQNpiLg">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_add_plan_labels.py</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="3140" cache_read_input_tokens="16604" cache_creation="{'ephemeral_5m_input_tokens': 3140, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01RcbCJ5f4guXKj91Kk9cMZG">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_close_prs.py</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="3140" cache_read_input_tokens="16604" cache_creation="{'ephemeral_5m_input_tokens': 3140, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_014M83nqQ6gzntLofypdFRJW">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_close_pr.py</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="3140" cache_read_input_tokens="16604" cache_creation="{'ephemeral_5m_input_tokens': 3140, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01RuUmSEgwmmM3qjA2Y8jeGp">
+     1→"""Unit tests for add_plan_label exec command.
+     2→
+     3→Tests backend-aware label addition using PlannedPRBackend and FakeLocalGitHub.
+     4→"""
+     5→
+     6→import json
+     7→from pathlib import Path
+     8→
+     9→from click.testing import CliRunner
+    10→
+    11→from erk.cli.commands.exec.scripts.add_plan_label import add_plan_label
+    12→from erk_shared.context.testing import context_for_test
+    13→from erk_shared.gateway.github.fake import FakeLocalGitHub
+    14→from erk_shared.gateway.time.fake import FakeTime
+    15→from erk_shared.plan_store.planned_pr import PlannedPRBackend
+    16→
+    17→# ============================================================================
+    18→# Success Cases
+    19→# ============================================================================
+    20→
+    21→
+    22→def test_add_plan_label_success() -&gt; None:
+    23→    """Test successful label addition via PlannedPRBackend."""
+    24→    fake_github = FakeLocalGitHub()
+    25→    backend = PlannedPRBackend(fake_github, fake_github.issues, time=FakeTime())
+    26→
+    27→    create_result = backend.create_plan(
+    28→        repo_root=Path("/repo"),
+    29→        title="Test Plan",
+    30→        content="Plan body",
+
+... [47 lines omitted] ...
+
+    57→# Error Cases
+    62→    """Test that missing --label flag exits with code 2 (usage error)."""
+  </tool_result>
+  <tool_result tool="toolu_01FCo5iKdbS1fLHgxYQNpiLg">
+     1→"""Unit tests for add-plan-labels batch command."""
+     2→
+     3→import json
+     4→from datetime import UTC, datetime
+     5→
+     6→from click.testing import CliRunner
+     7→
+     8→from erk.cli.commands.exec.scripts.add_plan_labels import add_plan_labels
+     9→from erk_shared.context.context import ErkContext
+    10→from erk_shared.gateway.github.fake import FakeLocalGitHub
+    11→from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+    12→from erk_shared.gateway.github.issues.types import IssueInfo
+    13→from erk_shared.gateway.time.fake import FakeTime
+    14→from erk_shared.plan_store.planned_pr import PlannedPRBackend
+    15→from tests.test_utils.plan_helpers import issue_info_to_pr_details
+    16→
+    17→
+    18→def _make_issue(
+    19→    number: int,
+    20→    title: str,
+    21→    body: str,
+    22→) -&gt; IssueInfo:
+    23→    """Create a test IssueInfo."""
+    24→    now = datetime.now(UTC)
+    25→    return IssueInfo(
+    26→        number=number,
+    27→        title=title,
+    28→        body=body,
+    29→        state="OPEN",
+    30→        url=f"https://github.com/test/repo/issues/{number}",
+
+... [153 lines omitted] ...
+
+    69→    assert result.exit_code == 0, f"Failed: {result.output}"
+    80→def test_add_plan_labels_partial_failure() -&gt; None:
+   115→    """Test error handling for invalid JSON input."""
+   132→    assert output["error_type"] == "invalid-json"
+   136→    """Test error handling for missing required fields."""
+   155→    assert output["error_type"] == "invalid-input"
+  </tool_result>
+  <tool_result tool="toolu_01RcbCJ5f4guXKj91Kk9cMZG">
+     1→"""Unit tests for close-prs batch command."""
+     2→
+     3→import json
+     4→from datetime import UTC, datetime
+     5→
+     6→from click.testing import CliRunner
+     7→
+     8→from erk.cli.commands.exec.scripts.close_prs import close_prs
+     9→from erk_shared.context.context import ErkContext
+    10→from erk_shared.gateway.github.fake import FakeLocalGitHub
+    11→from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+    12→from erk_shared.gateway.github.issues.types import IssueInfo
+    13→from erk_shared.gateway.time.fake import FakeTime
+    14→from erk_shared.plan_store.planned_pr import PlannedPRBackend
+    15→from tests.test_utils.plan_helpers import issue_info_to_pr_details
+    16→
+    17→
+    18→def _make_issue(
+    19→    number: int,
+    20→    title: str,
+    21→    body: str,
+    22→) -&gt; IssueInfo:
+    23→    """Create a test IssueInfo."""
+    24→    now = datetime.now(UTC)
+    25→    return IssueInfo(
+    26→        number=number,
+    27→        title=title,
+    28→        body=body,
+    29→        state="OPEN",
+    30→        url=f"https://github.com/test/repo/issues/{number}",
+
+... [157 lines omitted] ...
+
+    69→    assert result.exit_code == 0, f"Failed: {result.output}"
+    83→def test_close_prs_partial_failure() -&gt; None:
+   111→    assert output["success"] is False  # Overall failure due to one failing
+   115→    assert "999" in str(output["results"][1].get("error", ""))
+   119→    """Test error handling for invalid JSON input."""
+   136→    assert output["error_type"] == "invalid-json"
+   140→    """Test error handling for missing required fields."""
+   159→    assert output["error_type"] == "invalid-input"
+  </tool_result>
+  <tool_result tool="toolu_014M83nqQ6gzntLofypdFRJW">
+     1→"""Unit tests for close-pr command.
+     2→
+     3→Tests use PlannedPRBackend for dependency injection via ErkContext.for_test().
+     4→The command uses PlanBackend which routes to FakeLocalGitHub PR operations.
+     5→"""
+     6→
+     7→import json
+     8→from datetime import UTC, datetime
+     9→
+    10→from click.testing import CliRunner
+    11→
+    12→from erk.cli.commands.exec.scripts.close_pr import (
+    13→    close_pr,
+    14→)
+    15→from erk_shared.context.context import ErkContext
+    16→from erk_shared.gateway.github.fake import FakeLocalGitHub
+    17→from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+    18→from erk_shared.gateway.github.issues.types import IssueInfo
+    19→from erk_shared.gateway.github.types import PRNotFound
+    20→from erk_shared.gateway.time.fake import FakeTime
+    21→from erk_shared.plan_store.planned_pr import PlannedPRBackend
+    22→from tests.test_utils.plan_helpers import issue_info_to_pr_details
+    23→
+    24→
+    25→def _make_issue(
+    26→    number: int,
+    27→    title: str,
+    28→    body: str,
+    29→) -&gt; IssueInfo:
+    30→    """Create a test IssueInfo."""
+
+... [171 lines omitted] ...
+
+    65→    assert result.exit_code == 0, f"Failed: {result.output}"
+    84→    """Test error when issue does not exist."""
+   101→    assert "999" in output["error"]
+  </tool_result>
+  <assistant>Now let me read the remaining test files:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="13088" cache_read_input_tokens="19744" cache_creation="{'ephemeral_5m_input_tokens': 13088, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01TdYvr1SzjQutSV34uiqNWv">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_detect_plan_from_branch.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="13088" cache_read_input_tokens="19744" cache_creation="{'ephemeral_5m_input_tokens': 13088, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_018D5iAy8GZTmxqujd9pmd1E">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_objective_save_to_issue.py</param>
+    <param name="limit">350</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="13088" cache_read_input_tokens="19744" cache_creation="{'ephemeral_5m_input_tokens': 13088, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01QKAmbM59oaenV1hB4M6RMR">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_plan_save.py</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="13088" cache_read_input_tokens="19744" cache_creation="{'ephemeral_5m_input_tokens': 13088, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01NuE9JoKvRwkRdtUB3ug5Zd">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_plan_update.py</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="13088" cache_read_input_tokens="19744" cache_creation="{'ephemeral_5m_input_tokens': 13088, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01TdYvr1SzjQutSV34uiqNWv">
+     1→"""Tests for detect-plan-from-branch exec command.
+     2→
+     3→Tests both the implementation logic (_detect_plan_from_branch_impl)
+     4→and the CLI command (detect_plan_from_branch).
+     5→"""
+     6→
+     7→import json
+     8→from pathlib import Path
+     9→
+    10→from click.testing import CliRunner
+    11→
+    12→from erk.cli.commands.exec.scripts.detect_plan_from_branch import (
+    13→    _detect_plan_from_branch_impl,
+    14→    detect_plan_from_branch,
+    15→)
+    16→from erk_shared.context.context import ErkContext
+    17→from erk_shared.gateway.git.fake import FakeGit
+    18→from erk_shared.gateway.github.fake import FakeLocalGitHub
+    19→
+    20→# --- Implementation Logic Tests ---
+    21→
+    22→
+    23→def test_detect_impl_branch_name_p_prefix() -&gt; None:
+    24→    """P-prefix branches no longer resolve to plan numbers."""
+    25→    result = _detect_plan_from_branch_impl(
+    26→        current_branch="P2521-fix-auth-bug-01-15-1430",
+    27→        pr_lookup=lambda: None,
+    28→    )
+    29→    assert result == {"found": False}
+    30→
+
+... [82 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_018D5iAy8GZTmxqujd9pmd1E">
+     1→"""Unit tests for objective-save-to-issue command."""
+     2→
+     3→import json
+     4→from pathlib import Path
+     5→
+     6→from click.testing import CliRunner
+     7→
+     8→from erk.cli.commands.exec.scripts.objective_save_to_issue import (
+     9→    objective_save_to_issue,
+    10→)
+    11→from erk_shared.context.context import ErkContext
+    12→from erk_shared.gateway.claude_installation.fake import (
+    13→    FakeClaudeInstallation,
+    14→)
+    15→from erk_shared.gateway.git.fake import FakeGit
+    16→from erk_shared.gateway.github.fake import FakeLocalGitHub
+    17→from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+    18→from erk_shared.gateway.github.metadata.roadmap import rerender_comment_roadmap
+    19→from erk_shared.gateway.github.objective_issues import create_objective_issue
+    20→from erk_shared.gateway.time.fake import FakeTime
+    21→
+    22→# Valid plan content that passes validation (100+ chars with structure)
+    23→VALID_PLAN_CONTENT = """# Feature Objective
+    24→
+    25→This objective describes the implementation of a new feature.
+    26→
+    27→- Step 1: Set up the environment
+    28→- Step 2: Implement the core logic
+    29→- Step 3: Add tests and documentation"""
+    30→
+
+... [325 lines omitted] ...
+
+    53→    assert result.exit_code == 0, f"Failed: {result.output}"
+    78→    """Test error when no plan found."""
+    96→    assert "No plan found" in output["error"]
+   186→        assert result.exit_code == 0, f"Failed: {result.output}"
+   237→        assert result.exit_code == 0, f"Failed: {result.output}"
+   268→    assert result.exit_code == 0, f"Failed: {result.output}"
+   318→        assert result1.exit_code == 0, f"First call failed: {result1.output}"
+   331→        assert result2.exit_code == 0, f"Second call failed: {result2.output}"
+  </tool_result>
+  <tool_result tool="toolu_01QKAmbM59oaenV1hB4M6RMR">
+     1→"""Unit tests for plan-save command (draft PR creation)."""
+     2→
+     3→import json
+     4→from pathlib import Path
+     5→
+     6→import pytest
+     7→from click.testing import CliRunner
+     8→
+     9→from erk.cli.commands.exec.scripts.plan_save import plan_save
+    10→from erk_shared.context.context import ErkContext
+    11→from erk_shared.context.testing import context_for_test
+    12→from erk_shared.gateway.claude_installation.fake import FakeClaudeInstallation
+    13→from erk_shared.gateway.git.fake import FakeGit
+    14→from erk_shared.gateway.github.fake import FakeLocalGitHub
+    15→from erk_shared.gateway.graphite.fake import FakeGraphite
+    16→from erk_shared.plan_store.planned_pr_lifecycle import IMPL_CONTEXT_DIR
+    17→
+    18→# Valid plan content that passes validation (100+ chars with structure)
+    19→VALID_PLAN_CONTENT = """# Feature Plan
+    20→
+    21→This plan describes the implementation of a new feature.
+    22→
+    23→- Step 1: Set up the environment
+    24→- Step 2: Implement the core logic
+    25→- Step 3: Add tests and documentation"""
+    26→
+    27→
+    28→def _planned_pr_context(
+    29→    *,
+    30→    tmp_path: Path,
+
+... [75 lines omitted] ...
+
+    61→    assert result.exit_code == 0, f"Failed: {result.output}"
+    79→    assert result.exit_code == 0, f"Failed: {result.output}"
+  </tool_result>
+  <tool_result tool="toolu_01NuE9JoKvRwkRdtUB3ug5Zd">
+     1→"""Unit tests for plan-update command."""
+     2→
+     3→import json
+     4→from datetime import UTC, datetime
+     5→
+     6→from click.testing import CliRunner
+     7→
+     8→from erk.cli.commands.exec.scripts.plan_update import plan_update
+     9→from erk_shared.context.context import ErkContext
+    10→from erk_shared.gateway.claude_installation.fake import FakeClaudeInstallation
+    11→from erk_shared.gateway.git.fake import FakeGit
+    12→from erk_shared.gateway.git.remote_ops.types import PushError
+    13→from erk_shared.gateway.github.fake import FakeLocalGitHub
+    14→from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+    15→from erk_shared.gateway.github.issues.types import IssueComment, IssueInfo
+    16→from erk_shared.gateway.github.types import PRDetails
+    17→from erk_shared.gateway.time.fake import FakeTime
+    18→from erk_shared.plan_store.planned_pr import PlannedPRBackend
+    19→from erk_shared.plan_store.planned_pr_lifecycle import IMPL_CONTEXT_DIR
+    20→from tests.test_utils.plan_helpers import (
+    21→    format_plan_header_body_for_test,
+    22→    issue_info_to_pr_details,
+    23→)
+    24→
+    25→
+    26→def _make_issue(
+    27→    number: int,
+    28→    title: str,
+    29→    body: str,
+    30→) -&gt; IssueInfo:
+
+... [75 lines omitted] ...
+
+    86→    assert result.exit_code == 0, f"Failed: {result.output}"
+  </tool_result>
+  <assistant>Now I need to read more of the objective_save_to_issue.py and plan_save.py files to find all the lines mentioned:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="9739" cache_read_input_tokens="32832" cache_creation="{'ephemeral_5m_input_tokens': 9739, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01A2dGDUuW2D4mnZs8fyJEZi">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_objective_save_to_issue.py</param>
+    <param name="offset">300</param>
+    <param name="limit">250</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="9739" cache_read_input_tokens="32832" cache_creation="{'ephemeral_5m_input_tokens': 9739, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01JhEKLsq39wMphH1nrUrfLL">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_plan_save.py</param>
+    <param name="offset">900</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="9739" cache_read_input_tokens="32832" cache_creation="{'ephemeral_5m_input_tokens': 9739, 'ephemeral_1h_input_tokens': 0}" output_tokens="255" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01A2dGDUuW2D4mnZs8fyJEZi">
+   300→    runner = CliRunner()
+   301→
+   302→    with runner.isolated_filesystem(temp_dir=tmp_path) as td:
+   303→        ctx = ErkContext.for_test(
+   304→            github=FakeLocalGitHub(issues_gateway=fake_gh),
+   305→            git=fake_git,
+   306→            claude_installation=fake_store,
+   307→            cwd=Path(td),
+   308→            repo_root=Path(td),
+   309→        )
+   310→
+   311→        # First call - should create issue
+   312→        result1 = runner.invoke(
+   313→            objective_save_to_issue,
+   314→            ["--format", "json", "--session-id", test_session_id],
+   315→            obj=ctx,
+   316→        )
+   317→
+   318→        assert result1.exit_code == 0, f"First call failed: {result1.output}"
+   319→        output1 = json.loads(result1.output)
+   320→        assert output1["success"] is True
+   321→        assert output1["plan_number"] == 1
+   322→        assert output1.get("skipped_duplicate") is not True
+   323→
+   324→        # Second call - should return existing issue (not create duplicate)
+   325→        result2 = runner.invoke(
+   326→            objective_save_to_issue,
+   327→            ["--format", "json", "--session-id", test_session_id],
+   328→            obj=ctx,
+   329→        )
+
+... [225 lines omitted] ...
+
+   331→        assert result2.exit_code == 0, f"Second call failed: {result2.output}"
+   415→&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+   462→    assert result.exit_code == 0, f"Failed: {result.output}"
+   500→    assert result.exit_code == 0, f"Failed: {result.output}"
+   524→    assert result.exit_code == 0, f"Failed: {result.output}"
+   546→    assert result.exit_code == 0, f"Failed: {result.output}"
+  </tool_result>
+  <tool_result tool="toolu_01JhEKLsq39wMphH1nrUrfLL">
+   900→
+   901→    result = runner.invoke(
+   902→        plan_save,
+   903→        ["--format", "json", "--current-branch", "--session-id", session_id],
+   904→        obj=ctx,
+   905→    )
+   906→
+   907→    assert result.exit_code == 0, f"Failed: {result.output}"
+   908→    output = json.loads(result.output)
+   909→    marker_dir = tmp_path / ".erk" / "scratch" / "sessions" / session_id
+   910→    # Unified plan-saved marker should exist with plan number on first line
+   911→    plan_saved_marker = marker_dir / "exit-plan-mode-hook.plan-saved.marker"
+   912→    assert plan_saved_marker.exists(), "plan-saved marker should exist"
+   913→    marker_content = plan_saved_marker.read_text(encoding="utf-8")
+   914→    first_line = marker_content.split("\n")[0].strip()
+   915→    assert first_line == str(output["plan_number"]), "first line should be plan number"
+   916→    # Old current-branch marker should NOT exist
+   917→    old_marker = marker_dir / "exit-plan-mode-hook.plan-saved-current-branch.marker"
+   918→    assert not old_marker.exists(), "plan-saved-current-branch marker should NOT exist"
+   919→    # Issue and branch markers should still exist
+   920→    assert (marker_dir / "plan-saved-issue.marker").exists()
+   921→    assert (marker_dir / "plan-saved-branch.marker").exists()
+   922→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>Perfect! Now I have all the information I need. Let me start making the edits. I'll begin with the first file:
+
+**1. test_add_plan_label.py - line 49:**</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="4214" cache_read_input_tokens="42571" cache_creation="{'ephemeral_5m_input_tokens': 4214, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01V9pFAmVqDfj5ZmLQFnJSNz">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_add_plan_label.py</param>
+    <param name="old_string">    assert result.exit_code == 0
+    output = json.loads(result.output)
+    assert output[...[truncated 18 chars]...plan_number"] == int(create_result.pr_id)
+    assert output["label"] == "erk-consolidated"</param>
+    <param name="new_string">    assert result.exit_code == 0
+    output = json.loads(result.output)
+    assert output[...[truncated 16 chars]...["pr_number"] == int(create_result.pr_id)
+    assert output["label"] == "erk-consolidated"</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="4214" cache_read_input_tokens="42571" cache_creation="{'ephemeral_5m_input_tokens': 4214, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01V9pFAmVqDfj5ZmLQFnJSNz">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_add_plan_label.py has been updated successfully.
+  </tool_result>
+  <assistant>**2. test_add_plan_labels.py - lines 55-56 (input), lines 73, 76 (output), lines 92-93 (input), line 141 (input):**</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="352" cache_read_input_tokens="46785" cache_creation="{'ephemeral_5m_input_tokens': 352, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_013NZnSgCXj6HzQKEciYqLu3">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_add_plan_labels.py</param>
+    <param name="old_string">    batch_input = json.dumps(
+        [
+            {"plan_number": 42, "label": "erk-learn"},
+            {"plan_number": 43, "label": "erk-stale"},
+        ]
+    )</param>
+    <param name="new_string">    batch_input = json.dumps(
+        [
+            {"pr_number": 42, "label": "erk-learn"},
+            {"pr_number": 43, "label": "erk-stale"},
+        ]
+    )</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="352" cache_read_input_tokens="46785" cache_creation="{'ephemeral_5m_input_tokens': 352, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013NZnSgCXj6HzQKEciYqLu3">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_add_plan_labels.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_0136XuXyDADZtbdpEQwvW6yL">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_add_plan_labels.py</param>
+    <param name="old_string">    assert result.exit_code == 0, f"Failed: {result.output}"
+    output = json.loads(resul...[truncated 239 chars]...tput["results"][1]["plan_number"] == 43
+    assert output["results"][1]["success"] is True</param>
+    <param name="new_string">    assert result.exit_code == 0, f"Failed: {result.output}"
+    output = json.loads(resul...[truncated 235 chars]...output["results"][1]["pr_number"] == 43
+    assert output["results"][1]["success"] is True</param>
+  </tool_use>
+  <usage input_tokens="4" cache_creation_input_tokens="443" cache_read_input_tokens="47137" cache_creation="{'ephemeral_5m_input_tokens': 443, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0136XuXyDADZtbdpEQwvW6yL">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_add_plan_labels.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01RDJbxW54EpRUrYj5vDYzr4">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_add_plan_labels.py</param>
+    <param name="old_string">    batch_input = json.dumps(
+        [
+            {"plan_number": 42, "label": "erk-learn"},
+            {"plan_number": 999, "label": "erk-stale"},
+        ]
+    )
+
+    result = runner.invoke(</param>
+    <param name="new_string">    batch_input = json.dumps(
+        [
+            {"pr_number": 42, "label": "erk-learn"},
+            {"pr_number": 999, "label": "erk-stale"},
+        ]
+    )
+
+    result = runner.invoke(</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="435" cache_read_input_tokens="47580" cache_creation="{'ephemeral_5m_input_tokens': 435, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01RDJbxW54EpRUrYj5vDYzr4">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_add_plan_labels.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_013M1MgzhzDZgAYoiqfWxmur">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_add_plan_labels.py</param>
+    <param name="old_string">    batch_input = json.dumps([{"plan_number": 42}])  # Missing 'label'</param>
+    <param name="new_string">    batch_input = json.dumps([{"pr_number": 42}])  # Missing 'label'</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="305" cache_read_input_tokens="48015" cache_creation="{'ephemeral_5m_input_tokens': 305, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013M1MgzhzDZgAYoiqfWxmur">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_add_plan_labels.py has been updated successfully.
+  </tool_result>
+  <assistant>**3. test_close_prs.py - lines 55-56 (input), lines 73, 75 (output), lines 95-96 (input), line 145 (input):**</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="329" cache_read_input_tokens="48320" cache_creation="{'ephemeral_5m_input_tokens': 329, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_012KzSBTV3N76wfQT3yULnDx">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_close_prs.py</param>
+    <param name="old_string">    batch_input = json.dumps(
+        [
+            {"plan_number": 42, "comment": "Closin...[truncated 27 chars]...mment": "Closing plan B"},
+        ]
+    )
+
+    result = runner.invoke(
+        close_prs,</param>
+    <param name="new_string">    batch_input = json.dumps(
+        [
+            {"pr_number": 42, "comment": "Closing ...[truncated 23 chars]...mment": "Closing plan B"},
+        ]
+    )
+
+    result = runner.invoke(
+        close_prs,</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="329" cache_read_input_tokens="48320" cache_creation="{'ephemeral_5m_input_tokens': 329, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012KzSBTV3N76wfQT3yULnDx">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_close_prs.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_014joNxeZkNyZokB575F4fCA">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_close_prs.py</param>
+    <param name="old_string">    assert result.exit_code == 0, f"Failed: {result.output}"
+    output = json.loads(resul...[truncated 183 chars]...tput["results"][1]["plan_number"] == 43
+    assert output["results"][1]["success"] is True</param>
+    <param name="new_string">    assert result.exit_code == 0, f"Failed: {result.output}"
+    output = json.loads(resul...[truncated 179 chars]...output["results"][1]["pr_number"] == 43
+    assert output["results"][1]["success"] is True</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="364" cache_read_input_tokens="48649" cache_creation="{'ephemeral_5m_input_tokens': 364, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014joNxeZkNyZokB575F4fCA">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_close_prs.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01F2r6a23yNaWjg41Z4zVzEB">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_close_prs.py</param>
+    <param name="old_string">    batch_input = json.dumps(
+        [
+            {"plan_number": 42, "comment": "Closin...[truncated 30 chars]...ent": "This should fail"},
+        ]
+    )
+
+    result = runner.invoke(
+        close_prs,</param>
+    <param name="new_string">    batch_input = json.dumps(
+        [
+            {"pr_number": 42, "comment": "Closing ...[truncated 26 chars]...ent": "This should fail"},
+        ]
+    )
+
+    result = runner.invoke(
+        close_prs,</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="500" cache_read_input_tokens="49013" cache_creation="{'ephemeral_5m_input_tokens': 500, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01F2r6a23yNaWjg41Z4zVzEB">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_close_prs.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01NTcHsLuV6QuzKrNfBPiEc2">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_close_prs.py</param>
+    <param name="old_string">    batch_input = json.dumps([{"plan_number": 42}])  # Missing 'comment'</param>
+    <param name="new_string">    batch_input = json.dumps([{"pr_number": 42}])  # Missing 'comment'</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="312" cache_read_input_tokens="49513" cache_creation="{'ephemeral_5m_input_tokens': 312, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01NTcHsLuV6QuzKrNfBPiEc2">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_close_prs.py has been updated successfully.
+  </tool_result>
+  <assistant>**4. test_close_pr.py - lines 68, 138:**</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="222" cache_read_input_tokens="49825" cache_creation="{'ephemeral_5m_input_tokens': 222, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_016oLSk4N7AjM2xMvAKzw7W6">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_close_pr.py</param>
+    <param name="old_string">    assert result.exit_code == 0, f"Failed: {result.output}"
+    output = json.loads(resul...[truncated 114 chars]...g ID from FakeLocalGitHub (starts at 1000000)
+    assert output["comment_id"] == "1000000"</param>
+    <param name="new_string">    assert result.exit_code == 0, f"Failed: {result.output}"
+    output = json.loads(resul...[truncated 112 chars]...g ID from FakeLocalGitHub (starts at 1000000)
+    assert output["comment_id"] == "1000000"</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="222" cache_read_input_tokens="49825" cache_creation="{'ephemeral_5m_input_tokens': 222, 'ephemeral_1h_input_tokens': 0}" output_tokens="339" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016oLSk4N7AjM2xMvAKzw7W6">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_close_pr.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_014aeRUMB64MVzinjtXqp5Zp">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_close_pr.py</param>
+    <param name="old_string">    assert result.exit_code == 0
+    output = json.loads(result.output)
+    assert output[...[truncated 33 chars]...= 100
+
+    # Verify the full comment was preserved (via FakeLocalGitHub.create_pr_comment)</param>
+    <param name="new_string">    assert result.exit_code == 0
+    output = json.loads(result.output)
+    assert output[...[truncated 31 chars]...= 100
+
+    # Verify the full comment was preserved (via FakeLocalGitHub.create_pr_comment)</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="493" cache_read_input_tokens="50047" cache_creation="{'ephemeral_5m_input_tokens': 493, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014aeRUMB64MVzinjtXqp5Zp">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_close_pr.py has been updated successfully.
+  </tool_result>
+  <assistant>**5. test_detect_plan_from_branch.py - line 47, line 74:**</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="304" cache_read_input_tokens="50540" cache_creation="{'ephemeral_5m_input_tokens': 304, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01UG5CwuYt4NxkKCnT5Cw72q">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_detect_plan_from_branch.py</param>
+    <param name="old_string">    result = _detect_plan_from_branch_impl(
+        current_branch="plnd/fix-auth-bug-01-1...[truncated 27 chars]...    assert result == {"found": True, "plan_number": 7890, "detection_method": "pr_lookup"}</param>
+    <param name="new_string">    result = _detect_plan_from_branch_impl(
+        current_branch="plnd/fix-auth-bug-01-1...[truncated 25 chars]...)
+    assert result == {"found": True, "pr_number": 7890, "detection_method": "pr_lookup"}</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="304" cache_read_input_tokens="50540" cache_creation="{'ephemeral_5m_input_tokens': 304, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01UG5CwuYt4NxkKCnT5Cw72q">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_detect_plan_from_branch.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_017Xuzsng5HaGH11oB2MpoRM">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_detect_plan_from_branch.py</param>
+    <param name="old_string">    result = _detect_plan_from_branch_impl(
+        current_branch="P100-feature",
+       ...[truncated 12 chars]...  assert result["plan_number"] == 200
+    assert result["detection_method"] == "pr_lookup"</param>
+    <param name="new_string">    result = _detect_plan_from_branch_impl(
+        current_branch="P100-feature",
+       ...[truncated 10 chars]...    assert result["pr_number"] == 200
+    assert result["detection_method"] == "pr_lookup"</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="466" cache_read_input_tokens="50844" cache_creation="{'ephemeral_5m_input_tokens': 466, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017Xuzsng5HaGH11oB2MpoRM">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_detect_plan_from_branch.py has been updated successfully.
+  </tool_result>
+  <assistant>**6. test_objective_save_to_issue.py - lines 56, 321, 334, 503:**</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="310" cache_read_input_tokens="51310" cache_creation="{'ephemeral_5m_input_tokens': 310, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01WQtKks2SpEFnBPMT7E58vw">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_objective_save_to_issue.py</param>
+    <param name="old_string">    assert result.exit_code == 0, f"Failed: {result.output}"
+    output = json.loads(resul...[truncated 19 chars]...is True
+    assert output["plan_number"] == 1
+    assert output["title"] == "My Objective"</param>
+    <param name="new_string">    assert result.exit_code == 0, f"Failed: {result.output}"
+    output = json.loads(resul...[truncated 17 chars]...] is True
+    assert output["pr_number"] == 1
+    assert output["title"] == "My Objective"</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="310" cache_read_input_tokens="51310" cache_creation="{'ephemeral_5m_input_tokens': 310, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01WQtKks2SpEFnBPMT7E58vw">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_objective_save_to_issue.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01X5cWBeWTdGHDcrJpjCozwS">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_objective_save_to_issue.py</param>
+    <param name="old_string">        assert result1.exit_code == 0, f"First call failed: {result1.output}"
+        outp...[truncated 67 chars]...rt output1["plan_number"] == 1
+        assert output1.get("skipped_duplicate") is not True</param>
+    <param name="new_string">        assert result1.exit_code == 0, f"First call failed: {result1.output}"
+        outp...[truncated 65 chars]...sert output1["pr_number"] == 1
+        assert output1.get("skipped_duplicate") is not True</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="443" cache_read_input_tokens="51620" cache_creation="{'ephemeral_5m_input_tokens': 443, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01X5cWBeWTdGHDcrJpjCozwS">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_objective_save_to_issue.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01D5rEY6uH7k9ZHaFLzqe6F4">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_objective_save_to_issue.py</param>
+    <param name="old_string">        assert result2.exit_code == 0, f"Second call failed: {result2.output}"
+        out...[truncated 146 chars]...pped_duplicate"] is True
+        assert "already saved objective #1" in output2["message"]</param>
+    <param name="new_string">        assert result2.exit_code == 0, f"Second call failed: {result2.output}"
+        out...[truncated 144 chars]...pped_duplicate"] is True
+        assert "already saved objective #1" in output2["message"]</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="334" cache_read_input_tokens="52063" cache_creation="{'ephemeral_5m_input_tokens': 334, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01D5rEY6uH7k9ZHaFLzqe6F4">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_objective_save_to_issue.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01BJjcZhWaaBpubFhqZLEnJd">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_objective_save_to_issue.py</param>
+    <param name="old_string">    assert result.exit_code == 0, f"Failed: {result.output}"
+    output = json.loads(resul...[truncated 272 chars]...
+    assert "schema_version: '4'" in created_body or 'schema_version: "4"' in created_body</param>
+    <param name="new_string">    assert result.exit_code == 0, f"Failed: {result.output}"
+    output = json.loads(resul...[truncated 308 chars]...
+    assert "schema_version: '4'" in created_body or 'schema_version: "4"' in created_body</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="370" cache_read_input_tokens="52397" cache_creation="{'ephemeral_5m_input_tokens': 370, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01BJjcZhWaaBpubFhqZLEnJd">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_objective_save_to_issue.py has been updated successfully.
+  </tool_result>
+  <assistant>**7. test_plan_save.py - line 64, line 915:**</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="576" cache_read_input_tokens="52767" cache_creation="{'ephemeral_5m_input_tokens': 576, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01Gi7g6oppG2aJf7YCUKJNWG">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_plan_save.py</param>
+    <param name="old_string">    assert result.exit_code == 0, f"Failed: {result.output}"
+    output = json.loads(resul...[truncated 6 chars]...t["success"] is True
+    assert "plan_number" in output
+    assert "branch_name" in output</param>
+    <param name="new_string">    assert result.exit_code == 0, f"Failed: {result.output}"
+    output = json.loads(resul...[truncated 4 chars]...put["success"] is True
+    assert "pr_number" in output
+    assert "branch_name" in output</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="576" cache_read_input_tokens="52767" cache_creation="{'ephemeral_5m_input_tokens': 576, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Gi7g6oppG2aJf7YCUKJNWG">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_plan_save.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01FWNTiyGDKFsfU4dMZs7mBR">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_plan_save.py</param>
+    <param name="old_string">    assert result.exit_code == 0, f"Failed: {result.output}"
+    output = json.loads(resul...[truncated 407 chars]...()
+    assert first_line == str(output["plan_number"]), "first line should be plan number"</param>
+    <param name="new_string">    assert result.exit_code == 0, f"Failed: {result.output}"
+    output = json.loads(resul...[truncated 405 chars]...ip()
+    assert first_line == str(output["pr_number"]), "first line should be plan number"</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="312" cache_read_input_tokens="53343" cache_creation="{'ephemeral_5m_input_tokens': 312, 'ephemeral_1h_input_tokens': 0}" output_tokens="490" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01FWNTiyGDKFsfU4dMZs7mBR">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_plan_save.py has been updated successfully.
+  </tool_result>
+  <assistant>**8. test_plan_update.py - line 89:**</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="644" cache_read_input_tokens="53655" cache_creation="{'ephemeral_5m_input_tokens': 644, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_012TGXMpaqAu3E2DBsqPp5AG">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_plan_update.py</param>
+    <param name="old_string">    assert result.exit_code == 0, f"Failed: {result.output}"
+    output = json.loads(resul...[truncated 32 chars]...ssert output["plan_number"] == 42
+
+    assert output["title"] == "[erk-plan] Updated Plan"</param>
+    <param name="new_string">    assert result.exit_code == 0, f"Failed: {result.output}"
+    output = json.loads(resul...[truncated 30 chars]... assert output["pr_number"] == 42
+
+    assert output["title"] == "[erk-plan] Updated Plan"</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="644" cache_read_input_tokens="53655" cache_creation="{'ephemeral_5m_input_tokens': 644, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012TGXMpaqAu3E2DBsqPp5AG">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_plan_update.py has been updated successfully.
+  </tool_result>
+  <assistant>Perfect! Now let me verify the changes by running a quick check on each file to ensure the edits were applied correctly:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="326" cache_read_input_tokens="54299" cache_creation="{'ephemeral_5m_input_tokens': 326, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01MAzuwQxKbaLtnMuugY5c57">
+    <param name="command">grep -n "pr_number\|plan_number" tests/unit/cli/commands/exec/scripts/test_add_plan_label.py | head -5</param>
+    <param name="description">Verify test_add_plan_label.py changes</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="326" cache_read_input_tokens="54299" cache_creation="{'ephemeral_5m_input_tokens': 326, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01MHjgGni9kE6eiSN719u3BA">
+    <param name="command">grep -n '"pr_number"' tests/unit/cli/commands/exec/scripts/test_add_plan_labels.py | wc -l</param>
+    <param name="description">Count pr_number occurrences in test_add_plan_labels.py</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="326" cache_read_input_tokens="54299" cache_creation="{'ephemeral_5m_input_tokens': 326, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01NE4o5NbchCkzezEgSj7WTN">
+    <param name="command">grep -n '"pr_number"' tests/unit/cli/commands/exec/scripts/test_close_prs.py | wc -l</param>
+    <param name="description">Count pr_number occurrences in test_close_prs.py</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="326" cache_read_input_tokens="54299" cache_creation="{'ephemeral_5m_input_tokens': 326, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01BrpZneM4hCGvWLZ9QHQFk3">
+    <param name="command">grep -n "pr_number" tests/unit/cli/commands/exec/scripts/test_close_pr.py</param>
+    <param name="description">Verify test_close_pr.py changes</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="326" cache_read_input_tokens="54299" cache_creation="{'ephemeral_5m_input_tokens': 326, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01BrpZneM4hCGvWLZ9QHQFk3">
+68:    assert output["pr_number"] == 42
+75:    pr_number, comment_body = fake_github.pr_comments[0]
+76:    assert pr_number == 42
+138:    assert output["pr_number"] == 100
+141:    pr_number, comment_body = fake_github.pr_comments[0]
+142:    assert pr_number == 100
+  </tool_result>
+  <tool_result tool="toolu_01MAzuwQxKbaLtnMuugY5c57">
+49:    assert output["pr_number"] == int(create_result.pr_id)
+  </tool_result>
+  <tool_result tool="toolu_01MHjgGni9kE6eiSN719u3BA">
+7
+  </tool_result>
+  <tool_result tool="toolu_01NE4o5NbchCkzezEgSj7WTN">
+7
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01VNVQwShxLmMVLCUgXe9iWe">
+    <param name="command">grep -n "pr_number" tests/unit/cli/commands/exec/scripts/test_detect_plan_from_branch.py</param>
+    <param name="description">Verify test_detect_plan_from_branch.py changes</param>
+  </tool_use>
+  <usage input_tokens="118" cache_creation_input_tokens="641" cache_read_input_tokens="54625" cache_creation="{'ephemeral_5m_input_tokens': 641, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01GperNeS9s4ih1HDjTHo2Fe">
+    <param name="command">grep -n '"pr_number"' tests/unit/cli/commands/exec/scripts/test_objective_save_to_issue.py | head -10</param>
+    <param name="description">Verify test_objective_save_to_issue.py changes</param>
+  </tool_use>
+  <usage input_tokens="118" cache_creation_input_tokens="641" cache_read_input_tokens="54625" cache_creation="{'ephemeral_5m_input_tokens': 641, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01CRdWJfz7CeERCgEM79fWx5">
+    <param name="command">grep -n "pr_number\|plan_number" tests/unit/cli/commands/exec/scripts/test_plan_save.py | head -5</param>
+    <param name="description">Verify test_plan_save.py changes</param>
+  </tool_use>
+  <usage input_tokens="118" cache_creation_input_tokens="641" cache_read_input_tokens="54625" cache_creation="{'ephemeral_5m_input_tokens': 641, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01BeeUYsw86efeyvcpjSqMot">
+    <param name="command">grep -n "pr_number" tests/unit/cli/commands/exec/scripts/test_plan_update.py</param>
+    <param name="description">Verify test_plan_update.py changes</param>
+  </tool_use>
+  <usage input_tokens="118" cache_creation_input_tokens="641" cache_read_input_tokens="54625" cache_creation="{'ephemeral_5m_input_tokens': 641, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01GperNeS9s4ih1HDjTHo2Fe">
+56:    assert output["pr_number"] == 1
+321:        assert output1["pr_number"] == 1
+334:        assert output2["pr_number"] == 1  # Same plan number
+465:    assert output["pr_number"] == 1
+  </tool_result>
+  <tool_result tool="toolu_01VNVQwShxLmMVLCUgXe9iWe">
+47:    assert result == {"found": True, "pr_number": 7890, "detection_method": "pr_lookup"}
+74:    assert result["pr_number"] == 200
+  </tool_result>
+  <tool_result tool="toolu_01CRdWJfz7CeERCgEM79fWx5">
+64:    assert "pr_number" in output
+915:    assert first_line == str(output["pr_number"]), "first line should be plan number"
+  </tool_result>
+  <tool_result tool="toolu_01BeeUYsw86efeyvcpjSqMot">
+89:    assert output["pr_number"] == 42
+  </tool_result>
+  <assistant>Excellent! All the edits have been successfully applied. Let me verify that there are no remaining old field names that should have been changed:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="880" cache_read_input_tokens="55266" cache_creation="{'ephemeral_5m_input_tokens': 880, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01GQCeoky2cRSiBzBLUeTstm">
+    <param name="command">grep -n '"plan_number"' tests/unit/cli/commands/exec/scripts/test_add_plan_label.py tests/...[truncated 367 chars]...cripts/test_plan_update.py 2&gt;/dev/null || echo "No old plan_number field references found"</param>
+    <param name="description">Check for any remaining old plan_number references in modified files</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="880" cache_read_input_tokens="55266" cache_creation="{'ephemeral_5m_input_tokens': 880, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01GQCeoky2cRSiBzBLUeTstm">
+tests/unit/cli/commands/exec/scripts/test_objective_save_to_issue.py:504:    assert output["plan_number"] == 1
+  </tool_result>
+  <assistant>I found one more instance in test_objective_save_to_issue.py. Let me check the context and fix it:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="351" cache_read_input_tokens="56146" cache_creation="{'ephemeral_5m_input_tokens': 351, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_014bJUQNgaC6NZ7iQg2F82iC">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_objective_save_to_issue.py</param>
+    <param name="offset">500</param>
+    <param name="limit">10</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="351" cache_read_input_tokens="56146" cache_creation="{'ephemeral_5m_input_tokens': 351, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014bJUQNgaC6NZ7iQg2F82iC">
+   500→
+   501→    assert result.exit_code == 0, f"Failed: {result.output}"
+   502→    output = json.loads(result.output)
+   503→    assert output["success"] is True
+   504→    assert output["plan_number"] == 1
+   505→    assert "validation" in output
+   506→    assert isinstance(output["validation"]["passed"], bool)
+   507→    assert isinstance(output["validation"]["checks"], list)
+   508→
+   509→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>Let me fix this one more occurrence:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="463" cache_read_input_tokens="56497" cache_creation="{'ephemeral_5m_input_tokens': 463, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01RwYLpj9HrRdRbkDEEjfntm">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_objective_save_to_issue.py</param>
+    <param name="old_string">    assert result.exit_code == 0, f"Failed: {result.output}"
+    output = json.loads(resul...[truncated 8 chars]..."success"] is True
+    assert output["plan_number"] == 1
+    assert "validation" in output</param>
+    <param name="new_string">    assert result.exit_code == 0, f"Failed: {result.output}"
+    output = json.loads(resul...[truncated 6 chars]...t["success"] is True
+    assert output["pr_number"] == 1
+    assert "validation" in output</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="463" cache_read_input_tokens="56497" cache_creation="{'ephemeral_5m_input_tokens': 463, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01RwYLpj9HrRdRbkDEEjfntm">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_objective_save_to_issue.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me do a final comprehensive check:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="309" cache_read_input_tokens="56960" cache_creation="{'ephemeral_5m_input_tokens': 309, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01Fch9M9P6SJZJhq4cZTZ6Ag">
+    <param name="command">grep -rn '"plan_number"' tests/unit/cli/commands/exec/scripts/test_add_plan_label.py tests...[truncated 386 chars]...pdate.py 2&gt;/dev/null | grep -v "# " || echo "All plan_number references have been updated"</param>
+    <param name="description">Final check for any remaining plan_number JSON field references</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="309" cache_read_input_tokens="56960" cache_creation="{'ephemeral_5m_input_tokens': 309, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Fch9M9P6SJZJhq4cZTZ6Ag">
+All plan_number references have been updated
+  </tool_result>
+  <assistant>Perfect! Let me create a summary of all the changes made:
+
+## Summary
+
+I have successfully updated all the test files to rename JSON output field names from `plan_number` to `pr_number`, matching the changes made to the exec scripts. Here's a complete list of the changes:
+
+### Files Updated:
+
+1. **test_add_plan_label.py** (1 change)
+   - Line 49: `output["plan_number"]` → `output["pr_number"]`
+
+2. **test_add_plan_labels.py** (7 changes)
+   - Lines 55-56: Input JSON `"plan_number"` → `"pr_number"` (2 instances)
+   - Lines 73, 76: Output assertions `output["results"][...]["plan_number"]` → `output["results"][...]["pr_number"]` (2 instances)
+   - Lines 92-93: Input JSON `"plan_number"` → `"pr_number"` (2 instances)
+   - Line 141: Input JSON `"plan_number"` → `"pr_number"`
+
+3. **test_close_prs.py** (7 changes)
+   - Lines 55-56: Input JSON `"plan_number"` → `"pr_number"` (2 instances)
+   - Lines 73, 75: Output assertions `output["results"][...]["plan_number"]` → `output["results"][...]["pr_number"]` (2 instances)
+   - Lines 95-96: Input JSON `"plan_number"` → `"pr_number"` (2 instances)
+   - Line 145: Input JSON `"plan_number"` → `"pr_number"`
+
+4. **test_close_pr.py** (2 changes)
+   - Line 68: `output["plan_number"]` → `output["pr_number"]`
+   - Line 138: `output["plan_number"]` → `output["pr_number"]`
+
+5. **test_detect_plan_from_branch.py** (2 changes)
+   - Line 47: Expected dict `"plan_number": 7890` → `"pr_number": 7890`
+   - Line 74: `result["plan_number"]` → `result["pr_number"]`
+
+6. **test_objective_save_to_issue.py** (5 changes)
+   - Line 56: `output["plan_number"]` → `output["pr_number"]`
+   - Line 321: `output1["plan_number"]` → `output1["pr_number"]`
+   - Line 334: `output2["plan_number"]` → `output2["pr_number"]`
+   - Line 465: `output["plan_number"]` → `output["pr_number"]`
+   - Line 504: `output["plan_number"]` → `output["pr_number"]`
+
+7. **test_plan_save.py** (2 changes)
+   - Line 64: `"plan_number" in output` → `"pr_number" in output`
+   - Line 915: `output["plan_number"]` → `output["pr_number"]`
+
+8. **test_plan_update.py** (1 change)
+   - Line 89: `output["plan_number"]` → `output["pr_number"]`
+
+All changes were made precisely according to the requirements:
+- Only JSON output field names were renamed (not internal test infrastructure or fixture fields)
+- Input JSON data was also updated since the scripts now expect the new field names
+- Comments mentioning "plan number" were left unchanged to maintain clarity about what the field represents</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="411" cache_read_input_tokens="57269" cache_creation="{'ephemeral_5m_input_tokens': 411, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>

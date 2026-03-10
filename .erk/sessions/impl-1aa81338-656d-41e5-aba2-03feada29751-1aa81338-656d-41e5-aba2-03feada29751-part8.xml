@@ -1,0 +1,51 @@
+<session>
+  <meta source="agent-a398c89" />
+  <meta branch="plnd/O9109-rename-exec-json-fie-03-10-0015" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <assistant>Perfect! All the changes have been successfully applied. Let me create a summary document:
+
+## Summary
+
+I have successfully completed the bulk rename of JSON output field names in the Python exec scripts. Here's what was changed:
+
+### Part A: Renamed `"plan_url"` → `"pr_url"` (5 files, 8 locations)
+
+1. **plan_update.py** (line 169)
+   - Changed: `"plan_url": plan_result.url,` → `"pr_url": plan_result.url,`
+
+2. **plan_save.py** (line 348)
+   - Changed: `"plan_url": result.url,` → `"pr_url": result.url,`
+
+3. **create_impl_context_from_plan.py** (line 89)
+   - Changed: `"plan_url": plan.url,` → `"pr_url": plan.url,`
+
+4. **setup_impl_from_pr.py** (3 locations)
+   - Line 211: `"plan_url": pr_url,` → `"pr_url": pr_url,`
+   - Line 257: `"plan_url": existing_ref.url,` → `"pr_url": existing_ref.url,`
+   - Line 298: `"plan_url": pr_url,` → `"pr_url": pr_url,`
+
+5. **create_pr_from_session.py** (2 locations)
+   - Line 12 (docstring): Updated JSON example from `"plan_url"` to `"pr_url"`
+   - Line 124: `"plan_url": result.pr_url,` → `"pr_url": result.pr_url,`
+
+### Part B: Renamed `"plan_title"` → `"pr_title"` (2 files, 4 locations)
+
+1. **setup_impl_from_pr.py** (3 locations)
+   - Line 213: `"plan_title": plan_title,` → `"pr_title": plan_title,`
+   - Line 259: `"plan_title": "",` → `"pr_title": "",`
+   - Line 300: `"plan_title": pr_result.title,` → `"pr_title": pr_result.title,`
+
+2. **incremental_dispatch.py** (line 167)
+   - Changed: `"plan_title": pr_result.title,` → `"pr_title": pr_result.title,`
+
+**Important note:** Only STRING KEYS in JSON dicts were renamed. Python variable names like `plan_title` (the variable itself, not the dict key) were left unchanged, as well as docstring examples that weren't in the specified locations.
+
+All files are located at:
+- `/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/plan_update.py`
+- `/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/plan_save.py`
+- `/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/create_impl_context_from_plan.py`
+- `/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/setup_impl_from_pr.py`
+- `/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/create_pr_from_session.py`
+- `/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/incremental_dispatch.py`</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="254" cache_read_input_tokens="59521" cache_creation="{'ephemeral_5m_input_tokens': 254, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>

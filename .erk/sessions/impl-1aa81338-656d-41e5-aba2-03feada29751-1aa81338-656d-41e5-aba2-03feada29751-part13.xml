@@ -1,0 +1,887 @@
+<session>
+  <meta source="agent-a9bee25" />
+  <meta branch="plnd/O9109-rename-exec-json-fie-03-10-0015" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>Update test files that verify JSON output from exec scripts. The exec scripts have been updated to rename JSON output field names:
+- `"plan_number"` → `"pr_number"` (in output dicts)
+- `"plan_id"` → `"pr_number"` (in output dicts)
+- `"plan_url"` → `"pr_url"` (in output dicts)
+- `"plan_title"` → `"pr_title"` (in output dicts)
+
+Now the tests need to match.
+
+RULES:
+- Only rename strings that assert/check JSON output from exec scripts
+- Do NOT rename plan_ref fixture data (like plan_ref.json contents, which use `plan_id` internally)
+- Do NOT rename things from non-exec-script code (like gateway output, TUI data providers, etc.)
+
+Files to update:
+
+1. `/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_create_impl_context_from_plan.py`:
+   - line 78: `output["plan_id"]` → `output["pr_number"]`
+   - line 80: `output["plan_url"]` → `output["pr_url"]`
+   NOTE: line 94 `ref_data["plan_id"]` — this is plan_ref internal data, do NOT change
+
+2. `/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_get_learn_sessions.py`:
+   - line 71: `output["plan_id"]` → `output["pr_number"]`
+   - line 140: `output["plan_id"]` → `output["pr_number"]`
+   - line 246: `"plan_id" in output` → `"pr_number" in output`
+   - line 258: `output["plan_id"]` → `output["pr_number"]`
+   NOTE: line 665 `"plan_id": 700` is inside a manifest fixture (pushed session data). The push_session script now outputs `"pr_number"` instead of `"plan_id"`, so this SHOULD be renamed to `"pr_number": 700`.
+   NOTE: line 710 `output["preprocessed_manifest"]["plan_id"]` → `output["preprocessed_manifest"]["pr_number"]`
+
+3. `/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_fetch_sessions.py`:
+   - line 56: `"plan_id": 42` — this is a manifest fixture created by push_session. Since push_session now writes `"pr_number"`, change to `"pr_number": 42`
+   - line 116: `output["plan_id"]` → `output["pr_number"]`
+
+4. `/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_get_plan_info.py`:
+   - line 62: `output["plan_id"]` → `output["pr_number"]`
+
+5. `/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_track_learn_result.py`:
+   - lines 58, 98, 208: `output["plan_id"]` → `output["pr_number"]`
+
+6. `/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_push_session.py`:
+   - line 130: `output["plan_id"]` → `output["pr_number"]`
+   - line 153: `manifest["plan_id"]` → `manifest["pr_number"]`
+   - line 187: `"plan_id": 42` → `"pr_number": 42` (in existing manifest fixture)
+   - line 267: `"plan_id": 42` → `"pr_number": 42` (in existing manifest fixture)
+
+7. `/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_setup_impl_from_pr.py`:
+   - line 376: `output["plan_title"]` → `output["pr_title"]`
+   - line 562: `result["plan_title"]` → `result["pr_title"]`
+   - line 591: `result["plan_title"]` → `result["pr_title"]`
+   - line 614: `result["plan_title"]` → `result["pr_title"]`
+
+8. `/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_incremental_dispatch.py`:
+   - line 88: `inputs["plan_id"]` → `inputs["pr_number"]` (but also check: the original `inputs` dict had BOTH `"plan_id"` and `"pr_number"` — now only `"pr_number"` remains, so this assertion should just check `inputs["pr_number"]`)
+
+Read each file, then apply the edits. Be precise with old_string to ensure uniqueness.</user>
+  <assistant>I'll help you update the test files to reflect the JSON output field name changes from the exec scripts. Let me start by reading each file and then making the necessary updates.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="7052" cache_read_input_tokens="10086" cache_creation="{'ephemeral_5m_input_tokens': 7052, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01VGW92P9rVqB9MLD8VrZmVy">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_create_impl_context_from_plan.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="7052" cache_read_input_tokens="10086" cache_creation="{'ephemeral_5m_input_tokens': 7052, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01XU4rvjFDctvTRBZ5RdGGYx">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_get_learn_sessions.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="7052" cache_read_input_tokens="10086" cache_creation="{'ephemeral_5m_input_tokens': 7052, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01EkSFzwcvY16NrNYYy6pDTs">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_fetch_sessions.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="7052" cache_read_input_tokens="10086" cache_creation="{'ephemeral_5m_input_tokens': 7052, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01KyYde8k25rLqtZaQoBikyd">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_get_plan_info.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="7052" cache_read_input_tokens="10086" cache_creation="{'ephemeral_5m_input_tokens': 7052, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01QGaEj2ApTe7d8ruXRfyPrz">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_track_learn_result.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="7052" cache_read_input_tokens="10086" cache_creation="{'ephemeral_5m_input_tokens': 7052, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01LzKEjWoETzZVSvcUvTvc8Q">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_push_session.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="7052" cache_read_input_tokens="10086" cache_creation="{'ephemeral_5m_input_tokens': 7052, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_013gSStcdWCL22pCd6FwdLsy">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_setup_impl_from_pr.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="7052" cache_read_input_tokens="10086" cache_creation="{'ephemeral_5m_input_tokens': 7052, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01HYh9wMcmp16Cj3K6ZZuqud">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_incremental_dispatch.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="7052" cache_read_input_tokens="10086" cache_creation="{'ephemeral_5m_input_tokens': 7052, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01VGW92P9rVqB9MLD8VrZmVy">
+     1→"""Unit tests for create-impl-context-from-plan command.
+     2→
+     3→Layer 2: Tests using fakes via ErkContext.for_test().
+     4→
+     5→Tests verify the command fetches a plan via PlanBackend and creates
+     6→.erk/impl-context/ folder structure with plan.md and ref.json.
+     7→"""
+     8→
+     9→import json
+    10→from datetime import UTC, datetime
+    11→from pathlib import Path
+    12→
+    13→from click.testing import CliRunner
+    14→
+    15→from erk.cli.commands.exec.scripts.create_impl_context_from_plan import (
+    16→    create_impl_context_from_plan,
+    17→)
+    18→from erk_shared.context.context import ErkContext
+    19→from erk_shared.gateway.github.fake import FakeLocalGitHub
+    20→from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+    21→from erk_shared.gateway.github.issues.types import IssueInfo
+    22→from erk_shared.gateway.time.fake import FakeTime
+    23→from erk_shared.plan_store.planned_pr import PlannedPRBackend
+    24→from tests.test_utils.plan_helpers import issue_info_to_pr_details
+    25→
+    26→
+    27→def _make_plan_issue(
+    28→    *,
+    29→    number: int,
+    30→    body: str,
+
+... [135 lines omitted] ...
+
+    75→    assert result.exit_code == 0, f"Command failed: {result.output}"
+   100→def test_plan_not_found_exits_with_error(tmp_path: Path) -&gt; None:
+   101→    """Test error output when plan does not exist."""
+   117→    # Error output goes to stderr
+   118→    error_output = json.loads(result.output)
+   119→    assert error_output["success"] is False
+   120→    assert error_output["error"] == "plan_not_found"
+   154→    assert result.exit_code == 0, f"Command failed: {result.output}"
+  </tool_result>
+  <tool_result tool="toolu_01EkSFzwcvY16NrNYYy6pDTs">
+     1→"""Unit tests for fetch-sessions command."""
+     2→
+     3→import json
+     4→from pathlib import Path
+     5→
+     6→from click.testing import CliRunner
+     7→
+     8→from erk.cli.commands.exec.scripts.fetch_sessions import fetch_sessions
+     9→from erk_shared.context.context import ErkContext
+    10→from erk_shared.gateway.git.fake import FakeGit
+    11→
+    12→
+    13→class TestFetchSessionsBranchNotFound:
+    14→    """Tests for fetch-sessions when the planned-pr-context branch doesn't exist."""
+    15→
+    16→    def test_branch_not_found(self, tmp_path: Path) -&gt; None:
+    17→        """Error when planned-pr-context branch doesn't exist on remote."""
+    18→        repo_root = tmp_path / "repo"
+    19→        repo_root.mkdir()
+    20→        output_dir = tmp_path / "learn"
+    21→        fake_git = FakeGit(
+    22→            current_branches={repo_root: "plan/my-feature"},
+    23→            local_branches={repo_root: []},
+    24→            remote_branches={repo_root: []},
+    25→        )
+    26→        runner = CliRunner()
+    27→
+    28→        result = runner.invoke(
+    29→            fetch_sessions,
+    30→            [
+
+... [132 lines omitted] ...
+
+    42→        assert output["error"] == "branch_not_found"
+   113→        assert result.exit_code == 0, f"Failed: {result.output}"
+   130→        """Error when manifest.json not found on branch."""
+   156→        assert output["error"] == "manifest_not_found"
+  </tool_result>
+  <tool_result tool="toolu_01KyYde8k25rLqtZaQoBikyd">
+     1→"""Unit tests for get_plan_info exec command.
+     2→
+     3→Tests backend-aware plan info retrieval using PlannedPRBackend and FakeLocalGitHub.
+     4→"""
+     5→
+     6→import json
+     7→from pathlib import Path
+     8→
+     9→from click.testing import CliRunner
+    10→
+    11→from erk.cli.commands.exec.scripts.get_plan_info import get_plan_info
+    12→from erk_shared.context.testing import context_for_test
+    13→from erk_shared.gateway.github.fake import FakeLocalGitHub
+    14→from erk_shared.gateway.time.fake import FakeTime
+    15→from erk_shared.plan_store.planned_pr import PlannedPRBackend
+    16→
+    17→
+    18→def _create_backend_with_plan(
+    19→    *, title: str = "Test Plan Title", content: str = "# Plan Content"
+    20→) -&gt; tuple[PlannedPRBackend, FakeLocalGitHub, str]:
+    21→    """Create a PlannedPRBackend with a single plan.
+    22→
+    23→    Returns:
+    24→        Tuple of (backend, fake_github, plan_id).
+    25→    """
+    26→    fake_github = FakeLocalGitHub()
+    27→    backend = PlannedPRBackend(fake_github, fake_github.issues, time=FakeTime())
+    28→
+    29→    result = backend.create_plan(
+    30→        repo_root=Path("/repo"),
+
+... [130 lines omitted] ...
+
+   136→# Error Cases
+   141→    """Test error when plan doesn't exist."""
+   153→    assert output["error"] == "plan_not_found"
+  </tool_result>
+  <tool_result tool="toolu_01QGaEj2ApTe7d8ruXRfyPrz">
+     1→"""Unit tests for track-learn-result exec script.
+     2→
+     3→Tests learn result tracking on plans.
+     4→Uses fakes for fast, reliable testing without subprocess calls.
+     5→"""
+     6→
+     7→import json
+     8→from pathlib import Path
+     9→
+    10→from click.testing import CliRunner
+    11→
+    12→from erk.cli.commands.exec.scripts.track_learn_result import track_learn_result
+    13→from erk_shared.context.context import ErkContext
+    14→from erk_shared.gateway.github.fake import FakeLocalGitHub
+    15→from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+    16→from erk_shared.gateway.github.metadata.core import find_metadata_block
+    17→from erk_shared.gateway.github.types import PRNotFound
+    18→from erk_shared.gateway.time.fake import FakeTime
+    19→from erk_shared.plan_store.planned_pr import PlannedPRBackend
+    20→from tests.test_utils.github_helpers import create_test_issue
+    21→from tests.test_utils.plan_helpers import (
+    22→    format_plan_header_body_for_test,
+    23→    issue_info_to_pr_details,
+    24→)
+    25→
+    26→# ============================================================================
+    27→# Success Cases (Layer 4: Business Logic over Fakes)
+    28→# ============================================================================
+    29→
+    30→
+
+... [303 lines omitted] ...
+
+   112→# Validation Error Cases
+   117→    """Test error when completed_with_plan is missing --learn-plan."""
+   147→    """Test error when completed_no_plan has --learn-plan."""
+   223→    """Test error when pending_review is missing --plan-pr."""
+   253→    """Test error when pending_review has --learn-plan."""
+   292→    """Test error when completed_with_plan has --plan-pr."""
+  </tool_result>
+  <tool_result tool="toolu_01LzKEjWoETzZVSvcUvTvc8Q">
+     1→"""Unit tests for push-session command."""
+     2→
+     3→import json
+     4→from pathlib import Path
+     5→from unittest.mock import patch
+     6→
+     7→from click.testing import CliRunner
+     8→
+     9→from erk.cli.commands.exec.scripts.push_session import push_session
+    10→from erk_shared.context.context import ErkContext
+    11→from erk_shared.gateway.git.fake import FakeGit
+    12→
+    13→
+    14→def _write_session_file(tmp_path: Path) -&gt; Path:
+    15→    """Create a test session JSONL file."""
+    16→    session_file = tmp_path / "session.jsonl"
+    17→    session_file.write_text('{"type": "test"}\n', encoding="utf-8")
+    18→    return session_file
+    19→
+    20→
+    21→def _make_xml_file(tmpdir: str, prefix: str) -&gt; None:
+    22→    """Write a fake XML file to the preprocessing output directory."""
+    23→    xml_path = Path(tmpdir) / f"{prefix}.xml"
+    24→    xml_path.write_text("&lt;session&gt;test&lt;/session&gt;", encoding="utf-8")
+    25→
+    26→
+    27→def _fake_preprocess_success(prefix: str):
+    28→    """Return a subprocess side_effect that fakes successful preprocessing."""
+    29→
+    30→    def fake_preprocess(*args, **kwargs):
+
+... [298 lines omitted] ...
+
+    47→class TestPushSessionPreprocessingFailed:
+    64→            mock_run.return_value.stderr = "preprocessing error"
+    86→        assert output["reason"] == "preprocessing_failed"
+   125→        assert result.exit_code == 0, f"Failed: {result.output}"
+   234→        assert result.exit_code == 0, f"Failed: {result.output}"
+   314→        assert result.exit_code == 0, f"Failed: {result.output}"
+  </tool_result>
+  <tool_result tool="toolu_01XU4rvjFDctvTRBZ5RdGGYx">
+     1→"""Unit tests for get-learn-sessions exec script.
+     2→
+     3→Tests session discovery for plans.
+     4→Uses fakes for fast, reliable testing without subprocess calls.
+     5→"""
+     6→
+     7→import json
+     8→from pathlib import Path
+     9→
+    10→from click.testing import CliRunner
+    11→
+    12→from erk.cli.commands.exec.scripts.get_learn_sessions import get_learn_sessions
+    13→from erk_shared.context.context import ErkContext
+    14→from erk_shared.gateway.claude_installation.fake import (
+    15→    FakeClaudeInstallation,
+    16→    FakeProject,
+    17→    FakeSessionData,
+    18→)
+    19→from erk_shared.gateway.git.fake import FakeGit
+    20→from erk_shared.gateway.github.fake import FakeLocalGitHub
+    21→from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+    22→from erk_shared.gateway.time.fake import FakeTime
+    23→from erk_shared.plan_store.planned_pr import PlannedPRBackend
+    24→from tests.test_utils.github_helpers import create_test_issue
+    25→from tests.test_utils.plan_helpers import (
+    26→    format_plan_header_body_for_test,
+    27→    issue_info_to_pr_details,
+    28→)
+    29→
+    30→
+
+... [688 lines omitted] ...
+
+   107→    assert "No issue specified" in output["error"]
+   144→# Error Cases (Layer 4: Business Logic over Fakes)
+   149→    """Test error when no issue provided and can't infer from branch."""
+   177→    assert "No issue specified" in output["error"]
+   181→    """Test error with invalid issue identifier."""
+   206→    assert "Invalid issue identifier" in output["error"]
+  </tool_result>
+  <tool_result tool="toolu_013gSStcdWCL22pCd6FwdLsy">
+     1→"""Tests for erk exec setup-impl-from-pr command."""
+     2→
+     3→import json
+     4→from pathlib import Path
+     5→
+     6→import click
+     7→import pytest
+     8→from click.testing import CliRunner
+     9→
+    10→from erk.cli.commands.exec.scripts.setup_impl_from_pr import (
+    11→    _get_current_branch,
+    12→    create_impl_context_from_pr,
+    13→    setup_impl_from_pr,
+    14→)
+    15→from erk_shared.context.context import ErkContext
+    16→from erk_shared.context.testing import context_for_test
+    17→from erk_shared.gateway.git.fake import FakeGit
+    18→from erk_shared.gateway.git.remote_ops.types import PullRebaseError
+    19→from erk_shared.gateway.github.fake import FakeLocalGitHub
+    20→from erk_shared.gateway.graphite.fake import FakeGraphite
+    21→from erk_shared.gateway.time.fake import FakeTime
+    22→from erk_shared.impl_folder import get_impl_dir, save_plan_ref
+    23→from erk_shared.plan_store.planned_pr import PlannedPRBackend
+    24→from erk_shared.plan_store.planned_pr_lifecycle import IMPL_CONTEXT_DIR
+    25→
+    26→BRANCH = "test/branch"
+    27→"""Test branch name used across tests."""
+    28→
+    29→
+    30→class TestGetCurrentBranch:
+
+... [624 lines omitted] ...
+
+    40→        """Raises ClickException when in detached HEAD state."""
+    42→        with pytest.raises(click.ClickException) as exc_info:
+    50→    def test_missing_issue_shows_error(self, tmp_path: Path) -&gt; None:
+    58→        # This test verifies the error handling for missing issues
+    63→            catch_exceptions=False,
+    69→        assert result.exit_code != 0 or "error" in result.output.lower()
+    80→        just verifies the flag is accepted without syntax errors.
+    88→        # but we verify the flag is accepted without a click.UsageError
+    95→        # Verify no usage error (flag was accepted)
+    97→        assert "Error: No such option:" not in result.output, "--no-impl should be a valid option"
+   190→    assert result.exit_code == 0, f"Command failed: {result.output}"
+   224→    assert result.exit_code == 0, f"Command failed: {result.output}"
+   283→    assert result.exit_code == 0, f"Command failed: {result.output}"
+   301→def test_planned_pr_plan_sync_failure_reports_error(tmp_path: Path) -&gt; None:
+   302→    """Pull-rebase failure exits with code 1 and reports error JSON."""
+   306→        pull_rebase_error=PullRebaseError(message="Rebase conflict"),
+   319→    # Error JSON is present in output
+   321→    assert json_lines, "Expected JSON error output in command output"
+   322→    error_data = json.loads(json_lines[0])
+   323→    assert error_data["success"] is False
+   324→    assert error_data["error"] == "pull_rebase_failed"
+   325→    assert "Rebase conflict" in error_data["message"]
+   359→    assert result.exit_code == 0, f"Command failed: {result.output}"
+   403→    assert result.exit_code == 0, f"Command failed: {result.output}"
+   430→    assert result.exit_code == 0, f"Command failed: {result.output}"
+   498→    invoke_result = runner.invoke(_wrapper, obj=ctx, catch_exceptions=False)
+   499→    assert invoke_result.exit_code == 0, f"Wrapper failed: {invoke_result.output}"
+   620→def test_planned_pr_pr_not_found_reports_error(tmp_path: Path) -&gt; None:
+   621→    """When the PR doesn't exist, report an error."""
+   646→    error_data = json.loads(json_lines[0])
+   647→    assert error_data["success"] is False
+   648→    assert "not found" in error_data["message"].lower()
+  </tool_result>
+  <tool_result tool="toolu_01HYh9wMcmp16Cj3K6ZZuqud">
+     1→"""Unit tests for incremental-dispatch command."""
+     2→
+     3→import json
+     4→from pathlib import Path
+     5→
+     6→from click.testing import CliRunner
+     7→
+     8→from erk.cli.commands.exec.scripts.incremental_dispatch import incremental_dispatch
+     9→from erk_shared.context.context import ErkContext
+    10→from erk_shared.context.testing import context_for_test
+    11→from erk_shared.gateway.git.abc import WorktreeInfo
+    12→from erk_shared.gateway.git.fake import FakeGit
+    13→from erk_shared.gateway.github.fake import FakeLocalGitHub
+    14→from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
+    15→from erk_shared.gateway.graphite.fake import FakeGraphite
+    16→from erk_shared.gateway.time.fake import FakeTime
+    17→from erk_shared.plan_store.planned_pr import PlannedPRBackend
+    18→from tests.test_utils.plan_helpers import format_plan_header_body_for_test
+    19→
+    20→
+    21→def _make_pr(number: int, *, state: str = "OPEN", branch: str = "feature-branch") -&gt; PRDetails:
+    22→    return PRDetails(
+    23→        number=number,
+    24→        url=f"https://github.com/test-owner/test-repo/pull/{number}",
+    25→        title=f"Test PR #{number}",
+    26→        body="PR body",
+    27→        state=state,
+    28→        is_draft=False,
+    29→        base_ref_name="main",
+    30→        head_ref_name=branch,
+
+... [256 lines omitted] ...
+
+    66→    assert result.exit_code == 0, f"Failed: {result.output}"
+    94→    """Test error when PR does not exist."""
+   110→    assert "not found" in output["error"]
+   114→    """Test error when PR is not OPEN."""
+   131→    assert "CLOSED" in output["error"]
+   150→    assert result.exit_code == 0, f"Failed: {result.output}"
+   192→    assert result.exit_code == 0, f"Failed: {result.output}"
+   271→    assert result.exit_code == 0, f"Failed: {result.output}"
+  </tool_result>
+  <assistant>Now I'll make the necessary edits to update the test files:
+
+**File 1: test_create_impl_context_from_plan.py**</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="43992" cache_read_input_tokens="17138" cache_creation="{'ephemeral_5m_input_tokens': 43992, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01TRX5LQKM641iLcNQDtp9G5">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_create_impl_context_from_plan.py</param>
+    <param name="old_string">    assert result.exit_code == 0, f"Command failed: {result.output}"
+    output = json.loa...[truncated 136 chars]...verts /issues/ to /pull/)
+    assert "test-owner/test-repo/pull/123" in output["plan_url"]</param>
+    <param name="new_string">    assert result.exit_code == 0, f"Command failed: {result.output}"
+    output = json.loa...[truncated 136 chars]...onverts /issues/ to /pull/)
+    assert "test-owner/test-repo/pull/123" in output["pr_url"]</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="43992" cache_read_input_tokens="17138" cache_creation="{'ephemeral_5m_input_tokens': 43992, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01TRX5LQKM641iLcNQDtp9G5">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_create_impl_context_from_plan.py has been updated successfully.
+  </tool_result>
+  <assistant>**File 2: test_get_learn_sessions.py** (Lines 71, 140, 246, 258, 665, 710)</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="435" cache_read_input_tokens="61130" cache_creation="{'ephemeral_5m_input_tokens': 435, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_0165j53R3NLnZHDQ5krGJnuC">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_get_learn_sessions.py</param>
+    <param name="old_string">    assert result.exit_code == 0, result.output
+    output = json.loads(result.output)
+    assert output["success"] is True
+    assert output["plan_id"] == "123"</param>
+    <param name="new_string">    assert result.exit_code == 0, result.output
+    output = json.loads(result.output)
+    assert output["success"] is True
+    assert output["pr_number"] == "123"</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="435" cache_read_input_tokens="61130" cache_creation="{'ephemeral_5m_input_tokens': 435, 'ephemeral_1h_input_tokens': 0}" output_tokens="254" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0165j53R3NLnZHDQ5krGJnuC">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_get_learn_sessions.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01V5CQFBEoNmihZwWiexF7nV">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_get_learn_sessions.py</param>
+    <param name="old_string">    assert result.exit_code == 0, result.output
+    output = json.loads(result.output)
+    assert output["success"] is True
+    assert output["plan_id"] == "789"</param>
+    <param name="new_string">    assert result.exit_code == 0, result.output
+    output = json.loads(result.output)
+    assert output["success"] is True
+    assert output["pr_number"] == "789"</param>
+  </tool_use>
+  <usage input_tokens="4" cache_creation_input_tokens="411" cache_read_input_tokens="61565" cache_creation="{'ephemeral_5m_input_tokens': 411, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01V5CQFBEoNmihZwWiexF7nV">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_get_learn_sessions.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01Cu1BS94ubJ8UndSXSKRiJZ">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_get_learn_sessions.py</param>
+    <param name="old_string">    # Verify all expected fields exist
+    assert "success" in output
+    assert "plan_id" in output</param>
+    <param name="new_string">    # Verify all expected fields exist
+    assert "success" in output
+    assert "pr_number" in output</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="271" cache_read_input_tokens="61976" cache_creation="{'ephemeral_5m_input_tokens': 271, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Cu1BS94ubJ8UndSXSKRiJZ">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_get_learn_sessions.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_014JAfHVxhabbhGFAfkTmNs4">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_get_learn_sessions.py</param>
+    <param name="old_string">    # Verify types
+    assert isinstance(output["success"], bool)
+    assert isinstance(output["plan_id"], str)</param>
+    <param name="new_string">    # Verify types
+    assert isinstance(output["success"], bool)
+    assert isinstance(output["pr_number"], str)</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="227" cache_read_input_tokens="62247" cache_creation="{'ephemeral_5m_input_tokens': 227, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014JAfHVxhabbhGFAfkTmNs4">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_get_learn_sessions.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_016NLdUK5qxtxrBRy3s8aE27">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_get_learn_sessions.py</param>
+    <param name="old_string">        manifest = {
+            "version": 1,
+            "plan_id": 700,
+            "sessions": [</param>
+    <param name="new_string">        manifest = {
+            "version": 1,
+            "pr_number": 700,
+            "sessions": [</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="335" cache_read_input_tokens="62474" cache_creation="{'ephemeral_5m_input_tokens': 335, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016NLdUK5qxtxrBRy3s8aE27">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_get_learn_sessions.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01MHuUjyERDy6Ugh9WyNz1zc">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_get_learn_sessions.py</param>
+    <param name="old_string">    assert result.exit_code == 0, result.output
+    output = json.loads(result.output)
+   ...[truncated 61 chars]...ed_manifest"]["version"] == 1
+    assert output["preprocessed_manifest"]["plan_id"] == 700</param>
+    <param name="new_string">    assert result.exit_code == 0, result.output
+    output = json.loads(result.output)
+   ...[truncated 63 chars]..._manifest"]["version"] == 1
+    assert output["preprocessed_manifest"]["pr_number"] == 700</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="231" cache_read_input_tokens="62809" cache_creation="{'ephemeral_5m_input_tokens': 231, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01MHuUjyERDy6Ugh9WyNz1zc">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_get_learn_sessions.py has been updated successfully.
+  </tool_result>
+  <assistant>**File 3: test_fetch_sessions.py** (Lines 56, 116)</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="316" cache_read_input_tokens="63040" cache_creation="{'ephemeral_5m_input_tokens': 316, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01DtrcMANDDDkQAfkcHXEU4C">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_fetch_sessions.py</param>
+    <param name="old_string">        manifest = {
+            "version": 1,
+            "plan_id": 42,
+            "sessions": [</param>
+    <param name="new_string">        manifest = {
+            "version": 1,
+            "pr_number": 42,
+            "sessions": [</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="316" cache_read_input_tokens="63040" cache_creation="{'ephemeral_5m_input_tokens': 316, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01DtrcMANDDDkQAfkcHXEU4C">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_fetch_sessions.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_0172WhpoXWhF1vDcvX74Qg3v">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_fetch_sessions.py</param>
+    <param name="old_string">        assert result.exit_code == 0, f"Failed: {result.output}"
+        output = json.loads(result.output)
+        assert output["success"] is True
+        assert output["plan_id"] == 42</param>
+    <param name="new_string">        assert result.exit_code == 0, f"Failed: {result.output}"
+        output = json.loads(result.output)
+        assert output["success"] is True
+        assert output["pr_number"] == 42</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="352" cache_read_input_tokens="63356" cache_creation="{'ephemeral_5m_input_tokens': 352, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0172WhpoXWhF1vDcvX74Qg3v">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_fetch_sessions.py has been updated successfully.
+  </tool_result>
+  <assistant>**File 4: test_get_plan_info.py** (Line 62)</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="276" cache_read_input_tokens="63708" cache_creation="{'ephemeral_5m_input_tokens': 276, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01S2inZGhnQy2GxKHA513WgW">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_get_plan_info.py</param>
+    <param name="old_string">    assert result.exit_code == 0
+    output = json.loads(result.output)
+    assert output["success"] is True
+    assert output["plan_id"] == plan_id</param>
+    <param name="new_string">    assert result.exit_code == 0
+    output = json.loads(result.output)
+    assert output["success"] is True
+    assert output["pr_number"] == plan_id</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="276" cache_read_input_tokens="63708" cache_creation="{'ephemeral_5m_input_tokens': 276, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01S2inZGhnQy2GxKHA513WgW">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_get_plan_info.py has been updated successfully.
+  </tool_result>
+  <assistant>**File 5: test_track_learn_result.py** (Lines 58, 98, 208)</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="387" cache_read_input_tokens="63984" cache_creation="{'ephemeral_5m_input_tokens': 387, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01YWVNcZQZH9zETcjXeWJueY">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_track_learn_result.py</param>
+    <param name="old_string">    assert result.exit_code == 0, result.output
+    output = json.loads(result.output)
+   ...[truncated 17 chars]... assert output["plan_id"] == "42"
+    assert output["learn_status"] == "completed_no_plan"</param>
+    <param name="new_string">    assert result.exit_code == 0, result.output
+    output = json.loads(result.output)
+   ...[truncated 19 chars]...ssert output["pr_number"] == "42"
+    assert output["learn_status"] == "completed_no_plan"</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="387" cache_read_input_tokens="63984" cache_creation="{'ephemeral_5m_input_tokens': 387, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01YWVNcZQZH9zETcjXeWJueY">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_track_learn_result.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01R7HvkXYm7Lo9QVjrrYBQ4S">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_track_learn_result.py</param>
+    <param name="old_string">    assert result.exit_code == 0, result.output
+    output = json.loads(result.output)
+   ...[truncated 19 chars]...ssert output["plan_id"] == "42"
+    assert output["learn_status"] == "completed_with_plan"</param>
+    <param name="new_string">    assert result.exit_code == 0, result.output
+    output = json.loads(result.output)
+   ...[truncated 21 chars]...ert output["pr_number"] == "42"
+    assert output["learn_status"] == "completed_with_plan"</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="331" cache_read_input_tokens="64371" cache_creation="{'ephemeral_5m_input_tokens': 331, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01R7HvkXYm7Lo9QVjrrYBQ4S">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_track_learn_result.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_0131bMAPJA8JqhEvyhtY4q6g">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_track_learn_result.py</param>
+    <param name="old_string">    assert result.exit_code == 0, result.output
+    output = json.loads(result.output)
+   ...[truncated 14 chars]...    assert output["plan_id"] == "42"
+    assert output["learn_status"] == "pending_review"</param>
+    <param name="new_string">    assert result.exit_code == 0, result.output
+    output = json.loads(result.output)
+   ...[truncated 16 chars]...  assert output["pr_number"] == "42"
+    assert output["learn_status"] == "pending_review"</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="408" cache_read_input_tokens="64702" cache_creation="{'ephemeral_5m_input_tokens': 408, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0131bMAPJA8JqhEvyhtY4q6g">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_track_learn_result.py has been updated successfully.
+  </tool_result>
+  <assistant>**File 6: test_push_session.py** (Lines 130, 153, 187, 267)</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="300" cache_read_input_tokens="65110" cache_creation="{'ephemeral_5m_input_tokens': 300, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01FbLs8kKX9kaem2c4TnTGks">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_push_session.py</param>
+    <param name="old_string">        assert result.exit_code == 0, f"Failed: {result.output}"
+        output = json.loa...[truncated 113 chars]...  assert output["session_id"] == "test-session-abc"
+        assert output["plan_id"] == 42</param>
+    <param name="new_string">        assert result.exit_code == 0, f"Failed: {result.output}"
+        output = json.loa...[truncated 115 chars]...assert output["session_id"] == "test-session-abc"
+        assert output["pr_number"] == 42</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="300" cache_read_input_tokens="65110" cache_creation="{'ephemeral_5m_input_tokens': 300, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01FbLs8kKX9kaem2c4TnTGks">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_push_session.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01BZLDpgVppTPxpXwXiPYw4y">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_push_session.py</param>
+    <param name="old_string">        # Verify manifest content
+        manifest = json.loads(bc.files[".erk/sessions/manifest.json"])
+        assert manifest["version"] == 1
+        assert manifest["plan_id"] == 42</param>
+    <param name="new_string">        # Verify manifest content
+        manifest = json.loads(bc.files[".erk/sessions/manifest.json"])
+        assert manifest["version"] == 1
+        assert manifest["pr_number"] == 42</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="480" cache_read_input_tokens="65410" cache_creation="{'ephemeral_5m_input_tokens': 480, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01BZLDpgVppTPxpXwXiPYw4y">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_push_session.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01N2BKsgTUr6PNc514UK9oMc">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_push_session.py</param>
+    <param name="old_string">        existing_manifest = json.dumps(
+            {
+                "version": 1,
+      ...[truncated 321 chars]...anning-session-xyz.xml"],
+                    }
+                ],
+            }
+        )</param>
+    <param name="new_string">        existing_manifest = json.dumps(
+            {
+                "version": 1,
+      ...[truncated 323 chars]...anning-session-xyz.xml"],
+                    }
+                ],
+            }
+        )</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="270" cache_read_input_tokens="65890" cache_creation="{'ephemeral_5m_input_tokens': 270, 'ephemeral_1h_input_tokens': 0}" output_tokens="378" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01N2BKsgTUr6PNc514UK9oMc">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_push_session.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01QaTWaZ136WAdWSA3B7THgo">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_push_session.py</param>
+    <param name="old_string">        existing_manifest = json.dumps(
+            {
+                "version": 1,
+      ...[truncated 297 chars]..."impl-same-session.xml"],
+                    }
+                ],
+            }
+        )</param>
+    <param name="new_string">        existing_manifest = json.dumps(
+            {
+                "version": 1,
+      ...[truncated 299 chars]..."impl-same-session.xml"],
+                    }
+                ],
+            }
+        )</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="428" cache_read_input_tokens="66160" cache_creation="{'ephemeral_5m_input_tokens': 428, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01QaTWaZ136WAdWSA3B7THgo">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_push_session.py has been updated successfully.
+  </tool_result>
+  <assistant>**File 7: test_setup_impl_from_pr.py** (Lines 376, 562, 591, 614)</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="524" cache_read_input_tokens="66588" cache_creation="{'ephemeral_5m_input_tokens': 524, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01DMdTtTFPKcpLqe2VYKRjmv">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_setup_impl_from_pr.py</param>
+    <param name="old_string">    # Output JSON has correct metadata
+    output_lines = result.output.strip().split("\n"...[truncated 97 chars]...line)
+    assert output["success"] is True
+    assert output["plan_title"] == "Local Plan"</param>
+    <param name="new_string">    # Output JSON has correct metadata
+    output_lines = result.output.strip().split("\n"...[truncated 95 chars]...n_line)
+    assert output["success"] is True
+    assert output["pr_title"] == "Local Plan"</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="524" cache_read_input_tokens="66588" cache_creation="{'ephemeral_5m_input_tokens': 524, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01DMdTtTFPKcpLqe2VYKRjmv">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_setup_impl_from_pr.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01FfEXnGfTDsfoi9PQd6y5ho">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_setup_impl_from_pr.py</param>
+    <param name="old_string">        },
+    )
+    assert result["success"] is True
+    # Non-string title falls back to PR title
+    assert result["plan_title"] == "Test Plan Title"</param>
+    <param name="new_string">        },
+    )
+    assert result["success"] is True
+    # Non-string title falls back to PR title
+    assert result["pr_title"] == "Test Plan Title"</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="376" cache_read_input_tokens="67112" cache_creation="{'ephemeral_5m_input_tokens': 376, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01FfEXnGfTDsfoi9PQd6y5ho">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_setup_impl_from_pr.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01Hm1fDGDamZMKa9qUw3dg3u">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_setup_impl_from_pr.py</param>
+    <param name="old_string">    )
+    assert result["success"] is True
+    assert result["plan_title"] == "Test Plan Title"  # Falls back to PR title</param>
+    <param name="new_string">    )
+    assert result["success"] is True
+    assert result["pr_title"] == "Test Plan Title"  # Falls back to PR title</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="364" cache_read_input_tokens="67488" cache_creation="{'ephemeral_5m_input_tokens': 364, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Hm1fDGDamZMKa9qUw3dg3u">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_setup_impl_from_pr.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01HvfgitVt4FFmb4kEBdDG5d">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_setup_impl_from_pr.py</param>
+    <param name="old_string">    )
+    assert result["success"] is True
+    assert result["plan_title"] == "Custom Title"</param>
+    <param name="new_string">    )
+    assert result["success"] is True
+    assert result["pr_title"] == "Custom Title"</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="244" cache_read_input_tokens="67852" cache_creation="{'ephemeral_5m_input_tokens': 244, 'ephemeral_1h_input_tokens': 0}" output_tokens="174" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01HvfgitVt4FFmb4kEBdDG5d">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_setup_impl_from_pr.py has been updated successfully.
+  </tool_result>
+  <assistant>**File 8: test_incremental_dispatch.py** (Line 88)</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="228" cache_read_input_tokens="68096" cache_creation="{'ephemeral_5m_input_tokens': 228, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01SejGZ7yM6NiqsEJHMviMxF">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_incremental_dispatch.py</param>
+    <param name="old_string">    # Verify workflow was triggered
+    assert len(fake_github.triggered_workflows) == 1
+ ...[truncated 140 chars]...s["branch_name"] == "feature/my-feature"
+    assert inputs["plan_backend"] == "planned_pr"</param>
+    <param name="new_string">    # Verify workflow was triggered
+    assert len(fake_github.triggered_workflows) == 1
+ ...[truncated 142 chars]...s["branch_name"] == "feature/my-feature"
+    assert inputs["plan_backend"] == "planned_pr"</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="228" cache_read_input_tokens="68096" cache_creation="{'ephemeral_5m_input_tokens': 228, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01SejGZ7yM6NiqsEJHMviMxF">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_incremental_dispatch.py has been updated successfully.
+  </tool_result>
+  <assistant>Perfect! Now let me verify the changes were applied correctly by running a quick check on one of the files:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="494" cache_read_input_tokens="68324" cache_creation="{'ephemeral_5m_input_tokens': 494, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_015kEDnXDTxcAatCYsiY3Cdk">
+    <param name="command">grep -n "pr_number\|pr_url\|pr_title" tests/unit/cli/commands/exec/scripts/test_create_impl_context_from_plan.py | head -5</param>
+    <param name="description">Verify test_create_impl_context_from_plan.py was updated</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="494" cache_read_input_tokens="68324" cache_creation="{'ephemeral_5m_input_tokens': 494, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_015kEDnXDTxcAatCYsiY3Cdk">
+78:    assert output["pr_number"] == 123
+80:    assert "test-owner/test-repo/pull/123" in output["pr_url"]
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01NiRtgbJXXFHXieymWsU5Bg">
+    <param name="command">grep -n "pr_number\|pr_url\|pr_title" tests/unit/cli/commands/exec/scripts/test_get_learn_sessions.py | head -10</param>
+    <param name="description">Verify test_get_learn_sessions.py was updated</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="204" cache_read_input_tokens="68818" cache_creation="{'ephemeral_5m_input_tokens': 204, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01NiRtgbJXXFHXieymWsU5Bg">
+71:    assert output["pr_number"] == "123"
+140:    assert output["pr_number"] == "789"
+246:    assert "pr_number" in output
+258:    assert isinstance(output["pr_number"], str)
+665:            "pr_number": 700,
+710:    assert output["preprocessed_manifest"]["pr_number"] == 700
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01PK6VJCcXB7cwDzj1kwF3XY">
+    <param name="command">grep -n "pr_title" tests/unit/cli/commands/exec/scripts/test_setup_impl_from_pr.py</param>
+    <param name="description">Verify test_setup_impl_from_pr.py was updated</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="325" cache_read_input_tokens="69022" cache_creation="{'ephemeral_5m_input_tokens': 325, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01PK6VJCcXB7cwDzj1kwF3XY">
+376:    assert output["pr_title"] == "Local Plan"
+562:    assert result["pr_title"] == "Test Plan Title"
+591:    assert result["pr_title"] == "Test Plan Title"  # Falls back to PR title
+614:    assert result["pr_title"] == "Custom Title"
+  </tool_result>
+  <assistant>Excellent! All the updates have been successfully applied. Let me create a summary of the changes:
+
+## Summary
+
+I've successfully updated all 8 test files to match the JSON output field name changes from the exec scripts. Here's what was changed:
+
+### Files Updated:
+
+1. **test_create_impl_context_from_plan.py**
+   - Line 78: `output["plan_id"]` → `output["pr_number"]`
+   - Line 80: `output["plan_url"]` → `output["pr_url"]`
+
+2. **test_get_learn_sessions.py**
+   - Line 71: `output["plan_id"]` → `output["pr_number"]`
+   - Line 140: `output["plan_id"]` → `output["pr_number"]`
+   - Line 246: `"plan_id" in output` → `"pr_number" in output`
+   - Line 258: `output["plan_id"]` → `output["pr_number"]`
+   - Line 665: `"plan_id": 700` → `"pr_number": 700` (manifest fixture)
+   - Line 710: `output["preprocessed_manifest"]["plan_id"]` → `output["preprocessed_manifest"]["pr_number"]`
+
+3. **test_fetch_sessions.py**
+   - Line 56: `"plan_id": 42` → `"pr_number": 42` (manifest fixture)
+   - Line 116: `output["plan_id"]` → `output["pr_number"]`
+
+4. **test_get_plan_info.py**
+   - Line 62: `output["plan_id"]` → `output["pr_number"]`
+
+5. **test_track_learn_result.py**
+   - Lines 58, 98, 208: `output["plan_id"]` → `output["pr_number"]`
+
+6. **test_push_session.py**
+   - Line 130: `output["plan_id"]` → `output["pr_number"]`
+   - Line 153: `manifest["plan_id"]` → `manifest["pr_number"]`
+   - Line 187: `"plan_id": 42` → `"pr_number": 42` (manifest fixture)
+   - Line 267: `"plan_id": 42` → `"pr_number": 42` (manifest fixture)
+
+7. **test_setup_impl_from_pr.py**
+   - Lines 376, 562, 591, 614: `output/result["plan_title"]` → `output/result["pr_title"]`
+
+8. **test_incremental_dispatch.py**
+   - Line 88: `inputs["plan_id"]` → `inputs["pr_number"]`
+
+### Key Notes:
+
+- All changes follow the renaming rules you specified:
+  - `plan_id` → `pr_number` (in output dicts and workflow inputs)
+  - `plan_url` → `pr_url`
+  - `plan_title` → `pr_title`
+- Plan reference fixture data (like `ref.json` contents) was left unchanged as instructed
+- Non-exec-script code was not modified
+- All manifest fixtures were updated to use the new field names</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="197" cache_read_input_tokens="69347" cache_creation="{'ephemeral_5m_input_tokens': 197, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+</session>
