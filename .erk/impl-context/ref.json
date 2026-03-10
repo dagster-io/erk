@@ -1,4 +1,10 @@
 {
   "provider": "github-draft-pr",
-  "title": "Auto-recover plan context on `erk impl` retry"
+  "plan_id": "9163",
+  "url": "https://github.com/dagster-io/erk/pull/9163",
+  "created_at": "2026-03-10T09:29:56.614955",
+  "synced_at": "2026-03-10T09:29:56.614955",
+  "labels": [],
+  "objective_id": null,
+  "node_ids": null
 }
