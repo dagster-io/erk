@@ -130,7 +130,6 @@ def pr_filter_options(f: Callable[P, T]) -> Callable[P, T]:
     f = click.option(
         "--include-learn",
         is_flag=True,
-        default=False,
         help="Include learn plans in results (excluded by default)",
     )(f)
     return f
@@ -306,8 +305,6 @@ def _pr_list_impl(
 
     effective_state: IssueFilterState = "closed" if state == "closed" else "open"
 
-    exclude_labels = () if include_learn else ("erk-learn",)
-
     filters = PlanFilters(
         labels=labels,
         state=effective_state,
@@ -315,7 +312,7 @@ def _pr_list_impl(
         limit=limit,
         show_prs=True,
         show_runs=True,
-        exclude_labels=exclude_labels,
+        exclude_labels=() if include_learn else ("erk-learn",),
         creator=creator,
         show_pr_column=False,
         lifecycle_stage=stage,
