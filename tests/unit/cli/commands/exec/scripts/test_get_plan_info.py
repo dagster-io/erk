@@ -21,7 +21,7 @@ def _create_backend_with_plan(
     """Create a PlannedPRBackend with a single plan.
 
     Returns:
-        Tuple of (backend, fake_github, plan_id).
+        Tuple of (backend, fake_github, pr_id).
     """
     fake_github = FakeLocalGitHub()
     backend = PlannedPRBackend(fake_github, fake_github.issues, time=FakeTime())
@@ -44,12 +44,12 @@ def _create_backend_with_plan(
 
 def test_get_plan_info_success() -> None:
     """Test successful plan info retrieval from PlannedPRBackend."""
-    backend, fake_github, plan_id = _create_backend_with_plan()
+    backend, fake_github, pr_id = _create_backend_with_plan()
     runner = CliRunner()
 
     result = runner.invoke(
         get_plan_info,
-        [plan_id],
+        [pr_id],
         obj=context_for_test(
             github=fake_github,
             plan_store=backend,
@@ -59,7 +59,7 @@ def test_get_plan_info_success() -> None:
     assert result.exit_code == 0
     output = json.loads(result.output)
     assert output["success"] is True
-    assert output["pr_number"] == plan_id
+    assert output["pr_number"] == pr_id
     assert "Test Plan Title" in output["title"]
     assert output["state"] == "OPEN"
     assert "erk-pr" in output["labels"]
@@ -69,12 +69,12 @@ def test_get_plan_info_success() -> None:
 
 def test_get_plan_info_includes_objective_id() -> None:
     """Test that objective_id is included in the response."""
-    backend, fake_github, plan_id = _create_backend_with_plan()
+    backend, fake_github, pr_id = _create_backend_with_plan()
     runner = CliRunner()
 
     result = runner.invoke(
         get_plan_info,
-        [plan_id],
+        [pr_id],
         obj=context_for_test(
             github=fake_github,
             plan_store=backend,
@@ -93,12 +93,12 @@ def test_get_plan_info_includes_objective_id() -> None:
 
 def test_get_plan_info_include_body() -> None:
     """Test that --include-body adds body field to the response."""
-    backend, fake_github, plan_id = _create_backend_with_plan()
+    backend, fake_github, pr_id = _create_backend_with_plan()
     runner = CliRunner()
 
     result = runner.invoke(
         get_plan_info,
-        [plan_id, "--include-body"],
+        [pr_id, "--include-body"],
         obj=context_for_test(
             github=fake_github,
             plan_store=backend,
@@ -114,12 +114,12 @@ def test_get_plan_info_include_body() -> None:
 
 def test_get_plan_info_excludes_body_by_default() -> None:
     """Test that body field is NOT present without --include-body."""
-    backend, fake_github, plan_id = _create_backend_with_plan()
+    backend, fake_github, pr_id = _create_backend_with_plan()
     runner = CliRunner()
 
     result = runner.invoke(
         get_plan_info,
-        [plan_id],
+        [pr_id],
         obj=context_for_test(
             github=fake_github,
             plan_store=backend,

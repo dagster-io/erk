@@ -25,7 +25,7 @@ def make_plan_body(content: str = "Implementation details...") -> str:
 
 
 def create_plan(
-    plan_identifier: str,
+    pr_identifier: str,
     title: str,
     body: str | None = None,
     state: PlanState = PlanState.OPEN,
@@ -34,11 +34,11 @@ def create_plan(
     """Create a Plan with common defaults for testing."""
     now = datetime.now(UTC)
     return Plan(
-        pr_identifier=plan_identifier,
+        pr_identifier=pr_identifier,
         title=title,
         body=body if body is not None else make_plan_body(),
         state=state,
-        url=f"https://github.com/test-owner/test-repo/issues/{plan_identifier}",
+        url=f"https://github.com/test-owner/test-repo/issues/{pr_identifier}",
         labels=labels if labels is not None else ["erk-pr"],
         assignees=[],
         created_at=now,

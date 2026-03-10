@@ -25,7 +25,7 @@ from tests.test_utils.plan_helpers import format_plan_header_body_for_test
 
 def _create_plan_issue_with_objective(
     *,
-    plan_number: int,
+    pr_number: int,
     objective_number: int,
 ) -> IssueInfo:
     """Create a plan with objective_issue in plan-header metadata."""
@@ -35,11 +35,11 @@ def _create_plan_issue_with_objective(
         objective_issue=objective_number,
     )
     return IssueInfo(
-        number=plan_number,
-        title=f"P{plan_number}: Test Plan",
+        number=pr_number,
+        title=f"P{pr_number}: Test Plan",
         body=body,
         state="OPEN",
-        url=f"https://github.com/owner/repo/issues/{plan_number}",
+        url=f"https://github.com/owner/repo/issues/{pr_number}",
         labels=["erk-pr"],
         assignees=[],
         created_at=datetime.now(UTC),
@@ -117,7 +117,7 @@ def test_land_execute_no_objective_auto_detection() -> None:
         )
 
         plan_issue = _create_plan_issue_with_objective(
-            plan_number=42,
+            pr_number=42,
             objective_number=100,
         )
         issues_ops = FakeGitHubIssues(username="testuser", issues={42: plan_issue})
@@ -236,7 +236,7 @@ def test_land_execute_with_objective_triggers_update() -> None:
         )
 
         plan_issue = _create_plan_issue_with_objective(
-            plan_number=42,
+            pr_number=42,
             objective_number=100,
         )
         issues_ops = FakeGitHubIssues(username="testuser", issues={42: plan_issue})

@@ -41,7 +41,7 @@ def test_returns_parsed_dict_for_valid_json(tmp_path: Path) -> None:
     """Returns parsed manifest dict for valid JSON content."""
     manifest = {
         "version": 1,
-        "plan_id": 100,
+        "pr_id": 100,
         "sessions": [
             {
                 "session_id": "test-session-1",
@@ -66,6 +66,6 @@ def test_returns_parsed_dict_for_valid_json(tmp_path: Path) -> None:
 
     assert result is not None
     assert result["version"] == 1
-    assert result["plan_id"] == 100
+    assert result["pr_id"] == 100
     assert len(result["sessions"]) == 1
     assert result["sessions"][0]["session_id"] == "test-session-1"

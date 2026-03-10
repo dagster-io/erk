@@ -8,29 +8,29 @@ from erk.cli.commands.implement_shared import detect_target_type, normalize_mode
 # Target Detection Tests
 
 
-def test_detect_plan_number_with_hash() -> None:
-    """Test detection of plan numbers with # prefix."""
+def test_detect_pr_number_with_hash() -> None:
+    """Test detection of PR numbers with # prefix."""
     target_info = detect_target_type("#123")
     assert target_info.target_type == "pr_number"
     assert target_info.pr_number == "123"
 
 
-def test_detect_plain_number_as_plan() -> None:
-    """Test that plain numbers are treated as plan numbers."""
+def test_detect_plain_number_as_pr() -> None:
+    """Test that plain numbers are treated as PR numbers."""
     target_info = detect_target_type("123")
     assert target_info.target_type == "pr_number"
     assert target_info.pr_number == "123"
 
 
-def test_detect_plan_url() -> None:
-    """Test detection of GitHub issue URLs as plan URLs."""
+def test_detect_pr_url() -> None:
+    """Test detection of GitHub issue URLs as PR URLs."""
     url = "https://github.com/user/repo/issues/456"
     target_info = detect_target_type(url)
     assert target_info.target_type == "pr_url"
     assert target_info.pr_number == "456"
 
 
-def test_detect_plan_url_with_path() -> None:
+def test_detect_pr_url_with_path() -> None:
     """Test detection of GitHub issue URLs with additional path."""
     url = "https://github.com/user/repo/issues/789#issuecomment-123"
     target_info = detect_target_type(url)
@@ -46,7 +46,7 @@ def test_detect_relative_numeric_file() -> None:
 
 
 def test_plain_and_prefixed_numbers_equivalent() -> None:
-    """Test that plain and prefixed numbers both resolve to plan numbers."""
+    """Test that plain and prefixed numbers both resolve to PR numbers."""
     result_plain = detect_target_type("809")
     result_prefixed = detect_target_type("#809")
     assert result_plain.target_type == result_prefixed.target_type == "pr_number"

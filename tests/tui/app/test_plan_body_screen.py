@@ -198,8 +198,8 @@ class TestPlanBodyScreen:
             assert body_screen._loading is False
 
     @pytest.mark.asyncio
-    async def test_issue_body_screen_shows_plan_number_and_title(self) -> None:
-        """PlanBodyScreen shows plan number and full title in header."""
+    async def test_issue_body_screen_shows_pr_number_and_title(self) -> None:
+        """PlanBodyScreen shows pr number and full title in header."""
         full_title = "This is a very long plan title that should be shown in full"
         provider = FakePrDataProvider(plans=[make_pr_row(456, full_title, pr_body="metadata body")])
         service = FakePrService()

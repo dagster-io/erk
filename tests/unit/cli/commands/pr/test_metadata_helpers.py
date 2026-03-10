@@ -18,15 +18,15 @@ from tests.test_utils.plan_helpers import create_plan_store_with_plans
 from tests.test_utils.test_context import context_for_test
 
 
-def _register_branch_alias(fake_github: FakeLocalGitHub, plan_id: str, branch: str) -> None:
+def _register_branch_alias(fake_github: FakeLocalGitHub, pr_id: str, branch: str) -> None:
     """Register an additional branch name for an existing PR in FakeLocalGitHub.
 
     PlannedPRBackend resolves plans via get_pr_for_branch, which requires
     the PR to be registered under the actual branch name.
     """
-    synthetic_branch = f"plan-{plan_id}"
+    synthetic_branch = f"plan-{pr_id}"
     fake_github._prs[branch] = fake_github._prs[synthetic_branch]
-    fake_github._prs_by_branch[branch] = fake_github._pr_details[int(plan_id)]
+    fake_github._prs_by_branch[branch] = fake_github._pr_details[int(pr_id)]
 
 
 def _make_repo(tmp_path: Path) -> RepoContext:

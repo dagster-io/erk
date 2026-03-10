@@ -446,10 +446,10 @@ class TestLandPrAsync:
             assert len(captured_calls) == 1
 
     @pytest.mark.asyncio
-    async def test_land_pr_includes_plan_number_flag(
+    async def test_land_pr_includes_pr_number_flag(
         self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
     ) -> None:
-        """_land_pr_async should include --plan-number when pr_number is set."""
+        """_land_pr_async should include --pr-number when pr_number is set."""
         import subprocess
 
         provider = FakePrDataProvider(
@@ -493,7 +493,7 @@ class TestLandPrAsync:
                 "--pr-number=123",
                 "--branch=test-branch",
                 "-f",
-                "--plan-number=42",
+                "--pr-number=42",
             ]
 
     @pytest.mark.asyncio

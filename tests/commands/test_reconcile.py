@@ -564,7 +564,7 @@ def test_cleanup_skips_branch_not_in_local() -> None:
 
 
 def test_skip_learn_flag() -> None:
-    """With skip_learn=True, learn PR is not created even with plan_id."""
+    """With skip_learn=True, learn PR is not created even with pr_id."""
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         git = FakeGit(

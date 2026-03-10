@@ -95,7 +95,7 @@ def test_get_impl_issue_from_impl_folder(tmp_path: Path) -> None:
     # Create ref.json (plan-ref format)
     ref_file = impl_dir / "ref.json"
     ref_file.write_text(
-        '{"provider": "github", "plan_id": "42", "url": "https://github.com/owner/repo/issues/42", '
+        '{"provider": "github", "pr_id": "42", "url": "https://github.com/owner/repo/issues/42", '
         '"created_at": "2024-01-01T00:00:00Z", "synced_at": "2024-01-01T00:00:00Z"}',
         encoding="utf-8",
     )

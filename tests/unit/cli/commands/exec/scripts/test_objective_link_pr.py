@@ -81,7 +81,7 @@ def _write_ref_json(
     impl_dir.mkdir(parents=True, exist_ok=True)
     ref_data = {
         "provider": "github-draft-pr",
-        "plan_id": "42",
+        "pr_id": "42",
         "url": "https://github.com/test/repo/pull/42",
         "created_at": "2025-01-01T00:00:00Z",
         "synced_at": "2025-01-01T00:00:00Z",

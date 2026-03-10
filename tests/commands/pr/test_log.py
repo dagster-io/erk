@@ -1,4 +1,4 @@
-"""Tests for plan log command."""
+"""Tests for pr log command."""
 
 import json
 from datetime import UTC, datetime

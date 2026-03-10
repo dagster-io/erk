@@ -94,7 +94,7 @@ class FakeLocalGitHub(LocalGitHub):
             workflow_runs_by_node_id: Mapping of GraphQL node_id -> WorkflowRun for
                                      get_workflow_runs_by_node_ids()
             run_logs: Mapping of run_id -> log string
-            pr_plan_linkages: Mapping of plan_number -> list[PullRequestInfo]
+            pr_plan_linkages: Mapping of pr_number -> list[PullRequestInfo]
             polled_run_id: Run ID to return from poll_for_workflow_run (None for timeout)
             authenticated: Whether gh CLI is authenticated (default True for test convenience)
             auth_username: Username returned by check_auth_status() (default "test-user")
@@ -480,20 +480,20 @@ class FakeLocalGitHub(LocalGitHub):
     def get_prs_linked_to_issues(
         self,
         location: GitHubRepoLocation,
-        plan_numbers: list[int],
+        pr_numbers: list[int],
     ) -> dict[int, list[PullRequestInfo]]:
         """Get PRs linked to plans (returns pre-configured data).
 
-        Returns only the mappings for plans in plan_numbers that have
+        Returns only the mappings for plans in pr_numbers that have
         pre-configured PR linkages. Plans without linkages are omitted.
 
         The location parameter is accepted but ignored - fake returns
         pre-configured data regardless of the location.
         """
         result = {}
-        for plan_num in plan_numbers:
-            if plan_num in self._pr_plan_linkages:
-                result[plan_num] = self._pr_plan_linkages[plan_num]
+        for pr_num in pr_numbers:
+            if pr_num in self._pr_plan_linkages:
+                result[pr_num] = self._pr_plan_linkages[pr_num]
         return result
 
     def get_prs_by_numbers(
@@ -1240,21 +1240,21 @@ class FakeLocalGitHub(LocalGitHub):
         self,
         *,
         location: GitHubRepoLocation,
-        plan_numbers: list[int],
+        pr_numbers: list[int],
     ) -> tuple[list[IssueInfo], dict[int, list[PullRequestInfo]]]:
         """Filter pre-configured issues by number, returning matching PR linkages.
 
         Args:
             location: GitHub repository location (ignored in fake)
-            plan_numbers: List of plan numbers to fetch
+            pr_numbers: List of plan numbers to fetch
 
         Returns:
             Tuple of (filtered_issues, pr_linkages for those plans)
         """
-        if not plan_numbers:
+        if not pr_numbers:
             return ([], {})
 
-        number_set = set(plan_numbers)
+        number_set = set(pr_numbers)
         filtered_issues = [issue for issue in self._issues_data if issue.number in number_set]
 
         pr_linkages: dict[int, list[PullRequestInfo]] = {}

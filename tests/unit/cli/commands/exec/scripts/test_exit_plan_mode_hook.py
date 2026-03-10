@@ -143,7 +143,7 @@ class TestDetermineExitAction:
         assert result.delete_plan_saved_marker is True
         assert result.delete_implement_now_marker is False
 
-    def test_plan_saved_marker_without_plan_number_fallback(self) -> None:
+    def test_plan_saved_marker_without_pr_number_fallback(self) -> None:
         """Plan-saved marker without plan number uses fallback message."""
         result = determine_exit_action(
             HookInput.for_test(
@@ -982,8 +982,8 @@ class TestBuildBlockingMessage:
 class TestBuildStep2Message:
     """Tests for the pure build_step2_message() function (Step 2: plain text next-steps)."""
 
-    def test_contains_plan_number(self) -> None:
-        """Step 2 message includes the plan number."""
+    def test_contains_pr_number(self) -> None:
+        """Step 2 message includes the PR number."""
         message = build_step2_message(pr_number=42, url="")
         assert "PR #42 saved" in message
 

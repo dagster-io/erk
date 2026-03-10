@@ -480,8 +480,8 @@ def test_updates_lifecycle_stage_for_linked_plan(tmp_path: Path) -> None:
     assert "lifecycle_stage: impl" in lifecycle_bodies[0]
 
 
-def test_no_lifecycle_update_with_only_plan_id(tmp_path: Path) -> None:
-    """finalize_pr does NOT update lifecycle when only plan_id is set (no plan_context)."""
+def test_no_lifecycle_update_with_only_pr_id(tmp_path: Path) -> None:
+    """finalize_pr does NOT update lifecycle when only pr_id is set (no plan_context)."""
     plan_body = format_plan_header_body_for_test(lifecycle_stage="planned")
     plan_issue = IssueInfo(
         number=321,

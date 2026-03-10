@@ -23,7 +23,7 @@ def plan_to_issue(plan: Plan) -> IssueInfo:
 
 
 def make_plan(
-    plan_identifier: str,
+    pr_identifier: str,
     title: str,
     state: PlanState,
     labels: list[str],
@@ -34,15 +34,15 @@ def make_plan(
 ) -> Plan:
     """Create a Plan with common defaults for testing."""
     return Plan(
-        pr_identifier=plan_identifier,
+        pr_identifier=pr_identifier,
         title=title,
         body=body,
         state=state,
-        url=f"https://github.com/owner/repo/issues/{plan_identifier}",
+        url=f"https://github.com/owner/repo/issues/{pr_identifier}",
         labels=labels,
         assignees=[],
         created_at=datetime(2024, 1, day, tzinfo=UTC),
         updated_at=datetime(2024, 1, day, tzinfo=UTC),
-        metadata={"number": int(plan_identifier)},
+        metadata={"number": int(pr_identifier)},
         objective_id=objective_issue,
     )

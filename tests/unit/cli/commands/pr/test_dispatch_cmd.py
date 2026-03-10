@@ -39,7 +39,7 @@ def _make_pr_details(*, number: int, branch: str) -> PRDetails:
 
 
 def test_fallback_to_plan_backend_when_no_impl_dir(tmp_path: Path) -> None:
-    """When resolve_impl_dir returns None, falls back to plan_backend.resolve_plan_id_for_branch."""
+    """When resolve_impl_dir returns None, falls back to plan_backend.resolve_pr_id_for_branch."""
     branch = "plnd/fix-something-01-01-1200"
     pr_details = _make_pr_details(number=42, branch=branch)
 

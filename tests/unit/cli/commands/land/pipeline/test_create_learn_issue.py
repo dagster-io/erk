@@ -54,7 +54,7 @@ def _execution_state(
 
 
 def test_returns_state_unchanged_when_plan_id_none(tmp_path: Path) -> None:
-    """No-op when plan_id is None — returns state unchanged."""
+    """No-op when pr_id is None — returns state unchanged."""
     fake_issues = FakeGitHubIssues(username="testuser")
     fake_github = FakeLocalGitHub(issues_gateway=fake_issues)
     ctx = context_for_test(github=fake_github, issues=fake_issues, cwd=tmp_path)
@@ -85,7 +85,7 @@ def test_returns_state_after_creating_pr(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """With plan_id and merged_pr_number set, delegates to learn PR creation."""
+    """With pr_id and merged_pr_number set, delegates to learn PR creation."""
     from erk.cli.commands import land_learn as learn_mod
 
     now = datetime(2024, 1, 1, tzinfo=UTC)

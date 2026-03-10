@@ -256,7 +256,7 @@ class TestBuildWorktreeMapping:
         impl_dir.mkdir(parents=True, exist_ok=True)
         plan_ref_data = {
             "provider": "github-draft-pr",
-            "plan_id": "7624",
+            "pr_id": "7624",
             "url": "https://github.com/test/repo/pull/7624",
             "created_at": "2026-02-19T14:16:00+00:00",
             "synced_at": "2026-02-19T14:16:00+00:00",
@@ -323,7 +323,7 @@ class TestBuildWorktreeMapping:
         impl_dir.mkdir(parents=True, exist_ok=True)
         plan_ref_data = {
             "provider": "github-draft-pr",
-            "plan_id": "8001",
+            "pr_id": "8001",
             "url": "https://github.com/test/repo/pull/8001",
             "created_at": "2026-01-15T14:30:00+00:00",
             "synced_at": "2026-01-15T14:30:00+00:00",
@@ -392,7 +392,7 @@ class TestBuildWorktreeMapping:
         impl_dir.mkdir(parents=True, exist_ok=True)
         plan_ref_data = {
             "provider": "github-draft-pr",
-            "plan_id": "9999",
+            "pr_id": "9999",
             "url": "https://github.com/test/repo/pull/9999",
             "created_at": "2026-01-15T14:30:00+00:00",
             "synced_at": "2026-01-15T14:30:00+00:00",

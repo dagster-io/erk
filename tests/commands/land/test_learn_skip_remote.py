@@ -128,11 +128,11 @@ def test_land_skips_learn_prompt_for_remote_pr(
         # Track if find_sessions_for_plan was called (it should NOT be called)
         find_sessions_called: list[str] = []
 
-        def mock_find_sessions(repo_root, plan_id):
-            find_sessions_called.append(plan_id)
+        def mock_find_sessions(repo_root, pr_id):
+            find_sessions_called.append(pr_id)
             raise AssertionError(
                 f"find_sessions_for_plan should NOT be called for remote PRs "
-                f"(no local worktree), but was called with plan_id={plan_id}"
+                f"(no local worktree), but was called with pr_id={pr_id}"
             )
 
         # Patch the method on the plan_backend instance

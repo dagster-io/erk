@@ -69,7 +69,7 @@ def backend_with_plan() -> tuple[PlanBackend, str]:
     """Fixture providing PlannedPRBackend with a pre-existing plan.
 
     Returns:
-        Tuple of (backend, plan_id)
+        Tuple of (backend, pr_id)
     """
     return _make_planned_pr_backend_with_plan()
 
@@ -131,28 +131,28 @@ def test_list_plans_filters_by_state(
     backend_with_plan: tuple[PlanBackend, str],
 ) -> None:
     """Backend filters by PlanState correctly."""
-    backend, plan_id = backend_with_plan
+    backend, pr_id = backend_with_plan
 
     open_results = backend.list_plans(Path("/repo"), PlanQuery(state=PlanState.OPEN))
-    assert any(p.pr_identifier == plan_id for p in open_results)
+    assert any(p.pr_identifier == pr_id for p in open_results)
 
     closed_results = backend.list_plans(Path("/repo"), PlanQuery(state=PlanState.CLOSED))
-    assert not any(p.pr_identifier == plan_id for p in closed_results)
+    assert not any(p.pr_identifier == pr_id for p in closed_results)
 
 
 def test_close_plan_changes_state(
     backend_with_plan: tuple[PlanBackend, str],
 ) -> None:
     """Backend closes a plan by changing state to CLOSED."""
-    backend, plan_id = backend_with_plan
+    backend, pr_id = backend_with_plan
 
-    plan_before = backend.get_plan(Path("/repo"), plan_id)
+    plan_before = backend.get_plan(Path("/repo"), pr_id)
     assert not isinstance(plan_before, PlanNotFound)
     assert plan_before.state == PlanState.OPEN
 
-    backend.close_plan(Path("/repo"), plan_id)
+    backend.close_plan(Path("/repo"), pr_id)
 
-    plan_after = backend.get_plan(Path("/repo"), plan_id)
+    plan_after = backend.get_plan(Path("/repo"), pr_id)
     assert not isinstance(plan_after, PlanNotFound)
     assert plan_after.state == PlanState.CLOSED
 
@@ -161,11 +161,11 @@ def test_add_comment_returns_string_id(
     backend_with_plan: tuple[PlanBackend, str],
 ) -> None:
     """Backend returns comment ID as string."""
-    backend, plan_id = backend_with_plan
+    backend, pr_id = backend_with_plan
 
     comment_id = backend.add_comment(
         repo_root=Path("/repo"),
-        plan_id=plan_id,
+        plan_id=pr_id,
         body="Progress update: Phase 1 complete",
     )
 
@@ -177,7 +177,7 @@ def test_get_plan_not_found_returns_plan_not_found(plan_backend: PlanBackend) ->
     """Backend returns PlanNotFound when plan not found."""
     result = plan_backend.get_plan(Path("/repo"), "99999999")
     assert isinstance(result, PlanNotFound)
-    assert result.pr_id == "99999999"
+    assert result.pr_id == "99999999"  # pr_id is the identifier for the not-found result
 
 
 def test_add_comment_not_found_raises_runtime_error(plan_backend: PlanBackend) -> None:
@@ -211,10 +211,10 @@ def test_update_metadata_not_found_raises_runtime_error(
 def test_plan_identifier_is_string(
     backend_with_plan: tuple[PlanBackend, str],
 ) -> None:
-    """Backend returns plan_identifier as string."""
-    backend, plan_id = backend_with_plan
+    """Backend returns pr_identifier as string."""
+    backend, pr_id = backend_with_plan
 
-    plan = backend.get_plan(Path("/repo"), plan_id)
+    plan = backend.get_plan(Path("/repo"), pr_id)
     assert not isinstance(plan, PlanNotFound)
     assert isinstance(plan.pr_identifier, str)
 
@@ -223,9 +223,9 @@ def test_assignees_is_list(
     backend_with_plan: tuple[PlanBackend, str],
 ) -> None:
     """Backend returns assignees as list."""
-    backend, plan_id = backend_with_plan
+    backend, pr_id = backend_with_plan
 
-    plan = backend.get_plan(Path("/repo"), plan_id)
+    plan = backend.get_plan(Path("/repo"), pr_id)
     assert not isinstance(plan, PlanNotFound)
     assert isinstance(plan.assignees, list)
     for assignee in plan.assignees:
@@ -236,9 +236,9 @@ def test_labels_is_list(
     backend_with_plan: tuple[PlanBackend, str],
 ) -> None:
     """Backend returns labels as list."""
-    backend, plan_id = backend_with_plan
+    backend, pr_id = backend_with_plan
 
-    plan = backend.get_plan(Path("/repo"), plan_id)
+    plan = backend.get_plan(Path("/repo"), pr_id)
     assert not isinstance(plan, PlanNotFound)
     assert isinstance(plan.labels, list)
     for label in plan.labels:
@@ -249,9 +249,9 @@ def test_timestamps_are_timezone_aware(
     backend_with_plan: tuple[PlanBackend, str],
 ) -> None:
     """Backend returns timezone-aware datetime objects."""
-    backend, plan_id = backend_with_plan
+    backend, pr_id = backend_with_plan
 
-    plan = backend.get_plan(Path("/repo"), plan_id)
+    plan = backend.get_plan(Path("/repo"), pr_id)
     assert not isinstance(plan, PlanNotFound)
     assert plan.created_at.tzinfo is not None
     assert plan.updated_at.tzinfo is not None
@@ -408,11 +408,11 @@ def test_update_plan_title_roundtrip(
     backend_with_plan: tuple[PlanBackend, str],
 ) -> None:
     """Backend can update and retrieve a plan title."""
-    backend, plan_id = backend_with_plan
+    backend, pr_id = backend_with_plan
 
-    backend.update_plan_title(Path("/repo"), plan_id, "New Title")
+    backend.update_plan_title(Path("/repo"), pr_id, "New Title")
 
-    plan = backend.get_plan(Path("/repo"), plan_id)
+    plan = backend.get_plan(Path("/repo"), pr_id)
     assert not isinstance(plan, PlanNotFound)
     assert "New Title" in plan.title
 
@@ -503,9 +503,9 @@ def test_get_comments_returns_empty_list_for_no_comments(
     backend_with_plan: tuple[PlanBackend, str],
 ) -> None:
     """Backend returns empty list when plan has no comments."""
-    backend, plan_id = backend_with_plan
+    backend, pr_id = backend_with_plan
 
-    comments = backend.get_comments(Path("/repo"), plan_id)
+    comments = backend.get_comments(Path("/repo"), pr_id)
     assert isinstance(comments, list)
 
 
@@ -543,9 +543,9 @@ def test_find_sessions_for_plan_returns_sessions_for_plan(
     backend_with_plan: tuple[PlanBackend, str],
 ) -> None:
     """Backend returns SessionsForPlan with expected structure."""
-    backend, plan_id = backend_with_plan
+    backend, pr_id = backend_with_plan
 
-    result = backend.find_sessions_for_plan(Path("/repo"), plan_id)
+    result = backend.find_sessions_for_plan(Path("/repo"), pr_id)
     assert hasattr(result, "planning_session_id")
     assert hasattr(result, "implementation_session_ids")
     assert hasattr(result, "learn_session_ids")
@@ -572,12 +572,12 @@ def test_find_sessions_for_plan_reads_header_fields(
         metadata=_create_metadata(plan_backend),
         summary="",
     )
-    plan_id = result.pr_id
+    pr_id = result.pr_id
 
     # Update metadata with session-related fields
     plan_backend.update_metadata(
         Path("/repo"),
-        plan_id,
+        pr_id,
         {
             "created_from_session": "planning-session-abc",
             "last_local_impl_session": "impl-session-def",
@@ -591,7 +591,7 @@ def test_find_sessions_for_plan_reads_header_fields(
         },
     )
 
-    sessions = plan_backend.find_sessions_for_plan(Path("/repo"), plan_id)
+    sessions = plan_backend.find_sessions_for_plan(Path("/repo"), pr_id)
 
     assert sessions.planning_session_id == "planning-session-abc"
     assert "impl-session-def" in sessions.implementation_session_ids
@@ -621,11 +621,11 @@ def test_add_label_adds_label(
     backend_with_plan: tuple[PlanBackend, str],
 ) -> None:
     """Backend can add a label to a plan."""
-    backend, plan_id = backend_with_plan
+    backend, pr_id = backend_with_plan
 
-    backend.add_label(Path("/repo"), plan_id, "erk-consolidated")
+    backend.add_label(Path("/repo"), pr_id, "erk-consolidated")
 
-    plan = backend.get_plan(Path("/repo"), plan_id)
+    plan = backend.get_plan(Path("/repo"), pr_id)
     assert not isinstance(plan, PlanNotFound)
     assert "erk-consolidated" in plan.labels
 

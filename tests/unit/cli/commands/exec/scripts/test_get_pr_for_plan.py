@@ -178,7 +178,7 @@ def test_json_output_structure_error() -> None:
 
 
 def test_get_pr_for_plan_planned_pr_backend() -> None:
-    """Test that planned-PR backend looks up PR directly by plan_id (which IS the PR number)."""
+    """Test that planned-PR backend looks up PR directly by pr_id (which IS the PR number)."""
     pr_number = 7670
     fake_issues = FakeGitHubIssues()
     fake_gh = FakeLocalGitHub(
