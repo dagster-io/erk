@@ -29,13 +29,10 @@ Two references establish the link:
 
 The `objective_issue` field in the plan-header metadata block stores the parent objective number:
 
-```python
-# Set the backlink
-updated_body = update_plan_header_objective_issue(issue_body, objective_issue_number)
+Key functions (see source file for current signatures):
 
-# Read the backlink
-objective_number = extract_plan_header_objective_issue(issue_body)
-```
+- `update_plan_header_objective_issue(issue_body, objective_issue_number)` — sets the backlink
+- `extract_plan_header_objective_issue(issue_body)` — reads the backlink
 
 ## \_set_plan_backlink()
 

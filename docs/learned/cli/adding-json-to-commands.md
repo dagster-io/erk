@@ -20,26 +20,17 @@ Step-by-step guide to adding structured JSON output to existing Click commands.
 
 The decorators must be stacked in this exact order (outermost to innermost):
 
-```python
-@mcp_exposed(name="pr_list", description="List plans")  # 1. MCP exposure (optional)
-@json_command(exclude_json_input=frozenset({"repo_id"}), output_types=(PrListResult,))  # 2. JSON infrastructure
-@click.command("list")  # 3. Click command
-@click.option(...)  # 4. Options/arguments
-@click.pass_obj  # 5. Context passing (innermost)
-```
+1. `@mcp_exposed(...)` — MCP exposure (optional, outermost)
+2. `@json_command(...)` — JSON infrastructure
+3. `@click.command(...)` — Click command
+4. `@click.option(...)` — Options/arguments
+5. `@click.pass_obj` — Context passing (innermost)
+
+See `src/erk/cli/commands/pr/list_cmd.py` for a working example of this stack.
 
 ## Step 1: Create a Result Dataclass
 
-```python
-@dataclass(frozen=True)
-class PrListResult:
-    """JSON result for erk pr list."""
-    plans: list[dict[str, Any]]
-    count: int
-
-    def to_json_dict(self) -> dict[str, Any]:
-        return {"plans": self.plans, "count": self.count}
-```
+See `PrListResult` in `src/erk/cli/commands/pr/list_cmd.py` for a working example.
 
 Rules:
 
@@ -103,15 +94,7 @@ Common exclusions:
 
 ### pr list (`src/erk/cli/commands/pr/list_cmd.py`)
 
-```python
-@mcp_exposed(name="pr_list", description="...")
-@json_command(exclude_json_input=frozenset({"repo_id"}), output_types=(PrListResult,))
-@click.command("list")
-@pr_filter_options
-@resolved_repo_option
-@click.pass_obj
-def pr_list(ctx, ...) -> PrListResult | None:
-```
+See `src/erk/cli/commands/pr/list_cmd.py` for the full decorator stack and function signature.
 
 ### pr view (`src/erk/cli/commands/pr/view_cmd.py`)
 

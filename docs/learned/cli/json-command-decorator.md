@@ -55,13 +55,10 @@ The decorator adds two flags to the command:
 
 Two helpers for producing JSON output:
 
-```python
-# For ad-hoc dict output — automatically adds success: True
-emit_json({"plan_number": 42, "title": "My Plan"})
+- `emit_json(dict)` — for ad-hoc dict output; automatically adds `success: True`
+- `emit_json_result(result)` — for result dataclass output; calls `to_json_dict()` or falls back to `dataclasses.asdict()`
 
-# For result dataclass output — calls to_json_dict() or dataclasses.asdict()
-emit_json_result(PrListResult(plans=[...], count=5))
-```
+See `packages/erk-shared/src/erk_shared/agentclick/json_command.py` for current signatures.
 
 **`emit_json_result()` protocol**:
 
@@ -71,12 +68,9 @@ emit_json_result(PrListResult(plans=[...], count=5))
 
 ## Error Handling
 
-```python
-from erk_shared.agentclick.errors import AgentCliError
+`AgentCliError` extends `click.ClickException` with an `error_type` parameter. See `packages/erk-shared/src/erk_shared/agentclick/errors.py` for the current class definition.
 
-class AgentCliError(click.ClickException):
-    def __init__(self, message: str, *, error_type: str) -> None:
-```
+Import: `from erk_shared.agentclick.errors import AgentCliError`
 
 When `--json` is active, `AgentCliError` serializes as:
 

@@ -77,12 +77,7 @@ Branch display uses a priority chain because after merge+deletion, `run.branch` 
 
 **Source**: `packages/erk-shared/src/erk_shared/gateway/github/abc.py`
 
-```python
-@abstractmethod
-def get_pr_head_branches(
-    self, location: GitHubRepoLocation, pr_numbers: list[int]
-) -> dict[int, str]:
-```
+See source file for the current method signature.
 
 Batch-fetches head branch names for PR numbers in a single GraphQL query. Follows the 4-place gateway pattern (ABC, Real, Fake, DryRun). Missing PRs are omitted from the returned dict.
 

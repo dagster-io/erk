@@ -131,17 +131,9 @@ The plan-implement workflow has a timing issue: the plan job may push commits to
 
 ### Fix: Reset After Checkout
 
-```yaml
-- name: Checkout implementation branch
-  run: |
-    git checkout "$BRANCH_NAME"
-    git fetch origin "$BRANCH_NAME"
-    git reset --hard "origin/$BRANCH_NAME"
-```
-
 **Source**: `.github/workflows/plan-implement.yml` (implement job checkout step)
 
-This is safe because the implement job has no local work to lose at this point — it's the first operation after checkout. The pattern ensures the implement job starts with the exact state the plan job left on the remote.
+The checkout step follows the Checkout → Fetch → Reset pattern (see source file for current YAML). This is safe because the implement job has no local work to lose at this point — it's the first operation after checkout. The pattern ensures the implement job starts with the exact state the plan job left on the remote.
 
 ### Pattern: Checkout → Fetch → Reset
 
