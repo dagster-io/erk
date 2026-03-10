@@ -53,8 +53,7 @@ def check_objective(
             click.echo(json.dumps({"success": False, "error": result.message}))
             raise SystemExit(1)
         user_output(
-            click.style("Error: ", fg="red")
-            + f"Failed to validate objective: {result.message}"
+            click.style("Error: ", fg="red") + f"Failed to validate objective: {result.message}"
         )
         raise SystemExit(1)
 

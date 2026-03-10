@@ -46,9 +46,7 @@ class ObjectiveCheckResult:
         return {
             "success": v.passed,
             "issue_number": self.issue_number,
-            "checks": [
-                {"passed": passed, "description": desc} for passed, desc in v.checks
-            ],
+            "checks": [{"passed": passed, "description": desc} for passed, desc in v.checks],
             "phases": serialize_phases(phases),
             "summary": v.summary,
             "next_node": v.next_node,
