@@ -9,8 +9,8 @@ from unittest.mock import patch
 import pytest
 
 from erk_mcp.server import (
-    JsonCommandTool,
-    _build_json_command_tools,
+    MachineCommandTool,
+    _build_machine_command_tools,
     _run_erk,
     _run_erk_json,
     create_mcp,
@@ -74,19 +74,19 @@ class TestRunErkJson:
     """Tests for _run_erk_json subprocess wrapper with command path tuples."""
 
     @patch("erk_mcp.server.subprocess.run")
-    def test_pipes_json_stdin_with_json_flag(self, mock_run: patch) -> None:
+    def test_pipes_json_stdin(self, mock_run: patch) -> None:
         mock_run.return_value = subprocess.CompletedProcess(
-            args=["erk", "one-shot", "--json"],
+            args=["erk", "json", "one-shot"],
             returncode=0,
             stdout='{"success": true}',
             stderr="",
         )
 
-        result = _run_erk_json(("one-shot",), {"prompt": "Fix bug"})
+        result = _run_erk_json(("json", "one-shot"), {"prompt": "Fix bug"})
 
         assert result == '{"success": true}'
         mock_run.assert_called_once_with(
-            ["erk", "one-shot", "--json"],
+            ["erk", "json", "one-shot"],
             input='{"prompt": "Fix bug"}',
             capture_output=True,
             text=True,
@@ -96,30 +96,30 @@ class TestRunErkJson:
     @patch("erk_mcp.server.subprocess.run")
     def test_returns_stdout_on_nonzero_exit(self, mock_run: patch) -> None:
         mock_run.return_value = subprocess.CompletedProcess(
-            args=["erk", "one-shot", "--json"],
+            args=["erk", "json", "one-shot"],
             returncode=1,
             stdout='{"success": false, "error_type": "auth_required"}',
             stderr="",
         )
 
-        result = _run_erk_json(("one-shot",), {"prompt": "Do something"})
+        result = _run_erk_json(("json", "one-shot"), {"prompt": "Do something"})
 
         assert result == '{"success": false, "error_type": "auth_required"}'
 
     @patch("erk_mcp.server.subprocess.run")
     def test_subcommand_path_expands_correctly(self, mock_run: patch) -> None:
         mock_run.return_value = subprocess.CompletedProcess(
-            args=["erk", "pr", "list", "--json"],
+            args=["erk", "json", "pr", "list"],
             returncode=0,
             stdout='{"success": true, "plans": []}',
             stderr="",
         )
 
-        result = _run_erk_json(("pr", "list"), {"state": "open"})
+        result = _run_erk_json(("json", "pr", "list"), {"state": "open"})
 
         assert result == '{"success": true, "plans": []}'
         mock_run.assert_called_once_with(
-            ["erk", "pr", "list", "--json"],
+            ["erk", "json", "pr", "list"],
             input='{"state": "open"}',
             capture_output=True,
             text=True,
@@ -127,17 +127,17 @@ class TestRunErkJson:
         )
 
 
-class TestJsonCommandTool:
-    """Tests for JsonCommandTool dynamic MCP tool."""
+class TestMachineCommandTool:
+    """Tests for MachineCommandTool dynamic MCP tool."""
 
     @patch("erk_mcp.server.subprocess.run")
     def test_filters_none_values(self, mock_run: patch) -> None:
         mock_run.return_value = subprocess.CompletedProcess(
             args=[], returncode=0, stdout='{"success": true}', stderr=""
         )
-        tool = JsonCommandTool(
+        tool = MachineCommandTool(
             name="test_tool",
-            cli_command_path=("test-cmd",),
+            cli_command_path=("json", "test-cmd"),
             description="Test",
             parameters={"type": "object", "properties": {"a": {"type": "string"}}},
         )
@@ -152,9 +152,9 @@ class TestJsonCommandTool:
         mock_run.return_value = subprocess.CompletedProcess(
             args=[], returncode=0, stdout='{"success": true}', stderr=""
         )
-        tool = JsonCommandTool(
+        tool = MachineCommandTool(
             name="test_tool",
-            cli_command_path=("test-cmd",),
+            cli_command_path=("json", "test-cmd"),
             description="Test",
             parameters={"type": "object", "properties": {"a": {"type": "string"}}},
         )
@@ -169,9 +169,9 @@ class TestJsonCommandTool:
         mock_run.return_value = subprocess.CompletedProcess(
             args=[], returncode=0, stdout='{"success": true}', stderr=""
         )
-        tool = JsonCommandTool(
+        tool = MachineCommandTool(
             name="test_tool",
-            cli_command_path=("test-cmd",),
+            cli_command_path=("json", "test-cmd"),
             description="Test",
             parameters={"type": "object", "properties": {"a": {"type": "string"}}},
         )
@@ -186,9 +186,9 @@ class TestJsonCommandTool:
         mock_run.return_value = subprocess.CompletedProcess(
             args=[], returncode=0, stdout='{"success": true}', stderr=""
         )
-        tool = JsonCommandTool(
+        tool = MachineCommandTool(
             name="my_tool",
-            cli_command_path=("my-command",),
+            cli_command_path=("json", "my-command"),
             description="Test",
             parameters={"type": "object", "properties": {"x": {"type": "string"}}},
         )
@@ -196,7 +196,7 @@ class TestJsonCommandTool:
         asyncio.run(tool.run({"x": "val"}))
 
         mock_run.assert_called_once_with(
-            ["erk", "my-command", "--json"],
+            ["erk", "json", "my-command"],
             input='{"x": "val"}',
             capture_output=True,
             text=True,
@@ -208,9 +208,9 @@ class TestJsonCommandTool:
         mock_run.return_value = subprocess.CompletedProcess(
             args=[], returncode=0, stdout='{"success": true}', stderr=""
         )
-        tool = JsonCommandTool(
+        tool = MachineCommandTool(
             name="pr_list",
-            cli_command_path=("pr", "list"),
+            cli_command_path=("json", "pr", "list"),
             description="List plans",
             parameters={"type": "object", "properties": {}},
         )
@@ -218,7 +218,7 @@ class TestJsonCommandTool:
         asyncio.run(tool.run({"state": "open"}))
 
         mock_run.assert_called_once_with(
-            ["erk", "pr", "list", "--json"],
+            ["erk", "json", "pr", "list"],
             input='{"state": "open"}',
             capture_output=True,
             text=True,
@@ -226,34 +226,34 @@ class TestJsonCommandTool:
         )
 
     def test_discovered_tools_include_one_shot(self) -> None:
-        tools = _build_json_command_tools()
+        tools = _build_machine_command_tools()
         tool_names = {t.name for t in tools}
         assert "one_shot" in tool_names
 
     def test_one_shot_tool_has_correct_command_path(self) -> None:
-        tools = _build_json_command_tools()
+        tools = _build_machine_command_tools()
         one_shot_tool = [t for t in tools if t.name == "one_shot"][0]
-        assert one_shot_tool.cli_command_path == ("one-shot",)
+        assert one_shot_tool.cli_command_path == ("json", "one-shot")
 
     def test_discovered_tools_include_pr_list(self) -> None:
-        tools = _build_json_command_tools()
+        tools = _build_machine_command_tools()
         tool_names = {t.name for t in tools}
         assert "pr_list" in tool_names
 
     def test_pr_list_tool_has_subcommand_path(self) -> None:
-        tools = _build_json_command_tools()
+        tools = _build_machine_command_tools()
         pr_list_tool = [t for t in tools if t.name == "pr_list"][0]
-        assert pr_list_tool.cli_command_path == ("pr", "list")
+        assert pr_list_tool.cli_command_path == ("json", "pr", "list")
 
     def test_discovered_tools_include_pr_view(self) -> None:
-        tools = _build_json_command_tools()
+        tools = _build_machine_command_tools()
         tool_names = {t.name for t in tools}
         assert "pr_view" in tool_names
 
     def test_pr_view_tool_has_subcommand_path(self) -> None:
-        tools = _build_json_command_tools()
+        tools = _build_machine_command_tools()
         pr_view_tool = [t for t in tools if t.name == "pr_view"][0]
-        assert pr_view_tool.cli_command_path == ("pr", "view")
+        assert pr_view_tool.cli_command_path == ("json", "pr", "view")
 
 
 class TestCreateMcp:

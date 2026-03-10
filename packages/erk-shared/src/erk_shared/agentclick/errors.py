@@ -4,7 +4,7 @@ import click
 
 
 class AgentCliError(click.ClickException):
-    """Exception with error_type for JSON serialization by @json_command."""
+    """Exception with error_type for JSON serialization by @machine_command."""
 
     def __init__(self, message: str, *, error_type: str) -> None:
         super().__init__(message)

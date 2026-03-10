@@ -9,8 +9,8 @@ from typing import TYPE_CHECKING, Any
 from anyio import to_thread
 from fastmcp.tools.tool import Tool, ToolResult
 
-from erk_shared.agentclick.json_schema import command_input_schema
-from erk_shared.agentclick.mcp_exposed import discover_mcp_commands
+from erk_shared.agentclick.machine_schema import request_schema
+from erk_shared.agentclick.mcp_exposed import discover_machine_commands
 
 if TYPE_CHECKING:
     from fastmcp import FastMCP
@@ -33,14 +33,14 @@ def _run_erk(args: list[str]) -> subprocess.CompletedProcess[str]:
 
 
 def _run_erk_json(command_path: tuple[str, ...], params: dict[str, Any]) -> str:
-    """Run erk command with --json, piping params as JSON stdin.
+    """Run erk machine command, piping params as JSON stdin.
 
     Args:
-        command_path: Tuple of subcommand names, e.g. ("pr", "list") or ("one-shot",).
+        command_path: Tuple of subcommand names, e.g. ("json", "pr", "list").
         params: JSON-serializable dict piped to stdin.
     """
     result = subprocess.run(
-        ["erk", *command_path, "--json"],
+        ["erk", *command_path],
         input=json.dumps(params),
         capture_output=True,
         text=True,
@@ -49,11 +49,11 @@ def _run_erk_json(command_path: tuple[str, ...], params: dict[str, Any]) -> str:
     return result.stdout
 
 
-class JsonCommandTool(Tool):
-    """MCP tool backed by an erk @json_command CLI command.
+class MachineCommandTool(Tool):
+    """MCP tool backed by an erk @machine_command CLI command.
 
     Dynamically registers a CLI command as an MCP tool using the command's
-    input schema derived from Click parameters. The tool filters out None
+    input schema derived from the request dataclass. The tool filters out None
     values before piping params as JSON to the CLI.
     """
 
@@ -69,19 +69,19 @@ class JsonCommandTool(Tool):
         return self.convert_result(result)
 
 
-def _build_json_command_tools() -> tuple[JsonCommandTool, ...]:
-    """Discover @mcp_exposed commands and build JsonCommandTool instances."""
+def _build_machine_command_tools() -> tuple[MachineCommandTool, ...]:
+    """Discover @machine_command commands and build MachineCommandTool instances."""
     from erk.cli.cli import cli
 
-    tools: list[JsonCommandTool] = []
-    for cmd, meta, command_path in discover_mcp_commands(cli, _parent_path=()):
+    tools: list[MachineCommandTool] = []
+    for cmd, meta, command_path in discover_machine_commands(cli, _parent_path=()):
         assert cmd.name is not None
         tools.append(
-            JsonCommandTool(
+            MachineCommandTool(
                 name=meta.name,
                 cli_command_path=command_path,
                 description=meta.description,
-                parameters=command_input_schema(cmd),
+                parameters=request_schema(meta.request_type),
             )
         )
     return tuple(tools)
@@ -92,8 +92,8 @@ def create_mcp() -> FastMCP:
     from fastmcp import FastMCP
 
     server = FastMCP(DEFAULT_MCP_NAME)
-    # Auto-discovered @mcp_exposed @json_command tools
-    for tool in _build_json_command_tools():
+    # Auto-discovered @machine_command tools
+    for tool in _build_machine_command_tools():
         server.add_tool(tool)
     return server
 

@@ -1,9 +1,7 @@
 """Command to list plans with filtering."""
 
-import tempfile
 from collections.abc import Callable
 from dataclasses import dataclass
-from pathlib import Path
 from typing import Any, ParamSpec, TypeVar
 
 import click
@@ -12,18 +10,14 @@ from rich.table import Table
 from rich.text import Text
 
 from erk.cli.core import discover_repo_context
-from erk.cli.repo_resolution import get_remote_github, resolved_repo_option
+from erk.cli.repo_resolution import resolved_repo_option
 from erk.core.context import ErkContext
 from erk.core.display_utils import strip_rich_markup
 from erk.core.repo_discovery import ensure_erk_metadata_dir
 from erk.tui.app import ErkDashApp
 from erk.tui.data.real_provider import RealPlanDataProvider
-from erk.tui.data.types import PlanFilters, PlanRowData, serialize_plan_row
-from erk.tui.sorting.logic import sort_plans
+from erk.tui.data.types import PlanFilters, PlanRowData
 from erk.tui.sorting.types import SortKey, SortState
-from erk_shared.agentclick.json_command import json_command
-from erk_shared.agentclick.mcp_exposed import mcp_exposed
-from erk_shared.context.types import NoRepoSentinel
 from erk_shared.gateway.browser.real import RealBrowserLauncher
 from erk_shared.gateway.clipboard.real import RealClipboard
 from erk_shared.gateway.github.emoji import get_pr_status_emoji
@@ -52,9 +46,9 @@ class PrListResult:
 
 
 def format_pr_cell(pr: PullRequestInfo, *, use_graphite: bool, graphite_url: str | None) -> str:
-    """Format PR cell with clickable link and emoji: #123 👀 or #123 👀🔗
+    """Format PR cell with clickable link and emoji: #123 or #123
 
-    The 🔗 emoji is appended for PRs that will auto-close the linked issue when merged.
+    The link emoji is appended for PRs that will auto-close the linked issue when merged.
 
     Args:
         pr: PR information
@@ -67,9 +61,9 @@ def format_pr_cell(pr: PullRequestInfo, *, use_graphite: bool, graphite_url: str
     emoji = get_pr_status_emoji(pr)
     pr_text = f"#{pr.number}"
 
-    # Append 🔗 for PRs that will close the issue when merged
+    # Append link for PRs that will close the issue when merged
     if pr.will_close_target:
-        emoji += "🔗"
+        emoji += "\U0001f517"
 
     # Determine which URL to use
     url = graphite_url if use_graphite else pr.url
@@ -252,103 +246,6 @@ def _row_to_static_values(
     return tuple(values)
 
 
-def _pr_list_impl(
-    ctx: ErkContext,
-    *,
-    label: tuple[str, ...],
-    state: str | None,
-    run_state: str | None,
-    stage: str | None,
-    limit: int | None,
-    all_users: bool,
-    sort: str,
-    repo_id: GitHubRepoId,
-    json_mode: bool,
-) -> PrListResult | None:
-    http_client = ctx.http_client
-    if http_client is None:
-        user_output(click.style("Error: ", fg="red") + "GitHub authentication not available")
-        raise SystemExit(1)
-
-    # Determine creator filter via RemoteGitHub (works for both local and remote)
-    creator: str | None = None
-    if not all_users:
-        remote = get_remote_github(ctx)
-        is_authenticated, username, _ = remote.check_auth_status()
-        if is_authenticated and username:
-            creator = username
-
-    labels = label if label else ("erk-pr",)
-
-    # Determine location root
-    if not isinstance(ctx.repo, NoRepoSentinel):
-        root = ctx.repo.root
-    else:
-        root = Path(tempfile.gettempdir()) / "erk-remote"
-
-    location = GitHubRepoLocation(
-        root=root,
-        repo_id=repo_id,
-    )
-
-    provider = RealPlanDataProvider(
-        ctx,
-        location=location,
-        http_client=http_client,
-    )
-
-    effective_state: IssueFilterState = "closed" if state == "closed" else "open"
-
-    filters = PlanFilters(
-        labels=labels,
-        state=effective_state,
-        run_state=run_state,
-        limit=limit,
-        show_prs=True,
-        show_runs=True,
-        exclude_labels=(),
-        creator=creator,
-        show_pr_column=False,
-        lifecycle_stage=stage,
-    )
-
-    rows, timings = provider.fetch_plans(filters)
-
-    if timings is not None and timings.warnings:
-        for warning in timings.warnings:
-            user_output(click.style("Warning: ", fg="yellow") + warning)
-
-    if stage is not None:
-        rows = [r for r in rows if strip_rich_markup(r.lifecycle_display).startswith(stage)]
-
-    if not rows:
-        if json_mode:
-            return PrListResult(plans=[], count=0)
-        user_output("No plans found matching the criteria.")
-        return None
-
-    # Sort: branch activity only available with local repo
-    if sort == "activity" and not isinstance(ctx.repo, NoRepoSentinel):
-        sort_key = SortKey.BRANCH_ACTIVITY
-        activity_by_plan = provider.fetch_branch_activity(rows)
-        rows = sort_plans(rows, sort_key, activity_by_plan=activity_by_plan)
-    else:
-        sort_key = SortKey.PLAN_ID
-        rows = sort_plans(rows, sort_key)
-
-    if json_mode:
-        plans = [serialize_plan_row(row) for row in rows]
-        return PrListResult(plans=plans, count=len(plans))
-
-    table = _build_static_table(rows, show_pr_column=False)
-
-    user_output(f"\nFound {len(rows)} plan(s):\n")
-    console = Console(stderr=True, width=200, force_terminal=True)
-    console.print(table)
-    console.print()
-    return None
-
-
 def _run_interactive_mode(
     ctx: ErkContext,
     *,
@@ -456,15 +353,6 @@ def _run_interactive_mode(
     app.run()
 
 
-@mcp_exposed(
-    name="pr_list",
-    description=(
-        "List erk plans with status, labels, and metadata."
-        " Returns JSON array of plans."
-        " Use state parameter to filter by 'open' or 'closed'."
-    ),
-)
-@json_command(exclude_json_input=frozenset({"repo_id"}), output_types=(PrListResult,))
 @click.command("list")
 @pr_filter_options
 @resolved_repo_option
@@ -480,8 +368,7 @@ def pr_list(
     all_users: bool,
     sort: str,
     repo_id: GitHubRepoId,
-    json_mode: bool,
-) -> PrListResult | None:
+) -> None:
     """List plans as a static table.
 
     By default, shows only plans created by you. Use --all-users (-A)
@@ -499,8 +386,9 @@ def pr_list(
         erk pr list --sort activity      # Sort by recent branch activity
         erk pr list --repo owner/repo    # Remote mode (no local git required)
     """
-    return _pr_list_impl(
-        ctx,
+    from erk.cli.commands.pr.list_operation import PrListRequest, run_pr_list
+
+    request = PrListRequest(
         label=label,
         state=state,
         run_state=run_state,
@@ -508,9 +396,58 @@ def pr_list(
         limit=limit,
         all_users=all_users,
         sort=sort,
-        repo_id=repo_id,
-        json_mode=json_mode,
+        repo=f"{repo_id.owner}/{repo_id.repo}",
     )
+
+    result = run_pr_list(request, ctx=ctx)
+
+    if result.count == 0:
+        user_output("No plans found matching the criteria.")
+        return
+
+    table = _build_static_table_from_result(result)
+    user_output(f"\nFound {result.count} plan(s):\n")
+    console = Console(stderr=True, width=200, force_terminal=True)
+    console.print(table)
+    console.print()
+
+
+def _build_static_table_from_result(result: PrListResult) -> Table:
+    """Build a Rich table from PrListResult for human display.
+
+    Since the core operation returns serialized dicts, we build
+    a table from the plan dicts matching the TUI column layout.
+    """
+    table = Table(show_header=True, header_style="bold")
+    table.add_column("pr", style="cyan", no_wrap=True, width=6)
+    table.add_column("stage", no_wrap=True, width=8)
+    table.add_column("sts", no_wrap=True, width=4)
+    table.add_column("created", no_wrap=True, width=7)
+    table.add_column("obj", no_wrap=True, width=5)
+    table.add_column("branch", no_wrap=True, width=42)
+    table.add_column("run-id", no_wrap=True, width=10)
+    table.add_column("run", no_wrap=True, width=3)
+    table.add_column("author", no_wrap=True, width=9)
+
+    for plan in result.plans:
+        plan_id = plan.get("plan_id", "?")
+        plan_url = plan.get("plan_url", "")
+        plan_cell = f"[link={plan_url}]#{plan_id}[/link]" if plan_url else f"#{plan_id}"
+        run_id_display = plan.get("run_id_display", "-")
+        run_state_display = plan.get("run_state_display", "-")
+        table.add_row(
+            plan_cell,
+            plan.get("lifecycle_display", "-"),
+            plan.get("status_display", "-"),
+            plan.get("created_display", "-"),
+            plan.get("objective_display", "-"),
+            plan.get("pr_head_branch", plan.get("worktree_branch", "-")),
+            run_id_display,
+            run_state_display,
+            plan.get("author", "-"),
+        )
+
+    return table
 
 
 @click.command("dash")

@@ -1,118 +1,118 @@
 ---
-title: "@json_command Decorator"
+title: "Machine and JSON Command Infrastructure"
 read_when:
-  - "adding @json_command decorator to a CLI command"
+  - "adding @machine_command decorator to a CLI command"
   - "creating structured JSON CLI output"
   - "understanding emit_json patterns"
-  - "implementing output_types validation"
   - "working with AgentCliError error handling"
+  - "creating a machine-readable command under erk json"
 tripwires:
-  - action: "applying @json_command below @click.command in the decorator stack"
-    warning: "@json_command must be applied ABOVE @click.command. The correct order is @mcp_exposed > @json_command > @click.command."
-  - action: "using json.dumps without indent=2 in a @json_command context"
-    warning: "All json.dumps() calls in @json_command commands use indent=2 for pretty-printing."
-  - action: "raising an exception in a @json_command without using AgentCliError"
-    warning: "Use AgentCliError(message, error_type=...) to ensure errors serialize as JSON when --json is active."
-  - action: "declaring output_types that don't match the return annotation"
-    warning: "test_output_types_matches_return_annotation() validates output_types against return type hints. Mismatches fail CI."
+  - action: "applying @machine_command below @click.command in the decorator stack"
+    warning: "@machine_command must be applied ABOVE @click.command. The correct order is @machine_command > @click.command."
+  - action: "using json.dumps without indent=2 in a @machine_command context"
+    warning: "All json.dumps() calls in @machine_command commands use indent=2 for pretty-printing."
+  - action: "raising an exception in a @machine_command without using AgentCliError"
+    warning: "Use AgentCliError(message, error_type=...) to ensure errors serialize as JSON."
+  - action: "adding Click options to a @machine_command"
+    warning: "Machine commands derive input from a request dataclass, not Click options. Only @click.pass_obj is allowed."
 ---
 
-# @json_command Decorator
+# Machine and JSON Command Infrastructure
 
-Universal CLI JSON infrastructure for agent-optimized command output.
+## Architecture: Three-Layer Pattern
+
+Commands now follow a three-layer architecture:
+
+1. **Core operation** — Pure business logic in `*_operation.py` files. Takes a request dataclass, returns a result dataclass.
+2. **Human CLI adapter** — Click command with options, calls core operation, renders human-readable output.
+3. **Machine CLI adapter** — `@machine_command` under `erk json ...`, reads JSON from stdin, calls core operation, emits JSON.
+
+## @machine_command Decorator
+
+**Source**: `packages/erk-shared/src/erk_shared/agentclick/machine_command.py`
+
+Machine commands are JSON-in (stdin) / JSON-out (stdout). Input schema is derived from a request dataclass, not Click parameters.
+
+```python
+@machine_command(
+    request_type=MyRequest,
+    result_types=(MyResult,),
+    name="my_tool",
+    description="Does something useful",
+)
+@click.command("my-tool")
+@click.pass_obj
+def json_my_tool(ctx: ErkContext, *, request: MyRequest) -> MyResult:
+    return run_my_operation(request, ctx=ctx)
+```
+
+See `src/erk/cli/commands/json/` for working examples.
+
+### Decorator Parameters
+
+| Parameter      | Type               | Purpose                              |
+| -------------- | ------------------ | ------------------------------------ |
+| `request_type` | `type`             | Frozen dataclass type for JSON input |
+| `result_types` | `tuple[type, ...]` | Result types for schema generation   |
+| `name`         | `str`              | MCP tool name                        |
+| `description`  | `str`              | MCP tool description                 |
+
+### Behavior
+
+- Reads JSON from stdin via `click.get_text_stream("stdin")`
+- Deserializes into request dataclass (extra keys ignored, missing optional fields use defaults)
+- Injects as `request` keyword argument
+- Serializes result as JSON with `success: True`
+- Serializes errors as JSON with `success: False`
+- `--schema` flag outputs input/output/error schemas without executing
+
+### Metadata
+
+Stores a `MachineCommandMeta` frozen dataclass on each decorated command. The MCP server and discovery utilities use this metadata to auto-register tools. See `MachineCommandMeta` in `machine_command.py` for the public API.
+
+## Utility Functions (Legacy)
 
 **Source**: `packages/erk-shared/src/erk_shared/agentclick/json_command.py`
 
-## Decorator Parameters
+Utility functions still available for ad-hoc use:
 
-```python
-@json_command(
-    exclude_json_input=frozenset({"repo_id"}),
-    required_json_input=frozenset({"prompt"}),
-    output_types=(PrListResult, PrViewResult),
-)
-```
-
-| Parameter             | Type               | Purpose                                                    |
-| --------------------- | ------------------ | ---------------------------------------------------------- |
-| `exclude_json_input`  | `frozenset[str]`   | Parameter names to skip when mapping JSON stdin input      |
-| `required_json_input` | `frozenset[str]`   | Parameters that must be present and non-None in JSON input |
-| `output_types`        | `tuple[type, ...]` | Result types for JSON Schema generation via `--schema`     |
-
-Two usage forms:
-
-- **Bare**: `@json_command` (no configuration needed)
-- **Parameterized**: `@json_command(exclude_json_input=..., output_types=...)`
-
-## CLI Flags Added
-
-The decorator adds two flags to the command:
-
-- `--json` — Output structured JSON instead of human-readable text
-- `--schema` — Output JSON Schema for the command's result types
-
-## emit_json() and emit_json_result()
-
-Two helpers for producing JSON output:
-
-- `emit_json(dict)` — for ad-hoc dict output; automatically adds `success: True`
-- `emit_json_result(result)` — for result dataclass output; calls `to_json_dict()` or falls back to `dataclasses.asdict()`
-
-See `packages/erk-shared/src/erk_shared/agentclick/json_command.py` for current signatures.
-
-**`emit_json_result()` protocol**:
-
-1. Calls `result.to_json_dict()` if method exists
-2. Falls back to `dataclasses.asdict()` for plain dataclasses
-3. Raises `TypeError` if neither is available
+- `emit_json(dict)` — outputs dict with `success: True`
+- `emit_json_result(result)` — outputs result dataclass as JSON
+- `read_stdin_json()` — reads JSON from stdin
 
 ## Error Handling
 
-`AgentCliError` extends `click.ClickException` with an `error_type` parameter. See `packages/erk-shared/src/erk_shared/agentclick/errors.py` for the current class definition.
+`AgentCliError` extends `click.ClickException` with an `error_type` parameter.
 
 Import: `from erk_shared.agentclick.errors import AgentCliError`
 
-When `--json` is active, `AgentCliError` serializes as:
+Machine commands serialize errors as:
 
 ```json
 { "success": false, "error_type": "invalid_plan", "message": "Plan not found" }
 ```
 
-Three error categories:
+Error categories:
 
-- **Validation errors**: `error_type: "invalid_json_input"` (bad stdin JSON)
+- **Validation errors**: `error_type: "invalid_json"` or `"invalid_request"`
 - **Command errors**: Custom `error_type` from `AgentCliError`
-- **Passthrough**: `SystemExit` and non-Click exceptions pass through unchanged
+- **Passthrough**: `SystemExit` passes through unchanged
 
-## JSON Input Validation
+## Testing @machine_command Commands
 
-When `--json` is active, the decorator reads from stdin (if piped):
-
-1. Input must be a JSON object (dict), not array
-2. All keys must match command parameters and not be in `exclude_json_input`
-3. Required fields (from `required_json_input`) must be present and non-None
-
-## output_types Validation
-
-A CI test (`test_output_types_matches_return_annotation()`) enforces consistency:
-
-- Walks the entire CLI tree collecting `@json_command` decorated commands
-- Compares declared `output_types` against function return type annotations
-- `type(None)` in unions is stripped (represents inline emission or no return)
-- Mismatches fail the test with descriptive error messages
-
-**Source**: `tests/unit/cli/test_json_command.py`
-
-## Testing @json_command Commands
-
-Use `CliRunner` with JSON assertions:
+Use `CliRunner` with `input` parameter for stdin:
 
 ```python
-result = runner.invoke(my_command, ["--json"])
+runner = CliRunner()
+result = runner.invoke(cmd, [], input='{"prompt": "hello"}')
 data = json.loads(result.output)
 assert data["success"] is True
 ```
 
-## Metadata Storage
+Schema tests:
 
-The decorator stores `JsonCommandMeta` (frozen dataclass) on the Command object and preserves the original callback as `cmd._json_command_original_callback` for schema introspection.
+```python
+result = runner.invoke(cmd, ["--schema"])
+doc = json.loads(result.output)
+assert "input_schema" in doc
+```
