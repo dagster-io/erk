@@ -390,7 +390,7 @@ def _update_objective_node(
         explicit_status="planning",
         description=None,
         slug=None,
-        reason=None,
+        comment=None,
     )
 
     if updated_body is None:
@@ -444,7 +444,7 @@ def _batch_update_objective_nodes(
             explicit_status="planning",
             description=None,
             slug=None,
-            reason=None,
+            comment=None,
         )
         if new_body is not None:
             updated_body = new_body
@@ -496,7 +496,7 @@ def _mark_node_planning(
         explicit_status="planning",
         description=None,
         slug=None,
-        reason=None,
+        comment=None,
     )
 
     if updated_body is None:

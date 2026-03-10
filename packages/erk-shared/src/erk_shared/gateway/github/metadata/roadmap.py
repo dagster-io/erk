@@ -37,7 +37,7 @@ class RoadmapNode:
     pr: str | None  # None or "#456" (PR number)
     depends_on: tuple[str, ...] | None  # None = not specified, () = no deps
     slug: str | None  # None = not yet generated, or kebab-case slug
-    reason: str | None  # None = not specified, or reason text (e.g., why skipped)
+    comment: str | None  # None = not specified, or comment text (e.g., why skipped)
 
 
 @dataclass(frozen=True)
@@ -149,9 +149,9 @@ def validate_roadmap_frontmatter(
             errors.append(f"Step {i} field 'slug' must be a string or null")
             return None, errors
 
-        raw_reason = step_dict.get("reason")
-        if raw_reason is not None and not isinstance(raw_reason, str):
-            errors.append(f"Step {i} field 'reason' must be a string or null")
+        raw_comment = step_dict.get("comment")
+        if raw_comment is not None and not isinstance(raw_comment, str):
+            errors.append(f"Step {i} field 'comment' must be a string or null")
             return None, errors
 
         steps.append(
@@ -162,7 +162,7 @@ def validate_roadmap_frontmatter(
                 pr=raw_pr,
                 depends_on=depends_on,
                 slug=raw_slug,
-                reason=raw_reason,
+                comment=raw_comment,
             )
         )
 
@@ -217,7 +217,7 @@ def render_roadmap_block_inner(nodes: list[RoadmapNode]) -> str:
         ``<details>`` with a YAML code block.
     """
     any_has_depends_on = any(s.depends_on is not None for s in nodes)
-    any_has_reason = any(s.reason is not None for s in nodes)
+    any_has_comment = any(s.comment is not None for s in nodes)
     node_dicts: list[dict[str, object]] = []
     for s in nodes:
         node_dict: dict[str, object] = {
@@ -229,8 +229,8 @@ def render_roadmap_block_inner(nodes: list[RoadmapNode]) -> str:
         }
         if any_has_depends_on:
             node_dict["depends_on"] = list(s.depends_on) if s.depends_on is not None else []
-        if any_has_reason:
-            node_dict["reason"] = s.reason
+        if any_has_comment:
+            node_dict["comment"] = s.comment
         node_dicts.append(node_dict)
     data: dict[str, object] = {
         "schema_version": "4",
@@ -327,7 +327,7 @@ def update_node_in_frontmatter(
     status: RoadmapNodeStatus | None,
     description: str | None,
     slug: str | None,
-    reason: str | None,
+    comment: str | None,
 ) -> str | None:
     """Update a node's fields in frontmatter YAML.
 
@@ -338,7 +338,7 @@ def update_node_in_frontmatter(
         status: Explicit status to set, or None to infer from resolved values.
         description: New description, or None to preserve existing.
         slug: New slug, or None to preserve existing.
-        reason: New reason, or None to preserve existing.
+        comment: New comment, or None to preserve existing.
 
     Returns:
         Updated block content with modified YAML, or None if node not found
@@ -376,8 +376,8 @@ def update_node_in_frontmatter(
                 replacements["description"] = description
             if slug is not None:
                 replacements["slug"] = slug
-            if reason is not None:
-                replacements["reason"] = reason
+            if comment is not None:
+                replacements["comment"] = comment
 
             updated_steps.append(replace(step, **replacements))
             found = True
@@ -398,7 +398,7 @@ def add_node_to_frontmatter(
     slug: str | None,
     status: RoadmapNodeStatus,
     depends_on: tuple[str, ...] | None,
-    reason: str | None,
+    comment: str | None,
 ) -> tuple[str, str] | None:
     """Add a new node to a phase in frontmatter YAML.
 
@@ -412,7 +412,7 @@ def add_node_to_frontmatter(
         slug: Kebab-case identifier, or None to auto-generate
         status: Node status (typically "pending")
         depends_on: Dependency node IDs, or None
-        reason: Reason for adding, or None
+        comment: Comment text, or None
 
     Returns:
         Tuple of (updated block content, assigned node ID), or None if
@@ -452,7 +452,7 @@ def add_node_to_frontmatter(
         pr=None,
         depends_on=depends_on,
         slug=resolved_slug,
-        reason=reason,
+        comment=comment,
     )
 
     # Insert after last node of same phase, or at end if phase not found
@@ -698,7 +698,7 @@ def serialize_phases(phases: list[RoadmapPhase]) -> list[dict[str, object]]:
                     "status": step.status,
                     "pr": step.pr,
                     "depends_on": list(step.depends_on) if step.depends_on is not None else None,
-                    "reason": step.reason,
+                    "comment": step.comment,
                 }
                 for step in phase.nodes
             ],

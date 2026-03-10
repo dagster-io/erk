@@ -495,7 +495,7 @@ def test_none_pr_preserves_existing_value() -> None:
         explicit_status="planning",
         description=None,
         slug=None,
-        reason=None,
+        comment=None,
     )
 
     assert result is not None
@@ -516,7 +516,7 @@ def test_empty_string_clears_pr_value() -> None:
         explicit_status=None,
         description=None,
         slug=None,
-        reason=None,
+        comment=None,
     )
 
     assert result is not None
@@ -829,15 +829,15 @@ def test_update_slug() -> None:
     assert "add-utils" in updated_body
 
 
-def test_update_reason() -> None:
-    """--reason sets the reason field in frontmatter."""
+def test_update_comment() -> None:
+    """--comment sets the comment field in frontmatter."""
     issue = _make_issue(6423, ROADMAP_BODY_V2)
     fake_gh = FakeGitHubIssues(issues={6423: issue})
     runner = CliRunner()
 
     result = runner.invoke(
         update_objective_node,
-        ["6423", "--node", "1.3", "--status", "skipped", "--reason", "Superseded by new approach"],
+        ["6423", "--node", "1.3", "--status", "skipped", "--comment", "Superseded by new approach"],
         obj=ErkContext.for_test(github=FakeLocalGitHub(issues_gateway=fake_gh)),
     )
 
@@ -850,10 +850,10 @@ def test_update_reason() -> None:
     assert "status: skipped" in updated_body
 
 
-def test_reason_preserved_when_not_passed() -> None:
-    """Reason is preserved when not passed in an update."""
-    # Build a body that already has a reason
-    body_with_reason = """\
+def test_comment_preserved_when_not_passed() -> None:
+    """Comment is preserved when not passed in an update."""
+    # Build a body that already has a comment
+    body_with_comment = """\
 # Objective: Build Feature X
 
 <!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->
@@ -870,14 +870,14 @@ nodes:
     status: skipped
     pr: null
     slug: null
-    reason: Was not needed
+    comment: Was not needed
 
 ```
 
 </details>
 <!-- /erk:metadata-block:objective-roadmap -->
 """
-    issue = _make_issue(6423, body_with_reason)
+    issue = _make_issue(6423, body_with_comment)
     fake_gh = FakeGitHubIssues(issues={6423: issue})
     runner = CliRunner()
 

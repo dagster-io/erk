@@ -121,8 +121,8 @@ erk exec update-objective-node 8470 --node 1.3 --description "Revised descriptio
 # Set slug
 erk exec update-objective-node 8470 --node 1.3 --slug "revised-slug"
 
-# Skip with reason
-erk exec update-objective-node 8470 --node 1.3 --status skipped --reason "Superseded by new approach"
+# Skip with comment
+erk exec update-objective-node 8470 --node 1.3 --status skipped --comment "Superseded by new approach"
 
 # Combine multiple updates
 erk exec update-objective-node 8470 --node 2.1 --description "New desc" --slug "new-slug" --status planning
@@ -142,10 +142,10 @@ erk exec add-objective-node 8470 --phase 2 \
   --slug integration-tests \
   --depends-on 2.1 --depends-on 2.2
 
-# With reason for adding
+# With comment for adding
 erk exec add-objective-node 8470 --phase 1 \
   --description "Handle edge case" \
-  --reason "Discovered during re-evaluation"
+  --comment "Discovered during re-evaluation"
 ```
 
 ### Updating Node Status

@@ -58,7 +58,7 @@ def _make_roadmap_node(
         pr=pr,
         depends_on=None,
         slug=None,
-        reason=None,
+        comment=None,
     )
 
 

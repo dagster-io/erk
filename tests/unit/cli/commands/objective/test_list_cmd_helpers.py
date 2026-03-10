@@ -191,7 +191,7 @@ def _roadmap_node(
         pr=pr,
         depends_on=depends_on,
         slug=None,
-        reason=None,
+        comment=None,
     )
 
 

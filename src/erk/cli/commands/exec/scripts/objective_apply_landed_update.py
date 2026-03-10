@@ -96,7 +96,7 @@ def _update_nodes_in_body(
             explicit_status="done",
             description=None,
             slug=None,
-            reason=None,
+            comment=None,
         )
         if new_body is None:
             continue

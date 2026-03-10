@@ -7,7 +7,7 @@ Usage:
       [--slug cleanup-modify-existing] \
       [--status pending] \
       [--depends-on 1.2] [--depends-on 1.3] \
-      [--reason "Added during objective re-evaluation"]
+      [--comment "Added during objective re-evaluation"]
 
 Output:
     JSON with {success, issue_number, node_id, url}
@@ -62,7 +62,7 @@ from erk_shared.gateway.github.types import BodyText
     multiple=True,
     help="Dependency node IDs",
 )
-@click.option("--reason", required=False, default=None, help="Reason for adding this node")
+@click.option("--comment", required=False, default=None, help="Comment for adding this node")
 @click.pass_context
 def add_objective_node(
     ctx: click.Context,
@@ -73,7 +73,7 @@ def add_objective_node(
     slug: str | None,
     status: str,
     depends_on_ids: tuple[str, ...],
-    reason: str | None,
+    comment: str | None,
 ) -> None:
     """Add a new node to an objective's roadmap."""
     github = require_issues(ctx)
@@ -124,7 +124,7 @@ def add_objective_node(
         slug=slug,
         status=cast(RoadmapNodeStatus, status),
         depends_on=depends_on,
-        reason=reason,
+        comment=comment,
     )
 
     if result is None:
