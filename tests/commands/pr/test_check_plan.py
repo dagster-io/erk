@@ -450,7 +450,7 @@ def test_validate_plan_format_passes_valid_plan() -> None:
         pr_references=None,
     )
 
-    result = validate_plan_format(fake_remote, owner="owner", repo="repo", plan_number=42)
+    result = validate_plan_format(fake_remote, owner="owner", repo="repo", pr_number=42)
 
     assert isinstance(result, PlanValidationSuccess)
     assert result.passed is True
@@ -488,7 +488,7 @@ def test_validate_plan_format_fails_missing_plan_header() -> None:
         pr_references=None,
     )
 
-    result = validate_plan_format(fake_remote, owner="owner", repo="repo", plan_number=42)
+    result = validate_plan_format(fake_remote, owner="owner", repo="repo", pr_number=42)
 
     assert isinstance(result, PlanValidationSuccess)
     assert result.passed is False
@@ -534,7 +534,7 @@ def test_validate_plan_format_fails_missing_first_comment() -> None:
         pr_references=None,
     )
 
-    result = validate_plan_format(fake_remote, owner="owner", repo="repo", plan_number=42)
+    result = validate_plan_format(fake_remote, owner="owner", repo="repo", pr_number=42)
 
     assert isinstance(result, PlanValidationSuccess)
     assert result.passed is False
@@ -579,7 +579,7 @@ def test_validate_plan_format_fails_missing_plan_body() -> None:
         pr_references=None,
     )
 
-    result = validate_plan_format(fake_remote, owner="owner", repo="repo", plan_number=42)
+    result = validate_plan_format(fake_remote, owner="owner", repo="repo", pr_number=42)
 
     assert isinstance(result, PlanValidationSuccess)
     assert result.passed is False
@@ -604,7 +604,7 @@ def test_validate_plan_format_returns_error_on_github_failure() -> None:
         pr_references=None,
     )
 
-    result = validate_plan_format(fake_remote, owner="owner", repo="repo", plan_number=999)
+    result = validate_plan_format(fake_remote, owner="owner", repo="repo", pr_number=999)
 
     assert isinstance(result, PlanValidationError)
     assert "999" in result.error or "not found" in result.error.lower()
@@ -654,7 +654,7 @@ def test_validate_plan_format_passes_draft_pr_plan() -> None:
         pr_references=None,
     )
 
-    result = validate_plan_format(fake_remote, owner="owner", repo="repo", plan_number=42)
+    result = validate_plan_format(fake_remote, owner="owner", repo="repo", pr_number=42)
 
     assert isinstance(result, PlanValidationSuccess)
     assert result.passed is True

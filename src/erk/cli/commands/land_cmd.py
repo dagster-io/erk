@@ -1386,7 +1386,7 @@ def render_land_execution_script(
     if objective_number is not None:
         cmd_parts.append(f"--objective-number={objective_number}")
     if plan_number is not None:
-        cmd_parts.append(f"--plan-number={plan_number}")
+        cmd_parts.append(f"--linked-pr-number={plan_number}")
     # User-controllable flags passed through "$@"
     cmd_parts.append('"$@"')
 

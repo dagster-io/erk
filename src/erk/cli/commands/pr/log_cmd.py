@@ -139,15 +139,15 @@ def pr_log(
     try:
         remote = get_remote_github(ctx)
 
-        plan_number = parse_issue_identifier(identifier)
+        pr_number = parse_issue_identifier(identifier)
 
-        issue = remote.get_issue(owner=repo_id.owner, repo=repo_id.repo, number=plan_number)
+        issue = remote.get_issue(owner=repo_id.owner, repo=repo_id.repo, number=pr_number)
         if isinstance(issue, IssueNotFound):
             user_output(click.style("Error: ", fg="red") + f"PR '{identifier}' not found")
             raise SystemExit(1)
 
         comment_bodies = remote.get_issue_comments(
-            owner=repo_id.owner, repo=repo_id.repo, number=plan_number
+            owner=repo_id.owner, repo=repo_id.repo, number=pr_number
         )
 
         events = _extract_events_from_comments(comment_bodies)
@@ -156,7 +156,7 @@ def pr_log(
         if output_json:
             _output_json(events)
         else:
-            _output_timeline(events, plan_number)
+            _output_timeline(events, pr_number)
 
     except (RuntimeError, ValueError) as e:
         user_output(click.style("Error: ", fg="red") + str(e))
@@ -345,18 +345,18 @@ def _output_json(events: list[Event]) -> None:
     user_output(json.dumps(events, indent=2))
 
 
-def _output_timeline(events: list[Event], plan_number: int) -> None:
+def _output_timeline(events: list[Event], pr_number: int) -> None:
     """Output events as human-readable timeline.
 
     Args:
         events: List of Event objects sorted chronologically
-        plan_number: GitHub issue number for the plan
+        pr_number: GitHub issue number for the plan
     """
     if not events:
-        user_output(f"No events found for PR #{plan_number}")
+        user_output(f"No events found for PR #{pr_number}")
         return
 
-    user_output(f"PR #{plan_number} Event Timeline\n")
+    user_output(f"PR #{pr_number} Event Timeline\n")
 
     for event in events:
         # Format timestamp as human-readable

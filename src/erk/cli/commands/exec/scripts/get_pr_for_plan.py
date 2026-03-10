@@ -55,7 +55,7 @@ def get_pr_for_plan(
 ) -> None:
     """Get PR details for a plan.
 
-    For planned-PR plans, the plan_id IS the PR number — look up directly.
+    For planned-PR plans, the pr_id IS the PR number — look up directly.
     """
     github = require_github_gateway(ctx)
     repo_root = require_repo_root(ctx)

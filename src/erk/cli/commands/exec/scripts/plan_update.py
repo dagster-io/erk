@@ -109,8 +109,8 @@ def plan_update(
     assert plan_content is not None
 
     # Step 2: Check plan exists via PlanBackend
-    plan_id = str(pr_number)
-    plan_result = backend.get_plan(repo_root, plan_id)
+    pr_id = str(pr_number)
+    plan_result = backend.get_plan(repo_root, pr_id)
     if isinstance(plan_result, PlanNotFound):
         _handle_update_error(f"PR #{pr_number} not found")
 
@@ -119,7 +119,7 @@ def plan_update(
 
     # Step 3: Update plan content via PlanBackend
     try:
-        backend.update_plan_content(repo_root, plan_id, plan_content.strip(), summary=summary or "")
+        backend.update_plan_content(repo_root, pr_id, plan_content.strip(), summary=summary or "")
     except RuntimeError as e:
         _handle_update_error(f"Failed to update comment: {e}", cause=e)
 
@@ -129,7 +129,7 @@ def plan_update(
     full_title = f"{title_tag} {new_title}"
 
     try:
-        backend.update_plan_title(repo_root, plan_id, full_title)
+        backend.update_plan_title(repo_root, pr_id, full_title)
     except RuntimeError as e:
         _handle_update_error(f"Failed to update title: {e}", cause=e)
 

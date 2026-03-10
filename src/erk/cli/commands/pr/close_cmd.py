@@ -60,7 +60,7 @@ def pr_close(ctx: ErkContext, identifier: str, *, repo_id: GitHubRepoId) -> None
     if objective_id is not None:
         run_objective_update_after_close(
             ctx,
-            plan_number=number,
+            pr_number=number,
             objective=objective_id,
         )
 

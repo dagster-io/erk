@@ -42,9 +42,9 @@ def get_plan_info(
     backend = require_plan_backend(ctx)
     repo_root = require_repo_root(ctx)
 
-    plan_id = str(pr_number)
+    pr_id = str(pr_number)
 
-    plan = backend.get_plan(repo_root, plan_id)
+    plan = backend.get_plan(repo_root, pr_id)
     if isinstance(plan, PlanNotFound):
         click.echo(
             json.dumps(

@@ -77,7 +77,7 @@ def _format_learn_state(
     return "- not started"
 
 
-def _format_header_section(header_info: dict[str, object], *, plan_url: str | None) -> list[str]:
+def _format_header_section(header_info: dict[str, object], *, pr_url: str | None) -> list[str]:
     """Format the header info section for display."""
     lines: list[str] = []
 
@@ -164,8 +164,8 @@ def _format_header_section(header_info: dict[str, object], *, plan_url: str | No
 
     if learn_status_val == "pending":
         learn_run_id_raw = header_info.get(LEARN_RUN_ID)
-        if learn_run_id_raw is not None and plan_url is not None:
-            owner_repo = extract_owner_repo_from_github_url(plan_url)
+        if learn_run_id_raw is not None and pr_url is not None:
+            owner_repo = extract_owner_repo_from_github_url(pr_url)
             if owner_repo is not None:
                 workflow_url = construct_workflow_run_url(
                     owner_repo[0], owner_repo[1], str(learn_run_id_raw)
@@ -188,7 +188,7 @@ def _display_plan(result: PrViewResult) -> None:
     state_color = "green" if result.state == "OPEN" else "red"
     user_output(_format_field("State", click.style(result.state, fg=state_color)))
 
-    id_text = f"#{result.plan_id}"
+    id_text = f"#{result.pr_id}"
     if result.url:
         colored_id = click.style(id_text, fg="cyan")
         clickable_id = f"\033]8;;{result.url}\033\\{colored_id}\033]8;;\033\\"
@@ -215,7 +215,7 @@ def _display_plan(result: PrViewResult) -> None:
     user_output(_format_field("Created", created))
     user_output(_format_field("Updated", updated))
 
-    header_lines = _format_header_section(result.header_fields, plan_url=result.url)
+    header_lines = _format_header_section(result.header_fields, pr_url=result.url)
     for line in header_lines:
         user_output(line)
 

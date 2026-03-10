@@ -26,7 +26,7 @@ def write_dispatch_metadata(
     plan_backend: PlanBackend,
     github: LocalGitHub,
     repo_root: Path,
-    plan_number: int,
+    pr_number: int,
     run_id: str,
     dispatched_at: str,
 ) -> None:
@@ -40,10 +40,10 @@ def write_dispatch_metadata(
         raise RuntimeError(f"Could not get node_id for run {run_id}")
 
     # LBYL: Check plan exists before updating metadata
-    pr_id = str(plan_number)
+    pr_id = str(pr_number)
     plan_result = plan_backend.get_plan(repo_root, pr_id)
     if isinstance(plan_result, PlanNotFound):
-        raise RuntimeError(f"Plan #{plan_number} not found")
+        raise RuntimeError(f"Plan #{pr_number} not found")
 
     plan_backend.ensure_plan_header(repo_root, pr_id)
     plan_backend.update_metadata(

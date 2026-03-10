@@ -1,4 +1,4 @@
-"""Detect plan number from the current git branch.
+"""Detect PR number from the current git branch.
 
 Uses github.get_pr_for_branch() to look up the associated PR for plnd/ branches.
 Plan-ref.json is the primary source; this exec script is the fallback when no
@@ -42,7 +42,7 @@ def _detect_plan_from_branch_impl(
             Signature: () -> int | None
 
     Returns:
-        Detection result dict with 'found', and optionally 'plan_number' and 'detection_method'.
+        Detection result dict with 'found', and optionally 'pr_number' and 'detection_method'.
     """
     if current_branch is None:
         return {"found": False}
@@ -58,7 +58,7 @@ def _detect_plan_from_branch_impl(
 @click.command(name="detect-plan-from-branch")
 @click.pass_context
 def detect_plan_from_branch(ctx: click.Context) -> None:
-    """Detect plan number from the current git branch.
+    """Detect PR number from the current git branch.
 
     Looks up the associated PR for the current branch.
 

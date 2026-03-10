@@ -134,17 +134,17 @@ class HookInput:
     github_planning_enabled: bool
     implement_now_marker_exists: bool
     plan_saved_marker_exists: bool
-    plan_saved_plan_number: int | None  # Plan number read from plan-saved marker
+    plan_saved_pr_number: int | None  # Plan number read from plan-saved marker
     incremental_plan_marker_exists: bool
     objective_context_marker_exists: bool
     objective_id: int | None  # Objective issue number if marker exists
     plan_file_path: Path | None  # Path to plan file if exists, None otherwise
-    plan_title: str | None  # Title extracted from plan file for display
+    pr_title: str | None  # Title extracted from plan file for display
     current_branch: str | None
     branch_has_commits: bool  # Whether branch has commits ahead of trunk
     worktree_name: str | None  # Directory name of current worktree
     pr_number: int | None  # PR number if exists for current branch
-    plan_number: int | None  # Plan number from .erk/impl-context/plan-ref.json
+    pr_number_from_plan_ref: int | None  # Plan number from .erk/impl-context/plan-ref.json
     editor: str | None  # Value of EDITOR env var for TUI detection
 
     @classmethod
@@ -155,17 +155,17 @@ class HookInput:
         github_planning_enabled: bool = True,
         implement_now_marker_exists: bool = False,
         plan_saved_marker_exists: bool = False,
-        plan_saved_plan_number: int | None = None,
+        plan_saved_pr_number: int | None = None,
         incremental_plan_marker_exists: bool = False,
         objective_context_marker_exists: bool = False,
         objective_id: int | None = None,
         plan_file_path: Path | None = None,
-        plan_title: str | None = None,
+        pr_title: str | None = None,
         current_branch: str | None = "feature-branch",
         branch_has_commits: bool = False,
         worktree_name: str | None = None,
         pr_number: int | None = None,
-        plan_number: int | None = None,
+        pr_number_from_plan_ref: int | None = None,
         editor: str | None = None,
     ) -> Self:
         """Create a HookInput with test defaults.
@@ -174,15 +174,15 @@ class HookInput:
         - session_id: "test-session"
         - github_planning_enabled: True
         - All marker exists flags: False
-        - plan_saved_plan_number: None
+        - plan_saved_pr_number: None
         - objective_issue: None
         - plan_file_path: None
-        - plan_title: None
+        - pr_title: None
         - current_branch: "feature-branch"
         - branch_has_commits: False
         - worktree_name: None
         - pr_number: None
-        - plan_number: None
+        - pr_number_from_plan_ref: None
         - editor: None
         """
         return cls(
@@ -190,17 +190,17 @@ class HookInput:
             github_planning_enabled=github_planning_enabled,
             implement_now_marker_exists=implement_now_marker_exists,
             plan_saved_marker_exists=plan_saved_marker_exists,
-            plan_saved_plan_number=plan_saved_plan_number,
+            plan_saved_pr_number=plan_saved_pr_number,
             incremental_plan_marker_exists=incremental_plan_marker_exists,
             objective_context_marker_exists=objective_context_marker_exists,
             objective_id=objective_id,
             plan_file_path=plan_file_path,
-            plan_title=plan_title,
+            pr_title=pr_title,
             current_branch=current_branch,
             branch_has_commits=branch_has_commits,
             worktree_name=worktree_name,
             pr_number=pr_number,
-            plan_number=plan_number,
+            pr_number_from_plan_ref=pr_number_from_plan_ref,
             editor=editor,
         )
 
@@ -222,7 +222,7 @@ class HookOutput:
 # ============================================================================
 
 
-def extract_plan_title(plan_file_path: Path | None) -> str | None:
+def extract_pr_title(plan_file_path: Path | None) -> str | None:
     """Extract title from plan file for display in menu.
 
     Pure function - only reads file content, no other I/O.
@@ -258,7 +258,7 @@ def extract_plan_title(plan_file_path: Path | None) -> str | None:
 
 def build_step2_message(
     *,
-    plan_number: int,
+    pr_number: int,
     url: str,
 ) -> str:
     """Build the Step 2 blocking message after plan is saved.
@@ -269,13 +269,13 @@ def build_step2_message(
     into their shell. No interactive menu — just informational output.
 
     Args:
-        plan_number: The plan PR number that was just saved.
+        pr_number: The plan PR number that was just saved.
         url: The URL of the saved plan PR.
     """
-    next_steps = format_plan_next_steps_plain(plan_number, url=url)
+    next_steps = format_plan_next_steps_plain(pr_number, url=url)
 
     lines = [
-        f"PR #{plan_number} saved successfully.",
+        f"PR #{pr_number} saved successfully.",
         "",
         "Display ALL of the following next-steps commands to the user as plain text.",
         "Show every line exactly as written — do NOT summarize, truncate, or omit any lines.",
@@ -294,10 +294,10 @@ def build_blocking_message(
     current_branch: str | None,
     branch_has_commits: bool,
     plan_file_path: Path | None,
-    plan_title: str | None,
+    pr_title: str | None,
     worktree_name: str | None,
     pr_number: int | None,
-    plan_number: int | None,
+    pr_number_from_plan_ref: int | None,
     editor: str | None,
 ) -> str:
     """Build the blocking message with AskUserQuestion instructions.
@@ -309,18 +309,18 @@ def build_blocking_message(
         current_branch: Current git branch name.
         branch_has_commits: Whether branch has commits ahead of trunk.
         plan_file_path: Path to the plan file, if it exists.
-        plan_title: Title extracted from plan file, if available.
+        pr_title: Title extracted from plan file, if available.
         worktree_name: Directory name of current worktree.
         pr_number: PR number if exists for current branch.
-        plan_number: Plan number from .erk/impl-context/plan-ref.json.
+        pr_number_from_plan_ref: Plan number from .erk/impl-context/plan-ref.json.
         editor: Value of EDITOR env var for TUI detection.
     """
     # Build context lines for the question
     context_lines: list[str] = []
 
     # First line: title
-    if plan_title:
-        context_lines.append(f"📋 {plan_title}")
+    if pr_title:
+        context_lines.append(f"📋 {pr_title}")
 
     # Second line: statusline-style context
     statusline_parts: list[str] = []
@@ -330,8 +330,8 @@ def build_blocking_message(
         statusline_parts.append(f"br:{current_branch}")
     if pr_number is not None:
         statusline_parts.append(f"pr:#{pr_number}")
-    if plan_number is not None:
-        statusline_parts.append(f"plan:#{plan_number}")
+    if pr_number_from_plan_ref is not None:
+        statusline_parts.append(f"plan:#{pr_number_from_plan_ref}")
 
     if statusline_parts:
         statusline = " ".join(f"({part})" for part in statusline_parts)
@@ -508,10 +508,10 @@ def determine_exit_action(hook_input: HookInput) -> HookOutput:
 
     # Plan-saved marker present — show Step 2 "what next?" prompt
     if hook_input.plan_saved_marker_exists:
-        plan_num = hook_input.plan_saved_plan_number
-        if plan_num is not None:
+        pr_num = hook_input.plan_saved_pr_number
+        if pr_num is not None:
             saved_msg = build_step2_message(
-                plan_number=plan_num,
+                pr_number=pr_num,
                 url="",
             )
         else:
@@ -543,10 +543,10 @@ def determine_exit_action(hook_input: HookInput) -> HookOutput:
             current_branch=hook_input.current_branch,
             branch_has_commits=hook_input.branch_has_commits,
             plan_file_path=hook_input.plan_file_path,
-            plan_title=hook_input.plan_title,
+            pr_title=hook_input.pr_title,
             worktree_name=hook_input.worktree_name,
             pr_number=hook_input.pr_number,
-            plan_number=hook_input.plan_number,
+            pr_number_from_plan_ref=hook_input.pr_number_from_plan_ref,
             editor=hook_input.editor,
         ),
     )
@@ -724,7 +724,7 @@ def _gather_inputs(
     # Determine marker existence
     implement_now_marker_exists = False
     plan_saved_marker_exists = False
-    plan_saved_plan_number: int | None = None
+    plan_saved_pr_number: int | None = None
     incremental_plan_marker_exists = False
     objective_context_marker_exists = False
     objective_id: int | None = None
@@ -732,7 +732,7 @@ def _gather_inputs(
         implement_now_marker_exists = _get_implement_now_marker_path(session_id, repo_root).exists()
         plan_saved_marker_exists = _get_plan_saved_marker_path(session_id, repo_root).exists()
         if plan_saved_marker_exists:
-            plan_saved_plan_number = read_plan_saved_marker(session_id, repo_root)
+            plan_saved_pr_number = read_plan_saved_marker(session_id, repo_root)
         marker_path = _get_incremental_plan_marker_path(session_id, repo_root)
         incremental_plan_marker_exists = marker_path.exists()
         objective_context_marker_exists = _get_objective_context_marker_path(
@@ -746,16 +746,16 @@ def _gather_inputs(
         plan_file_path = _find_session_plan(session_id, repo_root, claude_installation)
 
     # Extract title for display (after finding plan file)
-    plan_title: str | None = None
+    pr_title: str | None = None
     if plan_file_path is not None:
-        plan_title = extract_plan_title(plan_file_path)
+        pr_title = extract_pr_title(plan_file_path)
 
     # Get current branch (only if we need to show the blocking message)
     current_branch: str | None = None
     branch_has_commits = False
     worktree_name: str | None = None
     pr_number: int | None = None
-    plan_number: int | None = None
+    pr_number_from_plan_ref: int | None = None
 
     needs_blocking_message = (
         session_id is not None
@@ -771,7 +771,7 @@ def _gather_inputs(
         worktree_name = _get_worktree_name(git, repo_root)
         impl_dir = resolve_impl_dir(repo_root, branch_name=current_branch)
         plan_ref = read_plan_ref(impl_dir) if impl_dir is not None else None
-        plan_number = (
+        pr_number_from_plan_ref = (
             int(plan_ref.pr_id) if plan_ref is not None and plan_ref.pr_id.isdigit() else None
         )
         editor = os.environ.get("EDITOR")
@@ -792,17 +792,17 @@ def _gather_inputs(
         github_planning_enabled=github_planning_enabled,
         implement_now_marker_exists=implement_now_marker_exists,
         plan_saved_marker_exists=plan_saved_marker_exists,
-        plan_saved_plan_number=plan_saved_plan_number,
+        plan_saved_pr_number=plan_saved_pr_number,
         incremental_plan_marker_exists=incremental_plan_marker_exists,
         objective_context_marker_exists=objective_context_marker_exists,
         objective_id=objective_id,
         plan_file_path=plan_file_path,
-        plan_title=plan_title,
+        pr_title=pr_title,
         current_branch=current_branch,
         branch_has_commits=branch_has_commits,
         worktree_name=worktree_name,
         pr_number=pr_number,
-        plan_number=plan_number,
+        pr_number_from_plan_ref=pr_number_from_plan_ref,
         editor=editor,
     )
 

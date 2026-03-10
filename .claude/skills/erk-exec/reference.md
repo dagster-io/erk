@@ -35,7 +35,7 @@ Quick reference for all `erk exec` subcommands.
 | `create-impl-context-from-plan`   | Create .erk/impl-context/ folder from plan content.                               |
 | `create-pr-from-session`          | Extract plan from Claude session and create GitHub draft PR.                      |
 | `dash-data`                       | Serialize plan dashboard data to JSON.                                            |
-| `detect-plan-from-branch`         | Detect plan number from the current git branch.                                   |
+| `detect-plan-from-branch`         | Detect PR number from the current git branch.                                     |
 | `detect-trunk-branch`             | Detect whether repo uses main or master as trunk branch.                          |
 | `discover-reviews`                | Discover code reviews matching PR changed files.                                  |
 | `download-remote-session`         | Download a session from a git branch.                                             |
@@ -108,7 +108,7 @@ Quick reference for all `erk exec` subcommands.
 | `track-learn-result`              | Track learn workflow result on a plan.                                            |
 | `update-issue-body`               | Update an issue's body using REST API (avoids GraphQL rate limits).               |
 | `update-objective-node`           | Update node fields in an objective's roadmap table.                               |
-| `update-plan-header`              | Update plan-header metadata fields on a plan.                                     |
+| `update-plan-header`              | Update plan-header metadata fields on a PR.                                       |
 | `update-pr-description`           | Update PR title and body with AI-generated description.                           |
 | `upload-impl-session`             | Upload current implementation session for async learn.                            |
 | `user-prompt-hook`                | UserPromptSubmit hook for session persistence and coding reminders.               |
@@ -351,7 +351,7 @@ Serialize plan dashboard data to JSON.
 
 ### detect-plan-from-branch
 
-Detect plan number from the current git branch.
+Detect PR number from the current git branch.
 
 **Usage:** `erk exec detect-plan-from-branch`
 
@@ -734,7 +734,7 @@ Execute deferred land operations.
 | `--is-current-branch` | FLAG    | No       | -              | Whether landing from the branch's own worktree                                           |
 | `--target-child`      | TEXT    | No       | Sentinel.UNSET | Target child branch for --up navigation                                                  |
 | `--objective-number`  | INTEGER | No       | Sentinel.UNSET | Linked objective issue number                                                            |
-| `--plan-number`       | INTEGER | No       | Sentinel.UNSET | Linked PR number                                                                         |
+| `--linked-pr-number`  | INTEGER | No       | Sentinel.UNSET | Linked PR number                                                                         |
 | `--use-graphite`      | FLAG    | No       | -              | Use Graphite for merge                                                                   |
 | `--pull`              | FLAG    | No       | -              | Pull latest changes after landing (default: --pull)                                      |
 | `--no-delete`         | FLAG    | No       | -              | Preserve the local branch and its slot assignment after landing                          |
@@ -1375,7 +1375,7 @@ Update node fields in an objective's roadmap table.
 
 ### update-plan-header
 
-Update plan-header metadata fields on a plan.
+Update plan-header metadata fields on a PR.
 
 **Usage:** `erk exec update-plan-header` <pr_id> [fields]
 

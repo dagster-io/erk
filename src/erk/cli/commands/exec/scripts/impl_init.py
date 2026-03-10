@@ -141,7 +141,7 @@ def impl_init(ctx: click.Context, json_output: bool) -> None:
     # Get plan reference info
     plan_ref = read_plan_ref(impl_dir)
     has_plan_tracking = plan_ref is not None
-    plan_number = int(plan_ref.pr_id) if plan_ref else None
+    pr_number = int(plan_ref.pr_id) if plan_ref else None
 
     # Read plan content
     plan_file = impl_dir / "plan.md"
@@ -157,7 +157,7 @@ def impl_init(ctx: click.Context, json_output: bool) -> None:
         "related_docs": related_docs,
     }
 
-    if plan_number is not None:
-        result["pr_number"] = plan_number
+    if pr_number is not None:
+        result["pr_number"] = pr_number
 
     click.echo(json.dumps(result))

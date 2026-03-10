@@ -86,8 +86,8 @@ def _validate_batch_input(data: object) -> list[PlanLabelItem] | BatchLabelError
                 message=f"Item at index {idx} missing required 'pr_number' field",
             )
 
-        plan_number = item_dict["pr_number"]
-        if not isinstance(plan_number, int):
+        pr_number = item_dict["pr_number"]
+        if not isinstance(pr_number, int):
             return BatchLabelError(
                 success=False,
                 error_type="invalid-input",
@@ -109,7 +109,7 @@ def _validate_batch_input(data: object) -> list[PlanLabelItem] | BatchLabelError
                 message=f"Item at index {idx} has non-string 'label'",
             )
 
-        validated_items.append({"pr_number": plan_number, "label": label})
+        validated_items.append({"pr_number": pr_number, "label": label})
 
     return validated_items
 
@@ -153,16 +153,16 @@ def add_plan_labels(ctx: click.Context) -> None:
     results: list[dict[str, object]] = []
 
     for item in validated:
-        plan_number = item["pr_number"]
+        pr_number = item["pr_number"]
         label = item["label"]
-        plan_id = str(plan_number)
+        pr_id = str(pr_number)
 
         try:
-            backend.add_label(repo_root, plan_id, label)
+            backend.add_label(repo_root, pr_id, label)
         except RuntimeError as e:
             results.append(
                 {
-                    "pr_number": plan_number,
+                    "pr_number": pr_number,
                     "success": False,
                     "error": f"Failed to add label: {e}",
                 }
@@ -171,7 +171,7 @@ def add_plan_labels(ctx: click.Context) -> None:
 
         results.append(
             {
-                "pr_number": plan_number,
+                "pr_number": pr_number,
                 "success": True,
                 "label": label,
             }

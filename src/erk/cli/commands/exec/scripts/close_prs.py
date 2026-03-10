@@ -86,8 +86,8 @@ def _validate_batch_input(data: object) -> list[PlanCloseItem] | BatchCloseError
                 message=f"Item at index {idx} missing required 'pr_number' field",
             )
 
-        plan_number = item_dict["pr_number"]
-        if not isinstance(plan_number, int):
+        pr_number = item_dict["pr_number"]
+        if not isinstance(pr_number, int):
             return BatchCloseError(
                 success=False,
                 error_type="invalid-input",
@@ -109,7 +109,7 @@ def _validate_batch_input(data: object) -> list[PlanCloseItem] | BatchCloseError
                 message=f"Item at index {idx} has non-string 'comment'",
             )
 
-        validated_items.append({"pr_number": plan_number, "comment": comment})
+        validated_items.append({"pr_number": pr_number, "comment": comment})
 
     return validated_items
 
@@ -153,16 +153,16 @@ def close_prs(ctx: click.Context) -> None:
     results: list[dict[str, object]] = []
 
     for item in validated:
-        plan_number = item["pr_number"]
+        pr_number = item["pr_number"]
         comment = item["comment"]
-        plan_id = str(plan_number)
+        pr_id = str(pr_number)
 
         try:
-            comment_id = backend.add_comment(repo_root, plan_id, comment)
+            comment_id = backend.add_comment(repo_root, pr_id, comment)
         except RuntimeError as e:
             results.append(
                 {
-                    "pr_number": plan_number,
+                    "pr_number": pr_number,
                     "success": False,
                     "error": f"Failed to add comment: {e}",
                 }
@@ -170,11 +170,11 @@ def close_prs(ctx: click.Context) -> None:
             continue
 
         try:
-            backend.close_plan(repo_root, plan_id)
+            backend.close_plan(repo_root, pr_id)
         except RuntimeError as e:
             results.append(
                 {
-                    "pr_number": plan_number,
+                    "pr_number": pr_number,
                     "success": False,
                     "error": f"Failed to close PR: {e}",
                     "comment_id": comment_id,
@@ -184,7 +184,7 @@ def close_prs(ctx: click.Context) -> None:
 
         results.append(
             {
-                "pr_number": plan_number,
+                "pr_number": pr_number,
                 "success": True,
                 "comment_id": comment_id,
             }

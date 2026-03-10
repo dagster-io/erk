@@ -57,14 +57,14 @@ class TrackLearnError:
     message: str
 
 
-def _extract_plan_number(identifier: str) -> int | None:
-    """Extract plan number from identifier (number or URL).
+def _extract_pr_number(identifier: str) -> int | None:
+    """Extract PR number from identifier (number or URL).
 
     Args:
         identifier: Plan number or GitHub issue URL
 
     Returns:
-        Plan number or None if invalid
+        PR number or None if invalid
     """
     # Try direct number (LBYL: check before converting)
     if identifier.isdigit():
@@ -83,7 +83,7 @@ def _do_track(
     *,
     backend,
     repo_root: Path,
-    plan_number: int,
+    pr_number: int,
     session_id: str | None,
     time: Time,
 ) -> None:
@@ -92,7 +92,7 @@ def _do_track(
     Args:
         backend: PlanBackend interface for metadata updates and comments
         repo_root: Repository root path
-        plan_number: Plan number
+        pr_number: Plan number
         session_id: Session ID invoking learn (optional)
         time: Time gateway for testable timestamps
     """
@@ -102,7 +102,7 @@ def _do_track(
     track_learn_invocation(
         backend,
         repo_root,
-        str(plan_number),
+        str(pr_number),
         session_id=session_id,
         readable_count=0,
         total_count=0,
@@ -113,7 +113,7 @@ def _do_track(
     try:
         backend.update_metadata(
             repo_root,
-            str(plan_number),
+            str(pr_number),
             metadata={
                 "last_learn_at": timestamp,
                 "last_learn_session": session_id,
@@ -124,7 +124,7 @@ def _do_track(
             success=False,
             error="no-metadata-block",
             message=(
-                f"PR #{plan_number} has no plan-header metadata block"
+                f"PR #{pr_number} has no plan-header metadata block"
                 " — cannot update learn evaluation"
             ),
         )
@@ -134,7 +134,7 @@ def _do_track(
         error = TrackLearnError(
             success=False,
             error="github-api-failed",
-            message=f"Failed to track learn evaluation on PR #{plan_number}: {e}",
+            message=f"Failed to track learn evaluation on PR #{pr_number}: {e}",
         )
         click.echo(json.dumps(asdict(error)), err=True)
         raise SystemExit(1) from None
@@ -163,11 +163,11 @@ def track_learn_evaluation(ctx: click.Context, issue: str | None, session_id: st
     repo_root = require_repo_root(ctx)
     time = require_time(ctx)
 
-    # Resolve plan number: explicit argument or infer from branch
-    plan_number: int | None = None
+    # Resolve PR number: explicit argument or infer from branch
+    pr_number: int | None = None
     if issue is not None:
-        plan_number = _extract_plan_number(issue)
-        if plan_number is None:
+        pr_number = _extract_pr_number(issue)
+        if pr_number is None:
             error = TrackLearnError(
                 success=False,
                 error="invalid-plan-identifier",
@@ -179,11 +179,11 @@ def track_learn_evaluation(ctx: click.Context, issue: str | None, session_id: st
         # Try to infer from current branch
         branch = git.branch.get_current_branch(cwd)
         if branch is not None:
-            plan_id_str = backend.resolve_plan_id_for_branch(repo_root, branch)
-            if plan_id_str is not None:
-                plan_number = int(plan_id_str)
+            pr_id_str = backend.resolve_plan_id_for_branch(repo_root, branch)
+            if pr_id_str is not None:
+                pr_number = int(pr_id_str)
 
-    if plan_number is None:
+    if pr_number is None:
         error = TrackLearnError(
             success=False,
             error="no-plan-specified",
@@ -196,14 +196,14 @@ def track_learn_evaluation(ctx: click.Context, issue: str | None, session_id: st
     _do_track(
         backend=backend,
         repo_root=repo_root,
-        plan_number=plan_number,
+        pr_number=pr_number,
         session_id=session_id,
         time=time,
     )
 
     result = TrackLearnResult(
         success=True,
-        pr_number=plan_number,
+        pr_number=pr_number,
         tracked=True,
     )
 

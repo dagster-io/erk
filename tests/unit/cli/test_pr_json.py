@@ -36,7 +36,7 @@ class TestPrViewResult:
 
     def test_to_json_dict_includes_all_fields(self) -> None:
         result = PrViewResult(
-            plan_id="42",
+            pr_id="42",
             title="My Plan",
             state="OPEN",
             url="https://github.com/owner/repo/issues/42",
@@ -52,7 +52,7 @@ class TestPrViewResult:
 
         data = result.to_json_dict()
 
-        assert data["plan_id"] == "42"
+        assert data["pr_id"] == "42"
         assert data["title"] == "My Plan"
         assert data["state"] == "OPEN"
         assert data["url"] == "https://github.com/owner/repo/issues/42"
@@ -67,7 +67,7 @@ class TestPrViewResult:
 
     def test_to_json_dict_omits_body_when_none(self) -> None:
         result = PrViewResult(
-            plan_id="42",
+            pr_id="42",
             title="My Plan",
             state="OPEN",
             url=None,
@@ -87,7 +87,7 @@ class TestPrViewResult:
 
     def test_to_json_dict_nullable_fields(self) -> None:
         result = PrViewResult(
-            plan_id="42",
+            pr_id="42",
             title="My Plan",
             state="CLOSED",
             url=None,

@@ -312,13 +312,13 @@ def _save_as_planned_pr(
     if not result.pr_id.isdigit():
         msg = f"Expected numeric pr_id from planned PR creation, got: {result.pr_id!r}"
         raise RuntimeError(msg)
-    plan_number = int(result.pr_id)
+    pr_number = int(result.pr_id)
 
     # Create markers and snapshot
     snapshot_result: PlanSnapshot | None = None
     if session_id is not None:
-        create_plan_saved_marker(session_id, repo_root, plan_number)
-        create_plan_saved_issue_marker(session_id, repo_root, plan_number, title=title)
+        create_plan_saved_marker(session_id, repo_root, pr_number)
+        create_plan_saved_issue_marker(session_id, repo_root, pr_number, title=title)
         create_plan_saved_branch_marker(session_id, repo_root, branch_name)
 
         snapshot_result = _get_snapshot_result(
@@ -331,18 +331,18 @@ def _save_as_planned_pr(
 
     # Output
     if output_format == "display":
-        click.echo(f"PR saved as planned PR #{plan_number}")
+        click.echo(f"PR saved as planned PR #{pr_number}")
         click.echo(f"Title: {prefixed_title}")
         click.echo(f"URL: {result.url}")
         click.echo(f"Branch: {branch_name}")
         if snapshot_result is not None:
             click.echo(f"Archived: {snapshot_result.snapshot_dir}")
         click.echo()
-        click.echo(format_plan_next_steps_plain(plan_number, url=result.url))
+        click.echo(format_plan_next_steps_plain(pr_number, url=result.url))
     else:
         output_data: dict[str, str | int | bool | None] = {
             "success": True,
-            "pr_number": plan_number,
+            "pr_number": pr_number,
             "pr_url": result.url,
             "title": prefixed_title,
             "branch_name": branch_name,

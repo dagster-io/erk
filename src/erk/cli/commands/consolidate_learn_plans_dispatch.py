@@ -197,9 +197,10 @@ def dispatch_consolidate_learn_plans(
         user_output(click.style(f"  \u2192 PR #{pr_number}", dim=True))
 
         # Build workflow inputs
+        workflow_pr_number = str(pr_number)
         inputs: dict[str, str] = {
             "branch_name": branch_name,
-            "pr_number": str(pr_number),
+            "pr_number": workflow_pr_number,
             "submitted_by": submitted_by,
         }
         if model is not None:

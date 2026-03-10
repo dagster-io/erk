@@ -46,10 +46,8 @@ from erk_shared.gateway.github.objective_issues import create_objective_issue
 from erk_shared.scratch.scratch import get_scratch_dir
 
 
-def _create_objective_saved_issue_marker(
-    session_id: str, repo_root: Path, plan_number: int
-) -> None:
-    """Create marker file storing the plan number of the saved objective.
+def _create_objective_saved_issue_marker(session_id: str, repo_root: Path, pr_number: int) -> None:
+    """Create marker file storing the PR number of the saved objective.
 
     This marker enables idempotency - when the agent calls objective-save-to-issue
     multiple times in the same session, subsequent calls return the existing issue
@@ -58,11 +56,11 @@ def _create_objective_saved_issue_marker(
     Args:
         session_id: The session ID for the scratch directory.
         repo_root: The repository root path.
-        plan_number: The GitHub issue number where the objective was saved.
+        pr_number: The GitHub issue number where the objective was saved.
     """
     marker_dir = get_scratch_dir(session_id, repo_root=repo_root)
     marker_file = marker_dir / "objective-saved-issue.marker"
-    marker_file.write_text(str(plan_number), encoding="utf-8")
+    marker_file.write_text(str(pr_number), encoding="utf-8")
 
 
 def _get_existing_saved_objective(session_id: str, repo_root: Path) -> int | None:
@@ -205,7 +203,7 @@ def objective_save_to_issue(
 
     # Guard for type narrowing
     if result.plan_number is None:
-        raise RuntimeError("Unexpected: plan_number is None after success")
+        raise RuntimeError("Unexpected: pr_number is None after success")
 
     # Create marker file to enable idempotency
     if session_id is not None:

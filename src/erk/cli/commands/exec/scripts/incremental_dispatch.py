@@ -114,9 +114,10 @@ def incremental_dispatch(
 
     # Build and commit impl-context files to branch
     user_output("Committing PR to branch...")
+    pr_id = str(pr_number)
     files = build_impl_context_files(
         plan_content=plan_content,
-        plan_id=str(pr_number),
+        plan_id=pr_id,
         url=pr_result.url,
         provider="incremental-dispatch",
         objective_id=None,
@@ -181,14 +182,14 @@ def incremental_dispatch(
     )
     user_output(click.style("✓", fg="green") + " Workflow dispatched")
 
-    # Update plan-header dispatch metadata (best-effort)
+    # Update PR header dispatch metadata (best-effort)
     try:
         plan_backend = require_plan_backend(ctx)
         write_dispatch_metadata(
             plan_backend=plan_backend,
             github=github,
             repo_root=repo_root,
-            plan_number=pr_number,
+            pr_number=pr_number,
             run_id=run_id,
             dispatched_at=time.now().isoformat(),
         )

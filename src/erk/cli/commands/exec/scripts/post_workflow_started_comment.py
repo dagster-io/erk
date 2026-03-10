@@ -9,9 +9,9 @@ This replaces ~40 lines of bash heredoc template assembly in GitHub Actions work
 
 Usage:
     erk exec post-workflow-started-comment \\
-        --plan-number 123 \\
+        --pr-number 123 \\
         --branch-name my-feature-branch \\
-        --pr-number 456 \\
+        --impl-pr-number 456 \\
         --run-id 12345678 \\
         --run-url https://github.com/owner/repo/actions/runs/12345678 \\
         --repository owner/repo
@@ -25,9 +25,9 @@ Exit Codes:
 
 Examples:
     $ erk exec post-workflow-started-comment \\
-        --plan-number 123 \\
+        --pr-number 123 \\
         --branch-name feat-auth \\
-        --pr-number 456 \\
+        --impl-pr-number 456 \\
         --run-id 99999 \\
         --run-url https://github.com/acme/app/actions/runs/99999 \\
         --repository acme/app
@@ -83,9 +83,9 @@ def _build_workflow_started_comment(
     by ``parse_metadata_blocks`` during ``erk land``.
 
     Args:
-        plan_number: Plan identifier
+        pr_number: PR identifier
         branch_name: Git branch name
-        pr_number: Pull request number
+        impl_pr_number: Implementation pull request number
         run_id: GitHub Actions workflow run ID
         run_url: Full URL to the workflow run
         repository: Repository in owner/repo format

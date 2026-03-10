@@ -37,10 +37,10 @@ def add_plan_label(
     backend = require_plan_backend(ctx)
     repo_root = require_repo_root(ctx)
 
-    plan_id = str(pr_number)
+    pr_id = str(pr_number)
 
     try:
-        backend.add_label(repo_root, plan_id, label)
+        backend.add_label(repo_root, pr_id, label)
     except RuntimeError as e:
         click.echo(
             json.dumps(

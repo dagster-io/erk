@@ -35,22 +35,22 @@ def check_and_display_plan_issue_closure(
     if pr_id is None:
         return None
 
-    plan_number = int(pr_id)
+    pr_number = int(pr_id)
 
     result = ctx.plan_store.get_plan(repo_root, pr_id)
     if isinstance(result, PlanNotFound):
-        logger.debug("Plan #%d not found, skipping closure check", plan_number)
+        logger.debug("Plan #%d not found, skipping closure check", pr_number)
         return None
 
     if result.state == PlanState.CLOSED:
-        user_output(click.style("✓", fg="green") + f" Closed plan #{plan_number}")
-        return plan_number
+        user_output(click.style("✓", fg="green") + f" Closed plan #{pr_number}")
+        return pr_number
 
     # Issue is open — close it directly (no more "Closes #N" auto-close)
     ctx.plan_store.close_plan(repo_root, pr_id)
-    user_output(click.style("✓", fg="green") + f" Closed plan #{plan_number}")
+    user_output(click.style("✓", fg="green") + f" Closed plan #{pr_number}")
 
-    return plan_number
+    return pr_number
 
 
 def get_objective_for_branch(ctx: ErkContext, repo_root: Path, branch: str) -> int | None:
@@ -76,7 +76,7 @@ def get_objective_for_branch(ctx: ErkContext, repo_root: Path, branch: str) -> i
 def run_objective_update_after_close(
     ctx: ErkContext,
     *,
-    plan_number: int,
+    pr_number: int,
     objective: int,
 ) -> None:
     """Run the objective update after a plan has been closed.
@@ -88,7 +88,7 @@ def run_objective_update_after_close(
     user_output("")
     user_output("Starting objective update...")
 
-    cmd = f"/erk:objective-update-with-closed-plan --plan {plan_number} --objective {objective}"
+    cmd = f"/erk:objective-update-with-closed-plan --plan {pr_number} --objective {objective}"
 
     result = stream_command_with_feedback(
         executor=ctx.prompt_executor,

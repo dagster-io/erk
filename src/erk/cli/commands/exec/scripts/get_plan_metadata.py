@@ -57,10 +57,10 @@ def get_plan_metadata(
     backend = require_plan_backend(ctx)
     repo_root = require_repo_root(ctx)
 
-    plan_id = str(pr_number)
+    pr_id = str(pr_number)
 
     # Get metadata field via PlanBackend
-    result = backend.get_metadata_field(repo_root, plan_id, field_name)
+    result = backend.get_metadata_field(repo_root, pr_id, field_name)
     if isinstance(result, PlanNotFound):
         error_result = MetadataError(
             success=False,

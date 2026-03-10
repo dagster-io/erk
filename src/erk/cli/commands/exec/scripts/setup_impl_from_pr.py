@@ -135,8 +135,8 @@ def create_impl_context_from_pr(
         branch_name: Branch name for impl-context scoping
 
     Returns:
-        Dict with success status, impl_path, pr_number, plan_url, branch,
-        and plan_title.
+        Dict with success status, impl_path, pr_number, pr_url, branch,
+        and pr_title.
     """
     repo_root = require_repo_root(ctx)
     github = require_github(ctx)
@@ -162,7 +162,7 @@ def create_impl_context_from_pr(
         plan_content = impl_context_plan.read_text(encoding="utf-8")
         ref_json_path = impl_context_dir / "ref.json"
         objective_id: int | None = None
-        plan_title: str = pr_result.title
+        pr_title: str = pr_result.title
         if ref_json_path.exists():
             ref_data = json.loads(ref_json_path.read_text(encoding="utf-8"))
             raw_objective = ref_data.get("objective_id")
@@ -170,14 +170,14 @@ def create_impl_context_from_pr(
                 objective_id = raw_objective
             raw_title = ref_data.get("title")
             if isinstance(raw_title, str):
-                plan_title = raw_title
+                pr_title = raw_title
             raw_node_ids = ref_data.get("node_ids")
             if isinstance(raw_node_ids, list):
                 node_ids = tuple(raw_node_ids)
     else:
         # Fallback: extract from PR body (legacy branch or already cleaned up)
         plan_content = extract_plan_content(pr_result.body)
-        plan_title = pr_result.title
+        pr_title = pr_result.title
         objective_id = None
         block = find_metadata_block(pr_result.body, BlockKeys.PLAN_HEADER)
         if block is not None:
@@ -210,7 +210,7 @@ def create_impl_context_from_pr(
         "pr_number": pr_number,
         "pr_url": pr_url,
         "branch": branch_name,
-        "pr_title": plan_title,
+        "pr_title": pr_title,
     }
 
 
