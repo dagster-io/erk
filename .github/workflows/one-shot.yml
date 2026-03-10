@@ -194,7 +194,7 @@ jobs:
         id: read_result
         if: steps.plan.outputs.plan_success == 'true' && steps.verify.outputs.rejected != 'true'
         run: |
-          PLAN_ID=$(jq -r '.plan_number' .erk/impl-context/plan-result.json)
+          PLAN_ID=$(jq -r '.pr_number' .erk/impl-context/plan-result.json)
           PLAN_TITLE=$(jq -r '.title' .erk/impl-context/plan-result.json)
           echo "plan_id=$PLAN_ID" >> $GITHUB_OUTPUT
           echo "plan_title=$PLAN_TITLE" >> $GITHUB_OUTPUT
