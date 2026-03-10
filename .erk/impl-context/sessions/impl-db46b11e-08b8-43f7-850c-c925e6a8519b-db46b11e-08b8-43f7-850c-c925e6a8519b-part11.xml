@@ -1,0 +1,79 @@
+<session>
+  <meta source="agent-ab37afc" />
+  <meta branch="plnd/O9009-objective-json-machi-03-10-1328" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>Run `pytest tests/unit/cli/commands/objective/ -x -v` and report results. Do NOT fix anything.</user>
+  <assistant>I'll execute the pytest command to run the objective CLI command tests.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="12328" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 12328, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01Hm1tbztnzBMNTMKvaPvFy4">
+    <param name="command">uv run pytest tests/unit/cli/commands/objective/ -x -v</param>
+    <param name="description">Run objective CLI command unit tests with verbose output</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="12328" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 12328, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Hm1tbztnzBMNTMKvaPvFy4">
+Exit code 1
+============================= test session starts ==============================
+platform linux -- Python 3.13.12, pytest-9.0.2, pluggy-1.6.0
+rootdir: /home/runner/work/erk/erk
+configfile: pyproject.toml
+plugins: anyio-4.12.1, cov-7.0.0, xdist-3.8.0, asyncio-1.3.0
+asyncio: mode=Mode.AUTO, debug=False, asyncio_default_fixture_loop_scope=function, asyncio_default_test_loop_scope=function
+collected 81 items
+
+tests/unit/cli/commands/objective/test_check_cmd.py .F
+
+=================================== FAILURES ===================================
+_______________________ test_valid_objective_json_output _______________________
+
+    def test_valid_objective_json_output() -&gt; None:
+        """Test JSON output mode returns structured data with phases and summary."""
+        issue = _make_issue(100, "Objective: Test Feature", VALID_OBJECTIVE_BODY)
+        fake_gh = FakeGitHubIssues(issues={100: issue})
+        runner = CliRunner()
+    
+        result = runner.invoke(
+            check_objective,
+            ["100", "--json-output"],
+            obj=_test_ctx(fake_gh=fake_gh, issues={100: issue}),
+        )
+    
+        assert result.exit_code == 0, f"Failed: {result.output}"
+&gt;       output = json.loads(result.output)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+
+... [34 lines omitted] ...
+
+s = 'Warning: --json-output is deprecated. Use \'erk json objective check\' instead.\n{"success": true, "issue_number": 10...iption": "Update docs", "phase": "Foundation", "status": "pending"}, "validation_errors": [], "all_complete": false}\n'
+&gt;           raise JSONDecodeError("Expecting value", s, err.value) from None
+E           json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+../../_temp/uv-python-dir/cpython-3.13.12-linux-x86_64-gnu/lib/python3.13/json/decoder.py:363: JSONDecodeError
+FAILED tests/unit/cli/commands/objective/test_check_cmd.py::test_valid_objective_json_output - json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+========================= 1 failed, 1 passed in 2.65s ==========================
+  </tool_result>
+  <assistant>pytest failed: 1 issue found
+
+**File:** tests/unit/cli/commands/objective/test_check_cmd.py
+
+**Issue:** test_valid_objective_json_output
+
+**Location:** Line 164
+
+**Error:** `JSONDecodeError: Expecting value: line 1 column 1 (char 0)`
+
+**Root Cause:** The JSON output is being prepended with a deprecation warning message:
+```
+Warning: --json-output is deprecated. Use 'erk json objective check' instead.
+```
+
+This warning text appears before the JSON, which causes `json.loads()` to fail when trying to parse the output. The test expects pure JSON but receives the warning followed by JSON.
+
+The actual output being parsed contains:
+```
+Warning: --json-output is deprecated. Use 'erk json objective check' instead.
+{"success": true, "issue_number": 100, ...}
+```</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="1223" cache_read_input_tokens="12328" cache_creation="{'ephemeral_5m_input_tokens': 1223, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>

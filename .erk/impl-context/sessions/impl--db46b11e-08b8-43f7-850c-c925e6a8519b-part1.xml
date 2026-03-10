@@ -1,0 +1,1282 @@
+<session>
+  <meta branch="plnd/O9009-objective-json-machi-03-10-1328" />
+  <meta model="claude-opus-4-6" />
+  <user>&lt;command-message&gt;erk:plan-implement is running…&lt;/command-message&gt;
+&lt;command-name&gt;/erk:plan-implement&lt;/command-name&gt;
+&lt;command-args&gt;9162&lt;/command-args&gt;</user>
+  <user># /erk:plan-implement
+
+Implement a plan - either from GitHub, a markdown file, an existing impl directory under `.erk/impl-context/`, or by saving the current plan first.
+
+This is the primary implementation workflow - it orchestrates:
+
+1. Setting up the impl directory under `.erk/impl-context/&lt;branch&gt;/` (from issue, file, existing folder, or fresh plan)
+2. Executing the implementation
+3. Running CI and submitting the PR
+
+## Prerequisites
+
+- Must be in a git repository managed by erk
+- GitHub CLI (`gh`) must be authenticated
+- One of:
+  - A plan number, URL, or file path argument
+  - An existing impl directory under `.erk/impl-context/`
+  - A plan branch checked out (e.g., `plnd/...` or `P{number}-...`)
+  - A plan in `~/.claude/plans/` (from plan mode)
+
+## Usage
+
+```bash
+/erk:plan-implement                    # Use impl directory, detect from branch, or save current plan
+/erk:plan-implement 2521               # Fetch and implement plan #2521
+/erk:plan-implement https://github.com/owner/repo/pull/2521   # URL form
+/erk:plan-implement ./my-plan.md       # Implement from local markdown file
+```
+
+---
+
+## CRITICAL: PR Operations
+
+**NEVER** run direct GitHub CLI commands for PR operations during implementation:
+
+- `gh pr edit` — destroys plan-header metadata block
+- `gh pr ready` — bypasses lifecycle tracking
+- `gh pr close` / `gh pr merge`
+
+All PR operations are handled by `erk pr submit` in Step 13. It automatically:
+
+- Generates the PR title and body
+- Preserves the plan-header metadata block
+- Marks draft PRs as ready for review
+- Updates lifecycle stage
+
+## Agent Instructions
+
+### Step 1: Set Up Implementation
+
+Parse `9162` and run the consolidated setup command:
+
+- **If numeric** (e.g., `2521`): `erk exec setup-impl --issue 2521`
+- **If GitHub URL** (e.g., `https://github.com/.../issues/2521`): Extract number, `erk exec setup-impl --issue 2521`
+- **If path to file** (anything else non-empty): `erk exec setup-impl --file &lt;path&gt;`
+- **If empty**: `erk exec setup-impl` (auto-detects from `.erk/impl-context/`, branch, or fails)
+
+```bash
+erk exec setup-impl [--issue &lt;N&gt; | --file &lt;path&gt;]
+```
+
+This single command handles:
+
+- Fetching plan from GitHub (draft PR)
+- Setting up from a local markdown file
+- Auto-detecting from existing impl directory under `.erk/impl-context/`
+- Auto-detecting plan number from branch name (P{number}-... or PR lookup)
+- Creating/checking out the feature branch
+- Creating impl directory under `.erk/impl-context/&lt;branch&gt;/` with plan content
+- Running impl-init validation
+- Cleaning up `.erk/impl-context/` staging directory (git rm + commit + push)
+
+Otherwise, generate a branch slug and set up from the specified issue:
+
+1. Fetch the title: `gh pr view &lt;ISSUE_ARG&gt; --json title -q .title`
+2. Generate a branch slug from the title:
+   - 2-4 hyphenated lowercase words, max 30 characters
+   - Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+   - Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+   - Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+3. Store as `BRANCH_SLUG`.
+
+```bash
+erk exec setup-impl --issue &lt;ISSUE_ARG&gt; --branch-slug="${BRANCH_SLUG}"
+```
+
+If `setup-impl` exits with code 1 and `error: "no_plan_found"`, fall back to saving the current plan:
+
+Generate a branch slug from the plan title (the first `# ` heading in the plan file):
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Store as `BRANCH_SLUG`
+
+Save the current plan to GitHub and capture the plan number:
+
+```bash
+erk exec plan-save --format json --session-id="${CLAUDE_SESSION_ID}" --branch-slug="${BRANCH_SLUG}"
+```
+
+Parse the JSON output to get `plan_number`, then:
+
+```bash
+erk exec setup-impl --issue &lt;plan_number&gt;
+```
+
+The `setup-impl` output includes `related_docs` (skills and docs to load) and `has_plan_tracking` (whether GitHub issue tracking is active).
+
+If this fails, display the error and stop.
+
+### Step 2: Read Plan and Load Context
+
+Read `plan.md` from the impl directory set up in Step 1 to understand:
+
+- Overall goal and context
+- Context &amp; Understanding sections (API quirks, architectural insights, pitfalls)
+- Implementation phases and dependencies
+- Success criteria
+
+**Context Consumption**: Plans contain expensive discoveries. Ignoring `[CRITICAL:]` tags, "Related Context:" subsections, or "DO NOT" items causes repeated mistakes.
+
+### Step 3: Load Related Documentation
+
+If plan contains "Related Documentation" section, load listed skills via Skill tool and read listed docs.
+
+### Step 4: Create TodoWrite Entries
+
+Create todo entries for each phase from the plan.
+
+### Step 5: Signal GitHub Started
+
+```bash
+erk exec impl-signal started --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This also deletes the Claude plan file (from `~/.claude/plans/`) since:
+
+- The content has been saved to GitHub
+- The content has been snapshotted to `.erk/scratch/`
+- Keeping it could cause confusion if the user tries to re-save
+
+### Step 6: Execute Each Phase Sequentially
+
+For each phase:
+
+1. **Mark phase as in_progress** (in TodoWrite)
+2. **Read task requirements** carefully
+3. **Implement code AND tests together**:
+   - Load `dignified-python-313` skill for coding standards
+   - Load `fake-driven-testing` skill for test patterns
+   - Follow project AGENTS.md standards
+4. **Mark phase as completed** (in TodoWrite)
+5. **Report progress**: changes made, what's next
+
+**Important:** `plan.md` is immutable - NEVER edit during implementation
+
+### Step 7: Report Progress
+
+After each phase: report changes made and what's next.
+
+### Step 8: Final Verification
+
+Confirm all tasks executed, success criteria met, note deviations, summarize changes.
+
+### Step 9: Signal GitHub Ended
+
+```bash
+erk exec impl-signal ended --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+### Step 10: Upload Session for Async Learn
+
+```bash
+erk exec upload-impl-session --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This reads plan reference from the impl directory, captures session info, and uploads for async learn processing.
+
+### Step 11: Clean Up Impl Context
+
+Remove the `.erk/impl-context/` directory from the repo:
+
+```bash
+erk exec cleanup-impl-context
+```
+
+This removes `.erk/impl-context/`, stages the deletion, commits, and pushes — all idempotent.
+
+### Step 12: Run CI Iteratively
+
+1. If `.erk/prompt-hooks/post-plan-implement-ci.md` exists: follow its instructions
+2. Otherwise: check CLAUDE.md/AGENTS.md for CI commands
+
+### Step 13: Submit PR
+
+Push the branch and create or update the PR using the Graphite-aware submit pipeline:
+
+```bash
+erk pr submit
+```
+
+This handles pushing commits, creating/updating the PR, generating the PR description, and enhancing with Graphite stack metadata when available.
+
+After successful submission, signal lifecycle transition:
+
+```bash
+erk exec impl-signal submitted 2&gt;/dev/null || true
+```
+
+Then validate PR completion invariants:
+
+```bash
+erk pr check --stage=impl
+```
+
+This validates PR submission readiness including implementation-specific checks
+(e.g., `.erk/impl-context/` must be cleaned up). If checks fail, display output and warn user.
+
+### Step 14: Output Format
+
+- **Start**: "Setting up implementation..." or "Fetching plan #X..."
+- **After setup**: "Implementation environment ready, reading plan..."
+- **Each phase**: "Phase X: [brief description]" with code changes
+- **End**: "Plan execution complete. [Summary]"
+
+---
+
+## Related Commands
+
+- `/erk:plan-save` - Save plan only, don't implement (for defer-to-later workflow)
+- `/erk:replan` - Re-plan an existing plan with current codebase state
+</user>
+  <assistant>
+
+I'll start by setting up the implementation for plan #9162.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="11300" cache_read_input_tokens="17332" cache_creation="{'ephemeral_5m_input_tokens': 11300, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01B2hGn4EZ2ZcpoorJR1xt2a">
+    <param name="command">erk exec setup-impl --issue 9162</param>
+    <param name="description">Set up implementation for plan #9162</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="11300" cache_read_input_tokens="17332" cache_creation="{'ephemeral_5m_input_tokens': 11300, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01B2hGn4EZ2ZcpoorJR1xt2a">
+{"success": true, "impl_path": "/home/runner/work/erk/erk/.erk/impl-context/plnd--O9009-objective-json-machi-03-10-1328", "pr_number": 9162, "pr_url": "https://github.com/dagster-io/erk/pull/9162", "branch": "plnd/O9009-objective-json-machi-03-10-1328", "pr_title": "[erk-pr] Plan: Create `erk json objective view` and `erk json objective check` machine commands", "no_impl": false}
+{"success": true, "source": "issue", "pr_number": 9162, "has_plan_tracking": true, "valid": true, "related_docs": {"skills": [], "docs": []}}
+Already on PR branch 'plnd/O9009-objective-json-machi-03-10-1328', teleporting from remote...
+  </tool_result>
+  <assistant>Implementation environment set up. Let me read the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="364" cache_read_input_tokens="28632" cache_creation="{'ephemeral_5m_input_tokens': 364, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01K867W6sxk4HRsdTe5AYKL2">
+    <param name="file_path">/home/runner/work/erk/erk/.erk/impl-context/plnd--O9009-objective-json-machi-03-10-1328/plan.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="364" cache_read_input_tokens="28632" cache_creation="{'ephemeral_5m_input_tokens': 364, 'ephemeral_1h_input_tokens': 0}" output_tokens="108" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01K867W6sxk4HRsdTe5AYKL2">
+     1→# Plan: Create `erk json objective view` and `erk json objective check` machine commands
+     2→
+     3→Part of Objective #9009, Node 3.2
+     4→
+     5→## Context
+     6→
+     7→The "best-of-both-worlds" machine command architecture (PR #9132) separates human CLI commands from machine-readable JSON commands. Human commands live at `erk &lt;path&gt;` with rich output; machine commands live at `erk json &lt;path&gt;` with structured JSON I/O via `@machine_command`.
+     8→
+     9→Currently, `erk objective view` and `erk objective check` have `--json-output` flags inline — the legacy pattern. This plan migrates them to the new architecture: extract shared operations into `operation.py`, create thin `json_cli.py` machine adapters, and register them under `erk json objective view/check`.
+    10→
+    11→## Implementation
+    12→
+    13→### Phase 1: Extract `objective view` operation
+    14→
+    15→**Create `src/erk/cli/commands/objective/view/operation.py`**
+    16→
+    17→Extract from `view_cmd.py`:
+    18→- `ObjectiveViewRequest` frozen dataclass: `identifier: str | None = None` (optional, infers from branch)
+    19→- `ObjectiveViewResult` frozen dataclass with fields: `issue_number`, `phases` (serialized), `graph_nodes`, `unblocked`, `pending_unblocked`, `next_node`, `is_complete`, `summary`. Include `to_json_dict()` matching the current `_display_json` output shape.
+    20→- `run_objective_view()` function: the shared logic from `view_objective()` that fetches the issue, validates the label, parses the roadmap, builds the graph, and returns `ObjectiveViewResult | MachineCommandError`.
+    21→
+    22→**Refactor `view_cmd.py` → `src/erk/cli/commands/objective/view/cli.py`**
+    23→
+    24→Move the human command to the new location. It imports from `operation.py` and calls `run_objective_view()`, then renders with Rich tables (all existing `_format_*` and display functions move here).
+    25→
+    26→**Create `src/erk/cli/commands/objective/view/json_cli.py`**
+    27→
+    28→Thin machine adapter following the pr/view pattern:
+    29→```python
+    30→@machine_command(request_type=ObjectiveViewRequest, output_types=(ObjectiveViewResult,))
+
+... [104 lines omitted] ...
+
+    48→Keep `validate_objective()`, `ObjectiveValidationSuccess`, `ObjectiveValidationError`, and the `_check_*` helper functions in a shared module (either keep them in `check_cmd.py` and import, or move to `check/validation.py`). Prefer moving to `check/validation.py` since it's pure logic.
+    89→Keep the `--json-output` flags on the human commands for backwards compatibility during transition, but have them emit a deprecation warning pointing to `erk json objective view/check`. The flags delegate to the same `run_*` operation.
+   114→- **Error returns**: Return `MachineCommandError(error_type=..., message=...)` not exceptions
+  </tool_result>
+  <assistant>Now let me explore the existing code and load relevant tripwires/documentation in parallel:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2651" cache_read_input_tokens="28996" cache_creation="{'ephemeral_5m_input_tokens': 2651, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01UVHkGVfS4Ji5qGuWxV4fzC">
+    <param name="description">Explore existing objective commands</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 777 chars]...ecorator definition
+
+Return ALL file contents in full - I need complete code to work with.</param>
+    <param name="subagent_type">Explore</param>
+    <param name="run_in_background">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2651" cache_read_input_tokens="28996" cache_creation="{'ephemeral_5m_input_tokens': 2651, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01UVHkGVfS4Ji5qGuWxV4fzC">
+Async agent launched successfully.
+agentId: a8f99f5 (This is an internal ID for your use, do not mention it to the user. Use this ID to retrieve results with TaskOutput when the agent finishes).
+The agent is currently working in the background. If you have other tasks you you should continue working on them now. Wait to call TaskOutput until either:
+- If you want to check on the agent's progress - call TaskOutput with block=false to get an immediate update on the agent's status
+- If you run out of things to do and the agent is still running - call TaskOutput with block=true to idle and wait for the agent's result (do not use block=true unless you completely run out of things to do as it will waste time).
+  </tool_result>
+  <tool_use name="Read" id="toolu_01HRhE9gYazaKhs2BWgxiNqQ">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/objectives/tripwires.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="580" cache_read_input_tokens="31647" cache_creation="{'ephemeral_5m_input_tokens': 580, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_018cjTeX89r7iKq1TBcPJKVp">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/tripwires.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="580" cache_read_input_tokens="31647" cache_creation="{'ephemeral_5m_input_tokens': 580, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01HRhE9gYazaKhs2BWgxiNqQ">
+     1→---
+     2→title: Objectives Tripwires
+     3→read_when:
+     4→  - "working on objectives code"
+     5→---
+     6→
+     7→&lt;!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY --&gt;
+     8→&lt;!-- Edit source frontmatter, then run 'erk docs sync' to regenerate. --&gt;
+     9→&lt;!-- Generated from objectives/*.md frontmatter --&gt;
+    10→
+    11→# Objectives Tripwires
+    12→
+    13→Rules triggered by matching actions in code.
+    14→
+    15→**accessing node_id on a RoadmapNode** → Read [Roadmap Shared Parser Architecture](roadmap-parser-api.md) first. The field is named 'id', not 'node_id'. This is a common mistake — check the actual dataclass definition.
+    16→
+    17→**accessing phase names from graph operations without calling enrich_phase_names()** → Read [Phase Name Enrichment](phase-name-enrichment.md) first. Phase names come from markdown headers, not from the parser. After graph_from_phases(), call enrich_phase_names(graph, issue_body) to populate phase names. Without enrichment, phase.name is None.
+    18→
+    19→**adding a new exec command without registering in the exec group** → Read [Objective Exec Command Consolidation](exec-command-consolidation.md) first. New exec scripts must be registered in the Click exec command group and follow the existing pattern: Click command with typed options, LBYL validation, structured result TypedDict.
+    20→
+    21→**adding a new roadmap mutation site without updating this document** → Read [Objective Lifecycle](objective-lifecycle.md) first. All roadmap mutation sites must be documented in objective-lifecycle.md
+    22→
+    23→**adding a new validation check** → Read [Roadmap Validation Architecture](roadmap-validation.md) first. Structural checks go in parse_roadmap() and return warnings alongside data. Semantic checks go in validate_objective() and produce pass/fail results. Don't mix levels.
+    24→
+    25→**adding a required parameter to objective-apply-landed-update without fallback discovery** → Read [Objective Exec Command Consolidation](exec-command-consolidation.md) first. The script auto-fills missing parameters from git/plan state. New parameters should follow the same pattern: explicit flag first, then auto-discovery fallback.
+    26→
+    27→**adding columns to the roadmap table format** → Read [Roadmap Format Versioning](roadmap-format-versioning.md) first. Read this doc to understand the header-based detection and rendering strategy before adding columns.
+    28→
+    29→**adding structural validation to check_cmd.py** → Read [Objective Check Command — Semantic Validation](objective-roadmap-check.md) first. Structural validation (phase headers, table format) belongs in roadmap.py (packages/erk-shared). check_cmd.py handles semantic validation only.
+    30→
+
+... [83 lines omitted] ...
+
+    73→**raising exceptions from validate_objective()** → Read [Objective Check Command — Semantic Validation](objective-roadmap-check.md) first. validate_objective() returns discriminated unions, never raises. Only CLI presentation functions (\_output_json, \_output_human) raise SystemExit.
+   101→**using parse_roadmap() when strict v2 validation is needed** → Read [Roadmap Shared Parser Architecture](roadmap-parser-api.md) first. Use parse_v2_roadmap() for commands that should reject legacy format. parse_roadmap() returns a legacy error string; parse_v2_roadmap() returns None for non-v2 content.
+  </tool_result>
+  <tool_result tool="toolu_018cjTeX89r7iKq1TBcPJKVp">
+     1→---
+     2→title: Cli Tripwires
+     3→read_when:
+     4→  - "working on cli code"
+     5→---
+     6→
+     7→&lt;!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY --&gt;
+     8→&lt;!-- Edit source frontmatter, then run 'erk docs sync' to regenerate. --&gt;
+     9→&lt;!-- Generated from cli/*.md frontmatter --&gt;
+    10→
+    11→# Cli Tripwires
+    12→
+    13→Rules triggered by matching actions in code.
+    14→
+    15→**Design batch commands that process items despite validation failures** → Read [Batch Exec Commands](batch-exec-commands.md) first. Validate ALL items upfront before processing ANY items. Stop on first validation error.
+    16→
+    17→**Return non-zero exit codes for batch command failures** → Read [Batch Exec Commands](batch-exec-commands.md) first. Always exit 0, encode errors in JSON output with per-item success fields.
+    18→
+    19→**Use OR semantics for batch success (success=true if any item succeeds)** → Read [Batch Exec Commands](batch-exec-commands.md) first. Use AND semantics: top-level success=true only if ALL items succeed.
+    20→
+    21→**Using RuntimeError for expected CLI failures** → Read [CLI Error Handling Anti-Patterns](error-handling-antipatterns.md) first. RuntimeError signals a programmer error (bug in the code), NOT expected user-facing failures. Use UserFacingCliError for expected conditions (missing files, invalid input, precondition violations) that should exit cleanly with an actionable message.
+    22→
+    23→**WORKFLOW_COMMAND_MAP maps command names to .yml filenames** → Read [Workflow Commands](workflow-commands.md) first. command names intentionally diverge from filenames (e.g., pr-rebase → pr-rebase.yml, but plan-implement → plan-implement.yml via DISPATCH_WORKFLOW_NAME constant)
+    24→
+    25→**adding --from-current-branch without handling detached HEAD** → Read [Slot Assign --from-current-branch](slot-assign-from-current-branch.md) first. When the target branch is checked out in another worktree, fall back to detached HEAD checkout. See slot-assign-from-current-branch.md.
+    26→
+    27→**adding --json flag to a command without using @json_output decorator** → Read [Agent-Friendly CLI Design Principles](agent-friendly-cli.md) first. Use the shared @json_output decorator from src/erk/cli/json_output.py. Do not manually implement JSON serialization in individual commands.
+    28→
+    29→**adding --json flag to a human command** → Read [Adding Machine JSON Commands](adding-json-to-commands.md) first. Machine JSON output belongs in the `erk json` command tree. Create a machine adapter as json_cli.py in the command's subpackage instead.
+    30→
+
+... [205 lines omitted] ...
+
+    43→**adding a new step to the submit pipeline** → Read [PR Submit Pipeline Architecture](pr-submit-pipeline.md) first. Each step must return SubmitState | SubmitError. Use dataclasses.replace() for state updates. Add the step to \_submit_pipeline() tuple.
+    45→**adding a parameter to erk exec without updating calling command** → Read [Parameter Addition Checklist](parameter-addition-checklist.md) first. 5-step verification required. Parameter additions must thread through skill argument-hint, command invocations, AND exec script. Miss any layer and you get silent failures or discovery problems. See parameter-addition-checklist.md.
+    79→**calling is_learned_docs_available() in CLI code** → Read [erk docs check Command](erk-docs-check.md) first. Function signature requires repo_ops and cwd kwargs: is_learned_docs_available(repo_ops=..., cwd=...). Omitting either kwarg will cause a TypeError.
+    81→**choosing between Ensure and EnsureIdeal** → Read [EnsureIdeal Pattern for Type Narrowing](ensure-ideal-pattern.md) first. Ensure is for invariant checks (preconditions). EnsureIdeal is for type narrowing (handling operations that can return non-ideal states). If the value comes from an operation that returns T | ErrorType, use EnsureIdeal.
+   111→**flagging 5+ parameter violations in code review** → Read [Code Review Filtering](code-review-filtering.md) first. Before flagging, verify NO exception applies (ABC/Protocol/Click)
+   133→**making a separate subprocess call for each item in a batch operation** → Read [Exec Script Performance Patterns](exec-script-performance.md) first. Use batch exec commands pattern (batch-exec-commands.md) to process items in a single invocation with per-item error handling.
+   135→**making session discovery failures block the land command** → Read [Land-Learn Integration](land-learn-integration.md) first. Session discovery uses fire-and-forget error resilience. The entire learn workflow is wrapped in try/except to prevent blocking land. Failures are reported as warnings, never errors.
+   155→**plan-implement exists in WORKFLOW_COMMAND_MAP but erk launch plan-implement always raises UsageError** → Read [Workflow Commands](workflow-commands.md) first. use erk pr submit instead
+   181→**returning MachineCommandError without raising SystemExit** → Read [Machine Command Architecture](json-command-decorator.md) first. The @machine_command decorator handles serialization and exit codes. Just return MachineCommandError from the callback.
+   183→**returning non-zero exit code when --json flag is active** → Read [Agent-Friendly CLI Design Principles](agent-friendly-cli.md) first. JSON mode must always exit 0. Errors are communicated via {success: false, error_type, message} in stdout JSON, not via exit codes.
+   193→**testing prompts without matching confirm_responses array length** → Read [Prompt Consolidation Pattern](prompt-consolidation-pattern.md) first. confirm_responses array length must match the number of prompts. Too few causes IndexError; too many indicates a prompt was removed without updating tests.
+   195→**using EnsureIdeal for discriminated union narrowing** → Read [EnsureIdeal Pattern for Type Narrowing](ensure-ideal-pattern.md) first. Only use when the error type implements NonIdealState protocol OR provides a message field. For custom error types without standard fields, add a specific EnsureIdeal method.
+   207→**using ctx.invoke() with kwargs that don't match target function parameter names** → Read [PR Submit Pipeline Architecture](pr-submit-pipeline.md) first. Click ctx.invoke() forwards kwargs directly — any name mismatch causes runtime TypeError. Verify all parameter names exactly match the target function signature.
+   209→**using dict .get() to access fields from exec script JSON output without a TypedDict schema** → Read [Exec Script Schema Patterns](exec-script-schema-patterns.md) first. Silent filtering failures occur when field names are mistyped. Define TypedDict in erk_shared and use cast() in consumers.
+   229→**writing multi-line error messages in Ensure method calls** → Read [CLI Output Styling Guide](output-styling.md) first. Use implicit string concatenation with \n at end of first string. Line 1 is the primary error, line 2+ is remediation context. Do NOT use \n\n (double newline) — Ensure handles spacing.
+  </tool_result>
+  <assistant>Let me get the explore agent results and also read the key documentation files for machine command architecture:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="12088" cache_read_input_tokens="32227" cache_creation="{'ephemeral_5m_input_tokens': 12088, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TaskOutput" id="toolu_01JrRf2J4p7nMyUiN5Z7pWUH">
+    <param name="task_id">a8f99f5</param>
+    <param name="block">True</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="12088" cache_read_input_tokens="32227" cache_creation="{'ephemeral_5m_input_tokens': 12088, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01NiqxFAWBGsDPGck17qDhFy">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/adding-json-to-commands.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="12088" cache_read_input_tokens="32227" cache_creation="{'ephemeral_5m_input_tokens': 12088, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01NupFLHd5Biv2dJ9ZYaQwFg">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/json-command-decorator.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="12088" cache_read_input_tokens="32227" cache_creation="{'ephemeral_5m_input_tokens': 12088, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01NiqxFAWBGsDPGck17qDhFy">
+     1→---
+     2→title: "Adding Machine JSON Commands"
+     3→read_when:
+     4→  - "adding a new machine-readable JSON command"
+     5→  - "exposing a command via MCP"
+     6→  - "creating result dataclasses for JSON output"
+     7→  - "stacking @mcp_exposed and @machine_command decorators"
+     8→  - "adding a new CLI command with both human and machine output"
+     9→  - "creating a new command subpackage"
+    10→tripwires:
+    11→  - action: "placing @mcp_exposed below @machine_command in decorator stack"
+    12→    warning: "@mcp_exposed must be ABOVE @machine_command. Correct order: @mcp_exposed &gt; @machine_command &gt; @click.command."
+    13→  - action: "creating a result dataclass without to_json_dict() method"
+    14→    warning: "Result dataclasses should implement to_json_dict() for custom serialization. Without it, the serializer falls back to dataclasses.asdict() which may not handle complex types correctly."
+    15→  - action: "adding --json flag to a human command"
+    16→    warning: "Machine JSON output belongs in the `erk json` command tree. Create a machine adapter as json_cli.py in the command's subpackage instead."
+    17→  - action: "duplicating fetch/query logic in cli.py instead of calling run_*() from operation.py"
+    18→    warning: "cli.py MUST delegate to the operation. The operation is the single source of truth for business logic. cli.py only marshals Click flags into the Request and renders the Result. Never re-fetch, re-query, or re-compute what the operation already returns."
+    19→  - action: "eagerly serializing rich objects in the Result dataclass"
+    20→    warning: "Result dataclasses should carry rich domain objects (not pre-serialized dicts). Serialization belongs in to_json_dict() only. The human CLI needs rich objects for display; the machine adapter needs to_json_dict() for JSON."
+    21→---
+    22→
+    23→# Adding Machine JSON Commands
+    24→
+    25→Step-by-step guide to adding structured JSON output for a CLI command using the `erk json` command tree.
+    26→
+    27→## Architecture
+    28→
+    29→Machine commands live in a separate `erk json` tree, not as flags on human commands:
+    30→
+
+... [149 lines omitted] ...
+
+    49→  run_foo(ctx, request) → Result | MachineCommandError
+    70→from erk_shared.agentclick.machine_command import MachineCommandError
+    85→def run_foo(ctx: ErkContext, request: FooRequest) -&gt; FooResult | MachineCommandError:
+    87→        return MachineCommandError(error_type="invalid_input", message="Name required")
+    99→from erk_shared.agentclick.machine_command import MachineCommandError, machine_command
+   106→def json_foo(ctx: ErkContext, *, request: FooRequest) -&gt; FooResult | MachineCommandError:
+   132→    if isinstance(result, MachineCommandError):
+   133→        user_output(click.style(f"Error: {result.message}", fg="red"))
+  </tool_result>
+  <tool_result tool="toolu_01NupFLHd5Biv2dJ9ZYaQwFg">
+     1→---
+     2→title: "Machine Command Architecture"
+     3→read_when:
+     4→  - "adding @machine_command decorator to a CLI command"
+     5→  - "creating structured JSON CLI output"
+     6→  - "understanding the erk json command tree"
+     7→  - "implementing output_types validation"
+     8→  - "working with MachineCommandError error handling"
+     9→  - "adding @json_command decorator to a CLI command"
+    10→tripwires:
+    11→  - action: "applying @machine_command below @click.command in the decorator stack"
+    12→    warning: "@machine_command must be applied ABOVE @click.command. The correct order is @mcp_exposed &gt; @machine_command &gt; @click.command."
+    13→  - action: "adding --json flag to a human-facing command"
+    14→    warning: "Machine JSON output lives in the `erk json` command tree, not as a flag on human commands. Create a json_cli.py machine adapter in the command's subpackage."
+    15→  - action: "putting business logic in the machine adapter"
+    16→    warning: "Machine adapters should be thin wrappers. Put shared logic in *_operation.py files."
+    17→  - action: "returning MachineCommandError without raising SystemExit"
+    18→    warning: "The @machine_command decorator handles serialization and exit codes. Just return MachineCommandError from the callback."
+    19→---
+    20→
+    21→# Machine Command Architecture
+    22→
+    23→The `erk json` command tree provides machine-readable JSON commands for agent consumption. Human-facing commands live separately with rich terminal output.
+    24→
+    25→## Architecture Overview
+    26→
+    27→```
+    28→src/erk/cli/commands/
+    29→├── one_shot/
+    30→│   ├── __init__.py
+
+... [133 lines omitted] ...
+
+    73→- Serializes return value (or `MachineCommandError`) as JSON to stdout
+    74→- Handles `ClickException` with `error_type` attribute
+   107→## Error Handling
+   109→`MachineCommandError` is a frozen dataclass (not an exception):
+   111→&lt;!-- Source: packages/erk-shared/src/erk_shared/agentclick/machine_command.py, MachineCommandError --&gt;
+   113→See `MachineCommandError` in `packages/erk-shared/src/erk_shared/agentclick/machine_command.py`. It is a frozen dataclass with `error_type: str` and `message: str` fields.
+   120→  "error_type": "invalid_input",
+   127→`--schema` returns a document with input, output, and error schemas:
+   133→  "error_schema": { ... }
+  </tool_result>
+  <tool_result tool="toolu_01JrRf2J4p7nMyUiN5Z7pWUH">
+&lt;retrieval_status&gt;timeout&lt;/retrieval_status&gt;
+
+&lt;task_id&gt;a8f99f5&lt;/task_id&gt;
+
+&lt;task_type&gt;local_agent&lt;/task_type&gt;
+
+&lt;status&gt;running&lt;/status&gt;
+
+&lt;output&gt;
+[Tool: Glob] {"pattern":"docs/learned/cli/*.md"}
+[Tool: Glob] {"pattern":"docs/learned/architecture/*.md"}
+[Tool: Glob] {"pattern":"src/erk/cli/commands/json/**/*.py"}
+[Tool: Glob] {"pattern":"src/erk/cli/commands/json/**/*.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/cli/json-command-decorator.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/cli/adding-json-to-commands.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/cli/objective-commands.md"}
+[Tool: Glob] {"pattern":"src/erk/cli/commands/objective/*.py"}
+[Tool: Glob] {"pattern":"src/erk/cli/commands/objective/*.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/objective/view_cmd.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/objective/check_cmd.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/objective/__init__.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/objective/__init__.py"}
+[Tool: Glob] {"pattern":"src/erk/cli/commands/pr/view/*.py"}
+[Tool: Glob] {"pattern":"src/erk/cli/commands/pr/list/*.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/json/__init__.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/json/__init__.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/pr/view/json_cli.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/pr/view/operation.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/pr/list/json_cli.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/pr/list/json_cli.py"}
+
+... [22 lines omitted] ...
+  </tool_result>
+  <assistant>The explore agent is still running. Let me read the key source files directly while waiting:</assistant>
+  <usage input_tokens="5201" cache_creation_input_tokens="2199" cache_read_input_tokens="44315" cache_creation="{'ephemeral_5m_input_tokens': 2199, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01GBavj551fT6DPSbasRjwNy">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/objective/view_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="5201" cache_creation_input_tokens="2199" cache_read_input_tokens="44315" cache_creation="{'ephemeral_5m_input_tokens': 2199, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01Fm5PZWAnbyXQDgTXKDzYcr">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/objective/check_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="5201" cache_creation_input_tokens="2199" cache_read_input_tokens="44315" cache_creation="{'ephemeral_5m_input_tokens': 2199, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01Aw7oy2aLoo3biRJAQv3Jpk">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/objective/__init__.py</param>
+  </tool_use>
+  <usage input_tokens="5201" cache_creation_input_tokens="2199" cache_read_input_tokens="44315" cache_creation="{'ephemeral_5m_input_tokens': 2199, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01PXU6uLQGCdx48TaZW6wb8H">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/json/__init__.py</param>
+  </tool_use>
+  <usage input_tokens="5201" cache_creation_input_tokens="2199" cache_read_input_tokens="44315" cache_creation="{'ephemeral_5m_input_tokens': 2199, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01GBavj551fT6DPSbasRjwNy">
+     1→"""Command to fetch and display a single objective."""
+     2→
+     3→import json
+     4→from datetime import datetime
+     5→
+     6→import click
+     7→from rich.cells import cell_len
+     8→from rich.console import Console
+     9→from rich.markup import escape
+    10→from rich.table import Table
+    11→from rich.text import Text
+    12→
+    13→from erk.cli.alias import alias
+    14→from erk.cli.commands.objective_helpers import get_objective_for_branch
+    15→from erk.cli.ensure import UserFacingCliError
+    16→from erk.cli.github_parsing import parse_issue_identifier
+    17→from erk.cli.repo_resolution import get_remote_github, resolved_repo_option
+    18→from erk.core.context import ErkContext
+    19→from erk.core.display_utils import format_relative_time
+    20→from erk_shared.context.types import NoRepoSentinel
+    21→from erk_shared.gateway.github.issues.types import IssueNotFound
+    22→from erk_shared.gateway.github.metadata.core import (
+    23→    extract_raw_metadata_blocks,
+    24→)
+    25→from erk_shared.gateway.github.metadata.dependency_graph import (
+    26→    DependencyGraph,
+    27→    ObjectiveNode,
+    28→    build_graph,
+    29→    compute_graph_summary,
+    30→    find_graph_next_node,
+
+... [396 lines omitted] ...
+
+   203→            raise UserFacingCliError(
+   206→                error_type="cli_error",
+   210→            raise UserFacingCliError(
+   213→                error_type="cli_error",
+   217→            raise UserFacingCliError(
+   221→                error_type="cli_error",
+   228→        raise UserFacingCliError(f"Issue #{issue_number} not found", error_type="cli_error")
+   233→        raise UserFacingCliError(
+   235→            error_type="cli_error",
+   245→            raise UserFacingCliError(
+   249→                error_type="cli_error",
+   251→        phases, _validation_errors = v2_result
+  </tool_result>
+  <tool_result tool="toolu_01Fm5PZWAnbyXQDgTXKDzYcr">
+     1→"""Validate an objective's format and roadmap consistency."""
+     2→
+     3→import json
+     4→from dataclasses import dataclass
+     5→
+     6→import click
+     7→
+     8→from erk.cli.alias import alias
+     9→from erk.cli.github_parsing import parse_issue_identifier
+    10→from erk.cli.repo_resolution import get_remote_github, resolved_repo_option
+    11→from erk.core.context import ErkContext
+    12→from erk_shared.gateway.github.issues.types import IssueNotFound
+    13→from erk_shared.gateway.github.metadata.core import (
+    14→    find_metadata_block,
+    15→    has_metadata_block,
+    16→)
+    17→from erk_shared.gateway.github.metadata.dependency_graph import (
+    18→    DependencyGraph,
+    19→    build_graph,
+    20→    compute_graph_summary,
+    21→    find_graph_next_node,
+    22→    phases_from_graph,
+    23→)
+    24→from erk_shared.gateway.github.metadata.plan_header import (
+    25→    extract_plan_header_objective_issue,
+    26→)
+    27→from erk_shared.gateway.github.metadata.roadmap import (
+    28→    parse_roadmap,
+    29→    rerender_comment_roadmap,
+    30→    serialize_phases,
+
+... [407 lines omitted] ...
+
+    42→    """Validation completed (may have passed or failed checks).
+    47→        failed_count: Number of failed checks
+    48→        graph: Dependency graph of roadmap nodes (empty if parsing failed)
+    51→        validation_errors: Parser-level warnings from roadmap parsing
+    57→    failed_count: int
+    61→    validation_errors: list[str]
+    66→class ObjectiveValidationError:
+    69→    error: str
+    72→ObjectiveValidationResult = ObjectiveValidationSuccess | ObjectiveValidationError
+   177→        ObjectiveValidationError if unable to complete validation
+   184→        return ObjectiveValidationError(error=f"Issue #{issue_number} not found")
+   194→    phases, validation_errors = parse_roadmap(issue.body)
+   201→        failed_count = sum(1 for passed, _ in checks if not passed)
+   203→            passed=failed_count == 0,
+   205→            failed_count=failed_count,
+   209→            validation_errors=[],
+   216→        # Block exists but failed to parse
+   217→        checks.append((False, f"Roadmap parses successfully ({'; '.join(validation_errors)})"))
+   218→        failed_count = sum(1 for passed, _ in checks if not passed)
+   222→            failed_count=failed_count,
+   226→            validation_errors=validation_errors,
+   307→    failed_count = sum(1 for passed, _ in checks if not passed)
+   310→        passed=failed_count == 0,
+   312→        failed_count=failed_count,
+   316→        validation_errors=validation_errors,
+   364→    if isinstance(result, ObjectiveValidationError):
+   369→                    "error": result.error,
+   388→                "validation_errors": result.validation_errors,
+   399→    if isinstance(result, ObjectiveValidationError):
+   401→            click.style("Error: ", fg="red") + f"Failed to validate objective: {result.error}"
+   425→        check_word = "checks" if result.failed_count &gt; 1 else "check"
+   428→                f"Objective validation failed ({result.failed_count} {check_word} failed)", fg="red"
+  </tool_result>
+  <tool_result tool="toolu_01Aw7oy2aLoo3biRJAQv3Jpk">
+     1→"""Objective management commands."""
+     2→
+     3→import click
+     4→
+     5→from erk.cli.alias import register_with_aliases
+     6→from erk.cli.commands.objective.check_cmd import check_objective
+     7→from erk.cli.commands.objective.close_cmd import close_objective
+     8→from erk.cli.commands.objective.list_cmd import list_objectives
+     9→from erk.cli.commands.objective.plan_cmd import plan_objective
+    10→from erk.cli.commands.objective.view_cmd import view_objective
+    11→from erk.cli.help_formatter import ErkCommandGroup
+    12→
+    13→
+    14→@click.group("objective", cls=ErkCommandGroup, grouped=False)
+    15→def objective_group() -&gt; None:
+    16→    """Manage objectives (multi-PR coordination issues)."""
+    17→    pass
+    18→
+    19→
+    20→register_with_aliases(objective_group, check_objective)
+    21→register_with_aliases(objective_group, close_objective)
+    22→register_with_aliases(objective_group, plan_objective)
+    23→register_with_aliases(objective_group, list_objectives)
+    24→register_with_aliases(objective_group, view_objective)
+    25→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_01PXU6uLQGCdx48TaZW6wb8H">
+     1→"""Machine-readable JSON command tree (erk json ...).
+     2→
+     3→All commands in this tree accept JSON input from stdin and produce
+     4→structured JSON output. No human-facing formatting or Click options
+     5→for input — the request dataclass IS the schema.
+     6→"""
+     7→
+     8→import click
+     9→
+    10→from erk.cli.commands.json.pr import json_pr_group
+    11→from erk.cli.commands.one_shot.json_cli import json_one_shot
+    12→
+    13→
+    14→@click.group("json")
+    15→def json_group() -&gt; None:
+    16→    """Machine-readable JSON commands."""
+    17→    pass
+    18→
+    19→
+    20→json_group.add_command(json_one_shot, name="one-shot")
+    21→json_group.add_command(json_pr_group, name="pr")
+    22→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>Now let me read the pr/view example pattern and the json/pr init:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="18054" cache_read_input_tokens="46514" cache_creation="{'ephemeral_5m_input_tokens': 18054, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_014Qnor8d9ZFAK55pvqjhAPG">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/view/json_cli.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="18054" cache_read_input_tokens="46514" cache_creation="{'ephemeral_5m_input_tokens': 18054, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01B8eQCUkBEUHAxZK7qCH2Ek">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/view/operation.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="18054" cache_read_input_tokens="46514" cache_creation="{'ephemeral_5m_input_tokens': 18054, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01YRL2UFdJMUp4ZeyVt3B3qD">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/json/pr/__init__.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="18054" cache_read_input_tokens="46514" cache_creation="{'ephemeral_5m_input_tokens': 18054, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_018Rty3YZFRBMDnDrwtodc7v">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/repo_resolution.py</param>
+    <param name="limit">60</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="18054" cache_read_input_tokens="46514" cache_creation="{'ephemeral_5m_input_tokens': 18054, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_014Qnor8d9ZFAK55pvqjhAPG">
+     1→"""Machine adapter for pr view.
+     2→
+     3→Accepts JSON from stdin, delegates to run_pr_view operation,
+     4→returns structured JSON output.
+     5→"""
+     6→
+     7→import click
+     8→
+     9→from erk.cli.commands.pr.view.operation import PrViewRequest, PrViewResult, run_pr_view
+    10→from erk.cli.repo_resolution import resolve_owner_repo
+    11→from erk.core.context import ErkContext
+    12→from erk_shared.agentclick.machine_command import MachineCommandError, machine_command
+    13→from erk_shared.agentclick.mcp_exposed import mcp_exposed
+    14→from erk_shared.gateway.github.types import GitHubRepoId
+    15→
+    16→
+    17→@mcp_exposed(
+    18→    name="pr_view",
+    19→    description=(
+    20→        "View a specific plan's metadata, header info, and body content."
+    21→        " Returns plan title, state, labels, timestamps, and header metadata."
+    22→    ),
+    23→)
+    24→@machine_command(
+    25→    request_type=PrViewRequest,
+    26→    output_types=(PrViewResult,),
+    27→)
+    28→@click.command("view")
+    29→@click.pass_obj
+    30→def json_pr_view(
+
+... [14 lines omitted] ...
+
+    34→) -&gt; PrViewResult | MachineCommandError:
+  </tool_result>
+  <tool_result tool="toolu_01B8eQCUkBEUHAxZK7qCH2Ek">
+     1→"""Core operation for pr view (transport-independent).
+     2→
+     3→Contains the request type and operation function that both the
+     4→human command (pr/view/cli.py) and machine command (pr/view/json_cli.py) share.
+     5→"""
+     6→
+     7→from dataclasses import dataclass
+     8→from datetime import datetime
+     9→from typing import Any
+    10→
+    11→from erk.cli.github_parsing import parse_issue_identifier
+    12→from erk.cli.repo_resolution import get_remote_github
+    13→from erk.core.context import ErkContext
+    14→from erk_shared.agentclick.machine_command import MachineCommandError
+    15→from erk_shared.context.types import NoRepoSentinel
+    16→from erk_shared.gateway.github.issues.types import IssueNotFound
+    17→from erk_shared.gateway.github.metadata.schemas import BRANCH_NAME
+    18→from erk_shared.gateway.github.types import GitHubRepoId
+    19→from erk_shared.plan_store.conversion import github_issue_to_plan
+    20→from erk_shared.plan_store.types import PlanNotFound
+    21→
+    22→
+    23→@dataclass(frozen=True)
+    24→class PrViewRequest:
+    25→    """Request type for pr view."""
+    26→
+    27→    identifier: str | None = None
+    28→    full: bool = False
+    29→
+    30→
+
+... [139 lines omitted] ...
+
+    83→) -&gt; PrViewResult | MachineCommandError:
+    92→        PrViewResult or MachineCommandError
+   101→            return MachineCommandError(
+   102→                error_type="missing_identifier",
+   111→            return MachineCommandError(
+   112→                error_type="missing_identifier",
+   118→            return MachineCommandError(
+   119→                error_type="missing_identifier",
+   133→        return MachineCommandError(
+   134→            error_type="not_found",
+  </tool_result>
+  <tool_result tool="toolu_01YRL2UFdJMUp4ZeyVt3B3qD">
+     1→"""Machine-readable JSON PR commands (erk json pr ...)."""
+     2→
+     3→import click
+     4→
+     5→from erk.cli.commands.pr.list.json_cli import json_pr_list
+     6→from erk.cli.commands.pr.view.json_cli import json_pr_view
+     7→
+     8→
+     9→@click.group("pr")
+    10→def json_pr_group() -&gt; None:
+    11→    """Machine-readable PR commands."""
+    12→    pass
+    13→
+    14→
+    15→json_pr_group.add_command(json_pr_list, name="list")
+    16→json_pr_group.add_command(json_pr_view, name="view")
+    17→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_018Rty3YZFRBMDnDrwtodc7v">
+     1→"""Shared --repo infrastructure for CLI commands.
+     2→
+     3→Provides helpers for resolving owner/repo from either a --repo flag
+     4→or local git context, and constructing RemoteGitHub instances.
+     5→"""
+     6→
+     7→import functools
+     8→
+     9→import click
+    10→
+    11→from erk.cli.ensure import UserFacingCliError
+    12→from erk.core.context import ErkContext, NoRepoSentinel
+    13→from erk_shared.gateway.github.types import GitHubRepoId
+    14→from erk_shared.gateway.remote_github.abc import RemoteGitHub
+    15→from erk_shared.gateway.remote_github.real import RealRemoteGitHub
+    16→
+    17→
+    18→def resolve_owner_repo(
+    19→    ctx: ErkContext,
+    20→    *,
+    21→    target_repo: str | None,
+    22→) -&gt; tuple[str, str]:
+    23→    """Resolve owner/repo from --repo flag or local git context.
+    24→
+    25→    Args:
+    26→        ctx: ErkContext
+    27→        target_repo: Optional "owner/repo" string from --repo flag
+    28→
+    29→    Returns:
+    30→        Tuple of (owner, repo_name)
+
+... [35 lines omitted] ...
+
+    33→        UserFacingCliError: If owner/repo cannot be determined
+    37→            raise UserFacingCliError(
+    40→                error_type="cli_error",
+    46→        raise UserFacingCliError(
+    49→            error_type="cli_error",
+  </tool_result>
+  <assistant>Now I have a thorough understanding of the existing code and patterns. Let me load the dignified-python skill and create the todo list, then start implementing.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="4323" cache_read_input_tokens="64568" cache_creation="{'ephemeral_5m_input_tokens': 4323, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Skill" id="toolu_01M8yvmTdKjNkjqwN6Em6mkx">
+    <param name="skill">dignified-python</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4323" cache_read_input_tokens="64568" cache_creation="{'ephemeral_5m_input_tokens': 4323, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01M8yvmTdKjNkjqwN6Em6mkx">
+Launching skill: dignified-python
+  </tool_result>
+  <user>Base directory for this skill: /home/runner/work/erk/erk/.claude/skills/dignified-python
+
+# Dignified Python Coding Standards
+
+## Core Knowledge (ALWAYS Loaded)
+
+@dignified-python-core.md
+
+## Version Detection
+
+**Identify the project's minimum Python version** by checking (in order):
+
+1. `pyproject.toml` - Look for `requires-python` field (e.g., `requires-python = "&gt;=3.12"`)
+2. `setup.py` or `setup.cfg` - Look for `python_requires`
+3. `.python-version` file - Contains version like `3.12` or `3.12.0`
+4. Default to Python 3.12 if no version specifier found
+
+**Once identified, load the appropriate version-specific file:**
+
+- Python 3.10: Load `versions/python-3.10.md`
+- Python 3.11: Load `versions/python-3.11.md`
+- Python 3.12: Load `versions/python-3.12.md`
+- Python 3.13: Load `versions/python-3.13.md`
+
+## Conditional Loading (Load Based on Task Patterns)
+
+Core files above cover 80%+ of Python code patterns. Only load these additional files when you detect specific patterns:
+
+Pattern detection examples:
+
+- If task mentions "click" or "CLI" -&gt; Load `cli-patterns.md`
+- If task mentions "subprocess" -&gt; Load `subprocess.md`
+
+## When to Read Each Reference Document
+
+The `references/` directory contains detailed guidance for specialized topics. Load these on-demand when you encounter relevant patterns:
+
+### `references/exception-handling.md`
+
+**Read when**:
+
+- Writing try/except blocks
+- Wrapping third-party APIs that may raise
+- Seeing or writing `from e` or `from None`
+- Unsure if LBYL alternative exists
+
+### `references/interfaces.md`
+
+**Read when**:
+
+- Creating ABC or Protocol classes
+- Writing @abstractmethod decorators
+- Designing gateway layer interfaces
+- Choosing between ABC and Protocol
+
+### `references/typing-advanced.md`
+
+**Read when**:
+
+- Using typing.cast()
+- Creating Literal type aliases
+- Narrowing types in conditional blocks
+
+### `references/module-design.md`
+
+**Read when**:
+
+- Creating new Python modules
+- Adding module-level code (beyond simple constants)
+- Using @cache decorator at module level
+- Seeing Path() or computation at module level
+- Considering inline imports
+
+### `references/api-design.md`
+
+**Read when**:
+
+- Adding default parameter values to functions
+- Defining functions with 5 or more parameters
+- Using ThreadPoolExecutor.submit()
+- Reviewing function signatures
+
+### `references/checklists.md`
+
+**Read when**:
+
+- Final review before committing Python code
+- Unsure if you've followed all rules
+- Need a quick lookup of requirements
+
+## How to Use This Skill
+
+1. **Core knowledge** is loaded automatically (LBYL, pathlib, basic imports, anti-patterns)
+2. **Version detection** happens once - identify the minimum Python version and load the appropriate version file
+3. **Reference documents** are loaded on-demand based on the triggers above
+4. **Additional patterns** may require extra loading (CLI patterns, subprocess)
+5. **Each file is self-contained** with complete guidance for its domain
+</user>
+  <assistant>
+
+Now let me load the core and version-specific rules:</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="909" cache_read_input_tokens="68891" cache_creation="{'ephemeral_5m_input_tokens': 909, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01K1b7MNp2EzCi8hqzgzXBrk">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/skills/dignified-python/dignified-python-core.md</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="909" cache_read_input_tokens="68891" cache_creation="{'ephemeral_5m_input_tokens': 909, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_0192Qi1vd78BUAhAemW6h3K6">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/skills/dignified-python/cli-patterns.md</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="909" cache_read_input_tokens="68891" cache_creation="{'ephemeral_5m_input_tokens': 909, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01K1b7MNp2EzCi8hqzgzXBrk">
+     1→---
+     2→---
+     3→
+     4→# Dignified Python - Core Standards
+     5→
+     6→This document contains the core Python coding standards that apply to 80%+ of Python code. These principles are loaded with every skill invocation.
+     7→
+     8→For conditional loading of specialized patterns:
+     9→
+    10→- CLI development -&gt; Load `cli-patterns.md`
+    11→- Subprocess operations -&gt; Load `subprocess.md`
+    12→
+    13→For detailed reference material, see the "When to Read Each Reference" section in SKILL.md.
+    14→
+    15→---
+    16→
+    17→## The Cornerstone: LBYL Over EAFP
+    18→
+    19→**Look Before You Leap: Check conditions proactively, NEVER use exceptions for control flow.**
+    20→
+    21→This is the single most important rule in dignified Python. Every pattern below flows from this principle.
+    22→
+    23→```python
+    24→# CORRECT: Check first
+    25→if key in mapping:
+    26→    value = mapping[key]
+    27→    process(value)
+    28→
+    29→# WRONG: Exception as control flow
+    30→try:
+
+... [502 lines omitted] ...
+
+    33→except KeyError:
+    39→## Exception Handling Basics
+    45→LBYL means checking conditions before acting. EAFP (Easier to Ask for Forgiveness than Permission) means trying operations and catching exceptions. In dignified Python, we strongly prefer LBYL.
+    65→# WRONG: KeyError as control flow
+    68→except KeyError:
+    72→### When Exceptions ARE Acceptable
+    74→Exceptions are ONLY acceptable at:
+    76→1. **Error boundaries** (CLI/API level)
+    80→**Default: Let exceptions bubble up**
+    82→**When you must use try-except: scope the try block to the single operation that raises.** Don't wrap multiple operations in one try block — each handler should know exactly what failed. Use early returns to keep subsequent code flat.
+    84→For detailed exception handling patterns including minimal exception scope, B904 chaining, third-party API examples, and anti-patterns, see `references/exception-handling.md`.
+   118→- `.resolve()` raises `OSError` for non-existent paths
+   119→- `.is_relative_to()` raises `ValueError` for invalid comparisons
+   120→- Checking `.exists()` first avoids exceptions entirely (LBYL!)
+   135→# WRONG: Using exceptions for path validation
+   140→except (OSError, ValueError):
+   180→3. **Inline imports only for specific exceptions** (circular deps, TYPE_CHECKING, conditional features)
+   211→**Acceptable exceptions:**
+   480→    log.warning("Non-numeric plan_id")
+   494→- **Raise exception**: When invalid data indicates a programming error or corrupt state
+   521→- **Exception chaining (B904), minimal exception scope**: `references/exception-handling.md`
+  </tool_result>
+  <tool_result tool="toolu_0192Qi1vd78BUAhAemW6h3K6">
+     1→---
+     2→---
+     3→
+     4→# CLI Patterns - Click Best Practices
+     5→
+     6→## Core Rules
+     7→
+     8→1. **Use `click.echo()` for output, NEVER `print()`**
+     9→2. **Exit with `raise SystemExit(1)` for CLI errors**
+    10→3. **Error boundaries at command level**
+    11→4. **Use `err=True` for error output**
+    12→5. **Flush stderr before `click.confirm()`** (prevents buffering hangs)
+    13→
+    14→## Basic Click Patterns
+    15→
+    16→```python
+    17→import click
+    18→from pathlib import Path
+    19→
+    20→# ✅ CORRECT: Use click.echo for output
+    21→@click.command()
+    22→@click.argument("name")
+    23→def greet(name: str) -&gt; None:
+    24→    """Greet the user."""
+    25→    click.echo(f"Hello, {name}!")
+    26→
+    27→# ❌ WRONG: Using print()
+    28→@click.command()
+    29→def greet(name: str) -&gt; None:
+    30→    print(f"Hello, {name}!")  # NEVER use print in CLI
+
+... [132 lines omitted] ...
+
+    33→## Error Handling in CLI
+    36→# ✅ CORRECT: CLI command error boundary
+    43→    except subprocess.CalledProcessError as e:
+    44→        click.echo(f"Error: Command failed: {e.stderr}", err=True)
+    46→    except ValueError as e:
+    47→        click.echo(f"Error: {e}", err=True)
+    57→# Error output to stderr
+    58→click.echo("Error: Operation failed", err=True)
+    62→click.echo(click.style("Warning!", fg="yellow", bold=True))
+   102→click.echo("Warning: This operation is destructive!", err=True)
+   109→click.echo("Warning: This operation is destructive!", err=True)
+   153→2. **Error to stderr**: Use `err=True` for error messages
+   154→3. **Exit cleanly**: Use `raise SystemExit(1)` for errors
+  </tool_result>
+  <assistant>Now let me signal started and create my todo list:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="8153" cache_read_input_tokens="69800" cache_creation="{'ephemeral_5m_input_tokens': 8153, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_012qV899nTpmxPjZs8FW2Z9s">
+    <param name="command">erk exec impl-signal started --session-id "${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true</param>
+    <param name="description">Signal implementation started</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="8153" cache_read_input_tokens="69800" cache_creation="{'ephemeral_5m_input_tokens': 8153, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01TPzBXGkcWmA3sgV4uBQPbh">
+    <param name="todos">[{'content': 'Phase 1: Extract `objective view` operation into view/ subpackage', 'status'...[truncated 602 chars]...CI checks'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="8153" cache_read_input_tokens="69800" cache_creation="{'ephemeral_5m_input_tokens': 8153, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_012qV899nTpmxPjZs8FW2Z9s">
+{
+  "success": false,
+  "event": "started",
+  "error_type": "session-id-required",
+  "message": "Session ID required for impl-signal started. Ensure ${CLAUDE_SESSION_ID} is available in the command context."
+}
+  </tool_result>
+  <tool_result tool="toolu_01TPzBXGkcWmA3sgV4uBQPbh">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01GyYGET45wZqVRjpAAu8YRc">
+    <param name="todos">[{'content': 'Phase 1: Extract `objective view` operation into view/ subpackage', 'status'...[truncated 606 chars]...CI checks'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="513" cache_read_input_tokens="77953" cache_creation="{'ephemeral_5m_input_tokens': 513, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01GyYGET45wZqVRjpAAu8YRc">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Setting up implementation... Reading plan #9162... Implementation environment ready.
+
+Now let me check the existing `objective_helpers.py` that's imported by `view_cmd.py`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="312" cache_read_input_tokens="78466" cache_creation="{'ephemeral_5m_input_tokens': 312, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01PgB5sHCHWDrSCSrYr21kWf">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/objective_helpers.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="312" cache_read_input_tokens="78466" cache_creation="{'ephemeral_5m_input_tokens': 312, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01PgB5sHCHWDrSCSrYr21kWf">
+     1→"""Shared helpers for objective tracking in land commands.
+     2→
+     3→These helpers are used by `erk land` to check for linked objectives
+     4→and prompt users to update them after landing.
+     5→"""
+     6→
+     7→import logging
+     8→from pathlib import Path
+     9→
+    10→import click
+    11→
+    12→from erk.cli.output import stream_command_with_feedback
+    13→from erk.core.context import ErkContext
+    14→from erk_shared.naming import extract_objective_number
+    15→from erk_shared.output.output import user_output
+    16→from erk_shared.plan_store.types import PlanNotFound, PlanState
+    17→
+    18→logger = logging.getLogger(__name__)
+    19→
+    20→
+    21→def check_and_display_plan_issue_closure(
+    22→    ctx: ErkContext,
+    23→    repo_root: Path,
+    24→    branch: str,
+    25→) -&gt; int | None:
+    26→    """Check and display plan issue closure status after landing.
+    27→
+    28→    Since PRs no longer contain "Closes #N", this always closes the plan
+    29→    issue directly via the API.
+    30→
+
+... [126 lines omitted] ...
+
+    67→    except RuntimeError:
+    84→    This is fail-open: catches all errors and never raises, because the
+   107→            click.style("⚠", fg="yellow") + f" Objective update failed: {result.error_message}"
+   122→    This is fail-open: catches all errors and never raises, because the
+   148→            click.style("⚠", fg="yellow") + f" Objective update failed: {result.error_message}"
+  </tool_result>
+  <assistant>Good. Now I have a comprehensive understanding of all the pieces. Let me also quickly check the existing tests:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2074" cache_read_input_tokens="78778" cache_creation="{'ephemeral_5m_input_tokens': 2074, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Glob" id="toolu_01SwbmzAmWmRTmkUJWMfEv1g">
+    <param name="pattern">tests/**/test_*objective*</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2074" cache_read_input_tokens="78778" cache_creation="{'ephemeral_5m_input_tokens': 2074, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01SwbmzAmWmRTmkUJWMfEv1g">
+/home/runner/work/erk/erk/tests/commands/land/test_get_objective_for_branch.py
+/home/runner/work/erk/erk/tests/commands/land/test_objective_update.py
+/home/runner/work/erk/erk/tests/commands/objective/test_close_objective.py
+/home/runner/work/erk/erk/tests/tui/data/test_fetch_objective_content.py
+/home/runner/work/erk/erk/tests/tui/screens/test_objective_plans_fake_provider.py
+/home/runner/work/erk/erk/tests/tui/screens/test_objective_nodes_screen.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_add_objective_node.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_get_plans_for_objective.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_land_execute_objective_detection.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_migrate_objective_schema.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_objective_link_pr.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_objective_render_roadmap.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_objective_apply_landed_update.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_objective_update_after_land.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_objective_plan_setup.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_objective_fetch_context.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_objective_save_to_issue.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_objective_post_action_comment.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_resolve_objective_ref.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_update_objective_node.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_link_pr_to_objective_nodes.py
+/home/runner/work/erk/erk/tests/unit/gateways/github/metadata_blocks/test_objective_content.py
+/home/runner/work/erk/erk/tests/unit/services/test_objective_list_service.py
+  </tool_result>
+  <tool_use name="Glob" id="toolu_01SMdAyUryXqeLbLrufYkndF">
+    <param name="pattern">tests/**/test_*view*objective*</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="877" cache_read_input_tokens="80852" cache_creation="{'ephemeral_5m_input_tokens': 877, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_use name="Glob" id="toolu_01MY5vgKiCYfK9SC4wpAR3GA">
+    <param name="pattern">tests/**/test_*check*objective*</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="877" cache_read_input_tokens="80852" cache_creation="{'ephemeral_5m_input_tokens': 877, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_use name="Glob" id="toolu_01QM7gJyb48cxkNcpJdbB4yw">
+    <param name="pattern">tests/**/test_objective_view*</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="877" cache_read_input_tokens="80852" cache_creation="{'ephemeral_5m_input_tokens': 877, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_use name="Glob" id="toolu_01GHXC3AyUHSfL2vkrFJdFUu">
+    <param name="pattern">tests/**/test_objective_check*</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="877" cache_read_input_tokens="80852" cache_creation="{'ephemeral_5m_input_tokens': 877, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01MY5vgKiCYfK9SC4wpAR3GA">
+No files found
+  </tool_result>
+  <tool_result tool="toolu_01GHXC3AyUHSfL2vkrFJdFUu">
+No files found
+  </tool_result>
+  <tool_result tool="toolu_01SMdAyUryXqeLbLrufYkndF">
+No files found
+  </tool_result>
+  <tool_result tool="toolu_01QM7gJyb48cxkNcpJdbB4yw">
+No files found
+  </tool_result>
+  <assistant>No existing tests for these commands. Let me also check the existing pr/view test pattern for reference and the machine command test structure:</assistant>
+  <usage input_tokens="34" cache_creation_input_tokens="491" cache_read_input_tokens="81729" cache_creation="{'ephemeral_5m_input_tokens': 491, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Glob" id="toolu_013ZSj5XRvC5dBoHLq9QAMxZ">
+    <param name="pattern">tests/**/test_*json*pr*view*</param>
+  </tool_use>
+  <usage input_tokens="34" cache_creation_input_tokens="491" cache_read_input_tokens="81729" cache_creation="{'ephemeral_5m_input_tokens': 491, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Glob" id="toolu_01WzXFmFj9oYeF6D12Z2xM7u">
+    <param name="pattern">tests/**/pr/view/test_*</param>
+  </tool_use>
+  <usage input_tokens="34" cache_creation_input_tokens="491" cache_read_input_tokens="81729" cache_creation="{'ephemeral_5m_input_tokens': 491, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_013ZSj5XRvC5dBoHLq9QAMxZ">
+No files found
+  </tool_result>
+  <tool_result tool="toolu_01WzXFmFj9oYeF6D12Z2xM7u">
+No files found
+  </tool_result>
+</session>
