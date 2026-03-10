@@ -104,6 +104,7 @@ Quick reference for all `erk exec` subcommands.
 | `setup-impl`                      | Consolidated implementation setup.                                                |
 | `setup-impl-from-pr`              | Set up .erk/impl-context/ folder from GitHub PR in current worktree.              |
 | `store-tripwire-candidates`       | Store tripwire candidates as a metadata comment on a plan.                        |
+| `summarize-impl-failure`          | Summarize an implementation failure using Haiku.                                  |
 | `track-learn-evaluation`          | Track learn evaluation completion on a plan.                                      |
 | `track-learn-result`              | Track learn workflow result on a plan.                                            |
 | `update-issue-body`               | Update an issue's body using REST API (avoids GraphQL rate limits).               |
@@ -1296,6 +1297,20 @@ Store tripwire candidates as a metadata comment on a plan.
 | ------------------- | ------- | -------- | -------------- | -------------------------------- |
 | `--pr-number`       | INTEGER | Yes      | Sentinel.UNSET | PR number                        |
 | `--candidates-file` | TEXT    | Yes      | Sentinel.UNSET | Path to tripwire-candidates.json |
+
+### summarize-impl-failure
+
+Summarize an implementation failure using Haiku.
+
+**Usage:** `erk exec summarize-impl-failure`
+
+**Options:**
+
+| Flag             | Type    | Required | Default        | Description                |
+| ---------------- | ------- | -------- | -------------- | -------------------------- |
+| `--session-file` | PATH    | Yes      | Sentinel.UNSET | Path to session JSONL file |
+| `--pr-number`    | INTEGER | Yes      | Sentinel.UNSET | PR number                  |
+| `--exit-code`    | INTEGER | No       | -              | Exit code                  |
 
 ### track-learn-evaluation
 

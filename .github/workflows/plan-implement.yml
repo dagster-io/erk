@@ -312,6 +312,22 @@ jobs:
             "last_remote_impl_session_id=$SESSION_ID" \
             "branch_name=$BRANCH_NAME"
 
+      - name: Summarize implementation failure
+        if: steps.implement.outputs.implementation_success != 'true' && steps.session.outputs.session_file
+        continue-on-error: true
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GH_TOKEN: ${{ github.token }}
+          SESSION_FILE: ${{ steps.session.outputs.session_file }}
+          PR_NUMBER: ${{ inputs.pr_number }}
+          EXIT_CODE: ${{ steps.implement.outputs.exit_code }}
+        run: |
+          SUMMARY=$(erk exec summarize-impl-failure \
+            --session-file "$SESSION_FILE" \
+            --pr-number "$PR_NUMBER" \
+            --exit-code "$EXIT_CODE")
+          echo "$SUMMARY" >> "$GITHUB_STEP_SUMMARY"
+
       - name: Handle implementation outcome
         id: handle_outcome
         if: steps.implement.outputs.implementation_success == 'true'
