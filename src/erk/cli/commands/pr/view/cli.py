@@ -173,7 +173,7 @@ def _format_header_section(header_info: dict[str, object], *, plan_url: str | No
                 lines.append(_format_field("Workflow", workflow_url))
 
     if CREATED_FROM_SESSION in header_info:
-        lines.append(_format_field("Plan session", str(header_info[CREATED_FROM_SESSION])))
+        lines.append(_format_field("PR session", str(header_info[CREATED_FROM_SESSION])))
     if LAST_LEARN_SESSION in header_info:
         lines.append(_format_field("Learn session", str(header_info[LAST_LEARN_SESSION])))
 

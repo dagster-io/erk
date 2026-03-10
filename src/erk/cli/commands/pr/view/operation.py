@@ -132,7 +132,7 @@ def run_pr_view(
     if isinstance(issue, IssueNotFound):
         return MachineCommandError(
             error_type="not_found",
-            message=f"Plan #{plan_id} not found",
+            message=f"PR #{plan_id} not found",
         )
 
     plan = github_issue_to_plan(issue)
