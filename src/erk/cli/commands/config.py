@@ -303,10 +303,10 @@ def config_list(ctx: ErkContext) -> None:
                 f"{' (includes local)' if local_only_config.pool_checkout_commands else ''}"
             )
 
-        # plans.repo with source annotation
+        # github.repo with source annotation
         if cfg.github_repo:
             user_output(
-                f"  plans.repo={cfg.github_repo}"
+                f"  github.repo={cfg.github_repo}"
                 f"{' (local)' if local_only_config.github_repo is not None else ''}"
             )
 
@@ -383,6 +383,13 @@ def config_get(ctx: ErkContext, key: str) -> None:
             machine_output(str(cfg.pool_size))
         else:
             machine_output(f"{DEFAULT_POOL_SIZE} (default)")
+        return
+
+    if parts == ["github", "repo"]:
+        if cfg.github_repo is not None:
+            machine_output(cfg.github_repo)
+        else:
+            machine_output("")
         return
 
     user_output(f"Invalid key: {key}")
@@ -529,7 +536,7 @@ def config_set(ctx: ErkContext, local: bool, repo_flag: bool, key: str, value: s
             ["env", _]
             | ["post_create", "shell"]
             | ["pool", "checkout", "shell"]
-            | ["plans", "repo"]
+            | ["github", "repo"]
         ):
             transformed = value
         case ["post_create", "commands"] | ["pool", "checkout", "commands"]:

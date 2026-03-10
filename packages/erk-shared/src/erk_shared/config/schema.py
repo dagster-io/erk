@@ -166,7 +166,7 @@ class RepoConfigSchema(BaseModel):
     )
     github_repo: str | None = Field(
         description="Repository for storing plan issues (owner/repo format)",
-        json_schema_extra={"level": ConfigLevel.REPO_ONLY, "cli_key": "plans.repo"},
+        json_schema_extra={"level": ConfigLevel.REPO_ONLY, "cli_key": "github.repo"},
     )
     docs_path: str | None = Field(
         description="Local path to external repository containing docs/learned/",
