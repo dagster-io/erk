@@ -5,7 +5,7 @@ Usage:
 
 Commits the plan as impl-context to the PR's branch and triggers the
 plan-implement workflow. Unlike regular dispatch, this does not require
-the erk-plan label — just an OPEN PR.
+the erk-pr label — just an OPEN PR.
 """
 
 import json

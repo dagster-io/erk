@@ -76,8 +76,8 @@ def pr_create(
     # Validate content is not empty
     Ensure.not_empty(content.strip(), "PR content is empty. Provide a non-empty PR body.")
 
-    # Build labels: erk-pr + erk-plan + any extra
-    labels = ["erk-pr", "erk-plan"]
+    # Build labels: erk-pr + any extra
+    labels = ["erk-pr"]
     for extra in label:
         if extra not in labels:
             labels.append(extra)

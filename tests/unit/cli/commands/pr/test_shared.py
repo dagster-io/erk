@@ -48,7 +48,7 @@ def _pr_with_plan_header(
         owner="owner",
         repo="repo",
         author=author,
-        labels=("erk-plan",),
+        labels=("erk-pr",),
     )
 
 
@@ -73,7 +73,7 @@ def _pr_without_plan_header(
         owner="owner",
         repo="repo",
         author=author,
-        labels=("erk-plan",),
+        labels=("erk-pr",),
         created_at=datetime(2024, 6, 1, 12, 0, tzinfo=UTC),
     )
 

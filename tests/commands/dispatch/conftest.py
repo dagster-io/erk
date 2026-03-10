@@ -3,7 +3,6 @@
 from datetime import UTC, datetime
 from pathlib import Path
 
-from erk.cli.commands.pr.dispatch_cmd import ERK_PLAN_LABEL
 from erk.core.repo_discovery import RepoContext
 from erk_shared.gateway.github.metadata.core import render_metadata_block
 from erk_shared.gateway.github.metadata.types import MetadataBlock
@@ -40,7 +39,7 @@ def create_plan(
         body=body if body is not None else make_plan_body(),
         state=state,
         url=f"https://github.com/test-owner/test-repo/issues/{plan_identifier}",
-        labels=labels if labels is not None else [ERK_PLAN_LABEL],
+        labels=labels if labels is not None else ["erk-pr"],
         assignees=[],
         created_at=now,
         updated_at=now,

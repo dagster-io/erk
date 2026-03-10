@@ -84,9 +84,9 @@ class TestPlanDataProviderRouting:
             objective_service=mock_objective_service, plan_service=mock_plan_service
         )
 
-        # Query filters with "erk-plan" label (NOT objective)
+        # Query filters with "erk-pr" label (NOT objective)
         filters = PlanFilters(
-            labels=("erk-plan",),
+            labels=("erk-pr",),
             state="open",
             run_state=None,
             limit=None,
@@ -195,7 +195,7 @@ class TestPlanDataProviderRouting:
 
         # Case 2: WITHOUT erk-objective (plan query)
         filters_without_objective = PlanFilters(
-            labels=("erk-plan",),
+            labels=("erk-pr",),
             state="open",
             run_state=None,
             limit=None,

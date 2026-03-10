@@ -15,7 +15,7 @@ from erk.cli.commands.slot.common import is_placeholder_branch
 from erk.cli.constants import (
     DISPATCH_WORKFLOW_METADATA_NAME,
     DISPATCH_WORKFLOW_NAME,
-    ERK_PLAN_LABEL,
+    ERK_PR_TITLE_PREFIX,
 )
 from erk.cli.core import discover_repo_context
 from erk.cli.ensure import Ensure, UserFacingCliError
@@ -148,7 +148,7 @@ def _validate_planned_pr_for_dispatch(
 ) -> ValidatedPlannedPR:
     """Validate a planned PR plan for dispatch.
 
-    Fetches the PR, validates it has the erk-plan label and is OPEN.
+    Fetches the PR, validates it has the [erk-pr] title prefix and is OPEN.
 
     Args:
         ctx: ErkContext with git operations
@@ -163,11 +163,11 @@ def _validate_planned_pr_for_dispatch(
         user_output(click.style("Error: ", fg="red") + f"PR #{pr_number} not found")
         raise SystemExit(1)
 
-    # Validate: must have erk-plan label
-    if ERK_PLAN_LABEL not in pr_result.labels:
+    # Validate: must have [erk-pr] title prefix
+    if not pr_result.title.startswith(ERK_PR_TITLE_PREFIX):
         user_output(
             click.style("Error: ", fg="red")
-            + f"PR #{pr_number} does not have {ERK_PLAN_LABEL} label\n\n"
+            + f"PR #{pr_number} does not have '[erk-pr]' title prefix\n\n"
             "Cannot dispatch non-plan PRs for automated implementation."
         )
         raise SystemExit(1)
@@ -335,7 +335,7 @@ def _dispatch_planned_pr_plan(
     try:
         validation_results = {
             "pr_is_open": True,
-            "has_erk_plan_label": True,
+            "has_erk_pr_title": True,
         }
 
         metadata_block = create_submission_queued_block(
@@ -389,8 +389,8 @@ def _validate_planned_pr_for_dispatch_remote(
 ) -> ValidatedPlannedPR:
     """Validate a planned PR for remote dispatch (no local git repo required).
 
-    Fetches the issue/PR via RemoteGitHub, validates it has the erk-plan label
-    and is OPEN, and extracts the branch name from the plan-header metadata.
+    Fetches the issue/PR via RemoteGitHub, validates it has the [erk-pr] title
+    prefix and is OPEN, and extracts the branch name from the plan-header metadata.
 
     Args:
         remote: RemoteGitHub gateway
@@ -399,7 +399,7 @@ def _validate_planned_pr_for_dispatch_remote(
         pr_number: PR number to validate
 
     Raises:
-        SystemExit: If PR doesn't exist, missing label, not OPEN,
+        SystemExit: If PR doesn't exist, missing title prefix, not OPEN,
             or branch name cannot be determined.
     """
     issue = remote.get_issue(owner=owner, repo=repo_name, number=pr_number)
@@ -407,10 +407,10 @@ def _validate_planned_pr_for_dispatch_remote(
         user_output(click.style("Error: ", fg="red") + f"PR #{pr_number} not found")
         raise SystemExit(1)
 
-    if ERK_PLAN_LABEL not in issue.labels:
+    if not issue.title.startswith(ERK_PR_TITLE_PREFIX):
         user_output(
             click.style("Error: ", fg="red")
-            + f"PR #{pr_number} does not have {ERK_PLAN_LABEL} label\n\n"
+            + f"PR #{pr_number} does not have '[erk-pr]' title prefix\n\n"
             "Cannot dispatch non-plan PRs for automated implementation."
         )
         raise SystemExit(1)
@@ -553,7 +553,7 @@ def _dispatch_planned_pr_plan_remote(
             plan_number=pr_number,
             validation_results={
                 "pr_is_open": True,
-                "has_erk_plan_label": True,
+                "has_erk_pr_title": True,
             },
             expected_workflow=DISPATCH_WORKFLOW_METADATA_NAME,
         )
@@ -894,7 +894,7 @@ def pr_dispatch(
         erk pr dispatch 123 --repo owner/repo  # remote mode
 
     Requires:
-        - All issues must have erk-plan label
+        - All issues must have [erk-pr] title prefix
         - All issues must be OPEN
         - Working directory must be clean (no uncommitted changes)
     """

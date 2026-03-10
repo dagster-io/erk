@@ -2,7 +2,7 @@
 
 Uses GitHub draft pull requests as the backing store for plans.
 PR body contains the plan-header metadata block followed by plan content.
-The "erk-plan" label identifies plan PRs vs regular draft PRs.
+The "[erk-pr]" title prefix identifies plan PRs vs regular draft PRs.
 """
 
 import logging
@@ -50,7 +50,7 @@ from erk_shared.plan_store.types import (
     PlanState,
 )
 
-_PLAN_LABEL = "erk-plan"
+_PLAN_TITLE_PREFIX = "[erk-pr]"
 
 _logger = logging.getLogger(__name__)
 
@@ -185,7 +185,7 @@ class PlannedPRBackend(PlanBackend):
     def list_plans(self, repo_root: Path, query: PlanQuery) -> list[Plan]:
         """Query plans from draft PRs.
 
-        Lists open PRs, filters to drafts with the erk-plan label,
+        Lists open PRs, filters to drafts with the [erk-pr] title prefix,
         and converts each to a Plan.
 
         Args:
@@ -204,9 +204,7 @@ class PlannedPRBackend(PlanBackend):
             pr_state = "all"
 
         # Push label and draft filtering to list_prs
-        all_labels = [_PLAN_LABEL]
-        if query.labels is not None:
-            all_labels.extend(query.labels)
+        all_labels = list(query.labels) if query.labels is not None else []
 
         prs = self._github.list_prs(
             repo_root,
@@ -217,6 +215,10 @@ class PlannedPRBackend(PlanBackend):
 
         plans: list[Plan] = []
         for _branch, pr_info in prs.items():
+            # Filter to plans by title prefix (replaces erk-pr label check)
+            if pr_info.title is None or not pr_info.title.startswith(_PLAN_TITLE_PREFIX):
+                continue
+
             pr_details = self._github.get_pr(repo_root, pr_info.number)
             if isinstance(pr_details, PRNotFound):
                 continue

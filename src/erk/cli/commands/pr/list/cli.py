@@ -389,7 +389,7 @@ def pr_list(
         erk pr list --all-users          # All users' plans
         erk pr list -A                   # All users' plans (short form)
         erk pr list --state open
-        erk pr list --label erk-plan --label bug
+        erk pr list --label erk-pr --label bug
         erk pr list --limit 10
         erk pr list --run-state in_progress
         erk pr list --stage impl         # Filter by lifecycle stage
@@ -439,7 +439,7 @@ def dash(
         erk dash --all-users             # All users' plans
         erk dash -A                      # All users' plans (short form)
         erk dash --interval 10
-        erk dash --label erk-plan --state open
+        erk dash --label erk-pr --state open
         erk dash --limit 10
         erk dash --run-state in_progress
         erk dash --stage impl            # Filter by lifecycle stage

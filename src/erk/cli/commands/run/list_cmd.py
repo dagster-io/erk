@@ -79,7 +79,7 @@ def _list_runs(ctx: ErkContext) -> None:
                 plan_numbers.append(plan_num)
 
     # 3. Fetch issues (needed for GitHubRepoLocation and plan→PR linkage)
-    issues = ctx.issues.list_issues(repo_root=repo.root, labels=["erk-pr", "erk-plan"])
+    issues = ctx.issues.list_issues(repo_root=repo.root, labels=["erk-pr"])
 
     # Extract location from first issue URL (needed for API calls and links)
     location = None

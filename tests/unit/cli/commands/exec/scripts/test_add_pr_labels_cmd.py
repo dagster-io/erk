@@ -41,14 +41,14 @@ def test_add_pr_labels_success() -> None:
 
     result = runner.invoke(
         add_pr_labels,
-        ["42", "--labels", "erk-plan", "--labels", "erk-learn"],
+        ["42", "--labels", "erk-pr", "--labels", "erk-learn"],
         obj=ErkContext.for_test(github=fake_github),
     )
 
     assert result.exit_code == 0, f"Failed: {result.output}"
     output = json.loads(result.output)
     assert output["success"] is True
-    assert sorted(output["added_labels"]) == ["erk-learn", "erk-plan"]
+    assert sorted(output["added_labels"]) == ["erk-learn", "erk-pr"]
     assert output["failed_labels"] == []
 
 
@@ -59,7 +59,7 @@ def test_add_pr_labels_pr_not_found() -> None:
 
     result = runner.invoke(
         add_pr_labels,
-        ["999", "--labels", "erk-plan"],
+        ["999", "--labels", "erk-pr"],
         obj=ErkContext.for_test(github=fake_github),
     )
 

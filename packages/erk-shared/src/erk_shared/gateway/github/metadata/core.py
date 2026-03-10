@@ -283,7 +283,7 @@ def create_submission_queued_block(
         queued_at: ISO 8601 timestamp when submission was queued
         submitted_by: Username from git config (user.name)
         plan_number: GitHub plan issue number
-        validation_results: Dict with validation checks (issue_is_open, has_erk_plan_label, etc.)
+        validation_results: Dict with validation checks (pr_is_open, has_erk_pr_title, etc.)
         expected_workflow: Name of the GitHub Actions workflow that will run
 
     Returns:

@@ -36,7 +36,7 @@ def _create_plan_issue_with_objective(objective_number: int) -> IssueInfo:
         body=body,
         state="OPEN",
         url="https://github.com/owner/repo/issues/42",
-        labels=["erk-pr", "erk-plan"],
+        labels=["erk-pr"],
         assignees=[],
         created_at=datetime.now(UTC),
         updated_at=datetime.now(UTC),

@@ -33,7 +33,7 @@ The `ERK_PLAN_BACKEND` environment variable is no longer read by application cod
 All plan creation pathways apply a title tag via `get_title_tag_from_labels()` in `packages/erk-shared/src/erk_shared/plan_utils.py`:
 
 - `"erk-learn"` label → `[erk-learn]` prefix
-- All other plans → `[erk-plan]` prefix
+- All other plans → `[erk-pr]` prefix
 
 ## Lifecycle Stage at Creation
 

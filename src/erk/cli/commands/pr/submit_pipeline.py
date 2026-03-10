@@ -615,7 +615,7 @@ def extract_diff(ctx: ErkContext, state: SubmitState) -> SubmitState | SubmitErr
 
 
 def fetch_plan_context(ctx: ErkContext, state: SubmitState) -> SubmitState | SubmitError:
-    """Fetch plan context from linked erk-plan issue."""
+    """Fetch plan context from linked erk-pr issue."""
     if state.skip_description:
         return state
 

@@ -386,7 +386,7 @@ def run_commit_message_generation(
         current_branch: Current branch name
         parent_branch: Parent branch name
         commit_messages: Optional list of existing commit messages for context
-        plan_context: Optional plan context from linked erk-plan issue
+        plan_context: Optional plan context from linked erk-pr issue
         debug: Whether to show debug output (currently unused, progress always shown)
 
     Returns:

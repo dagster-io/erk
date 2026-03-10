@@ -108,7 +108,7 @@ Rules triggered by matching actions in code.
 
 **creating a new plan-generating command without a pre-plan gathering step** → Read [Context Preservation Prompting Patterns](context-preservation-prompting.md) first. Without explicit context materialization before EnterPlanMode, agents produce sparse plans. Apply the two-phase pattern from this document.
 
-**creating erk-learn plan for an issue that already has erk-learn label** → Read [Learn Plan Validation](learn-plan-validation.md) first. Validate target issue has erk-plan label, NOT erk-learn. Learn plans analyze implementation plans, not other learn plans (cycle prevention).
+**creating erk-learn plan for an issue that already has erk-learn label** → Read [Learn Plan Validation](learn-plan-validation.md) first. Validate target issue has erk-pr label, NOT erk-learn. Learn plans analyze implementation plans, not other learn plans (cycle prevention).
 
 **creating temp files for AI workflows** → Read [Scratch Storage](scratch-storage.md) first. Use worktree-scoped scratch storage for session-specific data.
 
@@ -160,7 +160,7 @@ Rules triggered by matching actions in code.
 
 **making objective-update-after-land exit non-zero** → Read [Objective Update After Land](objective-update-after-land.md) first. This script uses fail-open design. Failures must not block landing. See objective-update-after-land.md.
 
-**manually creating an erk-plan with gh issue create** → Read [Plan Lifecycle](lifecycle.md) first. Use `erk exec plan-save --plan-file <path>` instead. Manual creation requires complex metadata block format (see Metadata Block Reference section).
+**manually creating an erk-pr with gh issue create** → Read [Plan Lifecycle](lifecycle.md) first. Use `erk exec plan-save --plan-file <path>` instead. Manual creation requires complex metadata block format (see Metadata Block Reference section).
 
 **manually setting the base branch for a learn plan submission** → Read [Learn Plans vs. Implementation Plans](learn-vs-implementation-plans.md) first. Learn plan base branch is auto-detected from learned_from_issue → parent branch. Only use --base to override if the parent branch is missing from the remote.
 
@@ -186,7 +186,7 @@ Rules triggered by matching actions in code.
 
 **pushing implementation commits after impl-context cleanup without git pull --rebase** → Read [Impl-Context Staging Directory](impl-context.md) first. After git rm + commit + push of .erk/impl-context/, the local branch may diverge from remote if other commits were pushed. Run git pull --rebase before pushing further implementation commits to avoid non-fast-forward push failures.
 
-**querying all erk PRs without using the erk-pr base label** → Read [PR and Plan Label Assignment Scheme](label-scheme.md) first. Use erk-pr to query all erk-submitted PRs (plans + code). Use type-specific labels (erk-plan, erk-learn) only when you need to filter to a specific type.
+**querying core erk PRs using erk-core label** → Read [PR and Plan Label Assignment Scheme](label-scheme.md) first. erk-core no longer exists. Use erk-pr with exclude_labels=(erk-learn,) to query non-learn PRs. Use erk-learn only when you need learn-specific filtering.
 
 **reading learn_plan_issue or learn_status** → Read [Learn Plan Metadata Preservation](learn-plan-metadata-fields.md) first. Verify field came through full pipeline. If null, check if filtered out earlier. Use gateway abstractions; never hand-construct Plan objects.
 

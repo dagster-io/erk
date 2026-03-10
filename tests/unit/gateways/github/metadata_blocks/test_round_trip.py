@@ -89,7 +89,7 @@ SAMPLE_DATA: dict[str, dict] = {
         "queued_at": "2025-01-15T10:00:00Z",
         "submitted_by": "testuser",
         "pr_number": 42,
-        "validation_results": {"issue_is_open": True, "has_erk_plan_label": True},
+        "validation_results": {"pr_is_open": True, "has_erk_pr_title": True},
         "expected_workflow": "implement-plan",
         "trigger_mechanism": "label-based-webhook",
     },
@@ -181,7 +181,7 @@ FACTORY_BLOCKS: dict[str, MetadataBlock] = {
         queued_at="2025-01-15T10:00:00Z",
         submitted_by="testuser",
         plan_number=42,
-        validation_results={"issue_is_open": True, "has_erk_plan_label": True},
+        validation_results={"pr_is_open": True, "has_erk_pr_title": True},
         expected_workflow="implement-plan",
     ),
     "workflow-started": create_workflow_started_block(

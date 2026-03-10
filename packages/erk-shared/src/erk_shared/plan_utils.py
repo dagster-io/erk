@@ -96,7 +96,7 @@ def wrap_plan_in_metadata_block(
     return f"""{intro_text}
 
 <details>
-<summary><code>erk-plan</code></summary>
+<summary><code>erk-pr</code></summary>
 
 {plan_content}
 
@@ -179,15 +179,15 @@ def get_title_tag_from_labels(labels: list[str]) -> str:
     """Return the appropriate title tag based on issue labels.
 
     Returns "[erk-learn]" if the issue has the "erk-learn" label,
-    otherwise returns "[erk-plan]".
+    otherwise returns "[erk-pr]".
 
     Args:
         labels: List of label names on the issue
 
     Returns:
-        Title tag string: "[erk-learn]" or "[erk-plan]"
+        Title tag string: "[erk-learn]" or "[erk-pr]"
     """
-    return "[erk-learn]" if "erk-learn" in labels else "[erk-plan]"
+    return "[erk-learn]" if "erk-learn" in labels else "[erk-pr]"
 
 
 def format_error(brief: str, details: str, actions: list[str]) -> str:

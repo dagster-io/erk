@@ -105,11 +105,11 @@ def test_returns_state_after_creating_pr(
         is_cross_repository=False,
         owner="owner",
         repo="repo",
-        labels=("erk-plan",),
+        labels=("erk-pr",),
         created_at=now,
         updated_at=now,
     )
-    fake_issues = FakeGitHubIssues(username="testuser", labels={"erk-pr", "erk-learn", "erk-plan"})
+    fake_issues = FakeGitHubIssues(username="testuser", labels={"erk-pr", "erk-learn"})
     fake_github = FakeLocalGitHub(pr_details={100: pr}, issues_gateway=fake_issues)
     fake_time = FakeTime()
     fake_git = FakeGit(trunk_branches={tmp_path: "main"})

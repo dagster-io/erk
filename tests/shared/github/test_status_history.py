@@ -223,7 +223,7 @@ class TestBuildStatusHistory:
         """Ignores entries that aren't status events."""
         entries = [
             _log_entry(
-                "erk-plan",
+                "erk-pr",
                 {
                     "issue_number": 123,
                     "worktree_name": "feature-123",
@@ -240,7 +240,7 @@ class TestBuildStatusHistory:
         ]
         history = build_status_history(entries, "2024-01-15T12:00:00Z")
 
-        assert len(history) == 2  # queued + completed, not erk-plan
+        assert len(history) == 2  # queued + completed, not erk-pr
         assert history[0]["status"] == "queued"
         assert history[1]["status"] == "completed"
 

@@ -170,12 +170,12 @@ def _implement_from_issue(
         raise SystemExit(1)
     plan = result
 
-    # Validate erk-plan label
-    if "erk-plan" not in plan.labels:
+    # Validate erk-pr title prefix
+    if not plan.title.startswith("[erk-pr]"):
         user_output(
             click.style("Error: ", fg="red")
-            + f"Plan #{plan_number} does not have the 'erk-plan' label.\n"
-            "Create a plan using 'erk pr create' or add the label manually."
+            + f"Plan #{plan_number} does not have the '[erk-pr]' title prefix.\n"
+            "Create a plan using 'erk pr create' to ensure correct formatting."
         )
         raise SystemExit(1) from None
 
@@ -351,7 +351,7 @@ def implement(
     Note: Plain numbers (e.g., 809) are always interpreted as plan numbers.
           For files with numeric names, use ./ prefix (e.g., ./809).
 
-    The plan must have the 'erk-plan' label.
+    The plan must have the '[erk-pr]' title prefix.
 
     Examples:
 

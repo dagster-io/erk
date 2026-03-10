@@ -36,7 +36,7 @@ def _make_issue(
         body=body,
         state="OPEN",
         url=f"https://github.com/test/repo/issues/{number}",
-        labels=["erk-pr", "erk-plan"],
+        labels=["erk-pr"],
         assignees=[],
         created_at=now,
         updated_at=now,
@@ -56,7 +56,7 @@ def _make_comment(comment_id: int, body: str) -> IssueComment:
 
 def test_plan_update_success() -> None:
     """Test successful plan update."""
-    issue = _make_issue(42, "Test Plan [erk-plan]", "metadata body")
+    issue = _make_issue(42, "Test Plan [erk-pr]", "metadata body")
     comment = _make_comment(12345, "old plan content")
     fake_gh = FakeGitHubIssues(
         issues={42: issue},
@@ -88,7 +88,7 @@ def test_plan_update_success() -> None:
     assert output["success"] is True
     assert output["pr_number"] == 42
 
-    assert output["title"] == "[erk-plan] Updated Plan"
+    assert output["title"] == "[erk-pr] Updated Plan"
 
     # Verify update_plan_content was called (updates PR body with PlannedPRBackend)
     content_bodies = [b for n, b in fake_github.updated_pr_bodies if n == 42]
@@ -99,12 +99,12 @@ def test_plan_update_success() -> None:
 
     # Verify update_plan_title was called
     assert len(fake_github.updated_pr_titles) == 1
-    assert fake_github.updated_pr_titles[0] == (42, "[erk-plan] Updated Plan")
+    assert fake_github.updated_pr_titles[0] == (42, "[erk-pr] Updated Plan")
 
 
 def test_plan_update_display_format() -> None:
     """Test display output format."""
-    issue = _make_issue(99, "My Feature [erk-plan]", "body")
+    issue = _make_issue(99, "My Feature [erk-pr]", "body")
     comment = _make_comment(55555, "plan content")
     fake_gh = FakeGitHubIssues(
         issues={99: issue},
@@ -132,13 +132,13 @@ def test_plan_update_display_format() -> None:
 
     assert result.exit_code == 0
     assert "PR #99 updated" in result.output
-    assert "Title: [erk-plan] Display Test" in result.output
+    assert "Title: [erk-pr] Display Test" in result.output
     assert "URL: " in result.output
 
 
 def test_plan_update_no_plan_found() -> None:
     """Test error when no plan found."""
-    issue = _make_issue(42, "Test [erk-plan]", "body")
+    issue = _make_issue(42, "Test [erk-pr]", "body")
     comment = _make_comment(12345, "plan content")
     fake_gh = FakeGitHubIssues(
         issues={42: issue},
@@ -197,7 +197,7 @@ def test_plan_update_issue_not_found() -> None:
 
 def test_plan_update_formats_plan_content() -> None:
     """Test that plan content is properly formatted with metadata block."""
-    issue = _make_issue(42, "Test [erk-plan]", "body")
+    issue = _make_issue(42, "Test [erk-pr]", "body")
     comment = _make_comment(12345, "old content")
     fake_gh = FakeGitHubIssues(
         issues={42: issue},
@@ -236,7 +236,7 @@ def test_plan_update_formats_plan_content() -> None:
 
 def test_plan_update_updates_title_from_plan() -> None:
     """Test that issue title is updated from plan H1 heading."""
-    issue = _make_issue(42, "[erk-plan] Old Title", "body")
+    issue = _make_issue(42, "[erk-pr] Old Title", "body")
     comment = _make_comment(12345, "old content")
     fake_gh = FakeGitHubIssues(
         issues={42: issue},
@@ -265,11 +265,11 @@ def test_plan_update_updates_title_from_plan() -> None:
 
     assert result.exit_code == 0, f"Failed: {result.output}"
     output = json.loads(result.output)
-    assert output["title"] == "[erk-plan] New Feature Name"
+    assert output["title"] == "[erk-pr] New Feature Name"
 
     # Verify update_plan_title was called
     assert len(fake_github.updated_pr_titles) == 1
-    assert fake_github.updated_pr_titles[0] == (42, "[erk-plan] New Feature Name")
+    assert fake_github.updated_pr_titles[0] == (42, "[erk-pr] New Feature Name")
 
 
 def test_plan_update_learn_plan_gets_learn_tag() -> None:
@@ -321,7 +321,7 @@ def test_plan_update_learn_plan_gets_learn_tag() -> None:
 
 def test_plan_update_strips_plan_prefix_from_title() -> None:
     """Test that 'Plan: ' prefix is stripped from extracted title."""
-    issue = _make_issue(42, "[erk-plan] Old Title", "body")
+    issue = _make_issue(42, "[erk-pr] Old Title", "body")
     comment = _make_comment(12345, "old content")
     fake_gh = FakeGitHubIssues(
         issues={42: issue},
@@ -349,12 +349,12 @@ def test_plan_update_strips_plan_prefix_from_title() -> None:
 
     assert result.exit_code == 0, f"Failed: {result.output}"
     output = json.loads(result.output)
-    assert output["title"] == "[erk-plan] Add Feature X"
+    assert output["title"] == "[erk-pr] Add Feature X"
 
 
 def test_plan_update_display_format_shows_new_title() -> None:
     """Test display format shows the updated title."""
-    issue = _make_issue(42, "[erk-plan] Old Title", "body")
+    issue = _make_issue(42, "[erk-pr] Old Title", "body")
     comment = _make_comment(12345, "old content")
     fake_gh = FakeGitHubIssues(
         issues={42: issue},
@@ -381,7 +381,7 @@ def test_plan_update_display_format_shows_new_title() -> None:
     )
 
     assert result.exit_code == 0
-    assert "Title: [erk-plan] Updated Feature" in result.output
+    assert "Title: [erk-pr] Updated Feature" in result.output
 
 
 # ============================================================================
@@ -416,14 +416,14 @@ def _make_pr_details(
         merge_state_status="UNKNOWN",
         owner="test-owner",
         repo="test-repo",
-        labels=("erk-plan",),
+        labels=("erk-pr",),
     )
 
 
 def test_plan_update_pushes_to_branch() -> None:
     """Test that plan update pushes to branch when branch_name is in header_fields."""
     branch_name = "plnd/my-feature-branch"
-    pr = _make_pr_details(42, "[erk-plan] Old Title", branch_name=branch_name)
+    pr = _make_pr_details(42, "[erk-pr] Old Title", branch_name=branch_name)
     fake_github = FakeLocalGitHub(pr_details={42: pr})
     fake_git = FakeGit()
     plan_content = """# Updated Plan
@@ -470,7 +470,7 @@ def test_plan_update_pushes_to_branch() -> None:
 def test_plan_update_branch_push_failure_still_succeeds() -> None:
     """Test that push failure still reports success (PR body was updated)."""
     branch_name = "plnd/my-feature-branch"
-    pr = _make_pr_details(42, "[erk-plan] Old Title", branch_name=branch_name)
+    pr = _make_pr_details(42, "[erk-pr] Old Title", branch_name=branch_name)
     fake_github = FakeLocalGitHub(pr_details={42: pr})
     fake_git = FakeGit(push_to_remote_error=PushError(message="rejected"))
     plan_content = """# Updated Plan
@@ -503,7 +503,7 @@ def test_plan_update_branch_push_failure_still_succeeds() -> None:
 
 def test_plan_update_no_branch_skips_push() -> None:
     """Test that issue-backed plans (no branch_name) skip branch push entirely."""
-    issue = _make_issue(42, "[erk-plan] Old Title", "body")
+    issue = _make_issue(42, "[erk-pr] Old Title", "body")
     comment = _make_comment(12345, "old content")
     fake_gh = FakeGitHubIssues(
         issues={42: issue},

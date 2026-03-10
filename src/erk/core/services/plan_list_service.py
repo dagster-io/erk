@@ -42,7 +42,7 @@ if TYPE_CHECKING:
 class PlannedPRPlanListService(PlanListService):
     """Plan list service for planned-PR-backed plans.
 
-    Uses a single GraphQL query to fetch draft PRs with the erk-plan label
+    Uses a single GraphQL query to fetch draft PRs with the erk-pr label
     along with rich data (checks, review threads, merge status). Converts
     results to PlanListData with fully populated PullRequestInfo for display.
     """
@@ -116,7 +116,7 @@ class PlannedPRPlanListService(PlanListService):
 
         # Step 1: REST issues list with server-side filtering
         rest_state = state.lower() if state else "open"
-        effective_limit = limit if limit is not None else 30
+        effective_limit = limit if limit is not None else 100
 
         params = [
             f"labels={','.join(labels)}",
@@ -364,7 +364,7 @@ class RealPlanListService(PlanListService):
 
         Args:
             location: GitHub repository location (local root + repo identity)
-            labels: Labels to filter issues by (e.g., ["erk-plan"])
+            labels: Labels to filter issues by (e.g., ["erk-pr"])
             state: Filter by state ("open" or "closed")
             limit: Maximum number of issues to return (None for no limit)
             skip_workflow_runs: If True, skip fetching workflow runs (for performance)

@@ -72,7 +72,7 @@ fake_github = FakeLocalGitHub(
 
 # Configure issues via constructor
 fake_issues = FakeGitHubIssues(
-    issues={100: IssueInfo(number=100, title="Example plan", labels=["erk-plan", "erk-planned-pr"])},
+    issues={100: IssueInfo(number=100, title="Example plan", labels=["erk-pr", "erk-planned-pr"])},
 )
 ```
 

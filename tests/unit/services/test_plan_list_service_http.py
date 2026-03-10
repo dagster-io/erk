@@ -27,7 +27,7 @@ def _make_rest_issue_pr(
         "state": "open",
         "created_at": "2024-01-15T10:00:00Z",
         "updated_at": "2024-01-15T14:00:00Z",
-        "labels": [{"name": label} for label in (labels or ["erk-plan"])],
+        "labels": [{"name": label} for label in (labels or ["erk-pr"])],
         "user": {"login": "test-user"},
         "pull_request": {"head": {"ref": f"plan-branch-{number}"}},
     }
@@ -59,7 +59,7 @@ def _setup_http_client_for_plan(
     """Configure FakeHttpClient with REST + GraphQL responses."""
     client = FakeHttpClient()
     client.set_list_response(
-        "repos/owner/repo/issues?labels=erk-plan&state=open&per_page=30&sort=updated&direction=desc",
+        "repos/owner/repo/issues?labels=erk-pr&state=open&per_page=100&sort=updated&direction=desc",
         response=rest_items,
     )
     client.set_response("graphql", response=_make_graphql_enrichment(pr_numbers))
@@ -74,7 +74,7 @@ def test_http_path_returns_plan_for_pr() -> None:
     service = PlannedPRPlanListService(FakeLocalGitHub(), time=FakeTime())
     result = service.get_plan_list_data(
         location=TEST_LOCATION,
-        labels=["erk-plan"],
+        labels=["erk-pr"],
         http_client=http_client,
     )
 
@@ -86,14 +86,14 @@ def test_http_path_empty_response() -> None:
     """HTTP path with no issues returns empty data."""
     http_client = FakeHttpClient()
     http_client.set_list_response(
-        "repos/owner/repo/issues?labels=erk-plan&state=open&per_page=30&sort=updated&direction=desc",
+        "repos/owner/repo/issues?labels=erk-pr&state=open&per_page=100&sort=updated&direction=desc",
         response=[],
     )
 
     service = PlannedPRPlanListService(FakeLocalGitHub(), time=FakeTime())
     result = service.get_plan_list_data(
         location=TEST_LOCATION,
-        labels=["erk-plan"],
+        labels=["erk-pr"],
         http_client=http_client,
     )
 
@@ -111,14 +111,14 @@ def test_http_path_filters_non_pr_items() -> None:
         "state": "open",
         "created_at": "2024-01-15T10:00:00Z",
         "updated_at": "2024-01-15T14:00:00Z",
-        "labels": [{"name": "erk-plan"}],
+        "labels": [{"name": "erk-pr"}],
         "user": {"login": "test-user"},
     }
     pr_item = _make_rest_issue_pr(number=42)
 
     http_client = FakeHttpClient()
     http_client.set_list_response(
-        "repos/owner/repo/issues?labels=erk-plan&state=open&per_page=30&sort=updated&direction=desc",
+        "repos/owner/repo/issues?labels=erk-pr&state=open&per_page=100&sort=updated&direction=desc",
         response=[issue_without_pr, pr_item],
     )
     http_client.set_response("graphql", response=_make_graphql_enrichment([42]))
@@ -126,7 +126,7 @@ def test_http_path_filters_non_pr_items() -> None:
     service = PlannedPRPlanListService(FakeLocalGitHub(), time=FakeTime())
     result = service.get_plan_list_data(
         location=TEST_LOCATION,
-        labels=["erk-plan"],
+        labels=["erk-pr"],
         http_client=http_client,
     )
 
@@ -137,13 +137,13 @@ def test_http_path_filters_non_pr_items() -> None:
 def test_http_path_excludes_labels() -> None:
     """HTTP path applies client-side exclude_labels filtering."""
     items = [
-        _make_rest_issue_pr(number=1, labels=["erk-plan"]),
-        _make_rest_issue_pr(number=2, labels=["erk-plan", "erk-learn"]),
+        _make_rest_issue_pr(number=1, labels=["erk-pr"]),
+        _make_rest_issue_pr(number=2, labels=["erk-pr", "erk-learn"]),
     ]
 
     http_client = FakeHttpClient()
     http_client.set_list_response(
-        "repos/owner/repo/issues?labels=erk-plan&state=open&per_page=30&sort=updated&direction=desc",
+        "repos/owner/repo/issues?labels=erk-pr&state=open&per_page=100&sort=updated&direction=desc",
         response=items,
     )
     http_client.set_response("graphql", response=_make_graphql_enrichment([1]))
@@ -151,7 +151,7 @@ def test_http_path_excludes_labels() -> None:
     service = PlannedPRPlanListService(FakeLocalGitHub(), time=FakeTime())
     result = service.get_plan_list_data(
         location=TEST_LOCATION,
-        labels=["erk-plan"],
+        labels=["erk-pr"],
         exclude_labels=["erk-learn"],
         http_client=http_client,
     )
@@ -168,7 +168,7 @@ def test_http_path_populates_timing_data() -> None:
     service = PlannedPRPlanListService(FakeLocalGitHub(), time=FakeTime())
     result = service.get_plan_list_data(
         location=TEST_LOCATION,
-        labels=["erk-plan"],
+        labels=["erk-pr"],
         http_client=http_client,
     )
 
@@ -184,7 +184,7 @@ def test_http_path_skip_workflow_runs() -> None:
     service = PlannedPRPlanListService(FakeLocalGitHub(), time=FakeTime())
     result = service.get_plan_list_data(
         location=TEST_LOCATION,
-        labels=["erk-plan"],
+        labels=["erk-pr"],
         skip_workflow_runs=True,
         http_client=http_client,
     )

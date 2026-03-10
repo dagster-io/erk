@@ -70,7 +70,7 @@ class PlanListService(ABC):
 
         Args:
             location: GitHub repository location (local root + repo identity)
-            labels: Labels to filter issues by (e.g., ["erk-plan"])
+            labels: Labels to filter issues by (e.g., ["erk-pr"])
             state: Filter by state ("open" or "closed")
             limit: Maximum number of issues to return (None for no limit)
             skip_workflow_runs: If True, skip fetching workflow runs (for performance)

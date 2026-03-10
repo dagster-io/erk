@@ -737,7 +737,7 @@ def test_impl_planned_pr_preserves_metadata_and_adds_plan_section(tmp_path: Path
     pr_details = PRDetails(
         number=42,
         url="https://github.com/owner/repo/pull/42",
-        title="[erk-plan] Test Plan",
+        title="[erk-pr] Test Plan",
         body=pr_body,
         state="OPEN",
         is_draft=True,
@@ -748,7 +748,7 @@ def test_impl_planned_pr_preserves_metadata_and_adds_plan_section(tmp_path: Path
         merge_state_status="CLEAN",
         owner="test-owner",
         repo="test-repo",
-        labels=("erk-plan",),
+        labels=("erk-pr",),
     )
 
     github = FakeLocalGitHub(
@@ -758,7 +758,7 @@ def test_impl_planned_pr_preserves_metadata_and_adds_plan_section(tmp_path: Path
                 state="OPEN",
                 url="https://github.com/owner/repo/pull/42",
                 is_draft=True,
-                title="[erk-plan] Test Plan",
+                title="[erk-pr] Test Plan",
                 checks_passing=True,
                 owner="test-owner",
                 repo="test-repo",
@@ -821,7 +821,7 @@ def test_impl_planned_pr_missing_plan_header_returns_error(tmp_path: Path) -> No
     pr_details = PRDetails(
         number=42,
         url="https://github.com/owner/repo/pull/42",
-        title="[erk-plan] Test Plan",
+        title="[erk-pr] Test Plan",
         body=pr_body,
         state="OPEN",
         is_draft=True,
@@ -841,7 +841,7 @@ def test_impl_planned_pr_missing_plan_header_returns_error(tmp_path: Path) -> No
                 state="OPEN",
                 url="https://github.com/owner/repo/pull/42",
                 is_draft=True,
-                title="[erk-plan] Test Plan",
+                title="[erk-pr] Test Plan",
                 checks_passing=True,
                 owner="test-owner",
                 repo="test-repo",
@@ -887,7 +887,7 @@ def test_cli_planned_pr_flag(tmp_path: Path) -> None:
     pr_details = PRDetails(
         number=42,
         url="https://github.com/owner/repo/pull/42",
-        title="[erk-plan] Test Plan",
+        title="[erk-pr] Test Plan",
         body=pr_body,
         state="OPEN",
         is_draft=True,
@@ -898,7 +898,7 @@ def test_cli_planned_pr_flag(tmp_path: Path) -> None:
         merge_state_status="CLEAN",
         owner="test-owner",
         repo="test-repo",
-        labels=("erk-plan",),
+        labels=("erk-pr",),
     )
 
     github = FakeLocalGitHub(
@@ -908,7 +908,7 @@ def test_cli_planned_pr_flag(tmp_path: Path) -> None:
                 state="OPEN",
                 url="https://github.com/owner/repo/pull/42",
                 is_draft=True,
-                title="[erk-plan] Test Plan",
+                title="[erk-pr] Test Plan",
                 checks_passing=True,
                 owner="test-owner",
                 repo="test-repo",

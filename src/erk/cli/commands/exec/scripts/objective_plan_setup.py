@@ -34,7 +34,7 @@ from erk_shared.gateway.remote_github.abc import RemoteGitHub
 from erk_shared.scratch.scratch import get_scratch_dir
 
 MARKER_EXTENSION = ".marker"
-ERK_PLAN_LABEL = "erk-plan"
+ERK_PR_TITLE_PREFIX = "[erk-pr]"
 
 
 def _fetch_and_setup(
@@ -61,7 +61,7 @@ def _fetch_and_setup(
 
     # Check labels
     warnings: list[str] = []
-    if ERK_PLAN_LABEL in issue.labels:
+    if issue.title.startswith(ERK_PR_TITLE_PREFIX):
         return (
             {
                 "success": False,

@@ -68,7 +68,7 @@ def _make_issue_info(
         body=body,
         state="OPEN",
         url=f"https://github.com/test-owner/test-repo/issues/{number}",
-        labels=["erk-pr", "erk-plan"],
+        labels=["erk-pr"],
         assignees=[],
         created_at=now,
         updated_at=now,
@@ -404,7 +404,7 @@ def test_no_plan_context_after_pxxxx_removal() -> None:
             provider="github",
             plan_id="123",
             url="https://github.com/test-owner/test-repo/issues/123",
-            labels=("erk-plan",),
+            labels=("erk-pr",),
             objective_id=None,
             node_ids=None,
         )

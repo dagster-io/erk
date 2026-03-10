@@ -76,7 +76,7 @@ def create_plan_draft_pr(
     4. Commit plan.md + ref.json to branch via git plumbing
     5. Push branch to remote
     6. Build metadata dict with branch_name and optional fields
-    7. Prefix title with label tag ([erk-plan] or [erk-learn])
+    7. Prefix title with label tag ([erk-pr] or [erk-learn])
     8. Create draft PR via PlannedPRBackend.create_plan()
     9. Return CreatePlanDraftPRResult
 
@@ -91,7 +91,7 @@ def create_plan_draft_pr(
         plan_content: The full plan markdown content
         branch_name: Pre-generated branch name (callers use generate_planned_pr_branch_name)
         title: Optional title (extracted from H1 if None)
-        labels: Labels to apply (e.g. ["erk-pr", "erk-plan"])
+        labels: Labels to apply (e.g. ["erk-pr"])
         source_repo: For cross-repo plans, the implementation repo
         objective_id: Optional parent objective issue number
         created_from_session: Optional session ID

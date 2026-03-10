@@ -28,7 +28,7 @@ def test_plan_list_pr_column_no_pr_linked() -> None:
         body="",
         state=PlanState.OPEN,
         url="https://github.com/owner/repo/issues/106",
-        labels=["erk-pr", "erk-plan"],
+        labels=["erk-pr"],
         assignees=[],
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 1, tzinfo=UTC),

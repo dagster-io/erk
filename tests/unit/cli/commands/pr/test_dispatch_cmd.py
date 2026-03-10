@@ -34,7 +34,7 @@ def _make_pr_details(*, number: int, branch: str) -> PRDetails:
         merge_state_status="UNKNOWN",
         owner="test-owner",
         repo="test-repo",
-        labels=("erk-plan",),
+        labels=("erk-pr",),
     )
 
 

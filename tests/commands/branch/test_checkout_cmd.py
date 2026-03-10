@@ -749,11 +749,11 @@ def test_checkout_for_plan_creates_impl_folder() -> None:
 
         plan = Plan(
             pr_identifier="500",
-            title="Add feature",
+            title="[erk-pr] Add feature",
             body="# Plan\nImplementation details",
             state=PlanState.OPEN,
             url="https://github.com/owner/repo/issues/500",
-            labels=["erk-pr", "erk-plan"],
+            labels=["erk-pr"],
             assignees=[],
             created_at=TEST_PLAN_TIMESTAMP,
             updated_at=TEST_PLAN_TIMESTAMP,
@@ -805,11 +805,11 @@ def test_checkout_for_plan_prints_activation_when_sync_status_fails() -> None:
 
         plan = Plan(
             pr_identifier="600",
-            title="Test activation output",
+            title="[erk-pr] Test activation output",
             body="# Plan\nTest plan content",
             state=PlanState.OPEN,
             url="https://github.com/owner/repo/issues/600",
-            labels=["erk-pr", "erk-plan"],
+            labels=["erk-pr"],
             assignees=[],
             created_at=TEST_PLAN_TIMESTAMP,
             updated_at=TEST_PLAN_TIMESTAMP,
@@ -864,11 +864,11 @@ def test_checkout_stacks_in_place_for_plan_outputs_activation_script() -> None:
 
         plan = Plan(
             pr_identifier="700",
-            title="Stack in place activation",
+            title="[erk-pr] Stack in place activation",
             body="# Plan\nStack-in-place plan",
             state=PlanState.OPEN,
             url="https://github.com/owner/repo/issues/700",
-            labels=["erk-pr", "erk-plan"],
+            labels=["erk-pr"],
             assignees=[],
             created_at=TEST_PLAN_TIMESTAMP,
             updated_at=TEST_PLAN_TIMESTAMP,
@@ -1165,11 +1165,11 @@ def test_checkout_stacks_in_place_for_plan_with_script() -> None:
 
         plan = Plan(
             pr_identifier="500",
-            title="Add feature",
+            title="[erk-pr] Add feature",
             body="# Plan\nImplementation details",
             state=PlanState.OPEN,
             url="https://github.com/owner/repo/issues/500",
-            labels=["erk-pr", "erk-plan"],
+            labels=["erk-pr"],
             assignees=[],
             created_at=TEST_PLAN_TIMESTAMP,
             updated_at=TEST_PLAN_TIMESTAMP,
@@ -1230,11 +1230,11 @@ def test_checkout_for_plan_planned_pr_stacks_on_base_ref() -> None:
 
         plan = Plan(
             pr_identifier="600",
-            title="Stack feature",
+            title="[erk-pr] Stack feature",
             body="# Plan\nStacking test",
             state=PlanState.OPEN,
             url="https://github.com/owner/repo/issues/600",
-            labels=["erk-pr", "erk-plan"],
+            labels=["erk-pr"],
             assignees=[],
             created_at=TEST_PLAN_TIMESTAMP,
             updated_at=TEST_PLAN_TIMESTAMP,
@@ -1388,11 +1388,11 @@ def test_checkout_for_plan_planned_pr_falls_back_to_trunk_without_base_ref() -> 
 
         plan = Plan(
             pr_identifier="601",
-            title="Trunk feature",
+            title="[erk-pr] Trunk feature",
             body="# Plan\nTrunk parent test",
             state=PlanState.OPEN,
             url="https://github.com/owner/repo/issues/601",
-            labels=["erk-pr", "erk-plan"],
+            labels=["erk-pr"],
             assignees=[],
             created_at=TEST_PLAN_TIMESTAMP,
             updated_at=TEST_PLAN_TIMESTAMP,
@@ -1441,11 +1441,11 @@ def test_checkout_for_plan_rebases_onto_stale_parent() -> None:
 
         plan = Plan(
             pr_identifier="602",
-            title="Stacked plan rebase",
+            title="[erk-pr] Stacked plan rebase",
             body="# Plan\nRebase test",
             state=PlanState.OPEN,
             url="https://github.com/owner/repo/issues/602",
-            labels=["erk-pr", "erk-plan"],
+            labels=["erk-pr"],
             assignees=[],
             created_at=TEST_PLAN_TIMESTAMP,
             updated_at=TEST_PLAN_TIMESTAMP,
@@ -1498,11 +1498,11 @@ def test_checkout_for_plan_skips_rebase_for_trunk_parent() -> None:
 
         plan = Plan(
             pr_identifier="603",
-            title="Trunk parent plan",
+            title="[erk-pr] Trunk parent plan",
             body="# Plan\nNo rebase needed",
             state=PlanState.OPEN,
             url="https://github.com/owner/repo/issues/603",
-            labels=["erk-pr", "erk-plan"],
+            labels=["erk-pr"],
             assignees=[],
             created_at=TEST_PLAN_TIMESTAMP,
             updated_at=TEST_PLAN_TIMESTAMP,
@@ -1554,11 +1554,11 @@ def test_checkout_for_plan_updates_stale_local_parent() -> None:
 
         plan = Plan(
             pr_identifier="604",
-            title="Stale parent sync",
+            title="[erk-pr] Stale parent sync",
             body="# Plan\nStale parent test",
             state=PlanState.OPEN,
             url="https://github.com/owner/repo/issues/604",
-            labels=["erk-pr", "erk-plan"],
+            labels=["erk-pr"],
             assignees=[],
             created_at=TEST_PLAN_TIMESTAMP,
             updated_at=TEST_PLAN_TIMESTAMP,

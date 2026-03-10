@@ -55,8 +55,8 @@ def _plan_to_pr_details(plan: Plan) -> PRDetails:
         details_section = DETAILS_OPEN + body + DETAILS_CLOSE
         pr_body = details_section + "\n\n" + metadata_body
 
-    # Include erk-plan label plus any existing labels
-    labels = tuple(plan.labels) if "erk-plan" in plan.labels else ("erk-plan", *plan.labels)
+    # Include erk-pr label (ensure it's present)
+    labels = tuple(plan.labels) if "erk-pr" in plan.labels else ("erk-pr", *plan.labels)
 
     # Use base_ref_name from plan metadata if provided, otherwise default to "main"
     raw_base_ref = plan.metadata.get("base_ref_name")

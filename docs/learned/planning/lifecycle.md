@@ -7,7 +7,7 @@ read_when:
   - "closing a plan"
   - "understanding plan states"
 tripwires:
-  - action: "manually creating an erk-plan with gh issue create"
+  - action: "manually creating an erk-pr with gh issue create"
     warning: "Use `erk exec plan-save --plan-file <path>` instead. Manual creation requires complex metadata block format (see Metadata Block Reference section)."
   - action: "saving a plan linked to an objective"
     warning: "Always verify the link was saved correctly with `erk exec get-plan-metadata <issue> objective_issue`. Silent failures can leave plans unlinked from their objectives."
@@ -59,7 +59,7 @@ The erk plan lifecycle manages implementation plans from creation through automa
        │                  │                   │                   │                   │
        ▼                  ▼                   ▼                   ▼                   ▼
  GitHub Issue       git branch            GitHub Actions      Code Changes        Issue Closed
- with erk-plan      creates branch        finds existing      committed           via commit
+ with erk-pr        creates branch        finds existing      committed           via commit
  label              + draft PR            PR and executes     and pushed          message
 ```
 
@@ -75,14 +75,14 @@ The erk plan lifecycle manages implementation plans from creation through automa
 
 ### Which Phase Am I In?
 
-| Observable State                        | Current Phase                | `lifecycle_stage` |
-| --------------------------------------- | ---------------------------- | ----------------- |
-| Issue has `erk-plan` label, no comments | Phase 1: Created             | `planned`         |
-| Issue has `submission-queued` comment   | Phase 2: Submitted           | `planned`         |
-| Issue has `workflow-started` comment    | Phase 3: Dispatched          | `impl`            |
-| PR is draft, workflow running           | Phase 4: Implementing        | `impl`            |
-| PR is ready for review                  | Phase 5: Complete            | `impl`            |
-| Issue is CLOSED                         | Merged (PR closed the issue) | —                 |
+| Observable State                      | Current Phase                | `lifecycle_stage` |
+| ------------------------------------- | ---------------------------- | ----------------- |
+| Issue has `erk-pr` label, no comments | Phase 1: Created             | `planned`         |
+| Issue has `submission-queued` comment | Phase 2: Submitted           | `planned`         |
+| Issue has `workflow-started` comment  | Phase 3: Dispatched          | `impl`            |
+| PR is draft, workflow running         | Phase 4: Implementing        | `impl`            |
+| PR is ready for review                | Phase 5: Complete            | `impl`            |
+| Issue is CLOSED                       | Merged (PR closed the issue) | —                 |
 
 **Note:** The `lifecycle_stage` field in plan-header metadata provides a machine-readable equivalent of these observable states. See [Lifecycle Stage Tracking](#lifecycle-stage-tracking) for details.
 
@@ -194,7 +194,7 @@ This workflow:
 1. Claude enters Plan Mode for the task
 2. Plan creation with context extraction
 3. Plan saved to `~/.claude/plans/*.md` on Exit Plan Mode
-4. `/erk:plan-save` creates GitHub Issue with `erk-plan` label
+4. `/erk:plan-save` creates GitHub Issue with `erk-pr` label
 
 ### CLI Path: `erk pr create --file <path>`
 
@@ -250,9 +250,9 @@ lifecycle_stage: planned
 <!-- /erk:metadata-block:plan-body -->
 ```
 
-### The `erk-plan` Label
+### The `erk-pr` Label
 
-The `erk-plan` label marks issues as implementation plans:
+The `erk-pr` label marks issues as implementation plans:
 
 - **Auto-created** if it doesn't exist (green, #0E8A16)
 - **Required** for submission and implementation
@@ -270,7 +270,7 @@ Dispatch prepares the plan for remote execution via `erk pr dispatch <issue_numb
 
 Before submission, the command validates:
 
-1. **Label check**: Issue must have `erk-plan` label
+1. **Label check**: Issue must have `erk-pr` label
 2. **State check**: Issue must be OPEN (not closed)
 3. **Clean working directory**: No uncommitted changes
 
@@ -387,8 +387,8 @@ queued_at: 2025-01-15T10:30:00Z
 submitted_by: username
 issue_number: 123
 validation_results:
-  issue_is_open: true
-  has_erk_plan_label: true
+  pr_is_open: true
+  has_erk_pr_label: true
 expected_workflow: erk-impl
 ```
 
@@ -772,8 +772,8 @@ queued_at: 2025-01-15T10:30:00Z
 submitted_by: username
 issue_number: 123
 validation_results:
-  issue_is_open: true
-  has_erk_plan_label: true
+  pr_is_open: true
+  has_erk_pr_label: true
 expected_workflow: erk-impl
 ```
 
@@ -923,7 +923,7 @@ Different plan fields are populated at different lifecycle stages:
 
 During the planning stage:
 
-- Plan exists only as a GitHub issue with `erk-plan` label
+- Plan exists only as a GitHub issue with `erk-pr` label
 - No branch has been created yet
 - Branch is created during `erk pr submit` (Phase 2)
 
@@ -972,7 +972,7 @@ Before dispatching a plan for implementation, validate:
 | Check               | Command                                           | Expected        |
 | ------------------- | ------------------------------------------------- | --------------- |
 | Plan exists         | `erk exec get-issue-body <number>`                | `success: true` |
-| Has erk-plan label  | Check `labels` field in output                    | Contains label  |
+| Has erk-pr label    | Check `labels` field in output                    | Contains label  |
 | Branch exists       | `erk exec get-plan-metadata <number> branch_name` | Non-null value  |
 | PR exists           | `erk exec get-pr-for-plan <number>`               | PR number       |
 | Not already running | Check for `workflow-started` comment on issue     | No such comment |

@@ -361,15 +361,15 @@ def test_branch_create_for_plan_creates_branch_and_impl_folder(tmp_path) -> None
             pool_json_path=repo_dir / "pool.json",
         )
 
-        # Create a plan with erk-plan label
+        # Create a plan with erk-pr label
         now = TEST_PLAN_TIMESTAMP
         plan = Plan(
             pr_identifier="123",
-            title="Add feature",
+            title="[erk-pr] Add feature",
             body="# Plan\nImplementation details",
             state=PlanState.OPEN,
             url="https://github.com/owner/repo/issues/123",
-            labels=["erk-pr", "erk-plan"],
+            labels=["erk-pr"],
             assignees=[],
             created_at=now,
             updated_at=now,
@@ -442,11 +442,11 @@ def test_branch_create_for_plan_with_issue_url(tmp_path) -> None:
         now = TEST_PLAN_TIMESTAMP
         plan = Plan(
             pr_identifier="456",
-            title="Fix bug",
+            title="[erk-pr] Fix bug",
             body="# Bug fix plan",
             state=PlanState.OPEN,
             url="https://github.com/owner/repo/issues/456",
-            labels=["erk-pr", "erk-plan"],
+            labels=["erk-pr"],
             assignees=[],
             created_at=now,
             updated_at=now,
@@ -504,11 +504,11 @@ def test_branch_create_for_plan_with_no_slot_skips_impl() -> None:
         now = TEST_PLAN_TIMESTAMP
         plan = Plan(
             pr_identifier="100",
-            title="No slot feature",
+            title="[erk-pr] No slot feature",
             body="# Plan",
             state=PlanState.OPEN,
             url="https://github.com/owner/repo/issues/100",
-            labels=["erk-pr", "erk-plan"],
+            labels=["erk-pr"],
             assignees=[],
             created_at=now,
             updated_at=now,
@@ -677,11 +677,11 @@ def test_branch_create_for_plan_stacks_on_current_branch() -> None:
         now = TEST_PLAN_TIMESTAMP
         plan = Plan(
             pr_identifier="200",
-            title="Stacked feature",
+            title="[erk-pr] Stacked feature",
             body="# Plan\nStacked implementation",
             state=PlanState.OPEN,
             url="https://github.com/owner/repo/issues/200",
-            labels=["erk-pr", "erk-plan"],
+            labels=["erk-pr"],
             assignees=[],
             created_at=now,
             updated_at=now,
@@ -890,11 +890,11 @@ def test_branch_create_for_plan_stacks_in_place_creates_impl() -> None:
         now = TEST_PLAN_TIMESTAMP
         plan = Plan(
             pr_identifier="300",
-            title="Stacked plan",
+            title="[erk-pr] Stacked plan",
             body="# Plan\nStacked implementation",
             state=PlanState.OPEN,
             url="https://github.com/owner/repo/issues/300",
-            labels=["erk-pr", "erk-plan"],
+            labels=["erk-pr"],
             assignees=[],
             created_at=now,
             updated_at=now,

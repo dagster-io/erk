@@ -38,7 +38,7 @@ def _make_plan_issue(
         body=body,
         state="OPEN",
         url=url,
-        labels=["erk-pr", "erk-plan"],
+        labels=["erk-pr"],
         assignees=[],
         created_at=now,
         updated_at=now,
@@ -52,7 +52,7 @@ def test_success_creates_impl_context(tmp_path: Path) -> None:
     issue = _make_plan_issue(
         number=123,
         body=plan_body,
-        title="[erk-plan] Test Plan",
+        title="[erk-pr] Test Plan",
         url="https://github.com/test-owner/test-repo/issues/123",
     )
     fake_issues = FakeGitHubIssues(issues={123: issue})
@@ -131,7 +131,7 @@ def test_objective_id_preserved_in_ref_json(tmp_path: Path) -> None:
     issue = _make_plan_issue(
         number=456,
         body=plan_body,
-        title="[erk-plan] Objective Plan",
+        title="[erk-pr] Objective Plan",
         url="https://github.com/test-owner/test-repo/issues/456",
     )
     fake_issues = FakeGitHubIssues(issues={456: issue})
