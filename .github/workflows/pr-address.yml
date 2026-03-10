@@ -17,12 +17,6 @@ on:
         required: false
         type: string
         default: "claude-opus-4-6"
-      plan_number:
-        description: "Plan issue/PR number for dispatch metadata (empty to skip)"
-        required: false
-        type: string
-        default: ""
-
 concurrency:
   group: pr-address-${{ github.event.inputs.pr_number }}
   cancel-in-progress: true
@@ -48,11 +42,10 @@ jobs:
           claude-code-oauth-token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
 
       - name: Write dispatch metadata to plan
-        if: inputs.plan_number != ''
         continue-on-error: true
         env:
           GH_TOKEN: ${{ secrets.ERK_QUEUE_GH_PAT }}
-          PLAN_NUMBER: ${{ inputs.plan_number }}
+          PLAN_NUMBER: ${{ inputs.pr_number }}
           RUN_ID: ${{ github.run_id }}
           REPO: ${{ github.repository }}
         run: |
