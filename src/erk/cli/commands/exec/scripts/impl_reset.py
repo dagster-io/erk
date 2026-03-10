@@ -35,6 +35,7 @@ from erk_shared.context.helpers import (
 )
 from erk_shared.gateway.git.remote_ops.types import PushError
 from erk_shared.gateway.github.metadata.core import render_erk_issue_event
+from erk_shared.plan_store.types import PlanNotFound
 
 
 @dataclass(frozen=True)
@@ -85,15 +86,15 @@ def _reset_branch(ctx: click.Context, plan_number_arg: int | None) -> None:
     7. Force-push the reset
     8. Reset lifecycle_stage to "planned" on the PR
     """
-    # Get context dependencies
-    try:
-        cwd = require_cwd(ctx)
-        git = require_git(ctx)
-        repo_root = require_repo_root(ctx)
-        backend = require_plan_backend(ctx)
-    except SystemExit:
+    # Get context dependencies (LBYL: check ctx.obj before accessing)
+    if ctx.obj is None:
         _output_error("context-not-initialized", "Context not initialized")
         return
+
+    cwd = require_cwd(ctx)
+    git = require_git(ctx)
+    repo_root = require_repo_root(ctx)
+    backend = require_plan_backend(ctx)
 
     # Get current branch
     current_branch = git.branch.get_current_branch(cwd)
@@ -115,8 +116,6 @@ def _reset_branch(ctx: click.Context, plan_number_arg: int | None) -> None:
         plan_number = int(plan_id)
 
     # Get plan to find base_ref_name
-    from erk_shared.plan_store.types import PlanNotFound
-
     plan_result = backend.get_plan(repo_root, str(plan_number))
     if isinstance(plan_result, PlanNotFound):
         _output_error("plan-not-found", f"Plan #{plan_number} not found")
