@@ -1,0 +1,1137 @@
+<session>
+  <meta branch="plnd/O9109-update-test-plan-to-03-10-2146" />
+  <meta model="claude-opus-4-6" />
+  <user>&lt;command-message&gt;erk:plan-implement&lt;/command-message&gt;
+&lt;command-name&gt;/erk:plan-implement&lt;/command-name&gt;</user>
+  <user># /erk:plan-implement
+
+Implement a plan - either from GitHub, a markdown file, an existing impl directory under `.erk/impl-context/`, or by saving the current plan first.
+
+This is the primary implementation workflow - it orchestrates:
+
+1. Setting up the impl directory under `.erk/impl-context/&lt;branch&gt;/` (from issue, file, existing folder, or fresh plan)
+2. Executing the implementation
+3. Running CI and submitting the PR
+
+## Prerequisites
+
+- Must be in a git repository managed by erk
+- GitHub CLI (`gh`) must be authenticated
+- One of:
+  - A plan number, URL, or file path argument
+  - An existing impl directory under `.erk/impl-context/`
+  - A plan branch checked out (e.g., `plnd/...` or `P{number}-...`)
+  - A plan in `~/.claude/plans/` (from plan mode)
+
+## Usage
+
+```bash
+/erk:plan-implement                    # Use impl directory, detect from branch, or save current plan
+/erk:plan-implement 2521               # Fetch and implement PR #2521
+/erk:plan-implement https://github.com/owner/repo/pull/2521   # URL form
+/erk:plan-implement ./my-plan.md       # Implement from local markdown file
+```
+
+---
+
+## CRITICAL: PR Operations
+
+**NEVER** run direct GitHub CLI commands for PR operations during implementation:
+
+- `gh pr edit` — destroys plan-header metadata block
+- `gh pr ready` — bypasses lifecycle tracking
+- `gh pr close` / `gh pr merge`
+
+All PR operations are handled by `erk pr submit` in Step 13. It automatically:
+
+- Generates the PR title and body
+- Preserves the plan-header metadata block
+- Marks draft PRs as ready for review
+- Updates lifecycle stage
+
+## Agent Instructions
+
+### Step 1: Set Up Implementation
+
+Parse `` and run the consolidated setup command:
+
+- **If numeric** (e.g., `2521`): `erk exec setup-impl --issue 2521`
+- **If GitHub URL** (e.g., `https://github.com/.../issues/2521`): Extract number, `erk exec setup-impl --issue 2521`
+- **If path to file** (anything else non-empty): `erk exec setup-impl --file &lt;path&gt;`
+- **If empty**: `erk exec setup-impl` (auto-detects from `.erk/impl-context/`, branch, or fails)
+
+```bash
+erk exec setup-impl [--issue &lt;N&gt; | --file &lt;path&gt;]
+```
+
+This single command handles:
+
+- Fetching plan from GitHub (draft PR)
+- Setting up from a local markdown file
+- Auto-detecting from existing impl directory under `.erk/impl-context/`
+- Auto-detecting plan number from branch name (P{number}-... or PR lookup)
+- Creating/checking out the feature branch
+- Creating impl directory under `.erk/impl-context/&lt;branch&gt;/` with plan content
+- Running impl-init validation
+- Cleaning up `.erk/impl-context/` staging directory (git rm + commit + push)
+
+Otherwise, generate a branch slug and set up from the specified issue:
+
+1. Fetch the title: `gh pr view &lt;ISSUE_ARG&gt; --json title -q .title`
+2. Generate a branch slug from the title:
+   - 2-4 hyphenated lowercase words, max 30 characters
+   - Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+   - Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+   - Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+3. Store as `BRANCH_SLUG`.
+
+```bash
+erk exec setup-impl --issue &lt;ISSUE_ARG&gt; --branch-slug="${BRANCH_SLUG}"
+```
+
+If `setup-impl` exits with code 1 and `error: "no_plan_found"`, fall back to saving the current plan:
+
+Generate a branch slug from the plan title (the first `# ` heading in the plan file):
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Store as `BRANCH_SLUG`
+
+Save the current plan to GitHub and capture the plan number:
+
+```bash
+erk exec plan-save --format json --session-id="55dd741f-020e-4499-a39c-5846a26b12c5" --branch-slug="${BRANCH_SLUG}"
+```
+
+Parse the JSON output to get `pr_number`, then:
+
+```bash
+erk exec setup-impl --issue &lt;pr_number&gt;
+```
+
+The `setup-impl` output includes `related_docs` (skills and docs to load) and `has_plan_tracking` (whether GitHub issue tracking is active).
+
+If this fails, display the error and stop.
+
+### Step 2: Read Plan and Load Context
+
+Read `plan.md` from the impl directory set up in Step 1 to understand:
+
+- Overall goal and context
+- Context &amp; Understanding sections (API quirks, architectural insights, pitfalls)
+- Implementation phases and dependencies
+- Success criteria
+
+**Context Consumption**: Plans contain expensive discoveries. Ignoring `[CRITICAL:]` tags, "Related Context:" subsections, or "DO NOT" items causes repeated mistakes.
+
+### Step 3: Load Related Documentation
+
+If plan contains "Related Documentation" section, load listed skills via Skill tool and read listed docs.
+
+### Step 4: Create TodoWrite Entries
+
+Create todo entries for each phase from the plan.
+
+### Step 5: Signal GitHub Started
+
+```bash
+erk exec impl-signal started --session-id="55dd741f-020e-4499-a39c-5846a26b12c5" 2&gt;/dev/null || true
+```
+
+This also deletes the Claude plan file (from `~/.claude/plans/`) since:
+
+- The content has been saved to GitHub
+- The content has been snapshotted to `.erk/scratch/`
+- Keeping it could cause confusion if the user tries to re-save
+
+### Step 6: Execute Each Phase Sequentially
+
+For each phase:
+
+1. **Mark phase as in_progress** (in TodoWrite)
+2. **Read task requirements** carefully
+3. **Implement code AND tests together**:
+   - Load `dignified-python-313` skill for coding standards
+   - Load `fake-driven-testing` skill for test patterns
+   - Follow project AGENTS.md standards
+4. **Mark phase as completed** (in TodoWrite)
+5. **Report progress**: changes made, what's next
+
+**Important:** `plan.md` is immutable - NEVER edit during implementation
+
+### Step 7: Report Progress
+
+After each phase: report changes made and what's next.
+
+### Step 8: Final Verification
+
+Confirm all tasks executed, success criteria met, note deviations, summarize changes.
+
+### Step 9: Signal GitHub Ended
+
+```bash
+erk exec impl-signal ended --session-id="55dd741f-020e-4499-a39c-5846a26b12c5" 2&gt;/dev/null || true
+```
+
+### Step 10: Upload Session for Async Learn
+
+```bash
+erk exec upload-impl-session --session-id="55dd741f-020e-4499-a39c-5846a26b12c5" 2&gt;/dev/null || true
+```
+
+This reads plan reference from the impl directory, captures session info, and uploads for async learn processing.
+
+### Step 11: Clean Up Impl Context
+
+Remove the `.erk/impl-context/` directory from the repo:
+
+```bash
+erk exec cleanup-impl-context
+```
+
+This removes `.erk/impl-context/`, stages the deletion, commits, and pushes — all idempotent.
+
+### Step 12: Run CI Iteratively
+
+1. If `.erk/prompt-hooks/post-plan-implement-ci.md` exists: follow its instructions
+2. Otherwise: check CLAUDE.md/AGENTS.md for CI commands
+
+### Step 13: Submit PR
+
+Push the branch and create or update the PR using the Graphite-aware submit pipeline:
+
+```bash
+erk pr submit
+```
+
+This handles pushing commits, creating/updating the PR, generating the PR description, and enhancing with Graphite stack metadata when available.
+
+After successful submission, signal lifecycle transition:
+
+```bash
+erk exec impl-signal submitted 2&gt;/dev/null || true
+```
+
+Then validate PR completion invariants:
+
+```bash
+erk pr check --stage=impl
+```
+
+This validates PR submission readiness including implementation-specific checks
+(e.g., `.erk/impl-context/` must be cleaned up). If checks fail, display output and warn user.
+
+### Step 14: Output Format
+
+- **Start**: "Setting up implementation..." or "Fetching plan #X..."
+- **After setup**: "Implementation environment ready, reading plan..."
+- **Each phase**: "Phase X: [brief description]" with code changes
+- **End**: "Plan execution complete. [Summary]"
+
+---
+
+## Related Commands
+
+- `/erk:plan-save` - Save plan only, don't implement (for defer-to-later workflow)
+- `/erk:replan` - Re-plan an existing plan with current codebase state
+</user>
+  <usage input_tokens="2" cache_creation_input_tokens="15398" cache_read_input_tokens="9131" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 15398}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Setting up implementation from the current branch...</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="15398" cache_read_input_tokens="9131" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 15398}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01GvoetdMLzFTo43AiBZr72f">
+    <param name="command">erk exec setup-impl</param>
+    <param name="description">Auto-detect and set up implementation from current branch</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="15398" cache_read_input_tokens="9131" output_tokens="265" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 15398, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01GvoetdMLzFTo43AiBZr72f">
+Found existing impl dir for PR #9196, skipping branch setup
+{"success": true, "impl_path": "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/.erk/impl-context/plnd--O9109-update-test-plan-to-03-10-2146", "pr_number": 9196, "pr_url": "https://github.com/dagster-io/erk/pull/9196", "branch": "plnd/O9109-update-test-plan-to-03-10-2146", "pr_title": "", "no_impl": false}
+{"success": true, "source": "issue", "pr_number": 9196, "has_plan_tracking": true, "valid": true, "related_docs": {"skills": [], "docs": []}}
+  </tool_result>
+  <assistant>Implementation environment ready. Reading plan...</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="451" cache_read_input_tokens="24529" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 451}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01BBy3zzBrpqiwuJGiAnZL7A">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/.erk/impl-context/plnd--O9109-update-test-plan-to-03-10-2146/plan.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="451" cache_read_input_tokens="24529" output_tokens="119" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 451, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01BBy3zzBrpqiwuJGiAnZL7A">
+     1→# Plan: Update Test Fixtures and Assertions for Renamed Fields and Types
+     2→
+     3→**Part of Objective #9109, Node 4.1**
+     4→
+     5→## Context
+     6→
+     7→Objective #9109 renamed "plan" terminology to "pr" across all APIs (26/27 nodes complete). The source code renames are done: types like `PrRowData`, `PrStatus`, `PrNumberEvent`, `CommandResult` now use `pr_number`/`pr_id`/`pr_url`/`pr_title` fields. However, ~302 references across ~71 test files still use old `plan_number`/`plan_id`/`plan_url`/`plan_title` names in fixtures, assertions, and fake implementations.
+     8→
+     9→## Scope
+    10→
+    11→### RENAME these patterns in tests:
+    12→- **Dataclass field access**: `.plan_number` → `.pr_number`, `.plan_id` → `.pr_id`, `.plan_url` → `.pr_url`
+    13→- **Dict/JSON keys**: `"plan_number"` → `"pr_number"`, `"plan_id"` → `"pr_id"`, etc.
+    14→- **Constructor kwargs**: `plan_number=42` → `pr_number=42`, `plan_id="42"` → `pr_id="42"`
+    15→- **Fake gateway params**: `plan_numbers: list[int]` → `pr_numbers: list[int]` in fake implementations
+    16→- **Test function names**: `test_*_plan_number` → `test_*_pr_number` (where they test renamed fields)
+    17→- **Variable names tracking renamed fields**: `plan_num` → `pr_num` in fake gateway loops
+    18→
+    19→### DO NOT RENAME:
+    20→- `extract_plan_number()` — intentionally kept in `src/erk/cli/commands/run/shared.py`
+    21→- `extract_learn_plan_number()` — intentionally kept in `src/erk/tui/operations/logic.py`
+    22→- `validate_plan_title()` — intentionally kept in `erk_shared/naming.py`
+    23→- `plan_duplicate_checker` JSON parsing of `"plan_id"` key from LLM output — this is the LLM's response format
+    24→- "plan" as a noun (erk-plan concept, plan body, plan content, etc.)
+    25→- Class names like `PlanListService`, `PlanMetadata` that weren't renamed in source
+    26→
+    27→## Implementation Phases
+    28→
+    29→### Phase 1: Fake Gateway Implementations (3 files)
+    30→
+
+... [110 lines omitted] ...
+
+   137→2. Run `ruff check` — no lint errors
+   138→3. Run `ty` — no type errors
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="3435" cache_read_input_tokens="24980" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3435}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_014qWo2MtLeoumvi7zmrS2Ji">
+    <param name="query">select:TaskCreate,TodoWrite</param>
+    <param name="max_results">2</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3435" cache_read_input_tokens="24980" output_tokens="1414" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3435, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_014qWo2MtLeoumvi7zmrS2Ji">
+
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_01XsaZyQaZakqzzcYxqkuxfi">
+    <param name="subject">Phase 1: Fake Gateway Implementations (3 files)</param>
+    <param name="description">Rename plan_numbers→pr_numbers, plan_num→pr_num, extraction_plan_url→extraction_pr_url in tests/fakes/gateway/{github.py,github_issues.py,shell.py}</param>
+    <param name="activeForm">Renaming fake gateway implementations</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="2161" cache_read_input_tokens="28415" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2161}" output_tokens="22" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01XsaZyQaZakqzzcYxqkuxfi">
+Task #1 created successfully: Phase 1: Fake Gateway Implementations (3 files)
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_01CnnpjNSWChRcFqoHCJnCa4">
+    <param name="subject">Phase 2: Test Helper Utilities (1 file)</param>
+    <param name="description">Rename plan_identifier comment, plan_id loop var → pr_id in tests/test_utils/plan_helpers.py</param>
+    <param name="activeForm">Renaming test helper utilities</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="2161" cache_read_input_tokens="28415" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2161}" output_tokens="22" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01CnnpjNSWChRcFqoHCJnCa4">
+Task #2 created successfully: Phase 2: Test Helper Utilities (1 file)
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_01PEsCuMUrbftkygGV4aGs6k">
+    <param name="subject">Phase 3: Core Test Files (~15 files)</param>
+    <param name="description">Rename plan_number/plan_id/plan_url/plan_title refs in core test files</param>
+    <param name="activeForm">Renaming core test files</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="2161" cache_read_input_tokens="28415" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2161}" output_tokens="22" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01PEsCuMUrbftkygGV4aGs6k">
+Task #3 created successfully: Phase 3: Core Test Files (~15 files)
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_014xfCwrLeucaZNSrbA4rgNw">
+    <param name="subject">Phase 4: Command Test Files (~20 files)</param>
+    <param name="description">Rename plan_number/plan_id refs in command test files. DO NOT rename tests/commands/run/test_shared.py (tests extract_plan_number)</param>
+    <param name="activeForm">Renaming command test files</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="2161" cache_read_input_tokens="28415" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2161}" output_tokens="22" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014xfCwrLeucaZNSrbA4rgNw">
+Task #4 created successfully: Phase 4: Command Test Files (~20 files)
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_014H7VjwM46c9nb497gxTpyt">
+    <param name="subject">Phase 5: TUI Test Files (~5 files)</param>
+    <param name="description">Rename plan_number→pr_number in TUI test files. Keep extract_learn_plan_number import name.</param>
+    <param name="activeForm">Renaming TUI test files</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="2161" cache_read_input_tokens="28415" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2161}" output_tokens="22" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014H7VjwM46c9nb497gxTpyt">
+Task #5 created successfully: Phase 5: TUI Test Files (~5 files)
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_0181cT4Qvg54zCJptRRrP9AF">
+    <param name="subject">Phase 6: Exec Script Tests (~12 files)</param>
+    <param name="description">Rename plan_id/plan_number refs in exec script test files</param>
+    <param name="activeForm">Renaming exec script test files</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="2161" cache_read_input_tokens="28415" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2161}" output_tokens="22" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0181cT4Qvg54zCJptRRrP9AF">
+Task #6 created successfully: Phase 6: Exec Script Tests (~12 files)
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_0155Nuc3bfCe6rsMZzwvnauG">
+    <param name="subject">Phase 7: Remaining Files</param>
+    <param name="description">Rename refs in submit_pipeline, land, admin tests and other remaining files</param>
+    <param name="activeForm">Renaming remaining test files</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="2161" cache_read_input_tokens="28415" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2161}" output_tokens="22" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0155Nuc3bfCe6rsMZzwvnauG">
+Task #7 created successfully: Phase 7: Remaining Files
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_01M34jzRiKyTvq5655RxFPgC">
+    <param name="subject">Verification: CI and grep audit</param>
+    <param name="description">Run make fast-ci, ruff check, ty. Grep tests/ for remaining plan_number|plan_id|plan_url|plan_title and verify only intentional references remain.</param>
+    <param name="activeForm">Running verification</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="2161" cache_read_input_tokens="28415" output_tokens="917" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2161, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01M34jzRiKyTvq5655RxFPgC">
+Task #8 created successfully: Verification: CI and grep audit
+  </tool_result>
+  <user>[Request interrupted by user]</user>
+  <user>&lt;command-message&gt;rename-swarm&lt;/command-message&gt;
+&lt;command-name&gt;/rename-swarm&lt;/command-name&gt;
+&lt;command-args&gt;
+
+  ◻ Phase 1: Fake Gateway Implementations (3 files)
+  ◻ Phase 2: Test Helper Utilities (1 file)
+  ◻ Phase 3: Core Test Files (~15 files)
+  ◻ Phase 4: Command Test Files (~20 files)
+  ◻ Phase 5: TUI Test Files (~5 files)
+  ◻ Phase 6: Exec Script Tests (~12 files)
+  ◻ Phase 7: Remaining Files
+
+all of these&lt;/command-args&gt;</user>
+  <user>Base directory for this skill: /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/.claude/skills/rename-swarm
+
+You are an expert at orchestrating parallel mechanical renames across large codebases using swarms of lightweight agents. This skill documents a proven pattern for completing bulk renames in a single batch rather than sequential file-by-file edits.
+
+## When to Use
+
+- Renaming an identifier, parameter, key, or variable across **5+ files**
+- The renames are **mechanical** — same find-and-replace logic in each file, no reasoning required
+- Files are **independent** — editing file A doesn't affect what needs to change in file B
+- Examples: renaming `issue_number` to `plan_number`, renaming `old_func` to `new_func`, updating a key name across config consumers
+
+## When NOT to Use
+
+- **Cross-file cascading refactors** where renaming a shared type changes method signatures, requiring each file to adapt differently
+- **Renames requiring judgment** — e.g., "rename this concept" where each call site needs context-aware naming
+- **Fewer than 5 files** — sequential edits are simpler and have less overhead
+- **Complex AST transforms** — use `libcst-refactor` agent instead
+
+## The Pattern
+
+### Step 1: Identify All Files
+
+Use Grep to find every file containing the target identifier:
+
+```
+Grep(pattern="old_name", output_mode="files_with_matches")
+```
+
+Partition files into two groups:
+
+- **Source files** (`src/` or library code)
+- **Test files** (`tests/`)
+
+### Step 2: Launch Source File Agents in Parallel
+
+Launch one `Task` agent per file (or per small group of 2-3 closely related files):
+
+```python
+Task(
+    subagent_type='general-purpose',
+    model='haiku',
+    description='Rename old_name in path/to/file.py',
+    prompt="""..."""  # See agent prompt template below
+)
+```
+
+**Launch ALL source file agents in a single message** so they run concurrently.
+
+### Step 3: Wait for Source Agents to Complete
+
+Collect results from all source file agents. Review for errors.
+
+### Step 4: Launch Test File Agents in Parallel
+
+Same pattern as Step 2, but for test files. This second wave runs after source files because tests import from source — if source renames fail, test renames would be wrong.
+
+### Step 5: Verify
+
+After all agents complete:
+
+1. **Grep check**: Confirm old name no longer appears (except intentional exceptions)
+2. **Run CI**: Use devrun agent to run tests, type checking, and linting
+
+## Agent Prompt Template
+
+Each agent receives a focused, self-contained prompt:
+
+```
+In the file `{file_path}`:
+
+Rename all occurrences of `{old_name}` to `{new_name}`.
+
+This includes:
+- Variable names and assignments
+- Function/method parameter names
+- Dictionary keys (both definition and access)
+- String literals that reference the identifier programmatically
+- Type annotations
+- Comments that reference the identifier by name
+
+DO NOT rename:
+- {boundary_constraints}
+
+Read the file first, then apply all renames using the Edit tool.
+```
+
+### Boundary Constraints
+
+Boundary constraints are critical for partial renames. Always specify what should NOT be renamed. Examples:
+
+- `"Do not rename occurrences inside string literals that are user-facing messages"`
+- `"Do not rename the GitHub API field 'issue_number' — only rename internal references"`
+- `"Do not rename imports from external packages"`
+
+If there are no exceptions, state: `"No exceptions — rename ALL occurrences."`
+
+## Batching Strategy
+
+| Wave | Files                 | Rationale                                                    |
+| ---- | --------------------- | ------------------------------------------------------------ |
+| 1    | Source files (`src/`) | Core renames, no dependencies on other waves                 |
+| 2    | Test files (`tests/`) | Tests import from source; must run after source renames land |
+
+Within each wave, all agents run in parallel. Between waves, wait for completion.
+
+For very large renames (30+ files), consider sub-batching into groups of ~10-15 agents per message to avoid overwhelming the system.
+
+## Key Design Decisions
+
+- **Model: haiku** — mechanical edits need speed, not deep reasoning. Haiku is 10x cheaper and sufficient for find-and-replace tasks.
+- **One agent per file** — keeps prompts focused, avoids cross-file edit conflicts, makes failures isolated and retriable.
+- **Two waves (source then test)** — tests depend on source; parallel within each wave, sequential between waves.
+- **Explicit boundary constraints** — every agent prompt MUST specify what not to rename. Omitting this causes over-eager renames (e.g., renaming API field names that must stay as-is).
+
+## Example: Renaming `issue_number` to `pr_number`
+
+1. Grep found 16 source files and 12 test files containing `issue_number`
+2. Wave 1: Launched 16 haiku agents for source files — completed in ~25 seconds
+3. Wave 2: Launched 12 haiku agents for test files — completed in ~20 seconds
+4. Verification: `Grep(pattern="issue_number")` confirmed only intentional GitHub API references remained
+5. CI: All tests passed, type checker clean
+
+Total wall time: ~60 seconds for 28 files, vs ~10+ minutes for sequential edits.
+
+
+ARGUMENTS: 
+
+  ◻ Phase 1: Fake Gateway Implementations (3 files)
+  ◻ Phase 2: Test Helper Utilities (1 file)
+  ◻ Phase 3: Core Test Files (~15 files)
+  ◻ Phase 4: Command Test Files (~20 files)
+  ◻ Phase 5: TUI Test Files (~5 files)
+  ◻ Phase 6: Exec Script Tests (~12 files)
+  ◻ Phase 7: Remaining Files
+
+all of these</user>
+  <usage input_tokens="3" cache_creation_input_tokens="3045" cache_read_input_tokens="30576" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3045}" output_tokens="11" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me first identify all files needing renames, then launch the swarm.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="3045" cache_read_input_tokens="30576" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3045}" output_tokens="11" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01Nzp1m6hYicjjR8gSwXqWRv">
+    <param name="pattern">plan_number|plan_id|plan_url|plan_title</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/tests</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="3045" cache_read_input_tokens="30576" output_tokens="249" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3045, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Nzp1m6hYicjjR8gSwXqWRv">
+Found 71 files
+tests/unit/cli/commands/pr/test_metadata_helpers.py
+tests/unit/cli/commands/pr/submit_pipeline/test_finalize_pr.py
+tests/unit/cli/commands/pr/submit_pipeline/test_link_pr_to_objective_nodes.py
+tests/unit/cli/commands/pr/submit_pipeline/test_prepare_state.py
+tests/unit/cli/commands/pr/test_dispatch_cmd.py
+tests/unit/cli/commands/land/test_land_learn.py
+tests/unit/cli/commands/land/test_render_land_script.py
+tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py
+tests/unit/cli/commands/land/pipeline/test_create_learn_issue.py
+tests/unit/cli/commands/land/pipeline/test_resolve_plan_id.py
+tests/core/test_plan_duplicate_checker.py
+tests/commands/implement/test_target_detection.py
+tests/commands/test_reconcile.py
+tests/unit/status/test_impl_collector.py
+tests/unit/sessions/test_manifest.py
+tests/unit/shared/test_next_steps.py
+tests/unit/shared/test_plan_workflow.py
+tests/unit/plan_store/test_planned_pr_backend.py
+tests/unit/plan_store/test_planned_pr_lifecycle.py
+tests/unit/plan_store/test_plan_backend_interface.py
+tests/unit/gateways/github/metadata_blocks/test_plan_issue_schema.py
+tests/unit/gateways/github/metadata_blocks/test_round_trip.py
+tests/unit/core/test_display_utils.py
+tests/unit/commands/wt/test_list_helpers.py
+tests/unit/cli/commands/test_admin_test_workflow.py
+tests/unit/cli/commands/exec/scripts/test_update_pr_description.py
+tests/unit/cli/commands/exec/scripts/test_upload_impl_session.py
+tests/unit/cli/commands/exec/scripts/test_setup_impl_from_pr.py
+tests/unit/cli/commands/exec/scripts/test_objective_save_to_issue.py
+
+... [42 lines omitted] ...
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="1478" cache_read_input_tokens="33621" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1478}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>71 files found. Let me first check the special-case files before launching the swarm.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1478" cache_read_input_tokens="33621" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1478}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_018rsgndArSgYThrYvnmCaMm">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/tests/commands/run/test_shared.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1478" cache_read_input_tokens="33621" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1478}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_018rsgndArSgYThrYvnmCaMm">
+     1→"""Unit tests for run command shared utilities.
+     2→
+     3→Tests the extract_plan_number and extract_pr_number helper functions
+     4→for parsing display_title formats.
+     5→"""
+     6→
+     7→from erk.cli.commands.run.shared import extract_plan_number, extract_pr_number
+     8→
+     9→
+    10→def test_extract_plan_number_new_format() -&gt; None:
+    11→    """Test parsing new format: '123:abc456' → 123."""
+    12→    assert extract_plan_number("123:abc456") == 123
+    13→    assert extract_plan_number("1:x") == 1
+    14→    assert extract_plan_number("999:distinct-id-here") == 999
+    15→
+    16→
+    17→def test_extract_plan_number_old_format_returns_none() -&gt; None:
+    18→    """Test old format: 'Issue title [abc123]' → None."""
+    19→    # Old format has title first, then distinct_id in brackets
+    20→    assert extract_plan_number("Add user authentication [abc123]") is None
+    21→    assert extract_plan_number("Fix bug in parser [xyz789]") is None
+    22→
+    23→
+    24→def test_extract_plan_number_with_colon_in_title_returns_none() -&gt; None:
+    25→    """Test titles with colons but non-numeric prefix → None."""
+    26→    # These look like they have colons but the prefix isn't a number
+    27→    assert extract_plan_number("Feature: Add caching [abc]") is None
+    28→    assert extract_plan_number("Bug fix: memory leak [xyz]") is None
+    29→
+    30→
+
+... [76 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01XEmUpnVftVEdg3b8ik3Tdu">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/tests/core/test_plan_duplicate_checker.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1478" cache_read_input_tokens="33621" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1478}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01XEmUpnVftVEdg3b8ik3Tdu">
+     1→"""Tests for PlanDuplicateChecker."""
+     2→
+     3→from datetime import datetime
+     4→
+     5→from erk.core.plan_duplicate_checker import PlanDuplicateChecker
+     6→from erk_shared.plan_store.types import Plan, PlanState
+     7→from tests.fakes.tests.prompt_executor import FakePromptExecutor
+     8→
+     9→
+    10→def _make_plan(
+    11→    *,
+    12→    pr_identifier: str,
+    13→    title: str,
+    14→    body: str,
+    15→) -&gt; Plan:
+    16→    """Create a minimal Plan for testing."""
+    17→    return Plan(
+    18→        pr_identifier=pr_identifier,
+    19→        title=title,
+    20→        body=body,
+    21→        state=PlanState.OPEN,
+    22→        url=f"https://github.com/owner/repo/issues/{pr_identifier}",
+    23→        labels=["erk-pr"],
+    24→        assignees=[],
+    25→        created_at=datetime(2025, 1, 1),
+    26→        updated_at=datetime(2025, 1, 1),
+    27→        metadata={},
+    28→        objective_id=None,
+    29→    )
+    30→
+
+... [230 lines omitted] ...
+
+    45→    assert result.error is None
+    68→    assert result.error is None
+    71→def test_executor_failure_graceful_degradation() -&gt; None:
+    72→    """Executor failure returns no duplicates with error message."""
+    74→        simulated_prompt_error="LLM unavailable",
+    84→    assert result.error is not None
+    85→    assert "LLM call failed" in result.error
+    98→    assert result.error is None
+   104→    """Malformed LLM response returns no duplicates with error."""
+   116→    assert result.error is not None
+   117→    assert "Malformed LLM response" in result.error
+   121→    """Valid JSON but wrong structure returns no duplicates with error."""
+   133→    assert result.error is not None
+   134→    assert "missing 'duplicates' list" in result.error
+   150→    assert result.error is None
+   209→    assert result.error is None
+   233→    assert result.error is None
+  </tool_result>
+  <tool_use name="Read" id="toolu_018rvN9sfryG7xeuJmSyRw2B">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/tests/core/utils/test_naming.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1478" cache_read_input_tokens="33621" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1478}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_018rvN9sfryG7xeuJmSyRw2B">
+     1→from datetime import datetime
+     2→from pathlib import Path
+     3→
+     4→import pytest
+     5→
+     6→from erk_shared.naming import (
+     7→    WORKTREE_DATE_SUFFIX_FORMAT,
+     8→    InvalidObjectiveSlug,
+     9→    InvalidPlanTitle,
+    10→    InvalidWorktreeName,
+    11→    ValidObjectiveSlug,
+    12→    ValidPlanTitle,
+    13→    ValidWorktreeName,
+    14→    default_branch_for_worktree,
+    15→    ensure_unique_worktree_name,
+    16→    extract_objective_number,
+    17→    generate_planned_pr_branch_name,
+    18→    sanitize_branch_component,
+    19→    sanitize_worktree_name,
+    20→    slugify_node_description,
+    21→    strip_plan_from_filename,
+    22→    validate_objective_slug,
+    23→    validate_plan_title,
+    24→    validate_worktree_name,
+    25→)
+    26→from tests.fakes.gateway.time import DEFAULT_FAKE_TIME
+    27→
+    28→# Deterministic date suffix for tests that call ensure_unique_worktree_name with now=
+    29→_FAKE_DATE_SUFFIX = DEFAULT_FAKE_TIME.strftime(WORKTREE_DATE_SUFFIX_FORMAT)
+    30→
+
+... [660 lines omitted] ...
+
+   454→def test_validate_objective_slug_error_message_includes_pattern() -&gt; None:
+   455→    """Error message includes the regex pattern for agent self-correction."""
+   507→def test_validate_plan_title_error_message_includes_rules() -&gt; None:
+   508→    """Error message includes rules for agent self-correction."""
+   517→def test_validate_plan_title_error_type() -&gt; None:
+   518→    """Error type is machine-readable."""
+   521→    assert result.error_type == "invalid-plan-title"
+   531→def test_validate_plan_title_preserves_original_in_error() -&gt; None:
+   532→    """Error includes the original unmodified title."""
+   615→def test_validate_worktree_name_error_type() -&gt; None:
+   616→    """Error type is machine-readable."""
+   619→    assert result.error_type == "invalid-worktree-name"
+   636→def test_validate_worktree_name_preserves_original_in_error() -&gt; None:
+   637→    """Error includes the original unmodified name."""
+  </tool_result>
+  <tool_use name="Read" id="toolu_01QnqqGv3j52BcAv5j1hgq3c">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/tests/unit/cli/commands/exec/scripts/test_validate_plan_content.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1478" cache_read_input_tokens="33621" output_tokens="1898" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1478, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01QnqqGv3j52BcAv5j1hgq3c">
+     1→"""Unit tests for validate-plan-content kit CLI command."""
+     2→
+     3→import json
+     4→
+     5→from click.testing import CliRunner
+     6→
+     7→from erk.cli.commands.exec.scripts.validate_plan_content import (
+     8→    _validate_plan_content,
+     9→    validate_plan_content,
+    10→)
+    11→
+    12→# Test the internal validation function
+    13→
+    14→
+    15→def test_validate_plan_with_headers_valid() -&gt; None:
+    16→    """Test validation passes for plan with headers."""
+    17→    plan = """# My Feature
+    18→
+    19→## Overview
+    20→
+    21→This is a detailed implementation plan with sufficient content to meet the minimum
+    22→length requirement. It includes headers and enough text to be meaningful.
+    23→
+    24→## Implementation Steps
+    25→
+    26→Step details here."""
+    27→
+    28→    valid, error, details = _validate_plan_content(plan)
+    29→
+    30→    assert valid is True
+
+... [359 lines omitted] ...
+
+    31→    assert error is None
+    42→- Task 2: Implement the API endpoints with proper validation and error handling
+    46→    valid, error, details = _validate_plan_content(plan)
+    49→    assert error is None
+    65→    valid, error, details = _validate_plan_content(plan)
+    68→    assert error is None
+    78→    valid, error, details = _validate_plan_content(plan)
+    81→    assert error is not None
+    82→    assert "too short" in error.lower()
+    90→    valid, error, details = _validate_plan_content(plan)
+    93→    assert error is not None
+    94→    assert "lacks structure" in error.lower()
+   103→    valid, error, details = _validate_plan_content(plan)
+   106→    assert error is not None
+   107→    assert "empty" in error.lower()
+   115→    valid, error, details = _validate_plan_content(plan)
+   118→    assert error is not None
+   119→    assert "empty" in error.lower() or "whitespace" in error.lower()
+   127→    valid, error, details = _validate_plan_content(plan)
+   130→    assert error is None
+   143→    valid, error, details = _validate_plan_content(plan)
+   146→    assert error is None
+   163→    valid, error, details = _validate_plan_content(plan)
+   166→    assert error is None
+   179→    valid, error, details = _validate_plan_content(plan)
+   182→    assert error is None
+   193→    valid, error, details = _validate_plan_content(plan)
+   196→    assert error is None
+   221→    assert output["error"] is None
+   231→- Implement API layer with validation, error handling, and security measures
+   239→    assert output["error"] is None
+   244→    """Test CLI returns validation error for plan that's too short."""
+   253→    assert output["error"] is not None
+   254→    assert "too short" in output["error"].lower()
+   258→    """Test CLI returns validation error for plan without structure."""
+   267→    assert output["error"] is not None
+   268→    assert "lacks structure" in output["error"].lower()
+   272→    """Test CLI returns validation error for empty plan."""
+   281→    assert output["error"] is not None
+   296→    assert "error" in output
+   306→    assert output["error"] is None or isinstance(output["error"], str)
+   337→    assert output["error"] is None
+   342→    """Test CLI returns validation error for short content from --plan-file."""
+   354→    assert output["error"] is not None
+   355→    assert "too short" in output["error"].lower()
+   388→    assert output["error"] is None
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="29546" cache_read_input_tokens="35099" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 29546}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me verify which specific patterns match in the questionable files.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="29546" cache_read_input_tokens="35099" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 29546}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01CwtNRjmYpmwgLtemdyKbcv">
+    <param name="pattern">plan_number|plan_id|plan_url|plan_title</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/tests/core/test_plan_duplicate_checker.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="29546" cache_read_input_tokens="35099" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 29546}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01CwtNRjmYpmwgLtemdyKbcv">
+49:    """Detected duplicate returns correct match with plan_id and explanation."""
+51:        '{"duplicates": [{"plan_id": "100", "explanation": "Both plans add dark mode support"}]}'
+140:        simulated_prompt_output='{"duplicates": [{"plan_id": "999", "explanation": "phantom"}]}',
+173:    llm_output = '```json\n{"duplicates": [{"plan_id": "100", "explanation": "same"}]}\n```'
+216:        '{"duplicates": [{"plan_id": "100", "explanation": "Both add auth"}]}\n'
+240:        '{"plan_id": "100", "explanation": "same A"}, '
+241:        '{"plan_id": "200", "explanation": "same B"}'
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01PWX7kQmqhGz12hUEoTkovf">
+    <param name="pattern">plan_number|plan_id|plan_url|plan_title</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/tests/core/utils/test_naming.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="29546" cache_read_input_tokens="35099" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 29546}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01PWX7kQmqhGz12hUEoTkovf">
+23:    validate_plan_title,
+462:# Tests for validate_plan_title
+477:def test_validate_plan_title_valid(title: str) -&gt; None:
+479:    result = validate_plan_title(title)
+500:def test_validate_plan_title_invalid(title: str, reason_fragment: str) -&gt; None:
+502:    result = validate_plan_title(title)
+507:def test_validate_plan_title_error_message_includes_rules() -&gt; None:
+509:    result = validate_plan_title("")
+517:def test_validate_plan_title_error_type() -&gt; None:
+519:    result = validate_plan_title("")
+524:def test_validate_plan_title_strips_whitespace() -&gt; None:
+526:    result = validate_plan_title("  Add Feature  ")
+531:def test_validate_plan_title_preserves_original_in_error() -&gt; None:
+533:    result = validate_plan_title("   ab   ")
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01Khq5YU277GVHDZBHcmMEnt">
+    <param name="pattern">plan_number|plan_id|plan_url|plan_title</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/tests/unit/cli/commands/exec/scripts/test_validate_plan_content.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="29546" cache_read_input_tokens="35099" output_tokens="2035" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 29546, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Khq5YU277GVHDZBHcmMEnt">
+135:def test_validate_plan_numbered_lists() -&gt; None:
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="2818" cache_read_input_tokens="64645" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2818}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I have a clear picture. Files to **skip**:
+- `tests/commands/run/test_shared.py` — tests `extract_plan_number` (intentionally kept)
+- `tests/core/test_plan_duplicate_checker.py` — all `plan_id` refs are LLM JSON format
+- `tests/core/utils/test_naming.py` — tests `validate_plan_title` (intentionally kept)
+- `tests/unit/cli/commands/exec/scripts/test_validate_plan_content.py` — "plan" as noun
+
+That leaves **67 files** to process. Let me signal started and launch the swarm in batches of ~15.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2818" cache_read_input_tokens="64645" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2818}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01DqsmeHbQB5vn3JkpjFJJta">
+    <param name="command">erk exec impl-signal started --session-id="55dd741f-020e-4499-a39c-5846a26b12c5" 2&gt;/dev/null || true</param>
+    <param name="description">Signal GitHub implementation started</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2818" cache_read_input_tokens="64645" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2818}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_01WyoMVXVKxsfzMAY8KAYFWe">
+    <param name="query">select:TaskUpdate</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2818" cache_read_input_tokens="64645" output_tokens="8149" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2818, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01DqsmeHbQB5vn3JkpjFJJta">
+{
+  "success": true,
+  "event": "started",
+  "pr_number": 9196
+}
+  </tool_result>
+  <tool_result tool="toolu_01WyoMVXVKxsfzMAY8KAYFWe">
+
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_011YX5cYrc69MAr8AcLYgY1F">
+    <param name="taskId">1</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="9151" cache_read_input_tokens="67463" output_tokens="73" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 9151, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_011YX5cYrc69MAr8AcLYgY1F">
+Updated task #1 status
+  </tool_result>
+  <assistant>Launching **Batch 1** (15 files: fakes, helpers, core, unit tests):</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="93" cache_read_input_tokens="76614" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 93}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01DM9xLU8fwRt6nMVwwM2KkA">
+    <param name="description">Rename plan→pr in fakes/gateway/github.py</param>
+    <param name="model">haiku</param>
+    <param name="prompt">In the file `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/tests/fakes/gateway/gith...[truncated 943 chars]...l renames using the Edit tool. Use replace_all=true when a pattern appears multiple times.</param>
+    <param name="run_in_background">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="93" cache_read_input_tokens="76614" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 93}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01DM9xLU8fwRt6nMVwwM2KkA">
+Async agent launched successfully.
+agentId: a75b64619fac76377 (internal ID - do not mention to user. Use to resume later if needed.)
+The agent is working in the background. You will be notified automatically when it completes.
+Do not duplicate this agent's work — avoid working with the same files or topics it is using. Work on non-overlapping tasks, or briefly tell the user what you launched and end your response.
+output_file: /private/tmp/claude-501/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-49/tasks/a75b64619fac76377.output
+If asked, you can check progress before completion by using Read or Bash tail on the output file.
+  </tool_result>
+  <tool_use name="Agent" id="toolu_01Xtf1CTL37J2any21jYhmSL">
+    <param name="description">Rename plan→pr in fakes/gateway/github_issues.py</param>
+    <param name="model">haiku</param>
+    <param name="prompt">In the file `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/tests/fakes/gateway/gith...[truncated 652 chars]...l renames using the Edit tool. Use replace_all=true when a pattern appears multiple times.</param>
+    <param name="run_in_background">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="93" cache_read_input_tokens="76614" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 93}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Xtf1CTL37J2any21jYhmSL">
+Async agent launched successfully.
+agentId: a07fa18af43a00cf1 (internal ID - do not mention to user. Use to resume later if needed.)
+The agent is working in the background. You will be notified automatically when it completes.
+Do not duplicate this agent's work — avoid working with the same files or topics it is using. Work on non-overlapping tasks, or briefly tell the user what you launched and end your response.
+output_file: /private/tmp/claude-501/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-49/tasks/a07fa18af43a00cf1.output
+If asked, you can check progress before completion by using Read or Bash tail on the output file.
+  </tool_result>
+  <tool_use name="Agent" id="toolu_019JqRfmtEhJo9hSRZ2SojLR">
+    <param name="description">Rename plan→pr in fakes/gateway/shell.py</param>
+    <param name="model">haiku</param>
+    <param name="prompt">In the file `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/tests/fakes/gateway/shel...[truncated 690 chars]...l renames using the Edit tool. Use replace_all=true when a pattern appears multiple times.</param>
+    <param name="run_in_background">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="93" cache_read_input_tokens="76614" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 93}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019JqRfmtEhJo9hSRZ2SojLR">
+Async agent launched successfully.
+agentId: a30a9ba22e19d07c2 (internal ID - do not mention to user. Use to resume later if needed.)
+The agent is working in the background. You will be notified automatically when it completes.
+Do not duplicate this agent's work — avoid working with the same files or topics it is using. Work on non-overlapping tasks, or briefly tell the user what you launched and end your response.
+output_file: /private/tmp/claude-501/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-49/tasks/a30a9ba22e19d07c2.output
+If asked, you can check progress before completion by using Read or Bash tail on the output file.
+  </tool_result>
+  <tool_use name="Agent" id="toolu_01Ru2DjxfxveR9wxXwMFVbHz">
+    <param name="description">Rename plan→pr in test_utils/plan_helpers.py</param>
+    <param name="model">haiku</param>
+    <param name="prompt">In the file `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/tests/test_utils/plan_he...[truncated 690 chars]...l renames using the Edit tool. Use replace_all=true when a pattern appears multiple times.</param>
+    <param name="run_in_background">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="93" cache_read_input_tokens="76614" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 93}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Ru2DjxfxveR9wxXwMFVbHz">
+Async agent launched successfully.
+agentId: a6e5d0f02a8b44716 (internal ID - do not mention to user. Use to resume later if needed.)
+The agent is working in the background. You will be notified automatically when it completes.
+Do not duplicate this agent's work — avoid working with the same files or topics it is using. Work on non-overlapping tasks, or briefly tell the user what you launched and end your response.
+output_file: /private/tmp/claude-501/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-49/tasks/a6e5d0f02a8b44716.output
+If asked, you can check progress before completion by using Read or Bash tail on the output file.
+  </tool_result>
+  <tool_use name="Agent" id="toolu_014stevmh4RLeoF8iNedaaYD">
+    <param name="description">Rename plan→pr in core/test_prompt_executor.py</param>
+    <param name="model">haiku</param>
+    <param name="prompt">In the file `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/tests/core/test_prompt_e...[truncated 650 chars]...l renames using the Edit tool. Use replace_all=true when a pattern appears multiple times.</param>
+    <param name="run_in_background">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="93" cache_read_input_tokens="76614" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 93}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014stevmh4RLeoF8iNedaaYD">
+Async agent launched successfully.
+agentId: a96e312362fa38875 (internal ID - do not mention to user. Use to resume later if needed.)
+The agent is working in the background. You will be notified automatically when it completes.
+Do not duplicate this agent's work — avoid working with the same files or topics it is using. Work on non-overlapping tasks, or briefly tell the user what you launched and end your response.
+output_file: /private/tmp/claude-501/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-49/tasks/a96e312362fa38875.output
+If asked, you can check progress before completion by using Read or Bash tail on the output file.
+  </tool_result>
+  <tool_use name="Agent" id="toolu_0121BBaqvt1yafUc3Ma7Zpmz">
+    <param name="description">Rename plan→pr in core/test_impl_folder.py</param>
+    <param name="model">haiku</param>
+    <param name="prompt">In the file `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/tests/core/test_impl_fol...[truncated 646 chars]...l renames using the Edit tool. Use replace_all=true when a pattern appears multiple times.</param>
+    <param name="run_in_background">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="93" cache_read_input_tokens="76614" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 93}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0121BBaqvt1yafUc3Ma7Zpmz">
+Async agent launched successfully.
+agentId: a4c2112985d62bb9d (internal ID - do not mention to user. Use to resume later if needed.)
+The agent is working in the background. You will be notified automatically when it completes.
+Do not duplicate this agent's work — avoid working with the same files or topics it is using. Work on non-overlapping tasks, or briefly tell the user what you launched and end your response.
+output_file: /private/tmp/claude-501/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-49/tasks/a4c2112985d62bb9d.output
+If asked, you can check progress before completion by using Read or Bash tail on the output file.
+  </tool_result>
+  <tool_use name="Agent" id="toolu_01JPHWoRfXhAHVxhLAPGwySC">
+    <param name="description">Rename plan→pr in core/test_impl_issue_wt_workflow.py</param>
+    <param name="model">haiku</param>
+    <param name="prompt">In the file `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/tests/core/test_impl_iss...[truncated 657 chars]...l renames using the Edit tool. Use replace_all=true when a pattern appears multiple times.</param>
+    <param name="run_in_background">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="93" cache_read_input_tokens="76614" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 93}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01JPHWoRfXhAHVxhLAPGwySC">
+Async agent launched successfully.
+agentId: a8f058f56ff24c937 (internal ID - do not mention to user. Use to resume later if needed.)
+The agent is working in the background. You will be notified automatically when it completes.
+Do not duplicate this agent's work — avoid working with the same files or topics it is using. Work on non-overlapping tasks, or briefly tell the user what you launched and end your response.
+output_file: /private/tmp/claude-501/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-49/tasks/a8f058f56ff24c937.output
+If asked, you can check progress before completion by using Read or Bash tail on the output file.
+  </tool_result>
+  <tool_use name="Agent" id="toolu_011po2c3nk1TT4StNwDHCKdR">
+    <param name="description">Rename plan→pr in unit/sessions/test_manifest.py</param>
+    <param name="model">haiku</param>
+    <param name="prompt">In the file `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/tests/unit/sessions/test...[truncated 652 chars]...l renames using the Edit tool. Use replace_all=true when a pattern appears multiple times.</param>
+    <param name="run_in_background">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="93" cache_read_input_tokens="76614" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 93}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011po2c3nk1TT4StNwDHCKdR">
+Async agent launched successfully.
+agentId: afcedd7aa3fefedb6 (internal ID - do not mention to user. Use to resume later if needed.)
+The agent is working in the background. You will be notified automatically when it completes.
+Do not duplicate this agent's work — avoid working with the same files or topics it is using. Work on non-overlapping tasks, or briefly tell the user what you launched and end your response.
+output_file: /private/tmp/claude-501/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-49/tasks/afcedd7aa3fefedb6.output
+If asked, you can check progress before completion by using Read or Bash tail on the output file.
+  </tool_result>
+  <tool_use name="Agent" id="toolu_014WFxcTVMWNEosp8iDvM5rU">
+    <param name="description">Rename plan→pr in unit/status/test_impl_collector.py</param>
+    <param name="model">haiku</param>
+    <param name="prompt">In the file `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/tests/unit/status/test_i...[truncated 656 chars]...l renames using the Edit tool. Use replace_all=true when a pattern appears multiple times.</param>
+    <param name="run_in_background">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="93" cache_read_input_tokens="76614" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 93}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014WFxcTVMWNEosp8iDvM5rU">
+Async agent launched successfully.
+agentId: a47dc5ba99800ec19 (internal ID - do not mention to user. Use to resume later if needed.)
+The agent is working in the background. You will be notified automatically when it completes.
+Do not duplicate this agent's work — avoid working with the same files or topics it is using. Work on non-overlapping tasks, or briefly tell the user what you launched and end your response.
+output_file: /private/tmp/claude-501/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-49/tasks/a47dc5ba99800ec19.output
+If asked, you can check progress before completion by using Read or Bash tail on the output file.
+  </tool_result>
+  <tool_use name="Agent" id="toolu_01DdhsyS9iAHk8EsDG9SMQJg">
+    <param name="description">Rename plan→pr in unit/shared/test_plan_workflow.py</param>
+    <param name="model">haiku</param>
+    <param name="prompt">In the file `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/tests/unit/shared/test_p...[truncated 655 chars]...l renames using the Edit tool. Use replace_all=true when a pattern appears multiple times.</param>
+    <param name="run_in_background">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="93" cache_read_input_tokens="76614" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 93}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01DdhsyS9iAHk8EsDG9SMQJg">
+Async agent launched successfully.
+agentId: a47dfdf04d2941a62 (internal ID - do not mention to user. Use to resume later if needed.)
+The agent is working in the background. You will be notified automatically when it completes.
+Do not duplicate this agent's work — avoid working with the same files or topics it is using. Work on non-overlapping tasks, or briefly tell the user what you launched and end your response.
+output_file: /private/tmp/claude-501/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-49/tasks/a47dfdf04d2941a62.output
+If asked, you can check progress before completion by using Read or Bash tail on the output file.
+  </tool_result>
+  <tool_use name="Agent" id="toolu_01Gts2um9w7ozxhnKAxNcrUV">
+    <param name="description">Rename plan→pr in unit/shared/test_next_steps.py</param>
+    <param name="model">haiku</param>
+    <param name="prompt">In the file `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/tests/unit/shared/test_n...[truncated 652 chars]...l renames using the Edit tool. Use replace_all=true when a pattern appears multiple times.</param>
+    <param name="run_in_background">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="93" cache_read_input_tokens="76614" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 93}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Gts2um9w7ozxhnKAxNcrUV">
+Async agent launched successfully.
+agentId: aade87420e544b089 (internal ID - do not mention to user. Use to resume later if needed.)
+The agent is working in the background. You will be notified automatically when it completes.
+Do not duplicate this agent's work — avoid working with the same files or topics it is using. Work on non-overlapping tasks, or briefly tell the user what you launched and end your response.
+output_file: /private/tmp/claude-501/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-49/tasks/aade87420e544b089.output
+If asked, you can check progress before completion by using Read or Bash tail on the output file.
+  </tool_result>
+  <tool_use name="Agent" id="toolu_01873EtaNinrp9QSnG4WFRpF">
+    <param name="description">Rename plan→pr in metadata_blocks/test_round_trip.py</param>
+    <param name="model">haiku</param>
+    <param name="prompt">In the file `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/tests/unit/gateways/gith...[truncated 677 chars]...l renames using the Edit tool. Use replace_all=true when a pattern appears multiple times.</param>
+    <param name="run_in_background">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="93" cache_read_input_tokens="76614" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 93}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01873EtaNinrp9QSnG4WFRpF">
+Async agent launched successfully.
+agentId: a5ebb9ea7bfbddaef (internal ID - do not mention to user. Use to resume later if needed.)
+The agent is working in the background. You will be notified automatically when it completes.
+Do not duplicate this agent's work — avoid working with the same files or topics it is using. Work on non-overlapping tasks, or briefly tell the user what you launched and end your response.
+output_file: /private/tmp/claude-501/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-49/tasks/a5ebb9ea7bfbddaef.output
+If asked, you can check progress before completion by using Read or Bash tail on the output file.
+  </tool_result>
+  <tool_use name="Agent" id="toolu_01WcftT7iMZffJgtekBppPWK">
+    <param name="description">Rename plan→pr in metadata_blocks/test_plan_issue_schema.py</param>
+    <param name="model">haiku</param>
+    <param name="prompt">In the file `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/tests/unit/gateways/gith...[truncated 684 chars]...l renames using the Edit tool. Use replace_all=true when a pattern appears multiple times.</param>
+    <param name="run_in_background">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="93" cache_read_input_tokens="76614" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 93}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01WcftT7iMZffJgtekBppPWK">
+Async agent launched successfully.
+agentId: a2a713d23b42e4649 (internal ID - do not mention to user. Use to resume later if needed.)
+The agent is working in the background. You will be notified automatically when it completes.
+Do not duplicate this agent's work — avoid working with the same files or topics it is using. Work on non-overlapping tasks, or briefly tell the user what you launched and end your response.
+output_file: /private/tmp/claude-501/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-49/tasks/a2a713d23b42e4649.output
+If asked, you can check progress before completion by using Read or Bash tail on the output file.
+  </tool_result>
+  <tool_use name="Agent" id="toolu_01YDfMLsGuXHZHRYdteYnCAX">
+    <param name="description">Rename plan→pr in plan_store/test_plan_backend_interface.py</param>
+    <param name="model">haiku</param>
+    <param name="prompt">In the file `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/tests/unit/plan_store/te...[truncated 668 chars]...l renames using the Edit tool. Use replace_all=true when a pattern appears multiple times.</param>
+    <param name="run_in_background">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="93" cache_read_input_tokens="76614" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 93}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01YDfMLsGuXHZHRYdteYnCAX">
+Async agent launched successfully.
+agentId: a92c14578836c8722 (internal ID - do not mention to user. Use to resume later if needed.)
+The agent is working in the background. You will be notified automatically when it completes.
+Do not duplicate this agent's work — avoid working with the same files or topics it is using. Work on non-overlapping tasks, or briefly tell the user what you launched and end your response.
+output_file: /private/tmp/claude-501/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-49/tasks/a92c14578836c8722.output
+If asked, you can check progress before completion by using Read or Bash tail on the output file.
+  </tool_result>
+  <tool_use name="Agent" id="toolu_018W8RXZnfe9HdA6S1kL2XgK">
+    <param name="description">Rename plan→pr in plan_store/test_planned_pr_lifecycle.py</param>
+    <param name="model">haiku</param>
+    <param name="prompt">In the file `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/tests/unit/plan_store/te...[truncated 666 chars]...l renames using the Edit tool. Use replace_all=true when a pattern appears multiple times.</param>
+    <param name="run_in_background">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="93" cache_read_input_tokens="76614" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 93}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_018W8RXZnfe9HdA6S1kL2XgK">
+Async agent launched successfully.
+agentId: a16be4f23b86225ac (internal ID - do not mention to user. Use to resume later if needed.)
+The agent is working in the background. You will be notified automatically when it completes.
+Do not duplicate this agent's work — avoid working with the same files or topics it is using. Work on non-overlapping tasks, or briefly tell the user what you launched and end your response.
+output_file: /private/tmp/claude-501/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-49/tasks/a16be4f23b86225ac.output
+If asked, you can check progress before completion by using Read or Bash tail on the output file.
+  </tool_result>
+  <assistant>
+
+Batch 1 launched (15 agents). Launching **Batch 2** (15 files: remaining unit + command tests):</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="73177" cache_read_input_tokens="12785" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 73177}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01NeohAzA2ZArRoAsM85jcXg">
+    <param name="description">Rename plan→pr in plan_store/test_planned_pr_backend.py</param>
+    <param name="model">haiku</param>
+    <param name="prompt">In the file `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/tests/unit/plan_store/te...[truncated 782 chars]...l renames using the Edit tool. Use replace_all=true when a pattern appears multiple times.</param>
+    <param name="run_in_background">True</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="73177" cache_read_input_tokens="12785" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 73177}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01NeohAzA2ZArRoAsM85jcXg">
+Async agent launched successfully.
+agentId: ad62029da97ed397b (internal ID - do not mention to user. Use to resume later if needed.)
+The agent is working in the background. You will be notified automatically when it completes.
+Do not duplicate this agent's work — avoid working with the same files or topics it is using. Work on non-overlapping tasks, or briefly tell the user what you launched and end your response.
+output_file: /private/tmp/claude-501/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-49/tasks/ad62029da97ed397b.output
+If asked, you can check progress before completion by using Read or Bash tail on the output file.
+  </tool_result>
+</session>

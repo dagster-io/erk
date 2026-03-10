@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "pr_number": 9196,
+  "sessions": [
+    {
+      "session_id": "55dd741f-020e-4499-a39c-5846a26b12c5",
+      "stage": "impl",
+      "source": "local",
+      "uploaded_at": "2026-03-10T18:17:15.344955+00:00",
+      "files": [
+        "impl-55dd741f-020e-4499-a39c-5846a26b12c5-55dd741f-020e-4499-a39c-5846a26b12c5-part1.xml",
+        "impl-55dd741f-020e-4499-a39c-5846a26b12c5-55dd741f-020e-4499-a39c-5846a26b12c5-part2.xml",
+        "impl-55dd741f-020e-4499-a39c-5846a26b12c5-55dd741f-020e-4499-a39c-5846a26b12c5-part3.xml",
+        "impl-55dd741f-020e-4499-a39c-5846a26b12c5-55dd741f-020e-4499-a39c-5846a26b12c5-part4.xml",
+        "impl-55dd741f-020e-4499-a39c-5846a26b12c5-55dd741f-020e-4499-a39c-5846a26b12c5-part5.xml",
+        "impl-55dd741f-020e-4499-a39c-5846a26b12c5-55dd741f-020e-4499-a39c-5846a26b12c5-part6.xml",
+        "impl-55dd741f-020e-4499-a39c-5846a26b12c5-55dd741f-020e-4499-a39c-5846a26b12c5-part7.xml",
+        "impl-55dd741f-020e-4499-a39c-5846a26b12c5-55dd741f-020e-4499-a39c-5846a26b12c5-part8.xml"
+      ],
+      "user_turns": 67,
+      "duration_minutes": 30,
+      "raw_size_kb": 2830,
+      "xml_size_kb": 505,
+      "git_branch": "plnd/O9109-update-test-plan-to-03-10-2146"
+    }
+  ]
+}
