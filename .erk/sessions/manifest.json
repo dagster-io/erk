@@ -1,0 +1,51 @@
+{
+  "version": 1,
+  "pr_number": 9130,
+  "sessions": [
+    {
+      "session_id": "",
+      "stage": "impl",
+      "source": "local",
+      "uploaded_at": "2026-03-10T09:00:37.404031+00:00",
+      "files": [
+        "impl--25030007-2c9c-4877-bc4b-bf8effcb4637-part1.xml",
+        "impl--25030007-2c9c-4877-bc4b-bf8effcb4637-part10.xml",
+        "impl--25030007-2c9c-4877-bc4b-bf8effcb4637-part11.xml",
+        "impl--25030007-2c9c-4877-bc4b-bf8effcb4637-part12.xml",
+        "impl--25030007-2c9c-4877-bc4b-bf8effcb4637-part13.xml",
+        "impl--25030007-2c9c-4877-bc4b-bf8effcb4637-part14.xml",
+        "impl--25030007-2c9c-4877-bc4b-bf8effcb4637-part15.xml",
+        "impl--25030007-2c9c-4877-bc4b-bf8effcb4637-part16.xml",
+        "impl--25030007-2c9c-4877-bc4b-bf8effcb4637-part17.xml",
+        "impl--25030007-2c9c-4877-bc4b-bf8effcb4637-part18.xml",
+        "impl--25030007-2c9c-4877-bc4b-bf8effcb4637-part19.xml",
+        "impl--25030007-2c9c-4877-bc4b-bf8effcb4637-part2.xml",
+        "impl--25030007-2c9c-4877-bc4b-bf8effcb4637-part20.xml",
+        "impl--25030007-2c9c-4877-bc4b-bf8effcb4637-part21.xml",
+        "impl--25030007-2c9c-4877-bc4b-bf8effcb4637-part22.xml",
+        "impl--25030007-2c9c-4877-bc4b-bf8effcb4637-part23.xml",
+        "impl--25030007-2c9c-4877-bc4b-bf8effcb4637-part24.xml",
+        "impl--25030007-2c9c-4877-bc4b-bf8effcb4637-part25.xml",
+        "impl--25030007-2c9c-4877-bc4b-bf8effcb4637-part26.xml",
+        "impl--25030007-2c9c-4877-bc4b-bf8effcb4637-part27.xml",
+        "impl--25030007-2c9c-4877-bc4b-bf8effcb4637-part28.xml",
+        "impl--25030007-2c9c-4877-bc4b-bf8effcb4637-part29.xml",
+        "impl--25030007-2c9c-4877-bc4b-bf8effcb4637-part3.xml",
+        "impl--25030007-2c9c-4877-bc4b-bf8effcb4637-part30.xml",
+        "impl--25030007-2c9c-4877-bc4b-bf8effcb4637-part31.xml",
+        "impl--25030007-2c9c-4877-bc4b-bf8effcb4637-part32.xml",
+        "impl--25030007-2c9c-4877-bc4b-bf8effcb4637-part4.xml",
+        "impl--25030007-2c9c-4877-bc4b-bf8effcb4637-part5.xml",
+        "impl--25030007-2c9c-4877-bc4b-bf8effcb4637-part6.xml",
+        "impl--25030007-2c9c-4877-bc4b-bf8effcb4637-part7.xml",
+        "impl--25030007-2c9c-4877-bc4b-bf8effcb4637-part8.xml",
+        "impl--25030007-2c9c-4877-bc4b-bf8effcb4637-part9.xml"
+      ],
+      "user_turns": 5,
+      "duration_minutes": 37,
+      "raw_size_kb": 2967,
+      "xml_size_kb": 1143,
+      "git_branch": "plnd/O9109-rename-click-args-pr-03-10-0822"
+    }
+  ]
+}

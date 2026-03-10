@@ -1,0 +1,881 @@
+<session>
+  <meta source="agent-adaf546" />
+  <meta branch="plnd/O9109-rename-click-args-pr-03-10-0822" />
+  <meta model="claude-sonnet-4-5-20250929" />
+  <user>You are performing a mechanical rename of Click CLI arguments/options across Python files. The goal is to rename `--plan-id` (int type) to `--pr-number` and `plan_id` param to `pr_number` in Click decorators, function signatures, and internal variable usage.
+
+## Files to edit (batch 2 - files with `--plan-id` option (int type)):
+
+### 1. `src/erk/cli/commands/exec/scripts/ci_update_pr_body.py`
+- Line 319: `@click.option("--plan-id", type=int, ...)` → `@click.option("--pr-number", type=int, ...)`
+- Line 326: `plan_id: int,` → `pr_number: int,`
+- The function does NOT use `plan_id` internally (it's only used as a context identifier), so just the decorator and param rename
+
+### 2. `src/erk/cli/commands/exec/scripts/handle_no_changes.py`
+- Line 142: `@click.option("--plan-id", type=int, ...)` → `@click.option("--pr-number", type=int, ...)`  (Note: there's already a `--pr-number` option on line 141, so we need `--plan-id` to become something different. Looking at the plan: `--plan-id` (int) → `--pr-number` ... but there's ALREADY `--pr-number`. Looking at the rename mapping more carefully: the plan says `plan_id` param → `pr_number`. But `pr_number` is already a param. So we need to REMOVE the `--plan-id` option entirely and just use the existing `--pr-number` for both. Wait, no - let me re-read the file. The function has BOTH `pr_number` and `plan_id` as separate params serving different purposes. `pr_number` is the PR to update, `plan_id` is the plan identifier. Since they might now be the same thing, we should check the plan mapping again.)
+
+Actually, re-reading the plan: `--plan-id` (int) → `--pr-number` / `pr_number`. But handle_no_changes already has `--pr-number`. In this case, the `plan_id` is semantically the same as `pr_number` in the new model. The plan says to rename `plan_id` to `pr_number`. Since `pr_number` already exists, we need to MERGE them - remove the `--plan-id` option and use the existing `--pr-number` for both purposes.
+
+Wait - looking more carefully, `pr_number` is the PR to update and `plan_id` is the plan. In the new world where plans ARE PRs, these are the same number. But they serve different logical purposes in the code. Let me look at the internal usage:
+- `_build_no_changes_title(plan_id=plan_id, ...)` 
+- `_build_pr_body(plan_id=plan_id, ...)`
+- `backend.update_metadata(repo_root, str(plan_id), ...)`
+- `backend.add_comment(repo_root, str(plan_id), ...)`
+- `HandleNoChangesSuccess(success=True, pr_number=pr_number, plan_id=plan_id)`
+
+The helper functions `_build_no_changes_title` and `_build_pr_body` also take `plan_id` params that need renaming.
+
+For handle_no_changes.py, rename:
+- Remove `@click.option("--plan-id", ...)` 
+- Remove `plan_id: int,` from function sig
+- The `HandleNoChangesSuccess` dataclass field `plan_id` → `pr_number` (but it already has `pr_number`... this gets complex)
+
+Actually, let me take a simpler approach based on the plan: just rename the CLI flag `--plan-id` to `--pr-number` and param `plan_id` to `pr_number`. Since there's already a `--pr-number`/`pr_number`, we need to REMOVE the `--plan-id` option and update all internal references from `plan_id` to `pr_number` (using the existing `pr_number` parameter).
+
+Edits for `src/erk/cli/commands/exec/scripts/handle_no_changes.py`:
+1. Remove the `@click.option("--plan-id", ...)` line (line 142-143)
+2. Remove `plan_id: int,` from function sig (line 158) 
+3. Replace all `plan_id` usage in the function body with `pr_number`
+4. In `HandleNoChangesSuccess` dataclass: remove `plan_id: int` field since `pr_number` already exists
+5. In helper functions `_build_no_changes_title` and `_build_pr_body`: rename `plan_id` param to `pr_number`
+6. Update all callers of those helpers
+
+### 3. `src/erk/cli/commands/exec/scripts/track_learn_result.py`
+- Line 63-67: `@click.option("--plan-id", ...)` → `@click.option("--pr-number", ...)`  (note: it's `type=str` here... the plan says this one maps to `pr_number` (int). But the current type is str. Let me check: the plan says `--plan-id` (int) → `--pr-number`. But in this file it's `type=str`. Actually looking at the plan rename mapping: `--plan-id` (str) → `--pr-id` (str). So this file should be `--pr-id`/`pr_id` since it's str type.)
+
+Wait, re-reading the plan more carefully:
+- `--plan-id` (int) → `--pr-number` / `pr_number`  
+- `--plan-id` (str) → `--pr-id` / `pr_id`
+
+In track_learn_result.py, `--plan-id` is `type=str`. So it should become `--pr-id` / `pr_id`.
+
+Edits:
+- Line 64: `"--plan-id",` → `"--pr-id",`
+- Line 89: `plan_id: str,` → `pr_id: str,`
+- All internal usage of `plan_id` → `pr_id`
+
+### 4. `src/erk/cli/commands/exec/scripts/fetch_sessions.py`
+- Line 63-67: `"--plan-id"` → `"--pr-number"`, type=int
+- Line 78: `plan_id: int,` → `pr_number: int,`
+- All internal usage: `plan_id` → `pr_number` (session_branch, result dict, etc.)
+
+### 5. `src/erk/cli/commands/exec/scripts/push_session.py`
+- Line 185-189: `"--plan-id"` → `"--pr-number"`, type=int
+- Line 197: `plan_id: int,` → `pr_number: int,`
+- All internal usage: `plan_id` → `pr_number`
+- Also update helper function `_update_manifest` param `plan_id` → `pr_number`
+
+### 6. `src/erk/cli/commands/exec/scripts/upload_impl_session.py`
+- This file doesn't have a `--plan-id` Click option directly - it constructs a subprocess call with `"--plan-id"` as a string argument to push-session. So update:
+- Line 110: `"--plan-id",` → `"--pr-number",`
+- Internal variable `plan_id` on line 79 → `pr_number`
+
+For each file:
+1. Read the file first
+2. Make edits using the Edit tool
+3. Rename ALL variable references appropriately
+4. Do NOT touch help strings content or error message prose text
+5. Be careful about the handle_no_changes.py case where pr_number already exists
+
+Important: Use replace_all=false for each edit to ensure precision.</user>
+  <assistant>I'll perform the mechanical rename of Click CLI arguments/options for batch 2. Let me start by reading each file to understand the current state.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="17902" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 17902, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Lo6sXZmCNyXHCh1TFqXyFc">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/ci_update_pr_body.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="17902" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 17902, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01CRPA8SMEuKn6gEbkDSLNLJ">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/handle_no_changes.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="17902" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 17902, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_0179GZFgDDGBsYxWMgEQoykH">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/track_learn_result.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="17902" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 17902, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01XC4KPDxPGpGvNrfszsPeYj">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/fetch_sessions.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="17902" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 17902, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01EMp676DxZatiWVYtWcQJHC">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/push_session.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="17902" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 17902, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01C2ptawBUzt5CxwosmotQRS">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/upload_impl_session.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="17902" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 17902, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Lo6sXZmCNyXHCh1TFqXyFc">
+     1→#!/usr/bin/env python3
+     2→"""Update PR body with AI-generated summary and footer.
+     3→
+     4→This command generates a PR summary from the diff using Claude, then updates
+     5→the PR body with the summary, optional workflow link, and standardized footer.
+     6→
+     7→This combines PR summary generation + footer construction + gh pr edit in one step,
+     8→replacing ~30 lines of bash in GitHub Actions workflows.
+     9→
+    10→Usage:
+    11→    erk exec ci-update-pr-body \\
+    12→        --plan-id 123 \\
+    13→        [--run-id 456789] \\
+    14→        [--run-url https://github.com/owner/repo/actions/runs/456789]
+    15→
+    16→Output:
+    17→    JSON object with success status
+    18→
+    19→Exit Codes:
+    20→    0: Success (PR body updated)
+    21→    1: Error (no PR for branch, empty diff, Claude failure, or GitHub API failed)
+    22→
+    23→Examples:
+    24→    $ erk exec ci-update-pr-body --plan-id 123
+    25→    {
+    26→      "success": true,
+    27→      "pr_number": 789
+    28→    }
+    29→
+    30→    $ erk exec ci-update-pr-body \\
+
+... [333 lines omitted] ...
+
+    77→class UpdateError:
+    78→    """Error result when PR body update fails."""
+    81→    error: Literal[
+    84→        "diff-fetch-failed",
+    85→        "claude-execution-failed",
+    87→        "github-api-failed",
+   173→) -&gt; UpdateSuccess | UpdateError:
+   186→        UpdateSuccess on success, UpdateError on failure
+   191→        return UpdateError(
+   193→            error="pr-not-found",
+   201→        return UpdateError(
+   203→            error="pr-not-found",
+   213→    except RuntimeError as e:
+   214→        return UpdateError(
+   216→            error="diff-fetch-failed",
+   217→            message=f"Failed to get PR diff: {e}",
+   222→        return UpdateError(
+   224→            error="empty-diff",
+   241→    # Separate failure modes for better diagnostics
+   243→        stderr_preview = result.error[:500] if result.error else None
+   244→        return UpdateError(
+   246→            error="claude-execution-failed",
+   253→        stderr_preview = result.error[:500] if result.error else None
+   254→        return UpdateError(
+   256→            error="claude-empty-output",
+   269→            return UpdateError(
+   271→                error="plan-header-not-found",
+   275→                    "Inspect the PR body and check for earlier CI step failures."
+   307→    except RuntimeError as e:
+   308→        return UpdateError(
+   310→            error="github-api-failed",
+   311→            message=f"Failed to update PR: {e}",
+   355→    # Exit with error code if update failed
+   356→    if isinstance(result, UpdateError):
+  </tool_result>
+  <tool_result tool="toolu_01CRPA8SMEuKn6gEbkDSLNLJ">
+     1→#!/usr/bin/env python3
+     2→"""Handle no-changes scenario in erk-impl workflow gracefully.
+     3→
+     4→When implementation produces no code changes (duplicate plan, work already merged),
+     5→this command updates the PR with diagnostic information and marks it ready for review.
+     6→
+     7→This replaces workflow failure with an informational PR that users can review and close.
+     8→
+     9→Usage:
+    10→    erk exec handle-no-changes \
+    11→        --pr-number 123 \
+    12→        --plan-id 456 \
+    13→        --behind-count 5 \
+    14→        --base-branch master \
+    15→        [--recent-commits "abc1234 Fix bug\\ndef5678 Add feature"] \
+    16→        [--run-url https://github.com/owner/repo/actions/runs/789]
+    17→
+    18→Output:
+    19→    JSON object with success status
+    20→
+    21→Exit Codes:
+    22→    0: Success (PR updated, labeled, and marked ready)
+    23→    1: Error (GitHub API failure)
+    24→"""
+    25→
+    26→import json
+    27→from dataclasses import asdict, dataclass
+    28→
+    29→import click
+    30→
+
+... [245 lines omitted] ...
+
+    45→class HandleNoChangesError:
+    46→    """Error result when handling fails."""
+    49→    error: str
+   195→    except RuntimeError as e:
+   196→        result = HandleNoChangesError(
+   198→            error="github-api-failed",
+   199→            message=f"Failed to update PR title and body: {e}",
+   213→    except RuntimeError as e:
+   214→        result = HandleNoChangesError(
+   216→            error="github-api-failed",
+   217→            message=f"Failed to add label: {e}",
+   229→    except RuntimeError as e:
+   230→        result = HandleNoChangesError(
+   232→            error="github-api-failed",
+   233→            message=f"Failed to update lifecycle stage: {e}",
+   241→    except RuntimeError as e:
+   242→        result = HandleNoChangesError(
+   244→            error="github-api-failed",
+   245→            message=f"Failed to mark PR ready: {e}",
+   254→    except RuntimeError as e:
+   255→        result = HandleNoChangesError(
+   257→            error="github-api-failed",
+   258→            message=f"Failed to add plan comment: {e}",
+  </tool_result>
+  <tool_result tool="toolu_0179GZFgDDGBsYxWMgEQoykH">
+     1→"""Track learn workflow result on a plan.
+     2→
+     3→This exec script updates the plan-header metadata block to record the result
+     4→of a learn workflow. It sets the learn_status field and optionally records
+     5→the learn_plan_issue if a plan was created.
+     6→
+     7→Usage:
+     8→    erk exec track-learn-result --plan-id 123 --status completed_no_plan
+     9→    erk exec track-learn-result --plan-id 123 --status completed_with_plan --learn-plan 456
+    10→
+    11→Output:
+    12→    JSON object with tracking result:
+    13→    {
+    14→        "success": true,
+    15→        "pr_number": "123",
+    16→        "learn_status": "completed_no_plan"
+    17→    }
+    18→
+    19→Exit Codes:
+    20→    0: Success
+    21→    1: Error (invalid issue, GitHub failure, validation error, etc.)
+    22→"""
+    23→
+    24→import json
+    25→from dataclasses import asdict, dataclass
+    26→
+    27→import click
+    28→
+    29→from erk_shared.context.helpers import require_plan_backend, require_repo_root
+    30→from erk_shared.gateway.github.metadata.schemas import LearnStatusValue
+
+... [171 lines omitted] ...
+
+    31→from erk_shared.plan_store.types import PlanHeaderNotFoundError
+    46→class TrackLearnResultError:
+    47→    """Error result when tracking fails."""
+    50→    error: str
+   102→        error = TrackLearnResultError(
+   104→            error="missing-learn-plan",
+   107→        click.echo(json.dumps(asdict(error)))
+   112→        error = TrackLearnResultError(
+   114→            error="unexpected-learn-plan",
+   117→        click.echo(json.dumps(asdict(error)))
+   122→        error = TrackLearnResultError(
+   124→            error="missing-plan-pr",
+   127→        click.echo(json.dumps(asdict(error)))
+   132→        error = TrackLearnResultError(
+   134→            error="unexpected-learn-plan",
+   137→        click.echo(json.dumps(asdict(error)))
+   142→        error = TrackLearnResultError(
+   144→            error="unexpected-plan-pr",
+   147→        click.echo(json.dumps(asdict(error)))
+   168→    except PlanHeaderNotFoundError:
+   169→        error = TrackLearnResultError(
+   171→            error="no-metadata-block",
+   176→        click.echo(json.dumps(asdict(error)), err=True)
+   178→    except RuntimeError as e:
+   179→        error = TrackLearnResultError(
+   181→            error="github-api-failed",
+   182→            message=f"Failed to update learn status on plan {plan_id}: {e}",
+   184→        click.echo(json.dumps(asdict(error)), err=True)
+  </tool_result>
+  <tool_result tool="toolu_01XC4KPDxPGpGvNrfszsPeYj">
+     1→"""Fetch preprocessed sessions from a planned-pr-context branch.
+     2→
+     3→Downloads the manifest and XML files from the planned-pr-context/{plan_id} branch
+     4→for use by the learn pipeline. Returns JSON with file list and manifest metadata.
+     5→
+     6→Usage:
+     7→    erk exec fetch-sessions --plan-id 2521 --output-dir ./learn
+     8→
+     9→Output:
+    10→    Structured JSON output:
+    11→    {"success": true, "pr_number": 2521, "manifest": {...}, "files": [...]}
+    12→    {"success": false, "error": "branch_not_found"}
+    13→
+    14→Exit Codes:
+    15→    0: Success
+    16→    1: Error (branch not found, fetch failed)
+    17→"""
+    18→
+    19→import json
+    20→from pathlib import Path
+    21→
+    22→import click
+    23→
+    24→from erk_shared.context.helpers import require_git, require_repo_root
+    25→from erk_shared.gateway.git.abc import Git
+    26→from erk_shared.sessions.manifest import read_session_manifest
+    27→
+    28→
+    29→def _fetch_file_from_branch(
+    30→    *,
+
+... [106 lines omitted] ...
+
+    47→        Path to the written file, or None on failure.
+    93→        click.echo(json.dumps({"success": False, "error": "branch_not_found"}))
+   102→        click.echo(json.dumps({"success": False, "error": "manifest_not_found"}))
+  </tool_result>
+  <tool_result tool="toolu_01EMp676DxZatiWVYtWcQJHC">
+     1→"""Push a preprocessed session to the planned-pr-context branch with accumulation.
+     2→
+     3→Preprocesses session JSONL to compressed XML and accumulates multiple sessions
+     4→on the same branch across lifecycle stages.
+     5→
+     6→Usage:
+     7→    erk exec push-session \\
+     8→        --session-file /path/to/session.jsonl \\
+     9→        --session-id abc-123 \\
+    10→        --stage planning \\
+    11→        --source local \\
+    12→        --plan-id 2521
+    13→
+    14→Output:
+    15→    Structured JSON output with upload status:
+    16→    {"uploaded": true, "pr_number": 2521, "session_branch": "planned-pr-context/2521",
+    17→     "files": [...]}
+    18→    {"uploaded": false, "reason": "preprocessing_failed"}
+    19→
+    20→Exit Codes:
+    21→    0: Always (non-critical operation, graceful degradation)
+    22→"""
+    23→
+    24→import json
+    25→import subprocess
+    26→import tempfile
+    27→from datetime import UTC
+    28→from pathlib import Path
+    29→from typing import Literal
+    30→
+
+... [298 lines omitted] ...
+
+    63→        List of XML file paths on success, None on failure.
+   223→        click.echo(json.dumps({"uploaded": False, "reason": "preprocessing_failed"}))
+   304→        except RuntimeError:
+  </tool_result>
+  <tool_result tool="toolu_01C2ptawBUzt5CxwosmotQRS">
+     1→"""Upload current implementation session for async learn.
+     2→
+     3→Reads plan reference from .erk/impl-context/, captures session info, and delegates
+     4→to push-session for preprocessed XML upload with branch accumulation.
+     5→
+     6→Usage:
+     7→    erk exec upload-impl-session --session-id &lt;id&gt;
+     8→
+     9→Output:
+    10→    JSON with upload result:
+    11→    {"uploaded": true, "pr_number": 2521}
+    12→    {"uploaded": false, "reason": "no_plan_tracking"}
+    13→    {"uploaded": false, "reason": "no_session_found"}
+    14→
+    15→Exit Codes:
+    16→    0: Always (non-critical operation, graceful degradation)
+    17→
+    18→Examples:
+    19→    $ erk exec upload-impl-session --session-id abc-123
+    20→    {"uploaded": true, "pr_number": 2521}
+    21→"""
+    22→
+    23→import json
+    24→import subprocess
+    25→from pathlib import Path
+    26→
+    27→import click
+    28→
+    29→from erk.cli.commands.exec.scripts.capture_session_info import capture_session
+    30→from erk_shared.context.helpers import (
+
+... [101 lines omitted] ...
+
+   124→    # push-session failed or returned not-uploaded — report gracefully
+   125→    click.echo(json.dumps({"uploaded": False, "reason": "push_session_failed"}))
+  </tool_result>
+  <assistant>Now I'll proceed with the mechanical renames for each file. Let me start with the edits:
+
+## File 1: ci_update_pr_body.py</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="18716" cache_read_input_tokens="17902" cache_creation="{'ephemeral_5m_input_tokens': 18716, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01YK9HRRxyKwczfgiiKmejWp">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/ci_update_pr_body.py</param>
+    <param name="old_string">@click.command(name="ci-update-pr-body")
+@click.option("--plan-id", type=int, required=Tru...[truncated 348 chars]...id: int,
+    run_id: str | None,
+    run_url: str | None,
+    planned_pr: bool,
+) -&gt; None:</param>
+    <param name="new_string">@click.command(name="ci-update-pr-body")
+@click.option("--pr-number", type=int, required=T...[truncated 352 chars]...er: int,
+    run_id: str | None,
+    run_url: str | None,
+    planned_pr: bool,
+) -&gt; None:</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="18716" cache_read_input_tokens="17902" cache_creation="{'ephemeral_5m_input_tokens': 18716, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01YK9HRRxyKwczfgiiKmejWp">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/ci_update_pr_body.py has been updated successfully.
+  </tool_result>
+  <assistant>## File 2: handle_no_changes.py
+
+This file needs more careful handling because it already has a `--pr-number` option. The `plan_id` and `pr_number` are now semantically the same, so we need to:
+1. Remove the `--plan-id` option
+2. Remove the `plan_id` parameter
+3. Replace all `plan_id` usages with `pr_number`
+4. Update the `HandleNoChangesSuccess` dataclass to remove the duplicate `plan_id` field
+5. Update helper functions</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="591" cache_read_input_tokens="36618" cache_creation="{'ephemeral_5m_input_tokens': 591, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_011DgnFEX2HFH7SovsDHXvDS">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/handle_no_changes.py</param>
+    <param name="old_string">@dataclass(frozen=True)
+class HandleNoChangesSuccess:
+    """Success result when no-changes is handled."""
+
+    success: bool
+    pr_number: int
+    plan_id: int</param>
+    <param name="new_string">@dataclass(frozen=True)
+class HandleNoChangesSuccess:
+    """Success result when no-changes is handled."""
+
+    success: bool
+    pr_number: int</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="591" cache_read_input_tokens="36618" cache_creation="{'ephemeral_5m_input_tokens': 591, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01A3P5hoPioa4jpDeEmd94Qh">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/handle_no_changes.py</param>
+    <param name="old_string">def _build_no_changes_title(*, plan_id: int, original_title: str) -&gt; str:
+    """Build PR ...[truncated 171 chars]...lan reference
+    """
+    return f"[no-changes] #{plan_id} Impl Attempt: {original_title}"</param>
+    <param name="new_string">def _build_no_changes_title(*, pr_number: int, original_title: str) -&gt; str:
+    """Build P...[truncated 177 chars]...n reference
+    """
+    return f"[no-changes] #{pr_number} Impl Attempt: {original_title}"</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="591" cache_read_input_tokens="36618" cache_creation="{'ephemeral_5m_input_tokens': 591, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01CbYcAcEi5uscKerwpBR6gj">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/handle_no_changes.py</param>
+    <param name="old_string">def _build_pr_body(
+    *,
+    plan_id: int,
+    behind_count: int,
+    base_branch: str,
+...[truncated 340 chars]...un_url: Optional workflow run URL
+
+    Returns:
+        Formatted PR body markdown
+    """</param>
+    <param name="new_string">def _build_pr_body(
+    *,
+    pr_number: int,
+    behind_count: int,
+    base_branch: str...[truncated 344 chars]...un_url: Optional workflow run URL
+
+    Returns:
+        Formatted PR body markdown
+    """</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="591" cache_read_input_tokens="36618" cache_creation="{'ephemeral_5m_input_tokens': 591, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01Do3D2uJhvZMq9JGxp6o8yF">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/handle_no_changes.py</param>
+    <param name="old_string">@click.command(name="handle-no-changes")
+@click.option("--pr-number", type=int, required=T...[truncated 735 chars]...  original_title: str,
+    recent_commits: str | None,
+    run_url: str | None,
+) -&gt; None:</param>
+    <param name="new_string">@click.command(name="handle-no-changes")
+@click.option("--pr-number", type=int, required=T...[truncated 641 chars]...  original_title: str,
+    recent_commits: str | None,
+    run_url: str | None,
+) -&gt; None:</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="591" cache_read_input_tokens="36618" cache_creation="{'ephemeral_5m_input_tokens': 591, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01Y5fqCwSRWSVnjZM5hqzz7R">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/handle_no_changes.py</param>
+    <param name="old_string">    # Build PR title and body
+    new_title = _build_no_changes_title(plan_id=plan_id, ori...[truncated 110 chars]..._branch=base_branch,
+        recent_commits=recent_commits,
+        run_url=run_url,
+    )</param>
+    <param name="new_string">    # Build PR title and body
+    new_title = _build_no_changes_title(pr_number=pr_number,...[truncated 118 chars]..._branch=base_branch,
+        recent_commits=recent_commits,
+        run_url=run_url,
+    )</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="591" cache_read_input_tokens="36618" cache_creation="{'ephemeral_5m_input_tokens': 591, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01QqgQyMB4r78HyBtyfDNT4E">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/handle_no_changes.py</param>
+    <param name="old_string">    # 3. Set lifecycle stage to impl
+    try:
+        backend.update_metadata(
+            repo_root,
+            str(plan_id),
+            metadata={"lifecycle_stage": "impl"},
+        )</param>
+    <param name="new_string">    # 3. Set lifecycle stage to impl
+    try:
+        backend.update_metadata(
+            repo_root,
+            str(pr_number),
+            metadata={"lifecycle_stage": "impl"},
+        )</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="591" cache_read_input_tokens="36618" cache_creation="{'ephemeral_5m_input_tokens': 591, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01Pk5VT6Yu2shqserJPi1g9B">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/handle_no_changes.py</param>
+    <param name="old_string">    # 5. Add comment to plan via PlanBackend
+    try:
+        comment = _build_issue_comment(pr_number=pr_number)
+        backend.add_comment(repo_root, str(plan_id), comment)</param>
+    <param name="new_string">    # 5. Add comment to plan via PlanBackend
+    try:
+        comment = _build_issue_comment(pr_number=pr_number)
+        backend.add_comment(repo_root, str(pr_number), comment)</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="591" cache_read_input_tokens="36618" cache_creation="{'ephemeral_5m_input_tokens': 591, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_011sTLdcMumRn62TgrW19QfF">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/handle_no_changes.py</param>
+    <param name="old_string">    # Success - output JSON and exit 0
+    result = HandleNoChangesSuccess(
+        succes...[truncated 10 chars]...umber,
+        plan_id=plan_id,
+    )
+    click.echo(json.dumps(asdict(result), indent=2))</param>
+    <param name="new_string">    # Success - output JSON and exit 0
+    result = HandleNoChangesSuccess(
+        success=True,
+        pr_number=pr_number,
+    )
+    click.echo(json.dumps(asdict(result), indent=2))</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="591" cache_read_input_tokens="36618" cache_creation="{'ephemeral_5m_input_tokens': 591, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011DgnFEX2HFH7SovsDHXvDS">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/handle_no_changes.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01A3P5hoPioa4jpDeEmd94Qh">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/handle_no_changes.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01CbYcAcEi5uscKerwpBR6gj">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/handle_no_changes.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01Do3D2uJhvZMq9JGxp6o8yF">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/handle_no_changes.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01Y5fqCwSRWSVnjZM5hqzz7R">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/handle_no_changes.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01QqgQyMB4r78HyBtyfDNT4E">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/handle_no_changes.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01Pk5VT6Yu2shqserJPi1g9B">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/handle_no_changes.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_011sTLdcMumRn62TgrW19QfF">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/handle_no_changes.py has been updated successfully.
+  </tool_result>
+  <assistant>## File 3: track_learn_result.py
+
+This file has `--plan-id` with `type=str`, so it should become `--pr-id` / `pr_id`:</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="3302" cache_read_input_tokens="37209" cache_creation="{'ephemeral_5m_input_tokens': 3302, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01W5HY8mpQmseFQ4gfFzbDV3">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/track_learn_result.py</param>
+    <param name="old_string">@click.command(name="track-learn-result")
+@click.option(
+    "--plan-id",
+    required=Tru...[truncated 565 chars]..._id: str,
+    status: str,
+    learn_plan: int | None,
+    plan_pr: int | None,
+) -&gt; None:</param>
+    <param name="new_string">@click.command(name="track-learn-result")
+@click.option(
+    "--pr-id",
+    required=True,...[truncated 561 chars]..._id: str,
+    status: str,
+    learn_plan: int | None,
+    plan_pr: int | None,
+) -&gt; None:</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="3302" cache_read_input_tokens="37209" cache_creation="{'ephemeral_5m_input_tokens': 3302, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01BotK6VPb4LEo4RnCHAbryQ">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/track_learn_result.py</param>
+    <param name="old_string">    # Update plan-header with learn result via PlanBackend
+    try:
+        backend.update...[truncated 1068 chars]...        learn_plan_pr=plan_pr,
+    )
+
+    click.echo(json.dumps(asdict(result), indent=2))</param>
+    <param name="new_string">    # Update plan-header with learn result via PlanBackend
+    try:
+        backend.update...[truncated 1060 chars]...        learn_plan_pr=plan_pr,
+    )
+
+    click.echo(json.dumps(asdict(result), indent=2))</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="3302" cache_read_input_tokens="37209" cache_creation="{'ephemeral_5m_input_tokens': 3302, 'ephemeral_1h_input_tokens': 0}" output_tokens="1486" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01W5HY8mpQmseFQ4gfFzbDV3">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/track_learn_result.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01BotK6VPb4LEo4RnCHAbryQ">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/track_learn_result.py has been updated successfully.
+  </tool_result>
+  <assistant>## File 4: fetch_sessions.py</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="1727" cache_read_input_tokens="40511" cache_creation="{'ephemeral_5m_input_tokens': 1727, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01REt7i94pz4uemFZPzYsfrr">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/fetch_sessions.py</param>
+    <param name="old_string">@click.command(name="fetch-sessions")
+@click.option(
+    "--plan-id",
+    required=True,
+ ...[truncated 211 chars]...fetch_sessions(
+    ctx: click.Context,
+    plan_id: int,
+    output_dir: Path,
+) -&gt; None:</param>
+    <param name="new_string">@click.command(name="fetch-sessions")
+@click.option(
+    "--pr-number",
+    required=True,...[truncated 215 chars]...tch_sessions(
+    ctx: click.Context,
+    pr_number: int,
+    output_dir: Path,
+) -&gt; None:</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="1727" cache_read_input_tokens="40511" cache_creation="{'ephemeral_5m_input_tokens': 1727, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01SSnv7M6LTpsQv9zwtU9E5W">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/fetch_sessions.py</param>
+    <param name="old_string">    """Fetch preprocessed sessions from a planned-pr-context branch.
+
+    Reads the manife...[truncated 122 chars]...root(ctx)
+    git = require_git(ctx)
+
+    session_branch = f"planned-pr-context/{plan_id}"</param>
+    <param name="new_string">    """Fetch preprocessed sessions from a planned-pr-context branch.
+
+    Reads the manife...[truncated 126 chars]...ot(ctx)
+    git = require_git(ctx)
+
+    session_branch = f"planned-pr-context/{pr_number}"</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="1727" cache_read_input_tokens="40511" cache_creation="{'ephemeral_5m_input_tokens': 1727, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01B8EECU2PwPCSNFJmQemSHM">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/fetch_sessions.py</param>
+    <param name="old_string">    result: dict[str, object] = {
+        "success": True,
+        "pr_number": plan_id,
+ ...[truncated 36 chars]...st": manifest,
+        "files": downloaded_files,
+    }
+    click.echo(json.dumps(result))</param>
+    <param name="new_string">    result: dict[str, object] = {
+        "success": True,
+        "pr_number": pr_number,...[truncated 38 chars]...st": manifest,
+        "files": downloaded_files,
+    }
+    click.echo(json.dumps(result))</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="1727" cache_read_input_tokens="40511" cache_creation="{'ephemeral_5m_input_tokens': 1727, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01REt7i94pz4uemFZPzYsfrr">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/fetch_sessions.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01SSnv7M6LTpsQv9zwtU9E5W">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/fetch_sessions.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01B8EECU2PwPCSNFJmQemSHM">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/fetch_sessions.py has been updated successfully.
+  </tool_result>
+  <assistant>## File 5: push_session.py</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="1231" cache_read_input_tokens="42238" cache_creation="{'ephemeral_5m_input_tokens': 1231, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01KnkpDSG1EAMvkqU4qRVET7">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/push_session.py</param>
+    <param name="old_string">def _update_manifest(
+    *,
+    existing_manifest: dict | None,
+    plan_id: int,
+    new...[truncated 563 chars]..."]]
+    sessions.append(new_entry)
+    manifest["sessions"] = sessions
+    return manifest</param>
+    <param name="new_string">def _update_manifest(
+    *,
+    existing_manifest: dict | None,
+    pr_number: int,
+    n...[truncated 567 chars]..."]]
+    sessions.append(new_entry)
+    manifest["sessions"] = sessions
+    return manifest</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="1231" cache_read_input_tokens="42238" cache_creation="{'ephemeral_5m_input_tokens': 1231, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01TCSbijdne4KbiCRtW8e8r5">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/push_session.py</param>
+    <param name="old_string">@click.command(name="push-session")
+@click.option(
+    "--session-file",
+    required=True...[truncated 765 chars]..., "impl", "address"],
+    source: Literal["local", "remote"],
+    plan_id: int,
+) -&gt; None:</param>
+    <param name="new_string">@click.command(name="push-session")
+@click.option(
+    "--session-file",
+    required=True...[truncated 769 chars]..."impl", "address"],
+    source: Literal["local", "remote"],
+    pr_number: int,
+) -&gt; None:</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="1231" cache_read_input_tokens="42238" cache_creation="{'ephemeral_5m_input_tokens': 1231, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01Hu3pmZYbJdmrpNYbxGK95S">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/push_session.py</param>
+    <param name="old_string">    """Preprocess and push a session to the planned-pr-context branch with accumulation.
+
+...[truncated 1054 chars]...f"planned-pr-context/{plan_id}"
+    timestamp = time.now().replace(tzinfo=UTC).isoformat()</param>
+    <param name="new_string">    """Preprocess and push a session to the planned-pr-context branch with accumulation.
+
+...[truncated 1058 chars]...planned-pr-context/{pr_number}"
+    timestamp = time.now().replace(tzinfo=UTC).isoformat()</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="1231" cache_read_input_tokens="42238" cache_creation="{'ephemeral_5m_input_tokens': 1231, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01VsNHCT9gjuD4L9u6Vkg3b2">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/push_session.py</param>
+    <param name="old_string">    manifest = _update_manifest(
+        existing_manifest=existing_manifest,
+        plan...[truncated 264 chars]...to_commit,
+        message=f"Push {stage} session {session_id} for plan #{plan_id}",
+    )</param>
+    <param name="new_string">    manifest = _update_manifest(
+        existing_manifest=existing_manifest,
+        pr_n...[truncated 270 chars]..._commit,
+        message=f"Push {stage} session {session_id} for plan #{pr_number}",
+    )</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="1231" cache_read_input_tokens="42238" cache_creation="{'ephemeral_5m_input_tokens': 1231, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01P5jftnufEM488PipZj2wuJ">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/push_session.py</param>
+    <param name="old_string">    # Step 7: Update plan metadata
+    backend = require_plan_backend(ctx)
+    plan_id_str...[truncated 901 chars]...stage": stage,
+        "files": filenames,
+    }
+    click.echo(json.dumps(result_output))</param>
+    <param name="new_string">    # Step 7: Update plan metadata
+    backend = require_plan_backend(ctx)
+    pr_number_s...[truncated 911 chars]...stage": stage,
+        "files": filenames,
+    }
+    click.echo(json.dumps(result_output))</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="1231" cache_read_input_tokens="42238" cache_creation="{'ephemeral_5m_input_tokens': 1231, 'ephemeral_1h_input_tokens': 0}" output_tokens="3314" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01KnkpDSG1EAMvkqU4qRVET7">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/push_session.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01TCSbijdne4KbiCRtW8e8r5">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/push_session.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01Hu3pmZYbJdmrpNYbxGK95S">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/push_session.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01VsNHCT9gjuD4L9u6Vkg3b2">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/push_session.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01P5jftnufEM488PipZj2wuJ">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/push_session.py has been updated successfully.
+  </tool_result>
+  <assistant>## File 6: upload_impl_session.py</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="3731" cache_read_input_tokens="43469" cache_creation="{'ephemeral_5m_input_tokens': 3731, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01Briaa7MtWSt2vag7tfVYzc">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/upload_impl_session.py</param>
+    <param name="old_string">    if not plan_ref.pr_id.isdigit():
+        _output_not_uploaded("non_numeric_plan_id")
+        return
+
+    plan_id = int(plan_ref.pr_id)</param>
+    <param name="new_string">    if not plan_ref.pr_id.isdigit():
+        _output_not_uploaded("non_numeric_plan_id")
+        return
+
+    pr_number = int(plan_ref.pr_id)</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="3731" cache_read_input_tokens="43469" cache_creation="{'ephemeral_5m_input_tokens': 3731, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01NyeTuDTsvVXASVadJzba8f">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/upload_impl_session.py</param>
+    <param name="old_string">    # Delegate to push-session for preprocessed upload with accumulation
+    repo_root = r...[truncated 765 chars]...racefully
+    click.echo(json.dumps({"uploaded": False, "reason": "push_session_failed"}))</param>
+    <param name="new_string">    # Delegate to push-session for preprocessed upload with accumulation
+    repo_root = r...[truncated 771 chars]...racefully
+    click.echo(json.dumps({"uploaded": False, "reason": "push_session_failed"}))</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="3731" cache_read_input_tokens="43469" cache_creation="{'ephemeral_5m_input_tokens': 3731, 'ephemeral_1h_input_tokens': 0}" output_tokens="872" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Briaa7MtWSt2vag7tfVYzc">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/upload_impl_session.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01NyeTuDTsvVXASVadJzba8f">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/upload_impl_session.py has been updated successfully.
+  </tool_result>
+  <assistant>Perfect! All the edits for batch 2 have been completed successfully. Let me create a summary of the changes:
+
+## Summary
+
+I've successfully completed the mechanical rename of Click CLI arguments/options for batch 2 (files with `--plan-id` option). Here's what was changed:
+
+### Files Modified:
+
+1. **`/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/ci_update_pr_body.py`**
+   - `--plan-id` → `--pr-number` 
+   - `plan_id: int` → `pr_number: int`
+
+2. **`/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/handle_no_changes.py`**
+   - Removed `--plan-id` option (merged with existing `--pr-number`)
+   - Removed `plan_id` parameter
+   - Updated `HandleNoChangesSuccess` dataclass (removed `plan_id` field)
+   - Updated helper functions `_build_no_changes_title` and `_build_pr_body`: `plan_id` → `pr_number`
+   - Replaced all internal usages of `plan_id` with `pr_number`
+
+3. **`/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/track_learn_result.py`**
+   - `--plan-id` (str type) → `--pr-id`
+   - `plan_id: str` → `pr_id: str`
+   - Updated all internal variable references
+
+4. **`/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/fetch_sessions.py`**
+   - `--plan-id` → `--pr-number`
+   - `plan_id: int` → `pr_number: int`
+   - Updated all internal variable references and output
+
+5. **`/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/push_session.py`**
+   - `--plan-id` → `--pr-number`
+   - `plan_id: int` → `pr_number: int`
+   - Updated helper function `_update_manifest`: `plan_id` → `pr_number`
+   - Updated all internal variable references including `plan_id_str` → `pr_number_str`
+
+6. **`/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/upload_impl_session.py`**
+   - Updated subprocess call: `"--plan-id"` → `"--pr-number"`
+   - Internal variable: `plan_id` → `pr_number`
+
+### Key Changes:
+- All Click decorator `@click.option` flags renamed according to the mapping
+- Function parameters renamed consistently
+- All internal variable references updated
+- Helper function parameters renamed where applicable
+- Dataclass fields updated (removed duplicate in `handle_no_changes.py`)
+- Subprocess command arguments updated
+
+All changes were mechanical and preserved the exact logic and behavior of each file. Help strings and error messages were left unchanged as instructed.</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="1113" cache_read_input_tokens="47200" cache_creation="{'ephemeral_5m_input_tokens': 1113, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>

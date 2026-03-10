@@ -1,0 +1,1253 @@
+<session>
+  <meta source="agent-a1da0d6" />
+  <meta branch="plnd/O9109-rename-click-args-pr-03-10-0822" />
+  <meta model="claude-sonnet-4-5-20250929" />
+  <user>You need to update test files to match renamed Click CLI flags/params. The source code has already been updated with these renames:
+
+| Old CLI Flag | New CLI Flag | Old Param | New Param |
+|--|--|--|--|
+| `--plan-number` (option) | `--pr-number` | `plan_number` | `pr_number` |
+| `--plan-id` (option, int type) | `--pr-number` | `plan_id` | `pr_number` |
+| `--plan-id` (option, str type) | `--pr-id` | `plan_id` | `pr_id` |
+| positional `plan_number` | positional `pr_number` | `plan_number` | `pr_number` |
+| `--plan`/`-p` (in admin.py) | `--pr`/`-p` | `plan` | `pr` |
+
+**SPECIAL CASE for dispatch_cmd.py:**
+- `DispatchResult.plan_number` → `DispatchResult.pr_number`
+- `DispatchResult.pr_number` (impl) → `DispatchResult.impl_pr_number`
+- `DispatchResult.pr_url` (impl) → `DispatchResult.impl_pr_url`
+
+**IMPORTANT RULES:**
+- Only rename CLI flags in test invocations (e.g., `["--plan-id", "123"]` → `["--pr-number", "123"]`)
+- Only rename function parameter references and dataclass field references
+- Do NOT rename help strings, error message text, or comments
+- Do NOT rename plan_backend, plan_store, plan_content, plan_title, plan_url, plan_body, plan_type, plan_file, plan_path variables
+- Do NOT rename `plan_number` in `land_execute` tests — that command was NOT renamed
+- Do NOT rename `plan_number` in `land/test_render_land_script.py` — that's for land_execute, NOT in scope
+
+Update these test files:
+
+1. `tests/unit/cli/commands/test_admin_test_workflow.py` - `--plan`/`-p` → `--pr`/`-p`
+2. `tests/unit/cli/commands/pr/submit_pipeline/test_prepare_state.py` - check for `plan_number`/`plan_id` references
+3. `tests/unit/cli/commands/land/test_render_land_script.py` - DO NOT rename `plan_number` here (it's for land-execute which was not renamed). Only check if there are other plan_id references.
+4. `tests/unit/cli/test_pr_json.py` - check for `plan_number`/`plan_id` references to DispatchResult
+5. `tests/unit/sessions/test_manifest.py` - check for `plan_number`/`plan_id` references
+6. `tests/unit/commands/wt/test_list_helpers.py` - check for `plan_number`/`plan_id` references
+7. `tests/commands/pr/test_remote_paths.py` - check for `plan_number`/`plan_id` references related to dispatch
+8. `tests/commands/launch/test_launch_remote_paths.py` - check for `plan_number`/`plan_id` references
+9. `tests/commands/launch/test_launch_cmd.py` - check for `plan_number`/`plan_id` references
+10. `tests/commands/implement/test_target_detection.py` - check for `plan_number`/`plan_id` references
+11. `tests/tui/data/test_provider.py` - check for `plan_number`/`plan_id` references
+12. `tests/tui/app/test_async_operations.py` - check for `plan_number`/`plan_id` references
+13. `tests/packages/erk_shared/test_impl_context.py` - check for `plan_number`/`plan_id` references
+14. `tests/core/test_impl_folder.py` - check for `plan_number`/`plan_id` references
+15. `tests/core/test_plan_duplicate_checker.py` - check for `plan_number`/`plan_id` references
+16. `tests/core/test_prompt_executor.py` - check for `plan_number`/`plan_id` references
+
+For each file, read it first, then use the Edit tool to make changes ONLY where the renamed Click parameters are referenced (CLI invocations, function kwargs, dataclass field access). Do NOT modify anything that doesn't need changing. Be thorough — check every occurrence.</user>
+  <assistant>I'll systematically update each test file to match the renamed Click CLI flags and parameters. Let me start by reading each file and making the necessary changes.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="20945" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 20945, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_014FX5Lpyj4AQrqtVWudb4Da">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/test_admin_test_workflow.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="20945" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 20945, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01CfmHDKa1KpLK8tS7nXJoj8">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_prepare_state.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="20945" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 20945, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01MNi7BA7WrcUc8tMyAmpGQu">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/land/test_render_land_script.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="20945" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 20945, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_011nTRe5N8toFwNVE95eSdqc">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/test_pr_json.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="20945" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 20945, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_0135hfY9LRzRaBhkEPgnAHrc">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/sessions/test_manifest.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="20945" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 20945, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014FX5Lpyj4AQrqtVWudb4Da">
+     1→"""Unit tests for admin test-plan-implement-gh-workflow command."""
+     2→
+     3→from click.testing import CliRunner
+     4→
+     5→from erk.cli.cli import cli
+     6→from tests.fakes.gateway.git import FakeGit
+     7→from tests.fakes.gateway.github import FakeLocalGitHub
+     8→from tests.fakes.gateway.github_issues import FakeGitHubIssues
+     9→from tests.test_utils.env_helpers import erk_isolated_fs_env
+    10→
+    11→
+    12→def test_happy_path_with_existing_issue() -&gt; None:
+    13→    """Command succeeds with --plan flag, using existing plan number."""
+    14→    runner = CliRunner()
+    15→    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+    16→        fake_github = FakeLocalGitHub()
+    17→        fake_issues = FakeGitHubIssues()
+    18→        ctx = env.build_context(
+    19→            current_branch="my-feature",
+    20→            github=fake_github,
+    21→            issues=fake_issues,
+    22→        )
+    23→
+    24→        result = runner.invoke(
+    25→            cli, ["admin", "test-plan-implement-gh-workflow", "--plan", "42"], obj=ctx
+    26→        )
+    27→
+    28→        assert result.exit_code == 0, f"Command failed: {result.output}"
+    29→        # Verify plan 42 was used
+    30→        assert "Using existing plan #42" in result.output
+
+... [111 lines omitted] ...
+
+    61→        assert result.exit_code == 0, f"Command failed: {result.output}"
+    98→        assert result.exit_code == 0, f"Command failed: {result.output}"
+   107→def test_error_no_github_remote() -&gt; None:
+   108→    """Command fails with clear error when repo has no GitHub remote."""
+   125→def test_error_detached_head() -&gt; None:
+   126→    """Command fails with clear error when in detached HEAD state."""
+  </tool_result>
+  <tool_result tool="toolu_01CfmHDKa1KpLK8tS7nXJoj8">
+     1→"""Unit tests for prepare_state pipeline step."""
+     2→
+     3→import json
+     4→from pathlib import Path
+     5→
+     6→from erk.cli.commands.pr.submit_pipeline import (
+     7→    SubmitError,
+     8→    SubmitState,
+     9→    prepare_state,
+    10→)
+    11→from erk_shared.impl_folder import get_impl_dir
+    12→from tests.fakes.gateway.git import FakeGit
+    13→from tests.test_utils.test_context import context_for_test
+    14→
+    15→BRANCH = "test/branch"
+    16→"""Test branch name used across tests."""
+    17→
+    18→
+    19→def _make_state(
+    20→    *,
+    21→    cwd: Path,
+    22→    repo_root: Path | None = None,
+    23→    branch_name: str = "",
+    24→    parent_branch: str = "",
+    25→    trunk_branch: str = "",
+    26→    use_graphite: bool = False,
+    27→    force: bool = False,
+    28→    debug: bool = False,
+    29→    session_id: str = "test-session",
+    30→    plan_id: str | None = None,
+
+... [208 lines omitted] ...
+
+    89→def test_detached_head_returns_error(tmp_path: Path) -&gt; None:
+    90→    """current_branch=None =&gt; SubmitError(error_type='no_branch')."""
+   100→    assert isinstance(result, SubmitError)
+   101→    assert result.error_type == "no_branch"
+   104→def test_issue_linkage_mismatch_returns_error(tmp_path: Path) -&gt; None:
+   108→    comes from ref.json without any mismatch error.
+   137→    # No mismatch error since branch cannot provide issue number
+  </tool_result>
+  <tool_result tool="toolu_01MNi7BA7WrcUc8tMyAmpGQu">
+     1→"""Tests for render_land_execution_script()."""
+     2→
+     3→from pathlib import Path
+     4→
+     5→from erk.cli.commands.land_cmd import render_land_execution_script
+     6→
+     7→
+     8→def test_render_land_execution_script_uses_shell_variables_for_pr_and_branch() -&gt; None:
+     9→    """The script uses $PR_NUMBER and $BRANCH from positional arguments."""
+    10→    script = render_land_execution_script(
+    11→        pr_number=123,
+    12→        branch="feature-branch",
+    13→        worktree_path=None,
+    14→        is_current_branch=False,
+    15→        objective_number=None,
+    16→        plan_number=None,
+    17→        use_graphite=False,
+    18→        skip_learn=False,
+    19→        cleanup_confirmed=True,
+    20→        target_path=Path("/repo"),
+    21→    )
+    22→
+    23→    # Should contain shell variable definitions
+    24→    assert 'PR_NUMBER="${1:?Error: PR number required}"' in script
+    25→    assert 'BRANCH="${2:?Error: Branch name required}"' in script
+    26→
+    27→    # Should use shell variables in the command, not hardcoded values
+    28→    assert '--pr-number="$PR_NUMBER"' in script
+    29→    assert '--branch="$BRANCH"' in script
+    30→
+
+... [218 lines omitted] ...
+
+   203→def test_render_land_execution_script_stops_on_execute_failure() -&gt; None:
+  </tool_result>
+  <tool_result tool="toolu_011nTRe5N8toFwNVE95eSdqc">
+     1→"""Tests for erk pr list/view --json output and --schema."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→from datetime import UTC, datetime
+     6→
+     7→from erk.cli.commands.pr.list_cmd import PrListResult
+     8→from erk.cli.commands.pr.view_cmd import PrViewResult, _serialize_header_fields
+     9→
+    10→
+    11→class TestPrListResult:
+    12→    """Tests for PrListResult JSON serialization."""
+    13→
+    14→    def test_to_json_dict_structure(self) -&gt; None:
+    15→        result = PrListResult(
+    16→            plans=[{"plan_id": 42, "full_title": "My Plan"}],
+    17→            count=1,
+    18→        )
+    19→
+    20→        data = result.to_json_dict()
+    21→
+    22→        assert data == {
+    23→            "plans": [{"plan_id": 42, "full_title": "My Plan"}],
+    24→            "count": 1,
+    25→        }
+    26→
+    27→    def test_empty_plans(self) -&gt; None:
+    28→        result = PrListResult(plans=[], count=0)
+    29→
+    30→        data = result.to_json_dict()
+
+... [114 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_0135hfY9LRzRaBhkEPgnAHrc">
+     1→"""Tests for shared manifest reader."""
+     2→
+     3→import json
+     4→from pathlib import Path
+     5→
+     6→from erk_shared.sessions.manifest import read_session_manifest
+     7→from tests.fakes.gateway.git import FakeGit
+     8→
+     9→
+    10→def test_returns_none_when_ref_not_found(tmp_path: Path) -&gt; None:
+    11→    """Returns None when read_file_from_ref returns None (file not on ref)."""
+    12→    fake_git = FakeGit()
+    13→
+    14→    result = read_session_manifest(
+    15→        fake_git,
+    16→        repo_root=tmp_path,
+    17→        session_branch="planned-pr-context/100",
+    18→    )
+    19→
+    20→    assert result is None
+    21→
+    22→
+    23→def test_returns_none_for_empty_content(tmp_path: Path) -&gt; None:
+    24→    """Returns None when manifest file exists but is empty."""
+    25→    fake_git = FakeGit(
+    26→        ref_file_contents={
+    27→            ("origin/planned-pr-context/100", ".erk/sessions/manifest.json"): b"   ",
+    28→        },
+    29→    )
+    30→
+
+... [47 lines omitted] ...
+  </tool_result>
+  <assistant>Let me continue reading the remaining files:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="15818" cache_read_input_tokens="20945" cache_creation="{'ephemeral_5m_input_tokens': 15818, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01B6uEqP4wvPwb62keyR4GdJ">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/commands/wt/test_list_helpers.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="15818" cache_read_input_tokens="20945" cache_creation="{'ephemeral_5m_input_tokens': 15818, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01R4SkHQkFuEzADEuEddXmXT">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_remote_paths.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="15818" cache_read_input_tokens="20945" cache_creation="{'ephemeral_5m_input_tokens': 15818, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_016CarEa6vDn8CAVyw4CGMKY">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/launch/test_launch_remote_paths.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="15818" cache_read_input_tokens="20945" cache_creation="{'ephemeral_5m_input_tokens': 15818, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01KzBg9V25jvqDMfSPwmrLrk">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/launch/test_launch_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="15818" cache_read_input_tokens="20945" cache_creation="{'ephemeral_5m_input_tokens': 15818, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01HS93QqbGVZuq8dPLtPHmrL">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/implement/test_target_detection.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="15818" cache_read_input_tokens="20945" cache_creation="{'ephemeral_5m_input_tokens': 15818, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01B6uEqP4wvPwb62keyR4GdJ">
+     1→"""Unit tests for wt list command helper functions."""
+     2→
+     3→from datetime import UTC, datetime, timedelta
+     4→from pathlib import Path
+     5→
+     6→from erk.cli.commands.wt.list_cmd import (
+     7→    _format_impl_cell,
+     8→    _format_last_commit_cell,
+     9→    _format_pr_cell,
+    10→    _format_sync_from_batch,
+    11→    _get_impl_issue,
+    12→    _get_sync_status,
+    13→)
+    14→from erk_shared.gateway.git.abc import BranchSyncInfo
+    15→from erk_shared.gateway.github.types import PullRequestInfo
+    16→from tests.fakes.gateway.git import FakeGit
+    17→from tests.fakes.tests.context import create_test_context
+    18→
+    19→
+    20→def test_get_sync_status_current() -&gt; None:
+    21→    """Test sync status returns 'current' when branch is up-to-date."""
+    22→    worktree_path = Path("/repo/worktree")
+    23→    git = FakeGit(
+    24→        ahead_behind={(worktree_path, "feature"): (0, 0)},
+    25→    )
+    26→    ctx = create_test_context(git=git)
+    27→
+    28→    result = _get_sync_status(ctx, worktree_path, "feature")
+    29→
+    30→    assert result == "current"
+
+... [339 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01R4SkHQkFuEzADEuEddXmXT">
+     1→"""Tests for PR command remote paths (--repo flag / NoRepoSentinel)."""
+     2→
+     3→from datetime import UTC, datetime
+     4→
+     5→from click.testing import CliRunner
+     6→
+     7→from erk.cli.cli import cli
+     8→from erk_shared.context.types import NoRepoSentinel
+     9→from erk_shared.core.plan_list_service import PlanListData
+    10→from erk_shared.gateway.github.issues.types import IssueInfo, PRReference
+    11→from erk_shared.gateway.github.metadata.core import MetadataBlock, render_metadata_block
+    12→from erk_shared.plan_store.planned_pr_lifecycle import build_plan_stage_body
+    13→from erk_shared.plan_store.types import Plan, PlanState
+    14→from tests.fakes.gateway.console import FakeConsole
+    15→from tests.fakes.gateway.core import FakePlanListService
+    16→from tests.fakes.gateway.remote_github import FakeRemoteGitHub
+    17→from tests.fakes.tests.prompt_executor import FakePromptExecutor
+    18→from tests.test_utils.test_context import context_for_test
+    19→
+    20→
+    21→def _make_fake_remote(
+    22→    *,
+    23→    issues: dict[int, IssueInfo] | None = None,
+    24→    issue_comments: dict[int, list[str]] | None = None,
+    25→    pr_references: dict[int, list[PRReference]] | None = None,
+    26→) -&gt; FakeRemoteGitHub:
+    27→    """Create a FakeRemoteGitHub with sensible defaults."""
+    28→    return FakeRemoteGitHub(
+    29→        authenticated_user="test-user",
+    30→        default_branch_name="main",
+
+... [627 lines omitted] ...
+
+   123→    """Test pr view --repo without identifier gives error."""
+   253→    """Test pr check --repo without identifier gives error."""
+   280→    """Test --repo with invalid format gives helpful error."""
+   497→    assert result.exit_code == 0, f"Unexpected failure:\n{result.output}"
+   565→    """Test pr dispatch --repo without plan number gives error."""
+   594→    assert result.exit_code == 0, f"Unexpected failure:\n{result.output}"
+   612→    assert result.exit_code == 0, f"Unexpected failure:\n{result.output}"
+   631→    assert result.exit_code == 0, f"Unexpected failure:\n{result.output}"
+   649→    assert result.exit_code == 0, f"Unexpected failure:\n{result.output}"
+  </tool_result>
+  <tool_result tool="toolu_016CarEa6vDn8CAVyw4CGMKY">
+     1→"""Tests for launch command with --repo flag (no local repo)."""
+     2→
+     3→from pathlib import Path
+     4→
+     5→from click.testing import CliRunner
+     6→from tests.fakes.gateway.remote_github import FakeRemoteGitHub
+     7→from tests.test_utils.test_context import context_for_test
+     8→
+     9→from erk.cli.cli import cli
+    10→from erk.cli.constants import WORKFLOW_COMMAND_MAP
+    11→from erk_shared.context.types import NoRepoSentinel
+    12→from erk_shared.gateway.remote_github.types import RemotePRInfo
+    13→
+    14→
+    15→def _make_fake_remote(
+    16→    *,
+    17→    prs: dict[int, RemotePRInfo] | None = None,
+    18→) -&gt; FakeRemoteGitHub:
+    19→    """Create a FakeRemoteGitHub with sensible defaults."""
+    20→    return FakeRemoteGitHub(
+    21→        authenticated_user="test-user",
+    22→        default_branch_name="main",
+    23→        default_branch_sha="abc123",
+    24→        next_pr_number=1,
+    25→        dispatch_run_id="run-123",
+    26→        issues=None,
+    27→        issue_comments=None,
+    28→        pr_references=None,
+    29→        prs=prs,
+    30→    )
+
+... [418 lines omitted] ...
+
+    77→    assert result.exit_code == 0, f"Unexpected failure:\n{result.output}"
+   164→    assert result.exit_code == 0, f"Unexpected failure:\n{result.output}"
+   200→    assert result.exit_code == 0, f"Unexpected failure:\n{result.output}"
+   238→    assert result.exit_code == 0, f"Unexpected failure:\n{result.output}"
+   275→    assert result.exit_code == 0, f"Unexpected failure:\n{result.output}"
+   337→    assert result.exit_code == 0, f"Unexpected failure:\n{result.output}"
+   415→    """Test --repo with invalid format gives helpful error."""
+   431→def test_plan_implement_remote_shows_usage_error() -&gt; None:
+   432→    """Test plan-implement with --repo gives usage error."""
+  </tool_result>
+  <tool_result tool="toolu_01KzBg9V25jvqDMfSPwmrLrk">
+     1→"""Tests for erk launch command."""
+     2→
+     3→from pathlib import Path
+     4→
+     5→from click.testing import CliRunner
+     6→from tests.fakes.gateway.git import FakeGit
+     7→from tests.fakes.gateway.github import FakeLocalGitHub
+     8→from tests.fakes.gateway.remote_github import FakeRemoteGitHub
+     9→from tests.test_utils.context_builders import build_workspace_test_context
+    10→from tests.test_utils.env_helpers import erk_isolated_fs_env
+    11→
+    12→from erk.cli.cli import cli
+    13→from erk.cli.constants import WORKFLOW_COMMAND_MAP
+    14→from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
+    15→from erk_shared.gateway.remote_github.types import RemotePRInfo
+    16→
+    17→
+    18→def _make_fake_remote(
+    19→    *,
+    20→    prs: dict[int, RemotePRInfo] | None = None,
+    21→) -&gt; FakeRemoteGitHub:
+    22→    """Create a FakeRemoteGitHub with sensible defaults."""
+    23→    return FakeRemoteGitHub(
+    24→        authenticated_user="test-user",
+    25→        default_branch_name="main",
+    26→        default_branch_sha="abc123",
+    27→        next_pr_number=1,
+    28→        dispatch_run_id="run-123",
+    29→        issues=None,
+    30→        issue_comments=None,
+
+... [628 lines omitted] ...
+
+   104→    """Test error when workflow name is not recognized."""
+   337→def test_workflow_launch_plan_implement_shows_usage_error(tmp_path: Path) -&gt; None:
+   620→    """Test error when PR is closed."""
+  </tool_result>
+  <tool_result tool="toolu_01HS93QqbGVZuq8dPLtPHmrL">
+     1→"""Tests for target detection and model normalization in implement command."""
+     2→
+     3→import click
+     4→import pytest
+     5→
+     6→from erk.cli.commands.implement_shared import detect_target_type, normalize_model_name
+     7→
+     8→# Target Detection Tests
+     9→
+    10→
+    11→def test_detect_plan_number_with_hash() -&gt; None:
+    12→    """Test detection of plan numbers with # prefix."""
+    13→    target_info = detect_target_type("#123")
+    14→    assert target_info.target_type == "plan_number"
+    15→    assert target_info.plan_number == "123"
+    16→
+    17→
+    18→def test_detect_plain_number_as_plan() -&gt; None:
+    19→    """Test that plain numbers are treated as plan numbers."""
+    20→    target_info = detect_target_type("123")
+    21→    assert target_info.target_type == "plan_number"
+    22→    assert target_info.plan_number == "123"
+    23→
+    24→
+    25→def test_detect_plan_url() -&gt; None:
+    26→    """Test detection of GitHub issue URLs as plan URLs."""
+    27→    url = "https://github.com/user/repo/issues/456"
+    28→    target_info = detect_target_type(url)
+    29→    assert target_info.target_type == "plan_url"
+    30→    assert target_info.plan_number == "456"
+
+... [83 lines omitted] ...
+
+   103→    """Test that invalid model names raise ClickException."""
+   104→    with pytest.raises(click.ClickException) as exc_info:
+  </tool_result>
+  <assistant>Let me continue reading the remaining files:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="32980" cache_read_input_tokens="36763" cache_creation="{'ephemeral_5m_input_tokens': 32980, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01SvjmhrAEzs2w6pywsDZiAn">
+    <param name="file_path">/home/runner/work/erk/erk/tests/tui/data/test_provider.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="32980" cache_read_input_tokens="36763" cache_creation="{'ephemeral_5m_input_tokens': 32980, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01G1jVZgsa1QypeLxiLTCvs5">
+    <param name="file_path">/home/runner/work/erk/erk/tests/tui/app/test_async_operations.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="32980" cache_read_input_tokens="36763" cache_creation="{'ephemeral_5m_input_tokens': 32980, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01ALVqb8gZ4V7gyQuBcwPBZC">
+    <param name="file_path">/home/runner/work/erk/erk/tests/packages/erk_shared/test_impl_context.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="32980" cache_read_input_tokens="36763" cache_creation="{'ephemeral_5m_input_tokens': 32980, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01DXYxrFBpdHqeU4vU1uXdRN">
+    <param name="file_path">/home/runner/work/erk/erk/tests/core/test_impl_folder.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="32980" cache_read_input_tokens="36763" cache_creation="{'ephemeral_5m_input_tokens': 32980, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_011PEJrQFX7cnXgXc6N1iXPF">
+    <param name="file_path">/home/runner/work/erk/erk/tests/core/test_plan_duplicate_checker.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="32980" cache_read_input_tokens="36763" cache_creation="{'ephemeral_5m_input_tokens': 32980, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Nmo4oHeacVDPahvykCwUWZ">
+    <param name="file_path">/home/runner/work/erk/erk/tests/core/test_prompt_executor.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="32980" cache_read_input_tokens="36763" cache_creation="{'ephemeral_5m_input_tokens': 32980, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01ALVqb8gZ4V7gyQuBcwPBZC">
+     1→"""Tests for impl_context utilities.
+     2→
+     3→Layer 3: Pure unit tests (zero dependencies).
+     4→
+     5→These tests verify the impl_context module functions work correctly with
+     6→basic filesystem operations.
+     7→"""
+     8→
+     9→import json
+    10→from pathlib import Path
+    11→
+    12→import pytest
+    13→
+    14→from erk_shared.impl_context import (
+    15→    build_impl_context_files,
+    16→    create_impl_context,
+    17→    impl_context_exists,
+    18→    remove_impl_context,
+    19→)
+    20→
+    21→FAKE_NOW_ISO = "2025-01-15T10:30:00+00:00"
+    22→
+    23→
+    24→def test_create_impl_context_success(tmp_path: Path) -&gt; None:
+    25→    """Test creating .erk/impl-context/ folder with all required files."""
+    26→    plan_content = "# Test Plan\n\n## Tasks\n\n1. First task\n2. Second task\n"
+    27→
+    28→    impl_context_dir = create_impl_context(
+    29→        plan_content=plan_content,
+    30→        plan_id="123",
+
+... [379 lines omitted] ...
+
+    61→    """Test error when .erk/impl-context/ folder already exists."""
+    66→    # Attempt to create again should raise FileExistsError
+    67→    with pytest.raises(FileExistsError, match=".erk/impl-context/ folder already exists"):
+    81→    """Test error when repo_root doesn't exist."""
+    84→    with pytest.raises(ValueError, match="Repository root does not exist"):
+    98→    """Test error when repo_root is a file, not a directory."""
+   103→    with pytest.raises(ValueError, match="Repository root is not a directory"):
+   141→    """Test error when .erk/impl-context/ folder doesn't exist."""
+   142→    with pytest.raises(FileNotFoundError, match=".erk/impl-context/ folder does not exist"):
+   147→    """Test error when repo_root doesn't exist."""
+   150→    with pytest.raises(ValueError, match="Repository root does not exist"):
+  </tool_result>
+  <tool_result tool="toolu_011PEJrQFX7cnXgXc6N1iXPF">
+     1→"""Tests for PlanDuplicateChecker."""
+     2→
+     3→from datetime import datetime
+     4→
+     5→from erk.core.plan_duplicate_checker import PlanDuplicateChecker
+     6→from erk_shared.plan_store.types import Plan, PlanState
+     7→from tests.fakes.tests.prompt_executor import FakePromptExecutor
+     8→
+     9→
+    10→def _make_plan(
+    11→    *,
+    12→    pr_identifier: str,
+    13→    title: str,
+    14→    body: str,
+    15→) -&gt; Plan:
+    16→    """Create a minimal Plan for testing."""
+    17→    return Plan(
+    18→        pr_identifier=pr_identifier,
+    19→        title=title,
+    20→        body=body,
+    21→        state=PlanState.OPEN,
+    22→        url=f"https://github.com/owner/repo/issues/{pr_identifier}",
+    23→        labels=["erk-pr", "erk-plan"],
+    24→        assignees=[],
+    25→        created_at=datetime(2025, 1, 1),
+    26→        updated_at=datetime(2025, 1, 1),
+    27→        metadata={},
+    28→        objective_id=None,
+    29→    )
+    30→
+
+... [235 lines omitted] ...
+
+    45→    assert result.error is None
+    68→    assert result.error is None
+    71→def test_executor_failure_graceful_degradation() -&gt; None:
+    72→    """Executor failure returns no duplicates with error message."""
+    74→        simulated_prompt_error="LLM unavailable",
+    84→    assert result.error is not None
+    85→    assert "LLM call failed" in result.error
+    98→    assert result.error is None
+   104→    """Malformed LLM response returns no duplicates with error."""
+   116→    assert result.error is not None
+   117→    assert "Malformed LLM response" in result.error
+   121→    """Valid JSON but wrong structure returns no duplicates with error."""
+   133→    assert result.error is not None
+   134→    assert "missing 'duplicates' list" in result.error
+   150→    assert result.error is None
+   209→    assert result.error is None
+   233→    assert result.error is None
+  </tool_result>
+  <tool_result tool="toolu_01Nmo4oHeacVDPahvykCwUWZ">
+     1→"""Tests for prompt_executor module."""
+     2→
+     3→import json
+     4→import os
+     5→from pathlib import Path
+     6→from unittest.mock import patch
+     7→
+     8→from erk.core.output_filter import extract_pr_metadata_from_text
+     9→from erk.core.prompt_executor import ClaudeCliPromptExecutor, format_prompt_error
+    10→
+    11→
+    12→def test_parse_stream_json_line_extracts_pr_metadata_from_string_content() -&gt; None:
+    13→    """Test that _parse_stream_json_line extracts PR metadata from string tool_result content."""
+    14→    executor = ClaudeCliPromptExecutor(console=None)
+    15→    worktree_path = Path("/test/repo")
+    16→    command = "/gt:pr-submit"
+    17→
+    18→    # Simulate a user message with tool_result containing string content (raw JSON)
+    19→    pr_metadata_json = json.dumps(
+    20→        {
+    21→            "success": True,
+    22→            "pr_number": 123,
+    23→            "pr_url": "https://github.com/owner/repo/pull/123",
+    24→            "pr_title": "Fix bug",
+    25→            "plan_number": 456,
+    26→        }
+    27→    )
+    28→    line = json.dumps(
+    29→        {
+    30→            "type": "user",
+
+... [561 lines omitted] ...
+
+   146→            "is_error": False,
+   156→    assert result["is_error"] is False
+   170→            "is_error": False,
+   181→    assert result["is_error"] is False
+   185→def test_parse_stream_json_line_extracts_result_error() -&gt; None:
+   186→    """Test that _parse_stream_json_line handles error results."""
+   191→    # Simulate an error result
+   195→            "subtype": "error",
+   196→            "is_error": True,
+   199→            "result": "An error occurred",
+   207→    assert result["is_error"] is True
+   208→    assert result["result_text"] == "An error occurred"
+   429→    # Edge cases and error handling
+   493→# Tests for format_prompt_error (pure function)
+   497→class TestFormatPromptError:
+   498→    """Tests for format_prompt_error() - pure function, no fakes needed."""
+   500→    def test_error_includes_exit_code_and_stderr(self) -&gt; None:
+   501→        """Error message includes exit code and stderr."""
+   502→        result = format_prompt_error(
+   511→    def test_error_includes_stdout_when_present(self) -&gt; None:
+   512→        """Error message includes stdout preview when available."""
+   513→        result = format_prompt_error(
+   516→            stdout='{"error": "rate_limited"}',
+   520→        assert 'stdout: {"error": "rate_limited"}' in result
+   522→    def test_error_with_both_stderr_and_stdout(self) -&gt; None:
+   523→        """Error message includes both stderr and stdout when both present."""
+   524→        result = format_prompt_error(
+   526→            stderr="Some error",
+   531→        assert "stderr: Some error" in result
+   534→    def test_error_without_stderr_or_stdout(self) -&gt; None:
+   535→        """Error message includes only exit code when no output."""
+   536→        result = format_prompt_error(
+   545→        """Stdout is truncated to 500 chars in error message."""
+   547→        result = format_prompt_error(
+  </tool_result>
+  <tool_result tool="toolu_01G1jVZgsa1QypeLxiLTCvs5">
+     1→"""Tests for async operations (address remote, rebase, land PR, dispatch, etc.)."""
+     2→
+     3→from pathlib import Path
+     4→
+     5→import pytest
+     6→
+     7→from erk.tui.app import ErkDashApp
+     8→from erk.tui.data.types import PlanFilters
+     9→from erk.tui.operations.logic import extract_learn_plan_number
+    10→from erk.tui.operations.types import OperationResult
+    11→from tests.fakes.gateway.plan_data_provider import FakePlanDataProvider, make_plan_row
+    12→from tests.fakes.gateway.pr_service import FakePrService
+    13→
+    14→
+    15→class _FakePopen:
+    16→    """Fake subprocess.Popen that yields configurable output lines."""
+    17→
+    18→    def __init__(self, *, lines: tuple[str, ...] = (), return_code: int = 0) -&gt; None:
+    19→        self._return_code = return_code
+    20→        self.stdout: list[str] = [line + "\n" for line in lines]
+    21→
+    22→    def wait(self) -&gt; int:
+    23→        return self._return_code
+    24→
+    25→
+    26→class TestAddressRemoteAsync:
+    27→    """Tests for _address_remote_async subprocess behavior.
+    28→
+    29→    Verifies that address_remote triggers a data refresh on success.
+    30→    """
+
+... [1390 lines omitted] ...
+
+    67→    async def test_address_remote_no_refresh_on_failure(
+    70→        """_address_remote_async should NOT refresh on subprocess failure."""
+    85→            return _FakePopen(lines=("dispatch failed",), return_code=1)
+   181→    async def test_rebase_remote_no_refresh_on_failure(
+   184→        """_rebase_remote_async should NOT refresh on failure."""
+   199→            return _FakePopen(lines=("dispatch failed",), return_code=1)
+   309→    async def test_land_pr_no_refresh_on_failure(
+   312→        """_land_pr_async should NOT refresh on failure."""
+   327→            return _FakePopen(lines=("land failed",), return_code=1)
+   655→    async def test_dispatch_to_queue_no_refresh_on_failure(
+   658→        """_dispatch_to_queue_async should NOT refresh on failure."""
+   673→            return _FakePopen(lines=("submit failed",), return_code=1)
+   984→    async def test_one_shot_dispatch_no_refresh_on_failure(
+   987→        """_one_shot_dispatch_async should NOT refresh on failure."""
+  1002→            return _FakePopen(lines=("dispatch failed",), return_code=1)
+  1056→    async def test_rewrite_remote_no_refresh_on_failure(
+  1059→        """_rewrite_remote_async should NOT refresh on subprocess failure."""
+  1074→            return _FakePopen(lines=("dispatch failed",), return_code=1)
+  1225→    async def test_cmux_checkout_shows_error_on_failure(
+  1228→        """_cmux_checkout_async should NOT refresh on failure."""
+  1243→            return _FakePopen(lines=("checkout failed",), return_code=1)
+  1351→    async def test_focus_silently_handles_subprocess_error(
+  1354→        """CalledProcessError should not propagate."""
+  1370→            return subprocess.CompletedProcess(args=[], returncode=1, stdout="", stderr="error")
+  1383→    async def test_focus_silently_handles_json_error(
+  </tool_result>
+  <tool_result tool="toolu_01DXYxrFBpdHqeU4vU1uXdRN">
+     1→"""Tests for implementation folder management utilities."""
+     2→
+     3→import json
+     4→from datetime import UTC, datetime
+     5→from pathlib import Path
+     6→
+     7→import pytest
+     8→
+     9→from erk_shared.gateway.github.issues.types import IssueInfo
+    10→from erk_shared.gateway.github.metadata.core import (
+    11→    find_metadata_block,
+    12→    parse_metadata_blocks,
+    13→)
+    14→from erk_shared.impl_folder import (
+    15→    IMPL_DIR_RELATIVE,
+    16→    _sanitize_branch_for_dirname,
+    17→    add_worktree_creation_comment,
+    18→    create_impl_folder,
+    19→    get_impl_dir,
+    20→    get_impl_path,
+    21→    has_plan_ref,
+    22→    read_last_dispatched_run_id,
+    23→    read_plan_author,
+    24→    read_plan_ref,
+    25→    resolve_impl_dir,
+    26→    save_plan_ref,
+    27→    validate_plan_linkage,
+    28→)
+    29→from tests.fakes.gateway.github_issues import FakeGitHubIssues
+    30→
+
+... [795 lines omitted] ...
+
+    96→    """Test that creating a plan folder when one exists raises error."""
+   103→    with pytest.raises(FileExistsError, match="Implementation folder already exists"):
+   213→    """Test add_worktree_creation_comment raises error when issue doesn't exist."""
+   216→    # Should raise RuntimeError (simulating gh CLI error)
+   217→    with pytest.raises(RuntimeError, match="Issue #999 not found"):
+   238→    plan_content = """&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+   314→    plan_content = """&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+   349→    plan_content = """&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+   427→    plan_content = """&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+   460→    plan_content = """&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+   519→    """Test save_plan_ref raises error when dir doesn't exist."""
+   522→    with pytest.raises(FileNotFoundError, match="Implementation directory does not exist"):
+  </tool_result>
+  <tool_result tool="toolu_01SvjmhrAEzs2w6pywsDZiAn">
+     1→"""Tests for plan data provider."""
+     2→
+     3→import json
+     4→from datetime import UTC, datetime
+     5→from pathlib import Path
+     6→
+     7→from erk.core.context import GlobalConfig
+     8→from erk.core.repo_discovery import RepoContext
+     9→from erk.tui.data.types import FetchTimings
+    10→from erk_shared.gateway.git.abc import WorktreeInfo
+    11→from erk_shared.gateway.github.issues.types import IssueInfo
+    12→from erk_shared.gateway.github.metadata.core import find_metadata_block
+    13→from erk_shared.gateway.github.types import (
+    14→    GitHubRepoId,
+    15→    GitHubRepoLocation,
+    16→    PullRequestInfo,
+    17→)
+    18→from erk_shared.gateway.plan_data_provider.real import RealPlanDataProvider
+    19→from erk_shared.gateway.pr_service.real import RealPrService
+    20→from erk_shared.plan_store.types import Plan, PlanState
+    21→from tests.fakes.gateway.browser import FakeBrowserLauncher
+    22→from tests.fakes.gateway.clipboard import FakeClipboard
+    23→from tests.fakes.gateway.git import FakeGit
+    24→from tests.fakes.gateway.github import FakeLocalGitHub
+    25→from tests.fakes.gateway.graphite import FakeGraphite
+    26→from tests.fakes.gateway.http import FakeHttpClient
+    27→from tests.fakes.tests.context import create_test_context
+    28→from tests.test_utils.plan_helpers import format_plan_header_body_for_test
+    29→
+    30→
+
+... [1952 lines omitted] ...
+
+  1443→        "&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n"
+  </tool_result>
+  <assistant>Now I'll update the files that need changes. Based on my analysis, I need to make the following updates:
+
+1. **test_admin_test_workflow.py**: Rename `--plan` to `--pr`
+2. **test_prepare_state.py**: Already uses correct naming (plan_id field in ref.json is now pr_id)
+3. **test_render_land_script.py**: Keep `plan_number` as is (it's for land-execute which was not renamed)
+4. **test_pr_json.py**: Check for references to PrListResult/PrViewResult (plan_id field)
+5. **test_list_helpers.py**: Check for plan_id references in ref.json
+6. **test_async_operations.py**: Check for `plan_id` references in land command
+7. **test_impl_context.py**: Check for `plan_id` references (this is now `pr_id`)
+8. **test_impl_folder.py**: Check for `plan_id` references (this is now `pr_id`)
+
+Let me start with the actual changes:</assistant>
+  <usage input_tokens="46573" cache_creation_input_tokens="29155" cache_read_input_tokens="69743" cache_creation="{'ephemeral_5m_input_tokens': 29155, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01WN1xxqeC444en5DRDV6NcG">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/test_admin_test_workflow.py</param>
+    <param name="old_string">def test_happy_path_with_existing_issue() -&gt; None:
+    """Command succeeds with --plan fla...[truncated 372 chars]...      cli, ["admin", "test-plan-implement-gh-workflow", "--plan", "42"], obj=ctx
+        )</param>
+    <param name="new_string">def test_happy_path_with_existing_issue() -&gt; None:
+    """Command succeeds with --pr flag,...[truncated 368 chars]...        cli, ["admin", "test-plan-implement-gh-workflow", "--pr", "42"], obj=ctx
+        )</param>
+  </tool_use>
+  <usage input_tokens="46573" cache_creation_input_tokens="29155" cache_read_input_tokens="69743" cache_creation="{'ephemeral_5m_input_tokens': 29155, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01N3sN6uWLLMonmNNtvMta2u">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/test_admin_test_workflow.py</param>
+    <param name="old_string">def test_happy_path_creating_new_issue() -&gt; None:
+    """Command succeeds without --plan, creating a new plan."""</param>
+    <param name="new_string">def test_happy_path_creating_new_issue() -&gt; None:
+    """Command succeeds without --pr, creating a new plan."""</param>
+  </tool_use>
+  <usage input_tokens="46573" cache_creation_input_tokens="29155" cache_read_input_tokens="69743" cache_creation="{'ephemeral_5m_input_tokens': 29155, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01MTQipA9LWvoGuTngLBppV6">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/test_admin_test_workflow.py</param>
+    <param name="old_string">        result = runner.invoke(
+            cli, ["admin", "test-plan-implement-gh-workflow", "--plan", "42"], obj=ctx
+        )</param>
+    <param name="new_string">        result = runner.invoke(
+            cli, ["admin", "test-plan-implement-gh-workflow", "--pr", "42"], obj=ctx
+        )</param>
+  </tool_use>
+  <usage input_tokens="46573" cache_creation_input_tokens="29155" cache_read_input_tokens="69743" cache_creation="{'ephemeral_5m_input_tokens': 29155, 'ephemeral_1h_input_tokens': 0}" output_tokens="1053" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01WN1xxqeC444en5DRDV6NcG">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/test_admin_test_workflow.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01N3sN6uWLLMonmNNtvMta2u">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/test_admin_test_workflow.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01MTQipA9LWvoGuTngLBppV6">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/test_admin_test_workflow.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me check test_prepare_state.py more carefully for any plan_id references:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="65544" cache_read_input_tokens="13992" cache_creation="{'ephemeral_5m_input_tokens': 65544, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_011cpdxbYapZ6uqpVQWBRisM">
+    <param name="pattern">plan_id</param>
+    <param name="path">/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="65544" cache_read_input_tokens="13992" cache_creation="{'ephemeral_5m_input_tokens': 65544, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011cpdxbYapZ6uqpVQWBRisM">
+tests/unit/cli/commands/pr/submit_pipeline/test_extract_diff.py:26:    plan_id: str | None = None,
+tests/unit/cli/commands/pr/submit_pipeline/test_extract_diff.py:49:        plan_id=plan_id,
+tests/unit/cli/commands/pr/submit_pipeline/test_link_pr_to_objective_nodes.py:69:        plan_id=None,
+tests/unit/cli/commands/pr/submit_pipeline/test_link_pr_to_objective_nodes.py:107:        plan_id="100",
+tests/unit/cli/commands/pr/submit_pipeline/test_fetch_plan_context.py:24:    plan_id: str | None = None,
+tests/unit/cli/commands/pr/submit_pipeline/test_fetch_plan_context.py:47:        plan_id=plan_id,
+tests/unit/cli/commands/pr/submit_pipeline/test_core_submit_flow.py:29:    plan_id: str | None = None,
+tests/unit/cli/commands/pr/submit_pipeline/test_core_submit_flow.py:53:        plan_id=plan_id,
+tests/unit/cli/commands/pr/submit_pipeline/test_run_pipeline.py:96:    assert state.plan_id is None
+tests/unit/cli/commands/pr/submit_pipeline/test_prepare_state.py:30:    plan_id: str | None = None,
+tests/unit/cli/commands/pr/submit_pipeline/test_prepare_state.py:53:        plan_id=plan_id,
+tests/unit/cli/commands/pr/submit_pipeline/test_prepare_state.py:107:    P-prefix branches cannot provide an issue number. The test verifies plan_id
+tests/unit/cli/commands/pr/submit_pipeline/test_prepare_state.py:118:                "plan_id": "99",
+tests/unit/cli/commands/pr/submit_pipeline/test_prepare_state.py:139:    assert result.plan_id == "99"  # From ref.json
+tests/unit/cli/commands/pr/submit_pipeline/test_prepare_state.py:146:    plan-ref.json, plan_id remains None.
+tests/unit/cli/commands/pr/submit_pipeline/test_prepare_state.py:164:    assert result.plan_id is None
+tests/unit/cli/commands/pr/submit_pipeline/test_prepare_state.py:170:def test_no_plan_id_from_branch(tmp_path: Path) -&gt; None:
+tests/unit/cli/commands/pr/submit_pipeline/test_prepare_state.py:171:    """Regular branch (no P-prefix) =&gt; plan_id=None."""
+tests/unit/cli/commands/pr/submit_pipeline/test_prepare_state.py:183:    assert result.plan_id is None
+tests/unit/cli/commands/pr/submit_pipeline/test_prepare_state.py:186:def test_plan_id_from_impl_folder(tmp_path: Path) -&gt; None:
+tests/unit/cli/commands/pr/submit_pipeline/test_prepare_state.py:187:    """Branch-scoped impl dir with ref.json present =&gt; plan_id populated."""
+tests/unit/cli/commands/pr/submit_pipeline/test_prepare_state.py:195:                "plan_id": "55",
+tests/unit/cli/commands/pr/submit_pipeline/test_prepare_state.py:215:    assert result.plan_id == "55"
+tests/unit/cli/commands/pr/submit_pipeline/test_enhance_with_graphite.py:28:    plan_id: str | None = None,
+tests/unit/cli/commands/pr/submit_pipeline/test_enhance_with_graphite.py:53:        plan_id=plan_id,
+tests/unit/cli/commands/pr/submit_pipeline/test_generate_description.py:24:    plan_id: str | None = None,
+tests/unit/cli/commands/pr/submit_pipeline/test_generate_description.py:47:        plan_id=plan_id,
+tests/unit/cli/commands/pr/submit_pipeline/test_finalize_pr.py:45:    plan_id: str | None = None,
+tests/unit/cli/commands/pr/submit_pipeline/test_finalize_pr.py:69:        plan_id=plan_id,
+tests/unit/cli/commands/pr/submit_pipeline/test_finalize_pr.py:231:        plan_id="1234",
+
+... [26 lines omitted] ...
+
+tests/unit/cli/commands/pr/submit_pipeline/test_graphite_first_flow.py:204:    """Plan impl branch (plan_id set) auto-forces when behind remote; no error returned."""
+tests/unit/cli/commands/pr/submit_pipeline/test_graphite_first_flow.py:350:    """Non-plan branch (no plan_id) still errors when behind remote."""
+  </tool_result>
+  <assistant>I can see that `plan_id` in these files refers to the field in the ref.json file. According to the requirements, the ref.json field `plan_id` should be renamed to `pr_id`. Let me check the test_prepare_state.py file more closely:</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="2390" cache_read_input_tokens="79536" cache_creation="{'ephemeral_5m_input_tokens': 2390, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Tz7u2qG3qGiDvQTEsKv3Ni">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_prepare_state.py</param>
+    <param name="offset">100</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="2390" cache_read_input_tokens="79536" cache_creation="{'ephemeral_5m_input_tokens': 2390, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Tz7u2qG3qGiDvQTEsKv3Ni">
+   100→    assert isinstance(result, SubmitError)
+   101→    assert result.error_type == "no_branch"
+   102→
+   103→
+   104→def test_issue_linkage_mismatch_returns_error(tmp_path: Path) -&gt; None:
+   105→    """Branch with P-prefix cannot extract issue number, no mismatch possible.
+   106→
+   107→    P-prefix branches cannot provide an issue number. The test verifies plan_id
+   108→    comes from ref.json without any mismatch error.
+   109→    """
+   110→    # Create branch-scoped impl dir with ref.json
+   111→    impl_dir = get_impl_dir(tmp_path, branch_name="P42-some-feature")
+   112→    impl_dir.mkdir(parents=True)
+   113→    ref_json = impl_dir / "ref.json"
+   114→    ref_json.write_text(
+   115→        json.dumps(
+   116→            {
+   117→                "provider": "github",
+   118→                "plan_id": "99",
+   119→                "url": "https://github.com/owner/repo/issues/99",
+   120→                "created_at": "2025-01-01T00:00:00+00:00",
+   121→                "synced_at": "2025-01-01T00:00:00+00:00",
+   122→            }
+   123→        )
+   124→    )
+   125→
+   126→    fake_git = FakeGit(
+   127→        repository_roots={tmp_path: tmp_path},
+   128→        current_branches={tmp_path: "P42-some-feature"},
+   129→        trunk_branches={tmp_path: "main"},
+
+... [75 lines omitted] ...
+
+   137→    # No mismatch error since branch cannot provide issue number
+  </tool_result>
+  <assistant>Now I need to update the ref.json field name from `plan_id` to `pr_id` in test_prepare_state.py:</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="1871" cache_read_input_tokens="81926" cache_creation="{'ephemeral_5m_input_tokens': 1871, 'ephemeral_1h_input_tokens': 0}" output_tokens="7" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01XysVdRNW4N9bTswY9G2Bga">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_prepare_state.py</param>
+    <param name="old_string">    ref_json.write_text(
+        json.dumps(
+            {
+                "provider": "gi...[truncated 142 chars]...",
+                "synced_at": "2025-01-01T00:00:00+00:00",
+            }
+        )
+    )</param>
+    <param name="new_string">    ref_json.write_text(
+        json.dumps(
+            {
+                "provider": "gi...[truncated 140 chars]...",
+                "synced_at": "2025-01-01T00:00:00+00:00",
+            }
+        )
+    )</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="1871" cache_read_input_tokens="81926" cache_creation="{'ephemeral_5m_input_tokens': 1871, 'ephemeral_1h_input_tokens': 0}" output_tokens="7" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_013YjLAX7B9Po43SjbE1Kdj6">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_prepare_state.py</param>
+    <param name="old_string">    ref_json.write_text(
+        json.dumps(
+            {
+                "provider": "gi...[truncated 126 chars]...1T00:00:00+00:00",
+                "synced_at": "2025-01-01T00:00:00+00:00",
+            }</param>
+    <param name="new_string">    ref_json.write_text(
+        json.dumps(
+            {
+                "provider": "gi...[truncated 124 chars]...1T00:00:00+00:00",
+                "synced_at": "2025-01-01T00:00:00+00:00",
+            }</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="1871" cache_read_input_tokens="81926" cache_creation="{'ephemeral_5m_input_tokens': 1871, 'ephemeral_1h_input_tokens': 0}" output_tokens="7" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01XysVdRNW4N9bTswY9G2Bga">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_prepare_state.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_013YjLAX7B9Po43SjbE1Kdj6">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_prepare_state.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me check test_list_helpers.py for any plan_id references in ref.json:</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="954" cache_read_input_tokens="83797" cache_creation="{'ephemeral_5m_input_tokens': 954, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_016DGLFFjz5Rp7VESLnQx7YV">
+    <param name="pattern">plan_id</param>
+    <param name="path">/home/runner/work/erk/erk/tests/unit/commands/wt/test_list_helpers.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="954" cache_read_input_tokens="83797" cache_creation="{'ephemeral_5m_input_tokens': 954, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016DGLFFjz5Rp7VESLnQx7YV">
+98:        '{"provider": "github", "plan_id": "42", "url": "https://github.com/owner/repo/issues/42", '
+  </tool_result>
+  <tool_use name="Read" id="toolu_01AT1E3Undy22EpfvXXRPew3">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/commands/wt/test_list_helpers.py</param>
+    <param name="offset">90</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="4" cache_creation_input_tokens="191" cache_read_input_tokens="84751" cache_creation="{'ephemeral_5m_input_tokens': 191, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01AT1E3Undy22EpfvXXRPew3">
+    90→
+    91→    # Create plan.md (required for get_impl_path to return path)
+    92→    plan_file = impl_dir / "plan.md"
+    93→    plan_file.write_text("# Plan", encoding="utf-8")
+    94→
+    95→    # Create ref.json (plan-ref format)
+    96→    ref_file = impl_dir / "ref.json"
+    97→    ref_file.write_text(
+    98→        '{"provider": "github", "plan_id": "42", "url": "https://github.com/owner/repo/issues/42", '
+    99→        '"created_at": "2024-01-01T00:00:00Z", "synced_at": "2024-01-01T00:00:00Z"}',
+   100→        encoding="utf-8",
+   101→    )
+   102→
+   103→    git = FakeGit(existing_paths={plan_file}, current_branches={worktree_path: branch})
+   104→    ctx = create_test_context(git=git)
+   105→
+   106→    issue_text, issue_url = _get_impl_issue(ctx, worktree_path, branch=branch)
+   107→
+   108→    assert issue_text == "#42"
+   109→    assert issue_url == "https://github.com/owner/repo/issues/42"
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01QEzszuo6wMAnGNHTQpfDx8">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/commands/wt/test_list_helpers.py</param>
+    <param name="old_string">    # Create ref.json (plan-ref format)
+    ref_file = impl_dir / "ref.json"
+    ref_file....[truncated 120 chars]...4-01-01T00:00:00Z", "synced_at": "2024-01-01T00:00:00Z"}',
+        encoding="utf-8",
+    )</param>
+    <param name="new_string">    # Create ref.json (plan-ref format)
+    ref_file = impl_dir / "ref.json"
+    ref_file....[truncated 118 chars]...4-01-01T00:00:00Z", "synced_at": "2024-01-01T00:00:00Z"}',
+        encoding="utf-8",
+    )</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="659" cache_read_input_tokens="84942" cache_creation="{'ephemeral_5m_input_tokens': 659, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01QEzszuo6wMAnGNHTQpfDx8">
+The file /home/runner/work/erk/erk/tests/unit/commands/wt/test_list_helpers.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me check test_async_operations.py for any references to `plan_id` that should be renamed:</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="421" cache_read_input_tokens="85601" cache_creation="{'ephemeral_5m_input_tokens': 421, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_015wKw6FXyVon6zHCrNVx6PN">
+    <param name="pattern">plan_id</param>
+    <param name="path">/home/runner/work/erk/erk/tests/tui/app/test_async_operations.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="421" cache_read_input_tokens="85601" cache_creation="{'ephemeral_5m_input_tokens': 421, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_015wKw6FXyVon6zHCrNVx6PN">
+254:                plan_id=None,
+302:                plan_id=None,
+342:                plan_id=None,
+392:                plan_id=None,
+442:                plan_id=None,
+453:        """_land_pr_async should include --plan-number when plan_id is set."""
+485:                plan_id=42,
+544:                plan_id=None,
+  </tool_result>
+  <assistant>Good! The `plan_id` parameter in test_async_operations.py is the function parameter in `_land_pr_async`, which should not be changed according to the rules. Let me verify the context around line 453:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="351" cache_read_input_tokens="86022" cache_creation="{'ephemeral_5m_input_tokens': 351, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_013kJ9DbFzPVJqGtwwKoF9nv">
+    <param name="file_path">/home/runner/work/erk/erk/tests/tui/app/test_async_operations.py</param>
+    <param name="offset">449</param>
+    <param name="limit">55</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="351" cache_read_input_tokens="86022" cache_creation="{'ephemeral_5m_input_tokens': 351, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013kJ9DbFzPVJqGtwwKoF9nv">
+   449→    @pytest.mark.asyncio
+   450→    async def test_land_pr_includes_plan_number_flag(
+   451→        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+   452→    ) -&gt; None:
+   453→        """_land_pr_async should include --plan-number when plan_id is set."""
+   454→        import subprocess
+   455→
+   456→        provider = FakePlanDataProvider(
+   457→            plans=[make_plan_row(123, "Test Plan", pr_number=456, pr_head_branch="test-branch")],
+   458→        )
+   459→        filters = PlanFilters.default()
+   460→        app = ErkDashApp(
+   461→            provider=provider,
+   462→            service=FakePrService(repo_root=tmp_path),
+   463→            filters=filters,
+   464→            refresh_interval=0,
+   465→        )
+   466→
+   467→        captured_calls: list[list[str]] = []
+   468→
+   469→        def fake_popen(*args: object, **kwargs: object) -&gt; _FakePopen:
+   470→            if args:
+   471→                captured_calls.append(list(args[0]))  # type: ignore[arg-type]
+   472→            return _FakePopen(return_code=0)
+   473→
+   474→        monkeypatch.setattr(subprocess, "Popen", fake_popen)
+   475→
+   476→        async with app.run_test() as pilot:
+   477→            await pilot.pause()
+   478→            await pilot.pause()
+
+... [30 lines omitted] ...
+  </tool_result>
+  <assistant>I see - this is testing that `--plan-number` is passed to land-execute. According to the requirements, land-execute's `plan_number` parameter was NOT renamed. So this file is correct as-is.
+
+Now let me check test_impl_context.py for plan_id references:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="946" cache_read_input_tokens="86373" cache_creation="{'ephemeral_5m_input_tokens': 946, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01CUJSTN6FJ4Mo1mHX35mxp9">
+    <param name="pattern">plan_id</param>
+    <param name="path">/home/runner/work/erk/erk/tests/packages/erk_shared/test_impl_context.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="946" cache_read_input_tokens="86373" cache_creation="{'ephemeral_5m_input_tokens': 946, 'ephemeral_1h_input_tokens': 0}" output_tokens="185" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01CUJSTN6FJ4Mo1mHX35mxp9">
+30:        plan_id="123",
+54:    assert ref_data["plan_id"] == "123"
+70:            plan_id="123",
+87:            plan_id="123",
+106:            plan_id="123",
+121:        plan_id="123",
+159:        plan_id="123",
+205:        plan_id="456",
+225:        plan_id="123",
+237:    assert ref_data["plan_id"] == "123"
+245:        plan_id="789",
+258:    assert ref_data["plan_id"] == "789"
+266:        plan_id="123",
+283:        plan_id="42",
+300:        plan_id="42",
+315:        plan_id="99",
+325:    assert ref_data["plan_id"] == "99"
+337:        plan_id="42",
+353:        plan_id="789",
+363:    assert ref_data["plan_id"] == "789"
+370:    plan_id = "55"
+378:        plan_id=plan_id,
+389:        plan_id=plan_id,
+  </tool_result>
+  <assistant>The `plan_id` in test_impl_context.py refers to the function parameter in `create_impl_context()` and the field in ref.json. According to the renaming rules, the ref.json field `plan_id` should be renamed to `pr_id`. Let me update these:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="570" cache_read_input_tokens="87319" cache_creation="{'ephemeral_5m_input_tokens': 570, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01PfwKs8pnk1qgyzaKbchWmF">
+    <param name="file_path">/home/runner/work/erk/erk/tests/packages/erk_shared/test_impl_context.py</param>
+    <param name="old_string">    # Verify ref.json exists with correct structure
+    ref_file = impl_context_dir / "ref...[truncated 217 chars]...er/repo/issues/123"
+    assert "created_at" in ref_data
+    assert "synced_at" in ref_data</param>
+    <param name="new_string">    # Verify ref.json exists with correct structure
+    ref_file = impl_context_dir / "ref...[truncated 215 chars]...er/repo/issues/123"
+    assert "created_at" in ref_data
+    assert "synced_at" in ref_data</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="570" cache_read_input_tokens="87319" cache_creation="{'ephemeral_5m_input_tokens': 570, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_0135TzKvmCi6ngU6BhoFApxu">
+    <param name="file_path">/home/runner/work/erk/erk/tests/packages/erk_shared/test_impl_context.py</param>
+    <param name="old_string">    ref_file = tmp_path / ".erk" / "impl-context" / "ref.json"
+    ref_data = json.loads(r...[truncated 10 chars]...f-8"))
+
+    assert ref_data["plan_id"] == "123"
+    assert ref_data["objective_id"] == 456</param>
+    <param name="new_string">    ref_file = tmp_path / ".erk" / "impl-context" / "ref.json"
+    ref_data = json.loads(r...[truncated 8 chars]...utf-8"))
+
+    assert ref_data["pr_id"] == "123"
+    assert ref_data["objective_id"] == 456</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="570" cache_read_input_tokens="87319" cache_creation="{'ephemeral_5m_input_tokens': 570, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01CVRTg6eZwVStfq6kWMDbXo">
+    <param name="file_path">/home/runner/work/erk/erk/tests/packages/erk_shared/test_impl_context.py</param>
+    <param name="old_string">    ref_file = tmp_path / ".erk" / "impl-context" / "ref.json"
+    ref_data = json.loads(r...[truncated 91 chars]..."plan_id"] == "789"
+    assert ref_data["url"] == "https://github.com/owner/repo/pull/789"</param>
+    <param name="new_string">    ref_file = tmp_path / ".erk" / "impl-context" / "ref.json"
+    ref_data = json.loads(r...[truncated 89 chars]...a["pr_id"] == "789"
+    assert ref_data["url"] == "https://github.com/owner/repo/pull/789"</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="570" cache_read_input_tokens="87319" cache_creation="{'ephemeral_5m_input_tokens': 570, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01FZCGgfayw87qbPMAaQUZUE">
+    <param name="file_path">/home/runner/work/erk/erk/tests/packages/erk_shared/test_impl_context.py</param>
+    <param name="old_string">    ref_data = json.loads(result[".erk/impl-context/ref.json"])
+    assert ref_data["provi...[truncated 197 chars]...KE_NOW_ISO
+    assert ref_data["labels"] == []
+    assert ref_data["objective_id"] is None</param>
+    <param name="new_string">    ref_data = json.loads(result[".erk/impl-context/ref.json"])
+    assert ref_data["provi...[truncated 195 chars]...KE_NOW_ISO
+    assert ref_data["labels"] == []
+    assert ref_data["objective_id"] is None</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="570" cache_read_input_tokens="87319" cache_creation="{'ephemeral_5m_input_tokens': 570, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_012Lv5jRQEFrKKftoE88Jdfz">
+    <param name="file_path">/home/runner/work/erk/erk/tests/packages/erk_shared/test_impl_context.py</param>
+    <param name="old_string">    ref_data = json.loads(result[".erk/impl-context/ref.json"])
+    assert ref_data["provi...[truncated 27 chars]..."plan_id"] == "789"
+    assert ref_data["url"] == "https://github.com/owner/repo/pull/789"</param>
+    <param name="new_string">    ref_data = json.loads(result[".erk/impl-context/ref.json"])
+    assert ref_data["provi...[truncated 25 chars]...a["pr_id"] == "789"
+    assert ref_data["url"] == "https://github.com/owner/repo/pull/789"</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="570" cache_read_input_tokens="87319" cache_creation="{'ephemeral_5m_input_tokens': 570, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01PfwKs8pnk1qgyzaKbchWmF">
+The file /home/runner/work/erk/erk/tests/packages/erk_shared/test_impl_context.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_0135TzKvmCi6ngU6BhoFApxu">
+The file /home/runner/work/erk/erk/tests/packages/erk_shared/test_impl_context.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01CVRTg6eZwVStfq6kWMDbXo">
+The file /home/runner/work/erk/erk/tests/packages/erk_shared/test_impl_context.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01FZCGgfayw87qbPMAaQUZUE">
+The file /home/runner/work/erk/erk/tests/packages/erk_shared/test_impl_context.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_012Lv5jRQEFrKKftoE88Jdfz">
+The file /home/runner/work/erk/erk/tests/packages/erk_shared/test_impl_context.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me check test_impl_folder.py for plan_id references:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2071" cache_read_input_tokens="87889" cache_creation="{'ephemeral_5m_input_tokens': 2071, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_012UzrRJ4sgYKLFBsL1GyQzV">
+    <param name="pattern">plan_id</param>
+    <param name="path">/home/runner/work/erk/erk/tests/core/test_impl_folder.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2071" cache_read_input_tokens="87889" cache_creation="{'ephemeral_5m_input_tokens': 2071, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012UzrRJ4sgYKLFBsL1GyQzV">
+498:        plan_id="42",
+526:            plan_id="42",
+542:        plan_id="42",
+561:        plan_id="42",
+587:        "plan_id": "PROJ-123",
+649:        plan_id="42",
+679:        plan_id="42",
+691:    """Test validation returns plan_id from plan-ref when branch has no issue number.
+694:    The function returns the plan_id from plan-ref.json without any mismatch check.
+701:        plan_id="99",
+710:    assert result == "99"  # Returns plan_id from plan-ref.json
+726:    """Test validation returns plan_id when branch has no issue number."""
+732:        plan_id="456",
+752:    """Test planned-PR branch returns plan_id from plan-ref.json."""
+758:        plan_id="789",
+  </tool_result>
+  <assistant>Let me read the relevant sections of test_impl_folder.py to understand the context:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="355" cache_read_input_tokens="89960" cache_creation="{'ephemeral_5m_input_tokens': 355, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>

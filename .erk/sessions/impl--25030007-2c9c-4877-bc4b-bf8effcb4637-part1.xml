@@ -1,0 +1,1546 @@
+<session>
+  <meta branch="plnd/O9109-rename-click-args-pr-03-10-0822" />
+  <meta model="claude-opus-4-6" />
+  <user>&lt;command-message&gt;erk:plan-implement is running…&lt;/command-message&gt;
+&lt;command-name&gt;/erk:plan-implement&lt;/command-name&gt;
+&lt;command-args&gt;9130&lt;/command-args&gt;</user>
+  <user># /erk:plan-implement
+
+Implement a plan - either from GitHub, a markdown file, an existing impl directory under `.erk/impl-context/`, or by saving the current plan first.
+
+This is the primary implementation workflow - it orchestrates:
+
+1. Setting up the impl directory under `.erk/impl-context/&lt;branch&gt;/` (from issue, file, existing folder, or fresh plan)
+2. Executing the implementation
+3. Running CI and submitting the PR
+
+## Prerequisites
+
+- Must be in a git repository managed by erk
+- GitHub CLI (`gh`) must be authenticated
+- One of:
+  - A plan number, URL, or file path argument
+  - An existing impl directory under `.erk/impl-context/`
+  - A plan branch checked out (e.g., `plnd/...` or `P{number}-...`)
+  - A plan in `~/.claude/plans/` (from plan mode)
+
+## Usage
+
+```bash
+/erk:plan-implement                    # Use impl directory, detect from branch, or save current plan
+/erk:plan-implement 2521               # Fetch and implement plan #2521
+/erk:plan-implement https://github.com/owner/repo/pull/2521   # URL form
+/erk:plan-implement ./my-plan.md       # Implement from local markdown file
+```
+
+---
+
+## CRITICAL: PR Operations
+
+**NEVER** run direct GitHub CLI commands for PR operations during implementation:
+
+- `gh pr edit` — destroys plan-header metadata block
+- `gh pr ready` — bypasses lifecycle tracking
+- `gh pr close` / `gh pr merge`
+
+All PR operations are handled by `erk pr submit` in Step 13. It automatically:
+
+- Generates the PR title and body
+- Preserves the plan-header metadata block
+- Marks draft PRs as ready for review
+- Updates lifecycle stage
+
+## Agent Instructions
+
+### Step 1: Set Up Implementation
+
+Parse `9130` and run the consolidated setup command:
+
+- **If numeric** (e.g., `2521`): `erk exec setup-impl --issue 2521`
+- **If GitHub URL** (e.g., `https://github.com/.../issues/2521`): Extract number, `erk exec setup-impl --issue 2521`
+- **If path to file** (anything else non-empty): `erk exec setup-impl --file &lt;path&gt;`
+- **If empty**: `erk exec setup-impl` (auto-detects from `.erk/impl-context/`, branch, or fails)
+
+```bash
+erk exec setup-impl [--issue &lt;N&gt; | --file &lt;path&gt;]
+```
+
+This single command handles:
+
+- Fetching plan from GitHub (draft PR)
+- Setting up from a local markdown file
+- Auto-detecting from existing impl directory under `.erk/impl-context/`
+- Auto-detecting plan number from branch name (P{number}-... or PR lookup)
+- Creating/checking out the feature branch
+- Creating impl directory under `.erk/impl-context/&lt;branch&gt;/` with plan content
+- Running impl-init validation
+- Cleaning up `.erk/impl-context/` staging directory (git rm + commit + push)
+
+Otherwise, generate a branch slug and set up from the specified issue:
+
+1. Fetch the title: `gh pr view &lt;ISSUE_ARG&gt; --json title -q .title`
+2. Generate a branch slug from the title:
+   - 2-4 hyphenated lowercase words, max 30 characters
+   - Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+   - Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+   - Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+3. Store as `BRANCH_SLUG`.
+
+```bash
+erk exec setup-impl --issue &lt;ISSUE_ARG&gt; --branch-slug="${BRANCH_SLUG}"
+```
+
+If `setup-impl` exits with code 1 and `error: "no_plan_found"`, fall back to saving the current plan:
+
+Generate a branch slug from the plan title (the first `# ` heading in the plan file):
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Store as `BRANCH_SLUG`
+
+Save the current plan to GitHub and capture the plan number:
+
+```bash
+erk exec plan-save --format json --session-id="${CLAUDE_SESSION_ID}" --branch-slug="${BRANCH_SLUG}"
+```
+
+Parse the JSON output to get `plan_number`, then:
+
+```bash
+erk exec setup-impl --issue &lt;plan_number&gt;
+```
+
+The `setup-impl` output includes `related_docs` (skills and docs to load) and `has_plan_tracking` (whether GitHub issue tracking is active).
+
+If this fails, display the error and stop.
+
+### Step 2: Read Plan and Load Context
+
+Read `plan.md` from the impl directory set up in Step 1 to understand:
+
+- Overall goal and context
+- Context &amp; Understanding sections (API quirks, architectural insights, pitfalls)
+- Implementation phases and dependencies
+- Success criteria
+
+**Context Consumption**: Plans contain expensive discoveries. Ignoring `[CRITICAL:]` tags, "Related Context:" subsections, or "DO NOT" items causes repeated mistakes.
+
+### Step 3: Load Related Documentation
+
+If plan contains "Related Documentation" section, load listed skills via Skill tool and read listed docs.
+
+### Step 4: Create TodoWrite Entries
+
+Create todo entries for each phase from the plan.
+
+### Step 5: Signal GitHub Started
+
+```bash
+erk exec impl-signal started --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This also deletes the Claude plan file (from `~/.claude/plans/`) since:
+
+- The content has been saved to GitHub
+- The content has been snapshotted to `.erk/scratch/`
+- Keeping it could cause confusion if the user tries to re-save
+
+### Step 6: Execute Each Phase Sequentially
+
+For each phase:
+
+1. **Mark phase as in_progress** (in TodoWrite)
+2. **Read task requirements** carefully
+3. **Implement code AND tests together**:
+   - Load `dignified-python-313` skill for coding standards
+   - Load `fake-driven-testing` skill for test patterns
+   - Follow project AGENTS.md standards
+4. **Mark phase as completed** (in TodoWrite)
+5. **Report progress**: changes made, what's next
+
+**Important:** `plan.md` is immutable - NEVER edit during implementation
+
+### Step 7: Report Progress
+
+After each phase: report changes made and what's next.
+
+### Step 8: Final Verification
+
+Confirm all tasks executed, success criteria met, note deviations, summarize changes.
+
+### Step 9: Signal GitHub Ended
+
+```bash
+erk exec impl-signal ended --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+### Step 10: Upload Session for Async Learn
+
+```bash
+erk exec upload-impl-session --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This reads plan reference from the impl directory, captures session info, and uploads for async learn processing.
+
+### Step 11: Clean Up Impl Context
+
+Remove the `.erk/impl-context/` directory from the repo:
+
+```bash
+erk exec cleanup-impl-context
+```
+
+This removes `.erk/impl-context/`, stages the deletion, commits, and pushes — all idempotent.
+
+### Step 12: Run CI Iteratively
+
+1. If `.erk/prompt-hooks/post-plan-implement-ci.md` exists: follow its instructions
+2. Otherwise: check CLAUDE.md/AGENTS.md for CI commands
+
+### Step 13: Submit PR
+
+Push the branch and create or update the PR using the Graphite-aware submit pipeline:
+
+```bash
+erk pr submit
+```
+
+This handles pushing commits, creating/updating the PR, generating the PR description, and enhancing with Graphite stack metadata when available.
+
+After successful submission, signal lifecycle transition:
+
+```bash
+erk exec impl-signal submitted 2&gt;/dev/null || true
+```
+
+Then validate PR completion invariants:
+
+```bash
+erk pr check --stage=impl
+```
+
+This validates PR submission readiness including implementation-specific checks
+(e.g., `.erk/impl-context/` must be cleaned up). If checks fail, display output and warn user.
+
+### Step 14: Output Format
+
+- **Start**: "Setting up implementation..." or "Fetching plan #X..."
+- **After setup**: "Implementation environment ready, reading plan..."
+- **Each phase**: "Phase X: [brief description]" with code changes
+- **End**: "Plan execution complete. [Summary]"
+
+---
+
+## Related Commands
+
+- `/erk:plan-save` - Save plan only, don't implement (for defer-to-later workflow)
+- `/erk:replan` - Re-plan an existing plan with current codebase state
+</user>
+  <assistant>
+
+I'll start by setting up the implementation for plan #9130.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="28644" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 28644, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01WqbKVMa8ZCCmTUBoBdNeyZ">
+    <param name="command">erk exec setup-impl --issue 9130</param>
+    <param name="description">Set up implementation for plan #9130</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="28644" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 28644, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01WqbKVMa8ZCCmTUBoBdNeyZ">
+{"success": true, "impl_path": "/home/runner/work/erk/erk/.erk/impl-context/plnd--O9109-rename-click-args-pr-03-10-0822", "pr_number": 9130, "pr_url": "https://github.com/dagster-io/erk/pull/9130", "branch": "plnd/O9109-rename-click-args-pr-03-10-0822", "pr_title": "[erk-plan] Plan: Rename Click Arguments/Options (Objective #9109, Node 2.3)", "no_impl": false}
+{"success": true, "source": "issue", "pr_number": 9130, "has_plan_tracking": true, "valid": true, "related_docs": {"skills": [], "docs": []}}
+Already on plan branch 'plnd/O9109-rename-click-args-pr-03-10-0822', teleporting from remote...
+  </tool_result>
+  <assistant>Implementation environment is set up. Let me read the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="367" cache_read_input_tokens="28644" cache_creation="{'ephemeral_5m_input_tokens': 367, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01TkZ6LkMeT37xxB1idiGXyM">
+    <param name="file_path">/home/runner/work/erk/erk/.erk/impl-context/plnd--O9109-rename-click-args-pr-03-10-0822/plan.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="367" cache_read_input_tokens="28644" cache_creation="{'ephemeral_5m_input_tokens': 367, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01TkZ6LkMeT37xxB1idiGXyM">
+     1→# Plan: Rename Click Arguments/Options (Objective #9109, Node 2.3)
+     2→
+     3→Part of Objective #9109, Node 2.3: Rename Click arguments/options: plan_number -&gt; pr_number, plan_id -&gt; pr_number across CLI commands.
+     4→
+     5→## Context
+     6→
+     7→Objective #9109 is renaming "plan" terminology to "pr" across all APIs. Phases 1 and 2.1-2.2 are done (core types, gateway ABCs, JSON output fields, TypedDict fields). Node 2.3 renames the Click argument/option declarations and their corresponding function parameter names. This must also update all callers (workflows, skills, commands) that pass these CLI flags, to prevent breakage.
+     8→
+     9→## Scope
+    10→
+    11→**In scope:** Click decorators, function parameter names, internal variable usage, and all callers of the renamed flags.
+    12→
+    13→**Out of scope:** Help strings and error messages (node 2.4), skill/command documentation prose (node 4.2).
+    14→
+    15→## Rename Mapping
+    16→
+    17→| Current CLI Flag | Current Param | New CLI Flag | New Param |
+    18→|-----------------|---------------|-------------|-----------|
+    19→| `--plan-number` | `plan_number` | `--pr-number` | `pr_number` |
+    20→| `--plan-id` (int) | `plan_id` | `--pr-number` | `pr_number` |
+    21→| `--plan-id` (str) | `plan_id` | `--pr-id` | `pr_id` |
+    22→| positional `plan_number` | `plan_number` | positional `pr_number` | `pr_number` |
+    23→| positional `plan_id` (int) | `plan_id` | positional `pr_number` | `pr_number` |
+    24→| `--plan` / `-p` | `plan` | `--plan` / `-p` | `plan` (keep - this is admin test helper) |
+    25→
+    26→**Special cases:**
+    27→- `update_plan_header.py`: `plan_id` is `type=str` -&gt; rename to `pr_id` (str)
+    28→- `dispatch_cmd.py`: `plan_numbers` (tuple) -&gt; `pr_numbers` (tuple), CLI name `plan_numbers` positional -&gt; `pr_numbers`
+    29→- `admin.py`: `--plan` / `-p` option is for an admin test command, rename to `--pr` / `-p`
+    30→
+
+... [75 lines omitted] ...
+
+    90→**Note:** Do NOT rename error message text or help strings - those are node 2.4.
+    94→1. Run `ruff check` to verify no syntax errors
+  </tool_result>
+  <assistant>Now let me load the required skills and tripwires before starting implementation.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2463" cache_read_input_tokens="29011" cache_creation="{'ephemeral_5m_input_tokens': 2463, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Skill" id="toolu_01Q8HfTpj43C77PsY6vq856W">
+    <param name="skill">dignified-python</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2463" cache_read_input_tokens="29011" cache_creation="{'ephemeral_5m_input_tokens': 2463, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Q8HfTpj43C77PsY6vq856W">
+Launching skill: dignified-python
+  </tool_result>
+  <user>Base directory for this skill: /home/runner/work/erk/erk/.claude/skills/dignified-python
+
+# Dignified Python Coding Standards
+
+## Core Knowledge (ALWAYS Loaded)
+
+@dignified-python-core.md
+
+## Version Detection
+
+**Identify the project's minimum Python version** by checking (in order):
+
+1. `pyproject.toml` - Look for `requires-python` field (e.g., `requires-python = "&gt;=3.12"`)
+2. `setup.py` or `setup.cfg` - Look for `python_requires`
+3. `.python-version` file - Contains version like `3.12` or `3.12.0`
+4. Default to Python 3.12 if no version specifier found
+
+**Once identified, load the appropriate version-specific file:**
+
+- Python 3.10: Load `versions/python-3.10.md`
+- Python 3.11: Load `versions/python-3.11.md`
+- Python 3.12: Load `versions/python-3.12.md`
+- Python 3.13: Load `versions/python-3.13.md`
+
+## Conditional Loading (Load Based on Task Patterns)
+
+Core files above cover 80%+ of Python code patterns. Only load these additional files when you detect specific patterns:
+
+Pattern detection examples:
+
+- If task mentions "click" or "CLI" -&gt; Load `cli-patterns.md`
+- If task mentions "subprocess" -&gt; Load `subprocess.md`
+
+## When to Read Each Reference Document
+
+The `references/` directory contains detailed guidance for specialized topics. Load these on-demand when you encounter relevant patterns:
+
+### `references/exception-handling.md`
+
+**Read when**:
+
+- Writing try/except blocks
+- Wrapping third-party APIs that may raise
+- Seeing or writing `from e` or `from None`
+- Unsure if LBYL alternative exists
+
+### `references/interfaces.md`
+
+**Read when**:
+
+- Creating ABC or Protocol classes
+- Writing @abstractmethod decorators
+- Designing gateway layer interfaces
+- Choosing between ABC and Protocol
+
+### `references/typing-advanced.md`
+
+**Read when**:
+
+- Using typing.cast()
+- Creating Literal type aliases
+- Narrowing types in conditional blocks
+
+### `references/module-design.md`
+
+**Read when**:
+
+- Creating new Python modules
+- Adding module-level code (beyond simple constants)
+- Using @cache decorator at module level
+- Seeing Path() or computation at module level
+- Considering inline imports
+
+### `references/api-design.md`
+
+**Read when**:
+
+- Adding default parameter values to functions
+- Defining functions with 5 or more parameters
+- Using ThreadPoolExecutor.submit()
+- Reviewing function signatures
+
+### `references/checklists.md`
+
+**Read when**:
+
+- Final review before committing Python code
+- Unsure if you've followed all rules
+- Need a quick lookup of requirements
+
+## How to Use This Skill
+
+1. **Core knowledge** is loaded automatically (LBYL, pathlib, basic imports, anti-patterns)
+2. **Version detection** happens once - identify the minimum Python version and load the appropriate version file
+3. **Reference documents** are loaded on-demand based on the triggers above
+4. **Additional patterns** may require extra loading (CLI patterns, subprocess)
+5. **Each file is self-contained** with complete guidance for its domain
+</user>
+  <assistant>
+
+Now let me read the core dignified-python rules and load the CLI patterns since this is a CLI-focused task.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="891" cache_read_input_tokens="31474" cache_creation="{'ephemeral_5m_input_tokens': 891, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01K9crujgoEpyLPBGhPQTkRJ">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/skills/dignified-python/dignified-python-core.md</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="891" cache_read_input_tokens="31474" cache_creation="{'ephemeral_5m_input_tokens': 891, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_016WEfuTw5TpH1sQfCJ6DJ2G">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/skills/dignified-python/cli-patterns.md</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="891" cache_read_input_tokens="31474" cache_creation="{'ephemeral_5m_input_tokens': 891, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01W1KqxH1wXn6tukW7W1ACnF">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/tripwires.md</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="891" cache_read_input_tokens="31474" cache_creation="{'ephemeral_5m_input_tokens': 891, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01K9crujgoEpyLPBGhPQTkRJ">
+     1→---
+     2→---
+     3→
+     4→# Dignified Python - Core Standards
+     5→
+     6→This document contains the core Python coding standards that apply to 80%+ of Python code. These principles are loaded with every skill invocation.
+     7→
+     8→For conditional loading of specialized patterns:
+     9→
+    10→- CLI development -&gt; Load `cli-patterns.md`
+    11→- Subprocess operations -&gt; Load `subprocess.md`
+    12→
+    13→For detailed reference material, see the "When to Read Each Reference" section in SKILL.md.
+    14→
+    15→---
+    16→
+    17→## The Cornerstone: LBYL Over EAFP
+    18→
+    19→**Look Before You Leap: Check conditions proactively, NEVER use exceptions for control flow.**
+    20→
+    21→This is the single most important rule in dignified Python. Every pattern below flows from this principle.
+    22→
+    23→```python
+    24→# CORRECT: Check first
+    25→if key in mapping:
+    26→    value = mapping[key]
+    27→    process(value)
+    28→
+    29→# WRONG: Exception as control flow
+    30→try:
+
+... [502 lines omitted] ...
+
+    33→except KeyError:
+    39→## Exception Handling Basics
+    45→LBYL means checking conditions before acting. EAFP (Easier to Ask for Forgiveness than Permission) means trying operations and catching exceptions. In dignified Python, we strongly prefer LBYL.
+    65→# WRONG: KeyError as control flow
+    68→except KeyError:
+    72→### When Exceptions ARE Acceptable
+    74→Exceptions are ONLY acceptable at:
+    76→1. **Error boundaries** (CLI/API level)
+    80→**Default: Let exceptions bubble up**
+    82→**When you must use try-except: scope the try block to the single operation that raises.** Don't wrap multiple operations in one try block — each handler should know exactly what failed. Use early returns to keep subsequent code flat.
+    84→For detailed exception handling patterns including minimal exception scope, B904 chaining, third-party API examples, and anti-patterns, see `references/exception-handling.md`.
+   118→- `.resolve()` raises `OSError` for non-existent paths
+   119→- `.is_relative_to()` raises `ValueError` for invalid comparisons
+   120→- Checking `.exists()` first avoids exceptions entirely (LBYL!)
+   135→# WRONG: Using exceptions for path validation
+   140→except (OSError, ValueError):
+   180→3. **Inline imports only for specific exceptions** (circular deps, TYPE_CHECKING, conditional features)
+   211→**Acceptable exceptions:**
+   480→    log.warning("Non-numeric plan_id")
+   494→- **Raise exception**: When invalid data indicates a programming error or corrupt state
+   521→- **Exception chaining (B904), minimal exception scope**: `references/exception-handling.md`
+  </tool_result>
+  <tool_result tool="toolu_016WEfuTw5TpH1sQfCJ6DJ2G">
+     1→---
+     2→---
+     3→
+     4→# CLI Patterns - Click Best Practices
+     5→
+     6→## Core Rules
+     7→
+     8→1. **Use `click.echo()` for output, NEVER `print()`**
+     9→2. **Exit with `raise SystemExit(1)` for CLI errors**
+    10→3. **Error boundaries at command level**
+    11→4. **Use `err=True` for error output**
+    12→5. **Flush stderr before `click.confirm()`** (prevents buffering hangs)
+    13→
+    14→## Basic Click Patterns
+    15→
+    16→```python
+    17→import click
+    18→from pathlib import Path
+    19→
+    20→# ✅ CORRECT: Use click.echo for output
+    21→@click.command()
+    22→@click.argument("name")
+    23→def greet(name: str) -&gt; None:
+    24→    """Greet the user."""
+    25→    click.echo(f"Hello, {name}!")
+    26→
+    27→# ❌ WRONG: Using print()
+    28→@click.command()
+    29→def greet(name: str) -&gt; None:
+    30→    print(f"Hello, {name}!")  # NEVER use print in CLI
+
+... [132 lines omitted] ...
+
+    33→## Error Handling in CLI
+    36→# ✅ CORRECT: CLI command error boundary
+    43→    except subprocess.CalledProcessError as e:
+    44→        click.echo(f"Error: Command failed: {e.stderr}", err=True)
+    46→    except ValueError as e:
+    47→        click.echo(f"Error: {e}", err=True)
+    57→# Error output to stderr
+    58→click.echo("Error: Operation failed", err=True)
+    62→click.echo(click.style("Warning!", fg="yellow", bold=True))
+   102→click.echo("Warning: This operation is destructive!", err=True)
+   109→click.echo("Warning: This operation is destructive!", err=True)
+   153→2. **Error to stderr**: Use `err=True` for error messages
+   154→3. **Exit cleanly**: Use `raise SystemExit(1)` for errors
+  </tool_result>
+  <tool_result tool="toolu_01W1KqxH1wXn6tukW7W1ACnF">
+     1→---
+     2→title: Cli Tripwires
+     3→read_when:
+     4→  - "working on cli code"
+     5→---
+     6→
+     7→&lt;!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY --&gt;
+     8→&lt;!-- Edit source frontmatter, then run 'erk docs sync' to regenerate. --&gt;
+     9→&lt;!-- Generated from cli/*.md frontmatter --&gt;
+    10→
+    11→# Cli Tripwires
+    12→
+    13→Rules triggered by matching actions in code.
+    14→
+    15→**Design batch commands that process items despite validation failures** → Read [Batch Exec Commands](batch-exec-commands.md) first. Validate ALL items upfront before processing ANY items. Stop on first validation error.
+    16→
+    17→**Return non-zero exit codes for batch command failures** → Read [Batch Exec Commands](batch-exec-commands.md) first. Always exit 0, encode errors in JSON output with per-item success fields.
+    18→
+    19→**Use OR semantics for batch success (success=true if any item succeeds)** → Read [Batch Exec Commands](batch-exec-commands.md) first. Use AND semantics: top-level success=true only if ALL items succeed.
+    20→
+    21→**Using RuntimeError for expected CLI failures** → Read [CLI Error Handling Anti-Patterns](error-handling-antipatterns.md) first. RuntimeError signals a programmer error (bug in the code), NOT expected user-facing failures. Use UserFacingCliError for expected conditions (missing files, invalid input, precondition violations) that should exit cleanly with an actionable message.
+    22→
+    23→**WORKFLOW_COMMAND_MAP maps command names to .yml filenames** → Read [Workflow Commands](workflow-commands.md) first. command names intentionally diverge from filenames (e.g., pr-rebase → pr-rebase.yml, but plan-implement → plan-implement.yml via DISPATCH_WORKFLOW_NAME constant)
+    24→
+    25→**adding --from-current-branch without handling detached HEAD** → Read [Slot Assign --from-current-branch](slot-assign-from-current-branch.md) first. When the target branch is checked out in another worktree, fall back to detached HEAD checkout. See slot-assign-from-current-branch.md.
+    26→
+    27→**adding --json flag to a command without using @json_output decorator** → Read [Agent-Friendly CLI Design Principles](agent-friendly-cli.md) first. Use the shared @json_output decorator from src/erk/cli/json_output.py. Do not manually implement JSON serialization in individual commands.
+    28→
+    29→**adding --sync to checkout** → Read [Checkout/Teleport Command Split](checkout-teleport-split.md) first. checkout is local-only; use teleport for sync. Checkout preserves local state; teleport force-resets to remote.
+    30→
+
+... [199 lines omitted] ...
+
+    39→**adding a new step to the submit pipeline** → Read [PR Submit Pipeline Architecture](pr-submit-pipeline.md) first. Each step must return SubmitState | SubmitError. Use dataclasses.replace() for state updates. Add the step to \_submit_pipeline() tuple.
+    41→**adding a parameter to erk exec without updating calling command** → Read [Parameter Addition Checklist](parameter-addition-checklist.md) first. 5-step verification required. Parameter additions must thread through skill argument-hint, command invocations, AND exec script. Miss any layer and you get silent failures or discovery problems. See parameter-addition-checklist.md.
+    75→**calling is_learned_docs_available() in CLI code** → Read [erk docs check Command](erk-docs-check.md) first. Function signature requires repo_ops and cwd kwargs: is_learned_docs_available(repo_ops=..., cwd=...). Omitting either kwarg will cause a TypeError.
+    77→**choosing between Ensure and EnsureIdeal** → Read [EnsureIdeal Pattern for Type Narrowing](ensure-ideal-pattern.md) first. Ensure is for invariant checks (preconditions). EnsureIdeal is for type narrowing (handling operations that can return non-ideal states). If the value comes from an operation that returns T | ErrorType, use EnsureIdeal.
+   105→**flagging 5+ parameter violations in code review** → Read [Code Review Filtering](code-review-filtering.md) first. Before flagging, verify NO exception applies (ABC/Protocol/Click)
+   127→**making a separate subprocess call for each item in a batch operation** → Read [Exec Script Performance Patterns](exec-script-performance.md) first. Use batch exec commands pattern (batch-exec-commands.md) to process items in a single invocation with per-item error handling.
+   129→**making session discovery failures block the land command** → Read [Land-Learn Integration](land-learn-integration.md) first. Session discovery uses fire-and-forget error resilience. The entire learn workflow is wrapped in try/except to prevent blocking land. Failures are reported as warnings, never errors.
+   149→**plan-implement exists in WORKFLOW_COMMAND_MAP but erk launch plan-implement always raises UsageError** → Read [Workflow Commands](workflow-commands.md) first. use erk pr submit instead
+   155→**raising an exception in a @json_command without using AgentCliError** → Read [@json_command Decorator](json-command-decorator.md) first. Use AgentCliError(message, error_type=...) to ensure errors serialize as JSON when --json is active.
+   175→**returning non-zero exit code when --json flag is active** → Read [Agent-Friendly CLI Design Principles](agent-friendly-cli.md) first. JSON mode must always exit 0. Errors are communicated via {success: false, error_type, message} in stdout JSON, not via exit codes.
+   185→**testing prompts without matching confirm_responses array length** → Read [Prompt Consolidation Pattern](prompt-consolidation-pattern.md) first. confirm_responses array length must match the number of prompts. Too few causes IndexError; too many indicates a prompt was removed without updating tests.
+   187→**using EnsureIdeal for discriminated union narrowing** → Read [EnsureIdeal Pattern for Type Narrowing](ensure-ideal-pattern.md) first. Only use when the error type implements NonIdealState protocol OR provides a message field. For custom error types without standard fields, add a specific EnsureIdeal method.
+   199→**using ctx.invoke() with kwargs that don't match target function parameter names** → Read [PR Submit Pipeline Architecture](pr-submit-pipeline.md) first. Click ctx.invoke() forwards kwargs directly — any name mismatch causes runtime TypeError. Verify all parameter names exactly match the target function signature.
+   201→**using dict .get() to access fields from exec script JSON output without a TypedDict schema** → Read [Exec Script Schema Patterns](exec-script-schema-patterns.md) first. Silent filtering failures occur when field names are mistyped. Define TypedDict in erk_shared and use cast() in consumers.
+   223→**writing multi-line error messages in Ensure method calls** → Read [CLI Output Styling Guide](output-styling.md) first. Use implicit string concatenation with \n at end of first string. Line 1 is the primary error, line 2+ is remediation context. Do NOT use \n\n (double newline) — Ensure handles spacing.
+  </tool_result>
+  <assistant>Good, I have the context I need. Now let me set up the todo list and signal that implementation has started.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="16083" cache_read_input_tokens="32365" cache_creation="{'ephemeral_5m_input_tokens': 16083, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01M5BAjtxoTEME2xa7erLrKV">
+    <param name="todos">[{'content': 'Phase 1: Rename Click decorators + params in exec scripts (18 files)', 'stat...[truncated 619 chars]... remaining old names)', 'status': 'pending', 'activeForm': 'Running verification checks'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="16083" cache_read_input_tokens="32365" cache_creation="{'ephemeral_5m_input_tokens': 16083, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_011ohkADi4Zk7781p36as2iB">
+    <param name="command">erk exec impl-signal started --session-id "${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true</param>
+    <param name="description">Signal implementation started</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="16083" cache_read_input_tokens="32365" cache_creation="{'ephemeral_5m_input_tokens': 16083, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01M5BAjtxoTEME2xa7erLrKV">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_result tool="toolu_011ohkADi4Zk7781p36as2iB">
+{
+  "success": false,
+  "event": "started",
+  "error_type": "session-id-required",
+  "message": "Session ID required for impl-signal started. Ensure ${CLAUDE_SESSION_ID} is available in the command context."
+}
+  </tool_result>
+  <assistant>Let me now start Phase 1. I'll read all the exec script files that need modification in parallel.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="523" cache_read_input_tokens="48448" cache_creation="{'ephemeral_5m_input_tokens': 523, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01C69r8gQ7c2ZPuLN95VgSS6">
+    <param name="todos">[{'content': 'Phase 1: Rename Click decorators + params in exec scripts (18 files)', 'stat...[truncated 623 chars]... remaining old names)', 'status': 'pending', 'activeForm': 'Running verification checks'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="523" cache_read_input_tokens="48448" cache_creation="{'ephemeral_5m_input_tokens': 523, 'ephemeral_1h_input_tokens': 0}" output_tokens="290" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01C69r8gQ7c2ZPuLN95VgSS6">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Let me read all 18 exec script files that need modification. I'll batch them in parallel.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="332" cache_read_input_tokens="48971" cache_creation="{'ephemeral_5m_input_tokens': 332, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_017jbdLj4GosxgZpDbZmxr3G">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/store_tripwire_candidates.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="332" cache_read_input_tokens="48971" cache_creation="{'ephemeral_5m_input_tokens': 332, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01TWZHKGkV3v649t1xJj87kL">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/register_one_shot_plan.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="332" cache_read_input_tokens="48971" cache_creation="{'ephemeral_5m_input_tokens': 332, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01QhLx2cDCZ7dizSZRBXUwaG">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/post_workflow_started_comment.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="332" cache_read_input_tokens="48971" cache_creation="{'ephemeral_5m_input_tokens': 332, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_0124ji5SpdAMzH3NDY29yPPD">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/plan_update.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="332" cache_read_input_tokens="48971" cache_creation="{'ephemeral_5m_input_tokens': 332, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01Grx8zYtmNAR2LKWJn661xo">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/ci_update_pr_body.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="332" cache_read_input_tokens="48971" cache_creation="{'ephemeral_5m_input_tokens': 332, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_0198knErVRTPwNF1NQzS47Zx">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/handle_no_changes.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="332" cache_read_input_tokens="48971" cache_creation="{'ephemeral_5m_input_tokens': 332, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01GGg3FwQJP9LYo1xdeT4vMi">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/track_learn_result.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="332" cache_read_input_tokens="48971" cache_creation="{'ephemeral_5m_input_tokens': 332, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_014xqofwaakZV3DDj8WJnKHR">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/fetch_sessions.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="332" cache_read_input_tokens="48971" cache_creation="{'ephemeral_5m_input_tokens': 332, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01Ni4qqYwoaQCi4MbpwQihx3">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/push_session.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="332" cache_read_input_tokens="48971" cache_creation="{'ephemeral_5m_input_tokens': 332, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_013FXvTLSNeGZkKQriZK2vHK">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/upload_impl_session.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="332" cache_read_input_tokens="48971" cache_creation="{'ephemeral_5m_input_tokens': 332, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_017ii9GH6o82NT7qFmSgTd6q">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/close_pr.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="332" cache_read_input_tokens="48971" cache_creation="{'ephemeral_5m_input_tokens': 332, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_011Pkky2i7j98ctJZXHYYWN7">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/get_pr_for_plan.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="332" cache_read_input_tokens="48971" cache_creation="{'ephemeral_5m_input_tokens': 332, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_012xDjtgqwzXRBUJDaKJpSTF">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/get_plan_info.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="332" cache_read_input_tokens="48971" cache_creation="{'ephemeral_5m_input_tokens': 332, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_019k7i656xdVFYDEq3zLVuZP">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/get_plan_metadata.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="332" cache_read_input_tokens="48971" cache_creation="{'ephemeral_5m_input_tokens': 332, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01K787tfgWhVHToM8gK66QfT">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/add_plan_label.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="332" cache_read_input_tokens="48971" cache_creation="{'ephemeral_5m_input_tokens': 332, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01DPLPkUWnDUCK71RSmaaSot">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/update_plan_header.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="332" cache_read_input_tokens="48971" cache_creation="{'ephemeral_5m_input_tokens': 332, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01KBHcwRkMXdEmnQSE5p59Vo">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/create_impl_context_from_plan.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="332" cache_read_input_tokens="48971" cache_creation="{'ephemeral_5m_input_tokens': 332, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01GntkhU1GpkFJxrJjhgbeJA">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/setup_impl.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="332" cache_read_input_tokens="48971" cache_creation="{'ephemeral_5m_input_tokens': 332, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_017jbdLj4GosxgZpDbZmxr3G">
+     1→"""Store tripwire candidates as a metadata comment on a plan.
+     2→
+     3→Usage:
+     4→    erk exec store-tripwire-candidates --plan-number &lt;N&gt; --candidates-file &lt;path&gt;
+     5→
+     6→Reads a JSON file produced by the tripwire extraction agent and adds
+     7→a metadata comment to the plan with key `tripwire-candidates`.
+     8→
+     9→Exit Codes:
+    10→    0: Success
+    11→    1: Error (file not found, invalid JSON, GitHub API failure)
+    12→"""
+    13→
+    14→import json
+    15→from dataclasses import asdict, dataclass
+    16→from pathlib import Path
+    17→
+    18→import click
+    19→
+    20→from erk.cli.commands.exec.scripts.normalize_tripwire_candidates import (
+    21→    normalize_candidates_data,
+    22→)
+    23→from erk_shared.context.helpers import require_issues, require_repo_root
+    24→from erk_shared.gateway.github.metadata.tripwire_candidates import (
+    25→    InvalidTripwireCandidates,
+    26→    render_tripwire_candidates_comment,
+    27→    validate_candidates_data,
+    28→)
+    29→
+    30→
+
+... [82 lines omitted] ...
+
+    40→class StoreError:
+    41→    """Error response for tripwire candidates storage."""
+    44→    error: str
+    64→        error_response = StoreError(
+    65→            success=False, error=f"Candidates file not found: {candidates_file}"
+    67→        click.echo(json.dumps(asdict(error_response)), err=True)
+    73→    except json.JSONDecodeError as exc:
+    74→        error_response = StoreError(success=False, error=f"Invalid JSON: {exc}")
+    75→        click.echo(json.dumps(asdict(error_response)), err=True)
+    79→        error_response = StoreError(
+    80→            success=False, error=f"Expected JSON object, got {type(data).__name__}"
+    82→        click.echo(json.dumps(asdict(error_response)), err=True)
+    88→        error_response = StoreError(success=False, error=result.message)
+    89→        click.echo(json.dumps(asdict(error_response)), err=True)
+  </tool_result>
+  <tool_result tool="toolu_01TWZHKGkV3v649t1xJj87kL">
+     1→"""Register a one-shot plan: dispatch metadata and queued comment.
+     2→
+     3→Composes independent operations that ``erk pr dispatch`` performs but
+     4→one-shot cannot do at submit time (the plan doesn't exist yet).
+     5→Each operation is best-effort; failures are logged but don't block others.
+     6→"""
+     7→
+     8→import json
+     9→from datetime import UTC, datetime
+    10→
+    11→import click
+    12→
+    13→from erk.cli.commands.pr.metadata_helpers import write_dispatch_metadata
+    14→from erk_shared.context.helpers import (
+    15→    require_github,
+    16→    require_issues,
+    17→    require_plan_backend,
+    18→    require_repo_root,
+    19→)
+    20→from erk_shared.gateway.github.issues.types import IssueNotFound
+    21→
+    22→
+    23→@click.command(name="register-one-shot-plan")
+    24→@click.option("--plan-number", type=int, required=True)
+    25→@click.option("--run-id", type=str, required=True)
+    26→@click.option("--pr-number", type=int, required=True)
+    27→@click.option("--submitted-by", type=str, required=True)
+    28→@click.option("--run-url", type=str, required=True)
+    29→@click.pass_context
+    30→def register_one_shot_plan(
+
+... [76 lines omitted] ...
+
+    57→    except Exception as exc:
+    58→        results["dispatch_metadata"] = {"success": False, "error": str(exc)}
+    64→            raise RuntimeError(f"Plan #{plan_number} not found")
+    84→    except Exception as exc:
+    85→        results["queued_comment"] = {"success": False, "error": str(exc)}
+    95→    except Exception as exc:
+    96→        results["lifecycle_stage"] = {"success": False, "error": str(exc)}
+  </tool_result>
+  <tool_result tool="toolu_01QhLx2cDCZ7dizSZRBXUwaG">
+     1→#!/usr/bin/env python3
+     2→"""Post a "workflow started" comment to a GitHub issue with YAML metadata block.
+     3→
+     4→This command posts a structured comment to a GitHub issue indicating that a
+     5→GitHub Actions workflow has started. The comment includes a YAML metadata block
+     6→that can be parsed programmatically.
+     7→
+     8→This replaces ~40 lines of bash heredoc template assembly in GitHub Actions workflows.
+     9→
+    10→Usage:
+    11→    erk exec post-workflow-started-comment \\
+    12→        --plan-number 123 \\
+    13→        --branch-name my-feature-branch \\
+    14→        --pr-number 456 \\
+    15→        --run-id 12345678 \\
+    16→        --run-url https://github.com/owner/repo/actions/runs/12345678 \\
+    17→        --repository owner/repo
+    18→
+    19→Output:
+    20→    JSON object with success status
+    21→
+    22→Exit Codes:
+    23→    0: Success (comment posted)
+    24→    1: Error (GitHub API failed)
+    25→
+    26→Examples:
+    27→    $ erk exec post-workflow-started-comment \\
+    28→        --plan-number 123 \\
+    29→        --branch-name feat-auth \\
+    30→        --pr-number 456 \\
+
+... [151 lines omitted] ...
+
+    62→class PostError:
+    63→    """Error result when comment posting fails."""
+    66→    error: str
+   168→    except RuntimeError as e:
+   169→        result = PostError(
+   171→            error="github-api-failed",
+  </tool_result>
+  <tool_result tool="toolu_0124ji5SpdAMzH3NDY29yPPD">
+     1→"""Update an existing plan's content.
+     2→
+     3→Usage:
+     4→    erk exec plan-update --plan-number N [OPTIONS]
+     5→
+     6→This command updates the plan content comment on an existing GitHub issue:
+     7→1. Find plan file (from session scratch, --plan-path, or ~/.claude/plans/)
+     8→2. Update plan content via PlanBackend
+     9→3. Update issue title from plan H1 heading
+    10→
+    11→Options:
+    12→    --plan-number N: Plan number to update (required)
+    13→    --session-id ID: Session ID to find plan file in scratch storage
+    14→    --plan-path PATH: Direct path to plan file (overrides session lookup)
+    15→
+    16→Output:
+    17→    --format json (default): {"success": true, ...}
+    18→    --format display: Formatted text
+    19→
+    20→Exit Codes:
+    21→    0: Success - plan comment updated
+    22→    1: Error - plan not found, no plan found, etc.
+    23→"""
+    24→
+    25→import json
+    26→from pathlib import Path
+    27→
+    28→import click
+    29→
+    30→from erk_shared.context.helpers import (
+
+... [151 lines omitted] ...
+
+    37→from erk_shared.gateway.git.remote_ops.types import PushError
+    83→    def _handle_update_error(error_msg: str, cause: Exception | None = None) -&gt; None:
+    84→        """Output error message and exit with code 1."""
+    86→            click.echo(f"Error: {error_msg}", err=True)
+    88→            click.echo(json.dumps({"success": False, "error": error_msg}))
+   106→        _handle_update_error("No plan found in ~/.claude/plans/")
+   115→        _handle_update_error(f"Plan #{plan_number} not found")
+   123→    except RuntimeError as e:
+   124→        _handle_update_error(f"Failed to update comment: {e}", cause=e)
+   133→    except RuntimeError as e:
+   134→        _handle_update_error(f"Failed to update title: {e}", cause=e)
+   152→        branch_updated = not isinstance(push_result, PushError)
+   162→            click.echo(f"Warning: branch push to {branch_name} failed")
+  </tool_result>
+  <tool_result tool="toolu_01Grx8zYtmNAR2LKWJn661xo">
+     1→#!/usr/bin/env python3
+     2→"""Update PR body with AI-generated summary and footer.
+     3→
+     4→This command generates a PR summary from the diff using Claude, then updates
+     5→the PR body with the summary, optional workflow link, and standardized footer.
+     6→
+     7→This combines PR summary generation + footer construction + gh pr edit in one step,
+     8→replacing ~30 lines of bash in GitHub Actions workflows.
+     9→
+    10→Usage:
+    11→    erk exec ci-update-pr-body \\
+    12→        --plan-id 123 \\
+    13→        [--run-id 456789] \\
+    14→        [--run-url https://github.com/owner/repo/actions/runs/456789]
+    15→
+    16→Output:
+    17→    JSON object with success status
+    18→
+    19→Exit Codes:
+    20→    0: Success (PR body updated)
+    21→    1: Error (no PR for branch, empty diff, Claude failure, or GitHub API failed)
+    22→
+    23→Examples:
+    24→    $ erk exec ci-update-pr-body --plan-id 123
+    25→    {
+    26→      "success": true,
+    27→      "pr_number": 789
+    28→    }
+    29→
+    30→    $ erk exec ci-update-pr-body \\
+
+... [333 lines omitted] ...
+
+    77→class UpdateError:
+    78→    """Error result when PR body update fails."""
+    81→    error: Literal[
+    84→        "diff-fetch-failed",
+    85→        "claude-execution-failed",
+    87→        "github-api-failed",
+   173→) -&gt; UpdateSuccess | UpdateError:
+   186→        UpdateSuccess on success, UpdateError on failure
+   191→        return UpdateError(
+   193→            error="pr-not-found",
+   201→        return UpdateError(
+   203→            error="pr-not-found",
+   213→    except RuntimeError as e:
+   214→        return UpdateError(
+   216→            error="diff-fetch-failed",
+   217→            message=f"Failed to get PR diff: {e}",
+   222→        return UpdateError(
+   224→            error="empty-diff",
+   241→    # Separate failure modes for better diagnostics
+   243→        stderr_preview = result.error[:500] if result.error else None
+   244→        return UpdateError(
+   246→            error="claude-execution-failed",
+   253→        stderr_preview = result.error[:500] if result.error else None
+   254→        return UpdateError(
+   256→            error="claude-empty-output",
+   269→            return UpdateError(
+   271→                error="plan-header-not-found",
+   275→                    "Inspect the PR body and check for earlier CI step failures."
+   307→    except RuntimeError as e:
+   308→        return UpdateError(
+   310→            error="github-api-failed",
+   311→            message=f"Failed to update PR: {e}",
+   355→    # Exit with error code if update failed
+   356→    if isinstance(result, UpdateError):
+  </tool_result>
+  <tool_result tool="toolu_0198knErVRTPwNF1NQzS47Zx">
+     1→#!/usr/bin/env python3
+     2→"""Handle no-changes scenario in erk-impl workflow gracefully.
+     3→
+     4→When implementation produces no code changes (duplicate plan, work already merged),
+     5→this command updates the PR with diagnostic information and marks it ready for review.
+     6→
+     7→This replaces workflow failure with an informational PR that users can review and close.
+     8→
+     9→Usage:
+    10→    erk exec handle-no-changes \
+    11→        --pr-number 123 \
+    12→        --plan-id 456 \
+    13→        --behind-count 5 \
+    14→        --base-branch master \
+    15→        [--recent-commits "abc1234 Fix bug\\ndef5678 Add feature"] \
+    16→        [--run-url https://github.com/owner/repo/actions/runs/789]
+    17→
+    18→Output:
+    19→    JSON object with success status
+    20→
+    21→Exit Codes:
+    22→    0: Success (PR updated, labeled, and marked ready)
+    23→    1: Error (GitHub API failure)
+    24→"""
+    25→
+    26→import json
+    27→from dataclasses import asdict, dataclass
+    28→
+    29→import click
+    30→
+
+... [245 lines omitted] ...
+
+    45→class HandleNoChangesError:
+    46→    """Error result when handling fails."""
+    49→    error: str
+   195→    except RuntimeError as e:
+   196→        result = HandleNoChangesError(
+   198→            error="github-api-failed",
+   199→            message=f"Failed to update PR title and body: {e}",
+   213→    except RuntimeError as e:
+   214→        result = HandleNoChangesError(
+   216→            error="github-api-failed",
+   217→            message=f"Failed to add label: {e}",
+   229→    except RuntimeError as e:
+   230→        result = HandleNoChangesError(
+   232→            error="github-api-failed",
+   233→            message=f"Failed to update lifecycle stage: {e}",
+   241→    except RuntimeError as e:
+   242→        result = HandleNoChangesError(
+   244→            error="github-api-failed",
+   245→            message=f"Failed to mark PR ready: {e}",
+   254→    except RuntimeError as e:
+   255→        result = HandleNoChangesError(
+   257→            error="github-api-failed",
+   258→            message=f"Failed to add plan comment: {e}",
+  </tool_result>
+  <tool_result tool="toolu_01GGg3FwQJP9LYo1xdeT4vMi">
+     1→"""Track learn workflow result on a plan.
+     2→
+     3→This exec script updates the plan-header metadata block to record the result
+     4→of a learn workflow. It sets the learn_status field and optionally records
+     5→the learn_plan_issue if a plan was created.
+     6→
+     7→Usage:
+     8→    erk exec track-learn-result --plan-id 123 --status completed_no_plan
+     9→    erk exec track-learn-result --plan-id 123 --status completed_with_plan --learn-plan 456
+    10→
+    11→Output:
+    12→    JSON object with tracking result:
+    13→    {
+    14→        "success": true,
+    15→        "pr_number": "123",
+    16→        "learn_status": "completed_no_plan"
+    17→    }
+    18→
+    19→Exit Codes:
+    20→    0: Success
+    21→    1: Error (invalid issue, GitHub failure, validation error, etc.)
+    22→"""
+    23→
+    24→import json
+    25→from dataclasses import asdict, dataclass
+    26→
+    27→import click
+    28→
+    29→from erk_shared.context.helpers import require_plan_backend, require_repo_root
+    30→from erk_shared.gateway.github.metadata.schemas import LearnStatusValue
+
+... [171 lines omitted] ...
+
+    31→from erk_shared.plan_store.types import PlanHeaderNotFoundError
+    46→class TrackLearnResultError:
+    47→    """Error result when tracking fails."""
+    50→    error: str
+   102→        error = TrackLearnResultError(
+   104→            error="missing-learn-plan",
+   107→        click.echo(json.dumps(asdict(error)))
+   112→        error = TrackLearnResultError(
+   114→            error="unexpected-learn-plan",
+   117→        click.echo(json.dumps(asdict(error)))
+   122→        error = TrackLearnResultError(
+   124→            error="missing-plan-pr",
+   127→        click.echo(json.dumps(asdict(error)))
+   132→        error = TrackLearnResultError(
+   134→            error="unexpected-learn-plan",
+   137→        click.echo(json.dumps(asdict(error)))
+   142→        error = TrackLearnResultError(
+   144→            error="unexpected-plan-pr",
+   147→        click.echo(json.dumps(asdict(error)))
+   168→    except PlanHeaderNotFoundError:
+   169→        error = TrackLearnResultError(
+   171→            error="no-metadata-block",
+   176→        click.echo(json.dumps(asdict(error)), err=True)
+   178→    except RuntimeError as e:
+   179→        error = TrackLearnResultError(
+   181→            error="github-api-failed",
+   182→            message=f"Failed to update learn status on plan {plan_id}: {e}",
+   184→        click.echo(json.dumps(asdict(error)), err=True)
+  </tool_result>
+  <tool_result tool="toolu_014xqofwaakZV3DDj8WJnKHR">
+     1→"""Fetch preprocessed sessions from a planned-pr-context branch.
+     2→
+     3→Downloads the manifest and XML files from the planned-pr-context/{plan_id} branch
+     4→for use by the learn pipeline. Returns JSON with file list and manifest metadata.
+     5→
+     6→Usage:
+     7→    erk exec fetch-sessions --plan-id 2521 --output-dir ./learn
+     8→
+     9→Output:
+    10→    Structured JSON output:
+    11→    {"success": true, "pr_number": 2521, "manifest": {...}, "files": [...]}
+    12→    {"success": false, "error": "branch_not_found"}
+    13→
+    14→Exit Codes:
+    15→    0: Success
+    16→    1: Error (branch not found, fetch failed)
+    17→"""
+    18→
+    19→import json
+    20→from pathlib import Path
+    21→
+    22→import click
+    23→
+    24→from erk_shared.context.helpers import require_git, require_repo_root
+    25→from erk_shared.gateway.git.abc import Git
+    26→from erk_shared.sessions.manifest import read_session_manifest
+    27→
+    28→
+    29→def _fetch_file_from_branch(
+    30→    *,
+
+... [106 lines omitted] ...
+
+    47→        Path to the written file, or None on failure.
+    93→        click.echo(json.dumps({"success": False, "error": "branch_not_found"}))
+   102→        click.echo(json.dumps({"success": False, "error": "manifest_not_found"}))
+  </tool_result>
+  <tool_result tool="toolu_01Ni4qqYwoaQCi4MbpwQihx3">
+     1→"""Push a preprocessed session to the planned-pr-context branch with accumulation.
+     2→
+     3→Preprocesses session JSONL to compressed XML and accumulates multiple sessions
+     4→on the same branch across lifecycle stages.
+     5→
+     6→Usage:
+     7→    erk exec push-session \\
+     8→        --session-file /path/to/session.jsonl \\
+     9→        --session-id abc-123 \\
+    10→        --stage planning \\
+    11→        --source local \\
+    12→        --plan-id 2521
+    13→
+    14→Output:
+    15→    Structured JSON output with upload status:
+    16→    {"uploaded": true, "pr_number": 2521, "session_branch": "planned-pr-context/2521",
+    17→     "files": [...]}
+    18→    {"uploaded": false, "reason": "preprocessing_failed"}
+    19→
+    20→Exit Codes:
+    21→    0: Always (non-critical operation, graceful degradation)
+    22→"""
+    23→
+    24→import json
+    25→import subprocess
+    26→import tempfile
+    27→from datetime import UTC
+    28→from pathlib import Path
+    29→from typing import Literal
+    30→
+
+... [298 lines omitted] ...
+
+    63→        List of XML file paths on success, None on failure.
+   223→        click.echo(json.dumps({"uploaded": False, "reason": "preprocessing_failed"}))
+   304→        except RuntimeError:
+  </tool_result>
+  <tool_result tool="toolu_013FXvTLSNeGZkKQriZK2vHK">
+     1→"""Upload current implementation session for async learn.
+     2→
+     3→Reads plan reference from .erk/impl-context/, captures session info, and delegates
+     4→to push-session for preprocessed XML upload with branch accumulation.
+     5→
+     6→Usage:
+     7→    erk exec upload-impl-session --session-id &lt;id&gt;
+     8→
+     9→Output:
+    10→    JSON with upload result:
+    11→    {"uploaded": true, "pr_number": 2521}
+    12→    {"uploaded": false, "reason": "no_plan_tracking"}
+    13→    {"uploaded": false, "reason": "no_session_found"}
+    14→
+    15→Exit Codes:
+    16→    0: Always (non-critical operation, graceful degradation)
+    17→
+    18→Examples:
+    19→    $ erk exec upload-impl-session --session-id abc-123
+    20→    {"uploaded": true, "pr_number": 2521}
+    21→"""
+    22→
+    23→import json
+    24→import subprocess
+    25→from pathlib import Path
+    26→
+    27→import click
+    28→
+    29→from erk.cli.commands.exec.scripts.capture_session_info import capture_session
+    30→from erk_shared.context.helpers import (
+
+... [101 lines omitted] ...
+
+   124→    # push-session failed or returned not-uploaded — report gracefully
+   125→    click.echo(json.dumps({"uploaded": False, "reason": "push_session_failed"}))
+  </tool_result>
+  <tool_result tool="toolu_017ii9GH6o82NT7qFmSgTd6q">
+     1→"""Close a plan with a comment.
+     2→
+     3→Usage:
+     4→    erk exec close-pr &lt;PLAN_NUMBER&gt; --comment "Closing because..."
+     5→
+     6→Output:
+     7→    JSON with {success, plan_number, comment_id}
+     8→
+     9→Exit Codes:
+    10→    0: Success - plan closed with comment
+    11→    1: Error - plan not found or API error
+    12→"""
+    13→
+    14→import json
+    15→
+    16→import click
+    17→
+    18→from erk_shared.context.helpers import (
+    19→    require_plan_backend,
+    20→    require_repo_root,
+    21→)
+    22→
+    23→
+    24→@click.command(name="close-pr")
+    25→@click.argument("plan_number", type=int)
+    26→@click.option(
+    27→    "--comment",
+    28→    required=True,
+    29→    help="Comment body to add before closing",
+    30→)
+
+... [56 lines omitted] ...
+
+    46→    except RuntimeError as e:
+    51→                    "error": f"Failed to add comment to plan #{plan_number}: {e}",
+    60→    except RuntimeError as e:
+    65→                    "error": f"Failed to close plan #{plan_number}: {e}",
+  </tool_result>
+  <tool_result tool="toolu_011Pkky2i7j98ctJZXHYYWN7">
+     1→"""Get PR details for a plan.
+     2→
+     3→Usage:
+     4→    erk exec get-pr-for-plan &lt;plan-number&gt;
+     5→
+     6→Extracts branch_name from plan metadata, then fetches PR for that branch.
+     7→
+     8→Output:
+     9→    JSON with PR details or error if not found.
+    10→"""
+    11→
+    12→import json
+    13→from dataclasses import asdict, dataclass
+    14→from typing import NoReturn
+    15→
+    16→import click
+    17→
+    18→from erk_shared.context.helpers import (
+    19→    require_github as require_github_gateway,
+    20→)
+    21→from erk_shared.context.helpers import require_repo_root
+    22→from erk_shared.gateway.github.types import PRNotFound
+    23→
+    24→
+    25→@dataclass(frozen=True)
+    26→class GetPrForPlanSuccess:
+    27→    """Success response with PR details."""
+    28→
+    29→    success: bool
+    30→    pr: dict[str, object]
+
+... [52 lines omitted] ...
+
+    34→class GetPrForPlanError:
+    35→    """Error response for PR lookup."""
+    38→    error: str
+    42→def _exit_with_error(*, error: str, message: str) -&gt; NoReturn:
+    43→    """Output error JSON to stderr and exit with code 1."""
+    44→    result = GetPrForPlanError(success=False, error=error, message=message)
+    66→        return _exit_with_error(error="no-pr-for-branch", message=f"PR #{plan_number} not found")
+  </tool_result>
+  <tool_result tool="toolu_012xDjtgqwzXRBUJDaKJpSTF">
+     1→"""Backend-aware plan info retrieval.
+     2→
+     3→Usage:
+     4→    erk exec get-plan-info &lt;plan-number&gt;
+     5→    erk exec get-plan-info &lt;plan-number&gt; --include-body
+     6→
+     7→Output:
+     8→    JSON with plan info fields:
+     9→    {"success": true, "pr_number": "42", "title": "...", "state": "OPEN",
+    10→     "labels": [...], "url": "...", "objective_id": null, "backend": "github"}
+    11→
+    12→    With --include-body, adds "body": "..." containing plan content.
+    13→
+    14→Exit Codes:
+    15→    0: Success
+    16→    1: Error (plan not found)
+    17→"""
+    18→
+    19→import json
+    20→
+    21→import click
+    22→
+    23→from erk_shared.context.helpers import require_plan_backend, require_repo_root
+    24→from erk_shared.plan_store.types import PlanNotFound
+    25→
+    26→
+    27→@click.command(name="get-plan-info")
+    28→@click.argument("plan_number", type=int)
+    29→@click.option(
+    30→    "--include-body",
+
+... [51 lines omitted] ...
+
+    53→                    "error": "plan_not_found",
+  </tool_result>
+  <tool_result tool="toolu_019k7i656xdVFYDEq3zLVuZP">
+     1→"""Extract arbitrary metadata fields from a plan's plan-header block.
+     2→
+     3→Usage:
+     4→    erk exec get-plan-metadata &lt;plan-number&gt; &lt;field-name&gt;
+     5→
+     6→Output:
+     7→    JSON with success status and field value (or null if field doesn't exist)
+     8→
+     9→Exit Codes:
+    10→    0: Success (field found or null)
+    11→    1: Error (plan not found)
+    12→"""
+    13→
+    14→import json
+    15→from dataclasses import asdict, dataclass
+    16→from typing import Any
+    17→
+    18→import click
+    19→
+    20→from erk_shared.context.helpers import require_plan_backend, require_repo_root
+    21→from erk_shared.plan_store.types import PlanNotFound
+    22→
+    23→
+    24→@dataclass(frozen=True)
+    25→class MetadataSuccess:
+    26→    """Success response for metadata extraction."""
+    27→
+    28→    success: bool
+    29→    value: Any
+    30→    pr_number: int
+
+... [56 lines omitted] ...
+
+    35→class MetadataError:
+    36→    """Error response for metadata extraction."""
+    39→    error: str
+    65→        error_result = MetadataError(
+    67→            error="issue_not_found",
+    70→        click.echo(json.dumps(asdict(error_result)), err=True)
+  </tool_result>
+  <tool_result tool="toolu_01K787tfgWhVHToM8gK66QfT">
+     1→"""Backend-aware label addition for plans.
+     2→
+     3→Usage:
+     4→    erk exec add-plan-label &lt;plan-number&gt; --label &lt;label&gt;
+     5→
+     6→Output:
+     7→    JSON with {success, plan_number, label}
+     8→
+     9→Exit Codes:
+    10→    0: Success - label added
+    11→    1: Error - plan not found or API error
+    12→    2: Usage error - missing required --label flag
+    13→"""
+    14→
+    15→import json
+    16→
+    17→import click
+    18→
+    19→from erk_shared.context.helpers import require_plan_backend, require_repo_root
+    20→
+    21→
+    22→@click.command(name="add-plan-label")
+    23→@click.argument("plan_number", type=int)
+    24→@click.option(
+    25→    "--label",
+    26→    required=True,
+    27→    help="Label to add to the plan",
+    28→)
+    29→@click.pass_context
+    30→def add_plan_label(
+
+... [39 lines omitted] ...
+
+    44→    except RuntimeError as e:
+    49→                    "error": f"Failed to add label to plan #{plan_number}: {e}",
+  </tool_result>
+  <tool_result tool="toolu_01DPLPkUWnDUCK71RSmaaSot">
+     1→"""Update plan-header metadata fields generically.
+     2→
+     3→Usage:
+     4→    erk exec update-plan-header &lt;plan_id&gt; key1=value1 key2=value2 ...
+     5→
+     6→Output:
+     7→    JSON with success status, plan_id, and fields_updated
+     8→
+     9→Exit Codes:
+    10→    0: Success
+    11→    1: Error (plan not found, no fields provided, invalid field format,
+    12→       schema validation failure, no plan-header block)
+    13→"""
+    14→
+    15→import json
+    16→from dataclasses import asdict, dataclass
+    17→from typing import NoReturn
+    18→
+    19→import click
+    20→
+    21→from erk_shared.context.helpers import require_plan_backend, require_repo_root
+    22→from erk_shared.plan_store.types import PlanHeaderNotFoundError
+    23→
+    24→
+    25→@dataclass(frozen=True)
+    26→class UpdateSuccess:
+    27→    """Success response for plan-header update."""
+    28→
+    29→    success: bool
+    30→    plan_id: str
+
+... [122 lines omitted] ...
+
+    35→class UpdateError:
+    36→    """Error response for plan-header update."""
+    39→    error: str
+    43→def _fail(*, error: str, message: str) -&gt; NoReturn:
+    44→    """Emit a JSON error to stderr and exit with code 1."""
+    45→    payload = UpdateError(success=False, error=error, message=message)
+    84→        ValueError: If any field lacks an '=' separator.
+    89→            raise ValueError(msg)
+   116→            error="no_fields",
+   123→    except ValueError as e:
+   124→        _fail(error="invalid_field_format", message=str(e))
+   131→    except PlanHeaderNotFoundError:
+   133→            error="no_plan_header",
+   136→    except RuntimeError as e:
+   137→        _fail(error="update_failed", message=f"Failed to update plan header: {e}")
+   138→    except ValueError as e:
+   139→        _fail(error="schema_validation_failed", message=f"Schema validation failed: {e}")
+  </tool_result>
+  <tool_result tool="toolu_01KBHcwRkMXdEmnQSE5p59Vo">
+     1→"""Create .erk/impl-context/ folder from plan content.
+     2→
+     3→This exec command fetches a plan via PlanBackend and creates the .erk/impl-context/
+     4→folder structure, providing a testable alternative to inline workflow scripts.
+     5→
+     6→Usage:
+     7→    erk exec create-impl-context-from-plan &lt;plan-id&gt;
+     8→
+     9→Output:
+    10→    Structured JSON output with success status and folder details
+    11→
+    12→Exit Codes:
+    13→    0: Success (.erk/impl-context/ folder created)
+    14→    1: Error (plan not found, fetch failed, folder creation failed)
+    15→
+    16→Examples:
+    17→    $ erk exec create-impl-context-from-plan 1028
+    18→    {"success": true, "impl_context_path": "/path/to/.erk/impl-context", "pr_number": 1028}
+    19→
+    20→    $ erk exec create-impl-context-from-plan 999
+    21→    {"success": false, "error": "plan_not_found", "message": "..."}
+    22→"""
+    23→
+    24→import json
+    25→
+    26→import click
+    27→
+    28→from erk_shared.context.helpers import (
+    29→    require_plan_backend,
+    30→    require_repo_root,
+
+... [67 lines omitted] ...
+
+    61→        error_output = {
+    63→            "error": "plan_not_found",
+    67→        click.echo(json.dumps(error_output), err=True)
+  </tool_result>
+  <tool_result tool="toolu_01GntkhU1GpkFJxrJjhgbeJA">
+     1→"""Consolidated implementation setup command for plan-implement.
+     2→
+     3→Replaces the entire Steps 0-2d decision tree in plan-implement.md with a
+     4→single command. Handles argument parsing, source detection, branch creation,
+     5→.erk/impl-context/ setup, and impl-context cleanup.
+     6→
+     7→Usage:
+     8→    erk exec setup-impl                              # Auto-detect from .erk/impl-context/ or branch
+     9→    erk exec setup-impl --issue 2521                 # Set up from issue #2521
+    10→    erk exec setup-impl --file ./my-plan.md          # Set up from local file
+    11→
+    12→Output:
+    13→    JSON with setup result including plan metadata and related docs.
+    14→
+    15→Exit Codes:
+    16→    0: Success
+    17→    1: Error (plan not found, git operation failed, etc.)
+    18→
+    19→Examples:
+    20→    $ erk exec setup-impl --issue 2521
+    21→    {"success": true, "pr_number": 2521, "source": "issue_arg", ...}
+    22→
+    23→    $ erk exec setup-impl
+    24→    {"success": true, "pr_number": 2521, "source": "branch_detection", ...}
+    25→
+    26→    $ erk exec setup-impl
+    27→    {"success": false, "error": "no_plan_found", ...}
+    28→"""
+    29→
+    30→import json
+
+... [288 lines omitted] ...
+
+   105→            "error": "file_not_found",
+   126→            "error": "detached_head",
+   254→                "error": "no_plan_found",
+   294→                    "error": "impl_init_failed",
+   295→                    "message": "Implementation setup succeeded but init validation failed.",
+  </tool_result>
+  <assistant>Now I have a thorough understanding of all 18 files. This is a mechanical rename task - I'll use the libcst-refactor agent for systematic renaming across files. But given the nature of these changes (Click decorators, function params, and internal variables), I'll perform targeted edits directly since each file has unique patterns.
+
+Let me also check `setup_impl_from_pr.py` since it's referenced from `setup_impl.py`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="37935" cache_read_input_tokens="49303" cache_creation="{'ephemeral_5m_input_tokens': 37935, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01KfZSzcWuajiShU44XAZPuR">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/setup_impl_from_pr.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="37935" cache_read_input_tokens="49303" cache_creation="{'ephemeral_5m_input_tokens': 37935, 'ephemeral_1h_input_tokens': 0}" output_tokens="188" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01KfZSzcWuajiShU44XAZPuR">
+     1→"""Set up .erk/impl-context/ folder from GitHub PR in current worktree.
+     2→
+     3→This exec command fetches a plan from a GitHub PR, creates a feature branch,
+     4→checks it out, and creates the .erk/impl-context/ folder structure for implementation.
+     5→
+     6→Usage:
+     7→    erk exec setup-impl-from-pr &lt;plan-number&gt; [--session-id &lt;id&gt;]
+     8→
+     9→Output:
+    10→    Structured JSON output with success status and folder details
+    11→
+    12→Exit Codes:
+    13→    0: Success (.erk/impl-context/ folder created, branch checked out)
+    14→    1: Error (PR not found, plan fetch failed, git operations failed)
+    15→
+    16→Examples:
+    17→    $ erk exec setup-impl-from-pr 1028
+    18→    {"success": true, "impl_path": "/path/to/.erk/impl-context",
+    19→     "pr_number": 1028, "branch": "P1028-..."}
+    20→"""
+    21→
+    22→import json
+    23→from pathlib import Path
+    24→
+    25→import click
+    26→
+    27→from erk_shared.context.helpers import (
+    28→    require_branch_manager,
+    29→    require_cwd,
+    30→    require_git,
+
+... [324 lines omitted] ...
+
+    36→from erk_shared.gateway.git.remote_ops.types import PullRebaseError
+    59→        raise click.ClickException(msg)
+   104→        if isinstance(pull_result, PullRebaseError):
+   105→            error_output = {
+   107→                "error": "pull_rebase_failed",
+   109→                    f"Failed to teleport branch '{branch_name}' from remote: {pull_result.message}"
+   112→            click.echo(json.dumps(error_output), err=True)
+   146→        error_output = {
+   148→            "error": "plan_not_found",
+   151→        click.echo(json.dumps(error_output), err=True)
+   270→        error_output = {
+   272→            "error": "plan_not_found",
+   275→        click.echo(json.dumps(error_output), err=True)
+  </tool_result>
+  <assistant>Now I have a complete picture. This is a large-scale mechanical rename. Let me use parallel agents to handle the changes efficiently. I'll split the work across multiple agents.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="4838" cache_read_input_tokens="87238" cache_creation="{'ephemeral_5m_input_tokens': 4838, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+</session>
