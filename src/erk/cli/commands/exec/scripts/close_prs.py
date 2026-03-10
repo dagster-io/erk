@@ -83,7 +83,7 @@ def _validate_batch_input(data: object) -> list[PlanCloseItem] | BatchCloseError
             return BatchCloseError(
                 success=False,
                 error_type="invalid-input",
-                message=f"Item at index {idx} missing required 'plan_number' field",
+                message=f"Item at index {idx} missing required 'pr_number' field",
             )
 
         plan_number = item_dict["pr_number"]
@@ -91,7 +91,7 @@ def _validate_batch_input(data: object) -> list[PlanCloseItem] | BatchCloseError
             return BatchCloseError(
                 success=False,
                 error_type="invalid-input",
-                message=f"Item at index {idx} has non-integer 'plan_number'",
+                message=f"Item at index {idx} has non-integer 'pr_number'",
             )
 
         if "comment" not in item_dict:
