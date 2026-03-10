@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "pr_number": 9144,
+  "sessions": [
+    {
+      "session_id": "941a049c-717d-4817-bdf5-76dc331b625e",
+      "stage": "impl",
+      "source": "remote",
+      "uploaded_at": "2026-03-10T10:51:55.398659+00:00",
+      "files": [
+        "impl-941a049c-717d-4817-bdf5-76dc331b625e-941a049c-717d-4817-bdf5-76dc331b625e-part1.xml",
+        "impl-941a049c-717d-4817-bdf5-76dc331b625e-941a049c-717d-4817-bdf5-76dc331b625e-part2.xml",
+        "impl-941a049c-717d-4817-bdf5-76dc331b625e-941a049c-717d-4817-bdf5-76dc331b625e-part3.xml",
+        "impl-941a049c-717d-4817-bdf5-76dc331b625e-941a049c-717d-4817-bdf5-76dc331b625e-part4.xml",
+        "impl-941a049c-717d-4817-bdf5-76dc331b625e-941a049c-717d-4817-bdf5-76dc331b625e-part5.xml",
+        "impl-941a049c-717d-4817-bdf5-76dc331b625e-941a049c-717d-4817-bdf5-76dc331b625e-part6.xml",
+        "impl-941a049c-717d-4817-bdf5-76dc331b625e-941a049c-717d-4817-bdf5-76dc331b625e-part7.xml",
+        "impl-941a049c-717d-4817-bdf5-76dc331b625e-941a049c-717d-4817-bdf5-76dc331b625e-part8.xml"
+      ],
+      "user_turns": 2,
+      "duration_minutes": 11,
+      "raw_size_kb": 1090,
+      "xml_size_kb": 155,
+      "git_branch": "plnd/O9109-consolidate-launch-d-03-10-1038"
+    }
+  ]
+}
