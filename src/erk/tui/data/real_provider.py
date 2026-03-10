@@ -820,7 +820,6 @@ class RealPlanDataProvider(PlanDataProvider):
         )
 
 
-
 def _format_learn_display(
     learn_status: str | None,
     learn_plan_issue: int | None,

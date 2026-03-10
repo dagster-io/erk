@@ -983,9 +983,7 @@ query {{
             is_draft = pr_data.get("isDraft", False)
             mergeable_raw = pr_data.get("mergeable")
             has_conflicts = mergeable_raw == "CONFLICTING" if mergeable_raw else None
-            checks_passing, checks_counts = parse_status_rollup(
-                pr_data.get("statusCheckRollup")
-            )
+            checks_passing, checks_counts = parse_status_rollup(pr_data.get("statusCheckRollup"))
             result[pr_num] = PullRequestInfo(
                 number=pr_num,
                 state=state,
