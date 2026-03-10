@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "plan_id": 9122,
+  "sessions": [
+    {
+      "session_id": "1aee72c5-304d-4bc2-a6e4-92e613914154",
+      "stage": "impl",
+      "source": "local",
+      "uploaded_at": "2026-03-09T20:56:44.506788+00:00",
+      "files": [
+        "impl-1aee72c5-304d-4bc2-a6e4-92e613914154-1aee72c5-304d-4bc2-a6e4-92e613914154-part1.xml",
+        "impl-1aee72c5-304d-4bc2-a6e4-92e613914154-1aee72c5-304d-4bc2-a6e4-92e613914154-part2.xml"
+      ],
+      "user_turns": 2,
+      "duration_minutes": 5,
+      "raw_size_kb": 818,
+      "xml_size_kb": 115,
+      "git_branch": "plnd/decouple-json-input-output-03-09-2047"
+    }
+  ]
+}
