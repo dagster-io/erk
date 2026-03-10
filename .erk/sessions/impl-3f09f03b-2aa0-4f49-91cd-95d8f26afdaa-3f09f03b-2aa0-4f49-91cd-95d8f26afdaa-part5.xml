@@ -1,0 +1,526 @@
+<session>
+  <meta source="agent-aa52e58" />
+  <meta branch="plnd/pushdown-review-activity-l-03-10-0845" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>Find a simple exec script test file under tests/unit/cli/commands/exec/scripts/ that tests a script using FakeLocalGitHub (a script that uses require_github). Show me the full content. Look for something that tests a relatively simple script like get_pr_body_footer or post_pr_inline_comment or post_or_update_pr_summary. 
+
+FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant docs before exploring raw files. Then explore codebase as necessary.</user>
+  <assistant>I'll help you find a simple exec script test file. Let me start by checking the documentation as instructed.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="18991" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 18991, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_012uMdRLyDkxWkVLsrj82su2">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/index.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="18991" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 18991, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01NNW2K4cGwsN4uLR4GZskyG">
+    <param name="pattern">tests/unit/cli/commands/exec/scripts/*.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="18991" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 18991, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012uMdRLyDkxWkVLsrj82su2">
+     1→&lt;!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY --&gt;
+     2→&lt;!-- Edit source frontmatter, then run 'erk docs sync' to regenerate. --&gt;
+     3→
+     4→# Agent Documentation
+     5→
+     6→Before starting work, scan the read-when conditions below.
+     7→If your current task matches, read the linked document **before writing code**.
+     8→
+     9→## Categories
+    10→
+    11→- [architecture/](architecture/) — Explore when working on core patterns (dry-run, gateways, subprocess, shell integration). Add docs here for cross-cutting technical patterns.
+    12→- [capabilities/](capabilities/)
+    13→- [changelog/](changelog/)
+    14→- [checklists/](checklists/)
+    15→- [ci/](ci/)
+    16→- [claude-code/](claude-code/)
+    17→- [cli/](cli/) — Explore when building CLI commands or output formatting. Add docs here for Click patterns and terminal UX.
+    18→- [commands/](commands/) — Explore when creating or optimizing slash commands. Add docs here for command authoring patterns.
+    19→- [config/](config/)
+    20→- [configuration/](configuration/)
+    21→- [documentation/](documentation/) — Explore when structuring or writing documentation. Add docs here for documentation methodology and best practices.
+    22→- [erk/](erk/) — Explore when working with erk-specific workflows (worktrees, PR sync, Graphite). Add docs here for erk user-facing features.
+    23→- [erk-dev/](erk-dev/)
+    24→- [gateway/](gateway/)
+    25→- [hooks/](hooks/) — Explore when creating or debugging hooks. Add docs here for hook development patterns.
+    26→- [integrations/](integrations/)
+    27→- [objectives/](objectives/)
+    28→- [planning/](planning/) — Explore when working with plans, .erk/impl-context/ folders, or agent delegation. Add docs here for planning workflow patterns.
+    29→- [pr-operations/](pr-operations/)
+    30→- [refactoring/](refactoring/)
+
+... [22 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01NNW2K4cGwsN4uLR4GZskyG">
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/__init__.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_capture_session_info.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/fixtures.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_add_pr_labels_cmd.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_add_plan_label.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_add_plan_labels.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_add_remote_execution_note.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_add_objective_node.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_cmux_checkout_workspace.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_create_impl_context_from_plan.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_close_prs.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_discover_reviews.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_cleanup_impl_context.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_ci_verify_autofix.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_detect_trunk_branch.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_ci_fetch_summaries.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_ci_update_pr_body.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_ci_generate_summaries.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_dash_data.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_close_pr.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_detect_plan_from_branch.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_download_remote_session.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_get_embedded_prompt.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_get_pr_feedback.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_get_pr_context.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_get_plan_metadata.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_get_plans_for_objective.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_get_pr_view.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_get_issue_timeline_prs.py
+
+... [58 lines omitted] ...
+  </tool_result>
+  <assistant>Good! I found the test files. Now let me check the testing documentation to understand the patterns:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="4383" cache_read_input_tokens="18991" cache_creation="{'ephemeral_5m_input_tokens': 4383, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01DA73wrWhAxjpasqh3V3YFo">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/testing</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="4383" cache_read_input_tokens="18991" cache_creation="{'ephemeral_5m_input_tokens': 4383, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01AzkPv6uL9MK9VS4hXAXw5d">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_get_pr_body_footer.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="4383" cache_read_input_tokens="18991" cache_creation="{'ephemeral_5m_input_tokens': 4383, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01DA73wrWhAxjpasqh3V3YFo">
+EISDIR: illegal operation on a directory, read
+  </tool_result>
+  <tool_result tool="toolu_01AzkPv6uL9MK9VS4hXAXw5d">
+     1→"""Unit tests for get_pr_body_footer kit CLI command.
+     2→
+     3→Tests the PR body footer generation for remote implementation PRs.
+     4→"""
+     5→
+     6→from click.testing import CliRunner
+     7→
+     8→from erk.cli.commands.exec.scripts.get_pr_body_footer import (
+     9→    get_pr_body_footer,
+    10→)
+    11→
+    12→
+    13→def test_get_pr_body_footer_outputs_teleport_command() -&gt; None:
+    14→    """Test that footer includes teleport command."""
+    15→    runner = CliRunner()
+    16→
+    17→    result = runner.invoke(get_pr_body_footer, ["--pr-number", "1895"])
+    18→
+    19→    assert result.exit_code == 0
+    20→    assert "erk pr teleport 1895" in result.output
+    21→    assert "---" in result.output
+    22→    assert "To replicate this PR" in result.output
+    23→
+    24→
+    25→def test_get_pr_body_footer_requires_pr_number() -&gt; None:
+    26→    """Test that --pr-number is required."""
+    27→    runner = CliRunner()
+    28→
+    29→    result = runner.invoke(get_pr_body_footer, [])
+    30→
+
+... [30 lines omitted] ...
+  </tool_result>
+  <assistant>Good! I have found a simple test file. However, let me check if there are any tests that use `FakeLocalGitHub` and the `require_github` pattern. Let me search for those:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="5161" cache_read_input_tokens="23374" cache_creation="{'ephemeral_5m_input_tokens': 5161, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01HCNp41baphR3tXy369r8v8">
+    <param name="pattern">FakeLocalGitHub|require_github</param>
+    <param name="path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="5161" cache_read_input_tokens="23374" cache_creation="{'ephemeral_5m_input_tokens': 5161, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01HCNp41baphR3tXy369r8v8">
+Found 55 files
+tests/unit/cli/commands/exec/scripts/test_set_pr_description.py
+tests/unit/cli/commands/exec/scripts/test_setup_impl_from_pr.py
+tests/unit/cli/commands/exec/scripts/test_setup_impl.py
+tests/unit/cli/commands/exec/scripts/test_store_tripwire_candidates.py
+tests/unit/cli/commands/exec/scripts/test_track_learn_evaluation.py
+tests/unit/cli/commands/exec/scripts/test_track_learn_result.py
+tests/unit/cli/commands/exec/scripts/test_update_issue_body.py
+tests/unit/cli/commands/exec/scripts/test_update_objective_node.py
+tests/unit/cli/commands/exec/scripts/test_update_plan_header.py
+tests/unit/cli/commands/exec/scripts/test_update_pr_description.py
+tests/unit/cli/commands/exec/scripts/test_push_and_create_pr.py
+tests/unit/cli/commands/exec/scripts/test_register_one_shot_plan.py
+tests/unit/cli/commands/exec/scripts/test_reply_to_discussion_comment.py
+tests/unit/cli/commands/exec/scripts/test_resolve_review_threads.py
+tests/unit/cli/commands/exec/scripts/test_set_local_review_marker.py
+tests/unit/cli/commands/exec/scripts/test_objective_save_to_issue.py
+tests/unit/cli/commands/exec/scripts/test_plan_save.py
+tests/unit/cli/commands/exec/scripts/test_plan_update.py
+tests/unit/cli/commands/exec/scripts/test_post_workflow_started_comment.py
+tests/unit/cli/commands/exec/scripts/test_pr_discussion_comments.py
+tests/unit/cli/commands/exec/scripts/test_pr_review_comments.py
+tests/unit/cli/commands/exec/scripts/test_pr_sync_commit.py
+tests/unit/cli/commands/exec/scripts/test_impl_signal.py
+tests/unit/cli/commands/exec/scripts/test_incremental_dispatch.py
+tests/unit/cli/commands/exec/scripts/test_land_execute_objective_detection.py
+tests/unit/cli/commands/exec/scripts/test_migrate_objective_schema.py
+tests/unit/cli/commands/exec/scripts/test_objective_apply_landed_update.py
+tests/unit/cli/commands/exec/scripts/test_objective_fetch_context.py
+tests/unit/cli/commands/exec/scripts/test_objective_plan_setup.py
+
+... [26 lines omitted] ...
+  </tool_result>
+  <assistant>Excellent! Let me look at one of the simpler-sounding ones. Let me check `test_update_pr_description.py` first, then maybe `test_set_pr_description.py`:</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="1568" cache_read_input_tokens="28535" cache_creation="{'ephemeral_5m_input_tokens': 1568, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Txm4gcGU6NxT8kQ2qPWXmu">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_set_pr_description.py</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="1568" cache_read_input_tokens="28535" cache_creation="{'ephemeral_5m_input_tokens': 1568, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01DVMeZJoQRSdp4QPdd4dz4N">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_update_pr_description.py</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="1568" cache_read_input_tokens="28535" cache_creation="{'ephemeral_5m_input_tokens': 1568, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Txm4gcGU6NxT8kQ2qPWXmu">
+     1→"""Tests for erk exec set-pr-description command."""
+     2→
+     3→from click.testing import CliRunner
+     4→
+     5→from erk.cli.commands.exec.scripts.set_pr_description import set_pr_description
+     6→from erk_shared.gateway.github.types import PRDetails
+     7→from erk_shared.gateway.graphite.types import BranchMetadata
+     8→from erk_shared.plan_store.planned_pr import PlannedPRBackend
+     9→from erk_shared.plan_store.planned_pr_lifecycle import build_plan_stage_body
+    10→from tests.fakes.gateway.git import FakeGit
+    11→from tests.fakes.gateway.github import FakeLocalGitHub
+    12→from tests.fakes.gateway.graphite import FakeGraphite
+    13→from tests.fakes.gateway.time import FakeTime
+    14→from tests.test_utils.context_builders import build_workspace_test_context
+    15→from tests.test_utils.env_helpers import erk_isolated_fs_env
+    16→from tests.test_utils.plan_helpers import format_plan_header_body_for_test
+    17→
+    18→
+    19→def _make_pr_details(
+    20→    *,
+    21→    number: int,
+    22→    branch: str,
+    23→    body: str = "",
+    24→) -&gt; PRDetails:
+    25→    return PRDetails(
+    26→        number=number,
+    27→        url=f"https://github.com/owner/repo/pull/{number}",
+    28→        title="WIP",
+    29→        body=body,
+    30→        base_ref_name="main",
+
+... [224 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01DVMeZJoQRSdp4QPdd4dz4N">
+     1→"""Tests for erk exec update-pr-description command.
+     2→
+     3→These tests verify the CLI layer behavior of the update-pr-description exec command.
+     4→The command generates an AI-powered PR title/body and updates the PR on GitHub,
+     5→preserving existing header and footer metadata.
+     6→"""
+     7→
+     8→from datetime import UTC, datetime
+     9→from typing import Any
+    10→
+    11→from click.testing import CliRunner
+    12→
+    13→from erk.cli.commands.exec.scripts.update_pr_description import update_pr_description
+    14→from erk_shared.gateway.github.issues.types import IssueComment, IssueInfo
+    15→from erk_shared.gateway.github.metadata.plan_header import format_plan_content_comment
+    16→from erk_shared.gateway.github.types import PRDetails
+    17→from erk_shared.gateway.graphite.types import BranchMetadata
+    18→from erk_shared.impl_folder import get_impl_dir
+    19→from erk_shared.plan_store.planned_pr import PlannedPRBackend
+    20→from erk_shared.plan_store.planned_pr_lifecycle import build_plan_stage_body
+    21→from tests.fakes.gateway.git import FakeGit
+    22→from tests.fakes.gateway.github import FakeLocalGitHub
+    23→from tests.fakes.gateway.github_issues import FakeGitHubIssues
+    24→from tests.fakes.gateway.graphite import FakeGraphite
+    25→from tests.fakes.gateway.time import FakeTime
+    26→from tests.fakes.tests.prompt_executor import FakePromptExecutor
+    27→from tests.test_utils.context_builders import build_workspace_test_context
+    28→from tests.test_utils.env_helpers import ErkIsolatedFsEnv, erk_isolated_fs_env
+    29→from tests.test_utils.plan_helpers import format_plan_header_body_for_test
+    30→
+
+... [440 lines omitted] ...
+
+    88→    prompt_error: str | None = None,
+   135→    if prompt_error is not None:
+   136→        executor_kwargs["simulated_prompt_error"] = prompt_error
+  </tool_result>
+  <assistant>Perfect! I found excellent examples. Let me show you the `test_set_pr_description.py` file as it's one of the simplest and most straightforward examples that uses `FakeLocalGitHub` with the GitHub-based pattern. This is the best example to learn from:
+
+## Summary
+
+I found a perfect example for you: **`test_set_pr_description.py`** at `/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_set_pr_description.py`
+
+Here's the full content:
+
+```python
+"""Tests for erk exec set-pr-description command."""
+
+from click.testing import CliRunner
+
+from erk.cli.commands.exec.scripts.set_pr_description import set_pr_description
+from erk_shared.gateway.github.types import PRDetails
+from erk_shared.gateway.graphite.types import BranchMetadata
+from erk_shared.plan_store.planned_pr import PlannedPRBackend
+from erk_shared.plan_store.planned_pr_lifecycle import build_plan_stage_body
+from tests.fakes.gateway.git import FakeGit
+from tests.fakes.gateway.github import FakeLocalGitHub
+from tests.fakes.gateway.graphite import FakeGraphite
+from tests.fakes.gateway.time import FakeTime
+from tests.test_utils.context_builders import build_workspace_test_context
+from tests.test_utils.env_helpers import erk_isolated_fs_env
+from tests.test_utils.plan_helpers import format_plan_header_body_for_test
+
+
+def _make_pr_details(
+    *,
+    number: int,
+    branch: str,
+    body: str = "",
+) -&gt; PRDetails:
+    return PRDetails(
+        number=number,
+        url=f"https://github.com/owner/repo/pull/{number}",
+        title="WIP",
+        body=body,
+        base_ref_name="main",
+        head_ref_name=branch,
+        state="OPEN",
+        is_draft=False,
+        is_cross_repository=False,
+        mergeable="MERGEABLE",
+        merge_state_status="CLEAN",
+        owner="owner",
+        repo="repo",
+    )
+
+
+def _make_standard_fakes(
+    env,
+    *,
+    branch_name: str = "feature",
+    parent_branch: str = "main",
+    pr_body: str = "",
+    pr_number: int = 42,
+):
+    git = FakeGit(
+        git_common_dirs={env.cwd: env.git_dir},
+        repository_roots={env.cwd: env.git_dir},
+        local_branches={env.cwd: ["main", branch_name]},
+        default_branches={env.cwd: "main"},
+        trunk_branches={env.git_dir: "main"},
+        current_branches={env.cwd: branch_name},
+    )
+
+    graphite = FakeGraphite(
+        authenticated=True,
+        branches={
+            branch_name: BranchMetadata(
+                name=branch_name,
+                parent=parent_branch,
+                children=[],
+                is_trunk=False,
+                commit_sha=None,
+            ),
+            "main": BranchMetadata(
+                name="main",
+                parent=None,
+                children=[branch_name],
+                is_trunk=True,
+                commit_sha=None,
+            ),
+        },
+    )
+
+    pr_details = _make_pr_details(
+        number=pr_number,
+        branch=branch_name,
+        body=pr_body,
+    )
+    github = FakeLocalGitHub(
+        authenticated=True,
+        prs_by_branch={branch_name: pr_details},
+    )
+
+    return git, graphite, github
+
+
+def test_updates_pr_title_and_body() -&gt; None:
+    """Happy path: PR title and body are updated."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+        git, graphite, github = _make_standard_fakes(env)
+
+        ctx = build_workspace_test_context(env, git=git, graphite=graphite, github=github)
+
+        result = runner.invoke(
+            set_pr_description,
+            ["--title", "Fix auth bug", "--body", "Fixes the authentication issue."],
+            obj=ctx,
+        )
+
+        assert result.exit_code == 0, result.output
+        assert "PR #42 updated" in result.output
+        assert "Fix auth bug" in result.output
+
+        # Verify PR was updated on GitHub
+        assert len(github.updated_pr_titles) == 1
+        assert github.updated_pr_titles[0] == (42, "Fix auth bug")
+
+        assert len(github.updated_pr_bodies) == 1
+        pr_number, body = github.updated_pr_bodies[0]
+        assert pr_number == 42
+        assert "Fixes the authentication issue." in body
+
+
+def test_generates_footer_with_checkout_command() -&gt; None:
+    """Updated body includes footer with checkout command."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+        git, graphite, github = _make_standard_fakes(env, pr_body="Old content")
+
+        ctx = build_workspace_test_context(env, git=git, graphite=graphite, github=github)
+
+        result = runner.invoke(
+            set_pr_description,
+            ["--title", "New title", "--body", "New body"],
+            obj=ctx,
+        )
+
+        assert result.exit_code == 0
+
+        _, updated_body = github.updated_pr_bodies[0]
+        assert "New body" in updated_body
+        assert "erk pr teleport" in updated_body
+        # No issue closing reference (planned-PR only)
+        assert "Closes #" not in updated_body
+
+
+def test_fails_when_no_pr() -&gt; None:
+    """Exits 1 when no PR exists for the branch."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            repository_roots={env.cwd: env.git_dir},
+            local_branches={env.cwd: ["main", "feature"]},
+            default_branches={env.cwd: "main"},
+            trunk_branches={env.git_dir: "main"},
+            current_branches={env.cwd: "feature"},
+        )
+
+        graphite = FakeGraphite(
+            authenticated=True,
+            branches={
+                "feature": BranchMetadata(
+                    name="feature",
+                    parent="main",
+                    children=[],
+                    is_trunk=False,
+                    commit_sha=None,
+                ),
+                "main": BranchMetadata(
+                    name="main",
+                    parent=None,
+                    children=["feature"],
+                    is_trunk=True,
+                    commit_sha=None,
+                ),
+            },
+        )
+
+        github = FakeLocalGitHub(authenticated=True)
+
+        ctx = build_workspace_test_context(env, git=git, graphite=graphite, github=github)
+
+        result = runner.invoke(
+            set_pr_description,
+            ["--title", "Test", "--body", "Test body"],
+            obj=ctx,
+        )
+
+        assert result.exit_code != 0
+        assert "No pull request found" in result.output
+
+
+def test_planned_pr_backend_preserves_metadata() -&gt; None:
+    """Metadata prefix is preserved for draft PR backend."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+        metadata_body = format_plan_header_body_for_test()
+        plan_content = "# My Plan\n\nImplement the thing."
+        pr_body = build_plan_stage_body(metadata_body, plan_content, summary=None)
+
+        git, graphite, github = _make_standard_fakes(
+            env,
+            branch_name="feature",
+            pr_body=pr_body,
+        )
+
+        ctx = build_workspace_test_context(
+            env,
+            git=git,
+            graphite=graphite,
+            github=github,
+            plan_store=PlannedPRBackend(github, github.issues, time=FakeTime()),
+        )
+
+        result = runner.invoke(
+            set_pr_description,
+            ["--title", "New title", "--body", "New body"],
+            obj=ctx,
+        )
+
+        assert result.exit_code == 0, result.output
+
+        assert len(github.updated_pr_bodies) == 1
+        _, updated_body = github.updated_pr_bodies[0]
+        assert "plan-header" in updated_body
+        # No self-closing reference for draft PR backend
+        assert "Closes #" not in updated_body
+
+
+def test_body_file_option() -&gt; None:
+    """Body can be provided via --body-file."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+        git, graphite, github = _make_standard_fakes(env)
+
+        ctx = build_workspace_test_context(env, git=git, graphite=graphite, github=github)
+
+        # Write body to a file
+        body_file = env.cwd / "body.md"
+        body_file.write_text("Body from file content.", encoding="utf-8")
+
+        result = runner.invoke(
+            set_pr_description,
+            ["--title", "File body title", "--body-file", str(body_file)],
+            obj=ctx,
+        )
+
+        assert result.exit_code == 0, result.output
+
+        _, updated_body = github.updated_pr_bodies[0]
+        assert "Body from file content." in updated_body
+```
+
+### Key Patterns to Learn:
+
+1. **FakeLocalGitHub Setup**: `FakeLocalGitHub(authenticated=True, prs_by_branch={branch_name: pr_details})`
+2. **Tracking mutations**: The fake github object tracks updates in `updated_pr_titles` and `updated_pr_bodies` properties
+3. **PRDetails Construction**: Shows how to create test PR data with all required fields
+4. **Helper functions**: Uses `_make_standard_fakes()` to reduce duplication
+5. **Test isolation**: Uses `erk_isolated_fs_env` context manager for filesystem isolation
+6. **Assertion patterns**: Verifies both CLI output and mutation tracking on fakes</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="9943" cache_read_input_tokens="30103" cache_creation="{'ephemeral_5m_input_tokens': 9943, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>
