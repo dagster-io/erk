@@ -1,0 +1,628 @@
+<session>
+  <meta source="agent-a9d5797" />
+  <meta branch="plnd/add-run-cancel-retry-03-10-0757" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>Find the RunRowData dataclass definition and the _get_selected_run_row method in the codebase. Also find the ViewMode enum to see if RUNS is already defined. Search in /home/runner/work/erk/erk/src/erk/tui/.
+
+FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant docs before exploring raw files. Then explore codebase as necessary.</user>
+  <assistant>I'll help you find these components. Let me start by checking the documentation index as instructed, then explore the codebase.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="18968" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 18968, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01XLzmvcv1caact1btasmUd2">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/index.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="18968" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 18968, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_0127NAMFS1wM4VQDhAZjfDTs">
+    <param name="pattern">**/tui/**/*.md</param>
+    <param name="path">/home/runner/work/erk/erk/docs/learned</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="18968" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 18968, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01XLzmvcv1caact1btasmUd2">
+     1→&lt;!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY --&gt;
+     2→&lt;!-- Edit source frontmatter, then run 'erk docs sync' to regenerate. --&gt;
+     3→
+     4→# Agent Documentation
+     5→
+     6→Before starting work, scan the read-when conditions below.
+     7→If your current task matches, read the linked document **before writing code**.
+     8→
+     9→## Categories
+    10→
+    11→- [architecture/](architecture/) — Explore when working on core patterns (dry-run, gateways, subprocess, shell integration). Add docs here for cross-cutting technical patterns.
+    12→- [capabilities/](capabilities/)
+    13→- [changelog/](changelog/)
+    14→- [checklists/](checklists/)
+    15→- [ci/](ci/)
+    16→- [claude-code/](claude-code/)
+    17→- [cli/](cli/) — Explore when building CLI commands or output formatting. Add docs here for Click patterns and terminal UX.
+    18→- [commands/](commands/) — Explore when creating or optimizing slash commands. Add docs here for command authoring patterns.
+    19→- [config/](config/)
+    20→- [configuration/](configuration/)
+    21→- [documentation/](documentation/) — Explore when structuring or writing documentation. Add docs here for documentation methodology and best practices.
+    22→- [erk/](erk/) — Explore when working with erk-specific workflows (worktrees, PR sync, Graphite). Add docs here for erk user-facing features.
+    23→- [erk-dev/](erk-dev/)
+    24→- [gateway/](gateway/)
+    25→- [hooks/](hooks/) — Explore when creating or debugging hooks. Add docs here for hook development patterns.
+    26→- [integrations/](integrations/)
+    27→- [objectives/](objectives/)
+    28→- [planning/](planning/) — Explore when working with plans, .erk/impl-context/ folders, or agent delegation. Add docs here for planning workflow patterns.
+    29→- [pr-operations/](pr-operations/)
+    30→- [refactoring/](refactoring/)
+
+... [22 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_0127NAMFS1wM4VQDhAZjfDTs">
+/home/runner/work/erk/erk/docs/learned/tui/action-inventory.md
+/home/runner/work/erk/erk/docs/learned/tui/async-action-refresh-pattern.md
+/home/runner/work/erk/erk/docs/learned/tui/adding-commands.md
+/home/runner/work/erk/erk/docs/learned/tui/async-state-snapshot.md
+/home/runner/work/erk/erk/docs/learned/tui/dashboard-columns.md
+/home/runner/work/erk/erk/docs/learned/tui/command-execution.md
+/home/runner/work/erk/erk/docs/learned/tui/command-palette.md
+/home/runner/work/erk/erk/docs/learned/tui/architecture.md
+/home/runner/work/erk/erk/docs/learned/tui/column-addition-pattern.md
+/home/runner/work/erk/erk/docs/learned/tui/clipboard-text-generation.md
+/home/runner/work/erk/erk/docs/learned/tui/one-shot-prompt-modal.md
+/home/runner/work/erk/erk/docs/learned/tui/frozen-dataclass-field-management.md
+/home/runner/work/erk/erk/docs/learned/tui/stacked-pr-indicator.md
+/home/runner/work/erk/erk/docs/learned/tui/modal-screen-pattern.md
+/home/runner/work/erk/erk/docs/learned/tui/multi-operation-tracking.md
+/home/runner/work/erk/erk/docs/learned/tui/plan-title-rendering-pipeline.md
+/home/runner/work/erk/erk/docs/learned/tui/dual-handler-pattern.md
+/home/runner/work/erk/erk/docs/learned/tui/lifecycle-display.md
+/home/runner/work/erk/erk/docs/learned/tui/modal-widget-embedding.md
+/home/runner/work/erk/erk/docs/learned/tui/index.md
+/home/runner/work/erk/erk/docs/learned/tui/filter-toggle-pattern.md
+/home/runner/work/erk/erk/docs/learned/tui/plan-row-data.md
+/home/runner/work/erk/erk/docs/learned/tui/runs-tab-architecture.md
+/home/runner/work/erk/erk/docs/learned/tui/data-contract.md
+/home/runner/work/erk/erk/docs/learned/tui/keyboard-shortcuts.md
+/home/runner/work/erk/erk/docs/learned/tui/derived-display-columns.md
+/home/runner/work/erk/erk/docs/learned/tui/filter-pipeline.md
+/home/runner/work/erk/erk/docs/learned/tui/view-aware-commands.md
+/home/runner/work/erk/erk/docs/learned/tui/tripwires.md
+/home/runner/work/erk/erk/docs/learned/tui/streaming-output.md
+
+... [7 lines omitted] ...
+  </tool_result>
+  <assistant>Good! There's a TUI documentation folder. Let me check the runs-tab-architecture.md file which looks directly relevant:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="2328" cache_read_input_tokens="18968" cache_creation="{'ephemeral_5m_input_tokens': 2328, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01YU2hpmQGuRn5Gn4Zm2VkhG">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/runs-tab-architecture.md</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="2328" cache_read_input_tokens="18968" cache_creation="{'ephemeral_5m_input_tokens': 2328, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Ebi5yQwVLCYEs2YiBnW34c">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/view-mode-help.md</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="2328" cache_read_input_tokens="18968" cache_creation="{'ephemeral_5m_input_tokens': 2328, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_0164KHiWH7aby7tqmkTNcJP4">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/data-contract.md</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="2328" cache_read_input_tokens="18968" cache_creation="{'ephemeral_5m_input_tokens': 2328, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01YU2hpmQGuRn5Gn4Zm2VkhG">
+     1→---
+     2→title: "Runs Tab Architecture"
+     3→read_when:
+     4→  - "working with TUI Runs tab"
+     5→  - "adding columns to RunDataTable"
+     6→  - "understanding branch resolution in runs"
+     7→  - "modifying workflow run display in TUI"
+     8→tripwires:
+     9→  - action: "using run.branch directly for display without checking PR head_branch first"
+    10→    warning: "After merge+deletion, run.branch becomes master/main. Use PR head_branch as primary source, falling back to run.branch only if not master/main."
+    11→  - action: "adding a new column to RunDataTable without updating RunRowData"
+    12→    warning: "RunDataTable columns are populated from RunRowData fields. Add the field to RunRowData first, then add the column in _setup_columns."
+    13→---
+    14→
+    15→# Runs Tab Architecture
+    16→
+    17→The Runs tab displays GitHub Actions workflow runs in the TUI, alongside Plans, Learn, and Objectives views.
+    18→
+    19→## RunRowData
+    20→
+    21→Frozen dataclass representing one workflow run row.
+    22→
+    23→**Source**: `src/erk/tui/data/types.py`
+    24→
+    25→| Field               | Type               | Description                                             |
+    26→| ------------------- | ------------------ | ------------------------------------------------------- |
+    27→| `run_id`            | `str`              | GitHub Actions workflow run ID                          |
+    28→| `run_url`           | `str \| None`      | URL to the GitHub Actions run page                      |
+    29→| `status`            | `str`              | Raw status: "queued", "in_progress", "completed"        |
+    30→| `conclusion`        | `str \| None`      | Raw conclusion: "success", "failure", "cancelled", None |
+
+... [78 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01Ebi5yQwVLCYEs2YiBnW34c">
+     1→---
+     2→title: View-Mode-Aware Help Screen
+     3→read_when:
+     4→  - "modifying the TUI help screen"
+     5→  - "adding view-specific actions to the TUI"
+     6→  - "understanding ViewMode-conditional rendering"
+     7→---
+     8→
+     9→# View-Mode-Aware Help Screen
+    10→
+    11→The TUI `HelpScreen` accepts a `view_mode: ViewMode` parameter and conditionally renders help content based on the active view (plans vs objectives).
+    12→
+    13→## Implementation Pattern
+    14→
+    15→&lt;!-- Source: src/erk/tui/screens/help_screen.py --&gt;
+    16→
+    17→The `HelpScreen.__init__()` stores `view_mode` as an instance variable. A helper method `_is_objectives_view()` wraps the check. The `compose()` method uses this to branch rendering:
+    18→
+    19→```python
+    20→def compose(self) -&gt; ComposeResult:
+    21→    is_objectives = self._is_objectives_view()
+    22→    # ... shared sections ...
+    23→    if is_objectives:
+    24→        yield Label("Enter   View objective details", ...)
+    25→    else:
+    26→        yield Label("Enter   View plan details", ...)
+    27→```
+    28→
+    29→## Conditional Sections
+    30→
+
+... [26 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_0164KHiWH7aby7tqmkTNcJP4">
+     1→---
+     2→title: TUI Data Contract
+     3→read_when:
+     4→  - "building an alternate frontend consuming plan data"
+     5→  - "adding fields to PlanRowData or PlanDataProvider"
+     6→  - "understanding the display-vs-raw field duality"
+     7→  - "serializing plan data to JSON for external consumers"
+     8→tripwires:
+     9→  - action: "formatting display strings during table render"
+    10→    warning: "Display strings are pre-formatted at fetch time. Add new *_display fields to PlanRowData and format in RealPlanDataProvider._build_row_data(), not in the widget layer."
+    11→  - action: "adding a field to PlanRowData without updating make_plan_row"
+    12→    warning: "The fake's make_plan_row() helper must stay in sync. Add the new field with a sensible default there too, or all TUI tests will break."
+    13→  - action: "putting PlanDataProvider ABC in src/erk/tui/"
+    14→    warning: "The ABC lives in erk-shared so provider implementations are co-located in the shared package. External consumers import from erk-shared alongside other shared gateways."
+    15→  - action: "constructing PlanFilters without copying all fields from existing filters"
+    16→    warning: "All fields must be explicitly copied in _load_data() PlanFilters construction. Missing fields (like creator) cause silent filtering failures."
+    17→last_audited: "2026-02-16 14:20 PT"
+    18→audit_result: edited
+    19→---
+    20→
+    21→# TUI Data Contract
+    22→
+    23→The TUI data layer is designed around a single frozen dataclass (`PlanRowData`) that carries both display-ready strings and raw identifiers. This document explains the design decisions behind the data contract, the cross-package split, and the pitfalls of JSON serialization — things that can't be learned by reading any single source file.
+    24→
+    25→## Why Display and Raw Fields Coexist
+    26→
+    27→&lt;!-- Source: src/erk/tui/data/types.py, PlanRowData --&gt;
+    28→
+    29→`PlanRowData` carries two kinds of fields for the same data. For example, `pr_number` (raw `int | None`) and `pr_display` (pre-formatted `str` like `"#123 👀"`). This is deliberate:
+    30→
+
+... [215 lines omitted] ...
+
+   143→| `run_conclusion` | `str`                              | Yes      | Workflow run conclusion: `"success"`, `"failure"`, `"cancelled"`, etc. |
+   225→Adding a field to `PlanRowData` touches at minimum five places. Missing any one causes test failures or silent data loss:
+  </tool_result>
+  <assistant>Perfect! The documentation provides clear guidance. Now let me search for the actual source files to locate the code:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="8122" cache_read_input_tokens="21296" cache_creation="{'ephemeral_5m_input_tokens': 8122, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_018Z2b8Q8DNrN1BFbgk8RQZV">
+    <param name="pattern">**/tui/**/*.py</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="8122" cache_read_input_tokens="21296" cache_creation="{'ephemeral_5m_input_tokens': 8122, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01TNKjP5cRTZoRVn88YLFz3R">
+    <param name="command">find /home/runner/work/erk/erk/src/erk/tui -name "types.py" -o -name "run_table.py" -o -name "*view*mode*" -type f 2&gt;/dev/null | head -20</param>
+    <param name="description">Find types.py, run_table.py, and view-related files in TUI</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="8122" cache_read_input_tokens="21296" cache_creation="{'ephemeral_5m_input_tokens': 8122, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_018Z2b8Q8DNrN1BFbgk8RQZV">
+/home/runner/work/erk/erk/src/erk/tui/actions/__init__.py
+/home/runner/work/erk/erk/src/erk/tui/__init__.py
+/home/runner/work/erk/erk/src/erk/tui/actions/filter_actions.py
+/home/runner/work/erk/erk/src/erk/tui/actions/navigation.py
+/home/runner/work/erk/erk/src/erk/tui/actions/palette.py
+/home/runner/work/erk/erk/src/erk/tui/commands/__init__.py
+/home/runner/work/erk/erk/src/erk/tui/app.py
+/home/runner/work/erk/erk/src/erk/tui/commands/types.py
+/home/runner/work/erk/erk/src/erk/tui/commands/provider.py
+/home/runner/work/erk/erk/src/erk/tui/commands/registry.py
+/home/runner/work/erk/erk/src/erk/tui/data/__init__.py
+/home/runner/work/erk/erk/src/erk/tui/filtering/__init__.py
+/home/runner/work/erk/erk/src/erk/tui/data/provider_abc.py
+/home/runner/work/erk/erk/src/erk/tui/data/real_provider.py
+/home/runner/work/erk/erk/src/erk/tui/data/types.py
+/home/runner/work/erk/erk/src/erk/tui/filtering/types.py
+/home/runner/work/erk/erk/src/erk/tui/filtering/logic.py
+/home/runner/work/erk/erk/src/erk/tui/formatting/__init__.py
+/home/runner/work/erk/erk/src/erk/tui/formatting/ci_checks.py
+/home/runner/work/erk/erk/src/erk/tui/jsonl_viewer/__init__.py
+/home/runner/work/erk/erk/src/erk/tui/operations/__init__.py
+/home/runner/work/erk/erk/src/erk/tui/jsonl_viewer/models.py
+/home/runner/work/erk/erk/src/erk/tui/jsonl_viewer/widgets.py
+/home/runner/work/erk/erk/src/erk/tui/jsonl_viewer/app.py
+/home/runner/work/erk/erk/src/erk/tui/operations/workers.py
+/home/runner/work/erk/erk/src/erk/tui/operations/types.py
+/home/runner/work/erk/erk/src/erk/tui/operations/logic.py
+/home/runner/work/erk/erk/src/erk/tui/operations/streaming.py
+/home/runner/work/erk/erk/src/erk/tui/screens/__init__.py
+/home/runner/work/erk/erk/src/erk/tui/sorting/__init__.py
+
+... [21 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01TNKjP5cRTZoRVn88YLFz3R">
+/home/runner/work/erk/erk/src/erk/tui/filtering/types.py
+/home/runner/work/erk/erk/src/erk/tui/views/types.py
+/home/runner/work/erk/erk/src/erk/tui/widgets/run_table.py
+/home/runner/work/erk/erk/src/erk/tui/operations/types.py
+/home/runner/work/erk/erk/src/erk/tui/commands/types.py
+/home/runner/work/erk/erk/src/erk/tui/sorting/types.py
+/home/runner/work/erk/erk/src/erk/tui/data/types.py
+  </tool_result>
+  <assistant>Great! Now let me read the key files:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="2077" cache_read_input_tokens="29418" cache_creation="{'ephemeral_5m_input_tokens': 2077, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01AFy89N5kKZk6iBMrPJyjML">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/data/types.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="2077" cache_read_input_tokens="29418" cache_creation="{'ephemeral_5m_input_tokens': 2077, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01T92nMtm7fmjvRKQS8qp2bn">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/views/types.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="2077" cache_read_input_tokens="29418" cache_creation="{'ephemeral_5m_input_tokens': 2077, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_019atUt1DVPLLKj2dRPC5ojp">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/widgets/run_table.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="2077" cache_read_input_tokens="29418" cache_creation="{'ephemeral_5m_input_tokens': 2077, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01AFy89N5kKZk6iBMrPJyjML">
+     1→"""Data types for TUI components."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→import dataclasses
+     6→from dataclasses import dataclass
+     7→from datetime import datetime
+     8→from typing import Any
+     9→
+    10→from erk_shared.gateway.github.types import IssueFilterState
+    11→
+    12→
+    13→@dataclass(frozen=True)
+    14→class PlanRowData:
+    15→    """Row data for displaying a plan in the TUI table.
+    16→
+    17→    Contains pre-formatted display strings and raw data needed for actions.
+    18→    Immutable to ensure table state consistency.
+    19→
+    20→    **Display vs Raw convention:** Many data points have both a raw field (for
+    21→    logic/predicates) and a display field (for table rendering). Raw fields are
+    22→    often nullable (None when absent), while display fields are always strings
+    23→    (dash "-" or empty when absent). Use raw fields in availability predicates
+    24→    (``ctx.row.pr_number is not None``), display fields for rendering.
+    25→
+    26→    Attributes:
+    27→
+    28→        plan_id: GitHub issue number (e.g., 123). Never None.
+    29→        plan_url: Full URL to the GitHub issue. None when unavailable.
+    30→        full_title: Complete untruncated plan title. Empty string possible.
+
+... [269 lines omitted] ...
+
+    58→        run_conclusion: Run conclusion ("success", "failure", "cancelled").
+   167→        conclusion: Raw run conclusion ("success", "failure", "cancelled"). None if in progress.
+   219→    warnings: tuple[str, ...] = ()
+  </tool_result>
+  <tool_result tool="toolu_01T92nMtm7fmjvRKQS8qp2bn">
+     1→"""View mode types for TUI dashboard."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→from dataclasses import dataclass
+     6→from enum import Enum, auto
+     7→
+     8→
+     9→class ViewMode(Enum):
+    10→    """Available view modes for the dashboard."""
+    11→
+    12→    PLANS = auto()
+    13→    LEARN = auto()
+    14→    OBJECTIVES = auto()
+    15→    RUNS = auto()
+    16→
+    17→
+    18→@dataclass(frozen=True)
+    19→class ViewConfig:
+    20→    """Configuration for a specific view mode.
+    21→
+    22→    Attributes:
+    23→        mode: The view mode this config describes
+    24→        display_name: Human-readable name for the view
+    25→        labels: GitHub labels to use when fetching data
+    26→        key_hint: Key binding hint (e.g., "1", "2", "3")
+    27→        exclude_labels: Labels to exclude from results (client-side filtering
+    28→            applied before expensive enrichment). Empty tuple means no exclusion.
+    29→    """
+    30→
+
+... [92 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_019atUt1DVPLLKj2dRPC5ojp">
+     1→"""Run table widget for TUI dashboard Runs tab."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→from typing import TYPE_CHECKING, cast
+     6→
+     7→from textual.events import Click
+     8→from textual.message import Message
+     9→from textual.widgets import DataTable
+    10→
+    11→from erk.tui.data.types import RunRowData
+    12→
+    13→if TYPE_CHECKING:
+    14→    from erk.tui.app import ErkDashApp
+    15→
+    16→
+    17→class RunDataTable(DataTable):
+    18→    """DataTable subclass for displaying workflow runs.
+    19→
+    20→    Manages column configuration and row population from RunRowData.
+    21→    Uses row selection mode (not cell selection) for simpler navigation.
+    22→    """
+    23→
+    24→    class RunClicked(Message):
+    25→        """Posted when user clicks run-id column on a row."""
+    26→
+    27→        def __init__(self, row_index: int) -&gt; None:
+    28→            super().__init__()
+    29→            self.row_index = row_index
+    30→
+
+... [148 lines omitted] ...
+  </tool_result>
+  <assistant>Perfect! Now let me search for the `_get_selected_run_row` method mentioned in your search request:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="10327" cache_read_input_tokens="31495" cache_creation="{'ephemeral_5m_input_tokens': 10327, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01WZkiFDUouZrwg1rZfN2R8B">
+    <param name="pattern">_get_selected_run_row</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/tui</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="10327" cache_read_input_tokens="31495" cache_creation="{'ephemeral_5m_input_tokens': 10327, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01DUuDSsA5MK6HeoEHbd9mPK">
+    <param name="pattern">get_selected_row_data</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/tui</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="10327" cache_read_input_tokens="31495" cache_creation="{'ephemeral_5m_input_tokens': 10327, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01DUuDSsA5MK6HeoEHbd9mPK">
+Found 3 files
+src/erk/tui/widgets/plan_table.py
+src/erk/tui/widgets/run_table.py
+src/erk/tui/actions/navigation.py
+  </tool_result>
+  <tool_result tool="toolu_01WZkiFDUouZrwg1rZfN2R8B">
+Found 1 file
+src/erk/tui/actions/navigation.py
+  </tool_result>
+  <assistant>Let me check the navigation.py file:</assistant>
+  <usage input_tokens="82" cache_creation_input_tokens="393" cache_read_input_tokens="41822" cache_creation="{'ephemeral_5m_input_tokens': 393, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01TpJ7NKCsqJZJyyPAAZvPB4">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/actions/navigation.py</param>
+  </tool_use>
+  <usage input_tokens="82" cache_creation_input_tokens="393" cache_read_input_tokens="41822" cache_creation="{'ephemeral_5m_input_tokens': 393, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01TpJ7NKCsqJZJyyPAAZvPB4">
+     1→"""Navigation action handlers for TUI application."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→from typing import TYPE_CHECKING
+     6→
+     7→from erk.tui.commands.types import CommandContext
+     8→from erk.tui.data.types import PlanRowData, RunRowData
+     9→from erk.tui.screens.check_runs_screen import CheckRunsScreen
+    10→from erk.tui.screens.help_screen import HelpScreen
+    11→from erk.tui.screens.launch_screen import LaunchScreen
+    12→from erk.tui.screens.objective_nodes_screen import ObjectiveNodesScreen
+    13→from erk.tui.screens.plan_body_screen import PlanBodyScreen
+    14→from erk.tui.screens.plan_detail_screen import PlanDetailScreen
+    15→from erk.tui.screens.unresolved_comments_screen import UnresolvedCommentsScreen
+    16→from erk.tui.views.types import ViewMode
+    17→from erk_shared.gateway.command_executor.real import RealCommandExecutor
+    18→
+    19→if TYPE_CHECKING:
+    20→    from erk.tui.app import ErkDashApp
+    21→
+    22→
+    23→class NavigationActionsMixin:
+    24→    """Mixin providing navigation and detail-view action handlers.
+    25→
+    26→    Includes action_exit_app, action_refresh, action_help, action_launch,
+    27→    action_show_detail, action_view_plan_body, action_view_comments,
+    28→    action_view_checks, action_cursor_down, action_cursor_up,
+    29→    action_open_pr, action_open_run, action_show_implement,
+    30→    action_copy_checkout, action_close_plan, and helpers.
+
+... [366 lines omitted] ...
+
+   329→            self.notify("Cannot close plan: no issue URL", severity="warning")
+  </tool_result>
+  <assistant>Excellent! Now let me verify the method exists in the plan_table for comparison:</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="5698" cache_read_input_tokens="42215" cache_creation="{'ephemeral_5m_input_tokens': 5698, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_014UShNoCt5xWUfq2vjQ6S6c">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/widgets/plan_table.py</param>
+    <param name="limit">200</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="5698" cache_read_input_tokens="42215" cache_creation="{'ephemeral_5m_input_tokens': 5698, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014UShNoCt5xWUfq2vjQ6S6c">
+     1→"""Plan table widget for TUI dashboard."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→from typing import TYPE_CHECKING, cast
+     6→
+     7→from rich.text import Text
+     8→from textual.events import Click
+     9→from textual.message import Message
+    10→from textual.widgets import DataTable
+    11→
+    12→from erk.core.display_utils import strip_rich_markup
+    13→from erk.tui.data.types import PlanFilters, PlanRowData
+    14→from erk.tui.views.types import ViewMode
+    15→
+    16→if TYPE_CHECKING:
+    17→    from erk.tui.app import ErkDashApp
+    18→
+    19→
+    20→class PlanDataTable(DataTable):
+    21→    """DataTable subclass for displaying plans.
+    22→
+    23→    Manages column configuration and row population from PlanRowData.
+    24→    Uses row selection mode (not cell selection) for simpler navigation.
+    25→    """
+    26→
+    27→    class LocalWtClicked(Message):
+    28→        """Posted when user clicks local-wt column on a row with existing worktree."""
+    29→
+    30→        def __init__(self, row_index: int) -&gt; None:
+
+... [175 lines omitted] ...
+  </tool_result>
+  <assistant>Let me get the get_selected_row_data method from the plan_table:</assistant>
+  <usage input_tokens="4" cache_creation_input_tokens="3011" cache_read_input_tokens="47913" cache_creation="{'ephemeral_5m_input_tokens': 3011, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01AtGwvmQLzFNbeDgZ3hA6cg">
+    <param name="command">grep -n "get_selected_row_data" /home/runner/work/erk/erk/src/erk/tui/widgets/plan_table.py</param>
+    <param name="description">Find get_selected_row_data method in plan_table.py</param>
+  </tool_use>
+  <usage input_tokens="4" cache_creation_input_tokens="3011" cache_read_input_tokens="47913" cache_creation="{'ephemeral_5m_input_tokens': 3011, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01AtGwvmQLzFNbeDgZ3hA6cg">
+367:    def get_selected_row_data(self) -&gt; PlanRowData | None:
+  </tool_result>
+  <tool_use name="Read" id="toolu_01HnSgV833eWrkH5BbmiBJK5">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/widgets/plan_table.py</param>
+    <param name="offset">367</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="211" cache_read_input_tokens="50924" cache_creation="{'ephemeral_5m_input_tokens': 211, 'ephemeral_1h_input_tokens': 0}" output_tokens="18" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01HnSgV833eWrkH5BbmiBJK5">
+   367→    def get_selected_row_data(self) -&gt; PlanRowData | None:
+   368→        """Get the PlanRowData for the currently selected row.
+   369→
+   370→        Returns:
+   371→            PlanRowData for selected row, or None if no selection
+   372→        """
+   373→        cursor_row = self.cursor_row
+   374→        if cursor_row is None or cursor_row &lt; 0 or cursor_row &gt;= len(self._rows):
+   375→            return None
+   376→        return self._rows[cursor_row]
+   377→
+   378→    def on_click(self, event: Click) -&gt; None:
+   379→        """Detect clicks on specific columns and post appropriate messages.
+   380→
+   381→        Posts LocalWtClicked event if:
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>Perfect! Now I have all the information needed. Let me create a comprehensive report:
+
+## Summary
+
+I've successfully located all the requested components in the codebase. Here's what I found:
+
+### 1. **RunRowData Dataclass**
+**File**: `/home/runner/work/erk/erk/src/erk/tui/data/types.py` (lines 156-202)
+
+```python
+@dataclass(frozen=True)
+class RunRowData:
+    """Row data for displaying a workflow run in the TUI Runs tab.
+    
+    Contains pre-formatted display strings and raw data needed for actions.
+    Immutable to ensure table state consistency.
+    """
+    
+    run_id: str
+    run_url: str | None
+    status: str
+    conclusion: str | None
+    status_display: str
+    workflow_name: str
+    pr_number: int | None
+    pr_url: str | None
+    pr_display: str
+    pr_title: str | None
+    pr_state: str | None
+    title_display: str
+    branch_display: str
+    submitted_display: str
+    created_at: datetime | None
+    checks_display: str
+    run_id_display: str
+    branch: str
+```
+
+### 2. **_get_selected_run_row Method**
+**File**: `/home/runner/work/erk/erk/src/erk/tui/actions/navigation.py` (lines 381-390)
+
+```python
+def _get_selected_run_row(self: ErkDashApp) -&gt; RunRowData | None:
+    """Get currently selected run row data.
+    
+    Only returns data when on the Runs tab.
+    """
+    if self._view_mode != ViewMode.RUNS:
+        return None
+    if self._run_table is None:
+        return None
+    return self._run_table.get_selected_row_data()
+```
+
+This method:
+- Checks if the current view mode is RUNS
+- Returns None if not on the Runs tab
+- Delegates to `_run_table.get_selected_row_data()` method
+- Used by action handlers like `action_open_pr()` and `action_open_run()` to get run data
+
+### 3. **ViewMode Enum - RUNS is Already Defined**
+**File**: `/home/runner/work/erk/erk/src/erk/tui/views/types.py` (lines 9-15)
+
+```python
+class ViewMode(Enum):
+    """Available view modes for the dashboard."""
+
+    PLANS = auto()
+    LEARN = auto()
+    OBJECTIVES = auto()
+    RUNS = auto()
+```
+
+**Yes, RUNS is already defined** in the ViewMode enum and is the fourth view mode with key binding "4". There's also a corresponding `RUNS_VIEW` configuration at lines 62-68:
+
+```python
+RUNS_VIEW = ViewConfig(
+    mode=ViewMode.RUNS,
+    display_name="Runs",
+    labels=(),
+    key_hint="4",
+    exclude_labels=(),
+)
+```
+
+### Supporting Method
+The `RunDataTable.get_selected_row_data()` method in `/home/runner/work/erk/erk/src/erk/tui/widgets/run_table.py` (lines 136-145) follows the same pattern as the plan table:
+
+```python
+def get_selected_row_data(self) -&gt; RunRowData | None:
+    """Get the RunRowData for the currently selected row.
+    
+    Returns:
+        RunRowData for selected row, or None if no selection
+    """
+    cursor_row = self.cursor_row
+    if cursor_row is None or cursor_row &lt; 0 or cursor_row &gt;= len(self._rows):
+        return None
+    return self._rows[cursor_row]
+```
+
+All three components are properly integrated into the TUI application for handling workflow runs display and interaction.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="543" cache_read_input_tokens="51135" cache_creation="{'ephemeral_5m_input_tokens': 543, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>

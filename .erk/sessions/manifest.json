@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "pr_number": 9150,
+  "sessions": [
+    {
+      "session_id": "011e9c07-f28b-460d-83d2-f2b8798f00dc",
+      "stage": "impl",
+      "source": "remote",
+      "uploaded_at": "2026-03-10T12:12:43.699933+00:00",
+      "files": [
+        "impl-011e9c07-f28b-460d-83d2-f2b8798f00dc-011e9c07-f28b-460d-83d2-f2b8798f00dc-part1.xml",
+        "impl-011e9c07-f28b-460d-83d2-f2b8798f00dc-011e9c07-f28b-460d-83d2-f2b8798f00dc-part2.xml",
+        "impl-011e9c07-f28b-460d-83d2-f2b8798f00dc-011e9c07-f28b-460d-83d2-f2b8798f00dc-part3.xml",
+        "impl-011e9c07-f28b-460d-83d2-f2b8798f00dc-011e9c07-f28b-460d-83d2-f2b8798f00dc-part4.xml",
+        "impl-011e9c07-f28b-460d-83d2-f2b8798f00dc-011e9c07-f28b-460d-83d2-f2b8798f00dc-part5.xml",
+        "impl-011e9c07-f28b-460d-83d2-f2b8798f00dc-011e9c07-f28b-460d-83d2-f2b8798f00dc-part6.xml",
+        "impl-011e9c07-f28b-460d-83d2-f2b8798f00dc-011e9c07-f28b-460d-83d2-f2b8798f00dc-part7.xml",
+        "impl-011e9c07-f28b-460d-83d2-f2b8798f00dc-011e9c07-f28b-460d-83d2-f2b8798f00dc-part8.xml"
+      ],
+      "user_turns": 3,
+      "duration_minutes": 12,
+      "raw_size_kb": 1453,
+      "xml_size_kb": 267,
+      "git_branch": "plnd/add-run-cancel-retry-03-10-0757"
+    }
+  ]
+}
