@@ -1,0 +1,832 @@
+<session>
+  <meta source="agent-a1c518d" />
+  <meta branch="plnd/move-fakes-to-tests-03-09-1534" />
+  <meta model="claude-sonnet-4-5-20250929" />
+  <tool_use name="Edit" id="toolu_01X1gqQkmQPbzYJvh1PJeK5g">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/testing/exec-script-testing.md</param>
+    <param name="old_string">When testing exec scripts that create and checkout branches, use `FakeBranchManager` to ve...[truncated 388 chars]...t_branch)` tuples
+
+```python
+from erk_shared.fakes.branch_manager import FakeBranchManager</param>
+    <param name="new_string">When testing exec scripts that create and checkout branches, use `FakeBranchManager` to ve...[truncated 394 chars]...ranch)` tuples
+
+```python
+from tests.fakes.gateway.branch_manager import FakeBranchManager</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="18825" cache_read_input_tokens="85274" cache_creation="{'ephemeral_5m_input_tokens': 18825, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_016hrGy7xQBihJPjrq8fX7CK">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/testing/exec-script-testing.md</param>
+    <param name="old_string">Note: `context_for_test()` (from `erk.core.context`) does not accept a `branch_manager` parameter directly. Branch manager is derived from the `ErkContext` based on git/graphite configuration.</param>
+    <param name="new_string">Note: `context_for_test()` (from `tests.test_utils.test_context`) does not accept a `branc...[truncated 5 chars]...ctly. Branch manager is derived from the `ErkContext` based on git/graphite configuration.</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="18825" cache_read_input_tokens="85274" cache_creation="{'ephemeral_5m_input_tokens': 18825, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01GBJCoEN7wmcAUF2Qu5hPGB">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/testing/fake-git-divergence.md</param>
+    <param name="old_string">```python
+from erk_shared.fakes.git import FakeGit
+from erk_shared.gateway.git.abc import BranchDivergence</param>
+    <param name="new_string">```python
+from tests.fakes.gateway.git import FakeGit
+from erk_shared.gateway.git.abc import BranchDivergence</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="18825" cache_read_input_tokens="85274" cache_creation="{'ephemeral_5m_input_tokens': 18825, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01V3Q55xFbfKAXF647xZUbmZ">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/testing/fake-git-divergence.md</param>
+    <param name="old_string">    ctx = context_for_test(git=fake_git, cwd=tmp_path)</param>
+    <param name="new_string">    ctx = minimal_context(git=fake_git, cwd=tmp_path)</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="18825" cache_read_input_tokens="85274" cache_creation="{'ephemeral_5m_input_tokens': 18825, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01VPa1Brb8MYazSiTQTdFbY2">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/testing/testing.md</param>
+    <param name="old_string">### FakeGit
+
+See `FakeGit` class in `packages/erk-shared/src/erk_shared/gateway/git/fake.py`.</param>
+    <param name="new_string">### FakeGit
+
+See `FakeGit` class in `tests/fakes/gateway/git.py`.</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="18825" cache_read_input_tokens="85274" cache_creation="{'ephemeral_5m_input_tokens': 18825, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01GBCHdyKjr3ZQ4u1ZTCtNXW">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/testing/testing.md</param>
+    <param name="old_string">### FakeGitHub
+
+See `FakeGitHub` class in `packages/erk-shared/src/erk_shared/gateway/github/fake.py`.</param>
+    <param name="new_string">### FakeGitHub
+
+See `FakeGitHub` class in `tests/fakes/gateway/github.py`.</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="18825" cache_read_input_tokens="85274" cache_creation="{'ephemeral_5m_input_tokens': 18825, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_016QFLk1LiKjaFVoDZA3owzC">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/testing/testing.md</param>
+    <param name="old_string">### FakeGraphite
+
+See `FakeGraphite` class in `packages/erk-shared/src/erk_shared/gateway/graphite/fake.py`.</param>
+    <param name="new_string">### FakeGraphite
+
+See `FakeGraphite` class in `tests/fakes/gateway/graphite.py`.</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="18825" cache_read_input_tokens="85274" cache_creation="{'ephemeral_5m_input_tokens': 18825, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01LRMjXnAgRxr1ueVprZK5Qt">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/testing/testing.md</param>
+    <param name="old_string">### FakeShell
+
+See `FakeShell` class in `packages/erk-shared/src/erk_shared/gateway/shell/fake.py`.</param>
+    <param name="new_string">### FakeShell
+
+See `FakeShell` class in `tests/fakes/gateway/shell.py`.</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="18825" cache_read_input_tokens="85274" cache_creation="{'ephemeral_5m_input_tokens': 18825, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01VCp1o2iWG2wkaPWqBF7gpS">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/testing/testing.md</param>
+    <param name="old_string">### FakeGitBranchOps
+
+See `FakeGitBranchOps` class in `packages/erk-shared/src/erk_shared/...[truncated 203 chars]...t FakeGitBranchOps
+from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists</param>
+    <param name="new_string">### FakeGitBranchOps
+
+See `FakeGitBranchOps` class in `tests/fakes/gateway/git_branch_ops....[truncated 178 chars]...t FakeGitBranchOps
+from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="18825" cache_read_input_tokens="85274" cache_creation="{'ephemeral_5m_input_tokens': 18825, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01PRQU2rsAZBDdJaFGuhvi3z">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/testing/testing.md</param>
+    <param name="old_string">### FakeWorktree Error Injection
+
+FakeWorktree (in `packages/erk-shared/src/erk_shared/gat...[truncated 74 chars]...rs raise `RuntimeError`:
+
+```python
+from erk_shared.fakes.git_worktree import FakeWorktree</param>
+    <param name="new_string">### FakeWorktree Error Injection
+
+FakeWorktree (in `tests/fakes/gateway/git_worktree.py`) ...[truncated 49 chars]...raise `RuntimeError`:
+
+```python
+from tests.fakes.gateway.git_worktree import FakeWorktree</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="18825" cache_read_input_tokens="85274" cache_creation="{'ephemeral_5m_input_tokens': 18825, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01GtxRUPDEGWh2vw9ZevUC37">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/testing/testing.md</param>
+    <param name="old_string">```python
+from erk_shared.fakes.git import FakeGit
+from erk_shared.fakes.graphite import F...[truncated 96 chars]...rt FakeGitHub
+from erk_shared.gateway.branch_manager.graphite import GraphiteBranchManager</param>
+    <param name="new_string">```python
+from tests.fakes.gateway.git import FakeGit
+from tests.fakes.gateway.graphite im...[truncated 108 chars]...rt FakeGitHub
+from erk_shared.gateway.branch_manager.graphite import GraphiteBranchManager</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="18825" cache_read_input_tokens="85274" cache_creation="{'ephemeral_5m_input_tokens': 18825, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01R9vvxvUdfUaxE7EssqBoM3">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/testing/testing.md</param>
+    <param name="old_string">- **Field**: `console: Console` in ErkContext
+- **Test**: `FakeConsole(...)` default in `for_test()`</param>
+    <param name="new_string">- **Field**: `console: Console` in ErkContext
+- **Test**: `FakeConsole(...)` default in `for_test()`
+- **Production**: `RealConsole()` in `src/erk/core/context.py`</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="18825" cache_read_input_tokens="85274" cache_creation="{'ephemeral_5m_input_tokens': 18825, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01C7Hm6BSd3Nu7ziZA26zpCx">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/testing/testing.md</param>
+    <param name="old_string">FakeConsole enables testing code that uses `ctx.console.confirm()` for user prompts.
+
+Source: `packages/erk-shared/src/erk_shared/gateway/console/fake.py`</param>
+    <param name="new_string">FakeConsole enables testing code that uses `ctx.console.confirm()` for user prompts.
+
+Source: `tests/fakes/gateway/console.py`</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="18825" cache_read_input_tokens="85274" cache_creation="{'ephemeral_5m_input_tokens': 18825, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_011bSgp6arRsTCNwPoHeH1C4">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/testing/testing.md</param>
+    <param name="old_string">```python
+from erk_shared.fakes.console import FakeConsole</param>
+    <param name="new_string">```python
+from tests.fakes.gateway.console import FakeConsole</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="18825" cache_read_input_tokens="85274" cache_creation="{'ephemeral_5m_input_tokens': 18825, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01GFqse5vyaf3AqXW38kEUtv">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/erk-architecture.md</param>
+    <param name="old_string">```python
+from erk.core.context import context_for_test</param>
+    <param name="new_string">```python
+from tests.test_utils.test_context import context_for_test</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="18825" cache_read_input_tokens="85274" cache_creation="{'ephemeral_5m_input_tokens': 18825, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_012xn4MrCjEDo8KVEk8zsat7">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/erk-architecture.md</param>
+    <param name="old_string">**Production (RealTime)**: See `RealTime` class in `packages/erk-shared/src/erk_shared/gateway/time/real.py`
+
+Usage example:
+
+```python
+from erk_shared.gateway.time.real import RealTime</param>
+    <param name="new_string">**Production (RealTime)**: See `RealTime` class in `packages/erk-shared/src/erk_shared/gateway/time/real.py`
+
+Usage example:
+
+```python
+from erk_shared.gateway.time.real import RealTime</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="18825" cache_read_input_tokens="85274" cache_creation="{'ephemeral_5m_input_tokens': 18825, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01Ea2xDLsNJC2RzKfLWFBnVe">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/erk-architecture.md</param>
+    <param name="old_string">**Testing (FakeTime)**: See `FakeTime` class in `packages/erk-shared/src/erk_shared/gateway/time/fake.py`
+
+Usage example:
+
+```python
+from erk_shared.fakes.time import FakeTime</param>
+    <param name="new_string">**Testing (FakeTime)**: See `FakeTime` class in `tests/fakes/gateway/time.py`
+
+Usage example:
+
+```python
+from tests.fakes.gateway.time import FakeTime</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="18825" cache_read_input_tokens="85274" cache_creation="{'ephemeral_5m_input_tokens': 18825, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_0147Dop7DH8KxCe2txjTNS6S">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/gateway-abc-implementation.md</param>
+    <param name="old_string">```python
+# Import ABC from abc.py, implementations from their respective files
+from erk_s...[truncated 79 chars]... erk_shared.fakes.git import FakeGit
+from erk_shared.gateway.github.abc import LocalGitHub</param>
+    <param name="new_string">```python
+# Import ABC from abc.py, implementations from their respective files
+from erk_s...[truncated 82 chars]...sts.fakes.gateway.git import FakeGit
+from erk_shared.gateway.github.abc import LocalGitHub</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="18825" cache_read_input_tokens="85274" cache_creation="{'ephemeral_5m_input_tokens': 18825, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01U3fdxWopz3RgKAtqqhyAXT">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/gateway-abc-implementation.md</param>
+    <param name="old_string">```python
+    @classmethod
+    def for_test(cls, time: Time | None = None, repo_info: Repo...[truncated 136 chars]...s.github_issues import FakeGitHubIssues
+        from erk_shared.fakes.time import FakeTime</param>
+    <param name="new_string">```python
+    @classmethod
+    def for_test(cls, time: Time | None = None, repo_info: Repo...[truncated 135 chars]...teway.github import FakeGitHubIssues
+        from tests.fakes.gateway.time import FakeTime</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="18825" cache_read_input_tokens="85274" cache_creation="{'ephemeral_5m_input_tokens': 18825, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_019vo6CfPu2ADHevYGEwhxSS">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/github-api-retry-mechanism.md</param>
+    <param name="old_string">```python
+# Production code
+from erk_shared.gateway.time.real import RealTime
+execute_gh_command_with_retry(cmd, cwd, RealTime())
+
+# Test code
+from erk_shared.fakes.time import FakeTime</param>
+    <param name="new_string">```python
+# Production code
+from erk_shared.gateway.time.real import RealTime
+execute_gh_command_with_retry(cmd, cwd, RealTime())
+
+# Test code
+from tests.fakes.gateway.time import FakeTime</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="18825" cache_read_input_tokens="85274" cache_creation="{'ephemeral_5m_input_tokens': 18825, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01PgLoqbC3TDKtGB77iiheVw">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/erk-dev/testing.md</param>
+    <param name="old_string">```python
+from click.testing import CliRunner
+from erk_dev.cli import cli
+from erk_dev.con...[truncated 3 chars]...xt
+from erk_shared.fakes.git import FakeGit
+from erk_shared.fakes.github import FakeGitHub</param>
+    <param name="new_string">```python
+from click.testing import CliRunner
+from erk_dev.cli import cli
+from erk_dev.con...[truncated 9 chars]...m tests.fakes.gateway.git import FakeGit
+from tests.fakes.gateway.github import FakeGitHub</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="18825" cache_read_input_tokens="85274" cache_creation="{'ephemeral_5m_input_tokens': 18825, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01XbssRnsiQKB3Y7fqqwntu8">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/skills/fake-driven-testing/references/quick-reference.md</param>
+    <param name="old_string">```python
+from erk_shared.gateway.github.issues import FakeGitHubIssues</param>
+    <param name="new_string">```python
+from tests.fakes.gateway.github import FakeGitHubIssues</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="18825" cache_read_input_tokens="85274" cache_creation="{'ephemeral_5m_input_tokens': 18825, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_011b6B5cnu6fkkJwW8T52fQQ">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/skills/fake-driven-testing/references/quick-reference.md</param>
+    <param name="old_string">```python
+from erk_shared.learn.extraction.claude_installation.fake import (
+    FakeClaudeInstallation,
+    FakeProject,
+    FakeSessionData,
+)</param>
+    <param name="new_string">```python
+from tests.fakes.tests.claude_installation import (
+    FakeClaudeInstallation,
+    FakeProject,
+    FakeSessionData,
+)</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="18825" cache_read_input_tokens="85274" cache_creation="{'ephemeral_5m_input_tokens': 18825, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_0135Q6ruvsqYi53HT5rnRDTQ">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/skills/fake-driven-testing/references/quick-reference.md</param>
+    <param name="old_string">```python
+from erk_shared.fakes.git import FakeGit</param>
+    <param name="new_string">```python
+from tests.fakes.gateway.git import FakeGit</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="18825" cache_read_input_tokens="85274" cache_creation="{'ephemeral_5m_input_tokens': 18825, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01DgwMsZXKKSGwZF4W7gCJbf">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/skills/fake-driven-testing/references/quick-reference.md</param>
+    <param name="old_string">```python
+# Your fakes
+from tests.fakes.database import FakeDatabaseAdapter
+from tests.fakes.api_client import FakeApiClient
+from tests.fakes.filesystem import FakeFileSystem</param>
+    <param name="new_string">```python
+# Your fakes
+from tests.fakes.gateway.database import FakeDatabaseAdapter
+from tests.fakes.gateway.api_client import FakeApiClient
+from tests.fakes.gateway.filesystem import FakeFileSystem</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="18825" cache_read_input_tokens="85274" cache_creation="{'ephemeral_5m_input_tokens': 18825, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_0199amXuohieEbjknPN8c95q">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/testing/rebase-conflicts.md</param>
+    <param name="old_string">The preferred test factory is `context_for_test()` from `src/erk/core/context.py`. There i...[truncated 56 chars]..., but it has a more limited parameter set. Most CLI tests should use `context_for_test()`.</param>
+    <param name="new_string">The preferred test factory is `context_for_test()` from `tests/test_utils/test_context.py`...[truncated 65 chars]..., but it has a more limited parameter set. Most CLI tests should use `context_for_test()`.</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="18825" cache_read_input_tokens="85274" cache_creation="{'ephemeral_5m_input_tokens': 18825, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01RqXyEh4hHsyx2uJQhVzYuA">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/testing/rebase-conflicts.md</param>
+    <param name="old_string">**1. `context_for_test()` (preferred for CLI tests)** -- defined in `src/erk/core/context.py`:
+
+```python
+from erk.core.context import context_for_test</param>
+    <param name="new_string">**1. `context_for_test()` (preferred for CLI tests)** -- defined in `tests/test_utils/test_context.py`:
+
+```python
+from tests.test_utils.test_context import context_for_test</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="18825" cache_read_input_tokens="85274" cache_creation="{'ephemeral_5m_input_tokens': 18825, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01AFN1HYbzUdhDQRjjyAyxnw">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/testing/rebase-conflicts.md</param>
+    <param name="old_string">| CLI command tests with `erk_isolated_fs_env`           | `env.build_context()`   | Wraps...[truncated 67 chars]...config` needs | `ErkContext.for_test()` | Available without depending on `erk.core`      |</param>
+    <param name="new_string">| CLI command tests with `erk_isolated_fs_env`           | `env.build_context()`   | Wraps...[truncated 67 chars]...config` needs | `ErkContext.for_test()` | Available without depending on test_utils      |</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="18825" cache_read_input_tokens="85274" cache_creation="{'ephemeral_5m_input_tokens': 18825, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01XJwUZ56hivQCVcJMqUng2y">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/testing/rebase-conflicts.md</param>
+    <param name="old_string">- **`src/erk/core/context.py`**
+  - `context_for_test()` factory function (preferred for CLI tests)
+  - Re-exports `ErkContext` from `erk_shared`</param>
+    <param name="new_string">- **`tests/test_utils/test_context.py`**
+  - `context_for_test()` factory function (preferred for CLI tests)
+  - `minimal_context()` factory function (for minimal test context)</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="18825" cache_read_input_tokens="85274" cache_creation="{'ephemeral_5m_input_tokens': 18825, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01X4YytWna86KGdTt9VLLn3A">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/testing/context-builder-signatures.md</param>
+    <param name="old_string">## src/erk Implementation
+
+&lt;!-- Source: src/erk/core/context.py, context_for_test --&gt;
+
+**Location:** `src/erk/core/context.py`</param>
+    <param name="new_string">## src/erk Implementation
+
+&lt;!-- Source: tests/test_utils/test_context.py, context_for_test --&gt;
+
+**Location:** `tests/test_utils/test_context.py`</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="18825" cache_read_input_tokens="85274" cache_creation="{'ephemeral_5m_input_tokens': 18825, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01VXdrWakeLvuZHZEvQuQRQM">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/testing/context-builder-signatures.md</param>
+    <param name="old_string">| Test Type                             | Use                             | Import From   ...[truncated 334 chars]...console, shell, time    | src/erk `context_for_test()`    | `erk.core.context`           |</param>
+    <param name="new_string">| Test Type                             | Use                             | Import From   ...[truncated 346 chars]...sole, shell, time    | src/erk `context_for_test()`    | `tests.test_utils.test_context` |</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="18825" cache_read_input_tokens="85274" cache_creation="{'ephemeral_5m_input_tokens': 18825, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01M8romK1tDMkgzRy5h8vi41">
+The file /home/runner/work/erk/erk/docs/learned/tui/architecture.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_018hWSNsBpLA35YgNrph677w">
+The file /home/runner/work/erk/erk/docs/learned/tui/architecture.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01MrUr7WM1Ws1PVyo4cm1Tco">
+The file /home/runner/work/erk/erk/docs/learned/tui/plan-row-data.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01FN9y6jLXDNmgeKoEkurbc4">
+The file /home/runner/work/erk/erk/docs/learned/testing/admin-command-testing.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_012ANHywrUoK7xgCTyjUu7tk">
+The file /home/runner/work/erk/erk/docs/learned/testing/admin-command-testing.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01AxGhthHYYaWWT2AvwQqd8j">
+The file /home/runner/work/erk/erk/docs/learned/testing/cli-testing.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_015SSPxyS18Yqyj5z1gGQ9nF">
+The file /home/runner/work/erk/erk/docs/learned/testing/cli-testing.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01JZy8Q6jzTNPd2BBsXh6aEc">
+The file /home/runner/work/erk/erk/docs/learned/testing/cli-testing.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01X1gqQkmQPbzYJvh1PJeK5g">
+The file /home/runner/work/erk/erk/docs/learned/testing/exec-script-testing.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_016hrGy7xQBihJPjrq8fX7CK">
+The file /home/runner/work/erk/erk/docs/learned/testing/exec-script-testing.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01GBJCoEN7wmcAUF2Qu5hPGB">
+The file /home/runner/work/erk/erk/docs/learned/testing/fake-git-divergence.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01V3Q55xFbfKAXF647xZUbmZ">
+The file /home/runner/work/erk/erk/docs/learned/testing/fake-git-divergence.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01VPa1Brb8MYazSiTQTdFbY2">
+The file /home/runner/work/erk/erk/docs/learned/testing/testing.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01GBCHdyKjr3ZQ4u1ZTCtNXW">
+The file /home/runner/work/erk/erk/docs/learned/testing/testing.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_016QFLk1LiKjaFVoDZA3owzC">
+The file /home/runner/work/erk/erk/docs/learned/testing/testing.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01LRMjXnAgRxr1ueVprZK5Qt">
+The file /home/runner/work/erk/erk/docs/learned/testing/testing.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01VCp1o2iWG2wkaPWqBF7gpS">
+The file /home/runner/work/erk/erk/docs/learned/testing/testing.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01PRQU2rsAZBDdJaFGuhvi3z">
+The file /home/runner/work/erk/erk/docs/learned/testing/testing.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01GtxRUPDEGWh2vw9ZevUC37">
+The file /home/runner/work/erk/erk/docs/learned/testing/testing.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01R9vvxvUdfUaxE7EssqBoM3">
+&lt;tool_use_error&gt;String to replace not found in file.
+String: - **Field**: `console: Console` in ErkContext
+- **Test**: `FakeConsole(...)` default in `for_test()`&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_result tool="toolu_01C7Hm6BSd3Nu7ziZA26zpCx">
+The file /home/runner/work/erk/erk/docs/learned/testing/testing.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_011bSgp6arRsTCNwPoHeH1C4">
+The file /home/runner/work/erk/erk/docs/learned/testing/testing.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01GFqse5vyaf3AqXW38kEUtv">
+&lt;tool_use_error&gt;String to replace not found in file.
+String: ```python
+from erk.core.context import context_for_test&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_result tool="toolu_012xn4MrCjEDo8KVEk8zsat7">
+&lt;tool_use_error&gt;No changes to make: old_string and new_string are exactly the same.&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_result tool="toolu_01Ea2xDLsNJC2RzKfLWFBnVe">
+The file /home/runner/work/erk/erk/docs/learned/architecture/erk-architecture.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_0147Dop7DH8KxCe2txjTNS6S">
+&lt;tool_use_error&gt;String to replace not found in file.
+String: ```python
+# Import ABC from abc.py, implementations from their respective files
+from erk_shared.gateway.git.abc import Git, WorktreeInfo
+from erk_shared.gateway.git.real import RealGit
+from erk_shared.fakes.git import FakeGit
+from erk_shared.gateway.github.abc import LocalGitHub&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_result tool="toolu_01U3fdxWopz3RgKAtqqhyAXT">
+&lt;tool_use_error&gt;String to replace not found in file.
+String: ```python
+    @classmethod
+    def for_test(cls, time: Time | None = None, repo_info: RepoInfo | None = None) -&gt; "RealLocalGitHub":
+        """Factory for tests that need Real implementation with sensible defaults."""
+        from erk_shared.fakes.github_issues import FakeGitHubIssues
+        from erk_shared.fakes.time import FakeTime&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_result tool="toolu_019vo6CfPu2ADHevYGEwhxSS">
+The file /home/runner/work/erk/erk/docs/learned/architecture/github-api-retry-mechanism.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01PgLoqbC3TDKtGB77iiheVw">
+The file /home/runner/work/erk/erk/docs/learned/erk-dev/testing.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01XbssRnsiQKB3Y7fqqwntu8">
+The file /home/runner/work/erk/erk/.claude/skills/fake-driven-testing/references/quick-reference.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_011b6B5cnu6fkkJwW8T52fQQ">
+The file /home/runner/work/erk/erk/.claude/skills/fake-driven-testing/references/quick-reference.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_0135Q6ruvsqYi53HT5rnRDTQ">
+The file /home/runner/work/erk/erk/.claude/skills/fake-driven-testing/references/quick-reference.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01DgwMsZXKKSGwZF4W7gCJbf">
+&lt;tool_use_error&gt;String to replace not found in file.
+String: ```python
+# Your fakes
+from tests.fakes.database import FakeDatabaseAdapter
+from tests.fakes.api_client import FakeApiClient
+from tests.fakes.filesystem import FakeFileSystem&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_result tool="toolu_0199amXuohieEbjknPN8c95q">
+The file /home/runner/work/erk/erk/docs/learned/testing/rebase-conflicts.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01RqXyEh4hHsyx2uJQhVzYuA">
+The file /home/runner/work/erk/erk/docs/learned/testing/rebase-conflicts.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01AFN1HYbzUdhDQRjjyAyxnw">
+The file /home/runner/work/erk/erk/docs/learned/testing/rebase-conflicts.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01XJwUZ56hivQCVcJMqUng2y">
+The file /home/runner/work/erk/erk/docs/learned/testing/rebase-conflicts.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01X4YytWna86KGdTt9VLLn3A">
+The file /home/runner/work/erk/erk/docs/learned/testing/context-builder-signatures.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01VXdrWakeLvuZHZEvQuQRQM">
+The file /home/runner/work/erk/erk/docs/learned/testing/context-builder-signatures.md has been updated successfully.
+  </tool_result>
+  <assistant>Great! I've successfully updated most of the documentation files. Now let me check if there are any additional imports or references that need to be updated by doing a more targeted search:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="105480" cache_read_input_tokens="10089" cache_creation="{'ephemeral_5m_input_tokens': 105480, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01PNEkqmVwW6KXQZtcvPcH1z">
+    <param name="pattern">from erk_shared\.fakes\.</param>
+    <param name="path">/home/runner/work/erk/erk/docs/learned</param>
+    <param name="output_mode">content</param>
+    <param name="glob">*.md</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="105480" cache_read_input_tokens="10089" cache_creation="{'ephemeral_5m_input_tokens': 105480, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01XZtVLf3q9S2evJfYqSNdfR">
+    <param name="pattern">from erk\.core\.context import context_for_test</param>
+    <param name="path">/home/runner/work/erk/erk/docs/learned</param>
+    <param name="output_mode">content</param>
+    <param name="glob">*.md</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="105480" cache_read_input_tokens="10089" cache_creation="{'ephemeral_5m_input_tokens': 105480, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_014cqexd8jSNGtDBSaBcUW5u">
+    <param name="pattern">erk_shared\.context\.testing</param>
+    <param name="path">/home/runner/work/erk/erk/docs/learned</param>
+    <param name="output_mode">content</param>
+    <param name="glob">*.md</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="105480" cache_read_input_tokens="10089" cache_creation="{'ephemeral_5m_input_tokens': 105480, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01PNEkqmVwW6KXQZtcvPcH1z">
+docs/learned/testing/tripwires.md:79:**importing FakePromptExecutor from erk_shared.fakes.prompt_executor** → Read [FakePromptExecutor API Migration - Gateway to Core](fake-api-migration-pattern.md) first. This module was deleted in the consolidation. Import from tests.fakes.tests.prompt_executor or tests.fakes.gateway.core instead.
+docs/learned/testing/fake-api-migration-pattern.md:8:  - action: "importing FakePromptExecutor from erk_shared.fakes.prompt_executor"
+docs/learned/architecture/erk-architecture.md:536:from erk_shared.fakes.git import FakeGit
+docs/learned/architecture/gateway-abc-implementation.md:426:        from erk_shared.fakes.github_issues import FakeGitHubIssues
+docs/learned/architecture/gateway-abc-implementation.md:427:        from erk_shared.fakes.time import FakeTime
+  </tool_result>
+  <tool_result tool="toolu_014cqexd8jSNGtDBSaBcUW5u">
+docs/learned/testing/hook-testing.md:98:- **Using `context_for_test()` when `ErkContext.for_test()` suffices**: The `context_for_test()` factory from `erk_shared.context.testing` is needed only when injecting fakes (FakeGit, FakeClaudeInstallation). For hooks that don't need gateway fakes, `ErkContext.for_test()` is simpler and sufficient.
+docs/learned/testing/context-builder-signatures.md:40:| Isolated unit tests (erk-shared only) | erk-shared `context_for_test()` | `erk_shared.context.testing`   |
+  </tool_result>
+  <tool_result tool="toolu_01XZtVLf3q9S2evJfYqSNdfR">
+docs/learned/testing/testing.md:265:from erk.core.context import context_for_test
+  </tool_result>
+  <assistant>Now let me update the remaining references:</assistant>
+  <usage input_tokens="195" cache_creation_input_tokens="823" cache_read_input_tokens="115569" cache_creation="{'ephemeral_5m_input_tokens': 823, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01UdVQ8PrTif5j4tnFiw1yTL">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/testing/tripwires.md</param>
+    <param name="old_string">**importing FakePromptExecutor from erk_shared.fakes.prompt_executor** → Read [FakePromptE...[truncated 97 chars]...dation. Import from tests.fakes.tests.prompt_executor or tests.fakes.gateway.core instead.</param>
+    <param name="new_string">**importing FakePromptExecutor from erk_shared.fakes.prompt_executor** → Read [FakePromptE...[truncated 69 chars]...e was deleted in the consolidation. Import from tests.fakes.tests.prompt_executor instead.</param>
+  </tool_use>
+  <usage input_tokens="195" cache_creation_input_tokens="823" cache_read_input_tokens="115569" cache_creation="{'ephemeral_5m_input_tokens': 823, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01SuDgHfq8dz3hLczSiRyoVX">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/testing/fake-api-migration-pattern.md</param>
+    <param name="old_string">  - action: "importing FakePromptExecutor from erk_shared.fakes.prompt_executor"
+    warni...[truncated 15 chars]... consolidation. Import from tests.fakes.prompt_executor or erk_shared.fakes.core instead."</param>
+    <param name="new_string">  - action: "importing FakePromptExecutor from erk_shared.fakes.prompt_executor"
+    warning: "This module was deleted in the consolidation. Import from tests.fakes.tests.prompt_executor instead."</param>
+  </tool_use>
+  <usage input_tokens="195" cache_creation_input_tokens="823" cache_read_input_tokens="115569" cache_creation="{'ephemeral_5m_input_tokens': 823, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01XWmu5VZ6tCZNaSjfertKYr">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/testing/fake-api-migration-pattern.md</param>
+    <param name="old_string">&lt;!-- Source: tests/fakes/prompt_executor.py, FakePromptExecutor --&gt;
+&lt;!-- Source: packages/...[truncated 1484 chars]...s plain descriptive names (`prompt_results`, `streaming_events`, `passthrough_exit_code`).</param>
+    <param name="new_string">&lt;!-- Source: tests/fakes/tests/prompt_executor.py, FakePromptExecutor --&gt;
+
+The `tests/fake...[truncated 393 chars]...t. Uses `simulated_*` prefix naming (`simulated_prompt_output`, `simulated_pr_url`, etc.).</param>
+  </tool_use>
+  <usage input_tokens="195" cache_creation_input_tokens="823" cache_read_input_tokens="115569" cache_creation="{'ephemeral_5m_input_tokens': 823, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01QFemDzUC4QVjVhctXSQbko">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/testing/fake-api-migration-pattern.md</param>
+    <param name="old_string">| Your test needs...                                                              | Use   ...[truncated 753 chars]...              | `tests/fakes/prompt_executor.FakePromptExecutor`                         |</param>
+    <param name="new_string">| Your test needs...                                                              | Use   ...[truncated 359 chars]...action                          | `tests/fakes/tests/prompt_executor.FakePromptExecutor` |</param>
+  </tool_use>
+  <usage input_tokens="195" cache_creation_input_tokens="823" cache_read_input_tokens="115569" cache_creation="{'ephemeral_5m_input_tokens': 823, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01NBSZvqhkEXB3pFRVeXTpBQ">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/testing/fake-api-migration-pattern.md</param>
+    <param name="old_string">| Deleted Gateway Parameter | Current Equivalent (`tests/fakes/`) | Notes                 ...[truncated 856 chars]...`     | Use `erk_shared/core/fakes` with `prompt_results=[...]` for sequential responses |</param>
+    <param name="new_string">| Deleted Gateway Parameter | Current Equivalent (`tests/fakes/tests/`) | Notes           ...[truncated 704 chars]...lent in `tests/fakes/tests/`     | Sequential responses not supported in current version |</param>
+  </tool_use>
+  <usage input_tokens="195" cache_creation_input_tokens="823" cache_read_input_tokens="115569" cache_creation="{'ephemeral_5m_input_tokens': 823, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01E2FKsqjL6LSUVJR1Jd7xqo">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/erk-architecture.md</param>
+    <param name="old_string">from erk_shared.fakes.git import FakeGit</param>
+    <param name="new_string">from tests.fakes.gateway.git import FakeGit</param>
+  </tool_use>
+  <usage input_tokens="195" cache_creation_input_tokens="823" cache_read_input_tokens="115569" cache_creation="{'ephemeral_5m_input_tokens': 823, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_013YYTFgPUh9d8ATmjVXR2ME">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/gateway-abc-implementation.md</param>
+    <param name="old_string">        from erk_shared.fakes.github_issues import FakeGitHubIssues
+        from erk_shared.fakes.time import FakeTime</param>
+    <param name="new_string">        from tests.fakes.gateway.github import FakeGitHubIssues
+        from tests.fakes.gateway.time import FakeTime</param>
+  </tool_use>
+  <usage input_tokens="195" cache_creation_input_tokens="823" cache_read_input_tokens="115569" cache_creation="{'ephemeral_5m_input_tokens': 823, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_012KqCQYXi5Ps4cz18br8wjE">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/testing/testing.md</param>
+    <param name="old_string">from erk.core.context import context_for_test</param>
+    <param name="new_string">from tests.test_utils.test_context import context_for_test</param>
+  </tool_use>
+  <usage input_tokens="195" cache_creation_input_tokens="823" cache_read_input_tokens="115569" cache_creation="{'ephemeral_5m_input_tokens': 823, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_019PPSXwsfWSW1ANkWJZvcyQ">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/testing/hook-testing.md</param>
+    <param name="old_string">- **Using `context_for_test()` when `ErkContext.for_test()` suffices**: The `context_for_t...[truncated 101 chars]...or hooks that don't need gateway fakes, `ErkContext.for_test()` is simpler and sufficient.</param>
+    <param name="new_string">- **Using `context_for_test()` when `ErkContext.for_test()` suffices**: The `context_for_t...[truncated 104 chars]...or hooks that don't need gateway fakes, `ErkContext.for_test()` is simpler and sufficient.</param>
+  </tool_use>
+  <usage input_tokens="195" cache_creation_input_tokens="823" cache_read_input_tokens="115569" cache_creation="{'ephemeral_5m_input_tokens': 823, 'ephemeral_1h_input_tokens': 0}" output_tokens="2681" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01UdVQ8PrTif5j4tnFiw1yTL">
+&lt;tool_use_error&gt;File has been modified since read, either by the user or by a linter. Read it again before attempting to write it.&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_result tool="toolu_01SuDgHfq8dz3hLczSiRyoVX">
+&lt;tool_use_error&gt;File has been modified since read, either by the user or by a linter. Read it again before attempting to write it.&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_result tool="toolu_01XWmu5VZ6tCZNaSjfertKYr">
+&lt;tool_use_error&gt;File has been modified since read, either by the user or by a linter. Read it again before attempting to write it.&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_result tool="toolu_01QFemDzUC4QVjVhctXSQbko">
+&lt;tool_use_error&gt;File has been modified since read, either by the user or by a linter. Read it again before attempting to write it.&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_result tool="toolu_01NBSZvqhkEXB3pFRVeXTpBQ">
+&lt;tool_use_error&gt;File has been modified since read, either by the user or by a linter. Read it again before attempting to write it.&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_result tool="toolu_01E2FKsqjL6LSUVJR1Jd7xqo">
+The file /home/runner/work/erk/erk/docs/learned/architecture/erk-architecture.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_013YYTFgPUh9d8ATmjVXR2ME">
+The file /home/runner/work/erk/erk/docs/learned/architecture/gateway-abc-implementation.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_012KqCQYXi5Ps4cz18br8wjE">
+The file /home/runner/work/erk/erk/docs/learned/testing/testing.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_019PPSXwsfWSW1ANkWJZvcyQ">
+The file /home/runner/work/erk/erk/docs/learned/testing/hook-testing.md has been updated successfully.
+  </tool_result>
+  <assistant>Now let me re-read those files that were modified and make the updates:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="3499" cache_read_input_tokens="116392" cache_creation="{'ephemeral_5m_input_tokens': 3499, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_013NMYzrXEmF8vVUJMY3C1oj">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/testing/tripwires.md</param>
+    <param name="offset">75</param>
+    <param name="limit">10</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="3499" cache_read_input_tokens="116392" cache_creation="{'ephemeral_5m_input_tokens': 3499, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01WjHamALYNqAXKANiD93FW5">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/testing/fake-api-migration-pattern.md</param>
+    <param name="offset">1</param>
+    <param name="limit">90</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="3499" cache_read_input_tokens="116392" cache_creation="{'ephemeral_5m_input_tokens': 3499, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013NMYzrXEmF8vVUJMY3C1oj">
+    75→**flagging `import X as X` or `from .mod import Y as Y` as a violation** → Read [Import Alias vs Re-Export Detection](alias-verification-pattern.md) first. The `X as X` form is an explicit re-export marker, not an alias. Only flag when the alias differs from the original name.
+    76→
+    77→**implementing interactive prompts with ctx.console.confirm()** → Read [Erk Test Reference](testing.md) first. Ensure FakeConsole in test fixture is configured with `confirm_responses` parameter. Array length must match prompt count exactly — too few causes IndexError, too many indicates a removed prompt. See tests/commands/submit/test_existing_branch_detection.py for examples.
+    78→
+    79→**importing FakePromptExecutor from erk_shared.fakes.prompt_executor** → Read [FakePromptExecutor API Migration - Gateway to Core](fake-api-migration-pattern.md) first. This module was deleted in the consolidation. Import from tests.fakes.tests.prompt_executor or tests.fakes.gateway.core instead.
+    80→
+    81→**importing or monkeypatching a module with 'exec' in its path** → Read [Exec Script Testing Patterns](exec-script-testing.md) first. `exec` is a Python keyword that blocks direct import and string-path monkeypatch. Use `importlib.import_module()` + object-form `setattr` instead.
+    82→
+    83→**importing time or calling datetime.now() directly** → Read [Time Injection Testing Patterns](time-injection-patterns.md) first. Never import time directly or call datetime.now(). Use ctx.time.now() and ctx.time.sleep() for testability. Read this doc.
+    84→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_01WjHamALYNqAXKANiD93FW5">
+     1→---
+     2→title: FakePromptExecutor API Migration - Gateway to Core
+     3→last_audited: "2026-02-08 00:00 PT"
+     4→audit_result: edited
+     5→tripwires:
+     6→  - action: "using output=, should_fail=, or transient_failures= parameters in FakePromptExecutor"
+     7→    warning: "These are the deleted gateway API. Use simulated_* parameters (tests/fakes/) or prompt_results/streaming_events (erk_shared/core/fakes.py). See migration table."
+     8→  - action: "importing FakePromptExecutor from erk_shared.fakes.prompt_executor"
+     9→    warning: "This module was deleted in the consolidation. Import from tests.fakes.tests.prompt_executor or tests.fakes.gateway.core instead."
+    10→read_when:
+    11→  - "writing tests that use FakePromptExecutor"
+    12→  - "choosing between the two FakePromptExecutor implementations"
+    13→  - "encountering old-style output=/should_fail= patterns in test code"
+    14→---
+    15→
+    16→# FakePromptExecutor API Migration: Gateway to Core
+    17→
+    18→## Why This Migration Happened
+    19→
+    20→PR #6587 consolidated two separate PromptExecutor abstractions into one:
+    21→
+    22→1. **Gateway PromptExecutor** — single-shot prompts with simple `output`/`should_fail` constructor
+    23→2. **Core PromptExecutor** — full-featured with interactive, streaming, command, and prompt modes
+    24→
+    25→The gateway version was deleted because it was a subset of the core's capabilities. The core ABC needed to support metadata extraction (PR URLs, issue numbers), event streaming (tool events, spinner updates), and hook interaction (zero-turns detection) — none of which the gateway's simple API could express.
+    26→
+    27→## Two Current FakePromptExecutor Implementations
+    28→
+    29→After the consolidation, two distinct fakes exist, serving different use cases:
+    30→
+
+... [61 lines omitted] ...
+
+    39→| **Best for**         | CLI command tests that need rich scenario simulation (PR creation, hook blocking, process errors) | Lower-level tests or erk-shared consumers that need simple prompt result sequences |
+    50→| `should_fail=True`        | `command_should_fail=True`          | For command execution failures                                                   |
+    51→| `error="message"`         | `simulated_prompt_error="message"`  | For prompt execution failures                                                    |
+    52→| `transient_failures=2`    | No equivalent                       | Retry logic moved to `RealPromptExecutor` in gateway layer                       |
+    60→- Process errors: `simulated_process_error`
+    66→| Simulate a specific execution scenario (PR creation, hook block, process error) | `tests/fakes/prompt_executor.FakePromptExecutor`                         |
+    71→## Anti-Pattern: Failure Mode Confusion
+    73→The old gateway API had one failure flag (`should_fail`) for everything. The current API distinguishes between failure modes because they have different downstream effects:
+    75→- **`command_should_fail`** — the command itself fails (returns `CommandResult` with `success=False` or yields `ErrorEvent`)
+    76→- **`simulated_prompt_error`** — the prompt returns a `PromptResult` with `success=False` and an error message
+    77→- **`simulated_process_error`** — the subprocess can't start (yields `ProcessErrorEvent`)
+    81→Using the wrong failure mode produces the wrong event type, which means tests that check for specific error handling paths will pass for the wrong reason.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01EaRw7amuzv4NYZvgfL5o3W">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/testing/tripwires.md</param>
+    <param name="old_string">**importing FakePromptExecutor from erk_shared.fakes.prompt_executor** → Read [FakePromptE...[truncated 97 chars]...dation. Import from tests.fakes.tests.prompt_executor or tests.fakes.gateway.core instead.</param>
+    <param name="new_string">**importing FakePromptExecutor from erk_shared.fakes.prompt_executor** → Read [FakePromptE...[truncated 69 chars]...e was deleted in the consolidation. Import from tests.fakes.tests.prompt_executor instead.</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="2871" cache_read_input_tokens="119891" cache_creation="{'ephemeral_5m_input_tokens': 2871, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01KSJcboTUvAynAMQVU8R5GF">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/testing/fake-api-migration-pattern.md</param>
+    <param name="old_string">  - action: "importing FakePromptExecutor from erk_shared.fakes.prompt_executor"
+    warni...[truncated 24 chars]...ation. Import from tests.fakes.tests.prompt_executor or tests.fakes.gateway.core instead."</param>
+    <param name="new_string">  - action: "importing FakePromptExecutor from erk_shared.fakes.prompt_executor"
+    warning: "This module was deleted in the consolidation. Import from tests.fakes.tests.prompt_executor instead."</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="2871" cache_read_input_tokens="119891" cache_creation="{'ephemeral_5m_input_tokens': 2871, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01DWxTeQi9cZu2ot8mQ7VLhN">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/testing/fake-api-migration-pattern.md</param>
+    <param name="old_string">&lt;!-- Source: tests/fakes/prompt_executor.py, FakePromptExecutor --&gt;
+&lt;!-- Source: packages/...[truncated 1484 chars]...s plain descriptive names (`prompt_results`, `streaming_events`, `passthrough_exit_code`).</param>
+    <param name="new_string">&lt;!-- Source: tests/fakes/tests/prompt_executor.py, FakePromptExecutor --&gt;
+
+The `tests/fake...[truncated 393 chars]...t. Uses `simulated_*` prefix naming (`simulated_prompt_output`, `simulated_pr_url`, etc.).</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="2871" cache_read_input_tokens="119891" cache_creation="{'ephemeral_5m_input_tokens': 2871, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01KXqsHLG5uMUCgGqp917cNW">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/testing/fake-api-migration-pattern.md</param>
+    <param name="old_string">| Deleted Gateway Parameter | Current Equivalent (`tests/fakes/`) | Notes                 ...[truncated 856 chars]...`     | Use `erk_shared/core/fakes` with `prompt_results=[...]` for sequential responses |</param>
+    <param name="new_string">| Deleted Gateway Parameter | Current Equivalent (`tests/fakes/tests/`) | Notes           ...[truncated 704 chars]...lent in `tests/fakes/tests/`     | Sequential responses not supported in current version |</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="2871" cache_read_input_tokens="119891" cache_creation="{'ephemeral_5m_input_tokens': 2871, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01XGszyZFwH6PkAxLNsPBLsS">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/testing/fake-api-migration-pattern.md</param>
+    <param name="old_string">| Your test needs...                                                              | Use   ...[truncated 753 chars]...              | `tests/fakes/prompt_executor.FakePromptExecutor`                         |</param>
+    <param name="new_string">| Your test needs...                                                              | Use   ...[truncated 359 chars]...action                          | `tests/fakes/tests/prompt_executor.FakePromptExecutor` |</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="2871" cache_read_input_tokens="119891" cache_creation="{'ephemeral_5m_input_tokens': 2871, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01EaRw7amuzv4NYZvgfL5o3W">
+The file /home/runner/work/erk/erk/docs/learned/testing/tripwires.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01KSJcboTUvAynAMQVU8R5GF">
+The file /home/runner/work/erk/erk/docs/learned/testing/fake-api-migration-pattern.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01DWxTeQi9cZu2ot8mQ7VLhN">
+The file /home/runner/work/erk/erk/docs/learned/testing/fake-api-migration-pattern.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01KXqsHLG5uMUCgGqp917cNW">
+The file /home/runner/work/erk/erk/docs/learned/testing/fake-api-migration-pattern.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01XGszyZFwH6PkAxLNsPBLsS">
+The file /home/runner/work/erk/erk/docs/learned/testing/fake-api-migration-pattern.md has been updated successfully.
+  </tool_result>
+  <assistant>Perfect! Now let me do a final verification to make sure all references have been updated:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="2369" cache_read_input_tokens="122762" cache_creation="{'ephemeral_5m_input_tokens': 2369, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01Ldfbm1qKdsZk1c5MhMC7kD">
+    <param name="command">grep -r "erk_shared\.fakes\." docs/learned --include="*.md" | head -20</param>
+    <param name="description">Check for remaining erk_shared.fakes references in docs</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="2369" cache_read_input_tokens="122762" cache_creation="{'ephemeral_5m_input_tokens': 2369, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01YACxqrf9bU7ErGTNLMjqAx">
+    <param name="command">grep -r "from erk_shared\.fakes\." docs/learned --include="*.md" .claude/skills --include="*.md" | wc -l</param>
+    <param name="description">Count remaining erk_shared.fakes imports</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="2369" cache_read_input_tokens="122762" cache_creation="{'ephemeral_5m_input_tokens': 2369, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_014XQf17NCuPpkQkCqHfqMpp">
+    <param name="command">grep -r "erk_shared/fakes/" docs/learned --include="*.md" | head -10</param>
+    <param name="description">Check for file path references to erk_shared/fakes</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="2369" cache_read_input_tokens="122762" cache_creation="{'ephemeral_5m_input_tokens': 2369, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014XQf17NCuPpkQkCqHfqMpp">
+
+  </tool_result>
+  <tool_result tool="toolu_01Ldfbm1qKdsZk1c5MhMC7kD">
+docs/learned/testing/tripwires.md:**importing FakePromptExecutor from erk_shared.fakes.prompt_executor** → Read [FakePromptExecutor API Migration - Gateway to Core](fake-api-migration-pattern.md) first. This module was deleted in the consolidation. Import from tests.fakes.tests.prompt_executor instead.
+docs/learned/testing/fake-api-migration-pattern.md:  - action: "importing FakePromptExecutor from erk_shared.fakes.prompt_executor"
+  </tool_result>
+  <tool_result tool="toolu_01YACxqrf9bU7ErGTNLMjqAx">
+2
+  </tool_result>
+  <assistant>Excellent! The only remaining references to `erk_shared.fakes.` are in the tripwires and migration documentation, which are intentionally documenting the OLD pattern (as warnings to not use it). Let me verify our work is complete:</assistant>
+  <usage input_tokens="37" cache_creation_input_tokens="601" cache_read_input_tokens="125131" cache_creation="{'ephemeral_5m_input_tokens': 601, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01QrCzA7BYCAcp2D8a4CsfMv">
+    <param name="command">grep -r "tests\.fakes\.gateway\." docs/learned --include="*.md" .claude/skills --include="*.md" | wc -l</param>
+    <param name="description">Count new tests.fakes.gateway references</param>
+  </tool_use>
+  <usage input_tokens="37" cache_creation_input_tokens="601" cache_read_input_tokens="125131" cache_creation="{'ephemeral_5m_input_tokens': 601, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01Axfn1x5hnvPY6TKXzpvhtS">
+    <param name="command">grep -r "tests\.fakes\.tests\." docs/learned --include="*.md" .claude/skills --include="*.md" | wc -l</param>
+    <param name="description">Count new tests.fakes.tests references</param>
+  </tool_use>
+  <usage input_tokens="37" cache_creation_input_tokens="601" cache_read_input_tokens="125131" cache_creation="{'ephemeral_5m_input_tokens': 601, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01Njni44t4m2ALev9nQZrzV9">
+    <param name="command">grep -r "tests/fakes/gateway/" docs/learned --include="*.md" | wc -l</param>
+    <param name="description">Count file path references to tests/fakes/gateway</param>
+  </tool_use>
+  <usage input_tokens="37" cache_creation_input_tokens="601" cache_read_input_tokens="125131" cache_creation="{'ephemeral_5m_input_tokens': 601, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Njni44t4m2ALev9nQZrzV9">
+12
+  </tool_result>
+  <tool_result tool="toolu_01QrCzA7BYCAcp2D8a4CsfMv">
+24
+  </tool_result>
+  <tool_result tool="toolu_01Axfn1x5hnvPY6TKXzpvhtS">
+5
+  </tool_result>
+  <assistant>Perfect! Let me create a summary of all the changes made:
+
+## Summary
+
+I've successfully updated all markdown documentation files in `/home/runner/work/erk/erk` to reflect the fake files migration. Here's what was changed:
+
+### Files Updated (17 total):
+
+1. **docs/learned/tui/architecture.md** - Updated PlanDataProvider fake location and imports
+2. **docs/learned/tui/plan-row-data.md** - Updated make_plan_row() helper location
+3. **docs/learned/testing/admin-command-testing.md** - Updated FakeGitHubAdmin import and source location
+4. **docs/learned/testing/cli-testing.md** - Updated FakeGitHubIssues and FakeClaudeInstallation imports
+5. **docs/learned/testing/exec-script-testing.md** - Updated FakeBranchManager location and context_for_test reference
+6. **docs/learned/testing/fake-git-divergence.md** - Updated FakeGit import and context function
+7. **docs/learned/testing/testing.md** - Updated all fake class references (FakeGit, FakeGitHub, FakeGraphite, FakeShell, FakeGitBranchOps, FakeWorktree, FakeConsole)
+8. **docs/learned/testing/tripwires.md** - Updated FakePromptExecutor warning
+9. **docs/learned/testing/fake-api-migration-pattern.md** - Updated FakePromptExecutor documentation
+10. **docs/learned/testing/hook-testing.md** - Updated context_for_test reference
+11. **docs/learned/testing/rebase-conflicts.md** - Updated context_for_test location references
+12. **docs/learned/testing/context-builder-signatures.md** - Updated context_for_test import paths
+13. **docs/learned/architecture/erk-architecture.md** - Updated FakeGit and FakeTime imports
+14. **docs/learned/architecture/gateway-abc-implementation.md** - Updated FakeGitHubIssues and FakeTime imports
+15. **docs/learned/architecture/github-api-retry-mechanism.md** - Updated FakeTime import
+16. **docs/learned/erk-dev/testing.md** - Updated FakeGit and FakeGitHub imports
+17. **.claude/skills/fake-driven-testing/references/quick-reference.md** - Updated multiple fake imports
+
+### Key Replacements Made:
+
+1. **Primary import path**: `erk_shared.fakes.` → `tests.fakes.gateway.` (for gateway fakes)
+2. **Test-specific fakes**: `erk_shared.fakes.claude_installation` → `tests.fakes.tests.claude_installation`
+3. **Prompt executor**: `erk_shared.fakes.prompt_executor` → `tests.fakes.tests.prompt_executor`
+4. **Context testing**: `erk.core.context import context_for_test` → `tests.test_utils.test_context import context_for_test`
+5. **Minimal context**: `erk.core.context import minimal_context` → `tests.test_utils.test_context import minimal_context`
+6. **File paths**: `packages/erk-shared/src/erk_shared/gateway/.../fake.py` → `tests/fakes/gateway/...py`
+
+### Statistics:
+- **24** new references to `tests.fakes.gateway.`
+- **5** new references to `tests.fakes.tests.`
+- **12** file path references to `tests/fakes/gateway/`
+- **2** remaining intentional references to the old `erk_shared.fakes.` pattern (in tripwire warnings about the deprecated import)
+
+All documentation now correctly reflects the new fake files location under `tests/fakes/gateway/` for gateway fakes and `tests/fakes/tests/` for test-specific fakes like ClaudeInstallation and PromptExecutor.</assistant>
+  <usage input_tokens="32" cache_creation_input_tokens="543" cache_read_input_tokens="125732" cache_creation="{'ephemeral_5m_input_tokens': 543, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>

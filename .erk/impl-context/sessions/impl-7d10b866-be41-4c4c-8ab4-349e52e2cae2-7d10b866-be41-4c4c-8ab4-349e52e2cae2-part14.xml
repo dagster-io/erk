@@ -1,0 +1,1369 @@
+<session>
+  <meta source="agent-a610eaf" />
+  <meta branch="plnd/move-fakes-to-tests-03-09-1534" />
+  <meta model="claude-sonnet-4-5-20250929" />
+  <user>Perform a migration of all `RealLocalGitHub.for_test()` call sites across the codebase at /home/runner/work/erk/erk.
+
+## What happened
+The `for_test()` classmethod was removed from `RealLocalGitHub` (in `packages/erk-shared/src/erk_shared/gateway/github/real.py`). We need to create a replacement standalone function and update all callers.
+
+## Step 1: Create the replacement function
+
+Add a `real_github_for_test` function at the END of the file `tests/test_utils/context_builders.py`. The function should be:
+
+```python
+def real_github_for_test(
+    *,
+    time: Time | None = None,
+    repo_info: RepoInfo | None = None,
+) -&gt; RealLocalGitHub:
+    """Create RealLocalGitHub with test defaults.
+
+    Replacement for the removed RealLocalGitHub.for_test() classmethod.
+
+    Args:
+        time: Time implementation (defaults to FakeTime)
+        repo_info: Repository info (defaults to None)
+
+    Returns:
+        RealLocalGitHub configured with FakeGitHubIssues
+    """
+    from tests.fakes.gateway.github_issues import FakeGitHubIssues
+    from tests.fakes.gateway.time import FakeTime
+
+    return RealLocalGitHub(
+        time=time if time is not None else FakeTime(),
+        repo_info=repo_info,
+        issues=FakeGitHubIssues(),
+    )
+```
+
+You'll also need to add these imports to the top of `tests/test_utils/context_builders.py`:
+```python
+from erk_shared.gateway.github.real import RealLocalGitHub
+from erk_shared.gateway.github.types import RepoInfo
+from erk_shared.gateway.time.abc import Time
+```
+
+Read the current file first to see exact placement.
+
+## Step 2: Update all callers
+
+There are ~50 call sites across these files:
+- tests/unit/gateways/github/test_real.py
+- tests/unit/gateways/github/test_parse_check_runs.py
+- tests/integration/test_real_github.py
+- tests/integration/test_real_github_pr_enrichment.py
+- tests/integration/test_github_graphql.py
+- tests/integration/test_helpers.py (just a docstring example)
+- tests/core/operations/test_github.py
+
+For each file:
+1. Replace `RealLocalGitHub.for_test(` with `real_github_for_test(`
+2. Add import: `from tests.test_utils.context_builders import real_github_for_test`
+3. If the file imported `RealLocalGitHub` solely for `for_test()`, and no longer uses `RealLocalGitHub` directly, remove the `RealLocalGitHub` import. But ONLY if `RealLocalGitHub` isn't used elsewhere in the file (type hints, other calls, etc.).
+
+## Important details
+- The `for_test()` call takes keyword args `time=` and `repo_info=` — preserve these exactly
+- Most calls are `RealLocalGitHub.for_test()` with no args
+- Some calls pass `time=fake_time` or `repo_info=RepoInfo(...)`
+- The tests/integration/test_helpers.py reference is in a docstring — update it too
+- Do NOT change any non-import, non-call-site lines</user>
+  <assistant>I'll help you perform this migration. Let me start by reading the current state of the files and understanding the scope of changes needed.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="6693" cache_read_input_tokens="18876" cache_creation="{'ephemeral_5m_input_tokens': 6693, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01PntWQKa5yG7qcRuuGAo3UD">
+    <param name="file_path">/home/runner/work/erk/erk/tests/test_utils/context_builders.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6693" cache_read_input_tokens="18876" cache_creation="{'ephemeral_5m_input_tokens': 6693, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_0143cdXvDxfS46qkccaahPeK">
+    <param name="pattern">RealLocalGitHub\.for_test\(</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6693" cache_read_input_tokens="18876" cache_creation="{'ephemeral_5m_input_tokens': 6693, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01PntWQKa5yG7qcRuuGAo3UD">
+     1→"""Shared context builders for test scenarios.
+     2→
+     3→This module provides reusable context builder functions to eliminate duplication
+     4→across test files. These builders encapsulate common patterns for setting up
+     5→ErkContext with appropriate fake implementations.
+     6→"""
+     7→
+     8→from erk.core.context import ErkContext
+     9→from erk_shared.core.plan_list_service import PlanListData
+    10→from tests.fakes.gateway.core import FakePlanListService
+    11→from tests.fakes.gateway.git import FakeGit
+    12→from tests.fakes.gateway.github import FakeLocalGitHub
+    13→from tests.fakes.gateway.shell import FakeShell
+    14→from erk_shared.gateway.git.dry_run import DryRunGit
+    15→from erk_shared.gateway.github.types import PullRequestInfo, WorkflowRun
+    16→from erk_shared.plan_store.types import Plan
+    17→from tests.test_utils.env_helpers import ErkInMemEnv, ErkIsolatedFsEnv
+    18→
+    19→
+    20→def build_workspace_test_context(
+    21→    env: ErkInMemEnv | ErkIsolatedFsEnv,
+    22→    *,
+    23→    dry_run: bool = False,
+    24→    use_graphite: bool = False,
+    25→    current_branch: str | None = None,
+    26→    **kwargs,
+    27→) -&gt; ErkContext:
+    28→    """Build ErkContext for workspace command tests (create, split, consolidate, delete).
+    29→
+    30→    This builder provides a standard context configuration for workspace manipulation
+
+... [123 lines omitted] ...
+
+   137→    warnings: tuple[str, ...] = (),
+   145→            warnings=warnings,
+  </tool_result>
+  <tool_result tool="toolu_0143cdXvDxfS46qkccaahPeK">
+Found 7 files
+tests/integration/test_real_github.py
+tests/unit/gateways/github/test_parse_check_runs.py
+tests/unit/gateways/github/test_real.py
+tests/integration/test_real_github_pr_enrichment.py
+tests/integration/test_github_graphql.py
+tests/integration/test_helpers.py
+tests/core/operations/test_github.py
+  </tool_result>
+  <assistant>Now let me look at the specific files that need updating:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="5304" cache_read_input_tokens="25569" cache_creation="{'ephemeral_5m_input_tokens': 5304, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01VYS22cjJ8SEuTMGNsJatkG">
+    <param name="pattern">RealLocalGitHub\.for_test\(</param>
+    <param name="path">/home/runner/work/erk/erk/tests/unit/gateways/github/test_real.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+    <param name="-C">2</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="5304" cache_read_input_tokens="25569" cache_creation="{'ephemeral_5m_input_tokens': 5304, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_016q49BDweGug5fK31goABXH">
+    <param name="pattern">RealLocalGitHub\.for_test\(</param>
+    <param name="path">/home/runner/work/erk/erk/tests/unit/gateways/github/test_parse_check_runs.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+    <param name="-C">2</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="5304" cache_read_input_tokens="25569" cache_creation="{'ephemeral_5m_input_tokens': 5304, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_018FXbSjDc8BhiFSkRCfN6mj">
+    <param name="pattern">RealLocalGitHub\.for_test\(</param>
+    <param name="path">/home/runner/work/erk/erk/tests/integration/test_real_github.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+    <param name="-C">2</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="5304" cache_read_input_tokens="25569" cache_creation="{'ephemeral_5m_input_tokens': 5304, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01JKaNkRUDouhUaLaKvixgo9">
+    <param name="pattern">RealLocalGitHub\.for_test\(</param>
+    <param name="path">/home/runner/work/erk/erk/tests/integration/test_real_github_pr_enrichment.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+    <param name="-C">2</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="5304" cache_read_input_tokens="25569" cache_creation="{'ephemeral_5m_input_tokens': 5304, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01Dbbv1nQp2dJeDY1vxfbCRn">
+    <param name="pattern">RealLocalGitHub\.for_test\(</param>
+    <param name="path">/home/runner/work/erk/erk/tests/integration/test_github_graphql.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+    <param name="-C">2</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="5304" cache_read_input_tokens="25569" cache_creation="{'ephemeral_5m_input_tokens': 5304, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_014wUM1zNiDFjrPjRyntjtkk">
+    <param name="pattern">RealLocalGitHub\.for_test\(</param>
+    <param name="path">/home/runner/work/erk/erk/tests/integration/test_helpers.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+    <param name="-C">2</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="5304" cache_read_input_tokens="25569" cache_creation="{'ephemeral_5m_input_tokens': 5304, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_0145Psaf5gDj2jC1JTANBNmq">
+    <param name="pattern">RealLocalGitHub\.for_test\(</param>
+    <param name="path">/home/runner/work/erk/erk/tests/core/operations/test_github.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+    <param name="-C">2</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="5304" cache_read_input_tokens="25569" cache_creation="{'ephemeral_5m_input_tokens': 5304, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01VYS22cjJ8SEuTMGNsJatkG">
+46-def test_parses_timestamps_from_iso_string() -&gt; None:
+47-    """Valid ISO timestamp strings are parsed into timezone-aware datetimes."""
+48:    github = RealLocalGitHub.for_test()
+49-    repo_info = RepoInfo(owner="owner", name="repo")
+50-
+--
+61-def test_uses_epoch_sentinel_when_timestamps_missing() -&gt; None:
+62-    """Missing timestamp strings fall back to the epoch sentinel datetime."""
+63:    github = RealLocalGitHub.for_test()
+64-    repo_info = RepoInfo(owner="owner", name="repo")
+65-
+--
+74-def test_extracts_author_from_user_login() -&gt; None:
+75-    """Author is extracted from the user.login field."""
+76:    github = RealLocalGitHub.for_test()
+77-    repo_info = RepoInfo(owner="owner", name="repo")
+78-
+--
+85-def test_author_empty_when_user_is_none() -&gt; None:
+86-    """Author is empty string when the user object is None (e.g., deleted account)."""
+87:    github = RealLocalGitHub.for_test()
+88-    repo_info = RepoInfo(owner="owner", name="repo")
+89-
+--
+147-def test_parse_plan_prs_returns_both_draft_and_non_draft() -&gt; None:
+148-    """Both draft and non-draft PRs are returned (no draft filtering)."""
+149:    github = RealLocalGitHub.for_test()
+150-    repo_id = GitHubRepoId(owner="owner", repo="repo")
+151-
+--
+
+... [89 lines omitted] ...
+
+305-    """RuntimeError from the API call propagates without caching."""
+306-    mock_execute.side_effect = RuntimeError("GitHub command failed: network error")
+  </tool_result>
+  <tool_result tool="toolu_018FXbSjDc8BhiFSkRCfN6mj">
+37-
+38-    with mock_subprocess_run(monkeypatch, mock_run):
+39:        ops = RealLocalGitHub.for_test()
+40-        ops.update_pr_base_branch(Path("/repo"), 123, "new-base")
+41-
+--
+58-
+59-    with mock_subprocess_run(monkeypatch, mock_run):
+60:        ops = RealLocalGitHub.for_test()
+61-        # Gracefully degrades - silently fails without raising
+62-        ops.update_pr_base_branch(Path("/repo"), 123, "new-base")
+--
+74-
+75-    with mock_subprocess_run(monkeypatch, mock_run):
+76:        ops = RealLocalGitHub.for_test()
+77-        # Gracefully degrades - silently fails when gh not found
+78-        ops.update_pr_base_branch(Path("/repo"), 123, "new-base")
+--
+115-        subprocess.run = mock_run
+116-
+117:        ops = RealLocalGitHub.for_test()
+118-        result = ops.merge_pr(repo_root, pr_number, squash=True, verbose=False)
+119-        assert isinstance(result, MergeResult)
+--
+147-        subprocess.run = mock_run
+148-
+149:        ops = RealLocalGitHub.for_test()
+150-        ops.merge_pr(repo_root, pr_number, squash=False, verbose=False)
+151-    finally:
+--
+
+... [197 lines omitted] ...
+
+281-        # Should raise RuntimeError (from run_subprocess_with_context wrapper)
+407-        # Should raise RuntimeError with helpful message instead of silently failing
+429-        # Should raise JSONDecodeError instead of silently failing
+464-        # Should raise KeyError instead of silently failing
+586-        # Should raise error for invalid response format
+638-        # Should raise error after max attempts
+704-        with pytest.raises(RuntimeError, match="run was skipped"):
+828-        with pytest.raises(RuntimeError, match="PR not found"):
+887-        # Should return False for errors other than 404
+  </tool_result>
+  <tool_result tool="toolu_016q49BDweGug5fK31goABXH">
+57-def test_parse_check_runs_filters_successful_checks() -&gt; None:
+58-    """SUCCESS CheckRuns are excluded from results."""
+59:    github = RealLocalGitHub.for_test()
+60-    response = _wrap_check_runs_response(
+61-        [
+--
+71-def test_parse_check_runs_includes_failed_checks() -&gt; None:
+72-    """FAILURE CheckRuns are included in results."""
+73:    github = RealLocalGitHub.for_test()
+74-    response = _wrap_check_runs_response(
+75-        [
+--
+88-def test_parse_check_runs_includes_in_progress_checks() -&gt; None:
+89-    """CheckRuns with null conclusion (in progress) are included."""
+90:    github = RealLocalGitHub.for_test()
+91-    response = _wrap_check_runs_response(
+92-        [
+--
+107-def test_parse_check_runs_handles_status_context_failure() -&gt; None:
+108-    """StatusContext with FAILURE state is included."""
+109:    github = RealLocalGitHub.for_test()
+110-    response = _wrap_check_runs_response(
+111-        [
+--
+124-def test_parse_check_runs_handles_status_context_pending() -&gt; None:
+125-    """StatusContext with PENDING state is included with no conclusion."""
+126:    github = RealLocalGitHub.for_test()
+127-    response = _wrap_check_runs_response(
+128-        [
+--
+
+... [23 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01JKaNkRUDouhUaLaKvixgo9">
+75-
+76-    with mock_subprocess_run(monkeypatch, mock_run):
+77:        ops = RealLocalGitHub.for_test()
+78-        result = ops._enrich_prs_via_graphql(location, [42])
+79-
+--
+102-
+103-    with mock_subprocess_run(monkeypatch, mock_run):
+104:        ops = RealLocalGitHub.for_test()
+105-        result = ops._enrich_prs_via_graphql(location, [10, 20])
+106-
+--
+124-
+125-    with mock_subprocess_run(monkeypatch, mock_run):
+126:        ops = RealLocalGitHub.for_test()
+127-        result = ops._enrich_prs_via_graphql(location, [42])
+128-
+--
+144-
+145-    with mock_subprocess_run(monkeypatch, mock_run):
+146:        ops = RealLocalGitHub.for_test()
+147-        result = ops._enrich_prs_via_graphql(location, [])
+148-
+--
+166-
+167-    with mock_subprocess_run(monkeypatch, mock_run):
+168:        ops = RealLocalGitHub.for_test()
+169-        result = ops._enrich_prs_via_graphql(location, [42, 99])
+170-
+  </tool_result>
+  <tool_result tool="toolu_01Dbbv1nQp2dJeDY1vxfbCRn">
+48-
+49-    with mock_subprocess_run(monkeypatch, mock_run):
+50:        github = RealLocalGitHub.for_test()
+51-        location = GitHubRepoLocation(
+52-            root=Path("/repo"),
+--
+104-
+105-    with mock_subprocess_run(monkeypatch, mock_run):
+106:        github = RealLocalGitHub.for_test()
+107-        location = GitHubRepoLocation(
+108-            root=Path("/repo"),
+--
+164-
+165-    with mock_subprocess_run(monkeypatch, mock_run):
+166:        github = RealLocalGitHub.for_test()
+167-        location = GitHubRepoLocation(
+168-            root=Path("/repo"),
+--
+219-
+220-    with mock_subprocess_run(monkeypatch, mock_run):
+221:        github = RealLocalGitHub.for_test()
+222-        location = GitHubRepoLocation(
+223-            root=Path("/repo"),
+--
+277-
+278-    with mock_subprocess_run(monkeypatch, mock_run):
+279:        github = RealLocalGitHub.for_test()
+280-        location = GitHubRepoLocation(
+281-            root=Path("/repo"),
+--
+
+... [5 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_0145Psaf5gDj2jC1JTANBNmq">
+124-def test_build_issue_pr_linkage_query_structure() -&gt; None:
+125-    """Test that issue PR linkage query uses timelineItems with CrossReferencedEvent."""
+126:    ops = RealLocalGitHub.for_test()
+127-
+128-    query = ops._build_issue_pr_linkage_query([100, 200], GitHubRepoId("test-owner", "test-repo"))
+--
+220-def test_parse_issue_pr_linkages_with_single_pr() -&gt; None:
+221-    """Test parsing timeline response with single PR closing issue."""
+222:    ops = RealLocalGitHub.for_test()
+223-
+224-    # Timeline response with PR closing issue 100 (uses aggregated check counts)
+--
+275-def test_parse_issue_pr_linkages_with_multiple_prs() -&gt; None:
+276-    """Test parsing timeline response with multiple PRs closing same issue."""
+277:    ops = RealLocalGitHub.for_test()
+278-
+279-    # Timeline response with two PRs closing issue 100 (aggregated format)
+--
+331-def test_parse_issue_pr_linkages_with_pr_linking_multiple_issues() -&gt; None:
+332-    """Test parsing response where same PR closes multiple issues."""
+333:    ops = RealLocalGitHub.for_test()
+334-
+335-    # Timeline response with same PR closing both issues 100 and 101 (aggregated format)
+--
+388-def test_parse_issue_pr_linkages_handles_empty_timeline() -&gt; None:
+389-    """Test parsing handles issues with no linked PRs."""
+390:    ops = RealLocalGitHub.for_test()
+391-
+392-    response = {"data": {"repository": {"issue_100": {"timelineItems": {"nodes": []}}}}}
+--
+
+... [53 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_014wUM1zNiDFjrPjRyntjtkk">
+35-            with mock_subprocess_run(monkeypatch, mock_run):
+36-                # Test code that calls subprocess.run
+37:                ops = RealLocalGitHub.for_test()
+38-                result = ops.some_method()
+39-    """
+  </tool_result>
+  <assistant>Now let me read the files that need updating to understand their complete import sections:</assistant>
+  <usage input_tokens="1180" cache_creation_input_tokens="7140" cache_read_input_tokens="30873" cache_creation="{'ephemeral_5m_input_tokens': 7140, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01EXP2vVhrg97janQuEGZuks">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/gateways/github/test_real.py</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1180" cache_creation_input_tokens="7140" cache_read_input_tokens="30873" cache_creation="{'ephemeral_5m_input_tokens': 7140, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01RmakbxYuCyqWZ9ooXUwbMp">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/gateways/github/test_parse_check_runs.py</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1180" cache_creation_input_tokens="7140" cache_read_input_tokens="30873" cache_creation="{'ephemeral_5m_input_tokens': 7140, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01FN2KhrzZUj6uovcbBgawz8">
+    <param name="file_path">/home/runner/work/erk/erk/tests/integration/test_real_github.py</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1180" cache_creation_input_tokens="7140" cache_read_input_tokens="30873" cache_creation="{'ephemeral_5m_input_tokens': 7140, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01KRwuphJfqQ5C4P2XA3DUsK">
+    <param name="file_path">/home/runner/work/erk/erk/tests/integration/test_real_github_pr_enrichment.py</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1180" cache_creation_input_tokens="7140" cache_read_input_tokens="30873" cache_creation="{'ephemeral_5m_input_tokens': 7140, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01YbrpwSXQeS2y6PYNfKHfuA">
+    <param name="file_path">/home/runner/work/erk/erk/tests/integration/test_github_graphql.py</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1180" cache_creation_input_tokens="7140" cache_read_input_tokens="30873" cache_creation="{'ephemeral_5m_input_tokens': 7140, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01NDxQTU2xrALZhaQk77HgPU">
+    <param name="file_path">/home/runner/work/erk/erk/tests/core/operations/test_github.py</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1180" cache_creation_input_tokens="7140" cache_read_input_tokens="30873" cache_creation="{'ephemeral_5m_input_tokens': 7140, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01EXP2vVhrg97janQuEGZuks">
+     1→"""Unit tests for RealLocalGitHub parsing and caching methods."""
+     2→
+     3→from datetime import UTC, datetime
+     4→from pathlib import Path
+     5→from unittest.mock import patch
+     6→
+     7→import pytest
+     8→
+     9→from erk_shared.gateway.github.real import RealLocalGitHub
+    10→from erk_shared.gateway.github.types import GitHubRepoId, RepoInfo
+    11→
+    12→
+    13→def _make_pr_data(
+    14→    *,
+    15→    number: int = 42,
+    16→    title: str = "Test PR",
+    17→    body: str = "PR body",
+    18→    state: str = "open",
+    19→    merged: bool = False,
+    20→    created_at: str = "2024-03-15T10:00:00Z",
+    21→    updated_at: str = "2024-03-16T12:00:00Z",
+    22→    user_login: str | None = "octocat",
+    23→    draft: bool = False,
+    24→) -&gt; dict:
+    25→    """Create minimal PR data dict matching GitHub REST API response shape."""
+    26→    user: dict | None = {"login": user_login} if user_login is not None else None
+    27→    return {
+    28→        "number": number,
+    29→        "html_url": f"https://github.com/owner/repo/pull/{number}",
+    30→        "title": title,
+
+... [5 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01RmakbxYuCyqWZ9ooXUwbMp">
+     1→"""Unit tests for RealLocalGitHub._parse_check_runs_response."""
+     2→
+     3→from erk_shared.gateway.github.real import RealLocalGitHub
+     4→
+     5→
+     6→def _make_check_run_node(
+     7→    *,
+     8→    name: str = "CI / unit-tests",
+     9→    status: str = "COMPLETED",
+    10→    conclusion: str | None = "SUCCESS",
+    11→    details_url: str | None = "https://github.com/runs/1",
+    12→) -&gt; dict:
+    13→    """Create a CheckRun node matching GraphQL statusCheckRollup response shape."""
+    14→    node: dict = {
+    15→        "__typename": "CheckRun",
+    16→        "name": name,
+    17→        "status": status,
+    18→        "detailsUrl": details_url,
+    19→    }
+    20→    if conclusion is not None:
+    21→        node["conclusion"] = conclusion
+    22→    return node
+    23→
+    24→
+    25→def _make_status_context_node(
+    26→    *,
+    27→    context: str = "ci/build",
+    28→    state: str = "SUCCESS",
+    29→    target_url: str | None = "https://ci.example.com/build/1",
+    30→) -&gt; dict:
+
+... [5 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01FN2KhrzZUj6uovcbBgawz8">
+     1→"""Tests for RealLocalGitHub with mocked subprocess execution.
+     2→
+     3→These tests verify that RealLocalGitHub correctly calls gh CLI commands and handles
+     4→responses. We use pytest monkeypatch to mock subprocess calls.
+     5→"""
+     6→
+     7→import json
+     8→import subprocess
+     9→from datetime import UTC, datetime
+    10→from pathlib import Path
+    11→
+    12→import pytest
+    13→from pytest import MonkeyPatch
+    14→
+    15→from tests.fakes.gateway.time import FakeTime
+    16→from erk_shared.gateway.github.real import RealLocalGitHub
+    17→from erk_shared.gateway.github.types import MergeError, MergeResult
+    18→from tests.integration.test_helpers import mock_subprocess_run
+    19→
+    20→# ============================================================================
+    21→# update_pr_base_branch() Tests
+    22→# ============================================================================
+    23→
+    24→
+    25→def test_update_pr_base_branch_success(monkeypatch: MonkeyPatch) -&gt; None:
+    26→    """Test updating PR base branch successfully via REST API."""
+    27→    called_with = []
+    28→
+    29→    def mock_run(cmd: list[str], **kwargs) -&gt; subprocess.CompletedProcess:
+    30→        called_with.append(cmd)
+
+... [5 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01KRwuphJfqQ5C4P2XA3DUsK">
+     1→"""Tests for RealLocalGitHub PR enrichment methods.
+     2→
+     3→Tests _enrich_prs_via_graphql() and _merge_rest_graphql_pr_data() which
+     4→combine REST and GraphQL data for the plan dashboard.
+     5→"""
+     6→
+     7→import json
+     8→import subprocess
+     9→from datetime import UTC, datetime
+    10→from pathlib import Path
+    11→from typing import Any
+    12→
+    13→from pytest import MonkeyPatch
+    14→
+    15→from erk_shared.gateway.github.pr_data_parsing import merge_rest_graphql_pr_data
+    16→from erk_shared.gateway.github.real import RealLocalGitHub
+    17→from erk_shared.gateway.github.types import GitHubRepoId, GitHubRepoLocation
+    18→from tests.integration.test_helpers import mock_subprocess_run
+    19→
+    20→# ============================================================================
+    21→# _enrich_prs_via_graphql() Tests
+    22→# ============================================================================
+    23→
+    24→
+    25→def _make_graphql_pr_node(
+    26→    *,
+    27→    is_draft: bool = False,
+    28→    mergeable: str = "MERGEABLE",
+    29→    merge_state_status: str = "CLEAN",
+    30→    head_ref_name: str = "feature-branch",
+
+... [5 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01YbrpwSXQeS2y6PYNfKHfuA">
+     1→"""Tests for GitHub GraphQL operations with mocked subprocess execution.
+     2→
+     3→These tests verify that RealLocalGitHub correctly passes GraphQL variables using
+     4→the gh CLI's special array and object syntax.
+     5→"""
+     6→
+     7→import json
+     8→import subprocess
+     9→from pathlib import Path
+    10→
+    11→from pytest import MonkeyPatch
+    12→
+    13→from erk_shared.gateway.github.real import RealLocalGitHub
+    14→from erk_shared.gateway.github.types import GitHubRepoId, GitHubRepoLocation
+    15→from tests.integration.test_helpers import mock_subprocess_run
+    16→
+    17→
+    18→def test_get_issues_with_pr_linkages_uses_gh_array_syntax_for_labels(
+    19→    monkeypatch: MonkeyPatch,
+    20→) -&gt; None:
+    21→    """Test that get_issues_with_pr_linkages uses gh's array syntax for labels.
+    22→
+    23→    Per gh api --help:
+    24→    - Arrays must use key[]=value1 -f key[]=value2 syntax
+    25→    - NOT -F key=["value1", "value2"] (which passes as literal string)
+    26→    """
+    27→    created_commands: list[list[str]] = []
+    28→
+    29→    graphql_response = {
+    30→        "data": {
+
+... [5 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01NDxQTU2xrALZhaQk77HgPU">
+     1→"""Tests for GitHub operations."""
+     2→
+     3→from erk_shared.gateway.github.parsing import (
+     4→    _parse_github_pr_url,
+     5→    extract_owner_repo_from_github_url,
+     6→)
+     7→from erk_shared.gateway.github.real import RealLocalGitHub
+     8→from erk_shared.gateway.github.types import GitHubRepoId
+     9→
+    10→
+    11→def test_parse_github_pr_url_valid_urls() -&gt; None:
+    12→    """Test parsing of valid GitHub PR URLs."""
+    13→    # Standard format
+    14→    result = _parse_github_pr_url("https://github.com/dagster-io/erk/pull/23")
+    15→    assert result == ("dagster-io", "erk")
+    16→
+    17→    # Different owner/repo names
+    18→    result = _parse_github_pr_url("https://github.com/facebook/react/pull/12345")
+    19→    assert result == ("facebook", "react")
+    20→
+    21→    # Single character names
+    22→    result = _parse_github_pr_url("https://github.com/a/b/pull/1")
+    23→    assert result == ("a", "b")
+    24→
+    25→    # Names with hyphens
+    26→    result = _parse_github_pr_url("https://github.com/my-org/my-repo/pull/456")
+    27→    assert result == ("my-org", "my-repo")
+    28→
+    29→    # Names with underscores
+    30→    result = _parse_github_pr_url("https://github.com/my_org/my_repo/pull/789")
+
+... [5 lines omitted] ...
+  </tool_result>
+  <assistant>Now I'll start performing the migration. Let me first add the new function to `context_builders.py`:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="11326" cache_read_input_tokens="38013" cache_creation="{'ephemeral_5m_input_tokens': 11326, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01XvoidJzpGMsGsqsZ4pBrZa">
+    <param name="file_path">/home/runner/work/erk/erk/tests/test_utils/context_builders.py</param>
+    <param name="content">"""Shared context builders for test scenarios.
+
+This module provides reusable context buil...[truncated 6452 chars]...ne else FakeTime(),
+        repo_info=repo_info,
+        issues=FakeGitHubIssues(),
+    )
+</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="11326" cache_read_input_tokens="38013" cache_creation="{'ephemeral_5m_input_tokens': 11326, 'ephemeral_1h_input_tokens': 0}" output_tokens="2042" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01XvoidJzpGMsGsqsZ4pBrZa">
+The file /home/runner/work/erk/erk/tests/test_utils/context_builders.py has been updated. Here's the result of running `cat -n` on a snippet of the edited file:
+     1→"""Shared context builders for test scenarios.
+     2→
+     3→This module provides reusable context builder functions to eliminate duplication
+     4→across test files. These builders encapsulate common patterns for setting up
+     5→ErkContext with appropriate fake implementations.
+     6→"""
+     7→
+     8→from erk.core.context import ErkContext
+     9→from erk_shared.core.plan_list_service import PlanListData
+    10→from erk_shared.gateway.github.real import RealLocalGitHub
+    11→from erk_shared.gateway.github.types import PullRequestInfo, RepoInfo, WorkflowRun
+    12→from erk_shared.gateway.time.abc import Time
+    13→from erk_shared.plan_store.types import Plan
+    14→from tests.fakes.gateway.core import FakePlanListService
+    15→from tests.fakes.gateway.git import FakeGit
+    16→from tests.fakes.gateway.github import FakeLocalGitHub
+    17→from tests.fakes.gateway.shell import FakeShell
+    18→from erk_shared.gateway.git.dry_run import DryRunGit
+    19→from tests.test_utils.env_helpers import ErkInMemEnv, ErkIsolatedFsEnv
+    20→
+    21→
+    22→def build_workspace_test_context(
+    23→    env: ErkInMemEnv | ErkIsolatedFsEnv,
+    24→    *,
+    25→    dry_run: bool = False,
+    26→    use_graphite: bool = False,
+    27→    current_branch: str | None = None,
+    28→    **kwargs,
+    29→) -&gt; ErkContext:
+
+... [147 lines omitted] ...
+
+   139→    warnings: tuple[str, ...] = (),
+   147→            warnings=warnings,
+  </tool_result>
+  <assistant>Good! Now let me update all the test files. Let me start with the unit test files:</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="4589" cache_read_input_tokens="49339" cache_creation="{'ephemeral_5m_input_tokens': 4589, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01FA6ZbBCv4v6DQVnCuVyyk4">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/gateways/github/test_real.py</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="4589" cache_read_input_tokens="49339" cache_creation="{'ephemeral_5m_input_tokens': 4589, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01FA6ZbBCv4v6DQVnCuVyyk4">
+     1→"""Unit tests for RealLocalGitHub parsing and caching methods."""
+     2→
+     3→from datetime import UTC, datetime
+     4→from pathlib import Path
+     5→from unittest.mock import patch
+     6→
+     7→import pytest
+     8→
+     9→from erk_shared.gateway.github.real import RealLocalGitHub
+    10→from erk_shared.gateway.github.types import GitHubRepoId, RepoInfo
+    11→
+    12→
+    13→def _make_pr_data(
+    14→    *,
+    15→    number: int = 42,
+    16→    title: str = "Test PR",
+    17→    body: str = "PR body",
+    18→    state: str = "open",
+    19→    merged: bool = False,
+    20→    created_at: str = "2024-03-15T10:00:00Z",
+    21→    updated_at: str = "2024-03-16T12:00:00Z",
+    22→    user_login: str | None = "octocat",
+    23→    draft: bool = False,
+    24→) -&gt; dict:
+    25→    """Create minimal PR data dict matching GitHub REST API response shape."""
+    26→    user: dict | None = {"login": user_login} if user_login is not None else None
+    27→    return {
+    28→        "number": number,
+    29→        "html_url": f"https://github.com/owner/repo/pull/{number}",
+    30→        "title": title,
+
+... [415 lines omitted] ...
+
+   304→def test_get_default_branch_propagates_runtime_error(mock_execute) -&gt; None:  # noqa: ANN001
+   305→    """RuntimeError from the API call propagates without caching."""
+   306→    mock_execute.side_effect = RuntimeError("GitHub command failed: network error")
+   310→    with pytest.raises(RuntimeError, match="network error"):
+   313→    # Error should NOT be cached — next call should retry
+  </tool_result>
+  <assistant>Now I'll update this file:</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="6444" cache_read_input_tokens="53928" cache_creation="{'ephemeral_5m_input_tokens': 6444, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01TUtsMPqr3fzJE5XoYdxPyE">
+    <param name="command">sed -i 's/RealLocalGitHub\.for_test(/real_github_for_test(/g' tests/unit/gateways/github/test_real.py</param>
+    <param name="description">Replace RealLocalGitHub.for_test with real_github_for_test in test_real.py</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="6444" cache_read_input_tokens="53928" cache_creation="{'ephemeral_5m_input_tokens': 6444, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01K4vd79D2JWRRMyL4wMJYXv">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/gateways/github/test_real.py</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="6444" cache_read_input_tokens="53928" cache_creation="{'ephemeral_5m_input_tokens': 6444, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01TUtsMPqr3fzJE5XoYdxPyE">
+
+  </tool_result>
+  <tool_result tool="toolu_01K4vd79D2JWRRMyL4wMJYXv">
+     1→"""Unit tests for RealLocalGitHub parsing and caching methods."""
+     2→
+     3→from datetime import UTC, datetime
+     4→from pathlib import Path
+     5→from unittest.mock import patch
+     6→
+     7→import pytest
+     8→
+     9→from erk_shared.gateway.github.real import RealLocalGitHub
+    10→from erk_shared.gateway.github.types import GitHubRepoId, RepoInfo
+    11→
+    12→
+    13→def _make_pr_data(
+    14→    *,
+    15→    number: int = 42,
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>Now I need to add the import. Let me update the file properly:</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="621" cache_read_input_tokens="60372" cache_creation="{'ephemeral_5m_input_tokens': 621, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01Rz5bCWwuCHJsLLekFGmRzm">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/gateways/github/test_real.py</param>
+    <param name="content">"""Unit tests for RealLocalGitHub parsing and caching methods."""
+
+from datetime import UT...[truncated 14330 chars]...numbers_response(response, repo_id)
+
+    assert issues == []
+    assert pr_linkages == {}
+</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="621" cache_read_input_tokens="60372" cache_creation="{'ephemeral_5m_input_tokens': 621, 'ephemeral_1h_input_tokens': 0}" output_tokens="4772" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Rz5bCWwuCHJsLLekFGmRzm">
+The file /home/runner/work/erk/erk/tests/unit/gateways/github/test_real.py has been updated. Here's the result of running `cat -n` on a snippet of the edited file:
+     1→"""Unit tests for RealLocalGitHub parsing and caching methods."""
+     2→
+     3→from datetime import UTC, datetime
+     4→from pathlib import Path
+     5→from unittest.mock import patch
+     6→
+     7→import pytest
+     8→
+     9→from erk_shared.gateway.github.types import GitHubRepoId, RepoInfo
+    10→from tests.test_utils.context_builders import real_github_for_test
+    11→
+    12→
+    13→def _make_pr_data(
+    14→    *,
+    15→    number: int = 42,
+    16→    title: str = "Test PR",
+    17→    body: str = "PR body",
+    18→    state: str = "open",
+    19→    merged: bool = False,
+    20→    created_at: str = "2024-03-15T10:00:00Z",
+    21→    updated_at: str = "2024-03-16T12:00:00Z",
+    22→    user_login: str | None = "octocat",
+    23→    draft: bool = False,
+    24→) -&gt; dict:
+    25→    """Create minimal PR data dict matching GitHub REST API response shape."""
+    26→    user: dict | None = {"login": user_login} if user_login is not None else None
+    27→    return {
+    28→        "number": number,
+    29→        "html_url": f"https://github.com/owner/repo/pull/{number}",
+
+... [411 lines omitted] ...
+
+   304→def test_get_default_branch_propagates_runtime_error(mock_execute) -&gt; None:  # noqa: ANN001
+   305→    """RuntimeError from the API call propagates without caching."""
+   306→    mock_execute.side_effect = RuntimeError("GitHub command failed: network error")
+   310→    with pytest.raises(RuntimeError, match="network error"):
+   313→    # Error should NOT be cached — next call should retry
+  </tool_result>
+  <assistant>Good! Now let me update the other test files. Let me do them efficiently using sed and then add the imports:</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="10928" cache_read_input_tokens="60993" cache_creation="{'ephemeral_5m_input_tokens': 10928, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01BzHpABapUAzuQvy2SziqS1">
+    <param name="command">sed -i 's/RealLocalGitHub\.for_test(/real_github_for_test(/g' /home/runner/work/erk/erk/tests/unit/gateways/github/test_parse_check_runs.py</param>
+    <param name="description">Replace RealLocalGitHub.for_test in test_parse_check_runs.py</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="10928" cache_read_input_tokens="60993" cache_creation="{'ephemeral_5m_input_tokens': 10928, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01GCejoJT8tg86DzkpZR6Ni3">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/gateways/github/test_parse_check_runs.py</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="10928" cache_read_input_tokens="60993" cache_creation="{'ephemeral_5m_input_tokens': 10928, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01BzHpABapUAzuQvy2SziqS1">
+
+  </tool_result>
+  <tool_result tool="toolu_01GCejoJT8tg86DzkpZR6Ni3">
+     1→"""Unit tests for RealLocalGitHub._parse_check_runs_response."""
+     2→
+     3→from erk_shared.gateway.github.real import RealLocalGitHub
+     4→
+     5→
+     6→def _make_check_run_node(
+     7→    *,
+     8→    name: str = "CI / unit-tests",
+     9→    status: str = "COMPLETED",
+    10→    conclusion: str | None = "SUCCESS",
+    11→    details_url: str | None = "https://github.com/runs/1",
+    12→) -&gt; dict:
+    13→    """Create a CheckRun node matching GraphQL statusCheckRollup response shape."""
+    14→    node: dict = {
+    15→        "__typename": "CheckRun",
+    16→        "name": name,
+    17→        "status": status,
+    18→        "detailsUrl": details_url,
+    19→    }
+    20→    if conclusion is not None:
+    21→        node["conclusion"] = conclusion
+    22→    return node
+    23→
+    24→
+    25→def _make_status_context_node(
+    26→    *,
+    27→    context: str = "ci/build",
+    28→    state: str = "SUCCESS",
+    29→    target_url: str | None = "https://ci.example.com/build/1",
+    30→) -&gt; dict:
+
+... [178 lines omitted] ...
+
+    71→def test_parse_check_runs_includes_failed_checks() -&gt; None:
+    72→    """FAILURE CheckRuns are included in results."""
+    76→            _make_check_run_node(name="failing-check", conclusion="FAILURE"),
+    84→    assert result[0].conclusion == "failure"
+   107→def test_parse_check_runs_handles_status_context_failure() -&gt; None:
+   108→    """StatusContext with FAILURE state is included."""
+   112→            _make_status_context_node(context="ci/deploy", state="FAILURE"),
+   120→    assert result[0].conclusion == "failure"
+   160→            _make_check_run_node(name="z-check", conclusion="FAILURE"),
+   161→            _make_check_run_node(name="a-check", conclusion="FAILURE"),
+   162→            _make_status_context_node(context="m-context", state="FAILURE"),
+   194→            _make_check_run_node(name="real-check", conclusion="FAILURE"),
+  </tool_result>
+  <assistant>Now let me update the imports in this file:</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="2936" cache_read_input_tokens="71921" cache_creation="{'ephemeral_5m_input_tokens': 2936, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01GqWEcrU3SeFPDa38pE5kU7">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/gateways/github/test_parse_check_runs.py</param>
+    <param name="content">"""Unit tests for RealLocalGitHub._parse_check_runs_response."""
+
+from tests.test_utils.co...[truncated 5981 chars]...response(response)
+
+    assert len(result) == 1
+    assert result[0].name == "real-check"
+</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="2936" cache_read_input_tokens="71921" cache_creation="{'ephemeral_5m_input_tokens': 2936, 'ephemeral_1h_input_tokens': 0}" output_tokens="1909" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01GqWEcrU3SeFPDa38pE5kU7">
+The file /home/runner/work/erk/erk/tests/unit/gateways/github/test_parse_check_runs.py has been updated. Here's the result of running `cat -n` on a snippet of the edited file:
+     1→"""Unit tests for RealLocalGitHub._parse_check_runs_response."""
+     2→
+     3→from tests.test_utils.context_builders import real_github_for_test
+     4→
+     5→
+     6→def _make_check_run_node(
+     7→    *,
+     8→    name: str = "CI / unit-tests",
+     9→    status: str = "COMPLETED",
+    10→    conclusion: str | None = "SUCCESS",
+    11→    details_url: str | None = "https://github.com/runs/1",
+    12→) -&gt; dict:
+    13→    """Create a CheckRun node matching GraphQL statusCheckRollup response shape."""
+    14→    node: dict = {
+    15→        "__typename": "CheckRun",
+    16→        "name": name,
+    17→        "status": status,
+    18→        "detailsUrl": details_url,
+    19→    }
+    20→    if conclusion is not None:
+    21→        node["conclusion"] = conclusion
+    22→    return node
+    23→
+    24→
+    25→def _make_status_context_node(
+    26→    *,
+    27→    context: str = "ci/build",
+    28→    state: str = "SUCCESS",
+    29→    target_url: str | None = "https://ci.example.com/build/1",
+
+... [174 lines omitted] ...
+
+    71→def test_parse_check_runs_includes_failed_checks() -&gt; None:
+    72→    """FAILURE CheckRuns are included in results."""
+    76→            _make_check_run_node(name="failing-check", conclusion="FAILURE"),
+    84→    assert result[0].conclusion == "failure"
+   107→def test_parse_check_runs_handles_status_context_failure() -&gt; None:
+   108→    """StatusContext with FAILURE state is included."""
+   112→            _make_status_context_node(context="ci/deploy", state="FAILURE"),
+   120→    assert result[0].conclusion == "failure"
+   160→            _make_check_run_node(name="z-check", conclusion="FAILURE"),
+   161→            _make_check_run_node(name="a-check", conclusion="FAILURE"),
+   162→            _make_status_context_node(context="m-context", state="FAILURE"),
+   194→            _make_check_run_node(name="real-check", conclusion="FAILURE"),
+  </tool_result>
+  <assistant>Now let me update the integration test files. Let me do them more efficiently by batch processing:</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="4431" cache_read_input_tokens="74857" cache_creation="{'ephemeral_5m_input_tokens': 4431, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01RtqxHBGqQmtfJ3AnukoUDd">
+    <param name="command">for file in /home/runner/work/erk/erk/tests/integration/test_real_github.py /home/runner/w...[truncated 164 chars]...github.py; do
+  sed -i 's/RealLocalGitHub\.for_test(/real_github_for_test(/g' "$file"
+done</param>
+    <param name="description">Replace RealLocalGitHub.for_test in remaining test files</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="4431" cache_read_input_tokens="74857" cache_creation="{'ephemeral_5m_input_tokens': 4431, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01RtqxHBGqQmtfJ3AnukoUDd">
+
+  </tool_result>
+  <assistant>Now let me update the imports in each of these files. Let me read them first to understand their current import sections:</assistant>
+  <usage input_tokens="4" cache_creation_input_tokens="357" cache_read_input_tokens="79288" cache_creation="{'ephemeral_5m_input_tokens': 357, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01WhBd1gdQKvqDoQnzyNBSr5">
+    <param name="file_path">/home/runner/work/erk/erk/tests/integration/test_real_github.py</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="4" cache_creation_input_tokens="357" cache_read_input_tokens="79288" cache_creation="{'ephemeral_5m_input_tokens': 357, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01BuD1Nh2ihknSQTBPcC2csU">
+    <param name="file_path">/home/runner/work/erk/erk/tests/integration/test_real_github_pr_enrichment.py</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="4" cache_creation_input_tokens="357" cache_read_input_tokens="79288" cache_creation="{'ephemeral_5m_input_tokens': 357, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01MGFR2H9phsEkXyA4rQm7GY">
+    <param name="file_path">/home/runner/work/erk/erk/tests/integration/test_github_graphql.py</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="4" cache_creation_input_tokens="357" cache_read_input_tokens="79288" cache_creation="{'ephemeral_5m_input_tokens': 357, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01K7f7wtk2VhWDSsWr4y3e7h">
+    <param name="file_path">/home/runner/work/erk/erk/tests/core/operations/test_github.py</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="4" cache_creation_input_tokens="357" cache_read_input_tokens="79288" cache_creation="{'ephemeral_5m_input_tokens': 357, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01WhBd1gdQKvqDoQnzyNBSr5">
+     1→"""Tests for RealLocalGitHub with mocked subprocess execution.
+     2→
+     3→These tests verify that RealLocalGitHub correctly calls gh CLI commands and handles
+     4→responses. We use pytest monkeypatch to mock subprocess calls.
+     5→"""
+     6→
+     7→import json
+     8→import subprocess
+     9→from datetime import UTC, datetime
+    10→from pathlib import Path
+    11→
+    12→import pytest
+    13→from pytest import MonkeyPatch
+    14→
+    15→from tests.fakes.gateway.time import FakeTime
+    16→from erk_shared.gateway.github.real import RealLocalGitHub
+    17→from erk_shared.gateway.github.types import MergeError, MergeResult
+    18→from tests.integration.test_helpers import mock_subprocess_run
+    19→
+    20→# ============================================================================
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_01BuD1Nh2ihknSQTBPcC2csU">
+     1→"""Tests for RealLocalGitHub PR enrichment methods.
+     2→
+     3→Tests _enrich_prs_via_graphql() and _merge_rest_graphql_pr_data() which
+     4→combine REST and GraphQL data for the plan dashboard.
+     5→"""
+     6→
+     7→import json
+     8→import subprocess
+     9→from datetime import UTC, datetime
+    10→from pathlib import Path
+    11→from typing import Any
+    12→
+    13→from pytest import MonkeyPatch
+    14→
+    15→from erk_shared.gateway.github.pr_data_parsing import merge_rest_graphql_pr_data
+    16→from erk_shared.gateway.github.real import RealLocalGitHub
+    17→from erk_shared.gateway.github.types import GitHubRepoId, GitHubRepoLocation
+    18→from tests.integration.test_helpers import mock_subprocess_run
+    19→
+    20→# ============================================================================
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_01MGFR2H9phsEkXyA4rQm7GY">
+     1→"""Tests for GitHub GraphQL operations with mocked subprocess execution.
+     2→
+     3→These tests verify that RealLocalGitHub correctly passes GraphQL variables using
+     4→the gh CLI's special array and object syntax.
+     5→"""
+     6→
+     7→import json
+     8→import subprocess
+     9→from pathlib import Path
+    10→
+    11→from pytest import MonkeyPatch
+    12→
+    13→from erk_shared.gateway.github.real import RealLocalGitHub
+    14→from erk_shared.gateway.github.types import GitHubRepoId, GitHubRepoLocation
+    15→from tests.integration.test_helpers import mock_subprocess_run
+    16→
+    17→
+    18→def test_get_issues_with_pr_linkages_uses_gh_array_syntax_for_labels(
+    19→    monkeypatch: MonkeyPatch,
+    20→) -&gt; None:
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_01K7f7wtk2VhWDSsWr4y3e7h">
+     1→"""Tests for GitHub operations."""
+     2→
+     3→from erk_shared.gateway.github.parsing import (
+     4→    _parse_github_pr_url,
+     5→    extract_owner_repo_from_github_url,
+     6→)
+     7→from erk_shared.gateway.github.real import RealLocalGitHub
+     8→from erk_shared.gateway.github.types import GitHubRepoId
+     9→
+    10→
+    11→def test_parse_github_pr_url_valid_urls() -&gt; None:
+    12→    """Test parsing of valid GitHub PR URLs."""
+    13→    # Standard format
+    14→    result = _parse_github_pr_url("https://github.com/dagster-io/erk/pull/23")
+    15→    assert result == ("dagster-io", "erk")
+    16→
+    17→    # Different owner/repo names
+    18→    result = _parse_github_pr_url("https://github.com/facebook/react/pull/12345")
+    19→    assert result == ("facebook", "react")
+    20→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>Now I'll update each file. For test_real_github.py, I need to remove the RealLocalGitHub import and add the real_github_for_test import:</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="1857" cache_read_input_tokens="79645" cache_creation="{'ephemeral_5m_input_tokens': 1857, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01191MJ56v8Xw7Qs3qVm4fur">
+    <param name="command">sed -i 's/^from erk_shared\.gateway\.github\.real import RealLocalGitHub$//' /home/runner/...[truncated 139 chars]...port real_github_for_test' /home/runner/work/erk/erk/tests/integration/test_real_github.py</param>
+    <param name="description">Update imports in test_real_github.py</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="1857" cache_read_input_tokens="79645" cache_creation="{'ephemeral_5m_input_tokens': 1857, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01LiJYCVpRmUsV6W2bC4vpFS">
+    <param name="command">sed -i 's/^from erk_shared\.gateway\.github\.real import RealLocalGitHub$//' /home/runner/...[truncated 202 chars]...ub_for_test' /home/runner/work/erk/erk/tests/integration/test_real_github_pr_enrichment.py</param>
+    <param name="description">Update imports in test_real_github_pr_enrichment.py</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="1857" cache_read_input_tokens="79645" cache_creation="{'ephemeral_5m_input_tokens': 1857, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01Vpis5zhnc8pGBy682BsJSq">
+    <param name="command">sed -i 's/^from erk_shared\.gateway\.github\.real import RealLocalGitHub$//' /home/runner/...[truncated 127 chars]...t real_github_for_test' /home/runner/work/erk/erk/tests/integration/test_github_graphql.py</param>
+    <param name="description">Update imports in test_github_graphql.py</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="1857" cache_read_input_tokens="79645" cache_creation="{'ephemeral_5m_input_tokens': 1857, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01WMxe6ydsJLD45iNQdhMsPx">
+    <param name="command">sed -i 's/^from erk_shared\.gateway\.github\.real import RealLocalGitHub$//' /home/runner/...[truncated 153 chars]...port real_github_for_test/' /home/runner/work/erk/erk/tests/core/operations/test_github.py</param>
+    <param name="description">Update imports in test_github.py</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="1857" cache_read_input_tokens="79645" cache_creation="{'ephemeral_5m_input_tokens': 1857, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01191MJ56v8Xw7Qs3qVm4fur">
+
+  </tool_result>
+  <tool_result tool="toolu_01LiJYCVpRmUsV6W2bC4vpFS">
+
+  </tool_result>
+  <tool_result tool="toolu_01Vpis5zhnc8pGBy682BsJSq">
+
+  </tool_result>
+  <tool_result tool="toolu_01WMxe6ydsJLD45iNQdhMsPx">
+
+  </tool_result>
+  <assistant>Let me verify these changes worked correctly:</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="1029" cache_read_input_tokens="81502" cache_creation="{'ephemeral_5m_input_tokens': 1029, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_012ErLNBeLZULDY8CA4jss6T">
+    <param name="file_path">/home/runner/work/erk/erk/tests/integration/test_real_github.py</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="1029" cache_read_input_tokens="81502" cache_creation="{'ephemeral_5m_input_tokens': 1029, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_015VKGkxV7J5AxQ7oXKMGPkj">
+    <param name="file_path">/home/runner/work/erk/erk/tests/integration/test_real_github_pr_enrichment.py</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="1029" cache_read_input_tokens="81502" cache_creation="{'ephemeral_5m_input_tokens': 1029, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01AqM38tcuCdmKSU5ZS8vtAU">
+    <param name="file_path">/home/runner/work/erk/erk/tests/integration/test_github_graphql.py</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="1029" cache_read_input_tokens="81502" cache_creation="{'ephemeral_5m_input_tokens': 1029, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01QYQvENA67VoDALoYMG1PQY">
+    <param name="file_path">/home/runner/work/erk/erk/tests/core/operations/test_github.py</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="1029" cache_read_input_tokens="81502" cache_creation="{'ephemeral_5m_input_tokens': 1029, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012ErLNBeLZULDY8CA4jss6T">
+     1→"""Tests for RealLocalGitHub with mocked subprocess execution.
+     2→
+     3→These tests verify that RealLocalGitHub correctly calls gh CLI commands and handles
+     4→responses. We use pytest monkeypatch to mock subprocess calls.
+     5→"""
+     6→
+     7→import json
+     8→import subprocess
+     9→from datetime import UTC, datetime
+    10→from pathlib import Path
+    11→
+    12→import pytest
+    13→from pytest import MonkeyPatch
+    14→
+    15→from tests.fakes.gateway.time import FakeTime
+    16→from tests.test_utils.context_builders import real_github_for_test
+    17→
+    18→from erk_shared.gateway.github.types import MergeError, MergeResult
+    19→from tests.integration.test_helpers import mock_subprocess_run
+    20→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_015VKGkxV7J5AxQ7oXKMGPkj">
+     1→"""Tests for RealLocalGitHub PR enrichment methods.
+     2→
+     3→Tests _enrich_prs_via_graphql() and _merge_rest_graphql_pr_data() which
+     4→combine REST and GraphQL data for the plan dashboard.
+     5→"""
+     6→
+     7→import json
+     8→import subprocess
+     9→from datetime import UTC, datetime
+    10→from pathlib import Path
+    11→from typing import Any
+    12→
+    13→from pytest import MonkeyPatch
+    14→
+    15→from erk_shared.gateway.github.pr_data_parsing import merge_rest_graphql_pr_data
+    16→from tests.test_utils.context_builders import real_github_for_test
+    17→
+    18→from erk_shared.gateway.github.types import GitHubRepoId, GitHubRepoLocation
+    19→from tests.integration.test_helpers import mock_subprocess_run
+    20→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_01AqM38tcuCdmKSU5ZS8vtAU">
+     1→"""Tests for GitHub GraphQL operations with mocked subprocess execution.
+     2→
+     3→These tests verify that RealLocalGitHub correctly passes GraphQL variables using
+     4→the gh CLI's special array and object syntax.
+     5→"""
+     6→
+     7→import json
+     8→import subprocess
+     9→from pathlib import Path
+    10→
+    11→from pytest import MonkeyPatch
+    12→from tests.test_utils.context_builders import real_github_for_test
+    13→
+    14→
+    15→from erk_shared.gateway.github.types import GitHubRepoId, GitHubRepoLocation
+    16→from tests.integration.test_helpers import mock_subprocess_run
+    17→
+    18→
+    19→def test_get_issues_with_pr_linkages_uses_gh_array_syntax_for_labels(
+    20→    monkeypatch: MonkeyPatch,
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_01QYQvENA67VoDALoYMG1PQY">
+     1→"""Tests for GitHub operations."""
+     2→
+     3→from erk_shared.gateway.github.parsing import (
+     4→    _parse_github_pr_url,
+     5→    extract_owner_repo_from_github_url,
+     6→)
+     7→from tests.test_utils.context_builders import real_github_for_test
+     8→
+     9→from erk_shared.gateway.github.types import GitHubRepoId
+    10→
+    11→
+    12→def test_parse_github_pr_url_valid_urls() -&gt; None:
+    13→    """Test parsing of valid GitHub PR URLs."""
+    14→    # Standard format
+    15→    result = _parse_github_pr_url("https://github.com/dagster-io/erk/pull/23")
+    16→    assert result == ("dagster-io", "erk")
+    17→
+    18→    # Different owner/repo names
+    19→    result = _parse_github_pr_url("https://github.com/facebook/react/pull/12345")
+    20→    assert result == ("facebook", "react")
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>Good! Now let me update the docstring in test_helpers.py as mentioned in the task:</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="1830" cache_read_input_tokens="82531" cache_creation="{'ephemeral_5m_input_tokens': 1830, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01WsiMCsAxUQRiMrrQ6xapcq">
+    <param name="file_path">/home/runner/work/erk/erk/tests/integration/test_helpers.py</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="1830" cache_read_input_tokens="82531" cache_creation="{'ephemeral_5m_input_tokens': 1830, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01WsiMCsAxUQRiMrrQ6xapcq">
+     1→"""Shared test helpers for integration tests."""
+     2→
+     3→import subprocess
+     4→from collections.abc import Callable
+     5→from contextlib import contextmanager
+     6→from typing import Any
+     7→
+     8→from pytest import MonkeyPatch
+     9→
+    10→
+    11→@contextmanager
+    12→def mock_subprocess_run(
+    13→    monkeypatch: MonkeyPatch,
+    14→    mock_fn: Callable[[list[str], Any], subprocess.CompletedProcess],
+    15→):
+    16→    """Context manager to mock subprocess.run with pytest monkeypatch.
+    17→
+    18→    This helper provides a clean way to mock subprocess calls in integration tests,
+    19→    automatically handling cleanup via monkeypatch.
+    20→
+    21→    Args:
+    22→        monkeypatch: The pytest monkeypatch fixture
+    23→        mock_fn: Function that receives (cmd: list[str], **kwargs) and returns
+    24→                 CompletedProcess. This function should assert on command structure
+    25→                 and return appropriate mock responses.
+    26→
+    27→    Usage:
+    28→        def test_something(monkeypatch: MonkeyPatch) -&gt; None:
+    29→            def mock_run(cmd: list[str], **kwargs) -&gt; subprocess.CompletedProcess:
+    30→                assert cmd == ["gh", "pr", "view", "123"]
+
+... [17 lines omitted] ...
+  </tool_result>
+  <assistant>Now I'll update the docstring in this file:</assistant>
+  <usage input_tokens="4" cache_creation_input_tokens="697" cache_read_input_tokens="84361" cache_creation="{'ephemeral_5m_input_tokens': 697, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01YQWUiLhtn7rLYLmCc1VaER">
+    <param name="file_path">/home/runner/work/erk/erk/tests/integration/test_helpers.py</param>
+    <param name="content">"""Shared test helpers for integration tests."""
+
+import subprocess
+from collections.abc i...[truncated 1263 chars]... = ops.some_method()
+    """
+    monkeypatch.setattr("subprocess.run", mock_fn)
+    yield
+</param>
+  </tool_use>
+  <usage input_tokens="4" cache_creation_input_tokens="697" cache_read_input_tokens="84361" cache_creation="{'ephemeral_5m_input_tokens': 697, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01YQWUiLhtn7rLYLmCc1VaER">
+The file /home/runner/work/erk/erk/tests/integration/test_helpers.py has been updated. Here's the result of running `cat -n` on a snippet of the edited file:
+     1→"""Shared test helpers for integration tests."""
+     2→
+     3→import subprocess
+     4→from collections.abc import Callable
+     5→from contextlib import contextmanager
+     6→from typing import Any
+     7→
+     8→from pytest import MonkeyPatch
+     9→
+    10→
+    11→@contextmanager
+    12→def mock_subprocess_run(
+    13→    monkeypatch: MonkeyPatch,
+    14→    mock_fn: Callable[[list[str], Any], subprocess.CompletedProcess],
+    15→):
+    16→    """Context manager to mock subprocess.run with pytest monkeypatch.
+    17→
+    18→    This helper provides a clean way to mock subprocess calls in integration tests,
+    19→    automatically handling cleanup via monkeypatch.
+    20→
+    21→    Args:
+    22→        monkeypatch: The pytest monkeypatch fixture
+    23→        mock_fn: Function that receives (cmd: list[str], **kwargs) and returns
+    24→                 CompletedProcess. This function should assert on command structure
+    25→                 and return appropriate mock responses.
+    26→
+    27→    Usage:
+    28→        def test_something(monkeypatch: MonkeyPatch) -&gt; None:
+    29→            def mock_run(cmd: list[str], **kwargs) -&gt; subprocess.CompletedProcess:
+
+... [13 lines omitted] ...
+  </tool_result>
+  <assistant>Perfect! Now let me verify that all the replacements were successful by checking if there are any remaining references to `RealLocalGitHub.for_test(`:</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="1142" cache_read_input_tokens="85058" cache_creation="{'ephemeral_5m_input_tokens': 1142, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01SAThXL7HRUGcscHqg3p5RB">
+    <param name="pattern">RealLocalGitHub\.for_test\(</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1142" cache_read_input_tokens="85058" cache_creation="{'ephemeral_5m_input_tokens': 1142, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01SAThXL7HRUGcscHqg3p5RB">
+Found 1 file
+tests/test_utils/context_builders.py
+  </tool_result>
+  <assistant>Good - the only match is in the docstring I added to context_builders.py. Let me verify that grep isn't finding it in imports:</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="151" cache_read_input_tokens="86200" cache_creation="{'ephemeral_5m_input_tokens': 151, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01VeeQYTzgvxWTSEPrcV9uwZ">
+    <param name="pattern">from erk_shared\.gateway\.github\.real import RealLocalGitHub</param>
+    <param name="output_mode">files_with_matches</param>
+    <param name="path">/home/runner/work/erk/erk/tests</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="151" cache_read_input_tokens="86200" cache_creation="{'ephemeral_5m_input_tokens': 151, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01VeeQYTzgvxWTSEPrcV9uwZ">
+Found 1 file
+tests/test_utils/context_builders.py
+  </tool_result>
+</session>

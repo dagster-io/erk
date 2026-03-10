@@ -1,0 +1,986 @@
+<session>
+  <meta source="agent-a312ffc" />
+  <meta branch="plnd/move-fakes-to-tests-03-09-1534" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant docs before exploring raw files. Then explore codebase as necessary.
+
+Search all documentation files (*.md) in the /home/runner/work/erk/erk/ directory for references to the old fake import paths that need updating:
+
+1. `erk_shared.fakes` or `erk_shared/fakes` → should be `tests.fakes.gateway` or `tests/fakes/gateway/`
+2. `erk_shared.context.testing` or `erk_shared/context/testing` → should be `tests.fakes.tests.shared_context` or `tests/fakes/tests/shared_context`
+3. `tests.fakes.context` (without `tests.` prefix) → `tests.fakes.tests.context`
+4. `tests/fakes/context.py` → `tests/fakes/tests/context.py`
+5. `erk.core.context import context_for_test` → `tests.test_utils.test_context import context_for_test`
+6. `erk.core.context import minimal_context` → `tests.test_utils.test_context import minimal_context`
+7. `create_minimal_context` in `erk_shared.context.factories` → deleted, remove/update references
+8. References to `RealLocalGitHub.for_test()` → `real_github_for_test()`
+
+For EACH match found, report:
+- The exact file path
+- The line number(s) 
+- The current text
+- What it should be changed to
+
+Only search `.md` files, `.txt` files, and AGENTS.md/CLAUDE.md. Do NOT modify any files, just report what needs changing.</user>
+  <assistant>I'll search for documentation files with references to the old fake import paths that need updating. Let me start by checking the learned docs index and then systematically search all markdown files.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="19271" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 19271, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01YAuSNGXk9B46QQLqqvKF13">
+    <param name="pattern">erk_shared\.fakes|erk_shared/fakes</param>
+    <param name="glob">**/*.md</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="19271" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 19271, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_012tCRyqYxceX6BzienGRQNT">
+    <param name="pattern">erk_shared\.context\.testing|erk_shared/context/testing</param>
+    <param name="glob">**/*.md</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="19271" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 19271, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_014FUU9t89z27WszXZWAoaX1">
+    <param name="pattern">tests\.fakes\.context(?!\.)|tests/fakes/context\.py</param>
+    <param name="glob">**/*.md</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="19271" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 19271, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01FLwj95tnPzUHoVKrCE93W4">
+    <param name="pattern">erk\.core\.context\s+import\s+(context_for_test|minimal_context)</param>
+    <param name="glob">**/*.md</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="19271" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 19271, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01WpJZC86mjDLSTFYSL9fqSe">
+    <param name="pattern">create_minimal_context|erk_shared\.context\.factories</param>
+    <param name="glob">**/*.md</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="19271" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 19271, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_0163RyfS6DUwZhM9YUXz4Gvs">
+    <param name="pattern">RealLocalGitHub\.for_test\(\)</param>
+    <param name="glob">**/*.md</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="19271" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 19271, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014FUU9t89z27WszXZWAoaX1">
+No files found
+  </tool_result>
+  <tool_result tool="toolu_01YAuSNGXk9B46QQLqqvKF13">
+Found 14 files
+docs/learned/tui/architecture.md
+docs/learned/tui/plan-row-data.md
+docs/learned/testing/admin-command-testing.md
+docs/learned/testing/cli-testing.md
+docs/learned/testing/exec-script-testing.md
+docs/learned/testing/fake-api-migration-pattern.md
+docs/learned/testing/fake-git-divergence.md
+docs/learned/testing/testing.md
+docs/learned/testing/tripwires.md
+docs/learned/architecture/erk-architecture.md
+docs/learned/architecture/gateway-abc-implementation.md
+docs/learned/architecture/github-api-retry-mechanism.md
+docs/learned/erk-dev/testing.md
+.claude/skills/fake-driven-testing/references/quick-reference.md
+  </tool_result>
+  <tool_result tool="toolu_012tCRyqYxceX6BzienGRQNT">
+Found 3 files
+docs/learned/testing/hook-testing.md
+docs/learned/testing/context-builder-signatures.md
+docs/learned/testing/environment-variable-isolation.md
+  </tool_result>
+  <tool_result tool="toolu_01FLwj95tnPzUHoVKrCE93W4">
+Found 2 files
+docs/learned/testing/testing.md
+docs/learned/testing/rebase-conflicts.md
+  </tool_result>
+  <tool_result tool="toolu_0163RyfS6DUwZhM9YUXz4Gvs">
+No files found
+  </tool_result>
+  <tool_result tool="toolu_01WpJZC86mjDLSTFYSL9fqSe">
+No files found
+  </tool_result>
+  <assistant>Now let me search for additional patterns and read the matched files to get full context with line numbers:</assistant>
+  <usage input_tokens="34" cache_creation_input_tokens="1154" cache_read_input_tokens="19271" cache_creation="{'ephemeral_5m_input_tokens': 1154, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_016hEmPKMMJ1EbMaPrPJmA1J">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/testing/fake-api-migration-pattern.md</param>
+  </tool_use>
+  <usage input_tokens="34" cache_creation_input_tokens="1154" cache_read_input_tokens="19271" cache_creation="{'ephemeral_5m_input_tokens': 1154, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01KSyy3W73p9ymzYhmoypZd6">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/testing/testing.md</param>
+  </tool_use>
+  <usage input_tokens="34" cache_creation_input_tokens="1154" cache_read_input_tokens="19271" cache_creation="{'ephemeral_5m_input_tokens': 1154, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_0171WvbDP9BTYRVd3Y2K4PxH">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/testing/cli-testing.md</param>
+  </tool_use>
+  <usage input_tokens="34" cache_creation_input_tokens="1154" cache_read_input_tokens="19271" cache_creation="{'ephemeral_5m_input_tokens': 1154, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Xp576XCuwHhCdKbgn6G8aZ">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/testing/admin-command-testing.md</param>
+  </tool_use>
+  <usage input_tokens="34" cache_creation_input_tokens="1154" cache_read_input_tokens="19271" cache_creation="{'ephemeral_5m_input_tokens': 1154, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Qug2VmQcyH9zWSF5w1qbro">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/testing/exec-script-testing.md</param>
+  </tool_use>
+  <usage input_tokens="34" cache_creation_input_tokens="1154" cache_read_input_tokens="19271" cache_creation="{'ephemeral_5m_input_tokens': 1154, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016hEmPKMMJ1EbMaPrPJmA1J">
+     1→---
+     2→title: FakePromptExecutor API Migration - Gateway to Core
+     3→last_audited: "2026-02-08 00:00 PT"
+     4→audit_result: edited
+     5→tripwires:
+     6→  - action: "using output=, should_fail=, or transient_failures= parameters in FakePromptExecutor"
+     7→    warning: "These are the deleted gateway API. Use simulated_* parameters (tests/fakes/) or prompt_results/streaming_events (erk_shared/core/fakes.py). See migration table."
+     8→  - action: "importing FakePromptExecutor from erk_shared.fakes.prompt_executor"
+     9→    warning: "This module was deleted in the consolidation. Import from tests.fakes.prompt_executor or erk_shared.fakes.core instead."
+    10→read_when:
+    11→  - "writing tests that use FakePromptExecutor"
+    12→  - "choosing between the two FakePromptExecutor implementations"
+    13→  - "encountering old-style output=/should_fail= patterns in test code"
+    14→---
+    15→
+    16→# FakePromptExecutor API Migration: Gateway to Core
+    17→
+    18→## Why This Migration Happened
+    19→
+    20→PR #6587 consolidated two separate PromptExecutor abstractions into one:
+    21→
+    22→1. **Gateway PromptExecutor** — single-shot prompts with simple `output`/`should_fail` constructor
+    23→2. **Core PromptExecutor** — full-featured with interactive, streaming, command, and prompt modes
+    24→
+    25→The gateway version was deleted because it was a subset of the core's capabilities. The core ABC needed to support metadata extraction (PR URLs, issue numbers), event streaming (tool events, spinner updates), and hook interaction (zero-turns detection) — none of which the gateway's simple API could express.
+    26→
+    27→## Two Current FakePromptExecutor Implementations
+    28→
+    29→After the consolidation, two distinct fakes exist, serving different use cases:
+    30→
+
+... [61 lines omitted] ...
+
+    39→| **Best for**         | CLI command tests that need rich scenario simulation (PR creation, hook blocking, process errors) | Lower-level tests or erk-shared consumers that need simple prompt result sequences |
+    50→| `should_fail=True`        | `command_should_fail=True`          | For command execution failures                                                   |
+    51→| `error="message"`         | `simulated_prompt_error="message"`  | For prompt execution failures                                                    |
+    52→| `transient_failures=2`    | No equivalent                       | Retry logic moved to `RealPromptExecutor` in gateway layer                       |
+    60→- Process errors: `simulated_process_error`
+    66→| Simulate a specific execution scenario (PR creation, hook block, process error) | `tests/fakes/prompt_executor.FakePromptExecutor`                         |
+    71→## Anti-Pattern: Failure Mode Confusion
+    73→The old gateway API had one failure flag (`should_fail`) for everything. The current API distinguishes between failure modes because they have different downstream effects:
+    75→- **`command_should_fail`** — the command itself fails (returns `CommandResult` with `success=False` or yields `ErrorEvent`)
+    76→- **`simulated_prompt_error`** — the prompt returns a `PromptResult` with `success=False` and an error message
+    77→- **`simulated_process_error`** — the subprocess can't start (yields `ProcessErrorEvent`)
+    81→Using the wrong failure mode produces the wrong event type, which means tests that check for specific error handling paths will pass for the wrong reason.
+  </tool_result>
+  <tool_result tool="toolu_01KSyy3W73p9ymzYhmoypZd6">
+     1→---
+     2→title: Erk Test Reference
+     3→last_audited: "2026-02-13 00:00 PT"
+     4→audit_result: clean
+     5→read_when:
+     6→  - "writing tests for erk"
+     7→  - "using erk fakes"
+     8→  - "running erk test commands"
+     9→tripwires:
+    10→  - action: "modifying business logic in src/ without adding a test"
+    11→    warning: "Bug fixes require regression tests (fails before, passes after). Features require behavior tests."
+    12→  - action: "implementing interactive prompts with ctx.console.confirm()"
+    13→    warning: "Ensure FakeConsole in test fixture is configured with `confirm_responses` parameter. Array length must match prompt count exactly — too few causes IndexError, too many indicates a removed prompt. See tests/commands/submit/test_existing_branch_detection.py for examples."
+    14→  - action: "accessing FakeGit properties in tests"
+    15→    warning: "FakeGit has top-level properties (e.g., `git.staged_files`, `git.deleted_branches`, `git.added_worktrees`). Worktree operations delegate to an internal FakeWorktree sub-gateway."
+    16→  - action: "asserting on fake-specific properties in tests using `build_workspace_test_context` with `use_graphite=True`"
+    17→    warning: "Production wrappers (e.g., `GraphiteBranchManager`) do not expose fake tracking properties like `submitted_branches`. Assert on observable behavior (CLI output, return values) instead of accessing fake internals through the wrapper."
+    18→  - action: "asserting on YAML metadata field values with exact string matching"
+    19→    warning: 'Assert on key-only format (''field_name:''), not ''field_name: "value"''. YAML serialization differs from Python repr.'
+    20→  - action: "changing cleanup or deletion behavior without updating test assertions"
+    21→    warning: "When behavior changes from 'delete X' to 'preserve X', update test assertions to verify the new behavior (e.g., assert file persists instead of asserting it was deleted). Stale assertions silently validate the old behavior."
+    22→    score: 4
+    23→  - action: "asserting user_output() content against capsys stdout"
+    24→    warning: "user_output() routes to stderr. When testing code that calls user_output(), assert against capsys.readouterr().err, not .out."
+    25→  - action: "using context_for_test() with wrong parameter name for issues"
+    26→    warning: "erk-shared uses github_issues= parameter, src/erk uses issues= parameter. These are NOT interchangeable — using wrong name causes TypeError."
+    27→---
+    28→
+    29→# Erk Test Reference
+    30→
+
+... [542 lines omitted] ...
+
+   154→**If you see path mismatch errors:** Ensure FakeGit's path resolution methods are being used (they handle symlinks), not direct dict lookups.
+   156→#### FakeWorktree Error Injection
+   158→FakeWorktree (in `packages/erk-shared/src/erk_shared/gateway/git/worktree/fake.py`) uses string-based error injection via constructor parameters. Errors raise `RuntimeError`:
+   163→# Inject error for add_worktree
+   165→    add_worktree_error="Worktree already exists",
+   166→    remove_worktree_error="Worktree is locked",
+   170→When `add_worktree_error` or `remove_worktree_error` is set, the corresponding method raises `RuntimeError` with that message. Error injection is checked FIRST in the method body, before any success logic executes.
+   172→You can also inject these errors via the top-level `FakeGit` constructor:
+   176→    add_worktree_error="Worktree already exists",
+   177→    remove_worktree_error="Worktree is locked",
+   199→This fake supports error injection via the `create_branch_error` constructor parameter, which accepts a `BranchAlreadyExists` instance:
+   209→# With error injection
+   210→fake_with_error = FakeGitBranchOps(
+   226→### Common Mistake: Sentinel Path Errors
+   454→fake_console.assert_not_contains("Error")
+   457→### Error Behavior
+   459→If `confirm()` is called but no responses remain, FakeConsole raises `AssertionError` with the prompt text. This catches missing test setup.
+   514→When refactoring gateway methods from exception-based to discriminated unions, update test names to reflect the new pattern.
+   516→### Pattern: Exception -&gt; Union
+   518→| Old Test Name (Exception-Based)       | New Test Name (Discriminated Union)      |
+   520→| `test_merge_pr_failure_returns_false` | `test_merge_pr_returns_merge_error`      |
+   523→| `test_get_issue_raises_api_error`     | `test_get_issue_returns_api_error`       |
+   532→**Error Case:**
+   534→- Old: `test_&lt;method&gt;_raises_&lt;error&gt;` or `test_&lt;method&gt;_returns_false`
+   535→- New: `test_&lt;method&gt;_returns_&lt;error_type&gt;`
+   543→3. [ ] Update docstring to describe return type (not exception)
+   544→4. [ ] Verify fake setup returns type (not raises exception)
+   549→When function signatures change (e.g., adding a column to a table, adding a new parameter), **all test fixtures must be updated comprehensively**. Partial updates cause hard-to-debug failures.
+  </tool_result>
+  <tool_result tool="toolu_0171WvbDP9BTYRVd3Y2K4PxH">
+     1→---
+     2→title: CLI Testing Patterns
+     3→last_audited: "2026-02-16 00:00 PT"
+     4→audit_result: clean
+     5→read_when:
+     6→  - "writing tests for erk CLI commands"
+     7→  - "using ErkContext.for_test()"
+     8→  - "testing Click commands with context"
+     9→tripwires:
+    10→  - action: "testing code that reads ERK_PLAN_BACKEND or other environment variables via CliRunner"
+    11→    warning: "CliRunner env var isolation: ambient env vars from the developer shell leak into CliRunner by default and cause intermittent test failures. Use CliRunner(env={'ERK_PLAN_BACKEND': '...'}) to override, or CliRunner(env={}) to isolate completely. Never rely on ambient env being clean. Note: mix_stderr parameter is broken in Click 8.3.1 — do not use it."
+    12→    score: 7
+    13→  - action: "renaming a user-facing string in CLI output and updating related test assertions"
+    14→    warning: "Test assertion lag: after renaming display strings (e.g., 'issue' → 'plan'), grep all test files for the old literal before committing. Tests using old string literals against stale snapshots will silently pass — the failure only surfaces in CI on a clean checkout."
+    15→    score: 6
+    16→  - action: "passing mix_stderr parameter to CliRunner"
+    17→    warning: "Click 8.3.1 CliRunner no longer accepts mix_stderr parameter. Use CliRunner() or CliRunner(env={}) instead."
+    18→---
+    19→
+    20→# CLI Testing Patterns
+    21→
+    22→This document covers testing patterns specific to erk CLI commands that use `ErkContext` for dependency injection.
+    23→
+    24→## Overview
+    25→
+    26→Erk CLI commands use Click's context system (`@click.pass_context`) to receive dependencies. Testing these commands requires passing a test context via the `obj` parameter to `CliRunner.invoke()`.
+    27→
+    28→## The ErkContext.for_test() Pattern
+    29→
+    30→`ErkContext.for_test()` is the canonical factory method for creating test contexts with fake dependencies.
+
+... [491 lines omitted] ...
+
+   148→### Pattern 4: Testing Error Handling
+   150→When testing error paths:
+   166→    # Assert: Command exits with error
+   356→- [ ] Test both success and error paths
+  </tool_result>
+  <tool_result tool="toolu_01Xp576XCuwHhCdKbgn6G8aZ">
+     1→---
+     2→title: Admin Command Testing Patterns
+     3→last_audited: "2026-02-11 00:00 PT"
+     4→audit_result: clean
+     5→read_when:
+     6→  - "writing tests for admin CLI commands"
+     7→  - "using FakeGitHubAdmin in tests"
+     8→  - "testing permission-related CLI commands"
+     9→tripwires:
+    10→  - action: "testing admin commands that read GitHub settings"
+    11→    warning: "Use FakeGitHubAdmin with workflow_permissions dict to configure read state. Do not mock subprocess calls."
+    12→---
+    13→
+    14→# Admin Command Testing Patterns
+    15→
+    16→Testing patterns for `erk admin` subcommands using the fake-driven architecture.
+    17→
+    18→## FakeGitHubAdmin Setup
+    19→
+    20→&lt;!-- Source: packages/erk-shared/src/erk_shared/gateway/github_admin/fake.py, FakeGitHubAdmin --&gt;
+    21→
+    22→`FakeGitHubAdmin` accepts keyword arguments to configure initial state:
+    23→
+    24→```python
+    25→from erk_shared.fakes.github_admin import FakeGitHubAdmin
+    26→
+    27→admin = FakeGitHubAdmin(
+    28→    workflow_permissions={"can_approve_pull_request_reviews": True},
+    29→)
+    30→```
+
+... [56 lines omitted] ...
+
+    68→## Standard Error Cases
+    70→1. **Missing GitHub remote**: Configure `FakeGit` with empty `remote_urls` to test `Ensure.not_none()` path. See `test_error_no_github_remote()` in both admin test files.
+    72→2. **Detached HEAD**: Omit `current_branch` from `build_context()` so `get_current_branch` returns `None`. See `test_error_detached_head()` in `test_admin_test_workflow.py`.
+    74→3. **Permission errors**: `FakeGitHubAdmin` can be extended to raise `RuntimeError` to test `UserFacingCliError` conversion.
+  </tool_result>
+  <tool_result tool="toolu_01Qug2VmQcyH9zWSF5w1qbro">
+     1→---
+     2→title: Exec Script Testing Patterns
+     3→last_audited: "2026-02-16 00:00 PT"
+     4→audit_result: edited
+     5→read_when:
+     6→  - "testing exec CLI commands"
+     7→  - "writing integration tests for scripts"
+     8→  - "debugging 'Context not initialized' errors in tests"
+     9→  - "debugging flaky tests in parallel execution"
+    10→tripwires:
+    11→  - action: "using monkeypatch.chdir() in exec script tests"
+    12→    warning: "Use obj=ErkContext.for_test(cwd=tmp_path) instead. monkeypatch.chdir() doesn't inject context, causing 'Context not initialized' errors."
+    13→    pattern: "monkeypatch\\.chdir\\("
+    14→  - action: "testing code that reads from Path.home() or ~/.claude/ or ~/.erk/"
+    15→    warning: "Tests that run in parallel must use monkeypatch to isolate from real filesystem state. Functions like extract_slugs_from_session() cause flakiness when they read from the user's home directory."
+    16→    pattern: "Path\\.home\\(\\)"
+    17→  - action: "using Path.home() directly in production code"
+    18→    warning: "Use gateway abstractions instead. For ~/.claude/ paths use ClaudeInstallation, for ~/.erk/ paths use ErkInstallation. Direct Path.home() access bypasses testability (fakes) and creates parallel test flakiness."
+    19→    pattern: "Path\\.home\\(\\)"
+    20→  - action: "importing or monkeypatching a module with 'exec' in its path"
+    21→    warning: "`exec` is a Python keyword that blocks direct import and string-path monkeypatch. Use `importlib.import_module()` + object-form `setattr` instead."
+    22→  - action: "using branch names with '/' in test data for resolve_impl_dir() tests"
+    23→    warning: "Branch name sanitization (_sanitize_branch_for_dirname() at packages/erk-shared/src/erk_shared/impl_folder.py) replaces '/' with '--'. Test data must account for this: branch 'plnd/my-feature' becomes directory 'plnd--my-feature'."
+    24→  - action: "adding new parameters to gateway methods without truth-table test coverage"
+    25→    warning: "When adding boolean parameters to gateway methods, the truth-table testing pattern covers all boolean combinations. Bot reviewers enforce this coverage."
+    26→---
+    27→
+    28→# Exec Script Testing Patterns
+    29→
+    30→Testing patterns for CLI commands in `src/erk/cli/commands/exec/scripts/`.
+
+... [390 lines omitted] ...
+
+    57→# WRONG - Causes "Context not initialized" error
+    63→    # FAILS: "Error: Context not initialized"
+   287→When a gateway method changes from exception-based to discriminated union (e.g., `T | ErrorType`), update exec script tests to check return types instead of catching exceptions.
+   291→| Aspect              | Exception-Based                     | Discriminated Union                     |
+   293→| Fake setup          | Set error flag, fake raises         | Configure fake to return error type     |
+   294→| Gateway behavior    | `raise SomeError()`                 | `return SomeErrorSentinel(...)`         |
+   295→| Exec script pattern | `try/except` block                  | `if isinstance(result, ErrorSentinel):` |
+   296→| Test assertion      | Verify exception caught &amp; formatted | Verify error type returned &amp; formatted  |
+   300→The `IssueNotFound` sentinel (`erk_shared.gateway.github.issues.types`) is used in union return types. `FakeGitHubIssues` handles this by returning `IssueNotFound` when the requested issue number is not in its `issues` dict, rather than raising an exception.
+   314→1. [ ] Update fake setup to return error types instead of raising
+   316→3. [ ] Verify test still checks exit code and error message
+   317→4. [ ] Verify test covers both success and error paths
+   318→5. [ ] Update test names if needed (e.g., `test_issue_not_found_exception` → `test_issue_not_found`)
+  </tool_result>
+  <assistant>Let me continue reading the other matched files:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="24389" cache_read_input_tokens="20425" cache_creation="{'ephemeral_5m_input_tokens': 24389, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01EnS8EhHbiDoa9yoq9cEkXB">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/testing/context-builder-signatures.md</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="24389" cache_read_input_tokens="20425" cache_creation="{'ephemeral_5m_input_tokens': 24389, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01TAZEHoiLbindLBKtjjqLWQ">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/testing/environment-variable-isolation.md</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="24389" cache_read_input_tokens="20425" cache_creation="{'ephemeral_5m_input_tokens': 24389, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01QAvv1abdvxwLDgXLFW6q7m">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/testing/hook-testing.md</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="24389" cache_read_input_tokens="20425" cache_creation="{'ephemeral_5m_input_tokens': 24389, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01AaFmTpR2zr1nLQNbeZkrX1">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/testing/rebase-conflicts.md</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="24389" cache_read_input_tokens="20425" cache_creation="{'ephemeral_5m_input_tokens': 24389, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01KduWq9c3SvAEDUnGTkknju">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/testing/tripwires.md</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="24389" cache_read_input_tokens="20425" cache_creation="{'ephemeral_5m_input_tokens': 24389, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01EnS8EhHbiDoa9yoq9cEkXB">
+     1→---
+     2→title: context_for_test() Dual Implementations
+     3→read_when:
+     4→  - "using context_for_test() in tests"
+     5→  - "choosing between erk-shared and src/erk test context"
+     6→  - "debugging TypeError from context_for_test()"
+     7→tripwires:
+     8→  - action: "using context_for_test() with wrong parameter name for issues"
+     9→    warning: "erk-shared uses github_issues= parameter, src/erk uses issues= parameter. These are NOT interchangeable — using wrong name causes TypeError."
+    10→---
+    11→
+    12→# context_for_test() Dual Implementations
+    13→
+    14→Two separate `context_for_test()` functions exist in the codebase. They have different parameter names and serve different test scopes.
+    15→
+    16→## erk-shared Implementation
+    17→
+    18→&lt;!-- Source: packages/erk-shared/src/erk_shared/context/testing.py, context_for_test --&gt;
+    19→
+    20→**Location:** `packages/erk-shared/src/erk_shared/context/testing.py`
+    21→
+    22→**Key parameter:** `github_issues=` (not `issues=`)
+    23→
+    24→Always defaults to PlannedPRBackend. Used for isolated unit tests that only need erk-shared dependencies.
+    25→
+    26→## src/erk Implementation
+    27→
+    28→&lt;!-- Source: src/erk/core/context.py, context_for_test --&gt;
+    29→
+    30→**Location:** `src/erk/core/context.py`
+
+... [22 lines omitted] ...
+
+    46→Using `issues=` with the erk-shared version or `github_issues=` with the src/erk version causes a `TypeError` at runtime. The parameter names are intentionally different due to the different dependency scopes.
+  </tool_result>
+  <tool_result tool="toolu_01TAZEHoiLbindLBKtjjqLWQ">
+     1→---
+     2→title: Environment Variable Isolation in Tests
+     3→read_when:
+     4→  - "debugging systematic test failures across many test files"
+     5→  - "working with ERK_PLAN_BACKEND in tests"
+     6→  - "understanding why tests behave differently based on environment"
+     7→  - "writing tests that involve plan backend selection"
+     8→tripwires:
+     9→  - action: "debugging 100+ unexpected test failures with no obvious cause"
+    10→    warning: "Check ERK_PLAN_BACKEND first. Although the env var is now obsolete (get_plan_backend() was deleted in PR #7971), legacy code paths in context_for_test() may still read it. Use monkeypatch.delenv('ERK_PLAN_BACKEND', raising=False) or env_overrides={} in fixtures as a defensive measure until full cleanup in objective #7911."
+    11→    score: 6
+    12→---
+    13→
+    14→# Environment Variable Isolation in Tests
+    15→
+    16→## The `ERK_PLAN_BACKEND` Contamination Pattern
+    17→
+    18→&gt; **Note:** After PR #7971 (objective #7911 node 1.1), the `get_plan_backend()` function was deleted and the plan backend is hardcoded to `"planned_pr"`. The `ERK_PLAN_BACKEND` environment variable is no longer read by application code. The contamination pattern described below is historical but the mitigations remain relevant until vestigial code paths are fully cleaned up in later nodes of objective #7911.
+    19→
+    20→Previously, setting `ERK_PLAN_BACKEND=planned_pr` in the shell environment caused **125+ test failures** when running the full test suite.
+    21→
+    22→### Root Cause
+    23→
+    24→`context_for_test()` in `packages/erk-shared/src/erk_shared/context/testing.py` creates a test `ErkContext`. After PR #7971, the plan backend selection uses a tautological comparison that always takes the planned-PR path, regardless of environment variables. Tests that set `ERK_PLAN_BACKEND` are now exercising dead code paths. Monkeypatching this variable has no behavioral effect.
+    25→
+    26→&lt;!-- Source: packages/erk-shared/src/erk_shared/context/testing.py, context_for_test --&gt;
+    27→
+    28→See `context_for_test()` in `packages/erk-shared/src/erk_shared/context/testing.py`.
+    29→
+    30→## `context_for_test()` Implementation
+
+... [49 lines omitted] ...
+
+    63→If you see 100+ unexpected failures:
+  </tool_result>
+  <tool_result tool="toolu_01QAvv1abdvxwLDgXLFW6q7m">
+     1→---
+     2→title: Hook Testing Patterns
+     3→read_when:
+     4→  - "writing tests for any hook (PreToolUse, UserPromptSubmit, ExitPlanMode)"
+     5→  - "creating a new hook implementation"
+     6→  - "testing hooks that read from stdin or check capabilities"
+     7→tripwires:
+     8→  - action: "creating or modifying a hook"
+     9→    warning: "Hooks fail silently (exit 0, no output) — untested hooks are invisible failures. Read docs/learned/testing/hook-testing.md first."
+    10→  - action: "using monkeypatch or unittest.mock in hook tests"
+    11→    warning: "Use ErkContext.for_test() with CliRunner instead of mocking. See docs/learned/testing/hook-testing.md."
+    12→last_audited: "2026-02-16 14:20 PT"
+    13→audit_result: clean
+    14→---
+    15→
+    16→# Hook Testing Patterns
+    17→
+    18→## Why Hook Testing Requires a Different Mindset
+    19→
+    20→Hooks default to silent success: exit 0, no output. When a hook malfunctions — wrong key in JSON, missing capability check, unhandled None — there is no runtime error signal. The hook simply does nothing. This makes negative tests (verifying silence under wrong conditions) more valuable than positive tests, because a broken hook looks identical to a correctly-silent hook.
+    21→
+    22→This silent-failure property drives every architectural decision below.
+    23→
+    24→## The Two-Layer Architecture
+    25→
+    26→All erk hooks follow the same structural pattern: pure functions for logic, a thin orchestration entry point for I/O. This isn't arbitrary — it exists because hook logic is complex (nested JSON parsing, capability checks, marker file state machines) but the I/O surface is tiny (stdin read, click.echo, file existence checks). Separating them means:
+    27→
+    28→- **Pure functions** test at Layer 3 "pure" (unit) with zero dependencies — no tmp_path, no CliRunner, no mocking. These cover the combinatorial edge cases that would be painful to set up through the full pipeline.
+    29→- **Integration entry point** tests at Layer 4 "logic" with CliRunner and `ErkContext.for_test()`. These verify the orchestration wiring — that the right pure functions are called in the right order with the right I/O.
+    30→
+
+... [74 lines omitted] ...
+
+    54→Every hook integration test suite should cover these five scenarios. They map to the silent-failure paths in the `@hook_command` decorator's orchestration:
+    95→- **Testing only the happy path**: Silent failure is the default mode, so the five negative scenarios above are where bugs hide. A hook that always returns nothing passes the positive test trivially.
+  </tool_result>
+  <tool_result tool="toolu_01AaFmTpR2zr1nLQNbeZkrX1">
+     1→---
+     2→title: Erk Test Rebase Conflicts
+     3→last_audited: "2026-02-16 00:00 PT"
+     4→audit_result: clean
+     5→read_when:
+     6→  - "fixing merge conflicts in erk tests"
+     7→  - "ErkContext API changes during rebase"
+     8→  - "env_helpers conflicts"
+     9→---
+    10→
+    11→# Erk Test Rebase Conflicts
+    12→
+    13→**For generic merge conflict resolution**: Use the `/erk:pr-rebase` command.
+    14→
+    15→This document covers **erk-specific test patterns** you'll encounter during rebases: ErkContext API evolution, env_helpers, parameter renames.
+    16→
+    17→## Quick Start
+    18→
+    19→When you encounter merge conflicts in **erk test files** during a rebase, check this guide. Test infrastructure conflicts are usually **mechanical** (both branches fixing the same issue with different timing) rather than semantic.
+    20→
+    21→### Pre-Flight Check
+    22→
+    23→```bash
+    24→# 1. Identify the conflict
+    25→git status
+    26→
+    27→# 2. Check if it's test infrastructure
+    28→git diff HEAD &lt;incoming_commit&gt; tests/
+    29→
+    30→# 3. Check for missing dependencies
+
+... [389 lines omitted] ...
+
+    44→# If you see ImportError for missing module:
+   199→### ImportError: cannot import name 'erk_isolated_fs_env'
+   214→### TypeError: ErkContext.**init**() missing required positional arguments
+   222→### TypeError: got an unexpected keyword argument 'global_config_ops'
+   235→### FileNotFoundError: '/test/default/cwd'
+   266→### AssertionError: assert 'Expected Message' in result.output
+  </tool_result>
+  <tool_result tool="toolu_01KduWq9c3SvAEDUnGTkknju">
+     1→---
+     2→title: Testing Tripwires
+     3→read_when:
+     4→  - "working on testing code"
+     5→---
+     6→
+     7→&lt;!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY --&gt;
+     8→&lt;!-- Edit source frontmatter, then run 'erk docs sync' to regenerate. --&gt;
+     9→&lt;!-- Generated from testing/*.md frontmatter --&gt;
+    10→
+    11→# Testing Tripwires
+    12→
+    13→Rules triggered by matching actions in code.
+    14→
+    15→**Test only success cases for batch commands** → Read [Exec Script Batch Testing](exec-script-batch-testing.md) first. Cover all four categories: success, partial failure, validation errors, and JSON structure. Missing any category leaves a critical gap.
+    16→
+    17→**Use stateful failure injection (\_should_fail_next flags) in fake gateways** → Read [Exec Script Batch Testing](exec-script-batch-testing.md) first. Use set-based constructor injection instead. Stateful flags are order-dependent and brittle. See the set-based pattern below.
+    18→
+    19→**accessing FakeGit properties in tests** → Read [Erk Test Reference](testing.md) first. FakeGit has top-level properties (e.g., `git.staged_files`, `git.deleted_branches`, `git.added_worktrees`). Worktree operations delegate to an internal FakeWorktree sub-gateway.
+    20→
+    21→**adding a force-include entry without registering in codex_portable_skills()** → Read [Artifact Distribution Sync Testing](artifact-distribution-sync.md) first. The skill will be distributed but not recognized by the runtime. Add it to codex_portable_skills() in src/erk/core/capabilities/codex_portable.py.
+    22→
+    23→**adding a skill to codex_portable_skills() without a pyproject.toml force-include entry** → Read [Artifact Distribution Sync Testing](artifact-distribution-sync.md) first. The wheel won't contain the skill. Add a force-include entry in pyproject.toml [tool.hatch.build.targets.wheel.force-include]. test_codex_portable_skills_match_force_include will catch this.
+    24→
+    25→**adding a test for a new pipeline step without creating a dedicated test file** → Read [Submit Pipeline Test Organization](submit-pipeline-tests.md) first. Each pipeline step gets its own test file in tests/unit/cli/commands/pr/submit_pipeline/. Follow the one-file-per-step convention.
+    26→
+    27→**adding a tracking list without documenting the tuple field order** → Read [FakeLocalGitHub Mutation Tracking](fake-github-mutation-tracking.md) first. Every tracking list must have a property docstring specifying the tuple format (e.g., 'Returns list of (pr_number, label) tuples'). Without it, test authors guess field positions wrong.
+    28→
+    29→**adding monkeypatch or @patch to a test** [pattern: `@patch|monkeypatch\.`] → Read [Monkeypatch Elimination Checklist](monkeypatch-elimination-checklist.md) first. Use gateway fakes instead. If no gateway exists for the operation, create one first. See gateway-abc-implementation.md.
+    30→
+
+... [123 lines omitted] ...
+
+    33→**allowing `import X as Y` for internal/project imports because it's convenient** → Read [Import Alias vs Re-Export Detection](alias-verification-pattern.md) first. Erk prohibits gratuitous import aliases for internal/project imports. Exceptions: genuine name collisions and well-known library aliases (pandas as pd, numpy as np, dagster as dg, matplotlib.pyplot as plt).
+    35→**asking devrun agent to fix errors or make tests pass** → Read [Devrun Agent - Read-Only Design](devrun-agent.md) first. Devrun is READ-ONLY. It runs commands and reports results. The parent agent must handle all fixes.
+    59→**creating a fake gateway without constructor-injected error configuration** → Read [Gateway Fake Testing Exemplar](gateway-fake-testing-exemplar.md) first. Fakes must accept error variants at construction time (e.g., push_to_remote_error=PushError(...)) to enable failure injection in tests.
+    67→**creating or modifying a hook** → Read [Hook Testing Patterns](hook-testing.md) first. Hooks fail silently (exit 0, no output) — untested hooks are invisible failures. Read docs/learned/testing/hook-testing.md first.
+    69→**debugging 100+ unexpected test failures with no obvious cause** → Read [Environment Variable Isolation in Tests](environment-variable-isolation.md) first. Check ERK_PLAN_BACKEND first. Although the env var is now obsolete (get_plan_backend() was deleted in PR #7971), legacy code paths in context_for_test() may still read it. Use monkeypatch.delenv('ERK_PLAN_BACKEND', raising=False) or env_overrides={} in fixtures as a defensive measure until full cleanup in objective #7911.
+    77→**implementing interactive prompts with ctx.console.confirm()** → Read [Erk Test Reference](testing.md) first. Ensure FakeConsole in test fixture is configured with `confirm_responses` parameter. Array length must match prompt count exactly — too few causes IndexError, too many indicates a removed prompt. See tests/commands/submit/test_existing_branch_detection.py for examples.
+    95→**renaming a user-facing string in CLI output and updating related test assertions** → Read [CLI Testing Patterns](cli-testing.md) first. Test assertion lag: after renaming display strings (e.g., 'issue' → 'plan'), grep all test files for the old literal before committing. Tests using old string literals against stale snapshots will silently pass — the failure only surfaces in CI on a clean checkout.
+   105→**testing code that reads ERK_PLAN_BACKEND or other environment variables via CliRunner** → Read [CLI Testing Patterns](cli-testing.md) first. CliRunner env var isolation: ambient env vars from the developer shell leak into CliRunner by default and cause intermittent test failures. Use CliRunner(env={'ERK_PLAN_BACKEND': '...'}) to override, or CliRunner(env={}) to isolate completely. Never rely on ambient env being clean. Note: mix_stderr parameter is broken in Click 8.3.1 — do not use it.
+   115→**tracking mutations before checking error configuration in a fake method** → Read [Gateway Fake Testing Exemplar](gateway-fake-testing-exemplar.md) first. Decide deliberately: should this operation track even on failure? push_to_remote skips tracking on error (nothing happened), pull_rebase always tracks (the attempt matters). Match the real operation's semantics.
+   127→**using context_for_test() with wrong parameter name for issues** → Read [context_for_test() Dual Implementations](context-builder-signatures.md) first. erk-shared uses github_issues= parameter, src/erk uses issues= parameter. These are NOT interchangeable — using wrong name causes TypeError.
+   129→**using context_for_test() with wrong parameter name for issues** → Read [Erk Test Reference](testing.md) first. erk-shared uses github_issues= parameter, src/erk uses issues= parameter. These are NOT interchangeable — using wrong name causes TypeError.
+   139→**using monkeypatch.chdir() in exec script tests** [pattern: `monkeypatch\.chdir\(`] → Read [Exec Script Testing Patterns](exec-script-testing.md) first. Use obj=ErkContext.for_test(cwd=tmp_path) instead. monkeypatch.chdir() doesn't inject context, causing 'Context not initialized' errors.
+   141→**using output=, should_fail=, or transient_failures= parameters in FakePromptExecutor** → Read [FakePromptExecutor API Migration - Gateway to Core](fake-api-migration-pattern.md) first. These are the deleted gateway API. Use simulated\_\* parameters (tests/fakes/) or prompt_results/streaming_events (erk_shared/core/fakes.py). See migration table.
+  </tool_result>
+  <assistant>Now let me search for the other files that matched on erk_shared.fakes and architecture patterns:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="15757" cache_read_input_tokens="44814" cache_creation="{'ephemeral_5m_input_tokens': 15757, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01C25oqgKGEngwYHDpXb2L51">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/erk-architecture.md</param>
+    <param name="limit">150</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="15757" cache_read_input_tokens="44814" cache_creation="{'ephemeral_5m_input_tokens': 15757, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01HEnNB8xNLrQpBjx96im2Yb">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/architecture.md</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="15757" cache_read_input_tokens="44814" cache_creation="{'ephemeral_5m_input_tokens': 15757, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01PsnVEqXw6zw6gRN19socgY">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/testing/fake-git-divergence.md</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="15757" cache_read_input_tokens="44814" cache_creation="{'ephemeral_5m_input_tokens': 15757, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01C25oqgKGEngwYHDpXb2L51">
+     1→---
+     2→last_audited: "2026-02-16 00:00 PT"
+     3→audit_result: clean
+     4→title: Erk Architecture Patterns
+     5→read_when:
+     6→  - "understanding erk architecture"
+     7→  - "implementing dry-run patterns"
+     8→  - "regenerating context after os.chdir"
+     9→  - "detecting root worktree"
+    10→  - "detecting worktree location"
+    11→  - "adding composing template methods to ABC"
+    12→tripwires:
+    13→  - action: "passing dry_run boolean flags through business logic function parameters"
+    14→    warning: "Use dependency injection with DryRunGit/DryRunLocalGitHub wrappers for multi-step workflows. Simple CLI preview flags at the command level are acceptable for single-action commands."
+    15→  - action: "calling os.chdir() in erk code"
+    16→    warning: "After os.chdir(), regenerate context using regenerate_context(ctx). Stale ctx.cwd causes FileNotFoundError."
+    17→    pattern: "os\\.chdir\\("
+    18→  - action: "importing time module or calling time.sleep() or datetime.now()"
+    19→    warning: "Use context.time.sleep() and context.time.now() for testability. Direct time.sleep() makes tests slow and datetime.now() makes tests non-deterministic."
+    20→    pattern: "\\bimport time\\b|time\\.sleep\\(|datetime\\.now\\("
+    21→  - action: "implementing CLI flags that affect post-mutation behavior"
+    22→    warning: "Validate flag preconditions BEFORE any mutations. Example: `--up` in `erk land` checks for child branches before merging PR. This prevents partial state (PR merged, worktree deleted, but no valid navigation target)."
+    23→  - action: "comparing worktree path to repo_root to detect root worktree"
+    24→    warning: "Use WorktreeInfo.is_root instead of path comparison. Path comparison fails when running from within a non-root worktree because ctx.cwd resolves differently."
+    25→  - action: "detecting current worktree using path comparisons on cwd"
+    26→    warning: "Use git.get_repository_root(cwd) to get the worktree root, then match exactly against known paths. Path comparisons with .exists()/.resolve()/is_relative_to() are fragile."
+    27→  - action: "checking isinstance(ctx.graphite, GraphiteDisabled) inline in command code"
+    28→    warning: "Use BranchManager abstraction instead. Add a method to BranchManager ABC that handles both Graphite and Git paths. This centralizes the branching logic and enables testing with FakeBranchManager."
+    29→    pattern: "isinstance\\(.*GraphiteDisabled\\)"
+    30→  - action: 'using os.environ.get("CLAUDE_CODE_SESSION_ID") in erk code'
+
+... [125 lines omitted] ...
+
+    31→    warning: "Erk code NEVER has access to this environment variable. Session IDs must be passed via --session-id CLI flags. Hooks receive session ID via stdin JSON, not environment variables."
+    34→    warning: "Accept optional Time in __init__ with default to RealTime(). Use injected dependency in methods. This enables testing with FakeTime without blocking. See packages/erk-shared/src/erk_shared/gateway/git/lock.py for pattern."
+    36→    warning: "Load `dignified-python` skill first. Class __init__ should be lightweight (just data assignment). Heavy operations belong in static factory methods like `from_config_path()` or `load()`. This enables direct instantiation in tests without I/O setup."
+    38→    warning: "Use ctx.branch_manager instead. Branch mutation methods are in GitBranchOps sub-gateway, accessible only through BranchManager. Query methods (get_current_branch, list_local_branches, etc.) remain on ctx.git."
+    40→    warning: "Use ctx.branch_manager instead. Branch mutation methods are in GraphiteBranchOps sub-gateway, accessible only through BranchManager. Query methods (is_branch_tracked, get_parent_branch, etc.) remain on ctx.graphite."
+    42→    warning: "GraphiteBranchManager.create_branch() restores the original branch after tracking. Always call branch_manager.checkout_branch() afterward if you need to be on the new branch."
+    44→    warning: "Validate at the single construction point (factory/reader function). Callers should trust returned objects without re-validation. This is the construction boundary principle."
+    46→    warning: "When adding new file formats, implement read-then-fallback: try new format first, fall back to old format transparently. See read_plan_ref() for the canonical pattern."
+    48→    warning: "Update ALL factory functions. Grep: `grep -r 'ErkContext(' packages/erk-shared/src/ src/erk/core/context.py` to find all construction sites. Missing a factory causes runtime errors or silent None values."
+    51→    warning: "Functions with 'skip silently' contracts must validate ALL preconditions with LBYL guards. Checking one field (e.g., schema_version) is insufficient — use set operations to verify all required fields."
+    53→    warning: "Always pass encoding='utf-8' to .read_text() and .write_text(). Python's default encoding varies by platform."
+  </tool_result>
+  <tool_result tool="toolu_01HEnNB8xNLrQpBjx96im2Yb">
+     1→---
+     2→title: TUI Architecture Overview
+     3→read_when:
+     4→  - "understanding TUI structure"
+     5→  - "implementing TUI components"
+     6→  - "working with TUI data providers"
+     7→tripwires:
+     8→  - action: "reusing same DOM element id across loading/empty/content states"
+     9→    warning: "query_one() returns wrong element silently when id is reused across lifecycle phases. Use unique IDs per phase."
+    10→  - action: "calling widget methods directly from @work(thread=True) background threads"
+    11→    warning: "Direct widget calls from background threads cause silent UI corruption. Must use self.app.call_from_thread(callback, ...)."
+    12→  - action: "extending PlanDataProvider ABC"
+    13→    warning: "Requires 3-file update: abc.py + real.py + fake.py. Fake must initialize new dict in __init__. Missing init causes AttributeError at test time."
+    14→  - action: "adding a DataTable column with add_column(key=...)"
+    15→    warning: "Column key is a data binding contract — must match data field name. Silent failure when mismatched."
+    16→  - action: "moving @on decorated event handlers to a mixin"
+    17→    warning: "Textual's _MessagePumpMeta only scans class.__dict__, not inherited methods. Event handlers on mixins are silently ignored."
+    18→  - action: "adding CI check formatting to TUI screens"
+    19→    warning: "Use src/erk/tui/formatting/ci_checks.py shared module (format_check_line, format_summary_blockquote, format_check_runs) instead of duplicating formatting logic."
+    20→last_audited: "2026-02-17 18:30 PT"
+    21→audit_result: clean
+    22→---
+    23→
+    24→# TUI Architecture Overview
+    25→
+    26→The erk TUI is built with Textual and follows a layered architecture separating data fetching, filtering, and rendering.
+    27→
+    28→## Directory Structure
+    29→
+    30→```
+
+... [75 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01PsnVEqXw6zw6gRN19socgY">
+     1→---
+     2→title: FakeGit Branch Divergence Testing
+     3→read_when:
+     4→  - "testing branch divergence scenarios"
+     5→  - "configuring FakeGit for force-push tests"
+     6→  - "writing tests that involve ahead/behind commit counts"
+     7→tripwires:
+     8→  - action: "testing divergence without setting branch_divergence in FakeGit"
+     9→    warning: "FakeGit.is_branch_diverged_from_remote() returns from the branch_divergence dict. Missing entries return default (not diverged). Set explicit divergence state for each test scenario."
+    10→  - action: "testing branch-scoped impl directory code without configuring FakeGit current_branches"
+    11→    warning: "FakeGit current_branches must be configured when testing resolve_impl_dir(). Without this, resolve_impl_dir() gets the wrong branch and resolves to the wrong directory."
+    12→---
+    13→
+    14→# FakeGit Branch Divergence Testing
+    15→
+    16→## BranchDivergence Type
+    17→
+    18→Defined in `packages/erk-shared/src/erk_shared/gateway/git/abc.py`:
+    19→
+    20→```python
+    21→class BranchDivergence(NamedTuple):
+    22→    is_diverged: bool
+    23→    ahead: int
+    24→    behind: int
+    25→```
+    26→
+    27→## FakeGit Configuration
+    28→
+    29→Constructor injection via dict with `(repo_path, branch_name, remote_name)` keys:
+    30→
+
+... [69 lines omitted] ...
+
+    61→def test_no_commits_ahead_returns_error(tmp_path: Path) -&gt; None:
+    75→    assert isinstance(result, SubmitError)
+    76→    assert result.error_type == "no_commits"
+  </tool_result>
+  <assistant>Let me now search for additional patterns I may have missed:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="6551" cache_read_input_tokens="60571" cache_creation="{'ephemeral_5m_input_tokens': 6551, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_019RujUrQnEzmm8Lxy8YnZtP">
+    <param name="pattern">tests\.fakes\.gateway|tests/fakes/gateway</param>
+    <param name="glob">**/*.md</param>
+    <param name="output_mode">content</param>
+    <param name="head_limit">50</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="6551" cache_read_input_tokens="60571" cache_creation="{'ephemeral_5m_input_tokens': 6551, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_0151BjCCZjLDxmBHqJtzsLcp">
+    <param name="pattern">RealLocalGitHub\.for_test|real_github_for_test</param>
+    <param name="glob">**/*.md</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="6551" cache_read_input_tokens="60571" cache_creation="{'ephemeral_5m_input_tokens': 6551, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01FKcmCiD9wuodbbTZykT5WX">
+    <param name="pattern">tests\.test_utils\.test_context|test_context</param>
+    <param name="glob">**/*.md</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="6551" cache_read_input_tokens="60571" cache_creation="{'ephemeral_5m_input_tokens': 6551, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0151BjCCZjLDxmBHqJtzsLcp">
+No matches found
+  </tool_result>
+  <tool_result tool="toolu_01FKcmCiD9wuodbbTZykT5WX">
+docs/learned/testing/tripwires.md:41:**asserting on fake-specific properties in tests using `build_workspace_test_context` with `use_graphite=True`** → Read [Erk Test Reference](testing.md) first. Production wrappers (e.g., `GraphiteBranchManager`) do not expose fake tracking properties like `submitted_branches`. Assert on observable behavior (CLI output, return values) instead of accessing fake internals through the wrapper.
+docs/learned/testing/tripwires.md:65:**creating custom FakeGitHubIssues without passing to build_workspace_test_context** → Read [FakeGitHubIssues Dual-Comment Parameters](fake-github-testing.md) first. Always pass issues=issues to build_workspace_test_context when using custom FakeGitHubIssues. Without it, plan_backend operates on a different instance and metadata writes are invisible.
+docs/learned/testing/fake-github-testing.md:10:  - action: "creating custom FakeGitHubIssues without passing to build_workspace_test_context"
+docs/learned/testing/fake-github-testing.md:11:    warning: "Always pass issues=issues to build_workspace_test_context when using custom FakeGitHubIssues. Without it, plan_backend operates on a different instance and metadata writes are invisible."
+docs/learned/testing/cli-testing.md:508:**Critical:** Always pass `issues=issues` to `build_workspace_test_context` when using custom `FakeGitHubIssues`. Without it, `plan_backend` operates on a different instance and metadata writes are invisible to your test assertions.
+docs/learned/testing/testing.md:16:  - action: "asserting on fake-specific properties in tests using `build_workspace_test_context` with `use_graphite=True`"
+docs/learned/testing/testing.md:245:### create_test_context()
+docs/learned/testing/testing.md:248:from tests.fakes.context import create_test_context
+docs/learned/testing/testing.md:251:ctx = create_test_context()
+docs/learned/testing/testing.md:254:ctx = create_test_context(
+docs/learned/architecture/tripwires.md:187:**creating custom FakeGitHubIssues without passing to test context builder** → Read [Test Context Composition](test-context-composition.md) first. Always pass issues=issues to build_workspace_test_context when using custom FakeGitHubIssues. Without it, plan_backend operates on a different instance and metadata writes are invisible.
+docs/learned/architecture/index.md:131:- **[test-context-composition.md](test-context-composition.md)** — using build_workspace_test_context with custom fakes, debugging invisible metadata writes in tests, understanding issues_explicitly_passed flag
+docs/learned/architecture/test-context-composition.md:4:  - "using build_workspace_test_context with custom fakes"
+docs/learned/architecture/test-context-composition.md:9:    warning: "Always pass issues=issues to build_workspace_test_context when using custom FakeGitHubIssues. Without it, plan_backend operates on a different instance and metadata writes are invisible."
+docs/learned/architecture/test-context-composition.md:18:`build_workspace_test_context()` creates a default `FakeGitHubIssues` if none is passed. If you create your own `FakeGitHubIssues` but don't pass it to the context builder, two separate instances exist:
+docs/learned/architecture/test-context-composition.md:33:    ctx = build_workspace_test_context(
+  </tool_result>
+  <tool_result tool="toolu_019RujUrQnEzmm8Lxy8YnZtP">
+No matches found
+
+[Showing results with pagination = limit: 50, offset: 0]
+  </tool_result>
+  <assistant>Let me read a couple more key files to get specific line numbers:</assistant>
+  <usage input_tokens="944" cache_creation_input_tokens="506" cache_read_input_tokens="67122" cache_creation="{'ephemeral_5m_input_tokens': 506, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_015iRJYGPRUfjFgayQ2AAgTH">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/testing/testing.md</param>
+    <param name="offset">245</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="944" cache_creation_input_tokens="506" cache_read_input_tokens="67122" cache_creation="{'ephemeral_5m_input_tokens': 506, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01EzD3t2rKsqRkj5fi26NMwx">
+    <param name="pattern">erk_shared\.fakes|from erk_shared\.fakes|import .*\.fakes</param>
+    <param name="glob">**/*.md</param>
+    <param name="output_mode">content</param>
+    <param name="head_limit">100</param>
+  </tool_use>
+  <usage input_tokens="944" cache_creation_input_tokens="506" cache_read_input_tokens="67122" cache_creation="{'ephemeral_5m_input_tokens': 506, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_015iRJYGPRUfjFgayQ2AAgTH">
+   245→### create_test_context()
+   246→
+   247→```python
+   248→from tests.fakes.context import create_test_context
+   249→
+   250→# Minimal context (all fakes with defaults)
+   251→ctx = create_test_context()
+   252→
+   253→# Custom fakes
+   254→ctx = create_test_context(
+   255→    git=FakeGit(worktrees={...}),
+   256→    dry_run=True,
+   257→)
+   258→```
+   259→
+   260→This is a convenience wrapper around `context_for_test()` from `erk.core.context`.
+   261→
+   262→### context_for_test()
+   263→
+   264→```python
+   265→from erk.core.context import context_for_test
+   266→
+   267→test_ctx = context_for_test(
+   268→    git=git,
+   269→    global_config=global_config,
+   270→    cwd=env.cwd,
+   271→)
+   272→```
+   273→
+   274→## Test Environment Helpers
+
+... [5 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01EzD3t2rKsqRkj5fi26NMwx">
+tests/AGENTS.md:52:Without `__init__.py`, pytest's import system breaks because Python 3.3+ treats directories without `__init__.py` as namespace packages, which disrupts absolute imports like `from tests.fakes.git import FakeGit`.
+docs/learned/testing/fake-git-divergence.md:32:from erk_shared.fakes.git import FakeGit
+docs/learned/testing/tripwires.md:79:**importing FakePromptExecutor from erk_shared.fakes.prompt_executor** → Read [FakePromptExecutor API Migration - Gateway to Core](fake-api-migration-pattern.md) first. This module was deleted in the consolidation. Import from tests.fakes.prompt_executor or erk_shared.fakes.core instead.
+docs/learned/testing/exec-script-testing.md:208:`FakeBranchManager` is located at `erk_shared.fakes.branch_manager`. It tracks branch operations via internal lists exposed as read-only properties:
+docs/learned/testing/exec-script-testing.md:215:from erk_shared.fakes.branch_manager import FakeBranchManager
+docs/learned/testing/cli-testing.md:37:from erk_shared.fakes.github_issues import FakeGitHubIssues
+docs/learned/testing/cli-testing.md:206:from erk_shared.fakes.claude_installation import FakeClaudeInstallation
+docs/learned/testing/cli-testing.md:207:from erk_shared.fakes.github_issues import FakeGitHubIssues
+docs/learned/testing/cli-testing.md:247:from erk_shared.fakes.claude_installation import (
+docs/learned/testing/admin-command-testing.md:25:from erk_shared.fakes.github_admin import FakeGitHubAdmin
+docs/learned/testing/fake-api-migration-pattern.md:8:  - action: "importing FakePromptExecutor from erk_shared.fakes.prompt_executor"
+docs/learned/testing/fake-api-migration-pattern.md:9:    warning: "This module was deleted in the consolidation. Import from tests.fakes.prompt_executor or erk_shared.fakes.core instead."
+docs/learned/testing/testing.md:161:from erk_shared.fakes.git_worktree import FakeWorktree
+docs/learned/testing/testing.md:202:from erk_shared.fakes.git_branch_ops import FakeGitBranchOps
+docs/learned/testing/testing.md:417:from erk_shared.fakes.console import FakeConsole
+docs/learned/testing/testing.md:481:from erk_shared.fakes.git import FakeGit
+docs/learned/testing/testing.md:482:from erk_shared.fakes.graphite import FakeGraphite
+docs/learned/testing/testing.md:483:from erk_shared.fakes.graphite_branch_ops import FakeGraphiteBranchOps
+docs/learned/testing/testing.md:484:from erk_shared.fakes.github import FakeGitHub
+docs/learned/architecture/github-api-retry-mechanism.md:127:from erk_shared.fakes.time import FakeTime
+docs/learned/architecture/erk-architecture.md:241:from erk_shared.fakes.time import FakeTime
+docs/learned/architecture/erk-architecture.md:536:from erk_shared.fakes.git import FakeGit
+docs/learned/architecture/gateway-abc-implementation.md:426:        from erk_shared.fakes.github_issues import FakeGitHubIssues
+docs/learned/architecture/gateway-abc-implementation.md:427:        from erk_shared.fakes.time import FakeTime
+docs/learned/erk-dev/testing.md:28:from erk_shared.fakes.git import FakeGit
+docs/learned/erk-dev/testing.md:29:from erk_shared.fakes.github import FakeGitHub
+docs/learned/tui/plan-row-data.md:199:from erk_shared.fakes.plan_data_provider import make_plan_row
+docs/learned/tui/architecture.md:128:Use fake providers instead of mocking. `FakePlanDataProvider` lives in `erk_shared.fakes.plan_data_provider` and accepts keyword-only arguments (`plans`, `clipboard`, `browser`, `repo_root`, `fetch_error`). The `make_plan_row()` helper in the same module creates test `PlanRowData` instances with sensible defaults.
+.claude/skills/fake-driven-testing/references/quick-reference.md:330:from erk_shared.fakes.git import FakeGit
+
+
+... [1 lines omitted] ...
+  </tool_result>
+  <assistant>Perfect! Now I have a comprehensive view of all the documentation references. Let me compile my findings:
+
+## Summary of Documentation File Changes Needed
+
+Based on my comprehensive search of all `.md` documentation files in the repository, here are all the references to old fake import paths that need updating:
+
+### **1. docs/learned/testing/fake-api-migration-pattern.md**
+
+**Line 9** - Tripwire warning:
+- **Current:** `"This module was deleted in the consolidation. Import from tests.fakes.prompt_executor or erk_shared.fakes.core instead."`
+- **Change needed:** Update to reflect new location - should be `tests.fakes.gateway` for gateway-level fakes or `tests.fakes.tests` for test-level fakes depending on which FakePromptExecutor
+
+**Line 79** - In testing.md tripwires reference (same doc):
+- **Current:** Same as above
+- **Change needed:** Same update needed
+
+### **2. docs/learned/testing/testing.md**
+
+**Line 161** - Code example:
+- **Current:** `from erk_shared.fakes.git_worktree import FakeWorktree`
+- **Should be:** `from tests.fakes.gateway.git import FakeWorktree` (or appropriate new path)
+
+**Line 202** - Code example:
+- **Current:** `from erk_shared.fakes.git_branch_ops import FakeGitBranchOps`
+- **Should be:** `from tests.fakes.gateway.git import FakeGitBranchOps`
+
+**Line 417** - Code example:
+- **Current:** `from erk_shared.fakes.console import FakeConsole`
+- **Should be:** `from tests.fakes.gateway.console import FakeConsole`
+
+**Lines 481-484** - Code examples:
+- **Current:** 
+  - `from erk_shared.fakes.git import FakeGit`
+  - `from erk_shared.fakes.graphite import FakeGraphite`
+  - `from erk_shared.fakes.graphite_branch_ops import FakeGraphiteBranchOps`
+  - `from erk_shared.fakes.github import FakeGitHub`
+- **Should be:** `from tests.fakes.gateway...` with appropriate module paths
+
+**Line 248** - Code example:
+- **Current:** `from tests.fakes.context import create_test_context`
+- **Should be:** `from tests.test_utils.test_context import create_test_context`
+
+**Line 265** - Docstring:
+- **Current:** `from erk.core.context import context_for_test`
+- **Should be:** `from tests.test_utils.test_context import context_for_test` (if moved) or verify correct import location
+
+### **3. docs/learned/testing/cli-testing.md**
+
+**Line 37** - Code example:
+- **Current:** `from erk_shared.fakes.github_issues import FakeGitHubIssues`
+- **Should be:** `from tests.fakes.gateway.github import FakeGitHubIssues`
+
+**Lines 206-207** - Code examples:
+- **Current:** 
+  - `from erk_shared.fakes.claude_installation import FakeClaudeInstallation`
+  - `from erk_shared.fakes.github_issues import FakeGitHubIssues`
+- **Should be:** Update to `tests.fakes.gateway...`
+
+**Lines 247-250** - Code example:
+- **Current:** `from erk_shared.fakes.claude_installation import ...`
+- **Should be:** `from tests.fakes.gateway...`
+
+### **4. docs/learned/testing/admin-command-testing.md**
+
+**Line 25** - Code example:
+- **Current:** `from erk_shared.fakes.github_admin import FakeGitHubAdmin`
+- **Should be:** `from tests.fakes.gateway.github import FakeGitHubAdmin`
+
+### **5. docs/learned/testing/exec-script-testing.md**
+
+**Line 208** - Reference text:
+- **Current:** `` `FakeBranchManager` is located at `erk_shared.fakes.branch_manager` ``
+- **Should be:** `` `FakeBranchManager` is located at `tests.fakes.gateway...` ``
+
+**Line 215** - Code example:
+- **Current:** `from erk_shared.fakes.branch_manager import FakeBranchManager`
+- **Should be:** `from tests.fakes.gateway...`
+
+### **6. docs/learned/testing/fake-git-divergence.md**
+
+**Line 32** - Code example:
+- **Current:** `from erk_shared.fakes.git import FakeGit`
+- **Should be:** `from tests.fakes.gateway.git import FakeGit`
+
+### **7. docs/learned/architecture/gateway-abc-implementation.md**
+
+**Lines 426-427** - Code examples:
+- **Current:**
+  - `from erk_shared.fakes.github_issues import FakeGitHubIssues`
+  - `from erk_shared.fakes.time import FakeTime`
+- **Should be:** `from tests.fakes.gateway...`
+
+### **8. docs/learned/architecture/erk-architecture.md**
+
+**Line 241** - Code example:
+- **Current:** `from erk_shared.fakes.time import FakeTime`
+- **Should be:** `from tests.fakes.gateway.time import FakeTime`
+
+**Line 536** - Code example:
+- **Current:** `from erk_shared.fakes.git import FakeGit`
+- **Should be:** `from tests.fakes.gateway.git import FakeGit`
+
+### **9. docs/learned/architecture/github-api-retry-mechanism.md**
+
+**Line 127** - Code example:
+- **Current:** `from erk_shared.fakes.time import FakeTime`
+- **Should be:** `from tests.fakes.gateway.time import FakeTime`
+
+### **10. docs/learned/erk-dev/testing.md**
+
+**Lines 28-29** - Code examples:
+- **Current:**
+  - `from erk_shared.fakes.git import FakeGit`
+  - `from erk_shared.fakes.github import FakeGitHub`
+- **Should be:** `from tests.fakes.gateway...`
+
+### **11. docs/learned/tui/architecture.md**
+
+**Line 128** - Reference text:
+- **Current:** `` `FakePlanDataProvider` lives in `erk_shared.fakes.plan_data_provider` ``
+- **Should be:** `` `FakePlanDataProvider` lives in `tests.fakes.gateway.plan_data_provider` ``
+
+**Line 199** - Code example:
+- **Current:** `from erk_shared.fakes.plan_data_provider import make_plan_row`
+- **Should be:** `from tests.fakes.gateway.plan_data_provider import make_plan_row`
+
+### **12. .claude/skills/fake-driven-testing/references/quick-reference.md**
+
+**Line 330** - Code example:
+- **Current:** `from erk_shared.fakes.git import FakeGit`
+- **Should be:** `from tests.fakes.gateway.git import FakeGit`
+
+### **13. tests/AGENTS.md**
+
+**Line 52** - Reference text:
+- **Current:** Reference to importing `from tests.fakes.git import FakeGit`
+- **Should be:** Update to reflect that tests now has `__init__.py` and new location is `tests.fakes.gateway.git`
+
+---
+
+All these files contain import statements and references pointing to `erk_shared.fakes.*` which need to be updated to the new location structure under `tests.fakes.gateway` or `tests.fakes.tests` as appropriate.</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="2931" cache_read_input_tokens="67628" cache_creation="{'ephemeral_5m_input_tokens': 2931, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>
