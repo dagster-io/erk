@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Learn: Consolidate workflow dispatch inputs: rename plan_number to pr_number and --plan to --pr"
+}
