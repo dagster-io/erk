@@ -15,6 +15,30 @@
       "raw_size_kb": 338,
       "xml_size_kb": 49,
       "git_branch": "master"
+    },
+    {
+      "session_id": "",
+      "stage": "impl",
+      "source": "local",
+      "uploaded_at": "2026-03-10T08:42:36.837006+00:00",
+      "files": [
+        "impl--ab6b6fa7-e70a-4943-a3a3-44894e8055f1-part1.xml",
+        "impl--ab6b6fa7-e70a-4943-a3a3-44894e8055f1-part10.xml",
+        "impl--ab6b6fa7-e70a-4943-a3a3-44894e8055f1-part11.xml",
+        "impl--ab6b6fa7-e70a-4943-a3a3-44894e8055f1-part2.xml",
+        "impl--ab6b6fa7-e70a-4943-a3a3-44894e8055f1-part3.xml",
+        "impl--ab6b6fa7-e70a-4943-a3a3-44894e8055f1-part4.xml",
+        "impl--ab6b6fa7-e70a-4943-a3a3-44894e8055f1-part5.xml",
+        "impl--ab6b6fa7-e70a-4943-a3a3-44894e8055f1-part6.xml",
+        "impl--ab6b6fa7-e70a-4943-a3a3-44894e8055f1-part7.xml",
+        "impl--ab6b6fa7-e70a-4943-a3a3-44894e8055f1-part8.xml",
+        "impl--ab6b6fa7-e70a-4943-a3a3-44894e8055f1-part9.xml"
+      ],
+      "user_turns": 3,
+      "duration_minutes": 8,
+      "raw_size_kb": 2157,
+      "xml_size_kb": 160,
+      "git_branch": "plnd/br-co-default-worktree-03-10-0430"
     }
   ]
 }
