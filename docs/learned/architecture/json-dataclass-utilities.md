@@ -32,11 +32,7 @@ Shared utilities for converting between JSON and frozen dataclasses, consolidate
 
 ## Usage Pattern
 
-Import from `erk_shared.agentclick`, not from individual packages:
-
-```python
-from erk_shared.agentclick.dataclass_json import python_type_to_json_schema
-```
+Import from `erk_shared.agentclick.dataclass_json`, not from individual packages (see Location above for full path).
 
 ## Rationale
 
