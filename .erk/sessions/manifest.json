@@ -43,6 +43,23 @@
       "raw_size_kb": 2519,
       "xml_size_kb": 1273,
       "git_branch": "plnd/O9109-sweep-exec-leaf-cmd-03-10-1757"
+    },
+    {
+      "session_id": "496fff1e-aeae-4f2b-8c85-4ea6ed6b532b",
+      "stage": "address",
+      "source": "remote",
+      "uploaded_at": "2026-03-10T20:00:43.516763+00:00",
+      "files": [
+        "address-496fff1e-aeae-4f2b-8c85-4ea6ed6b532b-496fff1e-aeae-4f2b-8c85-4ea6ed6b532b-part1.xml",
+        "address-496fff1e-aeae-4f2b-8c85-4ea6ed6b532b-496fff1e-aeae-4f2b-8c85-4ea6ed6b532b-part2.xml",
+        "address-496fff1e-aeae-4f2b-8c85-4ea6ed6b532b-496fff1e-aeae-4f2b-8c85-4ea6ed6b532b-part3.xml",
+        "address-496fff1e-aeae-4f2b-8c85-4ea6ed6b532b-496fff1e-aeae-4f2b-8c85-4ea6ed6b532b-part4.xml"
+      ],
+      "user_turns": 3,
+      "duration_minutes": 3,
+      "raw_size_kb": 133,
+      "xml_size_kb": 92,
+      "git_branch": "plnd/O9109-sweep-exec-leaf-cmd-03-10-1757"
     }
   ]
 }
