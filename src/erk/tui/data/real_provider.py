@@ -247,16 +247,15 @@ class RealPlanDataProvider(PlanDataProvider):
                 plan_to_run_ids.setdefault(run_plan, []).append(run.run_id)
 
         # 4. Fetch PR linkages and direct PR info in parallel
-        #    - get_prs_linked_to_issues needs plan_numbers (from step 2)
-        #    - get_prs_by_numbers needs direct_pr_numbers (from step 2)
         #    These two calls are independent of each other.
-        direct_pr_numbers = {n for n in run_pr_numbers.values()}
         pr_info_map: dict[int, PullRequestInfo] = {}
 
         def _fetch_plan_linkages() -> dict[int, list[PullRequestInfo]]:
             if not plan_numbers:
                 return {}
             return self._ctx.github.get_prs_linked_to_issues(self._location, plan_numbers)
+
+        direct_pr_numbers = {n for n in run_pr_numbers.values()}
 
         def _fetch_direct_prs() -> dict[int, PullRequestInfo]:
             if not direct_pr_numbers:

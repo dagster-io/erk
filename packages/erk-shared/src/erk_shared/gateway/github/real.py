@@ -565,8 +565,7 @@ class RealLocalGitHub(LocalGitHub):
         runs = []
         for run in data:
             created_at = None
-            created_at_str = run.get("created_at")
-            if created_at_str:
+            if created_at_str := run.get("created_at"):
                 created_at = datetime.fromisoformat(created_at_str.replace("Z", "+00:00"))
 
             workflow_run = WorkflowRun(
