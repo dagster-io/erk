@@ -1,0 +1,33 @@
+{
+  "version": 1,
+  "pr_number": 9152,
+  "sessions": [
+    {
+      "session_id": "a2ac88b6-83b2-4313-9a2f-e79af538b25f",
+      "stage": "impl",
+      "source": "remote",
+      "uploaded_at": "2026-03-10T12:34:10.699748+00:00",
+      "files": [
+        "impl-a2ac88b6-83b2-4313-9a2f-e79af538b25f-a2ac88b6-83b2-4313-9a2f-e79af538b25f-part1.xml",
+        "impl-a2ac88b6-83b2-4313-9a2f-e79af538b25f-a2ac88b6-83b2-4313-9a2f-e79af538b25f-part10.xml",
+        "impl-a2ac88b6-83b2-4313-9a2f-e79af538b25f-a2ac88b6-83b2-4313-9a2f-e79af538b25f-part11.xml",
+        "impl-a2ac88b6-83b2-4313-9a2f-e79af538b25f-a2ac88b6-83b2-4313-9a2f-e79af538b25f-part12.xml",
+        "impl-a2ac88b6-83b2-4313-9a2f-e79af538b25f-a2ac88b6-83b2-4313-9a2f-e79af538b25f-part13.xml",
+        "impl-a2ac88b6-83b2-4313-9a2f-e79af538b25f-a2ac88b6-83b2-4313-9a2f-e79af538b25f-part14.xml",
+        "impl-a2ac88b6-83b2-4313-9a2f-e79af538b25f-a2ac88b6-83b2-4313-9a2f-e79af538b25f-part2.xml",
+        "impl-a2ac88b6-83b2-4313-9a2f-e79af538b25f-a2ac88b6-83b2-4313-9a2f-e79af538b25f-part3.xml",
+        "impl-a2ac88b6-83b2-4313-9a2f-e79af538b25f-a2ac88b6-83b2-4313-9a2f-e79af538b25f-part4.xml",
+        "impl-a2ac88b6-83b2-4313-9a2f-e79af538b25f-a2ac88b6-83b2-4313-9a2f-e79af538b25f-part5.xml",
+        "impl-a2ac88b6-83b2-4313-9a2f-e79af538b25f-a2ac88b6-83b2-4313-9a2f-e79af538b25f-part6.xml",
+        "impl-a2ac88b6-83b2-4313-9a2f-e79af538b25f-a2ac88b6-83b2-4313-9a2f-e79af538b25f-part7.xml",
+        "impl-a2ac88b6-83b2-4313-9a2f-e79af538b25f-a2ac88b6-83b2-4313-9a2f-e79af538b25f-part8.xml",
+        "impl-a2ac88b6-83b2-4313-9a2f-e79af538b25f-a2ac88b6-83b2-4313-9a2f-e79af538b25f-part9.xml"
+      ],
+      "user_turns": 3,
+      "duration_minutes": 11,
+      "raw_size_kb": 1437,
+      "xml_size_kb": 777,
+      "git_branch": "plnd/O9109-rename-tui-plan-to-p-03-10-1220"
+    }
+  ]
+}
