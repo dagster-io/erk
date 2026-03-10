@@ -1,0 +1,388 @@
+<session>
+  <meta source="agent-ad223da" />
+  <meta branch="plnd/O9109-update-help-strings-03-10-0937" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>Update test assertion strings in test files under /home/runner/work/erk/erk/tests/commands/dash/ to match source code changes. The source code in list_cmd.py was changed from "Found N plan(s)" to "Found N PR(s)" and "No plans found" to "No PRs found".
+
+Files to update:
+
+1. /home/runner/work/erk/erk/tests/commands/dash/test_filtering.py:
+   - Line 67: `"Found 2 plan(s)"` → `"Found 2 PR(s)"` (use replace_all)
+   - Line 118: `"Found 1 plan(s)"` → `"Found 1 PR(s)"` (use replace_all)
+   - Line 175: `"Found 1 plan(s)"` → already covered by replace_all
+   - Line 219: `"Found 2 plan(s)"` → already covered by replace_all
+   - Line 306: `"Found 1 plan(s)"` → already covered by replace_all
+   - Line 341: `"No plans found matching the criteria"` → `"No PRs found matching the criteria"` (use replace_all)
+
+2. /home/runner/work/erk/erk/tests/commands/dash/test_workflow_run_state.py:
+   - Line 258: `"No plans found matching the criteria"` → `"No PRs found matching the criteria"` (use replace_all)
+
+Do NOT change test function names, docstrings, or variable names.
+
+Read the files first, make the changes, verify.</user>
+  <assistant>I'll help you update the test assertion strings to match the source code changes. Let me start by reading the files that need to be updated.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="6214" cache_read_input_tokens="10106" cache_creation="{'ephemeral_5m_input_tokens': 6214, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_019ZT8PnLTGapz7jDHSVzia4">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/dash/test_filtering.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6214" cache_read_input_tokens="10106" cache_creation="{'ephemeral_5m_input_tokens': 6214, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01PhJDLbGfqLuihgBFiScGm9">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/dash/test_workflow_run_state.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6214" cache_read_input_tokens="10106" cache_creation="{'ephemeral_5m_input_tokens': 6214, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019ZT8PnLTGapz7jDHSVzia4">
+     1→"""Tests for plan list filtering functionality.
+     2→
+     3→Tests state, labels, limit, and combined filters for plan list command.
+     4→"""
+     5→
+     6→from datetime import UTC, datetime
+     7→
+     8→from click.testing import CliRunner
+     9→
+    10→from erk.cli.cli import cli
+    11→from erk_shared.gateway.github.issues.types import IssueInfo
+    12→from erk_shared.plan_store.types import Plan, PlanState
+    13→from tests.commands.dash.conftest import plan_to_issue
+    14→from tests.fakes.gateway.github import FakeLocalGitHub
+    15→from tests.fakes.gateway.github_issues import FakeGitHubIssues
+    16→from tests.test_utils.context_builders import (
+    17→    build_fake_plan_list_service,
+    18→    build_workspace_test_context,
+    19→)
+    20→from tests.test_utils.env_helpers import erk_inmem_env
+    21→
+    22→
+    23→def test_plan_list_no_filters() -&gt; None:
+    24→    """Test listing all plan issues with no filters (defaults to open plans only)."""
+    25→    # Arrange - Create two OPEN plans (no filter defaults to open state)
+    26→    plan1 = Plan(
+    27→        pr_identifier="1",
+    28→        title="Issue 1",
+    29→        body="",
+    30→        state=PlanState.OPEN,
+
+... [317 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01PhJDLbGfqLuihgBFiScGm9">
+     1→"""Tests for --run-state filtering in plan list command.
+     2→
+     3→Tests filtering plans by workflow run state (queued, in_progress, success).
+     4→"""
+     5→
+     6→from datetime import UTC, datetime
+     7→
+     8→from click.testing import CliRunner
+     9→
+    10→from erk.cli.cli import cli
+    11→from erk_shared.gateway.github.types import WorkflowRun
+    12→from erk_shared.plan_store.types import Plan, PlanState
+    13→from tests.commands.dash.conftest import plan_to_issue
+    14→from tests.fakes.gateway.github import FakeLocalGitHub
+    15→from tests.fakes.gateway.github_issues import FakeGitHubIssues
+    16→from tests.test_utils.context_builders import (
+    17→    build_fake_plan_list_service,
+    18→    build_workspace_test_context,
+    19→)
+    20→from tests.test_utils.env_helpers import erk_inmem_env
+    21→
+    22→
+    23→def test_plan_list_filter_by_run_state_queued() -&gt; None:
+    24→    """Test filtering plans by workflow run state (queued)."""
+    25→    # Arrange - Create plans with workflow run node_ids in plan-header
+    26→    queued_plan_body = """&lt;!-- erk:metadata-block:plan-header --&gt;
+    27→&lt;details&gt;
+    28→&lt;summary&gt;&lt;code&gt;plan-header&lt;/code&gt;&lt;/summary&gt;
+    29→
+    30→```yaml
+
+... [234 lines omitted] ...
+
+   135→    failed_plan_body = """&lt;!-- erk:metadata-block:plan-header --&gt;
+   142→last_dispatched_node_id: 'WFR_failed'
+   161→    failed_plan = Plan(
+   163→        title="Failed Plan",
+   164→        body=failed_plan_body,
+   183→    failed_run = WorkflowRun(
+   186→        conclusion="failure",
+   194→            issues={1020: plan_to_issue(success_plan), 1021: plan_to_issue(failed_plan)},
+   197→            issues_data=[plan_to_issue(success_plan), plan_to_issue(failed_plan)],
+   198→            workflow_runs_by_node_id={"WFR_success": success_run, "WFR_failed": failed_run},
+   201→            [success_plan, failed_plan],
+   202→            workflow_runs={1020: success_run, 1021: failed_run},
+  </tool_result>
+  <assistant>Now I'll make the necessary updates to both test files using `replace_all` to ensure all occurrences are changed consistently.</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="13391" cache_read_input_tokens="16320" cache_creation="{'ephemeral_5m_input_tokens': 13391, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01MrD28pnrYyz1xBo3BoAjYa">
+    <param name="replace_all">True</param>
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/dash/test_filtering.py</param>
+    <param name="old_string">        assert "Found 2 plan(s)" in result.output</param>
+    <param name="new_string">        assert "Found 2 PR(s)" in result.output</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="13391" cache_read_input_tokens="16320" cache_creation="{'ephemeral_5m_input_tokens': 13391, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01Ne2fyx6RR6j6ynwBr3V1vQ">
+    <param name="replace_all">True</param>
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/dash/test_filtering.py</param>
+    <param name="old_string">        assert "Found 1 plan(s)" in result.output</param>
+    <param name="new_string">        assert "Found 1 PR(s)" in result.output</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="13391" cache_read_input_tokens="16320" cache_creation="{'ephemeral_5m_input_tokens': 13391, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01MqZ1EF4pWYT59J5qFGXejN">
+    <param name="replace_all">True</param>
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/dash/test_filtering.py</param>
+    <param name="old_string">        assert "No plans found matching the criteria" in result.output</param>
+    <param name="new_string">        assert "No PRs found matching the criteria" in result.output</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="13391" cache_read_input_tokens="16320" cache_creation="{'ephemeral_5m_input_tokens': 13391, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01AQJVBJ82QkrN23yYLoHdSS">
+    <param name="replace_all">True</param>
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/dash/test_workflow_run_state.py</param>
+    <param name="old_string">        assert "No plans found matching the criteria" in result.output</param>
+    <param name="new_string">        assert "No PRs found matching the criteria" in result.output</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="13391" cache_read_input_tokens="16320" cache_creation="{'ephemeral_5m_input_tokens': 13391, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01MrD28pnrYyz1xBo3BoAjYa">
+The file /home/runner/work/erk/erk/tests/commands/dash/test_filtering.py has been updated. All occurrences of '        assert "Found 2 plan(s)" in result.output' were successfully replaced with '        assert "Found 2 PR(s)" in result.output'.
+  </tool_result>
+  <tool_result tool="toolu_01Ne2fyx6RR6j6ynwBr3V1vQ">
+The file /home/runner/work/erk/erk/tests/commands/dash/test_filtering.py has been updated. All occurrences of '        assert "Found 1 plan(s)" in result.output' were successfully replaced with '        assert "Found 1 PR(s)" in result.output'.
+  </tool_result>
+  <tool_result tool="toolu_01MqZ1EF4pWYT59J5qFGXejN">
+The file /home/runner/work/erk/erk/tests/commands/dash/test_filtering.py has been updated. All occurrences of '        assert "No plans found matching the criteria" in result.output' were successfully replaced with '        assert "No PRs found matching the criteria" in result.output'.
+  </tool_result>
+  <tool_result tool="toolu_01AQJVBJ82QkrN23yYLoHdSS">
+The file /home/runner/work/erk/erk/tests/commands/dash/test_workflow_run_state.py has been updated. All occurrences of '        assert "No plans found matching the criteria" in result.output' were successfully replaced with '        assert "No PRs found matching the criteria" in result.output'.
+  </tool_result>
+  <assistant>Perfect! Now let me verify the changes by reading the modified files to confirm all updates were applied correctly:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="1125" cache_read_input_tokens="29711" cache_creation="{'ephemeral_5m_input_tokens': 1125, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01J3pkp1vBNmG5C2ohMNDSEW">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/dash/test_filtering.py</param>
+    <param name="offset">60</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1125" cache_read_input_tokens="29711" cache_creation="{'ephemeral_5m_input_tokens': 1125, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01BZNK1LefEboa42uaPKP5DC">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/dash/test_filtering.py</param>
+    <param name="offset">110</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1125" cache_read_input_tokens="29711" cache_creation="{'ephemeral_5m_input_tokens': 1125, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_016x6ddmnzXASZ3wWfMJ7KsH">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/dash/test_filtering.py</param>
+    <param name="offset">168</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1125" cache_read_input_tokens="29711" cache_creation="{'ephemeral_5m_input_tokens': 1125, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_012SpVS9p2NTMmoroDzvb4j3">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/dash/test_filtering.py</param>
+    <param name="offset">212</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1125" cache_read_input_tokens="29711" cache_creation="{'ephemeral_5m_input_tokens': 1125, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01RKgW6JvGcQQjdk1LGuGzBM">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/dash/test_filtering.py</param>
+    <param name="offset">299</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1125" cache_read_input_tokens="29711" cache_creation="{'ephemeral_5m_input_tokens': 1125, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01A32xf6zxUeYWTNvhbMPfBe">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/dash/test_filtering.py</param>
+    <param name="offset">335</param>
+    <param name="limit">10</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1125" cache_read_input_tokens="29711" cache_creation="{'ephemeral_5m_input_tokens': 1125, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01FZtx3SkNk7rkJxtJQiqrFb">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/dash/test_workflow_run_state.py</param>
+    <param name="offset">250</param>
+    <param name="limit">10</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1125" cache_read_input_tokens="29711" cache_creation="{'ephemeral_5m_input_tokens': 1125, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01J3pkp1vBNmG5C2ohMNDSEW">
+    60→        )
+    61→
+    62→        # Act - Use erk plan list for static output
+    63→        result = runner.invoke(cli, ["pr", "list"], obj=ctx)
+    64→
+    65→        # Assert
+    66→        assert result.exit_code == 0
+    67→        assert "Found 2 PR(s)" in result.output
+    68→        assert "#1" in result.output
+    69→        assert "#2" in result.output
+    70→
+    71→
+    72→def test_plan_list_filter_by_state() -&gt; None:
+    73→    """Test filtering plan issues by state."""
+    74→    # Arrange
+    75→    open_plan = Plan(
+    76→        pr_identifier="1",
+    77→        title="Open Issue",
+    78→        body="",
+    79→        state=PlanState.OPEN,
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_01BZNK1LefEboa42uaPKP5DC">
+   110→            env, issues=issues, github=github, plan_list_service=plan_service
+   111→        )
+   112→
+   113→        # Act - Filter for open issues
+   114→        result = runner.invoke(cli, ["pr", "list", "--state", "open"], obj=ctx)
+   115→
+   116→        # Assert
+   117→        assert result.exit_code == 0
+   118→        assert "Found 1 PR(s)" in result.output
+   119→        assert "#1" in result.output
+   120→        assert "#2" not in result.output
+   121→
+   122→
+   123→def test_plan_list_filter_by_labels() -&gt; None:
+   124→    """Test filtering plan issues by labels with AND logic."""
+   125→    # Arrange
+   126→    plan_with_both = Plan(
+   127→        pr_identifier="1",
+   128→        title="Issue with both labels",
+   129→        body="",
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_016x6ddmnzXASZ3wWfMJ7KsH">
+   168→            cli,
+   169→            ["pr", "list", "--label", "erk-plan", "--label", "erk-queue"],
+   170→            obj=ctx,
+   171→        )
+   172→
+   173→        # Assert
+   174→        assert result.exit_code == 0
+   175→        assert "Found 1 PR(s)" in result.output
+   176→        assert "#1" in result.output
+   177→        assert "#2" not in result.output
+   178→
+   179→
+   180→def test_plan_list_with_limit() -&gt; None:
+   181→    """Test limiting the number of returned plan issues."""
+   182→    # Arrange
+   183→    plans_dict: dict[int, IssueInfo] = {}
+   184→    issues_list: list[IssueInfo] = []
+   185→    all_plans: list[Plan] = []
+   186→    for i in range(1, 6):
+   187→        plan = Plan(
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_012SpVS9p2NTMmoroDzvb4j3">
+   212→        )
+   213→
+   214→        # Act
+   215→        result = runner.invoke(cli, ["pr", "list", "--limit", "2"], obj=ctx)
+   216→
+   217→        # Assert
+   218→        assert result.exit_code == 0
+   219→        assert "Found 2 PR(s)" in result.output
+   220→
+   221→
+   222→def test_plan_list_combined_filters() -&gt; None:
+   223→    """Test combining multiple filters."""
+   224→    # Arrange
+   225→    matching_plan = Plan(
+   226→        pr_identifier="1",
+   227→        title="Matching Issue",
+   228→        body="",
+   229→        state=PlanState.OPEN,
+   230→        url="https://github.com/owner/repo/issues/1",
+   231→        labels=["erk-pr", "erk-plan", "bug"],
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_01RKgW6JvGcQQjdk1LGuGzBM">
+   299→                "bug",
+   300→            ],
+   301→            obj=ctx,
+   302→        )
+   303→
+   304→        # Assert
+   305→        assert result.exit_code == 0
+   306→        assert "Found 1 PR(s)" in result.output
+   307→        assert "#1" in result.output
+   308→
+   309→
+   310→def test_plan_list_empty_results() -&gt; None:
+   311→    """Test querying with filters that match no issues."""
+   312→    # Arrange
+   313→    plan = Plan(
+   314→        pr_identifier="1",
+   315→        title="Issue",
+   316→        body="",
+   317→        state=PlanState.OPEN,
+   318→        url="https://github.com/owner/repo/issues/1",
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_01A32xf6zxUeYWTNvhbMPfBe">
+   335→
+   336→        # Act
+   337→        result = runner.invoke(cli, ["pr", "list", "--state", "closed"], obj=ctx)
+   338→
+   339→        # Assert
+   340→        assert result.exit_code == 0
+   341→        assert "No PRs found matching the criteria" in result.output
+   342→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_01FZtx3SkNk7rkJxtJQiqrFb">
+   250→            env, issues=issues, github=github, plan_list_service=plan_service
+   251→        )
+   252→
+   253→        # Act - Filter for "in_progress" which won't match (run is completed/success)
+   254→        result = runner.invoke(cli, ["pr", "list", "--run-state", "in_progress"], obj=ctx)
+   255→
+   256→        # Assert
+   257→        assert result.exit_code == 0
+   258→        assert "No PRs found matching the criteria" in result.output
+   259→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>Excellent! All the changes have been successfully applied. Let me create a summary of what was updated:
+
+## Summary
+
+I have successfully updated all test assertion strings in the two test files to match the source code changes from "plan(s)" to "PR(s)":
+
+### File 1: `/home/runner/work/erk/erk/tests/commands/dash/test_filtering.py`
+Updated 5 assertions using `replace_all`:
+- Line 67: `"Found 2 plan(s)"` → `"Found 2 PR(s)"` 
+- Line 118: `"Found 1 plan(s)"` → `"Found 1 PR(s)"`
+- Line 175: `"Found 1 plan(s)"` → `"Found 1 PR(s)"` (covered by replace_all)
+- Line 219: `"Found 2 plan(s)"` → `"Found 2 PR(s)"` (covered by replace_all)
+- Line 306: `"Found 1 plan(s)"` → `"Found 1 PR(s)"` (covered by replace_all)
+- Line 341: `"No plans found matching the criteria"` → `"No PRs found matching the criteria"`
+
+### File 2: `/home/runner/work/erk/erk/tests/commands/dash/test_workflow_run_state.py`
+Updated 1 assertion:
+- Line 258: `"No plans found matching the criteria"` → `"No PRs found matching the criteria"`
+
+All updates were made using `replace_all` to ensure consistency. Test function names, docstrings, and variable names were preserved as requested.</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="2904" cache_read_input_tokens="30836" cache_creation="{'ephemeral_5m_input_tokens': 2904, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+</session>

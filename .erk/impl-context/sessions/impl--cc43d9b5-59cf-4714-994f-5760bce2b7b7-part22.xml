@@ -1,0 +1,393 @@
+<session>
+  <meta source="agent-a4babc5" />
+  <meta branch="plnd/O9109-update-help-strings-03-10-0937" />
+  <meta model="claude-sonnet-4-5-20250929" />
+  <user>Fix test assertion strings in /home/runner/work/erk/erk/tests/commands/pr/test_remote_paths.py.
+
+Read the file first, then make these exact replacements using the Edit tool:
+
+1. `"Found 2 plan(s)"` → `"Found 2 PR(s)"` (use replace_all=true)
+2. `"No plans found"` → `"No PRs found"` (use replace_all=true)
+3. `"Closed plan #42"` → `"Closed PR #42"` (use replace_all=true)
+4. `"Plan #999 not found"` → `"PR #999 not found"` (use replace_all=true)
+5. `"Plan #999 not found"` in the check section → `"PR #999 not found"` (use replace_all=true)
+6. `"1 plan(s) dispatched successfully"` → `"1 PR(s) dispatched successfully"` (use replace_all=true)
+7. `"2 plan(s) dispatched successfully"` → `"2 PR(s) dispatched successfully"` (use replace_all=true)
+8. `"Plan number(s) required in remote mode"` → `"PR number(s) required in remote mode"` (use replace_all=true)
+9. `"Plan #999 not found"` → `"PR #999 not found"` (use replace_all=true)
+
+Be careful NOT to change test docstrings, variable names, or non-assertion strings.</user>
+  <assistant>I'll read the file first to understand its structure, then make the exact replacements requested.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="6205" cache_read_input_tokens="10117" cache_creation="{'ephemeral_5m_input_tokens': 6205, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_016vzT9kHS1381ANUQh48Sk1">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_remote_paths.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6205" cache_read_input_tokens="10117" cache_creation="{'ephemeral_5m_input_tokens': 6205, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016vzT9kHS1381ANUQh48Sk1">
+     1→"""Tests for PR command remote paths (--repo flag / NoRepoSentinel)."""
+     2→
+     3→from datetime import UTC, datetime
+     4→
+     5→from click.testing import CliRunner
+     6→
+     7→from erk.cli.cli import cli
+     8→from erk_shared.context.types import NoRepoSentinel
+     9→from erk_shared.core.plan_list_service import PlanListData
+    10→from erk_shared.gateway.github.issues.types import IssueInfo, PRReference
+    11→from erk_shared.gateway.github.metadata.core import MetadataBlock, render_metadata_block
+    12→from erk_shared.plan_store.planned_pr_lifecycle import build_plan_stage_body
+    13→from erk_shared.plan_store.types import Plan, PlanState
+    14→from tests.fakes.gateway.console import FakeConsole
+    15→from tests.fakes.gateway.core import FakePlanListService
+    16→from tests.fakes.gateway.remote_github import FakeRemoteGitHub
+    17→from tests.fakes.tests.prompt_executor import FakePromptExecutor
+    18→from tests.test_utils.test_context import context_for_test
+    19→
+    20→
+    21→def _make_fake_remote(
+    22→    *,
+    23→    issues: dict[int, IssueInfo] | None = None,
+    24→    issue_comments: dict[int, list[str]] | None = None,
+    25→    pr_references: dict[int, list[PRReference]] | None = None,
+    26→) -&gt; FakeRemoteGitHub:
+    27→    """Create a FakeRemoteGitHub with sensible defaults."""
+    28→    return FakeRemoteGitHub(
+    29→        authenticated_user="test-user",
+    30→        default_branch_name="main",
+
+... [627 lines omitted] ...
+
+   123→    """Test pr view --repo without identifier gives error."""
+   253→    """Test pr check --repo without identifier gives error."""
+   280→    """Test --repo with invalid format gives helpful error."""
+   497→    assert result.exit_code == 0, f"Unexpected failure:\n{result.output}"
+   565→    """Test pr dispatch --repo without plan number gives error."""
+   594→    assert result.exit_code == 0, f"Unexpected failure:\n{result.output}"
+   612→    assert result.exit_code == 0, f"Unexpected failure:\n{result.output}"
+   631→    assert result.exit_code == 0, f"Unexpected failure:\n{result.output}"
+   649→    assert result.exit_code == 0, f"Unexpected failure:\n{result.output}"
+  </tool_result>
+  <assistant>Now I'll make the exact replacements requested using the Edit tool. I'll use `replace_all=true` for each replacement to ensure all instances are updated:</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="13662" cache_read_input_tokens="16322" cache_creation="{'ephemeral_5m_input_tokens': 13662, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01SuJZtL5wcojZV3Kf66BDHw">
+    <param name="replace_all">True</param>
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_remote_paths.py</param>
+    <param name="old_string">Found 2 plan(s)</param>
+    <param name="new_string">Found 2 PR(s)</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="13662" cache_read_input_tokens="16322" cache_creation="{'ephemeral_5m_input_tokens': 13662, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01QT696b89VYgPpEHjdWz1be">
+    <param name="replace_all">True</param>
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_remote_paths.py</param>
+    <param name="old_string">No plans found</param>
+    <param name="new_string">No PRs found</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="13662" cache_read_input_tokens="16322" cache_creation="{'ephemeral_5m_input_tokens': 13662, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01K49R5DYjWgLN62WDAiYRny">
+    <param name="replace_all">True</param>
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_remote_paths.py</param>
+    <param name="old_string">Closed plan #42</param>
+    <param name="new_string">Closed PR #42</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="13662" cache_read_input_tokens="16322" cache_creation="{'ephemeral_5m_input_tokens': 13662, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01S6PrtScFopEo6i7cdFyCG7">
+    <param name="replace_all">True</param>
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_remote_paths.py</param>
+    <param name="old_string">Plan #999 not found</param>
+    <param name="new_string">PR #999 not found</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="13662" cache_read_input_tokens="16322" cache_creation="{'ephemeral_5m_input_tokens': 13662, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01EwJp2CC6XPTVZqDkvn5iP9">
+    <param name="replace_all">True</param>
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_remote_paths.py</param>
+    <param name="old_string">1 plan(s) dispatched successfully</param>
+    <param name="new_string">1 PR(s) dispatched successfully</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="13662" cache_read_input_tokens="16322" cache_creation="{'ephemeral_5m_input_tokens': 13662, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_017Mjt6dTdJyqADJmVzVQ8zQ">
+    <param name="replace_all">True</param>
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_remote_paths.py</param>
+    <param name="old_string">2 plan(s) dispatched successfully</param>
+    <param name="new_string">2 PR(s) dispatched successfully</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="13662" cache_read_input_tokens="16322" cache_creation="{'ephemeral_5m_input_tokens': 13662, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01SGW5AgCACuV5yHXtHahuHR">
+    <param name="replace_all">True</param>
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_remote_paths.py</param>
+    <param name="old_string">Plan number(s) required in remote mode</param>
+    <param name="new_string">PR number(s) required in remote mode</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="13662" cache_read_input_tokens="16322" cache_creation="{'ephemeral_5m_input_tokens': 13662, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01SuJZtL5wcojZV3Kf66BDHw">
+The file /home/runner/work/erk/erk/tests/commands/pr/test_remote_paths.py has been updated. All occurrences of 'Found 2 plan(s)' were successfully replaced with 'Found 2 PR(s)'.
+  </tool_result>
+  <tool_result tool="toolu_01QT696b89VYgPpEHjdWz1be">
+The file /home/runner/work/erk/erk/tests/commands/pr/test_remote_paths.py has been updated. All occurrences of 'No plans found' were successfully replaced with 'No PRs found'.
+  </tool_result>
+  <tool_result tool="toolu_01K49R5DYjWgLN62WDAiYRny">
+The file /home/runner/work/erk/erk/tests/commands/pr/test_remote_paths.py has been updated. All occurrences of 'Closed plan #42' were successfully replaced with 'Closed PR #42'.
+  </tool_result>
+  <tool_result tool="toolu_01S6PrtScFopEo6i7cdFyCG7">
+The file /home/runner/work/erk/erk/tests/commands/pr/test_remote_paths.py has been updated. All occurrences of 'Plan #999 not found' were successfully replaced with 'PR #999 not found'.
+  </tool_result>
+  <tool_result tool="toolu_01EwJp2CC6XPTVZqDkvn5iP9">
+The file /home/runner/work/erk/erk/tests/commands/pr/test_remote_paths.py has been updated. All occurrences of '1 plan(s) dispatched successfully' were successfully replaced with '1 PR(s) dispatched successfully'.
+  </tool_result>
+  <tool_result tool="toolu_017Mjt6dTdJyqADJmVzVQ8zQ">
+The file /home/runner/work/erk/erk/tests/commands/pr/test_remote_paths.py has been updated. All occurrences of '2 plan(s) dispatched successfully' were successfully replaced with '2 PR(s) dispatched successfully'.
+  </tool_result>
+  <tool_result tool="toolu_01SGW5AgCACuV5yHXtHahuHR">
+The file /home/runner/work/erk/erk/tests/commands/pr/test_remote_paths.py has been updated. All occurrences of 'Plan number(s) required in remote mode' were successfully replaced with 'PR number(s) required in remote mode'.
+  </tool_result>
+  <assistant>Perfect! All the replacements have been successfully made. Let me verify the changes by reading the file one more time to confirm all the updates:</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="1660" cache_read_input_tokens="29984" cache_creation="{'ephemeral_5m_input_tokens': 1660, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01TN7Nz96M4KxdkNVmHDyjhv">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_remote_paths.py</param>
+    <param name="offset">110</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="1660" cache_read_input_tokens="29984" cache_creation="{'ephemeral_5m_input_tokens': 1660, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01TN7Nz96M4KxdkNVmHDyjhv">
+   110→def test_view_remote_not_found() -&gt; None:
+   111→    """Test pr view --repo with non-existent plan."""
+   112→    fake_remote = _make_fake_remote(issues={})
+   113→    ctx = _build_remote_context(fake_remote)
+   114→
+   115→    runner = CliRunner()
+   116→    result = runner.invoke(cli, ["pr", "view", "999", "--repo", "owner/repo"], obj=ctx)
+   117→
+   118→    assert result.exit_code == 1
+   119→    assert "PR #999 not found" in result.output
+   120→
+   121→
+   122→def test_view_remote_requires_identifier() -&gt; None:
+   123→    """Test pr view --repo without identifier gives error."""
+   124→    fake_remote = _make_fake_remote()
+   125→    ctx = _build_remote_context(fake_remote)
+   126→
+   127→    runner = CliRunner()
+   128→    result = runner.invoke(cli, ["pr", "view", "--repo", "owner/repo"], obj=ctx)
+   129→
+   130→    assert result.exit_code == 1
+   131→    assert "identifier is required in remote mode" in result.output
+   132→
+   133→
+   134→# --- pr close --repo ---
+   135→
+   136→
+   137→def test_close_remote_closes_plan() -&gt; None:
+   138→    """Test pr close with --repo flag closes the plan."""
+   139→    issue = _make_issue(42)
+
+... [25 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01GWRRXp4azpVFHCVYpEYBEB">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_remote_paths.py</param>
+    <param name="offset">165</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="952" cache_read_input_tokens="31644" cache_creation="{'ephemeral_5m_input_tokens': 952, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01GWRRXp4azpVFHCVYpEYBEB">
+   165→
+   166→    assert result.exit_code == 0
+   167→    assert "Closed PR #42" in result.output
+   168→    assert "Closed 1 linked PR(s): #100" in result.output
+   169→    # Only OPEN PR should be closed
+   170→    assert len(fake_remote.closed_prs) == 1
+   171→    assert fake_remote.closed_prs[0].number == 100
+   172→
+   173→
+   174→def test_close_remote_not_found() -&gt; None:
+   175→    """Test pr close --repo with non-existent plan."""
+   176→    fake_remote = _make_fake_remote(issues={})
+   177→    ctx = _build_remote_context(fake_remote)
+   178→
+   179→    runner = CliRunner()
+   180→    result = runner.invoke(cli, ["pr", "close", "999", "--repo", "owner/repo"], obj=ctx)
+   181→
+   182→    assert result.exit_code == 1
+   183→    assert "PR #999 not found" in result.output
+   184→
+   185→
+   186→# --- pr log --repo ---
+   187→
+   188→
+   189→def test_log_remote_displays_events() -&gt; None:
+   190→    """Test pr log with --repo flag parses events from comments."""
+   191→    issue = _make_issue(42)
+   192→    # Comment with an erk-plan metadata block
+   193→    comment_body = """&lt;!-- erk:metadata-block:erk-plan --&gt;
+   194→&lt;details&gt;
+
+... [25 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01PKA4oSuJeh23xDfWU48bTB">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_remote_paths.py</param>
+    <param name="offset">260</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="4" cache_creation_input_tokens="934" cache_read_input_tokens="32596" cache_creation="{'ephemeral_5m_input_tokens': 934, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01PKA4oSuJeh23xDfWU48bTB">
+   260→    assert result.exit_code == 1
+   261→    assert "local git repository" in result.output
+   262→
+   263→
+   264→def test_check_remote_plan_not_found() -&gt; None:
+   265→    """Test pr check --repo with non-existent plan."""
+   266→    fake_remote = _make_fake_remote(issues={})
+   267→    ctx = _build_remote_context(fake_remote)
+   268→
+   269→    runner = CliRunner()
+   270→    result = runner.invoke(cli, ["pr", "check", "999", "--repo", "owner/repo"], obj=ctx)
+   271→
+   272→    assert result.exit_code == 1
+   273→    assert "PR #999 not found" in result.output
+   274→
+   275→
+   276→# --- repo_resolution edge cases ---
+   277→
+   278→
+   279→def test_invalid_repo_format() -&gt; None:
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_use name="Read" id="toolu_017fy1WBpR7oeWbpSd3zjzfB">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_remote_paths.py</param>
+    <param name="offset">405</param>
+    <param name="limit">40</param>
+  </tool_use>
+  <usage input_tokens="4" cache_creation_input_tokens="444" cache_read_input_tokens="33530" cache_creation="{'ephemeral_5m_input_tokens': 444, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017fy1WBpR7oeWbpSd3zjzfB">
+   405→
+   406→    runner = CliRunner()
+   407→    result = runner.invoke(
+   408→        cli,
+   409→        ["pr", "list", "--repo", "owner/repo"],
+   410→        obj=ctx,
+   411→    )
+   412→
+   413→    assert result.exit_code == 0
+   414→    assert "Found 2 PR(s)" in result.output
+   415→    assert "#1" in result.output
+   416→    assert "#2" in result.output
+   417→
+   418→
+   419→def test_list_remote_empty() -&gt; None:
+   420→    """Test pr list --repo with no plans."""
+   421→    fake_remote = _make_fake_remote()
+   422→
+   423→    ctx = context_for_test(
+   424→        repo=NoRepoSentinel(),
+   425→        remote_github=fake_remote,
+   426→        plan_list_service=_make_plan_list_service([]),
+   427→    )
+   428→
+   429→    runner = CliRunner()
+   430→    result = runner.invoke(
+   431→        cli,
+   432→        ["pr", "list", "--repo", "owner/repo"],
+   433→        obj=ctx,
+   434→    )
+
+... [15 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01YGbmJ1MNA34uw7rFyMzdUx">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_remote_paths.py</param>
+    <param name="offset">490</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="4" cache_creation_input_tokens="629" cache_read_input_tokens="33974" cache_creation="{'ephemeral_5m_input_tokens': 629, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01YGbmJ1MNA34uw7rFyMzdUx">
+   490→    runner = CliRunner()
+   491→    result = runner.invoke(
+   492→        cli,
+   493→        ["pr", "dispatch", "42", "--repo", "owner/repo"],
+   494→        obj=ctx,
+   495→    )
+   496→
+   497→    assert result.exit_code == 0, f"Unexpected failure:\n{result.output}"
+   498→    assert "Workflow dispatched" in result.output
+   499→    assert "1 PR(s) dispatched successfully" in result.output
+   500→
+   501→    # Verify workflow was dispatched
+   502→    assert len(fake_remote.dispatched_workflows) == 1
+   503→    dispatched = fake_remote.dispatched_workflows[0]
+   504→    assert dispatched.inputs["plan_id"] == "42"
+   505→    assert dispatched.inputs["plan_backend"] == "planned_pr"
+   506→    assert dispatched.inputs["branch_name"] == "plnd/remote-test"
+   507→
+   508→    # Verify impl-context files were committed to the branch
+   509→    assert len(fake_remote.created_file_commits) &gt;= 1
+   510→    committed_paths = [c.path for c in fake_remote.created_file_commits]
+   511→    assert any(".erk/impl-context/plan.md" in p for p in committed_paths)
+   512→
+   513→
+   514→def test_dispatch_remote_plan_not_found() -&gt; None:
+   515→    """Test pr dispatch --repo with non-existent plan."""
+   516→    fake_remote = _make_fake_remote(issues={})
+   517→    ctx = _build_remote_context(fake_remote)
+   518→
+   519→    runner = CliRunner()
+
+... [25 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01PSjCPBC9jg3iP9E4R2ccP5">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_remote_paths.py</param>
+    <param name="offset">565</param>
+    <param name="limit">35</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1006" cache_read_input_tokens="34603" cache_creation="{'ephemeral_5m_input_tokens': 1006, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01PSjCPBC9jg3iP9E4R2ccP5">
+   565→    """Test pr dispatch --repo without plan number gives error."""
+   566→    fake_remote = _make_fake_remote()
+   567→    ctx = _build_remote_context(fake_remote)
+   568→
+   569→    runner = CliRunner()
+   570→    result = runner.invoke(
+   571→        cli,
+   572→        ["pr", "dispatch", "--repo", "owner/repo"],
+   573→        obj=ctx,
+   574→    )
+   575→
+   576→    assert result.exit_code != 0
+   577→    assert "PR number(s) required in remote mode" in result.output
+   578→
+   579→
+   580→def test_dispatch_remote_multiple_plans() -&gt; None:
+   581→    """Test pr dispatch --repo dispatches multiple plans."""
+   582→    issue_1 = _make_plan_issue(10, title="Plan A", branch_name="plnd/plan-a")
+   583→    issue_2 = _make_plan_issue(20, title="Plan B", branch_name="plnd/plan-b")
+   584→    fake_remote = _make_fake_remote(issues={10: issue_1, 20: issue_2})
+   585→    ctx = _build_remote_context(fake_remote)
+   586→
+   587→    runner = CliRunner()
+   588→    result = runner.invoke(
+   589→        cli,
+   590→        ["pr", "dispatch", "10", "20", "--repo", "owner/repo"],
+   591→        obj=ctx,
+   592→    )
+   593→
+   594→    assert result.exit_code == 0, f"Unexpected failure:\n{result.output}"
+
+... [10 lines omitted] ...
+  </tool_result>
+  <assistant>Perfect! All the requested replacements have been successfully completed. Let me provide a summary:
+
+## Summary
+
+I've successfully updated all test assertion strings in `/home/runner/work/erk/erk/tests/commands/pr/test_remote_paths.py` to change "plan" terminology to "PR" terminology. The following replacements were made:
+
+1. ✅ `"Found 2 plan(s)"` → `"Found 2 PR(s)"` (line 414)
+2. ✅ `"No plans found"` → `"No PRs found"` (line 437)
+3. ✅ `"Closed plan #42"` → `"Closed PR #42"` (lines 147, 167)
+4. ✅ `"Plan #999 not found"` → `"PR #999 not found"` (lines 119, 183, 273, 527)
+5. ✅ `"1 plan(s) dispatched successfully"` → `"1 PR(s) dispatched successfully"` (line 499)
+6. ✅ `"2 plan(s) dispatched successfully"` → `"2 PR(s) dispatched successfully"` (line 595)
+7. ✅ `"Plan number(s) required in remote mode"` → `"PR number(s) required in remote mode"` (line 577)
+
+All changes were made using `replace_all=true` to ensure consistency throughout the file. Test docstrings, variable names, and non-assertion strings (like comments mentioning "plan-header metadata") were preserved as requested.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="695" cache_read_input_tokens="35609" cache_creation="{'ephemeral_5m_input_tokens': 695, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>

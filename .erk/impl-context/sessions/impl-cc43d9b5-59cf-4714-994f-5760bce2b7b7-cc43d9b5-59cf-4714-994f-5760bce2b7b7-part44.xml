@@ -1,0 +1,1314 @@
+<session>
+  <meta source="agent-ad7112b" />
+  <meta branch="plnd/O9109-update-help-strings-03-10-0937" />
+  <meta model="claude-sonnet-4-5-20250929" />
+  <user>Update help strings in exec script CLI files. Change "plan" references to "PR" where "plan" refers to an erk-plan (NOT when it refers to Claude plan mode, erk-plan label, plan.md filename, plan-header metadata block, workflow names, branch prefixes, variable/function/class names, lifecycle stage "planning", or the verb "plan"/"planning").
+
+Make these specific edits. Read each file first, then use the Edit tool.
+
+1. `src/erk/cli/commands/exec/scripts/plan_save.py` — around lines 499,504,510,516,537. Look for help= strings that reference "plan" and update to "PR". Be careful: the script is called plan_save but the help strings describing what "plan" is should use "PR".
+
+2. `src/erk/cli/commands/exec/scripts/plan_update.py` — around lines 49,61,65,69. Look for help= strings referencing "plan" and update to "PR".
+
+3. `src/erk/cli/commands/exec/scripts/land_execute.py` — around lines 60,87. Change "Linked plan number" → "Linked PR number", "learn plan" → "learn PR" in help strings.
+
+4. `src/erk/cli/commands/exec/scripts/track_learn_result.py` — around lines 67,78. Change "Plan identifier" → "PR identifier", "Learn plan number" → "Learn PR number" in help strings.
+
+5. `src/erk/cli/commands/exec/scripts/get_plan_info.py:32` — change "plan body content" → "PR body content" in help string.
+
+6. `src/erk/cli/commands/exec/scripts/validate_plan_content.py:88` — change "plan file" → "PR file" in help string.
+
+7. `src/erk/cli/commands/exec/scripts/add_plan_label.py:27` — change "Label to add to the plan" → "Label to add to the PR" in help string.
+
+8. `src/erk/cli/commands/exec/scripts/ci_update_pr_body.py` — around lines 319,322. Change "Plan identifier" → "PR identifier", "Planned-PR plan" → appropriate PR reference.
+
+9. `src/erk/cli/commands/exec/scripts/impl_signal.py:432` — change "plan file deletion" → "PR file deletion" in help string.
+
+10. `src/erk/cli/commands/exec/scripts/incremental_dispatch.py:46` — change "plan markdown file" → "PR markdown file" in help string.
+
+11. `src/erk/cli/commands/exec/scripts/create_pr_from_session.py:45` — change "collapsed plan" → "collapsed PR" in help string.
+
+12. `src/erk/cli/commands/exec/scripts/objective_save_to_issue.py:102` — change "scoped plan lookup" → "scoped PR lookup" in help string.
+
+13. `src/erk/cli/commands/exec/scripts/push_session.py:188` — change "Plan identifier" → "PR identifier" in help string.
+
+14. `src/erk/cli/commands/exec/scripts/post_workflow_started_comment.py:125` — change "Plan identifier" → "PR identifier" in help string.
+
+15. `src/erk/cli/commands/exec/scripts/store_tripwire_candidates.py:48` — change "Plan number" → "PR number" in help string.
+
+16. `src/erk/cli/commands/exec/scripts/setup_impl.py:151` — change "Plan number to set up from" → "PR number to set up from" in help string.
+
+17. `src/erk/cli/commands/exec/scripts/objective_fetch_context.py:157` — change "Plan number" → "PR number" in help string.
+
+18. `src/erk/cli/commands/exec/scripts/fetch_sessions.py:67` — change "Plan identifier" → "PR identifier" in help string.
+
+19. `src/erk/cli/commands/exec/scripts/download_remote_session.py:139` — check for help string referencing plan branch and update.
+
+20. `src/erk/cli/commands/exec/scripts/launch_cmd.py:342` — change "Plan number" → "PR number" in help string if applicable.
+
+Read each file at the specified line (and surrounding context) FIRST, then make the Edit. Only change help= string parameters, not variable names, function names, or other code.</user>
+  <assistant>I'll help you update the help strings in these exec script CLI files. Let me start by reading each file at the specified lines to understand the context, then make the appropriate edits.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="17043" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 17043, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01YJWpFRMPEjCJxa7WC7JbwW">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/plan_save.py</param>
+    <param name="offset">490</param>
+    <param name="limit">60</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="17043" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 17043, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01FxcTboFijcQfZbHSDtCmd3">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/plan_update.py</param>
+    <param name="offset">40</param>
+    <param name="limit">40</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="17043" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 17043, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01KD71E3rD39S6WCE9cDRSGA">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/land_execute.py</param>
+    <param name="offset">50</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="17043" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 17043, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01XZY1EweDertQsVqCsgaKf1">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/track_learn_result.py</param>
+    <param name="offset">60</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="17043" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 17043, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_014Lr8WTvWcw7MAgEJHNhtXk">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/get_plan_info.py</param>
+    <param name="offset">25</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="17043" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 17043, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01YJWpFRMPEjCJxa7WC7JbwW">
+   490→    "output_format",
+   491→    type=click.Choice(["json", "display"]),
+   492→    default="json",
+   493→    help="Output format: json (default) or display (formatted text)",
+   494→)
+   495→@click.option(
+   496→    "--plan-file",
+   497→    type=click.Path(exists=True, path_type=Path),
+   498→    default=None,
+   499→    help="Path to specific plan file (highest priority)",
+   500→)
+   501→@click.option(
+   502→    "--session-id",
+   503→    default=None,
+   504→    help="Session ID for scoped plan lookup",
+   505→)
+   506→@click.option(
+   507→    "--plan-type",
+   508→    type=click.Choice(["standard", "learn"]),
+   509→    default=None,
+   510→    help="Plan type: standard (default) or learn",
+   511→)
+   512→@click.option(
+   513→    "--learned-from-issue",
+   514→    type=int,
+   515→    default=None,
+   516→    help="Parent plan number (for learn plans)",
+   517→)
+   518→@click.option(
+   519→    "--created-from-workflow-run-url",
+
+... [35 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01FxcTboFijcQfZbHSDtCmd3">
+    40→from erk_shared.plan_store.types import PlanNotFound
+    41→from erk_shared.plan_utils import extract_title_from_plan, get_title_tag_from_labels
+    42→
+    43→
+    44→@click.command(name="plan-update")
+    45→@click.option(
+    46→    "--pr-number",
+    47→    type=int,
+    48→    required=True,
+    49→    help="Plan number to update",
+    50→)
+    51→@click.option(
+    52→    "--format",
+    53→    "output_format",
+    54→    type=click.Choice(["json", "display"]),
+    55→    default="json",
+    56→    help="Output format: json (default) or display (formatted text)",
+    57→)
+    58→@click.option(
+    59→    "--plan-path",
+    60→    type=click.Path(exists=True, path_type=Path),
+    61→    help="Direct path to plan file (overrides session lookup)",
+    62→)
+    63→@click.option(
+    64→    "--session-id",
+    65→    help="Session ID to find plan file in scratch storage",
+    66→)
+    67→@click.option(
+    68→    "--summary",
+    69→    help="AI-generated summary to display above the collapsed plan in the PR body",
+
+... [15 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01KD71E3rD39S6WCE9cDRSGA">
+    50→    help="Target child branch for --up navigation",
+    51→)
+    52→@click.option(
+    53→    "--objective-number",
+    54→    type=int,
+    55→    help="Linked objective issue number",
+    56→)
+    57→@click.option(
+    58→    "--plan-number",
+    59→    type=int,
+    60→    help="Linked plan number",
+    61→)
+    62→@click.option(
+    63→    "--use-graphite",
+    64→    is_flag=True,
+    65→    help="Use Graphite for merge",
+    66→)
+    67→@click.option(
+    68→    "--pull/--no-pull",
+    69→    "pull_flag",
+    70→    default=True,
+    71→    help="Pull latest changes after landing (default: --pull)",
+    72→)
+    73→@click.option(
+    74→    "--no-delete",
+    75→    is_flag=True,
+    76→    help="Preserve the local branch and its slot assignment after landing",
+    77→)
+    78→@click.option(
+    79→    "--no-cleanup",
+
+... [25 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01XZY1EweDertQsVqCsgaKf1">
+    60→
+    61→
+    62→@click.command(name="track-learn-result")
+    63→@click.option(
+    64→    "--pr-id",
+    65→    required=True,
+    66→    type=str,
+    67→    help="Plan identifier (e.g., issue number)",
+    68→)
+    69→@click.option(
+    70→    "--status",
+    71→    required=True,
+    72→    type=click.Choice(["completed_no_plan", "completed_with_plan", "pending_review"]),
+    73→    help="Learn workflow result status",
+    74→)
+    75→@click.option(
+    76→    "--learn-plan",
+    77→    type=int,
+    78→    help="Learn plan number (required if status is completed_with_plan)",
+    79→)
+    80→@click.option(
+    81→    "--plan-pr",
+    82→    type=int,
+    83→    help="Learn documentation PR number (required if status is pending_review)",
+    84→)
+    85→@click.pass_context
+    86→def track_learn_result(
+    87→    ctx: click.Context,
+    88→    *,
+    89→    pr_id: str,
+
+... [5 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_014Lr8WTvWcw7MAgEJHNhtXk">
+    25→
+    26→
+    27→@click.command(name="get-plan-info")
+    28→@click.argument("pr_number", type=int)
+    29→@click.option(
+    30→    "--include-body",
+    31→    is_flag=True,
+    32→    help="Include the plan body content in the response",
+    33→)
+    34→@click.pass_context
+    35→def get_plan_info(
+    36→    ctx: click.Context,
+    37→    pr_number: int,
+    38→    *,
+    39→    include_body: bool,
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_use name="Read" id="toolu_01E1nPDkQugZ1snFa4omEwNE">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/validate_plan_content.py</param>
+    <param name="offset">80</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="3905" cache_read_input_tokens="17043" cache_creation="{'ephemeral_5m_input_tokens': 3905, 'ephemeral_1h_input_tokens': 0}" output_tokens="18" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_014aJGPzhgqYxjK99oFYWst8">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/add_plan_label.py</param>
+    <param name="offset">20</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="3905" cache_read_input_tokens="17043" cache_creation="{'ephemeral_5m_input_tokens': 3905, 'ephemeral_1h_input_tokens': 0}" output_tokens="18" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01BZA9QdNgEovpKMyGZEMiUN">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/ci_update_pr_body.py</param>
+    <param name="offset">310</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="3905" cache_read_input_tokens="17043" cache_creation="{'ephemeral_5m_input_tokens': 3905, 'ephemeral_1h_input_tokens': 0}" output_tokens="18" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01MJVViq2252sp5HL1CeAWqu">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/impl_signal.py</param>
+    <param name="offset">425</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="3905" cache_read_input_tokens="17043" cache_creation="{'ephemeral_5m_input_tokens': 3905, 'ephemeral_1h_input_tokens': 0}" output_tokens="18" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Ux175jb4TBGwvMeYSCMRFX">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/incremental_dispatch.py</param>
+    <param name="offset">40</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="3905" cache_read_input_tokens="17043" cache_creation="{'ephemeral_5m_input_tokens': 3905, 'ephemeral_1h_input_tokens': 0}" output_tokens="18" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01E1nPDkQugZ1snFa4omEwNE">
+    80→
+    81→    return True, None, details
+    82→
+    83→
+    84→@click.command(name="validate-plan-content")
+    85→@click.option(
+    86→    "--plan-file",
+    87→    type=click.Path(exists=True, path_type=Path),
+    88→    help="Path to plan file. If not provided, reads from stdin.",
+    89→)
+    90→def validate_plan_content(*, plan_file: Path | None) -&gt; None:
+    91→    """Validate plan content from file or stdin.
+    92→
+    93→    Reads plan content from --plan-file or stdin and validates:
+    94→    - Minimum 100 characters
+    95→    - Contains structural elements (headers OR lists)
+    96→    - Not empty/whitespace only
+    97→
+    98→    Outputs JSON with validation result and details.
+    99→    """
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_014aJGPzhgqYxjK99oFYWst8">
+    20→
+    21→
+    22→@click.command(name="add-plan-label")
+    23→@click.argument("pr_number", type=int)
+    24→@click.option(
+    25→    "--label",
+    26→    required=True,
+    27→    help="Label to add to the plan",
+    28→)
+    29→@click.pass_context
+    30→def add_plan_label(
+    31→    ctx: click.Context,
+    32→    pr_number: int,
+    33→    *,
+    34→    label: str,
+    35→) -&gt; None:
+    36→    """Add a label to a plan via the appropriate backend."""
+    37→    backend = require_plan_backend(ctx)
+    38→    repo_root = require_repo_root(ctx)
+    39→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_01BZA9QdNgEovpKMyGZEMiUN">
+   310→            error="github-api-failed",
+   311→            message=f"Failed to update PR: {e}",
+   312→            stderr=None,
+   313→        )
+   314→
+   315→    return UpdateSuccess(success=True, pr_number=pr_number, title=title)
+   316→
+   317→
+   318→@click.command(name="ci-update-pr-body")
+   319→@click.option("--pr-number", type=int, required=True, help="Plan identifier (for context)")
+   320→@click.option("--run-id", type=str, default=None, help="Optional workflow run ID")
+   321→@click.option("--run-url", type=str, default=None, help="Optional workflow run URL")
+   322→@click.option("--planned-pr", is_flag=True, default=False, help="Planned-PR plan")
+   323→@click.pass_context
+   324→def ci_update_pr_body(
+   325→    ctx: click.Context,
+   326→    pr_number: int,
+   327→    run_id: str | None,
+   328→    run_url: str | None,
+   329→    planned_pr: bool,
+   330→) -&gt; None:
+   331→    """Update PR body with AI-generated summary and footer.
+   332→
+   333→    Generates a summary from the PR diff using Claude, then updates the PR body
+   334→    with the summary, optional workflow link, and standardized footer with
+   335→    checkout instructions.
+   336→    """
+   337→    git = require_git(ctx)
+   338→    github = require_github(ctx)
+   339→    executor = require_prompt_executor(ctx)
+
+... [5 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01MJVViq2252sp5HL1CeAWqu">
+   425→
+   426→
+   427→@click.command(name="impl-signal")
+   428→@click.argument("event", type=click.Choice(["started", "ended", "submitted"]))
+   429→@click.option(
+   430→    "--session-id",
+   431→    default=None,
+   432→    help="Session ID for plan file deletion on 'started' event",
+   433→)
+   434→@click.pass_context
+   435→def impl_signal(ctx: click.Context, event: str, session_id: str | None) -&gt; None:
+   436→    """Signal implementation events to GitHub.
+   437→
+   438→    EVENT can be 'started', 'ended', or 'submitted'.
+   439→
+   440→    'started' posts a start comment and updates plan metadata.
+   441→    'ended' updates plan metadata with ended event.
+   442→    'submitted' sets lifecycle_stage to "impl" after PR submission.
+   443→
+   444→    When --session-id is provided on 'started', also deletes the Claude plan file
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_01Ux175jb4TBGwvMeYSCMRFX">
+    40→
+    41→@click.command(name="incremental-dispatch")
+    42→@click.option(
+    43→    "--plan-file",
+    44→    type=click.Path(exists=True, path_type=Path),
+    45→    required=True,
+    46→    help="Path to plan markdown file",
+    47→)
+    48→@click.option("--pr", "pr_number", type=int, required=True, help="PR number to dispatch against")
+    49→@click.option("--ref", "dispatch_ref", default=None, help="Branch to dispatch workflow from")
+    50→@click.option(
+    51→    "--ref-current",
+    52→    is_flag=True,
+    53→    default=False,
+    54→    help="Dispatch workflow from the current branch",
+    55→)
+    56→@click.option(
+    57→    "--format",
+    58→    "output_format",
+    59→    type=click.Choice(["json", "display"]),
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_use name="Read" id="toolu_01HoM9xBTFuoiuqBYDXt3qPA">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/create_pr_from_session.py</param>
+    <param name="offset">40</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="2529" cache_read_input_tokens="20948" cache_creation="{'ephemeral_5m_input_tokens': 2529, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01PsadzDUN3hBmLcXWDyTJLh">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/objective_save_to_issue.py</param>
+    <param name="offset">95</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="2529" cache_read_input_tokens="20948" cache_creation="{'ephemeral_5m_input_tokens': 2529, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Dn4BDH83ppEs9s8TfADNFG">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/push_session.py</param>
+    <param name="offset">180</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="2529" cache_read_input_tokens="20948" cache_creation="{'ephemeral_5m_input_tokens': 2529, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01KbJdnfdHJujLscxSdGQrLZ">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/post_workflow_started_comment.py</param>
+    <param name="offset">120</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="2529" cache_read_input_tokens="20948" cache_creation="{'ephemeral_5m_input_tokens': 2529, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_011aZaTh4rZ4izDwMMo6hVo6">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/store_tripwire_candidates.py</param>
+    <param name="offset">40</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="2529" cache_read_input_tokens="20948" cache_creation="{'ephemeral_5m_input_tokens': 2529, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01HoM9xBTFuoiuqBYDXt3qPA">
+    40→    "--session-id",
+    41→    help="Session ID to search within (optional, searches all sessions if not provided)",
+    42→)
+    43→@click.option(
+    44→    "--summary",
+    45→    help="AI-generated summary to display above the collapsed plan in the PR body",
+    46→)
+    47→@click.option(
+    48→    "--branch-slug",
+    49→    default=None,
+    50→    help="Pre-generated branch slug (required). Generate in the calling skill layer.",
+    51→)
+    52→@click.pass_context
+    53→def create_pr_from_session(
+    54→    ctx: click.Context,
+    55→    session_id: str | None,
+    56→    summary: str | None,
+    57→    branch_slug: str | None,
+    58→) -&gt; None:
+    59→    """Extract plan from Claude session and create GitHub draft PR.
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_01PsadzDUN3hBmLcXWDyTJLh">
+    95→    type=click.Choice(["json", "display"]),
+    96→    default="json",
+    97→    help="Output format: json (default) or display (formatted text)",
+    98→)
+    99→@click.option(
+   100→    "--session-id",
+   101→    default=None,
+   102→    help="Session ID for scoped plan lookup",
+   103→)
+   104→@click.option(
+   105→    "--slug",
+   106→    default=None,
+   107→    help="Short kebab-case identifier for the objective (e.g., 'build-auth-system')",
+   108→)
+   109→@click.option(
+   110→    "--validate",
+   111→    "run_validate",
+   112→    is_flag=True,
+   113→    help="Run objective validation after creation and include results in output",
+   114→)
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_01Dn4BDH83ppEs9s8TfADNFG">
+   180→    required=True,
+   181→    type=click.Choice(["local", "remote"]),
+   182→    help="Session source: 'local' or 'remote'",
+   183→)
+   184→@click.option(
+   185→    "--pr-number",
+   186→    required=True,
+   187→    type=int,
+   188→    help="Plan identifier for the planned-pr-context branch",
+   189→)
+   190→@click.pass_context
+   191→def push_session(
+   192→    ctx: click.Context,
+   193→    session_file: Path,
+   194→    session_id: str,
+   195→    stage: Literal["planning", "impl", "address"],
+   196→    source: Literal["local", "remote"],
+   197→    pr_number: int,
+   198→) -&gt; None:
+   199→    """Preprocess and push a session to the planned-pr-context branch with accumulation.
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_01KbJdnfdHJujLscxSdGQrLZ">
+   120→        description=description,
+   121→    )
+   122→
+   123→
+   124→@click.command(name="post-workflow-started-comment")
+   125→@click.option("--pr-number", type=int, required=True, help="Plan identifier")
+   126→@click.option("--branch-name", type=str, required=True, help="Git branch name")
+   127→@click.option("--impl-pr-number", type=int, required=True, help="Pull request number")
+   128→@click.option("--run-id", type=str, required=True, help="GitHub Actions workflow run ID")
+   129→@click.option("--run-url", type=str, required=True, help="Full URL to workflow run")
+   130→@click.option("--repository", type=str, required=True, help="Repository in owner/repo format")
+   131→@click.pass_context
+   132→def post_workflow_started_comment(
+   133→    ctx: click.Context,
+   134→    *,
+   135→    pr_number: int,
+   136→    branch_name: str,
+   137→    impl_pr_number: int,
+   138→    run_id: str,
+   139→    run_url: str,
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_011aZaTh4rZ4izDwMMo6hVo6">
+    40→class StoreError:
+    41→    """Error response for tripwire candidates storage."""
+    42→
+    43→    success: bool
+    44→    error: str
+    45→
+    46→
+    47→@click.command(name="store-tripwire-candidates")
+    48→@click.option("--pr-number", required=True, type=int, help="Plan number")
+    49→@click.option("--candidates-file", required=True, help="Path to tripwire-candidates.json")
+    50→@click.pass_context
+    51→def store_tripwire_candidates(
+    52→    ctx: click.Context,
+    53→    *,
+    54→    pr_number: int,
+    55→    candidates_file: str,
+    56→) -&gt; None:
+    57→    """Store tripwire candidates as a metadata comment on a plan."""
+    58→    repo_root = require_repo_root(ctx)
+    59→    issues = require_issues(ctx)
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_use name="Read" id="toolu_019kb7cNG1YqBeEEFGHEGF8U">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/setup_impl.py</param>
+    <param name="offset">145</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="2414" cache_read_input_tokens="23477" cache_creation="{'ephemeral_5m_input_tokens': 2414, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01GWCnbgqWihK5YQZMrnGMwf">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/objective_fetch_context.py</param>
+    <param name="offset">150</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="2414" cache_read_input_tokens="23477" cache_creation="{'ephemeral_5m_input_tokens': 2414, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01MNQjnAt78CJDnoHZRtJa7b">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/fetch_sessions.py</param>
+    <param name="offset">60</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="2414" cache_read_input_tokens="23477" cache_creation="{'ephemeral_5m_input_tokens': 2414, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01PD4sXgFWzQgnEXeALfeTfc">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/download_remote_session.py</param>
+    <param name="offset">135</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="2414" cache_read_input_tokens="23477" cache_creation="{'ephemeral_5m_input_tokens': 2414, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01TG6GDZ8952VFDyQyEujjiF">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/launch_cmd.py</param>
+    <param name="offset">335</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="2414" cache_read_input_tokens="23477" cache_creation="{'ephemeral_5m_input_tokens': 2414, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01TG6GDZ8952VFDyQyEujjiF">
+&lt;tool_use_error&gt;File does not exist.&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_result tool="toolu_019kb7cNG1YqBeEEFGHEGF8U">
+   145→        "has_plan_tracking": False,
+   146→        "related_docs": related_docs,
+   147→    }
+   148→
+   149→
+   150→@click.command(name="setup-impl")
+   151→@click.option("--issue", "pr_number", type=int, default=None, help="Plan number to set up from")
+   152→@click.option(
+   153→    "--file",
+   154→    "file_path",
+   155→    type=click.Path(path_type=Path),
+   156→    default=None,
+   157→    help="Markdown file to set up from",
+   158→)
+   159→@click.pass_context
+   160→def setup_impl(ctx: click.Context, pr_number: int | None, file_path: Path | None) -&gt; None:
+   161→    """Consolidated implementation setup.
+   162→
+   163→    Handles all setup paths for plan-implement:
+   164→    1. --issue: Set up from a GitHub issue/PR
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_01GWCnbgqWihK5YQZMrnGMwf">
+   150→    help="Branch name (auto-discovered if omitted)",
+   151→)
+   152→@click.option(
+   153→    "--plan",
+   154→    "plan_number",
+   155→    type=int,
+   156→    default=None,
+   157→    help="Plan number (direct lookup, skips branch-based discovery)",
+   158→)
+   159→@click.pass_context
+   160→def objective_fetch_context(
+   161→    ctx: click.Context,
+   162→    *,
+   163→    pr_number: int | None,
+   164→    objective_number: int | None,
+   165→    branch_name: str | None,
+   166→    plan_number: int | None,
+   167→) -&gt; None:
+   168→    """Fetch all context for objective update in a single call."""
+   169→    erk_ctx = require_context(ctx)
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_01MNQjnAt78CJDnoHZRtJa7b">
+    60→
+    61→
+    62→@click.command(name="fetch-sessions")
+    63→@click.option(
+    64→    "--pr-number",
+    65→    required=True,
+    66→    type=int,
+    67→    help="Plan identifier to fetch sessions for",
+    68→)
+    69→@click.option(
+    70→    "--output-dir",
+    71→    required=True,
+    72→    type=click.Path(path_type=Path),
+    73→    help="Directory to write fetched XML files",
+    74→)
+    75→@click.pass_context
+    76→def fetch_sessions(
+    77→    ctx: click.Context,
+    78→    pr_number: int,
+    79→    output_dir: Path,
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_01PD4sXgFWzQgnEXeALfeTfc">
+   135→@click.command(name="download-remote-session")
+   136→@click.option(
+   137→    "--session-branch",
+   138→    required=True,
+   139→    help="Git branch containing the session (e.g., planned-pr-context/123)",
+   140→)
+   141→@click.option(
+   142→    "--session-id",
+   143→    required=True,
+   144→    help="Claude session ID (used to locate file on the branch)",
+   145→)
+   146→@click.pass_context
+   147→def download_remote_session(
+   148→    ctx: click.Context,
+   149→    session_branch: str,
+   150→    session_id: str,
+   151→) -&gt; None:
+   152→    """Download a session from a git branch.
+   153→
+   154→    Fetches the session JSONL from the provided branch and stores it
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>Let me check if the launch_cmd.py file exists with a different path or search for it:</assistant>
+  <usage input_tokens="46" cache_creation_input_tokens="1947" cache_read_input_tokens="25891" cache_creation="{'ephemeral_5m_input_tokens': 1947, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01LRjXY47zSf5U1MsCrDAy91">
+    <param name="pattern">**/launch_cmd.py</param>
+    <param name="path">/home/runner/work/erk/erk/src</param>
+  </tool_use>
+  <usage input_tokens="46" cache_creation_input_tokens="1947" cache_read_input_tokens="25891" cache_creation="{'ephemeral_5m_input_tokens': 1947, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01LRjXY47zSf5U1MsCrDAy91">
+/home/runner/work/erk/erk/src/erk/cli/commands/launch_cmd.py
+  </tool_result>
+  <tool_use name="Read" id="toolu_01XVtwRfywyDvxRULJEGWLs3">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/launch_cmd.py</param>
+    <param name="offset">335</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="188" cache_read_input_tokens="27838" cache_creation="{'ephemeral_5m_input_tokens': 188, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01XVtwRfywyDvxRULJEGWLs3">
+   335→    type=int,
+   336→    help="PR number (required for pr-rebase and pr-address)",
+   337→)
+   338→@click.option(
+   339→    "--plan",
+   340→    "plan_number",
+   341→    type=int,
+   342→    help="Plan number (required for learn)",
+   343→)
+   344→@click.option(
+   345→    "--no-squash",
+   346→    is_flag=True,
+   347→    help="Skip squashing commits before rebase (pr-rebase only)",
+   348→)
+   349→@click.option(
+   350→    "--model",
+   351→    type=str,
+   352→    help="Claude model to use (for workflows that support it)",
+   353→)
+   354→@click.option(
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>Now I'll make all the edits. Let me start with the files I've read:</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="511" cache_read_input_tokens="28026" cache_creation="{'ephemeral_5m_input_tokens': 511, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01QhBRuvnvP3Xccb4PAAxQ5w">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/plan_save.py</param>
+    <param name="old_string">@click.option(
+    "--plan-file",
+    type=click.Path(exists=True, path_type=Path),
+    default=None,
+    help="Path to specific plan file (highest priority)",
+)</param>
+    <param name="new_string">@click.option(
+    "--plan-file",
+    type=click.Path(exists=True, path_type=Path),
+    default=None,
+    help="Path to specific PR file (highest priority)",
+)</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="511" cache_read_input_tokens="28026" cache_creation="{'ephemeral_5m_input_tokens': 511, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01B1KTGq4dj8UKMX2PbuvmTN">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/plan_save.py</param>
+    <param name="old_string">@click.option(
+    "--session-id",
+    default=None,
+    help="Session ID for scoped plan lookup",
+)</param>
+    <param name="new_string">@click.option(
+    "--session-id",
+    default=None,
+    help="Session ID for scoped PR lookup",
+)</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="511" cache_read_input_tokens="28026" cache_creation="{'ephemeral_5m_input_tokens': 511, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01Ep5vVHXSmHbEK1BH2bnDXr">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/plan_save.py</param>
+    <param name="old_string">@click.option(
+    "--plan-type",
+    type=click.Choice(["standard", "learn"]),
+    default=None,
+    help="Plan type: standard (default) or learn",
+)</param>
+    <param name="new_string">@click.option(
+    "--plan-type",
+    type=click.Choice(["standard", "learn"]),
+    default=None,
+    help="PR type: standard (default) or learn",
+)</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="511" cache_read_input_tokens="28026" cache_creation="{'ephemeral_5m_input_tokens': 511, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01TMNioVR9bVFNBYsaHL6wsu">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/plan_save.py</param>
+    <param name="old_string">@click.option(
+    "--learned-from-issue",
+    type=int,
+    default=None,
+    help="Parent plan number (for learn plans)",
+)</param>
+    <param name="new_string">@click.option(
+    "--learned-from-issue",
+    type=int,
+    default=None,
+    help="Parent PR number (for learn plans)",
+)</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="511" cache_read_input_tokens="28026" cache_creation="{'ephemeral_5m_input_tokens': 511, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01Dyh6GRHB616pF7sDPZsSbe">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/plan_save.py</param>
+    <param name="old_string">@click.option(
+    "--summary",
+    default=None,
+    help="AI-generated plan summary for PR description",
+)</param>
+    <param name="new_string">@click.option(
+    "--summary",
+    default=None,
+    help="AI-generated PR summary for PR description",
+)</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="511" cache_read_input_tokens="28026" cache_creation="{'ephemeral_5m_input_tokens': 511, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01QhBRuvnvP3Xccb4PAAxQ5w">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/plan_save.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01B1KTGq4dj8UKMX2PbuvmTN">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/plan_save.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01Ep5vVHXSmHbEK1BH2bnDXr">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/plan_save.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01TMNioVR9bVFNBYsaHL6wsu">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/plan_save.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01Dyh6GRHB616pF7sDPZsSbe">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/plan_save.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01Pfa9U7KY4SQrYxLT18PfJD">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/plan_update.py</param>
+    <param name="old_string">@click.option(
+    "--pr-number",
+    type=int,
+    required=True,
+    help="Plan number to update",
+)</param>
+    <param name="new_string">@click.option(
+    "--pr-number",
+    type=int,
+    required=True,
+    help="PR number to update",
+)</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="1359" cache_read_input_tokens="28537" cache_creation="{'ephemeral_5m_input_tokens': 1359, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01QTnxcDCmwdEJEJ8ZWqZDrp">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/plan_update.py</param>
+    <param name="old_string">@click.option(
+    "--plan-path",
+    type=click.Path(exists=True, path_type=Path),
+    help="Direct path to plan file (overrides session lookup)",
+)</param>
+    <param name="new_string">@click.option(
+    "--plan-path",
+    type=click.Path(exists=True, path_type=Path),
+    help="Direct path to PR file (overrides session lookup)",
+)</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="1359" cache_read_input_tokens="28537" cache_creation="{'ephemeral_5m_input_tokens': 1359, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01KwZ2vLZ8aqZN67FSKuLg1U">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/plan_update.py</param>
+    <param name="old_string">@click.option(
+    "--session-id",
+    help="Session ID to find plan file in scratch storage",
+)</param>
+    <param name="new_string">@click.option(
+    "--session-id",
+    help="Session ID to find PR file in scratch storage",
+)</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="1359" cache_read_input_tokens="28537" cache_creation="{'ephemeral_5m_input_tokens': 1359, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01PNvpASUrk7UDJmwXs4ctSK">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/plan_update.py</param>
+    <param name="old_string">@click.option(
+    "--summary",
+    help="AI-generated summary to display above the collapsed plan in the PR body",
+)</param>
+    <param name="new_string">@click.option(
+    "--summary",
+    help="AI-generated summary to display above the collapsed PR in the PR body",
+)</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="1359" cache_read_input_tokens="28537" cache_creation="{'ephemeral_5m_input_tokens': 1359, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Pfa9U7KY4SQrYxLT18PfJD">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/plan_update.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01QTnxcDCmwdEJEJ8ZWqZDrp">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/plan_update.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01KwZ2vLZ8aqZN67FSKuLg1U">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/plan_update.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01PNvpASUrk7UDJmwXs4ctSK">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/plan_update.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01QfxEQvQAE9SrApsyrDykBy">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/land_execute.py</param>
+    <param name="old_string">@click.option(
+    "--plan-number",
+    type=int,
+    help="Linked plan number",
+)</param>
+    <param name="new_string">@click.option(
+    "--plan-number",
+    type=int,
+    help="Linked PR number",
+)</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="1056" cache_read_input_tokens="29896" cache_creation="{'ephemeral_5m_input_tokens': 1056, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01QhBx8AktDnX2sXkQ4DaiLX">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/land_execute.py</param>
+    <param name="old_string">@click.option(
+    "--skip-learn",
+    "skip_learn",
+    is_flag=True,
+    help="Skip creating a learn plan",
+)</param>
+    <param name="new_string">@click.option(
+    "--skip-learn",
+    "skip_learn",
+    is_flag=True,
+    help="Skip creating a learn PR",
+)</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="1056" cache_read_input_tokens="29896" cache_creation="{'ephemeral_5m_input_tokens': 1056, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01QfxEQvQAE9SrApsyrDykBy">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/land_execute.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01QhBx8AktDnX2sXkQ4DaiLX">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/land_execute.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01VpzmCH7GEa6EA2CNZyYhVn">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/track_learn_result.py</param>
+    <param name="old_string">@click.option(
+    "--pr-id",
+    required=True,
+    type=str,
+    help="Plan identifier (e.g., issue number)",
+)</param>
+    <param name="new_string">@click.option(
+    "--pr-id",
+    required=True,
+    type=str,
+    help="PR identifier (e.g., issue number)",
+)</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="486" cache_read_input_tokens="30952" cache_creation="{'ephemeral_5m_input_tokens': 486, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01UBaAqUnTm3ygRh8BZcoamD">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/track_learn_result.py</param>
+    <param name="old_string">@click.option(
+    "--learn-plan",
+    type=int,
+    help="Learn plan number (required if status is completed_with_plan)",
+)</param>
+    <param name="new_string">@click.option(
+    "--learn-plan",
+    type=int,
+    help="Learn PR number (required if status is completed_with_plan)",
+)</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="486" cache_read_input_tokens="30952" cache_creation="{'ephemeral_5m_input_tokens': 486, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01VpzmCH7GEa6EA2CNZyYhVn">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/track_learn_result.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01UBaAqUnTm3ygRh8BZcoamD">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/track_learn_result.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01CgndK9N2ZUDgUZXXQgSfEQ">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/get_plan_info.py</param>
+    <param name="old_string">@click.option(
+    "--include-body",
+    is_flag=True,
+    help="Include the plan body content in the response",
+)</param>
+    <param name="new_string">@click.option(
+    "--include-body",
+    is_flag=True,
+    help="Include the PR body content in the response",
+)</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="618" cache_read_input_tokens="31438" cache_creation="{'ephemeral_5m_input_tokens': 618, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01WZLS2JsJZWeBbaBFn8rCfc">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/validate_plan_content.py</param>
+    <param name="old_string">@click.option(
+    "--plan-file",
+    type=click.Path(exists=True, path_type=Path),
+    help="Path to plan file. If not provided, reads from stdin.",
+)</param>
+    <param name="new_string">@click.option(
+    "--plan-file",
+    type=click.Path(exists=True, path_type=Path),
+    help="Path to PR file. If not provided, reads from stdin.",
+)</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="618" cache_read_input_tokens="31438" cache_creation="{'ephemeral_5m_input_tokens': 618, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_0193bPhcq1xPYBjGSrTqaHaz">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/add_plan_label.py</param>
+    <param name="old_string">@click.option(
+    "--label",
+    required=True,
+    help="Label to add to the plan",
+)</param>
+    <param name="new_string">@click.option(
+    "--label",
+    required=True,
+    help="Label to add to the PR",
+)</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="618" cache_read_input_tokens="31438" cache_creation="{'ephemeral_5m_input_tokens': 618, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01CgndK9N2ZUDgUZXXQgSfEQ">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/get_plan_info.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01WZLS2JsJZWeBbaBFn8rCfc">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/validate_plan_content.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_0193bPhcq1xPYBjGSrTqaHaz">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/add_plan_label.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_0152j81kK1FEp12TpJZ46bot">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/ci_update_pr_body.py</param>
+    <param name="old_string">@click.command(name="ci-update-pr-body")
+@click.option("--pr-number", type=int, required=T...[truncated 183 chars]...n URL")
+@click.option("--planned-pr", is_flag=True, default=False, help="Planned-PR plan")</param>
+    <param name="new_string">@click.command(name="ci-update-pr-body")
+@click.option("--pr-number", type=int, required=T...[truncated 179 chars]...run URL")
+@click.option("--planned-pr", is_flag=True, default=False, help="Planned-PR PR")</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="852" cache_read_input_tokens="32056" cache_creation="{'ephemeral_5m_input_tokens': 852, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01GkRUa5LzYBKBKho6AmWahp">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/impl_signal.py</param>
+    <param name="old_string">@click.option(
+    "--session-id",
+    default=None,
+    help="Session ID for plan file deletion on 'started' event",
+)</param>
+    <param name="new_string">@click.option(
+    "--session-id",
+    default=None,
+    help="Session ID for PR file deletion on 'started' event",
+)</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="852" cache_read_input_tokens="32056" cache_creation="{'ephemeral_5m_input_tokens': 852, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01UYzAGs7Z3sQ3KonnMUw5LA">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/incremental_dispatch.py</param>
+    <param name="old_string">@click.option(
+    "--plan-file",
+    type=click.Path(exists=True, path_type=Path),
+    required=True,
+    help="Path to plan markdown file",
+)</param>
+    <param name="new_string">@click.option(
+    "--plan-file",
+    type=click.Path(exists=True, path_type=Path),
+    required=True,
+    help="Path to PR markdown file",
+)</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="852" cache_read_input_tokens="32056" cache_creation="{'ephemeral_5m_input_tokens': 852, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0152j81kK1FEp12TpJZ46bot">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/ci_update_pr_body.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01GkRUa5LzYBKBKho6AmWahp">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/impl_signal.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01UYzAGs7Z3sQ3KonnMUw5LA">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/incremental_dispatch.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_012HesZ8zVbQLipsdW1v25os">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/create_pr_from_session.py</param>
+    <param name="old_string">@click.option(
+    "--summary",
+    help="AI-generated summary to display above the collapsed plan in the PR body",
+)</param>
+    <param name="new_string">@click.option(
+    "--summary",
+    help="AI-generated summary to display above the collapsed PR in the PR body",
+)</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="1042" cache_read_input_tokens="32908" cache_creation="{'ephemeral_5m_input_tokens': 1042, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01SFpZjaUC2SrA35fPUxQKFe">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/objective_save_to_issue.py</param>
+    <param name="old_string">@click.option(
+    "--session-id",
+    default=None,
+    help="Session ID for scoped plan lookup",
+)</param>
+    <param name="new_string">@click.option(
+    "--session-id",
+    default=None,
+    help="Session ID for scoped PR lookup",
+)</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="1042" cache_read_input_tokens="32908" cache_creation="{'ephemeral_5m_input_tokens': 1042, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01EK4QpmEPF4Ca7Xcjw5ej8U">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/push_session.py</param>
+    <param name="old_string">@click.option(
+    "--pr-number",
+    required=True,
+    type=int,
+    help="Plan identifier for the planned-pr-context branch",
+)</param>
+    <param name="new_string">@click.option(
+    "--pr-number",
+    required=True,
+    type=int,
+    help="PR identifier for the planned-pr-context branch",
+)</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="1042" cache_read_input_tokens="32908" cache_creation="{'ephemeral_5m_input_tokens': 1042, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012HesZ8zVbQLipsdW1v25os">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/create_pr_from_session.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01SFpZjaUC2SrA35fPUxQKFe">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/objective_save_to_issue.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01EK4QpmEPF4Ca7Xcjw5ej8U">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/push_session.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01SFuvvqZt7pR1QJgrRLySK9">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/post_workflow_started_comment.py</param>
+    <param name="old_string">@click.command(name="post-workflow-started-comment")
+@click.option("--pr-number", type=int, required=True, help="Plan identifier")</param>
+    <param name="new_string">@click.command(name="post-workflow-started-comment")
+@click.option("--pr-number", type=int, required=True, help="PR identifier")</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="838" cache_read_input_tokens="33950" cache_creation="{'ephemeral_5m_input_tokens': 838, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01BSctuZX2SMtzCr3BupXD5T">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/store_tripwire_candidates.py</param>
+    <param name="old_string">@click.command(name="store-tripwire-candidates")
+@click.option("--pr-number", required=True, type=int, help="Plan number")</param>
+    <param name="new_string">@click.command(name="store-tripwire-candidates")
+@click.option("--pr-number", required=True, type=int, help="PR number")</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="838" cache_read_input_tokens="33950" cache_creation="{'ephemeral_5m_input_tokens': 838, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01LG3aX3DkMub3TkWhPKmDUj">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/setup_impl.py</param>
+    <param name="old_string">@click.command(name="setup-impl")
+@click.option("--issue", "pr_number", type=int, default=None, help="Plan number to set up from")</param>
+    <param name="new_string">@click.command(name="setup-impl")
+@click.option("--issue", "pr_number", type=int, default=None, help="PR number to set up from")</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="838" cache_read_input_tokens="33950" cache_creation="{'ephemeral_5m_input_tokens': 838, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01SFuvvqZt7pR1QJgrRLySK9">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/post_workflow_started_comment.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01BSctuZX2SMtzCr3BupXD5T">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/store_tripwire_candidates.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01LG3aX3DkMub3TkWhPKmDUj">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/setup_impl.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01JdBY9paof8pUzh1hy3tAaj">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/objective_fetch_context.py</param>
+    <param name="old_string">@click.option(
+    "--plan",
+    "plan_number",
+    type=int,
+    default=None,
+    help="Plan number (direct lookup, skips branch-based discovery)",
+)</param>
+    <param name="new_string">@click.option(
+    "--plan",
+    "plan_number",
+    type=int,
+    default=None,
+    help="PR number (direct lookup, skips branch-based discovery)",
+)</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="876" cache_read_input_tokens="34788" cache_creation="{'ephemeral_5m_input_tokens': 876, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01W9yAuhvmi59y2HAN8YwERY">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/fetch_sessions.py</param>
+    <param name="old_string">@click.option(
+    "--pr-number",
+    required=True,
+    type=int,
+    help="Plan identifier to fetch sessions for",
+)</param>
+    <param name="new_string">@click.option(
+    "--pr-number",
+    required=True,
+    type=int,
+    help="PR identifier to fetch sessions for",
+)</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="876" cache_read_input_tokens="34788" cache_creation="{'ephemeral_5m_input_tokens': 876, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01QAbpKDfdyDQgexvGSmgQGj">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/launch_cmd.py</param>
+    <param name="old_string">@click.option(
+    "--plan",
+    "plan_number",
+    type=int,
+    help="Plan number (required for learn)",
+)</param>
+    <param name="new_string">@click.option(
+    "--plan",
+    "plan_number",
+    type=int,
+    help="PR number (required for learn)",
+)</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="876" cache_read_input_tokens="34788" cache_creation="{'ephemeral_5m_input_tokens': 876, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01JdBY9paof8pUzh1hy3tAaj">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/objective_fetch_context.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01W9yAuhvmi59y2HAN8YwERY">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/fetch_sessions.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01QAbpKDfdyDQgexvGSmgQGj">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/launch_cmd.py has been updated successfully.
+  </tool_result>
+  <assistant>Perfect! All edits have been completed successfully. Let me now create a summary of the changes made:
+
+## Summary
+
+I've successfully updated help strings in 20 exec script CLI files, changing "plan" references to "PR" where appropriate. The changes were made only to help strings (the `help=` parameter in Click options), preserving all variable names, function names, and other code elements.
+
+### Files Updated
+
+1. **`/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/plan_save.py`** - Updated 5 help strings:
+   - "Path to specific plan file" → "Path to specific PR file"
+   - "Session ID for scoped plan lookup" → "Session ID for scoped PR lookup"
+   - "Plan type: standard" → "PR type: standard"
+   - "Parent plan number" → "Parent PR number"
+   - "AI-generated plan summary" → "AI-generated PR summary"
+
+2. **`/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/plan_update.py`** - Updated 4 help strings:
+   - "Plan number to update" → "PR number to update"
+   - "Direct path to plan file" → "Direct path to PR file"
+   - "Session ID to find plan file" → "Session ID to find PR file"
+   - "collapsed plan in the PR body" → "collapsed PR in the PR body"
+
+3. **`/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/land_execute.py`** - Updated 2 help strings:
+   - "Linked plan number" → "Linked PR number"
+   - "Skip creating a learn plan" → "Skip creating a learn PR"
+
+4. **`/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/track_learn_result.py`** - Updated 2 help strings:
+   - "Plan identifier" → "PR identifier"
+   - "Learn plan number" → "Learn PR number"
+
+5. **`/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/get_plan_info.py`** - Updated 1 help string:
+   - "plan body content" → "PR body content"
+
+6. **`/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/validate_plan_content.py`** - Updated 1 help string:
+   - "Path to plan file" → "Path to PR file"
+
+7. **`/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/add_plan_label.py`** - Updated 1 help string:
+   - "Label to add to the plan" → "Label to add to the PR"
+
+8. **`/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/ci_update_pr_body.py`** - Updated 2 help strings:
+   - "Plan identifier (for context)" → "PR identifier (for context)"
+   - "Planned-PR plan" → "Planned-PR PR"
+
+9. **`/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/impl_signal.py`** - Updated 1 help string:
+   - "plan file deletion" → "PR file deletion"
+
+10. **`/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/incremental_dispatch.py`** - Updated 1 help string:
+    - "plan markdown file" → "PR markdown file"
+
+11. **`/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/create_pr_from_session.py`** - Updated 1 help string:
+    - "collapsed plan in the PR body" → "collapsed PR in the PR body"
+
+12. **`/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/objective_save_to_issue.py`** - Updated 1 help string:
+    - "scoped plan lookup" → "scoped PR lookup"
+
+13. **`/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/push_session.py`** - Updated 1 help string:
+    - "Plan identifier for the planned-pr-context branch" → "PR identifier for the planned-pr-context branch"
+
+14. **`/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/post_workflow_started_comment.py`** - Updated 1 help string:
+    - "Plan identifier" → "PR identifier"
+
+15. **`/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/store_tripwire_candidates.py`** - Updated 1 help string:
+    - "Plan number" → "PR number"
+
+16. **`/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/setup_impl.py`** - Updated 1 help string:
+    - "Plan number to set up from" → "PR number to set up from"
+
+17. **`/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/objective_fetch_context.py`** - Updated 1 help string:
+    - "Plan number (direct lookup...)" → "PR number (direct lookup...)"
+
+18. **`/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/fetch_sessions.py`** - Updated 1 help string:
+    - "Plan identifier to fetch sessions for" → "PR identifier to fetch sessions for"
+
+19. **`/home/runner/work/erk/erk/src/erk/cli/commands/launch_cmd.py`** - Updated 1 help string:
+    - "Plan number (required for learn)" → "PR number (required for learn)"
+
+20. **`/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/download_remote_session.py`** - No changes needed (no relevant help strings found matching the criteria)
+
+All edits were surgical and precise, updating only the user-facing help text while preserving all code structure, variable names, function names, and technical references to plan.md files, plan mode, erk-plan labels, and other technical artifacts.</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="852" cache_read_input_tokens="35664" cache_creation="{'ephemeral_5m_input_tokens': 852, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>
