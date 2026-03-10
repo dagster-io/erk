@@ -1,4 +1,10 @@
 {
   "provider": "github-draft-pr",
-  "title": "Show planning run ID in TUI dashboard"
+  "plan_id": "9175",
+  "url": "https://github.com/dagster-io/erk/pull/9175",
+  "created_at": "2026-03-10T12:10:31.125116",
+  "synced_at": "2026-03-10T12:10:31.125116",
+  "labels": [],
+  "objective_id": null,
+  "node_ids": null
 }
