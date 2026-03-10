@@ -292,7 +292,7 @@ def pr_view(
     *,
     full: bool,
     repo_id: GitHubRepoId,
-    json_mode: bool,
+    json_stdout: bool,
 ) -> PrViewResult | None:
     """Fetch and display a plan by identifier.
 
@@ -368,7 +368,7 @@ def pr_view(
     else:
         header_info = plan.header_fields
 
-    if json_mode:
+    if json_stdout:
         return PrViewResult(
             plan_id=plan_id,
             title=plan.title,

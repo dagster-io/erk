@@ -263,7 +263,7 @@ def _pr_list_impl(
     all_users: bool,
     sort: str,
     repo_id: GitHubRepoId,
-    json_mode: bool,
+    json_stdout: bool,
 ) -> PrListResult | None:
     http_client = ctx.http_client
     if http_client is None:
@@ -322,7 +322,7 @@ def _pr_list_impl(
         rows = [r for r in rows if strip_rich_markup(r.lifecycle_display).startswith(stage)]
 
     if not rows:
-        if json_mode:
+        if json_stdout:
             return PrListResult(plans=[], count=0)
         user_output("No plans found matching the criteria.")
         return None
@@ -336,7 +336,7 @@ def _pr_list_impl(
         sort_key = SortKey.PLAN_ID
         rows = sort_plans(rows, sort_key)
 
-    if json_mode:
+    if json_stdout:
         plans = [serialize_plan_row(row) for row in rows]
         return PrListResult(plans=plans, count=len(plans))
 
@@ -480,7 +480,7 @@ def pr_list(
     all_users: bool,
     sort: str,
     repo_id: GitHubRepoId,
-    json_mode: bool,
+    json_stdout: bool,
 ) -> PrListResult | None:
     """List plans as a static table.
 
@@ -509,7 +509,7 @@ def pr_list(
         all_users=all_users,
         sort=sort,
         repo_id=repo_id,
-        json_mode=json_mode,
+        json_stdout=json_stdout,
     )
 
 

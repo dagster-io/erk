@@ -16,7 +16,7 @@ import click
 from erk_shared.agentclick.json_command import JsonCommandMeta
 
 # Internal params injected by the decorator that should never appear in schemas
-_INTERNAL_PARAMS = frozenset({"json_mode", "schema_mode", "ctx"})
+_INTERNAL_PARAMS = frozenset({"json_stdout", "schema_mode", "stdin_json", "ctx"})
 
 ERROR_SCHEMA: dict[str, Any] = {
     "type": "object",
@@ -80,7 +80,7 @@ def command_input_schema(cmd: click.Command) -> dict[str, Any]:
     """Generate JSON Schema for a command's input parameters.
 
     Reads _json_command_meta from the command for exclude/required sets.
-    Skips internal params (json_mode, schema_mode, ctx).
+    Skips internal params (json_stdout, schema_mode, stdin_json, ctx).
 
     Args:
         cmd: Click Command decorated with @json_command

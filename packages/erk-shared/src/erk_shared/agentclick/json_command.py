@@ -1,10 +1,10 @@
 """JSON command harness for CLI commands (input + output + schema).
 
-Adds --json and --schema flags to Click commands with:
-- JSON error serialization (catches click.ClickException with error_type attribute)
-- JSON input from stdin (when piped, maps keys to Click params)
+Adds --json, --stdin-json, and --schema flags to Click commands with:
+- --json: JSON output mode (error serialization, auto-return-value serialization)
+- --stdin-json: JSON input from stdin (reads JSON object, maps keys to Click params)
+- --schema: Output JSON Schema for input/output/error shapes
 - emit_json_result() for structured output via to_json_dict() protocol
-- --schema flag to output JSON Schema for input/output/error shapes
 
 Commands return a result object with to_json_dict() or as a dataclass;
 the decorator auto-serializes it via emit_json_result() when --json is active.
@@ -60,15 +60,20 @@ def json_command(
         @json_command(exclude_json_input=...)   # with config
 
     When --json is passed:
-    - If stdin is piped (not a TTY), reads JSON object and maps keys to kwargs
     - Any click.ClickException with an error_type attribute is caught and serialized as JSON
+    - Return values with to_json_dict() or dataclasses are auto-serialized
     - SystemExit and other exceptions pass through unchanged
+
+    When --stdin-json is passed:
+    - Reads JSON object from stdin and maps keys to Click params
+    - Validates keys against command params and required_json_input
+    - Input validation errors use JSON format if --json is also active, otherwise click.UsageError
 
     When --schema is passed:
     - Outputs JSON Schema document for the command's input/output/error shapes
     - Short-circuits without executing the command
 
-    When neither is passed:
+    When none are passed:
     - Delegates to the original callback unchanged
 
     Args:
@@ -122,11 +127,18 @@ def _apply_json_command(
     )
 
     json_option = click.Option(
-        ["--json", "json_mode"],
+        ["--json", "json_stdout"],
         is_flag=True,
         help="Output results as JSON",
     )
     cmd.params.append(json_option)
+
+    stdin_json_option = click.Option(
+        ["--stdin-json", "stdin_json"],
+        is_flag=True,
+        help="Read input parameters as JSON from stdin",
+    )
+    cmd.params.append(stdin_json_option)
 
     schema_option = click.Option(
         ["--schema", "schema_mode"],
@@ -153,59 +165,51 @@ def _apply_json_command(
             click.echo(json.dumps(schema_doc, indent=2))
             return None
 
-        json_mode = kwargs.pop("json_mode", False)
-        kwargs["json_mode"] = json_mode
-        if not json_mode:
-            return original_callback(**kwargs)
+        stdin_json = kwargs.pop("stdin_json", False)
+        json_stdout = kwargs.pop("json_stdout", False)
+        kwargs["json_stdout"] = json_stdout
 
-        # JSON input: read from stdin when piped
-        try:
-            input_data = read_stdin_json()
-        except json.JSONDecodeError as exc:
-            error_data = {
-                "success": False,
-                "error_type": "invalid_json_input",
-                "message": f"Invalid JSON: {exc}",
-            }
-            click.echo(json.dumps(error_data, indent=2))
-            raise SystemExit(1) from None
-        except ValueError as exc:
-            error_data = {
-                "success": False,
-                "error_type": "invalid_json_input",
-                "message": str(exc),
-            }
-            click.echo(json.dumps(error_data, indent=2))
-            raise SystemExit(1) from None
-
-        if input_data is not None:
-            # Validate keys
-            skip_keys = exclude_json_input | {"json_mode"}
-            for key in input_data:
-                if key not in valid_param_names or key in skip_keys:
-                    error_data = {
-                        "success": False,
-                        "error_type": "invalid_json_input",
-                        "message": f"Unknown key: {key}",
-                    }
-                    click.echo(json.dumps(error_data, indent=2))
-                    raise SystemExit(1)
-
-            # Map JSON keys to kwargs (override defaults only)
-            for key, value in input_data.items():
-                if key not in skip_keys:
-                    kwargs[key] = value
-
-        # Validate required fields
-        for field in required_json_input:
-            if kwargs.get(field) is None:
+        def _emit_input_error(message: str) -> None:
+            """Emit a JSON input validation error. Format depends on json_stdout."""
+            if json_stdout:
                 error_data = {
                     "success": False,
                     "error_type": "invalid_json_input",
-                    "message": f"Missing required field: {field}",
+                    "message": message,
                 }
                 click.echo(json.dumps(error_data, indent=2))
                 raise SystemExit(1)
+            else:
+                raise click.UsageError(message)
+
+        # JSON input: read from stdin when --stdin-json is passed
+        if stdin_json:
+            try:
+                input_data = read_stdin_json()
+            except json.JSONDecodeError as exc:
+                _emit_input_error(f"Invalid JSON: {exc}")
+            except ValueError as exc:
+                _emit_input_error(str(exc))
+
+            if input_data is not None:
+                # Validate keys
+                skip_keys = exclude_json_input | {"json_stdout", "stdin_json"}
+                for key in input_data:
+                    if key not in valid_param_names or key in skip_keys:
+                        _emit_input_error(f"Unknown key: {key}")
+
+                # Map JSON keys to kwargs (override defaults only)
+                for key, value in input_data.items():
+                    if key not in skip_keys:
+                        kwargs[key] = value
+
+            # Validate required fields
+            for field in required_json_input:
+                if kwargs.get(field) is None:
+                    _emit_input_error(f"Missing required field: {field}")
+
+        if not json_stdout:
+            return original_callback(**kwargs)
 
         try:
             result = original_callback(**kwargs)

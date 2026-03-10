@@ -24,8 +24,8 @@ def _make_test_command() -> click.Command:
 
     @json_command
     @click.command("test-cmd")
-    def test_cmd(*, json_mode: bool) -> None:
-        if json_mode:
+    def test_cmd(*, json_stdout: bool) -> None:
+        if json_stdout:
             emit_json({"key": "value"})
             return
         click.echo("human output")
@@ -42,10 +42,11 @@ def _patch_stdin_json(data: dict[str, Any] | None = None) -> Any:
 
 
 def test_adds_json_flag() -> None:
-    """--json appears in command params."""
+    """--json and --stdin-json appear in command params."""
     cmd = _make_test_command()
     param_names = [p.name for p in cmd.params]
-    assert "json_mode" in param_names
+    assert "json_stdout" in param_names
+    assert "stdin_json" in param_names
 
 
 def test_no_flag_passes_through() -> None:
@@ -73,7 +74,7 @@ def test_catches_agent_cli_error() -> None:
 
     @json_command
     @click.command("error-cmd")
-    def error_cmd(*, json_mode: bool) -> None:
+    def error_cmd(*, json_stdout: bool) -> None:
         raise AgentCliError("something went wrong", error_type="cli_error")
 
     runner = CliRunner()
@@ -90,7 +91,7 @@ def test_preserves_error_type() -> None:
 
     @json_command
     @click.command("typed-error-cmd")
-    def typed_error_cmd(*, json_mode: bool) -> None:
+    def typed_error_cmd(*, json_stdout: bool) -> None:
         raise AgentCliError("auth failed", error_type="auth_required")
 
     runner = CliRunner()
@@ -107,7 +108,7 @@ def test_system_exit_passes_through() -> None:
 
     @json_command
     @click.command("exit-cmd")
-    def exit_cmd(*, json_mode: bool) -> None:
+    def exit_cmd(*, json_stdout: bool) -> None:
         raise SystemExit(42)
 
     runner = CliRunner()
@@ -120,7 +121,7 @@ def test_error_without_json_flag_uses_normal_handling() -> None:
 
     @json_command
     @click.command("normal-error-cmd")
-    def normal_error_cmd(*, json_mode: bool) -> None:
+    def normal_error_cmd(*, json_stdout: bool) -> None:
         raise AgentCliError("normal error", error_type="cli_error")
 
     runner = CliRunner()
@@ -143,21 +144,21 @@ def test_error_without_json_flag_uses_normal_handling() -> None:
 
 
 def test_json_input_from_stdin() -> None:
-    """Piped JSON populates kwargs when --json is active."""
+    """Piped JSON populates kwargs when --stdin-json and --json are active."""
 
     @json_command
     @click.command("input-cmd")
     @click.option("--name", default=None)
     @click.option("--count", type=int, default=None)
-    def input_cmd(*, json_mode: bool, name: str | None, count: int | None) -> None:
-        if json_mode:
+    def input_cmd(*, json_stdout: bool, name: str | None, count: int | None) -> None:
+        if json_stdout:
             emit_json({"name": name, "count": count})
             return
         click.echo(f"name={name} count={count}")
 
     runner = CliRunner()
     with _patch_stdin_json({"name": "alice", "count": 5}):
-        result = runner.invoke(input_cmd, ["--json"])
+        result = runner.invoke(input_cmd, ["--stdin-json", "--json"])
 
     assert result.exit_code == 0, f"Failed: {result.output}"
     data = json.loads(result.output.strip())
@@ -167,17 +168,17 @@ def test_json_input_from_stdin() -> None:
 
 
 def test_json_input_unknown_keys_error() -> None:
-    """Unknown keys produce JSON error."""
+    """Unknown keys produce JSON error when --stdin-json and --json are active."""
 
     @json_command
     @click.command("input-cmd")
     @click.option("--name", default=None)
-    def input_cmd(*, json_mode: bool, name: str | None) -> None:
+    def input_cmd(*, json_stdout: bool, name: str | None) -> None:
         emit_json({"name": name})
 
     runner = CliRunner()
     with _patch_stdin_json({"name": "alice", "bogus": True}):
-        result = runner.invoke(input_cmd, ["--json"])
+        result = runner.invoke(input_cmd, ["--stdin-json", "--json"])
 
     assert result.exit_code == 1
     data = json.loads(result.output.strip())
@@ -192,12 +193,12 @@ def test_json_input_skipped_when_tty() -> None:
     @json_command
     @click.command("input-cmd")
     @click.option("--name", default=None)
-    def input_cmd(*, json_mode: bool, name: str | None) -> None:
+    def input_cmd(*, json_stdout: bool, name: str | None) -> None:
         emit_json({"name": name})
 
     runner = CliRunner()
     with _patch_stdin_json(None):
-        result = runner.invoke(input_cmd, ["--json"])
+        result = runner.invoke(input_cmd, ["--stdin-json", "--json"])
 
     assert result.exit_code == 0
     data = json.loads(result.output.strip())
@@ -212,12 +213,12 @@ def test_exclude_json_input() -> None:
     @click.command("excl-cmd")
     @click.option("--name", default=None)
     @click.option("--secret", default=None)
-    def excl_cmd(*, json_mode: bool, name: str | None, secret: str | None) -> None:
+    def excl_cmd(*, json_stdout: bool, name: str | None, secret: str | None) -> None:
         emit_json({"name": name, "secret": secret})
 
     runner = CliRunner()
     with _patch_stdin_json({"name": "alice", "secret": "should-fail"}):
-        result = runner.invoke(excl_cmd, ["--json"])
+        result = runner.invoke(excl_cmd, ["--stdin-json", "--json"])
 
     assert result.exit_code == 1
     data = json.loads(result.output.strip())
@@ -231,12 +232,12 @@ def test_required_json_input_missing() -> None:
     @json_command(required_json_input=frozenset({"prompt"}))
     @click.command("req-cmd")
     @click.option("--prompt", default=None)
-    def req_cmd(*, json_mode: bool, prompt: str | None) -> None:
+    def req_cmd(*, json_stdout: bool, prompt: str | None) -> None:
         emit_json({"prompt": prompt})
 
     runner = CliRunner()
     with _patch_stdin_json(None):
-        result = runner.invoke(req_cmd, ["--json"])
+        result = runner.invoke(req_cmd, ["--stdin-json", "--json"])
 
     assert result.exit_code == 1
     data = json.loads(result.output.strip())
@@ -251,12 +252,12 @@ def test_required_json_input_present() -> None:
     @json_command(required_json_input=frozenset({"prompt"}))
     @click.command("req-cmd")
     @click.option("--prompt", default=None)
-    def req_cmd(*, json_mode: bool, prompt: str | None) -> None:
+    def req_cmd(*, json_stdout: bool, prompt: str | None) -> None:
         emit_json({"prompt": prompt})
 
     runner = CliRunner()
     with _patch_stdin_json({"prompt": "hello"}):
-        result = runner.invoke(req_cmd, ["--json"])
+        result = runner.invoke(req_cmd, ["--stdin-json", "--json"])
 
     assert result.exit_code == 0
     data = json.loads(result.output.strip())
@@ -279,7 +280,7 @@ def test_emit_json_result_with_to_json_dict() -> None:
 
     @json_command
     @click.command("result-cmd")
-    def result_cmd(*, json_mode: bool) -> None:
+    def result_cmd(*, json_stdout: bool) -> None:
         emit_json_result(MyResult(value=21))
 
     runner = CliRunner()
@@ -290,7 +291,7 @@ def test_emit_json_result_with_to_json_dict() -> None:
     assert data["custom"] == 42
 
 
-def test_return_value_auto_serialized_in_json_mode() -> None:
+def test_return_value_auto_serialized_in_json_stdout() -> None:
     """Command return value is auto-serialized as JSON when --json is active."""
 
     @dataclass(frozen=True)
@@ -302,7 +303,7 @@ def test_return_value_auto_serialized_in_json_mode() -> None:
 
     @json_command
     @click.command("auto-cmd")
-    def auto_cmd(*, json_mode: bool) -> AutoResult:
+    def auto_cmd(*, json_stdout: bool) -> AutoResult:
         return AutoResult(value=21)
 
     runner = CliRunner()
@@ -313,12 +314,12 @@ def test_return_value_auto_serialized_in_json_mode() -> None:
     assert data["doubled"] == 42
 
 
-def test_return_none_no_output_in_json_mode() -> None:
+def test_return_none_no_output_in_json_stdout() -> None:
     """Returning None in JSON mode emits no JSON (prevents double-output)."""
 
     @json_command
     @click.command("none-cmd")
-    def none_cmd(*, json_mode: bool) -> None:
+    def none_cmd(*, json_stdout: bool) -> None:
         # Command that handles JSON inline and returns None
         pass
 
@@ -328,7 +329,7 @@ def test_return_none_no_output_in_json_mode() -> None:
     assert result.output.strip() == ""
 
 
-def test_return_value_ignored_in_non_json_mode() -> None:
+def test_return_value_ignored_in_non_json_stdout() -> None:
     """Return value is not serialized when --json is not passed."""
 
     @dataclass(frozen=True)
@@ -340,7 +341,7 @@ def test_return_value_ignored_in_non_json_mode() -> None:
 
     @json_command
     @click.command("ignored-cmd")
-    def ignored_cmd(*, json_mode: bool) -> IgnoredResult:
+    def ignored_cmd(*, json_stdout: bool) -> IgnoredResult:
         click.echo("human output")
         return IgnoredResult(value=99)
 
@@ -367,7 +368,7 @@ def test_emit_json_result_with_plain_dataclass() -> None:
 
     @json_command
     @click.command("plain-cmd")
-    def plain_cmd(*, json_mode: bool) -> None:
+    def plain_cmd(*, json_stdout: bool) -> None:
         emit_json_result(PlainResult(name="test", count=7))
 
     runner = CliRunner()
@@ -392,7 +393,7 @@ def test_json_command_meta_stored_on_command() -> None:
     @click.command("meta-cmd")
     @click.option("--name", default=None)
     @click.option("--secret", default=None)
-    def meta_cmd(*, json_mode: bool, name: str | None, secret: str | None) -> None:
+    def meta_cmd(*, json_stdout: bool, name: str | None, secret: str | None) -> None:
         pass
 
     meta = meta_cmd._json_command_meta  # type: ignore[attr-defined]
@@ -411,7 +412,7 @@ def test_json_command_meta_with_output_types() -> None:
 
     @json_command(output_types=(ResultA,))
     @click.command("typed-cmd")
-    def typed_cmd(*, json_mode: bool) -> None:
+    def typed_cmd(*, json_stdout: bool) -> None:
         pass
 
     meta = typed_cmd._json_command_meta  # type: ignore[attr-defined]
@@ -435,7 +436,7 @@ def test_schema_flag_short_circuits() -> None:
     @json_command
     @click.command("schema-cmd")
     @click.option("--name", type=str, default=None)
-    def schema_cmd(*, json_mode: bool, name: str | None) -> None:
+    def schema_cmd(*, json_stdout: bool, name: str | None) -> None:
         nonlocal call_count
         call_count += 1
 
@@ -451,7 +452,7 @@ def test_schema_output_structure() -> None:
     @json_command
     @click.command("struct-cmd")
     @click.option("--name", type=str, default=None, help="The name")
-    def struct_cmd(*, json_mode: bool, name: str | None) -> None:
+    def struct_cmd(*, json_stdout: bool, name: str | None) -> None:
         pass
 
     runner = CliRunner()
@@ -473,7 +474,7 @@ def test_schema_includes_input_params() -> None:
     @click.command("params-cmd")
     @click.option("--name", type=str, default=None, help="User name")
     @click.option("--count", type=int, default=None, help="Item count")
-    def params_cmd(*, json_mode: bool, name: str | None, count: int | None) -> None:
+    def params_cmd(*, json_stdout: bool, name: str | None, count: int | None) -> None:
         pass
 
     runner = CliRunner()
@@ -508,7 +509,7 @@ def test_schema_with_output_types() -> None:
 
     @json_command(output_types=(MyResult,))
     @click.command("typed-schema-cmd")
-    def typed_cmd(*, json_mode: bool) -> None:
+    def typed_cmd(*, json_stdout: bool) -> None:
         pass
 
     runner = CliRunner()
@@ -516,3 +517,84 @@ def test_schema_with_output_types() -> None:
     doc = json.loads(result.output)
 
     assert "value" in doc["output_schema"]["properties"]
+
+
+# -- Decoupled --json / --stdin-json tests --
+
+
+def test_json_without_stdin_json_does_not_read_stdin() -> None:
+    """--json alone does NOT read stdin (no --stdin-json)."""
+
+    @json_command
+    @click.command("no-stdin-cmd")
+    @click.option("--name", default=None)
+    def no_stdin_cmd(*, json_stdout: bool, name: str | None) -> None:
+        emit_json({"name": name})
+
+    runner = CliRunner()
+    # Patch stdin to return data, but since --stdin-json is not passed, it should be ignored
+    with _patch_stdin_json({"name": "should-be-ignored"}) as mock_read:
+        result = runner.invoke(no_stdin_cmd, ["--json"])
+
+    assert result.exit_code == 0
+    data = json.loads(result.output.strip())
+    assert data["success"] is True
+    assert data["name"] is None  # stdin data was NOT applied
+    mock_read.assert_not_called()
+
+
+def test_stdin_json_without_json_reads_stdin_human_output() -> None:
+    """--stdin-json without --json reads stdin but outputs in human format."""
+
+    @json_command
+    @click.command("stdin-only-cmd")
+    @click.option("--name", default=None)
+    def stdin_only_cmd(*, json_stdout: bool, name: str | None) -> None:
+        click.echo(f"name={name}")
+
+    runner = CliRunner()
+    with _patch_stdin_json({"name": "alice"}):
+        result = runner.invoke(stdin_only_cmd, ["--stdin-json"])
+
+    assert result.exit_code == 0
+    assert "name=alice" in result.output
+
+
+def test_stdin_json_and_json_together() -> None:
+    """--stdin-json --json reads stdin AND outputs JSON."""
+
+    @json_command
+    @click.command("both-cmd")
+    @click.option("--name", default=None)
+    def both_cmd(*, json_stdout: bool, name: str | None) -> None:
+        if json_stdout:
+            emit_json({"name": name})
+            return
+        click.echo(f"name={name}")
+
+    runner = CliRunner()
+    with _patch_stdin_json({"name": "bob"}):
+        result = runner.invoke(both_cmd, ["--stdin-json", "--json"])
+
+    assert result.exit_code == 0
+    data = json.loads(result.output.strip())
+    assert data["success"] is True
+    assert data["name"] == "bob"
+
+
+def test_stdin_json_error_without_json_raises_usage_error() -> None:
+    """--stdin-json without --json raises click.UsageError for input errors."""
+
+    @json_command
+    @click.command("usage-err-cmd")
+    @click.option("--name", default=None)
+    def usage_err_cmd(*, json_stdout: bool, name: str | None) -> None:
+        click.echo(f"name={name}")
+
+    runner = CliRunner()
+    with _patch_stdin_json({"bogus": True}):
+        result = runner.invoke(usage_err_cmd, ["--stdin-json"])
+
+    assert result.exit_code != 0
+    # Should NOT be JSON — should be Click's usage error format
+    assert "Unknown key: bogus" in result.output

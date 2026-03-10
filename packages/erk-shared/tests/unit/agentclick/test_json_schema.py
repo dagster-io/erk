@@ -91,7 +91,7 @@ def _make_schema_test_command() -> click.Command:
     @click.option("--dry-run", is_flag=True, help="Dry run mode")
     @click.option("--secret", type=str, default=None, help="Secret value")
     def test_cmd(
-        *, json_mode: bool, name: str | None, count: int | None, dry_run: bool, secret: str | None
+        *, json_stdout: bool, name: str | None, count: int | None, dry_run: bool, secret: str | None
     ) -> None:
         pass
 
@@ -109,7 +109,8 @@ def test_input_schema_properties() -> None:
 def test_input_schema_excludes_internal_params() -> None:
     cmd = _make_schema_test_command()
     schema = command_input_schema(cmd)
-    assert "json_mode" not in schema["properties"]
+    assert "json_stdout" not in schema["properties"]
+    assert "stdin_json" not in schema["properties"]
     assert "schema_mode" not in schema["properties"]
 
 
@@ -226,7 +227,7 @@ def test_build_schema_document_structure() -> None:
     @json_command
     @click.command("my-cmd")
     @click.option("--name", type=str, default=None)
-    def my_cmd(*, json_mode: bool, name: str | None) -> None:
+    def my_cmd(*, json_stdout: bool, name: str | None) -> None:
         pass
 
     doc = build_schema_document(my_cmd)
@@ -244,7 +245,7 @@ def test_build_schema_document_with_output_types() -> None:
     @json_command(output_types=(MyOutput,))
     @click.command("typed-cmd")
     @click.option("--name", type=str, default=None)
-    def typed_cmd(*, json_mode: bool, name: str | None) -> None:
+    def typed_cmd(*, json_stdout: bool, name: str | None) -> None:
         pass
 
     doc = build_schema_document(typed_cmd)

@@ -131,7 +131,7 @@ def _get_remote_github(ctx: ErkContext) -> RemoteGitHub:
 def one_shot(
     ctx: ErkContext,
     *,
-    json_mode: bool,
+    json_stdout: bool,
     prompt: str | None,
     file_path: str | None,
     model: str | None,
