@@ -55,6 +55,24 @@
       "raw_size_kb": 1096,
       "xml_size_kb": 367,
       "git_branch": "plnd/auto-recover-impl-retry-03-10-0929"
+    },
+    {
+      "session_id": "c2dd8df7-84fe-45ed-b154-a6ef14d674dd",
+      "stage": "address",
+      "source": "remote",
+      "uploaded_at": "2026-03-10T14:35:13.765649+00:00",
+      "files": [
+        "address-c2dd8df7-84fe-45ed-b154-a6ef14d674dd-c2dd8df7-84fe-45ed-b154-a6ef14d674dd-part1.xml",
+        "address-c2dd8df7-84fe-45ed-b154-a6ef14d674dd-c2dd8df7-84fe-45ed-b154-a6ef14d674dd-part2.xml",
+        "address-c2dd8df7-84fe-45ed-b154-a6ef14d674dd-c2dd8df7-84fe-45ed-b154-a6ef14d674dd-part3.xml",
+        "address-c2dd8df7-84fe-45ed-b154-a6ef14d674dd-c2dd8df7-84fe-45ed-b154-a6ef14d674dd-part4.xml",
+        "address-c2dd8df7-84fe-45ed-b154-a6ef14d674dd-c2dd8df7-84fe-45ed-b154-a6ef14d674dd-part5.xml"
+      ],
+      "user_turns": 3,
+      "duration_minutes": 4,
+      "raw_size_kb": 204,
+      "xml_size_kb": 102,
+      "git_branch": "plnd/auto-recover-impl-retry-03-10-0929"
     }
   ]
 }
