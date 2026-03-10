@@ -952,7 +952,7 @@ def link_pr_to_objective_nodes(ctx: ErkContext, state: SubmitState) -> SubmitSta
                 status=None,
                 description=None,
                 slug=None,
-                reason=None,
+                comment=None,
             )
             if updated_block_content is None:
                 continue

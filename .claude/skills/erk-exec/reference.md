@@ -138,7 +138,7 @@ Add a new node to an objective's roadmap.
 | `--slug`        | TEXT    | No       | -              | Kebab-case identifier (auto-generated if omitted) |
 | `--status`      | CHOICE  | No       | 'pending'      | Initial status (default: pending)                 |
 | `--depends-on`  | TEXT    | No       | Sentinel.UNSET | Dependency node IDs                               |
-| `--reason`      | TEXT    | No       | -              | Reason for adding this node                       |
+| `--comment`     | TEXT    | No       | -              | Comment for adding this node                      |
 
 ### add-plan-label
 
@@ -1370,7 +1370,7 @@ Update node fields in an objective's roadmap table.
 | `--status`       | CHOICE | No       | -              | Explicit status to set (default: infer from PR value)                   |
 | `--description`  | TEXT   | No       | -              | New description for the node. Omit to preserve existing.                |
 | `--slug`         | TEXT   | No       | -              | New slug for the node. Omit to preserve existing.                       |
-| `--reason`       | TEXT   | No       | -              | Reason text (e.g., why a node was skipped). Omit to preserve existing.  |
+| `--comment`      | TEXT   | No       | -              | Comment text (e.g., why a node was skipped). Omit to preserve existing. |
 | `--include-body` | FLAG   | No       | -              | Include the fully-mutated issue body in JSON output as 'updated_body'   |
 
 ### update-plan-header

@@ -231,8 +231,8 @@ def test_add_node_with_depends_on() -> None:
     assert "depends_on" in updated_body
 
 
-def test_add_node_with_reason() -> None:
-    """Node with reason is added correctly."""
+def test_add_node_with_comment() -> None:
+    """Node with comment is added correctly."""
     issue = _make_issue(8470, ROADMAP_BODY)
     fake_gh = FakeGitHubIssues(issues={8470: issue})
     runner = CliRunner()
@@ -245,7 +245,7 @@ def test_add_node_with_reason() -> None:
             "1",
             "--description",
             "New cleanup task",
-            "--reason",
+            "--comment",
             "Added during re-evaluation",
         ],
         obj=ErkContext.for_test(github=FakeLocalGitHub(issues_gateway=fake_gh)),

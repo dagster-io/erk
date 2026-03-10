@@ -253,7 +253,7 @@ def _replace_node_refs_in_body(
     explicit_status: str | None,
     description: str | None,
     slug: str | None,
-    reason: str | None,
+    comment: str | None,
 ) -> str | None:
     """Replace fields for a node in the raw markdown body.
 
@@ -266,7 +266,7 @@ def _replace_node_refs_in_body(
         explicit_status: If provided, use this status instead of inferring.
         description: New description, or None to preserve existing.
         slug: New slug, or None to preserve existing.
-        reason: New reason, or None to preserve existing.
+        comment: New comment, or None to preserve existing.
 
     Returns:
         Updated body string, or None if the node row was not found.
@@ -289,7 +289,7 @@ def _replace_node_refs_in_body(
         status=cast(RoadmapNodeStatus, explicit_status) if explicit_status is not None else None,
         description=description,
         slug=slug,
-        reason=reason,
+        comment=comment,
     )
 
     if updated_block_content is None:
@@ -385,11 +385,11 @@ def _set_plan_backlink(
     help="New slug for the node. Omit to preserve existing.",
 )
 @click.option(
-    "--reason",
-    "new_reason",
+    "--comment",
+    "new_comment",
     required=False,
     default=None,
-    help="Reason text (e.g., why a node was skipped). Omit to preserve existing.",
+    help="Comment text (e.g., why a node was skipped). Omit to preserve existing.",
 )
 @click.option(
     "--include-body",
@@ -408,7 +408,7 @@ def update_objective_node(
     explicit_status: str | None,
     new_description: str | None,
     new_slug: str | None,
-    new_reason: str | None,
+    new_comment: str | None,
     include_body: bool,
 ) -> None:
     """Update node fields in an objective's roadmap table."""
@@ -417,12 +417,12 @@ def update_objective_node(
         and explicit_status is None
         and new_description is None
         and new_slug is None
-        and new_reason is None
+        and new_comment is None
     ):
         err = UpdateObjectiveNodeError(
             error="no_update",
             message="At least one of --pr, --status, --description, "
-            "--slug, or --reason must be provided",
+            "--slug, or --comment must be provided",
         )
         click.echo(json.dumps(err.to_dict()))
         raise SystemExit(0)
@@ -489,7 +489,7 @@ def update_objective_node(
             explicit_status=explicit_status,
             description=new_description,
             slug=new_slug,
-            reason=new_reason,
+            comment=new_comment,
         )
         if new_body is None:
             results.append(
