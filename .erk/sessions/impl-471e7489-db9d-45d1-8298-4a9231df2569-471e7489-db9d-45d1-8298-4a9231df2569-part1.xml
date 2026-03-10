@@ -1,0 +1,1424 @@
+<session>
+  <meta branch="plnd/machine-cli-adapters-03-09-2204" />
+  <meta model="claude-opus-4-6" />
+  <user>&lt;command-message&gt;erk:plan-implement&lt;/command-message&gt;
+&lt;command-name&gt;/erk:plan-implement&lt;/command-name&gt;</user>
+  <user># /erk:plan-implement
+
+Implement a plan - either from GitHub, a markdown file, an existing impl directory under `.erk/impl-context/`, or by saving the current plan first.
+
+This is the primary implementation workflow - it orchestrates:
+
+1. Setting up the impl directory under `.erk/impl-context/&lt;branch&gt;/` (from issue, file, existing folder, or fresh plan)
+2. Executing the implementation
+3. Running CI and submitting the PR
+
+## Prerequisites
+
+- Must be in a git repository managed by erk
+- GitHub CLI (`gh`) must be authenticated
+- One of:
+  - A plan number, URL, or file path argument
+  - An existing impl directory under `.erk/impl-context/`
+  - A plan branch checked out (e.g., `plnd/...` or `P{number}-...`)
+  - A plan in `~/.claude/plans/` (from plan mode)
+
+## Usage
+
+```bash
+/erk:plan-implement                    # Use impl directory, detect from branch, or save current plan
+/erk:plan-implement 2521               # Fetch and implement plan #2521
+/erk:plan-implement https://github.com/owner/repo/pull/2521   # URL form
+/erk:plan-implement ./my-plan.md       # Implement from local markdown file
+```
+
+---
+
+## CRITICAL: PR Operations
+
+**NEVER** run direct GitHub CLI commands for PR operations during implementation:
+
+- `gh pr edit` — destroys plan-header metadata block
+- `gh pr ready` — bypasses lifecycle tracking
+- `gh pr close` / `gh pr merge`
+
+All PR operations are handled by `erk pr submit` in Step 13. It automatically:
+
+- Generates the PR title and body
+- Preserves the plan-header metadata block
+- Marks draft PRs as ready for review
+- Updates lifecycle stage
+
+## Agent Instructions
+
+### Step 1: Set Up Implementation
+
+Parse `` and run the consolidated setup command:
+
+- **If numeric** (e.g., `2521`): `erk exec setup-impl --issue 2521`
+- **If GitHub URL** (e.g., `https://github.com/.../issues/2521`): Extract number, `erk exec setup-impl --issue 2521`
+- **If path to file** (anything else non-empty): `erk exec setup-impl --file &lt;path&gt;`
+- **If empty**: `erk exec setup-impl` (auto-detects from `.erk/impl-context/`, branch, or fails)
+
+```bash
+erk exec setup-impl [--issue &lt;N&gt; | --file &lt;path&gt;]
+```
+
+This single command handles:
+
+- Fetching plan from GitHub (draft PR)
+- Setting up from a local markdown file
+- Auto-detecting from existing impl directory under `.erk/impl-context/`
+- Auto-detecting plan number from branch name (P{number}-... or PR lookup)
+- Creating/checking out the feature branch
+- Creating impl directory under `.erk/impl-context/&lt;branch&gt;/` with plan content
+- Running impl-init validation
+- Cleaning up `.erk/impl-context/` staging directory (git rm + commit + push)
+
+Otherwise, generate a branch slug and set up from the specified issue:
+
+1. Fetch the title: `gh pr view &lt;ISSUE_ARG&gt; --json title -q .title`
+2. Generate a branch slug from the title:
+   - 2-4 hyphenated lowercase words, max 30 characters
+   - Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+   - Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+   - Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+3. Store as `BRANCH_SLUG`.
+
+```bash
+erk exec setup-impl --issue &lt;ISSUE_ARG&gt; --branch-slug="${BRANCH_SLUG}"
+```
+
+If `setup-impl` exits with code 1 and `error: "no_plan_found"`, fall back to saving the current plan:
+
+Generate a branch slug from the plan title (the first `# ` heading in the plan file):
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Store as `BRANCH_SLUG`
+
+Save the current plan to GitHub and capture the plan number:
+
+```bash
+erk exec plan-save --format json --session-id="471e7489-db9d-45d1-8298-4a9231df2569" --branch-slug="${BRANCH_SLUG}"
+```
+
+Parse the JSON output to get `plan_number`, then:
+
+```bash
+erk exec setup-impl --issue &lt;plan_number&gt;
+```
+
+The `setup-impl` output includes `related_docs` (skills and docs to load) and `has_plan_tracking` (whether GitHub issue tracking is active).
+
+If this fails, display the error and stop.
+
+### Step 2: Read Plan and Load Context
+
+Read `plan.md` from the impl directory set up in Step 1 to understand:
+
+- Overall goal and context
+- Context &amp; Understanding sections (API quirks, architectural insights, pitfalls)
+- Implementation phases and dependencies
+- Success criteria
+
+**Context Consumption**: Plans contain expensive discoveries. Ignoring `[CRITICAL:]` tags, "Related Context:" subsections, or "DO NOT" items causes repeated mistakes.
+
+### Step 3: Load Related Documentation
+
+If plan contains "Related Documentation" section, load listed skills via Skill tool and read listed docs.
+
+### Step 4: Create TodoWrite Entries
+
+Create todo entries for each phase from the plan.
+
+### Step 5: Signal GitHub Started
+
+```bash
+erk exec impl-signal started --session-id="471e7489-db9d-45d1-8298-4a9231df2569" 2&gt;/dev/null || true
+```
+
+This also deletes the Claude plan file (from `~/.claude/plans/`) since:
+
+- The content has been saved to GitHub
+- The content has been snapshotted to `.erk/scratch/`
+- Keeping it could cause confusion if the user tries to re-save
+
+### Step 6: Execute Each Phase Sequentially
+
+For each phase:
+
+1. **Mark phase as in_progress** (in TodoWrite)
+2. **Read task requirements** carefully
+3. **Implement code AND tests together**:
+   - Load `dignified-python-313` skill for coding standards
+   - Load `fake-driven-testing` skill for test patterns
+   - Follow project AGENTS.md standards
+4. **Mark phase as completed** (in TodoWrite)
+5. **Report progress**: changes made, what's next
+
+**Important:** `plan.md` is immutable - NEVER edit during implementation
+
+### Step 7: Report Progress
+
+After each phase: report changes made and what's next.
+
+### Step 8: Final Verification
+
+Confirm all tasks executed, success criteria met, note deviations, summarize changes.
+
+### Step 9: Signal GitHub Ended
+
+```bash
+erk exec impl-signal ended --session-id="471e7489-db9d-45d1-8298-4a9231df2569" 2&gt;/dev/null || true
+```
+
+### Step 10: Upload Session for Async Learn
+
+```bash
+erk exec upload-impl-session --session-id="471e7489-db9d-45d1-8298-4a9231df2569" 2&gt;/dev/null || true
+```
+
+This reads plan reference from the impl directory, captures session info, and uploads for async learn processing.
+
+### Step 11: Clean Up Impl Context
+
+Remove the `.erk/impl-context/` directory from the repo:
+
+```bash
+erk exec cleanup-impl-context
+```
+
+This removes `.erk/impl-context/`, stages the deletion, commits, and pushes — all idempotent.
+
+### Step 12: Run CI Iteratively
+
+1. If `.erk/prompt-hooks/post-plan-implement-ci.md` exists: follow its instructions
+2. Otherwise: check CLAUDE.md/AGENTS.md for CI commands
+
+### Step 13: Submit PR
+
+Push the branch and create or update the PR using the Graphite-aware submit pipeline:
+
+```bash
+erk pr submit
+```
+
+This handles pushing commits, creating/updating the PR, generating the PR description, and enhancing with Graphite stack metadata when available.
+
+After successful submission, signal lifecycle transition:
+
+```bash
+erk exec impl-signal submitted 2&gt;/dev/null || true
+```
+
+Then validate PR completion invariants:
+
+```bash
+erk pr check --stage=impl
+```
+
+This validates PR submission readiness including implementation-specific checks
+(e.g., `.erk/impl-context/` must be cleaned up). If checks fail, display output and warn user.
+
+### Step 14: Output Format
+
+- **Start**: "Setting up implementation..." or "Fetching plan #X..."
+- **After setup**: "Implementation environment ready, reading plan..."
+- **Each phase**: "Phase X: [brief description]" with code changes
+- **End**: "Plan execution complete. [Summary]"
+
+---
+
+## Related Commands
+
+- `/erk:plan-save` - Save plan only, don't implement (for defer-to-later workflow)
+- `/erk:replan` - Re-plan an existing plan with current codebase state
+</user>
+  <usage input_tokens="2" cache_creation_input_tokens="15373" cache_read_input_tokens="9148" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 15373}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>Setting up implementation...</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="15373" cache_read_input_tokens="9148" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 15373}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01EHyX7Mjp6X9VFHJQyqPPtt">
+    <param name="command">erk exec setup-impl 2&gt;&amp;1</param>
+    <param name="description">Auto-detect and set up implementation from current branch</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="15373" cache_read_input_tokens="9148" output_tokens="172" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 15373, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01EHyX7Mjp6X9VFHJQyqPPtt">
+Found existing impl dir for plan #9123, skipping branch setup
+{"success": true, "impl_path": "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-19/.erk/impl-context/plnd--machine-cli-adapters-03-09-2204", "plan_number": 9123, "plan_url": "https://github.com/dagster-io/erk/pull/9123", "branch": "plnd/machine-cli-adapters-03-09-2204", "plan_title": "", "no_impl": false}
+{"success": true, "source": "issue", "plan_number": 9123, "has_plan_tracking": true, "valid": true, "related_docs": {"skills": [], "docs": []}}
+  </tool_result>
+  <assistant>Implementation environment ready, reading plan...</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="348" cache_read_input_tokens="24521" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 348}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01MCgC8x2u1kPVtF76vKWuT8">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-19/.erk/impl-context/plnd--machine-cli-adapters-03-09-2204/plan.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="348" cache_read_input_tokens="24521" output_tokens="114" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 348, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01MCgC8x2u1kPVtF76vKWuT8">
+     1→# Plan: Replace @json_command With Separate Human and Machine CLI Adapters
+     2→
+     3→## Context
+     4→
+     5→The current `@json_command` decorator mixes human CLI parsing, machine JSON transport, and MCP discovery in one abstraction. JSON input is merged into Click kwargs, JSON values can override CLI values, and MCP schemas are derived from Click params rather than the actual machine contract. This refactor splits into three clean layers: core operations (request/result dataclasses), human CLI adapters, and machine CLI adapters under `erk json ...`.
+     6→
+     7→Source spec: `agentclick-machine-cli-plan.md` (on current branch).
+     8→
+     9→## Step 1: Create the machine command infrastructure
+    10→
+    11→Replace `@json_command` with a new `@machine_command` decorator in `packages/erk-shared/src/erk_shared/agentclick/`.
+    12→
+    13→**New/modified files:**
+    14→- `packages/erk-shared/src/erk_shared/agentclick/machine_command.py` (NEW)
+    15→  - `MachineCommandMeta(frozen=True)` — stores `request_type`, `result_types`, `name`, `description`
+    16→  - `@machine_command(request_type=..., result_types=..., name=..., description=...)` decorator
+    17→  - Wraps a Click command that: reads stdin JSON, deserializes to request dataclass, calls core op, serializes result
+    18→  - Adds `--schema` flag (short-circuits to emit schema doc)
+    19→  - No `--json` or `--stdin-json` flags — machine commands are always JSON in/out
+    20→  - Error handling: catches `AgentCliError`, emits `{"success": false, "error_type": ..., "message": ...}`
+    21→
+    22→- `packages/erk-shared/src/erk_shared/agentclick/machine_schema.py` (NEW or rename `json_schema.py`)
+    23→  - `request_schema(request_type)` — generates input schema from frozen dataclass fields (NOT Click params)
+    24→  - `result_schema(result_types)` — reuse existing `output_type_schema()` logic
+    25→  - `build_schema_document(meta: MachineCommandMeta)` — combines input/output/error schemas
+    26→  - Keep `dataclass_to_json_schema()` utility (already works well)
+    27→
+    28→- Keep `packages/erk-shared/src/erk_shared/agentclick/errors.py` — `AgentCliError` unchanged
+    29→- Keep `packages/erk-shared/src/erk_shared/agentclick/json_command.py` helpers: `emit_json()`, `emit_json_result()`, `read_stdin_json()` — move to a shared `io.py` or keep in place
+    30→
+
+... [140 lines omitted] ...
+
+   123→  - Test machine command decorator: stdin JSON parsing, result serialization, error envelopes, `--schema`
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="3689" cache_read_input_tokens="24869" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3689}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>This is a significant refactoring plan. Let me load the relevant skills and explore the current codebase before starting implementation.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3689" cache_read_input_tokens="24869" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3689}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Skill" id="toolu_015s36fahpkkunrYALDgPiKi">
+    <param name="skill">fake-driven-testing</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3689" cache_read_input_tokens="24869" output_tokens="150" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3689, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_015s36fahpkkunrYALDgPiKi">
+Launching skill: fake-driven-testing
+  </tool_result>
+  <user>Base directory for this skill: /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-19/.claude/skills/fake-driven-testing
+
+# Fake-Driven Testing Architecture for Python
+
+**Use this skill when**: Writing tests, fixing bugs, adding features, or modifying gateway layers in Python projects.
+
+**Prerequisites**: For Python code standards, load the `dignified-python-313` skill first. This skill focuses on testing architecture, not Python syntax.
+
+## Overview
+
+This skill provides a **defense-in-depth testing strategy** with five layers for Python applications:
+
+```
+┌─────────────────────────────────────────────────┐
+│  Layer 5 "smoke": Business Logic Integration Tests (5%)  │  ← Smoke tests over real system
+├─────────────────────────────────────────────────┤
+│  Layer 4 "logic": Business Logic Tests (70%)             │  ← Tests over fakes (MOST TESTS)
+├─────────────────────────────────────────────────┤
+│  Layer 3 "pure": Pure Unit Tests (10%)                   │  ← Zero dependencies, isolated testing
+├─────────────────────────────────────────────────┤
+│  Layer 2 "real-sanity": Integration Sanity Tests (10%)   │  ← Fast validation with mocking
+├─────────────────────────────────────────────────┤
+│  Layer 1 "fake-check": Fake Infrastructure Tests (5%)    │  ← Verify test doubles work
+└─────────────────────────────────────────────────┘
+```
+
+**Philosophy**: Test business logic extensively over fast in-memory fakes. Use real implementations sparingly for integration validation.
+
+**Terminology note**: The "gateway layer" (also called adapters/providers) refers to thin wrappers around heavyweight external APIs (databases, filesystems, HTTP APIs, message queues, etc.). The pattern matters more than the name.
+
+## Quick Decision: What Should I Read?
+
+**Adding a feature or fixing a bug?**
+→ Read `quick-reference.md` first, then `workflows.md#adding-a-new-feature`
+
+**Need to understand where to put a test?**
+→ Read `testing-strategy.md`
+
+**Working with Python-specific patterns?**
+→ Read `python-specific.md`
+
+**Adding/changing a gateway interface?**
+→ Read `gateway-architecture.md`, then `workflows.md#adding-a-gateway-method`
+
+**Creating a backend (higher-level abstraction over gateways)?**
+→ Read `gateway-architecture.md#gateways-vs-backends` - backends compose gateways and do NOT have fakes
+
+**Need to implement a specific pattern (CliRunner, builders, etc.)?**
+→ Read `patterns.md`
+
+**Not sure if I'm doing it right?**
+→ Read `anti-patterns.md`
+
+**Just need a quick lookup?**
+→ Read `quick-reference.md`
+
+## When to Read Each Reference Document
+
+### 📖 `gateway-architecture.md`
+
+**Read when**:
+
+- Adding or changing gateway/ABC interfaces
+- Understanding the ABC/Real/Fake/DryRun pattern
+- Need examples of gateway implementations
+- Want to understand what gateways are (and why they're thin)
+- **Creating a backend** (higher-level abstraction that composes gateways)
+
+**Contents**:
+
+- What are gateway classes? (naming: gateways/adapters/providers)
+- The four implementations (ABC, Real, Fake, DryRun)
+- Code examples for each
+- When to add/change gateway methods
+- Design principles (keep gateways thin)
+- Common gateway types (Database, API, FileSystem, MessageQueue)
+- **Gateways vs Backends** - critical distinction for DI boundaries
+
+### 📖 `testing-strategy.md`
+
+**Read when**:
+
+- Deciding where to put a test
+- Understanding the five testing layers
+- Need test distribution guidance (5/70/10/10/5 rule)
+- Want to know which layer tests what
+
+**Contents**:
+
+- Layer 1 "fake-check": Unit tests of fakes (verify test infrastructure)
+- Layer 2 "real-sanity": Integration sanity tests with mocking (quick validation)
+- Layer 3 "pure": Pure unit tests (zero dependencies, isolated testing)
+- Layer 4 "logic": Business logic over fakes (majority of tests)
+- Layer 5 "smoke": Business logic integration tests (smoke tests over real systems)
+- Decision tree: where should my test go?
+- Test distribution examples
+
+### 📖 `python-specific.md`
+
+**Read when**:
+
+- Working with pytest fixtures
+- Need Python mocking patterns
+- Testing Flask/FastAPI/Django applications
+- Understanding Python testing tools
+- Need Python-specific commands
+
+**Contents**:
+
+- pytest fixtures and parametrization
+- Mocking with unittest.mock and pytest-mock
+- Testing web frameworks (Flask, FastAPI, Django)
+- Python testing commands
+- Type hints in tests
+- Python packaging for test utilities
+
+### 📖 `workflows.md`
+
+**Read when**:
+
+- Adding a new feature (step-by-step)
+- Fixing a bug (step-by-step)
+- Adding a gateway method (complete checklist)
+- Changing an interface (what to update)
+- Managing dry-run features
+
+**Contents**:
+
+- Adding a new feature (TDD workflow)
+- Fixing a bug (reproduce → fix → regression test)
+- Adding a gateway method (8-step checklist with examples)
+- Changing an interface (update all layers)
+- Managing dry-run features (wrapping pattern)
+- Testing with builder patterns
+
+### 📖 `patterns.md`
+
+**Read when**:
+
+- Implementing constructor injection for fakes
+- Adding mutation tracking to fakes
+- Using CliRunner for CLI tests
+- Building complex test scenarios with builders
+- Testing dry-run behavior
+- Need code examples of specific patterns
+
+**Contents**:
+
+- Constructor injection (how and why)
+- Mutation tracking properties (read-only access)
+- Using CliRunner (not subprocess)
+- Builder patterns for complex scenarios
+- Simulated environment pattern
+- Error injection pattern
+- Dry-run testing pattern
+
+### 📖 `anti-patterns.md`
+
+**Read when**:
+
+- Unsure if your approach is correct
+- Want to avoid common mistakes
+- Reviewing code for bad patterns
+- Debugging why tests are slow/brittle
+
+**Contents**:
+
+- ❌ Testing speculative features
+- ❌ Hardcoded paths in tests (catastrophic)
+- ❌ Not updating all layers
+- ❌ Using subprocess in unit tests
+- ❌ Complex logic in gateway classes
+- ❌ Fakes with I/O operations
+- ❌ Testing implementation details
+- ❌ Incomplete test coverage for gateways
+
+### 📖 `quick-reference.md`
+
+**Read when**:
+
+- Quick lookup for file locations
+- Finding example tests to reference
+- Looking up common fixtures
+- Need command reference
+- Want test distribution guidelines
+
+**Contents**:
+
+- Decision tree (where to add test)
+- File location map (source + tests)
+- Common fixtures (tmp_path, CliRunner, etc.)
+- Common test patterns (code snippets)
+- Example tests to reference
+- Useful commands (pytest, ty, etc.)
+- Quick checklist for adding gateway methods
+
+## Quick Navigation by Task
+
+### I'm adding a new feature
+
+1. **Quick start**: `quick-reference.md` → Decision tree
+2. **Step-by-step**: `workflows.md#adding-a-new-feature`
+3. **Patterns**: `patterns.md` (CliRunner, builders)
+4. **Avoid**: `anti-patterns.md` (speculative tests, hardcoded paths)
+
+### I'm fixing a bug
+
+1. **Step-by-step**: `workflows.md#fixing-a-bug`
+2. **Patterns**: `patterns.md#constructor-injection-for-fakes`
+3. **Examples**: `quick-reference.md#example-tests-to-reference`
+
+### I'm adding/changing a gateway method
+
+1. **Understanding**: `gateway-architecture.md`
+2. **Step-by-step**: `workflows.md#adding-a-gateway-method`
+3. **Checklist**: `quick-reference.md#quick-checklist-adding-a-new-gateway-method`
+4. **Avoid**: `anti-patterns.md#not-updating-all-layers`
+
+### I don't know where my test should go
+
+1. **Decision tree**: `quick-reference.md#decision-tree`
+2. **Detailed guide**: `testing-strategy.md`
+3. **Examples**: `quick-reference.md#example-tests-to-reference`
+
+### I need to implement a pattern
+
+1. **All patterns**: `patterns.md`
+2. **Examples**: `quick-reference.md#common-test-patterns`
+
+### I think I'm doing something wrong
+
+1. **Anti-patterns**: `anti-patterns.md`
+2. **Correct approach**: `workflows.md`
+
+## Visual Layer Guide
+
+```
+┌──────────────────────────────────────────────────────────────┐
+│ Layer 5 "smoke": Business Logic Integration Tests (5%)       │
+│ ┌──────────────────────────────────────────────────────────┐ │
+│ │ Real database, filesystem, APIs, actual subprocess        │ │
+│ │ Purpose: Smoke tests, catch integration issues           │ │
+│ │ When: Sparingly, for critical workflows                  │ │
+│ │ Speed: Seconds per test                                   │ │
+│ │ Location: tests/e2e/ or tests/integration/               │ │
+│ └──────────────────────────────────────────────────────────┘ │
+└──────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────┐
+│ Layer 4 "logic": Business Logic Tests (70%) ← MOST TESTS    │
+│ ┌──────────────────────────────────────────────────────────┐ │
+│ │ FakeDatabase, FakeApiClient, FakeFileSystem              │ │
+│ │ Purpose: Test features and business logic extensively    │ │
+│ │ When: For EVERY feature and bug fix                      │ │
+│ │ Speed: Milliseconds per test                              │ │
+│ │ Location: tests/unit/, tests/services/, tests/commands/  │ │
+│ └──────────────────────────────────────────────────────────┘ │
+└──────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────┐
+│ Layer 3 "pure": Pure Unit Tests (10%)                        │
+│ ┌──────────────────────────────────────────────────────────┐ │
+│ │ Zero dependencies, no fakes, no mocks                    │ │
+│ │ Purpose: Test isolated utilities and helpers             │ │
+│ │ When: For pure functions, data structures, parsers       │ │
+│ │ Speed: Milliseconds per test                              │ │
+│ │ Location: tests/unit/                                     │ │
+│ └──────────────────────────────────────────────────────────┘ │
+└──────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────┐
+│ Layer 2 "real-sanity": Integration Sanity Tests (10%)        │
+│ ┌──────────────────────────────────────────────────────────┐ │
+│ │ RealDatabase with mocked connections                     │ │
+│ │ Purpose: Quick validation, catch syntax errors           │ │
+│ │ When: When adding/changing real implementation           │ │
+│ │ Speed: Fast (mocked)                                      │ │
+│ │ Location: tests/integration/test_real_*.py               │ │
+│ └──────────────────────────────────────────────────────────┘ │
+└──────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────┐
+│ Layer 1 "fake-check": Fake Infrastructure Tests (5%)         │
+│ ┌──────────────────────────────────────────────────────────┐ │
+│ │ Test FakeDatabase itself                                 │ │
+│ │ Purpose: Verify test infrastructure is reliable          │ │
+│ │ When: When adding/changing fake implementation           │ │
+│ │ Speed: Milliseconds per test                              │ │
+│ │ Location: tests/unit/fakes/test_fake_*.py               │ │
+│ └──────────────────────────────────────────────────────────┘ │
+└──────────────────────────────────────────────────────────────┘
+```
+
+## Key Principles
+
+1. **Thin gateway layer**: Wrap external state, push complexity to business logic
+2. **Fast tests over fakes**: 70% of tests should use in-memory fakes
+3. **Defense in depth**: Fakes → sanity tests → pure unit → business logic → integration
+4. **Test what you're building**: No speculative tests, only active work
+5. **Update all layers**: When changing interfaces, update ABC/real/fake/dry-run
+6. **Gateways vs Backends**: Gateways have fakes; backends compose gateways and do NOT have fakes
+
+## Layer Selection Guide
+
+**Distinguishing Layer 3 "pure" from Layer 4 "logic":**
+
+- **Layer 3 "pure" (Pure Unit Tests)**: ZERO dependencies - no fakes, no mocks, no external state
+  - Testing string utilities: `sanitize_branch_name("feat/FOO")` → `"feat-foo"`
+  - Testing parsers: `parse_git_status("## main")` → `{"branch": "main"}`
+  - Testing data structures: `LinkedList.append()` without any external dependencies
+
+- **Layer 4 "logic" (Business Logic Tests)**: Uses fakes for external dependencies
+  - Testing commands: `create_worktree(fake_git, name="feature")`
+  - Testing workflows: `submit_pr(fake_gh, fake_git, ...)`
+  - Testing business logic that coordinates multiple integrations
+
+**If your test imports a Fake\*, it belongs in Layer 4 "logic", not Layer 3 "pure".**
+
+## Default Testing Strategy
+
+**When in doubt**:
+
+- Write test over fakes (Layer 4 "logic") for business logic
+- Write pure unit test (Layer 3 "pure") for utilities/helpers with no dependencies
+- Use `pytest` with fixtures
+- Use `tmp_path` fixture (not hardcoded paths)
+- Follow examples in `quick-reference.md`
+
+## Summary
+
+**For quick tasks**: Start with `quick-reference.md`
+
+**For understanding**: Start with `testing-strategy.md` or `gateway-architecture.md`
+
+**For step-by-step guidance**: Use `workflows.md`
+
+**For implementation details**: Use `patterns.md`
+
+**For validation**: Check `anti-patterns.md`
+
+**For Python specifics**: Check `python-specific.md`
+</user>
+  <tool_use name="Skill" id="toolu_01XqjGYLbTq18SfVfmhVUySW">
+    <param name="skill">dignified-python</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="3927" cache_read_input_tokens="28558" output_tokens="56" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3927, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01XqjGYLbTq18SfVfmhVUySW">
+Launching skill: dignified-python
+  </tool_result>
+  <user>Base directory for this skill: /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-19/.claude/skills/dignified-python
+
+# Dignified Python Coding Standards
+
+## Core Knowledge (ALWAYS Loaded)
+
+@dignified-python-core.md
+
+## Version Detection
+
+**Identify the project's minimum Python version** by checking (in order):
+
+1. `pyproject.toml` - Look for `requires-python` field (e.g., `requires-python = "&gt;=3.12"`)
+2. `setup.py` or `setup.cfg` - Look for `python_requires`
+3. `.python-version` file - Contains version like `3.12` or `3.12.0`
+4. Default to Python 3.12 if no version specifier found
+
+**Once identified, load the appropriate version-specific file:**
+
+- Python 3.10: Load `versions/python-3.10.md`
+- Python 3.11: Load `versions/python-3.11.md`
+- Python 3.12: Load `versions/python-3.12.md`
+- Python 3.13: Load `versions/python-3.13.md`
+
+## Conditional Loading (Load Based on Task Patterns)
+
+Core files above cover 80%+ of Python code patterns. Only load these additional files when you detect specific patterns:
+
+Pattern detection examples:
+
+- If task mentions "click" or "CLI" -&gt; Load `cli-patterns.md`
+- If task mentions "subprocess" -&gt; Load `subprocess.md`
+
+## When to Read Each Reference Document
+
+The `references/` directory contains detailed guidance for specialized topics. Load these on-demand when you encounter relevant patterns:
+
+### `references/exception-handling.md`
+
+**Read when**:
+
+- Writing try/except blocks
+- Wrapping third-party APIs that may raise
+- Seeing or writing `from e` or `from None`
+- Unsure if LBYL alternative exists
+
+### `references/interfaces.md`
+
+**Read when**:
+
+- Creating ABC or Protocol classes
+- Writing @abstractmethod decorators
+- Designing gateway layer interfaces
+- Choosing between ABC and Protocol
+
+### `references/typing-advanced.md`
+
+**Read when**:
+
+- Using typing.cast()
+- Creating Literal type aliases
+- Narrowing types in conditional blocks
+
+### `references/module-design.md`
+
+**Read when**:
+
+- Creating new Python modules
+- Adding module-level code (beyond simple constants)
+- Using @cache decorator at module level
+- Seeing Path() or computation at module level
+- Considering inline imports
+
+### `references/api-design.md`
+
+**Read when**:
+
+- Adding default parameter values to functions
+- Defining functions with 5 or more parameters
+- Using ThreadPoolExecutor.submit()
+- Reviewing function signatures
+
+### `references/checklists.md`
+
+**Read when**:
+
+- Final review before committing Python code
+- Unsure if you've followed all rules
+- Need a quick lookup of requirements
+
+## How to Use This Skill
+
+1. **Core knowledge** is loaded automatically (LBYL, pathlib, basic imports, anti-patterns)
+2. **Version detection** happens once - identify the minimum Python version and load the appropriate version file
+3. **Reference documents** are loaded on-demand based on the triggers above
+4. **Additional patterns** may require extra loading (CLI patterns, subprocess)
+5. **Each file is self-contained** with complete guidance for its domain
+</user>
+  <usage input_tokens="2" cache_creation_input_tokens="891" cache_read_input_tokens="32485" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 891}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me explore the current codebase to understand the existing architecture before implementing.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="891" cache_read_input_tokens="32485" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 891}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01RC3ZM3pxQPhRqB34h1NGRy">
+    <param name="description">Explore agentclick package</param>
+    <param name="subagent_type">Explore</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 502 chars]...d
+6. Any other files in this directory
+
+Read each file completely and report all contents.</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="891" cache_read_input_tokens="32485" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 891}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_014gsHVkuyfaKWMaCnQaKjr4">
+    <param name="description">Explore existing commands</param>
+    <param name="subagent_type">Explore</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 437 chars]....py` - the main CLI group registration
+
+Read each file completely and report all contents.</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="891" cache_read_input_tokens="32485" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 891}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01SJmyn6Ae2Xv9TY5pQn9phV">
+    <param name="description">Explore MCP server and tests</param>
+    <param name="subagent_type">Explore</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 575 chars]...ne_shot_json.py` - one shot JSON tests
+
+Read each file completely and report all contents.</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="891" cache_read_input_tokens="32485" output_tokens="990" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 891, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01SJmyn6Ae2Xv9TY5pQn9phV">
+Perfect! I've now read all the requested files completely. Let me compile a comprehensive report of my findings.
+
+## Summary
+
+I've thoroughly explored the MCP server implementation and all related test files. Here are the complete contents and key findings:
+
+### Files Read (Absolute Paths):
+
+1. **`/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-19/packages/erk-mcp/src/erk_mcp/server.py`** (103 lines)
+   - FastMCP server exposing erk capabilities as MCP tools
+   - Key functions: `_run_erk()`, `_run_erk_json()`, `JsonCommandTool` class, `_build_json_command_tools()`, `create_mcp()`
+   - Discovers `@mcp_exposed @json_command` CLI commands and registers them as MCP tools
+   - Filters None values but keeps false booleans when piping JSON params to CLI
+
+2. **`/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-19/packages/erk-shared/tests/unit/agentclick/test_json_command.py`** (519 lines)
+   - Comprehensive tests for `@json_command` decorator, `emit_json()`, `emit_json_result()`
+   - Tests `--json` and `--schema` flag behavior
+   - Tests JSON input from stdin, error serialization, output type handling
+   - 50+ test functions covering success cases, error cases, and edge cases
+
+3. **`/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-19/packages/erk-shared/tests/unit/agentclick/test_json_schema.py`** (263 lines)
+   - Tests JSON schema generation from Click commands
+   - Tests `click_param_to_json_schema()`, `command_input_schema()`, `dataclass_to_json_schema()`, `build_schema_document()`
+   - Tests parameter type mapping (string, int, float, bool, choice, path)
+   - Tests output schema generation and error schema structure
+
+4. **`/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-19/tests/unit/cli/test_json_command.py`** (63 lines)
+   - Tests that every `@json_command`'s `output_types` matches its return annotation
+   - Validates consistency across the entire CLI tree
+   - Recursively collects all `@json_command` commands and verifies type safety
+
+... [35 lines omitted] ...
+
+   - Tests error cases (empty prompt, invalid repo format)
+- **Error Handling**: Discriminated unions with `success: bool`, `error_type`, and `message` fields
+  </tool_result>
+  <tool_result tool="toolu_014gsHVkuyfaKWMaCnQaKjr4">
+Perfect! I now have all the files read. Let me compile a comprehensive exploration report.
+
+## Exploration Report: CLI Refactoring for @json_command and Adapter Pattern
+
+I have thoroughly explored the CLI code and documentation. Here are my findings:
+
+### Files Explored
+
+1. **`/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-19/src/erk/cli/commands/one_shot.py`** (233 lines)
+   - Top-level command `erk one-shot` for remote autonomous execution
+   - Uses `@mcp_exposed` and `@json_command` decorators
+   - Returns `OneShotDispatchResult | OneShotDryRunResult`
+
+2. **`/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-19/src/erk/cli/commands/one_shot_remote_dispatch.py`** (485 lines)
+   - Core dispatch logic via RemoteGitHub REST API
+   - Defines `OneShotDispatchParams`, `OneShotDispatchResult`, `OneShotDryRunResult` dataclasses
+   - Both result classes implement `to_json_dict()` and `json_schema()` methods
+
+3. **`/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-19/src/erk/cli/commands/pr/list_cmd.py`** (569 lines)
+   - Two commands: `pr list` (static table) and `dash` (TUI)
+   - `pr_list()` uses `@mcp_exposed` and `@json_command`
+   - Returns `PrListResult | None`
+   - Implements shared filter/sort options via decorators `@pr_filter_options` and `@dash_options`
+   - Uses `@resolved_repo_option` for repo argument handling
+   - Internal `_pr_list_impl()` function handles the logic
+
+4. **`/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-19/src/erk/cli/commands/pr/view_cmd.py`** (452 lines)
+   - Single command `pr view` to fetch and display a plan
+   - Uses `@mcp_exposed` and `@json_command`
+   - Returns `PrViewResult | None`
+
+... [159 lines omitted] ...
+
+        raise UserFacingCliError(...)
+- Raises `UserFacingCliError` if neither available
+4. **Error Handling:** All three commands use `UserFacingCliError` for expected CLI failures (lines 27, 179, 196-200, 270, 287, etc.)
+  </tool_result>
+  <tool_result tool="toolu_01RC3ZM3pxQPhRqB34h1NGRy">
+Perfect! Now I have all the information. Let me compile a comprehensive report of the agentclick package.
+
+## Complete Exploration of `agentclick` Package
+
+I've thoroughly explored the agentclick package at `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-19/packages/erk-shared/src/erk_shared/agentclick/`. Here's the complete contents:
+
+### Files in the Package
+
+1. **`__init__.py`** - Empty file (no exports)
+2. **`errors.py`** - Error class definition
+3. **`json_command.py`** - JSON command decorator and helpers
+4. **`json_schema.py`** - JSON Schema generation
+5. **`mcp_exposed.py`** - MCP exposure decorator and discovery
+
+---
+
+### 1. `errors.py` - Complete Contents
+
+**Location**: `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-19/packages/erk-shared/src/erk_shared/agentclick/errors.py`
+
+**13 lines total**
+
+```python
+"""Base error class for agent-optimized CLI commands."""
+
+import click
+
+
+class AgentCliError(click.ClickException):
+    """Exception with error_type for JSON serialization by @json_command."""
+
+... [218 lines omitted] ...
+
+    def __init__(self, message: str, *, error_type: str) -&gt; None:
+        self.error_type = error_type
+**Summary**: Single frozen dataclass-like exception that extends `click.ClickException`. Takes `message` (str) and `error_type` (keyword-only str) parameters. The `error_type` attribute is used by `@json_command` to serialize errors as JSON.
+- Raises `json.JSONDecodeError` if JSON invalid
+- Raises `ValueError` if JSON is not an object (dict)
+  - Error handling:
+    - JSON parsing errors → `"invalid_json_input"` error type
+    - Unknown keys → `"invalid_json_input"` error type
+    - Missing required fields → `"invalid_json_input"` error type
+    - `click.ClickException` with `error_type` attribute → JSON serialization
+- Raises `TypeError` if neither available
+- `ERROR_SCHEMA` (lines 21-29): Fixed schema for error responses with `success`, `error_type`, `message` fields
+  - Raises `TypeError` if neither available
+- Builds full schema document with command name, input, output, and error schemas
+- Returns dict with keys: `command`, `input_schema`, `output_schema`, `error_schema`
+- `from erk_shared.agentclick.errors import AgentCliError`
+1. **JSON Command Decorator** (`json_command.py`): Transforms Click commands to support `--json` and `--schema` flags, handling JSON input/output, error serialization, and schema generation.
+4. **Error Handling** (`errors.py`): Extended Click exception with `error_type` field for JSON serialization in agent-optimized contexts.
+  </tool_result>
+  <usage input_tokens="3" cache_creation_input_tokens="8336" cache_read_input_tokens="33376" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 8336}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Good, I have a thorough understanding of the codebase. Let me set up tracking and start implementing.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="8336" cache_read_input_tokens="33376" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 8336}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_014xwFxBMoMSHK233g1StssX">
+    <param name="query">select:TaskCreate,TaskUpdate,TaskList</param>
+    <param name="max_results">3</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="8336" cache_read_input_tokens="33376" output_tokens="177" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 8336, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_014xwFxBMoMSHK233g1StssX">
+
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_011EFLf43MFZG4HmTbHaSwH2">
+    <param name="subject">Step 1: Create machine command infrastructure</param>
+    <param name="description">Create machine_command.py and machine_schema.py in agentclick package</param>
+    <param name="activeForm">Creating machine command infrastructure</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="2309" cache_read_input_tokens="41712" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2309}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011EFLf43MFZG4HmTbHaSwH2">
+Task #1 created successfully: Step 1: Create machine command infrastructure
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_01S6JVkK57ZqQyX9R9KDDY28">
+    <param name="subject">Step 2: Update MCP discovery for machine commands</param>
+    <param name="description">Update mcp_exposed.py and MCP server to target machine commands</param>
+    <param name="activeForm">Updating MCP discovery</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="2309" cache_read_input_tokens="41712" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2309}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01S6JVkK57ZqQyX9R9KDDY28">
+Task #2 created successfully: Step 2: Update MCP discovery for machine commands
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_01Qd3NyP7YYPTqyUY3RXRt82">
+    <param name="subject">Step 3: Create erk json command group</param>
+    <param name="description">Create json/ command group with machine adapters for one-shot, pr list, pr view</param>
+    <param name="activeForm">Creating erk json command group</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="2309" cache_read_input_tokens="41712" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2309}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Qd3NyP7YYPTqyUY3RXRt82">
+Task #3 created successfully: Step 3: Create erk json command group
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_011zpZBnRAeVJtUFih34aefX">
+    <param name="subject">Step 4: Extract core operations</param>
+    <param name="description">Extract core operations with request/result dataclasses for one-shot, pr list, pr view</param>
+    <param name="activeForm">Extracting core operations</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="2309" cache_read_input_tokens="41712" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2309}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011zpZBnRAeVJtUFih34aefX">
+Task #4 created successfully: Step 4: Extract core operations
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_013QPrFtBJrNx2zvy8CR8wR1">
+    <param name="subject">Step 5: Refactor human commands to use core operations</param>
+    <param name="description">Remove @json_command from human commands, wire to core operations</param>
+    <param name="activeForm">Refactoring human commands</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="2309" cache_read_input_tokens="41712" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2309}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013QPrFtBJrNx2zvy8CR8wR1">
+Task #5 created successfully: Step 5: Refactor human commands to use core operations
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_01YAmhh61boySuuKn2XxxP6Y">
+    <param name="subject">Step 6: Delete old infrastructure</param>
+    <param name="description">Remove @json_command decorator, command_input_schema, exclude/required_json_input</param>
+    <param name="activeForm">Deleting old infrastructure</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="2309" cache_read_input_tokens="41712" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2309}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01YAmhh61boySuuKn2XxxP6Y">
+Task #6 created successfully: Step 6: Delete old infrastructure
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_01RpwQ4aJEb52htJqa41qugL">
+    <param name="subject">Step 7: Rewrite tests</param>
+    <param name="description">Rewrite tests for machine command, machine schema, MCP server, CLI sync</param>
+    <param name="activeForm">Rewriting tests</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="2309" cache_read_input_tokens="41712" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2309}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01RpwQ4aJEb52htJqa41qugL">
+Task #7 created successfully: Step 7: Rewrite tests
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_018a3iqRQzpH954WfdgnCJmc">
+    <param name="subject">Step 8: Update documentation</param>
+    <param name="description">Update learned docs for new three-layer pattern</param>
+    <param name="activeForm">Updating documentation</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="2309" cache_read_input_tokens="41712" output_tokens="791" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2309, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_018a3iqRQzpH954WfdgnCJmc">
+Task #8 created successfully: Step 8: Update documentation
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01Q3JzTwfrD8rJNnScnPXx1h">
+    <param name="command">erk exec impl-signal started --session-id="471e7489-db9d-45d1-8298-4a9231df2569" 2&gt;/dev/null || true</param>
+    <param name="description">Signal implementation started</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1125" cache_read_input_tokens="44021" output_tokens="114" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1125, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Q3JzTwfrD8rJNnScnPXx1h">
+{
+  "success": true,
+  "event": "started",
+  "plan_number": 9123
+}
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01GS833E4T8kz6yYEPMowuZW">
+    <param name="taskId">1</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="152" cache_read_input_tokens="45146" output_tokens="72" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 152, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01GS833E4T8kz6yYEPMowuZW">
+Updated task #1 status
+  </tool_result>
+  <assistant>Now let me read the exact source files I need to work with.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="90" cache_read_input_tokens="45298" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 90}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01FhtN7W7AoqTfXsRHgjzD1g">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-19/packages/erk-shared/src/erk_shared/agentclick/json_command.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="90" cache_read_input_tokens="45298" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 90}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01FhtN7W7AoqTfXsRHgjzD1g">
+     1→"""JSON command harness for CLI commands (input + output + schema).
+     2→
+     3→Adds --json and --schema flags to Click commands with:
+     4→- JSON error serialization (catches click.ClickException with error_type attribute)
+     5→- JSON input from stdin (when piped, maps keys to Click params)
+     6→- emit_json_result() for structured output via to_json_dict() protocol
+     7→- --schema flag to output JSON Schema for input/output/error shapes
+     8→
+     9→Commands return a result object with to_json_dict() or as a dataclass;
+    10→the decorator auto-serializes it via emit_json_result() when --json is active.
+    11→Commands may also call emit_json()/emit_json_result() inline and return None.
+    12→"""
+    13→
+    14→import dataclasses
+    15→import json
+    16→import sys
+    17→from dataclasses import dataclass
+    18→from typing import Any, overload
+    19→
+    20→import click
+    21→
+    22→
+    23→@dataclass(frozen=True)
+    24→class JsonCommandMeta:
+    25→    """Metadata stored on Command objects decorated with @json_command."""
+    26→
+    27→    exclude_json_input: frozenset[str]
+    28→    required_json_input: frozenset[str]
+    29→    output_types: tuple[type, ...]
+    30→
+
+... [228 lines omitted] ...
+
+    52→    """Add --json/--schema flags, JSON input mapping, and JSON error handling to a Click command.
+    64→    - Any click.ClickException with an error_type attribute is caught and serialized as JSON
+    65→    - SystemExit and other exceptions pass through unchanged
+    68→    - Outputs JSON Schema document for the command's input/output/error shapes
+    96→        json.JSONDecodeError: If stdin contains invalid JSON
+    97→        ValueError: If stdin JSON is not an object
+   106→        raise ValueError("JSON input must be an object")
+   164→        except json.JSONDecodeError as exc:
+   165→            error_data = {
+   167→                "error_type": "invalid_json_input",
+   170→            click.echo(json.dumps(error_data, indent=2))
+   172→        except ValueError as exc:
+   173→            error_data = {
+   175→                "error_type": "invalid_json_input",
+   178→            click.echo(json.dumps(error_data, indent=2))
+   186→                    error_data = {
+   188→                        "error_type": "invalid_json_input",
+   191→                    click.echo(json.dumps(error_data, indent=2))
+   202→                error_data = {
+   204→                    "error_type": "invalid_json_input",
+   207→                click.echo(json.dumps(error_data, indent=2))
+   215→        except click.ClickException as exc:
+   216→            if not hasattr(exc, "error_type"):
+   218→            error_data = {
+   220→                "error_type": exc.error_type,
+   223→            click.echo(json.dumps(error_data, indent=2))
+   248→        TypeError: If result has no to_json_dict() and is not a dataclass
+   256→        raise TypeError(f"Cannot serialize {type_name}: no to_json_dict() and not a dataclass")
+  </tool_result>
+  <tool_use name="Read" id="toolu_01SquJxzzYvYDEPojE9qJ7FU">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-19/packages/erk-shared/src/erk_shared/agentclick/json_schema.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="90" cache_read_input_tokens="45298" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 90}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01SquJxzzYvYDEPojE9qJ7FU">
+     1→"""JSON Schema generation for @json_command Click commands.
+     2→
+     3→Provides:
+     4→- Click parameter type -&gt; JSON Schema type mapping
+     5→- Input schema generation from Click command parameters
+     6→- Output schema generation from result types with json_schema() or plain dataclasses
+     7→- Full schema document assembly (input + output + error)
+     8→"""
+     9→
+    10→import dataclasses
+    11→import types
+    12→from typing import Any, Union, get_args, get_origin
+    13→
+    14→import click
+    15→
+    16→from erk_shared.agentclick.json_command import JsonCommandMeta
+    17→
+    18→# Internal params injected by the decorator that should never appear in schemas
+    19→_INTERNAL_PARAMS = frozenset({"json_mode", "schema_mode", "ctx"})
+    20→
+    21→ERROR_SCHEMA: dict[str, Any] = {
+    22→    "type": "object",
+    23→    "properties": {
+    24→        "success": {"type": "boolean", "const": False},
+    25→        "error_type": {"type": "string"},
+    26→        "message": {"type": "string"},
+    27→    },
+    28→    "required": ["success", "error_type", "message"],
+    29→}
+    30→
+
+... [226 lines omitted] ...
+
+   124→    - Else raise TypeError
+   154→    raise TypeError(
+   228→    Returns a dict with command name, input_schema, output_schema, and error_schema.
+   242→        "error_schema": ERROR_SCHEMA,
+  </tool_result>
+  <tool_use name="Read" id="toolu_019b8nEaAQ3N5khJQLhba9zv">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-19/packages/erk-shared/src/erk_shared/agentclick/mcp_exposed.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="90" cache_read_input_tokens="45298" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 90}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019b8nEaAQ3N5khJQLhba9zv">
+     1→"""Decorator and discovery for auto-exposing @json_command CLIs as MCP tools."""
+     2→
+     3→from collections.abc import Callable
+     4→from dataclasses import dataclass
+     5→
+     6→import click
+     7→
+     8→
+     9→@dataclass(frozen=True)
+    10→class McpMeta:
+    11→    """MCP metadata attached to a Click command by @mcp_exposed."""
+    12→
+    13→    name: str
+    14→    description: str
+    15→
+    16→
+    17→_MCP_REGISTRY: dict[click.Command, McpMeta] = {}
+    18→
+    19→
+    20→def mcp_exposed(*, name: str, description: str) -&gt; Callable[[click.Command], click.Command]:
+    21→    """Mark a @json_command for automatic MCP exposure.
+    22→
+    23→    Apply above @json_command in the decorator stack:
+    24→
+    25→        @mcp_exposed(name="one_shot", description="...")
+    26→        @json_command(...)
+    27→        @click.command("one-shot")
+    28→
+    29→    Args:
+    30→        name: MCP tool name
+
+... [36 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_017XjMrpHNizHj7RhZeTCBRD">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-19/packages/erk-shared/src/erk_shared/agentclick/errors.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="90" cache_read_input_tokens="45298" output_tokens="371" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 90, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_017XjMrpHNizHj7RhZeTCBRD">
+     1→"""Base error class for agent-optimized CLI commands."""
+     2→
+     3→import click
+     4→
+     5→
+     6→class AgentCliError(click.ClickException):
+     7→    """Exception with error_type for JSON serialization by @json_command."""
+     8→
+     9→    def __init__(self, message: str, *, error_type: str) -&gt; None:
+    10→        super().__init__(message)
+    11→        self.message = message
+    12→        self.error_type = error_type
+    13→
+  </tool_result>
+  <assistant>Now let me read the existing commands and MCP server.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="7809" cache_read_input_tokens="45388" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7809}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01TLZRMrs8UNGKtwxLThZDA9">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-19/src/erk/cli/commands/one_shot.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="7809" cache_read_input_tokens="45388" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7809}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01TLZRMrs8UNGKtwxLThZDA9">
+     1→"""Command to dispatch a task for fully autonomous remote execution.
+     2→
+     3→No local planning — the remote Claude explores the codebase, plans the change,
+     4→implements it, and creates a PR.
+     5→
+     6→Usage:
+     7→    erk one-shot "fix the import in config.py"
+     8→    erk one-shot --file prompt.md
+     9→    erk one-shot "add type hints to utils.py" --model opus
+    10→    erk one-shot "fix the typo in README.md" --dry-run
+    11→    erk one-shot "rename issue_number to plan_number in impl_init.py" --plan-only
+    12→    erk one-shot "fix config bug" --repo owner/repo
+    13→"""
+    14→
+    15→from pathlib import Path
+    16→
+    17→import click
+    18→
+    19→from erk.cli.commands.implement_shared import normalize_model_name
+    20→from erk.cli.commands.one_shot_remote_dispatch import (
+    21→    OneShotDispatchParams,
+    22→    OneShotDispatchResult,
+    23→    OneShotDryRunResult,
+    24→    dispatch_one_shot_remote,
+    25→)
+    26→from erk.cli.commands.ref_resolution import resolve_dispatch_ref
+    27→from erk.cli.ensure import Ensure, UserFacingCliError
+    28→from erk.core.context import ErkContext, NoRepoSentinel
+    29→from erk_shared.agentclick.json_command import json_command
+    30→from erk_shared.agentclick.mcp_exposed import mcp_exposed
+
+... [203 lines omitted] ...
+
+    49→        UserFacingCliError: If no http_client is available
+    55→        raise UserFacingCliError(
+    57→            error_type="auth_required",
+    69→        "On error: error_type and message."
+   179→        raise UserFacingCliError("Prompt must not be empty", error_type="invalid_input")
+   196→            raise UserFacingCliError(
+   199→                error_type="invalid_repo",
+   204→            raise UserFacingCliError(
+   207→                error_type="cli_error",
+   213→        raise click.UsageError("--repo and --ref-current are mutually exclusive")
+  </tool_result>
+  <tool_use name="Read" id="toolu_01EQ6U7uW4igzbkai24SWucp">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-19/src/erk/cli/commands/pr/list_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="7809" cache_read_input_tokens="45388" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7809}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01EQ6U7uW4igzbkai24SWucp">
+     1→"""Command to list plans with filtering."""
+     2→
+     3→import tempfile
+     4→from collections.abc import Callable
+     5→from dataclasses import dataclass
+     6→from pathlib import Path
+     7→from typing import Any, ParamSpec, TypeVar
+     8→
+     9→import click
+    10→from rich.console import Console
+    11→from rich.table import Table
+    12→from rich.text import Text
+    13→
+    14→from erk.cli.core import discover_repo_context
+    15→from erk.cli.repo_resolution import get_remote_github, resolved_repo_option
+    16→from erk.core.context import ErkContext
+    17→from erk.core.display_utils import strip_rich_markup
+    18→from erk.core.repo_discovery import ensure_erk_metadata_dir
+    19→from erk.tui.app import ErkDashApp
+    20→from erk.tui.data.real_provider import RealPlanDataProvider
+    21→from erk.tui.data.types import PlanFilters, PlanRowData, serialize_plan_row
+    22→from erk.tui.sorting.logic import sort_plans
+    23→from erk.tui.sorting.types import SortKey, SortState
+    24→from erk_shared.agentclick.json_command import json_command
+    25→from erk_shared.agentclick.mcp_exposed import mcp_exposed
+    26→from erk_shared.context.types import NoRepoSentinel
+    27→from erk_shared.gateway.browser.real import RealBrowserLauncher
+    28→from erk_shared.gateway.clipboard.real import RealClipboard
+    29→from erk_shared.gateway.github.emoji import get_pr_status_emoji
+    30→from erk_shared.gateway.github.types import (
+
+... [539 lines omitted] ...
+
+   100→            ["queued", "in_progress", "success", "failure", "cancelled"], case_sensitive=False
+   270→        user_output(click.style("Error: ", fg="red") + "GitHub authentication not available")
+   317→    if timings is not None and timings.warnings:
+   318→        for warning in timings.warnings:
+   319→            user_output(click.style("Warning: ", fg="yellow") + warning)
+   387→        user_output(click.style("Error: ", fg="red") + "Could not determine repository owner/name")
+   409→        user_output(click.style("Error: ", fg="red") + "GitHub authentication not available")
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Hvwen4LY2Y97uX2WVkNPUN">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-19/src/erk/cli/commands/pr/view_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="7809" cache_read_input_tokens="45388" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7809}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Hvwen4LY2Y97uX2WVkNPUN">
+     1→"""Command to fetch and display a single plan."""
+     2→
+     3→from dataclasses import dataclass
+     4→from datetime import datetime
+     5→from typing import Any
+     6→
+     7→import click
+     8→
+     9→from erk.cli.github_parsing import parse_issue_identifier
+    10→from erk.cli.repo_resolution import get_remote_github, resolved_repo_option
+    11→from erk.core.context import ErkContext
+    12→from erk_shared.agentclick.json_command import json_command
+    13→from erk_shared.agentclick.mcp_exposed import mcp_exposed
+    14→from erk_shared.context.types import NoRepoSentinel
+    15→from erk_shared.core.typing_utils import narrow_to_literal
+    16→from erk_shared.gateway.github.issues.types import IssueNotFound
+    17→from erk_shared.gateway.github.metadata.schemas import (
+    18→    BRANCH_NAME,
+    19→    CREATED_BY,
+    20→    CREATED_FROM_SESSION,
+    21→    LAST_DISPATCHED_AT,
+    22→    LAST_DISPATCHED_RUN_ID,
+    23→    LAST_LEARN_SESSION,
+    24→    LAST_LOCAL_IMPL_AT,
+    25→    LAST_LOCAL_IMPL_EVENT,
+    26→    LAST_LOCAL_IMPL_SESSION,
+    27→    LAST_LOCAL_IMPL_USER,
+    28→    LAST_REMOTE_IMPL_AT,
+    29→    LEARN_PLAN_ISSUE,
+    30→    LEARN_PLAN_PR,
+
+... [422 lines omitted] ...
+
+   320→                click.style("Error: ", fg="red")
+   329→                click.style("Error: ", fg="red")
+   339→                click.style("Error: ", fg="red")
+   356→        user_output(click.style("Error: ", fg="red") + f"Plan #{plan_id} not found")
+  </tool_result>
+  <tool_use name="Read" id="toolu_01JHwFftevVts5ZYGX6fixkM">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-19/packages/erk-mcp/src/erk_mcp/server.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="7809" cache_read_input_tokens="45388" output_tokens="343" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 7809, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01JHwFftevVts5ZYGX6fixkM">
+     1→"""FastMCP server exposing erk capabilities as MCP tools."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→import json
+     6→import subprocess
+     7→from typing import TYPE_CHECKING, Any
+     8→
+     9→from anyio import to_thread
+    10→from fastmcp.tools.tool import Tool, ToolResult
+    11→
+    12→from erk_shared.agentclick.json_schema import command_input_schema
+    13→from erk_shared.agentclick.mcp_exposed import discover_mcp_commands
+    14→
+    15→if TYPE_CHECKING:
+    16→    from fastmcp import FastMCP
+    17→
+    18→DEFAULT_MCP_NAME = "erk"
+    19→
+    20→
+    21→def _run_erk(args: list[str]) -&gt; subprocess.CompletedProcess[str]:
+    22→    """Run an erk CLI command and return the result."""
+    23→    result = subprocess.run(
+    24→        ["erk", *args],
+    25→        capture_output=True,
+    26→        text=True,
+    27→        check=False,
+    28→    )
+    29→    if result.returncode != 0:
+    30→        stderr = result.stderr.strip()
+
+... [73 lines omitted] ...
+
+    31→        raise RuntimeError(f"erk {' '.join(args)} failed (exit {result.returncode}): {stderr}")
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="18364" cache_read_input_tokens="53197" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 18364}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me check the spec file and the repo_resolution module before starting.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="18364" cache_read_input_tokens="53197" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 18364}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01AMvmLRYdVj2SiJrZ4fsUfv">
+    <param name="pattern">**/agentclick-machine-cli-plan.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="18364" cache_read_input_tokens="53197" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 18364}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01AMvmLRYdVj2SiJrZ4fsUfv">
+No files found
+  </tool_result>
+  <tool_use name="Read" id="toolu_01AUKxpqGz9kujiFkti8QaBj">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-19/src/erk/cli/repo_resolution.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="18364" cache_read_input_tokens="53197" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 18364}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01AUKxpqGz9kujiFkti8QaBj">
+     1→"""Shared --repo infrastructure for CLI commands.
+     2→
+     3→Provides helpers for resolving owner/repo from either a --repo flag
+     4→or local git context, and constructing RemoteGitHub instances.
+     5→"""
+     6→
+     7→import functools
+     8→
+     9→import click
+    10→
+    11→from erk.cli.ensure import UserFacingCliError
+    12→from erk.core.context import ErkContext, NoRepoSentinel
+    13→from erk_shared.gateway.github.types import GitHubRepoId
+    14→from erk_shared.gateway.remote_github.abc import RemoteGitHub
+    15→from erk_shared.gateway.remote_github.real import RealRemoteGitHub
+    16→
+    17→
+    18→def resolve_owner_repo(
+    19→    ctx: ErkContext,
+    20→    *,
+    21→    target_repo: str | None,
+    22→) -&gt; tuple[str, str]:
+    23→    """Resolve owner/repo from --repo flag or local git context.
+    24→
+    25→    Args:
+    26→        ctx: ErkContext
+    27→        target_repo: Optional "owner/repo" string from --repo flag
+    28→
+    29→    Returns:
+    30→        Tuple of (owner, repo_name)
+
+... [77 lines omitted] ...
+
+    33→        UserFacingCliError: If owner/repo cannot be determined
+    37→            raise UserFacingCliError(
+    40→                error_type="cli_error",
+    46→        raise UserFacingCliError(
+    49→            error_type="cli_error",
+    67→        UserFacingCliError: If no http_client is available
+    73→        raise UserFacingCliError(
+    75→            error_type="cli_error",
+  </tool_result>
+  <tool_use name="Read" id="toolu_014Q7XWKKmvykCC5Uo62QyjB">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-19/src/erk/cli/cli.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="18364" cache_read_input_tokens="53197" output_tokens="386" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 18364, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+</session>
