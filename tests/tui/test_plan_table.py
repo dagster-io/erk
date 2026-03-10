@@ -570,13 +570,8 @@ class TestShowPrColumnFalse:
 
 def test_row_to_values_planned_pr_includes_stage() -> None:
     """Stage column is included in output (stage/sts/created columns are always present)."""
-<<<<<<< HEAD
-    filters = PlanFilters(
-        labels=("erk-pr",),
-=======
     filters = PrFilters(
         labels=("erk-plan",),
->>>>>>> 10b9f8a02 (Add plan: Plan: Objective #9109, Nodes 3.1–3.3 — Rename TUI Plan Types to PR)
         state=None,
         run_state=None,
         limit=None,
