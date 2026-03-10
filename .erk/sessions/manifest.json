@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "pr_number": 9175,
+  "sessions": [
+    {
+      "session_id": "",
+      "stage": "impl",
+      "source": "local",
+      "uploaded_at": "2026-03-10T16:17:52.550350+00:00",
+      "files": [
+        "impl--e4a7e2b4-fb85-42d4-9883-ad38692dcce3-part1.xml",
+        "impl--e4a7e2b4-fb85-42d4-9883-ad38692dcce3-part2.xml",
+        "impl--e4a7e2b4-fb85-42d4-9883-ad38692dcce3-part3.xml",
+        "impl--e4a7e2b4-fb85-42d4-9883-ad38692dcce3-part4.xml",
+        "impl--e4a7e2b4-fb85-42d4-9883-ad38692dcce3-part5.xml",
+        "impl--e4a7e2b4-fb85-42d4-9883-ad38692dcce3-part6.xml",
+        "impl--e4a7e2b4-fb85-42d4-9883-ad38692dcce3-part7.xml"
+      ],
+      "user_turns": 4,
+      "duration_minutes": 7,
+      "raw_size_kb": 981,
+      "xml_size_kb": 119,
+      "git_branch": "plnd/show-planning-run-id-03-10-1209"
+    }
+  ]
+}
