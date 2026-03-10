@@ -27,7 +27,7 @@ def _make_state(
     force: bool = False,
     debug: bool = False,
     session_id: str = "test-session",
-    plan_id: str | None = None,
+    pr_id: str | None = None,
     pr_number: int | None = None,
     pr_url: str | None = None,
     was_created: bool = False,
@@ -50,7 +50,7 @@ def _make_state(
         session_id=session_id,
         skip_description=False,
         quiet=False,
-        plan_id=plan_id,
+        pr_id=pr_id,
         pr_number=pr_number,
         pr_url=pr_url,
         was_created=was_created,
@@ -136,7 +136,7 @@ def test_issue_linkage_mismatch_returns_error(tmp_path: Path) -> None:
 
     # No mismatch error since branch cannot provide issue number
     assert isinstance(result, SubmitState)
-    assert result.plan_id == "99"  # From ref.json
+    assert result.pr_id == "99"  # From ref.json
 
 
 def test_auto_repair_creates_plan_ref_json(tmp_path: Path) -> None:
@@ -161,7 +161,7 @@ def test_auto_repair_creates_plan_ref_json(tmp_path: Path) -> None:
 
     assert isinstance(result, SubmitState)
     # No auto-repair since branch cannot provide issue number
-    assert result.plan_id is None
+    assert result.pr_id is None
     # Verify ref.json was NOT created
     plan_ref_json = impl_dir / "ref.json"
     assert not plan_ref_json.exists()
@@ -180,7 +180,7 @@ def test_no_plan_id_from_branch(tmp_path: Path) -> None:
     result = prepare_state(ctx, state)
 
     assert isinstance(result, SubmitState)
-    assert result.plan_id is None
+    assert result.pr_id is None
 
 
 def test_plan_id_from_impl_folder(tmp_path: Path) -> None:
@@ -212,7 +212,7 @@ def test_plan_id_from_impl_folder(tmp_path: Path) -> None:
     result = prepare_state(ctx, state)
 
     assert isinstance(result, SubmitState)
-    assert result.plan_id == "55"
+    assert result.pr_id == "55"
 
 
 def test_parent_falls_back_to_trunk(tmp_path: Path) -> None:

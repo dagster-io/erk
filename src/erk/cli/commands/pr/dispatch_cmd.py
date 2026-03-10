@@ -89,42 +89,42 @@ class DispatchResult:
     """Result of dispatching a single plan."""
 
     pr_number: int
-    plan_title: str
-    plan_url: str
+    pr_title: str
+    pr_url: str
     impl_pr_number: int | None
     impl_pr_url: str | None
     workflow_run_id: str
     workflow_url: str
 
 
-def _build_workflow_run_url(plan_url: str, run_id: str) -> str:
-    """Construct GitHub Actions workflow run URL from plan URL and run ID.
+def _build_workflow_run_url(pr_url: str, run_id: str) -> str:
+    """Construct GitHub Actions workflow run URL from PR URL and run ID.
 
     Args:
-        plan_url: GitHub plan URL (e.g., https://github.com/owner/repo/issues/123)
+        pr_url: GitHub PR URL (e.g., https://github.com/owner/repo/issues/123)
         run_id: Workflow run ID
 
     Returns:
         Workflow run URL (e.g., https://github.com/owner/repo/actions/runs/1234567890)
     """
-    owner_repo = extract_owner_repo_from_github_url(plan_url)
+    owner_repo = extract_owner_repo_from_github_url(pr_url)
     if owner_repo is not None:
         owner, repo = owner_repo
         return construct_workflow_run_url(owner, repo, run_id)
     return f"https://github.com/actions/runs/{run_id}"
 
 
-def _build_pr_url(plan_url: str, pr_number: int) -> str:
-    """Construct GitHub PR URL from plan URL and PR number.
+def _build_pr_url(pr_url: str, pr_number: int) -> str:
+    """Construct GitHub PR URL from PR URL and PR number.
 
     Args:
-        plan_url: GitHub plan URL (e.g., https://github.com/owner/repo/issues/123)
+        pr_url: GitHub PR URL (e.g., https://github.com/owner/repo/issues/123)
         pr_number: PR number
 
     Returns:
         PR URL (e.g., https://github.com/owner/repo/pull/456)
     """
-    owner_repo = extract_owner_repo_from_github_url(plan_url)
+    owner_repo = extract_owner_repo_from_github_url(pr_url)
     if owner_repo is not None:
         owner, repo = owner_repo
         return construct_pr_url(owner, repo, pr_number)
@@ -371,8 +371,8 @@ def _dispatch_planned_pr_plan(
 
     return DispatchResult(
         pr_number=pr_number,
-        plan_title=validated.title,
-        plan_url=validated.url,
+        pr_title=validated.title,
+        pr_url=validated.url,
         impl_pr_number=pr_number,
         impl_pr_url=impl_pr_url,
         workflow_run_id=run_id,
@@ -584,8 +584,8 @@ def _dispatch_planned_pr_plan_remote(
 
     return DispatchResult(
         pr_number=pr_number,
-        plan_title=validated.title,
-        plan_url=validated.url,
+        pr_title=validated.title,
+        pr_url=validated.url,
         impl_pr_number=pr_number,
         impl_pr_url=impl_pr_url,
         workflow_run_id=run_id,
@@ -593,7 +593,7 @@ def _dispatch_planned_pr_plan_remote(
     )
 
 
-def _detect_plan_number_from_context(
+def _detect_pr_number_from_context(
     ctx: ErkContext,
     repo: RepoContext,
     *,
@@ -619,9 +619,9 @@ def _detect_plan_number_from_context(
             return int(plan_ref.pr_id)
 
     if branch_name is not None:
-        plan_id = ctx.plan_backend.resolve_plan_id_for_branch(repo.root, branch_name)
-        if plan_id is not None and plan_id.isdigit():
-            return int(plan_id)
+        pr_id = ctx.plan_backend.resolve_plan_id_for_branch(repo.root, branch_name)
+        if pr_id is not None and pr_id.isdigit():
+            return int(pr_id)
 
     return None
 
@@ -748,7 +748,7 @@ def _dispatch_local(
 
     # If no arguments given, try to auto-detect from context
     if not pr_numbers:
-        detected = _detect_plan_number_from_context(ctx, repo, branch_name=original_branch)
+        detected = _detect_pr_number_from_context(ctx, repo, branch_name=original_branch)
         if detected is None:
             user_output(
                 click.style("Error: ", fg="red")
@@ -834,8 +834,8 @@ def _print_dispatch_summary(results: list[DispatchResult]) -> None:
     user_output("")
     user_output("Dispatched PRs:")
     for r in results:
-        user_output(f"  #{r.pr_number}: {r.plan_title}")
-        user_output(f"    Plan: {r.plan_url}")
+        user_output(f"  #{r.pr_number}: {r.pr_title}")
+        user_output(f"    Plan: {r.pr_url}")
         if r.impl_pr_url:
             user_output(f"    PR: {r.impl_pr_url}")
         user_output(f"    Workflow: {r.workflow_url}")

@@ -428,17 +428,17 @@ def test_get_plan_context_supports_legacy_branch_format(tmp_path: Path) -> None:
 def test_plan_context_dataclass_frozen() -> None:
     """Test that PlanContext is immutable (frozen dataclass)."""
     context = PlanContext(
-        plan_id="123",
+        pr_id="123",
         plan_content="Plan content",
         objective_summary="Objective #1: Test",
     )
 
-    assert context.plan_id == "123"
+    assert context.pr_id == "123"
     assert context.plan_content == "Plan content"
     assert context.objective_summary == "Objective #1: Test"
 
     try:
-        context.plan_id = "456"  # type: ignore[misc]
+        context.pr_id = "456"  # type: ignore[misc]
         raise AssertionError("Expected FrozenInstanceError")
     except AttributeError:
         pass

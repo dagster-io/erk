@@ -101,7 +101,7 @@ class SubmitState:
     session_id: str
     skip_description: bool
     quiet: bool
-    plan_id: str | None
+    pr_id: str | None
     pr_number: int | None
     pr_url: str | None
     was_created: bool
@@ -134,10 +134,10 @@ SubmitStep = Callable[[ErkContext, SubmitState], SubmitState | SubmitError]
 
 
 def prepare_state(ctx: ErkContext, state: SubmitState) -> SubmitState | SubmitError:
-    """Resolve repo_root, branch_name, parent_branch, trunk_branch, plan_id.
+    """Resolve repo_root, branch_name, parent_branch, trunk_branch, pr_id.
 
     Single location for all discovery. Consolidates duplicate parent-branch
-    and plan-id discovery sites.
+    and pr-id discovery sites.
     """
     if not state.quiet:
         click.echo(click.style("   Resolving branch and plan context...", dim=True))
@@ -156,12 +156,12 @@ def prepare_state(ctx: ErkContext, state: SubmitState) -> SubmitState | SubmitEr
     trunk_branch = ctx.git.branch.detect_trunk_branch(repo_root)
     parent_branch = ctx.branch_manager.get_parent_branch(repo_root, branch_name) or trunk_branch
 
-    # Plan ID discovery via plan-ref.json in resolved .erk/impl-context/ dir
+    # PR ID discovery via plan-ref.json in resolved .erk/impl-context/ dir
     impl_dir = resolve_impl_dir(cwd, branch_name=branch_name)
-    plan_id: str | None = None
+    pr_id: str | None = None
     if impl_dir is not None:
         try:
-            plan_id = validate_plan_linkage(impl_dir, branch_name)
+            pr_id = validate_plan_linkage(impl_dir, branch_name)
         except ValueError as e:
             return SubmitError(
                 phase="prepare",
@@ -171,15 +171,15 @@ def prepare_state(ctx: ErkContext, state: SubmitState) -> SubmitState | SubmitEr
             )
 
     # Auto-repair: create plan-ref.json if missing but issue inferred from branch
-    if plan_id is not None and impl_dir is not None and not has_plan_ref(impl_dir):
+    if pr_id is not None and impl_dir is not None and not has_plan_ref(impl_dir):
         remote_url = ctx.git.remote.get_remote_url(repo_root, "origin")
         owner, repo_name = parse_git_remote_url(remote_url)
-        plan_url = f"https://github.com/{owner}/{repo_name}/pull/{plan_id}"
+        pr_url = f"https://github.com/{owner}/{repo_name}/pull/{pr_id}"
         save_plan_ref(
             impl_dir,
             provider="github",
-            plan_id=plan_id,
-            url=plan_url,
+            plan_id=pr_id,
+            url=pr_url,
             labels=(),
             objective_id=None,
             node_ids=None,
@@ -202,7 +202,7 @@ def prepare_state(ctx: ErkContext, state: SubmitState) -> SubmitState | SubmitEr
         branch_name=branch_name,
         parent_branch=parent_branch,
         trunk_branch=trunk_branch,
-        plan_id=plan_id,
+        pr_id=pr_id,
         graphite_is_authed=graphite_is_authed,
         graphite_branch_tracked=graphite_branch_tracked,
     )
@@ -211,7 +211,7 @@ def prepare_state(ctx: ErkContext, state: SubmitState) -> SubmitState | SubmitEr
 def cleanup_impl_for_submit(ctx: ErkContext, state: SubmitState) -> SubmitState | SubmitError:
     """Remove .erk/impl-context/ if present and git-tracked.
 
-    Inserted after prepare_state (which discovers plan_id) and before commit_wip
+    Inserted after prepare_state (which discovers pr_id) and before commit_wip
     (which adds implementation changes). The cleanup commit is local-only; the
     push happens later in push_and_create_pr.
     """
@@ -275,7 +275,7 @@ def _graphite_first_flow(ctx: ErkContext, state: SubmitState) -> SubmitState | S
     # Auto-force for plan implementations (branches always diverge from remote).
     # Fall back to branch prefix when cleanup already deleted .erk/impl-context/
     # but the first submit attempt failed before pushing.
-    is_plan_impl = state.plan_id is not None or state.branch_name.startswith("plnd/")
+    is_plan_impl = state.pr_id is not None or state.branch_name.startswith("plnd/")
     effective_force = state.force or is_plan_impl
 
     # Pre-check: detect remote divergence before gt submit
@@ -564,7 +564,7 @@ def _core_submit_flow(ctx: ErkContext, state: SubmitState) -> SubmitState | Subm
 
 def label_code_pr(ctx: ErkContext, state: SubmitState) -> SubmitState | SubmitError:
     """Add erk-pr label to non-plan code PRs."""
-    if state.plan_id is not None:
+    if state.pr_id is not None:
         return state  # Plan PRs already get erk-pr via plan creation
     if state.pr_number is None:
         return state
@@ -816,7 +816,7 @@ def finalize_pr(ctx: ErkContext, state: SubmitState) -> SubmitState | SubmitErro
     header_missing = not has_metadata_block(existing_pr_body, BlockKeys.PLAN_HEADER)
     if header_missing and state.plan_context is not None:
         recovered_header = recover_plan_header(
-            ctx, repo_root=state.repo_root, plan_id=state.plan_context.plan_id
+            ctx, repo_root=state.repo_root, pr_id=state.plan_context.pr_id
         )
         if recovered_header is not None and not state.quiet:
             click.echo(click.style("   Recovered missing plan-header metadata", fg="yellow"))
@@ -876,17 +876,17 @@ def finalize_pr(ctx: ErkContext, state: SubmitState) -> SubmitState | SubmitErro
     click.echo(click.style("   PR metadata updated", fg="green"))
 
     # Update lifecycle stage for linked plan
-    plan_id_for_lifecycle: str | None = None
+    pr_id_for_lifecycle: str | None = None
     if state.plan_context is not None:
-        plan_id_for_lifecycle = state.plan_context.plan_id
+        pr_id_for_lifecycle = state.plan_context.pr_id
     elif state.pr_number is not None:
-        plan_id_for_lifecycle = str(state.pr_number)
+        pr_id_for_lifecycle = str(state.pr_number)
 
-    if plan_id_for_lifecycle is not None:
+    if pr_id_for_lifecycle is not None:
         maybe_advance_lifecycle_to_impl(
             ctx,
             repo_root=state.repo_root,
-            plan_id=plan_id_for_lifecycle,
+            pr_id=pr_id_for_lifecycle,
             quiet=state.quiet,
         )
 
@@ -1105,7 +1105,7 @@ def make_initial_state(
         session_id=resolved_session_id,
         skip_description=skip_description,
         quiet=quiet,
-        plan_id=None,
+        pr_id=None,
         pr_number=None,
         pr_url=None,
         was_created=False,

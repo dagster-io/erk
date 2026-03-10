@@ -18,12 +18,12 @@ class PlanContext:
     """Context from an erk plan for PR generation.
 
     Attributes:
-        plan_id: The plan identifier (e.g., "123" for plan numbers)
+        pr_id: The PR identifier (e.g., "123" for PR numbers)
         plan_content: The full plan markdown content
         objective_summary: Optional summary of the parent objective (e.g., "Objective #123: Title")
     """
 
-    plan_id: str
+    pr_id: str
     plan_content: str
     objective_summary: str | None
 
@@ -70,7 +70,7 @@ class PlanContextProvider:
         )
 
         return PlanContext(
-            plan_id=result.pr_identifier,
+            pr_id=result.pr_identifier,
             plan_content=result.body,
             objective_summary=objective_summary,
         )

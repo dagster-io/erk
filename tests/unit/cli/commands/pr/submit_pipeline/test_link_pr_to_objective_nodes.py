@@ -66,7 +66,7 @@ def _make_state(
         session_id="test-session",
         skip_description=False,
         quiet=False,
-        plan_id=None,
+        pr_id=None,
         pr_number=pr_number,
         pr_url=f"https://github.com/owner/repo/pull/{pr_number}" if pr_number else None,
         was_created=True,

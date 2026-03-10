@@ -27,7 +27,7 @@ def _make_state(
     force: bool = False,
     debug: bool = False,
     session_id: str = "test-session",
-    plan_id: str | None = None,
+    pr_id: str | None = None,
     pr_number: int | None = None,
     pr_url: str | None = None,
     was_created: bool = False,
@@ -50,7 +50,7 @@ def _make_state(
         session_id=session_id,
         skip_description=False,
         quiet=False,
-        plan_id=plan_id,
+        pr_id=pr_id,
         pr_number=pr_number,
         pr_url=pr_url,
         was_created=was_created,
@@ -201,7 +201,7 @@ def test_success(tmp_path: Path) -> None:
 
 
 def test_plan_impl_auto_forces_on_divergence(tmp_path: Path) -> None:
-    """Plan impl branch (plan_id set) auto-forces when behind remote; no error returned."""
+    """Plan impl branch (pr_id set) auto-forces when behind remote; no error returned."""
     pr = _pr_details(number=42, branch="feature")
     fake_graphite = FakeGraphite()
     fake_github = FakeLocalGitHub(
@@ -229,7 +229,7 @@ def test_plan_impl_auto_forces_on_divergence(tmp_path: Path) -> None:
         cwd=tmp_path,
         global_config=global_config,
     )
-    state = _make_state(cwd=tmp_path, plan_id="7699")
+    state = _make_state(cwd=tmp_path, pr_id="7699")
 
     result = _graphite_first_flow(ctx, state)
 
@@ -238,7 +238,7 @@ def test_plan_impl_auto_forces_on_divergence(tmp_path: Path) -> None:
 
 
 def test_plnd_branch_prefix_auto_forces_on_divergence(tmp_path: Path) -> None:
-    """plnd/ branch prefix auto-forces even without plan_id (retry after cleanup)."""
+    """plnd/ branch prefix auto-forces even without pr_id (retry after cleanup)."""
     branch = "plnd/delay-impl-context-cleanup"
     pr = _pr_details(number=42, branch=branch)
     fake_graphite = FakeGraphite()
@@ -267,8 +267,8 @@ def test_plnd_branch_prefix_auto_forces_on_divergence(tmp_path: Path) -> None:
         cwd=tmp_path,
         global_config=global_config,
     )
-    # plan_id is None (cleanup already deleted .erk/impl-context/)
-    state = _make_state(cwd=tmp_path, branch_name=branch, plan_id=None)
+    # pr_id is None (cleanup already deleted .erk/impl-context/)
+    state = _make_state(cwd=tmp_path, branch_name=branch, pr_id=None)
 
     result = _graphite_first_flow(ctx, state)
 
@@ -347,7 +347,7 @@ def test_branch_not_on_remote_skips_divergence_check(tmp_path: Path) -> None:
 
 
 def test_non_plan_branch_errors_on_divergence(tmp_path: Path) -> None:
-    """Non-plan branch (no plan_id) still errors when behind remote."""
+    """Non-plan branch (no pr_id) still errors when behind remote."""
     fake_git = FakeGit(
         remote_refs={("origin", "feature"): "remote_sha_abc"},
         branch_heads={"feature": "local_sha_xyz"},
@@ -366,7 +366,7 @@ def test_non_plan_branch_errors_on_divergence(tmp_path: Path) -> None:
         cwd=tmp_path,
         global_config=global_config,
     )
-    state = _make_state(cwd=tmp_path, plan_id=None)
+    state = _make_state(cwd=tmp_path, pr_id=None)
 
     result = _graphite_first_flow(ctx, state)
 
