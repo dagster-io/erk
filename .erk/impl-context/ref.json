@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Consolidate dataclass JSON serialization in exec scripts"
+}
