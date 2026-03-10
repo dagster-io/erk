@@ -1,6 +1,6 @@
 ---
 description: Extract insights from plan-associated sessions
-argument-hint: "[plan-number]"
+argument-hint: "[pr-number]"
 ---
 
 # /erk:learn
@@ -11,7 +11,7 @@ Create a documentation plan from Claude Code sessions associated with a plan imp
 
 ```
 /erk:learn                              # Infers plan from current branch
-/erk:learn 4655                          # Explicit plan number
+/erk:learn 4655                          # Explicit PR number
 ```
 
 ## Purpose
@@ -27,7 +27,7 @@ Tell the user (choose the appropriate pipeline display based on whether `.erk/im
 **When `.erk/impl-context/` exists (CI/async mode):**
 
 ```
-Learn pipeline for plan #<plan-number> (using preprocessed materials):
+Learn pipeline for PR #<pr-number> (using preprocessed materials):
   1. Read preprocessed materials from .erk/impl-context/
   2. Launch analysis agents (session, diff, docs check, PR comments)
   3. Synthesize findings into a documentation plan
@@ -37,7 +37,7 @@ Learn pipeline for plan #<plan-number> (using preprocessed materials):
 **When no `.erk/impl-context/`:**
 
 ```
-Learn pipeline for plan #<plan-number>:
+Learn pipeline for PR #<pr-number>:
   1. Discover and preprocess session logs
   2. Launch analysis agents (session, diff, docs check, PR comments)
   3. Synthesize findings into a documentation plan
@@ -49,13 +49,13 @@ Learn pipeline for plan #<plan-number>:
 First, check if the plan is a learn plan. **Learn plans cannot generate additional learn plans** - this would create documentation cycles.
 
 ```bash
-erk exec get-issue-body <plan-number>
+erk exec get-issue-body <pr-number>
 ```
 
 Parse the JSON output and check the `labels` array. If `erk-learn` is present, stop with this error:
 
 ```
-Error: Plan #<plan-number> is a learn plan (has erk-learn label).
+Error: PR #<pr-number> is a learn plan (has erk-learn label).
 Cannot learn from a learn plan - this would create documentation cycles.
 ```
 
@@ -102,7 +102,7 @@ Proceed to Step 3 for standard session discovery and preprocessing.
 Run the exec script to get session details:
 
 ```bash
-erk exec get-learn-sessions <plan-number>
+erk exec get-learn-sessions <pr-number>
 ```
 
 Parse the JSON output to get:
@@ -127,7 +127,7 @@ If no sessions are found, inform the user and stop.
 Tell the user:
 
 ```
-Found N session(s) for plan #<plan-number>:
+Found N session(s) for PR #<pr-number>:
   - N local session(s) from ~/.claude/projects/
   - N remote session(s) from GitHub Actions
 ```
@@ -137,7 +137,7 @@ Found N session(s) for plan #<plan-number>:
 Before gathering sessions, get the PR information for this plan (needed by analysis agents):
 
 ```bash
-erk exec get-pr-for-plan <plan-number>
+erk exec get-pr-for-plan <pr-number>
 ```
 
 This returns JSON with PR details (`number`, `title`, `state`, `url`, `head_ref_name`, `base_ref_name`) or an error if no PR exists. Save the PR number for the parallel agents below.
@@ -149,7 +149,7 @@ This returns JSON with PR details (`number`, `title`, `state`, `url`, `head_ref_
 2. **NEW: If `get-learn-sessions` returned `preprocessed_manifest` (non-null):** Download the preprocessed XMLs directly from the planned-pr-context branch — skip raw session preprocessing:
 
 ```bash
-erk exec fetch-sessions --pr-number <plan-number> \
+erk exec fetch-sessions --pr-number <pr-number> \
     --output-dir .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn
 ```
 
@@ -298,7 +298,6 @@ Task(
 
     Input:
     - pr_number: <pr-number>
-    - plan_number: <plan-number>
     - output_path: .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/diff-analysis.md
 
     ## Output Routing
@@ -719,13 +718,13 @@ fi
 eval "$CMD"
 ```
 
-Parse the JSON output to get `plan_number`, `plan_backend`, `title`, and `plan_url` (the new learn plan number).
+Parse the JSON output to get `pr_number`, `plan_backend`, `title`, and `pr_url` (the new learn plan number).
 
 Display the result:
 
 ```
-Learn plan saved as draft PR #<plan_number>: <title>
-URL: <plan_url>
+Learn plan saved as draft PR #<pr-number>: <title>
+URL: <pr-url>
 ```
 
 ### Step 8: Store Tripwire Candidates on Learn Plan PR
@@ -750,7 +749,7 @@ Parse the JSON output. If `count` is 0, no comment was added (no candidates foun
 erk exec track-learn-result \
     --issue <parent-issue-number> \
     --status completed_with_plan \
-    --learn-plan <learn-plan-number>
+    --learn-plan <learn-pr-number>
 ```
 
 This sets `learn_status: completed_with_plan` and `learn_plan_issue: <N>` on the parent plan,
@@ -805,7 +804,7 @@ Post-learn actions:
 **Execute the selected action:**
 
 - **Submit**: Run `/erk:pr-dispatch`
-- **Review**: Display the `plan_url` from the JSON output for the user to click. Then inform the user they can run `/erk:pr-dispatch` when ready.
+- **Review**: Display the `pr_url` from the JSON output for the user to click. Then inform the user they can run `/erk:pr-dispatch` when ready.
 - **Consolidate**: Run `/local:replan-learn-plans`
 - **Done**: Proceed directly to Step 11
 

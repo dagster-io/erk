@@ -145,7 +145,7 @@ erk exec setup-impl                           # Auto-detect from .erk/impl-conte
 - `--file` - Local markdown file path
 - `--no-impl` - Create branch only, skip `.erk/impl-context/` folder creation
 
-**Output:** JSON with `success`, `source`, `plan_number`, `has_plan_tracking`, `valid`, `related_docs`
+**Output:** JSON with `success`, `source`, `pr_number`, `has_plan_tracking`, `valid`, `related_docs`
 
 #### setup-impl-from-pr
 
@@ -201,8 +201,8 @@ Performs `git rm -rf .erk/impl-context/` and commits the deletion.
 
 Batch commands read JSON arrays from stdin and process items individually. They continue on individual failures and always exit with code 0.
 
-- `add-plan-labels` — Add labels to multiple plans (stdin: `[{"plan_number": int, "label": str}]`)
-- `close-prs` — Close multiple PRs with comments (stdin: `[{"plan_number": int, "comment": str}]`)
+- `add-plan-labels` — Add labels to multiple plans (stdin: `[{"pr_number": int, "label": str}]`)
+- `close-prs` — Close multiple PRs with comments (stdin: `[{"pr_number": int, "comment": str}]`)
 
 Both use frozen dataclass results with discriminated union error handling.
 

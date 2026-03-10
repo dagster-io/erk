@@ -53,7 +53,7 @@ The primary format (`.erk/impl-context/plan-ref.json`):
 ```json
 {
   "provider": "github-draft-pr",
-  "plan_id": "123",
+  "pr_id": "123",
   "url": "https://github.com/owner/repo/pull/123",
   "created_at": "2025-01-15T10:30:00+00:00",
   "synced_at": "2025-01-15T10:30:00+00:00",
@@ -117,7 +117,7 @@ This timing behavior is documented in [GitHub community discussion #24706](https
 ### PR Not Showing in `erk pr list`
 
 1. **No cross-reference exists**: PR body/commits don't mention the plan number
-2. **Wrong plan number**: Check `.erk/impl-context/plan-ref.json` (or `.erk/impl-context/ref.json`) contains correct plan ID
+2. **Wrong plan number**: Check `.erk/impl-context/plan-ref.json` (or `.erk/impl-context/ref.json`) contains correct PR ID
 3. **API propagation delay**: Wait a moment and refresh
 
 ### 🔗 Not Appearing (willCloseTarget is False)

@@ -11,7 +11,7 @@ Update an objective issue after closing a plan that was affiliated with it. Rese
 Run after closing a plan:
 
 ```bash
-/erk:objective-update-with-closed-plan --plan <number> --objective <number>
+/erk:objective-update-with-closed-plan --pr <number> --objective <number>
 ```
 
 ---
@@ -26,13 +26,13 @@ Run after closing a plan:
 
 Extract from `$ARGUMENTS`:
 
-- `--plan <number>`: Plan number that was just closed (required)
+- `--pr <number>`: PR number that was just closed (required)
 - `--objective <number>`: Objective number to update (required)
 
 Fetch objective and plan context:
 
 ```bash
-erk exec objective-fetch-context --plan <plan-number> --objective <objective-number>
+erk exec objective-fetch-context --pr <pr-number> --objective <objective-number>
 ```
 
 This returns JSON with:
@@ -93,7 +93,7 @@ If nothing is stale, skip this step entirely.
 Post the action comment via the exec script. Provide structured JSON on stdin:
 
 ```bash
-echo '{"issue_number": <N>, "date": "YYYY-MM-DD", "pr_number": 0, "phase_step": "X.Y, X.Z", "title": "Plan #<plan> Closed", "what_was_done": ["Plan #<plan> was closed", "Reset nodes to pending for re-planning"], "lessons_learned": [], "roadmap_updates": ["Node X.Y: in_progress -> pending (plan cleared)"], "body_reconciliation": []}' | erk exec objective-post-action-comment
+echo '{"issue_number": <N>, "date": "YYYY-MM-DD", "pr_number": 0, "phase_step": "X.Y, X.Z", "title": "PR #<pr> Closed", "what_was_done": ["PR #<pr> was closed", "Reset nodes to pending for re-planning"], "lessons_learned": [], "roadmap_updates": ["Node X.Y: in_progress -> pending (plan cleared)"], "body_reconciliation": []}' | erk exec objective-post-action-comment
 ```
 
 ### Step 6: Validate Objective
@@ -116,7 +116,7 @@ Display what was updated:
 
 ## Output Format
 
-- **Start:** "Updating objective #<number> after closing plan #<plan-number>"
+- **Start:** "Updating objective #<number> after closing PR #<pr-number>"
 - **After writes:** "Reset roadmap nodes and posted action comment for #<number>"
 - **End:** "Objective updated. Next focus: [next action from roadmap.next_step]"
 - **Always:** Display the objective URL

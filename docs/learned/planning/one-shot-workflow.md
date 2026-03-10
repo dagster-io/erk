@@ -83,7 +83,7 @@ The `.github/workflows/one-shot.yml` workflow has two jobs:
    - `OBJECTIVE_ISSUE` -- objective issue number (if from roadmap)
    - `NODE_ID` -- specific roadmap node ID
    - `PLAN_ISSUE_NUMBER` -- plan entity number (PR number for planned-PR backend)
-5. Validates Claude produced `.erk/impl-context/plan.md` and `.erk/impl-context/plan-result.json`
+5. Validates Claude produced `.erk/impl-context/plan.md` and `.erk/impl-context/plan-result.json` (with `pr_number` in JSON)
 6. Runs `erk exec register-one-shot-plan` for metadata registration
 7. Optionally updates objective roadmap step
 
@@ -202,7 +202,7 @@ The agent writes a rejection to `.erk/impl-context/plan-result.json`:
 Normal (non-rejected) output:
 
 ```json
-{ "plan_number": 1234, "title": "Plan title" }
+{ "pr_number": 1234, "title": "Plan title" }
 ```
 
 ### Workflow Routing on Rejection

@@ -350,7 +350,7 @@ The submit command creates the `.erk/impl-context/` folder structure:
 ```json
 {
   "provider": "github",
-  "plan_id": "123",
+  "pr_id": "123",
   "url": "https://github.com/owner/repo/issues/123",
   "created_at": "2025-01-15T10:30:00Z",
   "synced_at": "2025-01-15T10:30:00Z",
@@ -1056,7 +1056,7 @@ erk exec update-plan-header 123 lifecycle_stage=impl
 Returns JSON on success:
 
 ```json
-{ "success": true, "plan_id": "123", "fields_updated": ["lifecycle_stage"] }
+{ "success": true, "pr_id": "123", "fields_updated": ["lifecycle_stage"] }
 ```
 
 The backend validates that the plan exists, the field names are valid, and enum values (like lifecycle_stage) are one of the allowed values.

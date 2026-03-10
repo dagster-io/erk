@@ -123,7 +123,7 @@ Build the plan list and invoke the replan skill:
 **For single plan:**
 
 ```
-/erk:replan <plan_number>
+/erk:replan <pr_number>
 ```
 
 **For multiple plans:**
@@ -132,7 +132,7 @@ Build the plan list and invoke the replan skill:
 /erk:replan <issue1> <issue2> <issue3> ...
 ```
 
-Use the Skill tool with `skill: "erk:replan"` and `args: "<space-separated plan numbers>"`.
+Use the Skill tool with `skill: "erk:replan"` and `args: "<space-separated pr numbers>"`.
 
 **IMPORTANT:** The `/erk:replan` skill will launch background Explore agents for deep investigation. Per Step 4e of that skill, you MUST wait for ALL background agents to complete before creating the consolidated plan. Use `timeout: 600000` (10 minutes) when calling TaskOutput to wait for each agent. Do not proceed to plan creation until every investigation agent has returned its findings.
 

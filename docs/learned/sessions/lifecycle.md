@@ -32,11 +32,11 @@ This constraint drives two architectural decisions:
 
 Session data lives in three places with different persistence guarantees. Understanding which tier you're working with determines how you handle availability.
 
-| Tier                | Location                                        | Persistence                                  | Purpose                                                                     |
-| ------------------- | ----------------------------------------------- | -------------------------------------------- | --------------------------------------------------------------------------- |
-| **Claude-managed**  | `~/.claude/projects/<project>/sessions/`        | Unpredictable — Claude Code controls cleanup | Primary session storage; most workflows start here                          |
-| **Branch-uploaded** | `planned-pr-context/{plan_id}` branch on origin | Durable until branch deleted                 | Cross-session persistence for learn workflows                               |
-| **Scratch**         | `.erk/scratch/sessions/<session-id>/`           | 1 hour TTL, auto-cleaned                     | Inter-process file passing within a single session (e.g., preprocessed XML) |
+| Tier                | Location                                          | Persistence                                  | Purpose                                                                     |
+| ------------------- | ------------------------------------------------- | -------------------------------------------- | --------------------------------------------------------------------------- |
+| **Claude-managed**  | `~/.claude/projects/<project>/sessions/`          | Unpredictable — Claude Code controls cleanup | Primary session storage; most workflows start here                          |
+| **Branch-uploaded** | `planned-pr-context/{pr_number}` branch on origin | Durable until branch deleted                 | Cross-session persistence for learn workflows                               |
+| **Scratch**         | `.erk/scratch/sessions/<session-id>/`             | 1 hour TTL, auto-cleaned                     | Inter-process file passing within a single session (e.g., preprocessed XML) |
 
 The key insight: scratch storage is _not_ a session archive — it exists for transient artifacts like preprocessed XML files that a hook produces for Claude to read. The 1-hour TTL is deliberately aggressive because scratch files become stale once the producing session ends.
 
@@ -46,9 +46,9 @@ See `cleanup_stale_scratch()` in `packages/erk-shared/src/erk_shared/scratch/scr
 
 ## Why Branch-Based Persistence Exists
 
-The branch upload tier was added because learn workflows frequently run in a _different_ Claude Code session from the one that created or implemented the plan. By the time learn runs, the original session file is often gone. Pushing to a `planned-pr-context/{plan_id}` branch and recording the branch reference in the plan-header creates a durable reference that survives session cleanup.
+The branch upload tier was added because learn workflows frequently run in a _different_ Claude Code session from the one that created or implemented the plan. By the time learn runs, the original session file is often gone. Pushing to a `planned-pr-context/{pr_number}` branch and recording the branch reference in the plan-header creates a durable reference that survives session cleanup.
 
-See `push_session()` in `src/erk/cli/commands/exec/scripts/push_session.py` for how branch-based storage and plan-header updates are coordinated. The push preprocesses session JSONL to compressed XML, creates a `planned-pr-context/{plan_id}` branch, accumulates sessions across lifecycle stages, and updates plan metadata with `last_session_branch`, `last_session_id`, `last_session_at`, and `last_session_source` fields.
+See `push_session()` in `src/erk/cli/commands/exec/scripts/push_session.py` for how branch-based storage and plan-header updates are coordinated. The push preprocesses session JSONL to compressed XML, creates a `planned-pr-context/{pr_number}` branch, accumulates sessions across lifecycle stages, and updates plan metadata with `last_session_branch`, `last_session_id`, `last_session_at`, and `last_session_source` fields.
 
 ## Discovery Architecture
 

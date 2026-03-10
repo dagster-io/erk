@@ -29,7 +29,7 @@ This document defines conventions that supplement AGENTS.md. For basic naming (s
 
 | Type                  | Convention               | Example                          |
 | --------------------- | ------------------------ | -------------------------------- |
-| Issue numbers (`int`) | `_id` suffix             | `objective_id`, `plan_id`        |
+| Issue numbers (`int`) | `_id` suffix             | `objective_id`, `pr_id`          |
 | GitHub Issue objects  | No suffix or `_issue`    | `objective`, `plan_issue`        |
 | String identifiers    | `_identifier` or `_name` | `plan_identifier`, `branch_name` |
 

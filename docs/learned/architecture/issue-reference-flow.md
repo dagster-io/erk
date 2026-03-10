@@ -21,7 +21,7 @@ Parameters are keyword-only after `impl_dir`:
 
 See `save_plan_ref()` in
 [`packages/erk-shared/src/erk_shared/impl_folder.py`](../../../packages/erk-shared/src/erk_shared/impl_folder.py)
-for the full signature. Key points: all parameters after `impl_dir` are keyword-only (`provider`, `plan_id`, `url`, `labels`, `objective_id`).
+for the full signature. Key points: all parameters after `impl_dir` are keyword-only (`provider`, `pr_id`, `url`, `labels`, `objective_id`).
 
 Called by:
 
@@ -95,7 +95,7 @@ This creates unnecessary coupling between callers and the issue reference system
 │ .erk/impl-context/plan-ref.json │
 │ {                           │
 │   "provider": "github",     │
-│   "plan_id": "123",         │
+│   "pr_id": "123",           │
 │   "url": "..."              │
 │ }                           │
 └─────────┬────────────────────┘

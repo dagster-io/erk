@@ -191,8 +191,8 @@ Push-down can go too far. When each small task becomes its own CLI command, you 
 
 A push-down command that returns minimal JSON forces the agent to make additional calls for related data. Design the output to include everything the agent needs for the next decision.
 
-**Bad:** `{"plan_number": 42}` — agent must now fetch plan details separately.
-**Good:** `{"plan_number": 42, "title": "...", "phases": [...], "related_docs": {...}}` — agent can proceed immediately.
+**Bad:** `{"pr_number": 42}` — agent must now fetch plan details separately.
+**Good:** `{"pr_number": 42, "title": "...", "phases": [...], "related_docs": {...}}` — agent can proceed immediately.
 
 ### Pushing semantic work
 

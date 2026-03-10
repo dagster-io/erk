@@ -399,7 +399,7 @@ This generates an AI-powered title and body from the full PR diff, preserving ex
 ### Phase 6: Upload Address Session
 
 After addressing review comments, upload the session for cross-machine learning.
-Resolve the plan_id from the current branch, then push the session:
+Resolve the pr_id from the current branch, then push the session:
 
 ```bash
 erk exec upload-impl-session --session-id "${CLAUDE_SESSION_ID}" 2>/dev/null || true

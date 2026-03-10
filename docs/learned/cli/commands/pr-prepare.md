@@ -23,7 +23,7 @@ erk pr prepare <number>     # Prepare for specific plan number
 
 ### Auto-Detection
 
-When `plan_number` is omitted, uses `ctx.github.get_pr_for_branch()` to find the PR associated with the current branch.
+When `number` is omitted, uses `ctx.github.get_pr_for_branch()` to find the PR associated with the current branch.
 
 ### Idempotency
 

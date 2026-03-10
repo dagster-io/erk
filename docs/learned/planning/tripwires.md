@@ -68,7 +68,7 @@ Rules triggered by matching actions in code.
 
 **calling commands that depend on `.erk/impl-context/plan-ref.json` metadata** → Read [Plan Lifecycle](lifecycle.md) first. Verify metadata file exists in worktree; if missing, operations silently return empty values. read_plan_ref() tries plan-ref.json first, falls back to legacy issue.json.
 
-**calling gh issue view with a plan_id from PlannedPRBackend** → Read [Plan ID Semantics](plan-id-semantics.md) first. For planned-PR plans, plan_id is a PR number, not an issue number. Use gh pr view instead. Check provider type before assuming plan_id semantics.
+**calling gh issue view with a pr_id from PlannedPRBackend** → Read [Plan ID Semantics](plan-id-semantics.md) first. For planned-PR plans, pr_id is a PR number, not an issue number. Use gh pr view instead. Check provider type before assuming pr_id semantics.
 
 **calling gt track before rebasing a stacked plan branch** → Read [Stacked Plan Branch Rebase](stacked-plan-branch-rebase.md) first. Always rebase BEFORE gt track for stacked plans (not after). gt track requires the parent branch to be an ancestor in git history.
 
@@ -244,7 +244,7 @@ Rules triggered by matching actions in code.
 
 **using extract_metadata_prefix() or extract_plan_header_block() for metadata extraction** → Read [Plan Content Extraction Fallback](metadata-block-fallback.md) first. These functions are deleted. Use find_metadata_block() from packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py for extraction and render_metadata_block() for rendering.
 
-**using gh issue view on a plan ID without checking plan backend type** → Read [Planned PR Backend](planned-pr-backend.md) first. Planned PR plan IDs are PR numbers. Using gh issue view on a planned-PR plan produces a confusing 404. Route to gh pr view based on backend type.
+**using gh issue view on a PR ID without checking plan backend type** → Read [Planned PR Backend](planned-pr-backend.md) first. Planned PR PR IDs are PR numbers. Using gh issue view on a planned-PR plan produces a confusing 404. Route to gh pr view based on backend type.
 
 **using issue timeline API as the primary PR lookup path** → Read [PR Discovery Strategies for Plans](pr-discovery.md) first. The primary path is branch_name from plan-header → get_pr_for_branch(). Timeline API is a separate strategy for when branch_name is unavailable.
 
@@ -256,7 +256,7 @@ Rules triggered by matching actions in code.
 
 **using session-scoped markers in exec scripts** → Read [Session-Based Plan Deduplication](session-deduplication.md) first. Session markers enable idempotency in command retries. Always write markers AFTER successful operation completion, never before. Use triple-check guard on marker read: file exists AND content is valid AND expected type (numeric for issue numbers).
 
-**validating plan_id in exec scripts without checking provider type** → Read [Planned PR Backend](planned-pr-backend.md) first. Planned PR plan_id IS the PR number (not an issue number). Check provider type before assuming plan_id semantics.
+**validating pr_id in exec scripts without checking provider type** → Read [Planned PR Backend](planned-pr-backend.md) first. Planned PR pr_id IS the PR number (not an issue number). Check provider type before assuming pr_id semantics.
 
 **writing lifecycle_stage value other than 'impl' in a write point** → Read [Lifecycle Stage Consolidation](lifecycle-stage-consolidation.md) first. All lifecycle write points must use 'impl', never the legacy values 'implementing' or 'implemented'. Schema validation accepts legacy values for backwards compatibility only.
 

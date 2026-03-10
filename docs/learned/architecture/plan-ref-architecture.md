@@ -6,8 +6,8 @@ read_when:
   - "migrating from IssueReference to PlanRef"
   - "understanding provider-agnostic plan references"
 tripwires:
-  - action: "accessing plan_ref.plan_id as int without checking"
-    warning: "plan_id is a string. Use LBYL: `plan_ref.plan_id.isdigit()` before `int(plan_ref.plan_id)`. Supports future non-numeric providers like 'PROJ-123'."
+  - action: "accessing plan_ref.pr_id as int without checking"
+    warning: "pr_id is a string. Use LBYL: `plan_ref.pr_id.isdigit()` before `int(plan_ref.pr_id)`. Supports future non-numeric providers like 'PROJ-123'."
   - action: "calling save_plan_ref with positional arguments"
     warning: "All parameters after `impl_dir` are keyword-only. Positional calls will fail at runtime."
 ---
@@ -26,7 +26,7 @@ The original `IssueReference` was tightly coupled to GitHub:
 
 PlanRef generalizes this:
 
-- Fields: `provider`, `plan_id` (str), `url`, `labels`, `objective_id`
+- Fields: `provider`, `pr_id` (str), `url`, `labels`, `objective_id`
 - File: `.erk/impl-context/plan-ref.json`
 - Designed for any plan provider (GitHub, Jira, Linear, etc.)
 
@@ -37,15 +37,15 @@ Defined in `packages/erk-shared/src/erk_shared/impl_folder.py`:
 See the `PlanRef` dataclass in
 [`packages/erk-shared/src/erk_shared/impl_folder.py`](../../../packages/erk-shared/src/erk_shared/impl_folder.py).
 
-Key fields: `provider` (`PlanProviderType`), `plan_id` (str), `url`, `created_at`, `synced_at`, `labels` (tuple), `objective_id` (int | None).
+Key fields: `provider` (`PlanProviderType`), `pr_id` (str), `url`, `created_at`, `synced_at`, `labels` (tuple), `objective_id` (int | None).
 
-### String `plan_id` Rationale
+### String `pr_id` Rationale
 
-`plan_id` is deliberately a `str`, not `int`, to support future providers where plan identifiers are non-numeric (e.g., Jira's `PROJ-123`). GitHub issue numbers are stored as strings and converted at callsites when needed.
+`pr_id` is deliberately a `str`, not `int`, to support future providers where plan identifiers are non-numeric (e.g., Jira's `PROJ-123`). GitHub issue numbers are stored as strings and converted at callsites when needed.
 
 ## API Functions
 
-### `save_plan_ref(impl_dir, *, provider, plan_id, url, labels, objective_id)`
+### `save_plan_ref(impl_dir, *, provider, pr_id, url, labels, objective_id)`
 
 Saves a plan reference to `plan-ref.json`. All parameters after `impl_dir` are keyword-only. Raises `FileNotFoundError` if `impl_dir` doesn't exist.
 
@@ -59,7 +59,7 @@ Reads plan reference with backward compatibility:
 
 The legacy fallback maps old fields to new PlanRef structure:
 
-- `issue_number` -> `plan_id` (converted to string)
+- `issue_number` -> `pr_id` (converted to string)
 - `issue_url` -> `url`
 - Defaults: `provider="github"`, `labels=()`, `objective_id=None`
 
@@ -69,22 +69,22 @@ Returns `True` if either `plan-ref.json` or legacy `issue.json` exists.
 
 ### `validate_plan_linkage(impl_dir, branch_name) -> str | None`
 
-Returns plan_id from plan-ref.json. Plan-ref.json is the sole source of truth for plan-to-branch mapping. Branch names no longer encode issue numbers.
+Returns pr_id from plan-ref.json. Plan-ref.json is the sole source of truth for plan-to-branch mapping. Branch names no longer encode issue numbers.
 
 - Reads plan reference from impl directory via `read_plan_ref()`
 - The `branch_name` parameter is unused (kept for interface compatibility)
-- Returns `plan_id` as string if plan-ref.json exists, `None` otherwise
+- Returns `pr_id` as string if plan-ref.json exists, `None` otherwise
 
-## The `plan_id` String-to-Int Conversion Pattern
+## The `pr_id` String-to-Int Conversion Pattern
 
-Since `plan_id` is a string but GitHub APIs require integers, callsites must convert carefully:
+Since `pr_id` is a string but GitHub APIs require integers, callsites must convert carefully:
 
 ```python
 # Correct: LBYL before conversion
-if plan_ref.plan_id.isdigit():
-    issue_number = int(plan_ref.plan_id)
+if plan_ref.pr_id.isdigit():
+    issue_number = int(plan_ref.pr_id)
 else:
-    # Handle non-numeric plan_id
+    # Handle non-numeric pr_id
     ...
 ```
 

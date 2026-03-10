@@ -73,12 +73,12 @@ gh pr list --head <branch-name> --state all --limit 1 --json number -q '.[0].num
 
 **If no PR found:** Report error and exit - cannot land without a PR.
 
-### Step 4: Extract Plan Number
+### Step 4: Extract PR Number
 
-The plan number is no longer encoded in branch names. Instead, use `plan-ref.json` to resolve the plan ID:
+The PR number is no longer encoded in branch names. Instead, use `plan-ref.json` to resolve the PR ID:
 
 1. Check if `ref.json` exists in `.erk/impl-context/<branch>/`
-2. If exists, read the `plan_id` field from the JSON file
+2. If exists, read the `pr_id` field from the JSON file
 3. If not found, check for legacy `P<number>-*` branch prefix pattern for backwards compatibility
 
 Example:
@@ -93,7 +93,7 @@ Example:
 If branch has P-prefix, use the `get-plan-metadata` exec command to extract the objective issue:
 
 ```bash
-erk exec get-plan-metadata <plan-number> objective_issue
+erk exec get-plan-metadata <pr-number> objective_issue
 ```
 
 **Output format:**
@@ -102,7 +102,7 @@ erk exec get-plan-metadata <plan-number> objective_issue
 {
   "success": true,
   "value": 3400,
-  "plan_number": 3509,
+  "pr_number": 3509,
   "field": "objective_issue"
 }
 ```
