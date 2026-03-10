@@ -216,7 +216,7 @@ def test_json_stdin_input() -> None:
         ):
             result = runner.invoke(
                 cli,
-                ["one-shot", "--json"],
+                ["one-shot", "--stdin-json", "--json"],
                 obj=ctx,
                 catch_exceptions=False,
             )
