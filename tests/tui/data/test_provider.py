@@ -14,6 +14,7 @@ from erk_shared.gateway.github.types import (
     GitHubRepoId,
     GitHubRepoLocation,
     PullRequestInfo,
+    WorkflowRun,
 )
 from erk_shared.gateway.plan_data_provider.real import RealPrDataProvider
 from erk_shared.gateway.pr_service.real import RealPrService
@@ -1769,6 +1770,155 @@ class TestBlockingDepsPlans:
         # #400 should appear only once (from blocking dep), not duplicated
         displays = [d for d, _url in row.objective_deps_plans]
         assert displays.count("#400") == 1
+
+
+class TestPlanningRunIdFallback:
+    """Tests for planning run ID fallback from created_from_workflow_run_url."""
+
+    def _make_provider(self, tmp_path: Path) -> RealPrDataProvider:
+        """Create a minimal RealPrDataProvider for testing."""
+        repo_root = tmp_path / "repo"
+        repo_root.mkdir()
+        erk_dir = repo_root / ".erk"
+        erk_dir.mkdir()
+
+        git = FakeGit(
+            worktrees={
+                repo_root: [
+                    WorktreeInfo(path=repo_root, branch="main", is_root=True),
+                ]
+            },
+            git_common_dirs={repo_root: repo_root / ".git"},
+        )
+
+        ctx = create_test_context(
+            git=git,
+            github=FakeLocalGitHub(pr_plan_linkages={}),
+            cwd=repo_root,
+            repo=_make_repo_context(repo_root, tmp_path),
+        )
+
+        location = GitHubRepoLocation(
+            root=repo_root,
+            repo_id=GitHubRepoId(owner="test", repo="repo"),
+        )
+        return RealPrDataProvider(
+            ctx=ctx,
+            location=location,
+            http_client=FakeHttpClient(),
+        )
+
+    def test_planning_run_url_populates_run_fields(self, tmp_path: Path) -> None:
+        """Planning run URL populates run_id and run_url when no dispatched run."""
+        provider = self._make_provider(tmp_path)
+
+        pr_body = format_plan_header_body_for_test(
+            created_from_workflow_run_url="https://github.com/test/repo/actions/runs/12345678"
+        )
+        plan = Plan(
+            pr_identifier="123",
+            title="Test Plan",
+            body=pr_body,
+            state=PlanState.OPEN,
+            url="https://github.com/test/repo/issues/123",
+            labels=[],
+            assignees=[],
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC),
+            metadata={},
+            objective_id=None,
+            header_fields=_parse_header_fields(pr_body),
+        )
+
+        row = provider._build_row_data(
+            plan=plan,
+            pr_number=123,
+            pr_linkages={},
+            workflow_run=None,
+            worktree_by_pr_number={},
+            use_graphite=False,
+        )
+
+        assert row.run_id == "12345678"
+        assert row.run_url == "https://github.com/test/repo/actions/runs/12345678"
+        assert row.run_id_display == "12345678"
+        assert row.run_status is None
+        assert row.run_conclusion is None
+        assert row.run_state_display == "-"
+
+    def test_no_planning_run_url_shows_dash(self, tmp_path: Path) -> None:
+        """Without planning run URL or dispatched run, run fields are defaults."""
+        provider = self._make_provider(tmp_path)
+
+        plan = Plan(
+            pr_identifier="123",
+            title="Test Plan",
+            body="",
+            state=PlanState.OPEN,
+            url="https://github.com/test/repo/issues/123",
+            labels=[],
+            assignees=[],
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC),
+            metadata={},
+            objective_id=None,
+        )
+
+        row = provider._build_row_data(
+            plan=plan,
+            pr_number=123,
+            pr_linkages={},
+            workflow_run=None,
+            worktree_by_pr_number={},
+            use_graphite=False,
+        )
+
+        assert row.run_id is None
+        assert row.run_url is None
+        assert row.run_id_display == "-"
+
+    def test_dispatched_run_takes_precedence(self, tmp_path: Path) -> None:
+        """When both dispatched run and planning run URL exist, dispatched run takes precedence."""
+        provider = self._make_provider(tmp_path)
+
+        pr_body = format_plan_header_body_for_test(
+            created_from_workflow_run_url="https://github.com/test/repo/actions/runs/11111111"
+        )
+        plan = Plan(
+            pr_identifier="123",
+            title="Test Plan",
+            body=pr_body,
+            state=PlanState.OPEN,
+            url="https://github.com/test/repo/issues/123",
+            labels=[],
+            assignees=[],
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC),
+            metadata={},
+            objective_id=None,
+            header_fields=_parse_header_fields(pr_body),
+        )
+
+        workflow_run = WorkflowRun(
+            run_id="99999999",
+            status="completed",
+            conclusion="success",
+            branch="plnd/test",
+            head_sha="abc123",
+        )
+
+        row = provider._build_row_data(
+            plan=plan,
+            pr_number=123,
+            pr_linkages={},
+            workflow_run=workflow_run,
+            worktree_by_pr_number={},
+            use_graphite=False,
+        )
+
+        assert row.run_id == "99999999"
+        assert row.run_status == "completed"
+        assert row.run_conclusion == "success"
 
 
 class TestFetchPlansByIds:
