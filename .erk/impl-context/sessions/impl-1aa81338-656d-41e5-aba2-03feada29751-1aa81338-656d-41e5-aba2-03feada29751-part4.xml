@@ -1,0 +1,1273 @@
+<session>
+  <meta branch="plnd/O9109-rename-exec-json-fie-03-10-0015" />
+  <meta model="claude-opus-4-6" />
+  <user>This session is being continued from a previous conversation that ran out of context. The conversation is summarized below:
+Analysis:
+Let me chronologically analyze the conversation:
+
+1. The user initiated `/erk:plan-implement 9120` which is a command to implement plan #9120 - renaming JSON output fields in exec scripts.
+
+2. I set up the implementation environment with `erk exec setup-impl --issue 9120`, which checked out branch `plnd/O9109-rename-exec-json-fie-03-10-0015`.
+
+3. I read the plan from `.erk/impl-context/plnd--O9109-rename-exec-json-fie-03-10-0015/plan.md`. The plan involves renaming four JSON output field names across ~30 exec scripts:
+   - `"plan_number"` → `"pr_number"`
+   - `"plan_id"` → `"pr_number"`
+   - `"plan_url"` → `"pr_url"`
+   - `"plan_title"` → `"pr_title"`
+
+4. I loaded coding standards (dignified-python skill) and detected Python 3.11.
+
+5. I created TodoWrite entries and signaled GitHub started.
+
+6. I grepped for all occurrences of the four patterns across exec scripts.
+
+7. I launched 4 parallel subagents to handle the renames:
+   - Agent a9738f4: `plan_number` batch 1 (plan_update, detect_plan_from_branch, objective_save_to_issue, plan_save, post_workflow_started_comment, setup_impl_from_pr, close_pr, add_plan_label)
+   - Agent a1000bf: `plan_number` batch 2 (setup_impl, impl_init, create_pr_from_session, track_learn_evaluation, get_plan_metadata, impl_signal, objective_fetch_context)
+   - Agent ae10d6d: `plan_id` → `pr_number` (push_session, push_and_create_pr, upload_impl_session, get_learn_sessions, create_impl_context_from_plan, fetch_sessions, get_plan_info, track_learn_result, get_pr_context, update_plan_header, incremental_dispatch)
+   - Agent a398c89: `plan_url` → `pr_url` and `plan_title` → `pr_title`
+
+8. While agents ran, I manually handled the tricky files `add_plan_labels.py` and `close_prs.py` (Step 2 - input stream field names) which had both input AND output `"plan_number"` fields, plus TypedDict fields.
+
+9. All 4 agents completed. I found two errors:
+   - Agent a1000bf incorrectly renamed the Click option destination in `objective_fetch_context.py` from `"plan_number"` to `"pr_number"` and collapsed function parameters
+   - Agent ae10d6d and a398c89 both renamed `"plan_id"` in `incremental_dispatch.py`, creating duplicate `"pr_number"` keys
+
+10. I fixed both errors:
+    - Reverted `objective_fetch_context.py` to keep `"plan_number"` as the Click option destination and `plan_number` as the function parameter
+    - Fixed `incremental_dispatch.py` by removing the duplicate first `"pr_number"` entry (the original had `"plan_id"` AND `"pr_number"` as separate keys; removing `"plan_id"` leaves just the single `"pr_number"`)
+
+11. I verified all remaining old field names were only in Click argument/option decorators (correctly NOT renamed).
+
+12. First CI run: ruff PASSED, ty PASSED, pytest FAILED with:
+    - `E501 Line too long` in push_session.py (102 &gt; 100 chars) - Fixed by wrapping the line
+    - `KeyError: 'plan_number'` in test_add_plan_label.py - Tests needed updating
+
+13. I found ~80+ test references to old field names and launched 3 parallel subagents to update tests:
+    - Agent a8f3c98: test batch 1 (test_add_plan_label, test_add_plan_labels, test_close_prs, test_close_pr, test_detect_plan_from_branch, test_objective_save_to_issue, test_plan_save, test_plan_update)
+    - Agent a7f47dd: test batch 2 (test_track_learn_evaluation, test_impl_init, test_get_plan_metadata, test_impl_signal, test_post_workflow_started_comment, test_setup_impl)
+    - Agent a9bee25: test batch 3 (test_create_impl_context_from_plan, test_get_learn_sessions, test_fetch_sessions, test_get_plan_info, test_track_learn_result, test_push_session, test_setup_impl_from_pr, test_incremental_dispatch)
+
+14. All 3 test agents completed successfully.
+
+15. Second CI run: ruff PASSED, ty PASSED, pytest FAILED with `KeyError: 'pr_number'` in test_get_learn_sessions.py. The issue: `get_learn_sessions.py` uses `GetLearnSessionsResultDict` TypedDict from `erk_shared` package, which still had `plan_id` as its field name.
+
+16. Fixed by updating:
+    - `packages/erk-shared/src/erk_shared/learn/extraction/get_learn_sessions_result.py`: `plan_id: str` → `pr_number: str`
+    - `src/erk/cli/commands/exec/scripts/get_learn_sessions.py`: `plan_id=plan_id` → `pr_number=plan_id`
+
+17. Third CI run: ruff PASSED, ty PASSED, pytest FAILED with `KeyError: 'pr_number'` in test_post_workflow_started_comment.py. The issue: `PostSuccess` dataclass has `plan_number: int` field used via `asdict()`.
+
+18. Fixed by updating:
+    - `post_workflow_started_comment.py`: dataclass field `plan_number: int` → `pr_number: int`, and construction `plan_number=plan_number` → `pr_number=plan_number`
+
+19. I then discovered two MORE dataclass fields in:
+    - `track_learn_evaluation.py`: `TrackLearnResult.plan_number: int` (line 47)
+    - `track_learn_result.py`: `TrackLearnResultSuccess.plan_id: str` (line 39)
+
+These are still UNFIXED. This is where the work was interrupted by the summary request.
+
+The total file count: 26 exec scripts modified + test files + 1 erk_shared TypedDict. Still need to fix 2 more dataclass fields and their construction sites, then re-run CI.
+
+Summary:
+1. Primary Request and Intent:
+   The user ran `/erk:plan-implement 9120` to implement Plan #9120: "Rename JSON Output Fields in Exec Scripts." This is part of Objective #9109 which renames "plan" terminology to "pr" across all APIs. The plan targets JSON output field names emitted by ~30 exec scripts in `src/erk/cli/commands/exec/scripts/`. Four field renames:
+   - `"plan_number"` → `"pr_number"` (output dicts)
+   - `"plan_id"` → `"pr_number"` (output dicts)
+   - `"plan_url"` → `"pr_url"` (output dicts)
+   - `"plan_title"` → `"pr_title"` (output dicts)
+   
+   Scope: JSON output dict keys, dataclass fields used in JSON output (via `asdict()`), TypedDict fields that define JSON schemas, docstring examples, and input stream field names. NOT in scope: Click argument/option names, Python variable names, function parameters, or consumer updates outside exec scripts.
+
+2. Key Technical Concepts:
+   - JSON output field renaming across CLI exec scripts (Click commands)
+   - `dataclasses.asdict()` serialization — dataclass field names become JSON keys
+   - `TypedDict` field names — directly map to JSON output keys
+   - Click `@click.argument("plan_number")` / `@click.option("--plan", "plan_number")` — CLI parameter naming (NOT renamed)
+   - Stdin JSON input contracts (e.g., `add_plan_labels.py`, `close_prs.py`)
+   - Plan #9120 on branch `plnd/O9109-rename-exec-json-fie-03-10-0015`
+   - Python 3.11 project (`requires-python = "&gt;=3.11"`)
+   - Parallel subagent pattern for bulk mechanical renames
+
+3. Files and Code Sections:
+
+   **Exec Scripts Modified (26 files under `src/erk/cli/commands/exec/scripts/`):**
+   
+   - `plan_update.py` — renamed `"plan_number"` → `"pr_number"` and `"plan_url"` → `"pr_url"` in output dict
+   - `detect_plan_from_branch.py` — renamed `"plan_number"` → `"pr_number"` in docstrings and return dict
+   - `objective_save_to_issue.py` — renamed `"plan_number"` → `"pr_number"` in two output dicts
+   - `plan_save.py` — renamed `"plan_number"` → `"pr_number"` and `"plan_url"` → `"pr_url"` in output dicts (main + dedup)
+   - `post_workflow_started_comment.py` — renamed docstring example + dataclass field `plan_number` → `pr_number` and construction site
+   - `setup_impl_from_pr.py` — renamed `"plan_number"` → `"pr_number"`, `"plan_url"` → `"pr_url"`, `"plan_title"` → `"pr_title"` across 3 return dicts + docstring
+   - `close_pr.py` — renamed `"plan_number"` → `"pr_number"` in output dict
+   - `add_plan_label.py` — renamed `"plan_number"` → `"pr_number"` in output dict
+   - `add_plan_labels.py` — renamed all `"plan_number"` → `"pr_number"` in docstrings, TypedDict field, input validation, and output dicts
+   - `close_prs.py` — renamed all `"plan_number"` → `"pr_number"` in docstrings, TypedDict field, input validation, and output dicts
+   - `setup_impl.py` — renamed `"plan_number"` → `"pr_number"` in docstrings, output dicts, and detection result access
+   - `impl_init.py` — renamed `result["plan_number"]` → `result["pr_number"]`
+   - `create_pr_from_session.py` — renamed `"plan_number"` → `"pr_number"` and `"plan_url"` → `"pr_url"` in docstring and output dict
+   - `track_learn_evaluation.py` — renamed `"plan_number"` in docstring. **STILL HAS `plan_number: int` dataclass field at line 47 UNFIXED**
+   - `get_plan_metadata.py` — renamed dataclass field `plan_number` → `pr_number` and construction site
+   - `impl_signal.py` — renamed dataclass field `plan_number` → `pr_number` in `SignalSuccess` and all 3 construction sites + docstring examples
+   - `push_session.py` — renamed `"plan_id"` → `"pr_number"` in docstring and 2 output dicts. Fixed line-too-long by wrapping docstring.
+   - `push_and_create_pr.py` — renamed `"plan_id"` → `"pr_number"` in output dict
+   - `upload_impl_session.py` — renamed `"plan_id"` → `"pr_number"` in docstrings and output dict
+   - `get_learn_sessions.py` — renamed `plan_id=plan_id` → `pr_number=plan_id` in `GetLearnSessionsResultDict` construction
+   - `create_impl_context_from_plan.py` — renamed `"plan_id"` → `"pr_number"` and `"plan_url"` → `"pr_url"` in docstring and output dict
+   - `fetch_sessions.py` — renamed `"plan_id"` → `"pr_number"` in docstring and output dict
+   - `get_plan_info.py` — renamed `"plan_id"` → `"pr_number"` in docstring and output dict
+   - `track_learn_result.py` — renamed docstring `"plan_id"` → `"pr_number"`. **STILL HAS `plan_id: str` dataclass field at line 39 UNFIXED**
+   - `get_pr_context.py` — renamed `"plan_id"` → `"pr_number"` in output dict
+   - `incremental_dispatch.py` — removed duplicate `"plan_id"`/`"pr_number"` key (kept single `"pr_number"`), renamed `"plan_title"` → `"pr_title"`
+
+   **Shared Package TypedDict:**
+   - `packages/erk-shared/src/erk_shared/learn/extraction/get_learn_sessions_result.py` — renamed `plan_id: str` → `pr_number: str` in `GetLearnSessionsResultDict`
+
+   **objective_fetch_context.py — REVERTED (was incorrectly modified by subagent):**
+   - The Click option destination `"plan_number"` and function parameter `plan_number` were restored to original. These are NOT JSON output fields.
+
+   **Test Files Modified (~20 files under `tests/unit/cli/commands/exec/scripts/`):**
+   - `test_add_plan_label.py` — `output["plan_number"]` → `output["pr_number"]`
+   - `test_add_plan_labels.py` — input JSON and output assertions renamed
+   - `test_close_prs.py` — input JSON and output assertions renamed
+   - `test_close_pr.py` — output assertions renamed
+   - `test_detect_plan_from_branch.py` — expected dict and assertions renamed
+   - `test_objective_save_to_issue.py` — output assertions renamed
+   - `test_plan_save.py` — key checks and output assertions renamed
+   - `test_plan_update.py` — output assertions renamed
+   - `test_track_learn_evaluation.py` — output assertions renamed
+   - `test_impl_init.py` — output assertions renamed
+   - `test_get_plan_metadata.py` — output assertions renamed
+   - `test_impl_signal.py` — output assertions renamed
+   - `test_post_workflow_started_comment.py` — output assertions renamed
+   - `test_setup_impl.py` — output assertions renamed
+   - `test_create_impl_context_from_plan.py` — `output["plan_id"]` → `output["pr_number"]`, `output["plan_url"]` → `output["pr_url"]`
+   - `test_get_learn_sessions.py` — output assertions + manifest fixtures renamed
+   - `test_fetch_sessions.py` — manifest fixture + output assertions renamed
+   - `test_get_plan_info.py` — output assertions renamed
+   - `test_track_learn_result.py` — output assertions renamed
+   - `test_push_session.py` — output + manifest assertions/fixtures renamed
+   - `test_setup_impl_from_pr.py` — `"plan_title"` → `"pr_title"` assertions renamed
+   - `test_incremental_dispatch.py` — `inputs["plan_id"]` → `inputs["pr_number"]`
+
+4. Errors and Fixes:
+   - **Subagent a1000bf incorrectly renamed objective_fetch_context.py**: Renamed Click option destination `"plan_number"` to `"pr_number"` and collapsed function parameters, creating a duplicate `pr_number` parameter. Fixed by reverting the Click option destination and function signature back to original.
+   - **Subagent conflict on incremental_dispatch.py**: Two agents (ae10d6d and a398c89) both renamed `"plan_id"` → `"pr_number"`, creating duplicate `"pr_number"` keys in the dict. Fixed by removing the first duplicate line, keeping just one `"pr_number"`.
+   - **Line too long in push_session.py**: After renaming `"plan_id"` to `"pr_number"` (2 chars longer), docstring line exceeded 100 chars. Fixed by wrapping the line.
+   - **Test failures after exec script changes**: Tests still referenced old field names. Fixed by updating ~20 test files.
+   - **GetLearnSessionsResultDict TypedDict not updated**: The `plan_id` field in the shared TypedDict in `erk_shared` package was still producing `"plan_id"` in JSON output. Fixed by renaming the TypedDict field to `pr_number`.
+   - **PostSuccess dataclass field not updated**: `post_workflow_started_comment.py` had `plan_number: int` in the `PostSuccess` dataclass; `asdict()` serialized it as `"plan_number"`. Fixed by renaming field and construction site to `pr_number`.
+   - **TWO MORE dataclass fields STILL UNFIXED** (discovered just before summary):
+     - `track_learn_evaluation.py` line 47: `TrackLearnResult.plan_number: int`
+     - `track_learn_result.py` line 39: `TrackLearnResultSuccess.plan_id: str`
+
+5. Problem Solving:
+   - Used parallel subagent pattern to handle ~60+ string replacements across ~30 files efficiently
+   - Carefully distinguished between JSON output field names (renamed) vs Click parameter names (kept)
+   - Identified that `dataclasses.asdict()` and `TypedDict` field names directly control JSON output keys, requiring those to be renamed too
+   - Iterative CI-driven discovery of missed dataclass/TypedDict fields
+
+6. All User Messages:
+   - Message 1: `/erk:plan-implement 9120` — The initial command triggering the implementation workflow
+   - Message 2: (System reminder about TodoWrite + agent progress notifications) — No explicit user action
+   - Message 3: (System reminder about TodoWrite + agent completion notifications) — No explicit user action
+   - Message 4: Summary request — "Your task is to create a detailed summary of the conversation so far..."
+
+7. Pending Tasks:
+   - Fix `track_learn_evaluation.py` dataclass field `plan_number: int` → `pr_number: int` (line 47) and its construction sites (lines ~199, ~206)
+   - Fix `track_learn_result.py` dataclass field `plan_id: str` → `pr_number: str` (line 39) and its construction site (line ~189)
+   - Re-run CI (`ruff check`, `ty check`, `pytest`) to verify all changes pass
+   - Check for any other remaining dataclass/TypedDict fields that produce old JSON key names
+   - Signal GitHub ended, upload session, cleanup impl context, submit PR (Steps 9-13 of the plan-implement workflow)
+
+8. Current Work:
+   I was in the CI verification loop (Step 12 of plan-implement). After fixing the `PostSuccess` dataclass in `post_workflow_started_comment.py`, I discovered two MORE dataclass fields that still need renaming:
+   
+   ```python
+   # track_learn_evaluation.py line 42-48
+   @dataclass(frozen=True)
+   class TrackLearnResult:
+       """Result of track-learn-evaluation command."""
+       success: bool
+       plan_number: int  # NEEDS → pr_number: int
+       tracked: bool
+   ```
+   
+   ```python
+   # track_learn_result.py line 34-42
+   @dataclass(frozen=True)
+   class TrackLearnResultSuccess:
+       """Result of successful track-learn-result command."""
+       success: bool
+       plan_id: str  # NEEDS → pr_number: str
+       learn_status: str
+       learn_plan_issue: int | None
+       learn_plan_pr: int | None
+   ```
+   
+   These dataclasses are serialized via `asdict()` and produce JSON output with old field names.
+
+9. Optional Next Step:
+   Fix the two remaining dataclass fields and their construction sites:
+   - In `track_learn_evaluation.py`: rename `plan_number: int` → `pr_number: int` in `TrackLearnResult` dataclass and update construction calls at lines ~199 and ~206
+   - In `track_learn_result.py`: rename `plan_id: str` → `pr_number: str` in `TrackLearnResultSuccess` dataclass and update construction call at line ~189
+   - Then re-run CI to verify all tests pass
+   
+   This directly continues the CI verification loop I was in. The last test run showed `test_post_workflow_started_comment.py` failing, which I fixed, and then I grepped to discover these two additional unfixed dataclass fields..
+Please continue the conversation from where we left it off without asking the user any further questions. Continue with the last task that you were asked to work on.</user>
+  <assistant>
+
+I need to fix the two remaining dataclass fields and then run CI to verify everything passes. Let me continue.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="26870" cache_read_input_tokens="20414" cache_creation="{'ephemeral_5m_input_tokens': 26870, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01BxHfqoi89HT39DeK7qMiKA">
+    <param name="todos">[{'content': 'Step 1-4: Rename JSON output fields in exec scripts', 'status': 'completed',...[truncated 658 chars]...o verify all changes pass', 'status': 'pending', 'activeForm': 'Running CI verification'}]</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="26870" cache_read_input_tokens="20414" cache_creation="{'ephemeral_5m_input_tokens': 26870, 'ephemeral_1h_input_tokens': 0}" output_tokens="266" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01BxHfqoi89HT39DeK7qMiKA">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Q3arELDQ2uErh1DXo6iac5">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/track_learn_evaluation.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="345" cache_read_input_tokens="47284" cache_creation="{'ephemeral_5m_input_tokens': 345, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01WyxLXNE6UeqhRjoGj3M9px">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/track_learn_result.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="345" cache_read_input_tokens="47284" cache_creation="{'ephemeral_5m_input_tokens': 345, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Q3arELDQ2uErh1DXo6iac5">
+     1→"""Track learn evaluation completion on a plan.
+     2→
+     3→This exec script posts a tracking comment to the plan and updates
+     4→the plan-header metadata block to record that learn evaluation was performed.
+     5→It replaces the tracking side-effect in `erk learn --no-interactive`.
+     6→
+     7→Usage:
+     8→    erk exec track-learn-evaluation &lt;plan-number&gt; --session-id="..."
+     9→
+    10→Output:
+    11→    JSON object with tracking result:
+    12→    {
+    13→        "success": true,
+    14→        "pr_number": 123,
+    15→        "tracked": true
+    16→    }
+    17→
+    18→Exit Codes:
+    19→    0: Success
+    20→    1: Error (invalid plan, GitHub failure, etc.)
+    21→"""
+    22→
+    23→import json
+    24→from dataclasses import asdict, dataclass
+    25→from datetime import UTC
+    26→from pathlib import Path
+    27→
+    28→import click
+    29→
+    30→from erk_shared.context.helpers import (
+
+... [186 lines omitted] ...
+
+    39→from erk_shared.plan_store.types import PlanHeaderNotFoundError
+    52→class TrackLearnError:
+    53→    """Error result when tracking fails."""
+    56→    error: str
+   122→    except PlanHeaderNotFoundError:
+   123→        error = TrackLearnError(
+   125→            error="no-metadata-block",
+   131→        click.echo(json.dumps(asdict(error)), err=True)
+   133→    except RuntimeError as e:
+   134→        error = TrackLearnError(
+   136→            error="github-api-failed",
+   137→            message=f"Failed to track learn evaluation on plan #{plan_number}: {e}",
+   139→        click.echo(json.dumps(asdict(error)), err=True)
+   171→            error = TrackLearnError(
+   173→                error="invalid-plan-identifier",
+   176→            click.echo(json.dumps(asdict(error)))
+   187→        error = TrackLearnError(
+   189→            error="no-plan-specified",
+   192→        click.echo(json.dumps(asdict(error)))
+  </tool_result>
+  <tool_result tool="toolu_01WyxLXNE6UeqhRjoGj3M9px">
+     1→"""Track learn workflow result on a plan.
+     2→
+     3→This exec script updates the plan-header metadata block to record the result
+     4→of a learn workflow. It sets the learn_status field and optionally records
+     5→the learn_plan_issue if a plan was created.
+     6→
+     7→Usage:
+     8→    erk exec track-learn-result --plan-id 123 --status completed_no_plan
+     9→    erk exec track-learn-result --plan-id 123 --status completed_with_plan --learn-plan 456
+    10→
+    11→Output:
+    12→    JSON object with tracking result:
+    13→    {
+    14→        "success": true,
+    15→        "pr_number": "123",
+    16→        "learn_status": "completed_no_plan"
+    17→    }
+    18→
+    19→Exit Codes:
+    20→    0: Success
+    21→    1: Error (invalid issue, GitHub failure, validation error, etc.)
+    22→"""
+    23→
+    24→import json
+    25→from dataclasses import asdict, dataclass
+    26→
+    27→import click
+    28→
+    29→from erk_shared.context.helpers import require_plan_backend, require_repo_root
+    30→from erk_shared.gateway.github.metadata.schemas import LearnStatusValue
+
+... [171 lines omitted] ...
+
+    31→from erk_shared.plan_store.types import PlanHeaderNotFoundError
+    46→class TrackLearnResultError:
+    47→    """Error result when tracking fails."""
+    50→    error: str
+   102→        error = TrackLearnResultError(
+   104→            error="missing-learn-plan",
+   107→        click.echo(json.dumps(asdict(error)))
+   112→        error = TrackLearnResultError(
+   114→            error="unexpected-learn-plan",
+   117→        click.echo(json.dumps(asdict(error)))
+   122→        error = TrackLearnResultError(
+   124→            error="missing-plan-pr",
+   127→        click.echo(json.dumps(asdict(error)))
+   132→        error = TrackLearnResultError(
+   134→            error="unexpected-learn-plan",
+   137→        click.echo(json.dumps(asdict(error)))
+   142→        error = TrackLearnResultError(
+   144→            error="unexpected-plan-pr",
+   147→        click.echo(json.dumps(asdict(error)))
+   168→    except PlanHeaderNotFoundError:
+   169→        error = TrackLearnResultError(
+   171→            error="no-metadata-block",
+   176→        click.echo(json.dumps(asdict(error)), err=True)
+   178→    except RuntimeError as e:
+   179→        error = TrackLearnResultError(
+   181→            error="github-api-failed",
+   182→            message=f"Failed to update learn status on plan {plan_id}: {e}",
+   184→        click.echo(json.dumps(asdict(error)), err=True)
+  </tool_result>
+  <assistant>Now I can see the two remaining dataclass fields. Let me fix them both:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="5088" cache_read_input_tokens="47629" cache_creation="{'ephemeral_5m_input_tokens': 5088, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01QLanVp5qvHwDFc1Kzc5ChP">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/track_learn_evaluation.py</param>
+    <param name="old_string">    success: bool
+    plan_number: int
+    tracked: bool</param>
+    <param name="new_string">    success: bool
+    pr_number: int
+    tracked: bool</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5088" cache_read_input_tokens="47629" cache_creation="{'ephemeral_5m_input_tokens': 5088, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01QLanVp5qvHwDFc1Kzc5ChP">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/track_learn_evaluation.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_014nFf7MsYVU3DHaqbyP4b1W">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/track_learn_evaluation.py</param>
+    <param name="old_string">    result = TrackLearnResult(
+        success=True,
+        plan_number=plan_number,
+        tracked=True,
+    )</param>
+    <param name="new_string">    result = TrackLearnResult(
+        success=True,
+        pr_number=plan_number,
+        tracked=True,
+    )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="222" cache_read_input_tokens="52717" cache_creation="{'ephemeral_5m_input_tokens': 222, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_014nFf7MsYVU3DHaqbyP4b1W">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/track_learn_evaluation.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01Sf3KUc8ymJwbHrjh5zeVBy">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/track_learn_result.py</param>
+    <param name="old_string">    success: bool
+    plan_id: str
+    learn_status: str</param>
+    <param name="new_string">    success: bool
+    pr_number: str
+    learn_status: str</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="240" cache_read_input_tokens="52939" cache_creation="{'ephemeral_5m_input_tokens': 240, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Sf3KUc8ymJwbHrjh5zeVBy">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/track_learn_result.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01PrX3Y9w5tgNkCWuY7uWgug">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/track_learn_result.py</param>
+    <param name="old_string">    result = TrackLearnResultSuccess(
+        success=True,
+        plan_id=plan_id,
+        learn_status=status,</param>
+    <param name="new_string">    result = TrackLearnResultSuccess(
+        success=True,
+        pr_number=plan_id,
+        learn_status=status,</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="442" cache_read_input_tokens="53179" cache_creation="{'ephemeral_5m_input_tokens': 442, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01PrX3Y9w5tgNkCWuY7uWgug">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/track_learn_result.py has been updated successfully.
+  </tool_result>
+  <assistant>Good. Now let me also check if there are any other dataclass fields I might have missed — a comprehensive grep for all `plan_number` and `plan_id` in dataclass contexts within exec scripts:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="240" cache_read_input_tokens="53621" cache_creation="{'ephemeral_5m_input_tokens': 240, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_015Nu7HWo3qZAiwQHvM5nzeJ">
+    <param name="pattern">plan_(number|id|url|title):\s</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="240" cache_read_input_tokens="53621" cache_creation="{'ephemeral_5m_input_tokens': 240, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_015Nu7HWo3qZAiwQHvM5nzeJ">
+src/erk/cli/commands/exec/scripts/plan_update.py:75:    plan_number: int,
+src/erk/cli/commands/exec/scripts/push_session.py:136:    plan_id: int,
+src/erk/cli/commands/exec/scripts/push_session.py:197:    plan_id: int,
+src/erk/cli/commands/exec/scripts/objective_save_to_issue.py:50:    session_id: str, repo_root: Path, plan_number: int
+src/erk/cli/commands/exec/scripts/objective_save_to_issue.py:61:        plan_number: The GitHub issue number where the objective was saved.
+src/erk/cli/commands/exec/scripts/land_execute.py:123:    plan_number: int | None,
+src/erk/cli/commands/exec/scripts/post_workflow_started_comment.py:72:    plan_number: int,
+src/erk/cli/commands/exec/scripts/post_workflow_started_comment.py:86:        plan_number: Plan identifier
+src/erk/cli/commands/exec/scripts/post_workflow_started_comment.py:135:    plan_number: int,
+src/erk/cli/commands/exec/scripts/get_learn_sessions.py:86:    plan_id: str,
+src/erk/cli/commands/exec/scripts/get_learn_sessions.py:93:        plan_id: Plan identifier.
+src/erk/cli/commands/exec/scripts/get_learn_sessions.py:110:    plan_id: str,
+src/erk/cli/commands/exec/scripts/get_learn_sessions.py:146:    plan_id: str,
+src/erk/cli/commands/exec/scripts/get_learn_sessions.py:157:        plan_id: Plan identifier
+src/erk/cli/commands/exec/scripts/get_learn_sessions.py:264:    # Resolve plan_id: explicit argument or infer from branch
+src/erk/cli/commands/exec/scripts/get_learn_sessions.py:265:    plan_id: str | None = None
+src/erk/cli/commands/exec/scripts/create_impl_context_from_plan.py:43:    plan_id: int,
+src/erk/cli/commands/exec/scripts/register_one_shot_plan.py:33:    plan_number: int,
+src/erk/cli/commands/exec/scripts/setup_impl_from_pr.py:119:    plan_number: int,
+src/erk/cli/commands/exec/scripts/setup_impl_from_pr.py:133:        plan_number: PR number containing the plan
+src/erk/cli/commands/exec/scripts/setup_impl_from_pr.py:165:        plan_title: str = pr_result.title
+src/erk/cli/commands/exec/scripts/setup_impl_from_pr.py:220:    plan_number: int,
+src/erk/cli/commands/exec/scripts/setup_impl_from_pr.py:230:        plan_number: PR number for the planned-PR plan
+src/erk/cli/commands/exec/scripts/setup_impl_from_pr.py:329:    plan_number: int,
+src/erk/cli/commands/exec/scripts/get_pr_for_plan.py:54:    plan_number: int,
+src/erk/cli/commands/exec/scripts/fetch_sessions.py:78:    plan_id: int,
+src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py:137:    plan_saved_plan_number: int | None  # Plan number read from plan-saved marker
+src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py:142:    plan_title: str | None  # Title extracted from plan file for display
+src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py:147:    plan_number: int | None  # Plan number from .erk/impl-context/plan-ref.json
+src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py:158:        plan_saved_plan_number: int | None = None,
+
+... [39 lines omitted] ...
+  </tool_result>
+  <assistant>All the remaining `plan_number:` and `plan_id:` occurrences are in function parameters, Click option destinations, and local variables — NOT in dataclass fields used for JSON output. The two dataclass fields I just fixed were the last ones.
+
+Now let me update the tests for these two files to match:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2875" cache_read_input_tokens="53861" cache_creation="{'ephemeral_5m_input_tokens': 2875, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01J36cQpWS7tNDxQZk9kaVP4">
+    <param name="pattern">"plan_number"|"plan_id"</param>
+    <param name="path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_track_learn_evaluation.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2875" cache_read_input_tokens="53861" cache_creation="{'ephemeral_5m_input_tokens': 2875, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01KUXDYSe95Z2ttmRvTJTBFE">
+    <param name="pattern">"plan_number"|"plan_id"</param>
+    <param name="path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_track_learn_result.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2875" cache_read_input_tokens="53861" cache_creation="{'ephemeral_5m_input_tokens': 2875, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01KUXDYSe95Z2ttmRvTJTBFE">
+No matches found
+  </tool_result>
+  <tool_result tool="toolu_01J36cQpWS7tNDxQZk9kaVP4">
+No matches found
+  </tool_result>
+  <assistant>The tests don't reference the old field names — the previous test update agents already changed them to `"pr_number"`. The dataclass field renames I just did will make the JSON output match what the tests expect.
+
+Let me mark this task complete and run CI:</assistant>
+  <usage input_tokens="34" cache_creation_input_tokens="616" cache_read_input_tokens="56736" cache_creation="{'ephemeral_5m_input_tokens': 616, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01CBKqVsK2Qh7emgntvY2zwC">
+    <param name="todos">[{'content': 'Step 1-4: Rename JSON output fields in exec scripts', 'status': 'completed',...[truncated 660 chars]...rify all changes pass', 'status': 'in_progress', 'activeForm': 'Running CI verification'}]</param>
+  </tool_use>
+  <usage input_tokens="34" cache_creation_input_tokens="616" cache_read_input_tokens="56736" cache_creation="{'ephemeral_5m_input_tokens': 616, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01CBKqVsK2Qh7emgntvY2zwC">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="Task" id="toolu_01MPHbZHvvPPJGUpfA2SwT1N">
+    <param name="description">Run CI checks</param>
+    <param name="prompt">Run these CI checks in order and report ALL results:
+
+1. `cd /home/runner/work/erk/erk &amp;&amp; ...[truncated 303 chars]...t fails. If pytest fails, report the FULL error including traceback and which test failed.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="408" cache_read_input_tokens="57352" cache_creation="{'ephemeral_5m_input_tokens': 408, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01MPHbZHvvPPJGUpfA2SwT1N">
+Perfect! All three CI checks passed:
+
+## CI Check Results Summary
+
+1. **Ruff check** - PASSED: All checks passed!
+2. **Type check (ty)** - PASSED: All checks passed!
+3. **Pytest** - PASSED: 748 tests passed in 100%
+
+All CI checks for the exec scripts module are passing successfully with no violations, type errors, or test failures.
+agentId: a0e4a08 (for resuming to continue this agent's work if needed)
+  </tool_result>
+  <assistant>All 748 tests pass. Let me update the todo list and do a final verification that no old JSON field names remain in the output paths:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="385" cache_read_input_tokens="57760" cache_creation="{'ephemeral_5m_input_tokens': 385, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01K2KnfxazQpQ95Ru57SymKV">
+    <param name="todos">[{'content': 'Step 1-4: Rename JSON output fields in exec scripts', 'status': 'completed',...[truncated 791 chars]...t changes', 'status': 'in_progress', 'activeForm': 'Signaling completion and committing'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="385" cache_read_input_tokens="57760" cache_creation="{'ephemeral_5m_input_tokens': 385, 'ephemeral_1h_input_tokens': 0}" output_tokens="337" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01K2KnfxazQpQ95Ru57SymKV">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>All CI checks pass (ruff, ty, 748 pytest tests). Now let me signal completion and commit:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="379" cache_read_input_tokens="58145" cache_creation="{'ephemeral_5m_input_tokens': 379, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01SUqRryGJ4d26uVgxYEB8nr">
+    <param name="command">erk exec impl-signal github-ended 2&gt;/dev/null || true</param>
+    <param name="description">Signal GitHub ended</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="379" cache_read_input_tokens="58145" cache_creation="{'ephemeral_5m_input_tokens': 379, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01SUqRryGJ4d26uVgxYEB8nr">
+
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01UJapEZ4C3rUyrBNuBmRGd6">
+    <param name="command">git status</param>
+    <param name="description">Check git status</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="138" cache_read_input_tokens="58524" cache_creation="{'ephemeral_5m_input_tokens': 138, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_018fXMu4Dj5nRP3kMhLtn8rd">
+    <param name="command">git diff --stat</param>
+    <param name="description">Check diff stats</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="138" cache_read_input_tokens="58524" cache_creation="{'ephemeral_5m_input_tokens': 138, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01TgCHJtwPsizHQK7DAMpn92">
+    <param name="command">git log --oneline -5</param>
+    <param name="description">Check recent commits</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="138" cache_read_input_tokens="58524" cache_creation="{'ephemeral_5m_input_tokens': 138, 'ephemeral_1h_input_tokens': 0}" output_tokens="231" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01TgCHJtwPsizHQK7DAMpn92">
+2f70664ab Remove plan staging dirs before implementation
+af7795b20 Add plan for PR #9120
+909c0fb76 Add plan: Plan: Rename JSON Output Fields in Exec Scripts
+34ff359af Rename "plan" terminology to "pr" — Phase 1 (Core Types &amp; Gateway) (#9110)
+62ff56b05 Remove default MCP server configuration (#9113)
+  </tool_result>
+  <tool_result tool="toolu_018fXMu4Dj5nRP3kMhLtn8rd">
+ .../learn/extraction/get_learn_sessions_result.py  |  2 +-
+ .../cli/commands/exec/scripts/add_plan_label.py    |  2 +-
+ .../cli/commands/exec/scripts/add_plan_labels.py   | 20 ++++++++++----------
+ src/erk/cli/commands/exec/scripts/close_pr.py      |  2 +-
+ src/erk/cli/commands/exec/scripts/close_prs.py     | 22 +++++++++++-----------
+ .../exec/scripts/create_impl_context_from_plan.py  |  6 +++---
+ .../exec/scripts/create_pr_from_session.py         |  6 +++---
+ .../exec/scripts/detect_plan_from_branch.py        |  6 +++---
+ .../cli/commands/exec/scripts/fetch_sessions.py    |  4 ++--
+ .../commands/exec/scripts/get_learn_sessions.py    |  4 ++--
+ src/erk/cli/commands/exec/scripts/get_plan_info.py |  4 ++--
+ .../cli/commands/exec/scripts/get_plan_metadata.py |  4 ++--
+ .../cli/commands/exec/scripts/get_pr_context.py    |  2 +-
+ src/erk/cli/commands/exec/scripts/impl_init.py     |  2 +-
+ src/erk/cli/commands/exec/scripts/impl_signal.py   | 14 +++++++-------
+ .../commands/exec/scripts/incremental_dispatch.py  |  3 +--
+ .../exec/scripts/objective_save_to_issue.py        |  4 ++--
+ src/erk/cli/commands/exec/scripts/plan_save.py     |  6 +++---
+ src/erk/cli/commands/exec/scripts/plan_update.py   |  4 ++--
+ .../exec/scripts/post_workflow_started_comment.py  |  6 +++---
+ .../commands/exec/scripts/push_and_create_pr.py    |  2 +-
+ src/erk/cli/commands/exec/scripts/push_session.py  |  7 ++++---
+ src/erk/cli/commands/exec/scripts/setup_impl.py    | 10 +++++-----
+ .../commands/exec/scripts/setup_impl_from_pr.py    | 20 ++++++++++----------
+ .../exec/scripts/track_learn_evaluation.py         |  6 +++---
+ .../commands/exec/scripts/track_learn_result.py    |  6 +++---
+ .../commands/exec/scripts/upload_impl_session.py   |  6 +++---
+ .../commands/exec/scripts/test_add_plan_label.py   |  2 +-
+ .../commands/exec/scripts/test_add_plan_labels.py  | 14 +++++++-------
+ .../cli/commands/exec/scripts/test_close_pr.py     |  4 ++--
+
+... [20 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01UJapEZ4C3rUyrBNuBmRGd6">
+On branch plnd/O9109-rename-exec-json-fie-03-10-0015
+Your branch is up to date with 'origin/plnd/O9109-rename-exec-json-fie-03-10-0015'.
+
+Changes not staged for commit:
+  (use "git add &lt;file&gt;..." to update what will be committed)
+  (use "git restore &lt;file&gt;..." to discard changes in working directory)
+	modified:   packages/erk-shared/src/erk_shared/learn/extraction/get_learn_sessions_result.py
+	modified:   src/erk/cli/commands/exec/scripts/add_plan_label.py
+	modified:   src/erk/cli/commands/exec/scripts/add_plan_labels.py
+	modified:   src/erk/cli/commands/exec/scripts/close_pr.py
+	modified:   src/erk/cli/commands/exec/scripts/close_prs.py
+	modified:   src/erk/cli/commands/exec/scripts/create_impl_context_from_plan.py
+	modified:   src/erk/cli/commands/exec/scripts/create_pr_from_session.py
+	modified:   src/erk/cli/commands/exec/scripts/detect_plan_from_branch.py
+	modified:   src/erk/cli/commands/exec/scripts/fetch_sessions.py
+	modified:   src/erk/cli/commands/exec/scripts/get_learn_sessions.py
+	modified:   src/erk/cli/commands/exec/scripts/get_plan_info.py
+	modified:   src/erk/cli/commands/exec/scripts/get_plan_metadata.py
+	modified:   src/erk/cli/commands/exec/scripts/get_pr_context.py
+	modified:   src/erk/cli/commands/exec/scripts/impl_init.py
+	modified:   src/erk/cli/commands/exec/scripts/impl_signal.py
+	modified:   src/erk/cli/commands/exec/scripts/incremental_dispatch.py
+	modified:   src/erk/cli/commands/exec/scripts/objective_save_to_issue.py
+	modified:   src/erk/cli/commands/exec/scripts/plan_save.py
+	modified:   src/erk/cli/commands/exec/scripts/plan_update.py
+	modified:   src/erk/cli/commands/exec/scripts/post_workflow_started_comment.py
+	modified:   src/erk/cli/commands/exec/scripts/push_and_create_pr.py
+	modified:   src/erk/cli/commands/exec/scripts/push_session.py
+	modified:   src/erk/cli/commands/exec/scripts/setup_impl.py
+	modified:   src/erk/cli/commands/exec/scripts/setup_impl_from_pr.py
+
+... [27 lines omitted] ...
+  </tool_result>
+  <assistant>49 files modified, net -1 line change. Let me commit:</assistant>
+  <usage input_tokens="1445" cache_creation_input_tokens="1588" cache_read_input_tokens="58662" cache_creation="{'ephemeral_5m_input_tokens': 1588, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_015j8GiCqGwTCMcUFqFpnqQW">
+    <param name="command">git add -A &amp;&amp; git commit -m "$(cat &lt;&lt;'EOF'
+Rename JSON output fields in exec scripts: plan...[truncated 641 chars]...de](https://claude.com/claude-code)
+
+Co-Authored-By: Claude &lt;noreply@anthropic.com&gt;
+EOF
+)"</param>
+    <param name="description">Commit all changes</param>
+  </tool_use>
+  <usage input_tokens="1445" cache_creation_input_tokens="1588" cache_read_input_tokens="58662" cache_creation="{'ephemeral_5m_input_tokens': 1588, 'ephemeral_1h_input_tokens': 0}" output_tokens="354" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_015j8GiCqGwTCMcUFqFpnqQW">
+[plnd/O9109-rename-exec-json-fie-03-10-0015 1f5433fa4] Rename JSON output fields in exec scripts: plan → pr
+ 49 files changed, 156 insertions(+), 155 deletions(-)
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01MKhSRd4LomEov5xTpmzGy1">
+    <param name="command">git status</param>
+    <param name="description">Verify clean after commit</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2104" cache_read_input_tokens="60250" cache_creation="{'ephemeral_5m_input_tokens': 2104, 'ephemeral_1h_input_tokens': 0}" output_tokens="74" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01MKhSRd4LomEov5xTpmzGy1">
+On branch plnd/O9109-rename-exec-json-fie-03-10-0015
+Your branch is ahead of 'origin/plnd/O9109-rename-exec-json-fie-03-10-0015' by 1 commit.
+  (use "git push" to publish your local commits)
+
+nothing to commit, working tree clean
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01EMMGPNM4QHQGHp4VTecr9v">
+    <param name="todos">[{'content': 'Step 1-4: Rename JSON output fields in exec scripts', 'status': 'completed',...[truncated 906 chars]...nd submit PR', 'status': 'in_progress', 'activeForm': 'Pushing branch and submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="169" cache_read_input_tokens="62354" cache_creation="{'ephemeral_5m_input_tokens': 169, 'ephemeral_1h_input_tokens': 0}" output_tokens="336" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01EMMGPNM4QHQGHp4VTecr9v">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="SlashCommand" id="toolu_018MUfdQbJ14hw9e1iRSTEcp">
+    <param name="command">/erk:git-pr-push Rename JSON output fields in exec scripts: plan → pr</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="378" cache_read_input_tokens="62523" cache_creation="{'ephemeral_5m_input_tokens': 378, 'ephemeral_1h_input_tokens': 0}" output_tokens="73" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_018MUfdQbJ14hw9e1iRSTEcp">
+Launching command: /erk:git-pr-push
+  </tool_result>
+  <user>&lt;command-message&gt;erk:git-pr-push is running…&lt;/command-message&gt;
+&lt;command-name&gt;/erk:git-pr-push&lt;/command-name&gt;
+&lt;command-args&gt;Rename JSON output fields in exec scripts: plan → pr&lt;/command-args&gt;</user>
+  <user># Push PR (Git Only)
+
+Automatically create a git commit with a helpful summary message and push the current branch as a pull request using standard git + GitHub CLI (no Graphite required).
+
+## Usage
+
+```bash
+# Invoke the command (description argument is optional but recommended)
+/erk:git-pr-push "Add user authentication feature"
+
+# Without argument (will analyze changes automatically)
+/erk:git-pr-push
+```
+
+## What This Command Does
+
+Handles the complete git-only push-pr workflow:
+
+1. Check for uncommitted changes and stage/commit them if needed
+2. Analyze git diff to generate meaningful commit message
+3. Create commit with AI-generated message
+4. Push to origin with upstream tracking
+5. Create GitHub PR (or find existing one)
+6. Report results with PR URL
+
+## Key Differences from /gt:submit-branch
+
+- Uses standard `git push` instead of `gt submit`
+- Uses `gh pr create` instead of Graphite's PR submission
+- No stack operations (no restack, no stack metadata updates)
+- Simpler workflow: git -&gt; push -&gt; PR (no Graphite layer)
+- Works in any git repository (not just Graphite-enabled repos)
+
+## Prerequisites
+
+- Git repository with remote configured
+- GitHub CLI (`gh`) installed and authenticated
+- Run `gh auth status` to verify authentication
+- Run `gh auth login` if not authenticated
+
+## Implementation
+
+Execute the git-only push-pr workflow with the following steps:
+
+### Step 1: Verify Prerequisites
+
+Check GitHub CLI authentication and get current git state:
+
+```bash
+# Check GitHub CLI authentication (show status for verification)
+gh auth status
+
+# Get current branch name
+current_branch=$(git branch --show-current)
+
+# Check for uncommitted changes
+has_changes=$(git status --porcelain)
+```
+
+If `gh auth status` fails, report error and tell user to run `gh auth login`.
+
+### Step 2: Stage Changes (if needed)
+
+If `has_changes` is non-empty, stage all changes:
+
+```bash
+git add .
+```
+
+### Step 3: Analyze Staged Diff
+
+Get the staged diff and analyze it to generate a commit message:
+
+```bash
+# Get repository root for relative paths
+repo_root=$(git rev-parse --show-toplevel)
+
+# Get staged diff for analysis
+git diff --staged
+```
+
+Load the `erk-diff-analysis` skill for commit message generation guidance.
+
+### Step 4: Add Planned Prefix (if from plan)
+
+If this worktree was created from a plan (an `.erk/impl-context/` subdirectory containing `ref.json` exists), prepend `plnd/` to the PR title:
+
+```bash
+if ls .erk/impl-context/*/ref.json 1&gt;/dev/null 2&gt;&amp;1; then
+    # Extract the title before creating the commit
+    # (we'll apply the prefix when creating the commit message below)
+    has_impl_dir=true
+else
+    has_impl_dir=false
+fi
+```
+
+When generating the commit message in Step 5, if `has_impl_dir` is true, prepend `plnd/` to the title:
+
+```bash
+if [ "$has_impl_dir" = true ]; then
+    pr_title="plnd/${pr_title}"
+fi
+```
+
+### Step 5: Create Commit
+
+Create the commit with your AI-generated message using heredoc:
+
+```bash
+git commit -m "$(cat &lt;&lt;'COMMIT_MSG'
+[Your generated commit message here]
+COMMIT_MSG
+)"
+```
+
+### Step 6: Push to Remote
+
+Push the branch to origin with upstream tracking:
+
+```bash
+git push -u origin "$(git branch --show-current)"
+```
+
+### Step 7: Check for Existing PR
+
+Before creating a new PR, check if one already exists for the current branch:
+
+```bash
+existing_pr=$(gh pr list --head "$(git branch --show-current)" --state open --json number,url,isDraft --jq '.[0]')
+```
+
+**Decision logic:**
+
+- If `existing_pr` is empty or null: No existing PR, proceed to Step 8
+- If `existing_pr` has data: PR exists, skip Step 8 and go directly to Step 9 (Add Checkout Footer)
+
+&gt; **CRITICAL: When an existing PR is found, do NOT run `gh pr edit --body` or `gh pr edit --title`.**
+&gt; The PR body may contain plan-header metadata blocks (`&lt;!-- erk:metadata-block:plan-header --&gt;`)
+&gt; that must be preserved. The body will be updated by a later workflow step (`ci-update-pr-body`).
+&gt; Only push code (Step 6) and add the checkout footer (Step 9).
+
+If an existing PR was found, extract its details for reporting:
+
+```bash
+pr_url=$(echo "$existing_pr" | jq -r '.url')
+pr_number=$(echo "$existing_pr" | jq -r '.number')
+is_draft=$(echo "$existing_pr" | jq -r '.isDraft')
+```
+
+### Step 8: Create GitHub PR (if no existing PR)
+
+**Skip this step if an existing PR was found in Step 7.** The push in Step 6 already updated the existing PR with new commits.
+
+Extract PR title (first line) and body (remaining lines) from commit message:
+
+```bash
+# Get the commit message
+commit_msg=$(git log -1 --pretty=%B)
+
+# Extract first line as title
+pr_title=$(echo "$commit_msg" | head -n 1)
+
+# Extract remaining lines as body (skip empty first line after title)
+pr_body=$(echo "$commit_msg" | tail -n +2)
+
+# Create PR using GitHub CLI
+pr_output=$(gh pr create --title "$pr_title" --body "$pr_body")
+
+# Extract PR number from the output URL (last path segment)
+pr_number=$(echo "$pr_output" | grep -oE '[0-9]+$')
+pr_url="$pr_output"
+```
+
+### Step 9: Add Checkout Footer
+
+Extract the PR number (from Step 8 if PR was created, or from Step 7 if existing PR was found), then generate and append the checkout footer:
+
+**Determining PR number:**
+
+- If Step 8 was executed: Use `pr_number` extracted from `gh pr create` output
+- If Step 8 was skipped: Use `pr_number` extracted from `existing_pr` in Step 7
+
+**Generate and append footer:**
+
+&gt; **Note:** When appending the footer, always read the current body first and append.
+&gt; Never replace the entire body — only append the footer to the existing content.
+
+```bash
+# Generate footer
+footer=$(erk exec get-pr-body-footer --pr-number "$pr_number")
+
+# Get current PR body using REST API (avoids GraphQL rate limits) and append footer
+current_body=$(erk exec get-pr-view "$pr_number" | jq -r '.body')
+gh pr edit "$pr_number" --body "${current_body}${footer}"
+```
+
+**Note:** The footer includes the checkout command. This ensures `erk pr check` passes.
+
+### Step 10: Link PR to Objective (if applicable)
+
+If `ref.json` exists in the resolved impl directory (`.erk/impl-context/&lt;branch&gt;/ref.json`):
+
+```bash
+erk exec objective-link-pr --pr-number "$pr_number"
+```
+
+If this fails, warn but continue -- PR creation succeeded.
+
+### Step 11: Validate PR Rules
+
+Run the PR check command to validate the PR was created correctly:
+
+```bash
+erk pr check
+```
+
+This validates:
+
+- PR body contains the standard checkout footer
+
+If any checks fail, display the output and warn the user, but continue to Step 12.
+
+### Step 12: Report Results
+
+Display a clear summary based on whether a PR was created or found:
+
+**If a NEW PR was created (Step 8 was executed):**
+
+```
+## Branch Submission Complete
+
+### What Was Done
+
+✓ Staged all uncommitted changes
+✓ Created commit with AI-generated message
+✓ Pushed branch to origin with upstream tracking
+✓ Created GitHub PR
+
+### View PR
+
+[PR URL from gh pr create output]
+```
+
+**If an EXISTING PR was found (Step 8 was skipped):**
+
+```
+## Branch Submission Complete
+
+### What Was Done
+
+✓ Staged all uncommitted changes
+✓ Created commit with AI-generated message
+✓ Pushed branch to origin with upstream tracking
+✓ Found existing PR #N for this branch (skipped PR creation)
+
+### Note
+
+[If is_draft is true]: This is a draft PR. When ready for review, run: `gh pr ready`
+
+### View PR
+
+[PR URL extracted from existing_pr]
+```
+
+**Conditional lines:**
+
+- The "Note" section with draft guidance should only appear if `is_draft` is true
+
+**CRITICAL**: The PR URL MUST be the absolute last line of your output. Do not add any text after it.
+
+## Error Handling
+
+When errors occur, provide clear guidance:
+
+**GitHub CLI not authenticated:**
+
+```
+❌ GitHub CLI is not authenticated
+
+To use this command, authenticate with GitHub:
+    gh auth login
+```
+
+**Nothing to commit:**
+
+```
+❌ No changes to commit
+
+Your working directory is clean. Make some changes first.
+```
+
+**Push failed (diverged branches):**
+
+```
+❌ Push failed: branch has diverged
+
+Option 1: Pull and merge
+    git pull origin [branch]
+
+Option 2: Force push (⚠️ overwrites remote)
+    git push -f origin [branch]
+```
+
+Note: The "PR already exists" case is now handled automatically in Step 7. If a PR exists for the current branch, the command will skip PR creation and report the existing PR URL instead.
+
+## Best Practices
+
+### Never Change Directory
+
+**NEVER use `cd` during execution.** Always use absolute paths or git's `-C` flag.
+
+```bash
+# ❌ WRONG
+cd /path/to/repo &amp;&amp; git status
+
+# ✅ CORRECT
+git -C /path/to/repo status
+```
+
+**Rationale:** Changing directories pollutes the execution context and makes it harder to reason about state. The working directory should remain stable throughout the entire workflow.
+
+### Never Write to Temporary Files
+
+**NEVER write commit messages or other content to temporary files.** Always use in-context manipulation and shell built-ins.
+
+```bash
+# ❌ WRONG - Triggers permission prompts
+echo "$message" &gt; "${TMPDIR:-/tmp}/commit_msg.txt"
+git commit -F "${TMPDIR:-/tmp}/commit_msg.txt"
+
+# ✅ CORRECT - In-memory heredoc
+git commit -m "$(cat &lt;&lt;'EOF'
+$message
+EOF
+)"
+```
+
+**Rationale:** Temporary files require filesystem permissions and create unnecessary I/O. Since agents operate in isolated contexts, there's no risk of context pollution from in-memory manipulation.
+
+## Quality Standards
+
+### Always
+
+- Be concise and strategic in analysis
+- Use component-level descriptions
+- Highlight breaking changes prominently
+- Note test coverage patterns
+- Use relative paths from repository root
+- Provide clear error guidance
+- Use standard git + GitHub CLI commands (no Graphite dependencies)
+
+### Never
+
+- Add Claude attribution or footer to commit messages
+- Speculate about intentions without code evidence
+- Provide exhaustive lists of every function touched
+- Include implementation details (specific variable names, line numbers)
+- Provide time estimates
+- Use vague language like "various changes"
+- Retry failed operations automatically
+- Write to temporary files (use in-context quoting and shell built-ins instead)
+- Use Graphite-specific commands (`gt submit`, `gt restack`, etc.)
+
+## Self-Verification
+
+Before completing, verify:
+
+- [ ] GitHub CLI authentication checked
+- [ ] Git status verified
+- [ ] Uncommitted changes staged (if any existed)
+- [ ] Staged diff analyzed
+- [ ] Diff analysis is concise and strategic (3-5 key changes max)
+- [ ] Commit message has no Claude footer
+- [ ] File paths are relative to repository root
+- [ ] Commit created successfully
+- [ ] Branch pushed to origin with upstream tracking
+- [ ] GitHub PR created successfully (or existing PR found)
+- [ ] PR URL extracted from output
+- [ ] Results displayed with "What Was Done" section listing actions
+- [ ] PR URL placed at end under "View PR" section
+- [ ] Any errors handled with helpful guidance
+
+
+ARGUMENTS: Rename JSON output fields in exec scripts: plan → pr</user>
+  <assistant>
+
+Let me execute the git-pr-push workflow. The commit is already made, so I need to check auth, push, and create/find a PR.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="3105" cache_read_input_tokens="62901" cache_creation="{'ephemeral_5m_input_tokens': 3105, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01Rwz7EUEKJvmE9AArQE1qBX">
+    <param name="command">gh auth status 2&gt;&amp;1</param>
+    <param name="description">Check GitHub CLI auth status</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="3105" cache_read_input_tokens="62901" cache_creation="{'ephemeral_5m_input_tokens': 3105, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01LCLu2uFztdoSqvjzDHYhUy">
+    <param name="command">git branch --show-current</param>
+    <param name="description">Get current branch name</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="3105" cache_read_input_tokens="62901" cache_creation="{'ephemeral_5m_input_tokens': 3105, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_0192jYVQs1ydEAvpf97zdWBp">
+    <param name="command">git status --porcelain</param>
+    <param name="description">Check for uncommitted changes</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="3105" cache_read_input_tokens="62901" cache_creation="{'ephemeral_5m_input_tokens': 3105, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01ACmXuQ1cKZ9cyaJdhGUPrk">
+    <param name="command">git log -1 --pretty=%B</param>
+    <param name="description">Get latest commit message</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="3105" cache_read_input_tokens="62901" cache_creation="{'ephemeral_5m_input_tokens': 3105, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_018dQ6Vc54rkaavcZQdgyiW6">
+    <param name="command">ls .erk/impl-context/*/ref.json 2&gt;/dev/null &amp;&amp; echo "HAS_IMPL=true" || echo "HAS_IMPL=false"</param>
+    <param name="description">Check for impl-context ref.json</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="3105" cache_read_input_tokens="62901" cache_creation="{'ephemeral_5m_input_tokens': 3105, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Rwz7EUEKJvmE9AArQE1qBX">
+github.com
+  ✓ Logged in to github.com account github-actions[bot] (GH_TOKEN)
+  - Active account: true
+  - Git operations protocol: https
+  - Token: ghs_************************************
+  </tool_result>
+  <tool_result tool="toolu_01LCLu2uFztdoSqvjzDHYhUy">
+plnd/O9109-rename-exec-json-fie-03-10-0015
+  </tool_result>
+  <tool_result tool="toolu_01ACmXuQ1cKZ9cyaJdhGUPrk">
+Rename JSON output fields in exec scripts: plan → pr
+
+Renames four JSON output field names across ~27 exec scripts and their
+tests as part of Objective #9109 (plan→pr terminology migration):
+
+- "plan_number" → "pr_number" (in output dicts and dataclass fields)
+- "plan_id" → "pr_number" (in output dicts, dataclass fields, TypedDicts)
+- "plan_url" → "pr_url" (in output dicts)
+- "plan_title" → "pr_title" (in output dicts)
+
+Also updates stdin JSON input contracts (add_plan_labels, close_prs),
+docstring examples, and all corresponding test assertions.
+
+Scope: JSON output field names only. Click option destinations, Python
+variable names, and function parameters are unchanged.
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
+
+Co-Authored-By: Claude &lt;noreply@anthropic.com&gt;
+  </tool_result>
+  <tool_result tool="toolu_0192jYVQs1ydEAvpf97zdWBp">
+
+  </tool_result>
+  <tool_result tool="toolu_018dQ6Vc54rkaavcZQdgyiW6">
+.erk/impl-context/plnd--O9109-rename-exec-json-fie-03-10-0015/ref.json
+HAS_IMPL=true
+  </tool_result>
+  <assistant>GitHub CLI authenticated, working tree clean, commit already exists, and impl-context is present. Let me push and check for an existing PR:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1140" cache_read_input_tokens="66006" cache_creation="{'ephemeral_5m_input_tokens': 1140, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01TckeV8D2jdygAMoZDsrSo5">
+    <param name="command">git push -u origin "plnd/O9109-rename-exec-json-fie-03-10-0015" 2&gt;&amp;1</param>
+    <param name="description">Push branch to remote</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1140" cache_read_input_tokens="66006" cache_creation="{'ephemeral_5m_input_tokens': 1140, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01NEKMAxnAjmBuY96UMwdawV">
+    <param name="command">gh pr list --head "plnd/O9109-rename-exec-json-fie-03-10-0015" --state open --json number,url,isDraft --jq '.[0]' 2&gt;&amp;1</param>
+    <param name="description">Check for existing PR</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1140" cache_read_input_tokens="66006" cache_creation="{'ephemeral_5m_input_tokens': 1140, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01TckeV8D2jdygAMoZDsrSo5">
+remote: 
+remote: GitHub found 9 vulnerabilities on dagster-io/erk's default branch (8 high, 1 low). To find out more, visit:        
+remote:      https://github.com/dagster-io/erk/security/dependabot        
+remote: 
+To https://github.com/dagster-io/erk
+   2f70664ab..1f5433fa4  plnd/O9109-rename-exec-json-fie-03-10-0015 -&gt; plnd/O9109-rename-exec-json-fie-03-10-0015
+branch 'plnd/O9109-rename-exec-json-fie-03-10-0015' set up to track 'origin/plnd/O9109-rename-exec-json-fie-03-10-0015'.
+  </tool_result>
+  <tool_result tool="toolu_01NEKMAxnAjmBuY96UMwdawV">
+{"isDraft":true,"number":9120,"url":"https://github.com/dagster-io/erk/pull/9120"}
+  </tool_result>
+  <assistant>Branch pushed. Existing draft PR #9120 found — skipping PR creation. Let me add the checkout footer and link to the objective:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="787" cache_read_input_tokens="67146" cache_creation="{'ephemeral_5m_input_tokens': 787, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01E5aKXdEgq7rr4gVcKLbpsS">
+    <param name="command">footer=$(erk exec get-pr-body-footer --pr-number 9120 2&gt;/dev/null) &amp;&amp; current_body=$(erk e...[truncated 49 chars]...(json.load(sys.stdin)['body'])") &amp;&amp; gh pr edit 9120 --body "${current_body}${footer}" 2&gt;&amp;1</param>
+    <param name="description">Add checkout footer to PR</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="787" cache_read_input_tokens="67146" cache_creation="{'ephemeral_5m_input_tokens': 787, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01EEwGnLYSVo2Vf21saz7fUb">
+    <param name="command">erk exec objective-link-pr --pr-number 9120 2&gt;&amp;1</param>
+    <param name="description">Link PR to objective</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="787" cache_read_input_tokens="67146" cache_creation="{'ephemeral_5m_input_tokens': 787, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01E5aKXdEgq7rr4gVcKLbpsS">
+Exit code 2
+/bin/bash: eval: line 1: syntax error near unexpected token `('
+/bin/bash: eval: line 1: `footer=\$ ( erk exec get-pr-body-footer --pr-number 9120 2&gt;/dev/null ) &amp;&amp; current_body=\$ ( erk exec get-pr-view 9120 2&gt;/dev/null &lt; /dev/null | python3 -c "import sys,json; print(json.load(sys.stdin)['body'])" ) &amp;&amp; gh pr edit 9120 --body '' 2&gt;&amp;1'
+  </tool_result>
+  <tool_result tool="toolu_01EEwGnLYSVo2Vf21saz7fUb">
+{"success": false, "reason": "no_node_ids"}
+  </tool_result>
+  <assistant>The objective-link-pr returned "no_node_ids" which is expected (no node IDs in this plan). Let me retry the footer addition with separate steps:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="742" cache_read_input_tokens="67933" cache_creation="{'ephemeral_5m_input_tokens': 742, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01THxHByxs9PFZ6WAToHsYzw">
+    <param name="command">erk exec get-pr-body-footer --pr-number 9120 2&gt;/dev/null</param>
+    <param name="description">Get PR body footer</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="742" cache_read_input_tokens="67933" cache_creation="{'ephemeral_5m_input_tokens': 742, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01THxHByxs9PFZ6WAToHsYzw">
+---
+
+
+To replicate this PR locally, run:
+
+```
+erk pr teleport 9120
+```
+  </tool_result>
+  <tool_use name="Bash" id="toolu_018W4ULiV2Q5F9XPGaJficgg">
+    <param name="command">erk exec get-pr-view 9120 2&gt;/dev/null | python3 -c "import sys,json; print(json.load(sys.stdin)['body'])"</param>
+    <param name="description">Get current PR body</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="167" cache_read_input_tokens="68675" cache_creation="{'ephemeral_5m_input_tokens': 167, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_018W4ULiV2Q5F9XPGaJficgg">
+Renames JSON output field names (plan_number, plan_id, plan_url, plan_title) to pr-based equivalents across approximately 30 exec scripts. Covers output dicts, input stream fields, dataclass fields, and docstring examples.
+
+&lt;details&gt;
+&lt;summary&gt;original-plan&lt;/summary&gt;
+
+# Plan: Rename JSON Output Fields in Exec Scripts
+
+Part of Objective #9109, Node 2.1
+
+## Context
+
+Objective #9109 renames "plan" terminology to "pr" across all APIs. Phase 1 (gateway ABCs, core types, metadata schemas) landed in PR #9110. Node 2.1 is the first node of Phase 2, targeting JSON output fields emitted by exec scripts — the CLI-facing contract that skills, commands, and workflows consume.
+
+## Goal
+
+Rename four JSON output field names across ~30 exec scripts in `src/erk/cli/commands/exec/scripts/`:
+
+| Old Field | New Field |
+|-----------|-----------|
+| `plan_number` | `pr_number` |
+| `plan_id` | `pr_number` |
+| `plan_url` | `pr_url` |
+| `plan_title` | `pr_title` |
+
+## Scope
+
+**In scope:** JSON output dicts, dataclass fields used in JSON output, docstring examples, and input stream field names in exec scripts.
+
+**Out of scope (but noted as dependencies):** Consumer updates in `.claude/commands/` (~21 files), `.github/workflows/` (~7 files), and `.claude/skills/` that parse these JSON fields. These consumers MUST be updated in the same PR to maintain shippability. They should be covered by nodes 4.2 or a new companion node.
+
+
+... [133 lines omitted] ...
+
+1. Run `ruff check` and `ty` to catch any syntax/type errors
+&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+  </tool_result>
+  <assistant>The PR body already has the checkout footer. The existing PR was found and the push already updated it with the new commit. Let me run the PR check:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2568" cache_read_input_tokens="68842" cache_creation="{'ephemeral_5m_input_tokens': 2568, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01CZgU5tVALsRV91tgAAJxcR">
+    <param name="command">erk pr check 2&gt;&amp;1</param>
+    <param name="description">Validate PR rules</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2568" cache_read_input_tokens="68842" cache_creation="{'ephemeral_5m_input_tokens': 2568, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01CZgU5tVALsRV91tgAAJxcR">
+Checking PR #9120 for branch plnd/O9109-rename-exec-json-fie-03-10-0015...
+
+[PASS] Plan reference found (#9120)
+[PASS] PR body contains checkout footer
+
+All checks passed
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01W2N79oGFx6zLm5XUYBJ9y2">
+    <param name="todos">[{'content': 'Step 1-4: Rename JSON output fields in exec scripts', 'status': 'completed',...[truncated 904 chars]... and submit PR', 'status': 'completed', 'activeForm': 'Pushing branch and submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="181" cache_read_input_tokens="71410" cache_creation="{'ephemeral_5m_input_tokens': 181, 'ephemeral_1h_input_tokens': 0}" output_tokens="334" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01W2N79oGFx6zLm5XUYBJ9y2">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>## Branch Submission Complete
+
+### What Was Done
+
+- Staged all changes from exec script JSON field renames
+- Created commit with descriptive message
+- Pushed branch to origin with upstream tracking
+- Found existing draft PR #9120 for this branch (skipped PR creation)
+- PR check passed (plan reference + checkout footer)
+
+### Summary
+
+Renamed 4 JSON output field names across 27 exec scripts, 1 shared TypedDict, and 21 test files (49 files total):
+
+| Old Field | New Field |
+|-----------|-----------|
+| `"plan_number"` | `"pr_number"` |
+| `"plan_id"` | `"pr_number"` |
+| `"plan_url"` | `"pr_url"` |
+| `"plan_title"` | `"pr_title"` |
+
+All CI checks pass: ruff, ty, and 748 pytest tests.
+
+### Note
+
+This is a draft PR. When ready for review, run: `gh pr ready`
+
+### View PR
+
+https://github.com/dagster-io/erk/pull/9120</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="376" cache_read_input_tokens="71591" cache_creation="{'ephemeral_5m_input_tokens': 376, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+</session>
