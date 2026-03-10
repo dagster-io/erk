@@ -5,8 +5,8 @@
     {
       "session_id": "4d5eed54-1807-4cad-b0ec-380703b87893",
       "stage": "impl",
-      "source": "local",
-      "uploaded_at": "2026-03-10T19:38:15.958877+00:00",
+      "source": "remote",
+      "uploaded_at": "2026-03-10T19:39:29.255886+00:00",
       "files": [
         "impl-4d5eed54-1807-4cad-b0ec-380703b87893-4d5eed54-1807-4cad-b0ec-380703b87893-part1.xml",
         "impl-4d5eed54-1807-4cad-b0ec-380703b87893-4d5eed54-1807-4cad-b0ec-380703b87893-part2.xml",
@@ -14,9 +14,9 @@
         "impl-4d5eed54-1807-4cad-b0ec-380703b87893-4d5eed54-1807-4cad-b0ec-380703b87893-part4.xml"
       ],
       "user_turns": 3,
-      "duration_minutes": 4,
-      "raw_size_kb": 126,
-      "xml_size_kb": 43,
+      "duration_minutes": 5,
+      "raw_size_kb": 147,
+      "xml_size_kb": 51,
       "git_branch": "plnd/hide-stack-flag-03-10-1533"
     }
   ]
