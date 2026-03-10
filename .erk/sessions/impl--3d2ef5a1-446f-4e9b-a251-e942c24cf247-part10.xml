@@ -1,0 +1,708 @@
+<session>
+  <meta source="agent-ab9cecd" />
+  <meta branch="plnd/O9009-add-json-pr-dispatch-03-10-1728" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>Find the following files and report their paths and key content:
+1. FakeRemoteGitHub class - find its file path and constructor signature
+2. Any existing operation unit tests under tests/unit/cli/commands/pr/ - list them
+3. The MachineCommandError class definition
+4. The `machine_command` decorator definition to understand how it works
+5. The `resolve_owner_repo` and `get_remote_github` functions
+6. The `context_for_test` function in tests/fakes/tests/shared_context.py
+
+FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant docs before exploring raw files. Then explore codebase as necessary.</user>
+  <assistant>I'll help you find these files and their key content. Let me start by checking the documentation index, then systematically explore the codebase.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="15160" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15160, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01VwViUKadonX7ShG7CifprE">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/index.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15160" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15160, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01UwynsqKWq1ZwE82PL3xK61">
+    <param name="command">find /home/runner/work/erk/erk -type f -name "*.md" | grep -E "(testing|cli|fakes)" | head -20</param>
+    <param name="description">Search for relevant documentation files</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15160" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15160, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01VwViUKadonX7ShG7CifprE">
+     1→&lt;!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY --&gt;
+     2→&lt;!-- Edit source frontmatter, then run 'erk docs sync' to regenerate. --&gt;
+     3→
+     4→# Agent Documentation
+     5→
+     6→Before starting work, scan the read-when conditions below.
+     7→If your current task matches, read the linked document **before writing code**.
+     8→
+     9→## Categories
+    10→
+    11→- [architecture/](architecture/) — Explore when working on core patterns (dry-run, gateways, subprocess, shell integration). Add docs here for cross-cutting technical patterns.
+    12→- [capabilities/](capabilities/)
+    13→- [changelog/](changelog/)
+    14→- [checklists/](checklists/)
+    15→- [ci/](ci/)
+    16→- [claude-code/](claude-code/)
+    17→- [cli/](cli/) — Explore when building CLI commands or output formatting. Add docs here for Click patterns and terminal UX.
+    18→- [commands/](commands/) — Explore when creating or optimizing slash commands. Add docs here for command authoring patterns.
+    19→- [config/](config/)
+    20→- [configuration/](configuration/)
+    21→- [documentation/](documentation/) — Explore when structuring or writing documentation. Add docs here for documentation methodology and best practices.
+    22→- [erk/](erk/) — Explore when working with erk-specific workflows (worktrees, PR sync, Graphite). Add docs here for erk user-facing features.
+    23→- [erk-dev/](erk-dev/)
+    24→- [gateway/](gateway/)
+    25→- [hooks/](hooks/) — Explore when creating or debugging hooks. Add docs here for hook development patterns.
+    26→- [integrations/](integrations/)
+    27→- [objectives/](objectives/)
+    28→- [planning/](planning/) — Explore when working with plans, .erk/impl-context/ folders, or agent delegation. Add docs here for planning workflow patterns.
+    29→- [pr-operations/](pr-operations/)
+    30→- [refactoring/](refactoring/)
+
+... [22 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01UwynsqKWq1ZwE82PL3xK61">
+/home/runner/work/erk/erk/tests/unit/fakes/AGENTS.md
+/home/runner/work/erk/erk/tests/unit/fakes/CLAUDE.md
+/home/runner/work/erk/erk/docs/learned/testing/backend-testing-composition.md
+/home/runner/work/erk/erk/docs/learned/testing/fake-git-divergence.md
+/home/runner/work/erk/erk/docs/learned/testing/monkeypatch-vs-fakes-decision.md
+/home/runner/work/erk/erk/docs/learned/testing/tripwires.md
+/home/runner/work/erk/erk/docs/learned/testing/session-log-fixtures.md
+/home/runner/work/erk/erk/docs/learned/testing/exec-script-testing.md
+/home/runner/work/erk/erk/docs/learned/testing/fake-github-mutation-tracking.md
+/home/runner/work/erk/erk/docs/learned/testing/parameter-injection-pattern.md
+/home/runner/work/erk/erk/docs/learned/testing/hook-testing.md
+/home/runner/work/erk/erk/docs/learned/testing/fake-github-api-reference.md
+/home/runner/work/erk/erk/docs/learned/testing/fake-github-testing.md
+/home/runner/work/erk/erk/docs/learned/testing/context-builder-signatures.md
+/home/runner/work/erk/erk/docs/learned/testing/rebase-conflicts.md
+/home/runner/work/erk/erk/docs/learned/testing/devrun-agent.md
+/home/runner/work/erk/erk/docs/learned/testing/cli-testing.md
+/home/runner/work/erk/erk/docs/learned/testing/test-layer-migration.md
+/home/runner/work/erk/erk/docs/learned/testing/monkeypatch-elimination-checklist.md
+/home/runner/work/erk/erk/docs/learned/testing/index.md
+  </tool_result>
+  <assistant>Now let me check the testing documentation and then search for the specific files:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="1877" cache_read_input_tokens="15160" cache_creation="{'ephemeral_5m_input_tokens': 1877, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Gih4j57icmFioWtmM8Y2jr">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/testing/fake-github-testing.md</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1877" cache_read_input_tokens="15160" cache_creation="{'ephemeral_5m_input_tokens': 1877, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01FjVihgzCqyxAa9drZCkP1t">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/testing/cli-testing.md</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1877" cache_read_input_tokens="15160" cache_creation="{'ephemeral_5m_input_tokens': 1877, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01AvKd4yD15ddmCPCKT7SGKu">
+    <param name="pattern">**/FakeRemoteGitHub*</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1877" cache_read_input_tokens="15160" cache_creation="{'ephemeral_5m_input_tokens': 1877, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01SCPi8EgdhATspmEF1fr3Hb">
+    <param name="pattern">tests/unit/cli/commands/pr/**/*.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1877" cache_read_input_tokens="15160" cache_creation="{'ephemeral_5m_input_tokens': 1877, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Gih4j57icmFioWtmM8Y2jr">
+     1→---
+     2→title: FakeGitHubIssues Dual-Comment Parameters
+     3→read_when:
+     4→  - "setting up FakeGitHubIssues in a test"
+     5→  - "test fails with empty comments from FakeGitHubIssues"
+     6→  - "choosing between comments and comments_with_urls parameters"
+     7→tripwires:
+     8→  - action: "passing string values to comments_with_urls parameter of FakeGitHubIssues"
+     9→    warning: "comments_with_urls requires IssueComment objects, not strings. Strings cause silent empty-list returns. Match the parameter to the ABC getter method your code calls."
+    10→  - action: "creating custom FakeGitHubIssues without passing to build_workspace_test_context"
+    11→    warning: "Always pass issues=issues to build_workspace_test_context when using custom FakeGitHubIssues. Without it, plan_backend operates on a different instance and metadata writes are invisible."
+    12→  - action: "asserting on FakeGitHubIssues.added_comments for PlannedPRBackend.add_comment()"
+    13→    warning: "PlannedPRBackend routes comments to PR comments (FakeGitHub.pr_comments), not issue comments (FakeGitHubIssues.added_comments). Check the correct fake when testing planned-PR comment operations."
+    14→    score: 6
+    15→---
+    16→
+    17→# FakeGitHubIssues Dual-Comment Parameters
+    18→
+    19→## Why Two Comment Parameters Exist
+    20→
+    21→&lt;!-- Source: erk_shared/gateway/github/issues/abc.py, GitHubIssues.get_issue_comments --&gt;
+    22→&lt;!-- Source: erk_shared/gateway/github/issues/abc.py, GitHubIssues.get_issue_comments_with_urls --&gt;
+    23→
+    24→The `GitHubIssues` ABC exposes two distinct comment-retrieval methods: `get_issue_comments()` returns plain body strings, while `get_issue_comments_with_urls()` returns full `IssueComment` objects (with id, url, body, and author). These serve different use cases — simple body inspection vs. operations that need comment identity (reactions, updates, URL linking).
+    25→
+    26→&lt;!-- Source: erk_shared/gateway/github/issues/fake.py, FakeGitHubIssues.__init__ --&gt;
+    27→
+    28→`FakeGitHubIssues` mirrors this split with two constructor parameters: `comments` (for body strings) and `comments_with_urls` (for `IssueComment` objects). Each parameter feeds exactly one getter method. They are completely independent stores — populating one does not affect the other.
+    29→
+    30→## The Pitfall: Silent Type Mismatch
+
+... [45 lines omitted] ...
+
+    32→Because both parameters are dicts keyed by issue number, it's easy to pass the wrong type to the wrong parameter. The failure mode is silent: the getter returns an empty list rather than raising a type error, because it's querying the unpopulated store.
+  </tool_result>
+  <tool_result tool="toolu_01FjVihgzCqyxAa9drZCkP1t">
+     1→---
+     2→title: CLI Testing Patterns
+     3→last_audited: "2026-02-16 00:00 PT"
+     4→audit_result: clean
+     5→read_when:
+     6→  - "writing tests for erk CLI commands"
+     7→  - "using ErkContext.for_test()"
+     8→  - "testing Click commands with context"
+     9→tripwires:
+    10→  - action: "testing code that reads ERK_PLAN_BACKEND or other environment variables via CliRunner"
+    11→    warning: "CliRunner env var isolation: ambient env vars from the developer shell leak into CliRunner by default and cause intermittent test failures. Use CliRunner(env={'ERK_PLAN_BACKEND': '...'}) to override, or CliRunner(env={}) to isolate completely. Never rely on ambient env being clean. Note: mix_stderr parameter is broken in Click 8.3.1 — do not use it."
+    12→    score: 7
+    13→  - action: "renaming a user-facing string in CLI output and updating related test assertions"
+    14→    warning: "Test assertion lag: after renaming display strings (e.g., 'issue' → 'plan'), grep all test files for the old literal before committing. Tests using old string literals against stale snapshots will silently pass — the failure only surfaces in CI on a clean checkout."
+    15→    score: 6
+    16→  - action: "passing mix_stderr parameter to CliRunner"
+    17→    warning: "Click 8.3.1 CliRunner no longer accepts mix_stderr parameter. Use CliRunner() or CliRunner(env={}) instead."
+    18→---
+    19→
+    20→# CLI Testing Patterns
+    21→
+    22→This document covers testing patterns specific to erk CLI commands that use `ErkContext` for dependency injection.
+    23→
+    24→## Overview
+    25→
+    26→Erk CLI commands use Click's context system (`@click.pass_context`) to receive dependencies. Testing these commands requires passing a test context via the `obj` parameter to `CliRunner.invoke()`.
+    27→
+    28→## The ErkContext.for_test() Pattern
+    29→
+    30→`ErkContext.for_test()` is the canonical factory method for creating test contexts with fake dependencies.
+
+... [491 lines omitted] ...
+
+   148→### Pattern 4: Testing Error Handling
+   150→When testing error paths:
+   166→    # Assert: Command exits with error
+   356→- [ ] Test both success and error paths
+  </tool_result>
+  <tool_result tool="toolu_01SCPi8EgdhATspmEF1fr3Hb">
+/home/runner/work/erk/erk/tests/unit/cli/commands/pr/__init__.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/__init__.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/pr/test_dispatch_cmd.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_extract_diff_and_fetch_plan_context.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_graphite_first_flow.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_commit_wip.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_generate_description.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_prepare_state.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_core_submit_flow.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_cleanup_impl_for_submit.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_label_code_pr.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_capture_existing_pr_body.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_finalize_pr.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_enhance_with_graphite.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_run_pipeline.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_fetch_plan_context.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_link_pr_to_objective_nodes.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_extract_diff.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/pr/test_lifecycle_update.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/pr/test_dispatch_helpers.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/pr/test_shared.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/pr/test_metadata_helpers.py
+  </tool_result>
+  <tool_result tool="toolu_01AvKd4yD15ddmCPCKT7SGKu">
+No files found
+  </tool_result>
+  <assistant>Now let me search for the specific classes and functions you need:</assistant>
+  <usage input_tokens="801" cache_creation_input_tokens="8518" cache_read_input_tokens="17037" cache_creation="{'ephemeral_5m_input_tokens': 8518, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01HvihSgWjDxmCSwjQx4y1Md">
+    <param name="pattern">class FakeRemoteGitHub</param>
+    <param name="type">py</param>
+  </tool_use>
+  <usage input_tokens="801" cache_creation_input_tokens="8518" cache_read_input_tokens="17037" cache_creation="{'ephemeral_5m_input_tokens': 8518, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01PA3e3jnWZG4xt2HirespGX">
+    <param name="pattern">class MachineCommandError</param>
+    <param name="type">py</param>
+  </tool_use>
+  <usage input_tokens="801" cache_creation_input_tokens="8518" cache_read_input_tokens="17037" cache_creation="{'ephemeral_5m_input_tokens': 8518, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01KF8PWuVumqm67MDmdib7Nw">
+    <param name="pattern">def machine_command</param>
+    <param name="type">py</param>
+  </tool_use>
+  <usage input_tokens="801" cache_creation_input_tokens="8518" cache_read_input_tokens="17037" cache_creation="{'ephemeral_5m_input_tokens': 8518, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_011b1cAZ2b1cF3RY7zS8p8gC">
+    <param name="pattern">def resolve_owner_repo|def get_remote_github</param>
+    <param name="type">py</param>
+  </tool_use>
+  <usage input_tokens="801" cache_creation_input_tokens="8518" cache_read_input_tokens="17037" cache_creation="{'ephemeral_5m_input_tokens': 8518, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01KF8PWuVumqm67MDmdib7Nw">
+Found 1 file
+packages/erk-shared/src/erk_shared/agentclick/machine_command.py
+  </tool_result>
+  <tool_result tool="toolu_01HvihSgWjDxmCSwjQx4y1Md">
+Found 1 file
+tests/fakes/gateway/remote_github.py
+  </tool_result>
+  <tool_result tool="toolu_01PA3e3jnWZG4xt2HirespGX">
+Found 1 file
+packages/erk-shared/src/erk_shared/agentclick/machine_command.py
+  </tool_result>
+  <tool_result tool="toolu_011b1cAZ2b1cF3RY7zS8p8gC">
+Found 1 file
+src/erk/cli/repo_resolution.py
+  </tool_result>
+  <assistant>Now let me search for context_for_test:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="1402" cache_read_input_tokens="25555" cache_creation="{'ephemeral_5m_input_tokens': 1402, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_011uY6bUP4USSoMJmXnEgivX">
+    <param name="pattern">def context_for_test|class.*context_for_test</param>
+    <param name="type">py</param>
+    <param name="path">/home/runner/work/erk/erk/tests</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1402" cache_read_input_tokens="25555" cache_creation="{'ephemeral_5m_input_tokens': 1402, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011uY6bUP4USSoMJmXnEgivX">
+Found 2 files
+tests/test_utils/test_context.py
+tests/fakes/tests/shared_context.py
+  </tool_result>
+  <assistant>Perfect! Now let me read the files to get the exact content:</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="203" cache_read_input_tokens="26957" cache_creation="{'ephemeral_5m_input_tokens': 203, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01UtAktvM56ttoiFPnVawMZP">
+    <param name="file_path">/home/runner/work/erk/erk/tests/fakes/gateway/remote_github.py</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="203" cache_read_input_tokens="26957" cache_creation="{'ephemeral_5m_input_tokens': 203, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01UQsjoWT3HHtYbor9wNVXMS">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/agentclick/machine_command.py</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="203" cache_read_input_tokens="26957" cache_creation="{'ephemeral_5m_input_tokens': 203, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01UdtwviaJApiaWtUbGnwUCx">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/repo_resolution.py</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="203" cache_read_input_tokens="26957" cache_creation="{'ephemeral_5m_input_tokens': 203, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01PDyf8e5c4GNyBSiwbYsyNh">
+    <param name="file_path">/home/runner/work/erk/erk/tests/fakes/tests/shared_context.py</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="203" cache_read_input_tokens="26957" cache_creation="{'ephemeral_5m_input_tokens': 203, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01UtAktvM56ttoiFPnVawMZP">
+     1→"""Fake implementation of RemoteGitHub for testing.
+     2→
+     3→Constructor-injected responses for reads, mutation tracking lists for write assertions.
+     4→"""
+     5→
+     6→from dataclasses import dataclass, replace
+     7→
+     8→from erk_shared.gateway.github.issues.types import IssueInfo, IssueNotFound, PRReference
+     9→from erk_shared.gateway.remote_github.abc import RemoteGitHub
+    10→from erk_shared.gateway.remote_github.types import RemotePRInfo, RemotePRNotFound
+    11→
+    12→
+    13→@dataclass(frozen=True)
+    14→class CreatedRef:
+    15→    """Recorded create_ref call."""
+    16→
+    17→    owner: str
+    18→    repo: str
+    19→    ref: str
+    20→    sha: str
+    21→
+    22→
+    23→@dataclass(frozen=True)
+    24→class CreatedFileCommit:
+    25→    """Recorded create_file_commit call."""
+    26→
+    27→    owner: str
+    28→    repo: str
+    29→    path: str
+    30→    content: str
+
+... [460 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01UQsjoWT3HHtYbor9wNVXMS">
+     1→"""Machine command decorator for pure-JSON CLI commands.
+     2→
+     3→Provides @machine_command for commands that:
+     4→- Accept JSON input from stdin (not Click params)
+     5→- Return structured JSON output
+     6→- Use frozen dataclass request types for strict validation
+     7→- Support --schema flag for introspection
+     8→
+     9→Unlike @json_command (which adds --json/--schema to human commands),
+    10→@machine_command creates dedicated machine-only commands with no
+    11→Click-based input parsing. The request type IS the input schema.
+    12→"""
+    13→
+    14→import json
+    15→from dataclasses import dataclass
+    16→from typing import Any
+    17→
+    18→import click
+    19→
+    20→from erk_shared.agentclick.dataclass_json import (
+    21→    emit_json_error,
+    22→    emit_json_success,
+    23→    parse_dataclass_from_json,
+    24→    read_json_stdin,
+    25→    serialize_to_json_dict,
+    26→)
+    27→
+    28→
+    29→@dataclass(frozen=True)
+    30→class MachineCommandMeta:
+
+... [188 lines omitted] ...
+
+    38→class MachineCommandError:
+    39→    """Structured error result from a machine command."""
+    41→    error_type: str
+    59→    to_json_dict()) or a MachineCommandError. The decorator handles
+    79→        json.JSONDecodeError: If stdin contains invalid JSON
+    80→        ValueError: If stdin JSON is not an object
+    99→        ValueError: On validation errors (unknown fields, missing required, type mismatch)
+   104→def emit_machine_error(error: MachineCommandError) -&gt; None:
+   105→    """Emit a structured error to stdout."""
+   106→    emit_json_error(error_type=error.error_type, message=error.message)
+   152→        except json.JSONDecodeError as exc:
+   153→            emit_machine_error(
+   154→                MachineCommandError(
+   155→                    error_type="invalid_json_input",
+   160→        except ValueError as exc:
+   161→            emit_machine_error(
+   162→                MachineCommandError(
+   163→                    error_type="invalid_json_input",
+   175→        except ValueError as exc:
+   176→            emit_machine_error(
+   177→                MachineCommandError(
+   178→                    error_type="invalid_request",
+   188→            if isinstance(result, MachineCommandError):
+   189→                emit_machine_error(result)
+   194→        except click.ClickException as exc:
+   195→            error_type_attr = getattr(exc, "error_type", None)
+   196→            if error_type_attr is not None:
+   197→                emit_machine_error(
+   198→                    MachineCommandError(
+   199→                        error_type=str(error_type_attr),
+  </tool_result>
+  <tool_result tool="toolu_01UdtwviaJApiaWtUbGnwUCx">
+     1→"""Shared --repo infrastructure for CLI commands.
+     2→
+     3→Provides helpers for resolving owner/repo from either a --repo flag
+     4→or local git context, and constructing RemoteGitHub instances.
+     5→"""
+     6→
+     7→import functools
+     8→
+     9→import click
+    10→
+    11→from erk.cli.ensure import UserFacingCliError
+    12→from erk.core.context import ErkContext, NoRepoSentinel
+    13→from erk_shared.gateway.github.types import GitHubRepoId
+    14→from erk_shared.gateway.remote_github.abc import RemoteGitHub
+    15→from erk_shared.gateway.remote_github.real import RealRemoteGitHub
+    16→
+    17→
+    18→def resolve_owner_repo(
+    19→    ctx: ErkContext,
+    20→    *,
+    21→    target_repo: str | None,
+    22→) -&gt; tuple[str, str]:
+    23→    """Resolve owner/repo from --repo flag or local git context.
+    24→
+    25→    Args:
+    26→        ctx: ErkContext
+    27→        target_repo: Optional "owner/repo" string from --repo flag
+    28→
+    29→    Returns:
+    30→        Tuple of (owner, repo_name)
+
+... [82 lines omitted] ...
+
+    33→        UserFacingCliError: If owner/repo cannot be determined
+    37→            raise UserFacingCliError(
+    40→                error_type="cli_error",
+    46→        raise UserFacingCliError(
+    49→            error_type="cli_error",
+    67→        UserFacingCliError: If no http_client is available
+    73→        raise UserFacingCliError(
+    75→            error_type="cli_error",
+  </tool_result>
+  <tool_result tool="toolu_01PDyf8e5c4GNyBSiwbYsyNh">
+     1→"""Test factories for creating ErkContext instances.
+     2→
+     3→This module provides factory functions for creating test contexts with
+     4→fake implementations. These are used by both erk and erk-kits tests.
+     5→"""
+     6→
+     7→from __future__ import annotations
+     8→
+     9→from pathlib import Path
+    10→from typing import TYPE_CHECKING
+    11→
+    12→from erk_shared.context.context import ErkContext
+    13→from erk_shared.context.types import GlobalConfig, LoadedConfig, RepoContext
+    14→
+    15→if TYPE_CHECKING:
+    16→    from erk.artifacts.paths import ErkPackageInfo
+    17→from erk_shared.core.prompt_executor import PromptExecutor
+    18→from erk_shared.gateway.agent_docs.abc import AgentDocs
+    19→from erk_shared.gateway.agent_launcher.abc import AgentLauncher
+    20→from erk_shared.gateway.claude_installation.abc import ClaudeInstallation
+    21→from erk_shared.gateway.cmux.abc import Cmux
+    22→from erk_shared.gateway.codespace.abc import Codespace
+    23→from erk_shared.gateway.git.abc import Git
+    24→from erk_shared.gateway.github.abc import LocalGitHub
+    25→from erk_shared.gateway.github.issues.abc import GitHubIssues
+    26→from erk_shared.gateway.github.types import GitHubRepoId, RepoInfo
+    27→from erk_shared.gateway.github_admin.abc import GitHubAdmin
+    28→from erk_shared.gateway.graphite.abc import Graphite
+    29→from erk_shared.gateway.graphite.branch_ops.abc import GraphiteBranchOps
+    30→from erk_shared.gateway.graphite.disabled import GraphiteDisabled
+
+... [203 lines omitted] ...
+  </tool_result>
+  <assistant>Perfect! Now let me get the test file names under tests/unit/cli/commands/pr/:</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="16449" cache_read_input_tokens="27160" cache_creation="{'ephemeral_5m_input_tokens': 16449, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01KVeXcf5BYXrwU8EXmZJcq5">
+    <param name="command">find /home/runner/work/erk/erk/tests/unit/cli/commands/pr -name "test_*.py" -type f | sort</param>
+    <param name="description">List all test files in pr operations directory</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="16449" cache_read_input_tokens="27160" cache_creation="{'ephemeral_5m_input_tokens': 16449, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01KVeXcf5BYXrwU8EXmZJcq5">
+/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_capture_existing_pr_body.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_cleanup_impl_for_submit.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_commit_wip.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_core_submit_flow.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_enhance_with_graphite.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_extract_diff.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_extract_diff_and_fetch_plan_context.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_fetch_plan_context.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_finalize_pr.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_generate_description.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_graphite_first_flow.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_label_code_pr.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_link_pr_to_objective_nodes.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_prepare_state.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_run_pipeline.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/pr/test_dispatch_cmd.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/pr/test_dispatch_helpers.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/pr/test_lifecycle_update.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/pr/test_metadata_helpers.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/pr/test_shared.py
+  </tool_result>
+  <assistant>Excellent! Now let me provide you with a comprehensive report of all the findings:
+
+## Summary of File Locations and Key Content
+
+### 1. **FakeRemoteGitHub Class**
+**File Path:** `/home/runner/work/erk/erk/tests/fakes/gateway/remote_github.py`
+
+**Constructor Signature:**
+```python
+def __init__(
+    self,
+    *,
+    authenticated_user: str,
+    default_branch_name: str,
+    default_branch_sha: str,
+    next_pr_number: int,
+    dispatch_run_id: str,
+    issues: dict[int, IssueInfo] | None,
+    issue_comments: dict[int, list[str]] | None,
+    pr_references: dict[int, list[PRReference]] | None,
+    comments_by_id: dict[int, str] | None = None,
+    prs: dict[int, RemotePRInfo] | None = None,
+) -&gt; None
+```
+
+**Key Details:**
+- Frozen dataclass implementing `RemoteGitHub` ABC
+- Constructor-injected responses for read operations
+- Mutation tracking lists for write assertions (stored as private attributes)
+- Read-only properties like `created_refs`, `created_file_commits`, `created_pull_requests`, `updated_pr_bodies`, etc. for test assertions
+- Methods for read operations: `get_authenticated_user()`, `get_default_branch_name()`, `get_issue()`, `get_pr()`, etc.
+- Methods for write operations: `create_ref()`, `create_file_commit()`, `create_pull_request()`, `update_pull_request_body()`, etc.
+
+---
+
+### 2. **Unit Tests under tests/unit/cli/commands/pr/**
+
+**Main test files:**
+- `/home/runner/work/erk/erk/tests/unit/cli/commands/pr/test_dispatch_cmd.py`
+- `/home/runner/work/erk/erk/tests/unit/cli/commands/pr/test_dispatch_helpers.py`
+- `/home/runner/work/erk/erk/tests/unit/cli/commands/pr/test_lifecycle_update.py`
+- `/home/runner/work/erk/erk/tests/unit/cli/commands/pr/test_metadata_helpers.py`
+- `/home/runner/work/erk/erk/tests/unit/cli/commands/pr/test_shared.py`
+
+**Submit pipeline subtests (under submit_pipeline/):**
+- `test_capture_existing_pr_body.py`
+- `test_cleanup_impl_for_submit.py`
+- `test_commit_wip.py`
+- `test_core_submit_flow.py`
+- `test_enhance_with_graphite.py`
+- `test_extract_diff.py`
+- `test_extract_diff_and_fetch_plan_context.py`
+- `test_fetch_plan_context.py`
+- `test_finalize_pr.py`
+- `test_generate_description.py`
+- `test_graphite_first_flow.py`
+- `test_label_code_pr.py`
+- `test_link_pr_to_objective_nodes.py`
+- `test_prepare_state.py`
+- `test_run_pipeline.py`
+
+---
+
+### 3. **MachineCommandError Class**
+**File Path:** `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/agentclick/machine_command.py`
+
+**Definition:**
+```python
+@dataclass(frozen=True)
+class MachineCommandError:
+    """Structured error result from a machine command."""
+
+    error_type: str
+    message: str
+```
+
+**Key Details:**
+- Frozen dataclass with two fields: `error_type` (string) and `message` (string)
+- Used to represent structured error results from machine commands
+- Can be returned from a machine command callback to indicate failure
+
+---
+
+### 4. **machine_command Decorator Definition**
+**File Path:** `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/agentclick/machine_command.py`
+
+**Decorator Signature:**
+```python
+def machine_command(
+    *,
+    request_type: type,
+    output_types: tuple[type, ...],
+) -&gt; Any:
+    """Decorator for machine-only CLI commands with dataclass-based input.
+
+    Must be applied ABOVE @click.command in the decorator stack.
+
+    Adds --schema flag. Reads JSON from stdin, validates against request_type,
+    and passes the constructed request to the callback. The callback receives
+    the request as a keyword argument named 'request'.
+
+    The callback should return a result object (dataclass or object with
+    to_json_dict()) or a MachineCommandError. The decorator handles
+    serialization.
+
+    Args:
+        request_type: Frozen dataclass type for input validation
+        output_types: Result types for schema generation
+    """
+```
+
+**How it Works:**
+1. Must be applied ABOVE `@click.command` in decorator stack
+2. Automatically adds `--schema` flag for introspection
+3. Reads JSON from stdin (not Click params)
+4. Validates input against frozen dataclass `request_type`
+5. Passes constructed request to callback as `request` kwarg
+6. Callback returns result object or `MachineCommandError`
+7. Handles JSON serialization/deserialization automatically
+8. Supports `--schema` mode to introspect input/output types
+
+---
+
+### 5. **resolve_owner_repo and get_remote_github Functions**
+**File Path:** `/home/runner/work/erk/erk/src/erk/cli/repo_resolution.py`
+
+**resolve_owner_repo Function:**
+```python
+def resolve_owner_repo(
+    ctx: ErkContext,
+    *,
+    target_repo: str | None,
+) -&gt; tuple[str, str]:
+    """Resolve owner/repo from --repo flag or local git context.
+
+    Args:
+        ctx: ErkContext
+        target_repo: Optional "owner/repo" string from --repo flag
+
+    Returns:
+        Tuple of (owner, repo_name)
+
+    Raises:
+        UserFacingCliError: If owner/repo cannot be determined
+    """
+```
+
+**get_remote_github Function:**
+```python
+def get_remote_github(ctx: ErkContext) -&gt; RemoteGitHub:
+    """Get or construct a RemoteGitHub from context.
+
+    Uses ctx.remote_github if provided (tests inject FakeRemoteGitHub here).
+    Otherwise constructs RealRemoteGitHub from ctx.http_client.
+
+    Args:
+        ctx: ErkContext with http_client and time
+
+    Returns:
+        RemoteGitHub instance
+
+    Raises:
+        UserFacingCliError: If no http_client is available
+    """
+```
+
+**Key Details:**
+- `resolve_owner_repo()` resolves owner/repo from either `--repo` flag or local git context
+- Validates format is "owner/repo" with exactly one slash
+- `get_remote_github()` returns test-injected `FakeRemoteGitHub` if available, otherwise constructs `RealRemoteGitHub`
+- Both functions raise `UserFacingCliError` on validation failures
+
+---
+
+### 6. **context_for_test Function**
+**File Path:** `/home/runner/work/erk/erk/tests/fakes/tests/shared_context.py`
+
+**Signature:**
+```python
+def context_for_test(
+    *,
+    github_issues: GitHubIssues | None = None,
+    git: Git | None = None,
+    github: LocalGitHub | None = None,
+    github_admin: GitHubAdmin | None = None,
+    graphite: Graphite | None = None,
+    claude_installation: ClaudeInstallation | None = None,
+    agent_launcher: AgentLauncher | None = None,
+    agent_docs: AgentDocs | None = None,
+    prompt_executor: PromptExecutor | None = None,
+    codespace: Codespace | None = None,
+    cmux: Cmux | None = None,
+    plan_store: PlanBackend | None = None,
+    local_config: LoadedConfig | None = None,
+    remote_github: RemoteGitHub | None = None,
+    debug: bool = False,
+    repo_root: Path | None = None,
+    cwd: Path | None = None,
+    repo_info: RepoInfo | None = None,
+    package_info: ErkPackageInfo | None = None,
+) -&gt; ErkContext
+```
+
+**Key Details:**
+- Factory function for creating test contexts with optional pre-configured implementations
+- Provides full control over all context parameters with sensible test defaults
+- Returns an `ErkContext` with fake implementations for all services
+- Plan backend defaults to `PlannedPRBackend` unless explicitly overridden
+- Default paths: `repo_root=Path("/fake/repo")`, `cwd=Path("/fake/worktree")`
+- Automatically creates fake implementations for any unspecified dependencies:
+  - `FakeGitHubIssues` for github_issues
+  - `FakeGit` for git
+  - `FakeLocalGitHub` for github
+  - `FakeGraphite` for graphite
+  - `FakeClaudeInstallation` for claude_installation
+  - And many others...
+
+**Usage Example (from docstring):**
+```python
+&gt;&gt;&gt; from tests.fakes.gateway.github_issues import FakeGitHubIssues
+&gt;&gt;&gt; from tests.fakes.gateway.git import FakeGit
+&gt;&gt;&gt; github = FakeGitHubIssues()
+&gt;&gt;&gt; git_ops = FakeGit()
+&gt;&gt;&gt; ctx = context_for_test(github_issues=github, git=git_ops, debug=True)
+```
+
+---
+
+## Related Documentation
+
+The documentation files at `/home/runner/work/erk/erk/docs/learned/testing/cli-testing.md` and `/home/runner/work/erk/erk/docs/learned/testing/fake-github-testing.md` provide comprehensive guidance on using these testing patterns and fakes in actual test implementations.</assistant>
+  <usage input_tokens="4" cache_creation_input_tokens="894" cache_read_input_tokens="43609" cache_creation="{'ephemeral_5m_input_tokens': 894, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+</session>
