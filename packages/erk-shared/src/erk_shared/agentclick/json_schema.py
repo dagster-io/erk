@@ -1,5 +1,10 @@
 """JSON Schema generation for @json_command Click commands.
 
+.. deprecated::
+    This module is superseded by machine_schema.py. New commands should
+    use @machine_command with machine_schema for schema generation.
+    This module is retained for backwards compatibility with existing tests.
+
 Provides:
 - Click parameter type -> JSON Schema type mapping
 - Input schema generation from Click command parameters

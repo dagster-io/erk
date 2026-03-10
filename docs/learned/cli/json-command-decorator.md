@@ -1,118 +1,157 @@
 ---
-title: "@json_command Decorator"
+title: "Machine Command Architecture"
 read_when:
-  - "adding @json_command decorator to a CLI command"
+  - "adding @machine_command decorator to a CLI command"
   - "creating structured JSON CLI output"
-  - "understanding emit_json patterns"
+  - "understanding the erk json command tree"
   - "implementing output_types validation"
-  - "working with AgentCliError error handling"
+  - "working with MachineCommandError error handling"
+  - "adding @json_command decorator to a CLI command"
 tripwires:
-  - action: "applying @json_command below @click.command in the decorator stack"
-    warning: "@json_command must be applied ABOVE @click.command. The correct order is @mcp_exposed > @json_command > @click.command."
-  - action: "using json.dumps without indent=2 in a @json_command context"
-    warning: "All json.dumps() calls in @json_command commands use indent=2 for pretty-printing."
-  - action: "raising an exception in a @json_command without using AgentCliError"
-    warning: "Use AgentCliError(message, error_type=...) to ensure errors serialize as JSON when --json is active."
-  - action: "declaring output_types that don't match the return annotation"
-    warning: "test_output_types_matches_return_annotation() validates output_types against return type hints. Mismatches fail CI."
+  - action: "applying @machine_command below @click.command in the decorator stack"
+    warning: "@machine_command must be applied ABOVE @click.command. The correct order is @mcp_exposed > @machine_command > @click.command."
+  - action: "adding --json flag to a human-facing command"
+    warning: "Machine JSON output lives in the `erk json` command tree, not as a flag on human commands. Create a json_cli.py machine adapter in the command's subpackage."
+  - action: "putting business logic in the machine adapter"
+    warning: "Machine adapters should be thin wrappers. Put shared logic in *_operation.py files."
+  - action: "returning MachineCommandError without raising SystemExit"
+    warning: "The @machine_command decorator handles serialization and exit codes. Just return MachineCommandError from the callback."
 ---
 
-# @json_command Decorator
+# Machine Command Architecture
 
-Universal CLI JSON infrastructure for agent-optimized command output.
+The `erk json` command tree provides machine-readable JSON commands for agent consumption. Human-facing commands live separately with rich terminal output.
 
-**Source**: `packages/erk-shared/src/erk_shared/agentclick/json_command.py`
+## Architecture Overview
 
-## Decorator Parameters
-
-```python
-@json_command(
-    exclude_json_input=frozenset({"repo_id"}),
-    required_json_input=frozenset({"prompt"}),
-    output_types=(PrListResult, PrViewResult),
-)
+```
+src/erk/cli/commands/
+├── one_shot/
+│   ├── __init__.py
+│   ├── cli.py               # Human command (Click options, rich output)
+│   ├── operation.py          # Shared operation (transport-independent)
+│   └── json_cli.py           # Machine adapter (@machine_command)
+└── pr/
+    ├── list/
+    │   ├── __init__.py
+    │   ├── cli.py            # Human command
+    │   ├── operation.py      # Shared operation
+    │   └── json_cli.py       # Machine adapter
+    └── view/
+        ├── __init__.py
+        ├── cli.py            # Human command
+        ├── operation.py      # Shared operation
+        └── json_cli.py       # Machine adapter
 ```
 
-| Parameter             | Type               | Purpose                                                    |
-| --------------------- | ------------------ | ---------------------------------------------------------- |
-| `exclude_json_input`  | `frozenset[str]`   | Parameter names to skip when mapping JSON stdin input      |
-| `required_json_input` | `frozenset[str]`   | Parameters that must be present and non-None in JSON input |
-| `output_types`        | `tuple[type, ...]` | Result types for JSON Schema generation via `--schema`     |
+The pattern is:
 
-Two usage forms:
+1. **Operation file** (`*_operation.py`): Contains `Request` dataclass, `Result` dataclass, and `run_*()` function
+2. **Human command**: Click options, rich output, delegates to operation
+3. **Machine adapter** (`json_cli.py`): `@machine_command` + `@mcp_exposed`, thin wrapper around operation
 
-- **Bare**: `@json_command` (no configuration needed)
-- **Parameterized**: `@json_command(exclude_json_input=..., output_types=...)`
+## @machine_command Decorator
 
-## CLI Flags Added
+**Source**: `packages/erk-shared/src/erk_shared/agentclick/machine_command.py`
 
-The decorator adds two flags to the command:
+<!-- Source: src/erk/cli/commands/one_shot/json_cli.py, json_one_shot -->
 
-- `--json` — Output structured JSON instead of human-readable text
-- `--schema` — Output JSON Schema for the command's result types
+See `json_one_shot()` in `src/erk/cli/commands/one_shot/json_cli.py` for the canonical example. The decorator stack is `@mcp_exposed` > `@machine_command` > `@click.command` > `@click.pass_obj`, and the callback receives a typed `request` keyword argument.
 
-## emit_json() and emit_json_result()
+### Decorator Parameters
 
-Two helpers for producing JSON output:
+| Parameter      | Type               | Purpose                                 |
+| -------------- | ------------------ | --------------------------------------- |
+| `request_type` | `type`             | Frozen dataclass for input validation   |
+| `output_types` | `tuple[type, ...]` | Result types for JSON Schema generation |
 
-- `emit_json(dict)` — for ad-hoc dict output; automatically adds `success: True`
-- `emit_json_result(result)` — for result dataclass output; calls `to_json_dict()` or falls back to `dataclasses.asdict()`
+### What it does
 
-See `packages/erk-shared/src/erk_shared/agentclick/json_command.py` for current signatures.
+- Adds `--schema` flag for introspection
+- Reads JSON from stdin, validates against `request_type` dataclass
+- Passes constructed request as `request` keyword argument to callback
+- Serializes return value (or `MachineCommandError`) as JSON to stdout
+- Handles `ClickException` with `error_type` attribute
 
-**`emit_json_result()` protocol**:
+### Decorator Stack Order
 
-1. Calls `result.to_json_dict()` if method exists
-2. Falls back to `dataclasses.asdict()` for plain dataclasses
-3. Raises `TypeError` if neither is available
+```
+@mcp_exposed(...)      # MCP exposure (optional, outermost)
+@machine_command(...)   # Machine command infrastructure
+@click.command(...)     # Click command
+@click.pass_obj         # Context passing (innermost)
+```
+
+## Request Types
+
+Frozen dataclasses with strict validation:
+
+<!-- Source: src/erk/cli/commands/one_shot/operation.py, OneShotRequest -->
+
+See `OneShotRequest` in `src/erk/cli/commands/one_shot/operation.py` for the canonical example (8 fields: `prompt`, `model`, `dry_run`, `plan_only`, `slug`, `dispatch_ref`, `ref_current`, `target_repo`).
+
+- Fields without defaults are required in JSON input
+- Unknown fields are rejected
+- Type coercion is applied (bool, int, str, X | None unions)
+
+## Result Types
+
+Result dataclasses implement `to_json_dict()` for custom serialization:
+
+<!-- Source: src/erk/cli/commands/one_shot_remote_dispatch.py, OneShotDispatchResult -->
+
+See `OneShotDispatchResult` in `src/erk/cli/commands/one_shot_remote_dispatch.py` for the canonical example — a frozen dataclass with a `to_json_dict()` method that controls which fields appear in JSON output and how they're serialized.
+
+Falls back to `dataclasses.asdict()` if no `to_json_dict()` is defined.
 
 ## Error Handling
 
-`AgentCliError` extends `click.ClickException` with an `error_type` parameter. See `packages/erk-shared/src/erk_shared/agentclick/errors.py` for the current class definition.
+`MachineCommandError` is a frozen dataclass (not an exception):
 
-Import: `from erk_shared.agentclick.errors import AgentCliError`
+<!-- Source: packages/erk-shared/src/erk_shared/agentclick/machine_command.py, MachineCommandError -->
 
-When `--json` is active, `AgentCliError` serializes as:
+See `MachineCommandError` in `packages/erk-shared/src/erk_shared/agentclick/machine_command.py`. It is a frozen dataclass with `error_type: str` and `message: str` fields.
+
+Return it from the operation function — the decorator handles serialization:
 
 ```json
-{ "success": false, "error_type": "invalid_plan", "message": "Plan not found" }
+{
+  "success": false,
+  "error_type": "invalid_input",
+  "message": "Prompt must not be empty"
+}
 ```
 
-Three error categories:
+## Schema Output
 
-- **Validation errors**: `error_type: "invalid_json_input"` (bad stdin JSON)
-- **Command errors**: Custom `error_type` from `AgentCliError`
-- **Passthrough**: `SystemExit` and non-Click exceptions pass through unchanged
+`--schema` returns a document with input, output, and error schemas:
 
-## JSON Input Validation
+```json
+{
+  "input_schema": { ... },
+  "output_schema": { ... },
+  "error_schema": { ... }
+}
+```
 
-When `--json` is active, the decorator reads from stdin (if piped):
+**Source**: `packages/erk-shared/src/erk_shared/agentclick/machine_schema.py`
 
-1. Input must be a JSON object (dict), not array
-2. All keys must match command parameters and not be in `exclude_json_input`
-3. Required fields (from `required_json_input`) must be present and non-None
+## Testing Machine Commands
 
-## output_types Validation
-
-A CI test (`test_output_types_matches_return_annotation()`) enforces consistency:
-
-- Walks the entire CLI tree collecting `@json_command` decorated commands
-- Compares declared `output_types` against function return type annotations
-- `type(None)` in unions is stripped (represents inline emission or no return)
-- Mismatches fail the test with descriptive error messages
-
-**Source**: `tests/unit/cli/test_json_command.py`
-
-## Testing @json_command Commands
-
-Use `CliRunner` with JSON assertions:
+Mock `read_machine_command_input` to inject JSON input:
 
 ```python
-result = runner.invoke(my_command, ["--json"])
+with patch(
+    "erk_shared.agentclick.machine_command.read_machine_command_input",
+    return_value={"prompt": "fix bug"},
+):
+    result = runner.invoke(cli, ["json", "one-shot"], obj=ctx)
 data = json.loads(result.output)
 assert data["success"] is True
 ```
 
-## Metadata Storage
+## Legacy @json_command
 
-The decorator stores `JsonCommandMeta` (frozen dataclass) on the Command object and preserves the original callback as `cmd._json_command_original_callback` for schema introspection.
+The `@json_command` decorator in `json_command.py` is deprecated. It added `--json`/`--schema` flags to human commands. New commands should use the `@machine_command` pattern with a separate command in the `erk json` tree.
+
+**Source**: `packages/erk-shared/src/erk_shared/agentclick/json_command.py` (deprecated)

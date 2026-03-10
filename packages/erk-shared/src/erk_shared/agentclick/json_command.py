@@ -1,5 +1,11 @@
 """JSON command harness for CLI commands (input + output + schema).
 
+.. deprecated::
+    This module is superseded by machine_command.py. New commands should
+    use @machine_command with the ``erk json`` command tree instead of
+    @json_command. This module is retained for backwards compatibility
+    with existing tests. No new callers should be added.
+
 Adds --json and --schema flags to Click commands with:
 - JSON error serialization (catches click.ClickException with error_type attribute)
 - JSON input from stdin (when piped, maps keys to Click params)

@@ -1,111 +1,173 @@
 ---
-title: "Adding --json to CLI Commands"
+title: "Adding Machine JSON Commands"
 read_when:
-  - "adding --json flag to a CLI command"
+  - "adding a new machine-readable JSON command"
   - "exposing a command via MCP"
   - "creating result dataclasses for JSON output"
-  - "stacking @mcp_exposed and @json_command decorators"
+  - "stacking @mcp_exposed and @machine_command decorators"
+  - "adding a new CLI command with both human and machine output"
+  - "creating a new command subpackage"
 tripwires:
-  - action: "placing @mcp_exposed below @json_command in decorator stack"
-    warning: "@mcp_exposed must be ABOVE @json_command. Correct order: @mcp_exposed > @json_command > @click.command."
+  - action: "placing @mcp_exposed below @machine_command in decorator stack"
+    warning: "@mcp_exposed must be ABOVE @machine_command. Correct order: @mcp_exposed > @machine_command > @click.command."
   - action: "creating a result dataclass without to_json_dict() method"
-    warning: "Result dataclasses should implement to_json_dict() for custom serialization. Without it, emit_json_result() falls back to dataclasses.asdict() which may not handle complex types correctly."
+    warning: "Result dataclasses should implement to_json_dict() for custom serialization. Without it, the serializer falls back to dataclasses.asdict() which may not handle complex types correctly."
+  - action: "adding --json flag to a human command"
+    warning: "Machine JSON output belongs in the `erk json` command tree. Create a machine adapter as json_cli.py in the command's subpackage instead."
+  - action: "duplicating fetch/query logic in cli.py instead of calling run_*() from operation.py"
+    warning: "cli.py MUST delegate to the operation. The operation is the single source of truth for business logic. cli.py only marshals Click flags into the Request and renders the Result. Never re-fetch, re-query, or re-compute what the operation already returns."
+  - action: "eagerly serializing rich objects in the Result dataclass"
+    warning: "Result dataclasses should carry rich domain objects (not pre-serialized dicts). Serialization belongs in to_json_dict() only. The human CLI needs rich objects for display; the machine adapter needs to_json_dict() for JSON."
 ---
 
-# Adding --json to CLI Commands
+# Adding Machine JSON Commands
 
-Step-by-step guide to adding structured JSON output to existing Click commands.
+Step-by-step guide to adding structured JSON output for a CLI command using the `erk json` command tree.
 
-## Decorator Stacking Order
+## Architecture
 
-The decorators must be stacked in this exact order (outermost to innermost):
+Machine commands live in a separate `erk json` tree, not as flags on human commands:
 
-1. `@mcp_exposed(...)` — MCP exposure (optional, outermost)
-2. `@json_command(...)` — JSON infrastructure
-3. `@click.command(...)` — Click command
-4. `@click.option(...)` — Options/arguments
-5. `@click.pass_obj` — Context passing (innermost)
+- **Human command**: `src/erk/cli/commands/foo/cli.py` — Click options, rich terminal output
+- **Operation**: `src/erk/cli/commands/foo/operation.py` — Shared business logic
+- **Machine adapter**: `src/erk/cli/commands/foo/json_cli.py` — JSON stdin/stdout
 
-See `src/erk/cli/commands/pr/list_cmd.py` for a working example of this stack.
+## The Operation is the Single Source of Truth
 
-## Step 1: Create a Result Dataclass
+**Both `cli.py` and `json_cli.py` MUST call the operation's `run_*()` function.** The operation owns all business logic: fetching, filtering, sorting, enrichment. The transports only handle marshaling and rendering.
 
-See `PrListResult` in `src/erk/cli/commands/pr/list_cmd.py` for a working example.
-
-Rules:
-
-- Always frozen dataclass
-- Implement `to_json_dict()` for any custom serialization needs
-- For simple cases, `dataclasses.asdict()` fallback works without `to_json_dict()`
-- Conditionally include fields (e.g., `if self.body is not None`)
-
-## Step 2: Add Decorators
-
-```python
-@json_command(
-    exclude_json_input=frozenset({"repo_id"}),  # Params not accepted via JSON stdin
-    output_types=(PrListResult,),                # Must match return annotation
-)
+```
+cli.py          json_cli.py
+  │                 │
+  │  Click flags    │  JSON stdin
+  │  → Request      │  → Request
+  │                 │
+  └────┬────────────┘
+       │
+       ▼
+  operation.py
+  run_foo(ctx, request) → Result | MachineCommandError
+       │
+  ┌────┴────────────┐
+  │                 │
+  ▼                 ▼
+cli.py          json_cli.py
+Result →        Result →
+Rich output     to_json_dict()
 ```
 
-## Step 3: Return the Result
+**Anti-pattern: cli.py re-fetching or re-computing.** If `cli.py` calls `run_foo()` and then makes additional API calls to get data the operation already returned, the operation's Result type is incomplete. Fix the Result, not the CLI.
+
+**Anti-pattern: eagerly serializing in the Result.** If the Result carries `list[dict[str, Any]]` instead of rich domain objects, the human CLI can't render from it without re-fetching. Keep rich objects in the Result; serialize only in `to_json_dict()`.
+
+## Step 1: Create an Operation File
+
+Extract shared logic into an `operation.py` file:
 
 ```python
-def pr_list(ctx, ...) -> PrListResult | None:
+# src/erk/cli/commands/foo/operation.py
+from dataclasses import dataclass
+from erk_shared.agentclick.machine_command import MachineCommandError
+
+@dataclass(frozen=True)
+class FooRequest:
+    name: str
+    count: int
+    verbose: bool
+
+@dataclass(frozen=True)
+class FooResult:
+    items: list[Item]  # Rich domain objects, not serialized dicts
+
+    def to_json_dict(self) -> dict[str, Any]:
+        return {"items": [i.to_dict() for i in self.items], "count": len(self.items)}
+
+def run_foo(ctx: ErkContext, request: FooRequest) -> FooResult | MachineCommandError:
+    if not request.name.strip():
+        return MachineCommandError(error_type="invalid_input", message="Name required")
     # ... business logic ...
-    if ctx.json_mode:
-        return PrListResult(plans=plan_dicts, count=len(plan_dicts))
-    # ... human-readable output ...
-    return None
+    return FooResult(items=[item_a, item_b])
 ```
 
-The decorator calls `emit_json_result()` on non-None returns when `--json` is active.
-
-## Step 4: Add MCP Exposure (Optional)
+## Step 2: Create the Machine Adapter
 
 ```python
-@mcp_exposed(
-    name="pr_list",
-    description="List plans filtered by state and labels"
-)
+# src/erk/cli/commands/foo/json_cli.py
+import click
+from erk.cli.commands.foo.operation import FooRequest, FooResult, run_foo
+from erk.core.context import ErkContext
+from erk_shared.agentclick.machine_command import MachineCommandError, machine_command
+from erk_shared.agentclick.mcp_exposed import mcp_exposed
+
+@mcp_exposed(name="foo", description="Do foo operation")
+@machine_command(request_type=FooRequest, output_types=(FooResult,))
+@click.command("foo")
+@click.pass_obj
+def json_foo(ctx: ErkContext, *, request: FooRequest) -> FooResult | MachineCommandError:
+    return run_foo(ctx, request)
 ```
 
-- `@mcp_exposed` registers the command in `_MCP_REGISTRY` for MCP tool discovery
-- Uses `McpMeta` dataclass to store name and description
-- `discover_mcp_commands()` walks the CLI tree to find all registered commands
-- Does not modify command behavior — purely metadata annotation
+## Step 3: Register the Command
+
+Register in the command's subpackage `__init__.py` or the json group:
+
+```python
+from erk.cli.commands.foo.json_cli import json_foo
+json_group.add_command(json_foo, name="foo")
+```
+
+## Step 4: Update the Human Command
+
+The human command marshals Click flags into the Request and renders the Result:
+
+```python
+# src/erk/cli/commands/foo/cli.py
+@click.command("foo")
+@click.argument("name")
+@click.option("--count", type=int)
+@click.pass_obj
+def foo(ctx, *, name, count):
+    request = FooRequest(name=name, count=count)
+    result = run_foo(ctx, request)
+    if isinstance(result, MachineCommandError):
+        user_output(click.style(f"Error: {result.message}", fg="red"))
+        raise SystemExit(1)
+    # Rich human output using result.items directly
+    _display_items(result)
+```
+
+**cli.py has exactly two jobs:**
+
+1. Marshal Click flags/arguments into a `FooRequest`
+2. Render the `FooResult` as rich terminal output
+
+It does NOT fetch data, apply business logic, or duplicate anything the operation does.
+
+## Decorator Stack Order
+
+```
+@mcp_exposed(...)        # MCP exposure (optional, outermost)
+@machine_command(...)     # Machine command infrastructure
+@click.command(...)       # Click command
+@click.pass_obj           # Context passing (innermost)
+```
+
+## MCP Exposure
+
+`@mcp_exposed` registers the command for MCP tool discovery. At startup, the MCP server walks the Click tree to find commands with `_machine_command_meta` and registers them as tools.
 
 **Source**: `packages/erk-shared/src/erk_shared/agentclick/mcp_exposed.py`
 
-## exclude_json_input
-
-Use for parameters that should not be accepted from JSON stdin:
-
-```python
-exclude_json_input=frozenset({"repo_id"})
-```
-
-Common exclusions:
-
-- `repo_id` — resolved from git context, not user input
-- Context-derived parameters that make no sense in JSON input
-
 ## Worked Examples
 
-### pr list (`src/erk/cli/commands/pr/list_cmd.py`)
+### one-shot (`src/erk/cli/commands/one_shot/json_cli.py`)
 
-See `src/erk/cli/commands/pr/list_cmd.py` for the full decorator stack and function signature.
+See the one-shot machine adapter for the canonical example of `@mcp_exposed` / `@machine_command` / `@click.command` layering with the shared `run_one_shot()` operation.
 
-### pr view (`src/erk/cli/commands/pr/view_cmd.py`)
+### pr view (`src/erk/cli/commands/pr/view/`)
 
-```python
-@mcp_exposed(name="pr_view", description="...")
-@json_command(exclude_json_input=frozenset({"repo_id"}), output_types=(PrViewResult,))
-@click.command("view")
-@click.argument("identifier", ...)
-@resolved_repo_option
-@click.pass_obj
-def pr_view(ctx, ...) -> PrViewResult | None:
-```
+`PrViewResult` carries all fields needed for both human and machine display. The human `cli.py` renders directly from `PrViewResult` without re-fetching. `to_json_dict()` handles conditional `body` inclusion and datetime serialization.
 
-`PrViewResult` demonstrates complex serialization — it uses `_serialize_header_fields()` to handle nested datetime objects and conditionally includes the `body` field.
+### pr list (`src/erk/cli/commands/pr/list/`)
+
+`PrListResult` carries `list[PlanRowData]` (rich domain objects), not pre-serialized dicts. The human `cli.py` uses the rows directly for Rich table rendering. Serialization via `serialize_plan_row()` happens only in `to_json_dict()`.

@@ -117,7 +117,7 @@ def test_dryrun_read_operations_still_work(tmp_path: Path) -> None:
 
     # Mock _run_interactive_mode to verify CLI routing works without
     # actually running the Textual TUI (which hangs in test environments)
-    with patch("erk.cli.commands.pr.list_cmd._run_interactive_mode") as mock_run:
+    with patch("erk.cli.commands.pr.list.cli._run_interactive_mode") as mock_run:
         # Dash should work even in dry-run mode since it's a read operation
         # No need to os.chdir() since ctx.cwd is already set to repo
         result = runner.invoke(cli, ["dash"], obj=ctx)

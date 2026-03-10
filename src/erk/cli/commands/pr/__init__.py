@@ -11,7 +11,7 @@ from erk.cli.commands.pr.create_cmd import pr_create
 from erk.cli.commands.pr.dispatch_cmd import pr_dispatch
 from erk.cli.commands.pr.diverge_fix_cmd import pr_diverge_fix
 from erk.cli.commands.pr.duplicate_check_cmd import duplicate_check_plan
-from erk.cli.commands.pr.list_cmd import pr_list
+from erk.cli.commands.pr.list.cli import pr_list
 from erk.cli.commands.pr.log_cmd import pr_log
 from erk.cli.commands.pr.prepare_cmd import pr_prepare
 from erk.cli.commands.pr.rebase_cmd import rebase
@@ -19,7 +19,7 @@ from erk.cli.commands.pr.replan_cmd import pr_replan
 from erk.cli.commands.pr.rewrite_cmd import pr_rewrite
 from erk.cli.commands.pr.submit_cmd import pr_submit
 from erk.cli.commands.pr.teleport_cmd import pr_teleport
-from erk.cli.commands.pr.view_cmd import pr_view
+from erk.cli.commands.pr.view.cli import pr_view
 
 
 @click.group("pr")

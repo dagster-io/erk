@@ -5,7 +5,7 @@ from datetime import UTC, datetime
 from click.testing import CliRunner
 
 from erk.cli.cli import cli
-from erk.cli.commands.pr.list_cmd import dash
+from erk.cli.commands.pr.list.cli import dash
 from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.plan_store.types import Plan, PlanState
 from tests.fakes.gateway.github_issues import FakeGitHubIssues
@@ -43,7 +43,7 @@ def test_top_level_dash_command_works() -> None:
 
     # Mock _run_interactive_mode to verify CLI routing works without
     # actually running the Textual TUI (which hangs in test environments)
-    with patch("erk.cli.commands.pr.list_cmd._run_interactive_mode") as mock_run:
+    with patch("erk.cli.commands.pr.list.cli._run_interactive_mode") as mock_run:
         result = runner.invoke(cli, ["dash"])
 
         # Assert - command routes correctly and calls _run_interactive_mode
@@ -84,7 +84,7 @@ def test_dash_command_routes_to_interactive_mode() -> None:
         ctx = build_workspace_test_context(env, issues=issues, github=github)
 
         # Mock _run_interactive_mode to verify CLI routing works
-        with patch("erk.cli.commands.pr.list_cmd._run_interactive_mode") as mock_run:
+        with patch("erk.cli.commands.pr.list.cli._run_interactive_mode") as mock_run:
             # Act - Use dash command directly
             result = runner.invoke(dash, [], obj=ctx)
 
@@ -126,7 +126,7 @@ def test_dash_command_passes_filters_to_interactive_mode() -> None:
         ctx = build_workspace_test_context(env, issues=issues, github=github)
 
         # Mock _run_interactive_mode to verify filters are passed
-        with patch("erk.cli.commands.pr.list_cmd._run_interactive_mode") as mock_run:
+        with patch("erk.cli.commands.pr.list.cli._run_interactive_mode") as mock_run:
             # Act - Filter for open plans using dash command
             result = runner.invoke(dash, ["--state", "open"], obj=ctx)
 

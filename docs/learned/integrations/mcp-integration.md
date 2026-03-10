@@ -21,7 +21,7 @@ packages/erk-mcp/
 └── src/erk_mcp/
     ├── __init__.py
     ├── __main__.py          # Entry point: parses --transport/--host/--port, calls create_mcp().run()
-    └── server.py            # Tool definitions and _run_erk() wrapper
+    └── server.py            # Tool definitions and _run_erk_json() wrapper
 ```
 
 The package depends on [FastMCP](https://github.com/jlowin/fastmcp) (`fastmcp>=2.0`) and is a thin wrapper that delegates to the `erk` CLI.
@@ -30,62 +30,42 @@ The package depends on [FastMCP](https://github.com/jlowin/fastmcp) (`fastmcp>=2
 
 <!-- Source: packages/erk-mcp/src/erk_mcp/server.py -->
 
-Two internal wrappers in `server.py` delegate to the erk CLI:
-
-- **Standard wrapper** — Runs `erk <args>`, raises `RuntimeError` on non-zero exit. Used by hand-written tools (`plan_list`, `plan_view`).
-- **JSON wrapper** — Runs `erk <command> --json`, pipes params as JSON stdin. Does NOT raise on non-zero exit — `--json` guarantees structured error output flows through to the agent. Used by auto-discovered MCP tools.
+The MCP server uses a JSON wrapper that runs `erk json <command>` and pipes params as JSON stdin. It does NOT raise on non-zero exit — machine commands guarantee structured error output flows through to the agent.
 
 ## MCP Tools
 
-Three tools are registered:
+Tools are auto-discovered from the `erk json` command tree:
 
-| Tool        | Delegates To             | Purpose                                       |
-| ----------- | ------------------------ | --------------------------------------------- |
-| `plan_list` | `erk exec dash-data`     | List plans with status, labels, metadata      |
-| `plan_view` | `erk exec get-plan-info` | View a specific plan's metadata and body      |
-| `one_shot`  | `erk one-shot --json`    | Submit a task for autonomous remote execution |
+| Tool       | Delegates To        | Purpose                                       |
+| ---------- | ------------------- | --------------------------------------------- |
+| `one_shot` | `erk json one-shot` | Submit a task for autonomous remote execution |
+| `pr_list`  | `erk json pr list`  | List plans with status, labels, metadata      |
+| `pr_view`  | `erk json pr view`  | View a specific plan's metadata and body      |
 
-### `plan_list`
-
-<!-- Source: packages/erk-mcp/src/erk_mcp/server.py -->
-
-Returns structured JSON from the erk dashboard. Optional state filter (`"open"` or `"closed"`).
-
-### `plan_view`
-
-<!-- Source: packages/erk-mcp/src/erk_mcp/server.py -->
-
-Returns plan title, state, labels, and full markdown body for a given plan ID.
-
-### `one_shot` (auto-discovered via `@mcp_exposed`)
-
-Dispatches a task for fully autonomous execution via `erk one-shot --json`. Returns structured JSON indicating success or failure. On success, includes the created PR reference and CI run details. With `dry_run`: preview without executing.
-
-Parameters are auto-derived from Click parameters — no separate schema class needed.
-
-## Auto-Discovery from Click Command Tree
+### Auto-Discovery from Click Command Tree
 
 <!-- Source: packages/erk-shared/src/erk_shared/agentclick/mcp_exposed.py, packages/erk-mcp/src/erk_mcp/server.py -->
 
-CLI commands decorated with both `@json_command` and `@mcp_exposed` are automatically discovered and registered as MCP tools. One source of truth (Click parameters), two interfaces (CLI and MCP).
+CLI commands decorated with both `@machine_command` and `@mcp_exposed` are automatically discovered and registered as MCP tools. One source of truth (request dataclass), two interfaces (CLI and MCP).
 
 ### Adding a new MCP tool
 
-1. Add `@mcp_exposed(name="tool_name", description="...")` above `@json_command` on the Click command
-2. Done — the server walks the Click tree at startup and registers it automatically
+1. Create an operation file with `Request` and `Result` dataclasses
+2. Create a machine adapter in the command's own subpackage (e.g., `src/erk/cli/commands/foo/json_cli.py`) with `@mcp_exposed` + `@machine_command` + `@click.command`
+3. Register it in the `json_group`
+4. Done — the server walks the Click tree at startup and registers it automatically
 
-<!-- Source: src/erk/cli/commands/one_shot.py, one_shot command decorator stack -->
-
-See the `one_shot` command decorator stack in `src/erk/cli/commands/one_shot.py` for the canonical example of `@mcp_exposed` / `@json_command` / `@click.command` layering.
+See `src/erk/cli/commands/one_shot/json_cli.py` for the canonical example.
 
 ### How it works
 
 - The `@mcp_exposed` decorator attaches MCP metadata (name, description) to the Click command
-- At startup, the server walks the Click tree to find all decorated commands
-- Each command's Click parameters are automatically converted to a JSON Schema
-- Each discovered command is wrapped as a FastMCP `Tool`
+- The `@machine_command` decorator attaches machine command metadata (request_type, output_types) to the Click command
+- At startup, the server walks the Click tree to find all commands with both decorators applied
+- Each command's request type is converted to a JSON Schema via `request_schema()`
+- Each discovered command is wrapped as a FastMCP `Tool` (`MachineCommandTool`)
 
-At runtime, each tool filters out unset parameters before piping the remaining values as JSON to the CLI.
+At runtime, each tool pipes input parameters as JSON stdin to `erk json <command>`.
 
 ### Parity tests
 
@@ -94,7 +74,7 @@ At runtime, each tool filters out unset parameters before piping the remaining v
 Parity tests enforce:
 
 - Every `@mcp_exposed` command is registered as an MCP tool
-- Each tool's schema matches the Click-derived schema
+- Each tool's schema matches the request-derived schema
 - No orphaned tools exist without a corresponding `@mcp_exposed` command
 
 ## Configuration
