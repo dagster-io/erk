@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "pr_number": 9185,
+  "sessions": [
+    {
+      "session_id": "",
+      "stage": "impl",
+      "source": "local",
+      "uploaded_at": "2026-03-10T18:12:15.721688+00:00",
+      "files": [
+        "impl--cb048438-bcee-4510-8242-92002a1e5001-part1.xml",
+        "impl--cb048438-bcee-4510-8242-92002a1e5001-part10.xml",
+        "impl--cb048438-bcee-4510-8242-92002a1e5001-part11.xml",
+        "impl--cb048438-bcee-4510-8242-92002a1e5001-part2.xml",
+        "impl--cb048438-bcee-4510-8242-92002a1e5001-part3.xml",
+        "impl--cb048438-bcee-4510-8242-92002a1e5001-part4.xml",
+        "impl--cb048438-bcee-4510-8242-92002a1e5001-part5.xml",
+        "impl--cb048438-bcee-4510-8242-92002a1e5001-part6.xml",
+        "impl--cb048438-bcee-4510-8242-92002a1e5001-part7.xml",
+        "impl--cb048438-bcee-4510-8242-92002a1e5001-part8.xml",
+        "impl--cb048438-bcee-4510-8242-92002a1e5001-part9.xml"
+      ],
+      "user_turns": 3,
+      "duration_minutes": 18,
+      "raw_size_kb": 1446,
+      "xml_size_kb": 278,
+      "git_branch": "plnd/obj-node-mutation-primitiv-03-10-1351"
+    }
+  ]
+}
