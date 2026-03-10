@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
   check-submission:
-    if: github.event.pull_request.draft != true && !contains(github.event.pull_request.labels.*.name, 'erk-plan-review')
+    if: github.event.pull_request.draft != true
     runs-on: ubuntu-latest
     timeout-minutes: 5
     outputs:
@@ -28,7 +28,7 @@ jobs:
         uses: ./.github/actions/check-impl-context
 
   no-impl-context:
-    if: github.event.pull_request.draft != true && !contains(github.event.pull_request.labels.*.name, 'erk-plan-review')
+    if: github.event.pull_request.draft != true
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -210,7 +210,6 @@ jobs:
       always() &&
       (github.event_name == 'pull_request') &&
       (github.event.pull_request.draft != true) &&
-      !contains(github.event.pull_request.labels.*.name, 'erk-plan-review') &&
       (needs.format.result == 'failure' ||
        needs.lint.result == 'failure' ||
        needs.fix-formatting.result == 'failure' ||

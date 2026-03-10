@@ -28,7 +28,7 @@ check-submission (gate)
 
 ### Gate
 
-**`check-submission`** runs first with no dependencies. It checks whether the PR is a draft or labeled `erk-plan-review`, and outputs a `skip` flag consumed by all downstream jobs. This prevents wasted compute on PRs that aren't ready for validation.
+**`check-submission`** runs first with no dependencies. It checks whether the PR is a draft, and outputs a `skip` flag consumed by all downstream jobs. This prevents wasted compute on PRs that aren't ready for validation.
 
 ### Format Track (wait for fix-formatting)
 

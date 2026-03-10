@@ -35,15 +35,7 @@ Fetches unresolved PR review comments AND PR discussion comments from the curren
 
 Determine the execution mode before any work begins:
 
-1. **Check for `erk-plan-review` label**:
-
-   ```bash
-   gh pr view --json labels -q '.labels[].name' | grep -q '^erk-plan-review$'
-   ```
-
-   If found → **Plan Review Mode** (existing behavior, see Plan Review Mode section in pr-address-workflows docs)
-
-2. **Check if `.erk/impl-context/plan.md` is git-tracked**:
+1. **Check if `.erk/impl-context/plan.md` is git-tracked**:
 
    ```bash
    git ls-files --error-unmatch .erk/impl-context/plan.md >/dev/null 2>&1
@@ -51,7 +43,7 @@ Determine the execution mode before any work begins:
 
    If found → **Plan File Mode** (see below — skip Phases 1-6 entirely)
 
-3. **Neither** → **Code Review Mode** (continue to Phase 1)
+2. **Otherwise** → **Code Review Mode** (continue to Phase 1)
 
 ---
 
