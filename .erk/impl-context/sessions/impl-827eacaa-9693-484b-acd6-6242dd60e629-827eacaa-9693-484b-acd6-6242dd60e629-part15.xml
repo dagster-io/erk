@@ -1,0 +1,1054 @@
+<session>
+  <meta source="agent-a76e3b4" />
+  <meta branch="plnd/O9109-sweep-exec-leaf-cmd-03-10-1757" />
+  <meta model="claude-sonnet-4-5-20250929" />
+  <user>Fix test files that reference renamed symbols. These are test failures from a plan_number/plan_id to pr_number/pr_id rename sweep.
+
+DO NOT modify any src/ files. ONLY modify test files.
+
+Category 1: exit_plan_mode_hook test
+- File: tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py
+- Issue: Imports `extract_plan_title` which was renamed to `extract_pr_title` in the source
+- Also may have references to old dataclass field names: `plan_saved_plan_number` → `plan_saved_pr_number`, `plan_title` → `pr_title`, `plan_number` → `pr_number_from_plan_ref`
+- Fix: Update all imports and references
+
+Category 2: PrViewResult in view/operation.py tests  
+- File: tests/commands/pr/test_view.py and tests/commands/test_top_level_commands.py
+- Issue: Code constructs PrViewResult with `plan_id` field, but it was renamed to `pr_id` in src/erk/cli/commands/pr/view/operation.py
+- First READ the PrViewResult dataclass in src/erk/cli/commands/pr/view/operation.py to see the current field name
+- Fix: Update test files to use the new field name
+
+Category 3: land_execute() signature
+- Files: tests/commands/land/test_git_pull.py, test_learn_skip_remote.py, test_objective_update.py, test_unresolved_comments.py
+- Issue: `land_execute()` in src/erk/cli/commands/exec/scripts/land_execute.py had `plan_number` renamed to `linked_pr_number`
+- First READ the land_execute.py file to see the current parameter name
+- Fix: Update all test calls to use the new parameter name
+
+Category 4: LearnResult initialization
+- File: tests/commands/learn/test_display.py
+- Issue: Creates LearnResult with `plan_id=` but field was renamed to `pr_id=`
+- Fix: Update test to use `pr_id=`
+
+IMPORTANT: For each file, READ it first, then make the minimum necessary edits. Don't change anything not related to these renames.</user>
+  <assistant>I'll fix the test files that reference renamed symbols. Let me start by reading the affected test files and the source files they depend on to understand the current state.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="6378" cache_read_input_tokens="10119" cache_creation="{'ephemeral_5m_input_tokens': 6378, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01KpSPbf4q1RSRBDCe3xg8hD">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6378" cache_read_input_tokens="10119" cache_creation="{'ephemeral_5m_input_tokens': 6378, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01NaC91TXEwLRDTbsc3rHQfw">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/view/operation.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6378" cache_read_input_tokens="10119" cache_creation="{'ephemeral_5m_input_tokens': 6378, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01PMZpvz7yVV3zcKsGRxV1LT">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/land_execute.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6378" cache_read_input_tokens="10119" cache_creation="{'ephemeral_5m_input_tokens': 6378, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Fz3jd7gj2MEM86zkGzi8sy">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_view.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6378" cache_read_input_tokens="10119" cache_creation="{'ephemeral_5m_input_tokens': 6378, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01NMQhRV4AxVLKFHaAoqSmd8">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/test_top_level_commands.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6378" cache_read_input_tokens="10119" cache_creation="{'ephemeral_5m_input_tokens': 6378, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01NaC91TXEwLRDTbsc3rHQfw">
+     1→"""Core operation for pr view (transport-independent).
+     2→
+     3→Contains the request type and operation function that both the
+     4→human command (pr/view/cli.py) and machine command (pr/view/json_cli.py) share.
+     5→"""
+     6→
+     7→from dataclasses import dataclass
+     8→from datetime import datetime
+     9→from typing import Any
+    10→
+    11→from erk.cli.github_parsing import parse_issue_identifier
+    12→from erk.cli.repo_resolution import get_remote_github
+    13→from erk.core.context import ErkContext
+    14→from erk_shared.agentclick.machine_command import MachineCommandError
+    15→from erk_shared.context.types import NoRepoSentinel
+    16→from erk_shared.gateway.github.issues.types import IssueNotFound
+    17→from erk_shared.gateway.github.metadata.schemas import BRANCH_NAME
+    18→from erk_shared.gateway.github.types import GitHubRepoId
+    19→from erk_shared.plan_store.conversion import github_issue_to_plan
+    20→from erk_shared.plan_store.types import PlanNotFound
+    21→
+    22→
+    23→@dataclass(frozen=True)
+    24→class PrViewRequest:
+    25→    """Request type for pr view."""
+    26→
+    27→    identifier: str | None = None
+    28→    full: bool = False
+    29→
+    30→
+
+... [139 lines omitted] ...
+
+    83→) -&gt; PrViewResult | MachineCommandError:
+    92→        PrViewResult or MachineCommandError
+   101→            return MachineCommandError(
+   102→                error_type="missing_identifier",
+   111→            return MachineCommandError(
+   112→                error_type="missing_identifier",
+   118→            return MachineCommandError(
+   119→                error_type="missing_identifier",
+   133→        return MachineCommandError(
+   134→            error_type="not_found",
+  </tool_result>
+  <tool_result tool="toolu_01PMZpvz7yVV3zcKsGRxV1LT">
+     1→"""Execute deferred land operations from activation script.
+     2→
+     3→This exec command performs the actual merge and cleanup operations for landing a PR.
+     4→It is called by the activation script after the user has approved the operation.
+     5→
+     6→Usage:
+     7→    erk exec land-execute --pr-number=123 --branch=foo [options]
+     8→
+     9→All validation happens during the validation phase (erk land). This command
+    10→executes the pre-validated operations.
+    11→
+    12→Exit Codes:
+    13→    0: Success (PR merged, branch deleted)
+    14→    1: Error (merge failed, validation error)
+    15→"""
+    16→
+    17→from pathlib import Path
+    18→
+    19→import click
+    20→
+    21→from erk.cli.commands.land_cmd import _execute_land
+    22→from erk.cli.commands.objective_helpers import run_objective_update_after_land
+    23→from erk_shared.context.helpers import require_context
+    24→
+    25→
+    26→@click.command(name="land-execute")
+    27→@click.option(
+    28→    "--pr-number",
+    29→    type=int,
+    30→    required=True,
+
+... [180 lines omitted] ...
+
+   161→            raise click.ClickException(f"Cannot use --up: branch '{branch}' has no children")
+   164→            raise click.ClickException(
+  </tool_result>
+  <tool_result tool="toolu_01NMQhRV4AxVLKFHaAoqSmd8">
+     1→"""Tests for top-level plan commands (dash, get, close, retry)."""
+     2→
+     3→from datetime import UTC, datetime
+     4→
+     5→from click.testing import CliRunner
+     6→
+     7→from erk.cli.cli import cli
+     8→from erk.cli.commands.pr.list.cli import dash
+     9→from erk_shared.gateway.github.issues.types import IssueInfo
+    10→from erk_shared.plan_store.types import Plan, PlanState
+    11→from tests.fakes.gateway.github_issues import FakeGitHubIssues
+    12→from tests.test_utils.context_builders import build_workspace_test_context
+    13→from tests.test_utils.env_helpers import erk_inmem_env
+    14→from tests.test_utils.plan_helpers import create_plan_store_with_plans
+    15→
+    16→
+    17→def plan_to_issue(plan: Plan) -&gt; IssueInfo:
+    18→    """Convert Plan to IssueInfo for test setup."""
+    19→    return IssueInfo(
+    20→        number=int(plan.pr_identifier),
+    21→        title=plan.title,
+    22→        body=plan.body,
+    23→        state="OPEN" if plan.state == PlanState.OPEN else "CLOSED",
+    24→        url=plan.url or "",
+    25→        labels=plan.labels,
+    26→        assignees=plan.assignees,
+    27→        created_at=plan.created_at,
+    28→        updated_at=plan.updated_at,
+    29→        author="test-user",
+    30→    )
+
+... [187 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01KpSPbf4q1RSRBDCe3xg8hD">
+     1→"""Unit tests for exit-plan-mode-hook command.
+     2→
+     3→This test file uses the pure logic extraction pattern. Most tests call the
+     4→`determine_exit_action()` pure function directly with no mocking required.
+     5→Only a few integration tests use CliRunner to verify the full hook works.
+     6→"""
+     7→
+     8→import json
+     9→from pathlib import Path
+    10→
+    11→from click.testing import CliRunner
+    12→
+    13→from erk.cli.commands.exec.scripts.exit_plan_mode_hook import (
+    14→    ExitAction,
+    15→    HookInput,
+    16→    _gather_inputs,
+    17→    abbreviate_for_header,
+    18→    build_blocking_message,
+    19→    build_step2_message,
+    20→    determine_exit_action,
+    21→    exit_plan_mode_hook,
+    22→    extract_plan_title,
+    23→    is_terminal_editor,
+    24→)
+    25→from erk_shared.context.context import ErkContext
+    26→from tests.fakes.gateway.branch_manager import FakeBranchManager
+    27→from tests.fakes.gateway.claude_installation import FakeClaudeInstallation
+    28→from tests.fakes.gateway.git import FakeGit
+    29→from tests.fakes.tests.shared_context import context_for_test
+    30→
+
+... [1328 lines omitted] ...
+
+   469→    def test_trunk_branch_main_shows_warning(self) -&gt; None:
+   470→        """Warning shown when on main branch."""
+   483→        assert "WARNING" in message
+   488→    def test_trunk_branch_master_shows_warning(self) -&gt; None:
+   489→        """Warning shown when on master branch."""
+   502→        assert "WARNING" in message
+   506→    def test_feature_branch_no_warning(self) -&gt; None:
+   507→        """No warning when on feature branch."""
+   520→        assert "WARNING" not in message
+   523→    def test_none_branch_no_warning(self) -&gt; None:
+   524→        """No warning when branch is None."""
+   537→        assert "WARNING" not in message
+   769→        # Should NOT have the TUI editor warning
+   789→        # Should NOT have the TUI editor warning
+  1204→        AttributeError: 'RealLocalGitHub' object has no attribute 'get_prs_from_graphite'.
+  1250→        # The key assertion is that we didn't crash with AttributeError
+  </tool_result>
+  <tool_result tool="toolu_01Fz3jd7gj2MEM86zkGzi8sy">
+     1→"""Tests for plan view command."""
+     2→
+     3→from datetime import UTC, datetime
+     4→
+     5→from click.testing import CliRunner
+     6→
+     7→from erk.cli.cli import cli
+     8→from erk_shared.gateway.github.issues.types import IssueInfo
+     9→from erk_shared.plan_store.types import Plan, PlanState
+    10→from tests.fakes.gateway.remote_github import FakeRemoteGitHub
+    11→from tests.test_utils.context_builders import build_workspace_test_context
+    12→from tests.test_utils.env_helpers import erk_inmem_env
+    13→from tests.test_utils.plan_helpers import create_plan_store_with_plans
+    14→
+    15→
+    16→def _plan_to_issue_info(plan: Plan) -&gt; IssueInfo:
+    17→    """Convert Plan to IssueInfo for FakeRemoteGitHub."""
+    18→    return IssueInfo(
+    19→        number=int(plan.pr_identifier),
+    20→        title=plan.title,
+    21→        body=plan.body,
+    22→        state="OPEN" if plan.state == PlanState.OPEN else "CLOSED",
+    23→        url=plan.url,
+    24→        labels=plan.labels,
+    25→        assignees=plan.assignees,
+    26→        created_at=plan.created_at,
+    27→        updated_at=plan.updated_at,
+    28→        author="test-author",
+    29→    )
+    30→
+
+... [780 lines omitted] ...
+
+   127→def test_view_plan_error_when_cannot_infer_from_branch() -&gt; None:
+   128→    """Test error message when on non-plan branch without identifier."""
+   142→        assert "Error" in result.output
+   228→        assert "Error" in result.output
+   300→    """Test error handling for invalid identifier format."""
+   312→        assert "Error" in result.output
+   324→    issue_body = """&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+  </tool_result>
+  <assistant>Now let me read the remaining test files to understand what needs to be fixed:</assistant>
+  <usage input_tokens="3024" cache_creation_input_tokens="42754" cache_read_input_tokens="16497" cache_creation="{'ephemeral_5m_input_tokens': 42754, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01R9dXSKCpck6oitqHfdDsmB">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/land/test_git_pull.py</param>
+  </tool_use>
+  <usage input_tokens="3024" cache_creation_input_tokens="42754" cache_read_input_tokens="16497" cache_creation="{'ephemeral_5m_input_tokens': 42754, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01TB8vFDDxiqKXXauYsd6dbE">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/land/test_learn_skip_remote.py</param>
+  </tool_use>
+  <usage input_tokens="3024" cache_creation_input_tokens="42754" cache_read_input_tokens="16497" cache_creation="{'ephemeral_5m_input_tokens': 42754, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Te9qr3cjqVNXW9dmrKmVeN">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/land/test_objective_update.py</param>
+  </tool_use>
+  <usage input_tokens="3024" cache_creation_input_tokens="42754" cache_read_input_tokens="16497" cache_creation="{'ephemeral_5m_input_tokens': 42754, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_018P3omVAerGCf7KTPmvYk9E">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/land/test_unresolved_comments.py</param>
+  </tool_use>
+  <usage input_tokens="3024" cache_creation_input_tokens="42754" cache_read_input_tokens="16497" cache_creation="{'ephemeral_5m_input_tokens': 42754, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01W3ftUhantPMLkv2KGQCvvA">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/learn/test_display.py</param>
+  </tool_use>
+  <usage input_tokens="3024" cache_creation_input_tokens="42754" cache_read_input_tokens="16497" cache_creation="{'ephemeral_5m_input_tokens': 42754, 'ephemeral_1h_input_tokens': 0}" output_tokens="341" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01TB8vFDDxiqKXXauYsd6dbE">
+     1→"""Tests for skipping learn prompt on remote PRs.
+     2→
+     3→When landing a PR via `erk land &lt;url&gt;` or `erk land &lt;number&gt;` for a branch
+     4→that has NO local worktree, the learn status check should be skipped because
+     5→there are no local Claude sessions to learn from.
+     6→
+     7→Regression test for issue #4871.
+     8→"""
+     9→
+    10→import pytest
+    11→from click.testing import CliRunner
+    12→
+    13→from erk.cli.cli import cli
+    14→from erk.core.repo_discovery import RepoContext
+    15→from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
+    16→from erk_shared.gateway.graphite.types import BranchMetadata
+    17→from tests.fakes.gateway.git import FakeGit
+    18→from tests.fakes.gateway.github import FakeLocalGitHub
+    19→from tests.fakes.gateway.github_issues import FakeGitHubIssues
+    20→from tests.fakes.gateway.graphite import FakeGraphite
+    21→from tests.test_utils.env_helpers import erk_inmem_env
+    22→
+    23→
+    24→def test_land_skips_learn_prompt_for_remote_pr(
+    25→    monkeypatch: pytest.MonkeyPatch,
+    26→) -&gt; None:
+    27→    """Test that learn prompt is skipped when landing a PR with no local worktree.
+    28→
+    29→    When running `erk land &lt;url&gt;` for a remote PR (no local worktree), the learn
+    30→    status check should not run because there are no local Claude sessions to
+
+... [259 lines omitted] ...
+
+    34→    incorrectly prompting "Warning: Plan #X has not been learned from."
+   133→            raise AssertionError(
+   155→            catch_exceptions=False,
+   280→            catch_exceptions=False,
+  </tool_result>
+  <tool_result tool="toolu_01Te9qr3cjqVNXW9dmrKmVeN">
+     1→"""Tests for objective update behavior in erk land-execute command.
+     2→
+     3→After migrating objective update into land-execute, --objective-number
+     4→triggers the objective update inline (after successful merge). Without
+     5→the flag, no Claude calls are made.
+     6→"""
+     7→
+     8→from datetime import UTC, datetime
+     9→
+    10→from click.testing import CliRunner
+    11→
+    12→from erk.cli.cli import cli
+    13→from erk.core.repo_discovery import RepoContext
+    14→from erk_shared.gateway.github.issues.types import IssueInfo
+    15→from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
+    16→from erk_shared.gateway.graphite.types import BranchMetadata
+    17→from tests.fakes.gateway.git import FakeGit
+    18→from tests.fakes.gateway.github import FakeLocalGitHub
+    19→from tests.fakes.gateway.github_issues import FakeGitHubIssues
+    20→from tests.fakes.gateway.graphite import FakeGraphite
+    21→from tests.fakes.tests.prompt_executor import FakePromptExecutor
+    22→from tests.test_utils.env_helpers import erk_inmem_env
+    23→from tests.test_utils.plan_helpers import format_plan_header_body_for_test
+    24→
+    25→
+    26→def _create_plan_issue_with_objective(objective_number: int) -&gt; IssueInfo:
+    27→    """Create a plan issue with objective_issue in plan-header metadata."""
+    28→    body = format_plan_header_body_for_test(
+    29→        created_at=datetime.now(UTC).isoformat(),
+    30→        created_by="testuser",
+
+... [269 lines omitted] ...
+
+   151→            catch_exceptions=False,
+   287→            catch_exceptions=False,
+  </tool_result>
+  <tool_result tool="toolu_018P3omVAerGCf7KTPmvYk9E">
+     1→"""Tests for erk land command unresolved review comments warnings.
+     2→
+     3→Tests for behavior when PRs have unresolved review comments:
+     4→- Warning shown with prompt to continue
+     5→- Execute mode skips the warning (no prompts in execute phase)
+     6→- User can confirm to proceed despite warning
+     7→- Non-interactive mode fails with error when unresolved comments exist
+     8→"""
+     9→
+    10→from click.testing import CliRunner
+    11→
+    12→from erk.cli.cli import cli
+    13→from erk.core.repo_discovery import RepoContext
+    14→from erk_shared.gateway.github.types import PRDetails, PRReviewThread, PullRequestInfo
+    15→from erk_shared.gateway.graphite.types import BranchMetadata
+    16→from tests.fakes.gateway.console import FakeConsole
+    17→from tests.fakes.gateway.git import FakeGit
+    18→from tests.fakes.gateway.github import FakeLocalGitHub
+    19→from tests.fakes.gateway.github_issues import FakeGitHubIssues
+    20→from tests.fakes.gateway.graphite import FakeGraphite
+    21→from tests.test_utils.env_helpers import erk_inmem_env
+    22→
+    23→
+    24→def test_land_warns_on_unresolved_comments() -&gt; None:
+    25→    """Test land shows warning when PR has unresolved review comments."""
+    26→    runner = CliRunner()
+    27→    with erk_inmem_env(runner) as env:
+    28→        repo_dir = env.setup_repo_structure()
+    29→
+    30→        git_ops = FakeGit(
+
+... [601 lines omitted] ...
+
+   127→            catch_exceptions=False,
+   133→        # Should show warning about unresolved comments
+   140→def test_land_force_skips_unresolved_comments_warning() -&gt; None:
+   251→            catch_exceptions=False,
+   378→            catch_exceptions=False,
+   391→    """Test land continues with warning when GraphQL API is rate limited.
+   393→    When the GitHub GraphQL API returns a rate limit error for review threads,
+   394→    the land command should show a warning and continue instead of crashing.
+   397→    when rate limit warning is shown during validation.
+   493→            catch_exceptions=False,
+   509→    with an error message instead of hanging waiting for user input.
+   611→            catch_exceptions=False,
+   617→        # Should show warning about unresolved comments
+   620→        # Should show error about non-interactive mode
+  </tool_result>
+  <tool_result tool="toolu_01R9dXSKCpck6oitqHfdDsmB">
+     1→"""Tests for erk land command git pull behavior.
+     2→
+     3→By default, landing navigates to trunk and executes git pull in Python.
+     4→The --no-pull flag and --up flag affect this behavior.
+     5→
+     6→The git pull is executed in Python (not in the activation script) to avoid
+     7→race conditions with stale index.lock files from earlier git operations.
+     8→"""
+     9→
+    10→from pathlib import Path
+    11→
+    12→from click.testing import CliRunner
+    13→
+    14→from erk.cli.cli import cli
+    15→from erk.core.repo_discovery import RepoContext
+    16→from erk_shared.gateway.git.abc import BranchDivergence
+    17→from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
+    18→from erk_shared.gateway.graphite.types import BranchMetadata
+    19→from tests.fakes.gateway.git import FakeGit
+    20→from tests.fakes.gateway.github import FakeLocalGitHub
+    21→from tests.fakes.gateway.github_issues import FakeGitHubIssues
+    22→from tests.fakes.gateway.graphite import FakeGraphite
+    23→from tests.test_utils.env_helpers import erk_inmem_env
+    24→
+    25→
+    26→def test_land_default_calls_git_pull_in_python() -&gt; None:
+    27→    """Test default land (no --no-pull) calls git pull during execute phase."""
+    28→    runner = CliRunner()
+    29→    with erk_inmem_env(runner) as env:
+    30→        repo_dir = env.setup_repo_structure()
+
+... [882 lines omitted] ...
+
+   124→            catch_exceptions=False,
+   217→            catch_exceptions=False,
+   316→            cli, ["land", "--script", "--up", "--force"], obj=test_ctx, catch_exceptions=False
+   335→def test_land_git_pull_failure_shows_warning_but_succeeds() -&gt; None:
+   336→    """Test that git pull failure shows a warning but doesn't fail the command."""
+   356→            # Simulate git pull failure with RuntimeError (wrapped by run_subprocess_with_context)
+   357→            pull_branch_raises=RuntimeError("git pull failed"),
+   421→        # Execute mode: test git pull failure behavior during execution phase
+   435→            catch_exceptions=False,
+   438→        # Command should still succeed (exit 0) despite git pull failure
+   444→        # Verify warning message was shown
+   445→        assert "Warning:" in result.output
+   446→        assert "git pull failed" in result.output
+   450→    """Test that land detects diverged branch (ahead AND behind) and skips pull with warning."""
+   547→            catch_exceptions=False,
+   559→        # Verify divergence warning was shown
+   560→        assert "Warning:" in result.output
+   665→            catch_exceptions=False,
+   779→            catch_exceptions=False,
+   795→def test_land_pull_failure_after_divergence_check_shows_warning() -&gt; None:
+   796→    """Test that pull failure shows warning even after divergence check passes."""
+   817→            pull_branch_raises=RuntimeError("Unexpected pull failure"),
+   881→        # Execute mode: test pull failure handling
+   895→            catch_exceptions=False,
+   898→        # Command should succeed (pull failure is non-fatal)
+   904→        # Verify warning message was shown
+   905→        assert "Warning:" in result.output
+   906→        assert "git pull failed" in result.output
+  </tool_result>
+  <tool_result tool="toolu_01W3ftUhantPMLkv2KGQCvvA">
+     1→"""Tests for learn command display and CLI behavior."""
+     2→
+     3→from datetime import UTC, datetime
+     4→from pathlib import Path
+     5→
+     6→import pytest
+     7→from click.testing import CliRunner
+     8→
+     9→from erk.cli.cli import cli
+    10→from erk.cli.commands.learn.learn_cmd import LearnResult, _display_human_readable
+    11→from erk.core.repo_discovery import RepoContext
+    12→from erk_shared.context.types import GlobalConfig
+    13→from erk_shared.gateway.github.issues.types import IssueInfo
+    14→from erk_shared.gateway.github.metadata.core import render_metadata_block
+    15→from erk_shared.gateway.github.metadata.types import MetadataBlock
+    16→from tests.fakes.gateway.claude_installation import (
+    17→    FakeClaudeInstallation,
+    18→    FakeProject,
+    19→    FakeSessionData,
+    20→)
+    21→from tests.fakes.gateway.git import FakeGit
+    22→from tests.fakes.gateway.github import FakeLocalGitHub
+    23→from tests.fakes.gateway.github_issues import FakeGitHubIssues
+    24→from tests.fakes.tests.prompt_executor import FakePromptExecutor
+    25→from tests.test_utils.plan_helpers import issue_info_to_pr_details
+    26→from tests.test_utils.test_context import context_for_test
+    27→
+    28→
+    29→def test_display_shows_remote_impl_message_when_set(capsys: pytest.CaptureFixture[str]) -&gt; None:
+    30→    """Display shows remote implementation message when last_remote_impl_at is set."""
+
+... [779 lines omitted] ...
+
+   185→    assert result.exit_code == 0, f"Command failed: {result.output}"
+   272→    assert result.exit_code == 0, f"Command failed: {result.output}"
+   368→    assert result.exit_code == 0, f"Command failed: {result.output}"
+   453→    assert result.exit_code == 0, f"Command failed: {result.output}"
+   548→    assert result.exit_code == 0, f"Command failed: {result.output}"
+   635→    assert result.exit_code == 0, f"Command failed: {result.output}"
+   718→    assert result.exit_code == 0, f"Command failed: {result.output}"
+   802→    assert result.exit_code == 0, f"Command failed: {result.output}"
+  </tool_result>
+  <assistant>Now I understand the issues. Let me check the source file for `extract_plan_title` to see what it was renamed to:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="41652" cache_read_input_tokens="59251" cache_creation="{'ephemeral_5m_input_tokens': 41652, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01THw7UdampcbBtnFdLgiEX5">
+    <param name="command">grep -n "def extract_p" /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py | head -5</param>
+    <param name="description">Find the renamed function in exit_plan_mode_hook.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="41652" cache_read_input_tokens="59251" cache_creation="{'ephemeral_5m_input_tokens': 41652, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01THw7UdampcbBtnFdLgiEX5">
+225:def extract_pr_title(plan_file_path: Path | None) -&gt; str | None:
+  </tool_result>
+  <assistant>Perfect! Now I have all the information I need. Let me fix the test files:
+
+## Category 1: exit_plan_mode_hook test - Fix import and field names</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="195" cache_read_input_tokens="100903" cache_creation="{'ephemeral_5m_input_tokens': 195, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01E42UTSr1A1UJJxX9M9FQs5">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py</param>
+    <param name="old_string">from erk.cli.commands.exec.scripts.exit_plan_mode_hook import (
+    ExitAction,
+    HookIn...[truncated 96 chars]...ne_exit_action,
+    exit_plan_mode_hook,
+    extract_plan_title,
+    is_terminal_editor,
+)</param>
+    <param name="new_string">from erk.cli.commands.exec.scripts.exit_plan_mode_hook import (
+    ExitAction,
+    HookIn...[truncated 94 chars]...mine_exit_action,
+    exit_plan_mode_hook,
+    extract_pr_title,
+    is_terminal_editor,
+)</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="195" cache_read_input_tokens="100903" cache_creation="{'ephemeral_5m_input_tokens': 195, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01EGVhJ19pHrvZXGcREMMeQT">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py</param>
+    <param name="old_string"># ============================================================================
+# Pure Logi...[truncated 424 chars]...ere.\n", encoding="utf-8")
+        assert extract_plan_title(plan_file) == "My Plan Title"</param>
+    <param name="new_string"># ============================================================================
+# Pure Logi...[truncated 418 chars]... here.\n", encoding="utf-8")
+        assert extract_pr_title(plan_file) == "My Plan Title"</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="195" cache_read_input_tokens="100903" cache_creation="{'ephemeral_5m_input_tokens': 195, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01B1oZU5vXD3opZYTySYLNJP">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py</param>
+    <param name="old_string">    def test_extracts_from_task_section(self, tmp_path: Path) -&gt; None:
+        """Extract ...[truncated 2292 chars]...ption\n", encoding="utf-8")
+        assert extract_plan_title(plan_file) == "Better Title"</param>
+    <param name="new_string">    def test_extracts_from_task_section(self, tmp_path: Path) -&gt; None:
+        """Extract ...[truncated 2276 chars]...ription\n", encoding="utf-8")
+        assert extract_pr_title(plan_file) == "Better Title"</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="195" cache_read_input_tokens="100903" cache_creation="{'ephemeral_5m_input_tokens': 195, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01RHVferQn9nCN8jn22Jwjp5">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py</param>
+    <param name="old_string">    def test_plan_saved_marker_blocks_with_step2(self) -&gt; None:
+        """Plan-saved mark...[truncated 1168 chars]...session complete" in result.message
+        assert result.delete_plan_saved_marker is True</param>
+    <param name="new_string">    def test_plan_saved_marker_blocks_with_step2(self) -&gt; None:
+        """Plan-saved mark...[truncated 1164 chars]...session complete" in result.message
+        assert result.delete_plan_saved_marker is True</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="195" cache_read_input_tokens="100903" cache_creation="{'ephemeral_5m_input_tokens': 195, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_0188n2VSjo4nKXFELJn4WQZq">
+    <param name="replace_all">True</param>
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py</param>
+    <param name="old_string">            plan_number=None,
+            plan_number=None,</param>
+    <param name="new_string">            pr_number_from_plan_ref=None,
+            pr_number_from_plan_ref=None,</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="195" cache_read_input_tokens="100903" cache_creation="{'ephemeral_5m_input_tokens': 195, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01Q1abwE682AWer3YmJ3HH3W">
+    <param name="replace_all">True</param>
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py</param>
+    <param name="old_string">            plan_title=None,</param>
+    <param name="new_string">            pr_title=None,</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="195" cache_read_input_tokens="100903" cache_creation="{'ephemeral_5m_input_tokens': 195, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01YVB9C3iJXNNFHiR4CH7A45">
+    <param name="replace_all">True</param>
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py</param>
+    <param name="old_string">            plan_title="Add Feature X",</param>
+    <param name="new_string">            pr_title="Add Feature X",</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="195" cache_read_input_tokens="100903" cache_creation="{'ephemeral_5m_input_tokens': 195, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_015VL1TMFwjUVqDjryg8WYSh">
+    <param name="replace_all">True</param>
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py</param>
+    <param name="old_string">            plan_title="My Plan",</param>
+    <param name="new_string">            pr_title="My Plan",</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="195" cache_read_input_tokens="100903" cache_creation="{'ephemeral_5m_input_tokens': 195, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01E42UTSr1A1UJJxX9M9FQs5">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01EGVhJ19pHrvZXGcREMMeQT">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01B1oZU5vXD3opZYTySYLNJP">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01RHVferQn9nCN8jn22Jwjp5">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_0188n2VSjo4nKXFELJn4WQZq">
+&lt;tool_use_error&gt;String to replace not found in file.
+String:             plan_number=None,
+            plan_number=None,&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_result tool="toolu_01Q1abwE682AWer3YmJ3HH3W">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py has been updated. All occurrences of '            plan_title=None,' were successfully replaced with '            pr_title=None,'.
+  </tool_result>
+  <tool_result tool="toolu_01YVB9C3iJXNNFHiR4CH7A45">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py has been updated. All occurrences of '            plan_title="Add Feature X",' were successfully replaced with '            pr_title="Add Feature X",'.
+  </tool_result>
+  <tool_result tool="toolu_015VL1TMFwjUVqDjryg8WYSh">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py has been updated. All occurrences of '            plan_title="My Plan",' were successfully replaced with '            pr_title="My Plan",'.
+  </tool_result>
+  <assistant>Let me fix the plan_number field references manually:</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="4558" cache_read_input_tokens="101098" cache_creation="{'ephemeral_5m_input_tokens': 4558, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01Cs3JbM5kkpC9mBaUp7jYmt">
+    <param name="command">grep -n "plan_number=" /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py | head -20</param>
+    <param name="description">Find plan_number field references</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="4558" cache_read_input_tokens="101098" cache_creation="{'ephemeral_5m_input_tokens': 4558, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Cs3JbM5kkpC9mBaUp7jYmt">
+388:            plan_number=None,
+415:            plan_number=None,
+445:            plan_number=None,
+464:            plan_number=None,
+480:            plan_number=None,
+499:            plan_number=None,
+517:            plan_number=None,
+534:            plan_number=None,
+551:            plan_number=None,
+568:            plan_number=None,
+588:            plan_number=None,
+606:            plan_number=None,
+624:            plan_number=None,
+641:            plan_number=None,
+658:            plan_number=4224,
+682:            plan_number=4224,
+703:            plan_number=None,
+724:            plan_number=None,
+747:            plan_number=None,
+764:            plan_number=None,
+  </tool_result>
+  <tool_use name="Edit" id="toolu_019N4fq76gQtwW7WNVBxrUmF">
+    <param name="replace_all">True</param>
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py</param>
+    <param name="old_string">            plan_number=None,</param>
+    <param name="new_string">            pr_number_from_plan_ref=None,</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="347" cache_read_input_tokens="105656" cache_creation="{'ephemeral_5m_input_tokens': 347, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_0152V7W2d4gmg4qv5QU62mxN">
+    <param name="replace_all">True</param>
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py</param>
+    <param name="old_string">            plan_number=4224,</param>
+    <param name="new_string">            pr_number_from_plan_ref=4224,</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="347" cache_read_input_tokens="105656" cache_creation="{'ephemeral_5m_input_tokens': 347, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019N4fq76gQtwW7WNVBxrUmF">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py has been updated. All occurrences of '            plan_number=None,' were successfully replaced with '            pr_number_from_plan_ref=None,'.
+  </tool_result>
+  <tool_result tool="toolu_0152V7W2d4gmg4qv5QU62mxN">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py has been updated. All occurrences of '            plan_number=4224,' were successfully replaced with '            pr_number_from_plan_ref=4224,'.
+  </tool_result>
+  <assistant>Now fix the LearnResult initialization in test_display.py:</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="621" cache_read_input_tokens="106003" cache_creation="{'ephemeral_5m_input_tokens': 621, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_0119po8bk7fwwQ3vxyLRWEh3">
+    <param name="replace_all">True</param>
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/learn/test_display.py</param>
+    <param name="old_string">    result = LearnResult(
+        plan_id="123",</param>
+    <param name="new_string">    result = LearnResult(
+        pr_id="123",</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="621" cache_read_input_tokens="106003" cache_creation="{'ephemeral_5m_input_tokens': 621, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0119po8bk7fwwQ3vxyLRWEh3">
+The file /home/runner/work/erk/erk/tests/commands/learn/test_display.py has been updated. All occurrences of '    result = LearnResult(
+        plan_id="123",' were successfully replaced with '    result = LearnResult(
+        pr_id="123",'.
+  </tool_result>
+  <assistant>Now I need to check and fix the land_execute calls. Let me check what the actual parameter name is:</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="262" cache_read_input_tokens="106624" cache_creation="{'ephemeral_5m_input_tokens': 262, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01GTXsH73QxaD1hn1AbaLVpL">
+    <param name="command">grep -A10 "^def land_execute" /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/land_execute.py | grep -E "(plan_number|linked_pr_number)"</param>
+    <param name="description">Check parameter names in land_execute</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="262" cache_read_input_tokens="106624" cache_creation="{'ephemeral_5m_input_tokens': 262, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01GTXsH73QxaD1hn1AbaLVpL">
+    linked_pr_number: int | None,
+  </tool_result>
+  <assistant>Good! The parameter is named `linked_pr_number` in the function signature but the tests are calling it with `--pr-number`. Let me check the option name:</assistant>
+  <usage input_tokens="4" cache_creation_input_tokens="282" cache_read_input_tokens="106886" cache_creation="{'ephemeral_5m_input_tokens': 282, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01QiL8zgXSea1Nb9XpGj6Ggo">
+    <param name="command">grep -B5 "linked_pr_number" /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/land_execute.py | grep -A1 "@click.option" | head -10</param>
+    <param name="description">Check the Click option name for linked_pr_number</param>
+  </tool_use>
+  <usage input_tokens="4" cache_creation_input_tokens="282" cache_read_input_tokens="106886" cache_creation="{'ephemeral_5m_input_tokens': 282, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01QiL8zgXSea1Nb9XpGj6Ggo">
+
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01DzLKBZeWme27muE31wd8LC">
+    <param name="command">grep -B2 "linked_pr_number" /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/land_execute.py | grep "pr-number"</param>
+    <param name="description">Check for pr-number option</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="199" cache_read_input_tokens="107168" cache_creation="{'ephemeral_5m_input_tokens': 199, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01DzLKBZeWme27muE31wd8LC">
+
+  </tool_result>
+  <assistant>Let me look at the land_execute source more carefully:</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="238" cache_read_input_tokens="107367" cache_creation="{'ephemeral_5m_input_tokens': 238, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Tk6j6jN7RMaTBXc7mxppAo">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/land_execute.py</param>
+    <param name="offset">55</param>
+    <param name="limit">10</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="238" cache_read_input_tokens="107367" cache_creation="{'ephemeral_5m_input_tokens': 238, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Tk6j6jN7RMaTBXc7mxppAo">
+    55→    help="Linked objective issue number",
+    56→)
+    57→@click.option(
+    58→    "--pr-number",
+    59→    type=int,
+    60→    help="Linked PR number",
+    61→)
+    62→@click.option(
+    63→    "--use-graphite",
+    64→    is_flag=True,
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>I see! There are TWO `--pr-number` options - one on line 28 and another on line 58. The second one maps to `linked_pr_number`. The tests don't need to be changed - they're using the right CLI option. The issue is that the code internally passes `linked_pr_number` to `_execute_land` but uses a different parameter name there. Let me check what parameter name `_execute_land` expects:</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="315" cache_read_input_tokens="107605" cache_creation="{'ephemeral_5m_input_tokens': 315, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_018CXNHuR6TYDW2yYjiJrppe">
+    <param name="command">grep -n "plan_number=" /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/land_execute.py</param>
+    <param name="description">Check for plan_number usage in land_execute.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="315" cache_read_input_tokens="107605" cache_creation="{'ephemeral_5m_input_tokens': 315, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_018CXNHuR6TYDW2yYjiJrppe">
+185:            plan_number=linked_pr_number,
+  </tool_result>
+  <assistant>Excellent! So the source code is correct - it passes `linked_pr_number` as `plan_number` to `_execute_land`. The tests are also correct as they use the CLI option `--pr-number` which maps to the second occurrence. The tests should work as-is for land_execute tests.
+
+Now let me run the tests to verify all my changes work:</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="349" cache_read_input_tokens="107920" cache_creation="{'ephemeral_5m_input_tokens': 349, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_019ord33fy7ifgW7fsV5S1Pf">
+    <param name="command">python -m pytest tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py -xvs 2&gt;&amp;1 | head -100</param>
+    <param name="description">Run exit_plan_mode_hook tests to verify fixes</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="349" cache_read_input_tokens="107920" cache_creation="{'ephemeral_5m_input_tokens': 349, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019ord33fy7ifgW7fsV5S1Pf">
+/usr/bin/python: No module named pytest
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01MS1s479JvTocc8iLqxA59d">
+    <param name="command">uv run pytest tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py -xvs 2&gt;&amp;1 | head -150</param>
+    <param name="description">Run exit_plan_mode_hook tests with uv</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="243" cache_read_input_tokens="108269" cache_creation="{'ephemeral_5m_input_tokens': 243, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01MS1s479JvTocc8iLqxA59d">
+============================= test session starts ==============================
+platform linux -- Python 3.13.12, pytest-9.0.2, pluggy-1.6.0
+rootdir: /home/runner/work/erk/erk
+configfile: pyproject.toml
+plugins: anyio-4.12.1, cov-7.0.0, xdist-3.8.0, asyncio-1.3.0
+asyncio: mode=Mode.AUTO, debug=False, asyncio_default_fixture_loop_scope=function, asyncio_default_test_loop_scope=function
+collected 90 items
+
+tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py .......................................................................F
+
+=================================== FAILURES ===================================
+_______________ TestBuildStep2Message.test_contains_plan_number ________________
+
+self = &lt;tests.unit.cli.commands.exec.scripts.test_exit_plan_mode_hook.TestBuildStep2Message object at 0x7fc470634910&gt;
+
+    def test_contains_plan_number(self) -&gt; None:
+        """Step 2 message includes the plan number."""
+&gt;       message = build_step2_message(plan_number=42, url="")
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: build_step2_message() got an unexpected keyword argument 'plan_number'. Did you mean 'pr_number'?
+
+tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py:987: TypeError
+=========================== short test summary info ============================
+FAILED tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py::TestBuildStep2Message::test_contains_plan_number - TypeError: build_step2_message() got an unexpected keyword argument 'plan_number'. Did you mean 'pr_number'?
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+========================= 1 failed, 71 passed in 1.12s =========================
+  </tool_result>
+  <assistant>Good! I need to fix the build_step2_message test calls too:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="749" cache_read_input_tokens="108512" cache_creation="{'ephemeral_5m_input_tokens': 749, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_012G7XcozanyAYQYm1sibdr3">
+    <param name="replace_all">True</param>
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py</param>
+    <param name="old_string">        message = build_step2_message(plan_number=42, url="")</param>
+    <param name="new_string">        message = build_step2_message(pr_number=42, url="")</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="749" cache_read_input_tokens="108512" cache_creation="{'ephemeral_5m_input_tokens': 749, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012G7XcozanyAYQYm1sibdr3">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py has been updated. All occurrences of '        message = build_step2_message(plan_number=42, url="")' were successfully replaced with '        message = build_step2_message(pr_number=42, url="")'.
+  </tool_result>
+  <assistant>Now run the tests again:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="302" cache_read_input_tokens="109261" cache_creation="{'ephemeral_5m_input_tokens': 302, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_017rkPF8XGkkEXw66Cgc8nV3">
+    <param name="command">uv run pytest tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py -xvs 2&gt;&amp;1 | tail -20</param>
+    <param name="description">Run exit_plan_mode_hook tests again</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="302" cache_read_input_tokens="109261" cache_creation="{'ephemeral_5m_input_tokens': 302, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017rkPF8XGkkEXw66Cgc8nV3">
+============================= test session starts ==============================
+platform linux -- Python 3.13.12, pytest-9.0.2, pluggy-1.6.0
+rootdir: /home/runner/work/erk/erk
+configfile: pyproject.toml
+plugins: anyio-4.12.1, cov-7.0.0, xdist-3.8.0, asyncio-1.3.0
+asyncio: mode=Mode.AUTO, debug=False, asyncio_default_fixture_loop_scope=function, asyncio_default_test_loop_scope=function
+collected 90 items
+
+tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py ..........................................................................................
+
+============================== 90 passed in 1.07s ==============================
+  </tool_result>
+  <assistant>Excellent! Now let's run the learn test:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="447" cache_read_input_tokens="109563" cache_creation="{'ephemeral_5m_input_tokens': 447, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01WqpkXqrxbACHHFfvv1zQVD">
+    <param name="command">uv run pytest tests/commands/learn/test_display.py -xvs 2&gt;&amp;1 | tail -20</param>
+    <param name="description">Run learn display tests</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="447" cache_read_input_tokens="109563" cache_creation="{'ephemeral_5m_input_tokens': 447, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01WqpkXqrxbACHHFfvv1zQVD">
+============================= test session starts ==============================
+platform linux -- Python 3.13.12, pytest-9.0.2, pluggy-1.6.0
+rootdir: /home/runner/work/erk/erk
+configfile: pyproject.toml
+plugins: anyio-4.12.1, cov-7.0.0, xdist-3.8.0, asyncio-1.3.0
+asyncio: mode=Mode.AUTO, debug=False, asyncio_default_fixture_loop_scope=function, asyncio_default_test_loop_scope=function
+collected 11 items
+
+tests/commands/learn/test_display.py ...........
+
+============================== 11 passed in 0.98s ==============================
+  </tool_result>
+  <assistant>Great! Now let's run the land tests:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="318" cache_read_input_tokens="110010" cache_creation="{'ephemeral_5m_input_tokens': 318, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01E5cn2Si4V39KKu2WrK5Cr3">
+    <param name="command">uv run pytest tests/commands/land/test_git_pull.py tests/commands/land/test_learn_skip_rem...[truncated 10 chars]...t_objective_update.py tests/commands/land/test_unresolved_comments.py -xvs 2&gt;&amp;1 | tail -30</param>
+    <param name="description">Run land tests</param>
+    <param name="timeout">120000</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="318" cache_read_input_tokens="110010" cache_creation="{'ephemeral_5m_input_tokens': 318, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01E5cn2Si4V39KKu2WrK5Cr3">
+    return ctx.invoke(self.callback, **ctx.params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.13/site-packages/click/core.py:824: in invoke
+    return callback(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+args = ()
+kwargs = {'branch': 'feature-1', 'down_flag': False, 'force_flag': False, 'is_current_branch': True, ...}
+
+    def new_func(*args: P.args, **kwargs: P.kwargs) -&gt; R:
+&gt;       return f(get_current_context(), *args, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: land_execute() missing 1 required keyword-only argument: 'linked_pr_number'
+
+.venv/lib/python3.13/site-packages/click/decorators.py:34: TypeError
+=============================== warnings summary ===============================
+tests/commands/land/test_git_pull.py::test_land_default_calls_git_pull_in_python
+  /home/runner/work/erk/erk/.venv/lib/python3.13/site-packages/click/core.py:1223: UserWarning: The parameter --pr-number is used more than once. Remove its duplicate as parameters should be unique.
+    parser = self.make_parser(ctx)
+
+tests/commands/land/test_git_pull.py::test_land_default_calls_git_pull_in_python
+  /home/runner/work/erk/erk/.venv/lib/python3.13/site-packages/click/core.py:1216: UserWarning: The parameter --pr-number is used more than once. Remove its duplicate as parameters should be unique.
+    self.parse_args(ctx, args)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/commands/land/test_git_pull.py::test_land_default_calls_git_pull_in_python - TypeError: land_execute() missing 1 required keyword-only argument: 'linked_pr_number'
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+======================== 1 failed, 2 warnings in 1.11s =========================
+  </tool_result>
+  <assistant>Ah! The issue is that there are TWO `--pr-number` options in land_execute.py (lines 27-31 and 57-61), which is causing the warning and the parameter isn't being passed. The test needs to pass `--pr-number` for BOTH parameters. Looking at the source code more carefully:
+
+- Line 27-31: `--pr-number` for `pr_number` (PR to merge)
+- Line 57-61: `--pr-number` for `linked_pr_number` (Linked PR for objective update)
+
+This is a duplicate parameter name which Click doesn't support well. But wait, I was told NOT to modify src/ files. Let me check if the tests need to pass a different value. Let me look at the test invocations more carefully:
+
+Looking at the test, it's calling:
+```
+"--pr-number=123",
+```
+
+But there are two `--pr-number` options in the source. The issue is that both can't be named the same. Let me check if this was already an issue or if something else changed. Let me look at what the tests are actually trying to do - they're testing that objective_number parameter is passed, not the linked_pr_number. Actually, the tests don't need to pass the linked PR number at all for these tests since they're not testing objective update functionality.
+
+Let me check the tests - do they actually need `--pr-number` twice?
+
+Looking at test_objective_update.py, it passes `--objective-number=100` but not a separate linked PR. The tests in the other files don't pass objective numbers. So the duplicate `--pr-number` in the source is a bug, but I was told not to modify src/ files.
+
+Let me re-read the instructions - I need to check if the issue is actually in the source or the tests. Looking at line 58 of land_execute.py from my earlier read:
+
+```python
+@click.option(
+    "--pr-number",
+    type=int,
+    help="Linked PR number",
+)
+```
+
+This should probably be `--linked-pr-number` instead of `--pr-number`. But I'm not allowed to modify src/. However, this IS the cause of the test failure. Let me check if perhaps this was recently changed and the tests just need updating. Let me check git history or comments about this:
+
+Actually, looking at the user's instructions again: "These are test failures from a plan_number/plan_id to pr_number/pr_id rename sweep." So this IS part of the rename sweep - someone renamed plan_number to linked_pr_number but forgot to also rename the Click option from `--plan-number` to `--linked-pr-number`.
+
+Since I can't modify src/, I need to report this issue. But wait - let me check if the option name was actually changed in the source. Let me look at the source more carefully:
+
+From my earlier read at line 58, it says `--pr-number` for the second option. But the first option at line 27-31 also says `--pr-number`. This duplicate is causing the issue.
+
+Actually, wait - let me re-check my read output. Looking back at line 58-61:
+```
+57→@click.option(
+58→    "--pr-number",
+59→    type=int,
+60→    help="Linked PR number",
+61→)
+```
+
+This should have been `--linked-pr-number` to match the parameter name `linked_pr_number`. This is a bug in the source file that was introduced during the rename. But I'm told "DO NOT modify any src/ files. ONLY modify test files."
+
+Hmm, let me think about this differently. Maybe the tests were passing a `--plan-number` option before, and now that needs to be updated. Let me check what option the tests are actually using. They're using `--pr-number=123` which matches the first option. They're NOT passing the second pr-number option at all.
+
+So the tests don't need to change for this - they just call `--pr-number=123` which maps to the first parameter. The issue is that the source file has a duplicate `--pr-number` option which Click complains about. This is a source file bug that I cannot fix per the instructions.
+
+Let me report this as a separate issue and continue with the other tests. Actually, let me see if maybe the source is correct and I misread it. Let me re-read land_execute.py around line 58:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="898" cache_read_input_tokens="110328" cache_creation="{'ephemeral_5m_input_tokens': 898, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01M2iMsNJhwJwdx3Hf7Y6G4F">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/land_execute.py</param>
+    <param name="offset">52</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="898" cache_read_input_tokens="110328" cache_creation="{'ephemeral_5m_input_tokens': 898, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01M2iMsNJhwJwdx3Hf7Y6G4F">
+    52→@click.option(
+    53→    "--objective-number",
+    54→    type=int,
+    55→    help="Linked objective issue number",
+    56→)
+    57→@click.option(
+    58→    "--pr-number",
+    59→    type=int,
+    60→    help="Linked PR number",
+    61→)
+    62→@click.option(
+    63→    "--use-graphite",
+    64→    is_flag=True,
+    65→    help="Use Graphite for merge",
+    66→)
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>Yes, confirmed - there IS a duplicate `--pr-number` option. This is a bug in the source file. However, I'm instructed to ONLY modify test files. Let me check what the parameter was before the rename:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="1374" cache_read_input_tokens="111226" cache_creation="{'ephemeral_5m_input_tokens': 1374, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01SYPoSb3YdkANRwGMf75AjW">
+    <param name="command">git log --all --oneline --grep="plan_number" -20 2&gt;&amp;1 | head -20</param>
+    <param name="description">Check git log for plan_number changes</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="1374" cache_read_input_tokens="111226" cache_creation="{'ephemeral_5m_input_tokens': 1374, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01SYPoSb3YdkANRwGMf75AjW">
+a9298d348 Add plan: Learn: Sweep plan_number/plan_id refs to pr_number/pr_id in land pipeline, implement, and core modules
+cb4da9464 Add plan: Plan: Sweep plan_number/plan_id refs in exec scripts and remaining leaf commands
+bcc0c2d73 Sweep plan_number/plan_id refs to pr_number/pr_id in land pipeline, implement, and core modules (#9178)
+fc9164749 Sweep plan_number/plan_id refs to pr_number/pr_id in land pipeline, implement, and core modules
+055ca084a Add plan: Plan: Sweep plan_number/plan_id refs in land pipeline, implement, and core modules
+82f7c70cf Fix plan ID extraction from result JSON in CI workflows (#9174)
+27a8d08ef Rename "plan" field terminology to "pr" in commands, skills, and docs (#9156)
+8fcecedfd Add plan: Plan: Sweep remaining plan_number/plan_id references in src/
+4d72774e4 Add plan: Learn: Consolidate workflow dispatch inputs: rename plan_number to pr_number and --plan to --pr
+064a2988e Consolidate workflow dispatch inputs: rename plan_number to pr_number and --plan to --pr (#9144)
+70f0d48a0 Optimize Runs Tab Initial Load: Replace 7 Sequential API Calls with Parallel Batch Queries (#9133)
+5b8bb600f Rename JSON output fields in exec scripts: plan → pr (Objective #9109, Phase 2 Node 2.1) (#9120)
+58c6a7f78 Address PR review comments (batch 1/1)
+1f5433fa4 Rename JSON output fields in exec scripts: plan → pr
+34ff359af Rename "plan" terminology to "pr" — Phase 1 (Core Types &amp; Gateway) (#9110)
+963a7574f Add Runs tab to TUI dashboard for displaying workflow runs (#9041)
+aed52e300 Fix: Incremental dispatch now updates plan-header dispatch metadata (#9047)
+4eea8f29a Implement autonomous consolidate-learn-plans workflow for unified learn plan consolidation (#9030)
+c17f25a5f Convert `erk launch` to @no_repo_required with --repo flag (#9019)
+4b7d7a400 Add remote dispatch support to pr dispatch command (#8983)
+  </tool_result>
+  <assistant>Let me check the blame for that line:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="844" cache_read_input_tokens="112600" cache_creation="{'ephemeral_5m_input_tokens': 844, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01DFK4wFD2e8Ex4h9M8AdrA8">
+    <param name="command">git blame /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/land_execute.py | grep -A2 "Linked PR number"</param>
+    <param name="description">Check git blame for the duplicate option</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="844" cache_read_input_tokens="112600" cache_creation="{'ephemeral_5m_input_tokens': 844, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01DFK4wFD2e8Ex4h9M8AdrA8">
+17dfd5e4c3 (Nick Schrock      2026-03-10 07:22:18 -0400  60)     help="Linked PR number",
+36e6f5d541 (Nick Schrock      2026-02-24 11:23:57 -0800  61) )
+52a87b27ac (Nick Schrock      2026-01-19 11:40:38 -0500  62) @click.option(
+  </tool_result>
+  <assistant>Let me check what the option name was before:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="255" cache_read_input_tokens="113444" cache_creation="{'ephemeral_5m_input_tokens': 255, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01D6MS9Fj3zrwyft3jbGxHhp">
+    <param name="command">git show 17dfd5e4c3:src/erk/cli/commands/exec/scripts/land_execute.py | grep -B2 -A2 "Linked PR number"</param>
+    <param name="description">Check the rename commit</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="255" cache_read_input_tokens="113444" cache_creation="{'ephemeral_5m_input_tokens': 255, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01D6MS9Fj3zrwyft3jbGxHhp">
+    "--plan-number",
+    type=int,
+    help="Linked PR number",
+)
+@click.option(
+  </tool_result>
+  <assistant>Ah ha! So the option WAS `--plan-number` before commit 17dfd5e4c3, and it got renamed to `--pr-number`, creating the duplicate. This is definitely a bug in the source file that needs to be fixed. Since I cannot modify src/ files per the instructions, I need to report this issue.
+
+However, let me check if there's a way to work around this in the tests. Actually, since the tests aren't passing the second --pr-number at all, maybe they will work if I just don't pass it. Let me check what parameters are actually required vs optional:
+
+Looking at land_execute.py line 123, `linked_pr_number` is listed as `int | None`, so it's optional. The tests might pass if the option just exists but isn't provided. The error says "missing 1 required keyword-only argument: 'linked_pr_number'" which suggests it's required.
+
+Wait, that doesn't make sense. Let me check the parameter definition more carefully:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="271" cache_read_input_tokens="113699" cache_creation="{'ephemeral_5m_input_tokens': 271, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_017WbgcR9Q9KzXjDSKkf5dUP">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/land_execute.py</param>
+    <param name="offset">113</param>
+    <param name="limit">25</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="271" cache_read_input_tokens="113699" cache_creation="{'ephemeral_5m_input_tokens': 271, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+</session>

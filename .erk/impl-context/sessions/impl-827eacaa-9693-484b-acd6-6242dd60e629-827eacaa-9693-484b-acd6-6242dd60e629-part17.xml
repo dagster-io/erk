@@ -1,0 +1,1432 @@
+<session>
+  <meta source="agent-a7ea5e2" />
+  <meta branch="plnd/O9109-sweep-exec-leaf-cmd-03-10-1757" />
+  <meta model="claude-sonnet-4-5-20250929" />
+  <user>You are performing a systematic rename across multiple Python files. For each file listed below, read the file, then use Edit tool with replace_all where appropriate, or targeted edits for specific renames.
+
+## Rename Mapping
+- `plan_number` (local vars, params, dataclass fields) → `pr_number`
+- `plan_id` (local vars, params) → `pr_id`  
+- `plan_url` → `pr_url`
+- `plan_title` → `pr_title`
+- `exclude_plan_id` → `exclude_pr_id`
+- `_extract_plan_number` (function name) → `_extract_pr_number`
+- `extract_plan_number` (function name, import) → `extract_pr_number`
+
+## CRITICAL EXCEPTIONS - DO NOT RENAME:
+1. erk_shared API kwargs: `plan_id=` when passed as keyword argument to erk_shared functions — only rename the VALUE variable, not the keyword
+2. Do NOT rename `parse_plan_number_from_url` - that's an erk_shared import  
+3. Do NOT rename imports from erk_shared packages
+4. Keep docstring references to "plan" as a concept
+5. For pr/submit_cmd.py and pr/submit_pipeline.py and pr/dispatch_cmd.py and pr/shared.py — these may have been handled by a prior node (3.6.2). Check if they still have plan_number/plan_id references. If they do, rename them. If they don't, skip them.
+6. For pr/metadata_helpers.py — check if still has references. If so, rename them.
+
+## Files to Process:
+
+### PR Commands
+1. `src/erk/cli/commands/pr/checkout_cmd.py` — `plan_number` field, params, local vars throughout
+2. `src/erk/cli/commands/pr/view/operation.py` — `plan_id` dataclass field, local vars
+3. `src/erk/cli/commands/pr/log_cmd.py` — `plan_number` dataclass field, local vars
+4. `src/erk/cli/commands/pr/check_cmd.py` — `plan_number` param, local vars
+5. `src/erk/cli/commands/pr/view/cli.py` — `plan_url` param, header formatting
+6. `src/erk/cli/commands/pr/duplicate_check_cmd.py` — `exclude_plan_id`, `plan_number` vars
+7. `src/erk/cli/commands/pr/submit_cmd.py` — check if still has plan refs, rename if so
+8. `src/erk/cli/commands/pr/close_cmd.py` — `plan_number` local var
+9. `src/erk/cli/commands/pr/rewrite_cmd.py` — `plan_id` local var
+10. `src/erk/cli/commands/pr/dispatch_cmd.py` — check if still has plan refs
+11. `src/erk/cli/commands/pr/shared.py` — check if still has plan refs
+12. `src/erk/cli/commands/pr/submit_pipeline.py` — check if still has plan refs
+13. `src/erk/cli/commands/pr/metadata_helpers.py` — check if still has plan refs
+
+### Branch/WT Commands
+14. `src/erk/cli/commands/branch/checkout_cmd.py` — `plan_number` param, local vars
+15. `src/erk/cli/commands/branch/create_cmd.py` — `plan_number` param, `plan_id` local vars
+16. `src/erk/cli/commands/wt/delete_cmd.py` — `plan_number` local vars
+17. `src/erk/cli/commands/wt/create_cmd.py` — check for plan_number/plan_id
+
+### Other Commands
+18. `src/erk/cli/commands/admin.py` — `plan_number` local var. IMPORTANT: Keep dict keys `"plan_id"` and `"plan_title"` in workflow input dicts as-is (they must match YAML inputs). Only rename LOCAL VARIABLES.
+19. `src/erk/cli/commands/learn/learn_cmd.py` — `plan_id` dataclass field, `_extract_plan_number()` function, many local vars
+20. `src/erk/cli/commands/reconcile_pipeline.py` — `plan_id` local vars
+21. `src/erk/cli/commands/one_shot_remote_dispatch.py` — `plan_number` output
+22. `src/erk/cli/commands/consolidate_learn_plans_dispatch.py` — `plan_number` output
+23. `src/erk/cli/commands/one_shot/cli.py` — docstring examples
+
+For each file:
+1. Read the full file
+2. Identify ALL occurrences of plan_number, plan_id, plan_url, plan_title (excluding exceptions above)
+3. Apply the renames using Edit tool
+4. Report what was changed
+
+IMPORTANT: When a variable named plan_id is passed to an erk_shared function as plan_id=plan_id, you need to rename the VALUE (the second plan_id) to pr_id, making it plan_id=pr_id. The keyword name stays as plan_id=.</user>
+  <assistant>I'll systematically process each file, reading it first to understand the context, then applying the renames while respecting the exceptions.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="7859" cache_read_input_tokens="9380" cache_creation="{'ephemeral_5m_input_tokens': 7859, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_014T8ihxrg5FuCqtKZLEtZQL">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/checkout_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="7859" cache_read_input_tokens="9380" cache_creation="{'ephemeral_5m_input_tokens': 7859, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_018EfbGnduvvZmVHxLrLJ3Fs">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/view/operation.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="7859" cache_read_input_tokens="9380" cache_creation="{'ephemeral_5m_input_tokens': 7859, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01BsaMMfdZMhW4mBu6HnP5Jq">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/log_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="7859" cache_read_input_tokens="9380" cache_creation="{'ephemeral_5m_input_tokens': 7859, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01HmExoMYzLjqLpAC9zfrYFa">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/check_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="7859" cache_read_input_tokens="9380" cache_creation="{'ephemeral_5m_input_tokens': 7859, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01YZUkWJX7AvyEVZ8jXT2eSU">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/view/cli.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="7859" cache_read_input_tokens="9380" cache_creation="{'ephemeral_5m_input_tokens': 7859, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014T8ihxrg5FuCqtKZLEtZQL">
+     1→"""Checkout a pull request or plan into a worktree.
+     2→
+     3→This command fetches PR code (or finds plan branches) and creates a worktree
+     4→for local review/testing.
+     5→
+     6→Routing:
+     7→- Plain number (123) or PR URL → PR checkout
+     8→- P-prefixed (P123) or issue URL → plan checkout (find branches/PRs for plan)
+     9→"""
+    10→
+    11→import click
+    12→from rich.console import Console
+    13→from rich.table import Table
+    14→
+    15→from erk.cli.activation import (
+    16→    activation_config_activate_only,
+    17→    ensure_worktree_activate_script,
+    18→    print_activation_instructions,
+    19→)
+    20→from erk.cli.alias import alias
+    21→from erk.cli.commands.checkout_helpers import (
+    22→    ensure_branch_has_worktree,
+    23→    navigate_and_display_checkout,
+    24→)
+    25→from erk.cli.commands.pr.dispatch_helpers import sync_branch_to_sha
+    26→from erk.cli.ensure import Ensure
+    27→from erk.cli.help_formatter import CommandWithHiddenOptions, script_option
+    28→from erk.core.context import ErkContext
+    29→from erk.core.repo_discovery import NoRepoSentinel, RepoContext
+    30→from erk_shared.gateway.github.parsing import (
+
+... [455 lines omitted] ...
+
+    82→        click.style("Error: ", fg="red")
+   159→        ctx.console.error("Not in a git repository")
+   192→        ctx.console.error(
+   200→        ctx.console.info(f"Warning: PR #{pr_number} is {pr.state}")
+   283→                f"Warning: Rebase had conflicts. Worktree created but needs manual rebase.\n"
+   410→        ctx.console.error(
+  </tool_result>
+  <tool_result tool="toolu_018EfbGnduvvZmVHxLrLJ3Fs">
+     1→"""Core operation for pr view (transport-independent).
+     2→
+     3→Contains the request type and operation function that both the
+     4→human command (pr/view/cli.py) and machine command (pr/view/json_cli.py) share.
+     5→"""
+     6→
+     7→from dataclasses import dataclass
+     8→from datetime import datetime
+     9→from typing import Any
+    10→
+    11→from erk.cli.github_parsing import parse_issue_identifier
+    12→from erk.cli.repo_resolution import get_remote_github
+    13→from erk.core.context import ErkContext
+    14→from erk_shared.agentclick.machine_command import MachineCommandError
+    15→from erk_shared.context.types import NoRepoSentinel
+    16→from erk_shared.gateway.github.issues.types import IssueNotFound
+    17→from erk_shared.gateway.github.metadata.schemas import BRANCH_NAME
+    18→from erk_shared.gateway.github.types import GitHubRepoId
+    19→from erk_shared.plan_store.conversion import github_issue_to_plan
+    20→from erk_shared.plan_store.types import PlanNotFound
+    21→
+    22→
+    23→@dataclass(frozen=True)
+    24→class PrViewRequest:
+    25→    """Request type for pr view."""
+    26→
+    27→    identifier: str | None = None
+    28→    full: bool = False
+    29→
+    30→
+
+... [139 lines omitted] ...
+
+    83→) -&gt; PrViewResult | MachineCommandError:
+    92→        PrViewResult or MachineCommandError
+   101→            return MachineCommandError(
+   102→                error_type="missing_identifier",
+   111→            return MachineCommandError(
+   112→                error_type="missing_identifier",
+   118→            return MachineCommandError(
+   119→                error_type="missing_identifier",
+   133→        return MachineCommandError(
+   134→            error_type="not_found",
+  </tool_result>
+  <tool_result tool="toolu_01BsaMMfdZMhW4mBu6HnP5Jq">
+     1→"""Command to display chronological event log for a plan."""
+     2→
+     3→import json
+     4→from collections.abc import Callable
+     5→from datetime import datetime
+     6→from typing import Literal, TypeAlias, TypedDict
+     7→
+     8→import click
+     9→
+    10→from erk.cli.github_parsing import parse_issue_identifier
+    11→from erk.cli.repo_resolution import get_remote_github, resolved_repo_option
+    12→from erk.core.context import ErkContext
+    13→from erk_shared.gateway.github.issues.types import IssueNotFound
+    14→from erk_shared.gateway.github.metadata.core import parse_metadata_blocks
+    15→from erk_shared.gateway.github.metadata.types import BlockKeys
+    16→from erk_shared.gateway.github.types import GitHubRepoId
+    17→from erk_shared.output.output import user_output
+    18→
+    19→# Event type literals
+    20→EventType: TypeAlias = Literal[
+    21→    "plan-created",
+    22→    "submission-queued",
+    23→    "workflow-started",
+    24→    "implementation-status",
+    25→    "plan-retry",
+    26→    "worktree-created",
+    27→]
+    28→
+    29→
+    30→# Event metadata types
+
+... [418 lines omitted] ...
+
+   146→            user_output(click.style("Error: ", fg="red") + f"PR '{identifier}' not found")
+   161→    except (RuntimeError, ValueError) as e:
+   162→        user_output(click.style("Error: ", fg="red") + str(e))
+   384→    except (ValueError, AttributeError):
+   426→        if status == "failed":
+   427→            return "Implementation failed"
+  </tool_result>
+  <tool_result tool="toolu_01HmExoMYzLjqLpAC9zfrYFa">
+     1→"""Command to validate PR rules or plan format for the current branch."""
+     2→
+     3→from dataclasses import dataclass
+     4→from typing import NamedTuple
+     5→
+     6→import click
+     7→
+     8→from erk.cli.ensure import Ensure
+     9→from erk.cli.github_parsing import parse_issue_identifier
+    10→from erk.cli.repo_resolution import (
+    11→    get_remote_github,
+    12→    repo_option,
+    13→    resolve_owner_repo,
+    14→)
+    15→from erk.core.context import ErkContext
+    16→from erk_shared.context.types import NoRepoSentinel
+    17→from erk_shared.gateway.github.issues.types import IssueNotFound
+    18→from erk_shared.gateway.github.metadata.core import find_metadata_block
+    19→from erk_shared.gateway.github.metadata.plan_header import extract_plan_from_comment
+    20→from erk_shared.gateway.github.metadata.schemas import PlanHeaderSchema
+    21→from erk_shared.gateway.github.metadata.types import BlockKeys
+    22→from erk_shared.gateway.github.pr_footer import (
+    23→    extract_header_from_body,
+    24→    is_header_at_legacy_position,
+    25→)
+    26→from erk_shared.gateway.github.types import PRNotFound
+    27→from erk_shared.gateway.pr.submit import has_checkout_footer_for_pr
+    28→from erk_shared.gateway.remote_github.abc import RemoteGitHub
+    29→from erk_shared.impl_folder import read_plan_ref, resolve_impl_dir
+    30→from erk_shared.output.output import user_output
+
+... [330 lines omitted] ...
+
+    47→    """Validation completed (may have passed or failed checks).
+    52→        failed_count: Number of failed checks
+    57→    failed_count: int
+    61→class PlanValidationError:
+    62→    """Could not complete validation (API error, network issue, etc.)."""
+    64→    error: str
+    67→PlanValidationResult = PlanValidationSuccess | PlanValidationError
+    84→    It does not produce output or raise SystemExit. It never raises exceptions -
+    85→    API failures are returned as PlanValidationError.
+    94→        PlanValidationSuccess if validation completed (may have passed or failed checks)
+    95→        PlanValidationError if unable to complete validation (API error, etc.)
+   101→        return PlanValidationError(error=f"PR #{plan_number} not found")
+   117→        except ValueError as e:
+   118→            error_msg = str(e).split("\n")[0]
+   119→            checks.append((False, f"plan-header validation failed: {error_msg}"))
+   144→    failed_count = sum(1 for passed, _ in checks if not passed)
+   147→        passed=failed_count == 0,
+   149→        failed_count=failed_count,
+   203→                click.style("Error: ", fg="red")
+   229→    if isinstance(result, PlanValidationError):
+   230→        user_output(click.style("Error: ", fg="red") + f"Failed to validate PR: {result.error}")
+   243→        check_word = "checks" if result.failed_count &gt; 1 else "check"
+   246→                f"PR validation failed ({result.failed_count} {check_word} failed)", fg="red"
+   267→            click.style("Error: ", fg="red") + f"No pull request found for branch '{branch}'"
+   347→    failed_count = sum(1 for c in checks if not c.passed)
+   348→    if failed_count == 0:
+   352→        check_word = "check" if failed_count == 1 else "checks"
+   353→        user_output(click.style(f"{failed_count} {check_word} failed", fg="red"))
+  </tool_result>
+  <tool_result tool="toolu_01YZUkWJX7AvyEVZ8jXT2eSU">
+     1→"""Command to fetch and display a single plan.
+     2→
+     3→Human-facing command with Click options and rich terminal output.
+     4→Machine-readable JSON equivalent lives in pr/view/json_cli.py.
+     5→"""
+     6→
+     7→from datetime import datetime
+     8→
+     9→import click
+    10→
+    11→from erk.cli.commands.pr.view.operation import PrViewRequest, PrViewResult, run_pr_view
+    12→from erk.cli.repo_resolution import resolved_repo_option
+    13→from erk.core.context import ErkContext
+    14→from erk_shared.agentclick.machine_command import MachineCommandError
+    15→from erk_shared.core.typing_utils import narrow_to_literal
+    16→from erk_shared.gateway.github.metadata.schemas import (
+    17→    CREATED_BY,
+    18→    CREATED_FROM_SESSION,
+    19→    LAST_DISPATCHED_AT,
+    20→    LAST_DISPATCHED_RUN_ID,
+    21→    LAST_LEARN_SESSION,
+    22→    LAST_LOCAL_IMPL_AT,
+    23→    LAST_LOCAL_IMPL_EVENT,
+    24→    LAST_LOCAL_IMPL_SESSION,
+    25→    LAST_LOCAL_IMPL_USER,
+    26→    LAST_REMOTE_IMPL_AT,
+    27→    LEARN_PLAN_ISSUE,
+    28→    LEARN_PLAN_PR,
+    29→    LEARN_RUN_ID,
+    30→    LEARN_STATUS,
+
+... [241 lines omitted] ...
+
+   258→    if isinstance(result, MachineCommandError):
+   259→        user_output(click.style("Error: ", fg="red") + result.message)
+   260→        if result.error_type == "missing_identifier":
+  </tool_result>
+  <assistant>Let me continue reading more files:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="23246" cache_read_input_tokens="17239" cache_creation="{'ephemeral_5m_input_tokens': 23246, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01JhDKoMo7EKFXgs8AhHPjZx">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/duplicate_check_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="23246" cache_read_input_tokens="17239" cache_creation="{'ephemeral_5m_input_tokens': 23246, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01WjdPDPSCGJkpd4t9iQc5KG">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/submit_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="23246" cache_read_input_tokens="17239" cache_creation="{'ephemeral_5m_input_tokens': 23246, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_011X1XZWxd5QCjse4mJoTGJ2">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/close_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="23246" cache_read_input_tokens="17239" cache_creation="{'ephemeral_5m_input_tokens': 23246, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01KDoxNJy1MrwY9UyNNJZDaX">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/rewrite_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="23246" cache_read_input_tokens="17239" cache_creation="{'ephemeral_5m_input_tokens': 23246, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01CRktXuGKjewQAptHVBxTBC">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/dispatch_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="23246" cache_read_input_tokens="17239" cache_creation="{'ephemeral_5m_input_tokens': 23246, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01JhDKoMo7EKFXgs8AhHPjZx">
+     1→"""Command to check a plan for duplicates and commit-history relevance."""
+     2→
+     3→import sys
+     4→import tempfile
+     5→from pathlib import Path
+     6→
+     7→import click
+     8→
+     9→from erk.cli.ensure import Ensure
+    10→from erk.cli.github_parsing import parse_issue_identifier
+    11→from erk.cli.repo_resolution import get_remote_github, resolved_repo_option
+    12→from erk.core.context import ErkContext
+    13→from erk.core.plan_duplicate_checker import PlanDuplicateChecker
+    14→from erk.core.plan_relevance_checker import PlanRelevanceChecker
+    15→from erk_shared.context.types import NoRepoSentinel
+    16→from erk_shared.gateway.github.issues.types import IssueNotFound
+    17→from erk_shared.gateway.github.types import GitHubRepoId, GitHubRepoLocation
+    18→from erk_shared.output.output import user_output
+    19→
+    20→
+    21→@click.command("duplicate-check")
+    22→@click.option(
+    23→    "--file",
+    24→    "-f",
+    25→    type=click.Path(exists=True, path_type=Path),
+    26→    help="PR file to read",
+    27→)
+    28→@click.option(
+    29→    "--plan",
+    30→    "-p",
+
+... [174 lines omitted] ...
+
+    58→        1: Duplicates found, already implemented, or error
+    78→            user_output(click.style("Error: ", fg="red") + f"PR {plan_number} not found.")
+    86→        except OSError as e:
+    87→            user_output(click.style("Error: ", fg="red") + f"Failed to read file: {e}")
+    92→        except OSError as e:
+    93→            user_output(click.style("Error: ", fg="red") + f"Failed to read stdin: {e}")
+   104→        user_output(click.style("Error: ", fg="red") + "GitHub authentication not available")
+   143→        if dup_result.error is not None:
+   144→            user_output(click.style("Error: ", fg="red") + "Duplicate check failed:")
+   145→            user_output(f"  {dup_result.error}")
+   174→            if rel_result.error is not None:
+   176→                    click.style("Warning: ", fg="yellow")
+   177→                    + f"Relevance check failed: {rel_result.error}"
+  </tool_result>
+  <tool_result tool="toolu_01WjdPDPSCGJkpd4t9iQc5KG">
+     1→"""Submit current branch as a pull request.
+     2→
+     3→Runs a linear pipeline of functions transforming a frozen SubmitState:
+     4→1. Prepare state (resolve repo, branch, parent, issue)
+     5→2. Commit WIP changes
+     6→3. Push and create/find PR (Graphite-first or core path)
+     7→4. Extract diff for AI
+     8→5. Fetch plan context
+     9→6. Generate AI PR description
+    10→7. Enhance with Graphite (if applicable)
+    11→8. Finalize PR metadata
+    12→"""
+    13→
+    14→import sys
+    15→from pathlib import Path
+    16→
+    17→import click
+    18→
+    19→from erk.cli.commands.pr.shared import require_claude_available
+    20→from erk.cli.commands.pr.submit_pipeline import (
+    21→    SubmitError,
+    22→    SubmitState,
+    23→    make_initial_state,
+    24→    run_submit_pipeline,
+    25→)
+    26→from erk.core.context import ErkContext
+    27→
+    28→
+    29→def _make_clickable(url: str) -&gt; str:
+    30→    """Wrap a URL in terminal hyperlink escape sequences."""
+
+... [127 lines omitted] ...
+
+   148→    if isinstance(result, SubmitError):
+   149→        raise click.ClickException(result.message)
+  </tool_result>
+  <tool_result tool="toolu_011X1XZWxd5QCjse4mJoTGJ2">
+     1→"""Command to close a plan."""
+     2→
+     3→import click
+     4→
+     5→from erk.cli.commands.objective_helpers import run_objective_update_after_close
+     6→from erk.cli.github_parsing import parse_issue_identifier
+     7→from erk.cli.repo_resolution import get_remote_github, resolved_repo_option
+     8→from erk.core.context import ErkContext
+     9→from erk_shared.context.types import NoRepoSentinel
+    10→from erk_shared.gateway.github.issues.types import IssueNotFound
+    11→from erk_shared.gateway.github.types import GitHubRepoId
+    12→from erk_shared.output.output import user_output
+    13→from erk_shared.plan_store.types import PlanNotFound
+    14→
+    15→
+    16→@click.command("close")
+    17→@click.argument("identifier", type=str)
+    18→@resolved_repo_option
+    19→@click.pass_obj
+    20→def pr_close(ctx: ErkContext, identifier: str, *, repo_id: GitHubRepoId) -&gt; None:
+    21→    """Close a PR by PR number or GitHub URL.
+    22→
+    23→    Closes all OPEN PRs linked to the issue in addition to closing the issue itself.
+    24→
+    25→    Examples:
+    26→        erk pr close 42
+    27→        erk pr close 42 --repo owner/repo
+    28→    """
+    29→    remote = get_remote_github(ctx)
+    30→
+
+... [47 lines omitted] ...
+
+    36→        raise click.ClickException(f"PR #{number} not found")
+  </tool_result>
+  <tool_result tool="toolu_01KDoxNJy1MrwY9UyNNJZDaX">
+     1→"""Squash, regenerate AI commit message, push, and update remote PR.
+     2→
+     3→Replaces the old multi-step workflow (gt squash → erk pr summarize → push)
+     4→with a single command that handles the full cycle: squash commits, generate
+     5→an AI-powered commit message, amend the local commit, force-push, and update
+     6→the remote PR title/body.
+     7→"""
+     8→
+     9→from pathlib import Path
+    10→
+    11→import click
+    12→
+    13→from erk.cli.commands.pr.shared import (
+    14→    assemble_pr_body,
+    15→    cleanup_diff_file,
+    16→    discover_branch_context,
+    17→    echo_plan_context_status,
+    18→    maybe_advance_lifecycle_to_impl,
+    19→    render_progress,
+    20→    require_claude_available,
+    21→    run_commit_message_generation,
+    22→    run_diff_extraction,
+    23→)
+    24→from erk.cli.repo_resolution import get_remote_github
+    25→from erk.core.command_log import get_or_generate_session_id
+    26→from erk.core.commit_message_generator import CommitMessageGenerator
+    27→from erk.core.context import ErkContext, NoRepoSentinel
+    28→from erk.core.plan_context_provider import PlanContextProvider
+    29→from erk_shared.gateway.branch_manager.types import SubmitBranchError
+    30→from erk_shared.gateway.github.label_ops import add_labels_resilient
+
+... [207 lines omitted] ...
+
+    35→from erk_shared.gateway.gt.types import SquashError
+    83→        raise click.ClickException(
+    96→    if isinstance(squash_result, SquashError):
+    97→        raise click.ClickException(f"Squash failed: {squash_result.message}")
+   110→        raise click.ClickException("Failed to extract diff for AI analysis")
+   120→        raise click.ClickException("Repository has no GitHub remote configured")
+   144→        raise click.ClickException(f"Failed to generate message: {msg_result.error_message}")
+   166→    if isinstance(submit_result, SubmitBranchError):
+   167→        raise click.ClickException(f"Push failed: {submit_result.message}")
+   221→) -&gt; SquashError | None:
+   222→    """Run squash phase. Returns SquashError on failure, None on success."""
+   229→            if isinstance(result, SquashError):
+  </tool_result>
+  <tool_result tool="toolu_01CRktXuGKjewQAptHVBxTBC">
+     1→"""Dispatch plans for remote AI implementation via GitHub Actions."""
+     2→
+     3→import logging
+     4→import tomllib
+     5→from dataclasses import dataclass
+     6→from datetime import UTC, datetime
+     7→from pathlib import Path
+     8→
+     9→import click
+    10→
+    11→from erk.cli.commands.pr.dispatch_helpers import ensure_trunk_synced, sync_branch_to_sha
+    12→from erk.cli.commands.pr.metadata_helpers import write_dispatch_metadata
+    13→from erk.cli.commands.ref_resolution import resolve_dispatch_ref
+    14→from erk.cli.commands.slot.common import is_placeholder_branch
+    15→from erk.cli.constants import (
+    16→    DISPATCH_WORKFLOW_METADATA_NAME,
+    17→    DISPATCH_WORKFLOW_NAME,
+    18→    ERK_PR_TITLE_PREFIX,
+    19→)
+    20→from erk.cli.core import discover_repo_context
+    21→from erk.cli.ensure import Ensure, UserFacingCliError
+    22→from erk.cli.repo_resolution import get_remote_github, repo_option, resolve_owner_repo
+    23→from erk.core.context import ErkContext
+    24→from erk.core.repo_discovery import RepoContext
+    25→from erk_shared.context.types import NoRepoSentinel
+    26→from erk_shared.gateway.git.remote_ops.types import PushError
+    27→from erk_shared.gateway.github.issues.types import IssueNotFound
+    28→from erk_shared.gateway.github.metadata.core import (
+    29→    create_submission_queued_block,
+    30→    render_erk_issue_event,
+
+... [897 lines omitted] ...
+
+   163→        user_output(click.style("Error: ", fg="red") + f"PR #{pr_number} not found")
+   169→            click.style("Error: ", fg="red")
+   178→            click.style("Error: ", fg="red") + f"PR #{pr_number} is {pr_result.state}\n\n"
+   224→        user_output(click.style("Error: ", fg="red") + f"PR #{pr_number}: plan content not found")
+   266→        except Exception:
+   267→            logger.warning("Failed to sync index after plumbing commit", exc_info=True)
+   272→    if isinstance(push_result, PushError):
+   273→        raise UserFacingCliError(push_result.message, error_type="cli_error")
+   319→    except Exception as e:
+   321→            click.style("Warning: ", fg="yellow") + f"Failed to update dispatch metadata: {e}"
+   331→    except Exception as e:
+   332→        logger.warning("Failed to update PR body with workflow run link: %s", e)
+   363→    except Exception as e:
+   365→            click.style("Warning: ", fg="yellow")
+   366→            + f"Failed to post queued comment: {e}\n"
+   407→        user_output(click.style("Error: ", fg="red") + f"PR #{pr_number} not found")
+   412→            click.style("Error: ", fg="red")
+   420→            click.style("Error: ", fg="red") + f"PR #{pr_number} is {issue.state}\n\n"
+   429→            click.style("Error: ", fg="red")
+   480→        user_output(click.style("Error: ", fg="red") + f"PR #{pr_number}: plan content not found")
+   545→    except Exception as e:
+   546→        logger.warning("Failed to update PR body with workflow run link: %s", e)
+   578→    except Exception as e:
+   580→            click.style("Warning: ", fg="yellow")
+   581→            + f"Failed to post queued comment: {e}\n"
+   651→            click.style("Error: ", fg="red") + "PR number(s) required in remote mode.\n\n"
+   744→            click.style("Error: ", fg="red")
+   754→                click.style("Error: ", fg="red")
+   767→                click.style("Error: ", fg="red") + f"Base branch '{base}' does not exist on remote"
+  </tool_result>
+  <assistant>Now let me check the remaining files mentioned in the task:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="21932" cache_read_input_tokens="40485" cache_creation="{'ephemeral_5m_input_tokens': 21932, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_016rCLmSz6fuapXcSyBFz54a">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/shared.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="21932" cache_read_input_tokens="40485" cache_creation="{'ephemeral_5m_input_tokens': 21932, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01H1VVaQfmbj2uU8Y7PBgwxd">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/submit_pipeline.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="21932" cache_read_input_tokens="40485" cache_creation="{'ephemeral_5m_input_tokens': 21932, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01T5evkJo8x7jeYoKQNBGH2D">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/metadata_helpers.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="21932" cache_read_input_tokens="40485" cache_creation="{'ephemeral_5m_input_tokens': 21932, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016rCLmSz6fuapXcSyBFz54a">
+     1→"""Shared utilities for PR commands.
+     2→
+     3→This module contains common functionality used by multiple PR commands
+     4→(rewrite, submit) to avoid code duplication.
+     5→"""
+     6→
+     7→from __future__ import annotations
+     8→
+     9→import queue
+    10→import re
+    11→import threading
+    12→from dataclasses import dataclass
+    13→from pathlib import Path
+    14→
+    15→import click
+    16→
+    17→from erk.core.commit_message_generator import (
+    18→    CommitMessageGenerator,
+    19→    CommitMessageRequest,
+    20→    CommitMessageResult,
+    21→)
+    22→from erk.core.context import ErkContext
+    23→from erk.core.plan_context_provider import PlanContext
+    24→from erk_shared.gateway.github.metadata.core import find_metadata_block, render_metadata_block
+    25→from erk_shared.gateway.github.metadata.schemas import (
+    26→    CREATED_AT,
+    27→    CREATED_BY,
+    28→    LIFECYCLE_STAGE,
+    29→    SCHEMA_VERSION,
+    30→)
+
+... [418 lines omitted] ...
+
+    59→        click.ClickException: If in detached HEAD state
+    63→        raise click.ClickException("Not on a branch (detached HEAD state)")
+   102→        Path to diff file, or None if extraction failed
+   159→    Silently returns on any failure — lifecycle updates must never block submission.
+   171→    except RuntimeError as e:
+   173→            msg = f"   Warning: failed to update lifecycle stage: {e}"
+   237→        except OSError:
+   338→    elif event.style == "warning":
+   340→    elif event.style == "error":
+   347→    """Verify Claude CLI is available, raising ClickException if not.
+   353→        click.ClickException: If Claude CLI is not available
+   356→        raise click.ClickException(
+   393→        CommitMessageResult with the generated title/body or error info
+   439→            error_message="Commit message generation did not complete",
+  </tool_result>
+  <tool_result tool="toolu_01T5evkJo8x7jeYoKQNBGH2D">
+     1→"""Helpers for plan dispatch metadata updates.
+     2→
+     3→This module extracts shared logic for updating plan dispatch metadata
+     4→when triggering remote workflows on branches that follow the P{plan}-pattern.
+     5→"""
+     6→
+     7→from __future__ import annotations
+     8→
+     9→from pathlib import Path
+    10→from typing import TYPE_CHECKING
+    11→
+    12→import click
+    13→
+    14→from erk_shared.output.output import user_output
+    15→from erk_shared.plan_store.backend import PlanBackend
+    16→from erk_shared.plan_store.types import PlanNotFound
+    17→
+    18→if TYPE_CHECKING:
+    19→    from erk.core.context import ErkContext
+    20→    from erk.core.repo_discovery import RepoContext
+    21→    from erk_shared.gateway.github.abc import LocalGitHub
+    22→
+    23→
+    24→def write_dispatch_metadata(
+    25→    *,
+    26→    plan_backend: PlanBackend,
+    27→    github: LocalGitHub,
+    28→    repo_root: Path,
+    29→    plan_number: int,
+    30→    run_id: str,
+
+... [79 lines omitted] ...
+
+    36→        RuntimeError: If plan not found or node_id unavailable.
+    40→        raise RuntimeError(f"Could not get node_id for run {run_id}")
+    46→        raise RuntimeError(f"Plan #{plan_number} not found")
+  </tool_result>
+  <tool_result tool="toolu_01H1VVaQfmbj2uU8Y7PBgwxd">
+     1→"""Linear pipeline for PR submission.
+     2→
+     3→Replaces the dual-path branching orchestration with a sequence of plain
+     4→functions transforming a frozen SubmitState dataclass.
+     5→
+     6→Each step: (ErkContext, SubmitState) -&gt; SubmitState | SubmitError
+     7→"""
+     8→
+     9→import concurrent.futures
+    10→import dataclasses
+    11→import sys
+    12→import uuid
+    13→from collections.abc import Callable
+    14→from dataclasses import dataclass
+    15→from functools import cache
+    16→from pathlib import Path
+    17→
+    18→import click
+    19→
+    20→from erk.cli.commands.pr.shared import (
+    21→    assemble_pr_body,
+    22→    echo_plan_context_status,
+    23→    maybe_advance_lifecycle_to_impl,
+    24→    recover_plan_header,
+    25→    run_commit_message_generation,
+    26→)
+    27→from erk.cli.constants import ERK_PR_LABEL, PLANNED_PR_TITLE_PREFIX
+    28→from erk.cli.ensure import UserFacingCliError
+    29→from erk.cli.repo_resolution import get_remote_github
+    30→from erk.core.commit_message_generator import CommitMessageGenerator
+
+... [1097 lines omitted] ...
+
+    34→from erk_shared.gateway.git.remote_ops.types import PullRebaseError, PushError
+   120→class SubmitError:
+   121→    """Error result from a pipeline step."""
+   124→    error_type: str
+   133→SubmitStep = Callable[[ErkContext, SubmitState], SubmitState | SubmitError]
+   136→def prepare_state(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   149→        return SubmitError(
+   151→            error_type="no_branch",
+   165→        except ValueError as e:
+   166→            return SubmitError(
+   168→                error_type="issue_linkage_mismatch",
+   211→def cleanup_impl_for_submit(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   231→def commit_wip(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   241→def capture_existing_pr_body(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   253→def push_and_create_pr(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   270→def _graphite_first_flow(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   277→    # but the first submit attempt failed before pushing.
+   299→            return SubmitError(
+   301→                error_type="remote_diverged",
+   331→    except RuntimeError as e:
+   332→        error_str = str(e)
+   333→        if "restack" in error_str.lower():
+   334→            return SubmitError(
+   336→                error_type="graphite_restack_required",
+   345→        return SubmitError(
+   347→            error_type="graphite_submit_failed",
+   348→            message=f"Graphite submit failed: {e}",
+   360→        return SubmitError(
+   362→            error_type="pr_not_found",
+   391→def _core_submit_flow(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   399→        return SubmitError(
+   401→            error_type="github_auth_failed",
+   411→        return SubmitError(
+   413→            error_type="no_commits",
+   431→        if isinstance(pull_result, PullRebaseError):
+   432→            return SubmitError(
+   434→                error_type="rebase_failed",
+   436→                    f"Failed to rebase '{state.branch_name}' on origin.\n"
+   437→                    f"Error: {pull_result.message}\n\n"
+   447→        return SubmitError(
+   449→            error_type="branch_diverged",
+   468→    if isinstance(push_result, PushError):
+   470→            return SubmitError(
+   472→                error_type="branch_diverged",
+   481→        raise UserFacingCliError(push_result.message, error_type="cli_error")
+   491→                return SubmitError(
+   493→                    error_type="parent_branch_no_pr",
+   565→def label_code_pr(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   581→def extract_diff(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   587→        return SubmitError(
+   589→            error_type="no_base_branch",
+   617→def fetch_plan_context(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   627→        return SubmitError(
+   629→            error_type="no_repo",
+   648→) -&gt; SubmitState | SubmitError:
+   661→    if isinstance(diff_result, SubmitError):
+   663→    if isinstance(plan_result, SubmitError):
+   675→def generate_description(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   682→        return SubmitError(
+   684→            error_type="no_diff_file",
+   685→            message="Failed to extract diff for AI analysis",
+   706→        return SubmitError(
+   708→            error_type="ai_generation_failed",
+   709→            message=f"Failed to generate message: {msg_result.error_message}",
+   722→def enhance_with_graphite(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   764→    except RuntimeError as e:
+   765→        error_msg = str(e).lower()
+   766→        if "nothing to submit" in error_msg or "no changes" in error_msg:
+   770→        return SubmitError(
+   772→            error_type="graphite_enhance_failed",
+   773→            message=f"Graphite enhancement failed: {e}",
+   790→def finalize_pr(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   797→        return SubmitError(
+   799→            error_type="no_pr_number",
+   872→        except OSError as e:
+   874→                click.echo(click.style(f"   Failed to clean up diff file: {e}", dim=True))
+   902→def link_pr_to_objective_nodes(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   928→                f"   Warning: Objective #{objective_id} not found, skipping node linking",
+   969→            except ValueError:
+  1024→def run_push_and_create_pipeline(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+  1029→        except Exception as e:
+  1031→            return SubmitError(
+  1033→                error_type="unhandled_exception",
+  1034→                message=f"Unexpected error in {step_name}: {e}",
+  1038→        if isinstance(result, SubmitError):
+  1061→def run_submit_pipeline(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+  1062→    """Run the submit pipeline, returning final state or first error."""
+  1066→        except Exception as e:
+  1068→            return SubmitError(
+  1070→                error_type="unhandled_exception",
+  1071→                message=f"Unexpected error in {step_name}: {e}",
+  1075→        if isinstance(result, SubmitError):
+  </tool_result>
+  <assistant>Good! Now I can see that `pr/submit_cmd.py`, `pr/submit_pipeline.py`, `pr/shared.py`, and `pr/metadata_helpers.py` have already been updated in a prior sweep (they use `pr_id`, `pr_number`, etc.). Let me now continue reading the remaining files from the branch and other command areas:</assistant>
+  <usage input_tokens="1403" cache_creation_input_tokens="20948" cache_read_input_tokens="62417" cache_creation="{'ephemeral_5m_input_tokens': 20948, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01ACNPWAmj5SSrAmx3boRsMH">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/branch/checkout_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="1403" cache_creation_input_tokens="20948" cache_read_input_tokens="62417" cache_creation="{'ephemeral_5m_input_tokens': 20948, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01GBMdFGtHja2DuX2NLKfiE4">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/branch/create_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="1403" cache_creation_input_tokens="20948" cache_read_input_tokens="62417" cache_creation="{'ephemeral_5m_input_tokens': 20948, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01V7L5zNKBAFwVebMJFcuqui">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/wt/delete_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="1403" cache_creation_input_tokens="20948" cache_read_input_tokens="62417" cache_creation="{'ephemeral_5m_input_tokens': 20948, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01MtPgAwBrS9rJ6PEWBi76Rv">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/wt/create_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="1403" cache_creation_input_tokens="20948" cache_read_input_tokens="62417" cache_creation="{'ephemeral_5m_input_tokens': 20948, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01AJuEQXuK7RjrEtJHagroB9">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/admin.py</param>
+  </tool_use>
+  <usage input_tokens="1403" cache_creation_input_tokens="20948" cache_read_input_tokens="62417" cache_creation="{'ephemeral_5m_input_tokens': 20948, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01GBMdFGtHja2DuX2NLKfiE4">
+     1→"""Branch create command - create a new branch with optional slot assignment."""
+     2→
+     3→import sys
+     4→
+     5→import click
+     6→
+     7→from erk.cli.activation import (
+     8→    activation_config_activate_only,
+     9→    activation_config_for_implement,
+    10→    print_activation_instructions,
+    11→    render_activation_script,
+    12→    write_worktree_activate_script,
+    13→)
+    14→from erk.cli.commands.navigation_helpers import find_assignment_by_worktree_path
+    15→from erk.cli.commands.slot.common import allocate_slot_for_branch, update_slot_assignment_tip
+    16→from erk.cli.core import discover_repo_context
+    17→from erk.cli.github_parsing import parse_issue_identifier
+    18→from erk.cli.help_formatter import CommandWithHiddenOptions, script_option
+    19→from erk.core.context import ErkContext
+    20→from erk.core.repo_discovery import ensure_erk_metadata_dir
+    21→from erk.core.worktree_pool import load_pool_state
+    22→from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists
+    23→from erk_shared.impl_folder import create_impl_folder, save_plan_ref
+    24→from erk_shared.output.output import user_output
+    25→from erk_shared.plan_store.types import PlanNotFound
+    26→from erk_shared.plan_workflow import (
+    27→    PlanBranchSetup,
+    28→    PlanValidationFailed,
+    29→    prepare_plan_for_worktree,
+    30→)
+
+... [290 lines omitted] ...
+
+   108→            "Error: Cannot specify both BRANCH and --for-plan.\n"
+   114→        user_output("Error: Must provide BRANCH argument or --for-plan option.")
+   118→        user_output("Error: --codespace and --codespace-name cannot be used together.")
+   122→        user_output("Error: --docker and --codespace/--codespace-name cannot be used together.")
+   126→        user_output("Error: --new-slot and --no-slot cannot be used together.")
+   139→            raise click.ClickException(f"PR #{plan_number} not found")
+   143→        if isinstance(result, PlanValidationFailed):
+   144→            user_output(f"Error: {result.message}")
+   150→        for warning in setup.warnings:
+   151→            user_output(click.style("Warning: ", fg="yellow") + warning)
+   160→        user_output("Error: Could not detect trunk branch.")
+   183→                f"Error: Branch '{branch_name}' already exists.\n"
+   197→            user_output(f"Error: {result.message}")
+  </tool_result>
+  <tool_result tool="toolu_01V7L5zNKBAFwVebMJFcuqui">
+     1→import shutil
+     2→import subprocess
+     3→from pathlib import Path
+     4→
+     5→import click
+     6→
+     7→from erk.cli.commands.completions import complete_worktree_names
+     8→from erk.cli.commands.navigation_helpers import (
+     9→    check_pending_learn_marker,
+    10→    find_assignment_by_worktree_path,
+    11→)
+    12→from erk.cli.commands.slot.unassign_cmd import execute_unassign
+    13→from erk.cli.core import (
+    14→    discover_repo_context,
+    15→    validate_worktree_name_for_deletion,
+    16→    worktree_path_for,
+    17→)
+    18→from erk.cli.ensure import Ensure
+    19→from erk.core.context import ErkContext, create_context, regenerate_context
+    20→from erk.core.repo_discovery import RepoContext, ensure_erk_metadata_dir
+    21→from erk.core.worktree_pool import load_pool_state
+    22→from erk.core.worktree_utils import (
+    23→    find_worktree_containing_path,
+    24→    get_worktree_branch,
+    25→)
+    26→from erk_shared.gateway.git.abc import Git
+    27→from erk_shared.gateway.github.metadata.schemas import WORKTREE_NAME
+    28→from erk_shared.gateway.github.types import PRNotFound
+    29→from erk_shared.output.output import user_output
+    30→from erk_shared.plan_store.conversion import header_str
+
+... [533 lines omitted] ...
+
+   155→    except RuntimeError:
+   161→    """Prune worktree metadata, ignoring errors if nothing to prune.
+   166→    and failure doesn't affect the primary operation, we allow silent failure.
+   170→    except Exception:
+   223→            f"Warning: Worktree {name} is in detached HEAD state. Cannot delete branch.",
+   318→    This function encapsulates the legitimate error boundary for shutil.rmtree
+   361→    except OSError:
+   370→def _delete_branch_at_error_boundary(
+   375→    This function encapsulates a legitimate error boundary because:
+   379→    4. This is a CLI error boundary - appropriate place per AGENTS.md
+   381→    The exception handling distinguishes between user-declined (expected) and
+   382→    actual errors (propagated as SystemExit).
+   384→    Note: run_subprocess_with_context catches CalledProcessError and re-raises
+   385→    as RuntimeError with the original exception in __cause__.
+   394→    except RuntimeError as e:
+   395→        _handle_branch_deletion_error(e, branch, force)
+   398→def _handle_branch_deletion_error(e: RuntimeError, branch: str, force: bool) -&gt; None:
+   399→    """Handle errors from branch deletion commands.
+   401→    This function encapsulates the error boundary logic for branch deletion.
+   403→    prompt, which is expected behavior. Other errors are propagated as SystemExit.
+   406→        e: RuntimeError from run_subprocess_with_context, with the original
+   407→           CalledProcessError accessible via e.__cause__
+   408→        branch: Name of the branch that failed to delete
+   413→    # Extract returncode from the original CalledProcessError in __cause__
+   415→    if isinstance(e.__cause__, subprocess.CalledProcessError):
+   419→        # User declined - this is expected behavior, not an error
+   422→        # Other error (branch doesn't exist, git failure, etc.)
+   423→        # The RuntimeError message already contains stderr from run_subprocess_with_context
+   425→            click.style("Error: ", fg="red") + f"Failed to delete branch {branch_text}: {e}"
+   504→        _delete_branch_at_error_boundary(
+  </tool_result>
+  <tool_result tool="toolu_01AJuEQXuK7RjrEtJHagroB9">
+     1→"""Admin commands for repository configuration."""
+     2→
+     3→import os
+     4→import subprocess
+     5→from dataclasses import dataclass
+     6→from typing import Literal
+     7→
+     8→import click
+     9→
+    10→from erk.cli.core import discover_repo_context
+    11→from erk.cli.ensure import Ensure, UserFacingCliError
+    12→from erk.core.context import ErkContext
+    13→from erk_shared.gateway.git.remote_ops.types import PushError
+    14→from erk_shared.gateway.github.types import GitHubRepoLocation
+    15→from erk_shared.output.output import user_output
+    16→
+    17→CLAUDE_CI_WORKFLOWS = (
+    18→    "code-reviews",
+    19→    "autofix",
+    20→    "learn",
+    21→    "one-shot",
+    22→    "plan-implement",
+    23→    "pr-address",
+    24→    "pr-rebase",
+    25→)
+    26→
+    27→
+    28→@dataclass(frozen=True)
+    29→class _SecretConfig:
+    30→    github_secret_name: str
+
+... [543 lines omitted] ...
+
+   123→        except RuntimeError as e:
+   124→            raise UserFacingCliError(str(e), error_type="cli_error") from e
+   137→        except RuntimeError as e:
+   138→            raise UserFacingCliError(str(e), error_type="cli_error") from e
+   151→        except RuntimeError as e:
+   152→            raise UserFacingCliError(str(e), error_type="cli_error") from e
+   176→        gh_status = click.style("Error", fg="red")
+   293→        except RuntimeError as e:
+   294→            raise UserFacingCliError(str(e), error_type="cli_error") from e
+   303→        except RuntimeError as e:
+   304→            raise UserFacingCliError(str(e), error_type="cli_error") from e
+   371→        except RuntimeError as e:
+   372→            raise UserFacingCliError(str(e), error_type="cli_error") from e
+   381→        except RuntimeError as e:
+   382→            raise UserFacingCliError(str(e), error_type="cli_error") from e
+   455→    if isinstance(push_result, PushError):
+   456→        raise UserFacingCliError(push_result.message, error_type="cli_error")
+   486→    if isinstance(push_result, PushError):
+   487→        raise UserFacingCliError(push_result.message, error_type="cli_error")
+   499→    if isinstance(push_result, PushError):
+   500→        raise UserFacingCliError(push_result.message, error_type="cli_error")
+  </tool_result>
+  <tool_result tool="toolu_01ACNPWAmj5SSrAmx3boRsMH">
+     1→"""Checkout command - find and switch to a worktree by branch name."""
+     2→
+     3→import contextlib
+     4→import sys
+     5→from pathlib import Path
+     6→
+     7→import click
+     8→
+     9→from erk.cli.activation import (
+    10→    activation_config_activate_only,
+    11→    ensure_worktree_activate_script,
+    12→    print_activation_instructions,
+    13→    render_activation_script,
+    14→)
+    15→from erk.cli.alias import alias
+    16→from erk.cli.commands.checkout_helpers import (
+    17→    display_sync_status,
+    18→    navigate_to_worktree,
+    19→    script_error_handler,
+    20→)
+    21→from erk.cli.commands.completions import complete_branch_names
+    22→from erk.cli.commands.pr.dispatch_helpers import sync_branch_to_sha
+    23→from erk.cli.commands.slot.common import (
+    24→    allocate_slot_for_branch,
+    25→    update_slot_assignment_tip,
+    26→)
+    27→from erk.cli.commands.wt.create_cmd import ensure_worktree_for_branch
+    28→from erk.cli.core import discover_repo_context
+    29→from erk.cli.github_parsing import parse_issue_identifier
+    30→from erk.cli.graphite import find_worktrees_containing_branch
+
+... [846 lines omitted] ...
+
+    42→    PlanValidationFailed,
+   438→                f"Warning: Rebase had conflicts. Worktree created but needs manual rebase.\n"
+   494→    handler = script_error_handler(ctx) if script else contextlib.nullcontext()
+   517→    """Implementation body for branch_checkout — separated for error wrapping."""
+   521→            "Error: Cannot specify both BRANCH and --for-plan.\n"
+   527→        user_output("Error: Must provide BRANCH argument or --for-plan option.")
+   531→        user_output("Error: --new-slot and --no-slot cannot be used together.")
+   549→            raise click.ClickException(f"PR #{plan_number} not found")
+   553→        if isinstance(plan_result, PlanValidationFailed):
+   554→            user_output(f"Error: {plan_result.message}")
+   560→        for warning in setup.warnings:
+   561→            user_output(click.style("Warning: ", fg="yellow") + warning)
+   570→            user_output("Error: Could not detect trunk branch.")
+   621→                        f'Error: Cannot create worktree for trunk branch "{trunk_branch}".\n'
+   644→                                f"Error: Branch '{branch}' does not exist.\n"
+   774→            raise click.ClickException(
+   814→            raise click.ClickException(
+   858→                f"Error: Internal state mismatch. Branch '{branch}' was allocated "
+  </tool_result>
+  <tool_result tool="toolu_01MtPgAwBrS9rJ6PEWBi76Rv">
+     1→import json
+     2→import shlex
+     3→import subprocess
+     4→from collections.abc import Iterable
+     5→from pathlib import Path
+     6→
+     7→import click
+     8→
+     9→from erk.cli.activation import (
+    10→    activation_config_activate_only,
+    11→    print_activation_instructions,
+    12→    write_worktree_activate_script,
+    13→)
+    14→from erk.cli.config import LoadedConfig
+    15→from erk.cli.core import discover_repo_context, worktree_path_for
+    16→from erk.cli.ensure import Ensure, UserFacingCliError
+    17→from erk.cli.github_parsing import parse_issue_identifier
+    18→from erk.cli.help_formatter import CommandWithHiddenOptions, script_option
+    19→from erk.cli.shell_utils import render_navigation_script
+    20→from erk.cli.subprocess_utils import run_with_error_reporting
+    21→from erk.core.context import ErkContext
+    22→from erk.core.repo_discovery import RepoContext, ensure_erk_metadata_dir
+    23→from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists
+    24→from erk_shared.impl_folder import (
+    25→    create_impl_folder,
+    26→    get_impl_dir,
+    27→    get_impl_path,
+    28→    resolve_impl_dir,
+    29→    save_plan_ref,
+    30→)
+
+... [1029 lines omitted] ...
+
+    43→    PlanValidationFailed,
+   151→        except subprocess.CalledProcessError as e:
+   152→            raise UserFacingCliError(
+   153→                f"Failed to create local tracking branch from {remote_ref}\n"
+   159→                error_type="cli_error",
+   193→                        raise UserFacingCliError(
+   201→                            error_type="cli_error",
+   203→                    # Different branch: existing error handling
+   204→                    raise UserFacingCliError(
+   211→                        error_type="cli_error",
+   216→        raise UserFacingCliError(
+   219→            error_type="cli_error",
+   282→        # Pre-flight check: error if existing branch is not Graphite-tracked
+   291→            except Exception as e:
+   292→                # Remote unavailable or other error - proceed with warning
+   294→                    click.style("Warning: ", fg="yellow")
+   312→                raise ValueError("Cannot create graphite branch from detached HEAD")
+   325→            run_with_error_reporting(
+   328→                error_prefix=f"Failed to create Graphite branch '{branch}'",
+   540→    the 'origin' remote. If a conflict is detected, the command fails with an error.
+   626→        # Parse plan number from URL or plain number - raises click.ClickException if invalid
+   677→                click.style("Error: ", fg="red")
+   678→                + f"Failed to fetch plan #{plan_number_parsed}\n"
+   692→        if isinstance(result, PlanValidationFailed):
+   693→            user_output(click.style("Error: ", fg="red") + result.message)
+   697→        for warning in setup.warnings:
+   698→            user_output(click.style("Warning: ", fg="yellow") + warning)
+   703→            user_output(f"Error: {create_result.message}")
+  1045→        run_with_error_reporting(
+  1048→            error_prefix="Post-create command failed",
+  1050→                "The worktree was created successfully, but a post-create command failed",
+  </tool_result>
+  <assistant>Now I have all the necessary information. Let me start applying the renames. Based on my analysis:
+
+1. **checkout_cmd.py** - Has `plan_number` in function params
+2. **view/operation.py** - Has `plan_id` field
+3. **log_cmd.py** - Has `plan_number` field  
+4. **check_cmd.py** - Has `plan_number` param
+5. **view/cli.py** - Has `plan_url` param
+6. **duplicate_check_cmd.py** - Has `exclude_plan_id` and `plan_number` vars
+7. **close_cmd.py** - Has `plan_number` local var
+8. **rewrite_cmd.py** - Has `plan_id` local var
+9. **branch/checkout_cmd.py** - Has `plan_number` param
+10. **branch/create_cmd.py** - Has `plan_number` param and `plan_id` local vars
+11. **wt/delete_cmd.py** - Has `plan_number` local vars
+12. **wt/create_cmd.py** - Has `plan_number` parsed var
+13. **admin.py** - Has `plan_number` and dict keys `"plan_id"` and `"plan_title"` (but dict keys must stay as-is per instructions)
+
+Let me check the remaining files from my list that I haven't read yet:</assistant>
+  <usage input_tokens="7717" cache_creation_input_tokens="40667" cache_read_input_tokens="83365" cache_creation="{'ephemeral_5m_input_tokens': 40667, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01XJouJDdVjHdS3yUdq5ENfp">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/learn/learn_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="7717" cache_creation_input_tokens="40667" cache_read_input_tokens="83365" cache_creation="{'ephemeral_5m_input_tokens': 40667, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01T1DYt9m2zr1ksLD4Un89PH">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/reconcile_pipeline.py</param>
+  </tool_use>
+  <usage input_tokens="7717" cache_creation_input_tokens="40667" cache_read_input_tokens="83365" cache_creation="{'ephemeral_5m_input_tokens': 40667, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01E5uVwdYgvujDUggmxRWJer">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/one_shot_remote_dispatch.py</param>
+  </tool_use>
+  <usage input_tokens="7717" cache_creation_input_tokens="40667" cache_read_input_tokens="83365" cache_creation="{'ephemeral_5m_input_tokens': 40667, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_013tGeKKJgWBoYuCtRVnhRZ4">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/consolidate_learn_plans_dispatch.py</param>
+  </tool_use>
+  <usage input_tokens="7717" cache_creation_input_tokens="40667" cache_read_input_tokens="83365" cache_creation="{'ephemeral_5m_input_tokens': 40667, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01L6LnjYpPCKKQ4YC8tKEaGC">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/one_shot/cli.py</param>
+  </tool_use>
+  <usage input_tokens="7717" cache_creation_input_tokens="40667" cache_read_input_tokens="83365" cache_creation="{'ephemeral_5m_input_tokens': 40667, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01XJouJDdVjHdS3yUdq5ENfp">
+     1→"""Learn command for extracting insights from plan implementations.
+     2→
+     3→This command discovers all Claude Code sessions associated with a plan
+     4→and optionally launches Claude with the /erk:learn skill.
+     5→
+     6→Note: Session data retrieval and tracking are handled by separate exec scripts:
+     7→- `erk exec get-learn-sessions` - Returns JSON with session data
+     8→- `erk exec track-learn-evaluation` - Posts tracking comment to plan
+     9→"""
+    10→
+    11→from dataclasses import dataclass
+    12→from pathlib import Path
+    13→
+    14→import click
+    15→
+    16→from erk.cli.core import discover_repo_context
+    17→from erk.core.context import ErkContext
+    18→from erk_shared.output.output import user_confirm, user_output
+    19→from erk_shared.plan_store.types import PlanNotFound
+    20→from erk_shared.sessions.discovery import (
+    21→    find_local_sessions_for_project,
+    22→    get_readable_sessions,
+    23→)
+    24→
+    25→
+    26→@dataclass(frozen=True)
+    27→class LearnResult:
+    28→    """Result of learn command."""
+    29→
+    30→    plan_id: str
+
+... [286 lines omitted] ...
+
+   113→            user_output(click.style(f"Error: Invalid plan identifier: {plan}", fg="red"))
+   121→            click.style("Error: ", fg="red")
+  </tool_result>
+  <tool_result tool="toolu_01T1DYt9m2zr1ksLD4Un89PH">
+     1→"""Detection and processing pipeline for reconciling merged branches.
+     2→
+     3→Detects branches whose remote tracking refs have been pruned (gone=True)
+     4→and whose PRs are in MERGED state. For each, runs post-merge lifecycle
+     5→operations: learn PR creation, objective update, and branch/worktree cleanup.
+     6→"""
+     7→
+     8→from __future__ import annotations
+     9→
+    10→import logging
+    11→from dataclasses import dataclass
+    12→from pathlib import Path
+    13→
+    14→import click
+    15→
+    16→from erk.cli.commands.land_cmd import _ensure_branch_not_checked_out
+    17→from erk.cli.commands.land_learn import _create_learn_pr_for_merged_branch
+    18→from erk.cli.commands.objective_helpers import (
+    19→    get_objective_for_branch,
+    20→    run_objective_update_after_land,
+    21→)
+    22→from erk.cli.commands.slot.common import find_branch_assignment
+    23→from erk.cli.commands.slot.unassign_cmd import execute_unassign
+    24→from erk.cli.commands.wt.delete_cmd import _prune_worktrees_safe
+    25→from erk.core.context import ErkContext
+    26→from erk.core.worktree_pool import load_pool_state
+    27→from erk_shared.context.types import RepoContext
+    28→from erk_shared.gateway.github.types import PRNotFound
+    29→from erk_shared.output.output import user_output
+    30→
+
+... [222 lines omitted] ...
+
+    54→    error: str | None  # None = success
+   137→    Each step is fail-open: errors on one step don't prevent the next.
+   154→    error: str | None = None
+   162→            error=None,
+   176→        except Exception as exc:
+   178→                click.style("Warning: ", fg="yellow") + f"Learn PR failed for {info.branch}: {exc}"
+   192→        except Exception as exc:
+   194→                click.style("Warning: ", fg="yellow")
+   195→                + f"Objective update failed for {info.branch}: {exc}"
+   202→    except Exception as exc:
+   203→        error = f"Cleanup failed for {info.branch}: {exc}"
+   204→        user_output(click.style("Warning: ", fg="yellow") + error)
+   211→        error=error,
+  </tool_result>
+  <tool_result tool="toolu_01E5uVwdYgvujDUggmxRWJer">
+     1→"""Dispatch logic for one-shot execution via RemoteGitHub REST API.
+     2→
+     3→Uses RemoteGitHub gateway to create branches, commit files, create PRs,
+     4→and dispatch workflows entirely via the GitHub REST API. This is the
+     5→canonical dispatch path for all one-shot commands.
+     6→"""
+     7→
+     8→import time
+     9→from dataclasses import dataclass
+    10→from datetime import UTC
+    11→from typing import Any
+    12→
+    13→import click
+    14→
+    15→from erk.core.branch_slug_generator import generate_branch_slug
+    16→from erk_shared.core.prompt_executor import PromptExecutor
+    17→from erk_shared.gateway.github.metadata.core import (
+    18→    create_submission_queued_block,
+    19→    render_erk_issue_event,
+    20→)
+    21→from erk_shared.gateway.github.metadata.plan_header import format_plan_header_body
+    22→from erk_shared.gateway.github.parsing import construct_workflow_run_url
+    23→from erk_shared.gateway.github.pr_footer import build_pr_body_footer
+    24→from erk_shared.gateway.http.abc import HttpError
+    25→from erk_shared.gateway.remote_github.abc import RemoteGitHub
+    26→from erk_shared.gateway.time.abc import Time
+    27→from erk_shared.naming import (
+    28→    format_branch_timestamp_suffix,
+    29→    generate_planned_pr_branch_name,
+    30→    sanitize_worktree_name,
+
+... [460 lines omitted] ...
+
+   458→        except HttpError as e:
+   460→                click.style("Warning: ", fg="yellow") + f"Failed to post queued comment: {e}"
+   465→    except Exception as exc:
+   466→        user_output(click.style(f"Failed during: {current_step}", fg="red"))
+  </tool_result>
+  <tool_result tool="toolu_013tGeKKJgWBoYuCtRVnhRZ4">
+     1→"""Dispatch logic for consolidate-learn-plans workflow via RemoteGitHub REST API.
+     2→
+     3→Creates a branch, draft PR, and dispatches the consolidate-learn-plans workflow
+     4→entirely via the GitHub REST API. Follows the one-shot dispatch pattern.
+     5→"""
+     6→
+     7→import time
+     8→from dataclasses import dataclass
+     9→from datetime import UTC
+    10→
+    11→import click
+    12→
+    13→from erk_shared.gateway.github.metadata.core import (
+    14→    create_submission_queued_block,
+    15→    render_erk_issue_event,
+    16→)
+    17→from erk_shared.gateway.github.metadata.plan_header import format_plan_header_body
+    18→from erk_shared.gateway.github.parsing import construct_workflow_run_url
+    19→from erk_shared.gateway.github.pr_footer import build_pr_body_footer
+    20→from erk_shared.gateway.http.abc import HttpError
+    21→from erk_shared.gateway.remote_github.abc import RemoteGitHub
+    22→from erk_shared.gateway.time.abc import Time
+    23→from erk_shared.naming import format_branch_timestamp_suffix
+    24→from erk_shared.output.output import format_duration, user_output
+    25→from erk_shared.plan_store.planned_pr_lifecycle import build_plan_stage_body
+    26→
+    27→CONSOLIDATE_LEARN_PLANS_WORKFLOW = "consolidate-learn-plans.yml"
+    28→
+    29→BRANCH_PREFIX = "consolidate-learn-plans"
+    30→
+
+... [249 lines omitted] ...
+
+   249→        except HttpError as e:
+   251→                click.style("Warning: ", fg="yellow") + f"Failed to post queued comment: {e}"
+   256→    except Exception:
+   257→        user_output(click.style(f"Failed during: {current_step}", fg="red"))
+  </tool_result>
+  <tool_result tool="toolu_01L6LnjYpPCKKQ4YC8tKEaGC">
+     1→"""Command to dispatch a task for fully autonomous remote execution.
+     2→
+     3→Human-facing command with Click options and rich output.
+     4→Machine-readable JSON equivalent lives in one_shot/json_cli.py.
+     5→
+     6→Usage:
+     7→    erk one-shot "fix the import in config.py"
+     8→    erk one-shot --file prompt.md
+     9→    erk one-shot "add type hints to utils.py" --model opus
+    10→    erk one-shot "fix the typo in README.md" --dry-run
+    11→    erk one-shot "rename issue_number to plan_number in impl_init.py" --plan-only
+    12→    erk one-shot "fix config bug" --repo owner/repo
+    13→"""
+    14→
+    15→from pathlib import Path
+    16→
+    17→import click
+    18→
+    19→from erk.cli.commands.one_shot.operation import OneShotRequest, run_one_shot
+    20→from erk.cli.ensure import Ensure
+    21→from erk.core.context import ErkContext
+    22→from erk_shared.agentclick.machine_command import MachineCommandError
+    23→from erk_shared.output.output import user_output
+    24→
+    25→
+    26→@click.command("one-shot")
+    27→@click.argument("prompt", required=False, default=None)
+    28→@click.option(
+    29→    "-f",
+    30→    "--file",
+
+... [124 lines omitted] ...
+
+   127→            click.style("Error: ", fg="red") + "--repo and --ref-current are mutually exclusive"
+   144→    if isinstance(result, MachineCommandError):
+   145→        user_output(click.style(f"Error: {result.message}", fg="red"))
+  </tool_result>
+  <assistant>Perfect! Now I have all the information I need. Let me now systematically apply the renames to all the files. I'll start with the PR command files, then move to branch/wt commands, then the other commands.
+
+Let me start renaming:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="27877" cache_read_input_tokens="124032" cache_creation="{'ephemeral_5m_input_tokens': 27877, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_013NBLxxBKJJZ5fg2wr6WEBz">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/checkout_cmd.py</param>
+    <param name="old_string">def _checkout_plan(
+    ctx: ErkContext,
+    repo: RepoContext,
+    *,
+    plan_number: int,
+    no_slot: bool,
+    force: bool,
+    script: bool,
+) -&gt; None:</param>
+    <param name="new_string">def _checkout_plan(
+    ctx: ErkContext,
+    repo: RepoContext,
+    *,
+    pr_number: int,
+    no_slot: bool,
+    force: bool,
+    script: bool,
+) -&gt; None:</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="27877" cache_read_input_tokens="124032" cache_creation="{'ephemeral_5m_input_tokens': 27877, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013NBLxxBKJJZ5fg2wr6WEBz">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/pr/checkout_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_019VzkJvXG1wGBRGcmKq4erq">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/checkout_cmd.py</param>
+    <param name="old_string">    # Retrieve plan metadata from GitHub using plan_store
+    result = ctx.plan_store.get_plan(repo.root, str(plan_number))</param>
+    <param name="new_string">    # Retrieve plan metadata from GitHub using plan_store
+    result = ctx.plan_store.get_plan(repo.root, str(pr_number))</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="61299" cache_read_input_tokens="10119" cache_creation="{'ephemeral_5m_input_tokens': 61299, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019VzkJvXG1wGBRGcmKq4erq">
+&lt;tool_use_error&gt;File has not been read yet. Read it first before writing to it.&lt;/tool_use_error&gt;
+  </tool_result>
+  <assistant>Let me read the file again:</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="338" cache_read_input_tokens="71418" cache_creation="{'ephemeral_5m_input_tokens': 338, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01PQfh1jY4WRxbUhmi2CWXZR">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/checkout_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="338" cache_read_input_tokens="71418" cache_creation="{'ephemeral_5m_input_tokens': 338, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01PQfh1jY4WRxbUhmi2CWXZR">
+     1→"""Checkout a pull request or plan into a worktree.
+     2→
+     3→This command fetches PR code (or finds plan branches) and creates a worktree
+     4→for local review/testing.
+     5→
+     6→Routing:
+     7→- Plain number (123) or PR URL → PR checkout
+     8→- P-prefixed (P123) or issue URL → plan checkout (find branches/PRs for plan)
+     9→"""
+    10→
+    11→import click
+    12→from rich.console import Console
+    13→from rich.table import Table
+    14→
+    15→from erk.cli.activation import (
+    16→    activation_config_activate_only,
+    17→    ensure_worktree_activate_script,
+    18→    print_activation_instructions,
+    19→)
+    20→from erk.cli.alias import alias
+    21→from erk.cli.commands.checkout_helpers import (
+    22→    ensure_branch_has_worktree,
+    23→    navigate_and_display_checkout,
+    24→)
+    25→from erk.cli.commands.pr.dispatch_helpers import sync_branch_to_sha
+    26→from erk.cli.ensure import Ensure
+    27→from erk.cli.help_formatter import CommandWithHiddenOptions, script_option
+    28→from erk.core.context import ErkContext
+    29→from erk.core.repo_discovery import NoRepoSentinel, RepoContext
+    30→from erk_shared.gateway.github.parsing import (
+
+... [455 lines omitted] ...
+
+    82→        click.style("Error: ", fg="red")
+   159→        ctx.console.error("Not in a git repository")
+   192→        ctx.console.error(
+   200→        ctx.console.info(f"Warning: PR #{pr_number} is {pr.state}")
+   283→                f"Warning: Rebase had conflicts. Worktree created but needs manual rebase.\n"
+   410→        ctx.console.error(
+  </tool_result>
+  <assistant>Now I can continue with the edits for this file:</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="6914" cache_read_input_tokens="71756" cache_creation="{'ephemeral_5m_input_tokens': 6914, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>

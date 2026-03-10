@@ -1,0 +1,446 @@
+<session>
+  <meta branch="plnd/O9109-sweep-exec-leaf-cmd-03-10-1757" />
+  <meta model="claude-opus-4-6" />
+  <tool_result tool="toolu_01BbYwKJ8M3HYhQ9Q8557h7n">
+     1→"""Shared utilities for run commands."""
+     2→
+     3→import re
+     4→
+     5→
+     6→def extract_pr_number(display_title: str | None) -&gt; int | None:
+     7→    """Extract PR number from display_title containing '#NNN'.
+     8→
+     9→    Handles:
+    10→    - "pr-address:#456:abc123" → 456
+    11→    - "8559:#460:abc123" → 460
+    12→    - "one-shot:#458:abc123" → 458
+    13→    - "rebase:#456:abc123" → 456
+    14→    - "8559:abc123" (old format, no #) → None
+    15→    - "Some title [abc123]" (legacy) → None
+    16→    - None or empty → None
+    17→    """
+    18→    if not display_title:
+    19→        return None
+    20→    match = re.search(r"#(\d+)", display_title)
+    21→    if match is None:
+    22→        return None
+    23→    return int(match.group(1))
+    24→
+    25→
+    26→def extract_plan_number(display_title: str | None) -&gt; int | None:
+    27→    """Extract plan number from display_title format '123:abc456'.
+    28→
+    29→    Handles:
+    30→    - Legacy format: "123:abc456" → 123 (plan_id at start, no #pr_number)
+
+... [19 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01SpbNUx8gzZt3zXEy6Gx4fB">
+     1→"""File operation utilities."""
+     2→
+     3→from pathlib import Path
+     4→
+     5→import frontmatter
+     6→
+     7→from erk_shared.gateway.git.abc import Git
+     8→
+     9→
+    10→def extract_plan_title(plan_path: Path, git_ops: Git | None = None) -&gt; str | None:
+    11→    """Extract the first heading from a markdown plan file.
+    12→
+    13→    Uses python-frontmatter library to properly parse YAML frontmatter,
+    14→    then extracts the first line starting with # from the content.
+    15→    Common prefixes like "Plan: " and "Implementation Plan: " are stripped from the title.
+    16→
+    17→    Args:
+    18→        plan_path: Path to the plan markdown file (e.g., .plan/plan.md)
+    19→        git_ops: Optional Git interface for path checking (uses .exists() if None)
+    20→
+    21→    Returns:
+    22→        The heading text (without the # prefix and common prefixes), or None if
+    23→        not found or file doesn't exist
+    24→    """
+    25→    if git_ops is not None:
+    26→        path_exists = git_ops.worktree.path_exists(plan_path)
+    27→    else:
+    28→        path_exists = plan_path.exists()
+    29→    if not path_exists:
+    30→        return None
+
+... [66 lines omitted] ...
+  </tool_result>
+  <assistant>Now let me rename the shared utility functions. For `run/shared.py`, I'll rename `extract_plan_number` to `extract_legacy_plan_number` (since `extract_pr_number` already exists and handles the new format - this function handles the legacy format). Actually, re-reading the plan, it says to keep the function but just rename it. But `extract_pr_number` already exists in the same file! Let me check what callers do:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2216" cache_read_input_tokens="64814" cache_creation="{'ephemeral_5m_input_tokens': 2216, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01TtYrWG9xVykLBMJL3sD9Vf">
+    <param name="pattern">from erk\.cli\.commands\.run\.shared import|from erk\.cli\.commands\.run import shared</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2216" cache_read_input_tokens="64814" cache_creation="{'ephemeral_5m_input_tokens': 2216, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_018etHXmK1fPyVaLpLMMLteE">
+    <param name="pattern">import extract_plan_number|extract_plan_number</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli/commands/run</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2216" cache_read_input_tokens="64814" cache_creation="{'ephemeral_5m_input_tokens': 2216, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_018etHXmK1fPyVaLpLMMLteE">
+src/erk/cli/commands/run/list_cmd.py:11:from erk.cli.commands.run.shared import extract_plan_number, extract_pr_number
+src/erk/cli/commands/run/list_cmd.py:77:            plan_num = extract_plan_number(run.display_title)
+src/erk/cli/commands/run/list_cmd.py:95:        run_plan = extract_plan_number(run.display_title)
+src/erk/cli/commands/run/shared.py:26:def extract_plan_number(display_title: str | None) -&gt; int | None:
+  </tool_result>
+  <tool_result tool="toolu_01TtYrWG9xVykLBMJL3sD9Vf">
+src/erk/cli/commands/run/list_cmd.py:11:from erk.cli.commands.run.shared import extract_plan_number, extract_pr_number
+src/erk/tui/data/real_provider.py:190:        from erk.cli.commands.run.shared import extract_plan_number, extract_pr_number
+  </tool_result>
+  <assistant>OK, so `extract_plan_number` in `run/shared.py` handles the **legacy** display title format. Since `extract_pr_number` already exists, I need to think about this carefully. The plan says to rename `extract_plan_number()` → `extract_pr_number()`, but `extract_pr_number` already exists. Looking at the plan more carefully, item 47 says `run/shared.py (2) — extract_plan_number() function`. 
+
+Since these are different functions (one extracts from `#NNN` format, other from `NNN:` format), and the plan says to rename the function, I think the intent is to rename `extract_plan_number` to something like `extract_legacy_pr_number`. But the plan explicitly says `extract_plan_number()` → `extract_pr_number()`. Since that already exists, let me check if the callers distinguish them:</assistant>
+  <usage input_tokens="184" cache_creation_input_tokens="999" cache_read_input_tokens="67030" cache_creation="{'ephemeral_5m_input_tokens': 999, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01FZYBurm97xumkn5kmXWVXS">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/run/list_cmd.py</param>
+    <param name="offset">60</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="184" cache_creation_input_tokens="999" cache_read_input_tokens="67030" cache_creation="{'ephemeral_5m_input_tokens': 999, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01FZYBurm97xumkn5kmXWVXS">
+    60→    # Limit displayed runs
+    61→    tagged_runs = tagged_runs[:_MAX_DISPLAY_RUNS]
+    62→
+    63→    # Handle empty state
+    64→    if not tagged_runs:
+    65→        user_output("No workflow runs found")
+    66→        return
+    67→
+    68→    # 2. Extract PR numbers (direct) and plan numbers (fallback) from display_titles
+    69→    run_pr_numbers: dict[str, int] = {}  # run_id → pr_number
+    70→    plan_numbers: list[int] = []
+    71→
+    72→    for run, _workflow_name in tagged_runs:
+    73→        pr_num = extract_pr_number(run.display_title)
+    74→        if pr_num is not None:
+    75→            run_pr_numbers[run.run_id] = pr_num
+    76→        else:
+    77→            plan_num = extract_plan_number(run.display_title)
+    78→            if plan_num is not None:
+    79→                plan_numbers.append(plan_num)
+    80→
+    81→    # 3. Fetch issues (needed for GitHubRepoLocation and plan→PR linkage)
+    82→    issues = ctx.issues.list_issues(repo_root=repo.root, labels=["erk-pr"])
+    83→
+    84→    # Extract location from first issue URL (needed for API calls and links)
+    85→    location = None
+    86→    if issues:
+    87→        location = github_repo_location_from_url(repo.root, issues[0].url)
+    88→
+    89→    # 4. Batch fetch PRs linked to plan issues (for old-format plan-implement runs)
+
+... [25 lines omitted] ...
+  </tool_result>
+  <assistant>I see - `extract_plan_number` is used for legacy format runs where the display title starts with a number (the old plan issue number). This is a distinct concept from `extract_pr_number` (which extracts from `#NNN` format). The plan says to rename it, but since `extract_pr_number` already exists, I should rename it to `extract_legacy_plan_number` or keep it as-is since it genuinely refers to extracting a plan number (not a PR number) from legacy formats.
+
+Actually, looking at the plan again - the function `extract_plan_number` in `run/shared.py` genuinely extracts a plan number from a legacy format where the plan number != PR number. The callers use it to look up issues that are plans (not PRs). So this function name is actually correct as-is - it extracts a plan number, not a PR number. The plan may have been overly aggressive here.
+
+However, the plan does explicitly list this as item 47. Let me follow the plan's intent but be conservative - I'll keep the function name as `extract_plan_number` since renaming it to `extract_pr_number` would conflict with the existing function. The local variable renames in `list_cmd.py` that use `plan_number` for this legacy concept should also stay since they genuinely represent plan numbers (not PR numbers).
+
+Let me focus on `file_utils.py` instead - the `extract_plan_title` functions:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1407" cache_read_input_tokens="68029" cache_creation="{'ephemeral_5m_input_tokens': 1407, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_016BeT3MEvzHMLxkZupTAbbn">
+    <param name="pattern">extract_plan_title</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1407" cache_read_input_tokens="68029" cache_creation="{'ephemeral_5m_input_tokens': 1407, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_016BeT3MEvzHMLxkZupTAbbn">
+src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py:225:def extract_plan_title(plan_file_path: Path | None) -&gt; str | None:
+src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py:751:        plan_title = extract_plan_title(plan_file_path)
+src/erk/core/file_utils.py:10:def extract_plan_title(plan_path: Path, git_ops: Git | None = None) -&gt; str | None:
+src/erk/core/file_utils.py:63:def extract_plan_title_from_folder(folder_path: Path, git_ops: Git | None = None) -&gt; str | None:
+src/erk/core/file_utils.py:90:    return extract_plan_title(plan_file, git_ops)
+  </tool_result>
+  <assistant>Now let me check the callers of `extract_plan_title` from file_utils:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1198" cache_read_input_tokens="69436" cache_creation="{'ephemeral_5m_input_tokens': 1198, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01UiymF3JkKfsuSeJht15a24">
+    <param name="pattern">from erk\.core\.file_utils import|from erk\.core import file_utils</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1198" cache_read_input_tokens="69436" cache_creation="{'ephemeral_5m_input_tokens': 1198, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01UiymF3JkKfsuSeJht15a24">
+No matches found
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01FzSN6dLRVMWvkxMqTMhpZN">
+    <param name="pattern">file_utils</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="177" cache_read_input_tokens="70634" cache_creation="{'ephemeral_5m_input_tokens': 177, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01FzSN6dLRVMWvkxMqTMhpZN">
+No matches found
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01AvGinenGXiSb8uJ4kX9Z4R">
+    <param name="pattern">extract_plan_title_from_folder|extract_plan_title</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+    <param name="glob">*.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="596" cache_read_input_tokens="70811" cache_creation="{'ephemeral_5m_input_tokens': 596, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01AvGinenGXiSb8uJ4kX9Z4R">
+src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py:225:def extract_plan_title(plan_file_path: Path | None) -&gt; str | None:
+src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py:751:        plan_title = extract_plan_title(plan_file_path)
+src/erk/core/file_utils.py:10:def extract_plan_title(plan_path: Path, git_ops: Git | None = None) -&gt; str | None:
+src/erk/core/file_utils.py:63:def extract_plan_title_from_folder(folder_path: Path, git_ops: Git | None = None) -&gt; str | None:
+src/erk/core/file_utils.py:90:    return extract_plan_title(plan_file, git_ops)
+  </tool_result>
+  <assistant>The `extract_plan_title` in `file_utils.py` is only called internally (within the same file) and by `exit_plan_mode_hook.py` (which has its own local version). Let me check if `file_utils.py` functions are imported anywhere:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="434" cache_read_input_tokens="71407" cache_creation="{'ephemeral_5m_input_tokens': 434, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_018C3VtJ6Mqy4M6JPAPWS9YP">
+    <param name="pattern">extract_plan_title</param>
+    <param name="path">/home/runner/work/erk/erk</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+    <param name="glob">*.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="434" cache_read_input_tokens="71407" cache_creation="{'ephemeral_5m_input_tokens': 434, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_018C3VtJ6Mqy4M6JPAPWS9YP">
+tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py:22:    extract_plan_title,
+tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py:208:# Pure Logic Tests for extract_plan_title() - NO MOCKING REQUIRED
+tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py:213:    """Tests for the pure extract_plan_title() function."""
+tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py:219:        assert extract_plan_title(plan_file) == "My Plan Title"
+tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py:228:        assert extract_plan_title(plan_file) == "Do the thing with feature X"
+tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py:234:        assert extract_plan_title(plan_file) == "Actual task description"
+tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py:242:        assert extract_plan_title(plan_file) == "Build the widget"
+tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py:246:        assert extract_plan_title(None) is None
+tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py:251:        assert extract_plan_title(nonexistent) is None
+tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py:257:        assert extract_plan_title(plan_file) is None
+tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py:265:        assert extract_plan_title(plan_file) is None
+tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py:271:        assert extract_plan_title(plan_file) == "Better Title"
+tests/core/utils/test_file_utils.py:1:"""Tests for file_utils.extract_plan_title."""
+tests/core/utils/test_file_utils.py:5:from erk.core.file_utils import extract_plan_title
+tests/core/utils/test_file_utils.py:144:def test_extract_plan_title_cases(tmp_path, description, filename, contents, expected):
+tests/core/utils/test_file_utils.py:145:    """Exercise extract_plan_title across the supported input variations."""
+tests/core/utils/test_file_utils.py:151:    assert extract_plan_title(plan) == expected
+src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py:225:def extract_plan_title(plan_file_path: Path | None) -&gt; str | None:
+src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py:751:        plan_title = extract_plan_title(plan_file_path)
+src/erk/core/file_utils.py:10:def extract_plan_title(plan_path: Path, git_ops: Git | None = None) -&gt; str | None:
+src/erk/core/file_utils.py:63:def extract_plan_title_from_folder(folder_path: Path, git_ops: Git | None = None) -&gt; str | None:
+src/erk/core/file_utils.py:90:    return extract_plan_title(plan_file, git_ops)
+  </tool_result>
+  <assistant>Good. Now I have the full picture for `file_utils.py`. The plan says to rename `extract_plan_title()` → `extract_pr_title()`. Let me do the renames for `file_utils.py` now:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1558" cache_read_input_tokens="71841" cache_creation="{'ephemeral_5m_input_tokens': 1558, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01JDEupvz24jJ1N8D3NZwEr7">
+    <param name="replace_all">True</param>
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/core/file_utils.py</param>
+    <param name="old_string">extract_plan_title</param>
+    <param name="new_string">extract_pr_title</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1558" cache_read_input_tokens="71841" cache_creation="{'ephemeral_5m_input_tokens': 1558, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01JDEupvz24jJ1N8D3NZwEr7">
+The file /home/runner/work/erk/erk/src/erk/core/file_utils.py has been updated. All occurrences of 'extract_plan_title' were successfully replaced with 'extract_pr_title'.
+  </tool_result>
+  <assistant>Now update the `extract_plan_title_from_folder` name too:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="319" cache_read_input_tokens="73399" cache_creation="{'ephemeral_5m_input_tokens': 319, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01Gr3HxDn9MRiYyTFzmWPEVk">
+    <param name="replace_all">True</param>
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/core/file_utils.py</param>
+    <param name="old_string">extract_plan_title_from_folder</param>
+    <param name="new_string">extract_pr_title_from_folder</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="319" cache_read_input_tokens="73399" cache_creation="{'ephemeral_5m_input_tokens': 319, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Gr3HxDn9MRiYyTFzmWPEVk">
+&lt;tool_use_error&gt;String to replace not found in file.
+String: extract_plan_title_from_folder&lt;/tool_use_error&gt;
+  </tool_result>
+  <assistant>Right - the replace_all already caught `extract_plan_title_from_folder` since it contains `extract_plan_title`. Let me verify:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="678" cache_read_input_tokens="73718" cache_creation="{'ephemeral_5m_input_tokens': 678, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01LnbD1XUyhyGbHt1Hoc9yMk">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/core/file_utils.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="678" cache_read_input_tokens="73718" cache_creation="{'ephemeral_5m_input_tokens': 678, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01LnbD1XUyhyGbHt1Hoc9yMk">
+     1→"""File operation utilities."""
+     2→
+     3→from pathlib import Path
+     4→
+     5→import frontmatter
+     6→
+     7→from erk_shared.gateway.git.abc import Git
+     8→
+     9→
+    10→def extract_pr_title(plan_path: Path, git_ops: Git | None = None) -&gt; str | None:
+    11→    """Extract the first heading from a markdown plan file.
+    12→
+    13→    Uses python-frontmatter library to properly parse YAML frontmatter,
+    14→    then extracts the first line starting with # from the content.
+    15→    Common prefixes like "Plan: " and "Implementation Plan: " are stripped from the title.
+    16→
+    17→    Args:
+    18→        plan_path: Path to the plan markdown file (e.g., .plan/plan.md)
+    19→        git_ops: Optional Git interface for path checking (uses .exists() if None)
+    20→
+    21→    Returns:
+    22→        The heading text (without the # prefix and common prefixes), or None if
+    23→        not found or file doesn't exist
+    24→    """
+    25→    if git_ops is not None:
+    26→        path_exists = git_ops.worktree.path_exists(plan_path)
+    27→    else:
+    28→        path_exists = plan_path.exists()
+    29→    if not path_exists:
+    30→        return None
+
+... [66 lines omitted] ...
+  </tool_result>
+  <assistant>`file_utils.py` is done. Now let me update the callers - the test file and any imports:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1343" cache_read_input_tokens="74396" cache_creation="{'ephemeral_5m_input_tokens': 1343, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01C2jv6AFbTACCQy6zBvUvoi">
+    <param name="pattern">extract_plan_title_from_folder</param>
+    <param name="path">/home/runner/work/erk/erk</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+    <param name="glob">*.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1343" cache_read_input_tokens="74396" cache_creation="{'ephemeral_5m_input_tokens': 1343, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01C2jv6AFbTACCQy6zBvUvoi">
+No matches found
+  </tool_result>
+  <assistant>Good - `extract_plan_title_from_folder` has no other callers outside `file_utils.py`. Now update the test file:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="641" cache_read_input_tokens="75739" cache_creation="{'ephemeral_5m_input_tokens': 641, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01Rmq1T2ctMvhv6thNRrUTB2">
+    <param name="file_path">/home/runner/work/erk/erk/tests/core/utils/test_file_utils.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="641" cache_read_input_tokens="75739" cache_creation="{'ephemeral_5m_input_tokens': 641, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Rmq1T2ctMvhv6thNRrUTB2">
+     1→"""Tests for file_utils.extract_plan_title."""
+     2→
+     3→import pytest
+     4→
+     5→from erk.core.file_utils import extract_plan_title
+     6→
+     7→PLAN_CASES = [
+     8→    pytest.param(
+     9→        "frontmatter_followed_by_heading",
+    10→        "plan.md",
+    11→        """---
+    12→title: Metadata
+    13→---
+    14→
+    15→# Actual Title
+    16→
+    17→Content here.
+    18→""",
+    19→        "Actual Title",
+    20→        id="frontmatter_followed_by_heading",
+    21→    ),
+    22→    pytest.param(
+    23→        "heading_on_first_line",
+    24→        "plan.md",
+    25→        "# First Heading\n\nContent.",
+    26→        "First Heading",
+    27→        id="heading_on_first_line",
+    28→    ),
+    29→    pytest.param(
+    30→        "deep_heading",
+
+... [127 lines omitted] ...
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01AvS4NGqXAdwVSkh2hpox65">
+    <param name="replace_all">True</param>
+    <param name="file_path">/home/runner/work/erk/erk/tests/core/utils/test_file_utils.py</param>
+    <param name="old_string">extract_plan_title</param>
+    <param name="new_string">extract_pr_title</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1853" cache_read_input_tokens="76380" cache_creation="{'ephemeral_5m_input_tokens': 1853, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01AvS4NGqXAdwVSkh2hpox65">
+The file /home/runner/work/erk/erk/tests/core/utils/test_file_utils.py has been updated. All occurrences of 'extract_plan_title' were successfully replaced with 'extract_pr_title'.
+  </tool_result>
+  <assistant>Good. Now let me also update callers of `extract_pr_title_from_folder` (the renamed function):</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="611" cache_read_input_tokens="78233" cache_creation="{'ephemeral_5m_input_tokens': 611, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01JiLqiBGiL3npLMvSkkeyCm">
+    <param name="pattern">extract_plan_title_from_folder|import extract_plan_title</param>
+    <param name="path">/home/runner/work/erk/erk</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+    <param name="glob">*.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="611" cache_read_input_tokens="78233" cache_creation="{'ephemeral_5m_input_tokens': 611, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01JiLqiBGiL3npLMvSkkeyCm">
+No matches found
+  </tool_result>
+  <assistant>No more references to the old names. Now let me also check `extract_pr_title_from_folder` callers outside `file_utils.py`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="246" cache_read_input_tokens="78844" cache_creation="{'ephemeral_5m_input_tokens': 246, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01VHcC49DbsSdqqtvvCs3azQ">
+    <param name="pattern">extract_pr_title_from_folder</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+    <param name="glob">*.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="246" cache_read_input_tokens="78844" cache_creation="{'ephemeral_5m_input_tokens': 246, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01VHcC49DbsSdqqtvvCs3azQ">
+src/erk/core/file_utils.py:63:def extract_pr_title_from_folder(folder_path: Path, git_ops: Git | None = None) -&gt; str | None:
+  </tool_result>
+  <assistant>Good, it's only used internally. Now let me check on the `extract_pr_title_from_folder` callers in other locations:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="588" cache_read_input_tokens="79090" cache_creation="{'ephemeral_5m_input_tokens': 588, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01GwqxcyVZuxhZLcAM9dRkPx">
+    <param name="pattern">extract_pr_title_from_folder|extract_plan_title_from_folder</param>
+    <param name="path">/home/runner/work/erk/erk</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+    <param name="glob">*.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="588" cache_read_input_tokens="79090" cache_creation="{'ephemeral_5m_input_tokens': 588, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01GwqxcyVZuxhZLcAM9dRkPx">
+src/erk/core/file_utils.py:63:def extract_pr_title_from_folder(folder_path: Path, git_ops: Git | None = None) -&gt; str | None:
+  </tool_result>
+  <assistant>Phase 1 is complete for the shared utilities. Now let me also check the `extract_pr_title` from TUI/services that might reference the old names:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="395" cache_read_input_tokens="79678" cache_creation="{'ephemeral_5m_input_tokens': 395, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01Bi5tKVfHiYMKzmWrZsUBXA">
+    <param name="pattern">extract_plan</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/tui</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+    <param name="glob">*.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="395" cache_read_input_tokens="79678" cache_creation="{'ephemeral_5m_input_tokens': 395, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01QsiE2vNFKWqtBZ8QV82cVq">
+    <param name="pattern">extract_plan</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/core/services</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+    <param name="glob">*.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="395" cache_read_input_tokens="79678" cache_creation="{'ephemeral_5m_input_tokens': 395, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Bi5tKVfHiYMKzmWrZsUBXA">
+src/erk/tui/data/real_provider.py:190:        from erk.cli.commands.run.shared import extract_plan_number, extract_pr_number
+src/erk/tui/data/real_provider.py:236:                plan_num = extract_plan_number(run.display_title)
+src/erk/tui/data/real_provider.py:245:            run_plan = extract_plan_number(run.display_title)
+  </tool_result>
+  <tool_result tool="toolu_01QsiE2vNFKWqtBZ8QV82cVq">
+src/erk/core/services/plan_list_service.py:21:from erk_shared.gateway.github.metadata.plan_header import extract_plan_header_dispatch_info
+src/erk/core/services/plan_list_service.py:34:    extract_plan_content,
+src/erk/core/services/plan_list_service.py:278:            plan_body = extract_plan_content(pr_details.body)
+src/erk/core/services/plan_list_service.py:285:            _, node_id, _ = extract_plan_header_dispatch_info(pr_details.body)
+src/erk/core/services/plan_list_service.py:401:                _, node_id, _ = extract_plan_header_dispatch_info(issue.body)
+src/erk/core/services/objective_list_service.py:16:from erk_shared.gateway.github.metadata.plan_header import extract_plan_header_dispatch_info
+src/erk/core/services/objective_list_service.py:71:                _, node_id, _ = extract_plan_header_dispatch_info(issue.body)
+  </tool_result>
+  <assistant>I see the TUI's `real_provider.py` imports `extract_plan_number` from `run.shared`. The `plan_list_service.py` references are to `erk_shared` functions (`extract_plan_content`, `extract_plan_header_dispatch_info`) which should NOT be renamed (they're in erk_shared). 
+
+The `extract_plan_number` in `run/shared.py` is used by both `list_cmd.py` and `real_provider.py` for legacy format extraction. As I discussed earlier, since `extract_pr_number` already exists in the same file, I should NOT rename `extract_plan_number` — it genuinely extracts a plan number (from legacy format), not a PR number. The plan was likely generated before this distinction was clear.
+
+Let me now wait for the parallel agents to finish and then do the verification pass.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1223" cache_read_input_tokens="80073" cache_creation="{'ephemeral_5m_input_tokens': 1223, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TaskOutput" id="toolu_01G6FNVZwbDq7md2YvGKzbf6">
+    <param name="task_id">abd361e</param>
+    <param name="block">True</param>
+    <param name="timeout">120000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1223" cache_read_input_tokens="80073" cache_creation="{'ephemeral_5m_input_tokens': 1223, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+</session>
