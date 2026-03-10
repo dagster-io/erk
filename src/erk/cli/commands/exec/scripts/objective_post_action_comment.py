@@ -35,43 +35,51 @@ import click
 from erk_shared.context.helpers import require_issues, require_repo_root
 
 
-def _format_action_comment(
+def format_action_comment(
     *,
     title: str,
     date: str,
-    pr_number: int,
-    phase_step: str,
+    pr_number: int | None,
+    phase_step: str | None,
     what_was_done: list[str],
     lessons_learned: list[str],
     roadmap_updates: list[str],
     body_reconciliation: list[dict[str, str]],
 ) -> str:
-    """Format structured data into the standard action comment template."""
+    """Format structured data into the standard action comment template.
+
+    Empty sections (empty lists) are dropped from the output.
+    """
     lines: list[str] = []
 
     lines.append(f"## Action: {title}")
     lines.append("")
     lines.append(f"**Date:** {date}")
-    lines.append(f"**PR:** #{pr_number}")
-    lines.append(f"**Phase/Step:** {phase_step}")
-    lines.append("")
+    if pr_number is not None:
+        lines.append(f"**PR:** #{pr_number}")
+    if phase_step is not None:
+        lines.append(f"**Node:** {phase_step}")
 
-    lines.append("### What Was Done")
-    lines.append("")
-    for item in what_was_done:
-        lines.append(f"- {item}")
-    lines.append("")
+    if what_was_done:
+        lines.append("")
+        lines.append("### What Was Done")
+        lines.append("")
+        for item in what_was_done:
+            lines.append(f"- {item}")
 
-    lines.append("### Lessons Learned")
-    lines.append("")
-    for item in lessons_learned:
-        lines.append(f"- {item}")
-    lines.append("")
+    if lessons_learned:
+        lines.append("")
+        lines.append("### Lessons Learned")
+        lines.append("")
+        for item in lessons_learned:
+            lines.append(f"- {item}")
 
-    lines.append("### Roadmap Updates")
-    lines.append("")
-    for item in roadmap_updates:
-        lines.append(f"- {item}")
+    if roadmap_updates:
+        lines.append("")
+        lines.append("### Roadmap Updates")
+        lines.append("")
+        for item in roadmap_updates:
+            lines.append(f"- {item}")
 
     if body_reconciliation:
         lines.append("")
@@ -103,18 +111,18 @@ def objective_post_action_comment(ctx: click.Context) -> None:
     data = json.loads(raw_input)
 
     # Validate required fields
-    required_fields = ["issue_number", "date", "pr_number", "phase_step", "title", "what_was_done"]
+    required_fields = ["issue_number", "date", "title", "what_was_done"]
     missing = [f for f in required_fields if f not in data]
     if missing:
         msg = f"Missing required fields: {', '.join(missing)}"
         click.echo(json.dumps({"success": False, "error": msg}))
         raise SystemExit(1)
 
-    comment_body = _format_action_comment(
+    comment_body = format_action_comment(
         title=data["title"],
         date=data["date"],
-        pr_number=data["pr_number"],
-        phase_step=data["phase_step"],
+        pr_number=data.get("pr_number"),
+        phase_step=data.get("phase_step"),
         what_was_done=data["what_was_done"],
         lessons_learned=data.get("lessons_learned", []),
         roadmap_updates=data.get("roadmap_updates", []),

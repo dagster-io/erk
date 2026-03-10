@@ -2,8 +2,10 @@
 
 from erk_shared.gateway.github.metadata.roadmap import (
     RoadmapNode,
+    add_node_to_frontmatter,
     group_nodes_by_phase,
     parse_roadmap_frontmatter,
+    remove_node_from_frontmatter,
     render_roadmap_block_inner,
     update_node_in_frontmatter,
     validate_roadmap_frontmatter,
@@ -1188,3 +1190,169 @@ def test_update_node_preserves_depends_on() -> None:
     assert steps[0].depends_on == ()
     assert steps[1].depends_on == ("1.1",)
     assert steps[1].pr == "#999"
+
+
+# ---------------------------------------------------------------------------
+# remove_node_from_frontmatter tests
+# ---------------------------------------------------------------------------
+
+
+def test_remove_node_from_frontmatter_success() -> None:
+    """Remove an existing node from frontmatter."""
+    block_content = _details_block(
+        "schema_version: '4'\n"
+        "nodes:\n"
+        "- id: '1.1'\n"
+        "  description: First\n"
+        "  status: done\n"
+        "  pr: null\n"
+        "- id: '1.2'\n"
+        "  description: Second\n"
+        "  status: pending\n"
+        "  pr: null\n"
+    )
+
+    result = remove_node_from_frontmatter(block_content, node_id="1.2")
+
+    assert result is not None
+    steps = parse_roadmap_frontmatter(result)
+    assert steps is not None
+    assert len(steps) == 1
+    assert steps[0].id == "1.1"
+
+
+def test_remove_node_from_frontmatter_not_found() -> None:
+    """Returns None when node ID doesn't exist."""
+    block_content = _details_block(
+        "schema_version: '4'\n"
+        "nodes:\n"
+        "- id: '1.1'\n"
+        "  description: First\n"
+        "  status: done\n"
+        "  pr: null\n"
+    )
+
+    result = remove_node_from_frontmatter(block_content, node_id="9.9")
+
+    assert result is None
+
+
+# ---------------------------------------------------------------------------
+# add_node_to_frontmatter tests
+# ---------------------------------------------------------------------------
+
+
+def test_add_node_auto_assign_phase() -> None:
+    """Auto-assign next ID in phase."""
+    block_content = _details_block(
+        "schema_version: '4'\n"
+        "nodes:\n"
+        "- id: '1.1'\n"
+        "  slug: first\n"
+        "  description: First\n"
+        "  status: done\n"
+        "  pr: null\n"
+    )
+
+    result = add_node_to_frontmatter(
+        block_content,
+        phase=1,
+        node_id=None,
+        description="Second",
+        slug="second",
+        status="pending",
+        depends_on=None,
+        reason=None,
+    )
+
+    assert result is not None
+    updated_content, assigned_id = result
+    assert assigned_id == "1.2"
+    steps = parse_roadmap_frontmatter(updated_content)
+    assert steps is not None
+    assert len(steps) == 2
+    assert steps[1].id == "1.2"
+    assert steps[1].description == "Second"
+
+
+def test_add_node_explicit_id() -> None:
+    """Use explicit node ID."""
+    block_content = _details_block(
+        "schema_version: '4'\n"
+        "nodes:\n"
+        "- id: '1.1'\n"
+        "  slug: first\n"
+        "  description: First\n"
+        "  status: done\n"
+        "  pr: null\n"
+    )
+
+    result = add_node_to_frontmatter(
+        block_content,
+        phase=None,
+        node_id="1.1.1",
+        description="Sub-node",
+        slug="sub-node",
+        status="pending",
+        depends_on=None,
+        reason=None,
+    )
+
+    assert result is not None
+    updated_content, assigned_id = result
+    assert assigned_id == "1.1.1"
+    steps = parse_roadmap_frontmatter(updated_content)
+    assert steps is not None
+    assert len(steps) == 2
+
+
+def test_add_node_explicit_id_duplicate_rejected() -> None:
+    """Duplicate explicit ID returns None."""
+    block_content = _details_block(
+        "schema_version: '4'\n"
+        "nodes:\n"
+        "- id: '1.1'\n"
+        "  slug: first\n"
+        "  description: First\n"
+        "  status: done\n"
+        "  pr: null\n"
+    )
+
+    result = add_node_to_frontmatter(
+        block_content,
+        phase=None,
+        node_id="1.1",
+        description="Duplicate",
+        slug="dup",
+        status="pending",
+        depends_on=None,
+        reason=None,
+    )
+
+    assert result is None
+
+
+def test_add_node_no_phase_no_id_returns_none() -> None:
+    """Neither phase nor node_id returns None."""
+    block_content = _details_block(
+        "schema_version: '4'\n"
+        "nodes:\n"
+        "- id: '1.1'\n"
+        "  slug: first\n"
+        "  description: First\n"
+        "  status: done\n"
+        "  pr: null\n"
+    )
+
+    result = add_node_to_frontmatter(
+        block_content,
+        phase=None,
+        node_id=None,
+        description="Orphan",
+        slug="orphan",
+        status="pending",
+        depends_on=None,
+        reason=None,
+    )
+
+    assert result is None

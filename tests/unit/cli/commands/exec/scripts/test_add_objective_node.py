@@ -429,6 +429,115 @@ V2_COMMENT = """\
 """
 
 
+def test_add_node_with_explicit_id() -> None:
+    """Add a node with an explicit ID using --id."""
+    issue = _make_issue(8470, ROADMAP_BODY)
+    fake_gh = FakeGitHubIssues(issues={8470: issue})
+    runner = CliRunner()
+
+    result = runner.invoke(
+        add_objective_node,
+        [
+            "8470",
+            "--id",
+            "1.2.1",
+            "--description",
+            "Sub-task under 1.2",
+        ],
+        obj=ErkContext.for_test(github=FakeLocalGitHub(issues_gateway=fake_gh)),
+    )
+
+    assert result.exit_code == 0, f"Failed: {result.output}"
+    output = json.loads(result.output)
+    assert output["success"] is True
+    assert output["node_id"] == "1.2.1"
+
+    updated_body = fake_gh.updated_bodies[0][1]
+    assert "Sub-task under 1.2" in updated_body
+    assert (
+        "id: '1.2.1'" in updated_body
+        or 'id: "1.2.1"' in updated_body
+        or "id: 1.2.1" in updated_body
+    )
+
+
+def test_add_node_explicit_id_duplicate_fails() -> None:
+    """Adding a node with a duplicate explicit ID fails."""
+    issue = _make_issue(8470, ROADMAP_BODY)
+    fake_gh = FakeGitHubIssues(issues={8470: issue})
+    runner = CliRunner()
+
+    result = runner.invoke(
+        add_objective_node,
+        [
+            "8470",
+            "--id",
+            "1.1",
+            "--description",
+            "Duplicate node",
+        ],
+        obj=ErkContext.for_test(github=FakeLocalGitHub(issues_gateway=fake_gh)),
+    )
+
+    assert result.exit_code == 0
+    output = json.loads(result.output)
+    assert output["success"] is False
+    assert output["error"] == "add_failed"
+
+
+def test_add_node_missing_phase_and_id() -> None:
+    """Error when neither --phase nor --id is provided."""
+    issue = _make_issue(8470, ROADMAP_BODY)
+    fake_gh = FakeGitHubIssues(issues={8470: issue})
+    runner = CliRunner()
+
+    result = runner.invoke(
+        add_objective_node,
+        [
+            "8470",
+            "--description",
+            "No phase or id",
+        ],
+        obj=ErkContext.for_test(github=FakeLocalGitHub(issues_gateway=fake_gh)),
+    )
+
+    assert result.exit_code == 0
+    output = json.loads(result.output)
+    assert output["success"] is False
+    assert output["error"] == "missing_phase_or_id"
+
+
+def test_add_node_with_comment_posts_action_comment() -> None:
+    """Using --comment auto-posts an action comment."""
+    issue = _make_issue(8470, ROADMAP_BODY)
+    fake_gh = FakeGitHubIssues(issues={8470: issue})
+    runner = CliRunner()
+
+    result = runner.invoke(
+        add_objective_node,
+        [
+            "8470",
+            "--phase",
+            "1",
+            "--description",
+            "New task",
+            "--comment",
+            "Added during re-eval",
+        ],
+        obj=ErkContext.for_test(github=FakeLocalGitHub(issues_gateway=fake_gh)),
+    )
+
+    assert result.exit_code == 0, f"Failed: {result.output}"
+    output = json.loads(result.output)
+    assert output["success"] is True
+
+    # Should have posted an action comment
+    assert len(fake_gh.added_comments) == 1
+    _, comment_body, _ = fake_gh.added_comments[0]
+    assert "Added node 1.4" in comment_body
+    assert "Added during re-eval" in comment_body
+
+
 def test_add_node_rerenders_comment_table() -> None:
     """v2 format: adding a node also re-renders the comment table."""
     issue = _make_issue(8470, V2_BODY_WITH_COMMENT)

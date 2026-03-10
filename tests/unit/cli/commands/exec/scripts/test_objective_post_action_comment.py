@@ -7,7 +7,7 @@ from pathlib import Path
 from click.testing import CliRunner
 
 from erk.cli.commands.exec.scripts.objective_post_action_comment import (
-    _format_action_comment,
+    format_action_comment,
     objective_post_action_comment,
 )
 from erk_shared.context.context import ErkContext
@@ -34,7 +34,7 @@ def _make_issue(*, number: int) -> IssueInfo:
 class TestFormatActionComment:
     def test_full_template(self) -> None:
         """Formats all sections correctly."""
-        result = _format_action_comment(
+        result = format_action_comment(
             title="Implement auth system",
             date="2026-02-17",
             pr_number=6517,
@@ -50,7 +50,7 @@ class TestFormatActionComment:
         assert "## Action: Implement auth system" in result
         assert "**Date:** 2026-02-17" in result
         assert "**PR:** #6517" in result
-        assert "**Phase/Step:** 1.1, 1.2" in result
+        assert "**Node:** 1.1, 1.2" in result
         assert "### What Was Done" in result
         assert "- Added user model" in result
         assert "- Added JWT library" in result
@@ -63,7 +63,7 @@ class TestFormatActionComment:
 
     def test_no_body_reconciliation(self) -> None:
         """Omits Body Reconciliation section when empty."""
-        result = _format_action_comment(
+        result = format_action_comment(
             title="Simple update",
             date="2026-02-17",
             pr_number=100,
@@ -76,9 +76,9 @@ class TestFormatActionComment:
 
         assert "### Body Reconciliation" not in result
 
-    def test_empty_lessons(self) -> None:
-        """Handles empty lessons learned list."""
-        result = _format_action_comment(
+    def test_empty_lessons_dropped(self) -> None:
+        """Empty lessons learned section is dropped entirely."""
+        result = format_action_comment(
             title="Update",
             date="2026-02-17",
             pr_number=100,
@@ -89,12 +89,39 @@ class TestFormatActionComment:
             body_reconciliation=[],
         )
 
-        assert "### Lessons Learned" in result
-        # No bullet points after the header
-        lessons_idx = result.index("### Lessons Learned")
-        roadmap_idx = result.index("### Roadmap Updates")
-        between = result[lessons_idx:roadmap_idx]
-        assert "- " not in between
+        assert "### Lessons Learned" not in result
+
+    def test_no_pr_number(self) -> None:
+        """PR line is omitted when pr_number is None."""
+        result = format_action_comment(
+            title="Removed node 3.6",
+            date="2026-03-10",
+            pr_number=None,
+            phase_step="3.6",
+            what_was_done=["Removed node 3.6 from roadmap"],
+            lessons_learned=[],
+            roadmap_updates=["Node 3.6: removed"],
+            body_reconciliation=[],
+        )
+
+        assert "**PR:**" not in result
+        assert "**Node:** 3.6" in result
+
+    def test_no_phase_step(self) -> None:
+        """Node line is omitted when phase_step is None."""
+        result = format_action_comment(
+            title="General update",
+            date="2026-03-10",
+            pr_number=None,
+            phase_step=None,
+            what_was_done=["Did something"],
+            lessons_learned=[],
+            roadmap_updates=[],
+            body_reconciliation=[],
+        )
+
+        assert "**Node:**" not in result
+        assert "**PR:**" not in result
 
 
 class TestObjectivePostActionComment:
