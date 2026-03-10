@@ -10,12 +10,12 @@ from pathlib import Path
 
 import click
 
-from erk.cli.commands.one_shot import _get_remote_github
 from erk.cli.commands.one_shot_remote_dispatch import (
     OneShotDispatchParams,
     OneShotDispatchResult,
     dispatch_one_shot_remote,
 )
+from erk.cli.repo_resolution import get_remote_github as _get_remote_github
 from erk.core.context import ErkContext, NoRepoSentinel, RepoContext
 from erk_shared.gateway.github.parsing import construct_workflow_run_url
 

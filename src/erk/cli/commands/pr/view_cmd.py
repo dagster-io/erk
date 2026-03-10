@@ -6,16 +6,10 @@ from typing import Any
 
 import click
 
-from erk.cli.github_parsing import parse_issue_identifier
-from erk.cli.repo_resolution import get_remote_github, resolved_repo_option
+from erk.cli.repo_resolution import resolved_repo_option
 from erk.core.context import ErkContext
-from erk_shared.agentclick.json_command import json_command
-from erk_shared.agentclick.mcp_exposed import mcp_exposed
-from erk_shared.context.types import NoRepoSentinel
 from erk_shared.core.typing_utils import narrow_to_literal
-from erk_shared.gateway.github.issues.types import IssueNotFound
 from erk_shared.gateway.github.metadata.schemas import (
-    BRANCH_NAME,
     CREATED_BY,
     CREATED_FROM_SESSION,
     LAST_DISPATCHED_AT,
@@ -42,8 +36,6 @@ from erk_shared.gateway.github.parsing import (
 )
 from erk_shared.gateway.github.types import GitHubRepoId
 from erk_shared.output.output import user_output
-from erk_shared.plan_store.conversion import github_issue_to_plan
-from erk_shared.plan_store.types import Plan, PlanNotFound
 
 
 @dataclass(frozen=True)
@@ -273,14 +265,6 @@ def _format_header_section(header_info: dict[str, object], *, plan_url: str | No
     return lines
 
 
-@mcp_exposed(
-    name="pr_view",
-    description=(
-        "View a specific plan's metadata, header info, and body content."
-        " Returns plan title, state, labels, timestamps, and header metadata."
-    ),
-)
-@json_command(exclude_json_input=frozenset({"repo_id"}), output_types=(PrViewResult,))
 @click.command("view")
 @click.argument("identifier", type=str, required=False, default=None)
 @click.option("--full", "-f", is_flag=True, help="Show full plan body")
@@ -292,8 +276,7 @@ def pr_view(
     *,
     full: bool,
     repo_id: GitHubRepoId,
-    json_mode: bool,
-) -> PrViewResult | None:
+) -> None:
     """Fetch and display a plan by identifier.
 
     IDENTIFIER can be a plain number (e.g., "42") or a GitHub issue URL
@@ -310,142 +293,73 @@ def pr_view(
         erk pr view 42 --full
         erk pr view 42 --repo owner/repo
     """
-    repo_root = None if isinstance(ctx.repo, NoRepoSentinel) else ctx.repo.root
-    plan_id: str | None = None
+    from erk.cli.commands.pr.view_operation import PrViewRequest, run_pr_view
+    from erk_shared.agentclick.errors import AgentCliError
 
-    # If no identifier, infer from branch (local only)
-    if identifier is None:
-        if isinstance(ctx.repo, NoRepoSentinel):
-            user_output(
-                click.style("Error: ", fg="red")
-                + "A plan identifier is required in remote mode (cannot infer from branch).\n"
-                "Usage: erk pr view <number> --repo owner/repo"
-            )
-            raise SystemExit(1)
+    request = PrViewRequest(
+        identifier=identifier,
+        full=full,
+        repo=f"{repo_id.owner}/{repo_id.repo}",
+    )
 
-        branch = ctx.git.branch.get_current_branch(ctx.cwd)
-        if branch is None:
-            user_output(
-                click.style("Error: ", fg="red")
-                + "No identifier specified and could not infer from branch name"
-            )
+    try:
+        result = run_pr_view(request, ctx=ctx)
+    except AgentCliError as exc:
+        user_output(click.style("Error: ", fg="red") + exc.format_message())
+        if exc.error_type == "invalid_input":
             user_output("Usage: erk pr view <identifier>")
             user_output("Or run from a plan branch with a plan reference file")
-            raise SystemExit(1)
+        raise SystemExit(1) from None
 
-        plan_id = ctx.plan_backend.resolve_plan_id_for_branch(ctx.repo.root, branch)
-        if plan_id is None:
-            user_output(
-                click.style("Error: ", fg="red")
-                + "No identifier specified and could not infer from branch name"
-            )
-            user_output("Usage: erk pr view <identifier>")
-            user_output("Or run from a plan branch with a plan reference file")
-            raise SystemExit(1)
-
-        identifier = plan_id
-
-    plan_number = parse_issue_identifier(identifier)
-    if plan_id is None:
-        plan_id = str(plan_number)
-
-    remote = get_remote_github(ctx)
-
-    issue = remote.get_issue(owner=repo_id.owner, repo=repo_id.repo, number=plan_number)
-    if isinstance(issue, IssueNotFound):
-        user_output(click.style("Error: ", fg="red") + f"Plan #{plan_id} not found")
-        raise SystemExit(1)
-
-    plan = github_issue_to_plan(issue)
-
-    # Optional local enrichment for richer header metadata
-    if repo_root is not None:
-        all_meta = ctx.plan_backend.get_all_metadata_fields(repo_root, plan_id)
-        if isinstance(all_meta, PlanNotFound):
-            header_info: dict[str, object] = plan.header_fields
-        else:
-            header_info = all_meta
-    else:
-        header_info = plan.header_fields
-
-    if json_mode:
-        return PrViewResult(
-            plan_id=plan_id,
-            title=plan.title,
-            state=plan.state.value,
-            url=plan.url,
-            labels=plan.labels,
-            assignees=plan.assignees,
-            created_at=plan.created_at.isoformat(),
-            updated_at=plan.updated_at.isoformat(),
-            objective_id=plan.objective_id,
-            branch=str(header_info[BRANCH_NAME]) if BRANCH_NAME in header_info else None,
-            header_fields=header_info,
-            body=plan.body if full else None,
-        )
-
-    _display_plan(plan, plan_id=plan_id, header_info=header_info, full=full)
-    return None
+    _display_pr_view_result(result, full=full)
 
 
-def _display_plan(
-    plan: Plan,
-    *,
-    plan_id: str,
-    header_info: dict[str, object],
-    full: bool,
-) -> None:
-    """Display plan details with consistent formatting.
-
-    Shared display logic used by both local and remote paths.
-    """
+def _display_pr_view_result(result: PrViewResult, *, full: bool) -> None:
+    """Display PrViewResult with human-friendly formatting."""
     user_output("")
-    user_output(_format_field("Title", click.style(plan.title, bold=True)))
+    user_output(_format_field("Title", click.style(result.title, bold=True)))
 
     # Display metadata with clickable ID
-    state_color = "green" if plan.state.value == "OPEN" else "red"
-    user_output(_format_field("State", click.style(plan.state.value, fg=state_color)))
+    state_color = "green" if result.state == "OPEN" else "red"
+    user_output(_format_field("State", click.style(result.state, fg=state_color)))
 
     # Make ID clickable using OSC 8 if URL is available
-    id_text = f"#{plan_id}"
-    if plan.url:
+    id_text = f"#{result.plan_id}"
+    if result.url:
         colored_id = click.style(id_text, fg="cyan")
-        clickable_id = f"\033]8;;{plan.url}\033\\{colored_id}\033]8;;\033\\"
+        clickable_id = f"\033]8;;{result.url}\033\\{colored_id}\033]8;;\033\\"
     else:
         clickable_id = click.style(id_text, fg="cyan")
     user_output(_format_field("ID", clickable_id))
-    user_output(_format_field("URL", plan.url or "-"))
+    user_output(_format_field("URL", result.url or "-"))
 
-    # Display branch if available from plan-header
-    branch_name = header_info.get(BRANCH_NAME)
-    if branch_name:
-        user_output(_format_field("Branch", str(branch_name)))
+    # Display branch if available
+    if result.branch:
+        user_output(_format_field("Branch", result.branch))
 
     # Display labels
-    if plan.labels:
+    if result.labels:
         labels_str = ", ".join(
-            click.style(f"[{label}]", fg="bright_magenta") for label in plan.labels
+            click.style(f"[{label}]", fg="bright_magenta") for label in result.labels
         )
         user_output(_format_field("Labels", labels_str))
 
     # Display assignees
-    if plan.assignees:
-        assignees_str = ", ".join(plan.assignees)
+    if result.assignees:
+        assignees_str = ", ".join(result.assignees)
         user_output(_format_field("Assignees", assignees_str))
 
     # Display timestamps
-    created = plan.created_at.strftime("%Y-%m-%d %H:%M:%S UTC")
-    updated = plan.updated_at.strftime("%Y-%m-%d %H:%M:%S UTC")
-    user_output(_format_field("Created", created))
-    user_output(_format_field("Updated", updated))
+    user_output(_format_field("Created", result.created_at))
+    user_output(_format_field("Updated", result.updated_at))
 
     # Display header info section
-    header_lines = _format_header_section(header_info, plan_url=plan.url)
+    header_lines = _format_header_section(result.header_fields, plan_url=result.url)
     for line in header_lines:
         user_output(line)
 
     # Display body only with --full flag
-    if full and plan.body:
+    if full and result.body:
         user_output("")
         user_output(click.style("─── Plan ───", bold=True))
-        user_output(plan.body)
+        user_output(result.body)

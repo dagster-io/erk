@@ -4,7 +4,7 @@
 # Cli Documentation
 
 - **[activation-scripts.md](activation-scripts.md)** — working with worktree environment setup, understanding .erk/activate.sh scripts, configuring post-create commands
-- **[adding-json-to-commands.md](adding-json-to-commands.md)** — adding --json flag to a CLI command, exposing a command via MCP, creating result dataclasses for JSON output, stacking @mcp_exposed and @json_command decorators
+- **[adding-json-to-commands.md](adding-json-to-commands.md)** — adding a machine-readable command to erk, exposing a command via MCP, creating result dataclasses for JSON output, extracting core operations from CLI commands
 - **[agent-friendly-cli.md](agent-friendly-cli.md)** — adding --json flag to a CLI command, creating or modifying MCP tools, implementing structured JSON output for CLI commands, working on agent-friendly CLI patterns, implementing erk schema command
 - **[ambiguity-resolution.md](ambiguity-resolution.md)** — implementing CLI commands that accept identifiers with multiple possible matches, designing CLI behavior for ambiguous input, displaying tables of options without interactive selection
 - **[auto-generated-reference-docs.md](auto-generated-reference-docs.md)** — adding or modifying CLI commands, changing erk exec command structure, CI fails with exec reference check error
@@ -45,7 +45,7 @@
 - **[help-text-formatting.md](help-text-formatting.md)** — Writing CLI command docstrings, Adding Examples sections to Click commands, Formatting bulleted lists in help text
 - **[implement-command.md](implement-command.md)** — running erk implement without arguments, auto-detecting plans from current branch, understanding how erk implement selects which plan to execute
 - **[incomplete-command-removal.md](incomplete-command-removal.md)** — removing a workflow command or CLI entry, deprecating or deleting a command from erk, cleaning up dead references after removing a feature
-- **[json-command-decorator.md](json-command-decorator.md)** — adding @json_command decorator to a CLI command, creating structured JSON CLI output, understanding emit_json patterns, implementing output_types validation, working with AgentCliError error handling
+- **[json-command-decorator.md](json-command-decorator.md)** — adding @machine_command decorator to a CLI command, creating structured JSON CLI output, understanding emit_json patterns, working with AgentCliError error handling, creating a machine-readable command under erk json
 - **[land-learn-integration.md](land-learn-integration.md)** — modifying the erk land command's learn workflow, debugging session discovery during land, working with session reporting in the land pipeline, learn plan creation, session discovery, empty learn plan
 - **[learn-command-conditional-pipeline.md](learn-command-conditional-pipeline.md)** — modifying the erk learn command flow, adding session discovery logic to learn workflow, understanding how preprocessed materials bypass session discovery
 - **[learn-plan-land-flow.md](learn-plan-land-flow.md)** — landing PRs associated with learn plans, understanding how learn plan metadata updates parent issues
