@@ -9,24 +9,20 @@ from erk_shared.gateway.github.objective_issues import (
 )
 
 
-def test_get_erk_label_definitions_returns_six_labels() -> None:
-    """Test that get_erk_label_definitions returns all six expected labels."""
+def test_get_erk_label_definitions_returns_five_labels() -> None:
+    """Test that get_erk_label_definitions returns all four expected labels."""
     labels = get_erk_label_definitions()
 
-    assert len(labels) == 6
+    assert len(labels) == 4
 
 
-def test_get_erk_label_definitions_contains_erk_plan() -> None:
-    """Test that erk-plan label is included with correct properties."""
+def test_get_erk_label_definitions_excludes_erk_plan() -> None:
+    """Test that erk-plan label is NOT included (plans identified by title prefix)."""
     labels = get_erk_label_definitions()
 
-    erk_plan_labels = [label for label in labels if label.name == "erk-plan"]
-    assert len(erk_plan_labels) == 1
-
-    erk_plan = erk_plan_labels[0]
-    assert erk_plan.name == "erk-plan"
-    assert erk_plan.description == "Implementation plan for manual execution"
-    assert erk_plan.color == "0E8A16"  # Green
+    label_names = [label.name for label in labels]
+    assert "erk-plan" not in label_names
+    assert "erk-core" not in label_names
 
 
 def test_get_erk_label_definitions_contains_erk_learn() -> None:
@@ -68,19 +64,6 @@ def test_get_erk_label_definitions_contains_erk_pr() -> None:
     assert erk_pr.color == "1D76DB"
 
 
-def test_get_erk_label_definitions_contains_erk_core() -> None:
-    """Test that erk-core label is included with correct properties."""
-    labels = get_erk_label_definitions()
-
-    erk_core_labels = [label for label in labels if label.name == "erk-core"]
-    assert len(erk_core_labels) == 1
-
-    erk_core = erk_core_labels[0]
-    assert erk_core.name == "erk-core"
-    assert erk_core.description == "Core work PR (plan or code)"
-    assert erk_core.color == "0E8A16"
-
-
 def test_get_erk_label_definitions_contains_no_changes() -> None:
     """Test that no-changes label is included with correct properties."""
     labels = get_erk_label_definitions()
@@ -109,11 +92,11 @@ def test_get_erk_label_definitions_returns_frozen_dataclasses() -> None:
 # Tests for get_required_erk_labels()
 
 
-def test_get_required_erk_labels_returns_four_labels() -> None:
-    """Test that get_required_erk_labels returns four labels."""
+def test_get_required_erk_labels_returns_three_labels() -> None:
+    """Test that get_required_erk_labels returns two labels."""
     labels = get_required_erk_labels()
 
-    assert len(labels) == 4
+    assert len(labels) == 2
 
 
 def test_get_required_erk_labels_contains_erk_pr() -> None:
@@ -124,20 +107,12 @@ def test_get_required_erk_labels_contains_erk_pr() -> None:
     assert "erk-pr" in label_names
 
 
-def test_get_required_erk_labels_contains_erk_core() -> None:
-    """Test that erk-core label is included."""
+def test_get_required_erk_labels_excludes_erk_plan() -> None:
+    """Test that erk-plan label is NOT included (plans identified by title prefix)."""
     labels = get_required_erk_labels()
 
     label_names = [label.name for label in labels]
-    assert "erk-core" in label_names
-
-
-def test_get_required_erk_labels_contains_erk_plan() -> None:
-    """Test that erk-plan label is included."""
-    labels = get_required_erk_labels()
-
-    label_names = [label.name for label in labels]
-    assert "erk-plan" in label_names
+    assert "erk-plan" not in label_names
 
 
 def test_get_required_erk_labels_contains_erk_objective() -> None:

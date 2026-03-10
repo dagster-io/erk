@@ -76,12 +76,11 @@ def prepare_plan_for_worktree(
     Returns:
         PlanBranchSetup on success, PlanValidationFailed on validation failure
     """
-    # Validate erk-plan label
-    if "erk-plan" not in plan.labels:
+    # Validate erk-pr title prefix
+    if not plan.title.startswith("[erk-pr]"):
         return PlanValidationFailed(
-            f"Plan #{plan.pr_identifier} must have 'erk-plan' label.\n"
-            f"To add the label:\n"
-            f"  gh issue edit {plan.pr_identifier} --add-label erk-plan"
+            f"Plan #{plan.pr_identifier} must have '[erk-pr]' title prefix.\n"
+            f"Create a plan using 'erk pr create' to ensure correct formatting."
         )
 
     # Validate plan_identifier can be converted to int (LBYL)

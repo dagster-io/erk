@@ -4,7 +4,7 @@ Usage:
     erk exec objective-save-to-issue [OPTIONS]
 
 This command extracts a plan and creates a GitHub issue with:
-- erk-objective label only (NOT erk-plan - objectives are not plans)
+- erk-objective label only (NOT erk-pr - objectives are not plans)
 - No title suffix
 - Plan content directly in body (no metadata block)
 - No commands section
@@ -123,7 +123,7 @@ def objective_save_to_issue(
 ) -> None:
     """Save plan as objective GitHub issue.
 
-    Creates a GitHub issue with only the erk-objective label (NOT erk-plan).
+    Creates a GitHub issue with only the erk-objective label (NOT erk-pr).
     """
     # Get dependencies from context
     github = require_github_issues(ctx)

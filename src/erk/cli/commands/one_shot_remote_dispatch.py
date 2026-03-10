@@ -391,7 +391,7 @@ def dispatch_one_shot_remote(
             owner=owner,
             repo=repo,
             issue_number=pr_number,
-            labels=("erk-pr", "erk-plan", "erk-core"),
+            labels=("erk-pr",),
         )
         user_output(click.style(f"  \u2192 PR #{pr_number}", dim=True))
 
@@ -436,7 +436,7 @@ def dispatch_one_shot_remote(
                 queued_at=queued_at,
                 submitted_by=submitted_by,
                 plan_number=pr_number,
-                validation_results={"issue_is_open": True, "has_erk_plan_label": True},
+                validation_results={"issue_is_open": True, "has_erk_plan_title": True},
                 expected_workflow="one-shot",
             )
             comment_body = render_erk_issue_event(

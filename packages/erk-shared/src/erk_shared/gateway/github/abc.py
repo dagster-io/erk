@@ -432,7 +432,7 @@ class LocalGitHub(ABC):
 
         Args:
             location: GitHub repository location (local root + repo identity)
-            labels: Labels to filter by (e.g., ["erk-plan"])
+            labels: Labels to filter by (e.g., ["erk-pr"])
             state: Filter by state ("open" or "closed")
             limit: Maximum issues to return (default: 100)
             creator: Filter by creator username (e.g., "octocat"). If provided,
@@ -523,7 +523,7 @@ class LocalGitHub(ABC):
 
         Args:
             location: GitHub repository location
-            labels: Labels to filter by (e.g., ["erk-plan"])
+            labels: Labels to filter by (e.g., ["erk-pr"])
             state: Filter by state ("open" or "closed")
             limit: Maximum number of results (None for no limit)
             author: Filter by PR author username (server-side via REST creator param)

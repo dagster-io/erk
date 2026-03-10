@@ -1006,11 +1006,11 @@ def _make_plan_pr_issue(
     body = format_plan_header_body_for_test(objective_issue=objective_issue)
     return IssueInfo(
         number=number,
-        title=f"[erk-plan] Plan #{number}",
+        title=f"[erk-pr] Plan #{number}",
         body=body,
         state="OPEN",
         url=f"https://github.com/test/repo/pull/{number}",
-        labels=["erk-plan"],
+        labels=["erk-pr"],
         assignees=[],
         created_at=now,
         updated_at=now,

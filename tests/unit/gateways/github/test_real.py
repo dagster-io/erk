@@ -357,7 +357,7 @@ def _make_issue_node(
         "state": state,
         "url": f"https://github.com/acme/widgets/issues/{number}",
         "author": {"login": "testuser"},
-        "labels": {"nodes": [{"name": "erk-plan"}]},
+        "labels": {"nodes": [{"name": "erk-pr"}]},
         "assignees": {"nodes": []},
         "createdAt": "2025-01-01T00:00:00Z",
         "updatedAt": "2025-01-02T00:00:00Z",

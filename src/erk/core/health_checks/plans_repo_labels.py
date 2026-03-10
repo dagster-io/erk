@@ -15,7 +15,7 @@ def check_plans_repo_labels(
     """Check that required erk labels exist in the plans repository.
 
     When plans_repo is configured, issues are created in that repository.
-    This check verifies that required erk labels (erk-plan, erk-objective)
+    This check verifies that required erk labels (erk-pr, erk-objective)
     exist in the target repository. Excludes erk-extraction which is
     optional for documentation workflows.
 

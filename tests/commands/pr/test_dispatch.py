@@ -53,7 +53,7 @@ def test_dispatch_planned_pr_plan_triggers_workflow_with_planned_pr_backend() ->
         pr_42 = PRDetails(
             number=42,
             url="https://github.com/test-owner/test-repo/pull/42",
-            title="[erk-plan] Test Draft PR Plan",
+            title="[erk-pr] Test Draft PR Plan",
             body=pr_body,
             state="OPEN",
             is_draft=True,
@@ -64,7 +64,7 @@ def test_dispatch_planned_pr_plan_triggers_workflow_with_planned_pr_backend() ->
             merge_state_status="UNKNOWN",
             owner="test-owner",
             repo="test-repo",
-            labels=("erk-plan",),
+            labels=("erk-pr",),
         )
 
         fake_gh = FakeLocalGitHub(
@@ -161,7 +161,7 @@ def _make_pr_42(*, plan_branch: str) -> PRDetails:
     return PRDetails(
         number=42,
         url="https://github.com/test-owner/test-repo/pull/42",
-        title="[erk-plan] Auto-detect Test",
+        title="[erk-pr] Auto-detect Test",
         body=pr_body,
         state="OPEN",
         is_draft=True,
@@ -172,7 +172,7 @@ def _make_pr_42(*, plan_branch: str) -> PRDetails:
         merge_state_status="UNKNOWN",
         owner="test-owner",
         repo="test-repo",
-        labels=("erk-plan",),
+        labels=("erk-pr",),
     )
 
 
@@ -192,7 +192,7 @@ def test_dispatch_auto_detects_from_impl_folder() -> None:
             provider="github-draft-pr",
             pr_id="42",
             url="https://github.com/test-owner/test-repo/pull/42",
-            labels=("erk-plan",),
+            labels=("erk-pr",),
             objective_id=None,
             node_ids=None,
         )
@@ -266,7 +266,7 @@ def test_dispatch_auto_detects_from_impl_context() -> None:
             provider="github-draft-pr",
             pr_id="42",
             url="https://github.com/test-owner/test-repo/pull/42",
-            labels=("erk-plan",),
+            labels=("erk-pr",),
             objective_id=None,
             node_ids=None,
         )
@@ -401,7 +401,7 @@ def test_dispatch_with_ref_option_threads_ref_to_workflow() -> None:
         pr_42 = PRDetails(
             number=42,
             url="https://github.com/test-owner/test-repo/pull/42",
-            title="[erk-plan] Test Ref Option",
+            title="[erk-pr] Test Ref Option",
             body=pr_body,
             state="OPEN",
             is_draft=True,
@@ -412,7 +412,7 @@ def test_dispatch_with_ref_option_threads_ref_to_workflow() -> None:
             merge_state_status="UNKNOWN",
             owner="test-owner",
             repo="test-repo",
-            labels=("erk-plan",),
+            labels=("erk-pr",),
         )
 
         fake_gh = FakeLocalGitHub(

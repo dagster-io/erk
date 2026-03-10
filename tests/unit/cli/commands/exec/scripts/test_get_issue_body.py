@@ -25,7 +25,7 @@ def _make_issue(
         body=body,
         state="OPEN",
         url=f"https://github.com/test/repo/issues/{number}",
-        labels=["erk-pr", "erk-plan"],
+        labels=["erk-pr"],
         assignees=[],
         created_at=now,
         updated_at=now,
@@ -52,7 +52,7 @@ def test_get_issue_body_success() -> None:
     assert output["title"] == "Test Issue"
     assert output["body"] == "This is the issue body"
     assert output["state"] == "OPEN"
-    assert output["labels"] == ["erk-pr", "erk-plan"]
+    assert output["labels"] == ["erk-pr"]
     assert output["url"] == "https://github.com/test/repo/issues/42"
 
 
@@ -72,7 +72,7 @@ def hello():
     return "world"
 ```
 """
-    issue = _make_issue(99, "Markdown Test [erk-plan]", body_markdown)
+    issue = _make_issue(99, "Markdown Test [erk-pr]", body_markdown)
     fake_gh = FakeGitHubIssues(issues={99: issue})
     runner = CliRunner()
 

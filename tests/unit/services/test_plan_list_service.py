@@ -50,7 +50,7 @@ class TestPlanListData:
                 body="",
                 state=PlanState.OPEN,
                 url="",
-                labels=["erk-pr", "erk-plan"],
+                labels=["erk-pr"],
                 assignees=[],
                 created_at=now,
                 updated_at=now,
@@ -127,7 +127,7 @@ def _make_rest_issue_pr(
         "state": "open",
         "created_at": created_at,
         "updated_at": updated_at,
-        "labels": [{"name": label} for label in (labels or ["erk-plan"])],
+        "labels": [{"name": label} for label in (labels or ["erk-pr"])],
         "user": {"login": author},
         "pull_request": {"head": {"ref": effective_branch}},
     }
@@ -162,7 +162,7 @@ def _setup_http_for_prs(
     *,
     rest_items: list[dict],
     pr_numbers: list[int],
-    labels: str = "erk-pr,erk-plan",
+    labels: str = "erk-pr",
     graphql_override: dict | None = None,
 ) -> FakeHttpClient:
     """Configure FakeHttpClient with REST + GraphQL responses for planned PR tests."""
@@ -191,7 +191,7 @@ class TestPlannedPRPlanListService:
         service = PlannedPRPlanListService(FakeLocalGitHub(), time=FakeTime())
         result = service.get_plan_list_data(
             location=TEST_LOCATION,
-            labels=["erk-pr", "erk-plan"],
+            labels=["erk-pr"],
             http_client=http_client,
         )
 
@@ -206,7 +206,7 @@ class TestPlannedPRPlanListService:
         service = PlannedPRPlanListService(FakeLocalGitHub(), time=FakeTime())
         result = service.get_plan_list_data(
             location=TEST_LOCATION,
-            labels=["erk-pr", "erk-plan"],
+            labels=["erk-pr"],
             http_client=http_client,
         )
 
@@ -258,7 +258,7 @@ class TestPlannedPRPlanListService:
         service = PlannedPRPlanListService(FakeLocalGitHub(), time=FakeTime())
         result = service.get_plan_list_data(
             location=TEST_LOCATION,
-            labels=["erk-pr", "erk-plan"],
+            labels=["erk-pr"],
             http_client=http_client,
         )
 
@@ -286,7 +286,7 @@ class TestPlannedPRPlanListService:
         service = PlannedPRPlanListService(FakeLocalGitHub(), time=FakeTime())
         result = service.get_plan_list_data(
             location=TEST_LOCATION,
-            labels=["erk-pr", "erk-plan"],
+            labels=["erk-pr"],
             http_client=http_client,
         )
 
@@ -310,7 +310,7 @@ class TestPlannedPRPlanListService:
         service = PlannedPRPlanListService(FakeLocalGitHub(), time=FakeTime())
         result = service.get_plan_list_data(
             location=TEST_LOCATION,
-            labels=["erk-pr", "erk-plan"],
+            labels=["erk-pr"],
             http_client=http_client,
         )
 
@@ -350,7 +350,7 @@ last_dispatched_at: '2024-06-01T10:00:00Z'
         service = PlannedPRPlanListService(FakeLocalGitHub(), time=FakeTime())
         result = service.get_plan_list_data(
             location=TEST_LOCATION,
-            labels=["erk-pr", "erk-plan"],
+            labels=["erk-pr"],
             http_client=http_client,
         )
 
@@ -380,7 +380,7 @@ last_dispatched_node_id: 'WFR_draft456'
         service = PlannedPRPlanListService(FakeLocalGitHub(), time=FakeTime())
         result = service.get_plan_list_data(
             location=TEST_LOCATION,
-            labels=["erk-pr", "erk-plan"],
+            labels=["erk-pr"],
             skip_workflow_runs=True,
             http_client=http_client,
         )
@@ -422,7 +422,7 @@ last_dispatched_node_id: 'WFR_draft456'
         service = PlannedPRPlanListService(FakeLocalGitHub(), time=FakeTime())
         result = service.get_plan_list_data(
             location=TEST_LOCATION,
-            labels=["erk-pr", "erk-plan"],
+            labels=["erk-pr"],
             http_client=http_client,
         )
 
@@ -460,7 +460,7 @@ last_dispatched_node_id: 'WFR_draft456'
         service = PlannedPRPlanListService(FakeLocalGitHub(), time=FakeTime())
         result = service.get_plan_list_data(
             location=TEST_LOCATION,
-            labels=["erk-pr", "erk-plan"],
+            labels=["erk-pr"],
             http_client=http_client,
         )
 
@@ -480,7 +480,7 @@ last_dispatched_node_id: 'WFR_draft456'
         service = PlannedPRPlanListService(FakeLocalGitHub(), time=FakeTime())
         result = service.get_plan_list_data(
             location=TEST_LOCATION,
-            labels=["erk-pr", "erk-plan"],
+            labels=["erk-pr"],
             http_client=http_client,
         )
 
@@ -560,7 +560,7 @@ def _make_issue(
         body=body,
         state="OPEN",
         url=f"https://github.com/owner/repo/issues/{number}",
-        labels=labels or ["erk-plan"],
+        labels=labels or ["erk-pr"],
         assignees=[],
         created_at=_NOW,
         updated_at=_NOW,
@@ -575,7 +575,7 @@ def test_real_plan_list_service_returns_empty_data_when_no_issues() -> None:
 
     result = service.get_plan_list_data(
         location=TEST_LOCATION,
-        labels=["erk-plan"],
+        labels=["erk-pr"],
         http_client=FakeHttpClient(),
     )
 
@@ -595,7 +595,7 @@ def test_real_plan_list_service_fetches_issues_and_converts_to_plans() -> None:
 
     result = service.get_plan_list_data(
         location=TEST_LOCATION,
-        labels=["erk-plan"],
+        labels=["erk-pr"],
         http_client=FakeHttpClient(),
     )
 
@@ -626,7 +626,7 @@ def test_real_plan_list_service_skips_workflow_runs_when_requested() -> None:
 
     result = service.get_plan_list_data(
         location=TEST_LOCATION,
-        labels=["erk-plan"],
+        labels=["erk-pr"],
         skip_workflow_runs=True,
         http_client=FakeHttpClient(),
     )
@@ -653,7 +653,7 @@ def test_real_plan_list_service_fetches_workflow_runs_by_node_id() -> None:
 
     result = service.get_plan_list_data(
         location=TEST_LOCATION,
-        labels=["erk-plan"],
+        labels=["erk-pr"],
         http_client=FakeHttpClient(),
     )
 
@@ -674,7 +674,7 @@ def test_real_plan_list_service_graceful_on_workflow_run_failure() -> None:
 
     result = service.get_plan_list_data(
         location=TEST_LOCATION,
-        labels=["erk-plan"],
+        labels=["erk-pr"],
         http_client=FakeHttpClient(),
     )
 
@@ -691,7 +691,7 @@ def test_real_plan_list_service_populates_timing_fields() -> None:
 
     result = service.get_plan_list_data(
         location=TEST_LOCATION,
-        labels=["erk-plan"],
+        labels=["erk-pr"],
         http_client=FakeHttpClient(),
     )
 

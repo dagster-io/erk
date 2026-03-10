@@ -450,7 +450,7 @@ def _rebase_and_track_for_plan(
     "for_plan",
     type=str,
     default=None,
-    help="Plan number or PR with erk-plan label",
+    help="Plan number or PR with erk-pr label",
 )
 @click.option("--no-slot", is_flag=True, help="Create worktree without slot assignment")
 @click.option(

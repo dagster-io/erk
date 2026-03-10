@@ -174,10 +174,10 @@ def test_add_labels_records_call() -> None:
         issue_comments=None,
         pr_references=None,
     )
-    fake.add_labels(owner="o", repo="r", issue_number=42, labels=("erk-pr", "erk-plan"))
+    fake.add_labels(owner="o", repo="r", issue_number=42, labels=("erk-pr",))
 
     assert len(fake.added_labels) == 1
-    assert fake.added_labels[0].labels == ("erk-pr", "erk-plan")
+    assert fake.added_labels[0].labels == ("erk-pr",)
 
 
 def test_dispatch_workflow_records_call() -> None:
@@ -256,7 +256,7 @@ def test_get_pr_returns_configured_pr() -> None:
         base_ref_name="main",
         owner="o",
         repo="r",
-        labels=["erk-pr"],
+        labels=["erk-pr"],  # Not erk-core anymore
     )
     fake = FakeRemoteGitHub(
         authenticated_user="test-user",

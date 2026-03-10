@@ -55,18 +55,18 @@ def test_get_issues_with_pr_linkages_uses_gh_array_syntax_for_labels(
 
         github.get_issues_with_pr_linkages(
             location=location,
-            labels=["erk-pr", "erk-plan"],
+            labels=["erk-pr"],
             state="OPEN",
         )
 
         assert len(created_commands) == 1
         cmd = created_commands[0]
 
-        # Verify labels uses array syntax: -f labels[]=erk-plan
+        # Verify labels uses array syntax: -f labels[]=erk-pr
         # Find the labels array argument
         labels_found = False
         for arg in cmd:
-            if arg == "labels[]=erk-plan":
+            if arg == "labels[]=erk-pr":
                 labels_found = True
                 break
 
@@ -111,7 +111,7 @@ def test_get_issues_with_pr_linkages_uses_gh_array_syntax_for_states(
 
         github.get_issues_with_pr_linkages(
             location=location,
-            labels=["erk-pr", "erk-plan"],
+            labels=["erk-pr"],
             state="OPEN",
         )
 
@@ -171,7 +171,7 @@ def test_get_issues_with_pr_linkages_uses_gh_object_syntax_for_filterby(
 
         github.get_issues_with_pr_linkages(
             location=location,
-            labels=["erk-pr", "erk-plan"],
+            labels=["erk-pr"],
             creator="testuser",  # This triggers filterBy variable
         )
 
@@ -226,7 +226,7 @@ def test_get_issues_with_pr_linkages_uses_string_flags_for_strings(
 
         github.get_issues_with_pr_linkages(
             location=location,
-            labels=["erk-pr", "erk-plan"],
+            labels=["erk-pr"],
         )
 
         assert len(created_commands) == 1
@@ -284,7 +284,7 @@ def test_get_issues_with_pr_linkages_uses_typed_flag_for_first(
 
         github.get_issues_with_pr_linkages(
             location=location,
-            labels=["erk-pr", "erk-plan"],
+            labels=["erk-pr"],
             limit=50,
         )
 
@@ -337,7 +337,7 @@ def test_get_issues_with_pr_linkages_handles_multiple_labels(
 
         github.get_issues_with_pr_linkages(
             location=location,
-            labels=["erk-plan", "bug"],
+            labels=["erk-pr", "bug"],
         )
 
         assert len(created_commands) == 1
@@ -346,5 +346,5 @@ def test_get_issues_with_pr_linkages_handles_multiple_labels(
         # Verify each label is passed separately with array syntax
         label_args = [a for a in cmd if a.startswith("labels[]=")]
         assert len(label_args) == 2, f"Expected 2 label args, got {label_args}"
-        assert "labels[]=erk-plan" in label_args
+        assert "labels[]=erk-pr" in label_args
         assert "labels[]=bug" in label_args

@@ -458,7 +458,7 @@ def _create_json_response(
     "from_plan",
     type=str,
     help=(
-        "Plan number or URL with erk-plan label. Fetches plan content "
+        "Plan number or URL with erk-pr label. Fetches plan content "
         "and creates worktree with impl folder and plan-ref.json metadata. "
         "Worktree names are automatically suffixed with the current date (-YY-MM-DD) "
         "and versioned if duplicates exist."
@@ -531,7 +531,7 @@ def create_wt(
     Reads config.toml for env templates and post-create commands (if present).
     If --from-plan-file is provided, derives name from the plan filename and creates
     an implementation context folder in the worktree.
-    If --from-plan is provided, fetches the plan, validates the erk-plan label,
+    If --from-plan is provided, fetches the plan, validates the erk-pr label,
     derives name from the plan title, and creates an impl folder with plan-ref.json metadata.
     If --from-current-branch is provided, moves the current branch to the new worktree.
     If --from-branch is provided, creates a worktree from an existing branch.

@@ -1,10 +1,7 @@
 """Shared constants for erk CLI commands."""
 
-# GitHub issue label for erk plans
-ERK_PLAN_LABEL = "erk-plan"
-
-# Title prefix for erk-plan issues (with trailing space for easy stripping)
-ERK_PLAN_TITLE_PREFIX = "[erk-plan] "
+# Title prefix for erk-pr issues (with trailing space for easy stripping)
+ERK_PR_TITLE_PREFIX = "[erk-pr] "
 
 # Plan markdown heading prefix (with trailing space for easy stripping)
 PLAN_HEADING_PREFIX = "Plan: "
@@ -56,9 +53,6 @@ AUTOFIX_TRIGGER_WORKFLOWS = frozenset(
 
 # Shared label for all plan PRs (implementation + learn)
 ERK_PR_LABEL = "erk-pr"
-
-# Core work label (plan PRs + code PRs, excludes learn PRs)
-ERK_CORE_LABEL = "erk-core"
 
 # Learn plan label (for plans that learn from sessions)
 ERK_LEARN_LABEL = "erk-learn"

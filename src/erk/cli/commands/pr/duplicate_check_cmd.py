@@ -116,12 +116,13 @@ def duplicate_check_plan(
     )
     plan_data = ctx.plan_list_service.get_plan_list_data(
         location=location,
-        labels=["erk-pr", "erk-plan"],
+        labels=["erk-pr"],
         state="open",
         skip_workflow_runs=True,
         http_client=http_client,
     )
-    existing_plans = plan_data.plans
+    # Filter to plans only (title prefix check)
+    existing_plans = [p for p in plan_data.plans if p.title.startswith("[erk-pr]")]
 
     if exclude_plan_id is not None:
         existing_plans = [p for p in existing_plans if p.pr_identifier != exclude_plan_id]

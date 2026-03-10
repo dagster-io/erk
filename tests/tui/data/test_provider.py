@@ -260,7 +260,7 @@ class TestBuildWorktreeMapping:
             "url": "https://github.com/test/repo/pull/7624",
             "created_at": "2026-02-19T14:16:00+00:00",
             "synced_at": "2026-02-19T14:16:00+00:00",
-            "labels": ["erk-plan"],
+            "labels": ["erk-pr"],
             "objective_id": None,
         }
         (impl_dir / "plan-ref.json").write_text(json.dumps(plan_ref_data), encoding="utf-8")
@@ -327,7 +327,7 @@ class TestBuildWorktreeMapping:
             "url": "https://github.com/test/repo/pull/8001",
             "created_at": "2026-01-15T14:30:00+00:00",
             "synced_at": "2026-01-15T14:30:00+00:00",
-            "labels": ["erk-plan"],
+            "labels": ["erk-pr"],
             "objective_id": None,
         }
         (impl_dir / "plan-ref.json").write_text(json.dumps(plan_ref_data), encoding="utf-8")
@@ -396,7 +396,7 @@ class TestBuildWorktreeMapping:
             "url": "https://github.com/test/repo/pull/9999",
             "created_at": "2026-01-15T14:30:00+00:00",
             "synced_at": "2026-01-15T14:30:00+00:00",
-            "labels": ["erk-plan"],
+            "labels": ["erk-pr"],
             "objective_id": None,
         }
         (impl_dir / "plan-ref.json").write_text(json.dumps(plan_ref_data), encoding="utf-8")
@@ -1830,7 +1830,7 @@ class TestFetchPlansByIds:
                 body=body,
                 state="OPEN",
                 url="https://github.com/test/repo/issues/100",
-                labels=["erk-pr", "erk-plan"],
+                labels=["erk-pr"],
                 assignees=[],
                 created_at=datetime(2025, 1, 1, tzinfo=UTC),
                 updated_at=datetime(2025, 1, 2, tzinfo=UTC),
@@ -1842,7 +1842,7 @@ class TestFetchPlansByIds:
                 body=body,
                 state="CLOSED",
                 url="https://github.com/test/repo/issues/200",
-                labels=["erk-pr", "erk-plan"],
+                labels=["erk-pr"],
                 assignees=[],
                 created_at=datetime(2025, 1, 1, tzinfo=UTC),
                 updated_at=datetime(2025, 1, 2, tzinfo=UTC),
@@ -1866,7 +1866,7 @@ class TestFetchPlansByIds:
                 body=body,
                 state="OPEN",
                 url="https://github.com/test/repo/issues/300",
-                labels=["erk-pr", "erk-plan"],
+                labels=["erk-pr"],
                 assignees=[],
                 created_at=datetime(2025, 1, 1, tzinfo=UTC),
                 updated_at=datetime(2025, 1, 2, tzinfo=UTC),
@@ -1878,7 +1878,7 @@ class TestFetchPlansByIds:
                 body=body,
                 state="OPEN",
                 url="https://github.com/test/repo/issues/100",
-                labels=["erk-pr", "erk-plan"],
+                labels=["erk-pr"],
                 assignees=[],
                 created_at=datetime(2025, 1, 1, tzinfo=UTC),
                 updated_at=datetime(2025, 1, 2, tzinfo=UTC),

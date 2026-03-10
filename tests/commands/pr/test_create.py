@@ -37,13 +37,12 @@ def test_create_from_file(tmp_path) -> None:
         # Verify draft PR was created with correct title
         assert len(fake_github.created_prs) == 1
         _branch, pr_title, _body, _base, draft = fake_github.created_prs[0]
-        assert pr_title == "[erk-plan] Test Feature"
+        assert pr_title == "[erk-pr] Test Feature"
         assert draft is True
 
         # Verify labels were added to PR
         label_names = [label for _pr_num, label in fake_github.added_labels]
         assert "erk-pr" in label_names
-        assert "erk-plan" in label_names
 
 
 def test_create_from_stdin() -> None:
@@ -73,9 +72,9 @@ def test_create_from_stdin() -> None:
         assert result.exit_code == 0, f"Command failed: {result.output}"
         assert "Created plan #999" in result.output
 
-        # Verify title was extracted from H1 (with [erk-plan] prefix)
+        # Verify title was extracted from H1 (with [erk-pr] prefix)
         _branch, pr_title, _body, _base, _draft = fake_github.created_prs[0]
-        assert pr_title == "[erk-plan] Stdin Feature"
+        assert pr_title == "[erk-pr] Stdin Feature"
 
 
 def test_create_extracts_h1_title(tmp_path) -> None:
@@ -97,7 +96,7 @@ def test_create_extracts_h1_title(tmp_path) -> None:
         # Assert
         assert result.exit_code == 0
         _branch, pr_title, _body, _base, _draft = fake_github.created_prs[0]
-        assert pr_title == "[erk-plan] Auto Extracted Title"
+        assert pr_title == "[erk-pr] Auto Extracted Title"
 
 
 def test_create_with_explicit_title(tmp_path) -> None:
@@ -121,7 +120,7 @@ def test_create_with_explicit_title(tmp_path) -> None:
         # Assert
         assert result.exit_code == 0
         _branch, pr_title, _body, _base, _draft = fake_github.created_prs[0]
-        assert pr_title == "[erk-plan] Custom Title"
+        assert pr_title == "[erk-pr] Custom Title"
 
 
 def test_create_with_additional_labels(tmp_path) -> None:
@@ -148,7 +147,6 @@ def test_create_with_additional_labels(tmp_path) -> None:
         assert result.exit_code == 0
         label_names = [label for _pr_num, label in fake_github.added_labels]
         assert "erk-pr" in label_names
-        assert "erk-plan" in label_names
         assert "bug" in label_names
         assert "urgent" in label_names
 
@@ -219,9 +217,9 @@ def test_create_with_file_ignores_stdin(tmp_path) -> None:
 
         # Assert
         assert result.exit_code == 0, f"Command failed: {result.output}"
-        # Verify the file content was used, not stdin (with [erk-plan] prefix)
+        # Verify the file content was used, not stdin (with [erk-pr] prefix)
         _branch, pr_title, _body, _base, _draft = fake_github.created_prs[0]
-        assert pr_title == "[erk-plan] File Title"
+        assert pr_title == "[erk-pr] File Title"
 
 
 def test_create_adds_labels_to_pr(tmp_path) -> None:
@@ -242,10 +240,9 @@ def test_create_adds_labels_to_pr(tmp_path) -> None:
         # Assert
         assert result.exit_code == 0
 
-        # Verify labels were added to PR (erk-pr + erk-plan)
+        # Verify labels were added to PR (erk-pr)
         label_names = [label for _pr_num, label in fake_github.added_labels]
         assert "erk-pr" in label_names
-        assert "erk-plan" in label_names
 
 
 def test_create_uses_current_schema(tmp_path) -> None:
@@ -335,7 +332,7 @@ def test_create_with_h2_title_fallback(tmp_path) -> None:
         # Assert
         assert result.exit_code == 0
         _branch, pr_title, _body, _base, _draft = fake_github.created_prs[0]
-        assert pr_title == "[erk-plan] H2 Title"
+        assert pr_title == "[erk-pr] H2 Title"
 
 
 def test_create_does_not_include_worktree_name(tmp_path) -> None:

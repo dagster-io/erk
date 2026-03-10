@@ -147,7 +147,7 @@ def test_not_found_error(tmp_path: Path) -> None:
 
 
 def test_is_plan_error(tmp_path: Path) -> None:
-    issue = _make_issue(200, "Some Plan", "body", labels=["erk-plan"])
+    issue = _make_issue(200, "[erk-pr] Some Plan", "body", labels=["erk-pr"])
     fake_gh = FakeGitHubIssues(issues={200: issue})
     ctx = ErkContext.for_test(
         github=FakeLocalGitHub(issues_gateway=fake_gh),

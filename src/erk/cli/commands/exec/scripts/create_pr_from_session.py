@@ -102,7 +102,7 @@ def create_pr_from_session(
         plan_content=plan_text,
         branch_name=branch_name,
         title=None,
-        labels=["erk-pr", "erk-plan", "erk-core"],
+        labels=["erk-pr"],
         source_repo=None,
         objective_id=None,
         created_from_session=session_id,

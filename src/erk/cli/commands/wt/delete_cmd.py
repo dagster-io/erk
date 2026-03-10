@@ -65,7 +65,7 @@ def _get_plan_info_for_worktree(
         Tuple of (plan number, state) if found, None otherwise.
     """
     # Search ALL states (open and closed) to find the plan
-    query = PlanQuery(labels=["erk-pr", "erk-plan"])
+    query = PlanQuery(labels=["erk-pr"])
     plans = ctx.plan_store.list_plans(repo_root, query)
 
     for plan in plans:

@@ -16,7 +16,7 @@ from erk_shared.plan_workflow import (
 def _make_plan(
     *,
     pr_identifier: str = "123",
-    title: str = "Test Issue",
+    title: str = "[erk-pr] Test Issue",
     body: str = "Plan content",
     state: PlanState = PlanState.OPEN,
     url: str = "https://github.com/org/repo/issues/123",
@@ -30,7 +30,7 @@ def _make_plan(
         body=body,
         state=state,
         url=url,
-        labels=labels if labels is not None else ["erk-plan"],
+        labels=labels if labels is not None else ["erk-pr"],
         assignees=[],
         created_at=datetime(2024, 1, 1),
         updated_at=datetime(2024, 1, 1),
@@ -43,9 +43,9 @@ def _make_plan(
 
 
 def test_prepare_plan_valid_returns_setup() -> None:
-    """Valid plan with erk-plan label returns PlanBranchSetup."""
+    """Valid plan with [erk-pr] title prefix returns PlanBranchSetup."""
     plan = _make_plan(
-        labels=["erk-plan", "enhancement"],
+        labels=["erk-pr", "enhancement"],
         header_fields={"branch_name": "plan-test-01-15-1430"},
     )
     timestamp = datetime(2024, 1, 15, 14, 30)
@@ -56,22 +56,22 @@ def test_prepare_plan_valid_returns_setup() -> None:
     assert result.warnings == ()
 
 
-def test_prepare_plan_missing_label_returns_failure() -> None:
-    """Plan without erk-plan label returns PlanValidationFailed."""
-    plan = _make_plan(labels=["bug", "enhancement"])
+def test_prepare_plan_missing_title_prefix_returns_failure() -> None:
+    """Plan without [erk-pr] title prefix returns PlanValidationFailed."""
+    plan = _make_plan(title="No prefix plan")
     timestamp = datetime(2024, 1, 15, 14, 30)
 
     result = prepare_plan_for_worktree(plan, timestamp, warn_non_open=True)
 
     assert isinstance(result, PlanValidationFailed)
-    assert "must have 'erk-plan' label" in result.message
+    assert "'[erk-pr]' title prefix" in result.message
 
 
 def test_prepare_plan_non_open_generates_warning() -> None:
     """Non-OPEN plan generates warning in result."""
     plan = _make_plan(
         state=PlanState.CLOSED,
-        labels=["erk-pr", "erk-plan"],
+        labels=["erk-pr"],
         header_fields={"branch_name": "plan-test-01-15-1430"},
     )
     timestamp = datetime(2024, 1, 15, 14, 30)
@@ -115,11 +115,11 @@ def test_prepare_plan_with_objective_id_populates_objective_issue() -> None:
     """Plan with objective_id populates PlanBranchSetup.objective_issue field."""
     plan = Plan(
         pr_identifier="123",
-        title="Test Issue",
+        title="[erk-pr] Test Issue",
         body="Plan content",
         state=PlanState.OPEN,
         url="https://github.com/org/repo/issues/123",
-        labels=["erk-pr", "erk-plan"],
+        labels=["erk-pr"],
         assignees=[],
         created_at=datetime(2024, 1, 1),
         updated_at=datetime(2024, 1, 1),
@@ -150,7 +150,7 @@ def test_uses_existing_branch_from_header() -> None:
     """Plan with branch_name in header_fields uses it directly."""
     plan = _make_plan(
         pr_identifier="456",
-        title="Add New Feature",
+        title="[erk-pr] Add New Feature",
         header_fields={"branch_name": "plan-add-new-feature-01-15-1430"},
     )
     timestamp = datetime(2024, 3, 10, 9, 15)
@@ -166,7 +166,7 @@ def test_missing_branch_returns_failure() -> None:
     """Plan without branch_name in header_fields returns failure."""
     plan = _make_plan(
         pr_identifier="456",
-        title="Add New Feature",
+        title="[erk-pr] Add New Feature",
         header_fields={},
     )
     timestamp = datetime(2024, 3, 10, 9, 15)
@@ -181,7 +181,7 @@ def test_empty_branch_returns_failure() -> None:
     """Plan with empty branch_name in header_fields returns failure."""
     plan = _make_plan(
         pr_identifier="456",
-        title="Add New Feature",
+        title="[erk-pr] Add New Feature",
         header_fields={"branch_name": ""},
     )
     timestamp = datetime(2024, 3, 10, 9, 15)

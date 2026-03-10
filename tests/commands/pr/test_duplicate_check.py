@@ -29,7 +29,7 @@ def _make_plan(
         body=body,
         state=PlanState.OPEN,
         url=f"https://github.com/owner/repo/issues/{pr_identifier}",
-        labels=["erk-pr", "erk-plan"],
+        labels=["erk-pr"],
         assignees=[],
         created_at=datetime(2025, 1, 1),
         updated_at=datetime(2025, 1, 1),
@@ -59,7 +59,9 @@ def test_no_duplicates_found() -> None:
     executor = FakePromptExecutor(
         simulated_prompt_output='{"duplicates": []}',
     )
-    existing = _make_plan(pr_identifier="100", title="Refactor auth", body="Restructure auth flow")
+    existing = _make_plan(
+        pr_identifier="100", title="[erk-pr] Refactor auth", body="Restructure auth flow"
+    )
     plan_store, _ = create_plan_store_with_plans({"100": existing})
 
     runner = CliRunner()
@@ -90,7 +92,7 @@ def test_duplicate_detected() -> None:
         simulated_prompt_output=llm_output,
     )
     existing = _make_plan(
-        pr_identifier="100", title="Dark mode support", body="Add dark mode to app"
+        pr_identifier="100", title="[erk-pr] Dark mode support", body="Add dark mode to app"
     )
     plan_store, _ = create_plan_store_with_plans({"100": existing})
 
@@ -113,7 +115,7 @@ def test_duplicate_detected() -> None:
 
         assert result.exit_code == 1
         assert "Potential duplicate(s) found" in result.output
-        assert '#100: "Dark mode support"' in result.output
+        assert '#100: "[erk-pr] Dark mode support"' in result.output
         assert "Both add dark mode" in result.output
 
 
@@ -150,7 +152,7 @@ def test_llm_error_graceful_degradation() -> None:
     executor = FakePromptExecutor(
         simulated_prompt_error="LLM unavailable",
     )
-    existing = _make_plan(pr_identifier="100", title="Existing plan", body="body")
+    existing = _make_plan(pr_identifier="100", title="[erk-pr] Existing plan", body="body")
     plan_store, _ = create_plan_store_with_plans({"100": existing})
 
     runner = CliRunner()
@@ -196,8 +198,8 @@ def test_plan_flag_fetches_and_excludes_self() -> None:
     executor = FakePromptExecutor(
         simulated_prompt_output=llm_output,
     )
-    plan_100 = _make_plan(pr_identifier="100", title="Plan A", body="body A")
-    plan_200 = _make_plan(pr_identifier="200", title="Plan B", body="body B for checking")
+    plan_100 = _make_plan(pr_identifier="100", title="[erk-pr] Plan A", body="body A")
+    plan_200 = _make_plan(pr_identifier="200", title="[erk-pr] Plan B", body="body B for checking")
     plan_store, _ = create_plan_store_with_plans({"100": plan_100, "200": plan_200})
 
     issue_200 = IssueInfo(
@@ -206,7 +208,7 @@ def test_plan_flag_fetches_and_excludes_self() -> None:
         body="body B for checking",
         state="OPEN",
         url="https://github.com/owner/repo/issues/200",
-        labels=["erk-pr", "erk-plan"],
+        labels=["erk-pr"],
         assignees=[],
         created_at=datetime(2025, 1, 1),
         updated_at=datetime(2025, 1, 1),
@@ -258,8 +260,8 @@ def test_progress_reporting_lists_plans() -> None:
     executor = FakePromptExecutor(
         simulated_prompt_output='{"duplicates": []}',
     )
-    plan_100 = _make_plan(pr_identifier="100", title="Refactor auth", body="body A")
-    plan_200 = _make_plan(pr_identifier="200", title="Add dark mode", body="body B")
+    plan_100 = _make_plan(pr_identifier="100", title="[erk-pr] Refactor auth", body="body A")
+    plan_200 = _make_plan(pr_identifier="200", title="[erk-pr] Add dark mode", body="body B")
     plan_store, _ = create_plan_store_with_plans({"100": plan_100, "200": plan_200})
 
     runner = CliRunner()
@@ -281,8 +283,8 @@ def test_progress_reporting_lists_plans() -> None:
 
         assert result.exit_code == 0
         assert "Checking against 2 open plan(s):" in result.output
-        assert "#100: Refactor auth" in result.output
-        assert "#200: Add dark mode" in result.output
+        assert "#100: [erk-pr] Refactor auth" in result.output
+        assert "#200: [erk-pr] Add dark mode" in result.output
         assert "Analyzing for semantic duplicates..." in result.output
 
 

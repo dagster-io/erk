@@ -378,21 +378,19 @@ def test_fake_github_issues_empty_labels() -> None:
 def test_fake_github_issues_label_filtering_implemented() -> None:
     """Test that label filtering filters issues by required labels."""
     pre_configured = {
-        1: create_test_issue(
-            1, "Issue 1", "Body 1", url="http://url/1", labels=["erk-plan", "bug"]
-        ),
+        1: create_test_issue(1, "Issue 1", "Body 1", url="http://url/1", labels=["erk-pr", "bug"]),
         2: create_test_issue(
             2,
             "Issue 2",
             "Body 2",
             url="http://url/2",
-            labels=["erk-pr", "erk-plan"],
+            labels=["erk-pr"],
         ),
     }
     issues = FakeGitHubIssues(issues=pre_configured)
 
     # Filter for issues with a label that exists on issue 1 but not issue 2
-    result = issues.list_issues(repo_root=sentinel_path(), labels=["erk-plan", "bug"])
+    result = issues.list_issues(repo_root=sentinel_path(), labels=["erk-pr", "bug"])
 
     # Only issue 1 has both labels
     assert len(result) == 1
@@ -563,28 +561,28 @@ def test_fake_github_issues_ensure_label_exists_creates_new() -> None:
 
     issues.ensure_label_exists(
         repo_root=sentinel_path(),
-        label="erk-plan",
-        description="Implementation plan created by erk",
+        label="erk-pr",
+        description="Planning PR",
         color="0E8A16",
     )
 
-    assert "erk-plan" in issues.labels
-    assert issues.created_labels == [("erk-plan", "Implementation plan created by erk", "0E8A16")]
+    assert "erk-pr" in issues.labels
+    assert issues.created_labels == [("erk-pr", "Planning PR", "0E8A16")]
 
 
 def test_fake_github_issues_ensure_label_exists_idempotent() -> None:
     """Test ensure_label_exists doesn't create duplicate labels."""
-    issues = FakeGitHubIssues(labels={"erk-plan"})
+    issues = FakeGitHubIssues(labels={"erk-pr"})
 
     issues.ensure_label_exists(
         repo_root=sentinel_path(),
-        label="erk-plan",
-        description="Implementation plan created by erk",
+        label="erk-pr",
+        description="Planning PR",
         color="0E8A16",
     )
 
     # Label already exists, no new creation
-    assert "erk-plan" in issues.labels
+    assert "erk-pr" in issues.labels
     assert issues.created_labels == []
 
 
@@ -995,15 +993,15 @@ def test_get_prs_referencing_issue_different_issue_numbers() -> None:
 
 def test_label_exists_returns_true_for_existing_label() -> None:
     """Test label_exists returns True when label exists in fake storage."""
-    issues = FakeGitHubIssues(labels={"erk-plan", "erk-objective"})
+    issues = FakeGitHubIssues(labels={"erk-pr", "erk-objective"})
 
-    assert issues.label_exists(sentinel_path(), "erk-plan") is True
+    assert issues.label_exists(sentinel_path(), "erk-pr") is True
     assert issues.label_exists(sentinel_path(), "erk-objective") is True
 
 
 def test_label_exists_returns_false_for_missing_label() -> None:
     """Test label_exists returns False when label doesn't exist."""
-    issues = FakeGitHubIssues(labels={"erk-plan"})
+    issues = FakeGitHubIssues(labels={"erk-pr"})
 
     assert issues.label_exists(sentinel_path(), "nonexistent") is False
 

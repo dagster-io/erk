@@ -465,7 +465,7 @@ class TestAuthorFilter:
         provider = FakePlanDataProvider(plans=[make_plan_row(1, "Plan A")])
         service = FakePrService()
         filters = PlanFilters(
-            labels=("erk-plan",),
+            labels=("erk-pr",),
             state="open",
             run_state=None,
             limit=None,
@@ -523,7 +523,7 @@ class TestAuthorFilter:
         provider = FakePlanDataProvider(plans=[make_plan_row(1, "Plan A")])
         service = FakePrService()
         filters = PlanFilters(
-            labels=("erk-plan",),
+            labels=("erk-pr",),
             state="open",
             run_state=None,
             limit=None,

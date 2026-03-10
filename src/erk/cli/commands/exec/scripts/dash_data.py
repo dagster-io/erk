@@ -27,7 +27,7 @@ from erk_shared.gateway.github.types import GitHubRepoId, GitHubRepoLocation, Is
 
 @click.command(name="dash-data")
 @click.option("--state", type=click.Choice(["open", "closed"]), default=None)
-@click.option("--label", multiple=True, default=("erk-core",))
+@click.option("--label", multiple=True, default=("erk-pr",))
 @click.option("--limit", type=int, default=None)
 @click.option("--show-prs/--no-show-prs", default=True)
 @click.option("--show-runs/--no-show-runs", default=False)

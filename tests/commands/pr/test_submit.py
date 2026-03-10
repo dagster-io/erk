@@ -1362,11 +1362,11 @@ plan_comment_id: 1000
 <!-- /erk:metadata-block:plan-header -->"""
         plan_issue = IssueInfo(
             number=5823,
-            title="[erk-plan] Add feature",
+            title="[erk-pr] Add feature",
             body=issue_body,
             state="OPEN",
             url="https://github.com/owner/repo/issues/5823",
-            labels=["erk-pr", "erk-plan"],
+            labels=["erk-pr"],
             assignees=[],
             created_at=now,
             updated_at=now,
@@ -1512,11 +1512,11 @@ objective_issue: 5000
 <!-- /erk:metadata-block:plan-header -->"""
         plan_issue = IssueInfo(
             number=5823,
-            title="[erk-plan] Add feature",
+            title="[erk-pr] Add feature",
             body=issue_body,
             state="OPEN",
             url="https://github.com/owner/repo/issues/5823",
-            labels=["erk-pr", "erk-plan"],
+            labels=["erk-pr"],
             assignees=[],
             created_at=now,
             updated_at=now,

@@ -354,14 +354,14 @@ def offer_plans_repo_label_setup(repo_root: Path, plans_repo: str) -> None:
 
     When a plans_repo is configured, issues are created in a separate repository
     from the working repository. This function ensures all required erk labels
-    (erk-plan, erk-extraction, erk-objective) exist in that target repository.
+    (erk-pr, erk-pr, erk-objective) exist in that target repository.
 
     Args:
         repo_root: Path to the working repository root (used for gh CLI context)
         plans_repo: Target repository in "owner/repo" format
     """
     user_output(f"\nPlans repo configured: {plans_repo}")
-    user_output("Erk uses labels (erk-plan, erk-extraction, erk-objective) to organize issues.")
+    user_output("Erk uses labels (erk-pr, erk-pr, erk-objective) to organize issues.")
 
     if not _console.confirm(f"Set up erk labels in {plans_repo}?", default=True):
         user_output("Skipped. You can set up labels later with: erk doctor --fix")

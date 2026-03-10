@@ -31,8 +31,8 @@ from erk_shared.gateway.github.metadata.types import BlockKeys
 def get_plans_for_objective(ctx: click.Context, objective_number: int) -> None:
     """Fetch erk-plans linked to an objective.
 
-    Lists all issues with the erk-plan label, then filters to those
-    whose plan-header metadata contains objective_id matching the
+    Lists all erk-pr issues with [erk-pr] title prefix, then filters
+    to those whose plan-header metadata contains objective_id matching the
     given objective number.
     """
     github = require_github_issues(ctx)
@@ -41,7 +41,7 @@ def get_plans_for_objective(ctx: click.Context, objective_number: int) -> None:
     try:
         all_plans = github.list_issues(
             repo_root=repo_root,
-            labels=["erk-pr", "erk-plan"],
+            labels=["erk-pr"],
             state="all",
         )
     except RuntimeError as e:

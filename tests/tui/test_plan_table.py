@@ -150,7 +150,7 @@ class TestPlanDataTableRowConversion:
     def test_row_to_values_basic(self) -> None:
         """Basic row conversion without optional columns."""
         filters = PlanFilters(
-            labels=("erk-plan",),
+            labels=("erk-pr",),
             state="open",
             run_state=None,
             limit=None,
@@ -178,7 +178,7 @@ class TestPlanDataTableRowConversion:
     def test_row_to_values_with_prs(self) -> None:
         """Row conversion with PR columns enabled."""
         filters = PlanFilters(
-            labels=("erk-plan",),
+            labels=("erk-pr",),
             state="open",
             run_state=None,
             limit=None,
@@ -206,7 +206,7 @@ class TestPlanDataTableRowConversion:
     def test_row_to_values_with_pr_link_indicator(self) -> None:
         """Row conversion shows 🔗 indicator for PRs that will close issues."""
         filters = PlanFilters(
-            labels=("erk-plan",),
+            labels=("erk-pr",),
             state="open",
             run_state=None,
             limit=None,
@@ -227,7 +227,7 @@ class TestPlanDataTableRowConversion:
     def test_row_to_values_with_runs(self) -> None:
         """Row conversion with run columns enabled."""
         filters = PlanFilters(
-            labels=("erk-plan",),
+            labels=("erk-pr",),
             state="open",
             run_state=None,
             limit=None,
@@ -509,7 +509,7 @@ class TestShowPrColumnFalse:
           chks, cmts, local-wt, local-impl, remote-impl
         """
         filters = PlanFilters(
-            labels=("erk-plan",),
+            labels=("erk-pr",),
             state="open",
             run_state=None,
             limit=None,
@@ -529,7 +529,7 @@ class TestShowPrColumnFalse:
     def test_row_to_values_with_show_pr_column_false_pr_display_not_in_values(self) -> None:
         """When show_pr_column=False, the pr_display string is absent from values."""
         filters = PlanFilters(
-            labels=("erk-plan",),
+            labels=("erk-pr",),
             state="open",
             run_state=None,
             limit=None,
@@ -550,7 +550,7 @@ class TestShowPrColumnFalse:
     def test_row_to_values_with_show_pr_column_true_includes_pr_value(self) -> None:
         """When show_pr_column=True (default), pr_display is included at index 10."""
         filters = PlanFilters(
-            labels=("erk-plan",),
+            labels=("erk-pr",),
             state="open",
             run_state=None,
             limit=None,
@@ -575,7 +575,7 @@ class TestShowPrColumnFalse:
 def test_row_to_values_planned_pr_includes_stage() -> None:
     """Stage column is included in output (stage/sts/created columns are always present)."""
     filters = PlanFilters(
-        labels=("erk-plan",),
+        labels=("erk-pr",),
         state=None,
         run_state=None,
         limit=None,

@@ -66,7 +66,7 @@ def _make_issue(
         body=body,
         state=state,
         url=f"https://github.com/test/repo/issues/{number}",
-        labels=["erk-pr", "erk-plan"],
+        labels=["erk-pr"],
         assignees=[],
         created_at=fixed_time,
         updated_at=fixed_time,

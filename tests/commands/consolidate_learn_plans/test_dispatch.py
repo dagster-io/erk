@@ -68,7 +68,7 @@ def test_dispatch_happy_path() -> None:
 
     # Verify erk-pr, erk-plan, and erk-learn labels added
     assert len(remote.added_labels) == 1
-    assert remote.added_labels[0].labels == ("erk-pr", "erk-plan", "erk-learn")
+    assert remote.added_labels[0].labels == ("erk-pr", "erk-learn")
 
     # Verify workflow was triggered
     assert len(remote.dispatched_workflows) == 1

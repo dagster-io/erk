@@ -454,7 +454,7 @@ class RealPlanDataProvider(PlanDataProvider):
         all_plans: list[PlanRowData] = []
         for state in ("open", "closed"):
             filters = PlanFilters(
-                labels=("erk-plan",),
+                labels=("erk-pr",),
                 state=state,
                 run_state=None,
                 limit=100,

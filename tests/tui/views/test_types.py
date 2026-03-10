@@ -33,7 +33,7 @@ class TestViewConfig:
         """PLANS_VIEW has correct configuration."""
         assert PLANS_VIEW.mode == ViewMode.PLANS
         assert PLANS_VIEW.display_name == "PRs"
-        assert PLANS_VIEW.labels == ("erk-core",)
+        assert PLANS_VIEW.labels == ("erk-pr",)
         assert PLANS_VIEW.key_hint == "1"
 
     def test_learn_view_config(self) -> None:

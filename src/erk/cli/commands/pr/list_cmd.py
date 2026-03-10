@@ -278,7 +278,7 @@ def _pr_list_impl(
         if is_authenticated and username:
             creator = username
 
-    labels = label if label else ("erk-core",)
+    labels = label if label else ("erk-pr",)
 
     # Determine location root
     if not isinstance(ctx.repo, NoRepoSentinel):
@@ -396,8 +396,8 @@ def _run_interactive_mode(
         if is_authenticated and username:
             creator = username
 
-    # Build labels - default to ["erk-core"]
-    labels = label if label else ("erk-core",)
+    # Build labels - default to ["erk-pr"]
+    labels = label if label else ("erk-pr",)
 
     # Create data provider and filters
     location = GitHubRepoLocation(root=repo_root, repo_id=GitHubRepoId(owner, repo_name))
@@ -492,7 +492,7 @@ def pr_list(
         erk pr list --all-users          # All users' plans
         erk pr list -A                   # All users' plans (short form)
         erk pr list --state open
-        erk pr list --label erk-plan --label bug
+        erk pr list --label erk-pr --label bug
         erk pr list --limit 10
         erk pr list --run-state in_progress
         erk pr list --stage impl         # Filter by lifecycle stage
@@ -543,7 +543,7 @@ def dash(
         erk dash --all-users             # All users' plans
         erk dash -A                      # All users' plans (short form)
         erk dash --interval 10
-        erk dash --label erk-plan --state open
+        erk dash --label erk-pr --state open
         erk dash --limit 10
         erk dash --run-state in_progress
         erk dash --stage impl            # Filter by lifecycle stage

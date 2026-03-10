@@ -45,7 +45,7 @@ def _create_plan(
     if fake_time is None:
         fake_time = FakeTime()
     if labels is None:
-        labels = ["erk-pr", "erk-plan"]
+        labels = ["erk-pr"]
 
     return create_plan_draft_pr(
         git=fake_git,
@@ -232,7 +232,7 @@ class TestCreateObjectiveIssue:
         # Title should be just the extracted title, no suffix
         title, _, _ = fake_gh.created_issues[0]
         assert title == "My Objective"
-        assert "[erk-plan]" not in title
+        assert "[erk-pr]" not in title
         assert "[erk-objective]" not in title
 
     def test_objective_v2_body_has_metadata_and_content_in_comment(self, tmp_path: Path) -> None:
@@ -491,7 +491,7 @@ class TestCreatePlanDraftPRBranchAlreadyExists:
             plan_content="# My Feature\n\nSteps...",
             branch_name="plnd/my-feature-01-15-1430",
             title=None,
-            labels=["erk-pr", "erk-plan"],
+            labels=["erk-pr"],
             source_repo=None,
             objective_id=None,
             created_from_session=None,
@@ -596,7 +596,7 @@ class TestCreatePlanDraftPRMetadata:
             plan_content="# Full Metadata Plan\n\nSteps...",
             branch_name="plnd/full-metadata-plan-01-15-1430",
             title=None,
-            labels=["erk-pr", "erk-plan"],
+            labels=["erk-pr"],
             source_repo="owner/impl-repo",
             objective_id=7,
             created_from_session="sess-xyz",
@@ -643,7 +643,7 @@ class TestCreatePlanDraftPRNonNumericPlanId:
                 plan_content="# Test Plan\n\nSteps...",
                 branch_name="plnd/test-plan-01-15-1430",
                 title=None,
-                labels=["erk-pr", "erk-plan"],
+                labels=["erk-pr"],
                 source_repo=None,
                 objective_id=None,
                 created_from_session=None,
@@ -720,7 +720,7 @@ class TestCreatePlanDraftPRExtraFiles:
             plan_content="# Plan\n\nSteps...",
             branch_name="plnd/plan-01-15-1430",
             title=None,
-            labels=["erk-pr", "erk-plan"],
+            labels=["erk-pr"],
             source_repo=None,
             objective_id=None,
             created_from_session=None,
