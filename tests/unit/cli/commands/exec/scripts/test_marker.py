@@ -178,9 +178,7 @@ class TestMarkerCreate:
         assert "plan-saved" in data["message"]
 
         # Verify marker file was created with correct content
-        marker_file = (
-            tmp_path / ".erk" / "scratch" / "sessions" / session_id / "plan-saved.marker"
-        )
+        marker_file = tmp_path / ".erk" / "scratch" / "sessions" / session_id / "plan-saved.marker"
         assert marker_file.exists()
         assert marker_file.read_text(encoding="utf-8") == "4386"
 

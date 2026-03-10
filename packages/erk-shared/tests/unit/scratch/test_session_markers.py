@@ -96,9 +96,7 @@ def test_create_plan_saved_pr_marker_stores_number_and_title(tmp_path: Path) -> 
 
     create_plan_saved_pr_marker(session_id, tmp_path, 42, title="My Plan")
 
-    marker_file = (
-        tmp_path / ".erk" / "scratch" / "sessions" / session_id / "plan-saved.marker"
-    )
+    marker_file = tmp_path / ".erk" / "scratch" / "sessions" / session_id / "plan-saved.marker"
     assert marker_file.exists()
     assert marker_file.read_text(encoding="utf-8") == "42\nMy Plan"
 
