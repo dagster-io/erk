@@ -1,0 +1,347 @@
+<session>
+  <meta source="agent-a12369d" />
+  <meta branch="plnd/O9109-update-help-strings-03-10-0937" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>Update test assertion strings in /home/runner/work/erk/erk/tests/commands/pr/test_check_plan.py to match source code changes. The source code in check_cmd.py was changed from "Plan" to "PR" in user-facing output.
+
+Changes needed (all assertion strings):
+1. `"Validating plan #42"` → `"Validating PR #42"` (lines 69, 314)
+2. `"Plan validation passed"` → `"PR validation passed"` (lines 74, 315, 374)
+3. `"Plan validation failed"` → `"PR validation failed"` (lines 113, 162, 209, 258)
+4. `"Invalid plan number or URL"` → `"Invalid PR number or URL"` (line 400 if present)
+
+Use replace_all=true for each pattern since they appear multiple times.
+
+Do NOT change:
+- Test function names
+- Docstrings
+- Variable names
+- Test data like `plan_content = """# Plan: Test Feature` - these are GitHub issue body content, NOT output strings
+- References to "plan-header" or "plan-body" metadata block names
+
+Read the file first, make the changes, verify.</user>
+  <assistant>I'll help you update the test assertion strings in the test file to match the source code changes. Let me start by reading the file.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="6118" cache_read_input_tokens="10106" cache_creation="{'ephemeral_5m_input_tokens': 6118, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01B63dRxgjEQb73fvQqUtt59">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_check_plan.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6118" cache_read_input_tokens="10106" cache_creation="{'ephemeral_5m_input_tokens': 6118, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01B63dRxgjEQb73fvQqUtt59">
+     1→"""Tests for plan validation via pr check command."""
+     2→
+     3→from datetime import UTC, datetime
+     4→
+     5→from click.testing import CliRunner
+     6→
+     7→from erk.cli.cli import cli
+     8→from erk_shared.gateway.github.issues.types import IssueInfo
+     9→from erk_shared.gateway.github.metadata.core import render_metadata_block
+    10→from erk_shared.gateway.github.metadata.types import MetadataBlock
+    11→from erk_shared.plan_store.planned_pr_lifecycle import build_plan_stage_body
+    12→from tests.fakes.gateway.remote_github import FakeRemoteGitHub
+    13→from tests.test_utils.context_builders import build_workspace_test_context
+    14→from tests.test_utils.env_helpers import erk_inmem_env
+    15→
+    16→
+    17→def test_check_valid_plan_passes() -&gt; None:
+    18→    """Test validating a valid Schema v2 plan."""
+    19→    # Arrange
+    20→    # Valid plan-header metadata
+    21→    plan_header_data = {
+    22→        "schema_version": "2",
+    23→        "created_at": "2024-01-01T00:00:00Z",
+    24→        "created_by": "alice",
+    25→        "worktree_name": "test-feature",
+    26→    }
+    27→    plan_header_block = render_metadata_block(MetadataBlock("plan-header", plan_header_data))
+    28→
+    29→    # Valid plan-body in first comment
+    30→    plan_content = """# Plan: Test Feature
+
+... [639 lines omitted] ...
+
+   113→        assert "Plan validation failed" in result.output
+   162→        assert "Plan validation failed" in result.output
+   209→        assert "Plan validation failed" in result.output
+   258→        assert "Plan validation failed" in result.output
+   399→        assert "Error:" in result.output
+   457→    assert result.failed_count == 0
+   495→    assert result.failed_count &gt;= 1
+   496→    # Check first failure is plan-header
+   497→    failed_checks = [desc for passed, desc in result.checks if not passed]
+   498→    assert "plan-header metadata block present" in failed_checks
+   541→    assert result.failed_count &gt;= 1
+   542→    failed_checks = [desc for passed, desc in result.checks if not passed]
+   543→    assert "First comment exists" in failed_checks
+   586→    assert result.failed_count &gt;= 1
+   587→    failed_checks = [desc for passed, desc in result.checks if not passed]
+   588→    assert "plan-body content extractable" in failed_checks
+   591→def test_validate_plan_format_returns_error_on_github_failure() -&gt; None:
+   592→    """Returns PlanValidationError when GitHub API fails."""
+   593→    from erk.cli.commands.pr.check_cmd import PlanValidationError, validate_plan_format
+   609→    assert isinstance(result, PlanValidationError)
+   610→    assert "999" in result.error or "not found" in result.error.lower()
+   661→    assert result.failed_count == 0
+  </tool_result>
+  <assistant>Now I'll make the required changes. Let me update all the assertion strings that need to be changed from "Plan" to "PR":</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="14005" cache_read_input_tokens="16224" cache_creation="{'ephemeral_5m_input_tokens': 14005, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_0153dd92QHW6h1DSTKGJXrz6">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_check_plan.py</param>
+    <param name="old_string">        # Assert
+        assert result.exit_code == 0
+        assert "Validating plan #42"...[truncated 246 chars]...ent extractable" in result.output
+        assert "Plan validation passed" in result.output</param>
+    <param name="new_string">        # Assert
+        assert result.exit_code == 0
+        assert "Validating PR #42" i...[truncated 242 chars]...ntent extractable" in result.output
+        assert "PR validation passed" in result.output</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="14005" cache_read_input_tokens="16224" cache_creation="{'ephemeral_5m_input_tokens': 14005, 'ephemeral_1h_input_tokens': 0}" output_tokens="363" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0153dd92QHW6h1DSTKGJXrz6">
+The file /home/runner/work/erk/erk/tests/commands/pr/test_check_plan.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update the test for missing plan header:</assistant>
+  <usage input_tokens="4" cache_creation_input_tokens="408" cache_read_input_tokens="30229" cache_creation="{'ephemeral_5m_input_tokens': 408, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_0181htaPMoy4SNt8HXNM3n5Q">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_check_plan.py</param>
+    <param name="old_string">        # Assert
+        assert result.exit_code == 1
+        assert "[FAIL] plan-header metadata block present" in result.output
+        assert "Plan validation failed" in result.output</param>
+    <param name="new_string">        # Assert
+        assert result.exit_code == 1
+        assert "[FAIL] plan-header metadata block present" in result.output
+        assert "PR validation failed" in result.output</param>
+  </tool_use>
+  <usage input_tokens="4" cache_creation_input_tokens="408" cache_read_input_tokens="30229" cache_creation="{'ephemeral_5m_input_tokens': 408, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0181htaPMoy4SNt8HXNM3n5Q">
+The file /home/runner/work/erk/erk/tests/commands/pr/test_check_plan.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update the test for missing required field:</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="257" cache_read_input_tokens="30637" cache_creation="{'ephemeral_5m_input_tokens': 257, 'ephemeral_1h_input_tokens': 0}" output_tokens="7" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01WfCrCButGCqfWKEMDpV5sB">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_check_plan.py</param>
+    <param name="old_string">        # Assert
+        assert result.exit_code == 1
+        assert "[PASS] plan-header m...[truncated 72 chars]...ert "created_by" in result.output
+        assert "Plan validation failed" in result.output</param>
+    <param name="new_string">        # Assert
+        assert result.exit_code == 1
+        assert "[PASS] plan-header m...[truncated 70 chars]...ssert "created_by" in result.output
+        assert "PR validation failed" in result.output</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="257" cache_read_input_tokens="30637" cache_creation="{'ephemeral_5m_input_tokens': 257, 'ephemeral_1h_input_tokens': 0}" output_tokens="7" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01WfCrCButGCqfWKEMDpV5sB">
+The file /home/runner/work/erk/erk/tests/commands/pr/test_check_plan.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update the test for missing first comment:</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="409" cache_read_input_tokens="30894" cache_creation="{'ephemeral_5m_input_tokens': 409, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01JRE3rYAyGMraUEa5LWhuQ6">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_check_plan.py</param>
+    <param name="old_string">        # Assert
+        assert result.exit_code == 1
+        assert "[FAIL] First comment exists" in result.output
+        assert "Plan validation failed" in result.output</param>
+    <param name="new_string">        # Assert
+        assert result.exit_code == 1
+        assert "[FAIL] First comment exists" in result.output
+        assert "PR validation failed" in result.output</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="409" cache_read_input_tokens="30894" cache_creation="{'ephemeral_5m_input_tokens': 409, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01JRE3rYAyGMraUEa5LWhuQ6">
+The file /home/runner/work/erk/erk/tests/commands/pr/test_check_plan.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update the test for missing plan body:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="251" cache_read_input_tokens="31303" cache_creation="{'ephemeral_5m_input_tokens': 251, 'ephemeral_1h_input_tokens': 0}" output_tokens="7" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_016Xiv49RScdJM8Mvu9NEKyS">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_check_plan.py</param>
+    <param name="old_string">        # Assert
+        assert result.exit_code == 1
+        assert "[PASS] First comment...[truncated 43 chars]...ent extractable" in result.output
+        assert "Plan validation failed" in result.output</param>
+    <param name="new_string">        # Assert
+        assert result.exit_code == 1
+        assert "[PASS] First comment...[truncated 41 chars]...ntent extractable" in result.output
+        assert "PR validation failed" in result.output</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="251" cache_read_input_tokens="31303" cache_creation="{'ephemeral_5m_input_tokens': 251, 'ephemeral_1h_input_tokens': 0}" output_tokens="242" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016Xiv49RScdJM8Mvu9NEKyS">
+The file /home/runner/work/erk/erk/tests/commands/pr/test_check_plan.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update the test for GitHub URL parsing:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="391" cache_read_input_tokens="31554" cache_creation="{'ephemeral_5m_input_tokens': 391, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01QrxBf4zN2StRJoxYTHt5yP">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_check_plan.py</param>
+    <param name="old_string">        # Assert
+        assert result.exit_code == 0
+        assert "Validating plan #42" in result.output
+        assert "Plan validation passed" in result.output</param>
+    <param name="new_string">        # Assert
+        assert result.exit_code == 0
+        assert "Validating PR #42" in result.output
+        assert "PR validation passed" in result.output</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="391" cache_read_input_tokens="31554" cache_creation="{'ephemeral_5m_input_tokens': 391, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01QrxBf4zN2StRJoxYTHt5yP">
+The file /home/runner/work/erk/erk/tests/commands/pr/test_check_plan.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update the test for valid draft PR plan:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="250" cache_read_input_tokens="31945" cache_creation="{'ephemeral_5m_input_tokens': 250, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01HKCQwpVuxp9g8NZq8cJQFa">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_check_plan.py</param>
+    <param name="old_string">        # Assert
+        assert result.exit_code == 0
+        assert "[PASS] plan-header m...[truncated 135 chars]...table from body" in result.output
+        assert "Plan validation passed" in result.output</param>
+    <param name="new_string">        # Assert
+        assert result.exit_code == 0
+        assert "[PASS] plan-header m...[truncated 133 chars]...actable from body" in result.output
+        assert "PR validation passed" in result.output</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="250" cache_read_input_tokens="31945" cache_creation="{'ephemeral_5m_input_tokens': 250, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01HKCQwpVuxp9g8NZq8cJQFa">
+The file /home/runner/work/erk/erk/tests/commands/pr/test_check_plan.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update the test for invalid identifier:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="433" cache_read_input_tokens="32195" cache_creation="{'ephemeral_5m_input_tokens': 433, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01YGoHqKP5c5YzecVdLPmC2y">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_check_plan.py</param>
+    <param name="old_string">        # Assert
+        assert result.exit_code == 1
+        assert "Error:" in result.output
+        assert "Invalid plan number or URL" in result.output</param>
+    <param name="new_string">        # Assert
+        assert result.exit_code == 1
+        assert "Error:" in result.output
+        assert "Invalid PR number or URL" in result.output</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="433" cache_read_input_tokens="32195" cache_creation="{'ephemeral_5m_input_tokens': 433, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01YGoHqKP5c5YzecVdLPmC2y">
+The file /home/runner/work/erk/erk/tests/commands/pr/test_check_plan.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me verify the changes by reading the modified file:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="243" cache_read_input_tokens="32628" cache_creation="{'ephemeral_5m_input_tokens': 243, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01HQXucuEZ7ZyawBhwSwC75C">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_check_plan.py</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="243" cache_read_input_tokens="32628" cache_creation="{'ephemeral_5m_input_tokens': 243, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01HQXucuEZ7ZyawBhwSwC75C">
+     1→"""Tests for plan validation via pr check command."""
+     2→
+     3→from datetime import UTC, datetime
+     4→
+     5→from click.testing import CliRunner
+     6→
+     7→from erk.cli.cli import cli
+     8→from erk_shared.gateway.github.issues.types import IssueInfo
+     9→from erk_shared.gateway.github.metadata.core import render_metadata_block
+    10→from erk_shared.gateway.github.metadata.types import MetadataBlock
+    11→from erk_shared.plan_store.planned_pr_lifecycle import build_plan_stage_body
+    12→from tests.fakes.gateway.remote_github import FakeRemoteGitHub
+    13→from tests.test_utils.context_builders import build_workspace_test_context
+    14→from tests.test_utils.env_helpers import erk_inmem_env
+    15→
+    16→
+    17→def test_check_valid_plan_passes() -&gt; None:
+    18→    """Test validating a valid Schema v2 plan."""
+    19→    # Arrange
+    20→    # Valid plan-header metadata
+    21→    plan_header_data = {
+    22→        "schema_version": "2",
+    23→        "created_at": "2024-01-01T00:00:00Z",
+    24→        "created_by": "alice",
+    25→        "worktree_name": "test-feature",
+    26→    }
+    27→    plan_header_block = render_metadata_block(MetadataBlock("plan-header", plan_header_data))
+    28→
+    29→    # Valid plan-body in first comment
+    30→    plan_content = """# Plan: Test Feature
+
+... [75 lines omitted] ...
+  </tool_result>
+  <assistant>Good! Let me verify a few more key sections to ensure all changes were applied:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="1677" cache_read_input_tokens="32871" cache_creation="{'ephemeral_5m_input_tokens': 1677, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01Knd4Sd7x745Di9XWNSRVme">
+    <param name="pattern">Validating (plan|PR)|validation (passed|failed)|Invalid (plan|PR)</param>
+    <param name="path">/home/runner/work/erk/erk/tests/commands/pr/test_check_plan.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="1677" cache_read_input_tokens="32871" cache_creation="{'ephemeral_5m_input_tokens': 1677, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Knd4Sd7x745Di9XWNSRVme">
+69:        assert "Validating PR #42" in result.output
+74:        assert "PR validation passed" in result.output
+113:        assert "PR validation failed" in result.output
+162:        assert "PR validation failed" in result.output
+209:        assert "PR validation failed" in result.output
+258:        assert "PR validation failed" in result.output
+314:        assert "Validating PR #42" in result.output
+315:        assert "PR validation passed" in result.output
+374:        assert "PR validation passed" in result.output
+400:        assert "Invalid PR number or URL" in result.output
+  </tool_result>
+  <assistant>Perfect! All the changes have been successfully applied. Let me run the tests to verify they pass with the updated assertions:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="308" cache_read_input_tokens="34548" cache_creation="{'ephemeral_5m_input_tokens': 308, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01BBKvofyjRE9xTDsKLGkKnW">
+    <param name="command">python -m pytest tests/commands/pr/test_check_plan.py -xvs 2&gt;&amp;1 | head -100</param>
+    <param name="description">Run the updated tests to verify they pass</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="308" cache_read_input_tokens="34548" cache_creation="{'ephemeral_5m_input_tokens': 308, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01BBKvofyjRE9xTDsKLGkKnW">
+/usr/bin/python: No module named pytest
+  </tool_result>
+  <assistant>Let me run it with uv as per the project standards:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="255" cache_read_input_tokens="34856" cache_creation="{'ephemeral_5m_input_tokens': 255, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01Uz6xNN23ZpcCsJKaH5qcCJ">
+    <param name="command">uv run pytest tests/commands/pr/test_check_plan.py -xvs 2&gt;&amp;1 | head -150</param>
+    <param name="description">Run the updated tests with uv</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="255" cache_read_input_tokens="34856" cache_creation="{'ephemeral_5m_input_tokens': 255, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Uz6xNN23ZpcCsJKaH5qcCJ">
+============================= test session starts ==============================
+platform linux -- Python 3.13.12, pytest-9.0.2, pluggy-1.6.0
+rootdir: /home/runner/work/erk/erk
+configfile: pyproject.toml
+plugins: anyio-4.12.1, cov-7.0.0, xdist-3.8.0, asyncio-1.3.0
+asyncio: mode=Mode.AUTO, debug=False, asyncio_default_fixture_loop_scope=function, asyncio_default_test_loop_scope=function
+collected 14 items
+
+tests/commands/pr/test_check_plan.py ..............
+
+============================== 14 passed in 1.03s ==============================
+  </tool_result>
+  <assistant>Excellent! All 14 tests pass. Let me create a summary of the changes made:
+
+## Summary
+
+I have successfully updated all test assertion strings in `/home/runner/work/erk/erk/tests/commands/pr/test_check_plan.py` to match the source code changes from "Plan" to "PR" in user-facing output.
+
+### Changes Made
+
+All assertion strings were updated as follows:
+
+1. **Line 69**: `"Validating plan #42"` → `"Validating PR #42"`
+2. **Line 74**: `"Plan validation passed"` → `"PR validation passed"`
+3. **Line 113**: `"Plan validation failed"` → `"PR validation failed"`
+4. **Line 162**: `"Plan validation failed"` → `"PR validation failed"`
+5. **Line 209**: `"Plan validation failed"` → `"PR validation failed"`
+6. **Line 258**: `"Plan validation failed"` → `"PR validation failed"`
+7. **Line 314**: `"Validating plan #42"` → `"Validating PR #42"`
+8. **Line 315**: `"Plan validation passed"` → `"PR validation passed"`
+9. **Line 374**: `"Plan validation passed"` → `"PR validation passed"`
+10. **Line 400**: `"Invalid plan number or URL"` → `"Invalid PR number or URL"`
+
+### What Was Preserved
+
+As requested, I did NOT change:
+- Test function names (e.g., `test_check_valid_plan_passes`)
+- Docstrings
+- Variable names
+- Test data like `plan_content = """# Plan: Test Feature` (GitHub issue body content)
+- References to internal metadata blocks like "plan-header" and "plan-body"
+
+### Verification
+
+All 14 tests in the file now pass successfully with the updated assertions.</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="309" cache_read_input_tokens="35111" cache_creation="{'ephemeral_5m_input_tokens': 309, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+</session>

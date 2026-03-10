@@ -1,0 +1,152 @@
+<session>
+  <meta source="agent-a1fcad5" />
+  <meta branch="plnd/O9109-update-help-strings-03-10-0937" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>Run `uv run pytest tests/ --ignore=tests/tui --tb=line 2&gt;&amp;1 | grep "FAILED" | head -40` in /home/runner/work/erk/erk to get the list of all failing test names. Also run `uv run pytest tests/ --ignore=tests/tui --tb=line 2&gt;&amp;1 | tail -30` to get the summary. Report all failing tests.</user>
+  <assistant>I'll run both commands to get the failing tests and summary.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="5929" cache_read_input_tokens="6479" cache_creation="{'ephemeral_5m_input_tokens': 5929, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01Le7riQiSpkRhHWHdNWEZ7z">
+    <param name="command">uv run pytest tests/ --ignore=tests/tui --tb=line 2&gt;&amp;1 | grep "FAILED" | head -40</param>
+    <param name="description">Get failing test names from pytest</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="5929" cache_read_input_tokens="6479" cache_creation="{'ephemeral_5m_input_tokens': 5929, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01FmatWbs4ckxoz4ZNaU69uc">
+    <param name="command">uv run pytest tests/ --ignore=tests/tui --tb=line 2&gt;&amp;1 | tail -30</param>
+    <param name="description">Get pytest summary from last 30 lines</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="5929" cache_read_input_tokens="6479" cache_creation="{'ephemeral_5m_input_tokens': 5929, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Le7riQiSpkRhHWHdNWEZ7z">
+FAILED tests/cli/commands/split/test_plan.py::test_execute_split_plan_creates_worktrees - AttributeError: 'FakeGit' object has no attribute 'worktree'
+FAILED tests/cli/commands/split/test_plan.py::test_execute_split_plan_with_noop_ops - AttributeError: 'MockDryRunGit' object has no attribute 'worktree'
+FAILED tests/commands/admin/test_plan_implement_workflow.py::test_creates_issue_when_not_provided - assert 'Created test plan #1' in "Ensuring branch 'my-feature-branch' exists on remote...\n✓ Branch 'my-feature-branch' pushed to origin\n✓ Created tes...er/repo/actions/runs/1234567890\nTest branch: test-workflow-s7at60\nDraft PR: https://github.com/owner/repo/pull/999\n"
+FAILED tests/commands/branch/test_checkout_cmd.py::test_checkout_for_plan_creates_impl_folder - AssertionError: assert 'Created .erk/impl-context/ folder from plan #500' in 'Checking out PR branch: plan-500\nCreated .erk/impl-context/ folder from PR #500\n/tmp/erk-checkout-98995521.sh'
+FAILED tests/commands/branch/test_checkout_cmd.py::test_checkout_for_plan_prints_activation_when_sync_status_fails - AssertionError: assert 'Created .erk/impl-context/ folder from plan #600' in 'Checking out PR branch: plan-600\n✓ Stacked plan-600 in erk-slot-01 (in place)\nCreated .erk/impl-context/ folder from PR #600\n/tmp/erk-checkout-aa7bdfbb.sh'
+FAILED tests/commands/branch/test_checkout_cmd.py::test_checkout_stacks_in_place_for_plan_outputs_activation_script - AssertionError: assert 'Created .erk/impl-context/ folder from plan #700' in 'Checking out PR branch: plan-700\n✓ Stacked plan-700 in erk-slot-01 (in place)\nCreated .erk/impl-context/ folder from PR #700\n/tmp/erk-checkout-bc85a73d.sh'
+FAILED tests/commands/consolidate_learn_plans/test_dispatch.py::test_dispatch_happy_path - AssertionError: assert 'Consolidate learn PRs' == 'Consolidate learn plans'
+FAILED tests/shared/github/test_metadata_schemas.py::TestWorktreeCreationSchema::test_invalid_issue_number_type - AssertionError: Regex pattern did not match.
+FAILED tests/shared/github/test_metadata_schemas.py::TestWorktreeCreationSchema::test_negative_issue_number - AssertionError: Regex pattern did not match.
+FAILED tests/shared/github/test_metadata_schemas.py::TestPlanSchema::test_invalid_issue_number_type - AssertionError: Regex pattern did not match.
+FAILED tests/shared/github/test_metadata_schemas.py::TestPlanSchema::test_zero_issue_number - AssertionError: Regex pattern did not match.
+FAILED tests/unit/cli/commands/branch/test_create_cmd.py::test_branch_create_for_plan_creates_branch_and_impl_folder - AssertionError: assert 'Created .erk/impl-context/ folder from plan #123' in 'Checking out PR branch: plan-123\n✓ Assigned plan-123 to erk-slot-01\nCreated .erk/impl-context/ folder from PR #123\...YzZjdDZyM18vZXJrcy9yZXBvcy9yZXBvL3dvcmt0cmVlcy9lcmstc2xvdC0wMS8uZXJrL2Jpbi9hY3RpdmF0ZS5zaCAmJiBlcmsgaW1wbGVtZW50\x1b\\'
+FAILED tests/unit/cli/commands/branch/test_create_cmd.py::test_branch_create_for_plan_with_issue_url - AssertionError: assert 'Created .erk/impl-context/ folder from plan #456' in 'Checking out PR branch: plan-456\n✓ Assigned plan-456 to erk-slot-01\nCreated .erk/impl-context/ folder from PR #456\...Y2I0czZhcTQvZXJrcy9yZXBvcy9yZXBvL3dvcmt0cmVlcy9lcmstc2xvdC0wMS8uZXJrL2Jpbi9hY3RpdmF0ZS5zaCAmJiBlcmsgaW1wbGVtZW50\x1b\\'
+FAILED tests/unit/cli/commands/branch/test_create_cmd.py::test_branch_create_for_plan_stacks_in_place_creates_impl - AssertionError: assert 'Created .erk/impl-context/ folder from plan #300' in 'Checking out PR branch: plan-300\n✓ Stacked plan-300 in erk-slot-01 (in place)\nCreated .erk/impl-context/ folder fro...o clipboard)\n\x1b]52;c;c291cmNlIC90bXAvdG1wOHVvazA2YWcvcmVwby8uZXJrL2Jpbi9hY3RpdmF0ZS5zaCAmJiBlcmsgaW1wbGVtZW50\x1b\\'
+FAILED tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py::TestDetermineExitAction::test_plan_saved_marker_without_plan_number_fallback - AssertionError: assert 'Plan PR saved' in 'PR saved. Planning session complete. Do NOT call ExitPlanMode again — plan mode stays on to prevent accidental edits. Session is done.'
+FAILED tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py::TestBuildStep2Message::test_contains_dispatch_command - AssertionError: assert 'Dispatch plan #42:' in 'PR #42 saved successfully.\n\nDisplay ALL of the following next-steps commands to the user as plain text.\nShow every...ommand:    erk pr dispatch 42\n  Slash command:  /erk:pr-dispatch\n\nSession complete. Do NOT call ExitPlanMode again.'
+FAILED tests/unit/cli/commands/exec/scripts/test_handle_no_changes.py::test_build_pr_body_includes_all_sections - AssertionError: assert 'Duplicate plan' in '## No Code Changes\n\nImplementation completed but produced no code changes.\n\n### Diagnosis\n\n**Likely cause: Dupl... done: Investigate why no changes were produced\n\n[View workflow run](https://github.com/owner/repo/actions/runs/789)'
+FAILED tests/unit/cli/commands/exec/scripts/test_objective_fetch_context.py::TestObjectiveFetchContext::test_bad_branch_pattern - assert 'No plan found for branch' in "No PR found for branch 'feature-branch'"
+FAILED tests/unit/cli/commands/exec/scripts/test_objective_fetch_context.py::TestObjectiveFetchContext::test_plan_not_found - assert 'No plan found for branch' in "No PR found for branch 'plnd/some-branch-01-01-1200'"
+FAILED tests/unit/cli/commands/exec/scripts/test_objective_fetch_context.py::TestPlannedPRBackend::test_planned_pr_plan_not_found - assert 'No plan found for branch' in "No PR found for branch 'plan-no-such-plan'"
+FAILED tests/unit/cli/commands/exec/scripts/test_objective_save_to_issue.py::test_objective_save_to_issue_no_plan - AssertionError: assert 'No plan found' in 'No PR found in ~/.claude/plans/'
+FAILED tests/unit/cli/commands/exec/scripts/test_plan_save.py::test_planned_pr_success_display - AssertionError: assert 'Plan saved as planned PR' in 'PR saved as planned PR #999\nTitle: [erk-plan] Feature Plan\nURL: https://github.com/test-owner/test-repo/pull/999\nB...-slot --for-plan 999\n\nDispatch PR #999:\n  CLI command:    erk pr dispatch 999\n  Slash command:  /erk:pr-dispatch\n'
+FAILED tests/unit/cli/commands/exec/scripts/test_setup_impl_from_pr.py::test_planned_pr_plan_already_on_plan_branch - assert "Already on plan branch 'my-plan-branch-02-19'" in 'Already on PR branch \'my-plan-branch-02-19\', teleporting from remote...\n{"success": true, "impl_path": null, "pr_n...github.com/test-owner/test-repo/pull/999", "branch": "my-plan-branch-02-19", "pr_title": "My Plan", "no_impl": true}\n'
+FAILED tests/unit/cli/commands/exec/scripts/test_setup_impl_from_pr.py::test_planned_pr_plan_skips_checkout_when_impl_exists - assert 'Found existing impl dir for plan #999, skipping branch setup' in 'Found existing impl dir for PR #999, skipping branch setup\n{"success": true, "impl_path": "/tmp/pytest-of-runner/pyt...b.com/test-owner/test-repo/pull/999", "branch": "P100-my-feature-impl-02-19-1430", "pr_title": "", "no_impl": false}\n'
+FAILED tests/unit/cli/commands/exec/scripts/test_track_learn_evaluation.py::test_track_learn_evaluation_infers_from_branch - AssertionError: assert 'No plan specified' in 'No PR specified and could not infer from branch name'
+FAILED tests/unit/cli/commands/exec/scripts/test_track_learn_evaluation.py::test_track_learn_evaluation_fails_without_issue - AssertionError: assert 'No plan specified' in 'No PR specified and could not infer from branch name'
+FAILED tests/unit/cli/commands/test_admin_test_workflow.py::test_happy_path_with_existing_issue - assert 'Using existing plan #42' in "Ensuring branch 'my-feature' exists on remote...\n✓ Branch 'my-feature' pushed to origin\nUsing existing PR #42\nCrea...er/repo/actions/runs/1234567890\nTest branch: test-workflow-s7b4a0\nDraft PR: https://github.com/owner/repo/pull/999\n"
+FAILED tests/unit/cli/commands/test_admin_test_workflow.py::test_happy_path_creating_new_issue - assert 'Created test plan #1' in "Ensuring branch 'my-feature' exists on remote...\n✓ Branch 'my-feature' pushed to origin\n✓ Created test PR #1\nCreat...er/repo/actions/runs/1234567890\nTest branch: test-workflow-s7b4a0\nDraft PR: https://github.com/owner/repo/pull/999\n"
+FAILED tests/unit/shared/test_next_steps.py::TestFormatPlanNextStepsPlain::test_hierarchical_format - AssertionError: assert 'Implement plan #42:' in 'Implement PR #42:\n  In current wt:    erk br co --for-plan 42 &amp;&amp; erk implement\n    (dangerously):  erk br co --for-...--new-slot --for-plan 42\n\nDispatch PR #42:\n  CLI command:    erk pr dispatch 42\n  Slash command:  /erk:pr-dispatch'
+FAILED tests/unit/shared/test_next_steps.py::TestFormatPlanNextStepsPlain::test_contains_dispatch - AssertionError: assert 'Dispatch plan #42:' in 'Implement PR #42:\n  In current wt:    erk br co --for-plan 42 &amp;&amp; erk implement\n    (dangerously):  erk br co --for-...--new-slot --for-plan 42\n\nDispatch PR #42:\n  CLI command:    erk pr dispatch 42\n  Slash command:  /erk:pr-dispatch'
+  </tool_result>
+  <tool_result tool="toolu_01FmatWbs4ckxoz4ZNaU69uc">
+FAILED tests/shared/github/test_metadata_schemas.py::TestWorktreeCreationSchema::test_negative_issue_number - AssertionError: Regex pattern did not match.
+  Expected regex: 'issue_number must be positive'
+  Actual message: 'pr_number must be positive'
+FAILED tests/shared/github/test_metadata_schemas.py::TestPlanSchema::test_invalid_issue_number_type - AssertionError: Regex pattern did not match.
+  Expected regex: 'issue_number must be an integer'
+  Actual message: 'pr_number must be an integer'
+FAILED tests/shared/github/test_metadata_schemas.py::TestPlanSchema::test_zero_issue_number - AssertionError: Regex pattern did not match.
+  Expected regex: 'issue_number must be positive'
+  Actual message: 'pr_number must be positive'
+FAILED tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py::TestDetermineExitAction::test_plan_saved_marker_without_plan_number_fallback - AssertionError: assert 'Plan PR saved' in 'PR saved. Planning session complete. Do NOT call ExitPlanMode again — plan mode stays on to prevent accidental edits. Session is done.'
+ +  where 'PR saved. Planning session complete. Do NOT call ExitPlanMode again — plan mode stays on to prevent accidental edits. Session is done.' = HookOutput(action=&lt;ExitAction.BLOCK: 2&gt;, message='PR saved. Planning session complete. Do NOT call ExitPlanMode again ...rker=False, delete_plan_saved_marker=True, delete_incremental_plan_marker=False, delete_objective_context_marker=False).message
+FAILED tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py::TestBuildStep2Message::test_contains_dispatch_command - AssertionError: assert 'Dispatch plan #42:' in 'PR #42 saved successfully.\n\nDisplay ALL of the following next-steps commands to the user as plain text.\nShow every...ommand:    erk pr dispatch 42\n  Slash command:  /erk:pr-dispatch\n\nSession complete. Do NOT call ExitPlanMode again.'
+FAILED tests/unit/cli/commands/exec/scripts/test_handle_no_changes.py::test_build_pr_body_includes_all_sections - AssertionError: assert 'Duplicate plan' in '## No Code Changes\n\nImplementation completed but produced no code changes.\n\n### Diagnosis\n\n**Likely cause: Dupl... done: Investigate why no changes were produced\n\n[View workflow run](https://github.com/owner/repo/actions/runs/789)'
+FAILED tests/unit/cli/commands/exec/scripts/test_objective_fetch_context.py::TestObjectiveFetchContext::test_bad_branch_pattern - assert 'No plan found for branch' in "No PR found for branch 'feature-branch'"
+FAILED tests/unit/cli/commands/exec/scripts/test_objective_fetch_context.py::TestObjectiveFetchContext::test_plan_not_found - assert 'No plan found for branch' in "No PR found for branch 'plnd/some-branch-01-01-1200'"
+FAILED tests/unit/cli/commands/exec/scripts/test_objective_fetch_context.py::TestPlannedPRBackend::test_planned_pr_plan_not_found - assert 'No plan found for branch' in "No PR found for branch 'plan-no-such-plan'"
+FAILED tests/unit/cli/commands/exec/scripts/test_objective_save_to_issue.py::test_objective_save_to_issue_no_plan - AssertionError: assert 'No plan found' in 'No PR found in ~/.claude/plans/'
+FAILED tests/unit/cli/commands/exec/scripts/test_plan_save.py::test_planned_pr_success_display - AssertionError: assert 'Plan saved as planned PR' in 'PR saved as planned PR #999\nTitle: [erk-plan] Feature Plan\nURL: https://github.com/test-owner/test-repo/pull/999\nB...-slot --for-plan 999\n\nDispatch PR #999:\n  CLI command:    erk pr dispatch 999\n  Slash command:  /erk:pr-dispatch\n'
+ +  where 'PR saved as planned PR #999\nTitle: [erk-plan] Feature Plan\nURL: https://github.com/test-owner/test-repo/pull/999\nB...-slot --for-plan 999\n\nDispatch PR #999:\n  CLI command:    erk pr dispatch 999\n  Slash command:  /erk:pr-dispatch\n' = &lt;Result okay&gt;.output
+FAILED tests/unit/cli/commands/exec/scripts/test_setup_impl_from_pr.py::test_planned_pr_plan_already_on_plan_branch - assert "Already on plan branch 'my-plan-branch-02-19'" in 'Already on PR branch \'my-plan-branch-02-19\', teleporting from remote...\n{"success": true, "impl_path": null, "pr_n...github.com/test-owner/test-repo/pull/999", "branch": "my-plan-branch-02-19", "pr_title": "My Plan", "no_impl": true}\n'
+ +  where 'Already on PR branch \'my-plan-branch-02-19\', teleporting from remote...\n{"success": true, "impl_path": null, "pr_n...github.com/test-owner/test-repo/pull/999", "branch": "my-plan-branch-02-19", "pr_title": "My Plan", "no_impl": true}\n' = &lt;Result okay&gt;.output
+FAILED tests/unit/cli/commands/exec/scripts/test_setup_impl_from_pr.py::test_planned_pr_plan_skips_checkout_when_impl_exists - assert 'Found existing impl dir for plan #999, skipping branch setup' in 'Found existing impl dir for PR #999, skipping branch setup\n{"success": true, "impl_path": "/tmp/pytest-of-runner/pyt...b.com/test-owner/test-repo/pull/999", "branch": "P100-my-feature-impl-02-19-1430", "pr_title": "", "no_impl": false}\n'
+ +  where 'Found existing impl dir for PR #999, skipping branch setup\n{"success": true, "impl_path": "/tmp/pytest-of-runner/pyt...b.com/test-owner/test-repo/pull/999", "branch": "P100-my-feature-impl-02-19-1430", "pr_title": "", "no_impl": false}\n' = &lt;Result okay&gt;.output
+FAILED tests/unit/cli/commands/exec/scripts/test_track_learn_evaluation.py::test_track_learn_evaluation_infers_from_branch - AssertionError: assert 'No plan specified' in 'No PR specified and could not infer from branch name'
+FAILED tests/unit/cli/commands/exec/scripts/test_track_learn_evaluation.py::test_track_learn_evaluation_fails_without_issue - AssertionError: assert 'No plan specified' in 'No PR specified and could not infer from branch name'
+FAILED tests/unit/cli/commands/test_admin_test_workflow.py::test_happy_path_with_existing_issue - assert 'Using existing plan #42' in "Ensuring branch 'my-feature' exists on remote...\n✓ Branch 'my-feature' pushed to origin\nUsing existing PR #42\nCrea...er/repo/actions/runs/1234567890\nTest branch: test-workflow-s7b4a0\nDraft PR: https://github.com/owner/repo/pull/999\n"
+ +  where "Ensuring branch 'my-feature' exists on remote...\n✓ Branch 'my-feature' pushed to origin\nUsing existing PR #42\nCrea...er/repo/actions/runs/1234567890\nTest branch: test-workflow-s7b4a0\nDraft PR: https://github.com/owner/repo/pull/999\n" = &lt;Result okay&gt;.output
+FAILED tests/unit/shared/test_next_steps.py::TestFormatPlanNextStepsPlain::test_hierarchical_format - AssertionError: assert 'Implement plan #42:' in 'Implement PR #42:\n  In current wt:    erk br co --for-plan 42 &amp;&amp; erk implement\n    (dangerously):  erk br co --for-...--new-slot --for-plan 42\n\nDispatch PR #42:\n  CLI command:    erk pr dispatch 42\n  Slash command:  /erk:pr-dispatch'
+FAILED tests/unit/shared/test_next_steps.py::TestFormatPlanNextStepsPlain::test_contains_dispatch - AssertionError: assert 'Dispatch plan #42:' in 'Implement PR #42:\n  In current wt:    erk br co --for-plan 42 &amp;&amp; erk implement\n    (dangerously):  erk br co --for-...--new-slot --for-plan 42\n\nDispatch PR #42:\n  CLI command:    erk pr dispatch 42\n  Slash command:  /erk:pr-dispatch'
+21 failed, 6744 passed, 2 warnings in 43.95s
+  </tool_result>
+  <assistant>## Summary
+
+pytest failed: 21 issues found
+
+### All Failing Tests
+
+1. **tests/cli/commands/split/test_plan.py::test_execute_split_plan_creates_worktrees** — AttributeError: 'FakeGit' object has no attribute 'worktree'
+
+2. **tests/cli/commands/split/test_plan.py::test_execute_split_plan_with_noop_ops** — AttributeError: 'MockDryRunGit' object has no attribute 'worktree'
+
+3. **tests/commands/admin/test_plan_implement_workflow.py::test_creates_issue_when_not_provided** — Expected string "Created test plan #1" not found in output
+
+4. **tests/commands/branch/test_checkout_cmd.py::test_checkout_for_plan_creates_impl_folder** — Expected "Created .erk/impl-context/ folder from plan #500" but got "...from PR #500"
+
+5. **tests/commands/branch/test_checkout_cmd.py::test_checkout_for_plan_prints_activation_when_sync_status_fails** — Expected "...from plan #600" but got "...from PR #600"
+
+6. **tests/commands/branch/test_checkout_cmd.py::test_checkout_stacks_in_place_for_plan_outputs_activation_script** — Expected "...from plan #700" but got "...from PR #700"
+
+7. **tests/commands/consolidate_learn_plans/test_dispatch.py::test_dispatch_happy_path** — Expected "Consolidate learn PRs" but got "Consolidate learn plans"
+
+8. **tests/shared/github/test_metadata_schemas.py::TestWorktreeCreationSchema::test_invalid_issue_number_type** — Regex pattern mismatch
+
+9. **tests/shared/github/test_metadata_schemas.py::TestWorktreeCreationSchema::test_negative_issue_number** — Expected regex "issue_number must be positive" but got "pr_number must be positive"
+
+10. **tests/shared/github/test_metadata_schemas.py::TestPlanSchema::test_invalid_issue_number_type** — Expected regex "issue_number must be an integer" but got "pr_number must be an integer"
+
+11. **tests/shared/github/test_metadata_schemas.py::TestPlanSchema::test_zero_issue_number** — Expected regex "issue_number must be positive" but got "pr_number must be positive"
+
+12. **tests/unit/cli/commands/branch/test_create_cmd.py::test_branch_create_for_plan_creates_branch_and_impl_folder** — Expected "...from plan #123" but got "...from PR #123"
+
+13. **tests/unit/cli/commands/branch/test_create_cmd.py::test_branch_create_for_plan_with_issue_url** — Expected "...from plan #456" but got "...from PR #456"
+
+14. **tests/unit/cli/commands/branch/test_create_cmd.py::test_branch_create_for_plan_stacks_in_place_creates_impl** — Expected "...from plan #300" but got "...from PR #300"
+
+15. **tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py::TestDetermineExitAction::test_plan_saved_marker_without_plan_number_fallback** — Expected "Plan PR saved" but got "PR saved"
+
+16. **tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py::TestBuildStep2Message::test_contains_dispatch_command** — Expected "Dispatch plan #42:" but got "Dispatch PR #42:"
+
+17. **tests/unit/cli/commands/exec/scripts/test_handle_no_changes.py::test_build_pr_body_includes_all_sections** — Expected "Duplicate plan" but got "Duplicate PR"
+
+18. **tests/unit/cli/commands/exec/scripts/test_objective_fetch_context.py::TestObjectiveFetchContext::test_bad_branch_pattern** — Expected "No plan found for branch" but got "No PR found for branch"
+
+19. **tests/unit/cli/commands/exec/scripts/test_objective_fetch_context.py::TestObjectiveFetchContext::test_plan_not_found** — Expected "No plan found for branch" but got "No PR found for branch"
+
+20. **tests/unit/cli/commands/exec/scripts/test_objective_fetch_context.py::TestPlannedPRBackend::test_planned_pr_plan_not_found** — Expected "No plan found for branch" but got "No PR found for branch"
+
+21. **tests/unit/cli/commands/exec/scripts/test_objective_save_to_issue.py::test_objective_save_to_issue_no_plan** — Expected "No plan found" but got "No PR found in ~/.claude/plans/"
+
+22. **tests/unit/cli/commands/exec/scripts/test_plan_save.py::test_planned_pr_success_display** — Expected "Plan saved as planned PR" but got "PR saved as planned PR"
+
+23. **tests/unit/cli/commands/exec/scripts/test_setup_impl_from_pr.py::test_planned_pr_plan_already_on_plan_branch** — Expected "Already on plan branch" but got "Already on PR branch"
+
+24. **tests/unit/cli/commands/exec/scripts/test_setup_impl_from_pr.py::test_planned_pr_plan_skips_checkout_when_impl_exists** — Expected "...for plan #999..." but got "...for PR #999..."
+
+25. **tests/unit/cli/commands/exec/scripts/test_track_learn_evaluation.py::test_track_learn_evaluation_infers_from_branch** — Expected "No plan specified" but got "No PR specified"
+
+26. **tests/unit/cli/commands/exec/scripts/test_track_learn_evaluation.py::test_track_learn_evaluation_fails_without_issue** — Expected "No plan specified" but got "No PR specified"
+
+27. **tests/unit/cli/commands/test_admin_test_workflow.py::test_happy_path_with_existing_issue** — Expected "Using existing plan #42" but got "Using existing PR #42"
+
+28. **tests/unit/cli/commands/test_admin_test_workflow.py::test_happy_path_creating_new_issue** — Expected "Created test plan #1" but got "Created test PR #1"
+
+29. **tests/unit/shared/test_next_steps.py::TestFormatPlanNextStepsPlain::test_hierarchical_format** — Expected "Implement plan #42:" but got "Implement PR #42:"
+
+30. **tests/unit/shared/test_next_steps.py::TestFormatPlanNextStepsPlain::test_contains_dispatch** — Expected "Dispatch plan #42:" but got "Dispatch PR #42:"
+
+**Test Results:** 21 failed, 6744 passed, 2 warnings in 43.95s
+
+The primary pattern across these failures indicates that the codebase has been updated to use PR terminology instead of plan terminology in help strings and user-facing messages (hence the branch name `plnd/O9109-update-help-strings-03-10-0937`), but the tests have not been updated to match these changes. Additionally, there are 2 test failures related to missing `worktree` attributes in fake Git objects and one metadata schema test failure related to attribute naming (`pr_number` vs `issue_number`).</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="5887" cache_read_input_tokens="12408" cache_creation="{'ephemeral_5m_input_tokens': 5887, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>
