@@ -1,0 +1,1014 @@
+<session>
+  <meta source="agent-ab9d9a5" />
+  <meta branch="plnd/O9109-rename-plan-pr-docs-03-10-1247" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>Check and update the following documentation files. 
+
+IMPORTANT CONTEXT: The TUI source code STILL uses `plan_id` and `plan_url` in `PlanRowData` (types.py). These have NOT been renamed. So most TUI docs should NOT be changed.
+
+However, JSON output from exec scripts has changed `"plan_number"` → `"pr_number"`.
+
+**TUI docs — likely NO changes needed (verify and skip if so):**
+1. `/home/runner/work/erk/erk/docs/learned/tui/data-contract.md` — `plan_id` and `plan_url` are still in TUI source. Leave as-is.
+2. `/home/runner/work/erk/erk/docs/learned/tui/plan-row-data.md` — `plan_id` still in source. Leave as-is.
+3. `/home/runner/work/erk/erk/docs/learned/tui/architecture.md` — `plan_id` still in TUI source. Leave as-is.
+4. `/home/runner/work/erk/erk/docs/learned/tui/action-inventory.md` — `plan_id` still in TUI. Leave as-is.
+5. `/home/runner/work/erk/erk/docs/learned/tui/view-switching.md` — `plan_id` in PlanBodyScreen.__init__ — still in source. Leave as-is.
+6. `/home/runner/work/erk/erk/docs/learned/tui/frozen-dataclass-field-management.md` — `plan_id=123` in PlanRowData — still in source. Leave as-is.
+7. `/home/runner/work/erk/erk/docs/learned/tui/runs-tab-architecture.md` — "plan-number runs" — this is a conceptual reference. Leave as-is.
+8. `/home/runner/work/erk/erk/docs/learned/tui/clipboard-text-generation.md` — `copy_plan_url` — still in source. Leave as-is.
+
+**CLI docs — check for JSON output renames:**
+9. `/home/runner/work/erk/erk/docs/learned/cli/output-styling.md` — Has `"plan_id": "6545"` in JSON output. If this is from PlanRef (now `pr_id`), rename. Also has `plan_context.plan_id` — leave as-is since PlanContext still uses `plan_id`. Also has `Plan #{plan_id}` output — leave as-is since this documents current user-visible output.
+10. `/home/runner/work/erk/erk/docs/learned/cli/pr-submit-pipeline.md` — Check for `plan_number` references
+11. `/home/runner/work/erk/erk/docs/learned/cli/land-learn-integration.md` — Check for `plan_number` references
+12. `/home/runner/work/erk/erk/docs/learned/cli/learn-plan-land-flow.md` — Check for `plan_number` references
+13. `/home/runner/work/erk/erk/docs/learned/cli/exec-command-patterns.md` — Check for `plan_number` in JSON output examples
+14. `/home/runner/work/erk/erk/docs/learned/cli/erk-exec-commands.md` — Check for `plan_number` references
+15. `/home/runner/work/erk/erk/docs/learned/cli/ambiguity-resolution.md` — Check for `plan_number` references
+16. `/home/runner/work/erk/erk/docs/learned/cli/workflow-run-list.md` — Check for references
+17. `/home/runner/work/erk/erk/docs/learned/cli/commands/pr-prepare.md` — Check for references
+
+Read each file, determine if changes are needed based on whether the documented fields were actually renamed in source, then apply only correct edits. Skip files that need no changes.</user>
+  <assistant>I'll check and update the documentation files based on the actual source code changes. Let me start by reading each file to determine what needs to be updated.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="6804" cache_read_input_tokens="10097" cache_creation="{'ephemeral_5m_input_tokens': 6804, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01QC7F6TzovAqNpCAYnrw8Rs">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/data-contract.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6804" cache_read_input_tokens="10097" cache_creation="{'ephemeral_5m_input_tokens': 6804, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_014XCuMDJijvJEZAjhiqX93Q">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/plan-row-data.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6804" cache_read_input_tokens="10097" cache_creation="{'ephemeral_5m_input_tokens': 6804, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01CHXZ3qgbmNxAh1AUMVweVZ">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/architecture.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6804" cache_read_input_tokens="10097" cache_creation="{'ephemeral_5m_input_tokens': 6804, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_019orEhryMqqGsiVFvGmWyXG">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/action-inventory.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6804" cache_read_input_tokens="10097" cache_creation="{'ephemeral_5m_input_tokens': 6804, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01GN55ZSQn8DnEyP6U5Q76RB">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/view-switching.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6804" cache_read_input_tokens="10097" cache_creation="{'ephemeral_5m_input_tokens': 6804, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01QC7F6TzovAqNpCAYnrw8Rs">
+     1→---
+     2→title: TUI Data Contract
+     3→read_when:
+     4→  - "building an alternate frontend consuming plan data"
+     5→  - "adding fields to PlanRowData or PlanDataProvider"
+     6→  - "understanding the display-vs-raw field duality"
+     7→  - "serializing plan data to JSON for external consumers"
+     8→tripwires:
+     9→  - action: "formatting display strings during table render"
+    10→    warning: "Display strings are pre-formatted at fetch time. Add new *_display fields to PlanRowData and format in RealPlanDataProvider._build_row_data(), not in the widget layer."
+    11→  - action: "adding a field to PlanRowData without updating make_plan_row"
+    12→    warning: "The fake's make_plan_row() helper must stay in sync. Add the new field with a sensible default there too, or all TUI tests will break."
+    13→  - action: "putting PlanDataProvider ABC in src/erk/tui/"
+    14→    warning: "The ABC lives in erk-shared so provider implementations are co-located in the shared package. External consumers import from erk-shared alongside other shared gateways."
+    15→  - action: "constructing PlanFilters without copying all fields from existing filters"
+    16→    warning: "All fields must be explicitly copied in _load_data() PlanFilters construction. Missing fields (like creator) cause silent filtering failures."
+    17→last_audited: "2026-02-16 14:20 PT"
+    18→audit_result: edited
+    19→---
+    20→
+    21→# TUI Data Contract
+    22→
+    23→The TUI data layer is designed around a single frozen dataclass (`PlanRowData`) that carries both display-ready strings and raw identifiers. This document explains the design decisions behind the data contract, the cross-package split, and the pitfalls of JSON serialization — things that can't be learned by reading any single source file.
+    24→
+    25→## Why Display and Raw Fields Coexist
+    26→
+    27→&lt;!-- Source: src/erk/tui/data/types.py, PlanRowData --&gt;
+    28→
+    29→`PlanRowData` carries two kinds of fields for the same data. For example, `pr_number` (raw `int | None`) and `pr_display` (pre-formatted `str` like `"#123 👀"`). This is deliberate:
+    30→
+
+... [215 lines omitted] ...
+
+   143→| `run_conclusion` | `str`                              | Yes      | Workflow run conclusion: `"success"`, `"failure"`, `"cancelled"`, etc. |
+   225→Adding a field to `PlanRowData` touches at minimum five places. Missing any one causes test failures or silent data loss:
+  </tool_result>
+  <tool_result tool="toolu_014XCuMDJijvJEZAjhiqX93Q">
+     1→---
+     2→title: PlanRowData Field Reference
+     3→read_when:
+     4→  - "writing command availability predicates"
+     5→  - "understanding what data is available for TUI commands"
+     6→  - "checking which PlanRowData fields are nullable"
+     7→last_audited: "2026-02-23 00:15 PT"
+     8→audit_result: edited
+     9→---
+    10→
+    11→# PlanRowData Field Reference
+    12→
+    13→Quick reference for writing command availability predicates and understanding
+    14→`PlanRowData` usage patterns.
+    15→
+    16→## Overview
+    17→
+    18→`PlanRowData` is a frozen dataclass containing all data for a single plan row in the TUI. It combines raw data (for actions) with pre-formatted display strings (for table rendering).
+    19→
+    20→**Location:** `src/erk/tui/data/types.py`
+    21→
+    22→## Field Categories
+    23→
+    24→### Plan Info
+    25→
+    26→| Field        | Type          | Description                   | Nullable?                     |
+    27→| ------------ | ------------- | ----------------------------- | ----------------------------- |
+    28→| `plan_id`    | `int`         | Plan identifier               | Never                         |
+    29→| `plan_url`   | `str \| None` | Full URL to the plan          | Yes                           |
+    30→| `full_title` | `str`         | Complete plan title           | Never (empty string possible) |
+
+... [196 lines omitted] ...
+
+    80→| `run_conclusion`    | `str \| None` | Run conclusion: "success", "failure", "cancelled" | Yes                   |
+  </tool_result>
+  <tool_result tool="toolu_01CHXZ3qgbmNxAh1AUMVweVZ">
+     1→---
+     2→title: TUI Architecture Overview
+     3→read_when:
+     4→  - "understanding TUI structure"
+     5→  - "implementing TUI components"
+     6→  - "working with TUI data providers"
+     7→tripwires:
+     8→  - action: "reusing same DOM element id across loading/empty/content states"
+     9→    warning: "query_one() returns wrong element silently when id is reused across lifecycle phases. Use unique IDs per phase."
+    10→  - action: "calling widget methods directly from @work(thread=True) background threads"
+    11→    warning: "Direct widget calls from background threads cause silent UI corruption. Must use self.app.call_from_thread(callback, ...)."
+    12→  - action: "extending PlanDataProvider ABC"
+    13→    warning: "Requires 3-file update: abc.py + real.py + fake.py. Fake must initialize new dict in __init__. Missing init causes AttributeError at test time."
+    14→  - action: "adding a DataTable column with add_column(key=...)"
+    15→    warning: "Column key is a data binding contract — must match data field name. Silent failure when mismatched."
+    16→  - action: "moving @on decorated event handlers to a mixin"
+    17→    warning: "Textual's _MessagePumpMeta only scans class.__dict__, not inherited methods. Event handlers on mixins are silently ignored."
+    18→  - action: "adding CI check formatting to TUI screens"
+    19→    warning: "Use src/erk/tui/formatting/ci_checks.py shared module (format_check_line, format_summary_blockquote, format_check_runs) instead of duplicating formatting logic."
+    20→last_audited: "2026-02-17 18:30 PT"
+    21→audit_result: clean
+    22→---
+    23→
+    24→# TUI Architecture Overview
+    25→
+    26→The erk TUI is built with Textual and follows a layered architecture separating data fetching, filtering, and rendering.
+    27→
+    28→## Directory Structure
+    29→
+    30→```
+
+... [183 lines omitted] ...
+
+   128→Use fake providers instead of mocking. `FakePlanDataProvider` lives in `tests.fakes.gateway.plan_data_provider` and accepts keyword-only arguments (`plans`, `clipboard`, `browser`, `repo_root`, `fetch_error`). The `make_plan_row()` helper in the same module creates test `PlanRowData` instances with sensible defaults.
+  </tool_result>
+  <tool_result tool="toolu_019orEhryMqqGsiVFvGmWyXG">
+     1→---
+     2→title: TUI Command Architecture
+     3→read_when:
+     4→  - "adding a new command to the TUI or desktop dashboard"
+     5→  - "understanding how command availability is determined"
+     6→  - "choosing which execution pattern a new command should use"
+     7→tripwires:
+     8→  - action: "adding a command without an availability predicate"
+     9→    warning: "Every command needs an is_available predicate based on PlanRowData field presence. Commands without predicates appear when they can't execute."
+    10→  - action: "adding an ACTION command that executes instantly"
+    11→    warning: "ACTION category implies mutative operations. Instant operations belong in OPEN or COPY categories."
+    12→last_audited: "2026-02-08 00:00 PT"
+    13→audit_result: edited
+    14→---
+    15→
+    16→# TUI Command Architecture
+    17→
+    18→The TUI command system uses a data-driven registry pattern where commands declare their own availability based on `PlanRowData` field presence. This decouples command definitions from UI rendering, enabling the same registry to serve multiple frontends (TUI command palette, desktop toolbar).
+    19→
+    20→## Why Data-Driven Availability
+    21→
+    22→&lt;!-- Source: src/erk/tui/commands/registry.py, get_all_commands --&gt;
+    23→
+    24→Commands don't check "can I run?" at execution time — they declare upfront what data they need via `is_available` predicates. This design was chosen because:
+    25→
+    26→1. **Multiple consumers need the same logic.** The TUI command palette (`MainListCommandProvider`, `PlanCommandProvider`) and the desktop dashboard toolbar both need to know which actions are valid for a given row. Centralizing predicates in the registry avoids duplicating availability logic across frontends.
+    27→
+    28→2. **Availability depends on `PlanRowData` nullability.** Each `PlanRowData` field is nullable for a reason (no PR yet, no workflow run, etc.). The predicates express which combination of non-null fields a command requires. This makes the availability contract explicit and testable.
+    29→
+    30→3. **Commands that are always available use `lambda _: True`** — these are plan-level operations (close, prepare, dispatch) that only need the issue number, which is always present.
+
+... [67 lines omitted] ...
+
+    58→**Anti-pattern**: Writing `is_available=lambda ctx: True` for a command that uses `ctx.row.pr_number`. The predicate will allow execution when `pr_number` is None, causing a runtime error. This is why the [three-layer null validation](adding-commands.md) pattern exists — the predicate is necessary but not sufficient.
+  </tool_result>
+  <tool_result tool="toolu_01GN55ZSQn8DnEyP6U5Q76RB">
+     1→---
+     2→title: TUI View Switching
+     3→read_when:
+     4→  - "adding a new view mode to the TUI"
+     5→  - "understanding how view switching and caching work"
+     6→  - "debugging data not appearing in a specific view"
+     7→  - "working with PlanBodyScreen content type parameterization"
+     8→tripwires:
+     9→  - action: "adding a new ViewMode without updating VIEW_CONFIGS"
+    10→    warning: "Every ViewMode must have a corresponding ViewConfig in VIEW_CONFIGS. Missing configs cause KeyError at runtime."
+    11→  - action: "using _render() as a method name in Textual widgets"
+    12→    warning: "Textual's LSP reserves _render(). Use _refresh_display() instead (see ViewBar)."
+    13→  - action: "pushing PlanBodyScreen without explicit content_type"
+    14→    warning: "Content type must come from view_mode at push time, not derived inside the screen."
+    15→  - action: "adding labels to ViewConfig.labels expecting OR semantics from GitHub API"
+    16→    warning: "GitHub GraphQL uses AND semantics for label arrays. Multiple labels in a single ViewConfig.labels means items must have ALL listed labels. Use separate views for separate label types. See github-graphql-label-semantics.md."
+    17→  - action: "adding the same label to multiple ViewConfig entries without exclude_labels"
+    18→    warning: "Without exclude_labels, items matching the shared label appear in multiple views. Use exclude_labels for defense-in-depth deduplication (Plans view excludes erk-learn)."
+    19→last_audited: "2026-02-17 00:00 PT"
+    20→audit_result: edited
+    21→---
+    22→
+    23→# TUI View Switching
+    24→
+    25→The TUI supports three views — Plans, Learn, and Objectives — with instant switching via keyboard shortcuts. This document explains the view system architecture, the two-tier filtering strategy, and the caching mechanism that enables sub-millisecond view switches.
+    26→
+    27→## Core Types
+    28→
+    29→&lt;!-- Source: src/erk/tui/views/types.py --&gt;
+    30→
+
+... [120 lines omitted] ...
+  </tool_result>
+  <assistant>Now let me continue reading the remaining TUI files and then the CLI files:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="18382" cache_read_input_tokens="16901" cache_creation="{'ephemeral_5m_input_tokens': 18382, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Kv7X6j5Qu7EwXUcWumwcj6">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/frozen-dataclass-field-management.md</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="18382" cache_read_input_tokens="16901" cache_creation="{'ephemeral_5m_input_tokens': 18382, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_0111hUy2phLFqzoFMyPhpHZJ">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/runs-tab-architecture.md</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="18382" cache_read_input_tokens="16901" cache_creation="{'ephemeral_5m_input_tokens': 18382, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01QVXd6qSpvAhsRZ5TJTtqx2">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/clipboard-text-generation.md</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="18382" cache_read_input_tokens="16901" cache_creation="{'ephemeral_5m_input_tokens': 18382, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01M9prYGw11g9Pohi3jn3Vjb">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/output-styling.md</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="18382" cache_read_input_tokens="16901" cache_creation="{'ephemeral_5m_input_tokens': 18382, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Kv7X6j5Qu7EwXUcWumwcj6">
+     1→---
+     2→title: Frozen Dataclass Field Management
+     3→read_when:
+     4→  - "removing a field from a frozen dataclass"
+     5→  - "renaming a field in PlanRowData or similar frozen dataclass"
+     6→  - "getting unexpected constructor errors after field changes"
+     7→tripwires:
+     8→  - action: "removing a field from a frozen dataclass"
+     9→    warning: "Grep for the class name across ALL constructor sites. Frozen dataclasses have 5+ places to update: field definition, real provider, fake provider, test helpers, and filtering/display logic. Missing one causes runtime TypeError."
+    10→  - action: "using positional arguments when constructing PlanRowData"
+    11→    warning: "Always use keyword arguments for frozen dataclass construction. Positional arguments break silently when fields are reordered. Use make_plan_row() helper in tests."
+    12→---
+    13→
+    14→# Frozen Dataclass Field Management
+    15→
+    16→Frozen dataclasses like `PlanRowData` have fields referenced across many files. Adding or removing a field requires updating every construction site, which is error-prone because the frozen constraint means you cannot incrementally update — all constructor calls must be correct simultaneously.
+    17→
+    18→## The Removal Checklist
+    19→
+    20→When removing a field from a frozen dataclass:
+    21→
+    22→1. **Remove the field definition** from the dataclass in `data/types.py`
+    23→2. **Remove from real provider** — `RealPlanDataProvider._build_row_data()` in the plan data provider
+    24→3. **Remove from fake provider** — `FakePlanDataProvider` and the `make_plan_row()` helper in `packages/erk-shared/src/erk_shared/gateway/plan_data_provider/fake.py`
+    25→4. **Remove from display logic** — `PlanDataTable._row_to_values()` in `plan_table.py`
+    26→5. **Remove from any filtering/sorting logic** that references the field
+    27→6. **Remove from documentation** — `docs/learned/tui/plan-row-data.md`
+    28→
+    29→The critical step is #3 — `make_plan_row()` is used extensively in tests. Missing this causes widespread test failures.
+    30→
+
+... [32 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_0111hUy2phLFqzoFMyPhpHZJ">
+     1→---
+     2→title: "Runs Tab Architecture"
+     3→read_when:
+     4→  - "working with TUI Runs tab"
+     5→  - "adding columns to RunDataTable"
+     6→  - "understanding branch resolution in runs"
+     7→  - "modifying workflow run display in TUI"
+     8→tripwires:
+     9→  - action: "using run.branch directly for display without checking PR head_branch first"
+    10→    warning: "After merge+deletion, run.branch becomes master/main. Use PR head_branch as primary source, falling back to run.branch only if not master/main."
+    11→  - action: "adding a new column to RunDataTable without updating RunRowData"
+    12→    warning: "RunDataTable columns are populated from RunRowData fields. Add the field to RunRowData first, then add the column in _setup_columns."
+    13→---
+    14→
+    15→# Runs Tab Architecture
+    16→
+    17→The Runs tab displays GitHub Actions workflow runs in the TUI, alongside Plans, Learn, and Objectives views.
+    18→
+    19→## RunRowData
+    20→
+    21→Frozen dataclass representing one workflow run row.
+    22→
+    23→**Source**: `src/erk/tui/data/types.py`
+    24→
+    25→| Field               | Type               | Description                                             |
+    26→| ------------------- | ------------------ | ------------------------------------------------------- |
+    27→| `run_id`            | `str`              | GitHub Actions workflow run ID                          |
+    28→| `run_url`           | `str \| None`      | URL to the GitHub Actions run page                      |
+    29→| `status`            | `str`              | Raw status: "queued", "in_progress", "completed"        |
+    30→| `conclusion`        | `str \| None`      | Raw conclusion: "success", "failure", "cancelled", None |
+
+... [78 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01QVXd6qSpvAhsRZ5TJTtqx2">
+     1→---
+     2→title: Clipboard Text Generation
+     3→read_when:
+     4→  - "implementing copy-to-clipboard in the TUI"
+     5→  - "adding a new command that supports clipboard copy"
+     6→  - "debugging why a copy command returns wrong text"
+     7→tripwires:
+     8→  - action: "duplicating display name logic for clipboard text"
+     9→    warning: "Use get_copy_text() from registry.py as the single source of truth for clipboard text. Display name generators in command definitions are the canonical source. Do not duplicate this logic in app.py or detail screens."
+    10→    score: 5
+    11→---
+    12→
+    13→# Clipboard Text Generation
+    14→
+    15→The TUI uses a centralized `get_copy_text()` function to generate clipboard text for copy commands. This eliminates duplication between the main plan list and detail screens.
+    16→
+    17→## Single Source of Truth
+    18→
+    19→&lt;!-- Source: src/erk/tui/commands/registry.py:470, get_copy_text --&gt;
+    20→
+    21→`get_copy_text()` in `src/erk/tui/commands/registry.py:470` maps `(command_id, row, view_mode)` to clipboard text:
+    22→
+    23→```python
+    24→def get_copy_text(command_id: str, row: PlanRowData, view_mode: ViewMode) -&gt; str | None:
+    25→```
+    26→
+    27→It finds the command by ID, checks availability, and delegates to the command's `get_display_name` callback. Returns `None` if the command isn't found, isn't available, or has no display name generator.
+    28→
+    29→## Why Display Name Generators Are Canonical
+    30→
+
+... [32 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01M9prYGw11g9Pohi3jn3Vjb">
+     1→---
+     2→title: CLI Output Styling Guide
+     3→last_audited: "2026-02-16 00:00 PT"
+     4→audit_result: clean
+     5→read_when:
+     6→  - "styling CLI output"
+     7→  - "using colors in CLI"
+     8→  - "formatting terminal output"
+     9→tripwires:
+    10→  - action: "using click.confirm() after user_output()"
+    11→    warning: "Use ctx.console.confirm() for testability, or user_confirm() if no context available. Direct click.confirm() after user_output() causes buffering hangs because stderr isn't flushed."
+    12→  - action: "displaying user-provided text in Rich CLI tables"
+    13→    warning: "Use `escape_markup(value)` for user data. Brackets like `[text]` are interpreted as Rich style tags and will disappear."
+    14→  - action: "writing multi-line error messages in Ensure method calls"
+    15→    warning: "Use implicit string concatenation with \\n at end of first string. Line 1 is the primary error, line 2+ is remediation context. Do NOT use \\n\\n (double newline) — Ensure handles spacing."
+    16→  - action: "using Python format strings with :N width specifiers for CLI output containing emoji"
+    17→    warning: "Use Rich tables instead — emoji have variable terminal widths (typically 2 cells) which break fixed-width alignment. See the Rich Tables for Variable-Width Characters section below."
+    18→---
+    19→
+    20→# CLI Output Styling Guide
+    21→
+    22→This guide defines the standard color scheme, emoji conventions, and output abstraction patterns for erk CLI commands.
+    23→
+    24→## Color Conventions
+    25→
+    26→Use consistent colors and styling for CLI output via `click.style()`:
+    27→
+    28→| Element                  | Color            | Bold | Example                                             |
+    29→| ------------------------ | ---------------- | ---- | --------------------------------------------------- |
+    30→| Branch names             | `yellow`         | No   | `click.style(branch, fg="yellow")`                  |
+
+... [934 lines omitted] ...
+
+    39→| Error states             | `red`            | No   | `click.style("Error", fg="red")`                    |
+   114→- The command is long/complex and manual copying would be error-prone
+   137→- Unsupported terminals silently ignore the sequence (no errors)
+   151→- `❌` - Errors/failures
+   378→| Error messages            | `user_output()`    | User info, goes to stderr   |
+   392→user_output(click.style("Error: ", fg="red") + "Branch not found")
+   409→user_output("Warning: This operation is destructive!")
+   422→user_output("Warning: This operation is destructive!")
+   434→user_output("Warning: This operation is destructive!")
+   444→- `src/erk/cli/commands/stack/consolidate_cmd.py` - Uses user_output() for error messages
+   446→## Error Message Guidelines
+   448→Use the `Ensure` class (from `erk.cli.ensure`) for all CLI validation errors. This provides consistent error styling and messaging.
+   450→### Error Message Format
+   452→All error messages should follow these principles:
+   465→**DO NOT** include "Error: " prefix - the `Ensure` class adds it automatically in red.
+   467→### Multi-line Error Messages
+   469→For errors that need both a primary message and remediation context, use implicit string concatenation with `\n`:
+   481→- Line 1: Primary error description (concise, specific)
+   485→**DO NOT** use `\n\n` (double newline) — the Ensure class already handles spacing in its error output formatting.
+   487→This pattern was established in the admin.py migration (PR #6860) and applies to all Ensure method calls where the error benefits from remediation context.
+   493→| `"Configuration file not found at ~/.erk/config.yml - Run 'erk init' to create it"`              | `"Error: Config missing"` |
+   494→| `"Worktree already exists at path {path} - Use --force to overwrite or choose a different name"` | `"Error: Path exists"`    |
+   496→| `"No child branches found - Already at the top of the stack"`                                    | `"Validation failed"`     |
+   500→| Situation            | Error Message Template                                      |
+   508→### UserFacingCliError for Mid-Function Errors
+   510→For errors that occur mid-function where `Ensure` precondition checks don't fit, use `UserFacingCliError`:
+   513→from erk.cli.ensure import UserFacingCliError
+   517→if isinstance(push_result, PushError):
+   518→    raise UserFacingCliError(push_result.message)
+   523→- **Mid-logic errors**: Errors discovered during execution, not preconditions
+   524→- **Discriminated union errors**: When consuming `Result | Error` types from gateway layer
+   525→- **After operations fail**: When an operation returns an error variant
+   530→- `UserFacingCliError`: For errors during execution (e.g., git push fails)
+   531→- Both produce the same styled output (`Error: ` prefix in red)
+   533→- Ensure uses `UserFacingCliError` internally
+   538→- Mid-function operation errors → Raise `UserFacingCliError`
+   539→- Complex multi-step operations → Mix both (Ensure upfront, UserFacingCliError for failures)
+   575→For multi-step validations, use sequential Ensure calls with specific error messages:
+   578→# Multi-condition validation - each check has specific error
+   591→# Validation with early return - fail fast on first error
+   597→**Design Principle:** Prefer simple sequential checks over complex validation abstractions. Each check should have a specific, actionable error message. This aligns with the LBYL (Look Before You Leap) philosophy and makes code easier to understand and debug.
+   599→**Exit Codes:** All Ensure methods use exit code 1 for validation failures. This is consistent across all CLI commands.
+   607→1. **If error has a boolean condition** → Use `Ensure.invariant()`
+   612→       user_output(click.style("Error: ", fg="red") + "Something is wrong")
+   619→2. **If error returns a value when truthy** → Use `Ensure.truthy()`
+   625→       user_output(click.style("Error: ", fg="red") + "No results found")
+   632→3. **If error checks for None specifically** → Use `Ensure.not_none()`
+   638→       user_output(click.style("Error: ", fg="red") + "Value is required")
+   645→4. **If error has no clear condition or needs custom flow** → Keep as direct pattern
+   649→**Pattern: Fallthrough/catch-all errors with no clear boolean condition**
+   651→Some errors occur as the "else" case after multiple checks have been exhausted. There's no meaningful boolean condition to express - the error state IS the remaining case.
+   664→        click.style("Error: ", fg="red")
+   670→**Why not migrate:** Using `Ensure.invariant(True, ...)` or wrapping with an artificial condition would be misleading. The error isn't about a condition being false - it's about reaching a catch-all state.
+   672→**Pattern: Errors with complex multi-line remediation messages**
+   674→When the error message spans multiple lines with detailed instructions, the `Ensure` API may not accommodate the formatting needs cleanly.
+   676→**Pattern: Errors that need conditional additional output before exit**
+   684→1. **Identify the error condition** - Is there a clear boolean/truthy/None check?
+   686→3. **Write the error message** - Follow the Error Message Guidelines (no "Error: " prefix)
+   687→4. **Test behavior is unchanged** - Error should trigger at the same conditions
+   697→    user_output(click.style("Error: ", fg="red") + "Already at the top...")
+   711→- The error message is a single line
+   755→| Action: Failed   | `[red]Failed[/red]`          | Execution failed       |
+   850→This causes columns to appear misaligned whenever emoji are present. The misalignment is silent — code runs without errors but output looks wrong.
+  </tool_result>
+  <assistant>Now let me check the source code to understand what fields were actually renamed. Let me search for references to `plan_number` and `pr_number` in JSON output:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="17914" cache_read_input_tokens="35283" cache_creation="{'ephemeral_5m_input_tokens': 17914, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01SJsj7AsA1YRMMZNDiv9B8X">
+    <param name="pattern">plan_number|pr_number</param>
+    <param name="path">/home/runner/work/erk/erk/src</param>
+    <param name="type">py</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="17914" cache_read_input_tokens="35283" cache_creation="{'ephemeral_5m_input_tokens': 17914, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01F8EZKNYD2p1hminS6131Nx">
+    <param name="pattern">"plan_id"|"pr_id"</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/tui</param>
+    <param name="type">py</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="17914" cache_read_input_tokens="35283" cache_creation="{'ephemeral_5m_input_tokens': 17914, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01F8EZKNYD2p1hminS6131Nx">
+No files found
+  </tool_result>
+  <tool_result tool="toolu_01SJsj7AsA1YRMMZNDiv9B8X">
+Found 129 files
+src/erk/tui/screens/check_runs_screen.py
+src/erk/tui/screens/objective_nodes_screen.py
+src/erk/tui/screens/plan_detail_screen.py
+src/erk/tui/screens/plan_input_screen.py
+src/erk/tui/screens/unresolved_comments_screen.py
+src/erk/tui/widgets/run_table.py
+src/erk/tui/commands/registry.py
+src/erk/tui/data/real_provider.py
+src/erk/tui/data/types.py
+src/erk/tui/filtering/logic.py
+src/erk/tui/operations/logic.py
+src/erk/tui/operations/workers.py
+src/erk/status/collectors/impl.py
+src/erk/status/models/status_data.py
+src/erk/status/renderers/simple.py
+src/erk/tui/actions/navigation.py
+src/erk/tui/actions/palette.py
+src/erk/tui/app.py
+src/erk/core/services/plan_list_service.py
+src/erk/core/workflow_smoke_test.py
+src/erk/review/prompt_assembly.py
+src/erk/core/output_filter.py
+src/erk/core/pr_utils.py
+src/erk/core/prompt_executor.py
+src/erk/core/codex_output_parser.py
+src/erk/cli/ensure.py
+src/erk/cli/github_parsing.py
+src/erk/cli/output.py
+src/erk/cli/commands/wt/create_cmd.py
+
+... [100 lines omitted] ...
+  </tool_result>
+  <assistant>Let me look at the TUI types specifically to understand the fields in PlanRowData:</assistant>
+  <usage input_tokens="34" cache_creation_input_tokens="2818" cache_read_input_tokens="53197" cache_creation="{'ephemeral_5m_input_tokens': 2818, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_014sWEiqHGeQrwWYwtqT1pS9">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/data/types.py</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="34" cache_creation_input_tokens="2818" cache_read_input_tokens="53197" cache_creation="{'ephemeral_5m_input_tokens': 2818, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01AN29441HVM4ZugSRZs6Rvq">
+    <param name="pattern">pr_number.*=|plan_id.*=</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/tui/data/types.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="34" cache_creation_input_tokens="2818" cache_read_input_tokens="53197" cache_creation="{'ephemeral_5m_input_tokens': 2818, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014sWEiqHGeQrwWYwtqT1pS9">
+     1→"""Data types for TUI components."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→import dataclasses
+     6→from dataclasses import dataclass
+     7→from datetime import datetime
+     8→from typing import Any
+     9→
+    10→from erk_shared.gateway.github.types import IssueFilterState
+    11→
+    12→
+    13→@dataclass(frozen=True)
+    14→class PlanRowData:
+    15→    """Row data for displaying a plan in the TUI table.
+    16→
+    17→    Contains pre-formatted display strings and raw data needed for actions.
+    18→    Immutable to ensure table state consistency.
+    19→
+    20→    **Display vs Raw convention:** Many data points have both a raw field (for
+    21→    logic/predicates) and a display field (for table rendering). Raw fields are
+    22→    often nullable (None when absent), while display fields are always strings
+    23→    (dash "-" or empty when absent). Use raw fields in availability predicates
+    24→    (``ctx.row.pr_number is not None``), display fields for rendering.
+    25→
+    26→    Attributes:
+    27→
+    28→        plan_id: GitHub issue number (e.g., 123). Never None.
+    29→        plan_url: Full URL to the GitHub issue. None when unavailable.
+    30→        full_title: Complete untruncated plan title. Empty string possible.
+
+... [75 lines omitted] ...
+
+    58→        run_conclusion: Run conclusion ("success", "failure", "cancelled").
+  </tool_result>
+  <tool_result tool="toolu_01AN29441HVM4ZugSRZs6Rvq">
+No matches found
+  </tool_result>
+  <assistant>Good! Now let me check what changed in the exec scripts for JSON output. Let me check a few key files:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="4126" cache_read_input_tokens="56015" cache_creation="{'ephemeral_5m_input_tokens': 4126, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01RCn3iyqfiTJLhC4bCM3A7Q">
+    <param name="pattern">"plan_number"|"pr_number"</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts</param>
+    <param name="type">py</param>
+    <param name="output_mode">content</param>
+    <param name="head_limit">30</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="4126" cache_read_input_tokens="56015" cache_creation="{'ephemeral_5m_input_tokens': 4126, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01RCn3iyqfiTJLhC4bCM3A7Q">
+src/erk/cli/commands/exec/scripts/close_prs.py:4:    echo '[{"pr_number": 42, "comment": "Superseded"}]' | erk exec close-prs
+src/erk/cli/commands/exec/scripts/close_prs.py:7:    JSON array from stdin, each item: {"pr_number": int, "comment": str}
+src/erk/cli/commands/exec/scripts/close_prs.py:82:        if "pr_number" not in item_dict:
+src/erk/cli/commands/exec/scripts/close_prs.py:89:        plan_number = item_dict["pr_number"]
+src/erk/cli/commands/exec/scripts/close_prs.py:112:        validated_items.append({"pr_number": plan_number, "comment": comment})
+src/erk/cli/commands/exec/scripts/close_prs.py:156:        plan_number = item["pr_number"]
+src/erk/cli/commands/exec/scripts/close_prs.py:165:                    "pr_number": plan_number,
+src/erk/cli/commands/exec/scripts/close_prs.py:177:                    "pr_number": plan_number,
+src/erk/cli/commands/exec/scripts/close_prs.py:187:                "pr_number": plan_number,
+src/erk/cli/commands/exec/scripts/track_learn_evaluation.py:14:        "pr_number": 123,
+src/erk/cli/commands/exec/scripts/reply_to_discussion_comment.py:170:        "pr_number": pr_details.number,
+src/erk/cli/commands/exec/scripts/fetch_sessions.py:11:    {"success": true, "pr_number": 2521, "manifest": {...}, "files": [...]}
+src/erk/cli/commands/exec/scripts/fetch_sessions.py:125:        "pr_number": pr_number,
+src/erk/cli/commands/exec/scripts/get_pr_view.py:27:@click.argument("pr_number", type=int, required=False, default=None)
+src/erk/cli/commands/exec/scripts/get_pr_review_comments.py:20:    {"success": true, "pr_number": 123, "threads": [...]}
+src/erk/cli/commands/exec/scripts/get_pr_review_comments.py:23:    {"success": true, "pr_number": 456, "threads": [...]}
+src/erk/cli/commands/exec/scripts/get_pr_for_plan.py:50:@click.argument("pr_number", type=int)
+src/erk/cli/commands/exec/scripts/add_pr_labels_cmd.py:31:@click.argument("pr_number", type=int)
+src/erk/cli/commands/exec/scripts/setup_impl_from_pr.py:19:     "pr_number": 1028, "branch": "P1028-..."}
+src/erk/cli/commands/exec/scripts/setup_impl_from_pr.py:210:        "pr_number": pr_number,
+src/erk/cli/commands/exec/scripts/setup_impl_from_pr.py:256:                "pr_number": pr_number,
+src/erk/cli/commands/exec/scripts/setup_impl_from_pr.py:297:            "pr_number": pr_number,
+src/erk/cli/commands/exec/scripts/setup_impl_from_pr.py:315:@click.argument("pr_number", type=int)
+src/erk/cli/commands/exec/scripts/incremental_dispatch.py:48:@click.option("--pr", "pr_number", type=int, required=True, help="PR number to dispatch against")
+src/erk/cli/commands/exec/scripts/incremental_dispatch.py:168:        "pr_number": str(pr_number),
+src/erk/cli/commands/exec/scripts/incremental_dispatch.py:214:                    "pr_number": pr_number,
+src/erk/cli/commands/exec/scripts/create_impl_context_from_plan.py:18:    {"success": true, "impl_context_path": "/path/to/.erk/impl-context", "pr_number": 1028}
+src/erk/cli/commands/exec/scripts/create_impl_context_from_plan.py:39:@click.argument("pr_number", type=int)
+src/erk/cli/commands/exec/scripts/create_impl_context_from_plan.py:88:        "pr_number": pr_number,
+src/erk/cli/commands/exec/scripts/get_learn_sessions.py:15:        "pr_number": "123",
+
+... [2 lines omitted] ...
+  </tool_result>
+  <assistant>Perfect! Now I can see the pattern. The JSON output in exec scripts is using `pr_number` (not `plan_number`). Let me now read the remaining CLI docs to check what needs to be updated:</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="1410" cache_read_input_tokens="60141" cache_creation="{'ephemeral_5m_input_tokens': 1410, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01VT8Xb58W8cq155Nqd4nyzg">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/pr-submit-pipeline.md</param>
+    <param name="limit">80</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="1410" cache_read_input_tokens="60141" cache_creation="{'ephemeral_5m_input_tokens': 1410, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_017JzT4rThNtXhLQRbfqtime">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/exec-command-patterns.md</param>
+    <param name="limit">80</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="1410" cache_read_input_tokens="60141" cache_creation="{'ephemeral_5m_input_tokens': 1410, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01VT8Xb58W8cq155Nqd4nyzg">
+     1→---
+     2→title: PR Submit Pipeline Architecture
+     3→read_when:
+     4→  - "modifying the PR submit workflow"
+     5→  - "adding new steps to the submit pipeline"
+     6→  - "debugging PR submission failures"
+     7→  - "understanding the Graphite-first vs core submit dispatch"
+     8→tripwires:
+     9→  - action: "adding a new step to the submit pipeline"
+    10→    warning: "Each step must return SubmitState | SubmitError. Use dataclasses.replace() for state updates. Add the step to _submit_pipeline() tuple."
+    11→  - action: "mutating SubmitState fields directly"
+    12→    warning: "SubmitState is frozen. Use dataclasses.replace(state, field=value) to create new state."
+    13→  - action: "adding discovery logic outside prepare_state()"
+    14→    warning: "All discovery (branch name, plan number, parent branch, etc.) must happen in prepare_state() to prevent duplication. Later steps assume these fields are populated."
+    15→  - action: "using ctx.invoke() with kwargs that don't match target function parameter names"
+    16→    warning: "Click ctx.invoke() forwards kwargs directly — any name mismatch causes runtime TypeError. Verify all parameter names exactly match the target function signature."
+    17→  - action: "calling an external tool that overwrites state without capturing it first"
+    18→    warning: "Save state BEFORE calling external tools that may overwrite it. Reference: capture_existing_pr_body() in submit_pipeline.py captures the PR body before gt submit overwrites it."
+    19→last_audited: "2026-02-16 14:20 PT"
+    20→audit_result: clean
+    21→---
+    22→
+    23→# PR Submit Pipeline Architecture
+    24→
+    25→The PR submit pipeline is erk's reference implementation of the state threading pattern. This document explains **why** the architecture choices matter, not what the code does (read the source for that).
+    26→
+    27→## Why Linear Pipelines: The Dual-Path Problem
+    28→
+    29→Before the linear pipeline refactor, PR submission used branching orchestration with two paths (Graphite-first vs core). **The problem:** discovery code was duplicated between paths, plan linkage validation happened in multiple places, and error handling varied between branches.
+    30→
+
+... [55 lines omitted] ...
+
+    31→Linear pipelines solve this by **deferring the dispatch decision**. Discovery happens once in step 1, then step 3 dispatches internally to Graphite or core flow. Both paths share the same state type and error handling.
+    43→3. **Type narrowing** — Later steps assume `branch_name` is `str`, not `str | None`, because step 1 checks and errors if unresolved
+    67→- **Shared error handling** — Both return `SubmitState | SubmitError`, uniform consumption at CLI layer
+  </tool_result>
+  <tool_result tool="toolu_017JzT4rThNtXhLQRbfqtime">
+     1→---
+     2→title: Exec Command Patterns
+     3→last_audited: "2026-02-16 14:20 PT"
+     4→audit_result: clean
+     5→read_when:
+     6→  - "writing exec scripts with PR/issue output"
+     7→  - "building diagnostic messages"
+     8→  - "standardizing exec command output"
+     9→tripwires:
+    10→  - action: "writing PR/issue body generation in exec scripts"
+    11→    warning: "Use `_build_pr_body` and `_build_issue_comment` patterns from handle_no_changes.py for consistency and testability."
+    12→---
+    13→
+    14→# Exec Command Patterns
+    15→
+    16→Patterns for writing `erk exec` scripts that produce user-facing output like PR bodies and issue comments.
+    17→
+    18→## Diagnostic PR Body Generation
+    19→
+    20→When exec scripts need to update PR bodies with diagnostic information, follow the `_build_pr_body()` pattern:
+    21→
+    22→**Key principles:**
+    23→
+    24→1. **Structured sections**: Use clear markdown headers (##, ###)
+    25→2. **Actionable guidance**: Include "Next Steps" with numbered actions
+    26→3. **Cross-linking**: Reference related issues/PRs with GitHub links
+    27→4. **Optional context**: Handle optional fields gracefully (workflow URLs, commit lists)
+    28→
+    29→**Section structure:**
+    30→
+
+... [55 lines omitted] ...
+  </tool_result>
+  <assistant>Now let me check the output-styling.md file more carefully for the JSON example mentioned:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="3275" cache_read_input_tokens="61551" cache_creation="{'ephemeral_5m_input_tokens': 3275, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01S1tBbVU5b18zH1FNctvhgo">
+    <param name="pattern">plan_id|pr_id|plan_number|pr_number</param>
+    <param name="path">/home/runner/work/erk/erk/docs/learned/cli/output-styling.md</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="3275" cache_read_input_tokens="61551" cache_creation="{'ephemeral_5m_input_tokens': 3275, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01S1tBbVU5b18zH1FNctvhgo">
+232:  "plan_id": "6545",
+304:   - Format: `"   Incorporating plan from issue #{plan_id}"`
+318:See `echo_plan_context_status()` in `src/erk/cli/commands/pr/shared.py` for the canonical implementation. Uses `plan_context.plan_id` (not `plan_number`) to display the plan reference.
+942:- **Internal variable names may differ.** Internal code can use `plan_id`, `plan_number`, or similar — these are implementation details. Only the user-visible strings must say "plan".
+949:click.echo(f"Issue #{plan_number} created")
+952:click.echo(f"Plan #{plan_id} created")
+  </tool_result>
+  <assistant>Good! Now I understand the situation:
+
+1. The TUI source code still uses `plan_id` and `plan_url` in `PlanRowData` - NOT renamed
+2. The JSON output from exec scripts has changed from `plan_number` to `pr_number` (but only for PR-related fields)
+3. The docs mention `plan_id` in various contexts which is still accurate
+
+Let me now check the other CLI docs more carefully:</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="329" cache_read_input_tokens="64826" cache_creation="{'ephemeral_5m_input_tokens': 329, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_014gXUEi83nqvXCEW8CftEzU">
+    <param name="pattern">plan_number|pr_number|plan_id</param>
+    <param name="path">/home/runner/work/erk/erk/docs/learned/cli/pr-submit-pipeline.md</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="329" cache_read_input_tokens="64826" cache_creation="{'ephemeral_5m_input_tokens': 329, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01LvnhncNjQienbYSoawxreH">
+    <param name="pattern">plan_number|pr_number|plan_id</param>
+    <param name="path">/home/runner/work/erk/erk/docs/learned/cli/land-learn-integration.md</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="329" cache_read_input_tokens="64826" cache_creation="{'ephemeral_5m_input_tokens': 329, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01RaarhmyXJFMh8biUfeX3tu">
+    <param name="pattern">plan_number|pr_number|plan_id</param>
+    <param name="path">/home/runner/work/erk/erk/docs/learned/cli/learn-plan-land-flow.md</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="329" cache_read_input_tokens="64826" cache_creation="{'ephemeral_5m_input_tokens': 329, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014gXUEi83nqvXCEW8CftEzU">
+37:Step 1 (`prepare_state()`) resolves 6 fields: `repo_root`, `branch_name`, `parent_branch`, `trunk_branch`, `plan_id`, and validates `.erk/impl-context/plan-ref.json` linkage (with legacy `.erk/impl-context/issue.json` fallback).
+41:1. **DRY** — Before this pattern, `plan_id` was derived independently in 3+ places with subtly different logic
+44:4. **Single source of truth** — Grep for "where does `plan_id` come from?" finds one place, not four
+98:**Why in prepare_state() instead of a separate "repair" step?** Because the repair needs `plan_id` (discovered in prepare), `repo_root` (discovered in prepare), and `remote_url` (fetched for repair). Preparing and repairing are coupled — no value in separating them.
+157:The pipeline detects plan implementations via `state.plan_id is not None or state.branch_name.startswith("plnd/")`. The branch-prefix fallback handles the case where `.erk/impl-context/` cleanup occurred before a failed push attempt, leaving `plan_id` as `None` but the branch name still indicating a plan implementation. This drives two auto-behaviors:
+  </tool_result>
+  <tool_result tool="toolu_01RaarhmyXJFMh8biUfeX3tu">
+45:4. Populate `state.plan_id` for execution pipeline
+88:The `LandState` dataclass threads `plan_id` through the validation and execution pipelines. See the `LandState` definition in `src/erk/cli/commands/land_pipeline.py`.
+96:1. **Validation pipeline**: `check_learn_status()` extracts from branch name → `state.plan_id`
+98:3. **Execution pipeline**: `make_execution_state()` re-derives from branch name → `state.plan_id`
+106:All learn-specific steps check `state.plan_id` and skip execution if `None`. This happens when:
+114:Not every branch is a plan branch. Regular feature branches should land normally without triggering learn plan logic. Checking `plan_id is None` makes the pipeline generic—it handles both plan and non-plan branches.
+  </tool_result>
+  <tool_result tool="toolu_01LvnhncNjQienbYSoawxreH">
+126:1. `extract_learn_plan_number()` in `src/erk/tui/operations/logic.py` scans operation output lines with regex `r"Created learn plan #(\d+)"`
+128:3. **Cycle prevention**: When the TUI triggers a land, it passes `plan_id=None` for learn plans (`row.plan_id if not row.is_learn_plan else None`). This prevents learn plans from creating learn plans of their own.
+130:&lt;!-- Source: src/erk/tui/operations/logic.py, extract_learn_plan_number --&gt;
+137:The **primary path** for fetching session XMLs from remote implementations (e.g., codespace or dispatch). When sessions are produced remotely, preprocessed XMLs are uploaded to the `planned-pr-context/{plan_id}` branch.
+143:1. Checks if `planned-pr-context/{plan_id}` branch exists on remote via `branch_exists_on_remote()`
+  </tool_result>
+  <assistant>Perfect! Now I can see that the CLI documentation uses `plan_id` (not `plan_number` or `pr_number`) in these contexts. Let me check a few more CLI docs to see if there are any actual `plan_number` → `pr_number` references that need changing:</assistant>
+  <usage input_tokens="234" cache_creation_input_tokens="1134" cache_read_input_tokens="65155" cache_creation="{'ephemeral_5m_input_tokens': 1134, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01LTfBnnSCLt4Sb97XBnFEDY">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/erk-exec-commands.md</param>
+    <param name="limit">80</param>
+  </tool_use>
+  <usage input_tokens="234" cache_creation_input_tokens="1134" cache_read_input_tokens="65155" cache_creation="{'ephemeral_5m_input_tokens': 1134, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Sf9hskGNit5zBGRyXrYkSy">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/ambiguity-resolution.md</param>
+    <param name="limit">80</param>
+  </tool_use>
+  <usage input_tokens="234" cache_creation_input_tokens="1134" cache_read_input_tokens="65155" cache_creation="{'ephemeral_5m_input_tokens': 1134, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01LTfBnnSCLt4Sb97XBnFEDY">
+     1→---
+     2→title: erk exec Commands
+     3→last_audited: "2026-02-16 14:20 PT"
+     4→audit_result: clean
+     5→read_when:
+     6→  - "running erk exec subcommands"
+     7→  - "looking up erk exec syntax"
+     8→tripwires:
+     9→  - action: "running any erk exec subcommand"
+    10→    warning: "Check syntax with `erk exec &lt;command&gt; -h` first, or load erk-exec skill for workflow guidance."
+    11→  - action: "using erk exec commands in scripts"
+    12→    warning: "Some erk exec subcommands don't support `--format json`. Always check with `erk exec &lt;command&gt; -h` first."
+    13→  - action: "adding new exec script parameters with 'issue' in the name"
+    14→    warning: "When adding new exec script parameters, use 'plan' terminology not 'issue'. See erk-exec-commands.md Phase 5 Terminology Standardization."
+    15→---
+    16→
+    17→# erk exec Commands
+    18→
+    19→The `erk exec` command group contains utility scripts for automation and agent workflows.
+    20→
+    21→## Usage Pattern
+    22→
+    23→All erk exec commands use named options (not positional arguments for most parameters):
+    24→
+    25→```bash
+    26→# Correct
+    27→erk exec get-pr-review-comments --pr 123
+    28→
+    29→# Wrong - positional arguments don't work
+    30→erk exec get-pr-review-comments 123
+
+... [55 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01Sf9hskGNit5zBGRyXrYkSy">
+     1→---
+     2→title: Ambiguity Resolution Pattern for CLI Commands
+     3→read_when:
+     4→  - "implementing CLI commands that accept identifiers with multiple possible matches"
+     5→  - "designing CLI behavior for ambiguous input"
+     6→  - "displaying tables of options without interactive selection"
+     7→last_audited: "2026-02-17 00:00 PT"
+     8→audit_result: clean
+     9→---
+    10→
+    11→# Ambiguity Resolution Pattern
+    12→
+    13→When a CLI command accepts an identifier that may match zero, one, or multiple results, use the "single → table → error" pattern for consistent user experience.
+    14→
+    15→## Pattern Overview
+    16→
+    17→```
+    18→┌─────────────────┐
+    19→│   Parse Input   │──► Validate identifier format
+    20→└────────┬────────┘
+    21→         │
+    22→         ▼
+    23→┌─────────────────┐
+    24→│   Find Matches  │──► Search for matching resources
+    25→└────────┬────────┘
+    26→         │
+    27→    ┌────┴────┬─────────┐
+    28→    │         │         │
+    29→    ▼         ▼         ▼
+    30→ Single    Multiple    Zero
+
+... [55 lines omitted] ...
+
+    35→Immediately  Table     Error
+    73→    raise SystemExit(0)  # Exit code 0: informational, not an error
+    76→### Zero Matches: Display Helpful Error
+  </tool_result>
+  <assistant>Now let me check the remaining files:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="2655" cache_read_input_tokens="66289" cache_creation="{'ephemeral_5m_input_tokens': 2655, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01JRTXtD8Mkwxh6BUKqP9UNt">
+    <param name="pattern">plan_number|pr_number</param>
+    <param name="path">/home/runner/work/erk/erk/docs/learned/cli</param>
+    <param name="glob">*.md</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="2655" cache_read_input_tokens="66289" cache_creation="{'ephemeral_5m_input_tokens': 2655, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01JRTXtD8Mkwxh6BUKqP9UNt">
+docs/learned/cli/output-styling.md:318:See `echo_plan_context_status()` in `src/erk/cli/commands/pr/shared.py` for the canonical implementation. Uses `plan_context.plan_id` (not `plan_number`) to display the plan reference.
+docs/learned/cli/output-styling.md:942:- **Internal variable names may differ.** Internal code can use `plan_id`, `plan_number`, or similar — these are implementation details. Only the user-visible strings must say "plan".
+docs/learned/cli/output-styling.md:949:click.echo(f"Issue #{plan_number} created")
+docs/learned/cli/erk-exec-commands.md:148:**Output:** JSON with `success`, `source`, `plan_number`, `has_plan_tracking`, `valid`, `related_docs`
+docs/learned/cli/erk-exec-commands.md:204:- `add-plan-labels` — Add labels to multiple plans (stdin: `[{"plan_number": int, "label": str}]`)
+docs/learned/cli/erk-exec-commands.md:205:- `close-prs` — Close multiple PRs with comments (stdin: `[{"plan_number": int, "comment": str}]`)
+docs/learned/cli/ambiguity-resolution.md:57:    user_output(f"Multiple branches found for plan #{plan_number}:\n")
+docs/learned/cli/ambiguity-resolution.md:83:        f"No local branch or open PR found for plan #{plan_number}\n\n"
+docs/learned/cli/ambiguity-resolution.md:85:        f"  • Run: erk implement {plan_number}"
+docs/learned/cli/ensure-ideal-pattern.md:86:ctx.git.merge_pr(pr_number)  # Mutation!
+docs/learned/cli/agent-friendly-cli.md:130:      "pr_number": { "type": "integer" },
+docs/learned/cli/agent-friendly-cli.md:277:    pr_number: int
+docs/learned/cli/workflow-run-list.md:32:`extract_pr_number()` in `shared.py` uses regex `r"#(\d+)"` to extract PR numbers from `display_title`:
+docs/learned/cli/workflow-run-list.md:42:The plan-implement workflow uses a `run-name` template of `"${{ inputs.branch_name }} (#${{ inputs.pr_number }}):${{ inputs.distinct_id }}"`, which includes the branch name for easier identification. The `#(\d+)` regex works with both old and new formats because it matches the `#NNN` pattern regardless of surrounding context.
+docs/learned/cli/workflow-run-list.md:44:Formats without `#` return None and fall back to plan-PR linkage via `extract_plan_number()` which parses `"NUMBER:HASH"` format.
+docs/learned/cli/workflow-run-list.md:70:The learn workflow has no PR number in run-name because learn runs execute post-merge and don't receive a `pr_number` input.
+docs/learned/cli/land-learn-integration.md:126:1. `extract_learn_plan_number()` in `src/erk/tui/operations/logic.py` scans operation output lines with regex `r"Created learn plan #(\d+)"`
+docs/learned/cli/land-learn-integration.md:130:&lt;!-- Source: src/erk/tui/operations/logic.py, extract_learn_plan_number --&gt;
+docs/learned/cli/exec-command-patterns.md:48:Closes #[plan_number]
+docs/learned/cli/two-phase-validation-model.md:87:ctx.github.merge_pr(repo_root, pr_number)  # Mutation 1
+docs/learned/cli/two-phase-validation-model.md:97:ctx.github.merge_pr(repo_root, pr_number)         # Phase 2
+docs/learned/cli/commands/pr-summarize.md:51:Extracts the diff between current branch and parent using the shared `execute_diff_extraction` pipeline. Sets `pr_number=0` as a placeholder since no PR exists yet.
+docs/learned/cli/commands/pr-prepare.md:26:When `plan_number` is omitted, uses `ctx.github.get_pr_for_branch()` to find the PR associated with the current branch.
+  </tool_result>
+  <assistant>Excellent! Now I found the issues. Let me check those specific files more carefully:</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="1228" cache_read_input_tokens="68944" cache_creation="{'ephemeral_5m_input_tokens': 1228, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01QzFeTT1qw651oxgJVsCDqg">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/erk-exec-commands.md</param>
+    <param name="offset">140</param>
+    <param name="limit">80</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="1228" cache_read_input_tokens="68944" cache_creation="{'ephemeral_5m_input_tokens': 1228, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_016qQRgAEt55CezGC9a8ATTU">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/commands/pr-prepare.md</param>
+    <param name="limit">80</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="1228" cache_read_input_tokens="68944" cache_creation="{'ephemeral_5m_input_tokens': 1228, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01QzFeTT1qw651oxgJVsCDqg">
+   140→4. Cleans up `.erk/impl-context/` staging directory (git rm + commit + push)
+   141→
+   142→**Flags:**
+   143→
+   144→- `--issue` - Plan number to fetch plan from
+   145→- `--file` - Local markdown file path
+   146→- `--no-impl` - Create branch only, skip `.erk/impl-context/` folder creation
+   147→
+   148→**Output:** JSON with `success`, `source`, `plan_number`, `has_plan_tracking`, `valid`, `related_docs`
+   149→
+   150→#### setup-impl-from-pr
+   151→
+   152→Creates implementation environment from a plan:
+   153→
+   154→1. Fetches plan from GitHub
+   155→2. Creates/checks out implementation branch (e.g., `P123-feature-01-15-1430`)
+   156→3. Creates `.erk/impl-context/` folder with plan content
+   157→4. Saves plan reference for PR linking
+   158→
+   159→**Flags:**
+   160→
+   161→- `--no-impl` - Create branch only, skip `.erk/impl-context/` folder creation
+   162→
+   163→**Branch behavior:**
+   164→
+   165→- If branch exists: Checks out existing branch
+   166→- If on trunk: Creates branch from trunk
+   167→- If on feature branch: Stacks new branch on current branch
+   168→
+   169→**Important:** After `create_branch()`, explicit `checkout_branch()` is called because GraphiteBranchManager restores the original branch after tracking.
+
+... [55 lines omitted] ...
+
+   202→Batch commands read JSON arrays from stdin and process items individually. They continue on individual failures and always exit with code 0.
+   207→Both use frozen dataclass results with discriminated union error handling.
+  </tool_result>
+  <tool_result tool="toolu_016qQRgAEt55CezGC9a8ATTU">
+     1→---
+     2→title: erk pr prepare Command
+     3→read_when:
+     4→  - "setting up impl-context for an existing PR"
+     5→  - "preparing a worktree for plan implementation"
+     6→  - "working with erk pr prepare"
+     7→---
+     8→
+     9→# erk pr prepare Command
+    10→
+    11→Sets up `.erk/impl-context/` for the current worktree's PR, making it ready for plan implementation without full checkout.
+    12→
+    13→## Usage
+    14→
+    15→```bash
+    16→erk pr prepare              # Auto-detect PR from current branch
+    17→erk pr prepare &lt;number&gt;     # Prepare for specific plan number
+    18→```
+    19→
+    20→## Implementation
+    21→
+    22→**File:** `src/erk/cli/commands/pr/prepare_cmd.py`
+    23→
+    24→### Auto-Detection
+    25→
+    26→When `plan_number` is omitted, uses `ctx.github.get_pr_for_branch()` to find the PR associated with the current branch.
+    27→
+    28→### Idempotency
+    29→
+    30→Before creating impl-context, reads any existing impl directory and compares the plan ID. If the plan ID matches, skips setup — safe to re-run.
+
+... [21 lines omitted] ...
+
+    40→The `erk pr checkout` error message now suggests `erk pr prepare` as an alternative when checkout fails.
+  </tool_result>
+  <assistant>Perfect! Now I've identified the files that need to be updated. Let me verify my findings by checking the actual source code to confirm what fields were renamed:</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="2175" cache_read_input_tokens="70172" cache_creation="{'ephemeral_5m_input_tokens': 2175, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_013kWrutmKFBwc3r947BkGPj">
+    <param name="command">grep -r "pr_number\|plan_number" src/erk/cli/commands/exec/scripts/close_prs.py | head -20</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="2175" cache_read_input_tokens="70172" cache_creation="{'ephemeral_5m_input_tokens': 2175, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013kWrutmKFBwc3r947BkGPj">
+    echo '[{"pr_number": 42, "comment": "Superseded"}]' | erk exec close-prs
+    JSON array from stdin, each item: {"pr_number": int, "comment": str}
+    pr_number: int
+        if "pr_number" not in item_dict:
+                message=f"Item at index {idx} missing required 'pr_number' field",
+        plan_number = item_dict["pr_number"]
+        if not isinstance(plan_number, int):
+                message=f"Item at index {idx} has non-integer 'pr_number'",
+        validated_items.append({"pr_number": plan_number, "comment": comment})
+    - pr_number (required): Plan PR number
+        plan_number = item["pr_number"]
+        plan_id = str(plan_number)
+                    "pr_number": plan_number,
+                    "pr_number": plan_number,
+                "pr_number": plan_number,
+  </tool_result>
+  <assistant>Perfect! The source code confirms the JSON fields use `pr_number`, but the docs are saying `plan_number`. Now let me make the edits:</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="369" cache_read_input_tokens="72347" cache_creation="{'ephemeral_5m_input_tokens': 369, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_015AJpZYTjxYJ596iN4aUXZe">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/erk-exec-commands.md</param>
+    <param name="old_string">**Output:** JSON with `success`, `source`, `plan_number`, `has_plan_tracking`, `valid`, `related_docs`</param>
+    <param name="new_string">**Output:** JSON with `success`, `source`, `pr_number`, `has_plan_tracking`, `valid`, `related_docs`</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="369" cache_read_input_tokens="72347" cache_creation="{'ephemeral_5m_input_tokens': 369, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_016JqyhUBNQeTUQ1NhM6XdTB">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/erk-exec-commands.md</param>
+    <param name="old_string">- `add-plan-labels` — Add labels to multiple plans (stdin: `[{"plan_number": int, "label": str}]`)
+- `close-prs` — Close multiple PRs with comments (stdin: `[{"plan_number": int, "comment": str}]`)</param>
+    <param name="new_string">- `add-plan-labels` — Add labels to multiple plans (stdin: `[{"pr_number": int, "label": str}]`)
+- `close-prs` — Close multiple PRs with comments (stdin: `[{"pr_number": int, "comment": str}]`)</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="369" cache_read_input_tokens="72347" cache_creation="{'ephemeral_5m_input_tokens': 369, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_014rD7hSGqefRQPLUzkMfh58">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/commands/pr-prepare.md</param>
+    <param name="old_string">When `plan_number` is omitted, uses `ctx.github.get_pr_for_branch()` to find the PR associated with the current branch.</param>
+    <param name="new_string">When `number` is omitted, uses `ctx.github.get_pr_for_branch()` to find the PR associated with the current branch.</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="369" cache_read_input_tokens="72347" cache_creation="{'ephemeral_5m_input_tokens': 369, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_015AJpZYTjxYJ596iN4aUXZe">
+The file /home/runner/work/erk/erk/docs/learned/cli/erk-exec-commands.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_016JqyhUBNQeTUQ1NhM6XdTB">
+The file /home/runner/work/erk/erk/docs/learned/cli/erk-exec-commands.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_014rD7hSGqefRQPLUzkMfh58">
+The file /home/runner/work/erk/erk/docs/learned/cli/commands/pr-prepare.md has been updated successfully.
+  </tool_result>
+  <assistant>Great! Now let me verify the changes and check if there are any other references that need updating. Let me double-check the workflow-run-list.md file:</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="1647" cache_read_input_tokens="72716" cache_creation="{'ephemeral_5m_input_tokens': 1647, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01X7r62eCftmq1vZs6zo1ta1">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/workflow-run-list.md</param>
+    <param name="limit">75</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="1647" cache_read_input_tokens="72716" cache_creation="{'ephemeral_5m_input_tokens': 1647, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>

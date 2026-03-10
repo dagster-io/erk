@@ -1,0 +1,680 @@
+<session>
+  <meta source="agent-a185b62" />
+  <meta branch="plnd/O9109-rename-plan-pr-docs-03-10-1247" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>Update the following documentation files. In the source code, `PlanRef.plan_id` was renamed to `PlanRef.pr_id`, and `plan_number` in JSON output/CLI args was renamed to `pr_number`. The branch pattern `planned-pr-context/{plan_id}` is now `planned-pr-context/{pr_number}`.
+
+IMPORTANT: `state.plan_id`, `PlanContext.plan_id`, `resolve_plan_id_for_branch()`, `PlanNotFound.plan_id` are STILL `plan_id` in source. Do NOT rename those references.
+
+**File 1: `/home/runner/work/erk/erk/docs/learned/planning/plan-id-semantics.md`**
+This file documents `plan_id` semantics by backend. Since the PlanRef field is now `pr_id`, update accordingly:
+- References to PlanRef's `plan_id` → `pr_id` 
+- Table heading `plan_id Refers To` → `pr_id Refers To`
+- `github.get_pr(repo_root, plan_id)` → `github.get_pr(repo_root, pr_id)`
+- But keep the document title concept as-is if it makes sense, and keep references to general "plan ID" concept
+- The tripwire warnings reference `plan_id` — update to `pr_id` where they refer to PlanRef field
+
+**File 2: `/home/runner/work/erk/erk/docs/learned/planning/planned-pr-backend.md`**
+- `plan_id IS the PR number` → `pr_id IS the PR number` (where referring to PlanRef field)
+- `plan_id` references that are about the PlanRef field → `pr_id`
+- `github.get_pr(plan_id)` → `github.get_pr(pr_id)`
+
+**File 3: `/home/runner/work/erk/erk/docs/learned/planning/plan-backend-migration.md`**
+This file documents the PlanBackend ABC methods. The `plan_id` parameter in these methods was renamed to `pr_id`:
+- Method signatures: `get_plan(repo_root, plan_id)` → `get_plan(repo_root, pr_id)`
+- All method parameters and code examples: `plan_id` → `pr_id`
+- `plan_id = str(issue_number)` → `pr_id = str(issue_number)`
+- `plan_result = backend.get_plan(repo_root, plan_id)` → `backend.get_plan(repo_root, pr_id)`
+- `backend.update_metadata(repo_root, plan_id, ...)` → `backend.update_metadata(repo_root, pr_id, ...)`
+- `backend.post_event(repo_root, plan_ref.plan_id, ...)` → `backend.post_event(repo_root, plan_ref.pr_id, ...)`
+- ABC table: all `plan_id` parameters → `pr_id`
+
+**File 4: `/home/runner/work/erk/erk/docs/learned/planning/lifecycle.md`**
+- In the ref.json structure: `plan_id` → `pr_id`
+- JSON example: `"plan_id": "123"` → `"pr_id": "123"`
+- `plan_number` variable refs → `pr_number` if it's a JSON output field
+- Keep `state.plan_id` references unchanged
+
+**File 5: `/home/runner/work/erk/erk/docs/learned/planning/workflow.md`**
+- `ref.json` description: `plan_id, plan_url` → `pr_id, pr_url`
+
+Read each file first, then apply edits.</user>
+  <assistant>I'll start by reading each of these documentation files to understand their current state, then apply the necessary updates.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="6739" cache_read_input_tokens="10097" cache_creation="{'ephemeral_5m_input_tokens': 6739, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01YJNPeJPW4tYDmhTxBpq6zm">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/plan-id-semantics.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6739" cache_read_input_tokens="10097" cache_creation="{'ephemeral_5m_input_tokens': 6739, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_0158ktb1tnZwmLnEtuDquNE9">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/planned-pr-backend.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6739" cache_read_input_tokens="10097" cache_creation="{'ephemeral_5m_input_tokens': 6739, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01FnSranYxkv7axr6uEUPMYb">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/plan-backend-migration.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6739" cache_read_input_tokens="10097" cache_creation="{'ephemeral_5m_input_tokens': 6739, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01DNQtWfydpk97bKPiG9E8uB">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/lifecycle.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6739" cache_read_input_tokens="10097" cache_creation="{'ephemeral_5m_input_tokens': 6739, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01LXdJDXzPuoebVcHdjUmZxN">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/workflow.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6739" cache_read_input_tokens="10097" cache_creation="{'ephemeral_5m_input_tokens': 6739, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01YJNPeJPW4tYDmhTxBpq6zm">
+     1→---
+     2→title: Plan ID Semantics
+     3→read_when:
+     4→  - "calling github.get_pr() or github.get_issue() with a plan_id"
+     5→  - "writing code that handles plan IDs"
+     6→  - "debugging 404 errors when fetching plan metadata"
+     7→tripwires:
+     8→  - action: "calling gh issue view with a plan_id from PlannedPRBackend"
+     9→    warning: "For planned-PR plans, plan_id is a PR number, not an issue number. Use gh pr view instead. Check provider type before assuming plan_id semantics."
+    10→---
+    11→
+    12→# Plan ID Semantics
+    13→
+    14→The meaning of `plan_id` depends on which backend created the plan.
+    15→
+    16→## Backend → plan_id Mapping
+    17→
+    18→| Backend          | Provider Name     | plan_id Refers To | Fetch With                          |
+    19→| ---------------- | ----------------- | ----------------- | ----------------------------------- |
+    20→| PlannedPRBackend | `github-draft-pr` | PR number         | `github.get_pr(repo_root, plan_id)` |
+    21→
+    22→## Why This Matters
+    23→
+    24→For planned-PR plans, the plan content lives in a draft PR body — not a separate issue. Callers working with planned-PR plans can call `github.get_pr(plan_id)` directly without extracting metadata first.
+    25→
+    26→## Detection Pattern
+    27→
+    28→&lt;!-- Source: src/erk/cli/commands/exec/scripts/setup_impl_from_pr.py, setup_impl_from_pr function --&gt;
+    29→
+    30→For planned-PR plans, call `github.get_pr(repo_root, plan_number)` and check for `PRNotFound` to handle missing plans. See the source file for the full implementation.
+
+... [22 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_0158ktb1tnZwmLnEtuDquNE9">
+     1→---
+     2→title: Planned PR Backend
+     3→read_when:
+     4→  - "working with plan storage or plan backends"
+     5→  - "adding plan storage behavior without checking plan backend type"
+     6→  - "understanding how plans are stored as planned pull requests"
+     7→  - "modifying plan-save or land pipeline for plan handling"
+     8→tripwires:
+     9→  - action: "validating plan_id in exec scripts without checking provider type"
+    10→    warning: "Planned PR plan_id IS the PR number (not an issue number). Check provider type before assuming plan_id semantics."
+    11→    score: 4
+    12→  - action: "using gh issue view on a plan ID without checking plan backend type"
+    13→    warning: "Planned PR plan IDs are PR numbers. Using gh issue view on a planned-PR plan produces a confusing 404. Route to gh pr view based on backend type."
+    14→    score: 7
+    15→  - action: "checking erk exec plan-save --format json output for empty result"
+    16→    warning: "Empty stdout does not mean failure. The duplicate-detection path writes JSON to stderr, not stdout. Always capture both streams with 2&gt;&amp;1 or check for empty stdout and retry with stderr capture."
+    17→    score: 5
+    18→  - action: "calling update_metadata() on PlannedPRBackend without verifying plan exists"
+    19→    warning: "PlannedPRBackend.update_metadata() raises PlanHeaderNotFoundError if the header block is absent. Read operations (get_plan) return None gracefully. Always check plan existence before writing metadata."
+    20→    score: 6
+    21→---
+    22→
+    23→# Planned PR Backend
+    24→
+    25→PlannedPRBackend stores plans as GitHub draft pull requests. It is the only active plan storage backend.
+    26→
+    27→## Backend Selection
+    28→
+    29→The plan backend is hardcoded to `"planned_pr"`. All plans are stored as GitHub draft pull requests via PlannedPRBackend. The former `get_plan_backend()` function and `PlanBackendType` type alias were deleted in PR #7971 (objective #7911 node 1.1).
+    30→
+
+... [116 lines omitted] ...
+
+    79→PlannedPRBackend metadata operations have asymmetric error behavior:
+    84→| `update_metadata()` | No header found      | Raises `PlanHeaderNotFoundError` |
+   119→**Rebase conflict handling:** After cleanup commits on the plan branch, a `git pull --rebase` may be needed before pushing further implementation commits. Skipping this can cause non-fast-forward push failures when the remote branch has diverged.
+   127→Empty stdout from `plan-save` does not indicate failure. Always capture both streams:
+   133→If stdout is empty, check stderr for the duplicate-detection response before assuming the command failed.
+  </tool_result>
+  <tool_result tool="toolu_01FnSranYxkv7axr6uEUPMYb">
+     1→---
+     2→title: PlanBackend Migration Guide
+     3→read_when:
+     4→  - "migrating exec scripts from direct GitHubIssues to PlanBackend"
+     5→  - "implementing LBYL pattern for plan existence checks"
+     6→  - "handling PlanNotFound vs PlanHeaderNotFoundError"
+     7→tripwires:
+     8→  - action: "calling update_metadata() on PlanBackend"
+     9→    warning: "Always check isinstance(result, PlanNotFound) before calling update_metadata()"
+    10→  - action: "catching PlanHeaderNotFoundError"
+    11→    warning: "PlanHeaderNotFoundError is an exception; PlanNotFound is a result type - use LBYL for the latter"
+    12→last_audited: "2026-02-16 14:30 PT"
+    13→audit_result: clean
+    14→---
+    15→
+    16→# PlanBackend Migration Guide
+    17→
+    18→When exec scripts need to read or update plans, use `PlanBackend` instead of direct `GitHubIssues` calls. PlanBackend provides typed abstractions with discriminated union error handling.
+    19→
+    20→## Migration Pattern
+    21→
+    22→**Before (direct GitHubIssues):**
+    23→
+    24→```python
+    25→gh = require_issues(ctx)
+    26→issue = gh.get_issue(repo_root, issue_number)
+    27→# No type safety on failure case
+    28→```
+    29→
+    30→**After (PlanBackend):**
+
+... [156 lines omitted] ...
+
+    52→    output_error("issue-not-found", f"Issue #{issue_number} not found")
+    59→## Error Type Distinction
+    61→Two different error types serve different purposes:
+    66→| `PlanHeaderNotFoundError` | Exception (RuntimeError) | Raised when plan exists but metadata block is missing |
+    68→**PlanNotFound** is checked with `isinstance()` (LBYL pattern). **PlanHeaderNotFoundError** is caught with try/except because it indicates a corrupted plan state that cannot be predicted.
+    78→except PlanHeaderNotFoundError:
+    80→    output_error("no-plan-header-block", str(e))
+    81→except RuntimeError:
+    82→    # GitHub API failure
+    83→    output_error("github-api-failed", str(e))
+    95→    result["issue_update_error"] = f"Issue #{issue_number} not found"
+   100→    except RuntimeError as e:
+   102→        result["issue_update_error"] = str(e)
+   153→`add_label()` raises `RuntimeError` if the provider fails or the plan is not found (unlike `get_plan`/`update_metadata` which use the `PlanNotFound` result type).
+   163→## Error Handling Asymmetry: get vs update
+   168→- **update**: caller typically wants to report failure and continue
+   178→- [Discriminated Union Error Handling](../architecture/discriminated-union-error-handling.md) -- the broader error handling pattern
+  </tool_result>
+  <tool_result tool="toolu_01LXdJDXzPuoebVcHdjUmZxN">
+     1→---
+     2→title: Planning Workflow
+     3→read_when:
+     4→  - "using .erk/impl-context/ folders"
+     5→  - "understanding plan file structure"
+     6→  - "implementing plans"
+     7→last_audited: "2026-03-05 00:00 PT"
+     8→audit_result: clean
+     9→---
+    10→
+    11→# Planning Workflow
+    12→
+    13→This guide explains the `.erk/impl-context/` protocol used in erk for managing implementation plans.
+    14→
+    15→## Overview
+    16→
+    17→Erk uses `.erk/impl-context/&lt;branch&gt;/` directories to track implementation progress for plans executed locally by agents.
+    18→
+    19→## .erk/impl-context/ Directories
+    20→
+    21→**Purpose**: Track implementation progress for plans executed locally.
+    22→
+    23→**Characteristics**:
+    24→
+    25→- Branch-scoped (multiple impl directories possible, one per branch)
+    26→- Briefly committed during plan-save, then cleaned up
+    27→- Created by planning commands
+    28→- Contains `plan.md`, `progress.md`, and `ref.json`
+    29→
+    30→### Location
+
+... [317 lines omitted] ...
+
+    99→&gt; **⚠️ WARNING:** If you are on `master` or `main`, option 3 is hidden and the hook displays a warning: "We strongly discourage implementing directly on the trunk branch. Consider saving the plan and implementing in a dedicated worktree instead."
+   224→Line numbers drift as code changes, causing implementation failures. Use durable alternatives instead.
+   242→### Exception: Historical Context Only
+   257→3. Change lines 200-215 in api.py to handle errors
+   265→3. Modify process_request() in src/api.py to handle timeout errors gracefully
+  </tool_result>
+  <tool_result tool="toolu_01DNQtWfydpk97bKPiG9E8uB">
+     1→---
+     2→title: Plan Lifecycle
+     3→last_audited: "2026-02-11 00:00 PT"
+     4→audit_result: clean
+     5→read_when:
+     6→  - "creating a plan"
+     7→  - "closing a plan"
+     8→  - "understanding plan states"
+     9→tripwires:
+    10→  - action: "manually creating an erk-pr with gh issue create"
+    11→    warning: "Use `erk exec plan-save --plan-file &lt;path&gt;` instead. Manual creation requires complex metadata block format (see Metadata Block Reference section)."
+    12→  - action: "saving a plan linked to an objective"
+    13→    warning: "Always verify the link was saved correctly with `erk exec get-plan-metadata &lt;issue&gt; objective_issue`. Silent failures can leave plans unlinked from their objectives."
+    14→  - action: "implementing custom PR/plan relevance assessment logic"
+    15→    warning: "Reference `/local:check-superceded` verdict classification system first. Use SUPERSEDED, PARTIALLY_SUPERSEDED, STILL_RELEVANT, NEEDS_REVIEW verdict categories for consistency. Note: DIFFERENT_APPROACH is a match type in the evidence table, not a verdict."
+    16→  - action: "after plan-implement execution completes"
+    17→    warning: "Always clean .erk/impl-context/ with `git rm -rf .erk/impl-context/` and commit. Transient artifacts cause CI formatter failures (Prettier)."
+    18→  - action: "implementing PR body generation with checkout footers"
+    19→    warning: "HTML `&lt;details&gt;` tags will fail `has_checkout_footer_for_pr()` validation. Use plain text backtick format: `` `gh pr checkout &lt;number&gt;` ``"
+    20→  - action: "calling commands that depend on `.erk/impl-context/plan-ref.json` metadata"
+    21→    warning: "Verify metadata file exists in worktree; if missing, operations silently return empty values. read_plan_ref() tries plan-ref.json first, falls back to legacy issue.json."
+    22→  - action: "delegating batch file renames from a plan"
+    23→    warning: "Verify each file path exists before delegating. Wrong paths cause silent coverage gaps in rename operations."
+    24→  - action: "renaming a lifecycle stage value"
+    25→    warning: "Update 3 locations: LifecycleStageValue type, valid_stages set, and color conditions in compute_lifecycle_display(). Missing any location causes silent validation failures or incorrect TUI colors."
+    26→    score: 7
+    27→---
+    28→
+    29→# Plan Lifecycle
+    30→
+
+... [1076 lines omitted] ...
+
+   221→&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+   536→### No-Changes Error Scenario
+   549→- Exit 1 = Error (GitHub API failure)
+   551→The workflow treats no-changes as successful completion, not an error. Users review the diagnostic PR to determine if work is already done.
+   795→status: in_progress # pending, in_progress, complete, failed
+   879→### Silent Failure Pattern
+   881→The most insidious failure is with `get-closing-text`:
+   899→  echo "ERROR: Missing plan-ref.json - issue linking will fail"
+   932→### Graceful Failure Patterns for Metadata
+   944→**Failure modes:**
+   947→2. **Metadata read failure** → Returns error with diagnostic message
+   959→if [ "$PR_NUMBER" = "error" ]; then
+   960→  echo "Failed to read plan metadata"
+  </tool_result>
+  <assistant>Now I'll apply the updates to each file. Let me start with the first file:</assistant>
+  <usage input_tokens="4277" cache_creation_input_tokens="21334" cache_read_input_tokens="16836" cache_creation="{'ephemeral_5m_input_tokens': 21334, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01Rfsm7RcCYHwpDjD3TKgub6">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/plan-id-semantics.md</param>
+    <param name="old_string">read_when:
+  - "calling github.get_pr() or github.get_issue() with a plan_id"
+  - "writing...[truncated 218 chars]...ue number. Use gh pr view instead. Check provider type before assuming plan_id semantics."</param>
+    <param name="new_string">read_when:
+  - "calling github.get_pr() or github.get_issue() with a plan_id"
+  - "writing...[truncated 212 chars]...ssue number. Use gh pr view instead. Check provider type before assuming pr_id semantics."</param>
+  </tool_use>
+  <usage input_tokens="4277" cache_creation_input_tokens="21334" cache_read_input_tokens="16836" cache_creation="{'ephemeral_5m_input_tokens': 21334, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Rfsm7RcCYHwpDjD3TKgub6">
+The file /home/runner/work/erk/erk/docs/learned/planning/plan-id-semantics.md has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_014subqZ1guYm78PgEAeb6ad">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/plan-id-semantics.md</param>
+    <param name="old_string"># Plan ID Semantics
+
+The meaning of `plan_id` depends on which backend created the plan.
+
+...[truncated 736 chars]...for `PRNotFound` to handle missing plans. See the source file for the full implementation.</param>
+    <param name="new_string"># Plan ID Semantics
+
+The meaning of `plan_id` depends on which backend created the plan.
+
+...[truncated 716 chars]...for `PRNotFound` to handle missing plans. See the source file for the full implementation.</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="4805" cache_read_input_tokens="38170" cache_creation="{'ephemeral_5m_input_tokens': 4805, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014subqZ1guYm78PgEAeb6ad">
+The file /home/runner/work/erk/erk/docs/learned/planning/plan-id-semantics.md has been updated successfully.
+  </tool_result>
+  <assistant>Now updating the second file:</assistant>
+  <usage input_tokens="4" cache_creation_input_tokens="663" cache_read_input_tokens="42975" cache_creation="{'ephemeral_5m_input_tokens': 663, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01YJe8Ldb3jBgQdxPGyvBPv6">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/planned-pr-backend.md</param>
+    <param name="old_string">tripwires:
+  - action: "validating plan_id in exec scripts without checking provider type"...[truncated 288 chars]...PR plan produces a confusing 404. Route to gh pr view based on backend type."
+    score: 7</param>
+    <param name="new_string">tripwires:
+  - action: "validating pr_id in exec scripts without checking provider type"
+ ...[truncated 278 chars]...PR plan produces a confusing 404. Route to gh pr view based on backend type."
+    score: 7</param>
+  </tool_use>
+  <usage input_tokens="4" cache_creation_input_tokens="663" cache_read_input_tokens="42975" cache_creation="{'ephemeral_5m_input_tokens': 663, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01YJe8Ldb3jBgQdxPGyvBPv6">
+The file /home/runner/work/erk/erk/docs/learned/planning/planned-pr-backend.md has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01SqtsPi8QjyFbxKtBGZojBN">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/planned-pr-backend.md</param>
+    <param name="old_string">## Learn Pipeline Integration
+
+The learn pipeline detects planned-PR plans via `plan_backe...[truncated 115 chars]...ly without metadata extraction. See [Plan ID Semantics](plan-id-semantics.md) for details.</param>
+    <param name="new_string">## Learn Pipeline Integration
+
+The learn pipeline detects planned-PR plans via `plan_backe...[truncated 111 chars]...ly without metadata extraction. See [Plan ID Semantics](plan-id-semantics.md) for details.</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="528" cache_read_input_tokens="43638" cache_creation="{'ephemeral_5m_input_tokens': 528, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01SqtsPi8QjyFbxKtBGZojBN">
+The file /home/runner/work/erk/erk/docs/learned/planning/planned-pr-backend.md has been updated successfully.
+  </tool_result>
+  <assistant>Now updating the third file (plan-backend-migration.md):</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="327" cache_read_input_tokens="44166" cache_creation="{'ephemeral_5m_input_tokens': 327, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_015v2x1FFpAL5wCebUZUVcno">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/plan-backend-migration.md</param>
+    <param name="old_string">**After (PlanBackend):**
+
+```python
+backend = require_plan_backend(ctx)
+plan_result = back...[truncated 51 chars]...d):
+    # Handle missing plan explicitly
+    return
+# plan_result is now typed as Plan
+```</param>
+    <param name="new_string">**After (PlanBackend):**
+
+```python
+backend = require_plan_backend(ctx)
+plan_result = back...[truncated 49 chars]...d):
+    # Handle missing plan explicitly
+    return
+# plan_result is now typed as Plan
+```</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="327" cache_read_input_tokens="44166" cache_creation="{'ephemeral_5m_input_tokens': 327, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_015v2x1FFpAL5wCebUZUVcno">
+The file /home/runner/work/erk/erk/docs/learned/planning/plan-backend-migration.md has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01Q7YbNxVBiN2UZHsTbLLvkp">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/plan-backend-migration.md</param>
+    <param name="old_string">## LBYL Pattern for Plan Existence
+
+Always check plan existence **before** calling mutatio...[truncated 270 chars]...d")
+    return
+
+# Safe to update
+backend.update_metadata(repo_root, plan_id, metadata)
+```</param>
+    <param name="new_string">## LBYL Pattern for Plan Existence
+
+Always check plan existence **before** calling mutatio...[truncated 264 chars]...und")
+    return
+
+# Safe to update
+backend.update_metadata(repo_root, pr_id, metadata)
+```</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="432" cache_read_input_tokens="44493" cache_creation="{'ephemeral_5m_input_tokens': 432, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Q7YbNxVBiN2UZHsTbLLvkp">
+The file /home/runner/work/erk/erk/docs/learned/planning/plan-backend-migration.md has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01AnVALEUytrSE23dsnycmbN">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/plan-backend-migration.md</param>
+    <param name="old_string">```python
+plan_result = backend.get_plan(repo_root, plan_id)
+if isinstance(plan_result, Pl...[truncated 242 chars]...t RuntimeError:
+    # GitHub API failure
+    output_error("github-api-failed", str(e))
+```</param>
+    <param name="new_string">```python
+plan_result = backend.get_plan(repo_root, pr_id)
+if isinstance(plan_result, Plan...[truncated 238 chars]...t RuntimeError:
+    # GitHub API failure
+    output_error("github-api-failed", str(e))
+```</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="441" cache_read_input_tokens="44925" cache_creation="{'ephemeral_5m_input_tokens': 441, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01AnVALEUytrSE23dsnycmbN">
+The file /home/runner/work/erk/erk/docs/learned/planning/plan-backend-migration.md has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_019FmYo98hsxQHu4WUzKMJ2t">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/plan-backend-migration.md</param>
+    <param name="old_string">```python
+# Gist already created successfully
+plan_result = backend.get_plan(repo_root, pl...[truncated 280 chars]...
+        result["issue_updated"] = False
+        result["issue_update_error"] = str(e)
+```</param>
+    <param name="new_string">```python
+# Gist already created successfully
+plan_result = backend.get_plan(repo_root, pr...[truncated 276 chars]...
+        result["issue_updated"] = False
+        result["issue_update_error"] = str(e)
+```</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="430" cache_read_input_tokens="45366" cache_creation="{'ephemeral_5m_input_tokens': 430, 'ephemeral_1h_input_tokens': 0}" output_tokens="402" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019FmYo98hsxQHu4WUzKMJ2t">
+The file /home/runner/work/erk/erk/docs/learned/planning/plan-backend-migration.md has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01AyvZbDTztVawfDqWjXr5T7">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/plan-backend-migration.md</param>
+    <param name="old_string">## PlanBackend Methods
+
+Key methods on `PlanBackend` ABC (`packages/erk-shared/src/erk_sha...[truncated 815 chars]...nt_type, data)` | `None`                   | Post a lifecycle event to the plan          |</param>
+    <param name="new_string">## PlanBackend Methods
+
+Key methods on `PlanBackend` ABC (`packages/erk-shared/src/erk_sha...[truncated 803 chars]...nt_type, data)` | `None`                   | Post a lifecycle event to the plan          |</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="550" cache_read_input_tokens="45796" cache_creation="{'ephemeral_5m_input_tokens': 550, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01AyvZbDTztVawfDqWjXr5T7">
+The file /home/runner/work/erk/erk/docs/learned/planning/plan-backend-migration.md has been updated successfully.
+  </tool_result>
+  <assistant>Now updating the fourth file (lifecycle.md). This is a large file, so I'll make targeted edits:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="680" cache_read_input_tokens="46346" cache_creation="{'ephemeral_5m_input_tokens': 680, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_019MQPEnp9EtghqmZCJHevkR">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/lifecycle.md</param>
+    <param name="old_string">**`ref.json` structure:**
+
+```json
+{
+  "provider": "github",
+  "plan_id": "123",
+  "url": ...[truncated 57 chars]...:00Z",
+  "synced_at": "2025-01-15T10:30:00Z",
+  "labels": [],
+  "objective_id": null
+}
+```</param>
+    <param name="new_string">**`ref.json` structure:**
+
+```json
+{
+  "provider": "github",
+  "pr_id": "123",
+  "url": "h...[truncated 55 chars]...:00Z",
+  "synced_at": "2025-01-15T10:30:00Z",
+  "labels": [],
+  "objective_id": null
+}
+```</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="680" cache_read_input_tokens="46346" cache_creation="{'ephemeral_5m_input_tokens': 680, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019MQPEnp9EtghqmZCJHevkR">
+The file /home/runner/work/erk/erk/docs/learned/planning/lifecycle.md has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01KttKMvA8ApsZkUiBvT6ZPb">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/lifecycle.md</param>
+    <param name="old_string">When setting up implementation environments:
+
+```bash
+# Always verify after setup
+if [ ! -...[truncated 52 chars]...on ]; then
+  echo "ERROR: Missing plan-ref.json - issue linking will fail"
+  exit 1
+fi
+```</param>
+    <param name="new_string">When setting up implementation environments:
+
+```bash
+# Always verify after setup
+if [ ! -...[truncated 52 chars]...on ]; then
+  echo "ERROR: Missing plan-ref.json - issue linking will fail"
+  exit 1
+fi
+```</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="507" cache_read_input_tokens="47026" cache_creation="{'ephemeral_5m_input_tokens': 507, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01KttKMvA8ApsZkUiBvT6ZPb">
+&lt;tool_use_error&gt;No changes to make: old_string and new_string are exactly the same.&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_use name="Edit" id="toolu_019Pe8yTQkhGjseABWFJf26G">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/lifecycle.md</param>
+    <param name="old_string">The `update-plan-header` exec command allows explicit field updates, including lifecycle s...[truncated 77 chars]...
+
+```json
+{ "success": true, "plan_id": "123", "fields_updated": ["lifecycle_stage"] }
+```</param>
+    <param name="new_string">The `update-plan-header` exec command allows explicit field updates, including lifecycle s...[truncated 75 chars]...s:
+
+```json
+{ "success": true, "pr_id": "123", "fields_updated": ["lifecycle_stage"] }
+```</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="319" cache_read_input_tokens="47533" cache_creation="{'ephemeral_5m_input_tokens': 319, 'ephemeral_1h_input_tokens': 0}" output_tokens="266" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019Pe8yTQkhGjseABWFJf26G">
+The file /home/runner/work/erk/erk/docs/learned/planning/lifecycle.md has been updated successfully.
+  </tool_result>
+  <assistant>Now updating the fifth file (workflow.md):</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="307" cache_read_input_tokens="47852" cache_creation="{'ephemeral_5m_input_tokens': 307, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01SWhhHuezDtMdoNaPpqQtgn">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/workflow.md</param>
+    <param name="old_string">**Structure**:
+
+```
+.erk/impl-context/&lt;branch&gt;/
+├── plan.md         # Immutable implementa...[truncated 28 chars]... tracking (checkboxes)
+└── ref.json        # GitHub plan reference (plan_id, plan_url)
+```</param>
+    <param name="new_string">**Structure**:
+
+```
+.erk/impl-context/&lt;branch&gt;/
+├── plan.md         # Immutable implementa...[truncated 24 chars]...ress tracking (checkboxes)
+└── ref.json        # GitHub plan reference (pr_id, pr_url)
+```</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="307" cache_read_input_tokens="47852" cache_creation="{'ephemeral_5m_input_tokens': 307, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01SWhhHuezDtMdoNaPpqQtgn">
+The file /home/runner/work/erk/erk/docs/learned/planning/workflow.md has been updated successfully.
+  </tool_result>
+  <assistant>Perfect! Now let me verify the changes by reading a few sections of the updated files to confirm they were applied correctly:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="405" cache_read_input_tokens="48159" cache_creation="{'ephemeral_5m_input_tokens': 405, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01NGfRiFihzLnUFDhgndNkwV">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/plan-id-semantics.md</param>
+    <param name="offset">1</param>
+    <param name="limit">35</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="405" cache_read_input_tokens="48159" cache_creation="{'ephemeral_5m_input_tokens': 405, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_012ZxTCGPqWXTJM5mn8SPY6q">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/plan-backend-migration.md</param>
+    <param name="offset">40</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="405" cache_read_input_tokens="48159" cache_creation="{'ephemeral_5m_input_tokens': 405, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01GXgLS9wyqLqJwKkibBWv6B">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/lifecycle.md</param>
+    <param name="offset">348</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="405" cache_read_input_tokens="48159" cache_creation="{'ephemeral_5m_input_tokens': 405, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01NGfRiFihzLnUFDhgndNkwV">
+     1→---
+     2→title: Plan ID Semantics
+     3→read_when:
+     4→  - "calling github.get_pr() or github.get_issue() with a plan_id"
+     5→  - "writing code that handles plan IDs"
+     6→  - "debugging 404 errors when fetching plan metadata"
+     7→tripwires:
+     8→  - action: "calling gh issue view with a pr_id from PlannedPRBackend"
+     9→    warning: "For planned-PR plans, pr_id is a PR number, not an issue number. Use gh pr view instead. Check provider type before assuming pr_id semantics."
+    10→---
+    11→
+    12→# Plan ID Semantics
+    13→
+    14→The meaning of `plan_id` depends on which backend created the plan.
+    15→
+    16→## Backend → pr_id Mapping
+    17→
+    18→| Backend          | Provider Name     | pr_id Refers To | Fetch With                       |
+    19→| ---------------- | ----------------- | --------------- | -------------------------------- |
+    20→| PlannedPRBackend | `github-draft-pr` | PR number       | `github.get_pr(repo_root, pr_id)` |
+    21→
+    22→## Why This Matters
+    23→
+    24→For planned-PR plans, the plan content lives in a draft PR body — not a separate issue. Callers working with planned-PR plans can call `github.get_pr(pr_id)` directly without extracting metadata first.
+    25→
+    26→## Detection Pattern
+    27→
+    28→&lt;!-- Source: src/erk/cli/commands/exec/scripts/setup_impl_from_pr.py, setup_impl_from_pr function --&gt;
+    29→
+    30→For planned-PR plans, call `github.get_pr(repo_root, pr_number)` and check for `PRNotFound` to handle missing plans. See the source file for the full implementation.
+
+... [10 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_012ZxTCGPqWXTJM5mn8SPY6q">
+    40→
+    41→## LBYL Pattern for Plan Existence
+    42→
+    43→Always check plan existence **before** calling mutation methods:
+    44→
+    45→```python
+    46→backend = require_plan_backend(ctx)
+    47→pr_id = str(issue_number)
+    48→
+    49→# LBYL: Check plan exists before updating
+    50→plan_result = backend.get_plan(repo_root, pr_id)
+    51→if isinstance(plan_result, PlanNotFound):
+    52→    output_error("issue-not-found", f"Issue #{issue_number} not found")
+    53→    return
+    54→
+    55→# Safe to update
+    56→backend.update_metadata(repo_root, pr_id, metadata)
+    57→```
+    58→
+    59→## Error Type Distinction
+    60→
+    61→Two different error types serve different purposes:
+    62→
+    63→| Type                      | Kind                     | Use                                                   |
+    64→| ------------------------- | ------------------------ | ----------------------------------------------------- |
+    65→| `PlanNotFound`            | Result type (dataclass)  | Returned by `get_plan()` when plan doesn't exist      |
+    66→| `PlanHeaderNotFoundError` | Exception (RuntimeError) | Raised when plan exists but metadata block is missing |
+    67→
+    68→**PlanNotFound** is checked with `isinstance()` (LBYL pattern). **PlanHeaderNotFoundError** is caught with try/except because it indicates a corrupted plan state that cannot be predicted.
+    69→
+
+... [5 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01GXgLS9wyqLqJwKkibBWv6B">
+   348→**`ref.json` structure:**
+   349→
+   350→```json
+   351→{
+   352→  "provider": "github",
+   353→  "pr_id": "123",
+   354→  "url": "https://github.com/owner/repo/issues/123",
+   355→  "created_at": "2025-01-15T10:30:00Z",
+   356→  "synced_at": "2025-01-15T10:30:00Z",
+   357→  "labels": [],
+   358→  "objective_id": null
+   359→}
+   360→```
+   361→
+   362→### Draft PR Creation
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>Excellent! All the edits have been applied successfully. Let me create a summary of the changes made:
+
+## Summary
+
+I have successfully updated all 5 documentation files to reflect the renaming of `PlanRef.plan_id` to `PlanRef.pr_id` and `plan_number` to `pr_number` in JSON output/CLI args. Here's what was changed:
+
+### File 1: `/home/runner/work/erk/erk/docs/learned/planning/plan-id-semantics.md`
+- Updated tripwire warning from `plan_id` to `pr_id` in PlannedPRBackend context
+- Changed table heading from `plan_id Refers To` to `pr_id Refers To`
+- Updated all code examples: `github.get_pr(repo_root, plan_id)` → `github.get_pr(repo_root, pr_id)`
+- Updated detection pattern references from `plan_number` to `pr_number`
+
+### File 2: `/home/runner/work/erk/erk/docs/learned/planning/planned-pr-backend.md`
+- Updated tripwire warnings to use `pr_id` instead of `plan_id`
+- Updated Learn Pipeline Integration section: `plan_id` → `pr_id` for the PlanRef field reference
+
+### File 3: `/home/runner/work/erk/erk/docs/learned/planning/plan-backend-migration.md`
+- Updated all PlanBackend method code examples:
+  - `backend.get_plan(repo_root, plan_id)` → `backend.get_plan(repo_root, pr_id)`
+  - `pr_id = str(issue_number)` (added clarification on variable naming)
+  - Updated LBYL pattern examples
+  - Updated method signature table: all `plan_id` parameters → `pr_id`
+
+### File 4: `/home/runner/work/erk/erk/docs/learned/planning/lifecycle.md`
+- Updated `ref.json` structure JSON example: `"plan_id": "123"` → `"pr_id": "123"`
+- Updated exec command JSON response example to show `"pr_id"` instead of `"plan_id"`
+
+### File 5: `/home/runner/work/erk/erk/docs/learned/planning/workflow.md`
+- Updated `.erk/impl-context/` structure comment: `(plan_id, plan_url)` → `(pr_id, pr_url)`
+
+All changes are consistent with the requirements: references to `PlanRef.pr_id` and JSON `pr_id` fields were renamed, while preserving unchanged references to `state.plan_id`, `PlanContext.plan_id`, and other plan_id fields that remain unchanged in the source code.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1838" cache_read_input_tokens="48564" cache_creation="{'ephemeral_5m_input_tokens': 1838, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+</session>

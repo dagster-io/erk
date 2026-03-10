@@ -1,0 +1,1098 @@
+<session>
+  <meta branch="plnd/O9109-rename-plan-pr-docs-03-10-1247" />
+  <meta model="claude-opus-4-6" />
+  <user>&lt;command-message&gt;erk:plan-implement is running…&lt;/command-message&gt;
+&lt;command-name&gt;/erk:plan-implement&lt;/command-name&gt;
+&lt;command-args&gt;9156&lt;/command-args&gt;</user>
+  <user># /erk:plan-implement
+
+Implement a plan - either from GitHub, a markdown file, an existing impl directory under `.erk/impl-context/`, or by saving the current plan first.
+
+This is the primary implementation workflow - it orchestrates:
+
+1. Setting up the impl directory under `.erk/impl-context/&lt;branch&gt;/` (from issue, file, existing folder, or fresh plan)
+2. Executing the implementation
+3. Running CI and submitting the PR
+
+## Prerequisites
+
+- Must be in a git repository managed by erk
+- GitHub CLI (`gh`) must be authenticated
+- One of:
+  - A plan number, URL, or file path argument
+  - An existing impl directory under `.erk/impl-context/`
+  - A plan branch checked out (e.g., `plnd/...` or `P{number}-...`)
+  - A plan in `~/.claude/plans/` (from plan mode)
+
+## Usage
+
+```bash
+/erk:plan-implement                    # Use impl directory, detect from branch, or save current plan
+/erk:plan-implement 2521               # Fetch and implement plan #2521
+/erk:plan-implement https://github.com/owner/repo/pull/2521   # URL form
+/erk:plan-implement ./my-plan.md       # Implement from local markdown file
+```
+
+---
+
+## CRITICAL: PR Operations
+
+**NEVER** run direct GitHub CLI commands for PR operations during implementation:
+
+- `gh pr edit` — destroys plan-header metadata block
+- `gh pr ready` — bypasses lifecycle tracking
+- `gh pr close` / `gh pr merge`
+
+All PR operations are handled by `erk pr submit` in Step 13. It automatically:
+
+- Generates the PR title and body
+- Preserves the plan-header metadata block
+- Marks draft PRs as ready for review
+- Updates lifecycle stage
+
+## Agent Instructions
+
+### Step 1: Set Up Implementation
+
+Parse `9156` and run the consolidated setup command:
+
+- **If numeric** (e.g., `2521`): `erk exec setup-impl --issue 2521`
+- **If GitHub URL** (e.g., `https://github.com/.../issues/2521`): Extract number, `erk exec setup-impl --issue 2521`
+- **If path to file** (anything else non-empty): `erk exec setup-impl --file &lt;path&gt;`
+- **If empty**: `erk exec setup-impl` (auto-detects from `.erk/impl-context/`, branch, or fails)
+
+```bash
+erk exec setup-impl [--issue &lt;N&gt; | --file &lt;path&gt;]
+```
+
+This single command handles:
+
+- Fetching plan from GitHub (draft PR)
+- Setting up from a local markdown file
+- Auto-detecting from existing impl directory under `.erk/impl-context/`
+- Auto-detecting plan number from branch name (P{number}-... or PR lookup)
+- Creating/checking out the feature branch
+- Creating impl directory under `.erk/impl-context/&lt;branch&gt;/` with plan content
+- Running impl-init validation
+- Cleaning up `.erk/impl-context/` staging directory (git rm + commit + push)
+
+Otherwise, generate a branch slug and set up from the specified issue:
+
+1. Fetch the title: `gh pr view &lt;ISSUE_ARG&gt; --json title -q .title`
+2. Generate a branch slug from the title:
+   - 2-4 hyphenated lowercase words, max 30 characters
+   - Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+   - Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+   - Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+3. Store as `BRANCH_SLUG`.
+
+```bash
+erk exec setup-impl --issue &lt;ISSUE_ARG&gt; --branch-slug="${BRANCH_SLUG}"
+```
+
+If `setup-impl` exits with code 1 and `error: "no_plan_found"`, fall back to saving the current plan:
+
+Generate a branch slug from the plan title (the first `# ` heading in the plan file):
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Store as `BRANCH_SLUG`
+
+Save the current plan to GitHub and capture the plan number:
+
+```bash
+erk exec plan-save --format json --session-id="${CLAUDE_SESSION_ID}" --branch-slug="${BRANCH_SLUG}"
+```
+
+Parse the JSON output to get `plan_number`, then:
+
+```bash
+erk exec setup-impl --issue &lt;plan_number&gt;
+```
+
+The `setup-impl` output includes `related_docs` (skills and docs to load) and `has_plan_tracking` (whether GitHub issue tracking is active).
+
+If this fails, display the error and stop.
+
+### Step 2: Read Plan and Load Context
+
+Read `plan.md` from the impl directory set up in Step 1 to understand:
+
+- Overall goal and context
+- Context &amp; Understanding sections (API quirks, architectural insights, pitfalls)
+- Implementation phases and dependencies
+- Success criteria
+
+**Context Consumption**: Plans contain expensive discoveries. Ignoring `[CRITICAL:]` tags, "Related Context:" subsections, or "DO NOT" items causes repeated mistakes.
+
+### Step 3: Load Related Documentation
+
+If plan contains "Related Documentation" section, load listed skills via Skill tool and read listed docs.
+
+### Step 4: Create TodoWrite Entries
+
+Create todo entries for each phase from the plan.
+
+### Step 5: Signal GitHub Started
+
+```bash
+erk exec impl-signal started --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This also deletes the Claude plan file (from `~/.claude/plans/`) since:
+
+- The content has been saved to GitHub
+- The content has been snapshotted to `.erk/scratch/`
+- Keeping it could cause confusion if the user tries to re-save
+
+### Step 6: Execute Each Phase Sequentially
+
+For each phase:
+
+1. **Mark phase as in_progress** (in TodoWrite)
+2. **Read task requirements** carefully
+3. **Implement code AND tests together**:
+   - Load `dignified-python-313` skill for coding standards
+   - Load `fake-driven-testing` skill for test patterns
+   - Follow project AGENTS.md standards
+4. **Mark phase as completed** (in TodoWrite)
+5. **Report progress**: changes made, what's next
+
+**Important:** `plan.md` is immutable - NEVER edit during implementation
+
+### Step 7: Report Progress
+
+After each phase: report changes made and what's next.
+
+### Step 8: Final Verification
+
+Confirm all tasks executed, success criteria met, note deviations, summarize changes.
+
+### Step 9: Signal GitHub Ended
+
+```bash
+erk exec impl-signal ended --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+### Step 10: Upload Session for Async Learn
+
+```bash
+erk exec upload-impl-session --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This reads plan reference from the impl directory, captures session info, and uploads for async learn processing.
+
+### Step 11: Clean Up Impl Context
+
+Remove the `.erk/impl-context/` directory from the repo:
+
+```bash
+erk exec cleanup-impl-context
+```
+
+This removes `.erk/impl-context/`, stages the deletion, commits, and pushes — all idempotent.
+
+### Step 12: Run CI Iteratively
+
+1. If `.erk/prompt-hooks/post-plan-implement-ci.md` exists: follow its instructions
+2. Otherwise: check CLAUDE.md/AGENTS.md for CI commands
+
+### Step 13: Submit PR
+
+Push the branch and create or update the PR using the Graphite-aware submit pipeline:
+
+```bash
+erk pr submit
+```
+
+This handles pushing commits, creating/updating the PR, generating the PR description, and enhancing with Graphite stack metadata when available.
+
+After successful submission, signal lifecycle transition:
+
+```bash
+erk exec impl-signal submitted 2&gt;/dev/null || true
+```
+
+Then validate PR completion invariants:
+
+```bash
+erk pr check --stage=impl
+```
+
+This validates PR submission readiness including implementation-specific checks
+(e.g., `.erk/impl-context/` must be cleaned up). If checks fail, display output and warn user.
+
+### Step 14: Output Format
+
+- **Start**: "Setting up implementation..." or "Fetching plan #X..."
+- **After setup**: "Implementation environment ready, reading plan..."
+- **Each phase**: "Phase X: [brief description]" with code changes
+- **End**: "Plan execution complete. [Summary]"
+
+---
+
+## Related Commands
+
+- `/erk:plan-save` - Save plan only, don't implement (for defer-to-later workflow)
+- `/erk:replan` - Re-plan an existing plan with current codebase state
+</user>
+  <assistant>
+
+I'll start by setting up the implementation for plan #9156.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="28631" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 28631, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01PND9GApcAWw4KnWrnpisoG">
+    <param name="command">erk exec setup-impl --issue 9156</param>
+    <param name="description">Set up implementation for plan #9156</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="28631" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 28631, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01PND9GApcAWw4KnWrnpisoG">
+{"success": true, "impl_path": "/home/runner/work/erk/erk/.erk/impl-context/plnd--O9109-rename-plan-pr-docs-03-10-1247", "pr_number": 9156, "pr_url": "https://github.com/dagster-io/erk/pull/9156", "branch": "plnd/O9109-rename-plan-pr-docs-03-10-1247", "pr_title": "[erk-pr] Plan: Rename \"plan\" field terminology to \"pr\" in commands, skills, and docs", "no_impl": false}
+{"success": true, "source": "issue", "pr_number": 9156, "has_plan_tracking": true, "valid": true, "related_docs": {"skills": [], "docs": []}}
+Already on PR branch 'plnd/O9109-rename-plan-pr-docs-03-10-1247', teleporting from remote...
+  </tool_result>
+  <assistant>Implementation environment is set up. Let me read the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="367" cache_read_input_tokens="28631" cache_creation="{'ephemeral_5m_input_tokens': 367, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01HEg57mU7JJAx7eJWDsW8LG">
+    <param name="file_path">/home/runner/work/erk/erk/.erk/impl-context/plnd--O9109-rename-plan-pr-docs-03-10-1247/plan.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="367" cache_read_input_tokens="28631" cache_creation="{'ephemeral_5m_input_tokens': 367, 'ephemeral_1h_input_tokens': 0}" output_tokens="110" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01HEg57mU7JJAx7eJWDsW8LG">
+     1→# Plan: Rename "plan" field terminology to "pr" in commands, skills, and docs
+     2→
+     3→**Part of Objective #9109, Nodes 4.2 + 4.3 + 4.4**
+     4→
+     5→## Context
+     6→
+     7→Objective #9109 renames programmatic "plan" terminology to "pr" across all APIs. Phases 1-3 renamed source code (types, gateway ABCs, exec scripts, CLI arguments). Phase 4 updates documentation and agent artifacts to match. Nodes 4.2-4.4 are the final documentation sweep.
+     8→
+     9→Node 4.4 (AGENTS.md/CLAUDE.md) requires **no changes** — these files only use "plan" as a concept noun, not as programmatic field names.
+    10→
+    11→## Scope
+    12→
+    13→**What changes:** Programmatic field names and CLI flag references in documentation/commands/skills:
+    14→- `plan_number` → `pr_number`
+    15→- `plan_id` → `pr_number` (or `pr_id` where contextually appropriate)
+    16→- `plan_url` → `pr_url`
+    17→- `plan_title` → `pr_title`
+    18→- `--plan` flag references → `--pr` (where the CLI flag was already renamed)
+    19→- Variable placeholders: `&lt;plan_number&gt;` → `&lt;pr_number&gt;`, `&lt;plan-number&gt;` → `&lt;pr-number&gt;`
+    20→- Output messages: "plan #N" → "PR #N" (when referring to the programmatic entity, not the concept)
+    21→
+    22→**What does NOT change:**
+    23→- "erk-plan" label name
+    24→- "plan" as a concept noun (implementation plan, plan mode, plan-oriented)
+    25→- `--plan-type` and `--plan-file` flags (these refer to plan content, not the PR entity)
+    26→- `plan.md` file references
+    27→- Skill/command names containing "plan" (e.g., `/erk:plan-save`)
+    28→
+    29→## Implementation
+    30→
+
+... [83 lines omitted] ...
+
+    64→- `docs/learned/architecture/` (~3 files) — plan_id in error handling examples
+  </tool_result>
+  <assistant>Good, I understand the plan. This is a mechanical bulk rename across documentation and command files. Let me set up todos and start the implementation.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2244" cache_read_input_tokens="28998" cache_creation="{'ephemeral_5m_input_tokens': 2244, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01GV8mt32SacAsjFdJ4pbNmx">
+    <param name="todos">[{'content': 'Step 1: Rename plan terminology in .claude/commands/ and .claude/skills/ (~1...[truncated 655 chars]... CI, submit PR', 'status': 'pending', 'activeForm': 'Signaling GitHub and submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2244" cache_read_input_tokens="28998" cache_creation="{'ephemeral_5m_input_tokens': 2244, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01GV8mt32SacAsjFdJ4pbNmx">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01PXaP1QX9YJqzbLAJZwMj7e">
+    <param name="command">erk exec impl-signal started --session-id "${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true</param>
+    <param name="description">Signal GitHub implementation started</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="371" cache_read_input_tokens="31242" cache_creation="{'ephemeral_5m_input_tokens': 371, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01PXaP1QX9YJqzbLAJZwMj7e">
+{
+  "success": false,
+  "event": "started",
+  "error_type": "session-id-required",
+  "message": "Session ID required for impl-signal started. Ensure ${CLAUDE_SESSION_ID} is available in the command context."
+}
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01Kg94WMGQeDNe7y8y2u48nw">
+    <param name="todos">[{'content': 'Step 1: Rename plan terminology in .claude/commands/ and .claude/skills/ (~1...[truncated 659 chars]... CI, submit PR', 'status': 'pending', 'activeForm': 'Signaling GitHub and submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="172" cache_read_input_tokens="31613" cache_creation="{'ephemeral_5m_input_tokens': 172, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Kg94WMGQeDNe7y8y2u48nw">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Let me first understand the scope by grepping for the target patterns across the affected directories.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="343" cache_read_input_tokens="31785" cache_creation="{'ephemeral_5m_input_tokens': 343, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01QUkvucKNWGSDqrwgesJ5TB">
+    <param name="pattern">plan_number|plan_id|plan_url|plan_title|plan-number</param>
+    <param name="path">/home/runner/work/erk/erk/.claude/commands</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="343" cache_read_input_tokens="31785" cache_creation="{'ephemeral_5m_input_tokens': 343, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01HzB2UQmHM8bKb3gbgm422P">
+    <param name="pattern">plan_number|plan_id|plan_url|plan_title|plan-number</param>
+    <param name="path">/home/runner/work/erk/erk/.claude/skills</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="343" cache_read_input_tokens="31785" cache_creation="{'ephemeral_5m_input_tokens': 343, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01QUkvucKNWGSDqrwgesJ5TB">
+.claude/commands/local/plan-update.md:3:argument-hint: &lt;plan-number&gt;
+.claude/commands/erk/objective-update-with-closed-plan.md:35:erk exec objective-fetch-context --plan &lt;plan-number&gt; --objective &lt;objective-number&gt;
+.claude/commands/erk/objective-update-with-closed-plan.md:119:- **Start:** "Updating objective #&lt;number&gt; after closing plan #&lt;plan-number&gt;"
+.claude/commands/erk/pr-submit.md:60:- `plan_context` (nullable) with `plan_id`, `plan_content`, `objective_summary`
+.claude/commands/erk/plan-save.md:26:  The JSON output contract includes `plan_number`, `plan_url`, `title`, `branch_name`, `plan_backend`.
+.claude/commands/erk/plan-save.md:98:Parse the JSON output to extract `plan_number` for verification in Step 5.
+.claude/commands/erk/plan-save.md:109:erk exec get-plan-metadata &lt;plan_number&gt; objective_issue
+.claude/commands/erk/plan-save.md:131:Fix: Close draft PR #&lt;plan_number&gt;,
+.claude/commands/erk/plan-save.md:154:erk exec update-objective-node &lt;objective-issue&gt; --node "$step_id" --pr "#&lt;plan_number&gt;" --status in_progress
+.claude/commands/erk/plan-save.md:161:Display: `Updated objective #&lt;objective-issue&gt; roadmap: node &lt;step_id&gt; → plan #&lt;plan_number&gt;`
+.claude/commands/erk/plan-save.md:169:Display: `Plan already saved as #&lt;plan_number&gt; (duplicate skipped)`
+.claude/commands/erk/plan-save.md:176:Plan "&lt;title&gt;" saved as draft PR #&lt;plan_number&gt;
+.claude/commands/erk/plan-save.md:203:If the plan was saved successfully and `plan_number` is known, use push-session directly
+.claude/commands/erk/plan-save.md:212:    --pr-number &lt;plan_number&gt; \
+.claude/commands/erk/plan-save.md:217:and `&lt;plan_number&gt;` is from Step 2's JSON output.
+.claude/commands/erk/pr-address.md:402:Resolve the plan_id from the current branch, then push the session:
+.claude/commands/erk/replan.md:3:argument-hint: &lt;plan-number-or-url&gt;
+.claude/commands/erk/replan.md:297:&gt; **Replans:** #&lt;original_plan_number&gt;
+.claude/commands/erk/replan.md:397:   erk exec get-plan-metadata &lt;new_plan_number&gt; objective_issue
+.claude/commands/erk/replan.md:401:   erk exec update-plan-header &lt;new_plan_number&gt; objective_issue=&lt;number&gt;
+.claude/commands/erk/replan.md:405:   echo "[{\"plan_number\": &lt;new_plan_number&gt;, \"label\": \"erk-consolidated\"}]" | erk exec add-plan-labels
+.claude/commands/erk/replan.md:413:echo "[{\"plan_number\": &lt;original_number&gt;, \"comment\": \"Superseded by #&lt;new_number&gt; - see updated plan that accounts for codebase changes.\"}]" | erk exec close-prs
+.claude/commands/erk/replan.md:419:echo '[{"plan_number": 123, "comment": "Consolidated into #&lt;new_number&gt; with #456, #789"}, {"plan_number": 456, "comment": "Consolidated into #&lt;new_number&gt; with #123, #789"}, {"plan_number": 789, "comment": "Consolidated into #&lt;new_number&gt; with #123, #456"}]' | erk exec close-prs
+.claude/commands/erk/replan.md:456:erk exec get-plan-info &lt;new_plan_number&gt;
+.claude/commands/erk/replan.md:468:erk exec add-plan-label &lt;new_plan_number&gt; --label "&lt;missing_label&gt;"
+.claude/commands/erk/land.md:81:2. If exists, read the `plan_id` field from the JSON file
+.claude/commands/erk/land.md:96:erk exec get-plan-metadata &lt;plan-number&gt; objective_issue
+.claude/commands/erk/land.md:105:  "plan_number": 3509,
+.claude/commands/erk/consolidate-learn-plans.md:126:/erk:replan &lt;plan_number&gt;
+.claude/commands/erk/pr-dispatch.md:15:3. Run `erk pr dispatch &lt;plan_number&gt;` to trigger remote implementation
+
+... [30 lines omitted] ...
+
+.claude/commands/erk/system/one-shot-plan.md:60:Parse the JSON output. If `success` is not `true`, stop and report the error. Otherwise, use `$PLAN_ISSUE_NUMBER` as the `plan_number`. To get the `title`, extract the first `# ` heading from `.erk/impl-context/plan.md`.
+.claude/commands/erk/system/one-shot-plan.md:78:Parse the JSON output. If `success` is not `true`, stop and report the error. Otherwise, extract `plan_number` and `title` from the output.
+.claude/commands/erk/learn.md:58:Error: Plan #&lt;plan-number&gt; is a learn plan (has erk-learn label).
+  </tool_result>
+  <tool_result tool="toolu_01HzB2UQmHM8bKb3gbgm422P">
+.claude/skills/erk-planning/references/workflow.md:76:  "plan_id": 123,
+.claude/skills/erk-planning/references/workflow.md:77:  "plan_url": "https://github.com/owner/repo/pull/123"
+.claude/skills/rename-swarm/SKILL.md:13:- Examples: renaming `issue_number` to `plan_number`, renaming `old_func` to `new_func`, updating a key name across config consumers
+.claude/skills/rename-swarm/SKILL.md:118:## Example: Renaming `issue_number` to `plan_number`
+.claude/skills/fake-driven-testing/references/gateway-architecture.md:532:        return CreatePlanResult(plan_id=str(result.number), url=result.url)
+.claude/skills/refac-cli-push-down/SKILL.md:194:**Bad:** `{"plan_number": 42}` — agent must now fetch plan details separately.
+.claude/skills/refac-cli-push-down/SKILL.md:195:**Good:** `{"plan_number": 42, "title": "...", "phases": [...], "related_docs": {...}}` — agent can proceed immediately.
+.claude/skills/fake-driven-testing/references/anti-patterns.md:780:        return CreatePlanResult(plan_id=str(result.number), url=result.url)
+.claude/skills/fake-driven-testing/references/anti-patterns.md:791:    assert result.plan_id == "1"
+.claude/skills/dignified-python/dignified-python-core.md:450:    plan_id: int          # Always valid — numeric guaranteed
+.claude/skills/dignified-python/dignified-python-core.md:457:    raw_id = data.get("plan_id")
+.claude/skills/dignified-python/dignified-python-core.md:460:    return PlanRef(plan_id=raw_id, url=data["url"], provider=data["provider"])
+.claude/skills/dignified-python/dignified-python-core.md:468:    plan_id: str          # Could be "42" or "PROJ-123" — caller must check
+.claude/skills/dignified-python/dignified-python-core.md:471:    def numeric_plan_id(self) -&gt; int | None:
+.claude/skills/dignified-python/dignified-python-core.md:472:        """Every callsite must use this instead of plan_id."""
+.claude/skills/dignified-python/dignified-python-core.md:473:        if self.plan_id.isdigit():
+.claude/skills/dignified-python/dignified-python-core.md:474:            return int(self.plan_id)
+.claude/skills/dignified-python/dignified-python-core.md:478:issue = plan_ref.numeric_plan_id
+.claude/skills/dignified-python/dignified-python-core.md:480:    log.warning("Non-numeric plan_id")
+.claude/skills/erk-exec/reference.md:737:| `--plan-number`       | INTEGER | No       | Sentinel.UNSET | Linked PR number                                                                         |
+  </tool_result>
+  <assistant>This is a large mechanical rename operation. Let me also check for the `"plan #` pattern in these directories, and check the `docs/learned/` directory.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3403" cache_read_input_tokens="32128" cache_creation="{'ephemeral_5m_input_tokens': 3403, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01DMbEuqAtvskGoM3x5miR1G">
+    <param name="pattern">plan_number|plan_id|plan_url|plan_title|plan-number</param>
+    <param name="path">/home/runner/work/erk/erk/docs/learned</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3403" cache_read_input_tokens="32128" cache_creation="{'ephemeral_5m_input_tokens': 3403, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_0191qq7burSmWZbnAPxofHpc">
+    <param name="pattern">"plan #|plan #</param>
+    <param name="path">/home/runner/work/erk/erk/.claude</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3403" cache_read_input_tokens="32128" cache_creation="{'ephemeral_5m_input_tokens': 3403, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_0191qq7burSmWZbnAPxofHpc">
+.claude/commands/erk/objective-update-with-closed-plan.md:119:- **Start:** "Updating objective #&lt;number&gt; after closing plan #&lt;plan-number&gt;"
+.claude/commands/erk/plan-save.md:161:Display: `Updated objective #&lt;objective-issue&gt; roadmap: node &lt;step_id&gt; → plan #&lt;plan_number&gt;`
+.claude/commands/erk/replan.md:427:✓ Created new plan #&lt;new_number&gt;
+.claude/commands/erk/replan.md:428:✓ Closed original plan #&lt;original_number&gt;
+.claude/commands/erk/replan.md:438:✓ Created consolidated plan #&lt;new_number&gt;
+.claude/commands/erk/replan.md:487:| No plan content          | `Error: No plan content found in plan #&lt;number&gt;.`                                         |
+.claude/commands/erk/learn.md:30:Learn pipeline for plan #&lt;plan-number&gt; (using preprocessed materials):
+.claude/commands/erk/learn.md:40:Learn pipeline for plan #&lt;plan-number&gt;:
+.claude/commands/erk/learn.md:130:Found N session(s) for plan #&lt;plan-number&gt;:
+.claude/commands/erk/plan-implement.md:30:/erk:plan-implement 2521               # Fetch and implement plan #2521
+.claude/commands/erk/plan-implement.md:227:- **Start**: "Setting up implementation..." or "Fetching plan #X..."
+  </tool_result>
+  <tool_result tool="toolu_01DMbEuqAtvskGoM3x5miR1G">
+Found 76 files
+docs/learned/tui/plan-row-data.md
+docs/learned/tui/runs-tab-architecture.md
+docs/learned/tui/view-switching.md
+docs/learned/textual/datatable-markup-escaping.md
+docs/learned/tui/action-inventory.md
+docs/learned/tui/architecture.md
+docs/learned/tui/clipboard-text-generation.md
+docs/learned/tui/data-contract.md
+docs/learned/tui/frozen-dataclass-field-management.md
+docs/learned/testing/cli-testing.md
+docs/learned/testing/dual-backend-testing.md
+docs/learned/testing/fake-api-migration-pattern.md
+docs/learned/testing/import-conflict-resolution.md
+docs/learned/sessions/lifecycle.md
+docs/learned/sessions/session-accumulation.md
+docs/learned/planning/workflow.md
+docs/learned/pr-operations/plan-implementation-auto-force.md
+docs/learned/planning/remote-branch-learn.md
+docs/learned/planning/tripwires.md
+docs/learned/planning/metadata-update-patterns.md
+docs/learned/planning/next-steps-output.md
+docs/learned/planning/objective-update-after-land.md
+docs/learned/planning/one-shot-workflow.md
+docs/learned/planning/plan-backend-migration.md
+docs/learned/planning/plan-id-semantics.md
+docs/learned/planning/plan-mismatch-recovery.md
+docs/learned/planning/planned-pr-backend.md
+docs/learned/planning/planned-pr-branch-teleport.md
+docs/learned/planning/planned-pr-context-local-preprocessing.md
+
+... [47 lines omitted] ...
+
+docs/learned/architecture/error-handling-patterns.md
+  </tool_result>
+  <assistant>This is a very large scope. The plan suggests using `rename-swarm` for bulk mechanical rename. Given the volume (~80+ files, 200+ occurrences), that's the right approach. Let me use the rename-swarm skill to handle this efficiently.
+
+Let me first understand the exact scope and patterns more carefully, then use the rename-swarm approach in parallel batches.
+
+Let me look at the rename patterns more carefully. The plan identifies these renames:
+1. `plan_number` → `pr_number` 
+2. `plan_id` → `pr_number` (context-dependent, some → `pr_id`)
+3. `plan_url` → `pr_url`
+4. `plan_title` → `pr_title`
+5. `&lt;plan-number&gt;` → `&lt;pr-number&gt;` (placeholder in kebab-case)
+6. `"plan #` → `"PR #` (output messages referring to programmatic entity)
+
+The `plan_id` rename is context-dependent, so I need to be careful there. Let me first handle the straightforward mechanical renames across `.claude/` files, then tackle docs/learned/.
+
+Let me start with the `.claude/commands/` and `.claude/skills/` files. I'll use the rename-swarm skill for the bulk of it.</assistant>
+  <usage input_tokens="401" cache_creation_input_tokens="1623" cache_read_input_tokens="35531" cache_creation="{'ephemeral_5m_input_tokens': 1623, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Skill" id="toolu_01VwmFiXxybQ6KNBzLh388sN">
+    <param name="skill">rename-swarm</param>
+  </tool_use>
+  <usage input_tokens="401" cache_creation_input_tokens="1623" cache_read_input_tokens="35531" cache_creation="{'ephemeral_5m_input_tokens': 1623, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01VwmFiXxybQ6KNBzLh388sN">
+Launching skill: rename-swarm
+  </tool_result>
+  <user>Base directory for this skill: /home/runner/work/erk/erk/.claude/skills/rename-swarm
+
+You are an expert at orchestrating parallel mechanical renames across large codebases using swarms of lightweight agents. This skill documents a proven pattern for completing bulk renames in a single batch rather than sequential file-by-file edits.
+
+## When to Use
+
+- Renaming an identifier, parameter, key, or variable across **5+ files**
+- The renames are **mechanical** — same find-and-replace logic in each file, no reasoning required
+- Files are **independent** — editing file A doesn't affect what needs to change in file B
+- Examples: renaming `issue_number` to `plan_number`, renaming `old_func` to `new_func`, updating a key name across config consumers
+
+## When NOT to Use
+
+- **Cross-file cascading refactors** where renaming a shared type changes method signatures, requiring each file to adapt differently
+- **Renames requiring judgment** — e.g., "rename this concept" where each call site needs context-aware naming
+- **Fewer than 5 files** — sequential edits are simpler and have less overhead
+- **Complex AST transforms** — use `libcst-refactor` agent instead
+
+## The Pattern
+
+### Step 1: Identify All Files
+
+Use Grep to find every file containing the target identifier:
+
+```
+Grep(pattern="old_name", output_mode="files_with_matches")
+```
+
+Partition files into two groups:
+
+- **Source files** (`src/` or library code)
+- **Test files** (`tests/`)
+
+### Step 2: Launch Source File Agents in Parallel
+
+Launch one `Task` agent per file (or per small group of 2-3 closely related files):
+
+```python
+Task(
+    subagent_type='general-purpose',
+    model='haiku',
+    description='Rename old_name in path/to/file.py',
+    prompt="""..."""  # See agent prompt template below
+)
+```
+
+**Launch ALL source file agents in a single message** so they run concurrently.
+
+### Step 3: Wait for Source Agents to Complete
+
+Collect results from all source file agents. Review for errors.
+
+### Step 4: Launch Test File Agents in Parallel
+
+Same pattern as Step 2, but for test files. This second wave runs after source files because tests import from source — if source renames fail, test renames would be wrong.
+
+### Step 5: Verify
+
+After all agents complete:
+
+1. **Grep check**: Confirm old name no longer appears (except intentional exceptions)
+2. **Run CI**: Use devrun agent to run tests, type checking, and linting
+
+## Agent Prompt Template
+
+Each agent receives a focused, self-contained prompt:
+
+```
+In the file `{file_path}`:
+
+Rename all occurrences of `{old_name}` to `{new_name}`.
+
+This includes:
+- Variable names and assignments
+- Function/method parameter names
+- Dictionary keys (both definition and access)
+- String literals that reference the identifier programmatically
+- Type annotations
+- Comments that reference the identifier by name
+
+DO NOT rename:
+- {boundary_constraints}
+
+Read the file first, then apply all renames using the Edit tool.
+```
+
+### Boundary Constraints
+
+Boundary constraints are critical for partial renames. Always specify what should NOT be renamed. Examples:
+
+- `"Do not rename occurrences inside string literals that are user-facing messages"`
+- `"Do not rename the GitHub API field 'issue_number' — only rename internal references"`
+- `"Do not rename imports from external packages"`
+
+If there are no exceptions, state: `"No exceptions — rename ALL occurrences."`
+
+## Batching Strategy
+
+| Wave | Files                 | Rationale                                                    |
+| ---- | --------------------- | ------------------------------------------------------------ |
+| 1    | Source files (`src/`) | Core renames, no dependencies on other waves                 |
+| 2    | Test files (`tests/`) | Tests import from source; must run after source renames land |
+
+Within each wave, all agents run in parallel. Between waves, wait for completion.
+
+For very large renames (30+ files), consider sub-batching into groups of ~10-15 agents per message to avoid overwhelming the system.
+
+## Key Design Decisions
+
+- **Model: haiku** — mechanical edits need speed, not deep reasoning. Haiku is 10x cheaper and sufficient for find-and-replace tasks.
+- **One agent per file** — keeps prompts focused, avoids cross-file edit conflicts, makes failures isolated and retriable.
+- **Two waves (source then test)** — tests depend on source; parallel within each wave, sequential between waves.
+- **Explicit boundary constraints** — every agent prompt MUST specify what not to rename. Omitting this causes over-eager renames (e.g., renaming API field names that must stay as-is).
+
+## Example: Renaming `issue_number` to `plan_number`
+
+1. Grep found 16 source files and 12 test files containing `issue_number`
+2. Wave 1: Launched 16 haiku agents for source files — completed in ~25 seconds
+3. Wave 2: Launched 12 haiku agents for test files — completed in ~20 seconds
+4. Verification: `Grep(pattern="issue_number")` confirmed only intentional GitHub API references remained
+5. CI: All tests passed, type checker clean
+
+Total wall time: ~60 seconds for 28 files, vs ~10+ minutes for sequential edits.
+</user>
+  <assistant>
+
+Now let me understand the rename-swarm pattern. I'll organize this into waves. Since all the files are documentation/command files (not source+test), I can run them all in parallel waves by directory.
+
+Let me first get the complete list of files to process and read a few key files to understand the context-dependent `plan_id` → `pr_number` vs `pr_id` question.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="2077" cache_read_input_tokens="37154" cache_creation="{'ephemeral_5m_input_tokens': 2077, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01EzQMo1Utp6A2Ya6xVBgRkQ">
+    <param name="pattern">plan_id</param>
+    <param name="path">/home/runner/work/erk/erk/.claude</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2077" cache_read_input_tokens="37154" cache_creation="{'ephemeral_5m_input_tokens': 2077, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01StSCK3iguuj82ErrDkUxST">
+    <param name="pattern">plan_id</param>
+    <param name="path">/home/runner/work/erk/erk/docs/learned</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2077" cache_read_input_tokens="37154" cache_creation="{'ephemeral_5m_input_tokens': 2077, 'ephemeral_1h_input_tokens': 0}" output_tokens="316" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01StSCK3iguuj82ErrDkUxST">
+docs/learned/glossary.md:936:Plan-header metadata fields for tracking pushed session logs. Sessions are accumulated on `planned-pr-context/{plan_id}` branches.
+docs/learned/sessions/lifecycle.md:38:| **Branch-uploaded** | `planned-pr-context/{plan_id}` branch on origin | Durable until branch deleted                 | Cross-session persistence for learn workflows                               |
+docs/learned/sessions/lifecycle.md:49:The branch upload tier was added because learn workflows frequently run in a _different_ Claude Code session from the one that created or implemented the plan. By the time learn runs, the original session file is often gone. Pushing to a `planned-pr-context/{plan_id}` branch and recording the branch reference in the plan-header creates a durable reference that survives session cleanup.
+docs/learned/sessions/lifecycle.md:51:See `push_session()` in `src/erk/cli/commands/exec/scripts/push_session.py` for how branch-based storage and plan-header updates are coordinated. The push preprocesses session JSONL to compressed XML, creates a `planned-pr-context/{plan_id}` branch, accumulates sessions across lifecycle stages, and updates plan metadata with `last_session_branch`, `last_session_id`, `last_session_at`, and `last_session_source` fields.
+docs/learned/sessions/session-accumulation.md:27:  "plan_id": 2521,
+docs/learned/planning/remote-branch-learn.md:23:The guard at land_pipeline.py:341 skips the interactive learn prompt for these branches. This is intentional — remote sessions are uploaded to `planned-pr-context/{plan_id}` branches by the CI worker and don't need interactive prompting during land.
+docs/learned/architecture/type-safety-patterns.md:66:    print(row.plan_id)
+docs/learned/architecture/error-handling-patterns.md:30:    backend.update_metadata(repo_root, plan_id, metadata={"lifecycle_stage": "impl"})
+docs/learned/planning/workflow.md:50:└── ref.json        # GitHub plan reference (plan_id, plan_url)
+docs/learned/architecture/pipeline-transformation-patterns.md:59:    plan_id=plan.plan_id,
+docs/learned/architecture/pipeline-transformation-patterns.md:80:    plan_id: int
+docs/learned/planning/metadata-update-patterns.md:34:- Checks `resolve_plan_id_for_branch()` — returns if None
+docs/learned/architecture/session-discovery.md:15:Erk discovers Claude Code sessions associated with plans through branch-based storage on `planned-pr-context/{plan_id}` branches, with local filesystem fallback for backwards compatibility.
+docs/learned/architecture/session-discovery.md:32:Sessions are preprocessed (JSONL to compressed XML) and accumulated on `planned-pr-context/{plan_id}` branches with manifest-based tracking. Each lifecycle stage (planning, impl, address) appends to the same branch.
+docs/learned/architecture/session-discovery.md:50:2. Push to `planned-pr-context/{plan_id}` branch, accumulating with existing sessions
+docs/learned/architecture/session-discovery.md:68:1. Fetch manifest and preprocessed XMLs from the `planned-pr-context/{plan_id}` branch
+docs/learned/architecture/session-discovery.md:78:1. **Plan header branch fields** - `last_session_branch` stores the `planned-pr-context/{plan_id}` branch reference
+docs/learned/architecture/session-discovery.md:108:| `RemoteSessionSource` | Sessions from `planned-pr-context/{plan_id}` branches or legacy artifacts |
+docs/learned/planning/objective-update-after-land.md:11:    warning: "Capture plan_id and objective_number BEFORE pipeline execution. The pipeline deletes the branch, making branch-based resolution impossible afterward."
+docs/learned/planning/objective-update-after-land.md:46:The land command captures `plan_id` and `objective_number` before the merge pipeline runs. These are discovered via branch-based lookup and then passed to the post-merge objective update step, ensuring the metadata is available even after the branch is deleted.
+docs/learned/planning/plan-id-semantics.md:4:  - "calling github.get_pr() or github.get_issue() with a plan_id"
+docs/learned/planning/plan-id-semantics.md:8:  - action: "calling gh issue view with a plan_id from PlannedPRBackend"
+docs/learned/planning/plan-id-semantics.md:9:    warning: "For planned-PR plans, plan_id is a PR number, not an issue number. Use gh pr view instead. Check provider type before assuming plan_id semantics."
+docs/learned/planning/plan-id-semantics.md:14:The meaning of `plan_id` depends on which backend created the plan.
+docs/learned/planning/plan-id-semantics.md:16:## Backend → plan_id Mapping
+docs/learned/planning/plan-id-semantics.md:18:| Backend          | Provider Name     | plan_id Refers To | Fetch With                          |
+docs/learned/planning/plan-id-semantics.md:20:| PlannedPRBackend | `github-draft-pr` | PR number         | `github.get_pr(repo_root, plan_id)` |
+docs/learned/planning/plan-id-semantics.md:24:For planned-PR plans, the plan content lives in a draft PR body — not a separate issue. Callers working with planned-PR plans can call `github.get_pr(plan_id)` directly without extracting metadata first.
+docs/learned/architecture/ref-json-migration.md:23:A frozen dataclass with fields: `provider` (PlanProviderType), `plan_id` (str), `url` (str), `created_at` (str, ISO 8601), `synced_at` (str, ISO 8601), `labels` (tuple of str), and `objective_id` (int or None). See `PlanRef` in `packages/erk-shared/src/erk_shared/impl_folder.py`.
+docs/learned/architecture/ref-json-migration.md:55:| `issue_number`    | `plan_id` (converted to string) |
+
+... [89 lines omitted] ...
+
+docs/learned/planning/planned-pr-backend.md:10:    warning: "Planned PR plan_id IS the PR number (not an issue number). Check provider type before assuming plan_id semantics."
+docs/learned/planning/branch-plan-resolution.md:9:    warning: "Branch resolution supports multiple formats (P-prefix, objective). Use resolve_plan_id_for_branch() rather than manual parsing. See branch-plan-resolution.md."
+docs/learned/planning/branch-plan-resolution.md:11:    warning: "plan-ref.json is sole source of truth. validate_plan_linkage() only reads plan-ref.json. get_branch_issue() and resolve_plan_id_for_branch() always return None."
+docs/learned/planning/branch-plan-resolution.md:48:- **`PlanNotFound`**: Frozen dataclass with `plan_id: str`. Returned when a plan can't be found — used as a return type, not an exception (per erk convention).
+docs/learned/planning/index.md:47:- **[plan-id-semantics.md](plan-id-semantics.md)** — calling github.get_pr() or github.get_issue() with a plan_id, writing code that handles plan IDs, debugging 404 errors when fetching plan metadata
+docs/learned/architecture/plan-ref-architecture.md:10:    warning: "plan_id is a string. Use LBYL: `plan_ref.plan_id.isdigit()` before `int(plan_ref.plan_id)`. Supports future non-numeric providers like 'PROJ-123'."
+docs/learned/architecture/session-storage-revert-rationale.md:9:    warning: "Session storage IS branch-based (planned-pr-context/{plan_id} branches). An earlier attempt at a different branch-based approach was tried and reverted in PR #7757→#7765. The current branch-based approach (push_session.py) is the stable implementation."
+  </tool_result>
+  <tool_result tool="toolu_01EzQMo1Utp6A2Ya6xVBgRkQ">
+.claude/skills/fake-driven-testing/references/gateway-architecture.md:532:        return CreatePlanResult(plan_id=str(result.number), url=result.url)
+.claude/skills/fake-driven-testing/references/anti-patterns.md:780:        return CreatePlanResult(plan_id=str(result.number), url=result.url)
+.claude/skills/fake-driven-testing/references/anti-patterns.md:791:    assert result.plan_id == "1"
+.claude/skills/erk-planning/references/workflow.md:76:  "plan_id": 123,
+.claude/skills/dignified-python/dignified-python-core.md:450:    plan_id: int          # Always valid — numeric guaranteed
+.claude/skills/dignified-python/dignified-python-core.md:457:    raw_id = data.get("plan_id")
+.claude/skills/dignified-python/dignified-python-core.md:460:    return PlanRef(plan_id=raw_id, url=data["url"], provider=data["provider"])
+.claude/skills/dignified-python/dignified-python-core.md:468:    plan_id: str          # Could be "42" or "PROJ-123" — caller must check
+.claude/skills/dignified-python/dignified-python-core.md:471:    def numeric_plan_id(self) -&gt; int | None:
+.claude/skills/dignified-python/dignified-python-core.md:472:        """Every callsite must use this instead of plan_id."""
+.claude/skills/dignified-python/dignified-python-core.md:473:        if self.plan_id.isdigit():
+.claude/skills/dignified-python/dignified-python-core.md:474:            return int(self.plan_id)
+.claude/skills/dignified-python/dignified-python-core.md:478:issue = plan_ref.numeric_plan_id
+.claude/skills/dignified-python/dignified-python-core.md:480:    log.warning("Non-numeric plan_id")
+.claude/commands/erk/pr-submit.md:60:- `plan_context` (nullable) with `plan_id`, `plan_content`, `objective_summary`
+.claude/commands/erk/land.md:81:2. If exists, read the `plan_id` field from the JSON file
+.claude/commands/erk/pr-address.md:402:Resolve the plan_id from the current branch, then push the session:
+  </tool_result>
+  <assistant>This is a very large scope. Let me understand what's happening here — many of these `plan_id` references in `docs/learned/` are documenting the **actual source code** (e.g., describing `PlanRef.plan_id` fields, `state.plan_id`, etc.). These are documenting current code behavior. I need to check whether the actual source code has already been renamed, to know what the docs should now say.</assistant>
+  <usage input_tokens="5963" cache_creation_input_tokens="1232" cache_read_input_tokens="39231" cache_creation="{'ephemeral_5m_input_tokens': 1232, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_011kWdCbtbAJfVSwJmubWBDF">
+    <param name="pattern">plan_id</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk</param>
+    <param name="output_mode">count</param>
+  </tool_use>
+  <usage input_tokens="5963" cache_creation_input_tokens="1232" cache_read_input_tokens="39231" cache_creation="{'ephemeral_5m_input_tokens': 1232, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_019VWVT5m4yLmGtiRxtKgS1F">
+    <param name="pattern">pr_number</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk</param>
+    <param name="output_mode">count</param>
+  </tool_use>
+  <usage input_tokens="5963" cache_creation_input_tokens="1232" cache_read_input_tokens="39231" cache_creation="{'ephemeral_5m_input_tokens': 1232, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_011YZzJwsJKgDMMKPzSewvji">
+    <param name="pattern">plan_number</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk</param>
+    <param name="output_mode">count</param>
+  </tool_use>
+  <usage input_tokens="5963" cache_creation_input_tokens="1232" cache_read_input_tokens="39231" cache_creation="{'ephemeral_5m_input_tokens': 1232, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_011YZzJwsJKgDMMKPzSewvji">
+src/erk/cli/ensure-conversion-tasks.md:1
+src/erk/cli/github_parsing.py:2
+src/erk/cli/commands/run/shared.py:1
+src/erk/cli/commands/run/list_cmd.py:7
+src/erk/cli/commands/implement_shared.py:8
+src/erk/cli/commands/consolidate_learn_plans_dispatch.py:1
+src/erk/cli/commands/learn/learn_cmd.py:4
+src/erk/cli/commands/exec/scripts/track_learn_evaluation.py:14
+src/erk/cli/commands/exec/scripts/incremental_dispatch.py:1
+src/erk/cli/commands/exec/scripts/resolve_objective_ref.py:2
+src/erk/cli/commands/wt/delete_cmd.py:5
+src/erk/cli/commands/wt/create_cmd.py:11
+src/erk/cli/commands/implement.py:12
+src/erk/cli/commands/exec/scripts/objective_fetch_context.py:5
+src/erk/cli/commands/exec/scripts/impl_init.py:3
+src/erk/cli/commands/exec/scripts/close_pr.py:1
+src/erk/cli/commands/pr/close_cmd.py:1
+src/erk/cli/commands/exec/scripts/setup_impl.py:4
+src/erk/cli/commands/exec/scripts/add_plan_label.py:1
+src/erk/cli/commands/exec/scripts/add_plan_labels.py:7
+src/erk/cli/commands/exec/scripts/close_prs.py:8
+src/erk/cli/commands/pr/view/operation.py:3
+src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py:25
+src/erk/cli/commands/pr/metadata_helpers.py:4
+src/erk/cli/commands/pr/dispatch_cmd.py:5
+src/erk/cli/commands/exec/scripts/register_one_shot_plan.py:1
+src/erk/cli/commands/exec/scripts/get_learn_sessions.py:4
+src/erk/cli/commands/pr/checkout_cmd.py:21
+src/erk/cli/commands/exec/scripts/post_workflow_started_comment.py:2
+src/erk/cli/commands/exec/scripts/land_execute.py:2
+
+... [18 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_011kWdCbtbAJfVSwJmubWBDF">
+src/erk/core/display_utils.py:3
+src/erk/core/plan_duplicate_checker.py:7
+src/erk/core/commit_message_generator.py:1
+src/erk/core/plan_context_provider.py:3
+src/erk/tui/screens/plan_detail_screen.py:25
+src/erk/tui/screens/plan_body_screen.py:6
+src/erk/tui/screens/objective_nodes_screen.py:16
+src/erk/tui/data/types.py:2
+src/erk/tui/data/real_provider.py:29
+src/erk/tui/data/provider_abc.py:4
+src/erk/tui/app.py:1
+src/erk/tui/sorting/logic.py:2
+src/erk/tui/actions/palette.py:23
+src/erk/tui/actions/navigation.py:7
+src/erk/tui/AGENTS.md:1
+src/erk/tui/commands/registry.py:11
+src/erk/tui/filtering/logic.py:1
+src/erk/tui/operations/workers.py:25
+src/erk/tui/widgets/plan_table.py:8
+src/erk/cli/commands/run/shared.py:2
+src/erk/cli/commands/implement_shared.py:1
+src/erk/cli/commands/learn/learn_cmd.py:16
+src/erk/cli/commands/reconcile_cmd.py:1
+src/erk/cli/commands/exec/scripts/track_learn_evaluation.py:3
+src/erk/cli/commands/exec/scripts/incremental_dispatch.py:1
+src/erk/cli/commands/exec/scripts/update_plan_header.py:3
+src/erk/cli/commands/exec/scripts/objective_apply_landed_update.py:5
+src/erk/cli/commands/land_pipeline.py:12
+src/erk/cli/commands/exec/scripts/objective_fetch_context.py:6
+src/erk/cli/commands/wt/create_cmd.py:1
+
+... [37 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_019VWVT5m4yLmGtiRxtKgS1F">
+src/erk/core/codex_output_parser.py:3
+src/erk/core/prompt_executor.py:9
+src/erk/review/prompt_assembly.py:17
+src/erk/core/workflow_smoke_test.py:7
+src/erk/cli/output.py:7
+src/erk/cli/ensure.py:1
+src/erk/cli/github_parsing.py:4
+src/erk/core/pr_utils.py:5
+src/erk/core/services/plan_list_service.py:5
+src/erk/cli/commands/run/shared.py:3
+src/erk/cli/commands/run/list_cmd.py:13
+src/erk/core/output_filter.py:18
+src/erk/status/models/status_data.py:1
+src/erk/cli/commands/land_stack.py:12
+src/erk/status/renderers/simple.py:5
+src/erk/status/collectors/impl.py:2
+src/erk/cli/commands/exec/scripts/track_learn_evaluation.py:3
+src/erk/cli/commands/exec/scripts/update_pr_description.py:5
+src/erk/cli/commands/exec/scripts/discover_reviews.py:2
+src/erk/cli/commands/exec/scripts/get_pr_view.py:4
+src/erk/cli/commands/exec/scripts/add_pr_labels_cmd.py:6
+src/erk/cli/commands/exec/scripts/incremental_dispatch.py:10
+src/erk/tui/screens/check_runs_screen.py:6
+src/erk/tui/screens/plan_detail_screen.py:40
+src/erk/cli/commands/reconcile_cmd.py:1
+src/erk/cli/commands/exec/scripts/objective_apply_landed_update.py:12
+src/erk/tui/screens/objective_nodes_screen.py:26
+src/erk/cli/commands/exec/scripts/get_review_activity_log.py:2
+src/erk/tui/screens/plan_input_screen.py:4
+src/erk/cli/commands/exec/scripts/ci_generate_summaries.py:21
+
+... [86 lines omitted] ...
+  </tool_result>
+  <assistant>I can see that the source code still has 385 occurrences of `plan_id` — the source code rename was part of earlier phases. The docs should be updated to match the **current** source code names. Wait, but the plan says "Phases 1-3 renamed source code". Let me check if this is on the master branch or if `plan_id` is still in the source.</assistant>
+  <usage input_tokens="968" cache_creation_input_tokens="10303" cache_read_input_tokens="40463" cache_creation="{'ephemeral_5m_input_tokens': 10303, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01YRKpdNESVBkzF3WABTcWEq">
+    <param name="pattern">class PlanRef</param>
+    <param name="path">/home/runner/work/erk/erk/src</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+    <param name="-A">10</param>
+  </tool_use>
+  <usage input_tokens="968" cache_creation_input_tokens="10303" cache_read_input_tokens="40463" cache_creation="{'ephemeral_5m_input_tokens': 10303, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01YRKpdNESVBkzF3WABTcWEq">
+No matches found
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01Kxhb7vTV4NZbN3PWYeUKSV">
+    <param name="pattern">class PlanRef|class PrRef</param>
+    <param name="path">/home/runner/work/erk/erk</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+    <param name="-A">5</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1211" cache_read_input_tokens="50766" cache_creation="{'ephemeral_5m_input_tokens': 1211, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Kxhb7vTV4NZbN3PWYeUKSV">
+.claude/skills/dignified-python/dignified-python-core.md:449:class PlanRef:
+.claude/skills/dignified-python/dignified-python-core.md-450-    plan_id: int          # Always valid — numeric guaranteed
+.claude/skills/dignified-python/dignified-python-core.md-451-    url: str
+.claude/skills/dignified-python/dignified-python-core.md-452-    provider: str
+/home/runner/work/erk/erk/.claude/skills/dignified-python/dignified-python-core.md-453-
+.claude/skills/dignified-python/dignified-python-core.md-454-def read_plan_ref(folder: Path) -&gt; PlanRef | None:
+--
+.claude/skills/dignified-python/dignified-python-core.md:467:class PlanRef:
+.claude/skills/dignified-python/dignified-python-core.md-468-    plan_id: str          # Could be "42" or "PROJ-123" — caller must check
+/home/runner/work/erk/erk/.claude/skills/dignified-python/dignified-python-core.md-469-
+/home/runner/work/erk/erk/.claude/skills/dignified-python/dignified-python-core.md-470-    @property
+.claude/skills/dignified-python/dignified-python-core.md-471-    def numeric_plan_id(self) -&gt; int | None:
+/home/runner/work/erk/erk/.claude/skills/dignified-python/dignified-python-core.md-472-        """Every callsite must use this instead of plan_id."""
+--
+packages/erk-shared/src/erk_shared/impl_folder.py:158:class PlanRef:
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/impl_folder.py-159-    """Provider-agnostic reference to a plan, stored in .impl/plan-ref.json."""
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/impl_folder.py-160-
+packages/erk-shared/src/erk_shared/impl_folder.py-161-    provider: PlanProviderType
+packages/erk-shared/src/erk_shared/impl_folder.py-162-    pr_id: str  # Provider-specific ID as string ("42", "PROJ-123")
+packages/erk-shared/src/erk_shared/impl_folder.py-163-    url: str  # Web URL to view the plan
+  </tool_result>
+  <assistant>Now I can see that in the actual source code (`packages/erk-shared/src/erk_shared/impl_folder.py`), `plan_id` has already been renamed to `pr_id`. The source code has `plan_number` → already renamed. So the documentation needs to match what the source code says now.
+
+Let me verify a few more source code renames to understand the mapping:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1066" cache_read_input_tokens="51977" cache_creation="{'ephemeral_5m_input_tokens': 1066, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01GsqSV86H2e5QeGjWL8redW">
+    <param name="pattern">pr_id|pr_url|pr_title</param>
+    <param name="path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/impl_folder.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1066" cache_read_input_tokens="51977" cache_creation="{'ephemeral_5m_input_tokens': 1066, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_019wV41HB6prs31iMpxq5t2W">
+    <param name="pattern">plan_id</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/submit_pipeline.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1066" cache_read_input_tokens="51977" cache_creation="{'ephemeral_5m_input_tokens': 1066, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_019wV41HB6prs31iMpxq5t2W">
+104:    plan_id: str | None
+137:    """Resolve repo_root, branch_name, parent_branch, trunk_branch, plan_id.
+161:    plan_id: str | None = None
+164:            plan_id = validate_plan_linkage(impl_dir, branch_name)
+174:    if plan_id is not None and impl_dir is not None and not has_plan_ref(impl_dir):
+177:        plan_url = f"https://github.com/{owner}/{repo_name}/pull/{plan_id}"
+181:            plan_id=plan_id,
+205:        plan_id=plan_id,
+214:    Inserted after prepare_state (which discovers plan_id) and before commit_wip
+278:    is_plan_impl = state.plan_id is not None or state.branch_name.startswith("plnd/")
+567:    if state.plan_id is not None:
+819:            ctx, repo_root=state.repo_root, plan_id=state.plan_context.plan_id
+879:    plan_id_for_lifecycle: str | None = None
+881:        plan_id_for_lifecycle = state.plan_context.plan_id
+883:        plan_id_for_lifecycle = str(state.pr_number)
+885:    if plan_id_for_lifecycle is not None:
+889:            plan_id=plan_id_for_lifecycle,
+1108:        plan_id=None,
+  </tool_result>
+  <tool_result tool="toolu_01GsqSV86H2e5QeGjWL8redW">
+31:_REQUIRED_REF_FIELDS = ("provider", "pr_id", "url", "created_at", "synced_at")
+32:_LEGACY_REF_FIELD_ALIASES = {"plan_id": "pr_id"}
+162:    pr_id: str  # Provider-specific ID as string ("42", "PROJ-123")
+196:    pr_id: str,
+208:        pr_id: Provider-specific ID as string ("42", "PROJ-123")
+221:        "pr_id": pr_id,
+264:        pr_id=plan_id,
+300:        pr_id=data["pr_id"],
+362:        return plan_ref.pr_id
+  </tool_result>
+  <assistant>So the source code has a mix — `PlanRef` now uses `pr_id`, but the submit pipeline still uses `plan_id` in its `SubmitState`. This makes sense — the plan says Phase 4 is about docs/commands/skills only. The source code `plan_id` in `submit_pipeline.py` was apparently not renamed yet (or is being kept as conceptual).
+
+The key mapping for docs is:
+- `plan_id` (when referring to `PlanRef.plan_id`) → `pr_id` (matching the actual current source code field)
+- `plan_number` (in CLI commands/JSON output) → `pr_number` 
+- `plan_url` → `pr_url`
+- `plan_title` → `pr_title`
+- `plan-number` (kebab) → `pr-number`
+
+But wait — many `plan_id` references in the docs reference `state.plan_id` which **still exists** in source code. I need to be more careful. Let me re-read the plan scope:
+
+The plan says:
+&gt; **What changes:** Programmatic field names and CLI flag references in documentation/commands/skills
+
+So the plan is to update docs to match the already-renamed API surface. Where source code still says `plan_id` (like `state.plan_id`), the docs should still reference `plan_id`. The focus is on the fields that were renamed in phases 1-3.
+
+Let me check which specific fields were renamed in the source:</assistant>
+  <usage input_tokens="385" cache_creation_input_tokens="814" cache_read_input_tokens="53043" cache_creation="{'ephemeral_5m_input_tokens': 814, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_017KYqxPZxSxaubA1zzhXMjq">
+    <param name="pattern">plan_number</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+    <param name="head_limit">30</param>
+  </tool_use>
+  <usage input_tokens="385" cache_creation_input_tokens="814" cache_read_input_tokens="53043" cache_creation="{'ephemeral_5m_input_tokens': 814, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_017KYqxPZxSxaubA1zzhXMjq">
+src/erk/cli/commands/exec/scripts/track_learn_evaluation.py:60:def _extract_plan_number(identifier: str) -&gt; int | None:
+src/erk/cli/commands/exec/scripts/track_learn_evaluation.py:86:    plan_number: int,
+src/erk/cli/commands/exec/scripts/track_learn_evaluation.py:95:        plan_number: Plan number
+src/erk/cli/commands/exec/scripts/track_learn_evaluation.py:105:        str(plan_number),
+src/erk/cli/commands/exec/scripts/track_learn_evaluation.py:116:            str(plan_number),
+src/erk/cli/commands/exec/scripts/track_learn_evaluation.py:127:                f"PR #{plan_number} has no plan-header metadata block"
+src/erk/cli/commands/exec/scripts/track_learn_evaluation.py:137:            message=f"Failed to track learn evaluation on PR #{plan_number}: {e}",
+src/erk/cli/commands/exec/scripts/track_learn_evaluation.py:167:    plan_number: int | None = None
+src/erk/cli/commands/exec/scripts/track_learn_evaluation.py:169:        plan_number = _extract_plan_number(issue)
+src/erk/cli/commands/exec/scripts/track_learn_evaluation.py:170:        if plan_number is None:
+src/erk/cli/commands/exec/scripts/track_learn_evaluation.py:184:                plan_number = int(plan_id_str)
+src/erk/cli/commands/exec/scripts/track_learn_evaluation.py:186:    if plan_number is None:
+src/erk/cli/commands/exec/scripts/track_learn_evaluation.py:199:        plan_number=plan_number,
+src/erk/cli/commands/exec/scripts/track_learn_evaluation.py:206:        pr_number=plan_number,
+src/erk/cli/commands/exec/scripts/close_prs.py:89:        plan_number = item_dict["pr_number"]
+src/erk/cli/commands/exec/scripts/close_prs.py:90:        if not isinstance(plan_number, int):
+src/erk/cli/commands/exec/scripts/close_prs.py:112:        validated_items.append({"pr_number": plan_number, "comment": comment})
+src/erk/cli/commands/exec/scripts/close_prs.py:156:        plan_number = item["pr_number"]
+src/erk/cli/commands/exec/scripts/close_prs.py:158:        plan_id = str(plan_number)
+src/erk/cli/commands/exec/scripts/close_prs.py:165:                    "pr_number": plan_number,
+src/erk/cli/commands/exec/scripts/close_prs.py:177:                    "pr_number": plan_number,
+src/erk/cli/commands/exec/scripts/close_prs.py:187:                "pr_number": plan_number,
+src/erk/cli/commands/exec/scripts/incremental_dispatch.py:191:            plan_number=pr_number,
+src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py:137:    plan_saved_plan_number: int | None  # Plan number read from plan-saved marker
+src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py:147:    plan_number: int | None  # Plan number from .erk/impl-context/plan-ref.json
+src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py:158:        plan_saved_plan_number: int | None = None,
+src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py:168:        plan_number: int | None = None,
+src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py:177:        - plan_saved_plan_number: None
+src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py:185:        - plan_number: None
+src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py:193:            plan_saved_plan_number=plan_saved_plan_number,
+
+... [2 lines omitted] ...
+  </tool_result>
+  <assistant>I see — in the source code, the CLI-facing JSON fields have been renamed to `pr_number` (e.g., `close_prs.py` reads `item_dict["pr_number"]`), but the internal variable names still use `plan_number` in some places. The plan scope is clear: update the documentation/commands/skills where they reference the old field names that have been renamed in the programmatic API.
+
+Now I understand the scope. Let me organize the rename swarm. I'll break this into manageable waves:
+
+**Wave 1**: `.claude/commands/` files (14+ files)
+**Wave 2**: `.claude/skills/` files (4+ files)  
+**Wave 3**: `docs/learned/` files (76 files — in sub-batches)
+
+Given the huge scope, I need to be smart about the boundary constraints. The plan is very clear:
+
+**DO NOT rename:**
+- "erk-plan" label name
+- "plan" as concept noun (implementation plan, plan mode, plan-oriented)
+- `--plan-type` and `--plan-file` flags
+- `plan.md` file references
+- Skill/command names containing "plan"
+- `state.plan_id` (still in source code)
+- `plan_context.plan_id` (still in source code)
+
+Let me launch Wave 1 — `.claude/commands/` files. I'll batch by groups.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2007" cache_read_input_tokens="53857" cache_creation="{'ephemeral_5m_input_tokens': 2007, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_012m9B8nszBHNKjH3iZoHTLk">
+    <param name="description">Rename plan terms in learn.md</param>
+    <param name="subagent_type">general-purpose</param>
+    <param name="model">haiku</param>
+    <param name="run_in_background">True</param>
+    <param name="prompt">In the file `/home/runner/work/erk/erk/.claude/commands/erk/learn.md`:
+
+This file document...[truncated 1036 chars]...eful to distinguish between programmatic field names (rename) and conceptual usage (keep).</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2007" cache_read_input_tokens="53857" cache_creation="{'ephemeral_5m_input_tokens': 2007, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_016UyVFPCz6LNEPPaMW39zCZ">
+    <param name="description">Rename plan terms in plan-save.md</param>
+    <param name="subagent_type">general-purpose</param>
+    <param name="model">haiku</param>
+    <param name="run_in_background">True</param>
+    <param name="prompt">In the file `/home/runner/work/erk/erk/.claude/commands/erk/plan-save.md`:
+
+This file docu...[truncated 759 chars]...- "erk-plan" label names
+
+Read the file first, then apply all renames using the Edit tool.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2007" cache_read_input_tokens="53857" cache_creation="{'ephemeral_5m_input_tokens': 2007, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_013VCQ4FnuZWyqFCZ8XBQ367">
+    <param name="description">Rename plan terms in plan-implement.md</param>
+    <param name="subagent_type">general-purpose</param>
+    <param name="model">haiku</param>
+    <param name="run_in_background">True</param>
+    <param name="prompt">In the file `/home/runner/work/erk/erk/.claude/commands/erk/plan-implement.md`:
+
+This file...[truncated 799 chars]...n-number-or-url-or-path)
+
+Read the file first, then apply all renames using the Edit tool.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2007" cache_read_input_tokens="53857" cache_creation="{'ephemeral_5m_input_tokens': 2007, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01Wco1MH2ru5eXYMEXNY9SU8">
+    <param name="description">Rename plan terms in replan.md</param>
+    <param name="subagent_type">general-purpose</param>
+    <param name="model">haiku</param>
+    <param name="run_in_background">True</param>
+    <param name="prompt">In the file `/home/runner/work/erk/erk/.claude/commands/erk/replan.md`:
+
+This file documen...[truncated 951 chars]...-info`, `add-plan-label`
+
+Read the file first, then apply all renames using the Edit tool.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2007" cache_read_input_tokens="53857" cache_creation="{'ephemeral_5m_input_tokens': 2007, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01BWKquNeC4bcmSYcHErBdiv">
+    <param name="description">Rename plan terms in land.md</param>
+    <param name="subagent_type">general-purpose</param>
+    <param name="model">haiku</param>
+    <param name="run_in_background">True</param>
+    <param name="prompt">In the file `/home/runner/work/erk/erk/.claude/commands/erk/land.md`:
+
+This file documents...[truncated 499 chars]...like `get-plan-metadata`
+
+Read the file first, then apply all renames using the Edit tool.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2007" cache_read_input_tokens="53857" cache_creation="{'ephemeral_5m_input_tokens': 2007, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_013uam9X7zhEaUHpeSWaZKQ7">
+    <param name="description">Rename plan terms in 5 more command files</param>
+    <param name="subagent_type">general-purpose</param>
+    <param name="model">haiku</param>
+    <param name="run_in_background">True</param>
+    <param name="prompt">Update multiple files to rename programmatic field names from "plan" to "pr". For each fil...[truncated 1207 chars]...--plan` flag → `--pr` and `plan-number` placeholders
+
+Read each file, make targeted edits.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2007" cache_read_input_tokens="53857" cache_creation="{'ephemeral_5m_input_tokens': 2007, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01TztZWNK8hXmVRrxx7TVmiX">
+    <param name="description">Rename plan terms in system commands</param>
+    <param name="subagent_type">general-purpose</param>
+    <param name="model">haiku</param>
+    <param name="run_in_background">True</param>
+    <param name="prompt">Update the following files to rename programmatic field names from "plan" to "pr". For eac...[truncated 863 chars]...plan-update.md` — has `plan-number` in argument-hint
+
+Read each file, make targeted edits.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2007" cache_read_input_tokens="53857" cache_creation="{'ephemeral_5m_input_tokens': 2007, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_012KTyGuCNiuCnouBUir2Gsy">
+    <param name="description">Rename plan terms in skills files</param>
+    <param name="subagent_type">general-purpose</param>
+    <param name="model">haiku</param>
+    <param name="run_in_background">True</param>
+    <param name="prompt">Update the following skills files to rename programmatic field names from "plan" to "pr". ...[truncated 1647 chars]...h-down/SKILL.md` — has `plan_number` in JSON example
+
+Read each file, make targeted edits.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2007" cache_read_input_tokens="53857" cache_creation="{'ephemeral_5m_input_tokens': 2007, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_012m9B8nszBHNKjH3iZoHTLk">
+Async agent launched successfully.
+agentId: a1e5217 (This is an internal ID for your use, do not mention it to the user. Use this ID to retrieve results with TaskOutput when the agent finishes).
+The agent is currently working in the background. If you have other tasks you you should continue working on them now. Wait to call TaskOutput until either:
+- If you want to check on the agent's progress - call TaskOutput with block=false to get an immediate update on the agent's status
+- If you run out of things to do and the agent is still running - call TaskOutput with block=true to idle and wait for the agent's result (do not use block=true unless you completely run out of things to do as it will waste time).
+  </tool_result>
+  <tool_result tool="toolu_016UyVFPCz6LNEPPaMW39zCZ">
+Async agent launched successfully.
+agentId: aca01a0 (This is an internal ID for your use, do not mention it to the user. Use this ID to retrieve results with TaskOutput when the agent finishes).
+The agent is currently working in the background. If you have other tasks you you should continue working on them now. Wait to call TaskOutput until either:
+- If you want to check on the agent's progress - call TaskOutput with block=false to get an immediate update on the agent's status
+- If you run out of things to do and the agent is still running - call TaskOutput with block=true to idle and wait for the agent's result (do not use block=true unless you completely run out of things to do as it will waste time).
+  </tool_result>
+  <tool_result tool="toolu_013VCQ4FnuZWyqFCZ8XBQ367">
+Async agent launched successfully.
+agentId: aea0abb (This is an internal ID for your use, do not mention it to the user. Use this ID to retrieve results with TaskOutput when the agent finishes).
+The agent is currently working in the background. If you have other tasks you you should continue working on them now. Wait to call TaskOutput until either:
+- If you want to check on the agent's progress - call TaskOutput with block=false to get an immediate update on the agent's status
+- If you run out of things to do and the agent is still running - call TaskOutput with block=true to idle and wait for the agent's result (do not use block=true unless you completely run out of things to do as it will waste time).
+  </tool_result>
+</session>

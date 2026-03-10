@@ -1,0 +1,331 @@
+<session>
+  <meta source="agent-a8c1afe" />
+  <meta branch="plnd/O9109-rename-plan-pr-docs-03-10-1247" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <tool_result tool="toolu_01MZGuGKwVh45GZyzxtYTeCS">
+
+  </tool_result>
+  <assistant>The test file doesn't have those strings. The cli-testing.md file is using a hypothetical example at line 233, so it doesn't need to be changed since it's just showing the pattern. Let me check if there are any other relevant files that need updating by searching for references in the markdown files themselves:</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="265" cache_read_input_tokens="73650" cache_creation="{'ephemeral_5m_input_tokens': 265, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_011P72SRC9P8GsFMZFdThXyC">
+    <param name="command">grep -l "plan_id" /home/runner/work/erk/erk/docs/learned/**/*.md 2&gt;/dev/null | head -20</param>
+    <param name="description">Find remaining files with plan_id references</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="265" cache_read_input_tokens="73650" cache_creation="{'ephemeral_5m_input_tokens': 265, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011P72SRC9P8GsFMZFdThXyC">
+/home/runner/work/erk/erk/docs/learned/architecture/derived-flags.md
+/home/runner/work/erk/erk/docs/learned/architecture/error-handling-patterns.md
+/home/runner/work/erk/erk/docs/learned/architecture/impl-context-api.md
+/home/runner/work/erk/erk/docs/learned/architecture/json-parsing-patterns.md
+/home/runner/work/erk/erk/docs/learned/architecture/land-state-threading.md
+/home/runner/work/erk/erk/docs/learned/architecture/linear-pipelines.md
+/home/runner/work/erk/erk/docs/learned/architecture/optional-field-propagation.md
+/home/runner/work/erk/erk/docs/learned/architecture/pipeline-transformation-patterns.md
+/home/runner/work/erk/erk/docs/learned/architecture/plan-backend-migration.md
+/home/runner/work/erk/erk/docs/learned/architecture/plan-context-integration.md
+/home/runner/work/erk/erk/docs/learned/architecture/selection-preservation-by-value.md
+/home/runner/work/erk/erk/docs/learned/architecture/session-storage-revert-rationale.md
+/home/runner/work/erk/erk/docs/learned/architecture/state-threading-pattern.md
+/home/runner/work/erk/erk/docs/learned/architecture/tripwires.md
+/home/runner/work/erk/erk/docs/learned/architecture/type-safety-patterns.md
+/home/runner/work/erk/erk/docs/learned/cli/land-learn-integration.md
+/home/runner/work/erk/erk/docs/learned/cli/learn-plan-land-flow.md
+/home/runner/work/erk/erk/docs/learned/cli/output-styling.md
+/home/runner/work/erk/erk/docs/learned/cli/pr-submit-pipeline.md
+/home/runner/work/erk/erk/docs/learned/erk/dispatch-ref-config.md
+  </tool_result>
+  <assistant>Now let me check for references that should be changed (PlanRef.plan_id context only) vs references that should stay (state.plan_id context):</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="732" cache_read_input_tokens="73915" cache_creation="{'ephemeral_5m_input_tokens': 732, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_016NRvKQpbuaJLYAFVPU6FZ9">
+    <param name="command">grep -n "PlanRef.*plan_id\|\.plan_id" /home/runner/work/erk/erk/docs/learned/architecture/plan-context-integration.md 2&gt;/dev/null | head -10</param>
+    <param name="description">Check plan_id references in plan-context-integration.md</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="732" cache_read_input_tokens="73915" cache_creation="{'ephemeral_5m_input_tokens': 732, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016NRvKQpbuaJLYAFVPU6FZ9">
+
+  </tool_result>
+  <assistant>Let me check specific files that are in the required list and might have plan-ref.json context:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="283" cache_read_input_tokens="74647" cache_creation="{'ephemeral_5m_input_tokens': 283, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01VWi8n3vkw4TZjbn8LEX4TP">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/testing/dual-backend-testing.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="283" cache_read_input_tokens="74647" cache_creation="{'ephemeral_5m_input_tokens': 283, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01VWi8n3vkw4TZjbn8LEX4TP">
+     1→---
+     2→title: Plan Storage Testing
+     3→read_when:
+     4→  - "writing tests that involve plan storage"
+     5→  - "testing plan-related features"
+     6→  - "creating test helpers for plan store operations"
+     7→tripwires:
+     8→  - action: "writing plan storage tests that parametrize across both backends"
+     9→    warning: "After PR #8210, only the PlannedPRBackend exists. The GitHubPlanStore class was deleted. New plan-related tests should use PlannedPRBackend directly."
+    10→  - action: "using isinstance() to detect plan backend type in application code"
+    11→    warning: "Use plan_backend.get_provider_name() for backend-conditional logic (returns 'github-draft-pr'). isinstance checks couple to implementation classes. The provider name string is the stable API."
+    12→    score: 7
+    13→---
+    14→
+    15→# Plan Storage Testing
+    16→
+    17→&gt; **Note:** After PR #8210, the `GitHubPlanStore` class and `PlanStore` ABC were deleted. Only `PlannedPRBackend` exists. This document describes the test infrastructure for the current single-backend architecture.
+    18→
+    19→## Test Helpers
+    20→
+    21→All plan test helpers are in `tests/test_utils/plan_helpers.py`.
+    22→
+    23→### `create_plan_store_with_plans()`
+    24→
+    25→Creates a `PlannedPRBackend` pre-populated with plans, backed by `FakeGitHub`.
+    26→
+    27→&lt;!-- Source: tests/test_utils/plan_helpers.py, create_plan_store_with_plans --&gt;
+    28→
+    29→See `create_plan_store_with_plans()` in `tests/test_utils/plan_helpers.py` for the full signature. Returns `tuple[PlannedPRBackend, FakeGitHub]` — the backend and its backing fake for assertions.
+    30→
+
+... [35 lines omitted] ...
+  </tool_result>
+  <assistant>This file doesn't have plan_id references that need updating. Let me check architecture/github-parsing.md for the function names:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1142" cache_read_input_tokens="74930" cache_creation="{'ephemeral_5m_input_tokens': 1142, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01D7JNkAeLAcXC8kF44J92LS">
+    <param name="command">grep -n "parse_plan_number_from_url\|parse_pr_number_from_url" /home/runner/work/erk/erk/docs/learned/architecture/github-parsing.md</param>
+    <param name="description">Check function names in github-parsing.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1142" cache_read_input_tokens="74930" cache_creation="{'ephemeral_5m_input_tokens': 1142, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01D7JNkAeLAcXC8kF44J92LS">
+38:See `packages/erk-shared/src/erk_shared/gateway/github/parsing.py:222-265` for `parse_pr_number_from_url` and `parse_plan_number_from_url`.
+  </tool_result>
+  <assistant>These functions still exist, so that's fine. Let me check for any references to "PLAN-REVIEW" in the pr-address-workflows file I already updated:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="324" cache_read_input_tokens="76072" cache_creation="{'ephemeral_5m_input_tokens': 324, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01EP9YhezdYNspN6JsH7kp9N">
+    <param name="command">grep "PLAN-REVIEW" /home/runner/work/erk/erk/docs/learned/erk/pr-address-workflows.md</param>
+    <param name="description">Check for PLAN-REVIEW references</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="324" cache_read_input_tokens="76072" cache_creation="{'ephemeral_5m_input_tokens': 324, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01EP9YhezdYNspN6JsH7kp9N">
+| **File modified**     | Source code files      | `PLAN-REVIEW-{plan_number}.md` |
+2. **Edit plan file**: Make changes to `PLAN-REVIEW-{plan_number}.md` based on feedback
+- **PR branch**: `PLAN-REVIEW-{plan_number}.md` file (for version control)
+| **File modified**  | `PLAN-REVIEW-{plan_number}.md`      | `.erk/impl-context/plan.md`             |
+  </tool_result>
+  <assistant>Good, those stay the same since `plan_number` is a different thing (it's the plan's issue number). The context says `plan_number` in filenames and user-facing output is unchanged. Let me verify my understanding by checking the exact context in the file:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="278" cache_read_input_tokens="76396" cache_creation="{'ephemeral_5m_input_tokens': 278, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Miy58JvDNbZBLPbdaJ6zzY">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/erk/pr-address-workflows.md</param>
+    <param name="offset">68</param>
+    <param name="limit">10</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="278" cache_read_input_tokens="76396" cache_creation="{'ephemeral_5m_input_tokens': 278, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Miy58JvDNbZBLPbdaJ6zzY">
+    68→
+    69→| Aspect                | Code Review Mode       | Plan Review Mode               |
+    70→| --------------------- | ---------------------- | ------------------------------ |
+    71→| **File modified**     | Source code files      | `PLAN-REVIEW-{plan_number}.md` |
+    72→| **Sync mechanism**    | Git push only          | Git push + plan sync to plan   |
+    73→| **Thread resolution** | Generic acknowledgment | Plan-specific messages         |
+    74→| **Target audience**   | Code reviewers         | Plan reviewers                 |
+    75→
+    76→#### Plan Review Workflow
+    77→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>That's correct - those are filenames using plan_number which is different. Now let me make a comprehensive final check of all the files I've reviewed to ensure completeness. Let me verify the changes I made are complete by reading them back:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="520" cache_read_input_tokens="76674" cache_creation="{'ephemeral_5m_input_tokens': 520, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_011ZPtpSCXp71gonF1gmFUot">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/erk/branch-naming.md</param>
+    <param name="offset">52</param>
+    <param name="limit">10</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="520" cache_read_input_tokens="76674" cache_creation="{'ephemeral_5m_input_tokens': 520, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Hfq64ZV2Z7uH9VvLPpy8RB">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/erk/issue-pr-linkage-storage.md</param>
+    <param name="offset">50</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="520" cache_read_input_tokens="76674" cache_creation="{'ephemeral_5m_input_tokens': 520, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_013forNT3VzjCF8PyBPxPoFr">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/conventions.md</param>
+    <param name="offset">29</param>
+    <param name="limit">10</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="520" cache_read_input_tokens="76674" cache_creation="{'ephemeral_5m_input_tokens': 520, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011ZPtpSCXp71gonF1gmFUot">
+    52→## Plan-to-Branch Mapping
+    53→
+    54→Since branch names do not encode plan numbers, `plan-ref.json` is the sole mechanism for mapping plans to branches:
+    55→
+    56→- **`.erk/impl-context/plan-ref.json`** in each worktree contains `provider`, `pr_id`, `url`, etc.
+    57→- **`PlannedPRBackend.get_plan_for_branch()`** resolves plans by looking up the PR associated with the branch
+    58→
+    59→## Extraction Functions
+    60→
+    61→### extract_objective_number()
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_01Hfq64ZV2Z7uH9VvLPpy8RB">
+    50→
+    51→The primary format (`.erk/impl-context/plan-ref.json`):
+    52→
+    53→```json
+    54→{
+    55→  "provider": "github-draft-pr",
+    56→  "pr_id": "123",
+    57→  "url": "https://github.com/owner/repo/pull/123",
+    58→  "created_at": "2025-01-15T10:30:00+00:00",
+    59→  "synced_at": "2025-01-15T10:30:00+00:00",
+    60→  "labels": [],
+    61→  "objective_id": null,
+    62→  "node_ids": null
+    63→}
+    64→```
+    65→
+    66→`read_plan_ref()` uses a two-level fallback: `plan-ref.json` → `ref.json`.
+    67→
+    68→This file maps the current worktree to its source plan.
+    69→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_013forNT3VzjCF8PyBPxPoFr">
+    29→
+    30→| Type                  | Convention               | Example                          |
+    31→| --------------------- | ------------------------ | -------------------------------- |
+    32→| Issue numbers (`int`) | `_id` suffix             | `objective_id`, `pr_id`          |
+    33→| GitHub Issue objects  | No suffix or `_issue`    | `objective`, `plan_issue`        |
+    34→| String identifiers    | `_identifier` or `_name` | `plan_identifier`, `branch_name` |
+    35→
+    36→**Rationale:** When a variable holds an integer ID (like a GitHub issue number), the `_id` suffix makes the type immediately clear. This distinguishes `objective_id: int` (an issue number) from `objective: ObjectiveInfo` (an object).
+    37→
+    38→## CLI Flag Conventions
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>Good! The edits look correct. Now let me verify the planning files:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1382" cache_read_input_tokens="77194" cache_creation="{'ephemeral_5m_input_tokens': 1382, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01EMjVMYUCbVZ5Q4WGgzELkp">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/pr-operations/plan-implementation-auto-force.md</param>
+    <param name="offset">36</param>
+    <param name="limit">5</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1382" cache_read_input_tokens="77194" cache_creation="{'ephemeral_5m_input_tokens': 1382, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_017QCGHKiL5rs3uGSS2KyHaj">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/planned-pr-branch-teleport.md</param>
+    <param name="offset">93</param>
+    <param name="limit">8</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1382" cache_read_input_tokens="77194" cache_creation="{'ephemeral_5m_input_tokens': 1382, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01EMjVMYUCbVZ5Q4WGgzELkp">
+    36→
+    37→`src/erk/cli/commands/pr/submit_pipeline.py` — Phase 1 (Graphite Submit), lines ~204–236.
+    38→
+    39→## When It Does Not Apply
+    40→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_017QCGHKiL5rs3uGSS2KyHaj">
+    93→## Auto-Force Push for Plan Implementation Branches
+    94→
+    95→Plan implementation branches always diverge from remote because the draft PR scaffolding commits (from `plan-save`) differ from the worker's implementation commits. The PR submit pipeline auto-enables force-push for plan branches to avoid requiring `--force` every time.
+    96→
+    97→**Detection:** Plan metadata is detected in `.erk/impl-context/` in `submit_pipeline.py`
+    98→
+    99→**Derived flag:** `effective_force = state.force or is_plan_impl`
+   100→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>Perfect! Let me verify the teleport.md file one more time to check my final edit:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="751" cache_read_input_tokens="78576" cache_creation="{'ephemeral_5m_input_tokens': 751, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01UM6BX9jCTNXgXBt97JdiCQ">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/planned-pr-branch-teleport.md</param>
+    <param name="offset">60</param>
+    <param name="limit">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="751" cache_read_input_tokens="78576" cache_creation="{'ephemeral_5m_input_tokens': 751, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01UM6BX9jCTNXgXBt97JdiCQ">
+    60→## Backend Detection
+    61→
+    62→The branch name is discovered via a lightweight GitHub PR query. Detection uses the PR's head ref:
+    63→
+    64→&lt;!-- Source: src/erk/cli/commands/exec/scripts/setup_impl_from_pr.py --&gt;
+    65→
+    66→Calls `github.get_pr(repo_root, pr_number)` and reads `pr_result.head_ref_name` to discover the plan branch name. This is a planned-PR plan (reuse the existing branch and teleport from remote).
+    67→
+    68→## Idempotent Design
+    69→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>Excellent! All edits are in place. Let me now create a summary of what was updated:
+
+## Summary
+
+I have successfully reviewed and updated the documentation files according to the context provided. The main change is:
+
+**`PlanRef.plan_id` → `PlanRef.pr_id`** and corresponding JSON field **`"plan_number"` → `"pr_id"`** in `plan-ref.json`
+
+### Files Updated:
+
+1. **`/home/runner/work/erk/erk/docs/learned/erk/branch-naming.md`** (Line 56)
+   - Changed: `.erk/impl-context/plan-ref.json` contains `provider`, `plan_id` → `provider`, `pr_id`
+
+2. **`/home/runner/work/erk/erk/docs/learned/erk/issue-pr-linkage-storage.md`** (Lines 56, 120)
+   - Changed JSON example: `"plan_id": "123"` → `"pr_id": "123"`
+   - Updated debugging guidance: "contains correct plan ID" → "contains correct PR ID"
+
+3. **`/home/runner/work/erk/erk/docs/learned/conventions.md`** (Line 32)
+   - Updated variable naming example: `objective_id`, `plan_id` → `objective_id`, `pr_id`
+
+4. **`/home/runner/work/erk/erk/docs/learned/pr-operations/plan-implementation-auto-force.md`** (Line 41)
+   - Updated: Clarified that auto-force applies to branches with plan metadata detected
+
+5. **`/home/runner/work/erk/erk/docs/learned/planning/planned-pr-branch-teleport.md`** (Lines 97, 66)
+   - Updated: Detection explanation simplified to mention plan metadata
+   - Changed: `github.get_pr(repo_root, plan_number)` → `github.get_pr(repo_root, pr_number)`
+
+### Files Checked (No Changes Needed):
+
+The following files were reviewed but require no changes as they either:
+- Use `plan_number` in context that is intentionally unchanged (user-facing filenames, issue numbers)
+- Reference other concepts that remain unchanged (state.plan_id, TUI plan_id, PlanContext.plan_id)
+- Don't contain relevant references to PlanRef.plan_id
+
+- `dispatch-ref-config.md` - Function names still exist in source
+- `pr-address-workflows.md` - Uses `plan_number` in filenames (correct context)
+- `graphite-divergence-detection.md` - No relevant changes needed
+- `integrations/linear-erk-mapping.md` - No changes needed
+- `testing/cli-testing.md` - Example code (no changes needed)
+- `testing/fake-api-migration-pattern.md` - No changes needed
+- `testing/import-conflict-resolution.md` - No changes needed
+- `testing/dual-backend-testing.md` - No changes needed
+- `architecture/github-parsing.md` - Function names still exist
+- `architecture/agent-backpressure-gates.md` - No changes needed
+- `planning/backend-naming-conventions.md` - References `plan_id` elsewhere in code (not PlanRef)
+- `planning/index.md` - Auto-generated index (no manual changes)
+
+All changes maintain consistency with the source code where `PlanRef` now uses `pr_id` instead of `plan_id`, while preserving unchanged references to `state.plan_id`, `PlanContext.plan_id`, and TUI `plan_id` fields.</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="381" cache_read_input_tokens="79327" cache_creation="{'ephemeral_5m_input_tokens': 381, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+</session>
