@@ -37,6 +37,7 @@
 - **[error-detection-patterns.md](error-detection-patterns.md)** — classifying errors from subprocess stderr output, detecting specific failure modes from external tool output, adding new SubmitError error_type based on error text
 - **[error-handling-antipatterns.md](error-handling-antipatterns.md)** — handling expected CLI failures, deciding between RuntimeError and UserFacingCliError, converting exception-based error handling to UserFacingCliError, writing actionable error messages for pipeline failures
 - **[exec-command-patterns.md](exec-command-patterns.md)** — writing exec scripts with PR/issue output, building diagnostic messages, standardizing exec command output
+- **[exec-review-activity-log.md](exec-review-activity-log.md)** — fetching review activity logs, working with erk exec get-review-activity-log, push down review activity log fetch
 - **[exec-script-discovery.md](exec-script-discovery.md)** — using erk exec commands, unsure what flags an exec command accepts
 - **[exec-script-patterns.md](exec-script-patterns.md)** — Creating new exec CLI commands, Understanding why exec commands use context injection instead of Path.cwd(), Deciding where to import gateway ABCs from
 - **[exec-script-performance.md](exec-script-performance.md)** — optimizing exec script execution time, reducing gh subprocess overhead in exec scripts, bundling multiple API calls into a single exec script
@@ -78,5 +79,6 @@
 - **[upgrade-workflow.md](upgrade-workflow.md)** — modifying erk init --upgrade behavior, adding new entries to REQUIRED_GITIGNORE_ENTRIES, working with the erk doctor --check-hooks flag, understanding how erk upgrades existing repositories
 - **[workflow-commands.md](workflow-commands.md)** — triggering GitHub Actions workflows from CLI, adding a new workflow to erk launch, understanding local vs remote command duality
 - **[workflow-run-list.md](workflow-run-list.md)** — modifying workflow run list display, working with erk workflow run list, understanding run-name format parsing, modifying workflow run display
+- **[workflow-run-management.md](workflow-run-management.md)** — canceling or retrying workflow runs, working with erk workflow run cancel or retry, managing GitHub Actions workflow runs
 - **[wt-command-comparison.md](wt-command-comparison.md)** — choosing between erk wt create, create-from, and checkout, setting up a worktree for an existing branch, understanding worktree slot allocation
 - **[wt-create-from.md](wt-create-from.md)** — setting up a local worktree for an existing branch, working with a PR branch that needs a worktree slot, understanding the difference between erk wt create and erk wt create-from

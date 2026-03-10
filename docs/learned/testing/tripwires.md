@@ -58,6 +58,8 @@ Rules triggered by matching actions in code.
 
 **creating a fake gateway without constructor-injected error configuration** → Read [Gateway Fake Testing Exemplar](gateway-fake-testing-exemplar.md) first. Fakes must accept error variants at construction time (e.g., push_to_remote_error=PushError(...)) to enable failure injection in tests.
 
+**creating a fake in src/** → Read [Test Fakes Directory Structure](fakes-directory-structure.md) first. Fakes live in tests/fakes/, not production code
+
 **creating a fake that uses **init** when frozen dataclass would work** → Read [Frozen Dataclass Test Doubles](frozen-dataclass-test-doubles.md) first. FakeBranchManager uses frozen dataclass because its state is simple and declarative. FakeGitHub uses **init** because it has 30+ constructor params. Choose based on complexity.
 
 **creating a test file exceeding 500 lines** → Read [Test File Organization Pattern](test-file-organization.md) first. Consider splitting into a subdirectory module. See test-file-organization.md for the pattern and existing precedents.
