@@ -1,0 +1,942 @@
+<session>
+  <meta branch="plnd/O9109-sweep-land-impl-core-03-10-1728" />
+  <meta model="claude-opus-4-6" />
+  <tool_use name="Edit" id="toolu_01Aranaz9UWHr3pi8WGFR337">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/land_cmd.py</param>
+    <param name="old_string">    # Capture plan context BEFORE execution pipeline (which deletes the branch)
+    plan_i...[truncated 38 chars]...root, branch)
+    objective_number = get_objective_for_branch(ctx, main_repo_root, branch)</param>
+    <param name="new_string">    # Capture plan context BEFORE execution pipeline (which deletes the branch)
+    pr_id ...[truncated 36 chars]...root, branch)
+    objective_number = get_objective_for_branch(ctx, main_repo_root, branch)</param>
+  </tool_use>
+  <usage input_tokens="39798" cache_creation_input_tokens="23902" cache_read_input_tokens="73514" cache_creation="{'ephemeral_5m_input_tokens': 23902, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01TDEHJVT1eyDWkrw6D2dfKV">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/land_cmd.py</param>
+    <param name="old_string">        plan_id=plan_id,
+        skip_learn=skip_learn,
+    )
+
+    # Re-derive main_repo_r...[truncated 55 chars]...)
+
+    # Run execution pipeline (merge + cleanup)
+    exit_after: SystemExit | None = None</param>
+    <param name="new_string">        pr_id=pr_id,
+        skip_learn=skip_learn,
+    )
+
+    # Re-derive main_repo_root ...[truncated 51 chars]...)
+
+    # Run execution pipeline (merge + cleanup)
+    exit_after: SystemExit | None = None</param>
+  </tool_use>
+  <usage input_tokens="39798" cache_creation_input_tokens="23902" cache_read_input_tokens="73514" cache_creation="{'ephemeral_5m_input_tokens': 23902, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01A1mMn4Cy8ZXi4x3oR15DCK">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/land_cmd.py</param>
+    <param name="old_string">    # Step 1: Look up plan and objective for branch (needed for script generation)
+    pla...[truncated 41 chars]...root, branch)
+    objective_number = get_objective_for_branch(ctx, main_repo_root, branch)</param>
+    <param name="new_string">    # Step 1: Look up plan and objective for branch (needed for script generation)
+    pr_...[truncated 39 chars]...root, branch)
+    objective_number = get_objective_for_branch(ctx, main_repo_root, branch)</param>
+  </tool_use>
+  <usage input_tokens="39798" cache_creation_input_tokens="23902" cache_read_input_tokens="73514" cache_creation="{'ephemeral_5m_input_tokens': 23902, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01TgtGbEGQbBr8GCnwasViy3">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/land_cmd.py</param>
+    <param name="old_string">        plan_number=int(plan_id) if plan_id is not None else None,</param>
+    <param name="new_string">        linked_pr_number=int(pr_id) if pr_id is not None else None,</param>
+  </tool_use>
+  <usage input_tokens="39798" cache_creation_input_tokens="23902" cache_read_input_tokens="73514" cache_creation="{'ephemeral_5m_input_tokens': 23902, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Aranaz9UWHr3pi8WGFR337">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/land_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01TDEHJVT1eyDWkrw6D2dfKV">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/land_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01A1mMn4Cy8ZXi4x3oR15DCK">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/land_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01TgtGbEGQbBr8GCnwasViy3">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/land_cmd.py has been updated successfully.
+  </tool_result>
+  <assistant>Wait, I need to check what `linked_pr_number` is — that parameter name might not exist on `LandExecScriptArgs`. Let me check the actual structure:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="60613" cache_read_input_tokens="20427" cache_creation="{'ephemeral_5m_input_tokens': 60613, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01SFJMmkBB72dJK3zJAuW3cn">
+    <param name="pattern">plan_number</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli/commands/land_cmd.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="60613" cache_read_input_tokens="20427" cache_creation="{'ephemeral_5m_input_tokens': 60613, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01B18fdgmYjyzhKkbvbjHhS3">
+    <param name="pattern">class LandExecScriptArgs</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli/commands</param>
+    <param name="output_mode">content</param>
+    <param name="-C">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="60613" cache_read_input_tokens="20427" cache_creation="{'ephemeral_5m_input_tokens': 60613, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01SFJMmkBB72dJK3zJAuW3cn">
+1313:    plan_number: int | None,
+1388:    if plan_number is not None:
+1389:        cmd_parts.append(f"--plan-number={plan_number}")
+1420:    plan_number: int | None,
+1445:        plan_number: Plan number for learn issue creation
+1466:        plan_id=str(plan_number) if plan_number is not None else None,
+  </tool_result>
+  <tool_result tool="toolu_01B18fdgmYjyzhKkbvbjHhS3">
+No matches found
+  </tool_result>
+  <assistant>I see — `land_cmd.py` has `plan_number` as a parameter name in functions and CLI args. The plan says to rename these too. Let me revert my last edit to `linked_pr_number` since the parameter is `plan_number` (which should be renamed to `pr_number`). Let me read the context around these locations:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="681" cache_read_input_tokens="81040" cache_creation="{'ephemeral_5m_input_tokens': 681, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01F9rigm4s1NWJHG2PKxLprP">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/land_cmd.py</param>
+    <param name="offset">1300</param>
+    <param name="limit">180</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="681" cache_read_input_tokens="81040" cache_creation="{'ephemeral_5m_input_tokens': 681, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01F9rigm4s1NWJHG2PKxLprP">
+  1300→            source_branch=None,
+  1301→            force=False,
+  1302→        )
+  1303→        # activate_root_repo raises SystemExit(0)
+  1304→
+  1305→
+  1306→def render_land_execution_script(
+  1307→    *,
+  1308→    pr_number: int,
+  1309→    branch: str,
+  1310→    worktree_path: Path | None,
+  1311→    is_current_branch: bool,
+  1312→    objective_number: int | None,
+  1313→    plan_number: int | None,
+  1314→    use_graphite: bool,
+  1315→    skip_learn: bool,
+  1316→    cleanup_confirmed: bool,
+  1317→    target_path: Path,
+  1318→) -&gt; str:
+  1319→    """Generate shell script that executes land and navigates.
+  1320→
+  1321→    This script is generated after validation passes. When sourced, it:
+  1322→    1. Validates required arguments (PR number and branch)
+  1323→    2. Calls `erk exec land-execute` with pre-validated state plus user flags
+  1324→    3. If land-execute fails (e.g., merge conflict), stops immediately via ``return 1``
+  1325→    4. On success, navigates to the target location (trunk or child branch)
+  1326→
+  1327→    Note: The execute phase always skips confirmation prompts because the user
+  1328→    already approved by sourcing the script. --force is not passed because
+  1329→    _execute_land handles this internally.
+
+... [155 lines omitted] ...
+
+  1367→    # Silence unused parameter warnings - these are still needed for the function
+  1398→PR_NUMBER="${{1:?Error: PR number required}}"
+  1399→BRANCH="${{2:?Error: Branch name required}}"
+  1476→    if isinstance(result, LandError):
+  1477→        user_output(click.style("Error: ", fg="red") + result.message)
+  </tool_result>
+  <assistant>Now I can see the full picture. The plan says to rename `plan_number` parameters in `land_cmd.py` to `pr_number` — but wait, there's already a `pr_number` parameter. Let me re-read the plan carefully. The plan says:
+
+- `land_cmd.py`: `plan_number` → keep as-is (it's a parameter that maps to `--plan-number` CLI arg, which feeds into `plan_id`).
+
+Actually, looking at the plan more carefully, it says for `land_cmd.py` in Phase 2: `plan_id` → `pr_id` in `_land_pr_branch` and `_land_merged_branch`. Let me check what I've already done and what's left:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2964" cache_read_input_tokens="81721" cache_creation="{'ephemeral_5m_input_tokens': 2964, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01PautYbpYxZiMiPEEZAwwnJ">
+    <param name="pattern">plan_id</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli/commands/land_cmd.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2964" cache_read_input_tokens="81721" cache_creation="{'ephemeral_5m_input_tokens': 2964, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01PautYbpYxZiMiPEEZAwwnJ">
+935:    pr_id = ctx.plan_backend.resolve_plan_id_for_branch(main_repo_root, branch)
+1054:    pr_id = ctx.plan_backend.resolve_plan_id_for_branch(main_repo_root, branch)
+1466:        plan_id=str(plan_number) if plan_number is not None else None,
+  </tool_result>
+  <assistant>Good. The two occurrences I already renamed are correct. Line 1466 still has `plan_id=` as a keyword argument to `make_execution_state`, which takes a `plan_id` parameter (now renamed to `pr_id` in Phase 1). So I need to update that kwarg name:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="636" cache_read_input_tokens="84685" cache_creation="{'ephemeral_5m_input_tokens': 636, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01FmFiaR5hgcNFwx7mXiUf3U">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/land_cmd.py</param>
+    <param name="old_string">        plan_id=str(plan_number) if plan_number is not None else None,
+        skip_learn=...[truncated 324 chars]...user_output(click.style("Error: ", fg="red") + result.message)
+        raise SystemExit(1)</param>
+    <param name="new_string">        pr_id=str(plan_number) if plan_number is not None else None,
+        skip_learn=sk...[truncated 322 chars]...user_output(click.style("Error: ", fg="red") + result.message)
+        raise SystemExit(1)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="636" cache_read_input_tokens="84685" cache_creation="{'ephemeral_5m_input_tokens': 636, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01FmFiaR5hgcNFwx7mXiUf3U">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/land_cmd.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update `land_cmd.py`'s `linked_pr_number` back to `plan_number` in the render function call — wait, let me re-check what I changed. Let me find the `linked_pr_number` edit:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="564" cache_read_input_tokens="85321" cache_creation="{'ephemeral_5m_input_tokens': 564, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_0188KtMbfyHM2B5tHb1428Rn">
+    <param name="pattern">linked_pr_number</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli/commands/land_cmd.py</param>
+    <param name="output_mode">content</param>
+    <param name="-C">3</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="564" cache_read_input_tokens="85321" cache_creation="{'ephemeral_5m_input_tokens': 564, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_0188KtMbfyHM2B5tHb1428Rn">
+1095-        worktree_path=worktree_path,
+1096-        is_current_branch=target.is_current_branch,
+1097-        objective_number=objective_number,
+1098:        linked_pr_number=int(pr_id) if pr_id is not None else None,
+1099-        use_graphite=target.use_graphite,
+1100-        skip_learn=skip_learn,
+1101-        cleanup_confirmed=cleanup_confirmed,
+  </tool_result>
+  <assistant>This is passing to `render_land_execution_script` which has a `plan_number` parameter. I need to revert this to `plan_number` — the function parameter itself should be kept since it maps to a CLI flag `--plan-number`. Let me fix that:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="567" cache_read_input_tokens="85885" cache_creation="{'ephemeral_5m_input_tokens': 567, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01UNQTCpPuxmd48m1SN9Ce5e">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/land_cmd.py</param>
+    <param name="old_string">        linked_pr_number=int(pr_id) if pr_id is not None else None,</param>
+    <param name="new_string">        plan_number=int(pr_id) if pr_id is not None else None,</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="567" cache_read_input_tokens="85885" cache_creation="{'ephemeral_5m_input_tokens': 567, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01UNQTCpPuxmd48m1SN9Ce5e">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/land_cmd.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update `land_learn.py`. The plan says to rename `plan_id` parameters and local variables to `pr_id`. Let me be careful — in `land_learn.py`, `plan_id` is used as a parameter name in many functions, and as local variables. The plan specifically says: "plan_id parameters/variables → pr_id" in `land_learn.py`. Let me make these changes:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="266" cache_read_input_tokens="86452" cache_creation="{'ephemeral_5m_input_tokens': 266, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01NnVNMhozWGu9xRtpBLkSk6">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/land_learn.py</param>
+    <param name="old_string">def _fetch_xmls_from_context_branch(
+    git: Git,
+    *,
+    repo_root: Path,
+    plan_id...[truncated 577 chars]...found or manifest is missing.
+    """
+    session_branch = f"planned-pr-context/{plan_id}"</param>
+    <param name="new_string">def _fetch_xmls_from_context_branch(
+    git: Git,
+    *,
+    repo_root: Path,
+    pr_id: ...[truncated 567 chars]...t found or manifest is missing.
+    """
+    session_branch = f"planned-pr-context/{pr_id}"</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="266" cache_read_input_tokens="86452" cache_creation="{'ephemeral_5m_input_tokens': 266, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01KKfTX7FHqhS3PWDTSNJtQN">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/land_learn.py</param>
+    <param name="old_string">def _log_session_summary_from_manifest(
+    manifest: dict,
+    *,
+    xml_files: dict[str, str],
+    plan_id: str,
+) -&gt; None:</param>
+    <param name="new_string">def _log_session_summary_from_manifest(
+    manifest: dict,
+    *,
+    xml_files: dict[str, str],
+    pr_id: str,
+) -&gt; None:</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="266" cache_read_input_tokens="86452" cache_creation="{'ephemeral_5m_input_tokens': 266, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01LaVSF97LGaq3PFpaKBX9Wm">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/land_learn.py</param>
+    <param name="old_string">    user_output(
+        f"  Manifest: planned-pr-context/{plan_id}"</param>
+    <param name="new_string">    user_output(
+        f"  Manifest: planned-pr-context/{pr_id}"</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="266" cache_read_input_tokens="86452" cache_creation="{'ephemeral_5m_input_tokens': 266, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01QKATqPdSGHSac8y53KciGZ">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/land_learn.py</param>
+    <param name="old_string">def _collect_session_material(
+    ctx: ErkContext,
+    *,
+    repo_root: Path,
+    plan_i...[truncated 1431 chars]...arn plan for #{plan_id}: no session material found"
+        + detail
+    )
+    return None</param>
+    <param name="new_string">def _collect_session_material(
+    ctx: ErkContext,
+    *,
+    repo_root: Path,
+    pr_id:...[truncated 1415 chars]...learn plan for #{pr_id}: no session material found"
+        + detail
+    )
+    return None</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="266" cache_read_input_tokens="86452" cache_creation="{'ephemeral_5m_input_tokens': 266, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01NnVNMhozWGu9xRtpBLkSk6">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/land_learn.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01KKfTX7FHqhS3PWDTSNJtQN">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/land_learn.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01LaVSF97LGaq3PFpaKBX9Wm">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/land_learn.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01QKATqPdSGHSac8y53KciGZ">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/land_learn.py has been updated successfully.
+  </tool_result>
+  <assistant>Now continue with `_create_learn_pr_core` and `_create_learn_pr_for_merged_branch` in `land_learn.py`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2556" cache_read_input_tokens="86718" cache_creation="{'ephemeral_5m_input_tokens': 2556, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01A6jBVtnw9fHP7tkis4qHDX">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/land_learn.py</param>
+    <param name="old_string">def _create_learn_pr_core(
+    ctx: ErkContext,
+    *,
+    repo_root: Path,
+    plan_id: s...[truncated 967 chars]...   f"Merged PR: #{merged_pr_number}\n\n"
+        f"## Sessions\n\n{session_section}"
+    )</param>
+    <param name="new_string">def _create_learn_pr_core(
+    ctx: ErkContext,
+    *,
+    repo_root: Path,
+    pr_id: str...[truncated 957 chars]...   f"Merged PR: #{merged_pr_number}\n\n"
+        f"## Sessions\n\n{session_section}"
+    )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2556" cache_read_input_tokens="86718" cache_creation="{'ephemeral_5m_input_tokens': 2556, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_0159BTg4v1CDaVUX5KVb3wHB">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/land_learn.py</param>
+    <param name="old_string">        learned_from_issue=int(plan_id),</param>
+    <param name="new_string">        learned_from_issue=int(pr_id),</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2556" cache_read_input_tokens="86718" cache_creation="{'ephemeral_5m_input_tokens': 2556, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01SpTp9sw3bqbZkjjip9CWp6">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/land_learn.py</param>
+    <param name="old_string">            click.style("\u2713", fg="green")
+            + f" Created learn plan #{pr_result.pr_number} for plan #{plan_id}"</param>
+    <param name="new_string">            click.style("\u2713", fg="green")
+            + f" Created learn plan #{pr_result.pr_number} for plan #{pr_id}"</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2556" cache_read_input_tokens="86718" cache_creation="{'ephemeral_5m_input_tokens': 2556, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_0116ig158gdXzNPExphprUMv">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/land_learn.py</param>
+    <param name="old_string">def _create_learn_pr_for_merged_branch(
+    ctx: ErkContext,
+    *,
+    plan_id: str,
+    ...[truncated 415 chars]...        plan_id=plan_id,
+        merged_pr_number=merged_pr_number,
+        cwd=cwd,
+    )</param>
+    <param name="new_string">def _create_learn_pr_for_merged_branch(
+    ctx: ErkContext,
+    *,
+    pr_id: str,
+    me...[truncated 409 chars]...ot,
+        pr_id=pr_id,
+        merged_pr_number=merged_pr_number,
+        cwd=cwd,
+    )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2556" cache_read_input_tokens="86718" cache_creation="{'ephemeral_5m_input_tokens': 2556, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01A6jBVtnw9fHP7tkis4qHDX">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/land_learn.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_0159BTg4v1CDaVUX5KVb3wHB">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/land_learn.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01SpTp9sw3bqbZkjjip9CWp6">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/land_learn.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_0116ig158gdXzNPExphprUMv">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/land_learn.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update `_create_learn_pr_with_sessions` and `_create_learn_pr_impl` in `land_learn.py`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2193" cache_read_input_tokens="89274" cache_creation="{'ephemeral_5m_input_tokens': 2193, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01L16EpEAU3qvyPxPzdwZwHU">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/land_learn.py</param>
+    <param name="old_string">    """Create a learn plan as a draft PR with session info for the landed plan.
+
+    This ...[truncated 202 chars]...r_number populated
+    """
+    if state.plan_id is None or state.merged_pr_number is None:</param>
+    <param name="new_string">    """Create a learn plan as a draft PR with session info for the landed plan.
+
+    This ...[truncated 198 chars]..._pr_number populated
+    """
+    if state.pr_id is None or state.merged_pr_number is None:</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2193" cache_read_input_tokens="89274" cache_creation="{'ephemeral_5m_input_tokens': 2193, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01K3kwCDocZdraAF48yeyVc1">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/land_learn.py</param>
+    <param name="old_string">    """Inner implementation for learn plan creation (raises on error).
+
+    Thin wrapper a...[truncated 325 chars]..._id=plan_id,
+        merged_pr_number=state.merged_pr_number,
+        cwd=state.cwd,
+    )</param>
+    <param name="new_string">    """Inner implementation for learn plan creation (raises on error).
+
+    Thin wrapper a...[truncated 315 chars]...pr_id=pr_id,
+        merged_pr_number=state.merged_pr_number,
+        cwd=state.cwd,
+    )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2193" cache_read_input_tokens="89274" cache_creation="{'ephemeral_5m_input_tokens': 2193, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01L16EpEAU3qvyPxPzdwZwHU">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/land_learn.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01K3kwCDocZdraAF48yeyVc1">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/land_learn.py has been updated successfully.
+  </tool_result>
+  <assistant>Now check if the `_create_learn_pr_for_merged_branch` function is called from `land_cmd.py` with the old kwarg name. Let me search:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1162" cache_read_input_tokens="91467" cache_creation="{'ephemeral_5m_input_tokens': 1162, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_019v25LSdagVUfkHZshXg4Up">
+    <param name="pattern">_create_learn_pr_for_merged_branch</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk</param>
+    <param name="output_mode">content</param>
+    <param name="-C">3</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1162" cache_read_input_tokens="91467" cache_creation="{'ephemeral_5m_input_tokens': 1162, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_019v25LSdagVUfkHZshXg4Up">
+/home/runner/work/erk/erk/src/erk/cli/commands/land_learn.py-296-        )
+/home/runner/work/erk/erk/src/erk/cli/commands/land_learn.py-297-
+/home/runner/work/erk/erk/src/erk/cli/commands/land_learn.py-298-
+src/erk/cli/commands/land_learn.py:299:def _create_learn_pr_for_merged_branch(
+src/erk/cli/commands/land_learn.py-300-    ctx: ErkContext,
+/home/runner/work/erk/erk/src/erk/cli/commands/land_learn.py-301-    *,
+src/erk/cli/commands/land_learn.py-302-    pr_id: str,
+--
+/home/runner/work/erk/erk/src/erk/cli/commands/reconcile_pipeline.py-14-import click
+/home/runner/work/erk/erk/src/erk/cli/commands/reconcile_pipeline.py-15-
+/home/runner/work/erk/erk/src/erk/cli/commands/reconcile_pipeline.py-16-from erk.cli.commands.land_cmd import _ensure_branch_not_checked_out
+src/erk/cli/commands/reconcile_pipeline.py:17:from erk.cli.commands.land_learn import _create_learn_pr_for_merged_branch
+/home/runner/work/erk/erk/src/erk/cli/commands/reconcile_pipeline.py-18-from erk.cli.commands.objective_helpers import (
+/home/runner/work/erk/erk/src/erk/cli/commands/reconcile_pipeline.py-19-    get_objective_for_branch,
+/home/runner/work/erk/erk/src/erk/cli/commands/reconcile_pipeline.py-20-    run_objective_update_after_land,
+--
+/home/runner/work/erk/erk/src/erk/cli/commands/reconcile_pipeline.py-165-    # 1. Learn PR (fail-open)
+src/erk/cli/commands/reconcile_pipeline.py-166-    if not skip_learn and info.plan_id is not None:
+src/erk/cli/commands/reconcile_pipeline.py-167-        try:
+src/erk/cli/commands/reconcile_pipeline.py:168:            _create_learn_pr_for_merged_branch(
+/home/runner/work/erk/erk/src/erk/cli/commands/reconcile_pipeline.py-169-                ctx,
+/home/runner/work/erk/erk/src/erk/cli/commands/reconcile_pipeline.py-170-                plan_id=info.plan_id,
+/home/runner/work/erk/erk/src/erk/cli/commands/reconcile_pipeline.py-171-                merged_pr_number=info.pr_number,
+--
+/home/runner/work/erk/erk/src/erk/cli/commands/land_stack.py-18-    _cleanup_landed_branch,
+/home/runner/work/erk/erk/src/erk/cli/commands/land_stack.py-19-    check_unresolved_comments,
+/home/runner/work/erk/erk/src/erk/cli/commands/land_stack.py-20-)
+src/erk/cli/commands/land_stack.py:21:from erk.cli.commands.land_learn import _create_learn_pr_for_merged_branch
+/home/runner/work/erk/erk/src/erk/cli/commands/land_stack.py-22-from erk.cli.commands.navigation_helpers import check_clean_working_tree
+/home/runner/work/erk/erk/src/erk/cli/commands/land_stack.py-23-from erk.cli.commands.objective_helpers import (
+
+... [9 lines omitted] ...
+  </tool_result>
+  <assistant>I see `reconcile_pipeline.py` also calls this function with `plan_id=info.plan_id`. I need to update that call too, and also check the `reconcile_pipeline.py` `info.plan_id` field. Let me read that file:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1467" cache_read_input_tokens="92629" cache_creation="{'ephemeral_5m_input_tokens': 1467, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01KjnJFNM8HefwucKS6CrBC2">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/reconcile_pipeline.py</param>
+    <param name="offset">150</param>
+    <param name="limit">40</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1467" cache_read_input_tokens="92629" cache_creation="{'ephemeral_5m_input_tokens': 1467, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01KjnJFNM8HefwucKS6CrBC2">
+   150→    """
+   151→    learn_created = False
+   152→    objective_updated = False
+   153→    cleaned_up = False
+   154→    error: str | None = None
+   155→
+   156→    if dry_run:
+   157→        return ReconcileResult(
+   158→            branch=info.branch,
+   159→            learn_created=False,
+   160→            objective_updated=False,
+   161→            cleaned_up=False,
+   162→            error=None,
+   163→        )
+   164→
+   165→    # 1. Learn PR (fail-open)
+   166→    if not skip_learn and info.plan_id is not None:
+   167→        try:
+   168→            _create_learn_pr_for_merged_branch(
+   169→                ctx,
+   170→                plan_id=info.plan_id,
+   171→                merged_pr_number=info.pr_number,
+   172→                main_repo_root=main_repo_root,
+   173→                cwd=cwd,
+   174→            )
+   175→            learn_created = True
+   176→        except Exception as exc:
+   177→            user_output(
+   178→                click.style("Warning: ", fg="yellow") + f"Learn PR failed for {info.branch}: {exc}"
+   179→            )
+
+... [15 lines omitted] ...
+  </tool_result>
+  <assistant>I need to update `reconcile_pipeline.py` too. Let me check the full scope of `plan_id` in that file and update the kwarg:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="962" cache_read_input_tokens="94096" cache_creation="{'ephemeral_5m_input_tokens': 962, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01S9XMwQVTG4Td6eYpjjbxLo">
+    <param name="pattern">plan_id</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli/commands/reconcile_pipeline.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="962" cache_read_input_tokens="94096" cache_creation="{'ephemeral_5m_input_tokens': 962, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01S9XMwQVTG4Td6eYpjjbxLo">
+42:    plan_id: str | None
+107:        plan_id = ctx.plan_backend.resolve_plan_id_for_branch(main_repo_root, info.branch)
+117:                plan_id=plan_id,
+166:    if not skip_learn and info.plan_id is not None:
+170:                plan_id=info.plan_id,
+  </tool_result>
+  <assistant>There's a `plan_id` field in `reconcile_pipeline.py` too. The plan mentions this file. Let me read the full class:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="254" cache_read_input_tokens="95058" cache_creation="{'ephemeral_5m_input_tokens': 254, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01YFS9KKdPq2apAaX5EXMvPm">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/reconcile_pipeline.py</param>
+    <param name="offset">30</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="254" cache_read_input_tokens="95058" cache_creation="{'ephemeral_5m_input_tokens': 254, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01YFS9KKdPq2apAaX5EXMvPm">
+    30→
+    31→logger = logging.getLogger(__name__)
+    32→
+    33→
+    34→@dataclass(frozen=True)
+    35→class ReconcileBranchInfo:
+    36→    """Information about a branch whose remote tracking ref is gone and PR is merged."""
+    37→
+    38→    branch: str
+    39→    pr_number: int
+    40→    pr_title: str | None
+    41→    worktree_path: Path | None
+    42→    plan_id: str | None
+    43→    objective_number: int | None
+    44→
+    45→
+    46→@dataclass(frozen=True)
+    47→class ReconcileResult:
+    48→    """Result of processing a single merged branch."""
+    49→
+    50→    branch: str
+    51→    learn_created: bool
+    52→    objective_updated: bool
+    53→    cleaned_up: bool
+    54→    error: str | None  # None = success
+    55→
+    56→
+    57→def detect_merged_branches(
+    58→    ctx: ErkContext,
+    59→    *,
+
+... [75 lines omitted] ...
+  </tool_result>
+  <assistant>I need to update `reconcile_pipeline.py` as well — the plan doesn't explicitly list it but it has the same `plan_id` field in `ReconcileBranchInfo` that should be renamed. Let me update it:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1660" cache_read_input_tokens="95312" cache_creation="{'ephemeral_5m_input_tokens': 1660, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_012LBDqTB9719szC6aTQZCgX">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/reconcile_pipeline.py</param>
+    <param name="old_string">    plan_id: str | None
+    objective_number: int | None</param>
+    <param name="new_string">    pr_id: str | None
+    objective_number: int | None</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1660" cache_read_input_tokens="95312" cache_creation="{'ephemeral_5m_input_tokens': 1660, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01Bw9irxzsUogXrJmUvK3Bwn">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/reconcile_pipeline.py</param>
+    <param name="old_string">        plan_id = ctx.plan_backend.resolve_plan_id_for_branch(main_repo_root, info.branch)</param>
+    <param name="new_string">        pr_id = ctx.plan_backend.resolve_plan_id_for_branch(main_repo_root, info.branch)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1660" cache_read_input_tokens="95312" cache_creation="{'ephemeral_5m_input_tokens': 1660, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01ELx2ZFApA2xx41aYxAVLgz">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/reconcile_pipeline.py</param>
+    <param name="old_string">                plan_id=plan_id,</param>
+    <param name="new_string">                pr_id=pr_id,</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1660" cache_read_input_tokens="95312" cache_creation="{'ephemeral_5m_input_tokens': 1660, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01E2dgz224YpKD8YrsPYbuVs">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/reconcile_pipeline.py</param>
+    <param name="old_string">    if not skip_learn and info.plan_id is not None:
+        try:
+            _create_learn_pr_for_merged_branch(
+                ctx,
+                plan_id=info.plan_id,</param>
+    <param name="new_string">    if not skip_learn and info.pr_id is not None:
+        try:
+            _create_learn_pr_for_merged_branch(
+                ctx,
+                pr_id=info.pr_id,</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1660" cache_read_input_tokens="95312" cache_creation="{'ephemeral_5m_input_tokens': 1660, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_012LBDqTB9719szC6aTQZCgX">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/reconcile_pipeline.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01Bw9irxzsUogXrJmUvK3Bwn">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/reconcile_pipeline.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01ELx2ZFApA2xx41aYxAVLgz">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/reconcile_pipeline.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01E2dgz224YpKD8YrsPYbuVs">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/reconcile_pipeline.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update `implement.py` — looking at the code, I need to rename `plan_number` to `pr_number` in `target_info` usage and `plan_url` to `pr_url`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1168" cache_read_input_tokens="96972" cache_creation="{'ephemeral_5m_input_tokens': 1168, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01SKD3kwhQ2iLUBjgaZCN8Vv">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/implement.py</param>
+    <param name="old_string">    if target_info.target_type in ("plan_number", "plan_url"):
+        ctx.console.info(f"...[truncated 183 chars]...fo.target_type in ("plan_number", "plan_url"):
+        if target_info.plan_number is None:</param>
+    <param name="new_string">    if target_info.target_type in ("pr_number", "pr_url"):
+        ctx.console.info(f"Dete...[truncated 171 chars]...get_info.target_type in ("pr_number", "pr_url"):
+        if target_info.pr_number is None:</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1168" cache_read_input_tokens="96972" cache_creation="{'ephemeral_5m_input_tokens': 1168, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01WfZn5AKHxWA7h7j3pGiv9s">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/implement.py</param>
+    <param name="old_string">            plan_number=target_info.plan_number,</param>
+    <param name="new_string">            plan_number=target_info.pr_number,</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1168" cache_read_input_tokens="96972" cache_creation="{'ephemeral_5m_input_tokens': 1168, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01SKD3kwhQ2iLUBjgaZCN8Vv">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/implement.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01WfZn5AKHxWA7h7j3pGiv9s">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/implement.py has been updated successfully.
+  </tool_result>
+  <assistant>Now check `display_utils.py` — looking at the plan, it says rename `plan_identifier` to `pr_identifier`. Let me make that change:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="886" cache_read_input_tokens="98140" cache_creation="{'ephemeral_5m_input_tokens': 886, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_014B3bsb5Acd1ZWWvHU2aPiv">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/core/display_utils.py</param>
+    <param name="old_string">def format_plan_display(
+    *, plan_identifier: str, state: str, title: str, labels: list...[truncated 477 chars]....style(state, fg=state_color)
+
+    # Format identifier
+    id_text = f"#{plan_identifier}"</param>
+    <param name="new_string">def format_plan_display(
+    *, pr_identifier: str, state: str, title: str, labels: list[s...[truncated 469 chars]...ck.style(state, fg=state_color)
+
+    # Format identifier
+    id_text = f"#{pr_identifier}"</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="886" cache_read_input_tokens="98140" cache_creation="{'ephemeral_5m_input_tokens': 886, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_014B3bsb5Acd1ZWWvHU2aPiv">
+The file /home/runner/work/erk/erk/src/erk/core/display_utils.py has been updated successfully.
+  </tool_result>
+  <assistant>Now find all callers of `format_plan_display` to update the kwarg:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="612" cache_read_input_tokens="99026" cache_creation="{'ephemeral_5m_input_tokens': 612, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_016J23AAAhscRGMiPFuYy6iw">
+    <param name="pattern">format_plan_display</param>
+    <param name="path">/home/runner/work/erk/erk/src</param>
+    <param name="output_mode">content</param>
+    <param name="-C">3</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="612" cache_read_input_tokens="99026" cache_creation="{'ephemeral_5m_input_tokens': 612, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_016J23AAAhscRGMiPFuYy6iw">
+/home/runner/work/erk/erk/src/erk/core/display_utils.py-414-    return line
+/home/runner/work/erk/erk/src/erk/core/display_utils.py-415-
+/home/runner/work/erk/erk/src/erk/core/display_utils.py-416-
+src/erk/core/display_utils.py:417:def format_plan_display(
+src/erk/core/display_utils.py-418-    *, pr_identifier: str, state: str, title: str, labels: list[str], url: str | None = None
+src/erk/core/display_utils.py-419-) -&gt; str:
+/home/runner/work/erk/erk/src/erk/core/display_utils.py-420-    """Format a plan for display in lists.
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01LzoEnjuT13NWv6tJ2xHizG">
+    <param name="pattern">plan_identifier=</param>
+    <param name="path">/home/runner/work/erk/erk/src</param>
+    <param name="output_mode">content</param>
+    <param name="-C">2</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="616" cache_read_input_tokens="99638" cache_creation="{'ephemeral_5m_input_tokens': 616, 'ephemeral_1h_input_tokens': 0}" output_tokens="26" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01LzoEnjuT13NWv6tJ2xHizG">
+No matches found
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01Ei8SaKf91dSeAt9R79TmaX">
+    <param name="pattern">format_plan_display\("</param>
+    <param name="path">/home/runner/work/erk/erk/src</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="137" cache_read_input_tokens="100254" cache_creation="{'ephemeral_5m_input_tokens': 137, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Ei8SaKf91dSeAt9R79TmaX">
+No matches found
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01EAM6r9HNRFooGnEaEY6Wat">
+    <param name="pattern">format_plan_display</param>
+    <param name="path">/home/runner/work/erk/erk/src</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="122" cache_read_input_tokens="100391" cache_creation="{'ephemeral_5m_input_tokens': 122, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01EAM6r9HNRFooGnEaEY6Wat">
+Found 1 file
+src/erk/core/display_utils.py
+  </tool_result>
+  <assistant>Only defined in `display_utils.py`, no callers in `src/`. Let me check tests too:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="384" cache_read_input_tokens="100513" cache_creation="{'ephemeral_5m_input_tokens': 384, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01J9XhzWEenJ1oo6Ne2i9NMS">
+    <param name="pattern">format_plan_display</param>
+    <param name="path">/home/runner/work/erk/erk/tests</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="384" cache_read_input_tokens="100513" cache_creation="{'ephemeral_5m_input_tokens': 384, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01J9XhzWEenJ1oo6Ne2i9NMS">
+No files found
+  </tool_result>
+  <assistant>Good, no callers outside the definition. Now `objective_helpers.py` — looking at the plan, it says rename `plan_id` local variable. I already read the file and noticed `plan_id = ctx.plan_backend.resolve_plan_id_for_branch(repo_root, branch)` which I need to rename:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="149" cache_read_input_tokens="100897" cache_creation="{'ephemeral_5m_input_tokens': 149, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01SLqsaQAwTc7yy4HSGz6pZR">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/objective_helpers.py</param>
+    <param name="old_string">    plan_id = ctx.plan_backend.resolve_plan_id_for_branch(repo_root, branch)
+    if plan_i...[truncated 10 chars]...
+
+    plan_number = int(plan_id)
+
+    result = ctx.plan_store.get_plan(repo_root, plan_id)</param>
+    <param name="new_string">    pr_id = ctx.plan_backend.resolve_plan_id_for_branch(repo_root, branch)
+    if pr_id is...[truncated 2 chars]...None
+
+    plan_number = int(pr_id)
+
+    result = ctx.plan_store.get_plan(repo_root, pr_id)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="149" cache_read_input_tokens="100897" cache_creation="{'ephemeral_5m_input_tokens': 149, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01KN4kWsAAPUpabtryveRRqg">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/objective_helpers.py</param>
+    <param name="old_string">    ctx.plan_store.close_plan(repo_root, plan_id)</param>
+    <param name="new_string">    ctx.plan_store.close_plan(repo_root, pr_id)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="149" cache_read_input_tokens="100897" cache_creation="{'ephemeral_5m_input_tokens': 149, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01SLqsaQAwTc7yy4HSGz6pZR">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/objective_helpers.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01KN4kWsAAPUpabtryveRRqg">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/objective_helpers.py has been updated successfully.
+  </tool_result>
+  <assistant>Now `metadata_helpers.py` — looking at the plan, it says rename `plan_id` local variable in `maybe_update_plan_dispatch_metadata`. But looking at the code, `plan_id` is returned by `ctx.plan_backend.resolve_plan_id_for_branch()`. The plan says to rename this local to `pr_id`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="842" cache_read_input_tokens="101046" cache_creation="{'ephemeral_5m_input_tokens': 842, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_011noUszKXgMhThb3Hio4c6F">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/metadata_helpers.py</param>
+    <param name="old_string">    plan_id = ctx.plan_backend.resolve_plan_id_for_branch(repo.root, branch_name)
+    if p...[truncated 463 chars]...click.style("\u2713", fg="green") + f" Updated dispatch metadata on plan #{plan_id}"
+    )</param>
+    <param name="new_string">    pr_id = ctx.plan_backend.resolve_plan_id_for_branch(repo.root, branch_name)
+    if pr_...[truncated 453 chars]...  click.style("\u2713", fg="green") + f" Updated dispatch metadata on plan #{pr_id}"
+    )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="842" cache_read_input_tokens="101046" cache_creation="{'ephemeral_5m_input_tokens': 842, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_011noUszKXgMhThb3Hio4c6F">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/pr/metadata_helpers.py has been updated successfully.
+  </tool_result>
+  <assistant>Also rename in `write_dispatch_metadata`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="694" cache_read_input_tokens="101888" cache_creation="{'ephemeral_5m_input_tokens': 694, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01UsLvbdSHbvVct6J32XatjX">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/metadata_helpers.py</param>
+    <param name="old_string">    # LBYL: Check plan exists before updating metadata
+    plan_id = str(plan_number)
+    ...[truncated 179 chars]...(repo_root, plan_id)
+    plan_backend.update_metadata(
+        repo_root,
+        plan_id,</param>
+    <param name="new_string">    # LBYL: Check plan exists before updating metadata
+    pr_id = str(plan_number)
+    pl...[truncated 171 chars]...ader(repo_root, pr_id)
+    plan_backend.update_metadata(
+        repo_root,
+        pr_id,</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="694" cache_read_input_tokens="101888" cache_creation="{'ephemeral_5m_input_tokens': 694, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01UsLvbdSHbvVct6J32XatjX">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/pr/metadata_helpers.py has been updated successfully.
+  </tool_result>
+  <assistant>Now `wt/create_cmd.py` — the plan says rename `plan_id=str(setup.plan_number)` kwarg. Let me check if there's a `plan_id` in the `save_plan_ref` call:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="661" cache_read_input_tokens="102582" cache_creation="{'ephemeral_5m_input_tokens': 661, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_018Zz6u1u2CpM3TQFnE3orKd">
+    <param name="pattern">plan_id</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli/commands/wt/create_cmd.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="661" cache_read_input_tokens="102582" cache_creation="{'ephemeral_5m_input_tokens': 661, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_018Zz6u1u2CpM3TQFnE3orKd">
+930:            plan_id=str(setup.plan_number),
+  </tool_result>
+  <assistant>This is a kwarg to `save_plan_ref`. The plan says to keep `save_plan_ref`'s parameter name as `plan_id` because it's a shared library function — but the plan doesn't mention renaming it. Actually, looking at the plan more carefully, the plan says `wt/create_cmd.py` is in Phase 2 for renaming `plan_id=str(...)` kwarg. But `save_plan_ref` is in `erk_shared` and the plan says those are out of scope. So this `plan_id=` kwarg should stay as-is (it matches the parameter name in `save_plan_ref`). Let me skip this one.
+
+Now let me check if I missed any remaining `plan_id` in `land_pipeline.py` — I should also check the `create_learn_pr_with_sessions` call in `land_pipeline.py`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="203" cache_read_input_tokens="103243" cache_creation="{'ephemeral_5m_input_tokens': 203, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_015kdb54mT51TMKgFyYpXPAK">
+    <param name="pattern">plan_id</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli/commands/land_pipeline.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="203" cache_read_input_tokens="103243" cache_creation="{'ephemeral_5m_input_tokens': 203, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_015kdb54mT51TMKgFyYpXPAK">
+346:    pr_id = ctx.plan_backend.resolve_plan_id_for_branch(state.main_repo_root, state.branch)
+  </tool_result>
+  <assistant>Good — only one occurrence in `land_pipeline.py` left and it's `resolve_plan_id_for_branch` which is a gateway method name (out of scope). Now let me check `plan_duplicate_checker.py`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="616" cache_read_input_tokens="103446" cache_creation="{'ephemeral_5m_input_tokens': 616, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01KvzFgzU4kDtVgWr18NRyeH">
+    <param name="pattern">plan_id</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/core/plan_duplicate_checker.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="616" cache_read_input_tokens="103446" cache_creation="{'ephemeral_5m_input_tokens': 616, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01KvzFgzU4kDtVgWr18NRyeH">
+28:{"duplicates": [{"plan_id": "ID", "explanation": "one sentence why"}]}
+169:        plan_id = entry.get("plan_id")
+170:        if not isinstance(plan_id, str):
+176:        if plan_id in plan_map:
+177:            plan = plan_map[plan_id]
+180:                    pr_id=plan_id,
+  </tool_result>
+  <assistant>Good — line 169's `plan_id` is reading from JSON output (from LLM), so the local var name stays. The field assignment on line 180 `pr_id=plan_id` is correct. The JSON key `plan_id` on line 28 stays as is since it's in the LLM prompt.
+
+Now let me check remaining `plan_id` references across the codebase for files in scope:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="275" cache_read_input_tokens="104062" cache_creation="{'ephemeral_5m_input_tokens': 275, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_014r11UVokNZguxP7m53Dc1o">
+    <param name="pattern">plan_id</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli/commands/land_learn.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="275" cache_read_input_tokens="104062" cache_creation="{'ephemeral_5m_input_tokens': 275, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_014r11UVokNZguxP7m53Dc1o">
+No matches found
+  </tool_result>
+  <assistant>All clear in `land_learn.py`. Phase 2 source files are complete. Let me mark it done and move to tests:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="474" cache_read_input_tokens="104337" cache_creation="{'ephemeral_5m_input_tokens': 474, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01GRQp38G6KjMGsE7TRk7wq8">
+    <param name="todos">[{'content': 'Phase 1: Type definitions - land_pipeline.py, land_stack.py, implement_share...[truncated 598 chars]...ification'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="474" cache_read_input_tokens="104337" cache_creation="{'ephemeral_5m_input_tokens': 474, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01GRQp38G6KjMGsE7TRk7wq8">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Now let me find all test files that reference the renamed identifiers:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="357" cache_read_input_tokens="104811" cache_creation="{'ephemeral_5m_input_tokens': 357, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01UPHnYWcUKHKv22Uc9jk1YD">
+    <param name="pattern">\bplan_id\b</param>
+    <param name="path">/home/runner/work/erk/erk/tests</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="357" cache_read_input_tokens="104811" cache_creation="{'ephemeral_5m_input_tokens': 357, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01W4oKr4LCEDkRLhcGZH2fP2">
+    <param name="pattern">plan_identifier</param>
+    <param name="path">/home/runner/work/erk/erk/tests</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="357" cache_read_input_tokens="104811" cache_creation="{'ephemeral_5m_input_tokens': 357, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01Mvcg8uazr6XKBzeqix5PKo">
+    <param name="pattern">plan_number</param>
+    <param name="path">/home/runner/work/erk/erk/tests</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="357" cache_read_input_tokens="104811" cache_creation="{'ephemeral_5m_input_tokens': 357, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_019W19L6E8xgL2RxQcPnmwSc">
+    <param name="pattern">plan_url</param>
+    <param name="path">/home/runner/work/erk/erk/tests</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="357" cache_read_input_tokens="104811" cache_creation="{'ephemeral_5m_input_tokens': 357, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01W4oKr4LCEDkRLhcGZH2fP2">
+Found 5 files
+tests/unit/plan_store/test_plan_backend_interface.py
+tests/test_utils/plan_helpers.py
+tests/commands/pr/test_log.py
+tests/commands/dispatch/conftest.py
+tests/commands/dash/conftest.py
+  </tool_result>
+  <tool_result tool="toolu_019W19L6E8xgL2RxQcPnmwSc">
+Found 2 files
+tests/fakes/gateway/shell.py
+tests/commands/implement/test_target_detection.py
+  </tool_result>
+  <tool_result tool="toolu_01UPHnYWcUKHKv22Uc9jk1YD">
+Found 58 files
+tests/unit/sessions/test_manifest.py
+tests/unit/status/test_impl_collector.py
+tests/unit/plan_store/test_plan_backend_interface.py
+tests/unit/plan_store/test_planned_pr_backend.py
+tests/unit/commands/wt/test_list_helpers.py
+tests/unit/cli/test_pr_json.py
+tests/unit/cli/commands/test_admin_test_workflow.py
+tests/unit/cli/commands/pr/submit_pipeline/test_capture_existing_pr_body.py
+tests/unit/cli/commands/pr/submit_pipeline/test_cleanup_impl_for_submit.py
+tests/unit/cli/commands/pr/submit_pipeline/test_commit_wip.py
+tests/unit/cli/commands/pr/submit_pipeline/test_core_submit_flow.py
+tests/unit/cli/commands/pr/submit_pipeline/test_enhance_with_graphite.py
+tests/unit/cli/commands/pr/submit_pipeline/test_extract_diff_and_fetch_plan_context.py
+tests/unit/cli/commands/pr/submit_pipeline/test_extract_diff.py
+tests/unit/cli/commands/pr/submit_pipeline/test_fetch_plan_context.py
+tests/unit/cli/commands/pr/submit_pipeline/test_finalize_pr.py
+tests/unit/cli/commands/pr/submit_pipeline/test_generate_description.py
+tests/unit/cli/commands/pr/submit_pipeline/test_graphite_first_flow.py
+tests/unit/cli/commands/pr/submit_pipeline/test_label_code_pr.py
+tests/unit/cli/commands/pr/submit_pipeline/test_link_pr_to_objective_nodes.py
+tests/unit/cli/commands/pr/submit_pipeline/test_prepare_state.py
+tests/unit/cli/commands/pr/submit_pipeline/test_run_pipeline.py
+tests/unit/cli/commands/pr/test_lifecycle_update.py
+tests/unit/cli/commands/pr/test_metadata_helpers.py
+tests/unit/cli/commands/pr/test_shared.py
+tests/unit/cli/commands/land/pipeline/test_create_learn_issue.py
+tests/unit/cli/commands/land/pipeline/test_merge_pr.py
+tests/unit/cli/commands/land/pipeline/test_resolve_plan_id.py
+tests/unit/cli/commands/land/pipeline/test_run_execution_pipeline.py
+
+... [29 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01Mvcg8uazr6XKBzeqix5PKo">
+Found 29 files
+tests/unit/shared/test_next_steps.py
+tests/unit/shared/test_plan_workflow.py
+tests/unit/gateways/github/metadata_blocks/test_plan_issue_schema.py
+tests/unit/gateways/github/metadata_blocks/test_round_trip.py
+tests/unit/cli/commands/pr/test_dispatch_cmd.py
+tests/unit/cli/commands/pr/test_metadata_helpers.py
+tests/unit/cli/commands/land/test_render_land_script.py
+tests/unit/cli/commands/exec/scripts/test_validate_plan_content.py
+tests/unit/cli/commands/exec/scripts/test_objective_save_to_issue.py
+tests/unit/cli/commands/exec/scripts/test_impl_init.py
+tests/unit/cli/commands/exec/scripts/test_land_execute_objective_detection.py
+tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py
+tests/unit/cli/commands/exec/scripts/test_get_plans_for_objective.py
+tests/tui/data/test_real_provider_runs.py
+tests/tui/app/test_async_operations.py
+tests/tui/app/test_operation_tracking.py
+tests/tui/app/test_plan_body_screen.py
+tests/fakes/gateway/github_issues.py
+tests/fakes/gateway/github.py
+tests/core/test_impl_folder.py
+tests/core/test_prompt_executor.py
+tests/commands/workspace/test_delete.py
+tests/commands/run/test_shared.py
+tests/commands/pr/test_check_plan.py
+tests/commands/pr/test_close.py
+tests/commands/pr/test_log.py
+tests/commands/pr/test_prepare.py
+tests/commands/pr/test_remote_paths.py
+tests/commands/implement/test_target_detection.py
+  </tool_result>
+  <assistant>That's a lot of files. But most of these are references to `plan_id` in erk_shared types (which are out of scope) or unrelated. I need to focus on the test files that test the specific structs/functions I renamed. Let me identify the key test files:
+
+1. Tests for `LandState.plan_id` → `pr_id` (land pipeline tests)
+2. Tests for `TargetInfo.plan_number` → `pr_number` (implement target detection)
+3. Tests for `DuplicateMatch.plan_id` → `pr_id` (plan duplicate checker)
+4. Tests for `StackLandEntry.plan_id` → `pr_id`
+5. Tests for `resolve_plan_id` → `resolve_pr_id`
+6. Tests for `format_plan_display` `plan_identifier` → `pr_identifier`
+7. Tests for `ReconcileBranchInfo.plan_id` → `pr_id`
+
+Let me read these test files in parallel:</assistant>
+  <usage input_tokens="61" cache_creation_input_tokens="2143" cache_read_input_tokens="105168" cache_creation="{'ephemeral_5m_input_tokens': 2143, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01PR3uCn7Am41CbP2UuE3vif">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/implement/test_target_detection.py</param>
+  </tool_use>
+  <usage input_tokens="61" cache_creation_input_tokens="2143" cache_read_input_tokens="105168" cache_creation="{'ephemeral_5m_input_tokens': 2143, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_015fCoDcXkn8tzSXYC3chB4e">
+    <param name="file_path">/home/runner/work/erk/erk/tests/core/test_plan_duplicate_checker.py</param>
+  </tool_use>
+  <usage input_tokens="61" cache_creation_input_tokens="2143" cache_read_input_tokens="105168" cache_creation="{'ephemeral_5m_input_tokens': 2143, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01AWTYbn6c4biSamHyQDi2Rs">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/land/pipeline/test_resolve_plan_id.py</param>
+  </tool_use>
+  <usage input_tokens="61" cache_creation_input_tokens="2143" cache_read_input_tokens="105168" cache_creation="{'ephemeral_5m_input_tokens': 2143, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01WuQu8KJuW2jMp9ytj4LMLx">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/land/pipeline/test_run_execution_pipeline.py</param>
+  </tool_use>
+  <usage input_tokens="61" cache_creation_input_tokens="2143" cache_read_input_tokens="105168" cache_creation="{'ephemeral_5m_input_tokens': 2143, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_015VfdjxNcSrfmnCvwHpzfxk">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/land/pipeline/test_create_learn_issue.py</param>
+  </tool_use>
+  <usage input_tokens="61" cache_creation_input_tokens="2143" cache_read_input_tokens="105168" cache_creation="{'ephemeral_5m_input_tokens': 2143, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_012GYxSQwssNNwKYiTrnT2JQ">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/land/test_learn_skip_remote.py</param>
+  </tool_use>
+  <usage input_tokens="61" cache_creation_input_tokens="2143" cache_read_input_tokens="105168" cache_creation="{'ephemeral_5m_input_tokens': 2143, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01EVv4B3YYDNB7vATupXMeBY">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/land/test_land_learn.py</param>
+  </tool_use>
+  <usage input_tokens="61" cache_creation_input_tokens="2143" cache_read_input_tokens="105168" cache_creation="{'ephemeral_5m_input_tokens': 2143, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+</session>
