@@ -23,6 +23,7 @@ from erk_shared.gateway.branch_manager.abc import BranchManager
 from erk_shared.gateway.claude_installation.abc import ClaudeInstallation
 from erk_shared.gateway.git.abc import Git
 from erk_shared.gateway.github.abc import LocalGitHub
+from erk_shared.gateway.github.actions.abc import GitHubActions
 from erk_shared.gateway.github.issues.abc import GitHubIssues
 from erk_shared.gateway.time.abc import Time
 from erk_shared.plan_store.backend import PlanBackend
@@ -213,6 +214,27 @@ def require_github(ctx: click.Context) -> LocalGitHub:
         raise SystemExit(1)
 
     return ctx.obj.github
+
+
+def require_actions(ctx: click.Context) -> GitHubActions:
+    """Get GitHub Actions from context, exiting with error if not initialized.
+
+    Uses LBYL pattern to check context before accessing.
+
+    Args:
+        ctx: Click context (must have ErkContext in ctx.obj)
+
+    Returns:
+        GitHubActions instance from context
+
+    Raises:
+        SystemExit: If context not initialized (exits with code 1)
+    """
+    if ctx.obj is None:
+        click.echo("Error: Context not initialized", err=True)
+        raise SystemExit(1)
+
+    return ctx.obj.github.actions
 
 
 def require_cwd(ctx: click.Context) -> Path:

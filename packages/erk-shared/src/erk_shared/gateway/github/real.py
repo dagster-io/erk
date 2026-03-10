@@ -20,6 +20,7 @@ from typing import Any
 
 from erk_shared.debug import debug_log
 from erk_shared.gateway.github.abc import LocalGitHub
+from erk_shared.gateway.github.actions.abc import GitHubActions
 from erk_shared.gateway.github.graphql_queries import (
     ADD_REVIEW_THREAD_REPLY_MUTATION,
     GET_ISSUES_WITH_PR_LINKAGES_QUERY,
@@ -104,6 +105,7 @@ class RealLocalGitHub(LocalGitHub):
         repo_info: RepoInfo | None,
         *,
         issues: GitHubIssues,
+        actions: GitHubActions,
     ):
         """Initialize RealLocalGitHub.
 
@@ -111,11 +113,18 @@ class RealLocalGitHub(LocalGitHub):
             time: Time abstraction for sleep operations
             repo_info: Repository owner/name info (None if not in a GitHub repo)
             issues: GitHubIssues gateway for issue operations
+            actions: GitHubActions gateway for Actions operations
         """
         self._time = time
         self._repo_info = repo_info
         self._issues = issues
+        self._actions = actions
         self._default_branch_cache: dict[Path, str] = {}
+
+    @property
+    def actions(self) -> GitHubActions:
+        """Access to GitHub Actions operations."""
+        return self._actions
 
     @property
     def issues(self) -> GitHubIssues:

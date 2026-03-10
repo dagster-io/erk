@@ -53,6 +53,7 @@ from erk_shared.gateway.git.abc import Git
 from erk_shared.gateway.git.dry_run import DryRunGit
 from erk_shared.gateway.git.real import RealGit
 from erk_shared.gateway.github.abc import LocalGitHub
+from erk_shared.gateway.github.actions.real import RealGitHubActions
 from erk_shared.gateway.github.dry_run import DryRunLocalGitHub
 from erk_shared.gateway.github.issues.abc import GitHubIssues
 from erk_shared.gateway.github.issues.real import RealGitHubIssues
@@ -299,7 +300,8 @@ def create_context(*, dry_run: bool, script: bool = False, debug: bool = False) 
     # Create issues first, then compose into github
     # Use plans_repo for cross-repo plan management if configured
     issues: GitHubIssues = RealGitHubIssues(target_repo=local_config.github_repo, time=time)
-    github: LocalGitHub = RealLocalGitHub(time, repo_info, issues=issues)
+    actions = RealGitHubActions(target_repo=local_config.github_repo)
+    github: LocalGitHub = RealLocalGitHub(time, repo_info, issues=issues, actions=actions)
 
     plan_store: PlanBackend = PlannedPRBackend(github, issues, time=RealTime())
     plan_list_service: PlanListService = PlannedPRPlanListService(github, time=time)

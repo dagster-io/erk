@@ -165,6 +165,7 @@ def real_github_for_test(
     Returns:
         RealLocalGitHub configured with FakeGitHubIssues
     """
+    from tests.fakes.gateway.github_actions import FakeGitHubActions
     from tests.fakes.gateway.github_issues import FakeGitHubIssues
     from tests.fakes.gateway.time import FakeTime
 
@@ -172,4 +173,5 @@ def real_github_for_test(
         time=time if time is not None else FakeTime(),
         repo_info=repo_info,
         issues=FakeGitHubIssues(),
+        actions=FakeGitHubActions(),
     )

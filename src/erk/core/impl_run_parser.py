@@ -312,7 +312,8 @@ def format_summary(summary: ImplRunSummary) -> str:
 
 def _safe_json_loads(line: str) -> dict | None:
     """Parse a JSON line, returning None on failure."""
-    if not line.strip():
+    stripped = line.strip()
+    if not stripped:
         return None
     try:
         parsed = json.loads(line)

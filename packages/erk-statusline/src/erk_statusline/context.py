@@ -14,6 +14,7 @@ from erk_shared.gateway.erk_installation.real import RealErkInstallation
 from erk_shared.gateway.git.abc import Git
 from erk_shared.gateway.git.real import RealGit
 from erk_shared.gateway.github.abc import LocalGitHub
+from erk_shared.gateway.github.actions.real import RealGitHubActions
 from erk_shared.gateway.github.issues.real import RealGitHubIssues
 from erk_shared.gateway.github.parsing import parse_git_remote_url
 from erk_shared.gateway.github.real import RealLocalGitHub
@@ -102,7 +103,8 @@ def create_context(cwd: str) -> StatuslineContext:
     # Create issues first, then compose into github
     time = RealTime()
     issues = RealGitHubIssues(target_repo=None, time=time)
-    github = RealLocalGitHub(time, repo_info, issues=issues)
+    actions = RealGitHubActions(target_repo=None)
+    github = RealLocalGitHub(time, repo_info, issues=issues, actions=actions)
     graphite = resolve_graphite(RealErkInstallation())
     graphite_branch_ops = (
         RealGraphiteBranchOps() if not isinstance(graphite, GraphiteDisabled) else None
