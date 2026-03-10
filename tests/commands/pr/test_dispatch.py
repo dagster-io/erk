@@ -1,11 +1,15 @@
 """Tests for erk pr dispatch command."""
 
+import json
+from datetime import UTC, datetime
+
 from click.testing import CliRunner
 
 from erk.cli.cli import cli
 from erk_shared.gateway.git.abc import WorktreeInfo
+from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.metadata.core import MetadataBlock, render_metadata_block
-from erk_shared.gateway.github.types import PRDetails
+from erk_shared.gateway.github.types import PRDetails, RepoInfo
 from erk_shared.gateway.graphite.types import BranchMetadata
 from erk_shared.impl_folder import build_plan_ref_json
 from erk_shared.plan_store.planned_pr import PlannedPRBackend
@@ -14,7 +18,9 @@ from tests.fakes.gateway.git import FakeGit
 from tests.fakes.gateway.github import FakeLocalGitHub
 from tests.fakes.gateway.github_issues import FakeGitHubIssues
 from tests.fakes.gateway.graphite import FakeGraphite
+from tests.fakes.gateway.remote_github import FakeRemoteGitHub
 from tests.fakes.gateway.time import FakeTime
+from tests.fakes.tests.shared_context import context_for_test
 from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_isolated_fs_env
 
@@ -634,3 +640,73 @@ def test_dispatch_rejects_dirty_checked_out_worktree() -> None:
         assert len(fake_gh.triggered_workflows) == 0
 
         assert "Traceback" not in result.output
+
+
+def test_json_pr_dispatch_returns_structured_json() -> None:
+    """Test erk json pr dispatch returns structured JSON via stdin/stdout."""
+    plan_branch = "plnd/json-dispatch-test"
+    plan_header = render_metadata_block(
+        MetadataBlock(
+            key="plan-header",
+            data={
+                "schema_version": "2",
+                "created_at": "2024-01-01T00:00:00+00:00",
+                "created_by": "testuser",
+                "branch_name": plan_branch,
+            },
+        )
+    )
+    plan_body = build_plan_stage_body(
+        plan_header,
+        "# Plan: JSON Dispatch Test\n\n- Step 1: Do something",
+        summary=None,
+    )
+
+    issue = IssueInfo(
+        number=42,
+        title="[erk-pr] JSON Dispatch Test",
+        body=plan_body,
+        state="OPEN",
+        url="https://github.com/test-owner/test-repo/pull/42",
+        labels=["erk-pr"],
+        assignees=[],
+        created_at=datetime(2024, 1, 1, tzinfo=UTC),
+        updated_at=datetime(2024, 1, 1, tzinfo=UTC),
+        author="testuser",
+    )
+
+    remote = FakeRemoteGitHub(
+        authenticated_user="testuser",
+        default_branch_name="main",
+        default_branch_sha="abc123",
+        next_pr_number=100,
+        dispatch_run_id="run-12345",
+        issues={42: issue},
+        issue_comments=None,
+        pr_references=None,
+    )
+
+    ctx = context_for_test(
+        remote_github=remote,
+        repo_info=RepoInfo(owner="test-owner", name="test-repo"),
+    )
+
+    runner = CliRunner()
+    input_json = json.dumps({"pr_number": 42, "base_branch": None, "ref": None})
+    result = runner.invoke(cli, ["json", "pr", "dispatch"], obj=ctx, input=input_json)
+
+    assert result.exit_code == 0, (
+        f"Expected exit code 0, got {result.exit_code}\nOutput: {result.output}"
+    )
+    output = json.loads(result.output)
+    assert output["success"] is True
+    assert output["pr_number"] == 42
+    assert output["plan_title"] == "[erk-pr] JSON Dispatch Test"
+    assert output["workflow_run_id"] == "run-12345"
+    assert "actions/runs/run-12345" in output["workflow_url"]
+
+    # Verify workflow was dispatched via remote
+    assert len(remote.dispatched_workflows) == 1
+    wf = remote.dispatched_workflows[0]
+    assert wf.inputs["plan_backend"] == "planned_pr"
+    assert wf.inputs["plan_id"] == "42"

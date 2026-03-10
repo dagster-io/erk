@@ -2,6 +2,7 @@
 
 import click
 
+from erk.cli.commands.pr.dispatch.json_cli import json_pr_dispatch
 from erk.cli.commands.pr.list.json_cli import json_pr_list
 from erk.cli.commands.pr.view.json_cli import json_pr_view
 
@@ -12,5 +13,6 @@ def json_pr_group() -> None:
     pass
 
 
+json_pr_group.add_command(json_pr_dispatch, name="dispatch")
 json_pr_group.add_command(json_pr_list, name="list")
 json_pr_group.add_command(json_pr_view, name="view")
