@@ -1,7 +1,7 @@
 ---
 title: Plan ID Semantics
 read_when:
-  - "calling github.get_pr() or github.get_issue() with a plan_id"
+  - "calling github.get_pr() or github.get_issue() with a pr_id"
   - "writing code that handles plan IDs"
   - "debugging 404 errors when fetching plan metadata"
 tripwires:
@@ -11,7 +11,7 @@ tripwires:
 
 # Plan ID Semantics
 
-The meaning of `plan_id` depends on which backend created the plan.
+The meaning of `pr_id` depends on which backend created the plan.
 
 ## Backend → pr_id Mapping
 
