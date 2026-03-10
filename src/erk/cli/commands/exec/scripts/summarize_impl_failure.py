@@ -59,10 +59,7 @@ def _extract_session_tail(session_file: Path, *, max_entries: int) -> SessionTai
     if not lines:
         return None
 
-    entries: list[dict] = []
-    for line in lines:
-        entry = json.loads(line)
-        entries.append(entry)
+    entries: list[dict] = [json.loads(line) for line in lines]
 
     total_events = len(entries)
     tail_entries = entries[-max_entries:]
@@ -178,7 +175,7 @@ def _post_failure_comment(*, pr_number: int, comment_body: str, cwd: Path) -> No
     help="Path to session JSONL file",
 )
 @click.option("--pr-number", required=True, type=int, help="PR number")
-@click.option("--exit-code", type=int, default=None, help="Exit code")
+@click.option("--exit-code", type=int, help="Exit code")
 @click.pass_context
 def summarize_impl_failure(
     ctx: click.Context,
