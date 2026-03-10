@@ -1024,8 +1024,8 @@ def test_config_set_local_post_create_commands() -> None:
         assert "commands" in content
 
 
-def test_config_set_local_plans_repo() -> None:
-    """Test setting plans.repo with --local flag."""
+def test_config_set_local_github_repo() -> None:
+    """Test setting github.repo with --local flag."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         repo_dir = env.setup_repo_structure()
@@ -1047,16 +1047,16 @@ def test_config_set_local_plans_repo() -> None:
         )
 
         result = runner.invoke(
-            cli, ["config", "set", "--local", "plans.repo", "myorg/plans"], obj=test_ctx
+            cli, ["config", "set", "--local", "github.repo", "myorg/plans"], obj=test_ctx
         )
 
         assert result.exit_code == 0, result.output
-        assert "Set plans.repo=myorg/plans (local)" in result.output
+        assert "Set github.repo=myorg/plans (local)" in result.output
 
         # Verify config.local.toml contains the setting
         local_config_path = env.cwd / ".erk" / "config.local.toml"
         content = local_config_path.read_text(encoding="utf-8")
-        assert "[plans]" in content
+        assert "[github]" in content
         assert 'repo = "myorg/plans"' in content
 
 

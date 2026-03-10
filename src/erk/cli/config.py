@@ -57,11 +57,14 @@ def _parse_config_file(cfg_path: Path) -> LoadedConfig:
     if shell is not None:
         shell = str(shell)
 
-    # Parse [plans] section
-    plans = data.get("plans", {})
-    plans_repo = plans.get("repo")
-    if plans_repo is not None:
-        plans_repo = str(plans_repo)
+    # Parse [github] section (with [plans] fallback for backwards compat)
+    github_section = data.get("github", {})
+    github_repo = github_section.get("repo")
+    if github_repo is None:
+        plans_section = data.get("plans", {})
+        github_repo = plans_section.get("repo")
+    if github_repo is not None:
+        github_repo = str(github_repo)
     # Parse [pool] section
     pool = data.get("pool", {})
     pool_size = pool.get("max_slots")
@@ -105,7 +108,7 @@ def _parse_config_file(cfg_path: Path) -> LoadedConfig:
         env=env,
         post_create_commands=commands,
         post_create_shell=shell,
-        github_repo=plans_repo,
+        github_repo=github_repo,
         pool_size=pool_size,
         pool_checkout_commands=pool_checkout_commands,
         pool_checkout_shell=pool_checkout_shell,
@@ -328,7 +331,7 @@ def merge_configs_with_local(
     - env: Local values override base values (dict merge)
     - post_create_commands: Base commands run first, then local (list concat)
     - post_create_shell: Local shell overrides base if set
-    - plans_repo: Local overrides base if set
+    - github_repo: Local overrides base if set
     - pool_size: Local overrides base if set
     - pool_checkout_commands: Base first, then local (list concat)
     - pool_checkout_shell: Local overrides base if set

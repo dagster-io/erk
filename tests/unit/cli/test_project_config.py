@@ -260,7 +260,7 @@ class TestLoadConfig:
         assert result.post_create_shell == "bash"
 
     def test_loads_plans_repo(self, tmp_path: Path) -> None:
-        """Loads plans.repo from config."""
+        """Loads plans.repo from config (backwards compat)."""
         repo_root = tmp_path / "repo"
         erk_dir = repo_root / ".erk"
         erk_dir.mkdir(parents=True)
@@ -273,8 +273,36 @@ class TestLoadConfig:
 
         assert result.github_repo == "owner/plans-repo"
 
+    def test_loads_github_repo(self, tmp_path: Path) -> None:
+        """Loads github.repo from config."""
+        repo_root = tmp_path / "repo"
+        erk_dir = repo_root / ".erk"
+        erk_dir.mkdir(parents=True)
+        (erk_dir / "config.toml").write_text(
+            '[github]\nrepo = "owner/github-repo"\n',
+            encoding="utf-8",
+        )
+
+        result = load_config(repo_root)
+
+        assert result.github_repo == "owner/github-repo"
+
+    def test_github_section_takes_precedence_over_plans(self, tmp_path: Path) -> None:
+        """When both [github] and [plans] sections exist, [github] wins."""
+        repo_root = tmp_path / "repo"
+        erk_dir = repo_root / ".erk"
+        erk_dir.mkdir(parents=True)
+        (erk_dir / "config.toml").write_text(
+            '[github]\nrepo = "owner/github-repo"\n\n[plans]\nrepo = "owner/plans-repo"\n',
+            encoding="utf-8",
+        )
+
+        result = load_config(repo_root)
+
+        assert result.github_repo == "owner/github-repo"
+
     def test_plans_repo_defaults_to_none(self, tmp_path: Path) -> None:
-        """plans_repo defaults to None when [plans] section absent."""
+        """github_repo defaults to None when neither section present."""
         repo_root = tmp_path / "repo"
         erk_dir = repo_root / ".erk"
         erk_dir.mkdir(parents=True)
@@ -288,7 +316,7 @@ class TestLoadConfig:
         assert result.github_repo is None
 
     def test_loads_full_config_with_plans_repo(self, tmp_path: Path) -> None:
-        """Loads full config including plans.repo."""
+        """Loads full config including plans.repo (backwards compat)."""
         repo_root = tmp_path / "repo"
         erk_dir = repo_root / ".erk"
         erk_dir.mkdir(parents=True)
@@ -313,6 +341,33 @@ repo = "owner/plans-repo"
         assert result.post_create_shell == "bash"
         assert result.post_create_commands == ["cmd1"]
         assert result.github_repo == "owner/plans-repo"
+
+    def test_loads_full_config_with_github_repo(self, tmp_path: Path) -> None:
+        """Loads full config including github.repo."""
+        repo_root = tmp_path / "repo"
+        erk_dir = repo_root / ".erk"
+        erk_dir.mkdir(parents=True)
+        (erk_dir / "config.toml").write_text(
+            """
+[env]
+FOO = "bar"
+
+[post_create]
+shell = "bash"
+commands = ["cmd1"]
+
+[github]
+repo = "owner/github-repo"
+""",
+            encoding="utf-8",
+        )
+
+        result = load_config(repo_root)
+
+        assert result.env == {"FOO": "bar"}
+        assert result.post_create_shell == "bash"
+        assert result.post_create_commands == ["cmd1"]
+        assert result.github_repo == "owner/github-repo"
 
     def test_loads_pool_max_slots(self, tmp_path: Path) -> None:
         """Loads pool.max_slots from config."""
