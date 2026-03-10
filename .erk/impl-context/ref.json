@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Decouple JSON Input and Output in agentclick"
+}
