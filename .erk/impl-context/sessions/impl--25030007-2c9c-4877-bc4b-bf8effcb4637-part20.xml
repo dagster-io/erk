@@ -1,0 +1,525 @@
+<session>
+  <meta source="agent-a4ae58b" />
+  <meta branch="plnd/O9109-rename-click-args-pr-03-10-0822" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>Run the following command and report ALL failures:
+
+```
+cd /home/runner/work/erk/erk &amp;&amp; uv run pytest tests/unit/ -x -q --tb=short 2&gt;&amp;1 | tail -50
+```
+
+If the first test passes, then also run:
+```
+cd /home/runner/work/erk/erk &amp;&amp; uv run pytest tests/commands/ tests/core/ tests/packages/ tests/tui/ -x -q --tb=short 2&gt;&amp;1 | tail -50
+```
+
+Report ALL output, especially failures. Do NOT modify any files.</user>
+  <assistant>I'll run these pytest commands and report the results.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="7586" cache_read_input_tokens="4863" cache_creation="{'ephemeral_5m_input_tokens': 7586, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01M9S7EsgwQouuq4HfeS8BpD">
+    <param name="command">uv run pytest tests/unit/ -x -q --tb=short 2&gt;&amp;1 | tail -50</param>
+    <param name="description">Run unit tests with short traceback</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="7586" cache_read_input_tokens="4863" cache_creation="{'ephemeral_5m_input_tokens': 7586, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01M9S7EsgwQouuq4HfeS8BpD">
+........................................................................ [  1%]
+........................................................................ [  3%]
+........................................................................ [  5%]
+........................................................................ [  7%]
+........................................................................ [  8%]
+........................................................................ [ 10%]
+........................................................................ [ 12%]
+...............F
+=================================== FAILURES ===================================
+_______________________________ test_cli_success _______________________________
+tests/unit/cli/commands/exec/scripts/test_handle_no_changes.py:216: in test_cli_success
+    assert result.exit_code == 0
+E   assert 1 == 0
+E    +  where 1 = &lt;Result SystemExit(1)&gt;.exit_code
+=========================== short test summary info ============================
+FAILED tests/unit/cli/commands/exec/scripts/test_handle_no_changes.py::test_cli_success - assert 1 == 0
+ +  where 1 = &lt;Result SystemExit(1)&gt;.exit_code
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+  </tool_result>
+  <assistant>A test failed on the first run. Let me get more details about this specific test failure:</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="376" cache_read_input_tokens="12449" cache_creation="{'ephemeral_5m_input_tokens': 376, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01992xvDoyfYsiWPWntNeWGf">
+    <param name="command">uv run pytest tests/unit/cli/commands/exec/scripts/test_handle_no_changes.py::test_cli_success -v --tb=long 2&gt;&amp;1 | tail -100</param>
+    <param name="description">Run failing test with verbose output and long traceback</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="376" cache_read_input_tokens="12449" cache_creation="{'ephemeral_5m_input_tokens': 376, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01992xvDoyfYsiWPWntNeWGf">
+============================= test session starts ==============================
+platform linux -- Python 3.13.12, pytest-9.0.2, pluggy-1.6.0
+rootdir: /home/runner/work/erk/erk
+configfile: pyproject.toml
+plugins: anyio-4.12.1, cov-7.0.0, xdist-3.8.0, asyncio-1.3.0
+asyncio: mode=Mode.AUTO, debug=False, asyncio_default_fixture_loop_scope=function, asyncio_default_test_loop_scope=function
+collected 1 item
+
+tests/unit/cli/commands/exec/scripts/test_handle_no_changes.py F         [100%]
+
+=================================== FAILURES ===================================
+_______________________________ test_cli_success _______________________________
+
+tmp_path = PosixPath('/tmp/pytest-of-runner/pytest-4/test_cli_success0')
+
+    def test_cli_success(tmp_path: Path) -&gt; None:
+        """Test CLI command succeeds with valid inputs."""
+        github, fake_gh_issues, backend = _create_github_with_plan_pr(456)
+    
+        ctx = ErkContext.for_test(github=github, plan_store=backend, repo_root=tmp_path, cwd=tmp_path)
+    
+        runner = CliRunner()
+        result = runner.invoke(
+            handle_no_changes_command,
+            [
+                "--pr-number",
+                "123",
+                "--behind-count",
+                "5",
+                "--base-branch",
+
+... [20 lines omitted] ...
+
+tests/unit/cli/commands/exec/scripts/test_handle_no_changes.py:216: AssertionError
+FAILED tests/unit/cli/commands/exec/scripts/test_handle_no_changes.py::test_cli_success - assert 1 == 0
+============================== 1 failed in 1.05s ===============================
+  </tool_result>
+  <assistant>Let me get the full output from the test including any exception messages:</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="779" cache_read_input_tokens="12825" cache_creation="{'ephemeral_5m_input_tokens': 779, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01WM25uTHKdtBa7NFEmwwCsv">
+    <param name="command">uv run pytest tests/unit/cli/commands/exec/scripts/test_handle_no_changes.py::test_cli_success -v --tb=short --capture=no 2&gt;&amp;1 | tail -150</param>
+    <param name="description">Run failing test without output capture to see errors</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="779" cache_read_input_tokens="12825" cache_creation="{'ephemeral_5m_input_tokens': 779, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01WM25uTHKdtBa7NFEmwwCsv">
+============================= test session starts ==============================
+platform linux -- Python 3.13.12, pytest-9.0.2, pluggy-1.6.0
+rootdir: /home/runner/work/erk/erk
+configfile: pyproject.toml
+plugins: anyio-4.12.1, cov-7.0.0, xdist-3.8.0, asyncio-1.3.0
+asyncio: mode=Mode.AUTO, debug=False, asyncio_default_fixture_loop_scope=function, asyncio_default_test_loop_scope=function
+collected 1 item
+
+tests/unit/cli/commands/exec/scripts/test_handle_no_changes.py F
+
+=================================== FAILURES ===================================
+_______________________________ test_cli_success _______________________________
+tests/unit/cli/commands/exec/scripts/test_handle_no_changes.py:216: in test_cli_success
+    assert result.exit_code == 0
+E   assert 1 == 0
+E    +  where 1 = &lt;Result SystemExit(1)&gt;.exit_code
+=========================== short test summary info ============================
+FAILED tests/unit/cli/commands/exec/scripts/test_handle_no_changes.py::test_cli_success - assert 1 == 0
+ +  where 1 = &lt;Result SystemExit(1)&gt;.exit_code
+============================== 1 failed in 1.04s ===============================
+  </tool_result>
+  <assistant>Let me check the test file to understand what's happening and get the actual exception:</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="504" cache_read_input_tokens="13604" cache_creation="{'ephemeral_5m_input_tokens': 504, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01EbbdrhY4fHJJ5jHJERDDgT">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_handle_no_changes.py</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="504" cache_read_input_tokens="13604" cache_creation="{'ephemeral_5m_input_tokens': 504, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01EbbdrhY4fHJJ5jHJERDDgT">
+     1→"""Unit tests for handle_no_changes exec CLI command.
+     2→
+     3→Tests the no-changes scenario handling for plan-implement workflow.
+     4→Uses FakeLocalGitHub for dependency injection.
+     5→"""
+     6→
+     7→import json
+     8→from pathlib import Path
+     9→
+    10→from click.testing import CliRunner
+    11→
+    12→from erk.cli.commands.exec.scripts.handle_no_changes import (
+    13→    HandleNoChangesError,
+    14→    HandleNoChangesSuccess,
+    15→    _build_issue_comment,
+    16→    _build_no_changes_title,
+    17→    _build_pr_body,
+    18→)
+    19→from erk.cli.commands.exec.scripts.handle_no_changes import (
+    20→    handle_no_changes as handle_no_changes_command,
+    21→)
+    22→from erk_shared.context.context import ErkContext
+    23→from erk_shared.gateway.github.metadata.plan_header import format_plan_header_body
+    24→from erk_shared.gateway.github.types import PRDetails
+    25→from erk_shared.plan_store.planned_pr import PlannedPRBackend
+    26→from tests.fakes.gateway.github import FakeLocalGitHub
+    27→from tests.fakes.gateway.github_issues import FakeGitHubIssues
+    28→from tests.fakes.gateway.time import FakeTime
+    29→
+    30→
+
+... [499 lines omitted] ...
+
+   516→def test_error_dataclass_frozen() -&gt; None:
+   517→    """Test that HandleNoChangesError is immutable."""
+   518→    error = HandleNoChangesError(
+   519→        success=False, error="github-api-failed", message="Failed to update PR"
+   521→    assert error.success is False
+   522→    assert error.error == "github-api-failed"
+   523→    assert error.message == "Failed to update PR"
+  </tool_result>
+  <assistant>Now let me run the test with exception output to see what the actual error is:</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="10665" cache_read_input_tokens="14108" cache_creation="{'ephemeral_5m_input_tokens': 10665, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01NbA8UXFtvchczoYMxMvep5">
+    <param name="command">uv run pytest tests/unit/cli/commands/exec/scripts/test_handle_no_changes.py::test_cli_success -v 2&gt;&amp;1</param>
+    <param name="description">Run failing test with full exception output</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="10665" cache_read_input_tokens="14108" cache_creation="{'ephemeral_5m_input_tokens': 10665, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01NbA8UXFtvchczoYMxMvep5">
+Exit code 1
+============================= test session starts ==============================
+platform linux -- Python 3.13.12, pytest-9.0.2, pluggy-1.6.0
+rootdir: /home/runner/work/erk/erk
+configfile: pyproject.toml
+plugins: anyio-4.12.1, cov-7.0.0, xdist-3.8.0, asyncio-1.3.0
+asyncio: mode=Mode.AUTO, debug=False, asyncio_default_fixture_loop_scope=function, asyncio_default_test_loop_scope=function
+collected 1 item
+
+tests/unit/cli/commands/exec/scripts/test_handle_no_changes.py F         [100%]
+
+=================================== FAILURES ===================================
+_______________________________ test_cli_success _______________________________
+
+tmp_path = PosixPath('/tmp/pytest-of-runner/pytest-6/test_cli_success0')
+
+    def test_cli_success(tmp_path: Path) -&gt; None:
+        """Test CLI command succeeds with valid inputs."""
+        github, fake_gh_issues, backend = _create_github_with_plan_pr(456)
+    
+        ctx = ErkContext.for_test(github=github, plan_store=backend, repo_root=tmp_path, cwd=tmp_path)
+    
+        runner = CliRunner()
+        result = runner.invoke(
+            handle_no_changes_command,
+            [
+                "--pr-number",
+                "123",
+                "--behind-count",
+                "5",
+
+... [21 lines omitted] ...
+
+tests/unit/cli/commands/exec/scripts/test_handle_no_changes.py:216: AssertionError
+FAILED tests/unit/cli/commands/exec/scripts/test_handle_no_changes.py::test_cli_success - assert 1 == 0
+============================== 1 failed in 1.04s ===============================
+  </tool_result>
+  <assistant>Let me check the output from the test to see what error was thrown:</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="777" cache_read_input_tokens="24773" cache_creation="{'ephemeral_5m_input_tokens': 777, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_017MEYk8w7hCEg47UmTwJ2En">
+    <param name="command">uv run pytest tests/unit/cli/commands/exec/scripts/test_handle_no_changes.py::test_cli_success -v --tb=short -s 2&gt;&amp;1 | grep -A 50 "test_cli_success"</param>
+    <param name="description">Run test with captured output and grep for exception details</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="777" cache_read_input_tokens="24773" cache_creation="{'ephemeral_5m_input_tokens': 777, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017MEYk8w7hCEg47UmTwJ2En">
+_______________________________ test_cli_success _______________________________
+tests/unit/cli/commands/exec/scripts/test_handle_no_changes.py:216: in test_cli_success
+    assert result.exit_code == 0
+E   assert 1 == 0
+E    +  where 1 = &lt;Result SystemExit(1)&gt;.exit_code
+=========================== short test summary info ============================
+FAILED tests/unit/cli/commands/exec/scripts/test_handle_no_changes.py::test_cli_success - assert 1 == 0
+ +  where 1 = &lt;Result SystemExit(1)&gt;.exit_code
+============================== 1 failed in 1.04s ===============================
+  </tool_result>
+  <assistant>Let me print the actual exception from the CliRunner result:</assistant>
+  <usage input_tokens="4" cache_creation_input_tokens="440" cache_read_input_tokens="25550" cache_creation="{'ephemeral_5m_input_tokens': 440, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01UgJKjLNUiuqnYDHKvy4w6q">
+    <param name="command">uv run python3 &lt;&lt; 'EOF'
+import json
+from pathlib import Path
+import tempfile
+from click.te...[truncated 3448 chars]...t_exception(type(result.exception), result.exception, result.exception.__traceback__)
+EOF
+</param>
+    <param name="description">Run the test directly to see the exception</param>
+  </tool_use>
+  <usage input_tokens="4" cache_creation_input_tokens="440" cache_read_input_tokens="25550" cache_creation="{'ephemeral_5m_input_tokens': 440, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01UgJKjLNUiuqnYDHKvy4w6q">
+Exit code: 1
+Output:
+{
+  "success": false,
+  "error": "github-api-failed",
+  "message": "Failed to update lifecycle stage: PR #123 not found"
+}
+
+Exception: 1
+Traceback (most recent call last):
+  File "/home/runner/work/erk/erk/.venv/lib/python3.13/site-packages/click/testing.py", line 504, in invoke
+    return_value = cli.main(args=args or (), prog_name=prog_name, **extra)
+  File "/home/runner/work/erk/erk/.venv/lib/python3.13/site-packages/click/core.py", line 1406, in main
+    rv = self.invoke(ctx)
+  File "/home/runner/work/erk/erk/.venv/lib/python3.13/site-packages/click/core.py", line 1269, in invoke
+    return ctx.invoke(self.callback, **ctx.params)
+           ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/erk/erk/.venv/lib/python3.13/site-packages/click/core.py", line 824, in invoke
+    return callback(*args, **kwargs)
+  File "/home/runner/work/erk/erk/.venv/lib/python3.13/site-packages/click/decorators.py", line 34, in new_func
+    return f(get_current_context(), *args, **kwargs)
+  File "/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/handle_no_changes.py", line 233, in handle_no_changes
+    raise SystemExit(1) from None
+SystemExit: 1
+  </tool_result>
+  <assistant>Perfect! Now I can see the issue clearly. Let me read the handle_no_changes command file to understand the problem:</assistant>
+  <usage input_tokens="4" cache_creation_input_tokens="1692" cache_read_input_tokens="25990" cache_creation="{'ephemeral_5m_input_tokens': 1692, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_0175NaTQKNByncprNMVJWifP">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/handle_no_changes.py</param>
+  </tool_use>
+  <usage input_tokens="4" cache_creation_input_tokens="1692" cache_read_input_tokens="25990" cache_creation="{'ephemeral_5m_input_tokens': 1692, 'ephemeral_1h_input_tokens': 0}" output_tokens="112" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0175NaTQKNByncprNMVJWifP">
+     1→#!/usr/bin/env python3
+     2→"""Handle no-changes scenario in erk-impl workflow gracefully.
+     3→
+     4→When implementation produces no code changes (duplicate plan, work already merged),
+     5→this command updates the PR with diagnostic information and marks it ready for review.
+     6→
+     7→This replaces workflow failure with an informational PR that users can review and close.
+     8→
+     9→Usage:
+    10→    erk exec handle-no-changes \
+    11→        --pr-number 123 \
+    12→        --plan-id 456 \
+    13→        --behind-count 5 \
+    14→        --base-branch master \
+    15→        [--recent-commits "abc1234 Fix bug\\ndef5678 Add feature"] \
+    16→        [--run-url https://github.com/owner/repo/actions/runs/789]
+    17→
+    18→Output:
+    19→    JSON object with success status
+    20→
+    21→Exit Codes:
+    22→    0: Success (PR updated, labeled, and marked ready)
+    23→    1: Error (GitHub API failure)
+    24→"""
+    25→
+    26→import json
+    27→from dataclasses import asdict, dataclass
+    28→
+    29→import click
+    30→
+
+... [241 lines omitted] ...
+
+    44→class HandleNoChangesError:
+    45→    """Error result when handling fails."""
+    48→    error: str
+   192→    except RuntimeError as e:
+   193→        result = HandleNoChangesError(
+   195→            error="github-api-failed",
+   196→            message=f"Failed to update PR title and body: {e}",
+   210→    except RuntimeError as e:
+   211→        result = HandleNoChangesError(
+   213→            error="github-api-failed",
+   214→            message=f"Failed to add label: {e}",
+   226→    except RuntimeError as e:
+   227→        result = HandleNoChangesError(
+   229→            error="github-api-failed",
+   230→            message=f"Failed to update lifecycle stage: {e}",
+   238→    except RuntimeError as e:
+   239→        result = HandleNoChangesError(
+   241→            error="github-api-failed",
+   242→            message=f"Failed to mark PR ready: {e}",
+   251→    except RuntimeError as e:
+   252→        result = HandleNoChangesError(
+   254→            error="github-api-failed",
+   255→            message=f"Failed to add plan comment: {e}",
+  </tool_result>
+  <assistant>Now I understand the issue. The error is "PR #123 not found" when trying to update the lifecycle stage at line 221. The test is passing pr_number=123 but the FakeLocalGitHub was created with pr_details containing only plan_id=456. The command is trying to find PR #123 in the backend but it doesn't exist.
+
+Let me verify this is the actual issue by checking the PlannedPRBackend implementation:</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="4284" cache_read_input_tokens="27682" cache_creation="{'ephemeral_5m_input_tokens': 4284, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01YbRitv527M21pzoqQw33mZ">
+    <param name="command">uv run grep -r "PR .* not found" /home/runner/work/erk/erk/src --include="*.py" | head -20</param>
+    <param name="description">Search for PR not found error message</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="4284" cache_read_input_tokens="27682" cache_creation="{'ephemeral_5m_input_tokens': 4284, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01YbRitv527M21pzoqQw33mZ">
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/dispatch_cmd.py:        user_output(click.style("Error: ", fg="red") + f"PR #{pr_number} not found")
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/dispatch_cmd.py:        user_output(click.style("Error: ", fg="red") + f"PR #{pr_number}: plan content not found")
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/dispatch_cmd.py:        user_output(click.style("Error: ", fg="red") + f"PR #{pr_number}: plan content not found")
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/setup_impl_from_pr.py:            "message": f"Could not fetch plan for PR #{pr_number}: PR not found.",
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/setup_impl_from_pr.py:            "message": f"Could not fetch plan for PR #{pr_number}: PR not found.",
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/get_pr_for_plan.py:    JSON with PR details or error if not found.
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/get_pr_for_plan.py:        return _exit_with_error(error="no-pr-for-branch", message=f"PR #{pr_number} not found")
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/get_pr_review_comments.py:            exit_with_error("pr-not-found", f"PR #{pr_number} not found")
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/ci_fetch_summaries.py:        click.echo(json.dumps({"error": f"PR #{pr_number} not found"}))
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/objective_fetch_context.py:        click.echo(_error_json(f"PR #{pr_number} not found"))
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/update_objective_node.py:        return BacklinkResult.warning(message=f"PR {pr_ref} not found")
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/objective_apply_landed_update.py:        click.echo(_error_json(f"PR #{pr_number} not found"))
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/incremental_dispatch.py:        _output_error(output_format, f"PR #{pr_number} not found")
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/add_pr_labels_cmd.py:                    "error": f"PR #{pr_number} not found",
+  </tool_result>
+  <assistant>Let me check the PlannedPRBackend.update_metadata method to see where that error comes from:</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="1035" cache_read_input_tokens="31966" cache_creation="{'ephemeral_5m_input_tokens': 1035, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01UEYi6gZvuyK75fxox1mKkN">
+    <param name="command">uv run grep -r "not found" /home/runner/work/erk/erk/src/erk_shared/plan_store --include="*.py" -B 2 -A 2 | head -50</param>
+    <param name="description">Search for PR not found error in plan store</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1035" cache_read_input_tokens="31966" cache_creation="{'ephemeral_5m_input_tokens': 1035, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01UEYi6gZvuyK75fxox1mKkN">
+grep: /home/runner/work/erk/erk/src/erk_shared/plan_store: No such file or directory
+  </tool_result>
+  <assistant>Let me find the PlannedPRBackend file:</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="301" cache_read_input_tokens="33001" cache_creation="{'ephemeral_5m_input_tokens': 301, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01GN7UzUdZsHsbGGx6cB3EBE">
+    <param name="command">find /home/runner/work/erk/erk -name "*planned*" -type f | head -10</param>
+    <param name="description">Find files related to PlannedPRBackend</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="301" cache_read_input_tokens="33001" cache_creation="{'ephemeral_5m_input_tokens': 301, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01GN7UzUdZsHsbGGx6cB3EBE">
+/home/runner/work/erk/erk/tests/unit/plan_store/__pycache__/test_planned_pr_lifecycle.cpython-313-pytest-9.0.2.pyc
+/home/runner/work/erk/erk/tests/unit/plan_store/__pycache__/test_planned_pr_backend.cpython-313-pytest-9.0.2.pyc
+/home/runner/work/erk/erk/tests/unit/plan_store/test_planned_pr_lifecycle.py
+/home/runner/work/erk/erk/tests/unit/plan_store/test_planned_pr_backend.py
+/home/runner/work/erk/erk/docs/learned/planning/planned-pr-context-local-preprocessing.md
+/home/runner/work/erk/erk/docs/learned/planning/planned-pr-lifecycle.md
+/home/runner/work/erk/erk/docs/learned/planning/planned-pr-backend.md
+/home/runner/work/erk/erk/docs/learned/planning/planned-pr-learn-pipeline.md
+/home/runner/work/erk/erk/docs/learned/planning/planned-pr-branch-teleport.md
+/home/runner/work/erk/erk/.venv/lib/python3.13/site-packages/material/templates/.icons/octicons/tracked-by-closed-not-planned-16.svg
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01C5smkwEqQuJ1AxpkTAX3sT">
+    <param name="command">find /home/runner/work/erk/erk/src -name "*planned*" -type f</param>
+    <param name="description">Find PlannedPRBackend source file</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="484" cache_read_input_tokens="33302" cache_creation="{'ephemeral_5m_input_tokens': 484, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01C5smkwEqQuJ1AxpkTAX3sT">
+
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01KZRzjx7cSSWnYCERBxV8JA">
+    <param name="command">find /home/runner/work/erk/erk -path "*.venv" -prune -o -name "*.py" -type f -exec grep -l "class PlannedPRBackend" {} \;</param>
+    <param name="description">Find PlannedPRBackend class definition</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="215" cache_read_input_tokens="33786" cache_creation="{'ephemeral_5m_input_tokens': 215, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01KZRzjx7cSSWnYCERBxV8JA">
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_store/planned_pr.py
+  </tool_result>
+  <tool_use name="Read" id="toolu_01MmyHkAa9H7chZtYFBRKb9u">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_store/planned_pr.py</param>
+    <param name="limit">300</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="175" cache_read_input_tokens="34001" cache_creation="{'ephemeral_5m_input_tokens': 175, 'ephemeral_1h_input_tokens': 0}" output_tokens="18" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01MmyHkAa9H7chZtYFBRKb9u">
+     1→"""Draft PR implementation of plan storage.
+     2→
+     3→Uses GitHub draft pull requests as the backing store for plans.
+     4→PR body contains the plan-header metadata block followed by plan content.
+     5→The "erk-plan" label identifies plan PRs vs regular draft PRs.
+     6→"""
+     7→
+     8→import logging
+     9→from collections.abc import Mapping
+    10→from datetime import UTC
+    11→from pathlib import Path
+    12→
+    13→from erk_shared.gateway.github.abc import LocalGitHub
+    14→from erk_shared.gateway.github.issues.abc import GitHubIssues
+    15→from erk_shared.gateway.github.label_ops import add_labels_resilient
+    16→from erk_shared.gateway.github.metadata.core import (
+    17→    add_metadata_block,
+    18→    find_metadata_block,
+    19→    has_metadata_block,
+    20→    render_metadata_block,
+    21→    replace_metadata_block_in_body,
+    22→)
+    23→from erk_shared.gateway.github.metadata.plan_header import (
+    24→    format_plan_header_body,
+    25→)
+    26→from erk_shared.gateway.github.metadata.schemas import (
+    27→    CREATED_FROM_SESSION,
+    28→    CREATED_FROM_WORKFLOW_RUN_URL,
+    29→    LEARNED_FROM_ISSUE,
+    30→    OBJECTIVE_ISSUE,
+
+... [275 lines omitted] ...
+
+    47→    PlanHeaderNotFoundError,
+    68→        ValueError: If value cannot be converted to int
+    76→    raise ValueError(f"objective_issue must be str or int, got {type(value).__name__}")
+   241→            RuntimeError: If PR not found
+   247→            raise RuntimeError(msg)
+   284→            RuntimeError: If branch_name not in metadata or creation fails
+   288→            raise RuntimeError("branch_name is required in metadata for PlannedPRBackend")
+  </tool_result>
+  <tool_use name="Read" id="toolu_01R4CWJUZvD2zcMTGwxHvhge">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_store/planned_pr.py</param>
+    <param name="offset">400</param>
+    <param name="limit">200</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3856" cache_read_input_tokens="34176" cache_creation="{'ephemeral_5m_input_tokens': 3856, 'ephemeral_1h_input_tokens': 0}" output_tokens="18" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01R4CWJUZvD2zcMTGwxHvhge">
+   400→    ) -&gt; object | PlanNotFound:
+   401→        """Get a single metadata field from the plan-header block in the PR body.
+   402→
+   403→        Args:
+   404→            repo_root: Repository root directory
+   405→            plan_id: PR number as string
+   406→            field_name: Name of the metadata field to read
+   407→
+   408→        Returns:
+   409→            Field value (may be None if unset), or PlanNotFound if PR doesn't exist
+   410→        """
+   411→        pr_number = int(plan_id)
+   412→        result = self._github.get_pr(repo_root, pr_number)
+   413→        if isinstance(result, PRNotFound):
+   414→            return PlanNotFound(pr_id=plan_id)
+   415→
+   416→        block = find_metadata_block(result.body, BlockKeys.PLAN_HEADER)
+   417→        if block is None:
+   418→            return None
+   419→
+   420→        return block.data.get(field_name)
+   421→
+   422→    def get_all_metadata_fields(
+   423→        self,
+   424→        repo_root: Path,
+   425→        plan_id: str,
+   426→    ) -&gt; dict[str, object] | PlanNotFound:
+   427→        """Get all metadata fields from the plan-header block in the PR body.
+   428→
+   429→        Args:
+
+... [175 lines omitted] ...
+
+   465→            PlanHeaderNotFoundError: If PR body has no plan-header metadata block
+   466→            RuntimeError: If PR not found or update fails
+   472→            raise RuntimeError(msg)
+   476→            raise PlanHeaderNotFoundError("plan-header block not found in PR body")
+   516→            RuntimeError: If PR not found
+   522→            raise RuntimeError(msg)
+   553→            RuntimeError: If PR not found or update fails
+   559→            raise RuntimeError(msg)
+   582→            RuntimeError: If PR not found
+   588→            raise RuntimeError(msg)
+  </tool_result>
+  <assistant>Perfect! Now I understand the issue completely. Looking at line 468-472 of `planned_pr.py`, the `update_metadata` method tries to fetch PR #123 but it doesn't exist in the FakeLocalGitHub's pr_details dictionary. The test creates a FakeLocalGitHub with only PR #456 in its pr_details.
+
+The test failure is at line 221 in handle_no_changes.py where it calls `backend.update_metadata()`. The command expects the PR (impl PR #123) to exist in the GitHub mock, but it doesn't.
+
+## Summary
+
+**Test Failure Found:**
+
+**File:** `/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_handle_no_changes.py`
+
+**Test:** `test_cli_success` (line 190-220)
+
+**Issue:** The test invokes the `handle_no_changes` command with PR number 123, but the FakeLocalGitHub mock is initialized with only PR 456. When the command tries to update the PR's metadata at line 221 of `handle_no_changes.py`, it fails with:
+
+```
+"message": "Failed to update lifecycle stage: PR #123 not found"
+```
+
+**Root Cause:** At line 192, the test creates GitHub with `_create_github_with_plan_pr(456)` which sets up only PR #456. However, the command is invoked with `--pr-number 123` at line 200. The `PlannedPRBackend.update_metadata()` method (line 468-472 of `planned_pr.py`) tries to fetch PR #123, but it doesn't exist in the mock's `pr_details` dictionary.
+
+**The command flow:**
+1. Updates PR title/body (line 186-191) - succeeds because FakeLocalGitHub doesn't validate
+2. Adds label (line 203-209) - succeeds 
+3. Updates metadata lifecycle_stage (line 221-225) - **FAILS** because PR #123 doesn't exist</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="2697" cache_read_input_tokens="38032" cache_creation="{'ephemeral_5m_input_tokens': 2697, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>

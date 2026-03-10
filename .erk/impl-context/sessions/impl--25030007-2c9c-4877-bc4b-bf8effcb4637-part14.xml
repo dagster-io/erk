@@ -1,0 +1,661 @@
+<session>
+  <meta source="agent-a1da0d6" />
+  <meta branch="plnd/O9109-rename-click-args-pr-03-10-0822" />
+  <meta model="claude-sonnet-4-5-20250929" />
+  <tool_use name="Read" id="toolu_013DFhohLLeXG31G4FoFn5ph">
+    <param name="file_path">/home/runner/work/erk/erk/tests/core/test_impl_folder.py</param>
+    <param name="offset">490</param>
+    <param name="limit">80</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="355" cache_read_input_tokens="89960" cache_creation="{'ephemeral_5m_input_tokens': 355, 'ephemeral_1h_input_tokens': 0}" output_tokens="130" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013DFhohLLeXG31G4FoFn5ph">
+   490→def test_save_plan_ref_success(tmp_path: Path) -&gt; None:
+   491→    """Test saving plan reference to ref.json."""
+   492→    impl_dir = get_impl_dir(tmp_path, branch_name=BRANCH)
+   493→    impl_dir.mkdir(parents=True)
+   494→
+   495→    save_plan_ref(
+   496→        impl_dir,
+   497→        provider="github",
+   498→        plan_id="42",
+   499→        url="https://github.com/owner/repo/issues/42",
+   500→        labels=("erk-plan",),
+   501→        objective_id=99,
+   502→        node_ids=None,
+   503→    )
+   504→
+   505→    ref_file = impl_dir / "ref.json"
+   506→    assert ref_file.exists()
+   507→
+   508→    data = json.loads(ref_file.read_text(encoding="utf-8"))
+   509→    assert data["provider"] == "github"
+   510→    assert data["pr_id"] == "42"
+   511→    assert data["url"] == "https://github.com/owner/repo/issues/42"
+   512→    assert data["labels"] == ["erk-plan"]
+   513→    assert data["objective_id"] == 99
+   514→    assert "created_at" in data
+   515→    assert "synced_at" in data
+   516→
+   517→
+   518→def test_save_plan_ref_dir_not_exists(tmp_path: Path) -&gt; None:
+   519→    """Test save_plan_ref raises error when dir doesn't exist."""
+
+... [55 lines omitted] ...
+
+   522→    with pytest.raises(FileNotFoundError, match="Implementation directory does not exist"):
+  </tool_result>
+  <assistant>I can see that in test_impl_folder.py:
+1. The `plan_id` parameter to `save_plan_ref()` is a function parameter that should NOT be renamed
+2. Line 510 checks `data["pr_id"]` which is already correct!
+3. But line 587 has `"plan_id": "PROJ-123"` in ref.json data
+
+Let me check the context of line 587:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="1356" cache_read_input_tokens="90315" cache_creation="{'ephemeral_5m_input_tokens': 1356, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01MrgmCtAWvhAQNrYopewB42">
+    <param name="file_path">/home/runner/work/erk/erk/tests/core/test_impl_folder.py</param>
+    <param name="offset">579</param>
+    <param name="limit">40</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="1356" cache_read_input_tokens="90315" cache_creation="{'ephemeral_5m_input_tokens': 1356, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01MrgmCtAWvhAQNrYopewB42">
+   579→def test_read_plan_ref_prefers_ref_json(tmp_path: Path) -&gt; None:
+   580→    """Test read_plan_ref prefers ref.json over legacy issue.json."""
+   581→    impl_dir = get_impl_dir(tmp_path, branch_name=BRANCH)
+   582→    impl_dir.mkdir(parents=True)
+   583→
+   584→    # Write both files with different data
+   585→    ref_data = {
+   586→        "provider": "linear",
+   587→        "plan_id": "PROJ-123",
+   588→        "url": "https://linear.app/proj/PROJ-123",
+   589→        "created_at": "2025-01-15T10:00:00+00:00",
+   590→        "synced_at": "2025-01-15T10:00:00+00:00",
+   591→        "labels": [],
+   592→        "objective_id": None,
+   593→    }
+   594→    (impl_dir / "ref.json").write_text(json.dumps(ref_data), encoding="utf-8")
+   595→
+   596→    issue_data = {
+   597→        "issue_number": 42,
+   598→        "issue_url": "https://github.com/owner/repo/issues/42",
+   599→        "created_at": "2025-01-15T10:00:00+00:00",
+   600→        "synced_at": "2025-01-15T10:00:00+00:00",
+   601→    }
+   602→    (impl_dir / "issue.json").write_text(json.dumps(issue_data), encoding="utf-8")
+   603→
+   604→    ref = read_plan_ref(impl_dir)
+   605→    assert ref is not None
+   606→    assert ref.provider == "linear"
+   607→    assert ref.pr_id == "PROJ-123"
+   608→
+
+... [15 lines omitted] ...
+  </tool_result>
+  <assistant>I see - line 587 creates test data with `"plan_id"` field in ref.json, which should be `"pr_id"`:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="929" cache_read_input_tokens="91671" cache_creation="{'ephemeral_5m_input_tokens': 929, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_0119A8pMyziYRLdDTgPMmZEA">
+    <param name="file_path">/home/runner/work/erk/erk/tests/core/test_impl_folder.py</param>
+    <param name="old_string">    # Write both files with different data
+    ref_data = {
+        "provider": "linear",
+...[truncated 209 chars]...None,
+    }
+    (impl_dir / "ref.json").write_text(json.dumps(ref_data), encoding="utf-8")</param>
+    <param name="new_string">    # Write both files with different data
+    ref_data = {
+        "provider": "linear",
+...[truncated 207 chars]...None,
+    }
+    (impl_dir / "ref.json").write_text(json.dumps(ref_data), encoding="utf-8")</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="929" cache_read_input_tokens="91671" cache_creation="{'ephemeral_5m_input_tokens': 929, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0119A8pMyziYRLdDTgPMmZEA">
+The file /home/runner/work/erk/erk/tests/core/test_impl_folder.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me check the remaining files from the list. Let me check for any ref.json file references in test_remote_paths.py, test_launch_remote_paths.py, test_launch_cmd.py, test_target_detection.py:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="601" cache_read_input_tokens="92600" cache_creation="{'ephemeral_5m_input_tokens': 601, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01EBGrbp3JhrTg9GhWZUKyaV">
+    <param name="pattern">\bplan_id\b</param>
+    <param name="path">/home/runner/work/erk/erk/tests/commands/pr/test_remote_paths.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="601" cache_read_input_tokens="92600" cache_creation="{'ephemeral_5m_input_tokens': 601, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01Lr9rnCpsXSZaYUrW5a7jy1">
+    <param name="pattern">\bplan_id\b</param>
+    <param name="path">/home/runner/work/erk/erk/tests/commands/launch/test_launch_remote_paths.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="601" cache_read_input_tokens="92600" cache_creation="{'ephemeral_5m_input_tokens': 601, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_014KFCW5QAgiemSic9qoWe5k">
+    <param name="pattern">\bplan_id\b</param>
+    <param name="path">/home/runner/work/erk/erk/tests/commands/launch/test_launch_cmd.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="601" cache_read_input_tokens="92600" cache_creation="{'ephemeral_5m_input_tokens': 601, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_018a8Wc67XXRftTa174Wj2th">
+    <param name="pattern">\bplan_id\b</param>
+    <param name="path">/home/runner/work/erk/erk/tests/commands/implement/test_target_detection.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="601" cache_read_input_tokens="92600" cache_creation="{'ephemeral_5m_input_tokens': 601, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Lr9rnCpsXSZaYUrW5a7jy1">
+No matches found
+  </tool_result>
+  <tool_result tool="toolu_018a8Wc67XXRftTa174Wj2th">
+No matches found
+  </tool_result>
+  <tool_result tool="toolu_01EBGrbp3JhrTg9GhWZUKyaV">
+361:    llm_output = '{"duplicates": [{"plan_id": "100", "explanation": "Both refactor auth"}]}'
+504:    assert dispatched.inputs["plan_id"] == "42"
+  </tool_result>
+  <tool_result tool="toolu_014KFCW5QAgiemSic9qoWe5k">
+No matches found
+  </tool_result>
+  <assistant>Let me check the context for test_remote_paths.py:</assistant>
+  <usage input_tokens="28" cache_creation_input_tokens="728" cache_read_input_tokens="93201" cache_creation="{'ephemeral_5m_input_tokens': 728, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01V8tjyyg39cCBGVfzggfAuq">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_remote_paths.py</param>
+    <param name="offset">356</param>
+    <param name="limit">10</param>
+  </tool_use>
+  <usage input_tokens="28" cache_creation_input_tokens="728" cache_read_input_tokens="93201" cache_creation="{'ephemeral_5m_input_tokens': 728, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_011TPnaKqyXFtBv5fGyvbyvG">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_remote_paths.py</param>
+    <param name="offset">499</param>
+    <param name="limit">10</param>
+  </tool_use>
+  <usage input_tokens="28" cache_creation_input_tokens="728" cache_read_input_tokens="93201" cache_creation="{'ephemeral_5m_input_tokens': 728, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01V8tjyyg39cCBGVfzggfAuq">
+   356→    assert "No duplicates found" in result.output
+   357→
+   358→
+   359→def test_duplicate_check_remote_finds_duplicate() -&gt; None:
+   360→    """Test pr duplicate-check --repo detects duplicates."""
+   361→    llm_output = '{"duplicates": [{"plan_id": "100", "explanation": "Both refactor auth"}]}'
+   362→    executor = FakePromptExecutor(
+   363→        simulated_prompt_output=llm_output,
+   364→    )
+   365→    existing = _make_plan(pr_identifier="100", title="Refactor auth", body="Restructure auth flow")
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_011TPnaKqyXFtBv5fGyvbyvG">
+   499→    assert "1 plan(s) dispatched successfully" in result.output
+   500→
+   501→    # Verify workflow was dispatched
+   502→    assert len(fake_remote.dispatched_workflows) == 1
+   503→    dispatched = fake_remote.dispatched_workflows[0]
+   504→    assert dispatched.inputs["plan_id"] == "42"
+   505→    assert dispatched.inputs["plan_backend"] == "planned_pr"
+   506→    assert dispatched.inputs["branch_name"] == "plnd/remote-test"
+   507→
+   508→    # Verify impl-context files were committed to the branch
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>I see two cases:
+1. Line 361: This is LLM output from a duplicate checker, which uses `plan_id` - this is part of the LLM response format and should NOT be changed.
+2. Line 504: This is checking `dispatched.inputs["plan_id"]` - this is a workflow dispatch input parameter. According to the requirements, I should check if this is related to the DispatchResult special case. Let me check:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="895" cache_read_input_tokens="93929" cache_creation="{'ephemeral_5m_input_tokens': 895, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_012YG8ovqnETSvn6cFAP42hs">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_remote_paths.py</param>
+    <param name="offset">475</param>
+    <param name="limit">40</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="895" cache_read_input_tokens="93929" cache_creation="{'ephemeral_5m_input_tokens': 895, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012YG8ovqnETSvn6cFAP42hs">
+   475→        url=f"https://github.com/owner/repo/pull/{number}",
+   476→        labels=labels if labels is not None else ["erk-pr", "erk-plan"],
+   477→        assignees=[],
+   478→        created_at=datetime(2024, 1, 1, tzinfo=UTC),
+   479→        updated_at=datetime(2024, 1, 2, tzinfo=UTC),
+   480→        author="test-author",
+   481→    )
+   482→
+   483→
+   484→def test_dispatch_remote_dispatches_workflow() -&gt; None:
+   485→    """Test pr dispatch --repo dispatches workflow via RemoteGitHub."""
+   486→    issue = _make_plan_issue(42, title="Remote Dispatch Plan", branch_name="plnd/remote-test")
+   487→    fake_remote = _make_fake_remote(issues={42: issue})
+   488→    ctx = _build_remote_context(fake_remote)
+   489→
+   490→    runner = CliRunner()
+   491→    result = runner.invoke(
+   492→        cli,
+   493→        ["pr", "dispatch", "42", "--repo", "owner/repo"],
+   494→        obj=ctx,
+   495→    )
+   496→
+   497→    assert result.exit_code == 0, f"Unexpected failure:\n{result.output}"
+   498→    assert "Workflow dispatched" in result.output
+   499→    assert "1 plan(s) dispatched successfully" in result.output
+   500→
+   501→    # Verify workflow was dispatched
+   502→    assert len(fake_remote.dispatched_workflows) == 1
+   503→    dispatched = fake_remote.dispatched_workflows[0]
+   504→    assert dispatched.inputs["plan_id"] == "42"
+
+... [15 lines omitted] ...
+  </tool_result>
+  <assistant>This is checking workflow dispatch inputs, not DispatchResult. The workflow dispatch input field `plan_id` should be renamed to `pr_id` based on the renaming rules. Let me update this:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="936" cache_read_input_tokens="94824" cache_creation="{'ephemeral_5m_input_tokens': 936, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01Kf9eCjB5CXjBbe6XfiuitX">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_remote_paths.py</param>
+    <param name="old_string">    # Verify workflow was dispatched
+    assert len(fake_remote.dispatched_workflows) == 1...[truncated 118 chars]...ackend"] == "planned_pr"
+    assert dispatched.inputs["branch_name"] == "plnd/remote-test"</param>
+    <param name="new_string">    # Verify workflow was dispatched
+    assert len(fake_remote.dispatched_workflows) == 1...[truncated 116 chars]...ackend"] == "planned_pr"
+    assert dispatched.inputs["branch_name"] == "plnd/remote-test"</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="936" cache_read_input_tokens="94824" cache_creation="{'ephemeral_5m_input_tokens': 936, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Kf9eCjB5CXjBbe6XfiuitX">
+The file /home/runner/work/erk/erk/tests/commands/pr/test_remote_paths.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me check test_provider.py and test_plan_duplicate_checker.py:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="499" cache_read_input_tokens="95760" cache_creation="{'ephemeral_5m_input_tokens': 499, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01RuytnXejAT9y3zZARcr2fE">
+    <param name="pattern">\bplan_id\b</param>
+    <param name="path">/home/runner/work/erk/erk/tests/tui/data/test_provider.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="499" cache_read_input_tokens="95760" cache_creation="{'ephemeral_5m_input_tokens': 499, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01TsHnAejvQ36L8X7ALcYnGZ">
+    <param name="pattern">\bplan_id\b</param>
+    <param name="path">/home/runner/work/erk/erk/tests/core/test_plan_duplicate_checker.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="499" cache_read_input_tokens="95760" cache_creation="{'ephemeral_5m_input_tokens': 499, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01RuytnXejAT9y3zZARcr2fE">
+259:            "plan_id": "7624",
+326:            "plan_id": "8001",
+395:            "plan_id": "9999",
+707:            plan_id=123,
+785:            plan_id=123,
+849:            plan_id=123,
+955:            plan_id=123,
+1020:            plan_id=123,
+1086:            plan_id=123,
+1150:            plan_id=123,
+1216:            plan_id=123,
+1284:            plan_id=123,
+1352:            plan_id=123,
+1422:            plan_id=123,
+1529:            plan_id=42,
+1572:            plan_id=42,
+1618:            plan_id=42,
+1666:            plan_id=42,
+1712:            plan_id=42,
+1762:            plan_id=42,
+1856:        plan_ids = {r.plan_id for r in result}
+1860:        """Results are sorted by plan_id ascending."""
+1891:        assert [r.plan_id for r in result] == [100, 300]
+  </tool_result>
+  <tool_result tool="toolu_01TsHnAejvQ36L8X7ALcYnGZ">
+49:    """Detected duplicate returns correct match with plan_id and explanation."""
+51:        '{"duplicates": [{"plan_id": "100", "explanation": "Both plans add dark mode support"}]}'
+64:    assert result.matches[0].plan_id == "100"
+140:        simulated_prompt_output='{"duplicates": [{"plan_id": "999", "explanation": "phantom"}]}',
+173:    llm_output = '```json\n{"duplicates": [{"plan_id": "100", "explanation": "same"}]}\n```'
+185:    assert result.matches[0].plan_id == "100"
+216:        '{"duplicates": [{"plan_id": "100", "explanation": "Both add auth"}]}\n'
+232:    assert result.matches[0].plan_id == "100"
+240:        '{"plan_id": "100", "explanation": "same A"}, '
+241:        '{"plan_id": "200", "explanation": "same B"}'
+258:    assert result.matches[0].plan_id == "100"
+259:    assert result.matches[1].plan_id == "200"
+  </tool_result>
+  <assistant>For test_plan_duplicate_checker.py, the `plan_id` references are:
+1. LLM JSON output format (`{"duplicates": [{"plan_id": "100", ...}]}`) - this is the format that the LLM returns and should NOT be changed
+2. Accessing result fields like `result.matches[0].plan_id` - these are accessing the PlanDuplicateMatch dataclass field, which should NOT be changed (it's not a CLI parameter)
+
+For test_provider.py, let me check the context of those plan_id references:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="965" cache_read_input_tokens="96259" cache_creation="{'ephemeral_5m_input_tokens': 965, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01MuGKh5GBYnpsG5W3L3czVt">
+    <param name="file_path">/home/runner/work/erk/erk/tests/tui/data/test_provider.py</param>
+    <param name="offset">255</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="965" cache_read_input_tokens="96259" cache_creation="{'ephemeral_5m_input_tokens': 965, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Kj158GELEMLMVi1QDk57hj">
+    <param name="file_path">/home/runner/work/erk/erk/tests/tui/data/test_provider.py</param>
+    <param name="offset">700</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="965" cache_read_input_tokens="96259" cache_creation="{'ephemeral_5m_input_tokens': 965, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01MuGKh5GBYnpsG5W3L3czVt">
+   255→        impl_dir = get_impl_dir(worktree_path, branch_name=branch_name)
+   256→        impl_dir.mkdir(parents=True, exist_ok=True)
+   257→        plan_ref_data = {
+   258→            "provider": "github-draft-pr",
+   259→            "plan_id": "7624",
+   260→            "url": "https://github.com/test/repo/pull/7624",
+   261→            "created_at": "2026-02-19T14:16:00+00:00",
+   262→            "synced_at": "2026-02-19T14:16:00+00:00",
+   263→            "labels": ["erk-plan"],
+   264→            "objective_id": None,
+   265→        }
+   266→        (impl_dir / "plan-ref.json").write_text(json.dumps(plan_ref_data), encoding="utf-8")
+   267→
+   268→        git = FakeGit(
+   269→            worktrees={
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_01Kj158GELEMLMVi1QDk57hj">
+   700→                    review_thread_counts=(3, 5),  # 3 resolved out of 5 total
+   701→                ),
+   702→            ],
+   703→        }
+   704→
+   705→        row = provider._build_row_data(
+   706→            plan=plan,
+   707→            plan_id=123,
+   708→            pr_linkages=pr_linkages,
+   709→            workflow_run=None,
+   710→            worktree_by_plan_id={},
+   711→            use_graphite=False,
+   712→        )
+   713→
+   714→        assert row.resolved_comment_count == 3
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>I can see:
+1. Line 259: This is creating test data for ref.json with `"plan_id"` field - should be renamed to `"pr_id"`
+2. Line 707: This is the `plan_id` parameter to `_build_row_data()` function - should NOT be changed (it's a function parameter)
+
+Let me also check line 1856 for the `plan_id` field access:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1087" cache_read_input_tokens="97224" cache_creation="{'ephemeral_5m_input_tokens': 1087, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_017SMtXWTqhDaznJAG1aaymi">
+    <param name="file_path">/home/runner/work/erk/erk/tests/tui/data/test_provider.py</param>
+    <param name="offset">1850</param>
+    <param name="limit">45</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1087" cache_read_input_tokens="97224" cache_creation="{'ephemeral_5m_input_tokens': 1087, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017SMtXWTqhDaznJAG1aaymi">
+  1850→            ),
+  1851→        ]
+  1852→        provider = self._make_provider(tmp_path, issues_data=issues)
+  1853→        result = provider.fetch_plans_by_ids({100, 200})
+  1854→
+  1855→        assert len(result) == 2
+  1856→        plan_ids = {r.plan_id for r in result}
+  1857→        assert plan_ids == {100, 200}
+  1858→
+  1859→    def test_results_sorted_by_plan_id(self, tmp_path: Path) -&gt; None:
+  1860→        """Results are sorted by plan_id ascending."""
+  1861→        body = format_plan_header_body_for_test()
+  1862→        issues = [
+  1863→            IssueInfo(
+  1864→                number=300,
+  1865→                title="Plan: Third",
+  1866→                body=body,
+  1867→                state="OPEN",
+  1868→                url="https://github.com/test/repo/issues/300",
+  1869→                labels=["erk-pr", "erk-plan"],
+  1870→                assignees=[],
+  1871→                created_at=datetime(2025, 1, 1, tzinfo=UTC),
+  1872→                updated_at=datetime(2025, 1, 2, tzinfo=UTC),
+  1873→                author="testuser",
+  1874→            ),
+  1875→            IssueInfo(
+  1876→                number=100,
+  1877→                title="Plan: First",
+  1878→                body=body,
+  1879→                state="OPEN",
+
+... [20 lines omitted] ...
+  </tool_result>
+  <assistant>The `r.plan_id` references (lines 1856, 1891) are accessing the `PlanRow.plan_id` dataclass field, which should NOT be changed according to the rules (only CLI flags/params are being renamed).
+
+Now let me update the ref.json field in test_provider.py:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="961" cache_read_input_tokens="98311" cache_creation="{'ephemeral_5m_input_tokens': 961, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_0127HrNqiPQ2YN4NJQBYfwd1">
+    <param name="file_path">/home/runner/work/erk/erk/tests/tui/data/test_provider.py</param>
+    <param name="old_string">        impl_dir = get_impl_dir(worktree_path, branch_name=branch_name)
+        impl_dir.m...[truncated 366 chars]...      (impl_dir / "plan-ref.json").write_text(json.dumps(plan_ref_data), encoding="utf-8")</param>
+    <param name="new_string">        impl_dir = get_impl_dir(worktree_path, branch_name=branch_name)
+        impl_dir.m...[truncated 364 chars]...      (impl_dir / "plan-ref.json").write_text(json.dumps(plan_ref_data), encoding="utf-8")</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="961" cache_read_input_tokens="98311" cache_creation="{'ephemeral_5m_input_tokens': 961, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0127HrNqiPQ2YN4NJQBYfwd1">
+The file /home/runner/work/erk/erk/tests/tui/data/test_provider.py has been updated successfully.
+  </tool_result>
+  <assistant>Let me check if there are other instances in test_provider.py:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="740" cache_read_input_tokens="99272" cache_creation="{'ephemeral_5m_input_tokens': 740, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01K3M4bqnwEMuXsoRKy2KdFq">
+    <param name="file_path">/home/runner/work/erk/erk/tests/tui/data/test_provider.py</param>
+    <param name="offset">322</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="740" cache_read_input_tokens="99272" cache_creation="{'ephemeral_5m_input_tokens': 740, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_0115Da21ynJUMLFCjikSVcn9">
+    <param name="file_path">/home/runner/work/erk/erk/tests/tui/data/test_provider.py</param>
+    <param name="offset">391</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="740" cache_read_input_tokens="99272" cache_creation="{'ephemeral_5m_input_tokens': 740, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01K3M4bqnwEMuXsoRKy2KdFq">
+   322→        impl_dir = get_impl_dir(worktree_path, branch_name=branch_name)
+   323→        impl_dir.mkdir(parents=True, exist_ok=True)
+   324→        plan_ref_data = {
+   325→            "provider": "github-draft-pr",
+   326→            "plan_id": "8001",
+   327→            "url": "https://github.com/test/repo/pull/8001",
+   328→            "created_at": "2026-01-15T14:30:00+00:00",
+   329→            "synced_at": "2026-01-15T14:30:00+00:00",
+   330→            "labels": ["erk-plan"],
+   331→            "objective_id": None,
+   332→        }
+   333→        (impl_dir / "plan-ref.json").write_text(json.dumps(plan_ref_data), encoding="utf-8")
+   334→
+   335→        git = FakeGit(
+   336→            worktrees={
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_0115Da21ynJUMLFCjikSVcn9">
+   391→        impl_dir = get_impl_dir(worktree_path, branch_name=branch_name)
+   392→        impl_dir.mkdir(parents=True, exist_ok=True)
+   393→        plan_ref_data = {
+   394→            "provider": "github-draft-pr",
+   395→            "plan_id": "9999",
+   396→            "url": "https://github.com/test/repo/pull/9999",
+   397→            "created_at": "2026-01-15T14:30:00+00:00",
+   398→            "synced_at": "2026-01-15T14:30:00+00:00",
+   399→            "labels": ["erk-plan"],
+   400→            "objective_id": None,
+   401→        }
+   402→        (impl_dir / "plan-ref.json").write_text(json.dumps(plan_ref_data), encoding="utf-8")
+   403→
+   404→        git = FakeGit(
+   405→            worktrees={
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_use name="Edit" id="toolu_016UKVq1E4RnUZgM45qY1xdc">
+    <param name="file_path">/home/runner/work/erk/erk/tests/tui/data/test_provider.py</param>
+    <param name="old_string">        impl_dir = get_impl_dir(worktree_path, branch_name=branch_name)
+        impl_dir.m...[truncated 366 chars]...      (impl_dir / "plan-ref.json").write_text(json.dumps(plan_ref_data), encoding="utf-8")</param>
+    <param name="new_string">        impl_dir = get_impl_dir(worktree_path, branch_name=branch_name)
+        impl_dir.m...[truncated 364 chars]...      (impl_dir / "plan-ref.json").write_text(json.dumps(plan_ref_data), encoding="utf-8")</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1070" cache_read_input_tokens="100012" cache_creation="{'ephemeral_5m_input_tokens': 1070, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_014nRrWmjvexrYz3ih5zNscJ">
+    <param name="file_path">/home/runner/work/erk/erk/tests/tui/data/test_provider.py</param>
+    <param name="old_string">        impl_dir = get_impl_dir(worktree_path, branch_name=branch_name)
+        impl_dir.m...[truncated 366 chars]...      (impl_dir / "plan-ref.json").write_text(json.dumps(plan_ref_data), encoding="utf-8")</param>
+    <param name="new_string">        impl_dir = get_impl_dir(worktree_path, branch_name=branch_name)
+        impl_dir.m...[truncated 364 chars]...      (impl_dir / "plan-ref.json").write_text(json.dumps(plan_ref_data), encoding="utf-8")</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1070" cache_read_input_tokens="100012" cache_creation="{'ephemeral_5m_input_tokens': 1070, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016UKVq1E4RnUZgM45qY1xdc">
+The file /home/runner/work/erk/erk/tests/tui/data/test_provider.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_014nRrWmjvexrYz3ih5zNscJ">
+The file /home/runner/work/erk/erk/tests/tui/data/test_provider.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me check test_pr_json.py more carefully to see if there are any DispatchResult references:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1146" cache_read_input_tokens="101082" cache_creation="{'ephemeral_5m_input_tokens': 1146, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Dz177ccLmmobFWBA1WSDVG">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/test_pr_json.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1146" cache_read_input_tokens="101082" cache_creation="{'ephemeral_5m_input_tokens': 1146, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Dz177ccLmmobFWBA1WSDVG">
+     1→"""Tests for erk pr list/view --json output and --schema."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→from datetime import UTC, datetime
+     6→
+     7→from erk.cli.commands.pr.list_cmd import PrListResult
+     8→from erk.cli.commands.pr.view_cmd import PrViewResult, _serialize_header_fields
+     9→
+    10→
+    11→class TestPrListResult:
+    12→    """Tests for PrListResult JSON serialization."""
+    13→
+    14→    def test_to_json_dict_structure(self) -&gt; None:
+    15→        result = PrListResult(
+    16→            plans=[{"plan_id": 42, "full_title": "My Plan"}],
+    17→            count=1,
+    18→        )
+    19→
+    20→        data = result.to_json_dict()
+    21→
+    22→        assert data == {
+    23→            "plans": [{"plan_id": 42, "full_title": "My Plan"}],
+    24→            "count": 1,
+    25→        }
+    26→
+    27→    def test_empty_plans(self) -&gt; None:
+    28→        result = PrListResult(plans=[], count=0)
+    29→
+    30→        data = result.to_json_dict()
+
+... [114 lines omitted] ...
+  </tool_result>
+  <assistant>This file tests PrListResult and PrViewResult dataclasses. The `plan_id` field in these dataclasses should NOT be changed according to the rules (only CLI flags/params are being renamed, not dataclass fields).
+
+Let me now check test_sessions.py and test_manifest.py:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="2063" cache_read_input_tokens="102228" cache_creation="{'ephemeral_5m_input_tokens': 2063, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01TaohbqW4uC7NB7tyAFNsWD">
+    <param name="pattern">\bplan_number\b|\bplan_id\b</param>
+    <param name="path">/home/runner/work/erk/erk/tests/unit/sessions/test_manifest.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="2063" cache_read_input_tokens="102228" cache_creation="{'ephemeral_5m_input_tokens': 2063, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01TaohbqW4uC7NB7tyAFNsWD">
+44:        "plan_id": 100,
+69:    assert result["plan_id"] == 100
+  </tool_result>
+  <assistant>Let me read the context:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="230" cache_read_input_tokens="104291" cache_creation="{'ephemeral_5m_input_tokens': 230, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01NnMbtKwoGyGxjGoKxUgyJs">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/sessions/test_manifest.py</param>
+    <param name="offset">35</param>
+    <param name="limit">40</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="230" cache_read_input_tokens="104291" cache_creation="{'ephemeral_5m_input_tokens': 230, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01NnMbtKwoGyGxjGoKxUgyJs">
+    35→    )
+    36→
+    37→    assert result is None
+    38→
+    39→
+    40→def test_returns_parsed_dict_for_valid_json(tmp_path: Path) -&gt; None:
+    41→    """Returns parsed manifest dict for valid JSON content."""
+    42→    manifest = {
+    43→        "version": 1,
+    44→        "plan_id": 100,
+    45→        "sessions": [
+    46→            {
+    47→                "session_id": "test-session-1",
+    48→                "stage": "impl",
+    49→                "files": ["impl-test-session-1.xml"],
+    50→            }
+    51→        ],
+    52→    }
+    53→    fake_git = FakeGit(
+    54→        ref_file_contents={
+    55→            ("origin/planned-pr-context/100", ".erk/sessions/manifest.json"): json.dumps(
+    56→                manifest
+    57→            ).encode("utf-8"),
+    58→        },
+    59→    )
+    60→
+    61→    result = read_session_manifest(
+    62→        fake_git,
+    63→        repo_root=tmp_path,
+    64→        session_branch="planned-pr-context/100",
+
+... [13 lines omitted] ...
+  </tool_result>
+  <assistant>This is testing the session manifest JSON structure. The `plan_id` field in the manifest is a JSON field in the manifest file format, which should NOT be changed according to the rules (only CLI flags/params are being renamed).
+
+Now let me create a summary of all the changes I made:
+
+## Summary
+
+I have successfully updated the test files to match the renamed Click CLI flags and parameters. Here's what was changed:
+
+### Files Updated:
+
+1. **tests/unit/cli/commands/test_admin_test_workflow.py**
+   - Renamed `--plan` to `--pr` in CLI invocations (3 changes)
+
+2. **tests/unit/cli/commands/pr/submit_pipeline/test_prepare_state.py**
+   - Renamed `"plan_id"` to `"pr_id"` in ref.json test data (2 changes)
+
+3. **tests/unit/commands/wt/test_list_helpers.py**
+   - Renamed `"plan_id"` to `"pr_id"` in ref.json test data (1 change)
+
+4. **tests/commands/pr/test_remote_paths.py**
+   - Renamed `dispatched.inputs["plan_id"]` to `dispatched.inputs["pr_id"]` (1 change)
+
+5. **tests/packages/erk_shared/test_impl_context.py**
+   - Renamed `ref_data["plan_id"]` to `ref_data["pr_id"]` in assertions (5 changes)
+
+6. **tests/core/test_impl_folder.py**
+   - Renamed `"plan_id"` to `"pr_id"` in ref.json test data (1 change)
+
+7. **tests/tui/data/test_provider.py**
+   - Renamed `"plan_id"` to `"pr_id"` in plan-ref.json test data (3 changes)
+
+### Files NOT Changed (as per requirements):
+
+- **test_render_land_script.py** - Correctly kept `plan_number` as-is (for land-execute which was not renamed)
+- **test_async_operations.py** - Correctly kept `plan_id` function parameter and `--plan-number` flag (for land-execute)
+- **test_pr_json.py** - Correctly kept `plan_id` dataclass fields (not CLI parameters)
+- **test_manifest.py** - Correctly kept `plan_id` in manifest JSON structure (not CLI parameters)
+- **test_plan_duplicate_checker.py** - Correctly kept `plan_id` in LLM output format and dataclass fields
+- **test_provider.py** - Correctly kept `plan_id` function parameters and dataclass fields (only updated ref.json field)
+
+All changes follow the renaming rules:
+- Only renamed CLI flags in test invocations
+- Only renamed ref.json field name from `plan_id` to `pr_id`
+- Did NOT rename help strings, error messages, comments, or variable names
+- Did NOT rename function parameters (except in CLI invocations)
+- Did NOT rename dataclass field references
+- Did NOT rename `plan_number` in land_execute tests</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="725" cache_read_input_tokens="104521" cache_creation="{'ephemeral_5m_input_tokens': 725, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>

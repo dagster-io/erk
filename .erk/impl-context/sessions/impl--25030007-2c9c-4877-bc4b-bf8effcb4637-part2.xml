@@ -1,0 +1,659 @@
+<session>
+  <meta branch="plnd/O9109-rename-click-args-pr-03-10-0822" />
+  <meta model="claude-opus-4-6" />
+  <tool_use name="Task" id="toolu_01SwDi7xXteGnDzuzU4E9pvb">
+    <param name="subagent_type">general-purpose</param>
+    <param name="description">Rename Click args batch 1</param>
+    <param name="prompt">You are performing a mechanical rename of Click CLI arguments/options across Python files....[truncated 2073 chars]...
+
+Important: Use replace_all=false for each edit to ensure precision. Make targeted edits.</param>
+    <param name="run_in_background">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4838" cache_read_input_tokens="87238" cache_creation="{'ephemeral_5m_input_tokens': 4838, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01Wu6a8AgZVpbd43nFyvzNzG">
+    <param name="subagent_type">general-purpose</param>
+    <param name="description">Rename Click args batch 2</param>
+    <param name="prompt">You are performing a mechanical rename of Click CLI arguments/options across Python files....[truncated 5606 chars]...number already exists
+
+Important: Use replace_all=false for each edit to ensure precision.</param>
+    <param name="run_in_background">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4838" cache_read_input_tokens="87238" cache_creation="{'ephemeral_5m_input_tokens': 4838, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01Hk15X5B7gvZtGDtD3fUWXq">
+    <param name="subagent_type">general-purpose</param>
+    <param name="description">Rename Click args batch 3</param>
+    <param name="prompt">You are performing a mechanical rename of Click CLI positional arguments across Python fil...[truncated 3463 chars]...eplace_all=false for each edit to ensure precision. Make multiple targeted edits per file.</param>
+    <param name="run_in_background">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4838" cache_read_input_tokens="87238" cache_creation="{'ephemeral_5m_input_tokens': 4838, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01SwDi7xXteGnDzuzU4E9pvb">
+Async agent launched successfully.
+agentId: ac00666 (This is an internal ID for your use, do not mention it to the user. Use this ID to retrieve results with TaskOutput when the agent finishes).
+The agent is currently working in the background. If you have other tasks you you should continue working on them now. Wait to call TaskOutput until either:
+- If you want to check on the agent's progress - call TaskOutput with block=false to get an immediate update on the agent's status
+- If you run out of things to do and the agent is still running - call TaskOutput with block=true to idle and wait for the agent's result (do not use block=true unless you completely run out of things to do as it will waste time).
+  </tool_result>
+  <tool_result tool="toolu_01Wu6a8AgZVpbd43nFyvzNzG">
+Async agent launched successfully.
+agentId: adaf546 (This is an internal ID for your use, do not mention it to the user. Use this ID to retrieve results with TaskOutput when the agent finishes).
+The agent is currently working in the background. If you have other tasks you you should continue working on them now. Wait to call TaskOutput until either:
+- If you want to check on the agent's progress - call TaskOutput with block=false to get an immediate update on the agent's status
+- If you run out of things to do and the agent is still running - call TaskOutput with block=true to idle and wait for the agent's result (do not use block=true unless you completely run out of things to do as it will waste time).
+  </tool_result>
+  <tool_result tool="toolu_01Hk15X5B7gvZtGDtD3fUWXq">
+Async agent launched successfully.
+agentId: a48f8e5 (This is an internal ID for your use, do not mention it to the user. Use this ID to retrieve results with TaskOutput when the agent finishes).
+The agent is currently working in the background. If you have other tasks you you should continue working on them now. Wait to call TaskOutput until either:
+- If you want to check on the agent's progress - call TaskOutput with block=false to get an immediate update on the agent's status
+- If you run out of things to do and the agent is still running - call TaskOutput with block=true to idle and wait for the agent's result (do not use block=true unless you completely run out of things to do as it will waste time).
+  </tool_result>
+  <assistant>While the agents work on Phase 1, let me read the Phase 2 files (non-exec commands) so I'm ready to proceed.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="5199" cache_read_input_tokens="92076" cache_creation="{'ephemeral_5m_input_tokens': 5199, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01ADZjhxx5MgPgswWK9bEt8U">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/prepare_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="5199" cache_read_input_tokens="92076" cache_creation="{'ephemeral_5m_input_tokens': 5199, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_019qKoZ8y4EcYDma8knDyB9d">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/dispatch_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="5199" cache_read_input_tokens="92076" cache_creation="{'ephemeral_5m_input_tokens': 5199, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_012FiG2nV5dUBbAfmQRDH4Qx">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/admin.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="5199" cache_read_input_tokens="92076" cache_creation="{'ephemeral_5m_input_tokens': 5199, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01ADZjhxx5MgPgswWK9bEt8U">
+     1→"""Prepare impl-context for the current worktree's PR.
+     2→
+     3→Sets up .erk/impl-context/ folder from the PR associated with the current
+     4→branch, making the worktree ready for plan implementation.
+     5→
+     6→Usage:
+     7→    erk pr prepare           # Auto-detect plan number from current branch's PR
+     8→    erk pr prepare 1234      # Explicit plan number
+     9→"""
+    10→
+    11→import click
+    12→
+    13→from erk.cli.commands.exec.scripts.setup_impl_from_pr import create_impl_context_from_pr
+    14→from erk.cli.ensure import Ensure
+    15→from erk.core.context import ErkContext
+    16→from erk.core.repo_discovery import NoRepoSentinel, RepoContext
+    17→from erk_shared.gateway.github.types import PRNotFound
+    18→from erk_shared.impl_folder import read_plan_ref, resolve_impl_dir
+    19→from erk_shared.output.output import user_output
+    20→
+    21→
+    22→@click.command("prepare")
+    23→@click.argument("plan_number", type=int, required=False, default=None)
+    24→@click.pass_context
+    25→def pr_prepare(ctx: click.Context, plan_number: int | None) -&gt; None:
+    26→    """Set up impl-context for the current worktree's PR.
+    27→
+    28→    Prepares the current worktree for plan implementation by creating
+    29→    the .erk/impl-context/ folder with plan content from the PR.
+    30→
+
+... [60 lines omitted] ...
+
+    48→        erk_ctx.console.error("Not in a git repository")
+    54→        erk_ctx.console.error("Cannot prepare from detached HEAD state")
+    61→            erk_ctx.console.error(
+  </tool_result>
+  <tool_result tool="toolu_012FiG2nV5dUBbAfmQRDH4Qx">
+     1→"""Admin commands for repository configuration."""
+     2→
+     3→import os
+     4→import subprocess
+     5→from dataclasses import dataclass
+     6→from typing import Literal
+     7→
+     8→import click
+     9→
+    10→from erk.cli.core import discover_repo_context
+    11→from erk.cli.ensure import Ensure, UserFacingCliError
+    12→from erk.core.context import ErkContext
+    13→from erk_shared.gateway.git.remote_ops.types import PushError
+    14→from erk_shared.gateway.github.types import GitHubRepoLocation
+    15→from erk_shared.output.output import user_output
+    16→
+    17→CLAUDE_CI_WORKFLOWS = (
+    18→    "code-reviews",
+    19→    "autofix",
+    20→    "learn",
+    21→    "one-shot",
+    22→    "plan-implement",
+    23→    "pr-address",
+    24→    "pr-rebase",
+    25→)
+    26→
+    27→
+    28→@dataclass(frozen=True)
+    29→class _SecretConfig:
+    30→    github_secret_name: str
+
+... [543 lines omitted] ...
+
+   123→        except RuntimeError as e:
+   124→            raise UserFacingCliError(str(e), error_type="cli_error") from e
+   137→        except RuntimeError as e:
+   138→            raise UserFacingCliError(str(e), error_type="cli_error") from e
+   151→        except RuntimeError as e:
+   152→            raise UserFacingCliError(str(e), error_type="cli_error") from e
+   176→        gh_status = click.style("Error", fg="red")
+   293→        except RuntimeError as e:
+   294→            raise UserFacingCliError(str(e), error_type="cli_error") from e
+   303→        except RuntimeError as e:
+   304→            raise UserFacingCliError(str(e), error_type="cli_error") from e
+   371→        except RuntimeError as e:
+   372→            raise UserFacingCliError(str(e), error_type="cli_error") from e
+   381→        except RuntimeError as e:
+   382→            raise UserFacingCliError(str(e), error_type="cli_error") from e
+   455→    if isinstance(push_result, PushError):
+   456→        raise UserFacingCliError(push_result.message, error_type="cli_error")
+   486→    if isinstance(push_result, PushError):
+   487→        raise UserFacingCliError(push_result.message, error_type="cli_error")
+   499→    if isinstance(push_result, PushError):
+   500→        raise UserFacingCliError(push_result.message, error_type="cli_error")
+  </tool_result>
+  <tool_result tool="toolu_019qKoZ8y4EcYDma8knDyB9d">
+     1→"""Dispatch plans for remote AI implementation via GitHub Actions."""
+     2→
+     3→import logging
+     4→import tomllib
+     5→from dataclasses import dataclass
+     6→from datetime import UTC, datetime
+     7→from pathlib import Path
+     8→
+     9→import click
+    10→
+    11→from erk.cli.commands.pr.dispatch_helpers import ensure_trunk_synced, sync_branch_to_sha
+    12→from erk.cli.commands.pr.metadata_helpers import write_dispatch_metadata
+    13→from erk.cli.commands.ref_resolution import resolve_dispatch_ref
+    14→from erk.cli.commands.slot.common import is_placeholder_branch
+    15→from erk.cli.constants import (
+    16→    DISPATCH_WORKFLOW_METADATA_NAME,
+    17→    DISPATCH_WORKFLOW_NAME,
+    18→    ERK_PLAN_LABEL,
+    19→)
+    20→from erk.cli.core import discover_repo_context
+    21→from erk.cli.ensure import Ensure, UserFacingCliError
+    22→from erk.cli.repo_resolution import get_remote_github, repo_option, resolve_owner_repo
+    23→from erk.core.context import ErkContext
+    24→from erk.core.repo_discovery import RepoContext
+    25→from erk_shared.context.types import NoRepoSentinel
+    26→from erk_shared.gateway.git.remote_ops.types import PushError
+    27→from erk_shared.gateway.github.issues.types import IssueNotFound
+    28→from erk_shared.gateway.github.metadata.core import (
+    29→    create_submission_queued_block,
+    30→    render_erk_issue_event,
+
+... [897 lines omitted] ...
+
+   163→        user_output(click.style("Error: ", fg="red") + f"PR #{plan_number} not found")
+   169→            click.style("Error: ", fg="red")
+   178→            click.style("Error: ", fg="red") + f"PR #{plan_number} is {pr_result.state}\n\n"
+   224→        user_output(click.style("Error: ", fg="red") + f"PR #{plan_number}: plan content not found")
+   266→        except Exception:
+   267→            logger.warning("Failed to sync index after plumbing commit", exc_info=True)
+   272→    if isinstance(push_result, PushError):
+   273→        raise UserFacingCliError(push_result.message, error_type="cli_error")
+   319→    except Exception as e:
+   321→            click.style("Warning: ", fg="yellow") + f"Failed to update dispatch metadata: {e}"
+   331→    except Exception as e:
+   332→        logger.warning("Failed to update PR body with workflow run link: %s", e)
+   363→    except Exception as e:
+   365→            click.style("Warning: ", fg="yellow")
+   366→            + f"Failed to post queued comment: {e}\n"
+   407→        user_output(click.style("Error: ", fg="red") + f"Plan #{plan_number} not found")
+   412→            click.style("Error: ", fg="red")
+   420→            click.style("Error: ", fg="red") + f"PR #{plan_number} is {issue.state}\n\n"
+   429→            click.style("Error: ", fg="red")
+   480→        user_output(click.style("Error: ", fg="red") + f"PR #{plan_number}: plan content not found")
+   545→    except Exception as e:
+   546→        logger.warning("Failed to update PR body with workflow run link: %s", e)
+   578→    except Exception as e:
+   580→            click.style("Warning: ", fg="yellow")
+   581→            + f"Failed to post queued comment: {e}\n"
+   651→            click.style("Error: ", fg="red") + "Plan number(s) required in remote mode.\n\n"
+   744→            click.style("Error: ", fg="red")
+   754→                click.style("Error: ", fg="red")
+   767→                click.style("Error: ", fg="red") + f"Base branch '{base}' does not exist on remote"
+  </tool_result>
+  <assistant>Good, I now have all Phase 2 files. Let me also read the Phase 3 caller files while the agents finish.</assistant>
+  <usage input_tokens="7717" cache_creation_input_tokens="14270" cache_read_input_tokens="97275" cache_creation="{'ephemeral_5m_input_tokens': 14270, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01FVnJAZztVjBKqqvPo9AjFE">
+    <param name="file_path">/home/runner/work/erk/erk/.github/workflows/plan-implement.yml</param>
+  </tool_use>
+  <usage input_tokens="7717" cache_creation_input_tokens="14270" cache_read_input_tokens="97275" cache_creation="{'ephemeral_5m_input_tokens': 14270, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01KoanUJVP8DNDuTUHds7oiH">
+    <param name="file_path">/home/runner/work/erk/erk/.github/workflows/one-shot.yml</param>
+  </tool_use>
+  <usage input_tokens="7717" cache_creation_input_tokens="14270" cache_read_input_tokens="97275" cache_creation="{'ephemeral_5m_input_tokens': 14270, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01W9ijdKgmR1cfVynR3rUNwP">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/commands/erk/system/one-shot-plan.md</param>
+  </tool_use>
+  <usage input_tokens="7717" cache_creation_input_tokens="14270" cache_read_input_tokens="97275" cache_creation="{'ephemeral_5m_input_tokens': 14270, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_015dNQpT8hS7Vgj9b4QwoLfP">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/commands/erk/system/consolidate-learn-plans-plan.md</param>
+  </tool_use>
+  <usage input_tokens="7717" cache_creation_input_tokens="14270" cache_read_input_tokens="97275" cache_creation="{'ephemeral_5m_input_tokens': 14270, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01WFMqRsX81o5BQSVueN6NK2">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/commands/local/plan-update.md</param>
+  </tool_use>
+  <usage input_tokens="7717" cache_creation_input_tokens="14270" cache_read_input_tokens="97275" cache_creation="{'ephemeral_5m_input_tokens': 14270, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01TVX5dM7fjZpMVMNih8RMK4">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/commands/erk/learn.md</param>
+  </tool_use>
+  <usage input_tokens="7717" cache_creation_input_tokens="14270" cache_read_input_tokens="97275" cache_creation="{'ephemeral_5m_input_tokens': 14270, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01FVnJAZztVjBKqqvPo9AjFE">
+     1→name: plan-implement
+     2→run-name: "${{ inputs.dispatch_type == 'incremental' &amp;&amp; '[incremental] ' || '' }}${{ inputs.branch_name }} (#${{ inputs.pr_number }}):${{ inputs.distinct_id }}"
+     3→
+     4→on:
+     5→  workflow_dispatch:
+     6→    inputs:
+     7→      plan_id:
+     8→        description: "Plan identifier to implement"
+     9→        required: true
+    10→        type: string
+    11→      submitted_by:
+    12→        description: "GitHub username of the person who submitted the issue"
+    13→        required: true
+    14→        type: string
+    15→      distinct_id:
+    16→        description: "Unique identifier for run discovery (base36)"
+    17→        required: true
+    18→        type: string
+    19→      plan_title:
+    20→        description: "Plan title for workflow run display"
+    21→        required: true
+    22→        type: string
+    23→      branch_name:
+    24→        description: "Branch name for implementation (created by submit command)"
+    25→        required: true
+    26→        type: string
+    27→      pr_number:
+    28→        description: "PR number for implementation (created by submit command)"
+    29→        required: true
+    30→        type: string
+
+... [450 lines omitted] ...
+
+   118→            echo "::error title=Missing Secret::ERK_QUEUE_GH_PAT secret is not configured or has expired. Add a PAT with 'repo' scope at: Settings → Secrets and variables → Actions"
+   230→          if git ls-files --error-unmatch .erk/impl-context/ &gt;/dev/null 2&gt;&amp;1; then
+   300→        continue-on-error: true
+   372→        continue-on-error: true
+   392→      - name: Handle merge conflicts if push failed
+   394→        if: steps.submit.outcome == 'failure'
+   424→          if git ls-files --error-unmatch .erk/impl-context/ &gt;/dev/null 2&gt;&amp;1; then
+   434→        continue-on-error: true
+   470→      - name: Fail workflow if implementation failed
+   473→          echo "Implementation failed with exit code: ${{ steps.implement.outputs.exit_code }}"
+  </tool_result>
+  <tool_result tool="toolu_01KoanUJVP8DNDuTUHds7oiH">
+     1→name: one-shot
+     2→run-name: "one-shot${{ inputs.plan_only &amp;&amp; '(plan)' || '' }}:#${{ inputs.pr_number }}:${{ inputs.distinct_id }}"
+     3→
+     4→on:
+     5→  workflow_dispatch:
+     6→    inputs:
+     7→      prompt:
+     8→        description: "Task description for autonomous execution"
+     9→        required: true
+    10→        type: string
+    11→      branch_name:
+    12→        description: "Branch to work on (created by CLI command)"
+    13→        required: true
+    14→        type: string
+    15→      pr_number:
+    16→        description: "Draft PR number (created by CLI command)"
+    17→        required: true
+    18→        type: string
+    19→      submitted_by:
+    20→        description: "GitHub username of the person who submitted"
+    21→        required: true
+    22→        type: string
+    23→      distinct_id:
+    24→        description: "Unique identifier for run discovery (base36)"
+    25→        required: true
+    26→        type: string
+    27→      model_name:
+    28→        description: "Claude model to use for execution"
+    29→        required: false
+    30→        type: string
+
+... [282 lines omitted] ...
+
+    82→            echo "::error title=Missing Secret::ERK_QUEUE_GH_PAT secret is not configured or has expired. Add a PAT with 'repo' scope at: Settings &gt; Secrets and variables &gt; Actions"
+   168→              echo "::warning::Plan rejected: $REASON"
+   174→            echo "::error::Planning succeeded but .erk/impl-context/plan.md not found"
+   178→            echo "::error::Planning succeeded but .erk/impl-context/plan-result.json not found"
+   218→        continue-on-error: true
+   269→          if git ls-files --error-unmatch .erk/impl-context/prompt.md &gt;/dev/null 2&gt;&amp;1; then
+   272→          if git ls-files --error-unmatch .worker-impl/prompt.md &gt;/dev/null 2&gt;&amp;1; then
+   286→      - name: Fail workflow if planning failed
+   289→          echo "One-shot planning failed with exit code: ${{ steps.plan.outputs.exit_code }}"
+  </tool_result>
+  <tool_result tool="toolu_01W9ijdKgmR1cfVynR3rUNwP">
+     1→---
+     2→description: Create a plan from a one-shot prompt, save it as a draft PR, and write results to .erk/impl-context/ (used by CI workflow)
+     3→---
+     4→
+     5→# One-Shot Plan
+     6→
+     7→You are running autonomously in a CI workflow. Your job is to read a prompt, explore the codebase, create a detailed implementation plan, and save it as a draft PR.
+     8→
+     9→**Important:** You are ONLY planning, not implementing. The plan must be self-contained — a separate Claude session will implement it with no access to your exploration context.
+    10→
+    11→## Step 1: Read the Prompt
+    12→
+    13→Read `.erk/impl-context/prompt.md` to understand what you need to do.
+    14→
+    15→## Step 2: Read Objective Context (if present)
+    16→
+    17→If the `$OBJECTIVE_ISSUE` environment variable is set (non-empty), this plan is for a specific node of an objective. Use `erk exec check-objective $OBJECTIVE_ISSUE` to fetch the full objective context (title, roadmap, progress). The `$NODE_ID` environment variable contains the specific roadmap node ID being planned. Incorporate the objective context into your planning — understand the broader goal and how this node fits into it.
+    18→
+    19→## Step 3: Load Context
+    20→
+    21→Read `AGENTS.md` to understand the project conventions. Follow its documentation-first discovery process: scan `docs/learned/index.md`, grep `docs/learned/` for relevant docs, and load skills as directed by AGENTS.md routing rules.
+    22→
+    23→## Step 4: Explore the Codebase
+    24→
+    25→Use Explore agents and Grep/Glob to understand the relevant areas of the codebase:
+    26→
+    27→- Search for files, patterns, and existing implementations related to the prompt
+    28→- Identify which files need to be created or modified
+    29→- Understand existing architecture and patterns
+    30→- Find relevant tests and test patterns
+
+... [73 lines omitted] ...
+
+    60→Parse the JSON output. If `success` is not `true`, stop and report the error. Otherwise, use `$PLAN_ISSUE_NUMBER` as the `plan_number`. To get the `title`, extract the first `# ` heading from `.erk/impl-context/plan.md`.
+    78→Parse the JSON output. If `success` is not `true`, stop and report the error. Otherwise, extract `plan_number` and `title` from the output.
+  </tool_result>
+  <tool_result tool="toolu_015dNQpT8hS7Vgj9b4QwoLfP">
+     1→---
+     2→description: CI-only skill for autonomous learn plan consolidation (used by consolidate-learn-plans workflow)
+     3→---
+     4→
+     5→# Consolidate Learn Plans (CI)
+     6→
+     7→You are running autonomously in a CI workflow. Your job is to query all open erk-learn plans, consolidate them into a single implementation-ready documentation plan, and output the results.
+     8→
+     9→**Important:** This is the autonomous CI version. No user interaction (no AskUserQuestion). If there are no plans, output a sentinel and exit cleanly.
+    10→
+    11→## Step 1: Load Context
+    12→
+    13→Read `AGENTS.md` to understand the project conventions. Follow its documentation-first discovery process: scan `docs/learned/index.md`, grep `docs/learned/` for relevant docs.
+    14→
+    15→## Step 2: Query Open erk-learn Plans
+    16→
+    17→Fetch all open plans with the `erk-learn` label:
+    18→
+    19→```bash
+    20→gh api repos/${GITHUB_REPOSITORY:-dagster-io/erk}/issues \
+    21→  -X GET \
+    22→  --paginate \
+    23→  -f labels=erk-learn \
+    24→  -f state=open \
+    25→  -f per_page=100 \
+    26→  --jq '.[] | {number, title, created_at, labels: [.labels[].name]}'
+    27→```
+    28→
+    29→## Step 3: Filter Out Already-Consolidated Plans
+    30→
+
+... [110 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01WFMqRsX81o5BQSVueN6NK2">
+     1→---
+     2→description: Update an existing plan with the current session's plan
+     3→argument-hint: &lt;plan-number&gt;
+     4→---
+     5→
+     6→# /local:plan-update
+     7→
+     8→Update an existing plan with the current session's plan content.
+     9→
+    10→## Usage
+    11→
+    12→```bash
+    13→/local:plan-update 42
+    14→/local:plan-update https://github.com/owner/repo/issues/42
+    15→```
+    16→
+    17→---
+    18→
+    19→## Agent Instructions
+    20→
+    21→### Step 1: Parse Plan Number
+    22→
+    23→Extract the plan number from the argument:
+    24→
+    25→- If numeric (e.g., `42`), use directly
+    26→- If URL (e.g., `https://github.com/owner/repo/pull/42`), extract the number from the path
+    27→
+    28→If no argument provided, check `ref.json` in `.erk/impl-context/&lt;branch&gt;/` for a linked plan number.
+    29→
+    30→If still no plan number, ask the user for the plan number.
+
+... [38 lines omitted] ...
+
+    48→- If `branch_name` is set but `branch_updated` is false: `"Plan updated on PR #N (warning: branch push failed)"`
+    50→On failure, display the error and suggest:
+  </tool_result>
+  <tool_result tool="toolu_01TVX5dM7fjZpMVMNih8RMK4">
+     1→---
+     2→description: Extract insights from plan-associated sessions
+     3→argument-hint: "[plan-number]"
+     4→---
+     5→
+     6→# /erk:learn
+     7→
+     8→Create a documentation plan from Claude Code sessions associated with a plan implementation. The verb "learn" means: analyze what happened, extract insights, and create an actionable plan to document those learnings.
+     9→
+    10→## Usage
+    11→
+    12→```
+    13→/erk:learn                              # Infers plan from current branch
+    14→/erk:learn 4655                          # Explicit plan number
+    15→```
+    16→
+    17→## Purpose
+    18→
+    19→All documentation produced by this command follows the content quality standards in the `learned-docs` skill. Load that skill for the full rules on audience (AI agents), the cornerstone principle (cross-cutting insight), and what belongs in learned docs vs code comments.
+    20→
+    21→## Agent Instructions
+    22→
+    23→**Prerequisite:** Load the `learned-docs` skill for content quality standards before proceeding.
+    24→
+    25→Tell the user (choose the appropriate pipeline display based on whether `.erk/impl-context/` exists):
+    26→
+    27→**When `.erk/impl-context/` exists (CI/async mode):**
+    28→
+    29→```
+    30→Learn pipeline for plan #&lt;plan-number&gt; (using preprocessed materials):
+
+... [802 lines omitted] ...
+
+    55→Parse the JSON output and check the `labels` array. If `erk-learn` is present, stop with this error:
+    58→Error: Plan #&lt;plan-number&gt; is a learn plan (has erk-learn label).
+   143→This returns JSON with PR details (`number`, `title`, `state`, `url`, `head_ref_name`, `base_ref_name`) or an error if no PR exists. Save the PR number for the parallel agents below.
+   414→Confirm you see the expected files (session-\*.md, diff-analysis.md, existing-docs-check.md, pr-comments-analysis.md) before proceeding. If any files are missing, the agent failed to write its output and must be re-launched.
+   545→If agents were not launched or failed, fall back to manual analysis.
+   574→- Error messages and how they were resolved
+   743→Parse the JSON output. If `count` is 0, no comment was added (no candidates found by the extractor). This is normal and not an error.
+   759→**If plan validation failed (no actionable documentation):**
+   825→- `&lt;tool_result&gt;` elements with errors often reveal the most useful insights
+  </tool_result>
+  <assistant>Now let me also read the skill files that need updating:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="35801" cache_read_input_tokens="111545" cache_creation="{'ephemeral_5m_input_tokens': 35801, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01JrfFf4p6MFuRLiqA2RuCYD">
+    <param name="pattern">--plan-number|--plan-id</param>
+    <param name="path">/home/runner/work/erk/erk/.claude/skills/erk-planning</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="35801" cache_read_input_tokens="111545" cache_creation="{'ephemeral_5m_input_tokens': 35801, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01JrfFf4p6MFuRLiqA2RuCYD">
+.claude/skills/erk-planning/SKILL.md:89:erk exec plan-update --plan-number 123 --session-id="&lt;session-id&gt;"
+.claude/skills/erk-planning/references/workflow.md:54:erk exec plan-update --plan-number 123 --session-id="&lt;session-id&gt;"
+.claude/skills/erk-planning/references/workflow.md:57:erk exec plan-update --plan-number 123 --plan-path /path/to/plan.md
+.claude/skills/erk-planning/references/workflow.md:119:erk exec plan-update --plan-number 42 --plan-path ~/.claude/plans/my-plan.md
+  </tool_result>
+  <tool_use name="Grep" id="toolu_018QVEBWreTGxmJMFBCnTBww">
+    <param name="pattern">--plan-number|--plan-id|plan_number|plan_id</param>
+    <param name="path">/home/runner/work/erk/erk/.claude</param>
+    <param name="output_mode">content</param>
+    <param name="glob">*.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="70610" cache_read_input_tokens="20438" cache_creation="{'ephemeral_5m_input_tokens': 70610, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_018QVEBWreTGxmJMFBCnTBww">
+.claude/skills/fake-driven-testing/references/gateway-architecture.md:532:        return CreatePlanResult(plan_id=str(result.number), url=result.url)
+.claude/skills/rename-swarm/SKILL.md:13:- Examples: renaming `issue_number` to `plan_number`, renaming `old_func` to `new_func`, updating a key name across config consumers
+.claude/skills/rename-swarm/SKILL.md:118:## Example: Renaming `issue_number` to `plan_number`
+.claude/skills/fake-driven-testing/references/anti-patterns.md:780:        return CreatePlanResult(plan_id=str(result.number), url=result.url)
+.claude/skills/fake-driven-testing/references/anti-patterns.md:791:    assert result.plan_id == "1"
+.claude/skills/erk-planning/SKILL.md:89:erk exec plan-update --plan-number 123 --session-id="&lt;session-id&gt;"
+.claude/skills/erk-planning/references/workflow.md:54:erk exec plan-update --plan-number 123 --session-id="&lt;session-id&gt;"
+.claude/skills/erk-planning/references/workflow.md:57:erk exec plan-update --plan-number 123 --plan-path /path/to/plan.md
+.claude/skills/erk-planning/references/workflow.md:76:  "plan_id": 123,
+.claude/skills/erk-planning/references/workflow.md:119:erk exec plan-update --plan-number 42 --plan-path ~/.claude/plans/my-plan.md
+.claude/skills/refac-cli-push-down/SKILL.md:194:**Bad:** `{"plan_number": 42}` — agent must now fetch plan details separately.
+.claude/skills/refac-cli-push-down/SKILL.md:195:**Good:** `{"plan_number": 42, "title": "...", "phases": [...], "related_docs": {...}}` — agent can proceed immediately.
+.claude/skills/dignified-python/dignified-python-core.md:450:    plan_id: int          # Always valid — numeric guaranteed
+.claude/skills/dignified-python/dignified-python-core.md:457:    raw_id = data.get("plan_id")
+.claude/skills/dignified-python/dignified-python-core.md:460:    return PlanRef(plan_id=raw_id, url=data["url"], provider=data["provider"])
+.claude/skills/dignified-python/dignified-python-core.md:468:    plan_id: str          # Could be "42" or "PROJ-123" — caller must check
+.claude/skills/dignified-python/dignified-python-core.md:471:    def numeric_plan_id(self) -&gt; int | None:
+.claude/skills/dignified-python/dignified-python-core.md:472:        """Every callsite must use this instead of plan_id."""
+.claude/skills/dignified-python/dignified-python-core.md:473:        if self.plan_id.isdigit():
+.claude/skills/dignified-python/dignified-python-core.md:474:            return int(self.plan_id)
+.claude/skills/dignified-python/dignified-python-core.md:478:issue = plan_ref.numeric_plan_id
+.claude/skills/dignified-python/dignified-python-core.md:480:    log.warning("Non-numeric plan_id")
+.claude/skills/erk-exec/reference.md:146:**Usage:** `erk exec add-plan-label` &lt;plan_number&gt;
+.claude/skills/erk-exec/reference.md:245:| `--plan-id`    | INTEGER | Yes      | Sentinel.UNSET | Plan identifier (for context) |
+.claude/skills/erk-exec/reference.md:273:**Usage:** `erk exec close-pr` &lt;plan_number&gt;
+.claude/skills/erk-exec/reference.md:311:**Usage:** `erk exec create-impl-context-from-plan` &lt;plan_id&gt;
+.claude/skills/erk-exec/reference.md:417:| `--plan-id`    | INTEGER | Yes      | Sentinel.UNSET | Plan identifier to fetch sessions for |
+.claude/skills/erk-exec/reference.md:495:**Usage:** `erk exec get-plan-info` &lt;plan_number&gt;
+.claude/skills/erk-exec/reference.md:513:**Usage:** `erk exec get-plan-metadata` &lt;plan_number&gt; &lt;field_name&gt;
+.claude/skills/erk-exec/reference.md:599:**Usage:** `erk exec get-pr-for-plan` &lt;plan_number&gt;
+
+... [52 lines omitted] ...
+
+.claude/commands/erk/system/one-shot-plan.md:60:Parse the JSON output. If `success` is not `true`, stop and report the error. Otherwise, use `$PLAN_ISSUE_NUMBER` as the `plan_number`. To get the `title`, extract the first `# ` heading from `.erk/impl-context/plan.md`.
+.claude/commands/erk/system/one-shot-plan.md:78:Parse the JSON output. If `success` is not `true`, stop and report the error. Otherwise, extract `plan_number` and `title` from the output.
+  </tool_result>
+  <assistant>Now I can see the full scope. Let me re-read the plan more carefully to understand what's in scope for this PR:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3953" cache_read_input_tokens="91048" cache_creation="{'ephemeral_5m_input_tokens': 3953, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_015nB26CFujLsuiJrjCDtKo8">
+    <param name="file_path">/home/runner/.claude/projects/-home-runner-work-erk-erk/25030007-2c9c-4877-bc4b-bf8effcb4637/tool-results/toolu_01TkZ6LkMeT37xxB1idiGXyM.txt</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3953" cache_read_input_tokens="91048" cache_creation="{'ephemeral_5m_input_tokens': 3953, 'ephemeral_1h_input_tokens': 0}" output_tokens="153" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_015nB26CFujLsuiJrjCDtKo8">
+     1→     1→# Plan: Rename Click Arguments/Options (Objective #9109, Node 2.3)
+     2→     2→
+     3→     3→Part of Objective #9109, Node 2.3: Rename Click arguments/options: plan_number -&gt; pr_number, plan_id -&gt; pr_number across CLI commands.
+     4→     4→
+     5→     5→## Context
+     6→     6→
+     7→     7→Objective #9109 is renaming "plan" terminology to "pr" across all APIs. Phases 1 and 2.1-2.2 are done (core types, gateway ABCs, JSON output fields, TypedDict fields). Node 2.3 renames the Click argument/option declarations and their corresponding function parameter names. This must also update all callers (workflows, skills, commands) that pass these CLI flags, to prevent breakage.
+     8→     8→
+     9→     9→## Scope
+    10→    10→
+    11→    11→**In scope:** Click decorators, function parameter names, internal variable usage, and all callers of the renamed flags.
+    12→    12→
+    13→    13→**Out of scope:** Help strings and error messages (node 2.4), skill/command documentation prose (node 4.2).
+    14→    14→
+    15→    15→## Rename Mapping
+    16→    16→
+    17→    17→| Current CLI Flag | Current Param | New CLI Flag | New Param |
+    18→    18→|-----------------|---------------|-------------|-----------|
+    19→    19→| `--plan-number` | `plan_number` | `--pr-number` | `pr_number` |
+    20→    20→| `--plan-id` (int) | `plan_id` | `--pr-number` | `pr_number` |
+    21→    21→| `--plan-id` (str) | `plan_id` | `--pr-id` | `pr_id` |
+    22→    22→| positional `plan_number` | `plan_number` | positional `pr_number` | `pr_number` |
+    23→    23→| positional `plan_id` (int) | `plan_id` | positional `pr_number` | `pr_number` |
+    24→    24→| `--plan` / `-p` | `plan` | `--plan` / `-p` | `plan` (keep - this is admin test helper) |
+    25→    25→
+    26→    26→**Special cases:**
+    27→    27→- `update_plan_header.py`: `plan_id` is `type=str` -&gt; rename to `pr_id` (str)
+    28→    28→- `dispatch_cmd.py`: `plan_numbers` (tuple) -&gt; `pr_numbers` (tuple), CLI name `plan_numbers` positional -&gt; `pr_numbers`
+    29→    29→- `admin.py`: `--plan` / `-p` option is for an admin test command, rename to `--pr` / `-p`
+    30→    30→
+
+... [80 lines omitted] ...
+
+    90→    90→**Note:** Do NOT rename error message text or help strings - those are node 2.4.
+    94→    94→1. Run `ruff check` to verify no syntax errors
+  </tool_result>
+  <assistant>Good. Now I have a clear picture of the full plan. The plan says `track_learn_result.py` maps `--plan-id` (int) -&gt; `--pr-number`, but looking at the actual code it's `type=str`. Let me re-read the plan mapping more carefully:
+
+- Line 44: `track_learn_result.py` - `plan_id` param -&gt; `pr_number`
+
+But in the actual file, `--plan-id` is `type=str`. The plan says rename to `pr_number` though. Let me check the plan mapping table again:
+- `--plan-id` (int) → `--pr-number` / `pr_number`
+- `--plan-id` (str) → `--pr-id` / `pr_id`
+
+So `track_learn_result.py` (which is `type=str`) should actually become `--pr-id` / `pr_id`. But the plan line 44 says `pr_number`. This is a plan inconsistency. Since `track_learn_result.py` uses `plan_id: str` (passed as `"--plan-id"` with `type=str`), the correct rename per the mapping table is `--pr-id` / `pr_id`.
+
+Let me check on the background agents now:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2902" cache_read_input_tokens="95001" cache_creation="{'ephemeral_5m_input_tokens': 2902, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TaskOutput" id="toolu_01Wp8aTt4yiFgXZjVfBwd4PA">
+    <param name="task_id">ac00666</param>
+    <param name="block">True</param>
+    <param name="timeout">120000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2902" cache_read_input_tokens="95001" cache_creation="{'ephemeral_5m_input_tokens': 2902, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Wp8aTt4yiFgXZjVfBwd4PA">
+&lt;retrieval_status&gt;success&lt;/retrieval_status&gt;
+
+&lt;task_id&gt;ac00666&lt;/task_id&gt;
+
+&lt;task_type&gt;local_agent&lt;/task_type&gt;
+
+&lt;status&gt;completed&lt;/status&gt;
+
+&lt;output&gt;
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/store_tripwire_candidates.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/register_one_shot_plan.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/post_workflow_started_comment.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/plan_update.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/plan_update.py"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/store_tripwire_candidates.py","old_string":"@click.command(name=\"store-tripwire-candidates\")\n@click.option(\"--plan-number\", required=True, type=int, help=\"Plan number\")\n@click.option(\"--candidates-file\", required=True, help=\"Path to tripwire-candidates.json\")\n@click.pass_context\ndef store_tripwire_candidates(\n    ctx: click.Context,\n    *,\n    plan_number: int,\n    candidates_file: str,\n) -&gt; None:","new_string":"@click.command(name=\"store-tripwire-candidates\")\n@click.option(\"--pr-number\", required=True, type=int, help=\"Plan number\")\n@click.option(\"--candidates-file\", required=True, help=\"Path to tripwire-candidates.json\")\n@click.pass_context\ndef store_tripwire_candidates(\n    ctx: click.Context,\n    *,\n    pr_number: int,\n    candidates_file: str,\n) -&gt; None:"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/store_tripwire_candidates.py","old_string":"    # Post comment to issue\n    issues.add_comment(repo_root, plan_number, comment_body)","new_string":"    # Post comment to issue\n    issues.add_comment(repo_root, pr_number, comment_body)"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/store_tripwire_candidates.py","old_string":"    # Post comment to issue\n    issues.add_comment(repo_root, plan_number, comment_body)","new_string":"    # Post comment to issue\n    issues.add_comment(repo_root, pr_number, comment_body)"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/register_one_shot_plan.py","old_string":"@click.command(name=\"register-one-shot-plan\")\n@click.option(\"--plan-number\", type=int, required=True)\n@click.option(\"--run-id\", type=str, required=True)\n@click.option(\"--pr-number\", type=int, required=True)\n@click.option(\"--submitted-by\", type=str, required=True)\n@click.option(\"--run-url\", type=str, required=True)\n@click.pass_context\ndef register_one_shot_plan(\n    ctx: click.Context,\n    *,\n    plan_number: int,\n    run_id: str,\n    pr_number: int,\n    submitted_by: str,\n    run_url: str,\n) -&gt; None:","new_string":"@click.command(name=\"register-one-shot-plan\")\n@click.option(\"--pr-number\", type=int, required=True)\n@click.option(\"--run-id\", type=str, required=True)\n@click.option(\"--impl-pr-number\", type=int, required=True)\n@click.option(\"--submitted-by\", type=str, required=True)\n@click.option(\"--run-url\", type=str, required=True)\n@click.pass_context\ndef register_one_shot_plan(\n    ctx: click.Context,\n    *,\n    pr_number: int,\n    run_id: str,\n    impl_pr_number: int,\n    submitted_by: str,\n    run_url: str,\n) -&gt; None:"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/register_one_shot_plan.py","old_string":"    # Op 1: dispatch metadata\n    try:\n        write_dispatch_metadata(\n            plan_backend=plan_backend,\n            github=github,\n            repo_root=repo_root,\n            plan_number=plan_number,\n            run_id=run_id,\n            dispatched_at=datetime.now(UTC).strftime(\"%Y-%m-%dT%H:%M:%SZ\"),\n        )\n        results[\"dispatch_metadata\"] = {\"success\": True}\n    except Exception as exc:\n        results[\"dispatch_metadata\"] = {\"success\": False, \"error\": str(exc)}","new_string":"    # Op 1: dispatch metadata\n    try:\n        write_dispatch_metadata(\n            plan_backend=plan_backend,\n            github=github,\n            repo_root=repo_root,\n            plan_number=pr_number,\n            run_id=run_id,\n            dispatched_at=datetime.now(UTC).strftime(\"%Y-%m-%dT%H:%M:%SZ\"),\n        )\n        results[\"dispatch_metadata\"] = {\"success\": True}\n    except Exception as exc:\n        results[\"dispatch_metadata\"] = {\"success\": False, \"error\": str(exc)}"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/register_one_shot_plan.py","old_string":"    # Op 2: queued comment\n    try:\n        issue = issues.get_issue(repo_root, plan_number)\n        if isinstance(issue, IssueNotFound):\n            raise RuntimeError(f\"Plan #{plan_number} not found\")\n        # Extract owner/repo from run_url for the PR link\n        url_parts = run_url.split(\"/\")\n        repo_slug = next(\n            (\n                f\"{url_parts[i + 1]}/{url_parts[i + 2]}\"\n                for i, p in enumerate(url_parts)\n                if p == \"github.com\" and i + 2 &lt; len(url_parts)\n            ),\n            \"\",\n        )\n        issues.add_comment(\n            repo_root,\n            plan_number,\n            f\"\\U0001f504 **Queued for Implementation**\\n\\n\"\n            f\"**Submitted by:** @{submitted_by}\\n\"\n            f\"**PR:** [#{pr_number}](https://github.com/{repo_slug}/pull/{pr_number})\\n\"\n            f\"**Workflow run:** [View run]({run_url})\\n\",\n        )\n        results[\"queued_comment\"] = {\"success\": True}\n    except Exception as exc:\n        results[\"queued_comment\"] = {\"success\": False, \"error\": str(exc)}","new_string":"    # Op 2: queued comment\n    try:\n        issue = issues.get_issue(repo_root, pr_number)\n        if isinstance(issue, IssueNotFound):\n            raise RuntimeError(f\"Plan #{pr_number} not found\")\n        # Extract owner/repo from run_url for the PR link\n        url_parts = run_url.split(\"/\")\n        repo_slug = next(\n            (\n                f\"{url_parts[i + 1]}/{url_parts[i + 2]}\"\n                for i, p in enumerate(url_parts)\n                if p == \"github.com\" and i + 2 &lt; len(url_parts)\n            ),\n            \"\",\n        )\n        issues.add_comment(\n            repo_root,\n            pr_number,\n            f\"\\U0001f504 **Queued for Implementation**\\n\\n\"\n            f\"**Submitted by:** @{submitted_by}\\n\"\n            f\"**PR:** [#{impl_pr_number}](https://github.com/{repo_slug}/pull/{impl_pr_number})\\n\"\n            f\"**Workflow run:** [View run]({run_url})\\n\",\n        )\n        results[\"queued_comment\"] = {\"success\": True}\n    except Exception as exc:\n        results[\"queued_comment\"] = {\"success\": False, \"error\": str(exc)}"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/register_one_shot_plan.py","old_string":"    # Op 3: update lifecycle stage to \"planned\"\n    try:\n        plan_backend.update_metadata(\n            repo_root,\n            str(plan_number),\n            metadata={\"lifecycle_stage\": \"planned\"},\n        )\n        results[\"lifecycle_stage\"] = {\"success\": True}\n    except Exception as exc:\n        results[\"lifecycle_stage\"] = {\"success\": False, \"error\": str(exc)}","new_string":"    # Op 3: update lifecycle stage to \"planned\"\n    try:\n        plan_backend.update_metadata(\n            repo_root,\n            str(pr_number),\n            metadata={\"lifecycle_stage\": \"planned\"},\n        )\n        results[\"lifecycle_stage\"] = {\"success\": True}\n    except Exception as exc:\n        results[\"lifecycle_stage\"] = {\"success\": False, \"error\": str(exc)}"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/register_one_shot_plan.py","old_string":"    # Op 3: update lifecycle stage to \"planned\"\n    try:\n        plan_backend.update_metadata(\n            repo_root,\n            str(plan_number),\n            metadata={\"lifecycle_stage\": \"planned\"},\n        )\n        results[\"lifecycle_stage\"] = {\"success\": True}\n    except Exception as exc:\n        results[\"lifecycle_stage\"] = {\"success\": False, \"error\": str(exc)}","new_string":"    # Op 3: update lifecycle stage to \"planned\"\n    try:\n        plan_backend.update_metadata(\n            repo_root,\n            str(pr_number),\n            metadata={\"lifecycle_stage\": \"planned\"},\n        )\n        results[\"lifecycle_stage\"] = {\"success\": True}\n    except Exception as exc:\n        results[\"lifecycle_stage\"] = {\"success\": False, \"error\": str(exc)}"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/post_workflow_started_comment.py","old_string":"def _build_workflow_started_comment(\n    *,\n    plan_number: int,\n    branch_name: str,\n    pr_number: int,\n    run_id: str,\n    run_url: str,\n    repository: str,\n    now_iso: str,\n) -&gt; str:","new_string":"def _build_workflow_started_comment(\n    *,\n    pr_number: int,\n    branch_name: str,\n    impl_pr_number: int,\n    run_id: str,\n    run_url: str,\n    repository: str,\n    now_iso: str,\n) -&gt; str:"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/post_workflow_started_comment.py","old_string":"    block = create_workflow_started_block(\n        started_at=started_at,\n        workflow_run_id=run_id,\n        workflow_run_url=run_url,\n        plan_number=plan_number,\n        branch_name=branch_name,\n    )\n\n    description = (\n        f\"Setup completed successfully.\\n\"\n        f\"\\n\"\n        f\"**Branch:** `{branch_name}`\\n\"\n        f\"**PR:** [#{pr_number}](https://github.com/{repository}/pull/{pr_number})\\n\"\n        f\"**Status:** Ready for implementation\\n\"\n        f\"\\n\"\n        f\"[View workflow run]({run_url})\"\n    )","new_string":"    block = create_workflow_started_block(\n        started_at=started_at,\n        workflow_run_id=run_id,\n        workflow_run_url=run_url,\n        plan_number=pr_number,\n        branch_name=branch_name,\n    )\n\n    description = (\n        f\"Setup completed successfully.\\n\"\n        f\"\\n\"\n        f\"**Branch:** `{branch_name}`\\n\"\n        f\"**PR:** [#{impl_pr_number}](https://github.com/{repository}/pull/{impl_pr_number})\\n\"\n        f\"**Status:** Ready for implementation\\n\"\n        f\"\\n\"\n        f\"[View workflow run]({run_url})\"\n    )"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/post_workflow_started_comment.py","old_string":"@click.command(name=\"post-workflow-started-comment\")\n@click.option(\"--plan-number\", type=int, required=True, help=\"Plan identifier\")\n@click.option(\"--branch-name\", type=str, required=True, help=\"Git branch name\")\n@click.option(\"--pr-number\", type=int, required=True, help=\"Pull request number\")\n@click.option(\"--run-id\", type=str, required=True, help=\"GitHub Actions workflow run ID\")\n@click.option(\"--run-url\", type=str, required=True, help=\"Full URL to workflow run\")\n@click.option(\"--repository\", type=str, required=True, help=\"Repository in owner/repo format\")\n@click.pass_context\ndef post_workflow_started_comment(\n    ctx: click.Context,\n    *,\n    plan_number: int,\n    branch_name: str,\n    pr_number: int,\n    run_id: str,\n    run_url: str,\n    repository: str,\n) -&gt; None:","new_string":"@click.command(name=\"post-workflow-started-comment\")\n@click.option(\"--pr-number\", type=int, required=True, help=\"Plan identifier\")\n@click.option(\"--branch-name\", type=str, required=True, help=\"Git branch name\")\n@click.option(\"--impl-pr-number\", type=int, required=True, help=\"Pull request number\")\n@click.option(\"--run-id\", type=str, required=True, help=\"GitHub Actions workflow run ID\")\n@click.option(\"--run-url\", type=str, required=True, help=\"Full URL to workflow run\")\n@click.option(\"--repository\", type=str, required=True, help=\"Repository in owner/repo format\")\n@click.pass_context\ndef post_workflow_started_comment(\n    ctx: click.Context,\n    *,\n    pr_number: int,\n    branch_name: str,\n    impl_pr_number: int,\n    run_id: str,\n    run_url: str,\n    repository: str,\n) -&gt; None:"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/post_workflow_started_comment.py","old_string":"    # Build comment body\n    now_iso = time.now().replace(tzinfo=UTC).strftime(\"%Y-%m-%dT%H:%M:%SZ\")\n    comment_body = _build_workflow_started_comment(\n        plan_number=plan_number,\n        branch_name=branch_name,\n        pr_number=pr_number,\n        run_id=run_id,\n        run_url=run_url,\n        repository=repository,\n        now_iso=now_iso,\n    )\n\n    # Post comment via PlanBackend (handles both issue and planned-PR plans)\n    try:\n        backend.add_comment(repo_root, str(plan_number), comment_body)\n        result = PostSuccess(success=True, pr_number=plan_number)\n        click.echo(json.dumps(asdict(result), indent=2))\n    except RuntimeError as e:\n        result = PostError(\n            success=False,\n            error=\"github-api-failed\",\n            message=str(e),\n        )\n        click.echo(json.dumps(asdict(result), indent=2))\n        raise SystemExit(1) from e","new_string":"    # Build comment body\n    now_iso = time.now().replace(tzinfo=UTC).strftime(\"%Y-%m-%dT%H:%M:%SZ\")\n    comment_body = _build_workflow_started_comment(\n        pr_number=pr_number,\n        branch_name=branch_name,\n        impl_pr_number=impl_pr_number,\n        run_id=run_id,\n        run_url=run_url,\n        repository=repository,\n        now_iso=now_iso,\n    )\n\n    # Post comment via PlanBackend (handles both issue and planned-PR plans)\n    try:\n        backend.add_comment(repo_root, str(pr_number), comment_body)\n        result = PostSuccess(success=True, pr_number=pr_number)\n        click.echo(json.dumps(asdict(result), indent=2))\n    except RuntimeError as e:\n        result = PostError(\n            success=False,\n            error=\"github-api-failed\",\n            message=str(e),\n        )\n        click.echo(json.dumps(asdict(result), indent=2))\n        raise SystemExit(1) from e"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/post_workflow_started_comment.py","old_string":"    # Build comment body\n    now_iso = time.now().replace(tzinfo=UTC).strftime(\"%Y-%m-%dT%H:%M:%SZ\")\n    comment_body = _build_workflow_started_comment(\n        plan_number=plan_number,\n        branch_name=branch_name,\n        pr_number=pr_number,\n        run_id=run_id,\n        run_url=run_url,\n        repository=repository,\n        now_iso=now_iso,\n    )\n\n    # Post comment via PlanBackend (handles both issue and planned-PR plans)\n    try:\n        backend.add_comment(repo_root, str(plan_number), comment_body)\n        result = PostSuccess(success=True, pr_number=plan_number)\n        click.echo(json.dumps(asdict(result), indent=2))\n    except RuntimeError as e:\n        result = PostError(\n            success=False,\n            error=\"github-api-failed\",\n            message=str(e),\n        )\n        click.echo(json.dumps(asdict(result), indent=2))\n        raise SystemExit(1) from e","new_string":"    # Build comment body\n    now_iso = time.now().replace(tzinfo=UTC).strftime(\"%Y-%m-%dT%H:%M:%SZ\")\n    comment_body = _build_workflow_started_comment(\n        pr_number=pr_number,\n        branch_name=branch_name,\n        impl_pr_number=impl_pr_number,\n        run_id=run_id,\n        run_url=run_url,\n        repository=repository,\n        now_iso=now_iso,\n    )\n\n    # Post comment via PlanBackend (handles both issue and planned-PR plans)\n    try:\n        backend.add_comment(repo_root, str(pr_number), comment_body)\n        result = PostSuccess(success=True, pr_number=pr_number)\n        click.echo(json.dumps(asdict(result), indent=2))\n    except RuntimeError as e:\n        result = PostError(\n            success=False,\n            error=\"github-api-failed\",\n            message=str(e),\n        )\n        click.echo(json.dumps(asdict(result), indent=2))\n        raise SystemExit(1) from e"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/plan_update.py","old_string":"@click.command(name=\"plan-update\")\n@click.option(\n    \"--plan-number\",\n    type=int,\n    required=True,\n    help=\"Plan number to update\",\n)\n@click.option(\n    \"--format\",\n    \"output_format\",\n    type=click.Choice([\"json\", \"display\"]),\n    default=\"json\",\n    help=\"Output format: json (default) or display (formatted text)\",\n)\n@click.option(\n    \"--plan-path\",\n    type=click.Path(exists=True, path_type=Path),\n    help=\"Direct path to plan file (overrides session lookup)\",\n)\n@click.option(\n    \"--session-id\",\n    help=\"Session ID to find plan file in scratch storage\",\n)\n@click.option(\n    \"--summary\",\n    help=\"AI-generated summary to display above the collapsed plan in the PR body\",\n)\n@click.pass_context\ndef plan_update(\n    ctx: click.Context,\n    *,\n    plan_number: int,\n    output_format: str,\n    plan_path: Path | None,\n    session_id: str | None,\n    summary: str | None,\n) -&gt; None:","new_string":"@click.command(name=\"plan-update\")\n@click.option(\n    \"--pr-number\",\n    type=int,\n    required=True,\n    help=\"Plan number to update\",\n)\n@click.option(\n    \"--format\",\n    \"output_format\",\n    type=click.Choice([\"json\", \"display\"]),\n    default=\"json\",\n    help=\"Output format: json (default) or display (formatted text)\",\n)\n@click.option(\n    \"--plan-path\",\n    type=click.Path(exists=True, path_type=Path),\n    help=\"Direct path to plan file (overrides session lookup)\",\n)\n@click.option(\n    \"--session-id\",\n    help=\"Session ID to find plan file in scratch storage\",\n)\n@click.option(\n    \"--summary\",\n    help=\"AI-generated summary to display above the collapsed plan in the PR body\",\n)\n@click.pass_context\ndef plan_update(\n    ctx: click.Context,\n    *,\n    pr_number: int,\n    output_format: str,\n    plan_path: Path | None,\n    session_id: str | None,\n    summary: str | None,\n) -&gt; None:"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/plan_update.py","old_string":"    # Step 2: Check plan exists via PlanBackend\n    plan_id = str(plan_number)\n    plan_result = backend.get_plan(repo_root, plan_id)\n    if isinstance(plan_result, PlanNotFound):\n        _handle_update_error(f\"Plan #{plan_number} not found\")","new_string":"    # Step 2: Check plan exists via PlanBackend\n    plan_id = str(pr_number)\n    plan_result = backend.get_plan(repo_root, plan_id)\n    if isinstance(plan_result, PlanNotFound):\n        _handle_update_error(f\"Plan #{pr_number} not found\")"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/plan_update.py","old_string":"    # Step 6: Output success\n    if output_format == \"display\":\n        click.echo(f\"Plan #{plan_number} updated\")\n        click.echo(f\"Title: {full_title}\")\n        click.echo(f\"URL: {plan_result.url}\")\n        if branch_updated:\n            click.echo(f\"Branch {branch_name} synced\")\n        elif branch_name is not None:\n            click.echo(f\"Warning: branch push to {branch_name} failed\")\n    else:\n        click.echo(\n            json.dumps(\n                {\n                    \"success\": True,\n                    \"pr_number\": plan_number,\n                    \"pr_url\": plan_result.url,\n                    \"title\": full_title,\n                    \"branch_name\": branch_name,\n                    \"branch_updated\": branch_updated,\n                }\n            )\n        )","new_string":"    # Step 6: Output success\n    if output_format == \"display\":\n        click.echo(f\"Plan #{pr_number} updated\")\n        click.echo(f\"Title: {full_title}\")\n        click.echo(f\"URL: {plan_result.url}\")\n        if branch_updated:\n            click.echo(f\"Branch {branch_name} synced\")\n        elif branch_name is not None:\n            click.echo(f\"Warning: branch push to {branch_name} failed\")\n    else:\n        click.echo(\n            json.dumps(\n                {\n                    \"success\": True,\n                    \"pr_number\": pr_number,\n                    \"pr_url\": plan_result.url,\n                    \"title\": full_title,\n                    \"branch_name\": branch_name,\n                    \"branch_updated\": branch_updated,\n                }\n            )\n        )"}
+
+... [45 lines omitted] ...
+
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/plan_update.py","old_string":"    # Step 6: Output success\n    if output_format == \"display\":\n        click.echo(f\"Plan #{plan_number} updated\")\n        click.echo(f\"Title: {full_title}\")\n        click.echo(f\"URL: {plan_result.url}\")\n        if branch_updated:\n            click.echo(f\"Branch {branch_name} synced\")\n        elif branch_name is not None:\n            click.echo(f\"Warning: branch push to {branch_name} failed\")\n    else:\n        click.echo(\n            json.dumps(\n                {\n                    \"success\": True,\n                    \"pr_number\": plan_number,\n                    \"pr_url\": plan_result.url,\n                    \"title\": full_title,\n                    \"branch_name\": branch_name,\n                    \"branch_updated\": branch_updated,\n                }\n            )\n        )","new_string":"    # Step 6: Output success\n    if output_format == \"display\":\n        click.echo(f\"Plan #{pr_number} updated\")\n        click.echo(f\"Title: {full_title}\")\n        click.echo(f\"URL: {plan_result.url}\")\n        if branch_updated:\n            click.echo(f\"Branch {branch_name} synced\")\n        elif branch_name is not None:\n            click.echo(f\"Warning: branch push to {branch_name} failed\")\n    else:\n        click.echo(\n            json.dumps(\n                {\n                    \"success\": True,\n                    \"pr_number\": pr_number,\n                    \"pr_url\": plan_result.url,\n                    \"title\": full_title,\n                    \"branch_name\": branch_name,\n                    \"branch_updated\": branch_updated,\n                }\n            )\n        )"}
+- All error message prose text was preserved (only variable references within f-strings were updated)
+  </tool_result>
+  <assistant>Agent 1 completed but made an error - it renamed `--pr-number` to `--impl-pr-number` in `register_one_shot_plan.py` and `post_workflow_started_comment.py`. Those files had BOTH `--plan-number` and `--pr-number` already, and the plan says only `--plan-number` → `--pr-number`. The existing `--pr-number` should NOT be renamed. I need to fix this. Let me check on the other agents and then fix:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="9330" cache_read_input_tokens="97903" cache_creation="{'ephemeral_5m_input_tokens': 9330, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TaskOutput" id="toolu_01VKNW2CfzjjGEM11Xjmitiq">
+    <param name="task_id">adaf546</param>
+    <param name="block">True</param>
+    <param name="timeout">120000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="9330" cache_read_input_tokens="97903" cache_creation="{'ephemeral_5m_input_tokens': 9330, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TaskOutput" id="toolu_018DhmzLG7mM6w7umcz9kF82">
+    <param name="task_id">a48f8e5</param>
+    <param name="block">True</param>
+    <param name="timeout">120000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="9330" cache_read_input_tokens="97903" cache_creation="{'ephemeral_5m_input_tokens': 9330, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+</session>

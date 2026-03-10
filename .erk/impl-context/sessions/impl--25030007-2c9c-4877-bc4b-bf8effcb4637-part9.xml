@@ -1,0 +1,1324 @@
+<session>
+  <meta source="agent-a027c01" />
+  <meta branch="plnd/O9109-rename-click-args-pr-03-10-0822" />
+  <meta model="claude-sonnet-4-5-20250929" />
+  <user>You need to update test files to match renamed Click CLI flags/params. The source code has already been updated with these renames:
+
+| Old CLI Flag | New CLI Flag | Old Param | New Param |
+|--|--|--|--|
+| `--plan-number` (option) | `--pr-number` | `plan_number` | `pr_number` |
+| `--plan-id` (option, int type) | `--pr-number` | `plan_id` | `pr_number` |
+| `--plan-id` (option, str type) | `--pr-id` | `plan_id` | `pr_id` |
+| positional `plan_number` | positional `pr_number` | `plan_number` | `pr_number` |
+| positional `plan_id` (int) | positional `pr_number` | `plan_id` | `pr_number` |
+| positional `plan_id` (str) | positional `pr_id` | `plan_id` | `pr_id` |
+| `--plan`/`-p` (in admin.py) | `--pr`/`-p` | `plan` | `pr` |
+
+**SPECIAL CASES for register_one_shot_plan.py and post_workflow_started_comment.py:**
+- `--plan-number` → `--pr-number` (the plan identifier)
+- The OLD `--pr-number` (impl PR number) → `--impl-pr-number` / `impl_pr_number`
+
+**SPECIAL CASE for handle_no_changes.py:**
+- The `--plan-id` option was REMOVED entirely (its functionality merged into existing `--pr-number`)
+- Tests should no longer pass `--plan-id` 
+
+**SPECIAL CASE for dispatch_cmd.py:**
+- `DispatchResult.plan_number` → `DispatchResult.pr_number`
+- `DispatchResult.pr_number` (impl) → `DispatchResult.impl_pr_number`
+- `DispatchResult.pr_url` (impl) → `DispatchResult.impl_pr_url`
+- Positional `plan_numbers` → `pr_numbers`
+
+**IMPORTANT RULES:**
+- Only rename CLI flags in test invocations (e.g., `["--plan-id", "123"]` → `["--pr-number", "123"]`)
+- Only rename function parameter references (e.g., `plan_number=123` → `pr_number=123`)
+- Only rename dataclass field references (e.g., `result.plan_number` → `result.pr_number`)
+- Do NOT rename help strings, error message text, or comments
+- Do NOT rename plan_backend, plan_store, plan_content, plan_title, plan_url, plan_body, plan_type, plan_file, plan_path variables — those are NOT part of this rename
+- Do NOT rename `plan_number` in `land_execute` — that command was NOT renamed
+
+Update these test files:
+
+1. `tests/unit/cli/commands/exec/scripts/test_ci_update_pr_body.py` - `--plan-id` → `--pr-number`
+2. `tests/unit/cli/commands/exec/scripts/test_plan_update.py` - `--plan-number` → `--pr-number`  
+3. `tests/unit/cli/commands/exec/scripts/test_store_tripwire_candidates.py` - `--plan-number` → `--pr-number`
+4. `tests/unit/cli/commands/exec/scripts/test_register_one_shot_plan.py` - `--plan-number` → `--pr-number`, old `--pr-number` → `--impl-pr-number`
+5. `tests/unit/cli/commands/exec/scripts/test_post_workflow_started_comment.py` - `--plan-number` → `--pr-number`, old `--pr-number` → `--impl-pr-number`
+6. `tests/unit/cli/commands/exec/scripts/test_handle_no_changes.py` - remove `--plan-id` from CLI invocations, `plan_id` param → removed
+7. `tests/unit/cli/commands/exec/scripts/test_push_session.py` - `--plan-id` → `--pr-number`
+8. `tests/unit/cli/commands/exec/scripts/test_fetch_sessions.py` - `--plan-id` → `--pr-number`
+
+For each file, read it first, then use the Edit tool to make all necessary changes. Be thorough — check every occurrence.</user>
+  <assistant>I'll update the test files to match the renamed Click CLI flags/params. Let me start by reading each file to understand the changes needed.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="20930" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 20930, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_018XL9XxRH349vNkc7Cqsxtd">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_ci_update_pr_body.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="20930" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 20930, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01EKpqgzWp269J4EdHjaDth7">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_plan_update.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="20930" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 20930, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01HdgKRLNrhQY3Pv7fbEGeiX">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_store_tripwire_candidates.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="20930" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 20930, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_011kvjtpSNuumGdFXUcBTguc">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_register_one_shot_plan.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="20930" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 20930, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_016t6nmRHyLA2gwuqQeJnXYY">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_post_workflow_started_comment.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="20930" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 20930, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01MmETPYyNeSgR6E4qYBuQzJ">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_handle_no_changes.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="20930" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 20930, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01LHAsFmQSx2K2vgUtVDsRcf">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_push_session.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="20930" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 20930, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_017oqi2JYGZqh86Y5QvHgEmU">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_fetch_sessions.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="20930" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 20930, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01EKpqgzWp269J4EdHjaDth7">
+     1→"""Unit tests for plan-update command."""
+     2→
+     3→import json
+     4→from datetime import UTC, datetime
+     5→
+     6→from click.testing import CliRunner
+     7→
+     8→from erk.cli.commands.exec.scripts.plan_update import plan_update
+     9→from erk_shared.context.context import ErkContext
+    10→from erk_shared.gateway.git.remote_ops.types import PushError
+    11→from erk_shared.gateway.github.issues.types import IssueComment, IssueInfo
+    12→from erk_shared.gateway.github.types import PRDetails
+    13→from erk_shared.plan_store.planned_pr import PlannedPRBackend
+    14→from erk_shared.plan_store.planned_pr_lifecycle import IMPL_CONTEXT_DIR
+    15→from tests.fakes.gateway.claude_installation import FakeClaudeInstallation
+    16→from tests.fakes.gateway.git import FakeGit
+    17→from tests.fakes.gateway.github import FakeLocalGitHub
+    18→from tests.fakes.gateway.github_issues import FakeGitHubIssues
+    19→from tests.fakes.gateway.time import FakeTime
+    20→from tests.test_utils.plan_helpers import (
+    21→    format_plan_header_body_for_test,
+    22→    issue_info_to_pr_details,
+    23→)
+    24→
+    25→
+    26→def _make_issue(
+    27→    number: int,
+    28→    title: str,
+    29→    body: str,
+    30→) -&gt; IssueInfo:
+
+... [518 lines omitted] ...
+
+    86→    assert result.exit_code == 0, f"Failed: {result.output}"
+   140→    """Test error when no plan found."""
+   168→    assert "No plan found" in output["error"]
+   172→    """Test error when issue does not exist."""
+   195→    assert "999" in output["error"]
+   266→    assert result.exit_code == 0, f"Failed: {result.output}"
+   315→    assert result.exit_code == 0, f"Failed: {result.output}"
+   350→    assert result.exit_code == 0, f"Failed: {result.output}"
+   448→    assert result.exit_code == 0, f"Failed: {result.output}"
+   470→def test_plan_update_branch_push_failure_still_succeeds() -&gt; None:
+   471→    """Test that push failure still reports success (PR body was updated)."""
+   475→    fake_git = FakeGit(push_to_remote_error=PushError(message="rejected"))
+   494→    assert result.exit_code == 0, f"Failed: {result.output}"
+   500→    # Commit was still made (before push failed)
+   534→    assert result.exit_code == 0, f"Failed: {result.output}"
+  </tool_result>
+  <tool_result tool="toolu_01HdgKRLNrhQY3Pv7fbEGeiX">
+     1→"""Tests for erk exec store-tripwire-candidates command."""
+     2→
+     3→import json
+     4→from datetime import UTC, datetime
+     5→from pathlib import Path
+     6→
+     7→from click.testing import CliRunner
+     8→
+     9→from erk.cli.commands.exec.scripts.store_tripwire_candidates import (
+    10→    store_tripwire_candidates,
+    11→)
+    12→from erk_shared.context.context import ErkContext
+    13→from erk_shared.gateway.github.issues.types import IssueInfo
+    14→from tests.fakes.gateway.github import FakeLocalGitHub
+    15→from tests.fakes.gateway.github_issues import FakeGitHubIssues
+    16→
+    17→
+    18→def _write_candidates_file(tmp_path: Path, candidates: list[dict[str, str]]) -&gt; Path:
+    19→    """Write a candidates JSON file and return its path."""
+    20→    json_file = tmp_path / "tripwire-candidates.json"
+    21→    json_file.write_text(json.dumps({"candidates": candidates}), encoding="utf-8")
+    22→    return json_file
+    23→
+    24→
+    25→def _write_raw_json(tmp_path: Path, data: dict) -&gt; Path:
+    26→    """Write raw JSON data to a file and return its path."""
+    27→    json_file = tmp_path / "tripwire-candidates.json"
+    28→    json_file.write_text(json.dumps(data), encoding="utf-8")
+    29→    return json_file
+    30→
+
+... [252 lines omitted] ...
+
+    56→                "warning": "Use bar() instead.",
+   113→    """Return error when candidates file does not exist."""
+   132→    """Return error when candidates file has invalid JSON."""
+   154→    """Return error when candidates file has invalid structure."""
+   186→                    "warning": "Use bar() instead.",
+   212→    """Store normalizes description-&gt;warning and title-&gt;action."""
+   252→                    "warning": "Use bar() instead.",
+  </tool_result>
+  <tool_result tool="toolu_011kvjtpSNuumGdFXUcBTguc">
+     1→"""Tests for register-one-shot-plan exec command."""
+     2→
+     3→import json
+     4→from datetime import UTC, datetime
+     5→from pathlib import Path
+     6→
+     7→from click.testing import CliRunner
+     8→
+     9→from erk.cli.commands.exec.scripts.register_one_shot_plan import register_one_shot_plan
+    10→from erk_shared.context.context import ErkContext
+    11→from erk_shared.gateway.github.issues.types import IssueInfo
+    12→from erk_shared.gateway.github.types import PRDetails
+    13→from erk_shared.plan_store.planned_pr import PlannedPRBackend
+    14→from tests.fakes.gateway.github import FakeLocalGitHub
+    15→from tests.fakes.gateway.github_issues import FakeGitHubIssues
+    16→from tests.fakes.gateway.time import FakeTime
+    17→from tests.test_utils.plan_helpers import issue_info_to_pr_details
+    18→
+    19→RUN_URL = "https://github.com/test-owner/test-repo/actions/runs/99999"
+    20→CLI_ARGS = [
+    21→    "--plan-number",
+    22→    "123",
+    23→    "--run-id",
+    24→    "99999",
+    25→    "--pr-number",
+    26→    "42",
+    27→    "--submitted-by",
+    28→    "alice",
+    29→    "--run-url",
+    30→    RUN_URL,
+
+... [133 lines omitted] ...
+
+    35→    return """&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+  </tool_result>
+  <tool_result tool="toolu_016t6nmRHyLA2gwuqQeJnXYY">
+     1→"""Unit tests for post_workflow_started_comment kit CLI command.
+     2→
+     3→Tests the workflow started comment building and posting functionality.
+     4→Uses FakeGitHubIssues for dependency injection instead of mocking.
+     5→"""
+     6→
+     7→import json
+     8→import re
+     9→from datetime import UTC, datetime
+    10→from pathlib import Path
+    11→
+    12→from click.testing import CliRunner
+    13→
+    14→from erk.cli.commands.exec.scripts.post_workflow_started_comment import (
+    15→    _build_workflow_started_comment,
+    16→)
+    17→from erk.cli.commands.exec.scripts.post_workflow_started_comment import (
+    18→    post_workflow_started_comment as post_workflow_started_comment_command,
+    19→)
+    20→from erk_shared.context.context import ErkContext
+    21→from erk_shared.gateway.github.issues.types import IssueInfo
+    22→from erk_shared.gateway.github.metadata.core import parse_metadata_blocks
+    23→from erk_shared.plan_store.planned_pr import PlannedPRBackend
+    24→from tests.fakes.gateway.github import FakeLocalGitHub
+    25→from tests.fakes.gateway.github_issues import FakeGitHubIssues
+    26→from tests.fakes.gateway.time import FakeTime
+    27→from tests.test_utils.plan_helpers import issue_info_to_pr_details
+    28→
+    29→FAKE_NOW_ISO = "2026-01-15T10:00:00Z"
+    30→
+
+... [295 lines omitted] ...
+
+   228→def test_cli_github_api_failure(tmp_path: Path) -&gt; None:
+   229→    """Test CLI command handles GitHub API failure."""
+   231→    # Issue not in the fake, so add_comment will raise RuntimeError
+   262→    assert output["error"] == "github-api-failed"
+  </tool_result>
+  <tool_result tool="toolu_01MmETPYyNeSgR6E4qYBuQzJ">
+     1→"""Unit tests for handle_no_changes exec CLI command.
+     2→
+     3→Tests the no-changes scenario handling for plan-implement workflow.
+     4→Uses FakeLocalGitHub for dependency injection.
+     5→"""
+     6→
+     7→import json
+     8→from pathlib import Path
+     9→
+    10→from click.testing import CliRunner
+    11→
+    12→from erk.cli.commands.exec.scripts.handle_no_changes import (
+    13→    HandleNoChangesError,
+    14→    HandleNoChangesSuccess,
+    15→    _build_issue_comment,
+    16→    _build_no_changes_title,
+    17→    _build_pr_body,
+    18→)
+    19→from erk.cli.commands.exec.scripts.handle_no_changes import (
+    20→    handle_no_changes as handle_no_changes_command,
+    21→)
+    22→from erk_shared.context.context import ErkContext
+    23→from erk_shared.gateway.github.metadata.plan_header import format_plan_header_body
+    24→from erk_shared.gateway.github.types import PRDetails
+    25→from erk_shared.plan_store.planned_pr import PlannedPRBackend
+    26→from tests.fakes.gateway.github import FakeLocalGitHub
+    27→from tests.fakes.gateway.github_issues import FakeGitHubIssues
+    28→from tests.fakes.gateway.time import FakeTime
+    29→
+    30→
+
+... [522 lines omitted] ...
+
+   539→def test_error_dataclass_frozen() -&gt; None:
+   540→    """Test that HandleNoChangesError is immutable."""
+   541→    error = HandleNoChangesError(
+   542→        success=False, error="github-api-failed", message="Failed to update PR"
+   544→    assert error.success is False
+   545→    assert error.error == "github-api-failed"
+   546→    assert error.message == "Failed to update PR"
+  </tool_result>
+  <tool_result tool="toolu_01LHAsFmQSx2K2vgUtVDsRcf">
+     1→"""Unit tests for push-session command."""
+     2→
+     3→import json
+     4→from pathlib import Path
+     5→from unittest.mock import patch
+     6→
+     7→from click.testing import CliRunner
+     8→
+     9→from erk.cli.commands.exec.scripts.push_session import push_session
+    10→from erk_shared.context.context import ErkContext
+    11→from tests.fakes.gateway.git import FakeGit
+    12→
+    13→
+    14→def _write_session_file(tmp_path: Path) -&gt; Path:
+    15→    """Create a test session JSONL file."""
+    16→    session_file = tmp_path / "session.jsonl"
+    17→    session_file.write_text('{"type": "test"}\n', encoding="utf-8")
+    18→    return session_file
+    19→
+    20→
+    21→def _make_xml_file(tmpdir: str, prefix: str) -&gt; None:
+    22→    """Write a fake XML file to the preprocessing output directory."""
+    23→    xml_path = Path(tmpdir) / f"{prefix}.xml"
+    24→    xml_path.write_text("&lt;session&gt;test&lt;/session&gt;", encoding="utf-8")
+    25→
+    26→
+    27→def _fake_preprocess_success(prefix: str):
+    28→    """Return a subprocess side_effect that fakes successful preprocessing."""
+    29→
+    30→    def fake_preprocess(*args, **kwargs):
+
+... [298 lines omitted] ...
+
+    47→class TestPushSessionPreprocessingFailed:
+    64→            mock_run.return_value.stderr = "preprocessing error"
+    86→        assert output["reason"] == "preprocessing_failed"
+   125→        assert result.exit_code == 0, f"Failed: {result.output}"
+   234→        assert result.exit_code == 0, f"Failed: {result.output}"
+   314→        assert result.exit_code == 0, f"Failed: {result.output}"
+  </tool_result>
+  <tool_result tool="toolu_017oqi2JYGZqh86Y5QvHgEmU">
+     1→"""Unit tests for fetch-sessions command."""
+     2→
+     3→import json
+     4→from pathlib import Path
+     5→
+     6→from click.testing import CliRunner
+     7→
+     8→from erk.cli.commands.exec.scripts.fetch_sessions import fetch_sessions
+     9→from erk_shared.context.context import ErkContext
+    10→from tests.fakes.gateway.git import FakeGit
+    11→
+    12→
+    13→class TestFetchSessionsBranchNotFound:
+    14→    """Tests for fetch-sessions when the planned-pr-context branch doesn't exist."""
+    15→
+    16→    def test_branch_not_found(self, tmp_path: Path) -&gt; None:
+    17→        """Error when planned-pr-context branch doesn't exist on remote."""
+    18→        repo_root = tmp_path / "repo"
+    19→        repo_root.mkdir()
+    20→        output_dir = tmp_path / "learn"
+    21→        fake_git = FakeGit(
+    22→            current_branches={repo_root: "plan/my-feature"},
+    23→            local_branches={repo_root: []},
+    24→            remote_branches={repo_root: []},
+    25→        )
+    26→        runner = CliRunner()
+    27→
+    28→        result = runner.invoke(
+    29→            fetch_sessions,
+    30→            [
+
+... [132 lines omitted] ...
+
+    42→        assert output["error"] == "branch_not_found"
+   113→        assert result.exit_code == 0, f"Failed: {result.output}"
+   130→        """Error when manifest.json not found on branch."""
+   156→        assert output["error"] == "manifest_not_found"
+  </tool_result>
+  <tool_result tool="toolu_018XL9XxRH349vNkc7Cqsxtd">
+     1→"""Unit tests for ci_update_pr_body kit CLI command.
+     2→
+     3→Tests the PR body update with AI-generated summary and footer.
+     4→Uses FakeGit, FakeLocalGitHub, and FakePromptExecutor for dependency injection.
+     5→"""
+     6→
+     7→import json
+     8→from pathlib import Path
+     9→
+    10→from click.testing import CliRunner
+    11→
+    12→from erk.cli.commands.exec.scripts.ci_update_pr_body import (
+    13→    UpdateError,
+    14→    UpdateSuccess,
+    15→    _build_pr_body,
+    16→    _build_prompt,
+    17→    _parse_title_and_summary,
+    18→    _update_pr_body_impl,
+    19→)
+    20→from erk.cli.commands.exec.scripts.ci_update_pr_body import (
+    21→    ci_update_pr_body as ci_update_pr_body_command,
+    22→)
+    23→from erk_shared.context.context import ErkContext
+    24→from erk_shared.core.prompt_executor import PromptResult
+    25→from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
+    26→from erk_shared.plan_store.planned_pr_lifecycle import build_plan_stage_body
+    27→from tests.fakes.gateway.core import FakePromptExecutor
+    28→from tests.fakes.gateway.git import FakeGit
+    29→from tests.fakes.gateway.github import FakeLocalGitHub
+    30→from tests.test_utils.plan_helpers import format_plan_header_body_for_test
+
+... [935 lines omitted] ...
+
+   160→                error=None,
+   189→    """Test error when no PR exists for the current branch."""
+   205→    assert isinstance(result, UpdateError)
+   207→    assert result.error == "pr-not-found"
+   211→    """Test error when PR diff is empty."""
+   259→    assert isinstance(result, UpdateError)
+   261→    assert result.error == "empty-diff"
+   264→def test_impl_claude_failure(tmp_path: Path) -&gt; None:
+   265→    """Test error when Claude execution fails."""
+   302→        prompt_results=[PromptResult(success=False, output="", error="API error")]
+   315→    assert isinstance(result, UpdateError)
+   317→    assert result.error == "claude-execution-failed"
+   319→    assert result.stderr == "API error"
+   322→def test_impl_claude_failure_truncates_long_stderr(tmp_path: Path) -&gt; None:
+   359→    # Create a very long error message (&gt; 500 chars)
+   360→    long_error = "x" * 600
+   362→        prompt_results=[PromptResult(success=False, output="", error=long_error)]
+   375→    assert isinstance(result, UpdateError)
+   377→    assert result.error == "claude-execution-failed"
+   384→    """Test error when Claude returns success but with empty output."""
+   421→        prompt_results=[PromptResult(success=True, output="", error=None)]
+   434→    assert isinstance(result, UpdateError)
+   436→    assert result.error == "claude-empty-output"
+   485→            PromptResult(success=True, output="PR title\n\nGenerated summary", error=None)
+   546→            PromptResult(success=True, output="PR title\n\nGenerated summary", error=None)
+   574→def test_cli_error_exit_code(tmp_path: Path) -&gt; None:
+   575→    """Test CLI command exits with error code on failure."""
+   595→    assert output["error"] == "pr-not-found"
+   646→        prompt_results=[PromptResult(success=True, output="PR title\n\nSummary", error=None)]
+   674→def test_cli_json_output_structure_error(tmp_path: Path) -&gt; None:
+   675→    """Test that JSON output has expected structure on error."""
+   696→    assert "error" in output
+   702→    assert isinstance(output["error"], str)
+   773→            PromptResult(success=True, output="Generated title\n\nGenerated summary", error=None)
+   814→def test_impl_planned_pr_missing_plan_header_returns_error(tmp_path: Path) -&gt; None:
+   856→            PromptResult(success=True, output="Generated title\n\nGenerated summary", error=None)
+   870→    assert isinstance(result, UpdateError)
+   871→    assert result.error == "plan-header-not-found"
+   923→            PromptResult(success=True, output="Draft PR title\n\nGenerated summary", error=None)
+  </tool_result>
+  <assistant>Now I'll make the necessary edits to update the CLI flags and parameter names according to the rename specification.</assistant>
+  <usage input_tokens="30209" cache_creation_input_tokens="16551" cache_read_input_tokens="20930" cache_creation="{'ephemeral_5m_input_tokens': 16551, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01QtztctUBbiohx8eQwT6ACW">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_ci_update_pr_body.py</param>
+    <param name="old_string">    runner = CliRunner()
+    result = runner.invoke(
+        ci_update_pr_body_command,
+        ["--plan-id", "456"],
+        obj=ctx,
+    )</param>
+    <param name="new_string">    runner = CliRunner()
+    result = runner.invoke(
+        ci_update_pr_body_command,
+        ["--pr-number", "456"],
+        obj=ctx,
+    )</param>
+  </tool_use>
+  <usage input_tokens="30209" cache_creation_input_tokens="16551" cache_read_input_tokens="20930" cache_creation="{'ephemeral_5m_input_tokens': 16551, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_017VMKcqQZuJGYKKFJKt9so4">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_ci_update_pr_body.py</param>
+    <param name="old_string">    runner = CliRunner()
+    result = runner.invoke(
+        ci_update_pr_body_command,
+  ...[truncated 105 chars]...       "https://github.com/owner/repo/actions/runs/789",
+        ],
+        obj=ctx,
+    )</param>
+    <param name="new_string">    runner = CliRunner()
+    result = runner.invoke(
+        ci_update_pr_body_command,
+  ...[truncated 107 chars]...       "https://github.com/owner/repo/actions/runs/789",
+        ],
+        obj=ctx,
+    )</param>
+  </tool_use>
+  <usage input_tokens="30209" cache_creation_input_tokens="16551" cache_read_input_tokens="20930" cache_creation="{'ephemeral_5m_input_tokens': 16551, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01WG3ZNRJavWKUvEPoTCiPU3">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_ci_update_pr_body.py</param>
+    <param name="old_string">    runner = CliRunner()
+    result = runner.invoke(
+        ci_update_pr_body_command,
+        ["--plan-id", "456"],
+        obj=ctx,
+    )
+
+    assert result.exit_code == 1</param>
+    <param name="new_string">    runner = CliRunner()
+    result = runner.invoke(
+        ci_update_pr_body_command,
+        ["--pr-number", "456"],
+        obj=ctx,
+    )
+
+    assert result.exit_code == 1</param>
+  </tool_use>
+  <usage input_tokens="30209" cache_creation_input_tokens="16551" cache_read_input_tokens="20930" cache_creation="{'ephemeral_5m_input_tokens': 16551, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01SRpeUa4Hw24sWJK8Ccakgi">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_ci_update_pr_body.py</param>
+    <param name="old_string">def test_cli_requires_plan_id() -&gt; None:
+    """Test that --plan-id is required."""
+    ru...[truncated 85 chars]...e != 0
+    assert "Missing option" in result.output or "required" in result.output.lower()</param>
+    <param name="new_string">def test_cli_requires_pr_number() -&gt; None:
+    """Test that --pr-number is required."""
+  ...[truncated 89 chars]...e != 0
+    assert "Missing option" in result.output or "required" in result.output.lower()</param>
+  </tool_use>
+  <usage input_tokens="30209" cache_creation_input_tokens="16551" cache_read_input_tokens="20930" cache_creation="{'ephemeral_5m_input_tokens': 16551, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01W4PBbiiuHZg6sMDFrXSYfm">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_ci_update_pr_body.py</param>
+    <param name="old_string">    runner = CliRunner()
+    result = runner.invoke(
+        ci_update_pr_body_command,
+        ["--plan-id", "456"],
+        obj=ctx,
+    )</param>
+    <param name="new_string">    runner = CliRunner()
+    result = runner.invoke(
+        ci_update_pr_body_command,
+        ["--pr-number", "456"],
+        obj=ctx,
+    )</param>
+  </tool_use>
+  <usage input_tokens="30209" cache_creation_input_tokens="16551" cache_read_input_tokens="20930" cache_creation="{'ephemeral_5m_input_tokens': 16551, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01F6HE3jFiqWj9krcsjTCmP2">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_ci_update_pr_body.py</param>
+    <param name="old_string">    runner = CliRunner()
+    result = runner.invoke(
+        ci_update_pr_body_command,
+        ["--plan-id", "456"],
+        obj=ctx,
+    )
+
+    assert result.exit_code == 0</param>
+    <param name="new_string">    runner = CliRunner()
+    result = runner.invoke(
+        ci_update_pr_body_command,
+        ["--pr-number", "456"],
+        obj=ctx,
+    )
+
+    assert result.exit_code == 0</param>
+  </tool_use>
+  <usage input_tokens="30209" cache_creation_input_tokens="16551" cache_read_input_tokens="20930" cache_creation="{'ephemeral_5m_input_tokens': 16551, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01THuUvXHrgj9ATZnDBpW5mh">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_ci_update_pr_body.py</param>
+    <param name="old_string">    runner = CliRunner()
+    result = runner.invoke(
+        ci_update_pr_body_command,
+        ["--plan-id", "42", "--planned-pr"],
+        obj=ctx,
+    )</param>
+    <param name="new_string">    runner = CliRunner()
+    result = runner.invoke(
+        ci_update_pr_body_command,
+        ["--pr-number", "42", "--planned-pr"],
+        obj=ctx,
+    )</param>
+  </tool_use>
+  <usage input_tokens="30209" cache_creation_input_tokens="16551" cache_read_input_tokens="20930" cache_creation="{'ephemeral_5m_input_tokens': 16551, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01EY3LMqCYhes6wmcoyxmREF">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_plan_update.py</param>
+    <param name="old_string">    result = runner.invoke(
+        plan_update,
+        ["--plan-number", "42", "--format...[truncated 107 chars]...b, fake_gh, time=FakeTime()),
+            claude_installation=fake_store,
+        ),
+    )</param>
+    <param name="new_string">    result = runner.invoke(
+        plan_update,
+        ["--pr-number", "42", "--format",...[truncated 105 chars]...b, fake_gh, time=FakeTime()),
+            claude_installation=fake_store,
+        ),
+    )</param>
+  </tool_use>
+  <usage input_tokens="30209" cache_creation_input_tokens="16551" cache_read_input_tokens="20930" cache_creation="{'ephemeral_5m_input_tokens': 16551, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01ARGMUKGfiaZeeFKHPhLvFr">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_plan_update.py</param>
+    <param name="old_string">    result = runner.invoke(
+        plan_update,
+        ["--plan-number", "99", "--format...[truncated 110 chars]...b, fake_gh, time=FakeTime()),
+            claude_installation=fake_store,
+        ),
+    )</param>
+    <param name="new_string">    result = runner.invoke(
+        plan_update,
+        ["--pr-number", "99", "--format",...[truncated 108 chars]...b, fake_gh, time=FakeTime()),
+            claude_installation=fake_store,
+        ),
+    )</param>
+  </tool_use>
+  <usage input_tokens="30209" cache_creation_input_tokens="16551" cache_read_input_tokens="20930" cache_creation="{'ephemeral_5m_input_tokens': 16551, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01BwtdUutFvBtXbaQP3iDtdc">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_plan_update.py</param>
+    <param name="old_string">    result = runner.invoke(
+        plan_update,
+        ["--plan-number", "42", "--format...[truncated 107 chars]...b, fake_gh, time=FakeTime()),
+            claude_installation=fake_store,
+        ),
+    )</param>
+    <param name="new_string">    result = runner.invoke(
+        plan_update,
+        ["--pr-number", "42", "--format",...[truncated 105 chars]...b, fake_gh, time=FakeTime()),
+            claude_installation=fake_store,
+        ),
+    )</param>
+  </tool_use>
+  <usage input_tokens="30209" cache_creation_input_tokens="16551" cache_read_input_tokens="20930" cache_creation="{'ephemeral_5m_input_tokens': 16551, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_012uevchEKLtAGjmCHtWvV7C">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_plan_update.py</param>
+    <param name="old_string">    result = runner.invoke(
+        plan_update,
+        ["--plan-number", "999", "--forma...[truncated 108 chars]...b, fake_gh, time=FakeTime()),
+            claude_installation=fake_store,
+        ),
+    )</param>
+    <param name="new_string">    result = runner.invoke(
+        plan_update,
+        ["--pr-number", "999", "--format"...[truncated 106 chars]...b, fake_gh, time=FakeTime()),
+            claude_installation=fake_store,
+        ),
+    )</param>
+  </tool_use>
+  <usage input_tokens="30209" cache_creation_input_tokens="16551" cache_read_input_tokens="20930" cache_creation="{'ephemeral_5m_input_tokens': 16551, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_019UTzi8tSiWePqEkuvrP4Ns">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_plan_update.py</param>
+    <param name="old_string">    result = runner.invoke(
+        plan_update,
+        ["--plan-number", "42"],
+        ...[truncated 87 chars]...b, fake_gh, time=FakeTime()),
+            claude_installation=fake_store,
+        ),
+    )</param>
+    <param name="new_string">    result = runner.invoke(
+        plan_update,
+        ["--pr-number", "42"],
+        ob...[truncated 85 chars]...b, fake_gh, time=FakeTime()),
+            claude_installation=fake_store,
+        ),
+    )</param>
+  </tool_use>
+  <usage input_tokens="30209" cache_creation_input_tokens="16551" cache_read_input_tokens="20930" cache_creation="{'ephemeral_5m_input_tokens': 16551, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01FybD7ByJbLVazvyndz9bsX">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_plan_update.py</param>
+    <param name="old_string">    result = runner.invoke(
+        plan_update,
+        ["--plan-number", "42", "--format...[truncated 268 chars]...ut = json.loads(result.output)
+    assert output["title"] == "[erk-plan] New Feature Name"</param>
+    <param name="new_string">    result = runner.invoke(
+        plan_update,
+        ["--pr-number", "42", "--format",...[truncated 266 chars]...ut = json.loads(result.output)
+    assert output["title"] == "[erk-plan] New Feature Name"</param>
+  </tool_use>
+  <usage input_tokens="30209" cache_creation_input_tokens="16551" cache_read_input_tokens="20930" cache_creation="{'ephemeral_5m_input_tokens': 16551, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01DCrKHs24jMApqH5qCpXsRm">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_plan_update.py</param>
+    <param name="old_string">    result = runner.invoke(
+        plan_update,
+        ["--plan-number", "42", "--format...[truncated 272 chars]... json.loads(result.output)
+    assert output["title"] == "[erk-learn] Learn Something New"</param>
+    <param name="new_string">    result = runner.invoke(
+        plan_update,
+        ["--pr-number", "42", "--format",...[truncated 270 chars]... json.loads(result.output)
+    assert output["title"] == "[erk-learn] Learn Something New"</param>
+  </tool_use>
+  <usage input_tokens="30209" cache_creation_input_tokens="16551" cache_read_input_tokens="20930" cache_creation="{'ephemeral_5m_input_tokens': 16551, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_014dCes7gyNiSrvWAQyVx4cG">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_plan_update.py</param>
+    <param name="old_string">    result = runner.invoke(
+        plan_update,
+        ["--plan-number", "42", "--format...[truncated 265 chars]...utput = json.loads(result.output)
+    assert output["title"] == "[erk-plan] Add Feature X"</param>
+    <param name="new_string">    result = runner.invoke(
+        plan_update,
+        ["--pr-number", "42", "--format",...[truncated 263 chars]...utput = json.loads(result.output)
+    assert output["title"] == "[erk-plan] Add Feature X"</param>
+  </tool_use>
+  <usage input_tokens="30209" cache_creation_input_tokens="16551" cache_read_input_tokens="20930" cache_creation="{'ephemeral_5m_input_tokens': 16551, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_017G7F1Jw8bQtd8dW6nCntTe">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_plan_update.py</param>
+    <param name="old_string">    result = runner.invoke(
+        plan_update,
+        ["--plan-number", "42", "--format...[truncated 110 chars]...b, fake_gh, time=FakeTime()),
+            claude_installation=fake_store,
+        ),
+    )</param>
+    <param name="new_string">    result = runner.invoke(
+        plan_update,
+        ["--pr-number", "42", "--format",...[truncated 108 chars]...b, fake_gh, time=FakeTime()),
+            claude_installation=fake_store,
+        ),
+    )</param>
+  </tool_use>
+  <usage input_tokens="30209" cache_creation_input_tokens="16551" cache_read_input_tokens="20930" cache_creation="{'ephemeral_5m_input_tokens': 16551, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01KSFJSnR5AwhnnAMHbGc8ZL">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_plan_update.py</param>
+    <param name="old_string">    result = runner.invoke(
+        plan_update,
+        ["--plan-number", "42", "--format...[truncated 85 chars]...          plan_store=backend,
+            claude_installation=fake_store,
+        ),
+    )</param>
+    <param name="new_string">    result = runner.invoke(
+        plan_update,
+        ["--pr-number", "42", "--format",...[truncated 83 chars]...          plan_store=backend,
+            claude_installation=fake_store,
+        ),
+    )</param>
+  </tool_use>
+  <usage input_tokens="30209" cache_creation_input_tokens="16551" cache_read_input_tokens="20930" cache_creation="{'ephemeral_5m_input_tokens': 16551, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_0136LLgUHyisnE2c4bLsdSyx">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_plan_update.py</param>
+    <param name="old_string">    result = runner.invoke(
+        plan_update,
+        ["--plan-number", "42", "--format...[truncated 147 chars]...fake_store,
+        ),
+    )
+
+    assert result.exit_code == 0, f"Failed: {result.output}"</param>
+    <param name="new_string">    result = runner.invoke(
+        plan_update,
+        ["--pr-number", "42", "--format",...[truncated 145 chars]...fake_store,
+        ),
+    )
+
+    assert result.exit_code == 0, f"Failed: {result.output}"</param>
+  </tool_use>
+  <usage input_tokens="30209" cache_creation_input_tokens="16551" cache_read_input_tokens="20930" cache_creation="{'ephemeral_5m_input_tokens': 16551, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_0151cAQxyodbri7Fpc1B6HtF">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_plan_update.py</param>
+    <param name="old_string">    result = runner.invoke(
+        plan_update,
+        ["--plan-number", "42", "--format...[truncated 195 chars]...fake_store,
+        ),
+    )
+
+    assert result.exit_code == 0, f"Failed: {result.output}"</param>
+    <param name="new_string">    result = runner.invoke(
+        plan_update,
+        ["--pr-number", "42", "--format",...[truncated 193 chars]...fake_store,
+        ),
+    )
+
+    assert result.exit_code == 0, f"Failed: {result.output}"</param>
+  </tool_use>
+  <usage input_tokens="30209" cache_creation_input_tokens="16551" cache_read_input_tokens="20930" cache_creation="{'ephemeral_5m_input_tokens': 16551, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01He6nQPskNcYEjAV8HXk6Sd">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_store_tripwire_candidates.py</param>
+    <param name="old_string">    runner = CliRunner()
+    result = runner.invoke(
+        store_tripwire_candidates,
+  ...[truncated 45 chars]...  "--candidates-file",
+            str(candidates_file),
+        ],
+        obj=ctx,
+    )</param>
+    <param name="new_string">    runner = CliRunner()
+    result = runner.invoke(
+        store_tripwire_candidates,
+  ...[truncated 43 chars]...  "--candidates-file",
+            str(candidates_file),
+        ],
+        obj=ctx,
+    )</param>
+  </tool_use>
+  <usage input_tokens="30209" cache_creation_input_tokens="16551" cache_read_input_tokens="20930" cache_creation="{'ephemeral_5m_input_tokens': 16551, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01HoSWKDkgoDpw2RxcHn95Cs">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_store_tripwire_candidates.py</param>
+    <param name="old_string">    runner = CliRunner()
+    result = runner.invoke(
+        store_tripwire_candidates,
+  ...[truncated 79 chars]... str(candidates_file),
+        ],
+        obj=ctx,
+    )
+
+    assert result.exit_code == 0</param>
+    <param name="new_string">    runner = CliRunner()
+    result = runner.invoke(
+        store_tripwire_candidates,
+  ...[truncated 77 chars]... str(candidates_file),
+        ],
+        obj=ctx,
+    )
+
+    assert result.exit_code == 0</param>
+  </tool_use>
+  <usage input_tokens="30209" cache_creation_input_tokens="16551" cache_read_input_tokens="20930" cache_creation="{'ephemeral_5m_input_tokens': 16551, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01JBckLZpTgD4HKDLT8S9Vs7">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_store_tripwire_candidates.py</param>
+    <param name="old_string">    runner = CliRunner()
+    result = runner.invoke(
+        store_tripwire_candidates,
+  ...[truncated 59 chars]...s-file",
+            str(tmp_path / "nonexistent.json"),
+        ],
+        obj=ctx,
+    )</param>
+    <param name="new_string">    runner = CliRunner()
+    result = runner.invoke(
+        store_tripwire_candidates,
+  ...[truncated 57 chars]...s-file",
+            str(tmp_path / "nonexistent.json"),
+        ],
+        obj=ctx,
+    )</param>
+  </tool_use>
+  <usage input_tokens="30209" cache_creation_input_tokens="16551" cache_read_input_tokens="20930" cache_creation="{'ephemeral_5m_input_tokens': 16551, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_017c17t4wLEYkbjK6BwvowQi">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_store_tripwire_candidates.py</param>
+    <param name="old_string">    runner = CliRunner()
+    result = runner.invoke(
+        store_tripwire_candidates,
+  ...[truncated 39 chars]...        "--candidates-file",
+            str(json_file),
+        ],
+        obj=ctx,
+    )</param>
+    <param name="new_string">    runner = CliRunner()
+    result = runner.invoke(
+        store_tripwire_candidates,
+  ...[truncated 37 chars]...        "--candidates-file",
+            str(json_file),
+        ],
+        obj=ctx,
+    )</param>
+  </tool_use>
+  <usage input_tokens="30209" cache_creation_input_tokens="16551" cache_read_input_tokens="20930" cache_creation="{'ephemeral_5m_input_tokens': 16551, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01AbMs3f3uMwjb3G4JewpQvG">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_store_tripwire_candidates.py</param>
+    <param name="old_string">    runner = CliRunner()
+    result = runner.invoke(
+        store_tripwire_candidates,
+  ...[truncated 73 chars]...       str(json_file),
+        ],
+        obj=ctx,
+    )
+
+    assert result.exit_code == 1</param>
+    <param name="new_string">    runner = CliRunner()
+    result = runner.invoke(
+        store_tripwire_candidates,
+  ...[truncated 71 chars]...       str(json_file),
+        ],
+        obj=ctx,
+    )
+
+    assert result.exit_code == 1</param>
+  </tool_use>
+  <usage input_tokens="30209" cache_creation_input_tokens="16551" cache_read_input_tokens="20930" cache_creation="{'ephemeral_5m_input_tokens': 16551, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_0115kCCNS4SaN3ouV1nPiyu4">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_store_tripwire_candidates.py</param>
+    <param name="old_string">    runner = CliRunner()
+    result = runner.invoke(
+        store_tripwire_candidates,
+        ["--plan-number", "42", "--candidates-file", str(candidates_file)],
+        obj=ctx,
+    )</param>
+    <param name="new_string">    runner = CliRunner()
+    result = runner.invoke(
+        store_tripwire_candidates,
+        ["--pr-number", "42", "--candidates-file", str(candidates_file)],
+        obj=ctx,
+    )</param>
+  </tool_use>
+  <usage input_tokens="30209" cache_creation_input_tokens="16551" cache_read_input_tokens="20930" cache_creation="{'ephemeral_5m_input_tokens': 16551, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01GpC3HUiX9JwxvczabDX9Ex">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_store_tripwire_candidates.py</param>
+    <param name="old_string">    runner = CliRunner()
+    result = runner.invoke(
+        store_tripwire_candidates,
+  ...[truncated 20 chars]...tes-file", str(candidates_file)],
+        obj=ctx,
+    )
+
+    assert result.exit_code == 0</param>
+    <param name="new_string">    runner = CliRunner()
+    result = runner.invoke(
+        store_tripwire_candidates,
+  ...[truncated 18 chars]...tes-file", str(candidates_file)],
+        obj=ctx,
+    )
+
+    assert result.exit_code == 0</param>
+  </tool_use>
+  <usage input_tokens="30209" cache_creation_input_tokens="16551" cache_read_input_tokens="20930" cache_creation="{'ephemeral_5m_input_tokens': 16551, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01DgenDfdJyNvsfgTqdwT5fU">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_store_tripwire_candidates.py</param>
+    <param name="old_string">    runner = CliRunner()
+    result = runner.invoke(
+        store_tripwire_candidates,
+  ...[truncated 128 chars]....loads(result.output)
+    assert output["success"] is True
+    assert output["count"] == 1</param>
+    <param name="new_string">    runner = CliRunner()
+    result = runner.invoke(
+        store_tripwire_candidates,
+  ...[truncated 126 chars]....loads(result.output)
+    assert output["success"] is True
+    assert output["count"] == 1</param>
+  </tool_use>
+  <usage input_tokens="30209" cache_creation_input_tokens="16551" cache_read_input_tokens="20930" cache_creation="{'ephemeral_5m_input_tokens': 16551, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01JxsPLCT6b9PXkCWELFkEGs">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_register_one_shot_plan.py</param>
+    <param name="old_string">RUN_URL = "https://github.com/test-owner/test-repo/actions/runs/99999"
+CLI_ARGS = [
+    "-...[truncated 40 chars]...--pr-number",
+    "42",
+    "--submitted-by",
+    "alice",
+    "--run-url",
+    RUN_URL,
+]</param>
+    <param name="new_string">RUN_URL = "https://github.com/test-owner/test-repo/actions/runs/99999"
+CLI_ARGS = [
+    "-...[truncated 43 chars]...l-pr-number",
+    "42",
+    "--submitted-by",
+    "alice",
+    "--run-url",
+    RUN_URL,
+]</param>
+  </tool_use>
+  <usage input_tokens="30209" cache_creation_input_tokens="16551" cache_read_input_tokens="20930" cache_creation="{'ephemeral_5m_input_tokens': 16551, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01MQsVxDxqmDRKnXtbifcrRW">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_register_one_shot_plan.py</param>
+    <param name="old_string">def test_all_fail_when_issue_and_pr_missing(tmp_path: Path) -&gt; None:
+    result = CliRunne...[truncated 277 chars]... ],
+        obj=_ctx(tmp_path, issues=FakeGitHubIssues(), github=FakeLocalGitHub()),
+    )</param>
+    <param name="new_string">def test_all_fail_when_issue_and_pr_missing(tmp_path: Path) -&gt; None:
+    result = CliRunne...[truncated 280 chars]... ],
+        obj=_ctx(tmp_path, issues=FakeGitHubIssues(), github=FakeLocalGitHub()),
+    )</param>
+  </tool_use>
+  <usage input_tokens="30209" cache_creation_input_tokens="16551" cache_read_input_tokens="20930" cache_creation="{'ephemeral_5m_input_tokens': 16551, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01HMXMsKg3bT5gbwxh5HaYgz">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_post_workflow_started_comment.py</param>
+    <param name="old_string">    result = runner.invoke(
+        post_workflow_started_comment_command,
+        [
+     ...[truncated 254 chars]...",
+            "--repository",
+            "owner/repo",
+        ],
+        obj=ctx,
+    )</param>
+    <param name="new_string">    result = runner.invoke(
+        post_workflow_started_comment_command,
+        [
+     ...[truncated 257 chars]...",
+            "--repository",
+            "owner/repo",
+        ],
+        obj=ctx,
+    )</param>
+  </tool_use>
+  <usage input_tokens="30209" cache_creation_input_tokens="16551" cache_read_input_tokens="20930" cache_creation="{'ephemeral_5m_input_tokens': 16551, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01FPi6VfLkZ5pk6KinRDc26N">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_post_workflow_started_comment.py</param>
+    <param name="old_string">    result = runner.invoke(
+        post_workflow_started_comment_command,
+        [
+     ...[truncated 213 chars]...ple.com",
+            "--repository",
+            "o/r",
+        ],
+        obj=ctx,
+    )</param>
+    <param name="new_string">    result = runner.invoke(
+        post_workflow_started_comment_command,
+        [
+     ...[truncated 216 chars]...ple.com",
+            "--repository",
+            "o/r",
+        ],
+        obj=ctx,
+    )</param>
+  </tool_use>
+  <usage input_tokens="30209" cache_creation_input_tokens="16551" cache_read_input_tokens="20930" cache_creation="{'ephemeral_5m_input_tokens': 16551, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_0156mtSpd1e3HQJt9YnUkxwL">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_post_workflow_started_comment.py</param>
+    <param name="old_string">def test_cli_missing_required_option() -&gt; None:
+    """Test CLI command requires all optio...[truncated 71 chars]...comment_command,
+        ["--plan-number", "123"],  # Missing other required options
+    )</param>
+    <param name="new_string">def test_cli_missing_required_option() -&gt; None:
+    """Test CLI command requires all optio...[truncated 69 chars]...d_comment_command,
+        ["--pr-number", "123"],  # Missing other required options
+    )</param>
+  </tool_use>
+  <usage input_tokens="30209" cache_creation_input_tokens="16551" cache_read_input_tokens="20930" cache_creation="{'ephemeral_5m_input_tokens': 16551, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_0183r2ydPrrpzB9TJgHKH5XH">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_post_workflow_started_comment.py</param>
+    <param name="old_string">    runner.invoke(
+        post_workflow_started_comment_command,
+        [
+            "-...[truncated 241 chars]...555",
+            "--repository",
+            "foo/bar",
+        ],
+        obj=ctx,
+    )</param>
+    <param name="new_string">    runner.invoke(
+        post_workflow_started_comment_command,
+        [
+            "-...[truncated 244 chars]...555",
+            "--repository",
+            "foo/bar",
+        ],
+        obj=ctx,
+    )</param>
+  </tool_use>
+  <usage input_tokens="30209" cache_creation_input_tokens="16551" cache_read_input_tokens="20930" cache_creation="{'ephemeral_5m_input_tokens': 16551, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_013cBZp4RwtoaDoo9XWvS79B">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_handle_no_changes.py</param>
+    <param name="old_string">    runner = CliRunner()
+    result = runner.invoke(
+        handle_no_changes_command,
+  ...[truncated 350 chars]...       "https://github.com/owner/repo/actions/runs/789",
+        ],
+        obj=ctx,
+    )</param>
+    <param name="new_string">    runner = CliRunner()
+    result = runner.invoke(
+        handle_no_changes_command,
+  ...[truncated 306 chars]...       "https://github.com/owner/repo/actions/runs/789",
+        ],
+        obj=ctx,
+    )</param>
+  </tool_use>
+  <usage input_tokens="30209" cache_creation_input_tokens="16551" cache_read_input_tokens="20930" cache_creation="{'ephemeral_5m_input_tokens': 16551, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_0133p9vwDAsDVUXzh6EHwiWM">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_handle_no_changes.py</param>
+    <param name="old_string">    runner = CliRunner()
+    result = runner.invoke(
+        handle_no_changes_command,
+  ...[truncated 175 chars]...           "--original-title",
+            "Simple Fix",
+        ],
+        obj=ctx,
+    )</param>
+    <param name="new_string">    runner = CliRunner()
+    result = runner.invoke(
+        handle_no_changes_command,
+  ...[truncated 131 chars]...           "--original-title",
+            "Simple Fix",
+        ],
+        obj=ctx,
+    )</param>
+  </tool_use>
+  <usage input_tokens="30209" cache_creation_input_tokens="16551" cache_read_input_tokens="20930" cache_creation="{'ephemeral_5m_input_tokens': 16551, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01BBSHcqMpooj58Uyg28ozna">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_handle_no_changes.py</param>
+    <param name="old_string">    runner = CliRunner()
+    runner.invoke(
+        handle_no_changes_command,
+        [
+ ...[truncated 173 chars]...      "--original-title",
+            "Fix Cache Issue",
+        ],
+        obj=ctx,
+    )</param>
+    <param name="new_string">    runner = CliRunner()
+    runner.invoke(
+        handle_no_changes_command,
+        [
+ ...[truncated 129 chars]...      "--original-title",
+            "Fix Cache Issue",
+        ],
+        obj=ctx,
+    )</param>
+  </tool_use>
+  <usage input_tokens="30209" cache_creation_input_tokens="16551" cache_read_input_tokens="20930" cache_creation="{'ephemeral_5m_input_tokens': 16551, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_014HCoQfAAw5yYs18zs3q29c">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_handle_no_changes.py</param>
+    <param name="old_string">    runner = CliRunner()
+    runner.invoke(
+        handle_no_changes_command,
+        [
+ ...[truncated 168 chars]...         "--original-title",
+            "Some Feature",
+        ],
+        obj=ctx,
+    )</param>
+    <param name="new_string">    runner = CliRunner()
+    runner.invoke(
+        handle_no_changes_command,
+        [
+ ...[truncated 124 chars]...         "--original-title",
+            "Some Feature",
+        ],
+        obj=ctx,
+    )</param>
+  </tool_use>
+  <usage input_tokens="30209" cache_creation_input_tokens="16551" cache_read_input_tokens="20930" cache_creation="{'ephemeral_5m_input_tokens': 16551, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01FZ56TSfPoYNLToa9asP6sH">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_handle_no_changes.py</param>
+    <param name="old_string">    runner = CliRunner()
+    runner.invoke(
+        handle_no_changes_command,
+        [
+ ...[truncated 168 chars]...         "--original-title",
+            "Some Feature",
+        ],
+        obj=ctx,
+    )</param>
+    <param name="new_string">    runner = CliRunner()
+    runner.invoke(
+        handle_no_changes_command,
+        [
+ ...[truncated 124 chars]...         "--original-title",
+            "Some Feature",
+        ],
+        obj=ctx,
+    )</param>
+  </tool_use>
+  <usage input_tokens="30209" cache_creation_input_tokens="16551" cache_read_input_tokens="20930" cache_creation="{'ephemeral_5m_input_tokens': 16551, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01N2xokPNCA2YH48SPcuT6P1">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_handle_no_changes.py</param>
+    <param name="old_string">def test_cli_requires_pr_number() -&gt; None:
+    """Test that --pr-number is required."""
+  ...[truncated 143 chars]...count",
+            "0",
+            "--base-branch",
+            "main",
+        ],
+    )</param>
+    <param name="new_string">def test_cli_requires_pr_number() -&gt; None:
+    """Test that --pr-number is required."""
+  ...[truncated 99 chars]...count",
+            "0",
+            "--base-branch",
+            "main",
+        ],
+    )</param>
+  </tool_use>
+  <usage input_tokens="30209" cache_creation_input_tokens="16551" cache_read_input_tokens="20930" cache_creation="{'ephemeral_5m_input_tokens': 16551, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_012Mb2knVQbj3bBnyEkPqMAh">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_handle_no_changes.py</param>
+    <param name="old_string">def test_cli_requires_plan_id() -&gt; None:
+    """Test that --plan-id is required."""
+    ru...[truncated 259 chars]...e != 0
+    assert "Missing option" in result.output or "required" in result.output.lower()</param>
+    <param name="new_string">def test_cli_requires_original_title_for_validation() -&gt; None:
+    """Test that --original...[truncated 288 chars]...e != 0
+    assert "Missing option" in result.output or "required" in result.output.lower()</param>
+  </tool_use>
+  <usage input_tokens="30209" cache_creation_input_tokens="16551" cache_read_input_tokens="20930" cache_creation="{'ephemeral_5m_input_tokens': 16551, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01RqAMso5r7GjtJimMZqJXzF">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_handle_no_changes.py</param>
+    <param name="old_string">    runner = CliRunner()
+    result = runner.invoke(
+        handle_no_changes_command,
+  ...[truncated 177 chars]...         "--original-title",
+            "Some Feature",
+        ],
+        obj=ctx,
+    )</param>
+    <param name="new_string">    runner = CliRunner()
+    result = runner.invoke(
+        handle_no_changes_command,
+  ...[truncated 133 chars]...         "--original-title",
+            "Some Feature",
+        ],
+        obj=ctx,
+    )</param>
+  </tool_use>
+  <usage input_tokens="30209" cache_creation_input_tokens="16551" cache_read_input_tokens="20930" cache_creation="{'ephemeral_5m_input_tokens': 16551, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01Q93wsZjV6M2LrcbapJe5NB">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_handle_no_changes.py</param>
+    <param name="old_string">    runner = CliRunner()
+    result = runner.invoke(
+        handle_no_changes_command,
+  ...[truncated 179 chars]...         "--original-title",
+            "Some Feature",
+        ],
+        obj=ctx,
+    )</param>
+    <param name="new_string">    runner = CliRunner()
+    result = runner.invoke(
+        handle_no_changes_command,
+  ...[truncated 135 chars]...         "--original-title",
+            "Some Feature",
+        ],
+        obj=ctx,
+    )</param>
+  </tool_use>
+  <usage input_tokens="30209" cache_creation_input_tokens="16551" cache_read_input_tokens="20930" cache_creation="{'ephemeral_5m_input_tokens': 16551, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01PwZRxhGjYvrxExGZT3hMYA">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_handle_no_changes.py</param>
+    <param name="old_string">def test_build_no_changes_title() -&gt; None:
+    """Test that _build_no_changes_title format...[truncated 437 chars]...upport")
+
+    assert title == "[no-changes] #123 Impl Attempt: Add [feature] flag support"</param>
+    <param name="new_string">def test_build_no_changes_title() -&gt; None:
+    """Test that _build_no_changes_title format...[truncated 441 chars]...upport")
+
+    assert title == "[no-changes] #123 Impl Attempt: Add [feature] flag support"</param>
+  </tool_use>
+  <usage input_tokens="30209" cache_creation_input_tokens="16551" cache_read_input_tokens="20930" cache_creation="{'ephemeral_5m_input_tokens': 16551, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01LoyUQEbmDqHvwHZALTWpva">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_handle_no_changes.py</param>
+    <param name="old_string">def test_build_pr_body_includes_all_sections() -&gt; None:
+    """Test that _build_pr_body in...[truncated 159 chars]...5678 Add feature",
+        run_url="https://github.com/owner/repo/actions/runs/789",
+    )</param>
+    <param name="new_string">def test_build_pr_body_includes_all_sections() -&gt; None:
+    """Test that _build_pr_body in...[truncated 161 chars]...5678 Add feature",
+        run_url="https://github.com/owner/repo/actions/runs/789",
+    )</param>
+  </tool_use>
+  <usage input_tokens="30209" cache_creation_input_tokens="16551" cache_read_input_tokens="20930" cache_creation="{'ephemeral_5m_input_tokens': 16551, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01Ey2dPtayvRTh172tc4s9ex">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_handle_no_changes.py</param>
+    <param name="old_string">def test_build_pr_body_without_recent_commits() -&gt; None:
+    """Test that _build_pr_body w...[truncated 78 chars]...nt=0,
+        base_branch="main",
+        recent_commits=None,
+        run_url=None,
+    )</param>
+    <param name="new_string">def test_build_pr_body_without_recent_commits() -&gt; None:
+    """Test that _build_pr_body w...[truncated 80 chars]...nt=0,
+        base_branch="main",
+        recent_commits=None,
+        run_url=None,
+    )</param>
+  </tool_use>
+  <usage input_tokens="30209" cache_creation_input_tokens="16551" cache_read_input_tokens="20930" cache_creation="{'ephemeral_5m_input_tokens': 16551, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_014aP9AYnNjQb6VA5Eivjq2G">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_handle_no_changes.py</param>
+    <param name="old_string">def test_build_pr_body_with_empty_recent_commits() -&gt; None:
+    """Test that _build_pr_bod...[truncated 88 chars]...nt=3,
+        base_branch="master",
+        recent_commits="",
+        run_url=None,
+    )</param>
+    <param name="new_string">def test_build_pr_body_with_empty_recent_commits() -&gt; None:
+    """Test that _build_pr_bod...[truncated 90 chars]...nt=3,
+        base_branch="master",
+        recent_commits="",
+        run_url=None,
+    )</param>
+  </tool_use>
+  <usage input_tokens="30209" cache_creation_input_tokens="16551" cache_read_input_tokens="20930" cache_creation="{'ephemeral_5m_input_tokens': 16551, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_015ok4E33cE6eJR26AoGNsPB">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_handle_no_changes.py</param>
+    <param name="old_string">    # Verify JSON output contains correct plan_id
+    assert output["plan_id"] == 456</param>
+    <param name="new_string">    # Verify JSON output doesn't contain plan_id anymore
+    assert "plan_id" not in output</param>
+  </tool_use>
+  <usage input_tokens="30209" cache_creation_input_tokens="16551" cache_read_input_tokens="20930" cache_creation="{'ephemeral_5m_input_tokens': 16551, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01HZ5iinSf1zXbpokZvHXooF">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_handle_no_changes.py</param>
+    <param name="old_string">    # Verify expected keys
+    assert "success" in output
+    assert "pr_number" in output...[truncated 82 chars]... assert isinstance(output["pr_number"], int)
+    assert isinstance(output["plan_id"], int)</param>
+    <param name="new_string">    # Verify expected keys
+    assert "success" in output
+    assert "pr_number" in output...[truncated 5 chars]...assert isinstance(output["success"], bool)
+    assert isinstance(output["pr_number"], int)</param>
+  </tool_use>
+  <usage input_tokens="30209" cache_creation_input_tokens="16551" cache_read_input_tokens="20930" cache_creation="{'ephemeral_5m_input_tokens': 16551, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01VHo4wk2ZULi833563omL5g">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_handle_no_changes.py</param>
+    <param name="old_string">def test_success_dataclass_frozen() -&gt; None:
+    """Test that HandleNoChangesSuccess is im...[truncated 85 chars]...cess.success is True
+    assert success.pr_number == 123
+    assert success.plan_id == 456</param>
+    <param name="new_string">def test_success_dataclass_frozen() -&gt; None:
+    """Test that HandleNoChangesSuccess is im...[truncated 38 chars]...rue, pr_number=123)
+    assert success.success is True
+    assert success.pr_number == 123</param>
+  </tool_use>
+  <usage input_tokens="30209" cache_creation_input_tokens="16551" cache_read_input_tokens="20930" cache_creation="{'ephemeral_5m_input_tokens': 16551, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_011NWkpsv8Q7P8eh5qWEFnjZ">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_handle_no_changes.py</param>
+    <param name="old_string">    # Verify comment was added to plan PR via PlannedPRBackend
+    # _pr_comments is list ...[truncated 74 chars]...ub.pr_comments[0]
+    assert pr_number == 456
+    assert "no code changes" in body.lower()</param>
+    <param name="new_string">    # Note: With --plan-id removed, the comment is no longer posted to a separate plan
+   ...[truncated 7 chars]...info is only on the impl PR itself
+    # So we don't expect a comment to be posted anymore</param>
+  </tool_use>
+  <usage input_tokens="30209" cache_creation_input_tokens="16551" cache_read_input_tokens="20930" cache_creation="{'ephemeral_5m_input_tokens': 16551, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01Mg9dGusPxt5FuFdtEktZDx">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_push_session.py</param>
+    <param name="old_string">            result = runner.invoke(
+                push_session,
+                [
+      ...[truncated 343 chars]...  obj=ErkContext.for_test(git=fake_git, repo_root=repo_root, cwd=repo_root),
+            )</param>
+    <param name="new_string">            result = runner.invoke(
+                push_session,
+                [
+      ...[truncated 345 chars]...  obj=ErkContext.for_test(git=fake_git, repo_root=repo_root, cwd=repo_root),
+            )</param>
+  </tool_use>
+  <usage input_tokens="30209" cache_creation_input_tokens="16551" cache_read_input_tokens="20930" cache_creation="{'ephemeral_5m_input_tokens': 16551, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01VvTB6Kcs41De2nWuEhTWUr">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_push_session.py</param>
+    <param name="old_string">            result = runner.invoke(
+                push_session,
+                [
+      ...[truncated 343 chars]...  obj=ErkContext.for_test(git=fake_git, repo_root=repo_root, cwd=repo_root),
+            )</param>
+    <param name="new_string">            result = runner.invoke(
+                push_session,
+                [
+      ...[truncated 345 chars]...  obj=ErkContext.for_test(git=fake_git, repo_root=repo_root, cwd=repo_root),
+            )</param>
+  </tool_use>
+  <usage input_tokens="30209" cache_creation_input_tokens="16551" cache_read_input_tokens="20930" cache_creation="{'ephemeral_5m_input_tokens': 16551, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>

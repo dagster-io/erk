@@ -1,0 +1,975 @@
+<session>
+  <meta source="agent-a027c01" />
+  <meta branch="plnd/O9109-rename-click-args-pr-03-10-0822" />
+  <meta model="claude-sonnet-4-5-20250929" />
+  <tool_use name="Edit" id="toolu_01Drz9myQUNsAMbSvJJpw6aV">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_push_session.py</param>
+    <param name="old_string">            result = runner.invoke(
+                push_session,
+                [
+      ...[truncated 341 chars]...  obj=ErkContext.for_test(git=fake_git, repo_root=repo_root, cwd=repo_root),
+            )</param>
+    <param name="new_string">            result = runner.invoke(
+                push_session,
+                [
+      ...[truncated 343 chars]...  obj=ErkContext.for_test(git=fake_git, repo_root=repo_root, cwd=repo_root),
+            )</param>
+  </tool_use>
+  <usage input_tokens="30209" cache_creation_input_tokens="16551" cache_read_input_tokens="20930" cache_creation="{'ephemeral_5m_input_tokens': 16551, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01RymyorayHE2buaPMeJHUst">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_push_session.py</param>
+    <param name="old_string">            result = runner.invoke(
+                push_session,
+                [
+      ...[truncated 336 chars]...  obj=ErkContext.for_test(git=fake_git, repo_root=repo_root, cwd=repo_root),
+            )</param>
+    <param name="new_string">            result = runner.invoke(
+                push_session,
+                [
+      ...[truncated 338 chars]...  obj=ErkContext.for_test(git=fake_git, repo_root=repo_root, cwd=repo_root),
+            )</param>
+  </tool_use>
+  <usage input_tokens="30209" cache_creation_input_tokens="16551" cache_read_input_tokens="20930" cache_creation="{'ephemeral_5m_input_tokens': 16551, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01BdZP3F7QCzHQWE5Ybm7gaZ">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_fetch_sessions.py</param>
+    <param name="old_string">        result = runner.invoke(
+            fetch_sessions,
+            [
+                ...[truncated 101 chars]...      obj=ErkContext.for_test(git=fake_git, repo_root=repo_root, cwd=repo_root),
+        )</param>
+    <param name="new_string">        result = runner.invoke(
+            fetch_sessions,
+            [
+                ...[truncated 103 chars]...      obj=ErkContext.for_test(git=fake_git, repo_root=repo_root, cwd=repo_root),
+        )</param>
+  </tool_use>
+  <usage input_tokens="30209" cache_creation_input_tokens="16551" cache_read_input_tokens="20930" cache_creation="{'ephemeral_5m_input_tokens': 16551, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01JHCWtLw5UfMgw5krgfseDS">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_fetch_sessions.py</param>
+    <param name="old_string">        result = runner.invoke(
+            fetch_sessions,
+            [
+                ...[truncated 167 chars]...wd=repo_root),
+        )
+
+        assert result.exit_code == 0, f"Failed: {result.output}"</param>
+    <param name="new_string">        result = runner.invoke(
+            fetch_sessions,
+            [
+                ...[truncated 169 chars]...wd=repo_root),
+        )
+
+        assert result.exit_code == 0, f"Failed: {result.output}"</param>
+  </tool_use>
+  <usage input_tokens="30209" cache_creation_input_tokens="16551" cache_read_input_tokens="20930" cache_creation="{'ephemeral_5m_input_tokens': 16551, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_015jnUjabBtNDAfzkm2kECty">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_fetch_sessions.py</param>
+    <param name="old_string">        result = runner.invoke(
+            fetch_sessions,
+            [
+                ...[truncated 139 chars]..._git, repo_root=repo_root, cwd=repo_root),
+        )
+
+        assert result.exit_code == 1</param>
+    <param name="new_string">        result = runner.invoke(
+            fetch_sessions,
+            [
+                ...[truncated 141 chars]..._git, repo_root=repo_root, cwd=repo_root),
+        )
+
+        assert result.exit_code == 1</param>
+  </tool_use>
+  <usage input_tokens="30209" cache_creation_input_tokens="16551" cache_read_input_tokens="20930" cache_creation="{'ephemeral_5m_input_tokens': 16551, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01QtztctUBbiohx8eQwT6ACW">
+&lt;tool_use_error&gt;Found 4 matches of the string to replace, but replace_all is false. To replace all occurrences, set replace_all to true. To replace only one occurrence, please provide more context to uniquely identify the instance.
+String:     runner = CliRunner()
+    result = runner.invoke(
+        ci_update_pr_body_command,
+        ["--plan-id", "456"],
+        obj=ctx,
+    )&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_result tool="toolu_017VMKcqQZuJGYKKFJKt9so4">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_ci_update_pr_body.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01WG3ZNRJavWKUvEPoTCiPU3">
+&lt;tool_use_error&gt;Found 2 matches of the string to replace, but replace_all is false. To replace all occurrences, set replace_all to true. To replace only one occurrence, please provide more context to uniquely identify the instance.
+String:     runner = CliRunner()
+    result = runner.invoke(
+        ci_update_pr_body_command,
+        ["--plan-id", "456"],
+        obj=ctx,
+    )
+
+    assert result.exit_code == 1&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_result tool="toolu_01SRpeUa4Hw24sWJK8Ccakgi">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_ci_update_pr_body.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01W4PBbiiuHZg6sMDFrXSYfm">
+&lt;tool_use_error&gt;Found 4 matches of the string to replace, but replace_all is false. To replace all occurrences, set replace_all to true. To replace only one occurrence, please provide more context to uniquely identify the instance.
+String:     runner = CliRunner()
+    result = runner.invoke(
+        ci_update_pr_body_command,
+        ["--plan-id", "456"],
+        obj=ctx,
+    )&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_result tool="toolu_01F6HE3jFiqWj9krcsjTCmP2">
+&lt;tool_use_error&gt;Found 2 matches of the string to replace, but replace_all is false. To replace all occurrences, set replace_all to true. To replace only one occurrence, please provide more context to uniquely identify the instance.
+String:     runner = CliRunner()
+    result = runner.invoke(
+        ci_update_pr_body_command,
+        ["--plan-id", "456"],
+        obj=ctx,
+    )
+
+    assert result.exit_code == 0&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_result tool="toolu_01THuUvXHrgj9ATZnDBpW5mh">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_ci_update_pr_body.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01EY3LMqCYhes6wmcoyxmREF">
+&lt;tool_use_error&gt;Found 5 matches of the string to replace, but replace_all is false. To replace all occurrences, set replace_all to true. To replace only one occurrence, please provide more context to uniquely identify the instance.
+String:     result = runner.invoke(
+        plan_update,
+        ["--plan-number", "42", "--format", "json"],
+        obj=ErkContext.for_test(
+            github=fake_github,
+            plan_store=PlannedPRBackend(fake_github, fake_gh, time=FakeTime()),
+            claude_installation=fake_store,
+        ),
+    )&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_result tool="toolu_01ARGMUKGfiaZeeFKHPhLvFr">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_plan_update.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01BwtdUutFvBtXbaQP3iDtdc">
+&lt;tool_use_error&gt;Found 5 matches of the string to replace, but replace_all is false. To replace all occurrences, set replace_all to true. To replace only one occurrence, please provide more context to uniquely identify the instance.
+String:     result = runner.invoke(
+        plan_update,
+        ["--plan-number", "42", "--format", "json"],
+        obj=ErkContext.for_test(
+            github=fake_github,
+            plan_store=PlannedPRBackend(fake_github, fake_gh, time=FakeTime()),
+            claude_installation=fake_store,
+        ),
+    )&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_result tool="toolu_012uevchEKLtAGjmCHtWvV7C">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_plan_update.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_019UTzi8tSiWePqEkuvrP4Ns">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_plan_update.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01FybD7ByJbLVazvyndz9bsX">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_plan_update.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01DCrKHs24jMApqH5qCpXsRm">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_plan_update.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_014dCes7gyNiSrvWAQyVx4cG">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_plan_update.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_017G7F1Jw8bQtd8dW6nCntTe">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_plan_update.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01KSFJSnR5AwhnnAMHbGc8ZL">
+&lt;tool_use_error&gt;Found 2 matches of the string to replace, but replace_all is false. To replace all occurrences, set replace_all to true. To replace only one occurrence, please provide more context to uniquely identify the instance.
+String:     result = runner.invoke(
+        plan_update,
+        ["--plan-number", "42", "--format", "json"],
+        obj=ErkContext.for_test(
+            github=fake_github,
+            git=fake_git,
+            plan_store=backend,
+            claude_installation=fake_store,
+        ),
+    )&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_result tool="toolu_0136LLgUHyisnE2c4bLsdSyx">
+&lt;tool_use_error&gt;Found 2 matches of the string to replace, but replace_all is false. To replace all occurrences, set replace_all to true. To replace only one occurrence, please provide more context to uniquely identify the instance.
+String:     result = runner.invoke(
+        plan_update,
+        ["--plan-number", "42", "--format", "json"],
+        obj=ErkContext.for_test(
+            github=fake_github,
+            git=fake_git,
+            plan_store=backend,
+            claude_installation=fake_store,
+        ),
+    )
+
+    assert result.exit_code == 0, f"Failed: {result.output}"&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_result tool="toolu_0151cAQxyodbri7Fpc1B6HtF">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_plan_update.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01He6nQPskNcYEjAV8HXk6Sd">
+&lt;tool_use_error&gt;Found 2 matches of the string to replace, but replace_all is false. To replace all occurrences, set replace_all to true. To replace only one occurrence, please provide more context to uniquely identify the instance.
+String:     runner = CliRunner()
+    result = runner.invoke(
+        store_tripwire_candidates,
+        [
+            "--plan-number",
+            "42",
+            "--candidates-file",
+            str(candidates_file),
+        ],
+        obj=ctx,
+    )&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_result tool="toolu_01HoSWKDkgoDpw2RxcHn95Cs">
+&lt;tool_use_error&gt;Found 2 matches of the string to replace, but replace_all is false. To replace all occurrences, set replace_all to true. To replace only one occurrence, please provide more context to uniquely identify the instance.
+String:     runner = CliRunner()
+    result = runner.invoke(
+        store_tripwire_candidates,
+        [
+            "--plan-number",
+            "42",
+            "--candidates-file",
+            str(candidates_file),
+        ],
+        obj=ctx,
+    )
+
+    assert result.exit_code == 0&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_result tool="toolu_01JBckLZpTgD4HKDLT8S9Vs7">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_store_tripwire_candidates.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_017c17t4wLEYkbjK6BwvowQi">
+&lt;tool_use_error&gt;Found 2 matches of the string to replace, but replace_all is false. To replace all occurrences, set replace_all to true. To replace only one occurrence, please provide more context to uniquely identify the instance.
+String:     runner = CliRunner()
+    result = runner.invoke(
+        store_tripwire_candidates,
+        [
+            "--plan-number",
+            "42",
+            "--candidates-file",
+            str(json_file),
+        ],
+        obj=ctx,
+    )&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_result tool="toolu_01AbMs3f3uMwjb3G4JewpQvG">
+&lt;tool_use_error&gt;Found 2 matches of the string to replace, but replace_all is false. To replace all occurrences, set replace_all to true. To replace only one occurrence, please provide more context to uniquely identify the instance.
+String:     runner = CliRunner()
+    result = runner.invoke(
+        store_tripwire_candidates,
+        [
+            "--plan-number",
+            "42",
+            "--candidates-file",
+            str(json_file),
+        ],
+        obj=ctx,
+    )
+
+    assert result.exit_code == 1&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_result tool="toolu_0115kCCNS4SaN3ouV1nPiyu4">
+&lt;tool_use_error&gt;Found 3 matches of the string to replace, but replace_all is false. To replace all occurrences, set replace_all to true. To replace only one occurrence, please provide more context to uniquely identify the instance.
+String:     runner = CliRunner()
+    result = runner.invoke(
+        store_tripwire_candidates,
+        ["--plan-number", "42", "--candidates-file", str(candidates_file)],
+        obj=ctx,
+    )&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_result tool="toolu_01GpC3HUiX9JwxvczabDX9Ex">
+&lt;tool_use_error&gt;Found 3 matches of the string to replace, but replace_all is false. To replace all occurrences, set replace_all to true. To replace only one occurrence, please provide more context to uniquely identify the instance.
+String:     runner = CliRunner()
+    result = runner.invoke(
+        store_tripwire_candidates,
+        ["--plan-number", "42", "--candidates-file", str(candidates_file)],
+        obj=ctx,
+    )
+
+    assert result.exit_code == 0&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_result tool="toolu_01DgenDfdJyNvsfgTqdwT5fU">
+&lt;tool_use_error&gt;Found 3 matches of the string to replace, but replace_all is false. To replace all occurrences, set replace_all to true. To replace only one occurrence, please provide more context to uniquely identify the instance.
+String:     runner = CliRunner()
+    result = runner.invoke(
+        store_tripwire_candidates,
+        ["--plan-number", "42", "--candidates-file", str(candidates_file)],
+        obj=ctx,
+    )
+
+    assert result.exit_code == 0
+    output = json.loads(result.output)
+    assert output["success"] is True
+    assert output["count"] == 1&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_result tool="toolu_01JxsPLCT6b9PXkCWELFkEGs">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_register_one_shot_plan.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01MQsVxDxqmDRKnXtbifcrRW">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_register_one_shot_plan.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01HMXMsKg3bT5gbwxh5HaYgz">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_post_workflow_started_comment.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01FPi6VfLkZ5pk6KinRDc26N">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_post_workflow_started_comment.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_0156mtSpd1e3HQJt9YnUkxwL">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_post_workflow_started_comment.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_0183r2ydPrrpzB9TJgHKH5XH">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_post_workflow_started_comment.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_013cBZp4RwtoaDoo9XWvS79B">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_handle_no_changes.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_0133p9vwDAsDVUXzh6EHwiWM">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_handle_no_changes.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01BBSHcqMpooj58Uyg28ozna">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_handle_no_changes.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_014HCoQfAAw5yYs18zs3q29c">
+&lt;tool_use_error&gt;Found 2 matches of the string to replace, but replace_all is false. To replace all occurrences, set replace_all to true. To replace only one occurrence, please provide more context to uniquely identify the instance.
+String:     runner = CliRunner()
+    runner.invoke(
+        handle_no_changes_command,
+        [
+            "--pr-number",
+            "123",
+            "--plan-id",
+            "456",
+            "--behind-count",
+            "0",
+            "--base-branch",
+            "main",
+            "--original-title",
+            "Some Feature",
+        ],
+        obj=ctx,
+    )&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_result tool="toolu_01FZ56TSfPoYNLToa9asP6sH">
+&lt;tool_use_error&gt;Found 2 matches of the string to replace, but replace_all is false. To replace all occurrences, set replace_all to true. To replace only one occurrence, please provide more context to uniquely identify the instance.
+String:     runner = CliRunner()
+    runner.invoke(
+        handle_no_changes_command,
+        [
+            "--pr-number",
+            "123",
+            "--plan-id",
+            "456",
+            "--behind-count",
+            "0",
+            "--base-branch",
+            "main",
+            "--original-title",
+            "Some Feature",
+        ],
+        obj=ctx,
+    )&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_result tool="toolu_01N2xokPNCA2YH48SPcuT6P1">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_handle_no_changes.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_012Mb2knVQbj3bBnyEkPqMAh">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_handle_no_changes.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01RqAMso5r7GjtJimMZqJXzF">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_handle_no_changes.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01Q93wsZjV6M2LrcbapJe5NB">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_handle_no_changes.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01PwZRxhGjYvrxExGZT3hMYA">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_handle_no_changes.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01LoyUQEbmDqHvwHZALTWpva">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_handle_no_changes.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01Ey2dPtayvRTh172tc4s9ex">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_handle_no_changes.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_014aP9AYnNjQb6VA5Eivjq2G">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_handle_no_changes.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_015ok4E33cE6eJR26AoGNsPB">
+&lt;tool_use_error&gt;String to replace not found in file.
+String:     # Verify JSON output contains correct plan_id
+    assert output["plan_id"] == 456&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_result tool="toolu_01HZ5iinSf1zXbpokZvHXooF">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_handle_no_changes.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01VHo4wk2ZULi833563omL5g">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_handle_no_changes.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_011NWkpsv8Q7P8eh5qWEFnjZ">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_handle_no_changes.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01Mg9dGusPxt5FuFdtEktZDx">
+&lt;tool_use_error&gt;Found 2 matches of the string to replace, but replace_all is false. To replace all occurrences, set replace_all to true. To replace only one occurrence, please provide more context to uniquely identify the instance.
+String:             result = runner.invoke(
+                push_session,
+                [
+                    "--session-file",
+                    str(session_file),
+                    "--session-id",
+                    "test-session-abc",
+                    "--stage",
+                    "planning",
+                    "--source",
+                    "local",
+                    "--plan-id",
+                    "42",
+                ],
+                obj=ErkContext.for_test(git=fake_git, repo_root=repo_root, cwd=repo_root),
+            )&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_result tool="toolu_01VvTB6Kcs41De2nWuEhTWUr">
+&lt;tool_use_error&gt;Found 2 matches of the string to replace, but replace_all is false. To replace all occurrences, set replace_all to true. To replace only one occurrence, please provide more context to uniquely identify the instance.
+String:             result = runner.invoke(
+                push_session,
+                [
+                    "--session-file",
+                    str(session_file),
+                    "--session-id",
+                    "test-session-abc",
+                    "--stage",
+                    "planning",
+                    "--source",
+                    "local",
+                    "--plan-id",
+                    "42",
+                ],
+                obj=ErkContext.for_test(git=fake_git, repo_root=repo_root, cwd=repo_root),
+            )&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_result tool="toolu_01Drz9myQUNsAMbSvJJpw6aV">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_push_session.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01RymyorayHE2buaPMeJHUst">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_push_session.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01BdZP3F7QCzHQWE5Ybm7gaZ">
+&lt;tool_use_error&gt;Found 3 matches of the string to replace, but replace_all is false. To replace all occurrences, set replace_all to true. To replace only one occurrence, please provide more context to uniquely identify the instance.
+String:         result = runner.invoke(
+            fetch_sessions,
+            [
+                "--plan-id",
+                "42",
+                "--output-dir",
+                str(output_dir),
+            ],
+            obj=ErkContext.for_test(git=fake_git, repo_root=repo_root, cwd=repo_root),
+        )&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_result tool="toolu_01JHCWtLw5UfMgw5krgfseDS">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_fetch_sessions.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_015jnUjabBtNDAfzkm2kECty">
+&lt;tool_use_error&gt;Found 2 matches of the string to replace, but replace_all is false. To replace all occurrences, set replace_all to true. To replace only one occurrence, please provide more context to uniquely identify the instance.
+String:         result = runner.invoke(
+            fetch_sessions,
+            [
+                "--plan-id",
+                "42",
+                "--output-dir",
+                str(output_dir),
+            ],
+            obj=ErkContext.for_test(git=fake_git, repo_root=repo_root, cwd=repo_root),
+        )
+
+        assert result.exit_code == 1&lt;/tool_use_error&gt;
+  </tool_result>
+  <assistant>Let me handle the remaining edits with replace_all where needed:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="76570" cache_read_input_tokens="13992" cache_creation="{'ephemeral_5m_input_tokens': 76570, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01TxaUiEyF1ZMrQntc7Gdaiz">
+    <param name="replace_all">True</param>
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_ci_update_pr_body.py</param>
+    <param name="old_string">    runner = CliRunner()
+    result = runner.invoke(
+        ci_update_pr_body_command,
+        ["--plan-id", "456"],
+        obj=ctx,
+    )</param>
+    <param name="new_string">    runner = CliRunner()
+    result = runner.invoke(
+        ci_update_pr_body_command,
+        ["--pr-number", "456"],
+        obj=ctx,
+    )</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="76570" cache_read_input_tokens="13992" cache_creation="{'ephemeral_5m_input_tokens': 76570, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_014Mp5mJ7SuiztbnqJcPJLvE">
+    <param name="replace_all">True</param>
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_ci_update_pr_body.py</param>
+    <param name="old_string">    runner = CliRunner()
+    result = runner.invoke(
+        ci_update_pr_body_command,
+        ["--plan-id", "456"],
+        obj=ctx,
+    )
+
+    assert result.exit_code == 1</param>
+    <param name="new_string">    runner = CliRunner()
+    result = runner.invoke(
+        ci_update_pr_body_command,
+        ["--pr-number", "456"],
+        obj=ctx,
+    )
+
+    assert result.exit_code == 1</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="76570" cache_read_input_tokens="13992" cache_creation="{'ephemeral_5m_input_tokens': 76570, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01CQpEx5Hf1P8CMTJmwfWGfP">
+    <param name="replace_all">True</param>
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_ci_update_pr_body.py</param>
+    <param name="old_string">    runner = CliRunner()
+    result = runner.invoke(
+        ci_update_pr_body_command,
+        ["--plan-id", "456"],
+        obj=ctx,
+    )
+
+    assert result.exit_code == 0</param>
+    <param name="new_string">    runner = CliRunner()
+    result = runner.invoke(
+        ci_update_pr_body_command,
+        ["--pr-number", "456"],
+        obj=ctx,
+    )
+
+    assert result.exit_code == 0</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="76570" cache_read_input_tokens="13992" cache_creation="{'ephemeral_5m_input_tokens': 76570, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_017MQUseJTocN8SxUJed2mEP">
+    <param name="replace_all">True</param>
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_plan_update.py</param>
+    <param name="old_string">    result = runner.invoke(
+        plan_update,
+        ["--plan-number", "42", "--format...[truncated 107 chars]...b, fake_gh, time=FakeTime()),
+            claude_installation=fake_store,
+        ),
+    )</param>
+    <param name="new_string">    result = runner.invoke(
+        plan_update,
+        ["--pr-number", "42", "--format",...[truncated 105 chars]...b, fake_gh, time=FakeTime()),
+            claude_installation=fake_store,
+        ),
+    )</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="76570" cache_read_input_tokens="13992" cache_creation="{'ephemeral_5m_input_tokens': 76570, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01XUhFAx4LBSy48Vbyww9J9n">
+    <param name="replace_all">True</param>
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_plan_update.py</param>
+    <param name="old_string">    result = runner.invoke(
+        plan_update,
+        ["--plan-number", "42", "--format...[truncated 85 chars]...          plan_store=backend,
+            claude_installation=fake_store,
+        ),
+    )</param>
+    <param name="new_string">    result = runner.invoke(
+        plan_update,
+        ["--pr-number", "42", "--format",...[truncated 83 chars]...          plan_store=backend,
+            claude_installation=fake_store,
+        ),
+    )</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="76570" cache_read_input_tokens="13992" cache_creation="{'ephemeral_5m_input_tokens': 76570, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01HwdNU3nPWXDfzc3CA1XDKa">
+    <param name="replace_all">True</param>
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_store_tripwire_candidates.py</param>
+    <param name="old_string">    runner = CliRunner()
+    result = runner.invoke(
+        store_tripwire_candidates,
+  ...[truncated 45 chars]...  "--candidates-file",
+            str(candidates_file),
+        ],
+        obj=ctx,
+    )</param>
+    <param name="new_string">    runner = CliRunner()
+    result = runner.invoke(
+        store_tripwire_candidates,
+  ...[truncated 43 chars]...  "--candidates-file",
+            str(candidates_file),
+        ],
+        obj=ctx,
+    )</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="76570" cache_read_input_tokens="13992" cache_creation="{'ephemeral_5m_input_tokens': 76570, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_0151CCDmjSfTLiK94H9WfUoC">
+    <param name="replace_all">True</param>
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_store_tripwire_candidates.py</param>
+    <param name="old_string">    runner = CliRunner()
+    result = runner.invoke(
+        store_tripwire_candidates,
+  ...[truncated 39 chars]...        "--candidates-file",
+            str(json_file),
+        ],
+        obj=ctx,
+    )</param>
+    <param name="new_string">    runner = CliRunner()
+    result = runner.invoke(
+        store_tripwire_candidates,
+  ...[truncated 37 chars]...        "--candidates-file",
+            str(json_file),
+        ],
+        obj=ctx,
+    )</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="76570" cache_read_input_tokens="13992" cache_creation="{'ephemeral_5m_input_tokens': 76570, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_014dcVTd9NLeLJp8eYnSgZwb">
+    <param name="replace_all">True</param>
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_store_tripwire_candidates.py</param>
+    <param name="old_string">    runner = CliRunner()
+    result = runner.invoke(
+        store_tripwire_candidates,
+        ["--plan-number", "42", "--candidates-file", str(candidates_file)],
+        obj=ctx,
+    )</param>
+    <param name="new_string">    runner = CliRunner()
+    result = runner.invoke(
+        store_tripwire_candidates,
+        ["--pr-number", "42", "--candidates-file", str(candidates_file)],
+        obj=ctx,
+    )</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="76570" cache_read_input_tokens="13992" cache_creation="{'ephemeral_5m_input_tokens': 76570, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01Ji6MZmr9oFwE3YZZZWX2jy">
+    <param name="replace_all">True</param>
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_handle_no_changes.py</param>
+    <param name="old_string">    runner = CliRunner()
+    runner.invoke(
+        handle_no_changes_command,
+        [
+ ...[truncated 168 chars]...         "--original-title",
+            "Some Feature",
+        ],
+        obj=ctx,
+    )</param>
+    <param name="new_string">    runner = CliRunner()
+    runner.invoke(
+        handle_no_changes_command,
+        [
+ ...[truncated 124 chars]...         "--original-title",
+            "Some Feature",
+        ],
+        obj=ctx,
+    )</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="76570" cache_read_input_tokens="13992" cache_creation="{'ephemeral_5m_input_tokens': 76570, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01S1rjJq1FuMEfB1dMGRmDPN">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_handle_no_changes.py</param>
+    <param name="old_string">    assert result.exit_code == 0
+    output = json.loads(result.output)
+    assert output["success"] is True
+    assert output["pr_number"] == 123
+    assert output["plan_id"] == 456</param>
+    <param name="new_string">    assert result.exit_code == 0
+    output = json.loads(result.output)
+    assert output["success"] is True
+    assert output["pr_number"] == 123</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="76570" cache_read_input_tokens="13992" cache_creation="{'ephemeral_5m_input_tokens': 76570, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_013r9STduJCZZPzR444quxdr">
+    <param name="replace_all">True</param>
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_push_session.py</param>
+    <param name="old_string">            result = runner.invoke(
+                push_session,
+                [
+      ...[truncated 343 chars]...  obj=ErkContext.for_test(git=fake_git, repo_root=repo_root, cwd=repo_root),
+            )</param>
+    <param name="new_string">            result = runner.invoke(
+                push_session,
+                [
+      ...[truncated 345 chars]...  obj=ErkContext.for_test(git=fake_git, repo_root=repo_root, cwd=repo_root),
+            )</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="76570" cache_read_input_tokens="13992" cache_creation="{'ephemeral_5m_input_tokens': 76570, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01Gymk5GCZkRRTbu9mP5xb4x">
+    <param name="replace_all">True</param>
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_fetch_sessions.py</param>
+    <param name="old_string">        result = runner.invoke(
+            fetch_sessions,
+            [
+                ...[truncated 101 chars]...      obj=ErkContext.for_test(git=fake_git, repo_root=repo_root, cwd=repo_root),
+        )</param>
+    <param name="new_string">        result = runner.invoke(
+            fetch_sessions,
+            [
+                ...[truncated 103 chars]...      obj=ErkContext.for_test(git=fake_git, repo_root=repo_root, cwd=repo_root),
+        )</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="76570" cache_read_input_tokens="13992" cache_creation="{'ephemeral_5m_input_tokens': 76570, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01TxaUiEyF1ZMrQntc7Gdaiz">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_ci_update_pr_body.py has been updated. All occurrences of '    runner = CliRunner()
+    result = runner.invoke(
+        ci_update_pr_body_command,
+        ["--plan-id", "456"],
+        obj=ctx,
+    )' were successfully replaced with '    runner = CliRunner()
+    result = runner.invoke(
+        ci_update_pr_body_command,
+        ["--pr-number", "456"],
+        obj=ctx,
+    )'.
+  </tool_result>
+  <tool_result tool="toolu_014Mp5mJ7SuiztbnqJcPJLvE">
+&lt;tool_use_error&gt;String to replace not found in file.
+String:     runner = CliRunner()
+    result = runner.invoke(
+        ci_update_pr_body_command,
+        ["--plan-id", "456"],
+        obj=ctx,
+    )
+
+    assert result.exit_code == 1&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_result tool="toolu_01CQpEx5Hf1P8CMTJmwfWGfP">
+&lt;tool_use_error&gt;String to replace not found in file.
+String:     runner = CliRunner()
+    result = runner.invoke(
+        ci_update_pr_body_command,
+        ["--plan-id", "456"],
+        obj=ctx,
+    )
+
+    assert result.exit_code == 0&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_result tool="toolu_017MQUseJTocN8SxUJed2mEP">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_plan_update.py has been updated. All occurrences of '    result = runner.invoke(
+        plan_update,
+        ["--plan-number", "42", "--format", "json"],
+        obj=ErkContext.for_test(
+            github=fake_github,
+            plan_store=PlannedPRBackend(fake_github, fake_gh, time=FakeTime()),
+            claude_installation=fake_store,
+        ),
+    )' were successfully replaced with '    result = runner.invoke(
+        plan_update,
+        ["--pr-number", "42", "--format", "json"],
+        obj=ErkContext.for_test(
+            github=fake_github,
+            plan_store=PlannedPRBackend(fake_github, fake_gh, time=FakeTime()),
+            claude_installation=fake_store,
+        ),
+    )'.
+  </tool_result>
+  <tool_result tool="toolu_01XUhFAx4LBSy48Vbyww9J9n">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_plan_update.py has been updated. All occurrences of '    result = runner.invoke(
+        plan_update,
+        ["--plan-number", "42", "--format", "json"],
+        obj=ErkContext.for_test(
+            github=fake_github,
+            git=fake_git,
+            plan_store=backend,
+            claude_installation=fake_store,
+        ),
+    )' were successfully replaced with '    result = runner.invoke(
+        plan_update,
+        ["--pr-number", "42", "--format", "json"],
+        obj=ErkContext.for_test(
+            github=fake_github,
+            git=fake_git,
+            plan_store=backend,
+            claude_installation=fake_store,
+        ),
+    )'.
+  </tool_result>
+  <tool_result tool="toolu_01HwdNU3nPWXDfzc3CA1XDKa">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_store_tripwire_candidates.py has been updated. All occurrences of '    runner = CliRunner()
+    result = runner.invoke(
+        store_tripwire_candidates,
+        [
+            "--plan-number",
+            "42",
+            "--candidates-file",
+            str(candidates_file),
+        ],
+        obj=ctx,
+    )' were successfully replaced with '    runner = CliRunner()
+    result = runner.invoke(
+        store_tripwire_candidates,
+        [
+            "--pr-number",
+            "42",
+            "--candidates-file",
+            str(candidates_file),
+        ],
+        obj=ctx,
+    )'.
+  </tool_result>
+  <tool_result tool="toolu_0151CCDmjSfTLiK94H9WfUoC">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_store_tripwire_candidates.py has been updated. All occurrences of '    runner = CliRunner()
+    result = runner.invoke(
+        store_tripwire_candidates,
+        [
+            "--plan-number",
+            "42",
+            "--candidates-file",
+            str(json_file),
+        ],
+        obj=ctx,
+    )' were successfully replaced with '    runner = CliRunner()
+    result = runner.invoke(
+        store_tripwire_candidates,
+        [
+            "--pr-number",
+            "42",
+            "--candidates-file",
+            str(json_file),
+        ],
+        obj=ctx,
+    )'.
+  </tool_result>
+  <tool_result tool="toolu_014dcVTd9NLeLJp8eYnSgZwb">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_store_tripwire_candidates.py has been updated. All occurrences of '    runner = CliRunner()
+    result = runner.invoke(
+        store_tripwire_candidates,
+        ["--plan-number", "42", "--candidates-file", str(candidates_file)],
+        obj=ctx,
+    )' were successfully replaced with '    runner = CliRunner()
+    result = runner.invoke(
+        store_tripwire_candidates,
+        ["--pr-number", "42", "--candidates-file", str(candidates_file)],
+        obj=ctx,
+    )'.
+  </tool_result>
+  <tool_result tool="toolu_01Ji6MZmr9oFwE3YZZZWX2jy">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_handle_no_changes.py has been updated. All occurrences of '    runner = CliRunner()
+    runner.invoke(
+        handle_no_changes_command,
+        [
+            "--pr-number",
+            "123",
+            "--plan-id",
+            "456",
+            "--behind-count",
+            "0",
+            "--base-branch",
+            "main",
+            "--original-title",
+            "Some Feature",
+        ],
+        obj=ctx,
+    )' were successfully replaced with '    runner = CliRunner()
+    runner.invoke(
+        handle_no_changes_command,
+        [
+            "--pr-number",
+            "123",
+            "--behind-count",
+            "0",
+            "--base-branch",
+            "main",
+            "--original-title",
+            "Some Feature",
+        ],
+        obj=ctx,
+
+... [1 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01S1rjJq1FuMEfB1dMGRmDPN">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_handle_no_changes.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_013r9STduJCZZPzR444quxdr">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_push_session.py has been updated. All occurrences of '            result = runner.invoke(
+                push_session,
+                [
+                    "--session-file",
+                    str(session_file),
+                    "--session-id",
+                    "test-session-abc",
+                    "--stage",
+                    "planning",
+                    "--source",
+                    "local",
+                    "--plan-id",
+                    "42",
+                ],
+                obj=ErkContext.for_test(git=fake_git, repo_root=repo_root, cwd=repo_root),
+            )' were successfully replaced with '            result = runner.invoke(
+                push_session,
+                [
+                    "--session-file",
+                    str(session_file),
+                    "--session-id",
+                    "test-session-abc",
+                    "--stage",
+                    "planning",
+                    "--source",
+                    "local",
+                    "--pr-number",
+                    "42",
+                ],
+                obj=ErkContext.for_test(git=fake_git, repo_root=repo_root, cwd=repo_root),
+
+... [1 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01Gymk5GCZkRRTbu9mP5xb4x">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_fetch_sessions.py has been updated. All occurrences of '        result = runner.invoke(
+            fetch_sessions,
+            [
+                "--plan-id",
+                "42",
+                "--output-dir",
+                str(output_dir),
+            ],
+            obj=ErkContext.for_test(git=fake_git, repo_root=repo_root, cwd=repo_root),
+        )' were successfully replaced with '        result = runner.invoke(
+            fetch_sessions,
+            [
+                "--pr-number",
+                "42",
+                "--output-dir",
+                str(output_dir),
+            ],
+            obj=ErkContext.for_test(git=fake_git, repo_root=repo_root, cwd=repo_root),
+        )'.
+  </tool_result>
+  <assistant>Perfect! All the test files have been successfully updated with the renamed CLI flags and parameters. Let me create a summary of all the changes made:
+
+## Summary
+
+I've successfully updated 8 test files to match the renamed Click CLI flags/params. Here's what was changed:
+
+### 1. **test_ci_update_pr_body.py** 
+- `--plan-id` → `--pr-number` (7 occurrences)
+- `test_cli_requires_plan_id()` → `test_cli_requires_pr_number()`
+
+### 2. **test_plan_update.py**
+- `--plan-number` → `--pr-number` (14 occurrences)
+
+### 3. **test_store_tripwire_candidates.py**
+- `--plan-number` → `--pr-number` (9 occurrences)
+
+### 4. **test_register_one_shot_plan.py**
+- `--plan-number` → `--pr-number` (for the plan identifier)
+- OLD `--pr-number` → `--impl-pr-number` (for the implementation PR number)
+
+### 5. **test_post_workflow_started_comment.py**
+- `--plan-number` → `--pr-number` (for the plan identifier)
+- OLD `--pr-number` → `--impl-pr-number` (for the implementation PR number)
+- Updated in 4 test cases
+
+### 6. **test_handle_no_changes.py**
+- Removed `--plan-id` from all CLI invocations (10 occurrences)
+- Updated function signatures: `plan_id` → `pr_number`
+- Updated test function names: `test_cli_requires_plan_id()` → `test_cli_requires_original_title_for_validation()`
+- Updated dataclass assertions
+- Removed `plan_id` from JSON output assertions
+- Updated comment about no longer posting to separate plan
+
+### 7. **test_push_session.py**
+- `--plan-id` → `--pr-number` (4 occurrences)
+
+### 8. **test_fetch_sessions.py**
+- `--plan-id` → `--pr-number` (3 occurrences)
+
+All changes follow the special cases outlined in the requirements:
+- `register_one_shot_plan.py` and `post_workflow_started_comment.py` correctly handle both `--pr-number` (plan) and `--impl-pr-number` (impl PR)
+- `handle_no_changes.py` has `--plan-id` completely removed as requested
+- All other files use the standard `--plan-number` → `--pr-number` rename pattern</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="5774" cache_read_input_tokens="90562" cache_creation="{'ephemeral_5m_input_tokens': 5774, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>

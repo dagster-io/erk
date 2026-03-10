@@ -1,0 +1,1105 @@
+<session>
+  <meta branch="plnd/O9109-rename-click-args-pr-03-10-0822" />
+  <meta model="claude-opus-4-6" />
+  <tool_use name="Read" id="toolu_01RWadGKbM7tVwpni6qmn9qC">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/handle_no_changes.py</param>
+    <param name="offset">170</param>
+    <param name="limit">70</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="839" cache_read_input_tokens="101171" cache_creation="{'ephemeral_5m_input_tokens': 839, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01RWadGKbM7tVwpni6qmn9qC">
+   170→    github = require_github(ctx)
+   171→    backend = require_plan_backend(ctx)
+   172→    repo_root = require_repo_root(ctx)
+   173→
+   174→    # Build PR title and body
+   175→    new_title = _build_no_changes_title(pr_number=pr_number, original_title=original_title)
+   176→    pr_body = _build_pr_body(
+   177→        pr_number=pr_number,
+   178→        behind_count=behind_count,
+   179→        base_branch=base_branch,
+   180→        recent_commits=recent_commits,
+   181→        run_url=run_url,
+   182→    )
+   183→
+   184→    # 1. Update PR title and body
+   185→    try:
+   186→        github.update_pr_title_and_body(
+   187→            repo_root=repo_root,
+   188→            pr_number=pr_number,
+   189→            title=new_title,
+   190→            body=BodyText(content=pr_body),
+   191→        )
+   192→    except RuntimeError as e:
+   193→        result = HandleNoChangesError(
+   194→            success=False,
+   195→            error="github-api-failed",
+   196→            message=f"Failed to update PR title and body: {e}",
+   197→        )
+   198→        click.echo(json.dumps(asdict(result), indent=2))
+   199→        raise SystemExit(1) from None
+
+... [45 lines omitted] ...
+
+   210→    except RuntimeError as e:
+   211→        result = HandleNoChangesError(
+   213→            error="github-api-failed",
+   214→            message=f"Failed to add label: {e}",
+   226→    except RuntimeError as e:
+   227→        result = HandleNoChangesError(
+   229→            error="github-api-failed",
+   230→            message=f"Failed to update lifecycle stage: {e}",
+   238→    except RuntimeError as e:
+   239→        result = HandleNoChangesError(
+  </tool_result>
+  <assistant>I see. Now the command uses `pr_number` for everything — the PR number IS the plan number (they're the same thing). The test creates a mock with PR 456 but passes `--pr-number 123`. The fix is to make the test consistent — pass 456 as the pr-number since that's the PR that exists in the mock. Let me look at the full test to understand the pattern:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1211" cache_read_input_tokens="102010" cache_creation="{'ephemeral_5m_input_tokens': 1211, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01TP3ZJzw22RyFDF24DZUu6n">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_handle_no_changes.py</param>
+    <param name="offset">1</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1211" cache_read_input_tokens="102010" cache_creation="{'ephemeral_5m_input_tokens': 1211, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01TP3ZJzw22RyFDF24DZUu6n">
+     1→"""Unit tests for handle_no_changes exec CLI command.
+     2→
+     3→Tests the no-changes scenario handling for plan-implement workflow.
+     4→Uses FakeLocalGitHub for dependency injection.
+     5→"""
+     6→
+     7→import json
+     8→from pathlib import Path
+     9→
+    10→from click.testing import CliRunner
+    11→
+    12→from erk.cli.commands.exec.scripts.handle_no_changes import (
+    13→    HandleNoChangesError,
+    14→    HandleNoChangesSuccess,
+    15→    _build_issue_comment,
+    16→    _build_no_changes_title,
+    17→    _build_pr_body,
+    18→)
+    19→from erk.cli.commands.exec.scripts.handle_no_changes import (
+    20→    handle_no_changes as handle_no_changes_command,
+    21→)
+    22→from erk_shared.context.context import ErkContext
+    23→from erk_shared.gateway.github.metadata.plan_header import format_plan_header_body
+    24→from erk_shared.gateway.github.types import PRDetails
+    25→from erk_shared.plan_store.planned_pr import PlannedPRBackend
+    26→from tests.fakes.gateway.github import FakeLocalGitHub
+    27→from tests.fakes.gateway.github_issues import FakeGitHubIssues
+    28→from tests.fakes.gateway.time import FakeTime
+    29→
+    30→
+
+... [25 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01GEQjwoJrQHhfKL1Lc9Q63K">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_handle_no_changes.py</param>
+    <param name="offset">50</param>
+    <param name="limit">80</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1243" cache_read_input_tokens="103221" cache_creation="{'ephemeral_5m_input_tokens': 1243, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01GEQjwoJrQHhfKL1Lc9Q63K">
+    50→        objective_issue=None,
+    51→        created_from_session=None,
+    52→        created_from_workflow_run_url=None,
+    53→        last_learn_session=None,
+    54→        last_learn_at=None,
+    55→        learn_status=None,
+    56→        learn_plan_issue=None,
+    57→        learn_plan_pr=None,
+    58→        learned_from_issue=None,
+    59→        lifecycle_stage=None,
+    60→    )
+    61→
+    62→
+    63→def _create_github_with_plan_pr(
+    64→    plan_id: int,
+    65→) -&gt; tuple[FakeLocalGitHub, FakeGitHubIssues, PlannedPRBackend]:
+    66→    """Create FakeLocalGitHub with a draft PR configured as a plan for PlannedPRBackend.
+    67→
+    68→    Returns:
+    69→        Tuple of (FakeLocalGitHub, FakeGitHubIssues, PlannedPRBackend).
+    70→    """
+    71→    body = _make_plan_header_body()
+    72→    issues_gateway = FakeGitHubIssues()
+    73→    fake_github = FakeLocalGitHub(
+    74→        issues_gateway=issues_gateway,
+    75→        pr_details={
+    76→            plan_id: PRDetails(
+    77→                number=plan_id,
+    78→                url=f"https://github.com/test-owner/test-repo/pull/{plan_id}",
+    79→                title="Test Plan",
+
+... [55 lines omitted] ...
+  </tool_result>
+  <assistant>I see the issue clearly now. Previously, the test created a mock with plan PR 456 and passed `--plan-id 456 --pr-number 123`. After the rename, the agent removed `--plan-id 456` and kept `--pr-number 123`. But now `--pr-number` serves as BOTH the plan and PR number. The mock has PR 456, but the test passes 123.
+
+The fix: change the test to use `--pr-number 456` (matching the mock PR) and update the assertion. Or change the mock to create PR 123. Let me go with the simpler approach — make the test use a consistent number. Since the mock is created with 456, change `--pr-number` to 456:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1259" cache_read_input_tokens="104464" cache_creation="{'ephemeral_5m_input_tokens': 1259, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01Y5fQiNBuG4ekxA6GqTRuRG">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_handle_no_changes.py</param>
+    <param name="offset">190</param>
+    <param name="limit">80</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1259" cache_read_input_tokens="104464" cache_creation="{'ephemeral_5m_input_tokens': 1259, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Y5fQiNBuG4ekxA6GqTRuRG">
+   190→def test_cli_success(tmp_path: Path) -&gt; None:
+   191→    """Test CLI command succeeds with valid inputs."""
+   192→    github, fake_gh_issues, backend = _create_github_with_plan_pr(456)
+   193→
+   194→    ctx = ErkContext.for_test(github=github, plan_store=backend, repo_root=tmp_path, cwd=tmp_path)
+   195→
+   196→    runner = CliRunner()
+   197→    result = runner.invoke(
+   198→        handle_no_changes_command,
+   199→        [
+   200→            "--pr-number",
+   201→            "123",
+   202→            "--behind-count",
+   203→            "5",
+   204→            "--base-branch",
+   205→            "master",
+   206→            "--original-title",
+   207→            "Fix Some Bug",
+   208→            "--recent-commits",
+   209→            "abc1234 Fix bug\ndef5678 Add feature",
+   210→            "--run-url",
+   211→            "https://github.com/owner/repo/actions/runs/789",
+   212→        ],
+   213→        obj=ctx,
+   214→    )
+   215→
+   216→    assert result.exit_code == 0
+   217→    output = json.loads(result.output)
+   218→    assert output["success"] is True
+   219→    assert output["pr_number"] == 123
+
+... [55 lines omitted] ...
+  </tool_result>
+  <assistant>I need to read more to see all the test functions that need fixing:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1570" cache_read_input_tokens="105723" cache_creation="{'ephemeral_5m_input_tokens': 1570, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_015s9nh1hVFed6Af8xUArWhD">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_handle_no_changes.py</param>
+    <param name="offset">270</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1570" cache_read_input_tokens="105723" cache_creation="{'ephemeral_5m_input_tokens': 1570, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_015s9nh1hVFed6Af8xUArWhD">
+   270→
+   271→    # Verify PR title was updated
+   272→    assert len(github.updated_pr_titles) == 1
+   273→    pr_number, title = github.updated_pr_titles[0]
+   274→    assert pr_number == 123
+   275→    assert title == "[no-changes] #456 Impl Attempt: Fix Cache Issue"
+   276→
+   277→    # Verify PR body was updated for the impl PR
+   278→    # PlannedPRBackend.update_metadata also updates the plan PR body
+   279→    no_changes_bodies = [(n, b) for n, b in github.updated_pr_bodies if n == 123]
+   280→    assert len(no_changes_bodies) == 1
+   281→    pr_number, body = no_changes_bodies[0]
+   282→    assert "No Code Changes" in body
+   283→    assert "Close this PR" in body
+   284→
+   285→
+   286→def test_cli_adds_label_to_pr(tmp_path: Path) -&gt; None:
+   287→    """Test that CLI command adds no-changes label to PR."""
+   288→    github, fake_gh_issues, backend = _create_github_with_plan_pr(456)
+   289→
+   290→    ctx = ErkContext.for_test(github=github, plan_store=backend, repo_root=tmp_path, cwd=tmp_path)
+   291→
+   292→    runner = CliRunner()
+   293→    runner.invoke(
+   294→        handle_no_changes_command,
+   295→        [
+   296→            "--pr-number",
+   297→            "123",
+   298→            "--behind-count",
+   299→            "0",
+
+... [75 lines omitted] ...
+  </tool_result>
+  <assistant>I see — previously `--plan-id 456` was the plan, and `--pr-number 123` was the impl PR. Now there's only `--pr-number` which serves as both. The mock creates PR 456. The simplest correct fix is to change the mock to create PR 123 instead, so all the assertions that check for 123 remain correct. Also, line 275 has `#456 Impl Attempt` which references the old plan_id in the no-changes title. Let me check how `_build_no_changes_title` works now:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1432" cache_read_input_tokens="107293" cache_creation="{'ephemeral_5m_input_tokens': 1432, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01GA5SX4AEyjfAAtDj4PXgLz">
+    <param name="pattern">def _build_no_changes_title</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/handle_no_changes.py</param>
+    <param name="output_mode">content</param>
+    <param name="-A">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1432" cache_read_input_tokens="107293" cache_creation="{'ephemeral_5m_input_tokens': 1432, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01GA5SX4AEyjfAAtDj4PXgLz">
+58:def _build_no_changes_title(*, pr_number: int, original_title: str) -&gt; str:
+59-    """Build PR title indicating no changes were produced.
+60-
+61-    Args:
+62-        pr_number: Plan identifier
+63-        original_title: Original PR title
+64-
+65-    Returns:
+66-        New title with [no-changes] prefix and plan reference
+67-    """
+68-    return f"[no-changes] #{pr_number} Impl Attempt: {original_title}"
+  </tool_result>
+  <assistant>Now it uses `pr_number` in the title. When `--pr-number 123` is passed, the title will be `[no-changes] #123 Impl Attempt: ...`.
+
+The simplest fix: change the mock to create PR 123 instead of 456. And update the title assertion from `#456` to `#123`. Let me fix all the test functions:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="673" cache_read_input_tokens="108725" cache_creation="{'ephemeral_5m_input_tokens': 673, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01Rnjr21ZmNcJgvZQt2Fikkk">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_handle_no_changes.py</param>
+    <param name="old_string">def test_cli_success(tmp_path: Path) -&gt; None:
+    """Test CLI command succeeds with valid inputs."""
+    github, fake_gh_issues, backend = _create_github_with_plan_pr(456)</param>
+    <param name="new_string">def test_cli_success(tmp_path: Path) -&gt; None:
+    """Test CLI command succeeds with valid inputs."""
+    github, fake_gh_issues, backend = _create_github_with_plan_pr(123)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="673" cache_read_input_tokens="108725" cache_creation="{'ephemeral_5m_input_tokens': 673, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01LC1gHpmXgmpgrC2HVMinYF">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_handle_no_changes.py</param>
+    <param name="old_string">def test_cli_success_minimal_options(tmp_path: Path) -&gt; None:
+    """Test CLI command succeeds with only required options."""
+    github, fake_gh_issues, backend = _create_github_with_plan_pr(456)</param>
+    <param name="new_string">def test_cli_success_minimal_options(tmp_path: Path) -&gt; None:
+    """Test CLI command succeeds with only required options."""
+    github, fake_gh_issues, backend = _create_github_with_plan_pr(123)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="673" cache_read_input_tokens="108725" cache_creation="{'ephemeral_5m_input_tokens': 673, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_011oEUBW5acVX1WXDH5syzPR">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_handle_no_changes.py</param>
+    <param name="old_string">def test_cli_updates_pr_title_and_body(tmp_path: Path) -&gt; None:
+    """Test that CLI command updates PR title and body."""
+    github, fake_gh_issues, backend = _create_github_with_plan_pr(456)</param>
+    <param name="new_string">def test_cli_updates_pr_title_and_body(tmp_path: Path) -&gt; None:
+    """Test that CLI command updates PR title and body."""
+    github, fake_gh_issues, backend = _create_github_with_plan_pr(123)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="673" cache_read_input_tokens="108725" cache_creation="{'ephemeral_5m_input_tokens': 673, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_016NNDBBZh2QmpWSRAJ5vgE1">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_handle_no_changes.py</param>
+    <param name="old_string">    assert title == "[no-changes] #456 Impl Attempt: Fix Cache Issue"</param>
+    <param name="new_string">    assert title == "[no-changes] #123 Impl Attempt: Fix Cache Issue"</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="673" cache_read_input_tokens="108725" cache_creation="{'ephemeral_5m_input_tokens': 673, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_014FpX4bAFf6QZcqYHP1yLPf">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_handle_no_changes.py</param>
+    <param name="old_string">def test_cli_adds_label_to_pr(tmp_path: Path) -&gt; None:
+    """Test that CLI command adds no-changes label to PR."""
+    github, fake_gh_issues, backend = _create_github_with_plan_pr(456)</param>
+    <param name="new_string">def test_cli_adds_label_to_pr(tmp_path: Path) -&gt; None:
+    """Test that CLI command adds no-changes label to PR."""
+    github, fake_gh_issues, backend = _create_github_with_plan_pr(123)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="673" cache_read_input_tokens="108725" cache_creation="{'ephemeral_5m_input_tokens': 673, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01KJYzvWzBuPkvJgKxBhCxpR">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_handle_no_changes.py</param>
+    <param name="old_string">def test_cli_adds_comment_to_issue(tmp_path: Path) -&gt; None:
+    """Test that CLI command adds comment to plan."""
+    github, fake_gh_issues, backend = _create_github_with_plan_pr(456)</param>
+    <param name="new_string">def test_cli_adds_comment_to_issue(tmp_path: Path) -&gt; None:
+    """Test that CLI command adds comment to plan."""
+    github, fake_gh_issues, backend = _create_github_with_plan_pr(123)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="673" cache_read_input_tokens="108725" cache_creation="{'ephemeral_5m_input_tokens': 673, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Rnjr21ZmNcJgvZQt2Fikkk">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_handle_no_changes.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01LC1gHpmXgmpgrC2HVMinYF">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_handle_no_changes.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_011oEUBW5acVX1WXDH5syzPR">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_handle_no_changes.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_016NNDBBZh2QmpWSRAJ5vgE1">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_handle_no_changes.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_014FpX4bAFf6QZcqYHP1yLPf">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_handle_no_changes.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01KJYzvWzBuPkvJgKxBhCxpR">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_handle_no_changes.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me run the tests again to see if this fixes the failure:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2002" cache_read_input_tokens="109398" cache_creation="{'ephemeral_5m_input_tokens': 2002, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01QxXARwuTpNYkMLt8amnEd6">
+    <param name="description">Run full pytest suite</param>
+    <param name="prompt">Run these commands in sequence and report ALL failures:
+
+1. First run:
+```
+cd /home/runner...[truncated 206 chars]... 2&gt;&amp;1 | tail -40
+```
+
+Report the complete output of each command. Do NOT modify any files.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2002" cache_read_input_tokens="109398" cache_creation="{'ephemeral_5m_input_tokens': 2002, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01QxXARwuTpNYkMLt8amnEd6">
+Now I understand the issue. The command is failing at step 3 when trying to update the lifecycle stage. The error is "plan-header block not found in PR body". This is being raised by the `PlannedPRBackend.update_metadata` call. The test's PR body doesn't have the proper plan-header metadata block. Let me check how the test creates the plan header:
+
+Looking at the test again, on line 71 it calls `_make_plan_header_body()` which returns just the header metadata using `format_plan_header_body()`. But I think the issue is that when we call `github.update_pr_title_and_body()` on line 186-191, we're replacing the body with just the "No Code Changes" text (from `_build_pr_body`), which loses the plan-header metadata block. Then when we try to call `backend.update_metadata()` on line 221, it fails because the plan-header block is no longer in the body.
+
+The `update_metadata` function expects the plan-header block to still be in the PR body so it can update it. We need to preserve the plan-header metadata when updating the body. Let me now compile the full report:
+
+## Test Result Summary
+
+**pytest failed with 1 failure:**
+
+**File:** `/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_handle_no_changes.py`
+
+**Test:** `test_cli_success` (line 190)
+
+**Failure Details:**
+- Exit code: 1 (expected 0)
+- Error message: "Failed to update lifecycle stage: plan-header block not found in PR body"
+- Root cause: The `handle_no_changes` command at line 186 calls `github.update_pr_title_and_body()` which completely replaces the PR body with the new "No Code Changes" diagnostic text. This removes the plan-header metadata block that was originally in the PR body. Later at line 221, the command calls `backend.update_metadata()` to set `lifecycle_stage: "impl"`, but this function expects the plan-header metadata block to still exist in the PR body so it can parse and update it. Since the metadata block was stripped away, it fails with "plan-header block not found in PR body".
+
+**Affected Test:** The test `test_cli_success` is failing. There are also other related tests that would likely fail with similar issues once we address this primary one.
+
+**Code Location Issue:** The problem is in `/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/handle_no_changes.py` at the sequence of operations (lines 186-225). The fix would need to ensure that when updating the PR body, the plan-header metadata block is preserved.
+
+Since you requested I run these commands and report results without making modifications, I have completed the task as specified. The unit tests failed with the one critical issue identified above.
+agentId: a92cf30 (for resuming to continue this agent's work if needed)
+  </tool_result>
+  <assistant>The remaining failure is more subtle. It's not about the CLI flag names — it's about the logic change when `--plan-id` was removed. Previously, `--plan-id` was used to reference the plan PR (whose body had plan-header metadata), while `--pr-number` was the impl PR. Now with only `--pr-number`, the code updates the impl PR's body (which replaces the plan-header metadata), then tries to update the same PR's metadata (which no longer exists since the body was replaced).
+
+This is a genuine behavior change from removing `--plan-id`. The command now updates the same PR's body AND tries to update its metadata. Let me look at how this was handled before removal to understand the proper behavior:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="961" cache_read_input_tokens="111400" cache_creation="{'ephemeral_5m_input_tokens': 961, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01UZrzknqp6Sxh26C5vPSABx">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/handle_no_changes.py</param>
+    <param name="offset">140</param>
+    <param name="limit">120</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="961" cache_read_input_tokens="111400" cache_creation="{'ephemeral_5m_input_tokens': 961, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01UZrzknqp6Sxh26C5vPSABx">
+   140→@click.option("--pr-number", type=int, required=True, help="PR number to update")
+   141→@click.option("--behind-count", type=int, required=True, help="How many commits behind base branch")
+   142→@click.option("--base-branch", type=str, required=True, help="Base branch name")
+   143→@click.option("--original-title", type=str, required=True, help="Original PR title")
+   144→@click.option(
+   145→    "--recent-commits",
+   146→    type=str,
+   147→    default=None,
+   148→    help="Recent commits on base branch (newline-separated)",
+   149→)
+   150→@click.option("--run-url", type=str, default=None, help="Optional workflow run URL")
+   151→@click.pass_context
+   152→def handle_no_changes(
+   153→    ctx: click.Context,
+   154→    *,
+   155→    pr_number: int,
+   156→    behind_count: int,
+   157→    base_branch: str,
+   158→    original_title: str,
+   159→    recent_commits: str | None,
+   160→    run_url: str | None,
+   161→) -&gt; None:
+   162→    """Handle no-changes scenario gracefully.
+   163→
+   164→    Updates the PR with diagnostic information explaining why no changes were made,
+   165→    adds the no-changes label, marks the PR ready for review, and adds a comment
+   166→    to the plan.
+   167→
+   168→    Exits with code 0 on success (making the workflow succeed rather than fail).
+   169→    """
+
+... [95 lines omitted] ...
+
+   192→    except RuntimeError as e:
+   193→        result = HandleNoChangesError(
+   195→            error="github-api-failed",
+   196→            message=f"Failed to update PR title and body: {e}",
+   210→    except RuntimeError as e:
+   211→        result = HandleNoChangesError(
+   213→            error="github-api-failed",
+   214→            message=f"Failed to add label: {e}",
+   226→    except RuntimeError as e:
+   227→        result = HandleNoChangesError(
+   229→            error="github-api-failed",
+   230→            message=f"Failed to update lifecycle stage: {e}",
+   238→    except RuntimeError as e:
+   239→        result = HandleNoChangesError(
+   241→            error="github-api-failed",
+   242→            message=f"Failed to mark PR ready: {e}",
+   251→    except RuntimeError as e:
+   252→        result = HandleNoChangesError(
+   254→            error="github-api-failed",
+   255→            message=f"Failed to add plan comment: {e}",
+  </tool_result>
+  <assistant>I see the issue. The code does step 1 (`update_pr_title_and_body` on the impl PR), then step 3 (`backend.update_metadata` on the plan PR). Previously, `--pr-number` was the impl PR and `--plan-id` was the plan PR — these were DIFFERENT PRs. Now they're the SAME PR.
+
+The problem: step 1 replaces the body (destroying plan-header), then step 3 tries to update plan-header metadata (which is gone).
+
+This is a real bug introduced by merging the two params. In the actual workflow, `handle-no-changes` is called when the plan PR IS the impl PR (planned-PR flow). The agent in Phase 1 removed `--plan-id` but didn't restructure the code to handle this correctly.
+
+Looking at the workflow in `plan-implement.yml`, let me check what values are actually passed:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2215" cache_read_input_tokens="112361" cache_creation="{'ephemeral_5m_input_tokens': 2215, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_015Qg8s3KTqK3Pij1AQawAgb">
+    <param name="pattern">handle-no-changes</param>
+    <param name="path">/home/runner/work/erk/erk/.github/workflows/plan-implement.yml</param>
+    <param name="output_mode">content</param>
+    <param name="-B">2</param>
+    <param name="-A">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2215" cache_read_input_tokens="112361" cache_creation="{'ephemeral_5m_input_tokens': 2215, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_015Qg8s3KTqK3Pij1AQawAgb">
+345-
+346-            # Call exec command to handle no-changes scenario
+347:            erk exec handle-no-changes \
+348-              --pr-number "$PR_NUMBER" \
+349-              --behind-count "$BEHIND_COUNT" \
+350-              --base-branch "$BASE_BRANCH" \
+351-              --original-title "$PLAN_TITLE" \
+352-              --recent-commits "$RECENT_COMMITS" \
+353-              --run-url "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+354-
+355-            echo "has_changes=false" &gt;&gt; $GITHUB_OUTPUT
+356-          else
+357-            echo "Implementation produced changes:"
+358-            if [ -n "$UNCOMMITTED" ]; then
+359-              echo "Uncommitted changes:"
+360-              echo "$UNCOMMITTED"
+361-            fi
+362-            if [ "$NEW_COMMITS" = "true" ]; then
+  </tool_result>
+  <assistant>In the workflow, `$PR_NUMBER` is the impl PR and previously `$PLAN_ID` was the plan number. They could be the same PR in the planned-PR flow. The key issue is that `update_pr_title_and_body` destroys the plan-header metadata in step 1, then step 3 can't find it.
+
+The correct fix: Step 3 should update the metadata BEFORE step 1 replaces the body, OR the body replacement should preserve the plan-header. Let me reorder steps 1 and 3:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="608" cache_read_input_tokens="114576" cache_creation="{'ephemeral_5m_input_tokens': 608, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01Re9XaC4mg3FngobFhqGfDu">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/handle_no_changes.py</param>
+    <param name="old_string">    # Build PR title and body
+    new_title = _build_no_changes_title(pr_number=pr_number,...[truncated 1777 chars]...    click.echo(json.dumps(asdict(result), indent=2))
+        raise SystemExit(1) from None</param>
+    <param name="new_string">    # Build PR title and body
+    new_title = _build_no_changes_title(pr_number=pr_number,...[truncated 1868 chars]...    click.echo(json.dumps(asdict(result), indent=2))
+        raise SystemExit(1) from None</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="608" cache_read_input_tokens="114576" cache_creation="{'ephemeral_5m_input_tokens': 608, 'ephemeral_1h_input_tokens': 0}" output_tokens="1457" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Re9XaC4mg3FngobFhqGfDu">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/handle_no_changes.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me run the tests again:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1764" cache_read_input_tokens="115184" cache_creation="{'ephemeral_5m_input_tokens': 1764, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_0155nivYNJZZ3N6n2SX6LBDG">
+    <param name="description">Run full pytest suite</param>
+    <param name="prompt">Run these commands in sequence and report ALL failures:
+
+1. First run:
+```
+cd /home/runner...[truncated 206 chars]... 2&gt;&amp;1 | tail -40
+```
+
+Report the complete output of each command. Do NOT modify any files.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1764" cache_read_input_tokens="115184" cache_creation="{'ephemeral_5m_input_tokens': 1764, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_0155nivYNJZZ3N6n2SX6LBDG">
+The first command found a failure. Let me report this result:
+
+**pytest failed: 1 issue found**
+
+**Failure in tests/unit/cli/commands/exec/scripts/test_handle_no_changes.py::test_cli_updates_pr_title_and_body**
+
+Location: `/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_handle_no_changes.py:280`
+
+Error: AssertionError: assert 2 == 1
+- Expected 1 item in `no_changes_bodies`
+- Found 2 items in `no_changes_bodies`
+
+The test is checking the length of a list containing PR update bodies, expecting exactly 1, but got 2 instead.
+
+Since the first command failed, per your instructions I'm stopping here without running the second command. The failure is in the handle_no_changes test which appears to be checking that the CLI updates PR title and body correctly when no changes occur.
+agentId: affff60 (for resuming to continue this agent's work if needed)
+  </tool_result>
+  <assistant>The `update_metadata` call also updates the PR body (to modify the plan-header), and then step 2 also updates the body. So there are now 2 body updates for PR 123 instead of the expected 1. Let me fix this assertion:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="500" cache_read_input_tokens="116948" cache_creation="{'ephemeral_5m_input_tokens': 500, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01S7MWvjkzXBfHtmaQrsm7P6">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_handle_no_changes.py</param>
+    <param name="offset">249</param>
+    <param name="limit">40</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="500" cache_read_input_tokens="116948" cache_creation="{'ephemeral_5m_input_tokens': 500, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01S7MWvjkzXBfHtmaQrsm7P6">
+   249→def test_cli_updates_pr_title_and_body(tmp_path: Path) -&gt; None:
+   250→    """Test that CLI command updates PR title and body."""
+   251→    github, fake_gh_issues, backend = _create_github_with_plan_pr(123)
+   252→
+   253→    ctx = ErkContext.for_test(github=github, plan_store=backend, repo_root=tmp_path, cwd=tmp_path)
+   254→
+   255→    runner = CliRunner()
+   256→    runner.invoke(
+   257→        handle_no_changes_command,
+   258→        [
+   259→            "--pr-number",
+   260→            "123",
+   261→            "--behind-count",
+   262→            "5",
+   263→            "--base-branch",
+   264→            "master",
+   265→            "--original-title",
+   266→            "Fix Cache Issue",
+   267→        ],
+   268→        obj=ctx,
+   269→    )
+   270→
+   271→    # Verify PR title was updated
+   272→    assert len(github.updated_pr_titles) == 1
+   273→    pr_number, title = github.updated_pr_titles[0]
+   274→    assert pr_number == 123
+   275→    assert title == "[no-changes] #123 Impl Attempt: Fix Cache Issue"
+   276→
+   277→    # Verify PR body was updated for the impl PR
+   278→    # PlannedPRBackend.update_metadata also updates the plan PR body
+
+... [15 lines omitted] ...
+  </tool_result>
+  <assistant>The issue: since `update_metadata` (step 1) and `update_pr_title_and_body` (step 2) now both operate on the same PR 123, there are 2 body updates. The test needs to check the LAST body update for the no-changes content:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1089" cache_read_input_tokens="117448" cache_creation="{'ephemeral_5m_input_tokens': 1089, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_0169jimRNNb6ci5kM933DpHF">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_handle_no_changes.py</param>
+    <param name="old_string">    # Verify PR body was updated for the impl PR
+    # PlannedPRBackend.update_metadata al...[truncated 153 chars]..._changes_bodies[0]
+    assert "No Code Changes" in body
+    assert "Close this PR" in body</param>
+    <param name="new_string">    # Verify PR body was updated for the impl PR
+    # update_metadata also updates the PR...[truncated 239 chars]...changes_bodies[-1]
+    assert "No Code Changes" in body
+    assert "Close this PR" in body</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1089" cache_read_input_tokens="117448" cache_creation="{'ephemeral_5m_input_tokens': 1089, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_0169jimRNNb6ci5kM933DpHF">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_handle_no_changes.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Task" id="toolu_01GMo5k8U5L5YvXNdenaTpzR">
+    <param name="description">Run full pytest suite</param>
+    <param name="prompt">Run these commands in sequence and report ALL failures:
+
+1. First run:
+```
+cd /home/runner...[truncated 206 chars]... 2&gt;&amp;1 | tail -40
+```
+
+Report the complete output of each command. Do NOT modify any files.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="485" cache_read_input_tokens="118537" cache_creation="{'ephemeral_5m_input_tokens': 485, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01GMo5k8U5L5YvXNdenaTpzR">
+pytest failed: 1 issue found
+
+**Test:** `test_cli_requires_behind_count` (tests/unit/cli/commands/exec/scripts/test_handle_no_changes.py:398)
+
+**Error:** The test expects either "Missing option" or "required" in the error output, but received "No such option: --plan-id"
+
+**Output:** The command produced:
+```
+Usage: handle-no-changes [OPTIONS]
+Try 'handle-no-changes --help' for help.
+
+Error: No such option: --plan-id
+```
+
+This indicates that `--plan-id` option no longer exists or has been renamed (likely as part of the "Rename Click Arguments/Options" objective #9109). The test is checking for a missing option error but using an old option name that no longer exists.
+
+Since the first test suite fails at the first error, the second command will not be executed per your requirement to "run in sequence."
+
+**Complete output from first command:**
+```
+........................................................................ [  1%]
+........................................................................ [  3%]
+........................................................................ [  5%]
+........................................................................ [  7%]
+........................................................................ [  8%]
+........................................................................ [ 10%]
+........................................................................ [ 12%]
+......................F
+=================================== FAILURES ===================================
+________________________ test_cli_requires_behind_count ________________________
+
+... [15 lines omitted] ...
+
+E   assert ('Missing option' in "Usage: handle-no-changes [OPTIONS]\nTry 'handle-no-changes --help' for help.\n\nError: No such option: --plan-id\n" or 'required' in "usage: handle-no-changes [options]\ntry 'handle-no-changes --help' for help.\n\nerror: no such option: --plan-id\n")
+E    +  where "Usage: handle-no-changes [OPTIONS]\nTry 'handle-no-changes --help' for help.\n\nError: No such option: --plan-id\n" = &lt;Result SystemExit(2)&gt;.output
+E    +   and   "usage: handle-no-changes [options]\ntry 'handle-no-changes --help' for help.\n\nerror: no such option: --plan-id\n" = &lt;built-in method lower of str object at 0x7f80edb68170&gt;()
+E    +    where &lt;built-in method lower of str object at 0x7f80edb68170&gt; = "Usage: handle-no-changes [OPTIONS]\nTry 'handle-no-changes --help' for help.\n\nError: No such option: --plan-id\n".lower
+E    +    where &lt;built-in method lower of str object at 0x7f80edb68170&gt; = "Usage: handle-no-changes [OPTIONS]\nTry 'handle-no-changes --help' for help.\n\nError: No such option: --plan-id\n".lower()
+FAILED tests/unit/cli/commands/exec/scripts/test_handle_no_changes.py::test_cli_requires_behind_count - assert ('Missing option' in "Usage: handle-no-changes [OPTIONS]\nTry 'handle-no-changes --help' for help.\n\nError: No such option: --plan-id\n" or 'required' in "usage: handle-no-changes [options]\ntry 'handle-no-changes --help' for help.\n\nerror: no such option: --plan-id\n")
+ +  where "Usage: handle-no-changes [OPTIONS]\nTry 'handle-no-changes --help' for help.\n\nError: No such option: --plan-id\n" = &lt;Result SystemExit(2)&gt;.output
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+The failure is in the test file at `/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_handle_no_changes.py`, line 398, which references `--plan-id` option that appears to have been renamed as part of PR #9120 (Rename JSON output fields in exec scripts: plan → pr).
+  </tool_result>
+  <assistant>Another test still references `--plan-id`. Let me fix it:</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="1587" cache_read_input_tokens="119022" cache_creation="{'ephemeral_5m_input_tokens': 1587, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_0178a7mhtYnS3TZrDXQGZ7Jz">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_handle_no_changes.py</param>
+    <param name="offset">385</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1587" cache_read_input_tokens="119022" cache_creation="{'ephemeral_5m_input_tokens': 1587, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_0178a7mhtYnS3TZrDXQGZ7Jz">
+   385→    result = runner.invoke(
+   386→        handle_no_changes_command,
+   387→        [
+   388→            "--pr-number",
+   389→            "123",
+   390→            "--plan-id",
+   391→            "456",
+   392→            "--base-branch",
+   393→            "main",
+   394→        ],
+   395→    )
+   396→
+   397→    assert result.exit_code != 0
+   398→    assert "Missing option" in result.output or "required" in result.output.lower()
+   399→
+   400→
+   401→def test_cli_requires_base_branch() -&gt; None:
+   402→    """Test that --base-branch is required."""
+   403→    runner = CliRunner()
+   404→
+   405→    result = runner.invoke(
+   406→        handle_no_changes_command,
+   407→        [
+   408→            "--pr-number",
+   409→            "123",
+   410→            "--plan-id",
+   411→            "456",
+   412→            "--behind-count",
+   413→            "0",
+   414→            "--original-title",
+
+... [5 lines omitted] ...
+  </tool_result>
+  <assistant>There are more `--plan-id` references that the agent missed. Let me find all remaining ones:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="518" cache_read_input_tokens="120609" cache_creation="{'ephemeral_5m_input_tokens': 518, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01YBVBuhGfVB47KVHEMBUCdA">
+    <param name="pattern">--plan-id</param>
+    <param name="path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_handle_no_changes.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="518" cache_read_input_tokens="120609" cache_creation="{'ephemeral_5m_input_tokens': 518, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01YBVBuhGfVB47KVHEMBUCdA">
+338:    # Note: With --plan-id removed, the comment is no longer posted to a separate plan
+390:            "--plan-id",
+410:            "--plan-id",
+432:            "--plan-id",
+  </tool_result>
+  <assistant>Three remaining CLI invocations on lines 390, 410, and 432. These tests are for "missing required option" validation — they provide some options and omit one. Since `--plan-id` no longer exists, I need to remove those lines from the invocations. Let me read the full context:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="482" cache_read_input_tokens="121127" cache_creation="{'ephemeral_5m_input_tokens': 482, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01SQjxJFHdBaFv5HvkxoLBgk">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_handle_no_changes.py</param>
+    <param name="offset">380</param>
+    <param name="limit">65</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="482" cache_read_input_tokens="121127" cache_creation="{'ephemeral_5m_input_tokens': 482, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01SQjxJFHdBaFv5HvkxoLBgk">
+   380→
+   381→def test_cli_requires_behind_count() -&gt; None:
+   382→    """Test that --behind-count is required."""
+   383→    runner = CliRunner()
+   384→
+   385→    result = runner.invoke(
+   386→        handle_no_changes_command,
+   387→        [
+   388→            "--pr-number",
+   389→            "123",
+   390→            "--plan-id",
+   391→            "456",
+   392→            "--base-branch",
+   393→            "main",
+   394→        ],
+   395→    )
+   396→
+   397→    assert result.exit_code != 0
+   398→    assert "Missing option" in result.output or "required" in result.output.lower()
+   399→
+   400→
+   401→def test_cli_requires_base_branch() -&gt; None:
+   402→    """Test that --base-branch is required."""
+   403→    runner = CliRunner()
+   404→
+   405→    result = runner.invoke(
+   406→        handle_no_changes_command,
+   407→        [
+   408→            "--pr-number",
+   409→            "123",
+
+... [40 lines omitted] ...
+  </tool_result>
+  <assistant>I need to remove `"--plan-id", "456"` from all three test invocations. For `test_cli_requires_behind_count`, also need to add `"--original-title", "Some Title"` since that's now required too (it was missing both `--behind-count` and `--original-title` before, but with `--plan-id` removed it fails on `--plan-id` first):</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="906" cache_read_input_tokens="121609" cache_creation="{'ephemeral_5m_input_tokens': 906, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_017RuKTCc1vw5DrodH3dqaqH">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_handle_no_changes.py</param>
+    <param name="old_string">    result = runner.invoke(
+        handle_no_changes_command,
+        [
+            "--pr...[truncated 1071 chars]...count",
+            "0",
+            "--base-branch",
+            "main",
+        ],
+    )</param>
+    <param name="new_string">    result = runner.invoke(
+        handle_no_changes_command,
+        [
+            "--pr...[truncated 997 chars]...count",
+            "0",
+            "--base-branch",
+            "main",
+        ],
+    )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="906" cache_read_input_tokens="121609" cache_creation="{'ephemeral_5m_input_tokens': 906, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_017RuKTCc1vw5DrodH3dqaqH">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_handle_no_changes.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me run the tests again:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1203" cache_read_input_tokens="122515" cache_creation="{'ephemeral_5m_input_tokens': 1203, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01Ad58MpXJ4RzPsgP1B3h2MG">
+    <param name="description">Run full pytest suite</param>
+    <param name="prompt">Run these commands in sequence and report ALL failures:
+
+1. First run:
+```
+cd /home/runner...[truncated 206 chars]... 2&gt;&amp;1 | tail -40
+```
+
+Report the complete output of each command. Do NOT modify any files.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1203" cache_read_input_tokens="122515" cache_creation="{'ephemeral_5m_input_tokens': 1203, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Ad58MpXJ4RzPsgP1B3h2MG">
+Perfect! Now I can see the actual error. The test is failing because the PR #123 is not found in the fake GitHub. The test creates a PR with ID 456, but the command is being invoked with PR number 123. Let me generate a complete report and continue with the second test command.
+
+## Summary of Test Run 1:
+
+**pytest failed** on unit tests with 1 issue found:
+
+**Failed Test:**
+- File: `/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_handle_no_changes.py`
+- Test: `test_cli_json_output_structure_success`
+- Line: 463
+- Error: PR #123 not found
+- Exit Code: 1 (expected 0)
+
+**Root Cause:** The test invokes the `handle_no_changes_command` with `--pr-number 123` but the setup creates a plan PR with ID 456. When the command tries to update PR #123 metadata, it fails because that PR does not exist in the fake GitHub implementation.
+
+**Actual Error Output:**
+```json
+{
+  "success": false,
+  "error": "github-api-failed",
+  "message": "Failed to update lifecycle stage: PR #123 not found"
+}
+```
+
+Since the first test suite failed, the second test command was not run per the `-x` (exit on first failure) flag you specified.
+agentId: a39b130 (for resuming to continue this agent's work if needed)
+  </tool_result>
+  <assistant>Another test in the same file that still creates the mock with PR 456 instead of 123. Let me find and fix all remaining instances:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="604" cache_read_input_tokens="123718" cache_creation="{'ephemeral_5m_input_tokens': 604, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01RbzApfocHe1HT8da7XwTeb">
+    <param name="pattern">_create_github_with_plan_pr\(456\)</param>
+    <param name="path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_handle_no_changes.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="604" cache_read_input_tokens="123718" cache_creation="{'ephemeral_5m_input_tokens': 604, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01RbzApfocHe1HT8da7XwTeb">
+443:    github, fake_gh_issues, backend = _create_github_with_plan_pr(456)
+477:    github, fake_gh_issues, backend = _create_github_with_plan_pr(456)
+  </tool_result>
+  <assistant>Two more. Let me fix them:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="503" cache_read_input_tokens="124322" cache_creation="{'ephemeral_5m_input_tokens': 503, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_014yHADJF3jBgeaed4SEKHXg">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_handle_no_changes.py</param>
+    <param name="offset">440</param>
+    <param name="limit">60</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="503" cache_read_input_tokens="124322" cache_creation="{'ephemeral_5m_input_tokens': 503, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_014yHADJF3jBgeaed4SEKHXg">
+   440→
+   441→def test_cli_json_output_structure_success(tmp_path: Path) -&gt; None:
+   442→    """Test that JSON output has expected structure on success."""
+   443→    github, fake_gh_issues, backend = _create_github_with_plan_pr(456)
+   444→
+   445→    ctx = ErkContext.for_test(github=github, plan_store=backend, repo_root=tmp_path, cwd=tmp_path)
+   446→
+   447→    runner = CliRunner()
+   448→    result = runner.invoke(
+   449→        handle_no_changes_command,
+   450→        [
+   451→            "--pr-number",
+   452→            "123",
+   453→            "--behind-count",
+   454→            "0",
+   455→            "--base-branch",
+   456→            "main",
+   457→            "--original-title",
+   458→            "Some Feature",
+   459→        ],
+   460→        obj=ctx,
+   461→    )
+   462→
+   463→    assert result.exit_code == 0
+   464→    output = json.loads(result.output)
+   465→
+   466→    # Verify expected keys
+   467→    assert "success" in output
+   468→    assert "pr_number" in output
+   469→
+
+... [35 lines omitted] ...
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01WEiZBR8AKY7zAN6QHfpbLy">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_handle_no_changes.py</param>
+    <param name="old_string">def test_cli_json_output_structure_success(tmp_path: Path) -&gt; None:
+    """Test that JSON ...[truncated 5 chars]...ture on success."""
+    github, fake_gh_issues, backend = _create_github_with_plan_pr(456)</param>
+    <param name="new_string">def test_cli_json_output_structure_success(tmp_path: Path) -&gt; None:
+    """Test that JSON ...[truncated 5 chars]...ture on success."""
+    github, fake_gh_issues, backend = _create_github_with_plan_pr(123)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="902" cache_read_input_tokens="124825" cache_creation="{'ephemeral_5m_input_tokens': 902, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01KvKzP1skNKeVYG6uQW7Wce">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_handle_no_changes.py</param>
+    <param name="old_string">def test_cli_exits_with_code_0_on_success(tmp_path: Path) -&gt; None:
+    """Test that CLI ex...[truncated 11 chars]...kflow succeeds)."""
+    github, fake_gh_issues, backend = _create_github_with_plan_pr(456)</param>
+    <param name="new_string">def test_cli_exits_with_code_0_on_success(tmp_path: Path) -&gt; None:
+    """Test that CLI ex...[truncated 11 chars]...kflow succeeds)."""
+    github, fake_gh_issues, backend = _create_github_with_plan_pr(123)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="902" cache_read_input_tokens="124825" cache_creation="{'ephemeral_5m_input_tokens': 902, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01WEiZBR8AKY7zAN6QHfpbLy">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_handle_no_changes.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01KvKzP1skNKeVYG6uQW7Wce">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_handle_no_changes.py has been updated successfully.
+  </tool_result>
+  <assistant>Let me also verify there are no more instances of 456 in this file that should be 123:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="880" cache_read_input_tokens="125727" cache_creation="{'ephemeral_5m_input_tokens': 880, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01P9BgRqvFJWLYxaMYtRjuBZ">
+    <param name="pattern">456</param>
+    <param name="path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_handle_no_changes.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="880" cache_read_input_tokens="125727" cache_creation="{'ephemeral_5m_input_tokens': 880, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01P9BgRqvFJWLYxaMYtRjuBZ">
+105:        pr_number=456,
+129:        pr_number=456,
+  </tool_result>
+  <assistant>Those are in the helper function tests (`_build_pr_body`, `_build_no_changes_title`) where 456 is just a test value passed directly to the function (not to the CLI). Those are fine.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="193" cache_read_input_tokens="126607" cache_creation="{'ephemeral_5m_input_tokens': 193, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_013hrA3JarQ22NvXFiXTHQVQ">
+    <param name="description">Run full pytest suite</param>
+    <param name="prompt">Run these commands in sequence and report ALL failures:
+
+1. First run:
+```
+cd /home/runner...[truncated 206 chars]... 2&gt;&amp;1 | tail -60
+```
+
+Report the complete output of each command. Do NOT modify any files.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="193" cache_read_input_tokens="126607" cache_creation="{'ephemeral_5m_input_tokens': 193, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_013hrA3JarQ22NvXFiXTHQVQ">
+The first command failed. Here's the result:
+
+**pytest failed: 1 issue found**
+
+**File:** `/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_post_workflow_started_comment.py:56`
+
+**Error Type:** `TypeError`
+
+**Message:** `_build_workflow_started_comment() got an unexpected keyword argument 'plan_number'. Did you mean 'pr_number'?`
+
+**Summary:** The test is calling `_build_workflow_started_comment()` with a `plan_number` argument, but the function expects `pr_number` instead. This suggests there was a recent refactoring that renamed the parameter from `plan_number` to `pr_number`, but the test wasn't updated to match.
+
+Since the first test run failed, I'm not proceeding to the second set of tests as instructed.
+agentId: a03ca8b (for resuming to continue this agent's work if needed)
+  </tool_result>
+  <assistant>The agents missed some internal function parameter renames in test files. Let me do a comprehensive sweep for all remaining `plan_number` and `plan_id` references in tests that should have been renamed:</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="777" cache_read_input_tokens="126800" cache_creation="{'ephemeral_5m_input_tokens': 777, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_013Vm1NttbhNeGy2QHoZx7V9">
+    <param name="pattern">plan_number=|plan_id=</param>
+    <param name="path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_post_workflow_started_comment.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="777" cache_read_input_tokens="126800" cache_creation="{'ephemeral_5m_input_tokens': 777, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01QJ9U7Sp2GyDaiiwuTK4TN3">
+    <param name="pattern">plan_number=|plan_id=</param>
+    <param name="path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_register_one_shot_plan.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="777" cache_read_input_tokens="126800" cache_creation="{'ephemeral_5m_input_tokens': 777, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_016keD4RRo4dLhD1Tv4ivVQ8">
+    <param name="pattern">plan_number=|plan_id=</param>
+    <param name="path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_handle_no_changes.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="777" cache_read_input_tokens="126800" cache_creation="{'ephemeral_5m_input_tokens': 777, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_013Vm1NttbhNeGy2QHoZx7V9">
+57:        plan_number=123,
+76:        plan_number=123,
+93:        plan_number=123,
+115:        plan_number=10,
+130:        plan_number=1,
+145:        plan_number=1,
+160:        plan_number=1,
+  </tool_result>
+  <tool_result tool="toolu_01QJ9U7Sp2GyDaiiwuTK4TN3">
+No matches found
+  </tool_result>
+  <tool_result tool="toolu_016keD4RRo4dLhD1Tv4ivVQ8">
+No matches found
+  </tool_result>
+  <assistant>The test file calls `_build_workflow_started_comment(plan_number=...)` but the function was renamed to accept `pr_number`. Let me also do a broader check across all test files for function kwargs that still use the old names:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="871" cache_read_input_tokens="127577" cache_creation="{'ephemeral_5m_input_tokens': 871, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_019aywHAfwrNyAKcmKXfrgga">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_post_workflow_started_comment.py</param>
+    <param name="offset">50</param>
+    <param name="limit">120</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="871" cache_read_input_tokens="127577" cache_creation="{'ephemeral_5m_input_tokens': 871, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_019aywHAfwrNyAKcmKXfrgga">
+    50→# 1. Comment Building Tests (6 tests) - Pure function tests, no fakes needed
+    51→# ============================================================================
+    52→
+    53→
+    54→def test_build_comment_contains_all_fields() -&gt; None:
+    55→    """Test that built comment contains all required fields."""
+    56→    comment = _build_workflow_started_comment(
+    57→        plan_number=123,
+    58→        branch_name="my-feature",
+    59→        pr_number=456,
+    60→        run_id="99999",
+    61→        run_url="https://github.com/owner/repo/actions/runs/99999",
+    62→        repository="owner/repo",
+    63→        now_iso=FAKE_NOW_ISO,
+    64→    )
+    65→
+    66→    assert "GitHub Action Started" in comment
+    67→    assert "branch_name: my-feature" in comment
+    68→    assert "pr_number: 123" in comment
+    69→    assert "workflow_run_id: '99999'" in comment
+    70→    assert "https://github.com/owner/repo/actions/runs/99999" in comment
+    71→
+    72→
+    73→def test_build_comment_has_metadata_block() -&gt; None:
+    74→    """Test that comment has properly formatted metadata block."""
+    75→    comment = _build_workflow_started_comment(
+    76→        plan_number=123,
+    77→        branch_name="feat-auth",
+    78→        pr_number=456,
+    79→        run_id="12345",
+
+... [95 lines omitted] ...
+  </tool_result>
+  <assistant>I see the pattern. The function `_build_workflow_started_comment` had `plan_number` renamed to `pr_number`, but it also had a separate `pr_number` param (impl PR). Per the special case, the old `pr_number` → `impl_pr_number`. So the new signature is `_build_workflow_started_comment(pr_number=..., impl_pr_number=...)`. Let me verify:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1838" cache_read_input_tokens="128448" cache_creation="{'ephemeral_5m_input_tokens': 1838, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01Mr1pMLmBsgZJHnRGeiLJ45">
+    <param name="pattern">def _build_workflow_started_comment</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/post_workflow_started_comment.py</param>
+    <param name="output_mode">content</param>
+    <param name="-A">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1838" cache_read_input_tokens="128448" cache_creation="{'ephemeral_5m_input_tokens': 1838, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Mr1pMLmBsgZJHnRGeiLJ45">
+70:def _build_workflow_started_comment(
+71-    *,
+72-    pr_number: int,
+73-    branch_name: str,
+74-    impl_pr_number: int,
+75-    run_id: str,
+76-    run_url: str,
+77-    repository: str,
+78-    now_iso: str,
+79-) -&gt; str:
+80-    """Build the workflow started comment body using the canonical metadata API.
+81-
+82-    Uses the standard metadata block API so the comment can be parsed
+83-    by ``parse_metadata_blocks`` during ``erk land``.
+84-
+85-    Args:
+  </tool_result>
+  <assistant>Confirmed. The new signature is `pr_number` (was `plan_number`) and `impl_pr_number` (was `pr_number`). All 7 test calls need updating: `plan_number=X` → `pr_number=X` and `pr_number=Y` → `impl_pr_number=Y`.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="674" cache_read_input_tokens="130286" cache_creation="{'ephemeral_5m_input_tokens': 674, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_016WA2BaVVKYrL1rAxuKkAyb">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_post_workflow_started_comment.py</param>
+    <param name="old_string">        plan_number=123,
+        branch_name="my-feature",
+        pr_number=456,</param>
+    <param name="new_string">        pr_number=123,
+        branch_name="my-feature",
+        impl_pr_number=456,</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="674" cache_read_input_tokens="130286" cache_creation="{'ephemeral_5m_input_tokens': 674, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01GQ143v3FeSPbyZMAbMRXts">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_post_workflow_started_comment.py</param>
+    <param name="old_string">        plan_number=123,
+        branch_name="feat-auth",
+        pr_number=456,
+        r...[truncated 107 chars]...=FAKE_NOW_ISO,
+    )
+
+    assert "&lt;!-- erk:metadata-block:workflow-started --&gt;" in comment</param>
+    <param name="new_string">        pr_number=123,
+        branch_name="feat-auth",
+        impl_pr_number=456,
+      ...[truncated 110 chars]...=FAKE_NOW_ISO,
+    )
+
+    assert "&lt;!-- erk:metadata-block:workflow-started --&gt;" in comment</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="674" cache_read_input_tokens="130286" cache_creation="{'ephemeral_5m_input_tokens': 674, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_014mGDdjLmteyDg96zY5paUS">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_post_workflow_started_comment.py</param>
+    <param name="old_string">        plan_number=123,
+        branch_name="feat-auth",
+        pr_number=456,
+        r...[truncated 82 chars]...cme/app",
+        now_iso=FAKE_NOW_ISO,
+    )
+
+    result = parse_metadata_blocks(comment)</param>
+    <param name="new_string">        pr_number=123,
+        branch_name="feat-auth",
+        impl_pr_number=456,
+      ...[truncated 85 chars]...cme/app",
+        now_iso=FAKE_NOW_ISO,
+    )
+
+    result = parse_metadata_blocks(comment)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="674" cache_read_input_tokens="130286" cache_creation="{'ephemeral_5m_input_tokens': 674, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_019UEeRNPud7AguvUmHGcfb3">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_post_workflow_started_comment.py</param>
+    <param name="old_string">        plan_number=10,
+        branch_name="fix-bug",
+        pr_number=42,</param>
+    <param name="new_string">        pr_number=10,
+        branch_name="fix-bug",
+        impl_pr_number=42,</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="674" cache_read_input_tokens="130286" cache_creation="{'ephemeral_5m_input_tokens': 674, 'ephemeral_1h_input_tokens': 0}" output_tokens="1023" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_016WA2BaVVKYrL1rAxuKkAyb">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_post_workflow_started_comment.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01GQ143v3FeSPbyZMAbMRXts">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_post_workflow_started_comment.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_014mGDdjLmteyDg96zY5paUS">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_post_workflow_started_comment.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_019UEeRNPud7AguvUmHGcfb3">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_post_workflow_started_comment.py has been updated successfully.
+  </tool_result>
+</session>
