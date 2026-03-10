@@ -26,6 +26,35 @@
       "raw_size_kb": 1044,
       "xml_size_kb": 336,
       "git_branch": "plnd/auto-recover-impl-retry-03-10-0929"
+    },
+    {
+      "session_id": "0ab80b46-f509-483d-8308-6733558ff638",
+      "stage": "impl",
+      "source": "remote",
+      "uploaded_at": "2026-03-10T13:47:13.567188+00:00",
+      "files": [
+        "impl-0ab80b46-f509-483d-8308-6733558ff638-0ab80b46-f509-483d-8308-6733558ff638-part1.xml",
+        "impl-0ab80b46-f509-483d-8308-6733558ff638-0ab80b46-f509-483d-8308-6733558ff638-part10.xml",
+        "impl-0ab80b46-f509-483d-8308-6733558ff638-0ab80b46-f509-483d-8308-6733558ff638-part11.xml",
+        "impl-0ab80b46-f509-483d-8308-6733558ff638-0ab80b46-f509-483d-8308-6733558ff638-part12.xml",
+        "impl-0ab80b46-f509-483d-8308-6733558ff638-0ab80b46-f509-483d-8308-6733558ff638-part13.xml",
+        "impl-0ab80b46-f509-483d-8308-6733558ff638-0ab80b46-f509-483d-8308-6733558ff638-part14.xml",
+        "impl-0ab80b46-f509-483d-8308-6733558ff638-0ab80b46-f509-483d-8308-6733558ff638-part15.xml",
+        "impl-0ab80b46-f509-483d-8308-6733558ff638-0ab80b46-f509-483d-8308-6733558ff638-part16.xml",
+        "impl-0ab80b46-f509-483d-8308-6733558ff638-0ab80b46-f509-483d-8308-6733558ff638-part2.xml",
+        "impl-0ab80b46-f509-483d-8308-6733558ff638-0ab80b46-f509-483d-8308-6733558ff638-part3.xml",
+        "impl-0ab80b46-f509-483d-8308-6733558ff638-0ab80b46-f509-483d-8308-6733558ff638-part4.xml",
+        "impl-0ab80b46-f509-483d-8308-6733558ff638-0ab80b46-f509-483d-8308-6733558ff638-part5.xml",
+        "impl-0ab80b46-f509-483d-8308-6733558ff638-0ab80b46-f509-483d-8308-6733558ff638-part6.xml",
+        "impl-0ab80b46-f509-483d-8308-6733558ff638-0ab80b46-f509-483d-8308-6733558ff638-part7.xml",
+        "impl-0ab80b46-f509-483d-8308-6733558ff638-0ab80b46-f509-483d-8308-6733558ff638-part8.xml",
+        "impl-0ab80b46-f509-483d-8308-6733558ff638-0ab80b46-f509-483d-8308-6733558ff638-part9.xml"
+      ],
+      "user_turns": 5,
+      "duration_minutes": 16,
+      "raw_size_kb": 1096,
+      "xml_size_kb": 367,
+      "git_branch": "plnd/auto-recover-impl-retry-03-10-0929"
     }
   ]
 }

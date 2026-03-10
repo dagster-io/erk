@@ -1,0 +1,988 @@
+<session>
+  <meta source="agent-aa02ea8" />
+  <meta branch="plnd/auto-recover-impl-retry-03-10-0929" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant docs before exploring raw files. Then explore codebase as necessary.
+
+I need to understand the existing patterns for implementing a new exec script and the implement.py command. Specifically:
+
+1. Read `src/erk/cli/commands/exec/scripts/impl_signal.py` - to understand the pattern for exec scripts (Click context injection, JSON output, require_git/require_plan_backend/require_repo_root)
+2. Read `src/erk/cli/commands/exec/group.py` - to understand how exec commands are registered
+3. Read `src/erk/cli/commands/implement.py` - to understand the implement command, especially Strategy 1 and Strategy 2, and `extract_plan_from_current_branch`
+4. Read `src/erk/cli/commands/implement_shared.py` - to understand shared implementation utilities
+5. Check what's in `erk_shared.gateway.git.analysis_ops` for `get_merge_base`
+6. Check what's in `erk_shared.gateway.git.branch_ops` for `reset_hard`
+7. Check what's in `erk_shared.gateway.git.remote_ops` for `push_to_remote` with force option
+8. Check the `erk_shared.context.helpers` for `require_plan_backend` and related functions
+9. Read `docs/learned/planning/tripwires.md` and `docs/learned/architecture/tripwires.md` for relevant tripwires
+
+Return the FULL content of each file. This is critical for implementation.</user>
+  <assistant>I'll systematically explore the files and documentation you've specified. Let me start by checking the docs, then reading the key implementation files.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="7102" cache_read_input_tokens="8268" cache_creation="{'ephemeral_5m_input_tokens': 7102, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01NvZKGFqnHqoZ85A21PoVBm">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/index.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="7102" cache_read_input_tokens="8268" cache_creation="{'ephemeral_5m_input_tokens': 7102, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01UQqxTTxX7cQrH2Dzx4KviF">
+    <param name="pattern">planning|architecture</param>
+    <param name="path">/home/runner/work/erk/erk/docs/learned</param>
+    <param name="glob">*.md</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="7102" cache_read_input_tokens="8268" cache_creation="{'ephemeral_5m_input_tokens': 7102, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01NvZKGFqnHqoZ85A21PoVBm">
+     1→&lt;!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY --&gt;
+     2→&lt;!-- Edit source frontmatter, then run 'erk docs sync' to regenerate. --&gt;
+     3→
+     4→# Agent Documentation
+     5→
+     6→Before starting work, scan the read-when conditions below.
+     7→If your current task matches, read the linked document **before writing code**.
+     8→
+     9→## Categories
+    10→
+    11→- [architecture/](architecture/) — Explore when working on core patterns (dry-run, gateways, subprocess, shell integration). Add docs here for cross-cutting technical patterns.
+    12→- [capabilities/](capabilities/)
+    13→- [changelog/](changelog/)
+    14→- [checklists/](checklists/)
+    15→- [ci/](ci/)
+    16→- [claude-code/](claude-code/)
+    17→- [cli/](cli/) — Explore when building CLI commands or output formatting. Add docs here for Click patterns and terminal UX.
+    18→- [commands/](commands/) — Explore when creating or optimizing slash commands. Add docs here for command authoring patterns.
+    19→- [config/](config/)
+    20→- [configuration/](configuration/)
+    21→- [documentation/](documentation/) — Explore when structuring or writing documentation. Add docs here for documentation methodology and best practices.
+    22→- [erk/](erk/) — Explore when working with erk-specific workflows (worktrees, PR sync, Graphite). Add docs here for erk user-facing features.
+    23→- [erk-dev/](erk-dev/)
+    24→- [gateway/](gateway/)
+    25→- [hooks/](hooks/) — Explore when creating or debugging hooks. Add docs here for hook development patterns.
+    26→- [integrations/](integrations/)
+    27→- [objectives/](objectives/)
+    28→- [planning/](planning/) — Explore when working with plans, .erk/impl-context/ folders, or agent delegation. Add docs here for planning workflow patterns.
+    29→- [pr-operations/](pr-operations/)
+    30→- [refactoring/](refactoring/)
+
+... [22 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01UQqxTTxX7cQrH2Dzx4KviF">
+Found 293 files
+docs/learned/workflows/one-shot-workflow.md
+docs/learned/tui/view-mode-help.md
+docs/learned/tui/view-switching.md
+docs/learned/universal-tripwires.md
+docs/learned/tui/keyboard-shortcuts.md
+docs/learned/tui/lifecycle-display.md
+docs/learned/tui/modal-screen-pattern.md
+docs/learned/tui/plan-row-data.md
+docs/learned/tui/plan-title-rendering-pipeline.md
+docs/learned/tui/stacked-pr-indicator.md
+docs/learned/tui/tripwires.md
+docs/learned/tui/tui-command-registration.md
+docs/learned/textual/datatable-markup-escaping.md
+docs/learned/textual/widget-development.md
+docs/learned/tripwires-index.md
+docs/learned/tui/adding-commands.md
+docs/learned/tui/architecture.md
+docs/learned/tui/command-palette.md
+docs/learned/tui/data-contract.md
+docs/learned/tui/index.md
+docs/learned/testing/testing.md
+docs/learned/testing/tui-subprocess-testing.md
+docs/learned/testing/integration-testing-patterns.md
+docs/learned/testing/monkeypatch-elimination-checklist.md
+docs/learned/testing/monkeypatch-vs-fakes-decision.md
+docs/learned/testing/submit-pipeline-tests.md
+docs/learned/testing/subprocess-testing.md
+docs/learned/testing/test-layer-migration.md
+docs/learned/testing/alias-verification-pattern.md
+
+... [264 lines omitted] ...
+
+docs/learned/cli/error-detection-patterns.md
+docs/learned/cli/error-handling-antipatterns.md
+docs/learned/architecture/discriminated-union-error-handling.md
+  </tool_result>
+  <assistant>Now let me read the relevant tripwires and planning documentation:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="5519" cache_read_input_tokens="15370" cache_creation="{'ephemeral_5m_input_tokens': 5519, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01XjV12VSywSA7uPrf1fUiBp">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/tripwires.md</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="5519" cache_read_input_tokens="15370" cache_creation="{'ephemeral_5m_input_tokens': 5519, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01EGEJ6viwtbhkV7se6cm9Zo">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/tripwires.md</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="5519" cache_read_input_tokens="15370" cache_creation="{'ephemeral_5m_input_tokens': 5519, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Uu6bxzqhBeAJ8TJDRU4AsG">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/implement-command.md</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="5519" cache_read_input_tokens="15370" cache_creation="{'ephemeral_5m_input_tokens': 5519, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Uu6bxzqhBeAJ8TJDRU4AsG">
+     1→---
+     2→title: Implement Command
+     3→read_when:
+     4→  - "running erk implement without arguments"
+     5→  - "auto-detecting plans from current branch"
+     6→  - "understanding how erk implement selects which plan to execute"
+     7→tripwires:
+     8→  - action: "assuming erk implement always requires a plan number argument"
+     9→    warning: "erk implement supports auto-detection from .erk/impl-context/ and from branch PRs. Read this doc first."
+    10→---
+    11→
+    12→# Implement Command
+    13→
+    14→The `erk implement` command sets up an implementation environment and executes a plan. When called without arguments, it uses a two-strategy auto-detection system to find the plan.
+    15→
+    16→## Auto-Detection Strategies
+    17→
+    18→&lt;!-- Source: src/erk/cli/commands/implement.py, implement() command --&gt;
+    19→
+    20→When `TARGET` is omitted, `erk implement` tries two strategies in order:
+    21→
+    22→### Strategy 1: Resolve from `.erk/impl-context/`
+    23→
+    24→Calls `resolve_impl_dir()` (from `erk_shared.impl_folder`) to check if an impl directory already exists under `.erk/impl-context/` for the current branch. If found, the plan is loaded from that directory without any network calls.
+    25→
+    26→### Strategy 2: Extract from Branch PR
+    27→
+    28→Calls `extract_plan_from_current_branch()` to look up the current branch's associated GitHub PR and extract the plan number from it. This handles the case where a plan branch has been checked out but the impl directory hasn't been set up yet.
+    29→
+    30→If neither strategy finds a plan, the command exits with an error.
+
+... [40 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01XjV12VSywSA7uPrf1fUiBp">
+     1→---
+     2→title: Planning Tripwires
+     3→read_when:
+     4→  - "working on planning code"
+     5→---
+     6→
+     7→&lt;!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY --&gt;
+     8→&lt;!-- Edit source frontmatter, then run 'erk docs sync' to regenerate. --&gt;
+     9→&lt;!-- Generated from planning/*.md frontmatter --&gt;
+    10→
+    11→# Planning Tripwires
+    12→
+    13→Rules triggered by matching actions in code.
+    14→
+    15→**adding &lt;code&gt; inside &lt;summary&gt; elements in PR bodies** → Read [Planned PR Lifecycle](planned-pr-lifecycle.md) first. Graphite doesn't render &lt;code&gt; inside &lt;summary&gt; — use plain text instead. GitHub renders it but Graphite does not. The correct format is &lt;summary&gt;original-plan&lt;/summary&gt; not &lt;summary&gt;&lt;code&gt;original-plan&lt;/code&gt;&lt;/summary&gt;.
+    16→
+    17→**adding Closes #N to a planned PR footer** → Read [Planned PR Lifecycle](planned-pr-lifecycle.md) first. Planned PR IS the plan. Self-referential close would close the plan itself. Use issue_number=None for github-draft-pr backend.
+    18→
+    19→**adding a new PR-dependent step to trigger-async-learn** → Read [Learn Without PR Context](learn-without-pr-context.md) first. Any new PR-dependent step must handle the None case from \_get_pr_for_plan_direct. The entire PR comment block is gated on pr_result not being None.
+    20→
+    21→**adding a new filtering step to preprocess_session.py** → Read [Session Preprocessing Architecture](session-preprocessing.md) first. There are TWO preprocessing implementations: the exec script (preprocess_session.py) and erk-shared (session_preprocessing.py). The exec script has the full filtering pipeline; erk-shared has only Stage 1 mechanical reduction. New filters go in the exec script. Read this doc first.
+    22→
+    23→**adding a new pipeline stage to the async learn pipeline** → Read [Learn Pipeline Workflow](learn-pipeline-workflow.md) first. New stages must be direct Python function calls, not subprocess invocations. The orchestrator uses tight coupling for performance. See the Direct-Call Architecture section in planned-pr-context-local-preprocessing.md.
+    24→
+    25→**adding a new setup path to plan-implement without routing through Step 2d** → Read [Impl-Context Staging Directory](impl-context.md) first. Impl-context cleanup routing: all code paths that set up an implementation context must route through Step 2d in plan-implement.md, which is the single convergence point for .erk/impl-context/ cleanup. Adding a new setup path that bypasses Step 2d will silently skip cleanup, leaving .erk/impl-context/ files in the final PR diff.
+    26→
+    27→**adding branch_name to plan-header at creation time** → Read [Branch Name Inference](branch-name-inference.md) first. branch_name is intentionally omitted at creation because the branch doesn't exist yet. The plan-save → branch-create → impl-signal lifecycle requires this gap. See the temporal gap section below.
+    28→
+    29→**adding dry-run support to one-shot commands** → Read [One-Shot Workflow](one-shot-workflow.md) first. One-shot dry-run mode must NOT create skeleton issues
+    30→
+
+... [241 lines omitted] ...
+
+    45→**after plan-implement execution completes** → Read [Plan Lifecycle](lifecycle.md) first. Always clean .erk/impl-context/ with `git rm -rf .erk/impl-context/` and commit. Transient artifacts cause CI formatter failures (Prettier).
+    67→**calling `create_impl_context()` without checking `impl_context_exists()` first** → Read [Impl-Context Staging Directory](impl-context.md) first. Both submit paths use LBYL: `if impl_context_exists(): remove_impl_context()` before creating. Stale .erk/impl-context/ from a prior failed submission causes errors.
+    79→**calling update_metadata() on PlannedPRBackend without verifying plan exists** → Read [Planned PR Backend](planned-pr-backend.md) first. PlannedPRBackend.update_metadata() raises PlanHeaderNotFoundError if the header block is absent. Read operations (get_plan) return None gracefully. Always check plan existence before writing metadata.
+    81→**capturing subagent output inline when it may exceed 1KB** → Read [Agent Orchestration Safety Patterns](agent-orchestration-safety.md) first. Bash tool truncates output at ~10KB with no error. Use Write tool to save agent output to scratch storage, then pass the file path to dependent agents.
+    83→**catching PlanHeaderNotFoundError** → Read [PlanBackend Migration Guide](plan-backend-migration.md) first. PlanHeaderNotFoundError is an exception; PlanNotFound is a result type - use LBYL for the latter
+    89→**checking erk exec plan-save --format json output for empty result** → Read [Planned PR Backend](planned-pr-backend.md) first. Empty stdout does not mean failure. The duplicate-detection path writes JSON to stderr, not stdout. Always capture both streams with 2&gt;&amp;1 or check for empty stdout and retry with stderr capture.
+    95→**closing a plan without verifying all items were addressed** → Read [Complete File Inventory Protocol](complete-inventory-protocol.md) first. Compare the file inventory against the plan's items before closing. Silent omissions are the most common failure mode.
+    97→**committing to planned-PR plan branches after checkout without pulling remote** → Read [Planned PR Branch Teleport](planned-pr-branch-teleport.md) first. Both setup_impl_from_pr.py and submit.py use the same three-step teleport: fetch_branch -&gt; checkout/create_tracking -&gt; pull_rebase. Skipping pull_rebase causes non-fast-forward push failures.
+   141→**grepping only for the error message text** → Read [Source Investigation Over Trial-and-Error](debugging-patterns.md) first. Also grep for function names extracted from the error (e.g., 'checkout_footer' from 'Missing checkout footer'). Validator function names are more stable search targets than error message strings.
+   159→**making a third trial-and-error attempt at a validation fix** → Read [Source Investigation Over Trial-and-Error](debugging-patterns.md) first. After 2 failed attempts, stop guessing. Grep for the validator function and read the source to understand the exact requirement.
+   161→**making objective-update-after-land exit non-zero** → Read [Objective Update After Land](objective-update-after-land.md) first. This script uses fail-open design. Failures must not block landing. See objective-update-after-land.md.
+   187→**pushing implementation commits after impl-context cleanup without git pull --rebase** → Read [Impl-Context Staging Directory](impl-context.md) first. After git rm + commit + push of .erk/impl-context/, the local branch may diverge from remote if other commits were pushed. Run git pull --rebase before pushing further implementation commits to avoid non-fast-forward push failures.
+   193→**reading parallel agent output without verifying files exist** → Read [Parallel Agent Orchestration for Bulk Operations](parallel-audit-pattern.md) first. Always verify output files exist (ls -la) before reading. Agent failures may produce empty or missing files.
+   205→**renaming a lifecycle stage value** → Read [Plan Lifecycle](lifecycle.md) first. Update 3 locations: LifecycleStageValue type, valid_stages set, and color conditions in compute_lifecycle_display(). Missing any location causes silent validation failures or incorrect TUI colors.
+   213→**reviewing a PR that contains .erk/impl-context/ files** → Read [Impl-Context Staging Directory](impl-context.md) first. Leave a PR comment telling the author to remove .erk/impl-context/. This is an erk tooling error — the directory should have been cleaned up before implementation. Run: git rm -rf .erk/impl-context/ &amp;&amp; git commit -m 'Remove leaked impl-context'
+   223→**saving a plan linked to an objective** → Read [Plan Lifecycle](lifecycle.md) first. Always verify the link was saved correctly with `erk exec get-plan-metadata &lt;issue&gt; objective_issue`. Silent failures can leave plans unlinked from their objectives.
+   229→**treating missing PR as an error in the learn pipeline** → Read [Learn Without PR Context](learn-without-pr-context.md) first. No-PR is a valid workflow state, not an error. The learn pipeline must degrade gracefully — sessions alone provide sufficient material for insight extraction.
+   241→**using assertive metadata writes in a best-effort context** → Read [Metadata Update Patterns](metadata-update-patterns.md) first. write_dispatch_metadata() raises on error. maybe_update_plan_dispatch_metadata() uses LBYL guards and silent skip with warning. Choose based on whether failure should block the operation.
+   263→**writing post-dispatch operations without try/except guards** → Read [One-Shot Workflow](one-shot-workflow.md) first. Post-dispatch operations (metadata write, queued comment) are best-effort. Wrap in try/except with user-visible warnings. See write_dispatch_metadata() and create_submission_queued_block() in one_shot_dispatch.py.
+  </tool_result>
+  <tool_result tool="toolu_01EGEJ6viwtbhkV7se6cm9Zo">
+     1→---
+     2→title: Architecture Tripwires
+     3→read_when:
+     4→  - "working on architecture code"
+     5→---
+     6→
+     7→&lt;!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY --&gt;
+     8→&lt;!-- Edit source frontmatter, then run 'erk docs sync' to regenerate. --&gt;
+     9→&lt;!-- Generated from architecture/*.md frontmatter --&gt;
+    10→
+    11→# Architecture Tripwires
+    12→
+    13→Rules triggered by matching actions in code.
+    14→
+    15→**FakePromptExecutor tracks all calls via properties** → Read [Prompt Executor Gateway](prompt-executor-gateway.md) first. use .prompt_calls, .interactive_calls, .passthrough_calls for assertions
+    16→
+    17→**accessing ctx.git or ctx.repo without checking for NoRepoSentinel** → Read [No-Repo Infrastructure](no-repo-infrastructure.md) first. Commands decorated with @no_repo_required may have sentinel gateways. Check isinstance(ctx.repo, NoRepoSentinel) before repo operations.
+    18→
+    19→**accessing ctx.obj directly without a require\_\*() helper** → Read [Click Context Dependency Injection Pattern](click-context-di-pattern.md) first. Use typed require\_\*() helpers (require_issues, require_git, require_cwd, etc.) instead of direct ctx.obj access. Helpers provide type narrowing and clear error messages.
+    20→
+    21→**accessing plan_ref.plan_id as int without checking** → Read [PlanRef Architecture](plan-ref-architecture.md) first. plan_id is a string. Use LBYL: `plan_ref.plan_id.isdigit()` before `int(plan_ref.plan_id)`. Supports future non-numeric providers like 'PROJ-123'.
+    22→
+    23→**accessing properties on a discriminated union result without isinstance() check** → Read [Discriminated Union Error Handling](discriminated-union-error-handling.md) first. Always check isinstance(result, ErrorType) before accessing success-variant properties. Without type narrowing, you may access .message on a success type or .data on an error type.
+    24→
+    25→**adding HTML, badges, or GitHub-specific markup to commit messages** → Read [PR Body Formatting Pattern](pr-body-formatting.md) first. Use the two-target pattern: plain text pr_body for commits, enhanced pr_body_for_github for the PR. Never put GitHub-specific HTML into git commit messages.
+    26→
+    27→**adding LBYL guards that only check a subset of required fields** → Read [Erk Architecture Patterns](erk-architecture.md) first. Functions with 'skip silently' contracts must validate ALL preconditions with LBYL guards. Checking one field (e.g., schema_version) is insufficient — use set operations to verify all required fields.
+    28→
+    29→**adding LLM-dependent logic inside a Click @command function in exec/scripts/** → Read [Inference Hoisting Pattern](inference-hoisting.md) first. Inference hoisting violation: exec scripts run as subprocesses; they cannot nest LLM calls within a Claude Code session. Move reasoning to the calling skill.
+    30→
+
+... [379 lines omitted] ...
+
+    45→**adding a new field to ErkContext dataclass** → Read [Erk Architecture Patterns](erk-architecture.md) first. Update ALL factory functions. Grep: `grep -r 'ErkContext(' packages/erk-shared/src/ src/erk/core/context.py` to find all construction sites. Missing a factory causes runtime errors or silent None values.
+    63→**adding a validation gate without actionable feedback in the error message** → Read [Agent Back Pressure via Gates](agent-backpressure-gates.md) first. Gates must include the expected pattern, the actual value, and examples so the agent can self-correct. See InvalidObjectiveSlug.message for the pattern.
+    85→**assuming GitHub API failures are transient without repository-specific testing** → Read [GitHub API Diagnostics](github-api-diagnostics.md) first. Test with a control repository first. Some GitHub bugs affect specific repos but not others. Follow the 3-step diagnostic methodology.
+    93→**bypassing PlanListService for direct GitHub API plan queries** → Read [HTTP-Accelerated Plan Refresh](http-accelerated-plan-refresh.md) first. PlanListService handles HTTP API calls. Direct API calls bypass caching and error handling.
+   105→**calling checkout_branch() in a multi-worktree repository** → Read [Multi-Worktree State Handling](multi-worktree-state.md) first. Verify the target branch is not already checked out in another worktree using `git.worktree.find_worktree_for_branch()`. Git enforces a single-checkout constraint - attempting to checkout a branch held elsewhere causes silent state corruption or unexpected failures.
+   119→**calling execute_gh_command() instead of execute_gh_command_with_retry() for network-sensitive operations** → Read [GitHub API Retry Mechanism](github-api-retry-mechanism.md) first. Use `execute_gh_command_with_retry()` for operations that may fail due to transient network errors. Pass `time_impl` for testability.
+   121→**calling get_X() and handling IssueNotFound sentinel inline** → Read [LBYL Gateway Pattern](lbyl-gateway-pattern.md) first. Check with X_exists() first for cleaner error messages and LBYL compliance.
+   131→**calling os.chdir() in erk code** [pattern: `os\.chdir\(`] → Read [Erk Architecture Patterns](erk-architecture.md) first. After os.chdir(), regenerate context using regenerate_context(ctx). Stale ctx.cwd causes FileNotFoundError.
+   139→**changing a gateway method signature** → Read [Gateway Signature Migration](gateway-signature-migration.md) first. Search for ALL callers with grep before changing. PR #6329 migrated 8 call sites across 7 files. Missing a call site causes runtime errors.
+   143→**changing erk_shared function signatures** → Read [Gateway Signature Migration](gateway-signature-migration.md) first. Grep all callers across full repo before committing. Missed call sites cause CI failures.
+   157→**choosing between exceptions and discriminated unions for operation failures** → Read [Discriminated Union Error Handling](discriminated-union-error-handling.md) first. If callers branch on the error and continue the operation, use discriminated unions. If all callers just terminate and surface the message, use exceptions. Read the 'When to Use' section.
+   173→**creating Protocol with bare attributes for frozen dataclasses** → Read [Protocol vs ABC Interface Design Guide](protocol-vs-abc.md) first. Use @property decorators in Protocol for frozen dataclass compatibility. Bare attributes cause type errors.
+   179→**creating a new complex command with multiple validation steps** → Read [Linear Pipeline Architecture](linear-pipelines.md) first. Consider two-pipeline pattern: validation pipeline (check preconditions) + execution pipeline (perform operations). Use discriminated unions (State | Error) for pipeline steps. Reference land_pipeline.py as exemplar.
+   195→**designing error handling for a new gateway method** → Read [Gateway ABC Implementation Checklist](gateway-abc-implementation.md) first. Ask: does the caller continue after the failure? If yes, use discriminated union. If all callers terminate, use exceptions. See 'Non-Ideal State Decision Checklist' section.
+   233→**migrating a gateway method to return discriminated union** → Read [Discriminated Union Error Handling](discriminated-union-error-handling.md) first. Update all implementations (ABC, real, fake; add dry_run only for dry-run-participating gateways) AND all call sites AND tests. Incomplete migrations break type safety.
+   235→**migrating git method calls after subgateway extraction** → Read [Gateway Decomposition Phases](gateway-decomposition-phases.md) first. The following methods have been moved from the Git ABC to subgateways: `git.fetch_branch()` → `git.remote.fetch_branch()` (Phase 3), `git.push_to_remote()` → `git.remote.push_to_remote()` (Phase 3), `git.commit()` → `git.commit.commit()` (Phase 4), `git.stage_files()` → `git.commit.stage_files()` (Phase 4), `git.has_staged_changes()` → `git.status.has_staged_changes()` (Phase 5), `git.rebase_onto()` → `git.rebase.rebase_onto()` (Phase 6), `git.tag_exists()` → `git.tag_exists()` (Phase 7), `git.create_tag()` → `git.tag.create_tag()` (Phase 7). Calling the old API will raise `AttributeError`. Always use the subgateway property.
+   237→**mixing discriminated unions with exception-based cleanup in a single method** → Read [Mixed Exception/Union Pattern (Deprecated)](gateway-specific-patterns.md) first. This pattern was tried in PR #6347 and reverted in PR #6375. Message-only discriminated unions with no domain-meaningful variants add complexity without value. Use exceptions for all error cases, or use discriminated unions with meaningful variants throughout. Document why in the PR.
+   239→**modifying Claude CLI error reporting or PromptResult.error format** → Read [Claude CLI Error Reporting](claude-cli-error-reporting.md) first. Error messages must maintain structured format with exit code, stderr, and context. Changes affect all callers of execute_prompt() and execute_command_streaming().
+   253→**parsing CalledProcessError messages for git operations** → Read [Git Operation Patterns](git-operation-patterns.md) first. Avoid parsing git error messages to determine failure modes. Use LBYL with git show-ref --verify to check existence before operations, or design discriminated unions that handle all returncode cases explicitly.
+   255→**passing None for http_client in service methods** → Read [HTTP-Accelerated Plan Refresh](http-accelerated-plan-refresh.md) first. http_client is a required parameter (not optional) in PlanListService and ObjectiveListService. Passing None causes TypeError. Validate at CLI entry point.
+   269→**placing @handle_non_ideal_exit before @click.command() or @click.pass_context** → Read [Discriminated Union Error Handling](discriminated-union-error-handling.md) first. @handle_non_ideal_exit must come AFTER @click.command() / @click.pass_context (outermost position in decorator stack). Inner position causes it to receive wrong arguments.
+   289→**removing an abstract method from a gateway ABC** → Read [Gateway ABC Implementation Checklist](gateway-abc-implementation.md) first. Must remove from all implementation files simultaneously (3 or 4 depending on pattern). Partial removal causes type checker errors. Update all call sites. Verify with grep across packages.
+   291→**returning a collection (list, tuple, str) directly from a function with NonIdealState return type** → Read [Discriminated Union Error Handling](discriminated-union-error-handling.md) first. Raw built-ins can't inherit EnsurableResult. Wrap in a named frozen dataclass that inherits EnsurableResult and implements **iter** if needed. See 'The Wrapping Rule' section.
+   303→**suppressing F401 (unused import) warnings** → Read [Re-Export Pattern](re-export-pattern.md) first. Use # noqa: F401 comment per-import with reason, not global ruff config. Indicates intentional re-export vs actual unused import.
+   305→**swallowing errors silently in a deterministic code path** → Read [Error Handling Patterns](error-handling-patterns.md) first. Never suppress errors deterministically. Use best-effort (catch + log warning) only for truly optional operations. Use error-first (check + fail with remediation) for required operations.
+   313→**try/except in fake.py or dry_run.py** [pattern: `\btry:|\bexcept\s`] → Read [Gateway Error Boundaries](gateway-error-boundaries.md) first. Gateway error handling (try/except) belongs ONLY in real.py. Fake and dry-run implementations return error discriminants based on constructor params, they don't catch exceptions.
+   321→**using None as a success return value in a validation function (ErrorType | None where None = success)** → Read [Discriminated Union Error Handling](discriminated-union-error-handling.md) first. None-as-success is counterintuitive — None typically signals absence/failure, not success. Use ValidThing | InvalidThing so both outcomes are explicit named types.
+   325→**using PlanContextProvider** → Read [Plan Context Integration](plan-context-integration.md) first. Read this doc first. PlanContextProvider returns None on any failure (graceful degradation). Always handle the None case.
+   327→**using Protocol property descriptors on a frozen dataclass NonIdealState class** → Read [Discriminated Union Error Handling](discriminated-union-error-handling.md) first. Protocol property descriptors conflict with frozen dataclass fields. Use NonIdealStateMixin (at packages/erk-shared/src/erk_shared/non_ideal_state.py) when the NonIdealState class uses dataclass fields.
+   331→**using `gt restack` to resolve branch divergence errors** [pattern: `gt\s+restack`] → Read [Git and Graphite Edge Cases Catalog](git-graphite-quirks.md) first. gt restack only handles parent-child stack rebasing, NOT same-branch remote divergence. Use git rebase origin/$BRANCH first.
+   333→**using bare subprocess.run with check=True** [pattern: `subprocess\.run\(`] → Read [Subprocess Wrappers](subprocess-wrappers.md) first. Use wrapper functions: run_subprocess_with_context() (gateway) or run_with_error_reporting() (CLI). Exception: Graceful degradation pattern with explicit CalledProcessError handling is acceptable for optional operations.
+   355→**using gh pr view --json merged** [pattern: `gh\s+pr\s+view.*--json.*\bmerged\b`] → Read [GitHub API Rate Limits](github-api-rate-limits.md) first. The `merged` field doesn't exist. Use `mergedAt` instead. Run `gh pr view --help` or check error output for valid field names.
+   357→**using git merge on a Graphite-managed branch** → Read [Git and Graphite Edge Cases Catalog](git-graphite-quirks.md) first. Merge commits break Graphite's linear stack model. Use git pull --rebase or gt sync. Merge commits cause gt squash divergence errors and broken parent tracking.
+   361→**using git stash in scripts that have running processes dependent on working tree state** → Read [Git Operation Patterns](git-operation-patterns.md) first. git stash changes working tree state which affects running processes. If code is executing from the working tree (e.g., Python scripts), stashing can cause import errors or missing file errors in the running process.
+   363→**using if/else on a discriminated union without isinstance() for type narrowing** → Read [Discriminated Union Error Handling](discriminated-union-error-handling.md) first. Type checkers require isinstance() for narrowing. 'if result.is_error' or 'if not result' does not narrow. Use 'if isinstance(result, ErrorType):' for correct narrowing in both branches.
+   383→**using try/except KeyError for JSON field access** → Read [JSON Parsing Patterns](json-parsing-patterns.md) first. Use LBYL pattern: check field presence with `any(f not in data for f in _REQUIRED_FIELDS)` before accessing. Never use try/except for control flow.
+   397→**writing a try-except block that wraps multiple independent operations** → Read [Error Handling Patterns](error-handling-patterns.md) first. Minimal exception scope: each try block should wrap only the single operation that can raise the caught exception. Split into separate try-except blocks with early returns. Broader scope is only acceptable when statements form an atomic unit (same message and recovery regardless of which line raises). See dignified-python references/exception-handling.md.
+   399→**writing complex business logic directly in Click command functions** → Read [CLI-to-Pipeline Boundary Pattern](cli-to-pipeline-boundary.md) first. Extract to pipeline layer when command has &gt;3 distinct steps or complex state management. CLI layer should handle: Click decorators, parameter parsing, output formatting. Pipeline layer should handle: business logic, state management, error types.
+  </tool_result>
+  <assistant>Now let me read the implementation files:</assistant>
+  <usage input_tokens="965" cache_creation_input_tokens="26817" cache_read_input_tokens="20889" cache_creation="{'ephemeral_5m_input_tokens': 26817, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_011gXtzY13S48yAh7Lgq3P4R">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/impl_signal.py</param>
+  </tool_use>
+  <usage input_tokens="965" cache_creation_input_tokens="26817" cache_read_input_tokens="20889" cache_creation="{'ephemeral_5m_input_tokens': 26817, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01DFyKCA1i8dyWR9W9E3RccG">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/group.py</param>
+  </tool_use>
+  <usage input_tokens="965" cache_creation_input_tokens="26817" cache_read_input_tokens="20889" cache_creation="{'ephemeral_5m_input_tokens': 26817, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01ML1NtsAcXoPsKxKu6sMKWC">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/implement.py</param>
+  </tool_use>
+  <usage input_tokens="965" cache_creation_input_tokens="26817" cache_read_input_tokens="20889" cache_creation="{'ephemeral_5m_input_tokens': 26817, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011gXtzY13S48yAh7Lgq3P4R">
+     1→"""Signal implementation events (started/ended/submitted) to GitHub.
+     2→
+     3→This exec command wraps the start/end/submit signaling operations:
+     4→- "started": Posts start comment and marks implementation as started
+     5→- "ended": Marks implementation as ended
+     6→- "submitted": Sets lifecycle_stage to "impl" after PR submission
+     7→
+     8→Provides a single entry point for /erk:plan-implement to signal events
+     9→with graceful failure (always exits 0 for || true pattern).
+    10→
+    11→Usage:
+    12→    erk exec impl-signal started
+    13→    erk exec impl-signal ended
+    14→    erk exec impl-signal submitted
+    15→
+    16→Output:
+    17→    JSON with success status or error information
+    18→    Always exits with code 0 (graceful degradation for || true pattern)
+    19→
+    20→Exit Codes:
+    21→    0: Always (even on error, to support || true pattern)
+    22→
+    23→Examples:
+    24→    $ erk exec impl-signal started
+    25→    {"success": true, "event": "started", "pr_number": 123}
+    26→
+    27→    $ erk exec impl-signal ended
+    28→    {"success": true, "event": "ended", "pr_number": 123}
+    29→
+    30→    $ erk exec impl-signal submitted
+
+... [430 lines omitted] ...
+
+    70→class SignalError:
+    71→    """Error response for signal command."""
+    75→    error_type: str
+    79→def _output_error(event: str, error_type: str, message: str) -&gt; None:
+    80→    """Output error JSON and exit gracefully."""
+    81→    result = SignalError(
+    84→        error_type=error_type,
+   103→        True if file was deleted, False if not found or error.
+   141→    except subprocess.CalledProcessError:
+   158→    except subprocess.CalledProcessError:
+   168→        _output_error(
+   181→        _output_error(event, "context-not-initialized", "Context not initialized")
+   191→        _output_error(event, "no-plan-reference", "No PR reference found")
+   202→        _output_error(event, "context-not-initialized", "Context not initialized")
+   208→        _output_error(event, "worktree-detection-failed", "Could not determine worktree name")
+   213→        _output_error(event, "branch-detection-failed", "Could not determine branch name")
+   229→    except (FileNotFoundError, ValueError) as e:
+   230→        _output_error(event, "local-state-write-failed", f"Failed to write local state: {e}")
+   237→        _output_error(event, "context-not-initialized", "Context not initialized")
+   272→    except RuntimeError as e:
+   273→        _output_error(event, "github-api-failed", f"Failed to post event: {e}")
+   294→        _output_error(event, "context-not-initialized", "Context not initialized")
+   304→        _output_error(event, "no-plan-reference", "No plan reference found")
+   311→        _output_error(event, "context-not-initialized", "Context not initialized")
+   327→    except (FileNotFoundError, ValueError) as e:
+   328→        _output_error(event, "local-state-write-failed", f"Failed to write local state: {e}")
+   335→        _output_error(event, "context-not-initialized", "Context not initialized")
+   351→    except RuntimeError as e:
+   352→        _output_error(event, "github-api-failed", f"Failed to update metadata: {e}")
+   373→        _output_error(event, "context-not-initialized", "Context not initialized")
+   383→        _output_error(event, "no-plan-reference", "No PR reference found")
+   390→        _output_error(event, "context-not-initialized", "Context not initialized")
+   397→        _output_error(event, "context-not-initialized", "Context not initialized")
+   408→        _output_error(event, "plan-not-found", f"PR #{plan_ref.pr_id} not found")
+   414→    except RuntimeError as e:
+   415→        _output_error(event, "github-api-failed", f"Failed to update metadata: {e}")
+  </tool_result>
+  <tool_result tool="toolu_01DFyKCA1i8dyWR9W9E3RccG">
+     1→"""Static exec group for erk scripts.
+     2→
+     3→This module provides the `erk exec` command group with all scripts
+     4→statically registered.
+     5→"""
+     6→
+     7→import click
+     8→
+     9→# Import and register all scripts
+    10→from erk.cli.commands.exec.scripts.add_objective_node import add_objective_node
+    11→from erk.cli.commands.exec.scripts.add_plan_label import add_plan_label
+    12→from erk.cli.commands.exec.scripts.add_plan_labels import add_plan_labels
+    13→from erk.cli.commands.exec.scripts.add_pr_labels_cmd import add_pr_labels
+    14→from erk.cli.commands.exec.scripts.add_remote_execution_note import (
+    15→    add_remote_execution_note,
+    16→)
+    17→from erk.cli.commands.exec.scripts.capture_session_info import (
+    18→    capture_session_info,
+    19→)
+    20→from erk.cli.commands.exec.scripts.ci_fetch_summaries import ci_fetch_summaries
+    21→from erk.cli.commands.exec.scripts.ci_generate_summaries import ci_generate_summaries
+    22→from erk.cli.commands.exec.scripts.ci_update_pr_body import ci_update_pr_body
+    23→from erk.cli.commands.exec.scripts.ci_verify_autofix import ci_verify_autofix
+    24→from erk.cli.commands.exec.scripts.cleanup_impl_context import cleanup_impl_context
+    25→from erk.cli.commands.exec.scripts.close_pr import (
+    26→    close_pr,
+    27→)
+    28→from erk.cli.commands.exec.scripts.close_prs import close_prs
+    29→from erk.cli.commands.exec.scripts.cmux_checkout_workspace import cmux_open_pr
+    30→from erk.cli.commands.exec.scripts.create_impl_context_from_plan import (
+
+... [264 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01ML1NtsAcXoPsKxKu6sMKWC">
+     1→"""Command to implement features from plans or plan files.
+     2→
+     3→This command runs implementation in the current directory using Claude.
+     4→It creates an impl folder (under .erk/impl-context/&lt;branch&gt;/) with the plan
+     5→content and invokes Claude for execution.
+     6→
+     7→Usage:
+     8→- Plan number mode: erk implement 123 or erk implement &lt;URL&gt;
+     9→- Plan file mode: erk implement path/to/plan.md
+    10→- Auto-detect mode: erk implement (on plan branch with plan-ref.json)
+    11→"""
+    12→
+    13→from pathlib import Path
+    14→
+    15→import click
+    16→
+    17→from erk.cli.alias import alias
+    18→from erk.cli.commands.completions import complete_plan_files
+    19→from erk.cli.commands.implement_shared import (
+    20→    PlanSource,
+    21→    build_claude_args,
+    22→    build_command_sequence,
+    23→    detect_target_type,
+    24→    execute_interactive_mode,
+    25→    execute_non_interactive_mode,
+    26→    extract_plan_from_current_branch,
+    27→    implement_common_options,
+    28→    normalize_model_name,
+    29→    output_activation_instructions,
+    30→    prepare_plan_source_from_file,
+
+... [465 lines omitted] ...
+
+   169→        user_output(click.style("Error: ", fg="red") + f"Plan #{plan_number} not found")
+   176→            click.style("Error: ", fg="red")
+   389→            raise click.ClickException("--yolo and --safe are mutually exclusive")
+   439→            raise click.ClickException(
+   460→                click.style("Error: ", fg="red") + "Failed to extract plan number from target"
+  </tool_result>
+  <assistant>Now let me read the implement_shared.py, helper functions, and check for git operations:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="19463" cache_read_input_tokens="47706" cache_creation="{'ephemeral_5m_input_tokens': 19463, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01AmicM74Ss8iS15CR6RxR1x">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/implement_shared.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="19463" cache_read_input_tokens="47706" cache_creation="{'ephemeral_5m_input_tokens': 19463, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01XfSYQrbhmZsRpgGzeseHKE">
+    <param name="pattern">packages/erk-shared/src/erk_shared/context/helpers.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="19463" cache_read_input_tokens="47706" cache_creation="{'ephemeral_5m_input_tokens': 19463, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_0117KTDMVa8sxAGWkTF57Aek">
+    <param name="pattern">packages/erk-shared/src/erk_shared/gateway/git/**/*.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="19463" cache_read_input_tokens="47706" cache_creation="{'ephemeral_5m_input_tokens': 19463, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01AmicM74Ss8iS15CR6RxR1x">
+     1→"""Shared utilities for implement commands.
+     2→
+     3→This module contains the common logic for erk implement.
+     4→"""
+     5→
+     6→import re
+     7→import shlex
+     8→from collections.abc import Callable
+     9→from dataclasses import dataclass
+    10→from pathlib import Path
+    11→from typing import NamedTuple, TypeVar
+    12→
+    13→import click
+    14→
+    15→from erk.cli.activation import render_activation_script
+    16→from erk.cli.help_formatter import script_option
+    17→from erk.core.context import ErkContext
+    18→from erk.core.prompt_executor import PromptExecutor
+    19→from erk_shared.naming import (
+    20→    sanitize_worktree_name,
+    21→    strip_plan_from_filename,
+    22→)
+    23→from erk_shared.output.output import user_output
+    24→
+    25→# Valid model names and their aliases
+    26→_MODEL_ALIASES: dict[str, str] = {
+    27→    "h": "haiku",
+    28→    "s": "sonnet",
+    29→    "o": "opus",
+    30→}
+
+... [577 lines omitted] ...
+
+   121→        click.ClickException: If model name is invalid
+   131→        raise click.ClickException(f"Invalid model: '{model}'\nValid options: {valid_options}")
+   168→    """Validate flag combinations and raise ClickException if invalid.
+   176→        click.ClickException: If flag combination is invalid
+   181→        raise click.ClickException(
+   188→        raise click.ClickException(
+   272→        click.ClickException: If Claude CLI not found
+   287→    except RuntimeError as e:
+   288→        raise click.ClickException(str(e)) from e
+   311→        click.ClickException: If Claude CLI not found or command fails
+   322→        raise click.ClickException(
+   355→        # Stop on first failure
+   365→    # Raise exception if any command failed
+   367→        raise click.ClickException("One or more commands failed")
+   498→        ctx.console.error(f"Error: PR file not found: {plan_file}")
+  </tool_result>
+  <tool_result tool="toolu_0117KTDMVa8sxAGWkTF57Aek">
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/__init__.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/analysis_ops/__init__.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/abc.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/__init__.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/analysis_ops/dry_run.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/analysis_ops/real.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/analysis_ops/abc.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/dry_run.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/types.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/abc.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/commit_ops/__init__.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/config_ops/__init__.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/commit_ops/dry_run.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/commit_ops/real.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/commit_ops/abc.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/config_ops/dry_run.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/config_ops/real.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/config_ops/abc.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/rebase_ops/__init__.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/dry_run.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/real.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/lock.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/rebase_ops/dry_run.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/rebase_ops/real.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/rebase_ops/abc.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/remote_ops/__init__.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/repo_ops/__init__.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/remote_ops/dry_run.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/remote_ops/real.py
+
+... [17 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01XfSYQrbhmZsRpgGzeseHKE">
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/context/helpers.py
+  </tool_result>
+  <assistant>Now let me read the helpers and relevant git operations files:</assistant>
+  <usage input_tokens="1868" cache_creation_input_tokens="7591" cache_read_input_tokens="67169" cache_creation="{'ephemeral_5m_input_tokens': 7591, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01RPpbSTuZptNyPv9YFNYiXR">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/context/helpers.py</param>
+  </tool_use>
+  <usage input_tokens="1868" cache_creation_input_tokens="7591" cache_read_input_tokens="67169" cache_creation="{'ephemeral_5m_input_tokens': 7591, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01QN2RrxqTvywGChx3oCDWY4">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/analysis_ops/abc.py</param>
+  </tool_use>
+  <usage input_tokens="1868" cache_creation_input_tokens="7591" cache_read_input_tokens="67169" cache_creation="{'ephemeral_5m_input_tokens': 7591, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_018HXtD7rB4ofnri4nbj8FsE">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/abc.py</param>
+  </tool_use>
+  <usage input_tokens="1868" cache_creation_input_tokens="7591" cache_read_input_tokens="67169" cache_creation="{'ephemeral_5m_input_tokens': 7591, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01RPpbSTuZptNyPv9YFNYiXR">
+     1→"""Helper functions for accessing context dependencies with LBYL checks.
+     2→
+     3→This module provides getter functions that encapsulate the "Look Before You Leap"
+     4→pattern for accessing dependencies from the ErkContext. These functions:
+     5→
+     6→1. Check that context is initialized
+     7→2. Return the typed dependency
+     8→3. Exit with clear error message if context is missing
+     9→
+    10→This eliminates code duplication across kit CLI commands.
+    11→"""
+    12→
+    13→from __future__ import annotations
+    14→
+    15→from pathlib import Path
+    16→
+    17→import click
+    18→
+    19→from erk_shared.context.context import ErkContext
+    20→from erk_shared.context.types import LoadedConfig, NoRepoSentinel
+    21→from erk_shared.core.prompt_executor import PromptExecutor
+    22→from erk_shared.gateway.branch_manager.abc import BranchManager
+    23→from erk_shared.gateway.claude_installation.abc import ClaudeInstallation
+    24→from erk_shared.gateway.git.abc import Git
+    25→from erk_shared.gateway.github.abc import LocalGitHub
+    26→from erk_shared.gateway.github.issues.abc import GitHubIssues
+    27→from erk_shared.gateway.time.abc import Time
+    28→from erk_shared.plan_store.backend import PlanBackend
+    29→
+    30→
+
+... [454 lines omitted] ...
+
+    32→    """Get the full ErkContext, exiting with error if not initialized.
+    35→    initialized (ctx.obj is None), prints error to stderr and exits with code 1.
+    54→        click.echo("Error: Context not initialized", err=True)
+    58→        click.echo("Error: Context must be ErkContext", err=True)
+    65→    """Get GitHub Issues from context, exiting with error if not initialized.
+    68→    initialized (ctx.obj is None), prints error to stderr and exits with code 1.
+    87→        click.echo("Error: Context not initialized", err=True)
+    91→        click.echo("Error: Context must be ErkContext", err=True)
+    98→    """Get repo root from context, exiting with error if not initialized.
+   120→        click.echo("Error: Context not initialized", err=True)
+   124→        click.echo("Error: Context must be ErkContext", err=True)
+   129→        click.echo("Error: Not in a git repository", err=True)
+   161→    """Get Git from context, exiting with error if not initialized.
+   183→        click.echo("Error: Context not initialized", err=True)
+   190→    """Get GitHub from context, exiting with error if not initialized.
+   212→        click.echo("Error: Context not initialized", err=True)
+   219→    """Get current working directory from context, exiting with error if not initialized.
+   241→        click.echo("Error: Context not initialized", err=True)
+   248→    """Get ClaudeInstallation from context, exiting with error if not initialized.
+   269→        click.echo("Error: Context not initialized", err=True)
+   296→        ...         # handle error
+   305→    """Get PromptExecutor from context, exiting with error if not initialized.
+   326→        click.echo("Error: Context not initialized", err=True)
+   333→    """Get local config from context, exiting with error if not initialized.
+   354→        click.echo("Error: Context not initialized", err=True)
+   384→        click.echo("Error: Context not initialized", err=True)
+   398→    """Get PlanBackend from context, exiting with error if not initialized.
+   419→        click.echo("Error: Context not initialized", err=True)
+   426→    """Get Time from context, exiting with error if not initialized.
+   447→        click.echo("Error: Context not initialized", err=True)
+   454→    """Get BranchManager from context, exiting with error if not initialized.
+   475→        click.echo("Error: Context not initialized", err=True)
+  </tool_result>
+  <tool_result tool="toolu_01QN2RrxqTvywGChx3oCDWY4">
+     1→"""Abstract interface for git analysis operations."""
+     2→
+     3→from abc import ABC, abstractmethod
+     4→from pathlib import Path
+     5→
+     6→
+     7→class GitAnalysisOps(ABC):
+     8→    """Abstract interface for Git branch analysis operations.
+     9→
+    10→    This interface contains query operations for comparing branches and commits.
+    11→    All implementations (real, fake, dry-run, printing) must implement this interface.
+    12→    """
+    13→
+    14→    # ============================================================================
+    15→    # Query Operations
+    16→    # ============================================================================
+    17→
+    18→    @abstractmethod
+    19→    def count_commits_ahead(self, cwd: Path, base_branch: str) -&gt; int:
+    20→        """Count commits in HEAD that are not in base_branch.
+    21→
+    22→        Uses `git rev-list --count {base_branch}..HEAD`.
+    23→
+    24→        Args:
+    25→            cwd: Working directory
+    26→            base_branch: Branch to compare against
+    27→
+    28→        Returns:
+    29→            Number of commits ahead, or 0 on error
+    30→        """
+
+... [55 lines omitted] ...
+
+    61→            Number of commits behind, or 0 on error
+  </tool_result>
+  <tool_result tool="toolu_018HXtD7rB4ofnri4nbj8FsE">
+     1→"""Abstract base class for Git branch operations.
+     2→
+     3→This sub-gateway extracts branch operations from the main Git gateway,
+     4→including both mutation and query operations.
+     5→"""
+     6→
+     7→from __future__ import annotations
+     8→
+     9→from abc import ABC, abstractmethod
+    10→from pathlib import Path
+    11→from typing import TYPE_CHECKING
+    12→
+    13→from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists, BranchCreated
+    14→
+    15→if TYPE_CHECKING:
+    16→    from erk_shared.gateway.git.abc import BranchDivergence, BranchSyncInfo
+    17→
+    18→
+    19→class GitBranchOps(ABC):
+    20→    """Abstract interface for Git branch operations.
+    21→
+    22→    This interface contains both mutation and query operations for branches.
+    23→    All implementations (real, fake, dry-run, printing) must implement this interface.
+    24→    """
+    25→
+    26→    @abstractmethod
+    27→    def create_branch(
+    28→        self, cwd: Path, branch_name: str, start_point: str, *, force: bool
+    29→    ) -&gt; BranchCreated | BranchAlreadyExists:
+    30→        """Create a new branch without checking it out.
+
+... [306 lines omitted] ...
+
+    84→            subprocess.CalledProcessError: If git command fails
+   184→            RuntimeError: If the specified branch doesn't exist
+  </tool_result>
+  <assistant>Now let me check the remote ops and examine how push_to_remote works:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="12651" cache_read_input_tokens="74760" cache_creation="{'ephemeral_5m_input_tokens': 12651, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01GzUYpirtHTKa6ry6QiBieT">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/remote_ops/abc.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="12651" cache_read_input_tokens="74760" cache_creation="{'ephemeral_5m_input_tokens': 12651, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01MvNjSzK2hw7YGtjYeqnEi8">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/impl_folder.py</param>
+    <param name="limit">200</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="12651" cache_read_input_tokens="74760" cache_creation="{'ephemeral_5m_input_tokens': 12651, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01GzUYpirtHTKa6ry6QiBieT">
+     1→"""Abstract base class for Git remote operations.
+     2→
+     3→This sub-gateway extracts remote operations from the main Git gateway,
+     4→including fetch, pull, and push operations.
+     5→"""
+     6→
+     7→from __future__ import annotations
+     8→
+     9→from abc import ABC, abstractmethod
+    10→from pathlib import Path
+    11→
+    12→from erk_shared.gateway.git.remote_ops.types import (
+    13→    PullRebaseError,
+    14→    PullRebaseResult,
+    15→    PushError,
+    16→    PushResult,
+    17→)
+    18→
+    19→
+    20→class GitRemoteOps(ABC):
+    21→    """Abstract interface for Git remote operations.
+    22→
+    23→    This interface contains both mutation and query operations for remotes.
+    24→    All implementations (real, fake, dry-run, printing) must implement this interface.
+    25→    """
+    26→
+    27→    @abstractmethod
+    28→    def fetch_prune(self, repo_root: Path, remote: str) -&gt; None:
+    29→        """Fetch from a remote and prune deleted tracking branches.
+    30→
+
+... [140 lines omitted] ...
+
+    81→            subprocess.CalledProcessError: If git command fails
+    94→    ) -&gt; PushResult | PushError:
+   105→            PushResult on success, PushError on failure.
+   112→    ) -&gt; PullRebaseResult | PullRebaseError:
+   125→            PullRebaseResult on success, PullRebaseError on failure.
+   162→            ValueError: If remote doesn't exist or has no URL
+  </tool_result>
+  <tool_result tool="toolu_01MvNjSzK2hw7YGtjYeqnEi8">
+     1→"""Implementation folder utilities for erk and erk-kits.
+     2→
+     3→This module provides shared utilities for managing branch-scoped impl directories
+     4→under .erk/impl-context/&lt;branch&gt;/:
+     5→- plan.md: Immutable implementation plan
+     6→- plan-ref.json: Provider-agnostic plan reference
+     7→
+     8→These utilities are used by both erk (for local operations) and erk-kits
+     9→(for kit CLI commands).
+    10→"""
+    11→
+    12→from __future__ import annotations
+    13→
+    14→import json
+    15→import shutil
+    16→from dataclasses import dataclass
+    17→from datetime import UTC, datetime
+    18→from pathlib import Path
+    19→from typing import Literal
+    20→
+    21→from erk_shared.gateway.github.metadata.core import (
+    22→    create_worktree_creation_block,
+    23→    render_erk_issue_event,
+    24→)
+    25→from erk_shared.gateway.github.metadata.schemas import CREATED_BY, LAST_DISPATCHED_RUN_ID
+    26→from erk_shared.gateway.github.metadata.types import BlockKeys
+    27→
+    28→IMPL_DIR_RELATIVE = ".erk/impl-context"
+    29→"""Relative path for branch-scoped implementation directories."""
+    30→
+
+... [175 lines omitted] ...
+
+   106→                   If False, raise FileExistsError when folder already exists.
+   112→        FileExistsError: If impl directory already exists and overwrite is False
+   120→            raise FileExistsError(f"Implementation folder already exists at {impl_folder}")
+  </tool_result>
+  <assistant>Perfect! Now I have comprehensive understanding of the codebase. Let me create a final summary document with all the key information needed for implementing a new exec script and understanding the implement.py command patterns.
+
+## Summary of Findings
+
+I have successfully analyzed the erk codebase patterns for implementing exec scripts and understanding the `implement.py` command. Here is the comprehensive report:
+
+### 1. **Exec Script Pattern** (`impl_signal.py` as exemplar)
+
+**File Location:** `/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/impl_signal.py`
+
+**Key Patterns:**
+- Uses Click context dependency injection pattern with `@click.pass_context`
+- Validates context using `require_*()` helper functions from `erk_shared.context.helpers`:
+  - `require_cwd(ctx)` - Current working directory
+  - `require_git(ctx)` - Git operations
+  - `require_repo_root(ctx)` - Repository root
+  - `require_plan_backend(ctx)` - Plan backend for metadata updates
+  - `require_claude_installation(ctx)` - Claude installation for session info
+- JSON output via `json.dumps(asdict(result))` 
+- Graceful error handling with structured error responses
+- Always exits with code 0 for `|| true` pattern support
+- Uses LBYL (Look Before You Leap) guards: Check field existence before accessing
+- Defines frozen dataclasses for success/error responses
+
+**Example structure (lines 427-454):**
+```python
+@click.command(name="impl-signal")
+@click.argument("event", type=click.Choice(["started", "ended", "submitted"]))
+@click.option("--session-id", default=None, help="...")
+@click.pass_context
+def impl_signal(ctx: click.Context, event: str, session_id: str | None) -&gt; None:
+    """Signal implementation events to GitHub."""
+    if event == "started":
+        _signal_started(ctx, session_id)
+    elif event == "ended":
+        _signal_ended(ctx, session_id)
+    else:
+        _signal_submitted(ctx, session_id)
+```
+
+**Error Handling Pattern:**
+```python
+def _output_error(event: str, error_type: str, message: str) -&gt; None:
+    """Output error JSON and exit gracefully."""
+    result = SignalError(success=False, event=event, error_type=error_type, message=message)
+    click.echo(json.dumps(asdict(result), indent=2))
+    raise SystemExit(0)  # Always exit 0
+```
+
+### 2. **Exec Command Registration** (`group.py`)
+
+**File Location:** `/home/runner/work/erk/erk/src/erk/cli/commands/exec/group.py`
+
+**Pattern:** Static registration with explicit imports and `add_command()` calls
+```python
+from erk.cli.commands.exec.scripts.impl_signal import impl_signal
+
+@click.group(name="exec", hidden=True)
+def exec_group() -&gt; None:
+    """Execute erk workflow scripts."""
+
+exec_group.add_command(impl_signal, name="impl-signal")
+```
+
+### 3. **Implement.py Command** (`implement.py`)
+
+**File Location:** `/home/runner/work/erk/erk/src/erk/cli/commands/implement.py`
+
+**Two-Strategy Auto-Detection (lines 407-445):**
+
+**Strategy 1:** Resolve from `.erk/impl-context/`
+```python
+impl_dir = resolve_impl_dir(ctx.cwd, branch_name=current_branch)
+if impl_dir is not None and (impl_dir / "plan.md").exists():
+    # Execute from existing impl-context
+```
+
+**Strategy 2:** Extract from Branch PR
+```python
+detected_plan = extract_plan_from_current_branch(ctx)
+if detected_plan is not None:
+    target = detected_plan
+```
+
+**Execution Modes (lines 45-103):**
+- **Interactive mode** (default): `execute_interactive_mode()` - Opens Claude Code
+- **Non-interactive mode** (`--no-interactive`): `execute_non_interactive_mode()` - Subprocess execution
+- **Script mode** (`--script`): `output_activation_instructions()` - Shell integration
+- **Dry-run mode** (`--dry-run`): `_show_dry_run_output()` - Preview without side effects
+
+### 4. **Implement_Shared.py Utilities**
+
+**File Location:** `/home/runner/work/erk/erk/src/erk/cli/commands/implement_shared.py`
+
+**Key Functions:**
+- `implement_common_options` (line 36) - Decorator applying standard flags
+- `normalize_model_name()` - Validates/expands model aliases (h→haiku, s→sonnet, o→opus)
+- `validate_flags()` - Enforces flag combinations (--submit requires --no-interactive)
+- `build_command_sequence()` - Builds list of slash commands (line 195)
+- `extract_plan_from_current_branch()` (line 447) - Auto-detection from branch
+- `prepare_plan_source_from_file()` (line 483) - Load plan from file
+- `detect_target_type()` (line 419) - Classify target as plan number/URL/file path
+
+### 5. **Context Helpers** (`erk_shared.context.helpers`)
+
+**File Location:** `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/context/helpers.py`
+
+**Helper Functions (LBYL pattern):**
+```python
+def require_cwd(ctx: click.Context) -&gt; Path:
+    """Get current working directory from context, exiting with error if not initialized."""
+    if ctx.obj is None:
+        click.echo("Error: Context not initialized", err=True)
+        raise SystemExit(1)
+    return ctx.obj.cwd
+
+def require_git(ctx: click.Context) -&gt; Git:
+    """Get Git from context, exiting with error if not initialized."""
+    if ctx.obj is None:
+        click.echo("Error: Context not initialized", err=True)
+        raise SystemExit(1)
+    return ctx.obj.git
+
+def require_plan_backend(ctx: click.Context) -&gt; PlanBackend:
+    """Get PlanBackend from context, exiting with error if not initialized."""
+    if ctx.obj is None:
+        click.echo("Error: Context not initialized", err=True)
+        raise SystemExit(1)
+    return ctx.obj.plan_backend
+```
+
+### 6. **Git Operations** 
+
+**Analysis Operations** (`erk_shared.gateway.git.analysis_ops.abc`):
+- `get_merge_base(repo_root, ref1, ref2)` → SHA of merge base or None
+- `count_commits_ahead(cwd, base_branch)` → int
+- `get_diff_to_branch(cwd, branch)` → str (three-dot syntax)
+
+**Branch Operations** (`erk_shared.gateway.git.branch_ops.abc`):
+- `reset_hard(cwd, target_ref)` → None (git reset --hard)
+- `get_current_branch(cwd)` → str | None
+- `update_local_ref(repo_root, branch, target_sha)` → None (git update-ref)
+
+**Remote Operations** (`erk_shared.gateway.git.remote_ops.abc`):
+- `push_to_remote(cwd, remote, branch, *, set_upstream: bool, force: bool)` → PushResult | PushError
+- `pull_rebase(cwd, remote, branch)` → PullRebaseResult | PullRebaseError
+- `fetch_branch(repo_root, remote, branch)` → None
+
+### 7. **Implementation Folder API** (`erk_shared.impl_folder`)
+
+**Key Functions:**
+- `get_impl_dir(base_path, *, branch_name)` → Path (branch-scoped)
+- `resolve_impl_dir(base_path, *, branch_name)` → Path | None (multi-step discovery)
+- `create_impl_folder(worktree_path, plan_content, *, branch_name, overwrite)` → Path
+- `read_plan_ref(impl_dir)` → PlanRef | None
+- `save_plan_ref(impl_dir, provider, plan_id, url, labels, objective_id, node_ids)` → None
+- `write_local_run_state(impl_dir, last_event, timestamp, user, session_id)` → None
+
+**PlanRef Structure (frozen dataclass):**
+```python
+@dataclass(frozen=True)
+class PlanRef:
+    provider: str
+    pr_id: str  # Provider-specific ID as string
+    url: str
+    created_at: str  # ISO 8601 UTC
+    synced_at: str  # ISO 8601 UTC
+    labels: tuple[str, ...]
+    objective_id: int | None
+    node_ids: tuple[str, ...] | None
+```
+
+### 8. **Related Documentation**
+
+Key tripwires and patterns documented in:
+- `/home/runner/work/erk/erk/docs/learned/planning/tripwires.md` (126 rules)
+- `/home/runner/work/erk/erk/docs/learned/architecture/tripwires.md` (404 rules)
+- `/home/runner/work/erk/erk/docs/learned/cli/implement-command.md` (High-level overview)
+- `/home/runner/work/erk/erk/docs/learned/cli/exec-script-patterns.md` (Pattern documentation)
+
+**Critical Tripwire Examples:**
+- Session ID handling: `${CLAUDE_SESSION_ID}` via string substitution in skills/commands
+- Plan backend abstraction: Use `require_plan_backend()` instead of direct `gh api` calls
+- Context injection: All dependencies via Click context, not direct access
+- LBYL pattern: Check existence before accessing (never EAFP try/except)
+- Graceful degradation: Exec scripts exit 0 even on errors for `|| true` support
+
+### 9. **Key File Paths for Reference**
+
+| Component | Path |
+|-----------|------|
+| Exec scripts location | `src/erk/cli/commands/exec/scripts/` |
+| Exec group registration | `src/erk/cli/commands/exec/group.py` |
+| Implement command | `src/erk/cli/commands/implement.py` |
+| Implement utilities | `src/erk/cli/commands/implement_shared.py` |
+| Context helpers | `packages/erk-shared/src/erk_shared/context/helpers.py` |
+| Git operations | `packages/erk-shared/src/erk_shared/gateway/git/` (ABC files) |
+| Impl folder API | `packages/erk-shared/src/erk_shared/impl_folder.py` |
+| Planning tripwires | `docs/learned/planning/tripwires.md` |
+| Architecture tripwires | `docs/learned/architecture/tripwires.md` |
+
+This comprehensive analysis provides all patterns needed to implement new exec scripts and understand the `implement.py` command's auto-detection and execution mechanisms.</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="4968" cache_read_input_tokens="87411" cache_creation="{'ephemeral_5m_input_tokens': 4968, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>
