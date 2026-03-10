@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "pr_number": 9135,
+  "sessions": [
+    {
+      "session_id": "cd1b8c25-1388-4993-ae89-7a4fd7cae502",
+      "stage": "planning",
+      "source": "local",
+      "uploaded_at": "2026-03-10T05:09:35.439145+00:00",
+      "files": [
+        "planning-cd1b8c25-1388-4993-ae89-7a4fd7cae502-cd1b8c25-1388-4993-ae89-7a4fd7cae502.xml"
+      ],
+      "user_turns": 5,
+      "duration_minutes": 8,
+      "raw_size_kb": 596,
+      "xml_size_kb": 45,
+      "git_branch": "plnd/add-erk-core-label-03-09-1959"
+    }
+  ]
+}
