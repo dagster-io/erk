@@ -1,4 +1,4 @@
-"""Decorator and discovery for auto-exposing @json_command CLIs as MCP tools."""
+"""Decorator and discovery for exposing machine CLIs as MCP tools."""
 
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -18,12 +18,12 @@ _MCP_REGISTRY: dict[click.Command, McpMeta] = {}
 
 
 def mcp_exposed(*, name: str, description: str) -> Callable[[click.Command], click.Command]:
-    """Mark a @json_command for automatic MCP exposure.
+    """Mark a machine command for automatic MCP exposure.
 
-    Apply above @json_command in the decorator stack:
+    Apply above @machine_command in the decorator stack:
 
         @mcp_exposed(name="one_shot", description="...")
-        @json_command(...)
+        @machine_command(...)
         @click.command("one-shot")
 
     Args:

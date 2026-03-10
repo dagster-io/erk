@@ -1,4 +1,6 @@
-"""Tests for erk one-shot --json output and input."""
+"""Tests for `erk json one-shot` and the human command split."""
+
+from __future__ import annotations
 
 import json
 
@@ -13,7 +15,6 @@ from tests.test_utils.env_helpers import erk_isolated_fs_env
 
 
 def _make_remote() -> FakeRemoteGitHub:
-    """Create a default FakeRemoteGitHub for tests."""
     return FakeRemoteGitHub(
         authenticated_user="testuser",
         default_branch_name="main",
@@ -26,12 +27,10 @@ def _make_remote() -> FakeRemoteGitHub:
     )
 
 
-def test_json_success() -> None:
-    """JSON output on successful dispatch includes all expected fields."""
+def test_machine_command_success() -> None:
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
-
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             default_branches={env.cwd: "main"},
@@ -40,34 +39,28 @@ def test_json_success() -> None:
         )
         github = FakeLocalGitHub(authenticated=True)
         remote = _make_remote()
-
         ctx = build_workspace_test_context(env, git=git, github=github, remote_github=remote)
-
         result = runner.invoke(
             cli,
-            ["one-shot", "fix the import in config.py", "--json"],
+            ["json", "one-shot"],
             obj=ctx,
+            input=json.dumps({"prompt": "fix the import in config.py"}),
             catch_exceptions=False,
         )
 
-        assert result.exit_code == 0, f"Command failed: {result.output}"
-
-        data = json.loads(result.stdout)
-        assert data["success"] is True
-        assert data["dry_run"] is False
-        assert data["pr_number"] == 1
-        assert "pr_url" in data
-        assert "run_id" in data
-        assert "run_url" in data
-        assert "branch_name" in data
+    assert result.exit_code == 0
+    data = json.loads(result.stdout)
+    assert data["success"] is True
+    assert data["dry_run"] is False
+    assert data["pr_number"] == 1
+    assert "pr_url" in data
+    assert "run_url" in data
 
 
-def test_json_dry_run() -> None:
-    """JSON output in dry-run mode includes preview fields."""
+def test_machine_command_dry_run() -> None:
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
-
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             default_branches={env.cwd: "main"},
@@ -76,97 +69,29 @@ def test_json_dry_run() -> None:
         )
         github = FakeLocalGitHub(authenticated=True)
         remote = _make_remote()
-
         ctx = build_workspace_test_context(env, git=git, github=github, remote_github=remote)
-
         result = runner.invoke(
             cli,
-            ["one-shot", "add type hints", "--dry-run", "--json"],
+            ["json", "one-shot"],
             obj=ctx,
+            input=json.dumps({"prompt": "add type hints", "dry_run": True}),
             catch_exceptions=False,
         )
 
-        assert result.exit_code == 0, f"Command failed: {result.output}"
-
-        data = json.loads(result.stdout)
-        assert data["success"] is True
-        assert data["dry_run"] is True
-        assert "branch_name" in data
-        assert data["prompt"] == "add type hints"
-        assert "target" in data
-        assert "pr_title" in data
-        assert data["base_branch"] == "main"
-        assert "submitted_by" in data
-        assert "workflow" in data
-
-        # Verify no mutations occurred
-        assert len(remote.created_refs) == 0
-        assert len(remote.created_pull_requests) == 0
-        assert len(remote.dispatched_workflows) == 0
+    assert result.exit_code == 0
+    data = json.loads(result.stdout)
+    assert data["success"] is True
+    assert data["dry_run"] is True
+    assert data["prompt"] == "add type hints"
+    assert remote.created_refs == []
+    assert remote.created_pull_requests == []
+    assert remote.dispatched_workflows == []
 
 
-def test_json_error_empty_prompt() -> None:
-    """Empty prompt produces JSON error with error_type."""
+def test_machine_command_error_for_empty_prompt() -> None:
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
-
-        git = FakeGit(
-            git_common_dirs={env.cwd: env.git_dir},
-            default_branches={env.cwd: "main"},
-            current_branches={env.cwd: "main"},
-        )
-        github = FakeLocalGitHub(authenticated=True)
-
-        ctx = build_workspace_test_context(env, git=git, github=github)
-
-        result = runner.invoke(
-            cli,
-            ["one-shot", "   ", "--json"],
-            obj=ctx,
-        )
-
-        assert result.exit_code == 1
-        data = json.loads(result.stdout)
-        assert data["success"] is False
-        assert data["error_type"] == "invalid_input"
-        assert "empty" in data["message"].lower()
-
-
-def test_json_error_invalid_repo() -> None:
-    """Invalid --repo format produces JSON error with error_type."""
-    runner = CliRunner()
-    with erk_isolated_fs_env(runner, env_overrides=None) as env:
-        env.setup_repo_structure()
-
-        git = FakeGit(
-            git_common_dirs={env.cwd: env.git_dir},
-            default_branches={env.cwd: "main"},
-            current_branches={env.cwd: "main"},
-        )
-        github = FakeLocalGitHub(authenticated=True)
-
-        ctx = build_workspace_test_context(env, git=git, github=github)
-
-        result = runner.invoke(
-            cli,
-            ["one-shot", "fix bug", "--repo", "invalid-format", "--json"],
-            obj=ctx,
-        )
-
-        assert result.exit_code == 1
-        data = json.loads(result.stdout)
-        assert data["success"] is False
-        assert data["error_type"] == "invalid_repo"
-        assert "invalid --repo format" in data["message"].lower()
-
-
-def test_json_no_human_on_stdout() -> None:
-    """With --json, output contains valid JSON with expected fields."""
-    runner = CliRunner()
-    with erk_isolated_fs_env(runner, env_overrides=None) as env:
-        env.setup_repo_structure()
-
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             default_branches={env.cwd: "main"},
@@ -175,30 +100,24 @@ def test_json_no_human_on_stdout() -> None:
         )
         github = FakeLocalGitHub(authenticated=True)
         remote = _make_remote()
-
         ctx = build_workspace_test_context(env, git=git, github=github, remote_github=remote)
-
         result = runner.invoke(
             cli,
-            ["one-shot", "fix the import in config.py", "--json"],
+            ["json", "one-shot"],
             obj=ctx,
-            catch_exceptions=False,
+            input=json.dumps({"prompt": "   "}),
         )
 
-        assert result.exit_code == 0
-        data = json.loads(result.stdout)
-        assert isinstance(data, dict)
-        assert data["success"] is True
+    assert result.exit_code == 0
+    data = json.loads(result.stdout)
+    assert data["success"] is False
+    assert data["error_type"] == "invalid_input"
 
 
-def test_json_stdin_input() -> None:
-    """JSON stdin input populates prompt when piped with --json."""
-    from unittest.mock import patch
-
+def test_human_command_no_longer_accepts_json_flag() -> None:
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
-
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             default_branches={env.cwd: "main"},
@@ -207,20 +126,12 @@ def test_json_stdin_input() -> None:
         )
         github = FakeLocalGitHub(authenticated=True)
         remote = _make_remote()
-
         ctx = build_workspace_test_context(env, git=git, github=github, remote_github=remote)
+        result = runner.invoke(
+            cli,
+            ["one-shot", "fix bug", "--json"],
+            obj=ctx,
+        )
 
-        with patch(
-            "erk_shared.agentclick.json_command.read_stdin_json",
-            return_value={"prompt": "fix bug from stdin"},
-        ):
-            result = runner.invoke(
-                cli,
-                ["one-shot", "--stdin-json", "--json"],
-                obj=ctx,
-                catch_exceptions=False,
-            )
-
-        assert result.exit_code == 0, f"Command failed: {result.output}"
-        data = json.loads(result.stdout)
-        assert data["success"] is True
+    assert result.exit_code != 0
+    assert "--json" in result.output
