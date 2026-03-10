@@ -61,9 +61,6 @@ from erk.cli.commands.exec.scripts.get_plans_for_objective import (
 )
 from erk.cli.commands.exec.scripts.get_pr_body_footer import get_pr_body_footer
 from erk.cli.commands.exec.scripts.get_pr_commits import get_pr_commits
-from erk.cli.commands.exec.scripts.get_review_activity_log import (
-    get_review_activity_log,
-)
 from erk.cli.commands.exec.scripts.get_pr_context import get_pr_context
 from erk.cli.commands.exec.scripts.get_pr_discussion_comments import (
     get_pr_discussion_comments,
@@ -74,6 +71,9 @@ from erk.cli.commands.exec.scripts.get_pr_review_comments import (
     get_pr_review_comments,
 )
 from erk.cli.commands.exec.scripts.get_pr_view import get_pr_view
+from erk.cli.commands.exec.scripts.get_review_activity_log import (
+    get_review_activity_log,
+)
 from erk.cli.commands.exec.scripts.handle_no_changes import handle_no_changes
 from erk.cli.commands.exec.scripts.impl_init import impl_init
 from erk.cli.commands.exec.scripts.impl_signal import impl_signal
