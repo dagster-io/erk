@@ -1,0 +1,1140 @@
+<session>
+  <meta branch="plnd/add-erk-core-label-03-09-1959" />
+  <meta model="claude-opus-4-6" />
+  <assistant>Now update `dash_data.py`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="206" cache_read_input_tokens="97252" cache_creation="{'ephemeral_5m_input_tokens': 206, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_015ZBDKzoekF7e8Ba38mV2vv">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/dash_data.py</param>
+    <param name="offset">28</param>
+    <param name="limit">5</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="206" cache_read_input_tokens="97252" cache_creation="{'ephemeral_5m_input_tokens': 206, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_015ZBDKzoekF7e8Ba38mV2vv">
+    28→@click.command(name="dash-data")
+    29→@click.option("--state", type=click.Choice(["open", "closed"]), default=None)
+    30→@click.option("--label", multiple=True, default=("erk-pr",))
+    31→@click.option("--limit", type=int, default=None)
+    32→@click.option("--show-prs/--no-show-prs", default=True)
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01RWmAPLnSDkSyxu98xXuEhR">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/dash_data.py</param>
+    <param name="old_string">@click.option("--label", multiple=True, default=("erk-pr",))</param>
+    <param name="new_string">@click.option("--label", multiple=True, default=("erk-core",))</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="545" cache_read_input_tokens="97458" cache_creation="{'ephemeral_5m_input_tokens': 545, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01RWmAPLnSDkSyxu98xXuEhR">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/dash_data.py has been updated successfully.
+  </tool_result>
+  <assistant>Phase 3 done. Now Phase 4: Increase default per_page from 30 to 100.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="210" cache_read_input_tokens="98003" cache_creation="{'ephemeral_5m_input_tokens': 210, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01NyKm9nXu3zUHn822cNh1zt">
+    <param name="todos">[{'content': 'Add constant and label definition', 'status': 'completed', 'activeForm': 'Ad...[truncated 739 chars]...', 'status': 'pending', 'activeForm': 'Signaling GitHub, cleaning up, and submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="210" cache_read_input_tokens="98003" cache_creation="{'ephemeral_5m_input_tokens': 210, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01NyKm9nXu3zUHn822cNh1zt">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="Read" id="toolu_01ALfvs83raR9Q7jFFxNJNAg">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/core/services/plan_list_service.py</param>
+    <param name="offset">115</param>
+    <param name="limit">8</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="368" cache_read_input_tokens="98213" cache_creation="{'ephemeral_5m_input_tokens': 368, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01ALfvs83raR9Q7jFFxNJNAg">
+   115→        repo_id = location.repo_id
+   116→
+   117→        # Step 1: REST issues list with server-side filtering
+   118→        rest_state = state.lower() if state else "open"
+   119→        effective_limit = limit if limit is not None else 30
+   120→
+   121→        params = [
+   122→            f"labels={','.join(labels)}",
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01UeFVw2qpVha5dW5gGEDCXr">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/core/services/plan_list_service.py</param>
+    <param name="old_string">        effective_limit = limit if limit is not None else 30</param>
+    <param name="new_string">        effective_limit = limit if limit is not None else 100</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="307" cache_read_input_tokens="98581" cache_creation="{'ephemeral_5m_input_tokens': 307, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01UeFVw2qpVha5dW5gGEDCXr">
+The file /home/runner/work/erk/erk/src/erk/core/services/plan_list_service.py has been updated successfully.
+  </tool_result>
+  <assistant>Phase 4 done. Now Phase 5: Update documentation.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="192" cache_read_input_tokens="98888" cache_creation="{'ephemeral_5m_input_tokens': 192, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01V2oYSGY9EqteFmdrWDBd2F">
+    <param name="todos">[{'content': 'Add constant and label definition', 'status': 'completed', 'activeForm': 'Ad...[truncated 741 chars]...', 'status': 'pending', 'activeForm': 'Signaling GitHub, cleaning up, and submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="192" cache_read_input_tokens="98888" cache_creation="{'ephemeral_5m_input_tokens': 192, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01V2oYSGY9EqteFmdrWDBd2F">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="Glob" id="toolu_01UPbQs7yqPfoRxs89kGUe3H">
+    <param name="pattern">docs/learned/planning/label-scheme.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="357" cache_read_input_tokens="99080" cache_creation="{'ephemeral_5m_input_tokens': 357, 'ephemeral_1h_input_tokens': 0}" output_tokens="26" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01UPbQs7yqPfoRxs89kGUe3H">
+/home/runner/work/erk/erk/docs/learned/planning/label-scheme.md
+  </tool_result>
+  <tool_use name="Read" id="toolu_011kNhKP8zFQcZjQAooD742i">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/label-scheme.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="97" cache_read_input_tokens="99437" cache_creation="{'ephemeral_5m_input_tokens': 97, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_011kNhKP8zFQcZjQAooD742i">
+     1→---
+     2→title: PR and Plan Label Assignment Scheme
+     3→read_when:
+     4→  - "understanding how plans, code PRs, and learn issues are labeled"
+     5→  - "working with erk-pr, erk-plan, or erk-learn labels"
+     6→  - "debugging label filtering in TUI or CLI views"
+     7→tripwires:
+     8→  - action: "querying all erk PRs without using the erk-pr base label"
+     9→    warning: "Use erk-pr to query all erk-submitted PRs (plans + code). Use type-specific labels (erk-plan, erk-learn) only when you need to filter to a specific type."
+    10→  - action: "backfilling labels on existing issues without considering updated_at side effects"
+    11→    warning: "GitHub label operations change the issue's updated_at timestamp. This affects sort order in list views and may confuse users."
+    12→---
+    13→
+    14→# PR and Plan Label Assignment Scheme
+    15→
+    16→Erk uses `erk-pr` as the **base label** on all erk-submitted PRs, with **type-specific labels** for filtering plans and learn issues.
+    17→
+    18→## Label Taxonomy
+    19→
+    20→| Label              | Purpose                              | Applied To                                        |
+    21→| ------------------ | ------------------------------------ | ------------------------------------------------- |
+    22→| `erk-pr`           | Base label — all erk-submitted PRs   | All plans, learn plans, and code PRs              |
+    23→| `erk-planned-pr`   | Legacy base label — identifies plans | Historical plans only (no longer applied by code) |
+    24→| `erk-plan`         | Type label — implementation plans    | Regular plans                                     |
+    25→| `erk-learn`        | Type label — documentation plans     | Learn plans                                       |
+    26→| `erk-objective`    | Separate system — objectives         | Objective issues                                  |
+    27→| `erk-consolidated` | Consolidation marker                 | Consolidated learn plans                          |
+    28→
+    29→## Label Assignment
+    30→
+
+... [50 lines omitted] ...
+  </tool_result>
+  <tool_use name="Edit" id="toolu_019ikaUwhy7t9iHw5xvDJTBV">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/label-scheme.md</param>
+    <param name="old_string">---
+title: PR and Plan Label Assignment Scheme
+read_when:
+  - "understanding how plans, co...[truncated 3476 chars]... label filters
+- [Glossary: Learn Plan](../glossary.md#learn-plan) — Learn plan definition</param>
+    <param name="new_string">---
+title: PR and Plan Label Assignment Scheme
+read_when:
+  - "understanding how plans, co...[truncated 3728 chars]... label filters
+- [Glossary: Learn Plan](../glossary.md#learn-plan) — Learn plan definition</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1405" cache_read_input_tokens="99534" cache_creation="{'ephemeral_5m_input_tokens': 1405, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_019ikaUwhy7t9iHw5xvDJTBV">
+The file /home/runner/work/erk/erk/docs/learned/planning/label-scheme.md has been updated successfully.
+  </tool_result>
+  <assistant>Phase 5 done. Now Phase 6: Update tests. Let me find and read the relevant test files:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2194" cache_read_input_tokens="100939" cache_creation="{'ephemeral_5m_input_tokens': 2194, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01E8ANWZFSkGK2Y4Rc3mHUNL">
+    <param name="todos">[{'content': 'Add constant and label definition', 'status': 'completed', 'activeForm': 'Ad...[truncated 743 chars]...', 'status': 'pending', 'activeForm': 'Signaling GitHub, cleaning up, and submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2194" cache_read_input_tokens="100939" cache_creation="{'ephemeral_5m_input_tokens': 2194, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01E8ANWZFSkGK2Y4Rc3mHUNL">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="Task" id="toolu_01CQEtQPqY45PKjmFhWYDtwR">
+    <param name="description">Find test files to update</param>
+    <param name="prompt">Search the codebase for these test files mentioned in the plan and find any other test fil...[truncated 540 chars]... the full paths of all matching test files and the key assertions that need to be updated.</param>
+    <param name="subagent_type">Explore</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="367" cache_read_input_tokens="103133" cache_creation="{'ephemeral_5m_input_tokens': 367, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01CQEtQPqY45PKjmFhWYDtwR">
+Perfect! I can see the issue clearly now. The PLANS_VIEW currently has `labels=("erk-core",)` on line 41, but the test on line 36 of test_types.py expects it to be `("erk-pr",)`. Let me compile my complete findings:
+
+## Summary
+
+Based on my thorough analysis of the codebase, here are all the test files that assert on label values and will need to be updated when the `erk-core` label scheme is introduced:
+
+### Key Finding
+
+Looking at the plan documentation and code:
+- **Current state**: PLANS_VIEW uses `"erk-core"` as the label (in `/home/runner/work/erk/erk/src/erk/tui/views/types.py` line 41)
+- **Test expectation**: The test in `/home/runner/work/erk/erk/tests/tui/views/test_types.py` line 36 expects `("erk-pr",)`
+
+The plan is to introduce the `erk-core` label for non-learn PRs, which means we need to update the test assertion.
+
+### Test Files Needing Updates
+
+#### 1. **PRIMARY TEST FILE (Must Update)**
+**File**: `/home/runner/work/erk/erk/tests/tui/views/test_types.py`
+- **Line 36**: `assert PLANS_VIEW.labels == ("erk-pr",)`
+  - **Update to**: `assert PLANS_VIEW.labels == ("erk-core",)`
+  - **Key assertion**: Tests that PLANS_VIEW uses the correct label tuple for querying PRs
+
+#### 2. **LABEL DEFINITION TEST**
+**File**: `/home/runner/work/erk/erk/tests/unit/objective_issues/test_label_definitions.py`
+- **Lines 58-68**: Test `test_get_erk_label_definitions_contains_erk_pr()`
+  - Asserts `erk_pr.description == "Plan managed as a draft PR"`
+  - **Status**: No changes needed (tests label properties, not usage in views)
+- **Lines 106-111**: Test `test_get_required_erk_labels_contains_erk_pr()`
+  - Asserts `"erk-pr" in label_names`
+  - **Status**: No changes needed (tests presence of label definition)
+
+... [76 lines omitted] ...
+
+- **Lines 32-45**: Test `test_check_returns_failed_when_one_label_missing()`
+- **Lines 48-63**: Test `test_check_returns_failed_when_all_labels_missing()`
+  - Asserts specific labels appear in error messages
+  </tool_result>
+  <assistant>Good analysis. Let me now read and update the critical test files:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2154" cache_read_input_tokens="103500" cache_creation="{'ephemeral_5m_input_tokens': 2154, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01QqeXYsUbHiidU1jABh1in4">
+    <param name="file_path">/home/runner/work/erk/erk/tests/tui/views/test_types.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2154" cache_read_input_tokens="103500" cache_creation="{'ephemeral_5m_input_tokens': 2154, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_013CN9U4n2z4rgCFVFbx8zCH">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_label_code_pr.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2154" cache_read_input_tokens="103500" cache_creation="{'ephemeral_5m_input_tokens': 2154, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01Cwtm5SsLUatYunUPfsqKbQ">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/objective_issues/test_label_definitions.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2154" cache_read_input_tokens="103500" cache_creation="{'ephemeral_5m_input_tokens': 2154, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_014aX11MH8DtinVSL1wS2A55">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/core/test_health_checks_plans_repo_labels.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2154" cache_read_input_tokens="103500" cache_creation="{'ephemeral_5m_input_tokens': 2154, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01QqeXYsUbHiidU1jABh1in4">
+     1→"""Tests for view mode types."""
+     2→
+     3→from erk.tui.views.types import (
+     4→    LEARN_VIEW,
+     5→    OBJECTIVES_VIEW,
+     6→    PLANS_VIEW,
+     7→    RUNS_VIEW,
+     8→    VIEW_CONFIGS,
+     9→    ViewConfig,
+    10→    ViewMode,
+    11→    get_next_view_mode,
+    12→    get_previous_view_mode,
+    13→    get_view_config,
+    14→)
+    15→
+    16→
+    17→class TestViewMode:
+    18→    """Tests for ViewMode enum."""
+    19→
+    20→    def test_has_four_modes(self) -&gt; None:
+    21→        """ViewMode has exactly four modes."""
+    22→        assert len(ViewMode) == 4
+    23→        assert ViewMode.PLANS is not None
+    24→        assert ViewMode.LEARN is not None
+    25→        assert ViewMode.OBJECTIVES is not None
+    26→        assert ViewMode.RUNS is not None
+    27→
+    28→
+    29→class TestViewConfig:
+    30→    """Tests for ViewConfig dataclass."""
+
+... [123 lines omitted] ...
+
+    77→            raise AssertionError("Should have raised FrozenInstanceError")
+    78→        except AttributeError:
+  </tool_result>
+  <tool_result tool="toolu_013CN9U4n2z4rgCFVFbx8zCH">
+     1→"""Unit tests for label_code_pr pipeline step."""
+     2→
+     3→from pathlib import Path
+     4→
+     5→from erk.cli.commands.pr.submit_pipeline import (
+     6→    SubmitState,
+     7→    label_code_pr,
+     8→)
+     9→from erk.core.context import context_for_test
+    10→from erk_shared.gateway.github.fake import FakeLocalGitHub
+    11→
+    12→
+    13→def _make_state(
+    14→    *,
+    15→    cwd: Path,
+    16→    repo_root: Path | None = None,
+    17→    plan_id: str | None = None,
+    18→    pr_number: int | None = None,
+    19→) -&gt; SubmitState:
+    20→    return SubmitState(
+    21→        cwd=cwd,
+    22→        repo_root=repo_root if repo_root is not None else cwd,
+    23→        branch_name="feature",
+    24→        parent_branch="main",
+    25→        trunk_branch="main",
+    26→        use_graphite=True,
+    27→        force=False,
+    28→        debug=False,
+    29→        session_id="test-session",
+    30→        skip_description=False,
+
+... [59 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01Cwtm5SsLUatYunUPfsqKbQ">
+     1→"""Tests for label definition functions.
+     2→
+     3→Pure unit tests (Layer 3) - no dependencies on fakes or external systems.
+     4→"""
+     5→
+     6→from erk_shared.gateway.github.objective_issues import (
+     7→    get_erk_label_definitions,
+     8→    get_required_erk_labels,
+     9→)
+    10→
+    11→
+    12→def test_get_erk_label_definitions_returns_five_labels() -&gt; None:
+    13→    """Test that get_erk_label_definitions returns all five expected labels."""
+    14→    labels = get_erk_label_definitions()
+    15→
+    16→    assert len(labels) == 5
+    17→
+    18→
+    19→def test_get_erk_label_definitions_contains_erk_plan() -&gt; None:
+    20→    """Test that erk-plan label is included with correct properties."""
+    21→    labels = get_erk_label_definitions()
+    22→
+    23→    erk_plan_labels = [label for label in labels if label.name == "erk-plan"]
+    24→    assert len(erk_plan_labels) == 1
+    25→
+    26→    erk_plan = erk_plan_labels[0]
+    27→    assert erk_plan.name == "erk-plan"
+    28→    assert erk_plan.description == "Implementation plan for manual execution"
+    29→    assert erk_plan.color == "0E8A16"  # Green
+    30→
+
+... [122 lines omitted] ...
+
+    89→        # Frozen dataclasses should raise FrozenInstanceError on attribute assignment
+  </tool_result>
+  <tool_result tool="toolu_014aX11MH8DtinVSL1wS2A55">
+     1→"""Tests for check_plans_repo_labels health check.
+     2→
+     3→These tests verify the health check correctly reports label status in the plans repository.
+     4→Uses FakeGitHubIssues to test label checking behavior.
+     5→
+     6→Note: The doctor check only verifies erk-plan and erk-objective labels.
+     7→erk-extraction is optional (for documentation workflows) and not checked.
+     8→"""
+     9→
+    10→from tests.test_utils.paths import sentinel_path
+    11→
+    12→from erk.core.health_checks.plans_repo_labels import check_plans_repo_labels
+    13→from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+    14→
+    15→
+    16→def test_check_returns_passed_when_all_required_labels_exist() -&gt; None:
+    17→    """Test that check returns success when required erk labels exist."""
+    18→    github_issues = FakeGitHubIssues(labels={"erk-pr", "erk-plan", "erk-objective"})
+    19→
+    20→    result = check_plans_repo_labels(
+    21→        repo_root=sentinel_path(),
+    22→        plans_repo="owner/plans-repo",
+    23→        github_issues=github_issues,
+    24→    )
+    25→
+    26→    assert result.passed is True
+    27→    assert result.name == "plans-repo-labels"
+    28→    assert "configured" in result.message.lower()
+    29→    assert "owner/plans-repo" in result.message
+    30→
+
+... [121 lines omitted] ...
+
+    32→def test_check_returns_failed_when_one_label_missing() -&gt; None:
+    48→def test_check_returns_failed_when_all_labels_missing() -&gt; None:
+    66→def test_check_returns_failed_message_includes_plans_repo() -&gt; None:
+    67→    """Test that failure message includes the plans repo name."""
+  </tool_result>
+  <assistant>Now I can see what needs updating:
+
+1. **test_types.py:36** — PLANS_VIEW labels assertion needs `("erk-core",)` and exclude_labels check
+2. **test_label_code_pr.py:57** — needs to also assert `erk-core` is added
+3. **test_label_definitions.py:12,16** — count goes from 5 to 6 for definitions, 3 to 4 for required
+4. **test_health_checks_plans_repo_labels.py** — needs `erk-core` in the label sets
+
+Let me make all these edits:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="8008" cache_read_input_tokens="105654" cache_creation="{'ephemeral_5m_input_tokens': 8008, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01SC2PB5ojP1r6phQG5h9vSx">
+    <param name="file_path">/home/runner/work/erk/erk/tests/tui/views/test_types.py</param>
+    <param name="old_string">        assert PLANS_VIEW.labels == ("erk-pr",)</param>
+    <param name="new_string">        assert PLANS_VIEW.labels == ("erk-core",)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="8008" cache_read_input_tokens="105654" cache_creation="{'ephemeral_5m_input_tokens': 8008, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01TUjreSaJMySYQLTqgQv5fG">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_label_code_pr.py</param>
+    <param name="old_string">    assert (42, "erk-pr") in fake_local_github.added_labels</param>
+    <param name="new_string">    assert (42, "erk-pr") in fake_local_github.added_labels
+    assert (42, "erk-core") in fake_local_github.added_labels</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="8008" cache_read_input_tokens="105654" cache_creation="{'ephemeral_5m_input_tokens': 8008, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_019TD2h3f1dugo8m3XPAiPnL">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/objective_issues/test_label_definitions.py</param>
+    <param name="old_string">def test_get_erk_label_definitions_returns_five_labels() -&gt; None:
+    """Test that get_erk...[truncated 15 chars]... expected labels."""
+    labels = get_erk_label_definitions()
+
+    assert len(labels) == 5</param>
+    <param name="new_string">def test_get_erk_label_definitions_returns_six_labels() -&gt; None:
+    """Test that get_erk_...[truncated 13 chars]... expected labels."""
+    labels = get_erk_label_definitions()
+
+    assert len(labels) == 6</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="8008" cache_read_input_tokens="105654" cache_creation="{'ephemeral_5m_input_tokens': 8008, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01RAtbKCvHQ3x3YBXSfgdtdj">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/objective_issues/test_label_definitions.py</param>
+    <param name="old_string">def test_get_required_erk_labels_returns_three_labels() -&gt; None:
+    """Test that get_required_erk_labels returns three labels."""
+    labels = get_required_erk_labels()
+
+    assert len(labels) == 3</param>
+    <param name="new_string">def test_get_required_erk_labels_returns_four_labels() -&gt; None:
+    """Test that get_required_erk_labels returns four labels."""
+    labels = get_required_erk_labels()
+
+    assert len(labels) == 4</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="8008" cache_read_input_tokens="105654" cache_creation="{'ephemeral_5m_input_tokens': 8008, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01SC2PB5ojP1r6phQG5h9vSx">
+The file /home/runner/work/erk/erk/tests/tui/views/test_types.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01TUjreSaJMySYQLTqgQv5fG">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_label_code_pr.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_019TD2h3f1dugo8m3XPAiPnL">
+The file /home/runner/work/erk/erk/tests/unit/objective_issues/test_label_definitions.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01RAtbKCvHQ3x3YBXSfgdtdj">
+The file /home/runner/work/erk/erk/tests/unit/objective_issues/test_label_definitions.py has been updated successfully.
+  </tool_result>
+  <assistant>Now add erk-core test for label definitions and update health check tests:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1370" cache_read_input_tokens="113662" cache_creation="{'ephemeral_5m_input_tokens': 1370, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01KMRmP41NRneswG3k3TUtfP">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/objective_issues/test_label_definitions.py</param>
+    <param name="old_string">def test_get_erk_label_definitions_contains_no_changes() -&gt; None:</param>
+    <param name="new_string">def test_get_erk_label_definitions_contains_erk_core() -&gt; None:
+    """Test that erk-core ...[truncated 337 chars]...core.color == "0E8A16"
+
+
+def test_get_erk_label_definitions_contains_no_changes() -&gt; None:</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1370" cache_read_input_tokens="113662" cache_creation="{'ephemeral_5m_input_tokens': 1370, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_012VowtJg1LvJcGgbnuXYEso">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/objective_issues/test_label_definitions.py</param>
+    <param name="old_string">def test_get_required_erk_labels_contains_erk_pr() -&gt; None:
+    """Test that erk-pr label ...[truncated 95 chars]...rt "erk-pr" in label_names
+
+
+def test_get_required_erk_labels_contains_erk_plan() -&gt; None:</param>
+    <param name="new_string">def test_get_required_erk_labels_contains_erk_pr() -&gt; None:
+    """Test that erk-pr label ...[truncated 335 chars]... "erk-core" in label_names
+
+
+def test_get_required_erk_labels_contains_erk_plan() -&gt; None:</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1370" cache_read_input_tokens="113662" cache_creation="{'ephemeral_5m_input_tokens': 1370, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01KMRmP41NRneswG3k3TUtfP">
+The file /home/runner/work/erk/erk/tests/unit/objective_issues/test_label_definitions.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_012VowtJg1LvJcGgbnuXYEso">
+The file /home/runner/work/erk/erk/tests/unit/objective_issues/test_label_definitions.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update the health checks tests — need to add `erk-core` to the label sets where `erk-pr` appears:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1047" cache_read_input_tokens="115032" cache_creation="{'ephemeral_5m_input_tokens': 1047, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_017RXATCRW333PoLhMqLJN1S">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/core/test_health_checks_plans_repo_labels.py</param>
+    <param name="old_string">    github_issues = FakeGitHubIssues(labels={"erk-pr", "erk-plan", "erk-objective"})
+
+    ...[truncated 445 chars]...  github_issues = FakeGitHubIssues(labels={"erk-pr", "erk-plan"})  # Missing erk-objective</param>
+    <param name="new_string">    github_issues = FakeGitHubIssues(labels={"erk-pr", "erk-core", "erk-plan", "erk-object...[truncated 469 chars]...ues = FakeGitHubIssues(labels={"erk-pr", "erk-core", "erk-plan"})  # Missing erk-objective</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1047" cache_read_input_tokens="115032" cache_creation="{'ephemeral_5m_input_tokens': 1047, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01PhEzxnPAcyxQm1YiKpjZW7">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/core/test_health_checks_plans_repo_labels.py</param>
+    <param name="old_string">    assert result.passed is False
+    assert "erk-pr" in result.message
+    assert "erk-pl...[truncated 81 chars]...d (optional for documentation workflows)
+    assert "erk-extraction" not in result.message</param>
+    <param name="new_string">    assert result.passed is False
+    assert "erk-pr" in result.message
+    assert "erk-co...[truncated 121 chars]...d (optional for documentation workflows)
+    assert "erk-extraction" not in result.message</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1047" cache_read_input_tokens="115032" cache_creation="{'ephemeral_5m_input_tokens': 1047, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_017dFGuHKWwxRq5Bb9RrD4av">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/core/test_health_checks_plans_repo_labels.py</param>
+    <param name="old_string">    github_issues = FakeGitHubIssues(
+        labels={
+            "erk-pr",
+            "...[truncated 21 chars]...           "erk-extraction",
+            "bug",
+            "enhancement",
+        }
+    )</param>
+    <param name="new_string">    github_issues = FakeGitHubIssues(
+        labels={
+            "erk-pr",
+            "...[truncated 45 chars]...           "erk-extraction",
+            "bug",
+            "enhancement",
+        }
+    )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1047" cache_read_input_tokens="115032" cache_creation="{'ephemeral_5m_input_tokens': 1047, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01Fq5U7q4xAvXqhTEMPfDtdv">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/core/test_health_checks_plans_repo_labels.py</param>
+    <param name="old_string">    github_issues = FakeGitHubIssues(labels={"erk-pr", "erk-plan", "erk-objective"})
+
+    ...[truncated 313 chars]...  github_issues = FakeGitHubIssues(labels={"erk-pr", "erk-plan"})  # Missing erk-objective</param>
+    <param name="new_string">    github_issues = FakeGitHubIssues(labels={"erk-pr", "erk-core", "erk-plan", "erk-object...[truncated 337 chars]...ues = FakeGitHubIssues(labels={"erk-pr", "erk-core", "erk-plan"})  # Missing erk-objective</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1047" cache_read_input_tokens="115032" cache_creation="{'ephemeral_5m_input_tokens': 1047, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01MgMyatu6wLRsKzZebW8wsf">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/core/test_health_checks_plans_repo_labels.py</param>
+    <param name="old_string">    assert result.remediation is not None
+    assert 'gh label create "erk-pr"' in result....[truncated 30 chars]...' in result.remediation
+    assert 'gh label create "erk-objective"' in result.remediation</param>
+    <param name="new_string">    assert result.remediation is not None
+    assert 'gh label create "erk-pr"' in result....[truncated 92 chars]...' in result.remediation
+    assert 'gh label create "erk-objective"' in result.remediation</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1047" cache_read_input_tokens="115032" cache_creation="{'ephemeral_5m_input_tokens': 1047, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_017RXATCRW333PoLhMqLJN1S">
+The file /home/runner/work/erk/erk/tests/unit/core/test_health_checks_plans_repo_labels.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01PhEzxnPAcyxQm1YiKpjZW7">
+The file /home/runner/work/erk/erk/tests/unit/core/test_health_checks_plans_repo_labels.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_017dFGuHKWwxRq5Bb9RrD4av">
+The file /home/runner/work/erk/erk/tests/unit/core/test_health_checks_plans_repo_labels.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01Fq5U7q4xAvXqhTEMPfDtdv">
+The file /home/runner/work/erk/erk/tests/unit/core/test_health_checks_plans_repo_labels.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01MgMyatu6wLRsKzZebW8wsf">
+The file /home/runner/work/erk/erk/tests/unit/core/test_health_checks_plans_repo_labels.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me also check if the PLANS_VIEW test checks the `exclude_labels` assertion — since we changed it from `("erk-learn",)` to `()`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2323" cache_read_input_tokens="116079" cache_creation="{'ephemeral_5m_input_tokens': 2323, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01W1CHpeXX6W7AEsKybqDRSJ">
+    <param name="pattern">exclude_labels</param>
+    <param name="path">/home/runner/work/erk/erk/tests/tui/views/test_types.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2323" cache_read_input_tokens="116079" cache_creation="{'ephemeral_5m_input_tokens': 2323, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01W1CHpeXX6W7AEsKybqDRSJ">
+73:            exclude_labels=(),
+  </tool_result>
+  <assistant>Good — the test doesn't assert on exclude_labels for PLANS_VIEW specifically, only in the frozen dataclass test. Let me also check whether there are tests in view switching that reference the old PLANS_VIEW labels/exclude:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="174" cache_read_input_tokens="118402" cache_creation="{'ephemeral_5m_input_tokens': 174, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01XsXKxRLuqy8JxP3Yh7W7Rd">
+    <param name="pattern">erk-pr|erk-learn.*exclude|exclude_labels.*erk-learn</param>
+    <param name="path">/home/runner/work/erk/erk/tests/tui</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="174" cache_read_input_tokens="118402" cache_creation="{'ephemeral_5m_input_tokens': 174, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01XsXKxRLuqy8JxP3Yh7W7Rd">
+tests/tui/data/test_provider.py:1833:                labels=["erk-pr", "erk-plan"],
+tests/tui/data/test_provider.py:1845:                labels=["erk-pr", "erk-plan"],
+tests/tui/data/test_provider.py:1869:                labels=["erk-pr", "erk-plan"],
+tests/tui/data/test_provider.py:1881:                labels=["erk-pr", "erk-plan"],
+tests/tui/test_plan_table.py:701:    # Simulates multi-label query (e.g., erk-pr + erk-learn) returning same plan
+  </tool_result>
+  <assistant>Those are test data setup, not assertions about default labels. They test what happens when PRs have those labels, which is fine. Let me also check for any init label test that might count labels:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="568" cache_read_input_tokens="118576" cache_creation="{'ephemeral_5m_input_tokens': 568, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_017z5fjuP6ZTvECUhyKWuQmY">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/init/test_create_plans_repo_labels.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="568" cache_read_input_tokens="118576" cache_creation="{'ephemeral_5m_input_tokens': 568, 'ephemeral_1h_input_tokens': 0}" output_tokens="128" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_017z5fjuP6ZTvECUhyKWuQmY">
+     1→"""Tests for create_plans_repo_labels().
+     2→
+     3→These tests verify the label creation logic for the plans repository.
+     4→Uses FakeGitHubIssues to test label creation behavior.
+     5→"""
+     6→
+     7→from erk.cli.commands.init.main import create_plans_repo_labels
+     8→from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+     9→from tests.test_utils.paths import sentinel_path
+    10→
+    11→
+    12→def test_create_plans_repo_labels_creates_all_labels() -&gt; None:
+    13→    """Test that all five erk labels are created."""
+    14→    github_issues = FakeGitHubIssues()
+    15→
+    16→    result = create_plans_repo_labels(
+    17→        repo_root=sentinel_path(),
+    18→        plans_repo="owner/plans-repo",
+    19→        github_issues=github_issues,
+    20→    )
+    21→
+    22→    assert result is None  # Success
+    23→    assert "erk-pr" in github_issues.labels
+    24→    assert "erk-plan" in github_issues.labels
+    25→    assert "erk-learn" in github_issues.labels
+    26→    assert "erk-objective" in github_issues.labels
+    27→    assert "no-changes" in github_issues.labels
+    28→
+    29→
+    30→def test_create_plans_repo_labels_tracks_created_labels() -&gt; None:
+
+... [58 lines omitted] ...
+  </tool_result>
+  <assistant>This test needs updating — it counts 5 labels and needs to include `erk-core`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1332" cache_read_input_tokens="119144" cache_creation="{'ephemeral_5m_input_tokens': 1332, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01UmBbFeHY7xfzHpSdLM9riD">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/init/test_create_plans_repo_labels.py</param>
+    <param name="old_string">def test_create_plans_repo_labels_creates_all_labels() -&gt; None:
+    """Test that all five ...[truncated 1984 chars]...s(
+        labels={"erk-pr", "erk-plan", "erk-learn", "erk-objective", "no-changes"}
+    )</param>
+    <param name="new_string">def test_create_plans_repo_labels_creates_all_labels() -&gt; None:
+    """Test that all six e...[truncated 2090 chars]...abels={"erk-pr", "erk-core", "erk-plan", "erk-learn", "erk-objective", "no-changes"}
+    )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1332" cache_read_input_tokens="119144" cache_creation="{'ephemeral_5m_input_tokens': 1332, 'ephemeral_1h_input_tokens': 0}" output_tokens="1538" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01UmBbFeHY7xfzHpSdLM9riD">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/init/test_create_plans_repo_labels.py has been updated successfully.
+  </tool_result>
+  <assistant>Now I need to check the init command itself to see if it also needs updating — it uses `get_erk_label_definitions()`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1804" cache_read_input_tokens="120476" cache_creation="{'ephemeral_5m_input_tokens': 1804, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01K8ELj8AQLhuAm8FCLxBEYt">
+    <param name="pattern">get_erk_label_definitions|create_plans_repo_labels</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli/commands/init</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1804" cache_read_input_tokens="120476" cache_creation="{'ephemeral_5m_input_tokens': 1804, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01K8ELj8AQLhuAm8FCLxBEYt">
+src/erk/cli/commands/init/main.py:48:from erk_shared.gateway.github.objective_issues import get_erk_label_definitions
+src/erk/cli/commands/init/main.py:324:def create_plans_repo_labels(
+src/erk/cli/commands/init/main.py:339:    labels = get_erk_label_definitions()
+src/erk/cli/commands/init/main.py:373:        create_plans_repo_labels(repo_root, plans_repo, github_issues)
+  </tool_result>
+  <assistant>Good, the init command iterates over `get_erk_label_definitions()` which now includes `erk-core`, so it will automatically create the new label. No code change needed there.
+
+Tests are updated. Now let me run CI:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="302" cache_read_input_tokens="122280" cache_creation="{'ephemeral_5m_input_tokens': 302, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01VF8HSBAqM3QdnszsPaqwyz">
+    <param name="todos">[{'content': 'Add constant and label definition', 'status': 'completed', 'activeForm': 'Ad...[truncated 745 chars]...', 'status': 'pending', 'activeForm': 'Signaling GitHub, cleaning up, and submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="302" cache_read_input_tokens="122280" cache_creation="{'ephemeral_5m_input_tokens': 302, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01VF8HSBAqM3QdnszsPaqwyz">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="Glob" id="toolu_01NWpB8Ygb1bWRA89wn7JVHR">
+    <param name="pattern">.erk/prompt-hooks/post-plan-implement-ci.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="397" cache_read_input_tokens="122582" cache_creation="{'ephemeral_5m_input_tokens': 397, 'ephemeral_1h_input_tokens': 0}" output_tokens="26" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01NWpB8Ygb1bWRA89wn7JVHR">
+/home/runner/work/erk/erk/.erk/prompt-hooks/post-plan-implement-ci.md
+  </tool_result>
+  <tool_use name="Read" id="toolu_016Pzz3uA76oHf5HsvbniBpV">
+    <param name="file_path">/home/runner/work/erk/erk/.erk/prompt-hooks/post-plan-implement-ci.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="108" cache_read_input_tokens="122979" cache_creation="{'ephemeral_5m_input_tokens': 108, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_016Pzz3uA76oHf5HsvbniBpV">
+     1→# Post-Implementation CI
+     2→
+     3→Run CI validation after plan implementation using `make fast-ci`.
+     4→
+     5→Load the `ci-iteration` skill for the iterative fix workflow.
+     6→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_use name="Skill" id="toolu_012YPqP7GfKMgeWXTccsTF3h">
+    <param name="skill">ci-iteration</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="229" cache_read_input_tokens="123087" cache_creation="{'ephemeral_5m_input_tokens': 229, 'ephemeral_1h_input_tokens': 0}" output_tokens="26" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_012YPqP7GfKMgeWXTccsTF3h">
+Launching skill: ci-iteration
+  </tool_result>
+  <user>Base directory for this skill: /home/runner/work/erk/erk/.claude/skills/ci-iteration
+
+# CI Iteration
+
+## Overview
+
+Run the specified CI target and automatically fix any failures. Keep iterating until all checks pass or you get stuck on an issue that requires human intervention.
+
+**IMPORTANT**: All `make` commands must be run from the repository root directory. The Makefile is located at the root of the repository, not in subdirectories.
+
+## Sub-Agent Policy
+
+**CRITICAL**: When spawning sub-agents to run `make`, `pytest`, `ty`, `ruff`, `prettier`, or `gt` commands, you MUST use `devrun`:
+
+```
+Task tool with:
+- subagent_type: devrun  &lt;- MUST be devrun, NEVER general-purpose
+```
+
+**Why**: devrun has hard tool constraints (no Edit/Write) preventing destructive changes. The parent agent (you) processes reports and applies fixes - sub-agents only report.
+
+**FORBIDDEN**:
+
+- Spawning general-purpose or other sub-agents for make/pytest/ty/ruff/prettier/gt
+- Giving sub-agents prompts like "fix issues" or "iterate until passing"
+
+**REQUIRED**:
+
+- Sub-agents run ONE command and report results
+- Parent agent decides what to fix based on reports
+
+## Core Workflow
+
+### 1. Initial Run
+
+Use the devrun agent to run the specified make target from the repository root:
+
+```
+Task tool with:
+- subagent_type: devrun
+- description: "Run [make target] from repo root"
+- prompt: "Change to repository root and execute: [make target]"
+```
+
+### 2. Parse Failures
+
+Analyze the output to identify which check(s) failed:
+
+- **Ruff lint failures**: "ruff check" errors
+- **Format failures**: "ruff format --check" or files needing reformatting
+- **Prettier failures**: Markdown files needing formatting
+- **MD-check failures**: CLAUDE.md files not properly referencing AGENTS.md
+- **ty failures**: Type errors with file paths and line numbers
+- **Test failures**: pytest failures with test names and assertion errors
+
+### 3. Apply Targeted Fixes
+
+Based on failure type, apply appropriate fixes:
+
+| Failure Type | Fix Command                                 |
+| ------------ | ------------------------------------------- |
+| Ruff lint    | `make fix` via devrun                       |
+| Ruff format  | `make format` via devrun                    |
+| Prettier     | `make prettier` via devrun                  |
+| Sync-Kit     | `erk sync` directly                         |
+| MD-check     | Edit CLAUDE.md to contain only `@AGENTS.md` |
+| ty           | Edit files to fix type annotations          |
+| Tests        | Read and edit source/test files             |
+
+### 4. Verify and Repeat
+
+After applying fixes, run the make target again via devrun. Continue the cycle: run -&gt; identify failures -&gt; fix -&gt; verify.
+
+## Iteration Control
+
+**Safety Limits:**
+
+- **Maximum iterations**: 10 attempts
+- **Stuck detection**: If the same error appears 3 times in a row, stop
+- **Progress tracking**: Use TodoWrite to show iteration progress
+
+## Progress Reporting
+
+Use TodoWrite to track progress:
+
+```
+Iteration 1: Fixing lint errors
+Iteration 2: Fixing format errors
+Iteration 3: Fixing type errors in src/erk/cli/commands/switch.py
+Iteration 4: All checks passed
+```
+
+## When to Stop
+
+**SUCCESS**: Stop when the make target exits with code 0 (all checks passed)
+
+**STUCK**: Stop and report to user if:
+
+1. You've completed 10 iterations without success
+2. The same error persists after 3 fix attempts
+3. You encounter an error you cannot automatically fix
+
+## Reporting Formats
+
+### Success Format
+
+```markdown
+## Finalization Status: SUCCESS
+
+All CI checks passed after N iteration(s):
+
+(check) **Lint (ruff check)**: PASSED
+
+(check) **Format (ruff format --check)**: PASSED
+
+(check) **Prettier**: PASSED
+
+(check) **AGENTS.md Standard (md-check)**: PASSED
+
+(check) **ty**: PASSED
+
+(check) **Tests**: PASSED
+
+(check) **Sync-Kit (erk check)**: PASSED
+
+The code is ready for commit/PR.
+```
+
+**IMPORTANT**: Each check line MUST be separated by a blank line in the markdown output to render properly in the CLI.
+
+### Stuck Format
+
+```markdown
+## Finalization Status: STUCK
+
+I was unable to resolve the following issue after N attempts:
+
+**Check**: [lint/format/prettier/md-check/ty/test]
+
+**Error**:
+[Exact error message]
+
+**File**: [file path if applicable]
+
+**Attempted Fixes**:
+
+1. [What you tried first]
+2. [What you tried second]
+3. [What you tried third]
+
+**Next Steps**:
+[Suggest what needs to be done manually]
+```
+
+## Guidelines
+
+1. **Be systematic**: Fix one type of error at a time
+2. **Run full CI**: Always run the full make target, not individual checks
+3. **Use devrun agent**: Always use the Task tool with devrun agent for ALL make commands
+4. **Run from repo root**: Always ensure make commands execute from repository root
+5. **Track progress**: Use TodoWrite for every iteration
+6. **Don't guess**: Read files before making changes
+7. **Follow standards**: Adhere to AGENTS.md coding standards
+8. **Fail gracefully**: Report clearly when stuck
+9. **Be efficient**: Use targeted fixes (don't reformat everything for one lint error)
+
+## Example Flow
+
+```
+Iteration 1:
+- Use Task tool with devrun agent to run make target from repo root
+- Found: 5 lint errors, 2 files need formatting
+- Fix: Use Task tool with devrun agent to run make fix, then make format from repo root
+- Result: 3 lint errors remain
+
+Iteration 2:
+- Use Task tool with devrun agent to run make target from repo root
+- Found: 3 lint errors (imports)
+- Fix: Edit files to fix import issues
+- Result: All lint/format pass, 2 type errors
+
+Iteration 3:
+- Use Task tool with devrun agent to run make target from repo root
+- Found: 2 ty errors in switch.py:45 and switch.py:67
+- Fix: Add type annotations
+- Result: All checks pass
+
+SUCCESS
+```
+
+## Important Reminders
+
+- NEVER run pytest/ty/ruff/prettier/make/gt directly via Bash
+- Always use the Task tool with subagent_type: devrun
+- Covered tools: pytest, ty, ruff, prettier, make, gt
+- Always ensure make commands execute from the repository root directory
+</user>
+  <assistant>
+
+Let me run CI to verify all changes:</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="1685" cache_read_input_tokens="123316" cache_creation="{'ephemeral_5m_input_tokens': 1685, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01Xxz8XEdZr9GV411CyVs6PC">
+    <param name="description">Run make fast-ci</param>
+    <param name="prompt">Run `make fast-ci` from the repository root /home/runner/work/erk/erk and report all results. Do NOT fix anything, just report.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="1685" cache_read_input_tokens="123316" cache_creation="{'ephemeral_5m_input_tokens': 1685, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Xxz8XEdZr9GV411CyVs6PC">
+## Report: `make fast-ci` Results
+
+The command failed with exit code 2. Here's a summary of the issues found:
+
+### Prettier (Format Check)
+- **Status**: FAILED
+- **Issue**: 1 file needs reformatting
+- **File**: `tests/unit/core/test_health_checks_plans_repo_labels.py`
+- **Details**: Code style issues found in 3 files (including markdown docs)
+
+### Ruff (Lint)
+- **Status**: FAILED
+- **Issues**: 2 errors found
+- **File**: `tests/unit/core/test_health_checks_plans_repo_labels.py`
+- **Line 34**: E501 Line too long (104 &gt; 100 characters)
+- **Line 119**: E501 Line too long (104 &gt; 100 characters)
+
+### Exec Reference Check
+- **Status**: FAILED
+- **Issue**: `.claude/skills/erk-exec/reference.md` is out of date
+- **Fix**: Run `erk-dev gen-exec-reference-docs` to regenerate
+
+### Type Checking (ty)
+- **Status**: PASSED - All checks passed
+
+### Unit Tests (erk)
+- **Status**: FAILED
+- **Results**: 43 failed, 5941 passed, 2 warnings in 25.65s
+- **Failed Tests**: 43 test failures primarily in:
+  - `tests/commands/one_shot/test_one_shot_*.py` - Label assertion failures (expecting `('erk-pr', 'erk-plan')` but getting `('erk-pr', 'erk-plan', 'erk-core')`)
+
+... [13 lines omitted] ...
+
+  - `tests/commands/pr/test_list.py` - Multiple failures with "No plans found matching the criteria" messages
+  - `tests/commands/test_dash_workflow_runs.py` - 7 test failures with similar "No plans found" issues
+  </tool_result>
+  <assistant>Several failures to fix. Let me address them systematically:
+
+1. Line too long in test file
+2. One-shot tests expecting old labels 
+3. `pr list` and `dash` tests with wrong default labels
+4. Exec reference docs</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="747" cache_read_input_tokens="125001" cache_creation="{'ephemeral_5m_input_tokens': 747, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01TignYxFfffEgndp4xKuKqC">
+    <param name="todos">[{'content': 'Add constant and label definition', 'status': 'completed', 'activeForm': 'Ad...[truncated 905 chars]...', 'status': 'pending', 'activeForm': 'Signaling GitHub, cleaning up, and submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="747" cache_read_input_tokens="125001" cache_creation="{'ephemeral_5m_input_tokens': 747, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01TignYxFfffEgndp4xKuKqC">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Let me fix the line-too-long issues and find the one-shot test files and pr list/dash test files:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="439" cache_read_input_tokens="125748" cache_creation="{'ephemeral_5m_input_tokens': 439, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_016FXzTpzK5rcUWE3xtFqqxv">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/core/test_health_checks_plans_repo_labels.py</param>
+    <param name="offset">32</param>
+    <param name="limit">5</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="439" cache_read_input_tokens="125748" cache_creation="{'ephemeral_5m_input_tokens': 439, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_0116EtsorVFxdHwfa7W7xsWb">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/core/test_health_checks_plans_repo_labels.py</param>
+    <param name="offset">115</param>
+    <param name="limit">8</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="439" cache_read_input_tokens="125748" cache_creation="{'ephemeral_5m_input_tokens': 439, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_016FXzTpzK5rcUWE3xtFqqxv">
+    32→def test_check_returns_failed_when_one_label_missing() -&gt; None:
+    33→    """Test that check fails when one required label is missing."""
+    34→    github_issues = FakeGitHubIssues(labels={"erk-pr", "erk-core", "erk-plan"})  # Missing erk-objective
+    35→
+    36→    result = check_plans_repo_labels(
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_0116EtsorVFxdHwfa7W7xsWb">
+   115→
+   116→
+   117→def test_remediation_contains_gh_label_create_commands() -&gt; None:
+   118→    """Test that remediation contains copy-paste gh label create commands."""
+   119→    github_issues = FakeGitHubIssues(labels={"erk-pr", "erk-core", "erk-plan"})  # Missing erk-objective
+   120→
+   121→    result = check_plans_repo_labels(
+   122→        repo_root=sentinel_path(),
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_use name="Edit" id="toolu_011iRQTiixbPV6v2L4yfXiuV">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/core/test_health_checks_plans_repo_labels.py</param>
+    <param name="old_string">    github_issues = FakeGitHubIssues(labels={"erk-pr", "erk-core", "erk-plan"})  # Missing...[truncated 300 chars]..." in result.remediation
+
+
+def test_check_returns_failed_when_all_labels_missing() -&gt; None:</param>
+    <param name="new_string">    # Missing erk-objective
+    github_issues = FakeGitHubIssues(labels={"erk-pr", "erk-co...[truncated 303 chars]..." in result.remediation
+
+
+def test_check_returns_failed_when_all_labels_missing() -&gt; None:</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="699" cache_read_input_tokens="126187" cache_creation="{'ephemeral_5m_input_tokens': 699, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01Dps5jtcM2zd36WSCfZBQua">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/core/test_health_checks_plans_repo_labels.py</param>
+    <param name="old_string">    github_issues = FakeGitHubIssues(labels={"erk-pr", "erk-core", "erk-plan"})  # Missing...[truncated 170 chars]...remediation is not None
+    assert 'gh label create "erk-objective"' in result.remediation</param>
+    <param name="new_string">    # Missing erk-objective
+    github_issues = FakeGitHubIssues(labels={"erk-pr", "erk-co...[truncated 173 chars]...remediation is not None
+    assert 'gh label create "erk-objective"' in result.remediation</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="699" cache_read_input_tokens="126187" cache_creation="{'ephemeral_5m_input_tokens': 699, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_011iRQTiixbPV6v2L4yfXiuV">
+The file /home/runner/work/erk/erk/tests/unit/core/test_health_checks_plans_repo_labels.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01Dps5jtcM2zd36WSCfZBQua">
+The file /home/runner/work/erk/erk/tests/unit/core/test_health_checks_plans_repo_labels.py has been updated successfully.
+  </tool_result>
+  <assistant>Now find and fix the one-shot test files and the pr list/dash tests:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="908" cache_read_input_tokens="126886" cache_creation="{'ephemeral_5m_input_tokens': 908, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01BjThYrvCbw3aCnG8LtHVDY">
+    <param name="pattern">"erk-pr", "erk-plan"</param>
+    <param name="path">/home/runner/work/erk/erk/tests/commands/one_shot</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="908" cache_read_input_tokens="126886" cache_creation="{'ephemeral_5m_input_tokens': 908, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_016Bv2ajGkRz3xz1PU8tWvNo">
+    <param name="pattern">erk-pr.*erk-plan</param>
+    <param name="path">/home/runner/work/erk/erk/tests/commands/one_shot</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="908" cache_read_input_tokens="126886" cache_creation="{'ephemeral_5m_input_tokens': 908, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_016Bv2ajGkRz3xz1PU8tWvNo">
+Found 2 files
+tests/commands/one_shot/test_one_shot_dispatch.py
+tests/commands/one_shot/test_one_shot_remote_dispatch.py
+  </tool_result>
+  <tool_result tool="toolu_01BjThYrvCbw3aCnG8LtHVDY">
+tests/commands/one_shot/test_one_shot_dispatch.py:71:    assert remote.added_labels[0].labels == ("erk-pr", "erk-plan")
+tests/commands/one_shot/test_one_shot_remote_dispatch.py:79:    assert labels.labels == ("erk-pr", "erk-plan")
+  </tool_result>
+  <tool_use name="Read" id="toolu_01WRtT9Csb3gGXcw2uHTYiqt">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/one_shot/test_one_shot_dispatch.py</param>
+    <param name="offset">65</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="74" cache_creation_input_tokens="613" cache_read_input_tokens="127794" cache_creation="{'ephemeral_5m_input_tokens': 613, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_016Quog3oZTcMCbmhsqHh64L">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/one_shot/test_one_shot_remote_dispatch.py</param>
+    <param name="offset">73</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="74" cache_creation_input_tokens="613" cache_read_input_tokens="127794" cache_creation="{'ephemeral_5m_input_tokens': 613, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01WRtT9Csb3gGXcw2uHTYiqt">
+    65→    assert pr.draft is True
+    66→    assert pr.base == "main"
+    67→    assert "plan-header" in pr.body
+    68→
+    69→    # Verify erk-plan label added to PR
+    70→    assert len(remote.added_labels) == 1
+    71→    assert remote.added_labels[0].labels == ("erk-pr", "erk-plan")
+    72→
+    73→    # Verify workflow was triggered with plan_backend=planned_pr
+    74→    assert len(remote.dispatched_workflows) == 1
+    75→    wf = remote.dispatched_workflows[0]
+    76→    assert wf.workflow == "one-shot.yml"
+    77→    assert wf.inputs["prompt"] == "fix the import in config.py"
+    78→    assert wf.inputs["plan_backend"] == "planned_pr"
+    79→    assert wf.inputs["plan_issue_number"] == "1"
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_016Quog3oZTcMCbmhsqHh64L">
+    73→    assert pr.draft is True
+    74→    assert "One-shot:" in pr.title
+    75→
+    76→    # Verify labels were added
+    77→    assert len(remote.added_labels) == 1
+    78→    labels = remote.added_labels[0]
+    79→    assert labels.labels == ("erk-pr", "erk-plan")
+    80→
+    81→    # Verify workflow was dispatched
+    82→    assert len(remote.dispatched_workflows) == 1
+    83→    wf = remote.dispatched_workflows[0]
+    84→    assert wf.workflow == "one-shot.yml"
+    85→    assert wf.inputs["prompt"] == "fix the bug in config.py"
+    86→    assert wf.inputs["pr_number"] == "42"
+    87→    assert wf.inputs["submitted_by"] == "alice"
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01Y7LtAZK68i79fB98NyJJc9">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/one_shot/test_one_shot_dispatch.py</param>
+    <param name="old_string">    assert remote.added_labels[0].labels == ("erk-pr", "erk-plan")</param>
+    <param name="new_string">    assert remote.added_labels[0].labels == ("erk-pr", "erk-plan", "erk-core")</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="977" cache_read_input_tokens="128407" cache_creation="{'ephemeral_5m_input_tokens': 977, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01BwR7nj3pajdn8YkbGtnK8j">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/one_shot/test_one_shot_remote_dispatch.py</param>
+    <param name="old_string">    assert labels.labels == ("erk-pr", "erk-plan")</param>
+    <param name="new_string">    assert labels.labels == ("erk-pr", "erk-plan", "erk-core")</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="977" cache_read_input_tokens="128407" cache_creation="{'ephemeral_5m_input_tokens': 977, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Y7LtAZK68i79fB98NyJJc9">
+The file /home/runner/work/erk/erk/tests/commands/one_shot/test_one_shot_dispatch.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01BwR7nj3pajdn8YkbGtnK8j">
+The file /home/runner/work/erk/erk/tests/commands/one_shot/test_one_shot_remote_dispatch.py has been updated successfully.
+  </tool_result>
+  <assistant>Now the pr list and dash test failures — they use `("erk-pr",)` as default and the fakes probably need the matching labels. Let me find the failing test files:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="691" cache_read_input_tokens="129384" cache_creation="{'ephemeral_5m_input_tokens': 691, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01S6d3x5GDkUFMU7zbUEEbvz">
+    <param name="description">Find pr list test failures</param>
+    <param name="prompt">Search for test files that test the `pr list` and `dash` commands and may be failing becau...[truncated 435 chars]...(is it that the fake data has "erk-pr" labels but the query now searches for "erk-core"?).</param>
+    <param name="subagent_type">Explore</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="691" cache_read_input_tokens="129384" cache_creation="{'ephemeral_5m_input_tokens': 691, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01S6d3x5GDkUFMU7zbUEEbvz">
+Perfect! Now I have all the information I need. Let me create a comprehensive report:
+
+## Analysis Report: Test Files with Label Mismatch
+
+I've found the issue causing the test failures. The code has changed from querying with **"erk-pr"** (the universal base label) to querying with **"erk-core"** (the non-learn label), but the test fake data hasn't been updated accordingly.
+
+### Documentation Context
+According to `/home/runner/work/erk/erk/docs/learned/planning/label-scheme.md`, the new label scheme is:
+- **`erk-pr`**: Universal base label applied to ALL erk-submitted PRs (plans + learn plans + code PRs)
+- **`erk-core`**: Core work label for non-learn PRs only (plans + code PRs, NOT learn PRs)
+- **`erk-plan`**: Type-specific label for regular implementation plans
+- **`erk-learn`**: Type-specific label for learn plans
+
+### The Issue: Default Labels Changed
+
+**Files Affected:**
+
+1. **`/home/runner/work/erk/erk/src/erk/cli/commands/pr/list_cmd.py`** (lines 281, 400)
+   - Line 281: `labels = label if label else ("erk-core",)` 
+   - Line 400: `labels = label if label else ("erk-core",)`
+   - **Changed from**: Default should have been `"erk-pr"` to query all plans
+   - **Changed to**: Now defaults to `"erk-core"` to query only non-learn plans
+
+2. **`/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/dash_data.py`** (line 30)
+   - Line 30: `@click.option("--label", multiple=True, default=("erk-core",))`
+   - **Changed to**: Defaults to `"erk-core"` instead of `"erk-pr"`
+
+### Test Files with Failing Fake Data
+
+**`/home/runner/work/erk/erk/tests/commands/pr/test_list.py`**
+
+... [47 lines omitted] ...
+  </tool_result>
+  <assistant>The issue is clear: the fake data needs `erk-core` added. Let me update both test files:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1591" cache_read_input_tokens="130075" cache_creation="{'ephemeral_5m_input_tokens': 1591, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01MVYK1rqAaaCGe4Tzgu4N3D">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_list.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1591" cache_read_input_tokens="130075" cache_creation="{'ephemeral_5m_input_tokens': 1591, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+</session>
