@@ -26,11 +26,11 @@ from click.testing import CliRunner
 from erk_dev.cli import cli
 from erk_dev.context import ErkDevContext
 from tests.fakes.gateway.git import FakeGit
-from tests.fakes.gateway.github import FakeGitHub
+from tests.fakes.gateway.github import FakeLocalGitHub
 
 def test_my_command(tmp_path: Path) -> None:
     fake_git = FakeGit()
-    fake_github = FakeGitHub()
+    fake_github = FakeLocalGitHub()
     ctx = ErkDevContext(git=fake_git, github=fake_github, repo_root=tmp_path)
     runner = CliRunner()
     result = runner.invoke(

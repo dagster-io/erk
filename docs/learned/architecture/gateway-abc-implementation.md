@@ -420,16 +420,8 @@ class RealLocalGitHub(LocalGitHub):
     def issues(self) -> GitHubIssues:
         return self._issues
 
-    @classmethod
-    def for_test(cls, time: Time | None = None, repo_info: RepoInfo | None = None) -> "RealLocalGitHub":
-        """Factory for tests that need Real implementation with sensible defaults."""
-        from tests.fakes.gateway.github import FakeGitHubIssues
-        from tests.fakes.gateway.time import FakeTime
-        return cls(
-            time=time if time is not None else FakeTime(),
-            repo_info=repo_info,
-            issues=FakeGitHubIssues(),
-        )
+    # Note: RealLocalGitHub does not have a for_test() factory method.
+    # Tests should use FakeLocalGitHub from tests.fakes.gateway.github instead.
 ```
 
 ### Fake: Separate Data vs Gateway Parameters
