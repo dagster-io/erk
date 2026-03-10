@@ -15,6 +15,23 @@
       "raw_size_kb": 759,
       "xml_size_kb": 32,
       "git_branch": "master"
+    },
+    {
+      "session_id": "96fe3d42-6e97-4fa9-9479-a7bd8018e034",
+      "stage": "impl",
+      "source": "local",
+      "uploaded_at": "2026-03-10T14:45:52.402950+00:00",
+      "files": [
+        "impl-96fe3d42-6e97-4fa9-9479-a7bd8018e034-96fe3d42-6e97-4fa9-9479-a7bd8018e034-part1.xml",
+        "impl-96fe3d42-6e97-4fa9-9479-a7bd8018e034-96fe3d42-6e97-4fa9-9479-a7bd8018e034-part2.xml",
+        "impl-96fe3d42-6e97-4fa9-9479-a7bd8018e034-96fe3d42-6e97-4fa9-9479-a7bd8018e034-part3.xml",
+        "impl-96fe3d42-6e97-4fa9-9479-a7bd8018e034-96fe3d42-6e97-4fa9-9479-a7bd8018e034-part4.xml"
+      ],
+      "user_turns": 3,
+      "duration_minutes": 5,
+      "raw_size_kb": 495,
+      "xml_size_kb": 70,
+      "git_branch": "plnd/add-pr-status-runs-tab-03-10-1038"
     }
   ]
 }
