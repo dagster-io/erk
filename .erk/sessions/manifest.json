@@ -5,8 +5,8 @@
     {
       "session_id": "9531b666-b931-4d61-948d-3890a9101063",
       "stage": "impl",
-      "source": "local",
-      "uploaded_at": "2026-03-10T16:39:33.524340+00:00",
+      "source": "remote",
+      "uploaded_at": "2026-03-10T16:40:57.450602+00:00",
       "files": [
         "impl-9531b666-b931-4d61-948d-3890a9101063-9531b666-b931-4d61-948d-3890a9101063-part1.xml",
         "impl-9531b666-b931-4d61-948d-3890a9101063-9531b666-b931-4d61-948d-3890a9101063-part2.xml",
@@ -19,9 +19,9 @@
         "impl-9531b666-b931-4d61-948d-3890a9101063-9531b666-b931-4d61-948d-3890a9101063-part9.xml"
       ],
       "user_turns": 3,
-      "duration_minutes": 11,
-      "raw_size_kb": 667,
-      "xml_size_kb": 336,
+      "duration_minutes": 13,
+      "raw_size_kb": 691,
+      "xml_size_kb": 345,
       "git_branch": "plnd/add-repo-check-cmd-03-10-1211"
     }
   ]
