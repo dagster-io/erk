@@ -690,7 +690,9 @@ def test_objective_commands_hidden_in_plans_view() -> None:
 
 def test_objective_commands_appear_in_objectives_view() -> None:
     """All 7 objective commands should appear in Objectives view."""
-    row = make_pr_row(123, "Test", pr_url="https://github.com/test/repo/issues/123")
+    row = make_pr_row(
+        123, "Test", pr_url="https://github.com/test/repo/issues/123", objective_issue=123
+    )
     ctx = CommandContext(row=row, view_mode=ViewMode.OBJECTIVES)
     commands = get_available_commands(ctx)
     cmd_ids = [cmd.id for cmd in commands]
@@ -706,6 +708,15 @@ def test_objective_commands_appear_in_objectives_view() -> None:
     ]
     for obj_id in expected:
         assert obj_id in cmd_ids, f"Objective command {obj_id} should appear in Objectives view"
+
+
+def test_open_objective_not_available_without_objective_url() -> None:
+    """open_objective requires objective_url, not just pr_url."""
+    row = make_pr_row(123, "Test", pr_url="https://github.com/test/repo/issues/123")
+    ctx = CommandContext(row=row, view_mode=ViewMode.OBJECTIVES)
+    commands = get_available_commands(ctx)
+    cmd_ids = [cmd.id for cmd in commands]
+    assert "open_objective" not in cmd_ids
 
 
 def test_plan_commands_available_in_learn_view() -> None:
@@ -750,6 +761,7 @@ def test_display_name_open_objective() -> None:
         7100,
         "Test Objective",
         pr_url="https://github.com/test/repo/issues/7100",
+        objective_issue=7100,
     )
     ctx = CommandContext(row=row, view_mode=ViewMode.OBJECTIVES)
     cmd = next(c for c in get_all_commands() if c.id == "open_objective")
