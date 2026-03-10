@@ -1,0 +1,784 @@
+<session>
+  <meta source="agent-a16928a" />
+  <meta branch="plnd/add-debug-impl-run-03-10-1308" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant docs before exploring raw files. Then explore codebase as necessary.
+
+I need to understand:
+1. The existing exec script pattern - look at a few examples in `src/erk/cli/commands/exec/scripts/` to understand the Click command structure, how they use ctx, imports, etc.
+2. The `output_filter.py` module - find and read it to understand `summarize_tool_use()` and `extract_text_content()` functions
+3. How exec scripts are registered in `src/erk/cli/commands/exec/group.py`
+4. The existing test patterns for exec scripts in `tests/unit/cli/commands/exec/scripts/` - look at a couple examples
+5. Look at `ci_generate_summaries.py` or any file that demonstrates fetching full logs via GitHub REST API pattern
+
+Please read these files fully and report back the key patterns I need to follow.</user>
+  <assistant>I'll help you understand the existing patterns. Let me start by checking the documentation, then explore the codebase systematically.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="15222" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15222, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01K3mPLQypfxeo5cuaerFV6s">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/index.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15222" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15222, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_014xHgxDhULbJXT5ZzN3FCB7">
+    <param name="command">find /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts -type f -name "*.py" | head -5</param>
+    <param name="description">List exec script examples</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15222" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15222, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_018uhjRAfTsBj1iQXDnPYMVF">
+    <param name="pattern">src/erk/cli/commands/exec/scripts/*.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15222" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15222, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01K3mPLQypfxeo5cuaerFV6s">
+     1→&lt;!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY --&gt;
+     2→&lt;!-- Edit source frontmatter, then run 'erk docs sync' to regenerate. --&gt;
+     3→
+     4→# Agent Documentation
+     5→
+     6→Before starting work, scan the read-when conditions below.
+     7→If your current task matches, read the linked document **before writing code**.
+     8→
+     9→## Categories
+    10→
+    11→- [architecture/](architecture/) — Explore when working on core patterns (dry-run, gateways, subprocess, shell integration). Add docs here for cross-cutting technical patterns.
+    12→- [capabilities/](capabilities/)
+    13→- [changelog/](changelog/)
+    14→- [checklists/](checklists/)
+    15→- [ci/](ci/)
+    16→- [claude-code/](claude-code/)
+    17→- [cli/](cli/) — Explore when building CLI commands or output formatting. Add docs here for Click patterns and terminal UX.
+    18→- [commands/](commands/) — Explore when creating or optimizing slash commands. Add docs here for command authoring patterns.
+    19→- [config/](config/)
+    20→- [configuration/](configuration/)
+    21→- [documentation/](documentation/) — Explore when structuring or writing documentation. Add docs here for documentation methodology and best practices.
+    22→- [erk/](erk/) — Explore when working with erk-specific workflows (worktrees, PR sync, Graphite). Add docs here for erk user-facing features.
+    23→- [erk-dev/](erk-dev/)
+    24→- [gateway/](gateway/)
+    25→- [hooks/](hooks/) — Explore when creating or debugging hooks. Add docs here for hook development patterns.
+    26→- [integrations/](integrations/)
+    27→- [objectives/](objectives/)
+    28→- [planning/](planning/) — Explore when working with plans, .erk/impl-context/ folders, or agent delegation. Add docs here for planning workflow patterns.
+    29→- [pr-operations/](pr-operations/)
+    30→- [refactoring/](refactoring/)
+
+... [22 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_018uhjRAfTsBj1iQXDnPYMVF">
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/ci_fetch_summaries.py
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/add_remote_execution_note.py
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/add_plan_labels.py
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/add_plan_label.py
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/__init__.py
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/capture_session_info.py
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/ci_update_pr_body.py
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/add_objective_node.py
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/cleanup_impl_context.py
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/ci_generate_summaries.py
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/ci_verify_autofix.py
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/add_pr_labels_cmd.py
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/download_remote_session.py
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/detect_plan_from_branch.py
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/cmux_checkout_workspace.py
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/create_impl_context_from_plan.py
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/generate_pr_address_summary.py
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/fetch_sessions.py
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/close_prs.py
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/detect_trunk_branch.py
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/get_issue_body.py
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/close_pr.py
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/create_pr_from_session.py
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/get_embedded_prompt.py
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/extract_latest_plan.py
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/dash_data.py
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/discover_reviews.py
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/get_plans_for_objective.py
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/get_pr_feedback.py
+
+... [64 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_014xHgxDhULbJXT5ZzN3FCB7">
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/run_review.py
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/download_remote_session.py
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/get_plans_for_objective.py
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/plan_update.py
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/push_session.py
+  </tool_result>
+  <assistant>Now let me read some example exec scripts and related files:</assistant>
+  <usage input_tokens="3260" cache_creation_input_tokens="1548" cache_read_input_tokens="15222" cache_creation="{'ephemeral_5m_input_tokens': 1548, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01AMYSfWT9geXoZAFaksB9qK">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/ci_generate_summaries.py</param>
+  </tool_use>
+  <usage input_tokens="3260" cache_creation_input_tokens="1548" cache_read_input_tokens="15222" cache_creation="{'ephemeral_5m_input_tokens': 1548, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Y3HjHgH1G3NumMFL3q6iYe">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/ci_fetch_summaries.py</param>
+  </tool_use>
+  <usage input_tokens="3260" cache_creation_input_tokens="1548" cache_read_input_tokens="15222" cache_creation="{'ephemeral_5m_input_tokens': 1548, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01XwNpiJh3BZZ3KwwAUVWq9U">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/get_pr_body_footer.py</param>
+  </tool_use>
+  <usage input_tokens="3260" cache_creation_input_tokens="1548" cache_read_input_tokens="15222" cache_creation="{'ephemeral_5m_input_tokens': 1548, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01UH7oWBUVHJEYD89mcYG3Yd">
+    <param name="command">find /home/runner/work/erk/erk -name "output_filter.py" -type f</param>
+    <param name="description">Find output_filter.py</param>
+  </tool_use>
+  <usage input_tokens="3260" cache_creation_input_tokens="1548" cache_read_input_tokens="15222" cache_creation="{'ephemeral_5m_input_tokens': 1548, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01AMYSfWT9geXoZAFaksB9qK">
+     1→"""Generate CI failure summaries using Haiku.
+     2→
+     3→Fetches failing jobs from a GitHub Actions run, retrieves their logs,
+     4→sends them to Claude Haiku for summarization, and outputs results
+     5→in ERK-CI-SUMMARY marker format (consumed by ci_summary_parsing.py).
+     6→
+     7→When --pr-number is provided, summaries are also posted as a PR comment
+     8→and the ci_summary_comment_id is stored in the plan-header metadata.
+     9→
+    10→Usage:
+    11→    erk exec ci-generate-summaries --run-id 12345
+    12→    erk exec ci-generate-summaries --run-id 12345 --pr-number 42
+    13→
+    14→Output:
+    15→    ERK-CI-SUMMARY markers to stdout, progress messages to stderr
+    16→
+    17→Exit Codes:
+    18→    0: Success (even if individual jobs fail to summarize)
+    19→    1: Error during execution (e.g., cannot fetch failing jobs)
+    20→
+    21→Examples:
+    22→    $ erk exec ci-generate-summaries --run-id 12345 --pr-number 42
+    23→    === ERK-CI-SUMMARY:lint ===
+    24→    - Formatting issues in `src/foo.py`
+    25→    === /ERK-CI-SUMMARY:lint ===
+    26→"""
+    27→
+    28→from __future__ import annotations
+    29→
+    30→import re
+
+... [442 lines omitted] ...
+
+    95→        f"Summarize this CI failure log for job '{job_name}' in 2-5 concise "
+    96→        f"bullet points. Focus on what failed and why.\n\n{log_content}"
+   109→    lines = ["## CI Failure Summary", ""]
+   178→        The comment ID, or None if posting failed
+   223→        click.echo(f"Failed to update comment, creating new one: {result.stderr}", err=True)
+   241→        click.echo(f"Failed to post comment: {result.stderr}", err=True)
+   259→        click.echo("Failed to retrieve comment ID", err=True)
+   308→        click.echo(f"Failed to read PR issue #{plan_issue}", err=True)
+   314→            "Failed to update plan-header: plan-header block not found in issue body",
+   337→        click.echo(f"Failed to update PR issue: {update_result.stderr}", err=True)
+   353→    Individual job failures don't stop other jobs from being summarized.
+   363→            '.jobs[] | select(.conclusion == "failure") | "\\(.id)\\t\\(.name)"',
+   371→        click.echo(f"Error fetching failing jobs: {result.stderr}", err=True)
+   399→            click.echo("(Log fetch failed)")
+   422→            summary = "(Summarization failed)"
+   441→            click.echo(f"Failed to post CI summary comment on PR #{pr_number}", err=True)
+   449→    """Generate CI failure summaries using Haiku.
+  </tool_result>
+  <tool_result tool="toolu_01Y3HjHgH1G3NumMFL3q6iYe">
+     1→"""Fetch CI failure summaries for a PR.
+     2→
+     3→Outputs JSON mapping of check name to summary text, parsed from the
+     4→ci-summarize job logs in the latest CI workflow run.
+     5→
+     6→Usage:
+     7→    erk exec ci-fetch-summaries --pr-number 123
+     8→
+     9→Output:
+    10→    JSON object: {"check_name": "summary", ...}
+    11→
+    12→Exit Codes:
+    13→    0: Success (even if no summaries found - returns empty object)
+    14→    1: Error during execution
+    15→"""
+    16→
+    17→from __future__ import annotations
+    18→
+    19→import json
+    20→
+    21→import click
+    22→
+    23→from erk_shared.context.helpers import require_cwd, require_git, require_github
+    24→from erk_shared.gateway.github.ci_summary_parsing import parse_ci_summaries
+    25→from erk_shared.gateway.github.types import PRNotFound
+    26→
+    27→
+    28→@click.command(name="ci-fetch-summaries")
+    29→@click.option("--pr-number", required=True, type=int, help="PR number to fetch summaries for")
+    30→@click.pass_context
+
+... [39 lines omitted] ...
+
+    32→    """Fetch CI failure summaries for a PR.
+    44→        click.echo(json.dumps({"error": f"PR #{pr_number} not found"}))
+  </tool_result>
+  <tool_result tool="toolu_01XwNpiJh3BZZ3KwwAUVWq9U">
+     1→"""Generate PR body footer for remote implementation PRs.
+     2→
+     3→This exec command generates a footer section for PR descriptions that includes
+     4→the `erk pr teleport` command. This is used by the GitHub Actions workflow when
+     5→creating PRs from remote implementations.
+     6→
+     7→Usage:
+     8→    erk exec get-pr-body-footer --pr-number 123
+     9→
+    10→Output:
+    11→    Markdown footer with teleport command
+    12→
+    13→Exit Codes:
+    14→    0: Success
+    15→    1: Error (missing pr-number)
+    16→
+    17→Examples:
+    18→    $ erk exec get-pr-body-footer --pr-number 1895
+    19→
+    20→    ---
+    21→
+    22→    To replicate this PR locally, run:
+    23→
+    24→    ```
+    25→    erk pr teleport 1895
+    26→    ```
+    27→"""
+    28→
+    29→import click
+    30→
+
+... [22 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01UH7oWBUVHJEYD89mcYG3Yd">
+/home/runner/work/erk/erk/src/erk/core/output_filter.py
+  </tool_result>
+  <assistant>Now let me read the output_filter module and check the exec group registration:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="12011" cache_read_input_tokens="16770" cache_creation="{'ephemeral_5m_input_tokens': 12011, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01RVedDFu9Xt4QpC1iXdqH6w">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/core/output_filter.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="12011" cache_read_input_tokens="16770" cache_creation="{'ephemeral_5m_input_tokens': 12011, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_019mB6DnZvyDsdstFHbdajWL">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/group.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="12011" cache_read_input_tokens="16770" cache_creation="{'ephemeral_5m_input_tokens': 12011, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01T3HmkFDwqbHGZWidQFHRh2">
+    <param name="command">ls -la /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/ | head -20</param>
+    <param name="description">List exec script tests</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="12011" cache_read_input_tokens="16770" cache_creation="{'ephemeral_5m_input_tokens': 12011, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01RVedDFu9Xt4QpC1iXdqH6w">
+     1→"""Output filtering for Claude CLI stream-json format.
+     2→
+     3→This module provides functions to parse and filter Claude CLI output in stream-json
+     4→format, extracting relevant text content and tool summaries while suppressing
+     5→verbose/noisy tool invocations.
+     6→"""
+     7→
+     8→import json
+     9→from pathlib import Path
+    10→
+    11→
+    12→def extract_text_content(message: dict) -&gt; str | None:
+    13→    """Extract Claude's text response from assistant message.
+    14→
+    15→    Args:
+    16→        message: Assistant message dict from stream-json
+    17→
+    18→    Returns:
+    19→        Extracted text content, or None if no text found
+    20→
+    21→    Example:
+    22→        &gt;&gt;&gt; msg = {"type": "assistant_message", "content": [{"type": "text", "text": "Hello"}]}
+    23→        &gt;&gt;&gt; extract_text_content(msg)
+    24→        'Hello'
+    25→    """
+    26→    content = message.get("content", [])
+    27→    if not isinstance(content, list):
+    28→        return None
+    29→
+    30→    text_parts: list[str] = []
+
+... [299 lines omitted] ...
+
+   159→    # Parse JSON safely - JSON parsing requires exception handling
+   166→        except json.JSONDecodeError:
+   197→    # Parse JSON safely - JSON parsing requires exception handling
+   204→        except json.JSONDecodeError:
+  </tool_result>
+  <tool_result tool="toolu_019mB6DnZvyDsdstFHbdajWL">
+     1→"""Static exec group for erk scripts.
+     2→
+     3→This module provides the `erk exec` command group with all scripts
+     4→statically registered.
+     5→"""
+     6→
+     7→import click
+     8→
+     9→# Import and register all scripts
+    10→from erk.cli.commands.exec.scripts.add_objective_node import add_objective_node
+    11→from erk.cli.commands.exec.scripts.add_plan_label import add_plan_label
+    12→from erk.cli.commands.exec.scripts.add_plan_labels import add_plan_labels
+    13→from erk.cli.commands.exec.scripts.add_pr_labels_cmd import add_pr_labels
+    14→from erk.cli.commands.exec.scripts.add_remote_execution_note import (
+    15→    add_remote_execution_note,
+    16→)
+    17→from erk.cli.commands.exec.scripts.capture_session_info import (
+    18→    capture_session_info,
+    19→)
+    20→from erk.cli.commands.exec.scripts.ci_fetch_summaries import ci_fetch_summaries
+    21→from erk.cli.commands.exec.scripts.ci_generate_summaries import ci_generate_summaries
+    22→from erk.cli.commands.exec.scripts.ci_update_pr_body import ci_update_pr_body
+    23→from erk.cli.commands.exec.scripts.ci_verify_autofix import ci_verify_autofix
+    24→from erk.cli.commands.exec.scripts.cleanup_impl_context import cleanup_impl_context
+    25→from erk.cli.commands.exec.scripts.close_pr import (
+    26→    close_pr,
+    27→)
+    28→from erk.cli.commands.exec.scripts.close_prs import close_prs
+    29→from erk.cli.commands.exec.scripts.cmux_checkout_workspace import cmux_open_pr
+    30→from erk.cli.commands.exec.scripts.create_impl_context_from_plan import (
+
+... [264 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01T3HmkFDwqbHGZWidQFHRh2">
+total 1148
+drwxr-xr-x 3 runner runner  4096 Mar 10 13:12 .
+drwxr-xr-x 3 runner runner  4096 Mar 10 13:12 ..
+-rw-r--r-- 1 runner runner     0 Mar 10 13:12 __init__.py
+-rw-r--r-- 1 runner runner  8318 Mar 10 13:12 fixtures.py
+-rw-r--r-- 1 runner runner 12647 Mar 10 13:12 test_add_objective_node.py
+-rw-r--r-- 1 runner runner  2241 Mar 10 13:12 test_add_plan_label.py
+-rw-r--r-- 1 runner runner  5444 Mar 10 13:12 test_add_plan_labels.py
+-rw-r--r-- 1 runner runner  2664 Mar 10 13:12 test_add_pr_labels_cmd.py
+-rw-r--r-- 1 runner runner  7650 Mar 10 13:12 test_add_remote_execution_note.py
+-rw-r--r-- 1 runner runner  6996 Mar 10 13:12 test_capture_session_info.py
+-rw-r--r-- 1 runner runner  5016 Mar 10 13:12 test_ci_fetch_summaries.py
+-rw-r--r-- 1 runner runner  4186 Mar 10 13:12 test_ci_generate_summaries.py
+-rw-r--r-- 1 runner runner 29107 Mar 10 13:12 test_ci_update_pr_body.py
+-rw-r--r-- 1 runner runner  6684 Mar 10 13:12 test_ci_verify_autofix.py
+-rw-r--r-- 1 runner runner  3933 Mar 10 13:12 test_cleanup_impl_context.py
+-rw-r--r-- 1 runner runner  6128 Mar 10 13:12 test_close_pr.py
+-rw-r--r-- 1 runner runner  5574 Mar 10 13:12 test_close_prs.py
+-rw-r--r-- 1 runner runner  5514 Mar 10 13:12 test_cmux_checkout_workspace.py
+-rw-r--r-- 1 runner runner  5338 Mar 10 13:12 test_create_impl_context_from_plan.py
+  </tool_result>
+  <assistant>Now let me look at a couple of test examples:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="11105" cache_read_input_tokens="28781" cache_creation="{'ephemeral_5m_input_tokens': 11105, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01VQfRARJq3QDUiaZQSW2Cda">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_ci_generate_summaries.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="11105" cache_read_input_tokens="28781" cache_creation="{'ephemeral_5m_input_tokens': 11105, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01GdTB6Fc97T2R4dRZE6iKaa">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_add_plan_label.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="11105" cache_read_input_tokens="28781" cache_creation="{'ephemeral_5m_input_tokens': 11105, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_012WdKSJbnCDo9nGaFfjMQvn">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/fixtures.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="11105" cache_read_input_tokens="28781" cache_creation="{'ephemeral_5m_input_tokens': 11105, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01VQfRARJq3QDUiaZQSW2Cda">
+     1→"""Tests for ci-generate-summaries exec command.
+     2→
+     3→Tests the pure functions: _parse_failing_jobs, _truncate_logs, _build_summary_prompt.
+     4→The CLI command calls gh api via run_subprocess_with_context, so it is tested
+     5→via CI integration rather than unit tests.
+     6→"""
+     7→
+     8→from __future__ import annotations
+     9→
+    10→from pathlib import Path
+    11→
+    12→from erk.cli.commands.exec.scripts.ci_generate_summaries import (
+    13→    FailingJob,
+    14→    _build_comment_body,
+    15→    _build_summary_prompt,
+    16→    _parse_failing_jobs,
+    17→    _truncate_logs,
+    18→)
+    19→
+    20→
+    21→class TestParseFailingJobs:
+    22→    """Tests for _parse_failing_jobs."""
+    23→
+    24→    def test_empty_input(self) -&gt; None:
+    25→        assert _parse_failing_jobs("") == []
+    26→
+    27→    def test_whitespace_only(self) -&gt; None:
+    28→        assert _parse_failing_jobs("  \n  \n  ") == []
+    29→
+    30→    def test_single_job(self) -&gt; None:
+
+... [103 lines omitted] ...
+
+    78→        assert "## CI Failure Summary" in result
+    86→            ("lint", "- format errors"),
+    87→            ("unit-tests", "- assertion failed in test_foo"),
+    97→        assert "## CI Failure Summary" in result
+   112→            log_content="error in foo.py",
+   116→        assert result == "Job: lint\nLogs: error in foo.py"
+  </tool_result>
+  <tool_result tool="toolu_01GdTB6Fc97T2R4dRZE6iKaa">
+     1→"""Unit tests for add_plan_label exec command.
+     2→
+     3→Tests backend-aware label addition using PlannedPRBackend and FakeLocalGitHub.
+     4→"""
+     5→
+     6→import json
+     7→from pathlib import Path
+     8→
+     9→from click.testing import CliRunner
+    10→
+    11→from erk.cli.commands.exec.scripts.add_plan_label import add_plan_label
+    12→from erk_shared.plan_store.planned_pr import PlannedPRBackend
+    13→from tests.fakes.gateway.github import FakeLocalGitHub
+    14→from tests.fakes.gateway.time import FakeTime
+    15→from tests.fakes.tests.shared_context import context_for_test
+    16→
+    17→# ============================================================================
+    18→# Success Cases
+    19→# ============================================================================
+    20→
+    21→
+    22→def test_add_plan_label_success() -&gt; None:
+    23→    """Test successful label addition via PlannedPRBackend."""
+    24→    fake_github = FakeLocalGitHub()
+    25→    backend = PlannedPRBackend(fake_github, fake_github.issues, time=FakeTime())
+    26→
+    27→    create_result = backend.create_plan(
+    28→        repo_root=Path("/repo"),
+    29→        title="Test Plan",
+    30→        content="Plan body",
+
+... [47 lines omitted] ...
+
+    57→# Error Cases
+    62→    """Test that missing --label flag exits with code 2 (usage error)."""
+  </tool_result>
+  <tool_result tool="toolu_012WdKSJbnCDo9nGaFfjMQvn">
+     1→"""Test fixtures for session log preprocessing tests.
+     2→
+     3→Contains real JSONL entry samples extracted from actual Claude Code session logs.
+     4→"""
+     5→
+     6→# File history snapshot entry (should be filtered out)
+     7→JSONL_FILE_HISTORY_SNAPSHOT = """{
+     8→  "type": "file-history-snapshot",
+     9→  "messageId": "msg_123",
+    10→  "parentUuid": "parent_456",
+    11→  "sessionId": "session_789",
+    12→  "snapshot": {"trackedFileBackups": {}, "timestamp": "2025-11-20T00:00:00Z"},
+    13→  "isSnapshotUpdate": false,
+    14→  "timestamp": "2025-11-20T00:00:00.000Z",
+    15→  "gitBranch": "test-branch",
+    16→  "cwd": "/test/dir",
+    17→  "userType": "user",
+    18→  "isSidechain": false
+    19→}"""
+    20→
+    21→# User message with string content
+    22→JSONL_USER_MESSAGE_STRING = """{
+    23→  "type": "user",
+    24→  "message": {"role": "user", "content": "Hello, how are you?"},
+    25→  "parentUuid": "parent_123",
+    26→  "sessionId": "session_456",
+    27→  "gitBranch": "test-branch",
+    28→  "cwd": "/test/dir",
+    29→  "timestamp": "2025-11-20T00:00:00.000Z",
+    30→  "userType": "user",
+
+... [276 lines omitted] ...
+  </tool_result>
+  <assistant>Now let me look at a couple more examples to show the GitHub REST API pattern:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="11231" cache_read_input_tokens="39886" cache_creation="{'ephemeral_5m_input_tokens': 11231, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01HDCDEo92miwSf5fJiV5pjh">
+    <param name="command">grep -r "gh api" /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/*.py | head -5</param>
+    <param name="description">Find gh api usage patterns</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="11231" cache_read_input_tokens="39886" cache_creation="{'ephemeral_5m_input_tokens': 11231, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_013JzEBroGGDwzaDjQ31Qk5e">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/get_pr_commits.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="11231" cache_read_input_tokens="39886" cache_creation="{'ephemeral_5m_input_tokens': 11231, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01HDCDEo92miwSf5fJiV5pjh">
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/ci_generate_summaries.py:    """Parse tab-separated gh api output into FailingJob list.
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/ci_generate_summaries.py:    # Use gh api to update the issue body (gh issue edit --body can mangle content)
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/get_pr_commits.py:    # Use gh api to get commits from REST API
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/get_pr_commits.py:    # gh api handles owner/repo detection from the current directory
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/get_pr_commits.py:    # Parse the JSON output from gh api
+  </tool_result>
+  <tool_result tool="toolu_013JzEBroGGDwzaDjQ31Qk5e">
+     1→"""Fetch PR commits using REST API (avoids GraphQL rate limits).
+     2→
+     3→Usage:
+     4→    erk exec get-pr-commits &lt;PR_NUMBER&gt;
+     5→
+     6→Output:
+     7→    JSON with {success, pr_number, commits: [{sha, message}]}
+     8→
+     9→Exit Codes:
+    10→    0: Success - commits fetched
+    11→    1: Error - PR not found or API error
+    12→"""
+    13→
+    14→import json
+    15→
+    16→import click
+    17→
+    18→from erk_shared.context.helpers import require_cwd
+    19→from erk_shared.subprocess_utils import run_subprocess_with_context
+    20→
+    21→
+    22→@click.command(name="get-pr-commits")
+    23→@click.argument("pr_number", type=int)
+    24→@click.pass_context
+    25→def get_pr_commits(ctx: click.Context, pr_number: int) -&gt; None:
+    26→    """Fetch PR commits using REST API (avoids GraphQL rate limits)."""
+    27→    cwd = require_cwd(ctx)
+    28→
+    29→    # Use gh api to get commits from REST API
+    30→    # The endpoint is /repos/{owner}/{repo}/pulls/{pull_number}/commits
+
+... [42 lines omitted] ...
+
+    44→    except RuntimeError as e:
+    49→                    "error": f"Failed to get commits for PR #{pr_number}: {e}",
+  </tool_result>
+  <assistant>Perfect! Now let me check one more simple script to see the minimal pattern:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="1445" cache_read_input_tokens="51117" cache_creation="{'ephemeral_5m_input_tokens': 1445, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Qd3rMqC1fTq6wXXFAbJTBH">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/detect_trunk_branch.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1445" cache_read_input_tokens="51117" cache_creation="{'ephemeral_5m_input_tokens': 1445, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Qd3rMqC1fTq6wXXFAbJTBH">
+     1→#!/usr/bin/env python3
+     2→"""Detect whether repo uses `main` or `master` as trunk branch.
+     3→
+     4→This command checks the remote (origin) for the existence of trunk branches,
+     5→suitable for CI environments where local branches may not be available.
+     6→
+     7→This replaces bash-based detection in GitHub Actions workflows:
+     8→```bash
+     9→if git ls-remote --heads origin main | grep -q main; then
+    10→  echo "trunk_branch=main"
+    11→elif git ls-remote --heads origin master | grep -q master; then
+    12→  echo "trunk_branch=master"
+    13→else
+    14→  exit 1
+    15→fi
+    16→```
+    17→
+    18→Usage:
+    19→    erk exec detect-trunk-branch
+    20→
+    21→Output:
+    22→    JSON object with success status and detected trunk branch
+    23→
+    24→Exit Codes:
+    25→    0: Success (trunk branch detected)
+    26→    1: Error (neither main nor master exists on remote)
+    27→
+    28→Examples:
+    29→    $ erk exec detect-trunk-branch
+    30→    {
+
+... [97 lines omitted] ...
+
+    44→      "error": "trunk_not_found",
+    69→class DetectionError:
+    70→    """Error result when trunk branch cannot be detected."""
+    73→    error: Literal["trunk-not-found", "git-error"]
+    77→def _detect_trunk_branch_impl(git: Git, repo_root: Path) -&gt; DetectedTrunk | DetectionError:
+    80→    Checks origin remote for 'main' first, then 'master'. Returns error
+    88→        DetectedTrunk on success, DetectionError if neither branch found
+    96→    return DetectionError(
+    98→        error="trunk-not-found",
+   109→    Checks for 'main' first, then 'master'. Exits with error if neither exists.
+   119→    # Exit with error code if detection failed
+   120→    if isinstance(result, DetectionError):
+  </tool_result>
+  <assistant>Excellent! Now I have all the information I need. Let me compile a comprehensive report for you.
+
+## Summary: Key Patterns for Exec Scripts
+
+I've thoroughly reviewed the existing exec script patterns and related modules. Here are the key patterns you need to follow:
+
+### 1. **Exec Script Click Command Structure**
+
+**Pattern** (from `detect_trunk_branch.py`, `get_pr_body_footer.py`, etc.):
+- Use `@click.command(name="kebab-case-command")` decorator
+- Always use `@click.pass_context` 
+- Function signature: `def my_command(ctx: click.Context, *, param1: Type, ...) -&gt; None:`
+- Extract dependencies from context using `require_*` helpers
+- Output results to stdout with `click.echo()` and errors to stderr with `click.echo(..., err=True)`
+- Use `raise SystemExit(1)` for errors, exit cleanly for success
+
+**Example** (from `detect_trunk_branch.py`, lines 103-121):
+```python
+@click.command(name="detect-trunk-branch")
+@click.pass_context
+def detect_trunk_branch(ctx: click.Context) -&gt; None:
+    """Command docstring."""
+    git = require_git(ctx)
+    repo_root = require_repo_root(ctx)
+    result = _detect_trunk_branch_impl(git, repo_root)
+    click.echo(json.dumps(asdict(result), indent=2))
+    if isinstance(result, DetectionError):
+        raise SystemExit(1)
+```
+
+### 2. **output_filter.py Module Functions**
+
+**Location:** `/home/runner/work/erk/erk/src/erk/core/output_filter.py`
+
+Key functions you'll use:
+- **`extract_text_content(message: dict) -&gt; str | None`** (lines 12-40) - Extracts text from assistant message dicts in stream-json format
+- **`summarize_tool_use(tool_use: dict, worktree_path: Path) -&gt; str | None`** (lines 43-115) - Creates brief summaries for tool invocations (suppresses Read/Glob/Grep, summarizes Edit/Write/Bash/SlashCommand)
+- **`extract_pr_url(tool_result_content: str) -&gt; str | None`** (lines 142-176) - Parses PR URL from JSON tool results
+- **`extract_pr_metadata(tool_result_content: str) -&gt; dict[str, str | int | None]`** (lines 179-218) - Extracts pr_url, pr_number, pr_title from JSON
+- **`extract_pr_metadata_from_text(text: str) -&gt; dict[str, str | int | None]`** (lines 221-285) - Extracts PR metadata from agent text output using regex patterns
+
+These functions use LBYL pattern (check `isinstance()` before using values), never raise exceptions, and return None/empty dicts for missing data.
+
+### 3. **Exec Script Registration**
+
+**Pattern** (from `group.py`, lines 189-289):
+- Scripts are **statically registered** (not dynamically discovered)
+- Each script is imported at top of `group.py`
+- Added to group via: `exec_group.add_command(function_name, name="command-name")`
+- Command names use **kebab-case** (e.g., `"ci-generate-summaries"`)
+- Registration is at module level, not in a function
+
+### 4. **Context Dependency Injection Pattern**
+
+**From AGENTS.md** (in `src/erk/cli/commands/exec/scripts/`):
+- All exec commands MUST use `@click.pass_context`
+- Extract dependencies via `require_*` helpers from `erk_shared.context.helpers`:
+  - `require_cwd(ctx)` → `Path`
+  - `require_repo_root(ctx)` → `Path`
+  - `require_git(ctx)` → `Git` interface
+  - `require_github(ctx)` → `GitHub` interface
+  - `require_prompt_executor(ctx)` → `PromptExecutor` for Claude calls
+
+**Why:** Enables testability without filesystem manipulation or monkeypatching.
+
+### 5. **GitHub REST API Pattern**
+
+**From `ci_generate_summaries.py` and `get_pr_commits.py`**:
+- Use `gh api` via `run_subprocess_with_context()` for REST API calls
+- Use `gh api repos/{owner}/{repo}/...` pattern
+- `{owner}` and `{repo}` are auto-substituted by gh CLI from current directory
+- Always use `--jq` for filtering/transforming response JSON
+- Example (lines 359-363 of `ci_generate_summaries.py`):
+```python
+result = run_subprocess_with_context(
+    cmd=[
+        "gh",
+        "api",
+        "repos/{owner}/{repo}/actions/runs/" + run_id + "/jobs",
+        "--paginate",
+        "--jq",
+        '.jobs[] | select(.conclusion == "failure") | "\\(.id)\\t\\(.name)"',
+    ],
+    operation_context="fetch failing jobs",
+    cwd=cwd,
+    check=False,
+)
+```
+
+### 6. **Test Pattern for Exec Scripts**
+
+**Location:** `tests/unit/cli/commands/exec/scripts/`
+
+**Pattern** (from `test_add_plan_label.py` and `test_ci_generate_summaries.py`):
+- Use `CliRunner` from Click testing
+- Inject dependencies via `obj=context_for_test(...)` parameter to `runner.invoke()`
+- Test pure functions separately from CLI command
+- Use fakes: `FakeLocalGitHub()`, `FakeTime()`, `PlannedPRBackend()`
+
+Example (from `test_add_plan_label.py`, lines 22-50):
+```python
+def test_add_plan_label_success() -&gt; None:
+    fake_github = FakeLocalGitHub()
+    backend = PlannedPRBackend(fake_github, fake_github.issues, time=FakeTime())
+    
+    create_result = backend.create_plan(
+        repo_root=Path("/repo"),
+        title="Test Plan",
+        content="Plan body",
+        labels=("erk-pr",),
+        metadata={"branch_name": "test-branch-label"},
+        summary=None,
+    )
+    
+    runner = CliRunner()
+    result = runner.invoke(
+        add_plan_label,
+        [create_result.pr_id, "--label", "erk-consolidated"],
+        obj=context_for_test(
+            github=fake_github,
+            plan_store=backend,
+        ),
+    )
+    
+    assert result.exit_code == 0
+    output = json.loads(result.output)
+    assert output["success"] is True
+```
+
+**Test pure functions separately** (from `test_ci_generate_summaries.py`, lines 21-127):
+- Extract logic to pure functions like `_parse_failing_jobs()`, `_truncate_logs()`, `_build_summary_prompt()`
+- Test these with direct function calls, not via CLI runner
+- Only test CLI integration for core logic that cannot be unit-tested
+
+### 7. **JSON Output Pattern**
+
+All exec scripts output JSON for machine consumption:
+```python
+click.echo(json.dumps({
+    "success": True,
+    "pr_number": pr_number,
+    "commits": commits,
+}))
+```
+
+Use `indent=2` for readability when appropriate. Progress/debug info goes to stderr with `err=True`.
+
+### 8. **Error Handling Pattern (LBYL)**
+
+From `output_filter.py` - the codebase uses LBYL (Look Before You Leap), never EAFP:
+```python
+# ✅ CORRECT - LBYL pattern
+content = message.get("content", [])
+if not isinstance(content, list):
+    return None
+
+text_parts: list[str] = []
+for item in content:
+    if isinstance(item, dict) and item.get("type") == "text":
+        text = item.get("text")
+        if isinstance(text, str) and text.strip():
+            text_parts.append(text.strip())
+
+# ❌ WRONG - EAFP pattern (never used in this codebase)
+# try:
+#     return content[0]["text"]
+# except (KeyError, IndexError, TypeError):
+#     return None
+```
+
+### 9. **Files to Use as Templates**
+
+- **Simple command:** `/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/detect_trunk_branch.py` (logic + CLI)
+- **Subprocess integration:** `/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/ci_generate_summaries.py` (subprocess via `run_subprocess_with_context`)
+- **REST API pattern:** `/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/get_pr_commits.py` (gh api calls)
+- **Tests:** `/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_add_plan_label.py` (context injection) and `test_ci_generate_summaries.py` (pure function tests)
+- **Output filtering:** `/home/runner/work/erk/erk/src/erk/core/output_filter.py` (text/metadata extraction from stream-json)
+
+### Key Tripwires from docs/learned/
+
+For your implementation:
+- **Dependency Injection:** Exec scripts MUST use Click context dependency injection via `require_*()` helpers
+- **LBYL Error Handling:** Never use try/except for control flow; always check types first
+- **Subprocess Wrapper:** Use `run_subprocess_with_context()` for shell commands (never raw `subprocess`)
+- **GitHub REST API:** Use `gh api` for REST endpoints; preferred over GraphQL when rate limits matter
+- **Tests:** Use context injection via `context_for_test()`, fakes for all dependencies
+
+This gives you a solid foundation for implementing your debug-impl-run exec script!</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="1563" cache_read_input_tokens="52562" cache_creation="{'ephemeral_5m_input_tokens': 1563, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+</session>
