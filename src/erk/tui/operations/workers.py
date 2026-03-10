@@ -486,7 +486,7 @@ class BackgroundWorkersMixin:
         """Cancel workflow run in background thread with toast."""
         result = self._run_streaming_operation(
             op_id=op_id,
-            command=["erk", "run", "cancel", run_id],
+            command=["erk", "workflow", "run", "cancel", run_id],
         )
         self.call_from_thread(self._finish_operation, op_id=op_id)
         if result.success:
@@ -504,7 +504,7 @@ class BackgroundWorkersMixin:
     @work(thread=True)
     def _retry_run_async(self: ErkDashApp, op_id: str, run_id: str, *, failed_only: bool) -> None:
         """Retry workflow run in background thread with toast."""
-        command = ["erk", "run", "retry", run_id]
+        command = ["erk", "workflow", "run", "retry", run_id]
         if failed_only:
             command.append("--failed")
         result = self._run_streaming_operation(
