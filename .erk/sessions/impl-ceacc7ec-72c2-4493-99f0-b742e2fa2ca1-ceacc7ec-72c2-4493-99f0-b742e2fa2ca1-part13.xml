@@ -1,0 +1,627 @@
+<session>
+  <meta source="agent-aed167b" />
+  <meta branch="plnd/create-erk-tui-skill-03-10-0421" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant docs before exploring raw files. Then explore codebase as necessary.
+
+I need to understand the existing skill structure to create a new `erk-tui` skill. Please:
+
+1. Read the SKILL.md from an existing skill like `.claude/skills/fake-driven-testing/SKILL.md` to understand the format and structure
+2. Read `src/erk/capabilities/skills/bundled.py` to see the _UNBUNDLED_SKILLS frozenset and how skills are registered
+3. Read a few of the reference files from an existing skill (e.g., `.claude/skills/fake-driven-testing/references/`) to understand the reference file format
+4. List all files in `.claude/skills/` to see what skills already exist
+
+Return the full content of the SKILL.md template, the bundled.py registration code, and the reference file format.</user>
+  <assistant>I'll help you understand the skill structure by examining existing skills and the registration system. Let me start by searching for the relevant documentation and files.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="15225" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15225, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01VXZTd9xKLAbrtFEhps97vD">
+    <param name="pattern">.claude/skills/*/SKILL.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15225" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15225, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_012voFMNJeGh9tzHEaZH7XZt">
+    <param name="command">ls -la /home/runner/work/erk/erk/.claude/skills/</param>
+    <param name="description">List all skills in .claude/skills/</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15225" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15225, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_013e7CkdoaQcBwDJa5DpstDC">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/capabilities/skills/bundled.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15225" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15225, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013e7CkdoaQcBwDJa5DpstDC">
+     1→"""Bundled skill capabilities — cached factory.
+     2→
+     3→All simple skill capabilities (those that only need a name and description)
+     4→are registered here. The dict is created lazily via a cached function to
+     5→avoid module-import-time allocation.
+     6→
+     7→Skills with custom install/uninstall logic (like learned-docs) are NOT here;
+     8→they have their own capability classes.
+     9→"""
+    10→
+    11→from functools import cache
+    12→
+    13→from erk.core.capabilities.codex_portable import codex_portable_skills
+    14→from erk.core.capabilities.skill_capability import SkillCapability
+    15→from erk_shared.context.types import AgentBackend
+    16→
+    17→_UNBUNDLED_SKILLS: frozenset[str] = frozenset(
+    18→    {
+    19→        "ci-iteration",
+    20→        "cli-skill-creator",
+    21→        "cmux",
+    22→        "command-creator",
+    23→        "learned-docs",  # has its own capability class (LearnedDocsCapability)
+    24→        "refac-cli-push-down",
+    25→        "refac-mock-to-fake",
+    26→        "refac-module-to-subpackage",
+    27→        "rename-swarm",
+    28→        "session-inspector",
+    29→        "erk-skill-onboarding",
+    30→        "skill-creator",
+
+... [80 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01VXZTd9xKLAbrtFEhps97vD">
+/home/runner/work/erk/erk/.claude/skills/ci-iteration/SKILL.md
+/home/runner/work/erk/erk/.claude/skills/cli-skill-creator/SKILL.md
+/home/runner/work/erk/erk/.claude/skills/cmux/SKILL.md
+/home/runner/work/erk/erk/.claude/skills/command-creator/SKILL.md
+/home/runner/work/erk/erk/.claude/skills/dignified-code-simplifier/SKILL.md
+/home/runner/work/erk/erk/.claude/skills/dignified-python/SKILL.md
+/home/runner/work/erk/erk/.claude/skills/erk-diff-analysis/SKILL.md
+/home/runner/work/erk/erk/.claude/skills/erk-exec/SKILL.md
+/home/runner/work/erk/erk/.claude/skills/erk-planning/SKILL.md
+/home/runner/work/erk/erk/.claude/skills/erk-skill-onboarding/SKILL.md
+/home/runner/work/erk/erk/.claude/skills/fake-driven-testing/SKILL.md
+/home/runner/work/erk/erk/.claude/skills/gh/SKILL.md
+/home/runner/work/erk/erk/.claude/skills/gt/SKILL.md
+/home/runner/work/erk/erk/.claude/skills/learned-docs/SKILL.md
+/home/runner/work/erk/erk/.claude/skills/objective/SKILL.md
+/home/runner/work/erk/erk/.claude/skills/pr-feedback-classifier/SKILL.md
+/home/runner/work/erk/erk/.claude/skills/pr-operations/SKILL.md
+/home/runner/work/erk/erk/.claude/skills/refac-cli-push-down/SKILL.md
+/home/runner/work/erk/erk/.claude/skills/refac-mock-to-fake/SKILL.md
+/home/runner/work/erk/erk/.claude/skills/refac-module-to-subpackage/SKILL.md
+/home/runner/work/erk/erk/.claude/skills/session-inspector/SKILL.md
+/home/runner/work/erk/erk/.claude/skills/rename-swarm/SKILL.md
+/home/runner/work/erk/erk/.claude/skills/skill-creator/SKILL.md
+  </tool_result>
+  <tool_result tool="toolu_012voFMNJeGh9tzHEaZH7XZt">
+total 100
+drwxr-xr-x 25 runner runner 4096 Mar 10 08:24 .
+drwxr-xr-x  6 runner runner 4096 Mar 10 08:24 ..
+drwxr-xr-x  2 runner runner 4096 Mar 10 08:24 ci-iteration
+drwxr-xr-x  3 runner runner 4096 Mar 10 08:24 cli-skill-creator
+drwxr-xr-x  3 runner runner 4096 Mar 10 08:24 cmux
+drwxr-xr-x  3 runner runner 4096 Mar 10 08:24 command-creator
+drwxr-xr-x  2 runner runner 4096 Mar 10 08:24 dignified-code-simplifier
+drwxr-xr-x  4 runner runner 4096 Mar 10 08:24 dignified-python
+drwxr-xr-x  3 runner runner 4096 Mar 10 08:24 erk-diff-analysis
+drwxr-xr-x  2 runner runner 4096 Mar 10 08:24 erk-exec
+drwxr-xr-x  3 runner runner 4096 Mar 10 08:24 erk-planning
+drwxr-xr-x  2 runner runner 4096 Mar 10 08:24 erk-skill-onboarding
+drwxr-xr-x  3 runner runner 4096 Mar 10 08:24 fake-driven-testing
+drwxr-xr-x  3 runner runner 4096 Mar 10 08:24 gh
+drwxr-xr-x  3 runner runner 4096 Mar 10 08:24 gt
+drwxr-xr-x  2 runner runner 4096 Mar 10 08:24 learned-docs
+drwxr-xr-x  3 runner runner 4096 Mar 10 08:24 objective
+drwxr-xr-x  2 runner runner 4096 Mar 10 08:24 pr-feedback-classifier
+drwxr-xr-x  3 runner runner 4096 Mar 10 08:24 pr-operations
+drwxr-xr-x  2 runner runner 4096 Mar 10 08:24 refac-cli-push-down
+drwxr-xr-x  2 runner runner 4096 Mar 10 08:24 refac-mock-to-fake
+drwxr-xr-x  2 runner runner 4096 Mar 10 08:24 refac-module-to-subpackage
+drwxr-xr-x  2 runner runner 4096 Mar 10 08:24 rename-swarm
+drwxr-xr-x  3 runner runner 4096 Mar 10 08:24 session-inspector
+drwxr-xr-x  7 runner runner 4096 Mar 10 08:24 skill-creator
+  </tool_result>
+  <assistant>Now let me read the SKILL.md template from fake-driven-testing and look at its reference structure:</assistant>
+  <usage input_tokens="1415" cache_creation_input_tokens="1732" cache_read_input_tokens="15225" cache_creation="{'ephemeral_5m_input_tokens': 1732, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_014F3rEEkmUzB7jff5oaeoro">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/skills/fake-driven-testing/SKILL.md</param>
+  </tool_use>
+  <usage input_tokens="1415" cache_creation_input_tokens="1732" cache_read_input_tokens="15225" cache_creation="{'ephemeral_5m_input_tokens': 1732, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01EuMxvQvSsffRDC2vDunB8f">
+    <param name="command">ls -la /home/runner/work/erk/erk/.claude/skills/fake-driven-testing/</param>
+    <param name="description">List files in fake-driven-testing skill</param>
+  </tool_use>
+  <usage input_tokens="1415" cache_creation_input_tokens="1732" cache_read_input_tokens="15225" cache_creation="{'ephemeral_5m_input_tokens': 1732, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01WKR5p41FRp2smm653hxhQS">
+    <param name="command">ls -la /home/runner/work/erk/erk/.claude/skills/fake-driven-testing/references/</param>
+    <param name="description">List reference files in fake-driven-testing</param>
+  </tool_use>
+  <usage input_tokens="1415" cache_creation_input_tokens="1732" cache_read_input_tokens="15225" cache_creation="{'ephemeral_5m_input_tokens': 1732, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014F3rEEkmUzB7jff5oaeoro">
+     1→---
+     2→name: fake-driven-testing
+     3→description:
+     4→  This skill should be used when writing tests, fixing bugs, adding features,
+     5→  or modifying the gateway layer. Use when you need guidance on testing architecture,
+     6→  working with fakes, implementing ABC gateway interfaces, or understanding the defense-in-depth
+     7→  testing strategy. Essential for maintaining test quality and understanding where
+     8→  different types of tests belong.
+     9→---
+    10→
+    11→# Fake-Driven Testing Architecture for Python
+    12→
+    13→**Use this skill when**: Writing tests, fixing bugs, adding features, or modifying gateway layers in Python projects.
+    14→
+    15→**Prerequisites**: For Python code standards, load the `dignified-python-313` skill first. This skill focuses on testing architecture, not Python syntax.
+    16→
+    17→## Overview
+    18→
+    19→This skill provides a **defense-in-depth testing strategy** with five layers for Python applications:
+    20→
+    21→```
+    22→┌─────────────────────────────────────────────────┐
+    23→│  Layer 5 "smoke": Business Logic Integration Tests (5%)  │  ← Smoke tests over real system
+    24→├─────────────────────────────────────────────────┤
+    25→│  Layer 4 "logic": Business Logic Tests (70%)             │  ← Tests over fakes (MOST TESTS)
+    26→├─────────────────────────────────────────────────┤
+    27→│  Layer 3 "pure": Pure Unit Tests (10%)                   │  ← Zero dependencies, isolated testing
+    28→├─────────────────────────────────────────────────┤
+    29→│  Layer 2 "real-sanity": Integration Sanity Tests (10%)   │  ← Fast validation with mocking
+    30→├─────────────────────────────────────────────────┤
+
+... [325 lines omitted] ...
+
+   162→- Error injection pattern
+   283→│ │ Purpose: Quick validation, catch syntax errors           │ │
+  </tool_result>
+  <tool_result tool="toolu_01EuMxvQvSsffRDC2vDunB8f">
+total 32
+drwxr-xr-x  3 runner runner  4096 Mar 10 08:24 .
+drwxr-xr-x 25 runner runner  4096 Mar 10 08:24 ..
+-rw-r--r--  1 runner runner 16668 Mar 10 08:24 SKILL.md
+drwxr-xr-x  2 runner runner  4096 Mar 10 08:24 references
+  </tool_result>
+  <tool_result tool="toolu_01WKR5p41FRp2smm653hxhQS">
+total 172
+drwxr-xr-x 2 runner runner  4096 Mar 10 08:24 .
+drwxr-xr-x 3 runner runner  4096 Mar 10 08:24 ..
+-rw-r--r-- 1 runner runner 26072 Mar 10 08:24 anti-patterns.md
+-rw-r--r-- 1 runner runner 18818 Mar 10 08:24 gateway-architecture.md
+-rw-r--r-- 1 runner runner 27768 Mar 10 08:24 patterns.md
+-rw-r--r-- 1 runner runner 22406 Mar 10 08:24 python-specific.md
+-rw-r--r-- 1 runner runner 18872 Mar 10 08:24 quick-reference.md
+-rw-r--r-- 1 runner runner 19991 Mar 10 08:24 testing-strategy.md
+-rw-r--r-- 1 runner runner 22570 Mar 10 08:24 workflows.md
+  </tool_result>
+  <assistant>Now let me read a couple of reference files from fake-driven-testing and check another simpler skill:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="7316" cache_read_input_tokens="16957" cache_creation="{'ephemeral_5m_input_tokens': 7316, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Sgdj5JjQKrhZfxcCohtqRL">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/skills/fake-driven-testing/references/quick-reference.md</param>
+    <param name="limit">80</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="7316" cache_read_input_tokens="16957" cache_creation="{'ephemeral_5m_input_tokens': 7316, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Ae6XCvQFedcRCTxeBKrQrm">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/skills/erk-planning/SKILL.md</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="7316" cache_read_input_tokens="16957" cache_creation="{'ephemeral_5m_input_tokens': 7316, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01Ws1VFPDfg8QDqSkVchThqu">
+    <param name="command">ls -la /home/runner/work/erk/erk/.claude/skills/erk-planning/</param>
+    <param name="description">List files in erk-planning skill</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="7316" cache_read_input_tokens="16957" cache_creation="{'ephemeral_5m_input_tokens': 7316, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Sgdj5JjQKrhZfxcCohtqRL">
+     1→---
+     2→name: fake-driven-testing-quick-reference
+     3→description: Quick lookup for file locations, fixtures, and example tests
+     4→---
+     5→
+     6→# Quick Reference
+     7→
+     8→**Read this when**: You need a quick lookup for file locations, fixtures, or example tests.
+     9→
+    10→## Decision Tree: Where Should I Add My Test?
+    11→
+    12→```
+    13→┌─ I need to test...
+    14→│
+    15→├─ A NEW FEATURE or BUG FIX WITH EXTERNAL DEPENDENCIES
+    16→│  └─&gt; Layer 4 "logic": tests/unit/ or tests/services/ (over fakes) ← START HERE
+    17→│     Example: tests/services/test_user_service.py
+    18→│
+    19→├─ A PURE UTILITY/HELPER WITH NO DEPENDENCIES
+    20→│  └─&gt; Layer 3 "pure": tests/unit/ (pure unit tests, no fakes/mocks)
+    21→│     Example: tests/unit/test_string_utils.py
+    22→│
+    23→├─ A FAKE IMPLEMENTATION (test infrastructure)
+    24→│  └─&gt; Layer 1 "fake-check": tests/unit/fakes/test_fake_*.py
+    25→│     Example: tests/unit/fakes/test_fake_database.py
+    26→│
+    27→├─ A REAL IMPLEMENTATION (code coverage with mocks)
+    28→│  └─&gt; Layer 2 "real-sanity": tests/integration/test_real_*.py
+    29→│     Example: tests/integration/test_real_database.py
+    30→│
+
+... [55 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01Ae6XCvQFedcRCTxeBKrQrm">
+     1→---
+     2→name: erk-planning
+     3→description: &gt;
+     4→  This skill documents plan management in erk. Use when creating, updating,
+     5→  or working with erk-plan GitHub PRs. Covers plan structure, the planning
+     6→  workflow, and when to update vs create new plans.
+     7→---
+     8→
+     9→# Erk Planning Skill
+    10→
+    11→## When to Load
+    12→
+    13→Load this skill when user mentions:
+    14→
+    15→- "update plan", "update the plan"
+    16→- "modify the plan", "change the plan"
+    17→- "edit the plan"
+    18→
+    19→**When these triggers fire and a plan was saved in this session:**
+    20→
+    21→1. Check for `plan-saved-issue.marker` in session scratch:
+    22→   ```bash
+    23→   erk exec marker read --session-id &lt;session-id&gt; plan-saved-issue
+    24→   ```
+    25→2. If found (exit code 0), invoke `/local:plan-update &lt;issue-number&gt;` with the marker content
+    26→3. If not found (exit code 1), ask user for issue number
+    27→
+    28→## Overview
+    29→
+    30→Erk-plans are GitHub PRs that track implementation plans. They have a two-part structure:
+
+... [128 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01Ws1VFPDfg8QDqSkVchThqu">
+total 20
+drwxr-xr-x  3 runner runner 4096 Mar 10 08:24 .
+drwxr-xr-x 25 runner runner 4096 Mar 10 08:24 ..
+-rw-r--r--  1 runner runner 4314 Mar 10 08:24 SKILL.md
+drwxr-xr-x  2 runner runner 4096 Mar 10 08:24 references
+  </tool_result>
+  <assistant>Let me check one more simpler skill to see the variation, and also look at the TUI-related documentation:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="3562" cache_read_input_tokens="24273" cache_creation="{'ephemeral_5m_input_tokens': 3562, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_015WxgJYu2ytmxuxYYgP6Gt8">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/skills/dignified-python/SKILL.md</param>
+    <param name="limit">60</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="3562" cache_read_input_tokens="24273" cache_creation="{'ephemeral_5m_input_tokens': 3562, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01YMvNLaVWQa8FG6iHAYHMXo">
+    <param name="command">ls -la /home/runner/work/erk/erk/.claude/skills/dignified-python/</param>
+    <param name="description">List files in dignified-python skill</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="3562" cache_read_input_tokens="24273" cache_creation="{'ephemeral_5m_input_tokens': 3562, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01GndGhoPFoLepSYwkGDV8vG">
+    <param name="command">ls -la /home/runner/work/erk/erk/docs/learned/tui/</param>
+    <param name="description">List TUI documentation</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="3562" cache_read_input_tokens="24273" cache_creation="{'ephemeral_5m_input_tokens': 3562, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_015WxgJYu2ytmxuxYYgP6Gt8">
+     1→---
+     2→name: dignified-python
+     3→description: Python coding standards with automatic version detection.
+     4→  Use when writing, reviewing, or refactoring Python to ensure adherence to LBYL exception
+     5→  handling patterns, modern type syntax (list[str], str | None), pathlib operations,
+     6→  ABC-based interfaces, absolute imports, and explicit error boundaries at CLI level.
+     7→  Also provides production-tested code smell patterns from Dagster Labs for API design,
+     8→  parameter complexity, and code organization. Essential for maintaining erk's dignified
+     9→  Python standards.
+    10→---
+    11→
+    12→# Dignified Python Coding Standards
+    13→
+    14→## Core Knowledge (ALWAYS Loaded)
+    15→
+    16→@dignified-python-core.md
+    17→
+    18→## Version Detection
+    19→
+    20→**Identify the project's minimum Python version** by checking (in order):
+    21→
+    22→1. `pyproject.toml` - Look for `requires-python` field (e.g., `requires-python = "&gt;=3.12"`)
+    23→2. `setup.py` or `setup.cfg` - Look for `python_requires`
+    24→3. `.python-version` file - Contains version like `3.12` or `3.12.0`
+    25→4. Default to Python 3.12 if no version specifier found
+    26→
+    27→**Once identified, load the appropriate version-specific file:**
+    28→
+    29→- Python 3.10: Load `versions/python-3.10.md`
+    30→- Python 3.11: Load `versions/python-3.11.md`
+
+... [35 lines omitted] ...
+
+    47→### `references/exception-handling.md`
+  </tool_result>
+  <tool_result tool="toolu_01YMvNLaVWQa8FG6iHAYHMXo">
+total 44
+drwxr-xr-x  4 runner runner  4096 Mar 10 08:24 .
+drwxr-xr-x 25 runner runner  4096 Mar 10 08:24 ..
+-rw-r--r--  1 runner runner  3433 Mar 10 08:24 SKILL.md
+-rw-r--r--  1 runner runner  4006 Mar 10 08:24 cli-patterns.md
+-rw-r--r--  1 runner runner 15545 Mar 10 08:24 dignified-python-core.md
+drwxr-xr-x  2 runner runner  4096 Mar 10 08:24 references
+-rw-r--r--  1 runner runner  2432 Mar 10 08:24 subprocess.md
+drwxr-xr-x  2 runner runner  4096 Mar 10 08:24 versions
+  </tool_result>
+  <tool_result tool="toolu_01GndGhoPFoLepSYwkGDV8vG">
+total 264
+drwxr-xr-x  2 runner runner  4096 Mar 10 08:24 .
+drwxr-xr-x 31 runner runner  4096 Mar 10 08:24 ..
+-rw-r--r--  1 runner runner  7303 Mar 10 08:24 action-inventory.md
+-rw-r--r--  1 runner runner  4987 Mar 10 08:24 adding-commands.md
+-rw-r--r--  1 runner runner 10359 Mar 10 08:24 architecture.md
+-rw-r--r--  1 runner runner  2591 Mar 10 08:24 async-action-refresh-pattern.md
+-rw-r--r--  1 runner runner  3244 Mar 10 08:24 async-state-snapshot.md
+-rw-r--r--  1 runner runner  2702 Mar 10 08:24 clipboard-text-generation.md
+-rw-r--r--  1 runner runner  5592 Mar 10 08:24 column-addition-pattern.md
+-rw-r--r--  1 runner runner  5597 Mar 10 08:24 command-execution.md
+-rw-r--r--  1 runner runner  3300 Mar 10 08:24 command-palette.md
+-rw-r--r--  1 runner runner  4865 Mar 10 08:24 dashboard-columns.md
+-rw-r--r--  1 runner runner 17231 Mar 10 08:24 data-contract.md
+-rw-r--r--  1 runner runner  2085 Mar 10 08:24 derived-display-columns.md
+-rw-r--r--  1 runner runner  7787 Mar 10 08:24 dual-handler-pattern.md
+-rw-r--r--  1 runner runner  3630 Mar 10 08:24 filter-pipeline.md
+-rw-r--r--  1 runner runner  3351 Mar 10 08:24 filter-toggle-pattern.md
+-rw-r--r--  1 runner runner  3024 Mar 10 08:24 frozen-dataclass-field-management.md
+-rw-r--r--  1 runner runner  7426 Mar 10 08:24 index.md
+-rw-r--r--  1 runner runner  3167 Mar 10 08:24 keyboard-shortcuts.md
+-rw-r--r--  1 runner runner  3604 Mar 10 08:24 lifecycle-display.md
+-rw-r--r--  1 runner runner  4769 Mar 10 08:24 modal-screen-pattern.md
+-rw-r--r--  1 runner runner  2898 Mar 10 08:24 modal-widget-embedding.md
+-rw-r--r--  1 runner runner  4333 Mar 10 08:24 multi-operation-tracking.md
+-rw-r--r--  1 runner runner  2432 Mar 10 08:24 one-shot-prompt-modal.md
+-rw-r--r--  1 runner runner 13560 Mar 10 08:24 plan-row-data.md
+-rw-r--r--  1 runner runner  4090 Mar 10 08:24 plan-title-rendering-pipeline.md
+-rw-r--r--  1 runner runner  4771 Mar 10 08:24 runs-tab-architecture.md
+-rw-r--r--  1 runner runner  3470 Mar 10 08:24 stacked-pr-indicator.md
+
+... [10 lines omitted] ...
+  </tool_result>
+  <assistant>Perfect! Now let me also check the TUI tripwires to understand TUI-specific patterns:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="2844" cache_read_input_tokens="27835" cache_creation="{'ephemeral_5m_input_tokens': 2844, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_016tVa6wXTyv1RTZSQJ8m1Yj">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/tripwires.md</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="2844" cache_read_input_tokens="27835" cache_creation="{'ephemeral_5m_input_tokens': 2844, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016tVa6wXTyv1RTZSQJ8m1Yj">
+     1→---
+     2→title: Tui Tripwires
+     3→read_when:
+     4→  - "working on tui code"
+     5→---
+     6→
+     7→&lt;!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY --&gt;
+     8→&lt;!-- Edit source frontmatter, then run 'erk docs sync' to regenerate. --&gt;
+     9→&lt;!-- Generated from tui/*.md frontmatter --&gt;
+    10→
+    11→# Tui Tripwires
+    12→
+    13→Rules triggered by matching actions in code.
+    14→
+    15→**accessing \_status_bar without null guard** → Read [TUI Streaming Output Patterns](streaming-output.md) first. Guard \_status_bar access with `if self._status_bar is not None:` — timing issue during widget lifecycle can cause AttributeError.
+    16→
+    17→**accessing optional gateway fields without null checks in TUI event handlers** → Read [Modal Widget Embedding Pattern](modal-widget-embedding.md) first. Gateway fields like plan_body or objective_content may be None. Always check before accessing in event handlers.
+    18→
+    19→**adding CI check formatting to TUI screens** → Read [TUI Architecture Overview](architecture.md) first. Use src/erk/tui/formatting/ci_checks.py shared module (format_check_line, format_summary_blockquote, format_check_runs) instead of duplicating formatting logic.
+    20→
+    21→**adding a CLI flag that affects behavior without checking TUI command palette** → Read [TUI Command Registration](tui-command-registration.md) first. TUI command palette generates shell commands via src/erk/tui/commands/registry.py. When adding CLI flags that change behavior, check if TUI-generated commands need the flag too.
+    22→
+    23→**adding a DataTable column with add_column(key=...)** → Read [TUI Architecture Overview](architecture.md) first. Column key is a data binding contract — must match data field name. Silent failure when mismatched.
+    24→
+    25→**adding a column to PlanDataTable without updating make_plan_row** → Read [Column Addition Pattern](column-addition-pattern.md) first. Column additions require 5 coordinated changes. See column-addition-pattern.md for the complete checklist.
+    26→
+    27→**adding a command without an availability predicate** → Read [TUI Command Architecture](action-inventory.md) first. Every command needs an is_available predicate based on PlanRowData field presence. Commands without predicates appear when they can't execute.
+    28→
+    29→**adding a field to PlanRowData without updating make_plan_row** → Read [TUI Data Contract](data-contract.md) first. The fake's make_plan_row() helper must stay in sync. Add the new field with a sensible default there too, or all TUI tests will break.
+    30→
+
+... [75 lines omitted] ...
+
+    35→**adding a new ViewMode without updating VIEW_CONFIGS** → Read [TUI View Switching](view-switching.md) first. Every ViewMode must have a corresponding ViewConfig in VIEW_CONFIGS. Missing configs cause KeyError at runtime.
+    45→**adding a subprocess call to the TUI without stderr inspection** → Read [TUI Subprocess Feedback Patterns](subprocess-feedback.md) first. TUI subprocess calls should inspect stderr for known success/failure markers. See subprocess-feedback.md for the pattern.
+    65→**calling start_operation() without a matching finish_operation() in the error path** → Read [TUI Multi-Operation Tracking](multi-operation-tracking.md) first. Always call finish_operation() in both success and error paths. Use try/finally or explicit error handling. Missing finish calls leave ghost operations in the status bar.
+    75→**constructing PlanFilters without copying all fields from existing filters** → Read [TUI Data Contract](data-contract.md) first. All fields must be explicitly copied in \_load_data() PlanFilters construction. Missing fields (like creator) cause silent filtering failures.
+    89→**extending PlanDataProvider ABC** → Read [TUI Architecture Overview](architecture.md) first. Requires 3-file update: abc.py + real.py + fake.py. Fake must initialize new dict in **init**. Missing init causes AttributeError at test time.
+  </tool_result>
+  <assistant>Perfect! Now I have all the information you need. Let me compile a comprehensive summary of the skill structure:
+
+## Summary: Skill Structure and Registration
+
+I've analyzed the existing skill structure and can provide you with the complete information needed to create the `erk-tui` skill.
+
+### 1. **SKILL.md Template Structure**
+
+Based on `fake-driven-testing/SKILL.md` and other skills, here's the template format:
+
+```yaml
+---
+name: skill-name-kebab-case
+description: &gt;
+  Brief description of what this skill teaches.
+  Use when [specific task/pattern].
+  Include key topics and learning outcomes.
+---
+
+# Skill Title
+
+**Use this skill when**: [Clear trigger conditions]
+
+**Prerequisites**: [Any skills to load first, if any]
+
+## Overview
+
+[High-level introduction to the skill domain - 2-3 paragraphs]
+
+[Key concepts, terminology, visual diagrams if applicable]
+
+## Quick Decision: What Should I Read?
+
+[Decision tree for different use cases - guide users to right reference docs]
+
+## When to Read Each Reference Document
+
+### 📖 `reference-file-1.md`
+
+**Read when**: [Specific conditions/patterns]
+
+**Contents**: [Bulleted list of what's covered]
+
+### 📖 `reference-file-2.md`
+
+[Similar structure]
+
+## Quick Navigation by Task
+
+[Task-based navigation showing which docs to read in what order]
+
+## [Key Principles / Visual Diagrams / Summary]
+
+[Closing section with key takeaways or visual reference]
+```
+
+### 2. **Skill Registration in `bundled.py`**
+
+From `/home/runner/work/erk/erk/src/erk/capabilities/skills/bundled.py`:
+
+```python
+# Lines 17-42: Unbundled and required skills
+_UNBUNDLED_SKILLS: frozenset[str] = frozenset({
+    "ci-iteration",
+    "cli-skill-creator",
+    "cmux",
+    # ... etc - skills NOT bundled with erk
+})
+
+_REQUIRED_BUNDLED_SKILLS: frozenset[str] = frozenset({
+    "erk-diff-analysis",
+    "erk-exec",
+    "objective",
+    "pr-operations",
+    "pr-feedback-classifier",
+})
+
+# Lines 45-60: Dictionary of bundled skills
+@cache
+def bundled_skills() -&gt; dict[str, str]:
+    """Return the bundled skills dict. Cached to avoid re-creation."""
+    return {
+        "dignified-python": "Python coding standards (LBYL, modern types, ABCs)",
+        "fake-driven-testing": "5-layer test architecture with fakes",
+        # ... add new skill here as "skill-name": "short description"
+    }
+```
+
+**To register `erk-tui` as a bundled skill:**
+1. Add `"erk-tui": "TUI development with Textual framework"` to the `bundled_skills()` dict
+2. The skill will automatically become available to users
+3. If it should be required, add `"erk-tui"` to `_REQUIRED_BUNDLED_SKILLS`
+
+### 3. **Reference File Format**
+
+Reference files use YAML frontmatter + Markdown:
+
+```yaml
+---
+name: reference-file-name
+description: Brief one-line description
+---
+
+# Reference Title
+
+**Read this when**: [Conditions for reading]
+
+## [Section 1]
+
+[Content with code examples, decision trees, checklists]
+
+## [Section 2]
+
+[More detailed guidance]
+```
+
+**Examples from `fake-driven-testing/references/`:**
+- `quick-reference.md` - Fast lookup with decision trees
+- `gateway-architecture.md` - Deep dives on concepts
+- `testing-strategy.md` - Guidance on where tests belong
+- `workflows.md` - Step-by-step procedures
+- `patterns.md` - Code pattern implementations
+- `anti-patterns.md` - What to avoid
+
+### 4. **Existing Skills in `.claude/skills/`**
+
+```
+22 skills total:
+
+Bundled Skills (14):
+- dignified-python
+- fake-driven-testing
+- erk-diff-analysis
+- erk-exec
+- erk-planning
+- objective
+- gh
+- gt
+- dignified-code-simplifier
+- pr-operations
+- pr-feedback-classifier
+- (+ 2 more)
+
+Unbundled Skills (not distributed with erk):
+- ci-iteration
+- cli-skill-creator
+- cmux
+- command-creator
+- learned-docs (has custom capability class)
+- refac-cli-push-down
+- refac-mock-to-fake
+- refac-module-to-subpackage
+- rename-swarm
+- session-inspector
+- erk-skill-onboarding
+- skill-creator
+```
+
+### 5. **Skill Directory Structure**
+
+Skills follow a consistent layout:
+
+```
+.claude/skills/skill-name/
+├── SKILL.md                 # Main skill document (frontmatter + content)
+└── references/              # Optional reference documents
+    ├── quick-reference.md   # Quick lookup (if applicable)
+    ├── architecture.md      # Deep concept explanations
+    ├── workflows.md         # Step-by-step procedures
+    ├── patterns.md          # Code examples
+    └── anti-patterns.md     # What to avoid
+```
+
+### 6. **Relevant TUI Documentation Structure**
+
+For the `erk-tui` skill, these docs already exist in `/docs/learned/tui/`:
+- `architecture.md` - TUI system architecture
+- `data-contract.md` - Data model contracts
+- `action-inventory.md` - Command system
+- `command-execution.md` - Command patterns
+- `modal-screen-pattern.md` - Modal dialogs
+- `async-action-refresh-pattern.md` - Async patterns
+- `filter-pipeline.md` - Filtering patterns
+- `keyboard-shortcuts.md` - Keyboard bindings
+- `status-indicators.md` - Display formatting
+- `tripwires.md` - 63 critical rules for TUI development
+
+---
+
+## Key Observations for Your `erk-tui` Skill
+
+1. **Keep SKILL.md focused**: It's a roadmap, not a comprehensive guide. Point to reference documents.
+
+2. **Use reference files for deep dives**: Each reference doc should be independently readable and address one major topic.
+
+3. **Tripwires are critical context**: The TUI tripwires (63 rules in `/docs/learned/tui/tripwires.md`) should inform your skill structure - they're the "gotchas" users need to know.
+
+4. **Registration is simple**: Add one line to `bundled_skills()` dict and you're registered.
+
+5. **Keep structure consistent**: Follow the pattern: SKILL.md with decision tree + targeted reference documents.</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="3645" cache_read_input_tokens="30679" cache_creation="{'ephemeral_5m_input_tokens': 3645, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>

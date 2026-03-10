@@ -1,0 +1,1174 @@
+<session>
+  <meta source="agent-a455792" />
+  <meta branch="plnd/create-erk-tui-skill-03-10-0421" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant docs before exploring raw files. Then explore codebase as necessary.
+
+I need to read all the TUI and Textual source docs to synthesize them into a skill. Please read and summarize the key content from ALL of these docs:
+
+**docs/learned/tui/**:
+- architecture.md
+- adding-commands.md
+- action-inventory.md
+- tui-command-registration.md
+- dual-handler-pattern.md
+- view-aware-commands.md
+- command-execution.md
+- clipboard-text-generation.md
+- command-palette.md
+- column-addition-pattern.md
+- plan-row-data.md
+- dashboard-columns.md
+- data-contract.md
+- derived-display-columns.md
+- frozen-dataclass-field-management.md
+- filter-pipeline.md
+- filter-toggle-pattern.md
+- view-switching.md
+- view-mode-help.md
+
+For each doc, provide:
+1. The key patterns/rules it teaches
+2. Critical tripwires or gotchas
+3. The essential "do this / don't do that" guidance
+
+Focus on distilling the WHY and WHEN, not copying verbatim content.</user>
+  <assistant>I'll read through all the TUI documentation files and synthesize them into a comprehensive summary. Let me start by reading all of these documents in parallel.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="15306" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15306, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01MPqKCX9FuU5dYyvxuyH3EX">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/architecture.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15306" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15306, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01NxHuj7GdW6MECYdkqfD5SW">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/adding-commands.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15306" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15306, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_016wCEEx5qi9XSDi81NX6vmc">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/action-inventory.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15306" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15306, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01LiYkErfd13P1hWjH84knX7">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/tui-command-registration.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15306" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15306, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01WodTWg54jzh9dC59XrsAvg">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/dual-handler-pattern.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15306" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15306, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01JNUNksUJbAiaprLYQtAyQa">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/view-aware-commands.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15306" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15306, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_017xdAWLynr2xWdgo13wBn5r">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/command-execution.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15306" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15306, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01D8s8krsXpWoYbA1CE14YDP">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/clipboard-text-generation.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15306" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15306, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01VJTKYwjsnzQ1AyRgYmJKxE">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/command-palette.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15306" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15306, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01F5mySo6Lmdsx3Ejdbbtkft">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/column-addition-pattern.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15306" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15306, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01WR4MmYsMyJhKxU4rXPAxSZ">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/plan-row-data.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15306" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15306, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01S9szNaLJ9akUSf6AWNnT3M">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/dashboard-columns.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15306" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15306, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Dx7FY6uyyx2GpgsnjkfEZP">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/data-contract.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15306" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15306, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01EsuDmKwqNDB2oSVpdKkHNN">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/derived-display-columns.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15306" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15306, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01XAFMsv5LGzfxoVZnexyAZq">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/frozen-dataclass-field-management.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15306" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15306, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01VUsJFba9uh87BNTtakZzJP">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/filter-pipeline.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15306" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15306, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Y4rmDVp415ayfFdnNXrzZR">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/filter-toggle-pattern.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15306" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15306, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_019y6r5RWVoQW7X2eHzzJ4kD">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/view-switching.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15306" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15306, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01DeSzQEbsoZicoQ7BXpkk6Z">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/view-mode-help.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15306" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15306, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01QVtub7aj7g5GidnTixNmpq">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/textual/tripwires.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15306" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15306, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01MPqKCX9FuU5dYyvxuyH3EX">
+     1→---
+     2→title: TUI Architecture Overview
+     3→read_when:
+     4→  - "understanding TUI structure"
+     5→  - "implementing TUI components"
+     6→  - "working with TUI data providers"
+     7→tripwires:
+     8→  - action: "reusing same DOM element id across loading/empty/content states"
+     9→    warning: "query_one() returns wrong element silently when id is reused across lifecycle phases. Use unique IDs per phase."
+    10→  - action: "calling widget methods directly from @work(thread=True) background threads"
+    11→    warning: "Direct widget calls from background threads cause silent UI corruption. Must use self.app.call_from_thread(callback, ...)."
+    12→  - action: "extending PlanDataProvider ABC"
+    13→    warning: "Requires 3-file update: abc.py + real.py + fake.py. Fake must initialize new dict in __init__. Missing init causes AttributeError at test time."
+    14→  - action: "adding a DataTable column with add_column(key=...)"
+    15→    warning: "Column key is a data binding contract — must match data field name. Silent failure when mismatched."
+    16→  - action: "moving @on decorated event handlers to a mixin"
+    17→    warning: "Textual's _MessagePumpMeta only scans class.__dict__, not inherited methods. Event handlers on mixins are silently ignored."
+    18→  - action: "adding CI check formatting to TUI screens"
+    19→    warning: "Use src/erk/tui/formatting/ci_checks.py shared module (format_check_line, format_summary_blockquote, format_check_runs) instead of duplicating formatting logic."
+    20→last_audited: "2026-02-17 18:30 PT"
+    21→audit_result: clean
+    22→---
+    23→
+    24→# TUI Architecture Overview
+    25→
+    26→The erk TUI is built with Textual and follows a layered architecture separating data fetching, filtering, and rendering.
+    27→
+    28→## Directory Structure
+    29→
+    30→```
+
+... [183 lines omitted] ...
+
+   128→Use fake providers instead of mocking. `FakePlanDataProvider` lives in `tests.fakes.gateway.plan_data_provider` and accepts keyword-only arguments (`plans`, `clipboard`, `browser`, `repo_root`, `fetch_error`). The `make_plan_row()` helper in the same module creates test `PlanRowData` instances with sensible defaults.
+  </tool_result>
+  <tool_result tool="toolu_01NxHuj7GdW6MECYdkqfD5SW">
+     1→---
+     2→title: Adding Commands to TUI
+     3→read_when:
+     4→  - "adding a new command to the TUI command palette"
+     5→  - "implementing TUI actions with streaming output"
+     6→  - "understanding the dual-handler pattern for TUI commands"
+     7→tripwires:
+     8→  - action: "generating TUI commands that depend on optional PlanRowData fields"
+     9→    warning: "Implement three-layer validation: registry predicate, handler guard, app-level helper. Never rely on registry predicate alone."
+    10→last_audited: "2026-02-05 00:00 PT"
+    11→audit_result: edited
+    12→---
+    13→
+    14→# Adding Commands to TUI
+    15→
+    16→## Architecture: The Dual-Handler Pattern
+    17→
+    18→Commands follow a **dual-handler pattern**:
+    19→
+    20→1. **Registry** (`src/erk/tui/commands/registry.py`) — Defines `CommandDefinition` with metadata and availability predicates
+    21→2. **Handlers** — Implement actual logic in two locations:
+    22→   - `ErkDashApp.execute_palette_command()` in `app.py` — Main list context
+    23→   - `PlanDetailScreen.execute_command()` — Detail modal context
+    24→
+    25→Commands need different behavior depending on invocation context. See the actual source files for current command definitions and handler implementations.
+    26→
+    27→## Adding a New Command
+    28→
+    29→1. **Add `CommandDefinition`** to `registry.py` with id, name, description, category, shortcut, availability predicate
+    30→2. **Add handler** in `ErkDashApp.execute_palette_command()` for main list context
+
+... [74 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_016wCEEx5qi9XSDi81NX6vmc">
+     1→---
+     2→title: TUI Command Architecture
+     3→read_when:
+     4→  - "adding a new command to the TUI or desktop dashboard"
+     5→  - "understanding how command availability is determined"
+     6→  - "choosing which execution pattern a new command should use"
+     7→tripwires:
+     8→  - action: "adding a command without an availability predicate"
+     9→    warning: "Every command needs an is_available predicate based on PlanRowData field presence. Commands without predicates appear when they can't execute."
+    10→  - action: "adding an ACTION command that executes instantly"
+    11→    warning: "ACTION category implies mutative operations. Instant operations belong in OPEN or COPY categories."
+    12→last_audited: "2026-02-08 00:00 PT"
+    13→audit_result: edited
+    14→---
+    15→
+    16→# TUI Command Architecture
+    17→
+    18→The TUI command system uses a data-driven registry pattern where commands declare their own availability based on `PlanRowData` field presence. This decouples command definitions from UI rendering, enabling the same registry to serve multiple frontends (TUI command palette, desktop toolbar).
+    19→
+    20→## Why Data-Driven Availability
+    21→
+    22→&lt;!-- Source: src/erk/tui/commands/registry.py, get_all_commands --&gt;
+    23→
+    24→Commands don't check "can I run?" at execution time — they declare upfront what data they need via `is_available` predicates. This design was chosen because:
+    25→
+    26→1. **Multiple consumers need the same logic.** The TUI command palette (`MainListCommandProvider`, `PlanCommandProvider`) and the desktop dashboard toolbar both need to know which actions are valid for a given row. Centralizing predicates in the registry avoids duplicating availability logic across frontends.
+    27→
+    28→2. **Availability depends on `PlanRowData` nullability.** Each `PlanRowData` field is nullable for a reason (no PR yet, no workflow run, etc.). The predicates express which combination of non-null fields a command requires. This makes the availability contract explicit and testable.
+    29→
+    30→3. **Commands that are always available use `lambda _: True`** — these are plan-level operations (close, prepare, dispatch) that only need the issue number, which is always present.
+
+... [67 lines omitted] ...
+
+    58→**Anti-pattern**: Writing `is_available=lambda ctx: True` for a command that uses `ctx.row.pr_number`. The predicate will allow execution when `pr_number` is None, causing a runtime error. This is why the [three-layer null validation](adding-commands.md) pattern exists — the predicate is necessary but not sufficient.
+  </tool_result>
+  <tool_result tool="toolu_01LiYkErfd13P1hWjH84knX7">
+     1→---
+     2→title: TUI Command Registration
+     3→read_when:
+     4→  - "adding a new TUI command to the registry"
+     5→  - "understanding the 3-place coordination pattern for TUI commands"
+     6→  - "working with TUI command categories or display formatters"
+     7→tripwires:
+     8→  - action: "adding a new TUI command without updating all 3 places"
+     9→    warning: "TUI commands require 3-place coordination: registry definition, display formatter, and action inventory. See tui-command-registration.md."
+    10→  - action: "adding a CLI flag that affects behavior without checking TUI command palette"
+    11→    warning: "TUI command palette generates shell commands via src/erk/tui/commands/registry.py. When adding CLI flags that change behavior, check if TUI-generated commands need the flag too."
+    12→---
+    13→
+    14→# TUI Command Registration
+    15→
+    16→Adding a TUI command requires coordinating three places in the codebase.
+    17→
+    18→## 3-Place Coordination Pattern
+    19→
+    20→When adding a command, update all three:
+    21→
+    22→1. **Display formatter**: A `_display_*()` function that generates the display name
+    23→2. **CommandDefinition**: Entry in `get_all_commands()` with id, name, category, availability, and display getter
+    24→3. **Action inventory**: Command appears in the correct category
+    25→
+    26→All definitions are in `src/erk/tui/commands/registry.py`.
+    27→
+    28→## Single Source of Truth: `launch_key` Field
+    29→
+    30→&lt;!-- Source: src/erk/tui/commands/types.py:60 --&gt;
+
+... [75 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01WodTWg54jzh9dC59XrsAvg">
+     1→---
+     2→title: Dual Provider Pattern for Context-Agnostic Commands
+     3→read_when:
+     4→  - "implementing a TUI command that works from both list and detail views"
+     5→  - "understanding how MainListCommandProvider and PlanCommandProvider share commands"
+     6→  - "adding command palette support to a new screen"
+     7→tripwires:
+     8→  - action: "duplicating command definitions for list and detail contexts"
+     9→    warning: "Commands are defined once in the registry. Use a second Provider subclass with its own _get_context() to serve the same commands from a new context."
+    10→  - action: "duplicating execute_palette_command logic between ErkDashApp and PlanDetailScreen"
+    11→    warning: "This duplication is a known trade-off. Both ErkDashApp.execute_palette_command() and PlanDetailScreen.execute_command() implement the same command_id switch because they dispatch to different APIs (provider methods vs executor methods). See the asymmetries section below."
+    12→  - action: "showing toast from a modal screen"
+    13→    warning: "Call self.dismiss() before app-level toasts. Modal blocks the correct z-layer, so toasts must render at app level after modal dismissal."
+    14→last_audited: "2026-02-16 14:20 PT"
+    15→audit_result: clean
+    16→---
+    17→
+    18→# Dual Provider Pattern for Context-Agnostic Commands
+    19→
+    20→The TUI command palette serves the same set of commands from two different UI contexts (main list and plan detail modal) without duplicating command definitions. This is achieved through Textual's `Provider` mechanism: two provider classes share one command registry but resolve `CommandContext` from different sources.
+    21→
+    22→## Why Two Providers, Not Two Registries
+    23→
+    24→The core design question was: when a user opens the command palette from the detail modal, should it show a different set of commands than from the main list? The answer is no — the same operations (open PR, copy checkout, close plan) apply regardless of context. What differs is only _which plan_ the command operates on and _how the command dispatches_.
+    25→
+    26→&lt;!-- Source: src/erk/tui/commands/provider.py, MainListCommandProvider --&gt;
+    27→&lt;!-- Source: src/erk/tui/commands/provider.py, PlanCommandProvider --&gt;
+    28→
+    29→`MainListCommandProvider` resolves context from the table's selected row (`_app._get_selected_row()`), while `PlanCommandProvider` resolves context from the detail screen's `_row` field. Both call the same `get_available_commands()` with the resolved `CommandContext`, so command definitions, availability predicates, and display names are defined exactly once.
+    30→
+
+... [83 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01JNUNksUJbAiaprLYQtAyQa">
+     1→---
+     2→title: View-Aware Command Filtering
+     3→read_when:
+     4→  - "registering a new TUI command with view-mode filtering"
+     5→  - "understanding how commands are filtered by view mode (plans, learn, objectives)"
+     6→  - "adding objective-specific commands to the command palette"
+     7→  - "implementing streaming commands in the TUI"
+     8→tripwires:
+     9→  - action: "registering a new TUI command without a view-mode predicate"
+    10→    warning: "Every command must use _is_plan_view() or _is_objectives_view() to prevent it from appearing in the wrong view. Commands without view predicates appear in all views."
+    11→  - action: "adding streaming commands without using the streaming operation pattern"
+    12→    warning: "Streaming ACTION commands need the streaming operation wrapper with status bar tracking. See streaming-output.md for the current pattern."
+    13→---
+    14→
+    15→# View-Aware Command Filtering
+    16→
+    17→The TUI command palette filters commands by the active view mode. Plan commands appear only in Plans/Learn views; objective commands appear only in the Objectives view. This filtering is implemented through view-mode predicates in the command registry.
+    18→
+    19→## View Mode Predicates
+    20→
+    21→&lt;!-- Source: src/erk/tui/commands/registry.py:21-28 --&gt;
+    22→
+    23→Two predicates partition the command space by view mode:
+    24→
+    25→&lt;!-- See _is_plan_view and _is_objectives_view in src/erk/tui/commands/registry.py:21-28 --&gt;
+    26→
+    27→- `_is_plan_view(ctx)`: Returns `True` when not in Objectives view (i.e., Plans or Learn) — checks `ctx.view_mode != ViewMode.OBJECTIVES`
+    28→- `_is_objectives_view(ctx)`: Returns `True` when in Objectives view — checks `ctx.view_mode == ViewMode.OBJECTIVES`
+    29→
+    30→The `CommandContext.view_mode` field carries the active `ViewMode` enum value. `MainListCommandProvider` reads this dynamically from `self._app._view_mode`, while `PlanCommandProvider` hardcodes `ViewMode.PLANS` since the detail modal is always in plan context.
+
+... [87 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_017xdAWLynr2xWdgo13wBn5r">
+     1→---
+     2→title: Command Execution Strategies
+     3→read_when:
+     4→  - "executing commands in TUI"
+     5→  - "choosing between sync and streaming execution"
+     6→  - "implementing command runners"
+     7→tripwires:
+     8→  - action: "using subprocess.Popen in TUI code without stdin=subprocess.DEVNULL"
+     9→    warning: "Child processes inherit stdin from parent; in TUI context this creates deadlocks when child prompts for user input. Always set `stdin=subprocess.DEVNULL` for TUI subprocess calls."
+    10→last_audited: "2026-02-16 08:00 PT"
+    11→audit_result: clean
+    12→---
+    13→
+    14→# Command Execution Strategies
+    15→
+    16→This guide covers the different strategies for executing commands in erk and when to use each approach.
+    17→
+    18→## Two Strategies
+    19→
+    20→### 1. Streaming Subprocess (Preferred)
+    21→
+    22→**Pattern:** Execute command in subprocess, stream output back to UI in real-time
+    23→
+    24→**Characteristics:**
+    25→
+    26→- Real-time output visibility
+    27→- Non-blocking UI
+    28→- Requires repository context (`repo_root`)
+    29→- Uses background thread for I/O
+    30→- Cross-thread communication with `app.call_from_thread()`
+
+... [165 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01D8s8krsXpWoYbA1CE14YDP">
+     1→---
+     2→title: Clipboard Text Generation
+     3→read_when:
+     4→  - "implementing copy-to-clipboard in the TUI"
+     5→  - "adding a new command that supports clipboard copy"
+     6→  - "debugging why a copy command returns wrong text"
+     7→tripwires:
+     8→  - action: "duplicating display name logic for clipboard text"
+     9→    warning: "Use get_copy_text() from registry.py as the single source of truth for clipboard text. Display name generators in command definitions are the canonical source. Do not duplicate this logic in app.py or detail screens."
+    10→    score: 5
+    11→---
+    12→
+    13→# Clipboard Text Generation
+    14→
+    15→The TUI uses a centralized `get_copy_text()` function to generate clipboard text for copy commands. This eliminates duplication between the main plan list and detail screens.
+    16→
+    17→## Single Source of Truth
+    18→
+    19→&lt;!-- Source: src/erk/tui/commands/registry.py:470, get_copy_text --&gt;
+    20→
+    21→`get_copy_text()` in `src/erk/tui/commands/registry.py:470` maps `(command_id, row, view_mode)` to clipboard text:
+    22→
+    23→```python
+    24→def get_copy_text(command_id: str, row: PlanRowData, view_mode: ViewMode) -&gt; str | None:
+    25→```
+    26→
+    27→It finds the command by ID, checks availability, and delegates to the command's `get_display_name` callback. Returns `None` if the command isn't found, isn't available, or has no display name generator.
+    28→
+    29→## Why Display Name Generators Are Canonical
+    30→
+
+... [32 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01VJTKYwjsnzQ1AyRgYmJKxE">
+     1→---
+     2→title: Textual CommandPalette Guide
+     3→read_when:
+     4→  - "implementing command palette in Textual TUI"
+     5→  - "hiding system commands from command palette"
+     6→  - "get_system_commands method"
+     7→  - "removing Keys Quit Screenshot Theme from palette"
+     8→  - "adding emoji prefixes to command palette entries"
+     9→  - "using CommandCategory for command categorization"
+    10→last_audited: "2026-02-05 00:00 PT"
+    11→audit_result: edited
+    12→---
+    13→
+    14→# Textual CommandPalette Guide
+    15→
+    16→For standard Textual CommandPalette patterns (Providers, Hit/DiscoveryHit, Matcher, async generators, Screen.COMMANDS), consult the [Textual documentation](https://textual.textualize.io/). This doc focuses on erk-specific patterns and a critical Textual pitfall.
+    17→
+    18→## System Commands Pitfall
+    19→
+    20→**CRITICAL:** `get_system_commands` must be overridden on the **App class**, not the Screen class. Textual calls `app.get_system_commands(screen)` when opening the palette — it never calls this method on screens.
+    21→
+    22→```python
+    23→# WRONG — This method is never called by Textual
+    24→class MyModalScreen(ModalScreen):
+    25→    def get_system_commands(self, screen: Screen) -&gt; Iterator[SystemCommand]:
+    26→        return iter(())  # Has no effect!
+    27→
+    28→# CORRECT — Override on App class
+    29→class MyApp(App):
+    30→    def get_system_commands(self, screen: Screen) -&gt; Iterator[SystemCommand]:
+
+... [45 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01F5mySo6Lmdsx3Ejdbbtkft">
+     1→---
+     2→title: Column Addition Pattern
+     3→read_when:
+     4→  - "adding a column to the plan table"
+     5→  - "adding a field to PlanRowData"
+     6→  - "modifying plan_table.py column layout"
+     7→tripwires:
+     8→  - action: "adding a column to PlanDataTable without updating make_plan_row"
+     9→    warning: "Column additions require 5 coordinated changes. See column-addition-pattern.md for the complete checklist."
+    10→  - action: "adding or reordering PlanDataTable columns"
+    11→    warning: "TUI column index cascade: adding or reordering columns invalidates ALL test assertions using column indices. Run a systematic grep for column-index assertions (e.g., row[N]) before and after the change. Update every affected test file."
+    12→    score: 6
+    13→last_audited: "2026-02-16 08:00 PT"
+    14→audit_result: clean
+    15→---
+    16→
+    17→# Column Addition Pattern
+    18→
+    19→Adding a column to the PlanDataTable requires 5 coordinated changes across the data pipeline. Missing any one causes runtime errors or test failures.
+    20→
+    21→## Worked Example: created_at Datetime Column (PR #6978)
+    22→
+    23→### 1. Add field to PlanRowData (`src/erk/tui/data/types.py`)
+    24→
+    25→Add both the raw data field and the display-formatted field:
+    26→
+    27→```python
+    28→@dataclass(frozen=True)
+    29→class PlanRowData:
+    30→    created_at: datetime     # Raw value for sorting/filtering
+
+... [94 lines omitted] ...
+
+   112→A mismatch between column count and value count causes a silent rendering error in Textual's DataTable.
+   118→- [Derived Display Columns](derived-display-columns.md) — Exception for columns reusing existing data
+  </tool_result>
+  <tool_result tool="toolu_01WR4MmYsMyJhKxU4rXPAxSZ">
+     1→---
+     2→title: PlanRowData Field Reference
+     3→read_when:
+     4→  - "writing command availability predicates"
+     5→  - "understanding what data is available for TUI commands"
+     6→  - "checking which PlanRowData fields are nullable"
+     7→last_audited: "2026-02-23 00:15 PT"
+     8→audit_result: edited
+     9→---
+    10→
+    11→# PlanRowData Field Reference
+    12→
+    13→Quick reference for writing command availability predicates and understanding
+    14→`PlanRowData` usage patterns.
+    15→
+    16→## Overview
+    17→
+    18→`PlanRowData` is a frozen dataclass containing all data for a single plan row in the TUI. It combines raw data (for actions) with pre-formatted display strings (for table rendering).
+    19→
+    20→**Location:** `src/erk/tui/data/types.py`
+    21→
+    22→## Field Categories
+    23→
+    24→### Plan Info
+    25→
+    26→| Field        | Type          | Description                   | Nullable?                     |
+    27→| ------------ | ------------- | ----------------------------- | ----------------------------- |
+    28→| `plan_id`    | `int`         | Plan identifier               | Never                         |
+    29→| `plan_url`   | `str \| None` | Full URL to the plan          | Yes                           |
+    30→| `full_title` | `str`         | Complete plan title           | Never (empty string possible) |
+
+... [196 lines omitted] ...
+
+    80→| `run_conclusion`    | `str \| None` | Run conclusion: "success", "failure", "cancelled" | Yes                   |
+  </tool_result>
+  <tool_result tool="toolu_01S9szNaLJ9akUSf6AWNnT3M">
+     1→---
+     2→title: Dashboard Column Inventory
+     3→read_when:
+     4→  - "adding a new column to the erk dash TUI"
+     5→  - "understanding which columns are always present vs conditional"
+     6→  - "debugging why a column is missing in a particular view mode"
+     7→tripwires:
+     8→  - action: "adding stage column outside planned_pr backend check"
+     9→    warning: "stage column is planned_pr-only. It appears before obj in the column order. Check _setup_columns() for the backend conditional block."
+    10→---
+    11→
+    12→# Dashboard Column Inventory
+    13→
+    14→The `erk dash` TUI uses `PlanDataTable` (`src/erk/tui/widgets/plan_table.py`) for its column layout. Column presence depends on the active view mode and plan backend.
+    15→
+    16→## Plans View Columns (Default)
+    17→
+    18→Column order in `_setup_columns()` for `ViewMode.PLANS`:
+    19→
+    20→| Column Header  | Key           | Width | Condition                                           |
+    21→| -------------- | ------------- | ----- | --------------------------------------------------- |
+    22→| `plan` or `pr` | `plan`        | 6     | Always (header is `pr` in planned_pr mode)          |
+    23→| `stage`        | `stage`       | 8     | Only when `plan_backend == "planned_pr"`            |
+    24→| `sts`          | `status`      | 7     | Only when `plan_backend == "planned_pr"`            |
+    25→| `created`      | `created`     | 7     | In planned_pr mode (positioned here, not after run) |
+    26→| `obj`          | `objective`   | 5     | Always                                              |
+    27→| `loc`          | `location`    | 3     | Always (location emoji)                             |
+    28→| `branch`       | `branch`      | 42    | Always                                              |
+    29→| `run-id`       | `run_id`      | 10    | Always                                              |
+    30→| `run`          | `run_state`   | 3     | Always (run state emoji)                            |
+
+... [57 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01Dx7FY6uyyx2GpgsnjkfEZP">
+     1→---
+     2→title: TUI Data Contract
+     3→read_when:
+     4→  - "building an alternate frontend consuming plan data"
+     5→  - "adding fields to PlanRowData or PlanDataProvider"
+     6→  - "understanding the display-vs-raw field duality"
+     7→  - "serializing plan data to JSON for external consumers"
+     8→tripwires:
+     9→  - action: "formatting display strings during table render"
+    10→    warning: "Display strings are pre-formatted at fetch time. Add new *_display fields to PlanRowData and format in RealPlanDataProvider._build_row_data(), not in the widget layer."
+    11→  - action: "adding a field to PlanRowData without updating make_plan_row"
+    12→    warning: "The fake's make_plan_row() helper must stay in sync. Add the new field with a sensible default there too, or all TUI tests will break."
+    13→  - action: "putting PlanDataProvider ABC in src/erk/tui/"
+    14→    warning: "The ABC lives in erk-shared so provider implementations are co-located in the shared package. External consumers import from erk-shared alongside other shared gateways."
+    15→  - action: "constructing PlanFilters without copying all fields from existing filters"
+    16→    warning: "All fields must be explicitly copied in _load_data() PlanFilters construction. Missing fields (like creator) cause silent filtering failures."
+    17→last_audited: "2026-02-16 14:20 PT"
+    18→audit_result: edited
+    19→---
+    20→
+    21→# TUI Data Contract
+    22→
+    23→The TUI data layer is designed around a single frozen dataclass (`PlanRowData`) that carries both display-ready strings and raw identifiers. This document explains the design decisions behind the data contract, the cross-package split, and the pitfalls of JSON serialization — things that can't be learned by reading any single source file.
+    24→
+    25→## Why Display and Raw Fields Coexist
+    26→
+    27→&lt;!-- Source: src/erk/tui/data/types.py, PlanRowData --&gt;
+    28→
+    29→`PlanRowData` carries two kinds of fields for the same data. For example, `pr_number` (raw `int | None`) and `pr_display` (pre-formatted `str` like `"#123 👀"`). This is deliberate:
+    30→
+
+... [215 lines omitted] ...
+
+   143→| `run_conclusion` | `str`                              | Yes      | Workflow run conclusion: `"success"`, `"failure"`, `"cancelled"`, etc. |
+   225→Adding a field to `PlanRowData` touches at minimum five places. Missing any one causes test failures or silent data loss:
+  </tool_result>
+  <tool_result tool="toolu_01EsuDmKwqNDB2oSVpdKkHNN">
+     1→---
+     2→title: Derived Display Columns
+     3→read_when:
+     4→  - "adding a TUI column that uses an existing PlanRowData field"
+     5→  - "deciding whether a new column needs gateway/query changes"
+     6→---
+     7→
+     8→# Derived Display Columns
+     9→
+    10→When a new TUI column reuses an already-present `PlanRowData` field (no new data needed), you can skip the gateway and data-layer steps from the standard [5-step column addition pattern](column-addition-pattern.md).
+    11→
+    12→## When This Applies
+    13→
+    14→The standard 5-step pattern assumes the column requires new data from the backend. If the data already exists in `PlanRowData` (perhaps fetched for a different purpose), skip steps 1, 2, 4, and 5. Only step 3 (add column + value in table) is needed.
+    15→
+    16→## Reduced Checklist
+    17→
+    18→| Step | File                        | Change                        |
+    19→| ---- | --------------------------- | ----------------------------- |
+    20→| 3    | `tui/widgets/plan_table.py` | Add column definition + value |
+    21→
+    22→Plus: update all index-based test assertions (see column index cascade tripwire in [column-addition-pattern.md](column-addition-pattern.md)).
+    23→
+    24→## Example: Branch Column
+    25→
+    26→The branch column displays `pr_head_branch` and `worktree_branch` — both already present in `PlanRowData` for other purposes (PR discovery, worktree display). No gateway query, data class field, or serialization changes were needed. Only the column definition and render logic were added to `plan_table.py`.
+    27→
+    28→## Decision: Standard vs Derived
+    29→
+    30→| Question                                   | Answer | Pattern                           |
+
+... [15 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01XAFMsv5LGzfxoVZnexyAZq">
+     1→---
+     2→title: Frozen Dataclass Field Management
+     3→read_when:
+     4→  - "removing a field from a frozen dataclass"
+     5→  - "renaming a field in PlanRowData or similar frozen dataclass"
+     6→  - "getting unexpected constructor errors after field changes"
+     7→tripwires:
+     8→  - action: "removing a field from a frozen dataclass"
+     9→    warning: "Grep for the class name across ALL constructor sites. Frozen dataclasses have 5+ places to update: field definition, real provider, fake provider, test helpers, and filtering/display logic. Missing one causes runtime TypeError."
+    10→  - action: "using positional arguments when constructing PlanRowData"
+    11→    warning: "Always use keyword arguments for frozen dataclass construction. Positional arguments break silently when fields are reordered. Use make_plan_row() helper in tests."
+    12→---
+    13→
+    14→# Frozen Dataclass Field Management
+    15→
+    16→Frozen dataclasses like `PlanRowData` have fields referenced across many files. Adding or removing a field requires updating every construction site, which is error-prone because the frozen constraint means you cannot incrementally update — all constructor calls must be correct simultaneously.
+    17→
+    18→## The Removal Checklist
+    19→
+    20→When removing a field from a frozen dataclass:
+    21→
+    22→1. **Remove the field definition** from the dataclass in `data/types.py`
+    23→2. **Remove from real provider** — `RealPlanDataProvider._build_row_data()` in the plan data provider
+    24→3. **Remove from fake provider** — `FakePlanDataProvider` and the `make_plan_row()` helper in `packages/erk-shared/src/erk_shared/gateway/plan_data_provider/fake.py`
+    25→4. **Remove from display logic** — `PlanDataTable._row_to_values()` in `plan_table.py`
+    26→5. **Remove from any filtering/sorting logic** that references the field
+    27→6. **Remove from documentation** — `docs/learned/tui/plan-row-data.md`
+    28→
+    29→The critical step is #3 — `make_plan_row()` is used extensively in tests. Missing this causes widespread test failures.
+    30→
+
+... [32 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01VUsJFba9uh87BNTtakZzJP">
+     1→---
+     2→title: TUI Filter Pipeline Pattern
+     3→read_when:
+     4→  - "adding a new filter to the TUI dashboard"
+     5→  - "understanding how objective/stack/text filters interact"
+     6→  - "modifying the escape key behavior in the TUI"
+     7→tripwires:
+     8→  - action: "adding a new filter without updating the escape chain"
+     9→    warning: "New filter implementations must add an entry to `action_exit_app()` progressive escape chain. Missing entries leave filters stuck with no way for the user to clear them."
+    10→  - action: "changing filter application order in _apply_filter_and_sort()"
+    11→    warning: "Filter order is intentional: objective → stack → text → sort. Objective is broadest (cross-stack), stack is mid-level, text is narrowest. Changing order produces unexpected results."
+    12→  - action: "using a mutable set for _stack_filter_branches"
+    13→    warning: "Stack filter branches use frozenset[str] for immutability and efficient membership testing. Do not use set or list."
+    14→---
+    15→
+    16→# TUI Filter Pipeline Pattern
+    17→
+    18→The TUI dashboard applies filters in a defined pipeline sequence: objective filter, stack filter, text filter, then sort. Each filter follows the same toggle pattern with state variables, toggle actions, and escape chain integration.
+    19→
+    20→## Filter Pipeline
+    21→
+    22→`_apply_filter_and_sort()` in `src/erk/tui/app.py` applies filters in sequence:
+    23→
+    24→1. **Objective filter**: Filters rows matching `_objective_filter_issue`
+    25→2. **Stack filter**: Filters rows matching branches in `_stack_filter_branches`
+    26→3. **Text filter**: Applies text search query if `FilterMode.ACTIVE`
+    27→4. **Sort**: Sorts using `SortKey` (supports `BranchActivity` ordering)
+    28→
+    29→## State Variables
+    30→
+
+... [53 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01Y4rmDVp415ayfFdnNXrzZR">
+     1→---
+     2→title: TUI Filter Toggle Pattern
+     3→read_when:
+     4→  - "adding a filter toggle to the TUI dashboard"
+     5→  - "implementing server-side filtering in the TUI"
+     6→  - "adding keybindings that toggle dashboard state"
+     7→tripwires:
+     8→  - action: "adding a filter toggle to the TUI dashboard"
+     9→    warning: "Server-side filters (like author) must clear _data_cache on toggle. Client-side filters (like stack, objective) only re-filter cached rows. Follow the 6-component pattern in filter-toggle-pattern.md."
+    10→---
+    11→
+    12→# TUI Filter Toggle Pattern
+    13→
+    14→Pattern for adding a filter toggle to the erk TUI dashboard. The author filter is the reference implementation.
+    15→
+    16→## 6 Required Components
+    17→
+    18→Each component below is demonstrated by the author filter toggle. The reference files are listed in the "Reference Implementation" section at the bottom.
+    19→
+    20→&lt;!-- Source: src/erk/tui/app.py, _show_all_users --&gt;
+    21→&lt;!-- Source: src/erk/tui/actions/filter_actions.py, action_toggle_all_users --&gt;
+    22→&lt;!-- Source: src/erk/tui/widgets/status_bar.py, set_author_filter --&gt;
+    23→&lt;!-- Source: src/erk/tui/screens/help_screen.py, help binding labels --&gt;
+    24→
+    25→### 1. Field Initialization (app.py)
+    26→
+    27→Add a boolean field (e.g., `_show_all_users = False`) in the app's `__init__`. See `ErkDashApp` in `src/erk/tui/app.py`.
+    28→
+    29→### 2. Action Handler (filter_actions.py)
+    30→
+
+... [45 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_019y6r5RWVoQW7X2eHzzJ4kD">
+     1→---
+     2→title: TUI View Switching
+     3→read_when:
+     4→  - "adding a new view mode to the TUI"
+     5→  - "understanding how view switching and caching work"
+     6→  - "debugging data not appearing in a specific view"
+     7→  - "working with PlanBodyScreen content type parameterization"
+     8→tripwires:
+     9→  - action: "adding a new ViewMode without updating VIEW_CONFIGS"
+    10→    warning: "Every ViewMode must have a corresponding ViewConfig in VIEW_CONFIGS. Missing configs cause KeyError at runtime."
+    11→  - action: "using _render() as a method name in Textual widgets"
+    12→    warning: "Textual's LSP reserves _render(). Use _refresh_display() instead (see ViewBar)."
+    13→  - action: "pushing PlanBodyScreen without explicit content_type"
+    14→    warning: "Content type must come from view_mode at push time, not derived inside the screen."
+    15→  - action: "adding labels to ViewConfig.labels expecting OR semantics from GitHub API"
+    16→    warning: "GitHub GraphQL uses AND semantics for label arrays. Multiple labels in a single ViewConfig.labels means items must have ALL listed labels. Use separate views for separate label types. See github-graphql-label-semantics.md."
+    17→  - action: "adding the same label to multiple ViewConfig entries without exclude_labels"
+    18→    warning: "Without exclude_labels, items matching the shared label appear in multiple views. Use exclude_labels for defense-in-depth deduplication (Plans view excludes erk-learn)."
+    19→last_audited: "2026-02-17 00:00 PT"
+    20→audit_result: edited
+    21→---
+    22→
+    23→# TUI View Switching
+    24→
+    25→The TUI supports three views — Plans, Learn, and Objectives — with instant switching via keyboard shortcuts. This document explains the view system architecture, the two-tier filtering strategy, and the caching mechanism that enables sub-millisecond view switches.
+    26→
+    27→## Core Types
+    28→
+    29→&lt;!-- Source: src/erk/tui/views/types.py --&gt;
+    30→
+
+... [120 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01DeSzQEbsoZicoQ7BXpkk6Z">
+     1→---
+     2→title: View-Mode-Aware Help Screen
+     3→read_when:
+     4→  - "modifying the TUI help screen"
+     5→  - "adding view-specific actions to the TUI"
+     6→  - "understanding ViewMode-conditional rendering"
+     7→---
+     8→
+     9→# View-Mode-Aware Help Screen
+    10→
+    11→The TUI `HelpScreen` accepts a `view_mode: ViewMode` parameter and conditionally renders help content based on the active view (plans vs objectives).
+    12→
+    13→## Implementation Pattern
+    14→
+    15→&lt;!-- Source: src/erk/tui/screens/help_screen.py --&gt;
+    16→
+    17→The `HelpScreen.__init__()` stores `view_mode` as an instance variable. A helper method `_is_objectives_view()` wraps the check. The `compose()` method uses this to branch rendering:
+    18→
+    19→```python
+    20→def compose(self) -&gt; ComposeResult:
+    21→    is_objectives = self._is_objectives_view()
+    22→    # ... shared sections ...
+    23→    if is_objectives:
+    24→        yield Label("Enter   View objective details", ...)
+    25→    else:
+    26→        yield Label("Enter   View plan details", ...)
+    27→```
+    28→
+    29→## Conditional Sections
+    30→
+
+... [26 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01QVtub7aj7g5GidnTixNmpq">
+     1→---
+     2→title: Textual Tripwires
+     3→read_when:
+     4→  - "working on textual code"
+     5→---
+     6→
+     7→&lt;!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY --&gt;
+     8→&lt;!-- Edit source frontmatter, then run 'erk docs sync' to regenerate. --&gt;
+     9→&lt;!-- Generated from textual/*.md frontmatter --&gt;
+    10→
+    11→# Textual Tripwires
+    12→
+    13→Rules triggered by matching actions in code.
+    14→
+    15→**adding cell values to Textual DataTable** → Read [DataTable Rich Markup Escaping](datatable-markup-escaping.md) first. Always wrap in `Text(value)` if strings contain user data with brackets. Otherwise `[anything]` will be interpreted as Rich markup.
+    16→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>Perfect! I've now read all 20 TUI documentation files plus the Textual tripwires. Let me synthesize these into a comprehensive summary organized by key patterns and critical guidance.
+
+## TUI/Textual Documentation Synthesis
+
+### ARCHITECTURE FOUNDATIONS
+
+**Layered Design Pattern:**
+The TUI follows a strict 5-layer architecture: Data Fetching → Filtering → Sorting → Rendering → UI Interaction.
+- **Data layer** (`PlanDataProvider` ABC): Fetches raw GitHub data
+- **Display layer** (`PlanRowData`): Pre-formatted display strings + raw identifiers (frozen dataclass)
+- **Filtering layer** (`PlanFilters`): Query parameters controlling what data is fetched
+- **Widget layer** (`PlanDataTable`): Displays filtered rows
+- **Action layer** (commands, keyboard bindings): Operates on selected rows
+
+**Why this matters:** Rendering is I/O-intensive (scroll, resize, focus). Pre-formatting at fetch time (layer 2) not at render time ensures sub-millisecond refreshes. Display fields (`*_display`) are pre-computed strings; raw fields (`plan_id`, `pr_number`) are used by actions.
+
+**Critical tripwire:** Formatting during table render causes visible UI lag. All `*_display` fields must be computed in `RealPlanDataProvider._build_row_data()`, never in the widget.
+
+---
+
+### MIXIN ARCHITECTURE + TEXTUAL METACLASS TRAP
+
+**The constraint:** Textual's `_MessagePumpMeta` metaclass scans `class.__dict__` (not MRO) for `@on` decorated event handlers during class creation. Event handlers on mixin classes are **silently ignored** — they never fire.
+
+**The solution:** All `@on(...)` decorated methods MUST stay on the concrete `ErkDashApp` class, never on any mixin. Mixins provide helper methods and action implementations, but event handlers belong on the app.
+
+**The workaround for type safety:** Use `TYPE_CHECKING` guard to import `ErkDashApp` in mixins without circular imports:
+```python
+from __future__ import annotations
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from erk.tui.app import ErkDashApp
+```
+
+---
+
+### COMMAND SYSTEM: DUAL-HANDLER + THREE-LAYER VALIDATION
+
+**Dual-Handler Pattern:**
+Commands are defined once in `src/erk/tui/commands/registry.py` but executed in TWO contexts:
+1. **Main list** → `ErkDashApp.execute_palette_command()` (accesses `self._provider` directly)
+2. **Detail modal** → `PlanDetailScreen.execute_command()` (uses injected `CommandExecutor`)
+
+This duplication is intentional. The asymmetry exists because the app operates at the app level (managing screens, toasts), while the modal is scoped to a single plan.
+
+**Three-Layer Validation for Optional Fields:**
+Commands that depend on nullable `PlanRowData` fields require validation at three levels:
+1. **Registry predicate** (`is_available` lambda): Controls palette visibility
+2. **Handler guard** (LBYL check in execute method): Re-validates before use
+3. **App-level helper** (optional): Encapsulates all guards and fallbacks
+
+Why three? Predicates can become stale, keyboard shortcuts bypass the palette, and type narrowing doesn't persist across method boundaries.
+
+**Category-to-Execution Mapping:**
+- `ACTION` (⚡): Mutative operations (close, dispatch, land) — implies long-running or API calls
+- `OPEN` (🔗): Browser navigation — instant, no side effects
+- `COPY` (📋): Clipboard write — instant, no side effects
+
+---
+
+### COMMAND AVAILABILITY: DATA-DRIVEN PREDICATES
+
+**Why data-driven?**
+1. Multiple consumers (palette, desktop toolbar) need the same logic
+2. Availability depends on `PlanRowData` field nullability
+3. Makes contracts explicit and testable
+
+**Availability Tiers:**
+| Tier | Predicate | Examples | Rationale |
+|------|-----------|----------|-----------|
+| Always | `lambda _: True` | `close_plan` | Only need `plan_id` (always present) |
+| Needs plan URL | `plan_url is not None` | `open_issue` | Plan must exist on GitHub |
+| Needs local branch | `worktree_branch is not None` | `copy_checkout` | Worktree must exist |
+| Needs PR | `pr_number is not None` | `open_pr`, `rebase_remote` | PR must be linked |
+| Compound | Multiple fields non-null | `land_pr` | All CI infrastructure present |
+
+**Anti-pattern:** Writing `is_available=lambda _: True` for a command using `ctx.row.pr_number`. This allows execution when `pr_number` is None, causing runtime errors.
+
+---
+
+### COMMAND REGISTRATION: 3-PLACE COORDINATION
+
+Adding a command requires updating THREE places (all in `src/erk/tui/commands/registry.py`):
+1. **Display formatter** (`_display_*()` function): Generates context-aware display name
+2. **CommandDefinition** entry: ID, category, availability predicate, display getter, launch key
+3. **Action inventory**: Appears in correct category group, alphabetically sorted
+
+`launch_key` field is the single source of truth for Launch modal key bindings.
+
+---
+
+### VIEW SWITCHING: CACHE + LABEL-BASED FILTERING
+
+**Three views with instant switching:**
+- **Plans** (`ViewMode.PLANS`): Queries `erk-plan` label, excludes `erk-learn`
+- **Learn** (`ViewMode.LEARN`): Queries `erk-learn` label
+- **Objectives** (`ViewMode.OBJECTIVES`): Queries `erk-objective` label
+
+**Cache strategy:** `dict[tuple[str, ...], list[PlanRowData]]` keyed by label tuple. Plans and Learn have different labels, so switching between them requires re-fetch. Each label tuple's data is cached independently.
+
+**Label semantics (critical):** GitHub GraphQL uses AND semantics for label arrays. Multiple labels in `ViewConfig.labels` means items must have ALL listed labels. Use `exclude_labels` for defense-in-depth deduplication.
+
+**ViewBar constraint:** Don't use `_render()` as method name (Textual LSP conflict). Use `_refresh_display()` instead.
+
+---
+
+### FILTER PIPELINE: SEQUENCE MATTERS
+
+Applied in order: Objective → Stack → Text → Sort. Each filter follows the toggle pattern.
+
+**Progressive Escape Chain** (`action_exit_app()`):
+1. Clear objective filter if set, return
+2. Clear stack filter if set, return
+3. Clear text input if active, return
+4. Quit app
+
+This allows users to press Escape multiple times to peel back one filter layer.
+
+**Filter types:**
+- **Server-side** (author): Clears `_data_cache` and re-fetches from GitHub
+- **Client-side** (text, stack, objective): Re-filters cached rows without re-fetching
+
+---
+
+### COLUMN ADDITION: 5-STEP PATTERN
+
+Adding a column requires coordinating changes across FIVE files (missing any one causes failures):
+
+| Step | File | Change |
+|------|------|--------|
+| 1 | `tui/data/types.py` | Add raw field + display field to `PlanRowData` |
+| 2 | `plan_data_provider/real.py` | Populate both fields in `_build_row_data()` |
+| 3 | `tui/widgets/plan_table.py` | Add column definition + value in `_row_to_values()` |
+| 4 | `plan_data_provider/fake.py` | Add parameter to `make_plan_row()` with sentinel default |
+| 5 | `dash_data.py` | Handle serialization if non-primitive type |
+
+**Critical gotcha:** Adding/reordering columns invalidates ALL test assertions using column indices. Run systematic grep for `row[`, `values[`, `cells[` before and after the change.
+
+**Derived columns shortcut:** If reusing existing `PlanRowData` field, skip steps 1, 2, 4, 5. Only add the column definition (step 3).
+
+---
+
+### PLANROWDATA: DISPLAY-VS-RAW DUALITY
+
+`PlanRowData` is a frozen dataclass with 47+ fields carrying both raw data and display strings.
+
+**The duality pattern:**
+- **Display fields** (`*_display`): Pre-formatted with emoji, relative times, etc. Ready for rendering.
+- **Raw fields**: Actual identifiers, URLs, timestamps for actions and sorting.
+
+Example:
+- `pr_number` (raw `int | None`): Used in predicates, sorting, API calls
+- `pr_display` (pre-formatted `str`): Rendered directly in table cell
+
+**Why this matters:** DataTable renders frequently (scroll, resize). Pushing formatting into fetch time eliminates formatting inconsistencies and keeps rendering fast.
+
+---
+
+### FROZEN DATACLASS FIELD MANAGEMENT
+
+**Removal checklist (when deleting a field):**
+1. Remove from `PlanRowData` definition
+2. Remove from `RealPlanDataProvider._build_row_data()`
+3. Remove from `FakePlanDataProvider` and `make_plan_row()` helper (CRITICAL — tests break without this)
+4. Remove from `PlanDataTable._row_to_values()`
+5. Remove from filtering/sorting logic
+6. Remove from documentation
+
+**Keyword arguments matter:** With 47+ fields, positional construction is brittle:
+```python
+# WRONG: Breaks if fields reorder
+row = PlanRowData(123, None, None, None, "", ...)
+
+# CORRECT: Survives field reordering
+row = PlanRowData(plan_id=123, plan_url=None, ...)
+
+# BEST: Use test helper
+row = make_plan_row(123, "Title", pr_number=456)
+```
+
+---
+
+### COMMAND EXECUTION STRATEGIES
+
+**Two patterns:**
+
+1. **Streaming subprocess** (preferred for TUI):
+   - Real-time output visibility
+   - Non-blocking UI
+   - Uses `subprocess.Popen` with `stdin=subprocess.DEVNULL`
+   - Cross-thread communication: `app.call_from_thread(callback, ...)`
+   - CRITICAL: Always set `stdin=subprocess.DEVNULL` to prevent deadlock when child prompts
+
+2. **Executor pattern** (legacy, tests):
+   - Synchronous, blocks until complete
+   - No progress visibility
+   - Used in non-interactive contexts
+   - `FakeCommandExecutor` for tests
+
+**Capability marker pattern:** Use `repo_root` as a capability marker to determine execution strategy. If `repo_root` is None, cannot execute streaming commands.
+
+---
+
+### CLIPBOARD TEXT GENERATION: SINGLE SOURCE OF TRUTH
+
+`get_copy_text(command_id, row, view_mode)` in `registry.py` is the ONLY place clipboard text is generated.
+
+**Why:** Display name generators (callbacks on `CommandDefinition`) are canonical. `get_copy_text()` looks up the command and delegates to its display generator. Both main list and detail screen call this same function, ensuring identical clipboard content.
+
+**Anti-pattern:** Duplicating display name logic in app.py or detail screens.
+
+---
+
+### TEXTUAL COMMANDPALETTE PITFALL
+
+**CRITICAL:** `get_system_commands()` must be overridden on the **App class**, not Screen class. Textual calls `app.get_system_commands(screen)` when opening palette — it never calls this method on screens.
+
+```python
+# WRONG — Never called
+class MyModalScreen(ModalScreen):
+    def get_system_commands(self, screen: Screen) -&gt; Iterator[SystemCommand]:
+        return iter(())
+
+# CORRECT — Override on App
+class MyApp(App):
+    def get_system_commands(self, screen: Screen) -&gt; Iterator[SystemCommand]:
+        if isinstance(screen, MyModalScreen):
+            return iter(())
+        yield from super().get_system_commands(screen)
+```
+
+---
+
+### VIEW-AWARE COMMAND FILTERING
+
+View mode and data availability are two independent filter dimensions.
+
+**View predicates:**
+- `_is_plan_view(ctx)`: Returns True when NOT in Objectives view (Plans or Learn)
+- `_is_objectives_view(ctx)`: Returns True when in Objectives view
+
+**Shortcut reuse:** Plan and objective commands safely reuse shortcuts because view predicates guarantee mutual exclusivity. Example: both `s` shortcut "Dispatch to Queue" (Plans) and "Implement (One-Shot)" (Objectives).
+
+**Backend as third dimension:** `plan_backend` field on `CommandContext` enables backend-specific filtering. Example: `copy_prepare` is hidden for `"planned_pr"` backend.
+
+---
+
+### DUAL PROVIDER PATTERN: ONE REGISTRY, TWO CONTEXTS
+
+Two providers share one command registry but resolve `CommandContext` from different sources:
+- **`MainListCommandProvider`**: Resolves from table's selected row, reads `view_mode` dynamically
+- **`PlanCommandProvider`**: Resolves from detail screen's `_row` field, hardcodes `view_mode=ViewMode.PLANS`
+
+**Critical asymmetries:**
+1. Context fallibility: Main list returns `CommandContext | None` (no row selected). Detail always returns `CommandContext`.
+2. Dispatch target: Main list dispatches to `ErkDashApp.execute_palette_command()`. Detail dispatches to `PlanDetailScreen.execute_command()`.
+3. ViewMode hardcoding: Detail screen hardcodes Plans mode because modal is scoped to single plan.
+
+---
+
+### DATA CONTRACT: CROSS-PACKAGE SPLIT
+
+| Artifact | Location | Why |
+|----------|----------|-----|
+| `PlanRowData`, `PlanFilters` | `src/erk/tui/data/types.py` | TUI-specific display types |
+| `PlanDataProvider` ABC | `packages/erk-shared/.../plan_data_provider/abc.py` | Shared interface |
+| `RealPlanDataProvider` | `packages/erk-shared/.../plan_data_provider/real.py` | Production impl |
+| `FakePlanDataProvider` | `packages/erk-shared/.../plan_data_provider/fake.py` | Test double |
+
+**Transformation pipeline:**
+1. `IssueInfo` (raw GitHub API)
+2. `Plan` (domain model with parsed metadata)
+3. `PlanRowData` (display-ready with worktree data, PR linkages)
+
+The key assembly is `_build_row_data()`, which merges data from four sources: Plan object, PR linkages (GraphQL), worktree filesystem scan, and plan header metadata.
+
+---
+
+### JSON SERIALIZATION GOTCHAS
+
+`dataclasses.asdict()` doesn't handle three types:
+1. **`datetime` fields**: Convert to ISO 8601 strings via `.isoformat()`
+2. **`tuple[tuple[...]]`** (log_entries): Convert to list of lists
+3. **Display strings with emoji**: Frontend-specific handling
+
+See `_serialize_plan_row()` in `dash_data.py` for production implementation.
+
+---
+
+### DISMISS-THEN-DELEGATE PATTERN
+
+When a modal command needs to show a toast or run background operations:
+1. Modal calls `self.dismiss()` first
+2. App shows toast at app level
+3. App delegates to `@work(thread=True)` method
+
+Modal blocks the correct z-layer, so toasts must render at app level after dismissal.
+
+---
+
+### TEXTUAL DATATABLE MARKUP ESCAPING
+
+**Critical:** Always wrap user data in `Text(value)` when adding cell values. Otherwise `[anything]` is interpreted as Rich markup:
+
+```python
+# WRONG — User data with brackets becomes Rich tags
+table.add_row("[critical] error", ...)  # Renders as styled tag, not literal text
+
+# CORRECT — Wrap to escape
+from rich.text import Text
+table.add_row(Text("[critical] error"), ...)  # Renders literal text
+```
+
+---
+
+### PLAN BODY SCREEN: CONTENT TYPE PARAMETERIZATION
+
+`PlanBodyScreen` accepts `content_type: Literal["Plan", "Objective"]` parameter controlling both UI labels and gateway method calls.
+
+**Critical:** Content type is determined by `_view_mode` BEFORE pushing the screen, not derived inside:
+- `content_type="Objective"` → calls `provider.fetch_objective_content()`
+- `content_type="Plan"` → calls `provider.fetch_plan_content()`
+
+Display labels use `content_type.lower()` for user-facing strings.
+
+---
+
+### RACE CONDITION PREVENTION: ASYNC STATE SNAPSHOT
+
+When fetch is in progress and user switches tabs, fetched data could apply to wrong view.
+
+**Guard pattern:** `_load_data()` snapshots `self._view_mode` at fetch start. `_update_table()` only updates display if current view still matches snapshot. See `async-state-snapshot.md` for full details.
+
+---
+
+### KEYBOARD SHORTCUTS ARCHITECTURE
+
+The `launch_key` field on `CommandDefinition` is the single source of truth. Plans and Objectives views have separate key namespaces (e.g., `c` maps to different commands). Only ACTION category commands have launch keys. OPEN and COPY commands have `launch_key=None`.
+
+---
+
+### HELP SCREEN: VIEW-MODE AWARE
+
+`HelpScreen` accepts `view_mode: ViewMode` parameter and branches rendering:
+- **Objectives view**: Shows objective-specific actions
+- **Plans view**: Shows plan-specific actions
+
+Helper method `_is_objectives_view()` wraps the check.
+
+---
+
+## ESSENTIAL DO THIS / DON'T DO THAT
+
+**DO:**
+- Pre-format all display strings in `RealPlanDataProvider._build_row_data()`, never during render
+- Use three-layer validation for commands with optional fields
+- Always wrap user data in `Text()` when adding to DataTable
+- Set `stdin=subprocess.DEVNULL` for all TUI subprocess calls
+- Use keyword arguments for frozen dataclass construction
+- Keep event handlers on concrete `ErkDashApp` class, never mixins
+- Use `_refresh_display()` for Textual widget methods, not `_render()`
+
+**DON'T:**
+- Format strings during table render (causes visible UI lag)
+- Put `@on` decorated methods on mixins (they're silently ignored)
+- Use positional arguments for frozen dataclass construction (breaks on reordering)
+- Duplicate display name logic between app.py and detail screens
+- Override `get_system_commands()` on Screen class (override on App)
+- Add columns without updating column index tests
+- Inherit stdin from parent TUI in subprocess calls
+- Add filters without updating the escape chain
+
+This synthesis captures the WHY and WHEN for each pattern, which is essential for effective TUI development in erk.</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="40873" cache_read_input_tokens="15306" cache_creation="{'ephemeral_5m_input_tokens': 40873, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>

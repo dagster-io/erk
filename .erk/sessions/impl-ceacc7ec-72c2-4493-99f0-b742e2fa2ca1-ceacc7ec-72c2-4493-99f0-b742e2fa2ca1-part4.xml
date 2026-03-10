@@ -1,0 +1,630 @@
+<session>
+  <meta source="agent-a1d9677" />
+  <meta branch="plnd/create-erk-tui-skill-03-10-0421" />
+  <meta model="claude-sonnet-4-5-20250929" />
+  <user>Add `curated_in: erk-tui` to the YAML frontmatter of the following docs/learned/tui/ files. The field should be added as the LAST field before the closing `---` in each file's frontmatter block.
+
+For each file:
+1. Read the file to see its current frontmatter
+2. Find the closing `---` of the frontmatter block
+3. Add `curated_in: erk-tui` as a new line just before the closing `---`
+
+Files to edit (all in /home/runner/work/erk/erk/docs/learned/tui/):
+1. multi-operation-tracking.md
+2. one-shot-prompt-modal.md
+3. plan-row-data.md
+4. plan-title-rendering-pipeline.md
+5. runs-tab-architecture.md
+6. stacked-pr-indicator.md
+7. status-indicators.md
+8. streaming-output.md
+9. subprocess-feedback.md
+10. textual-async.md
+
+For example, if a file has:
+```
+---
+title: Some Title
+read_when:
+  - "some condition"
+last_audited: "2026-02-05 00:00 PT"
+audit_result: edited
+---
+```
+
+It should become:
+```
+---
+title: Some Title
+read_when:
+  - "some condition"
+last_audited: "2026-02-05 00:00 PT"
+audit_result: edited
+curated_in: erk-tui
+---
+```
+
+IMPORTANT: The `curated_in: erk-tui` line goes after ALL existing fields, immediately before the closing `---`.
+
+Do NOT modify any content after the frontmatter block.</user>
+  <assistant>I'll add `curated_in: erk-tui` to the frontmatter of each file in the docs/learned/tui/ directory. Let me start by reading all the files to see their current structure.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="6978" cache_read_input_tokens="9380" cache_creation="{'ephemeral_5m_input_tokens': 6978, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01KVNRY4giLeKtFm5t1Ht5N2">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/multi-operation-tracking.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6978" cache_read_input_tokens="9380" cache_creation="{'ephemeral_5m_input_tokens': 6978, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_0149Yw3bjcd6VUnrUh2gJto9">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/one-shot-prompt-modal.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6978" cache_read_input_tokens="9380" cache_creation="{'ephemeral_5m_input_tokens': 6978, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01QGyuz2wgKj2wFxeC8jc2EP">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/plan-row-data.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6978" cache_read_input_tokens="9380" cache_creation="{'ephemeral_5m_input_tokens': 6978, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01HMVC7gV5YgzYe8L2TU3nV2">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/plan-title-rendering-pipeline.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6978" cache_read_input_tokens="9380" cache_creation="{'ephemeral_5m_input_tokens': 6978, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01FsaoZcR5YCS38sfhRcfyzp">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/runs-tab-architecture.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6978" cache_read_input_tokens="9380" cache_creation="{'ephemeral_5m_input_tokens': 6978, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01L1taRrKiKMutaADPYZDf46">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/stacked-pr-indicator.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6978" cache_read_input_tokens="9380" cache_creation="{'ephemeral_5m_input_tokens': 6978, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_0128A5AvaL5FQeZAHhDb8U5H">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/status-indicators.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6978" cache_read_input_tokens="9380" cache_creation="{'ephemeral_5m_input_tokens': 6978, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_011qzk7JhXpHC3LseDU2B6jJ">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/streaming-output.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6978" cache_read_input_tokens="9380" cache_creation="{'ephemeral_5m_input_tokens': 6978, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01PFpfYXiFtCVk8Y6wHNiAuR">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/subprocess-feedback.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6978" cache_read_input_tokens="9380" cache_creation="{'ephemeral_5m_input_tokens': 6978, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_016mrZKQmRS6zpPbpgK93xsn">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/textual-async.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6978" cache_read_input_tokens="9380" cache_creation="{'ephemeral_5m_input_tokens': 6978, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01KVNRY4giLeKtFm5t1Ht5N2">
+     1→---
+     2→title: TUI Multi-Operation Tracking
+     3→read_when:
+     4→  - "adding a new background operation to the TUI"
+     5→  - "implementing status bar progress for a workflow command"
+     6→  - "debugging operation lifecycle or stuck operations"
+     7→tripwires:
+     8→  - action: "calling start_operation() without a matching finish_operation() in the error path"
+     9→    warning: "Always call finish_operation() in both success and error paths. Use try/finally or explicit error handling. Missing finish calls leave ghost operations in the status bar."
+    10→  - action: "constructing op IDs without the {action}-{resource}-{id} pattern"
+    11→    warning: "Op IDs must follow the convention: f'{action}-{resource_type}-{resource_id}' (e.g., 'land-pr-456', 'close-plan-123'). Non-unique IDs cause operations to overwrite each other."
+    12→  - action: "using subprocess.run() instead of _run_streaming_operation() for TUI commands"
+    13→    warning: "TUI background operations must use _run_streaming_operation() for live progress. subprocess.run() blocks without streaming and produces no status bar updates."
+    14→  - action: "calling self.notify() or self._finish_operation() directly from a background thread"
+    15→    warning: "Use self.call_from_thread() for all UI updates from @work(thread=True) methods. Direct calls cause thread-safety violations."
+    16→---
+    17→
+    18→# TUI Multi-Operation Tracking
+    19→
+    20→The TUI supports multiple concurrent background operations with live progress display in the status bar. Operations are tracked via a registry pattern with start/update/finish lifecycle methods.
+    21→
+    22→## Architecture
+    23→
+    24→### \_OperationState
+    25→
+    26→Frozen dataclass in `src/erk/tui/widgets/status_bar.py`. Stores the current label and progress text for a single operation. See source file for implementation details.
+    27→
+    28→### Operations Registry
+    29→
+    30→`_operations: dict[str, _OperationState]` in `src/erk/tui/widgets/status_bar.py` maps op IDs to their current state. Supports multiple concurrent operations; the most recently updated one is displayed.
+
+... [59 lines omitted] ...
+
+    72→**Error path:** Extract the last line of output, finish the operation, and display an error toast with `severity="error"` and `timeout=5` for longer visibility.
+  </tool_result>
+  <tool_result tool="toolu_0149Yw3bjcd6VUnrUh2gJto9">
+     1→---
+     2→title: One-Shot Prompt Modal
+     3→read_when:
+     4→  - "adding a new modal or input screen to the TUI"
+     5→  - "working with the one-shot dispatch workflow in erk dash"
+     6→  - "adding global keybindings that trigger modals"
+     7→---
+     8→
+     9→# One-Shot Prompt Modal
+    10→
+    11→The `x` keybinding in erk dash opens a modal for dispatching one-shot prompts. This is a global action — no row selection is required.
+    12→
+    13→## Screen Implementation
+    14→
+    15→&lt;!-- Source: src/erk/tui/screens/one_shot_prompt_screen.py --&gt;
+    16→
+    17→`OneShotPromptScreen(ModalScreen[str | None])` at `src/erk/tui/screens/one_shot_prompt_screen.py`:
+    18→
+    19→- **Widget**: `TextArea` (not `Input`) for multi-line prompt support, 32-line height
+    20→- **Submit**: Ctrl+Enter dispatches the prompt (returns stripped text)
+    21→- **Cancel**: Escape dismisses (returns `None`)
+    22→- **No `q` binding**: The screen deliberately omits a `q` keybinding since users need to type `q` in prompts
+    23→
+    24→### Design Decision: TextArea vs Input
+    25→
+    26→`TextArea` was chosen over `Input` to allow multi-line prompts. One-shot prompts often contain detailed instructions spanning multiple lines. The 32-line height provides ample space without overwhelming the screen.
+    27→
+    28→### Design Decision: Ctrl+Enter vs Enter
+    29→
+    30→Ctrl+Enter (not Enter) submits because Enter inserts newlines in the `TextArea`. This avoids interfering with multi-line editing.
+
+... [39 lines omitted] ...
+
+    55→- **Failure**: Shows error toast with the last output line
+  </tool_result>
+  <tool_result tool="toolu_01QGyuz2wgKj2wFxeC8jc2EP">
+     1→---
+     2→title: PlanRowData Field Reference
+     3→read_when:
+     4→  - "writing command availability predicates"
+     5→  - "understanding what data is available for TUI commands"
+     6→  - "checking which PlanRowData fields are nullable"
+     7→last_audited: "2026-02-23 00:15 PT"
+     8→audit_result: edited
+     9→---
+    10→
+    11→# PlanRowData Field Reference
+    12→
+    13→Quick reference for writing command availability predicates and understanding
+    14→`PlanRowData` usage patterns.
+    15→
+    16→## Overview
+    17→
+    18→`PlanRowData` is a frozen dataclass containing all data for a single plan row in the TUI. It combines raw data (for actions) with pre-formatted display strings (for table rendering).
+    19→
+    20→**Location:** `src/erk/tui/data/types.py`
+    21→
+    22→## Field Categories
+    23→
+    24→### Plan Info
+    25→
+    26→| Field        | Type          | Description                   | Nullable?                     |
+    27→| ------------ | ------------- | ----------------------------- | ----------------------------- |
+    28→| `plan_id`    | `int`         | Plan identifier               | Never                         |
+    29→| `plan_url`   | `str \| None` | Full URL to the plan          | Yes                           |
+    30→| `full_title` | `str`         | Complete plan title           | Never (empty string possible) |
+
+... [196 lines omitted] ...
+
+    80→| `run_conclusion`    | `str \| None` | Run conclusion: "success", "failure", "cancelled" | Yes                   |
+  </tool_result>
+  <tool_result tool="toolu_01HMVC7gV5YgzYe8L2TU3nV2">
+     1→---
+     2→title: TUI Plan Title Rendering Pipeline
+     3→last_audited: "2026-02-16 04:53 PT"
+     4→audit_result: clean
+     5→read_when:
+     6→  - "debugging why plan titles display incorrectly"
+     7→  - "troubleshooting missing prefixes in TUI"
+     8→  - "understanding plan data flow in TUI"
+     9→tripwires:
+    10→  - action: "modifying how plan titles are displayed in TUI"
+    11→    warning: "Ensure `[erk-learn]` prefix is added BEFORE any filtering/sorting stages."
+    12→  - action: "using title-stripping functions"
+    13→    warning: "Distinguish `_strip_plan_prefixes` (PR creation) vs `_strip_plan_markers` (plan creation) vs `strip_plan_from_filename` (filename handling)."
+    14→---
+    15→
+    16→# TUI Plan Title Rendering Pipeline
+    17→
+    18→Plan titles pass through multiple stages before appearing in the TUI. Issues can occur at any stage.
+    19→
+    20→## The 5-Stage Pipeline
+    21→
+    22→```
+    23→GitHub API → Middleware (prefix) → Filtering → Service (transform) → Widget (render)
+    24→```
+    25→
+    26→### Stage 1: GitHub API Response
+    27→
+    28→GitHub returns raw issue/PR data:
+    29→
+    30→```json
+
+... [100 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01FsaoZcR5YCS38sfhRcfyzp">
+     1→---
+     2→title: "Runs Tab Architecture"
+     3→read_when:
+     4→  - "working with TUI Runs tab"
+     5→  - "adding columns to RunDataTable"
+     6→  - "understanding branch resolution in runs"
+     7→  - "modifying workflow run display in TUI"
+     8→tripwires:
+     9→  - action: "using run.branch directly for display without checking PR head_branch first"
+    10→    warning: "After merge+deletion, run.branch becomes master/main. Use PR head_branch as primary source, falling back to run.branch only if not master/main."
+    11→  - action: "adding a new column to RunDataTable without updating RunRowData"
+    12→    warning: "RunDataTable columns are populated from RunRowData fields. Add the field to RunRowData first, then add the column in _setup_columns."
+    13→---
+    14→
+    15→# Runs Tab Architecture
+    16→
+    17→The Runs tab displays GitHub Actions workflow runs in the TUI, alongside Plans, Learn, and Objectives views.
+    18→
+    19→## RunRowData
+    20→
+    21→Frozen dataclass representing one workflow run row.
+    22→
+    23→**Source**: `src/erk/tui/data/types.py`
+    24→
+    25→| Field               | Type               | Description                                             |
+    26→| ------------------- | ------------------ | ------------------------------------------------------- |
+    27→| `run_id`            | `str`              | GitHub Actions workflow run ID                          |
+    28→| `run_url`           | `str \| None`      | URL to the GitHub Actions run page                      |
+    29→| `status`            | `str`              | Raw status: "queued", "in_progress", "completed"        |
+    30→| `conclusion`        | `str \| None`      | Raw conclusion: "success", "failure", "cancelled", None |
+
+... [78 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01L1taRrKiKMutaADPYZDf46">
+     1→---
+     2→title: Stacked PR Indicator
+     3→read_when:
+     4→  - "adding or modifying PR indicators in the TUI dashboard"
+     5→  - "understanding blocking vs. informational indicators"
+     6→  - "working with stacked PR detection"
+     7→---
+     8→
+     9→# Stacked PR Indicator
+    10→
+    11→The pancake emoji (🥞) indicates a stacked PR in the TUI dashboard lifecycle column. It appears when a plan's PR targets a branch other than master/main.
+    12→
+    13→## Dual-Source Detection
+    14→
+    15→Stacked status is detected from two sources with a fallback strategy:
+    16→
+    17→1. **Primary: Graphite `get_parent_branch()`** — When the PR head branch is known, the branch manager's `get_parent_branch()` is consulted first. If it returns a parent branch not in `("master", "main")`, the PR is stacked. Graphite is authoritative because it reflects the actual stack topology.
+    18→
+    19→2. **Fallback: GitHub `base_ref_name`** — Only when Graphite returns `None` (branch not tracked locally). The `base_ref_name` field on `PullRequestInfo` is checked against `("master", "main")`.
+    20→
+    21→&lt;!-- Source: packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py, RealPlanDataProvider._build_row_data --&gt;
+    22→
+    23→See `RealPlanDataProvider._build_row_data()` in `real.py` for the dual-source detection logic.
+    24→
+    25→## Stale Data Handling
+    26→
+    27→Graphite is authoritative because GitHub's `base_ref_name` can become stale. When a parent PR merges, GitHub does not always update the child PR's target branch immediately — the child may still show the old (now-merged) branch as its base. Graphite's local branch tracking reflects the actual stack state, making it the more reliable source for stacking detection.
+    28→
+    29→## Indicator Ordering
+    30→
+
+... [42 lines omitted] ...
+
+    41→- **Blocking indicators** (CI failures, unresolved reviews, merge conflicts) prevent the rocket emoji (🚀) from appearing in the implemented stage.
+  </tool_result>
+  <tool_result tool="toolu_0128A5AvaL5FQeZAHhDb8U5H">
+     1→---
+     2→title: TUI Status Indicators
+     3→read_when:
+     4→  - "working with status indicators in TUI dashboard"
+     5→  - "adding new emoji indicators to plan display"
+     6→  - "modifying the sts column"
+     7→tripwires:
+     8→  - action: "adding emoji with Unicode variation selector (\\ufe0f) to status indicators"
+     9→    warning: "Variation selector forces double-wide rendering in terminals, breaking column alignment. Current safe emoji: 🥞 🚧 👀 💥 ✔ ❌ 🚀. Test any new emoji in terminal before adding."
+    10→    score: 5
+    11→  - action: "extracting status indicators from the lifecycle display string"
+    12→    warning: "Indicators are computed from RAW PR state fields (is_draft, has_conflicts, review_decision), NOT extracted from lifecycle display. Use compute_status_indicators() for standalone display, format_lifecycle_with_status() for inline."
+    13→    score: 4
+    14→---
+    15→
+    16→# TUI Status Indicators
+    17→
+    18→Status indicators show PR state as emoji in the TUI dashboard. They are computed from raw PR state fields, not extracted from the lifecycle display string.
+    19→
+    20→## Two Public Functions
+    21→
+    22→**Location:** `packages/erk-shared/src/erk_shared/gateway/plan_data_provider/lifecycle.py`
+    23→
+    24→### compute_status_indicators() — Standalone Display
+    25→
+    26→Used for the "sts" column in the dashboard. Returns space-joined emoji string or "-" when empty.
+    27→
+    28→```python
+    29→compute_status_indicators(
+    30→    lifecycle_display="[cyan]impl[/cyan]",
+
+... [61 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_011qzk7JhXpHC3LseDU2B6jJ">
+     1→---
+     2→title: TUI Streaming Output Patterns
+     3→read_when:
+     4→  - "displaying streaming command output in TUI"
+     5→  - "executing long-running commands with progress"
+     6→  - "cross-thread UI updates in Textual"
+     7→last_audited: "2026-02-05 00:00 PT"
+     8→audit_result: edited
+     9→tripwires:
+    10→  - action: "accessing _status_bar without null guard"
+    11→    warning: "Guard _status_bar access with `if self._status_bar is not None:` — timing issue during widget lifecycle can cause AttributeError."
+    12→  - action: "using subprocess.Popen without bufsize=1 for streaming"
+    13→    warning: "Use bufsize=1 with text=True for line-buffered streaming Popen output. Without it, output may be block-buffered."
+    14→  - action: "displaying subprocess output in plain text widgets without stripping ANSI"
+    15→    warning: "Use click.unstyle() before displaying subprocess output in plain text widgets. Raw ANSI codes render as garbage."
+    16→---
+    17→
+    18→# TUI Streaming Output Patterns
+    19→
+    20→Patterns for displaying streaming command output in the Erk TUI without blocking the UI thread.
+    21→
+    22→For subprocess execution strategies (streaming vs executor, `stdin=subprocess.DEVNULL` requirement), see [Command Execution Strategies](command-execution.md).
+    23→
+    24→## Architecture Components
+    25→
+    26→1. **Background Thread** - Reads subprocess output via `subprocess.PIPE`
+    27→2. **Output Widget** - `CommandOutputPanel` (`src/erk/tui/widgets/command_output.py`) displays streaming content
+    28→3. **Cross-Thread Bridge** - `app.call_from_thread()` safely updates UI from background thread
+    29→
+    30→## Critical: Threading Safety with `call_from_thread`
+
+... [93 lines omitted] ...
+
+    81→4. **Output collection**: Lines stored in a list for error context extraction on failure
+    82→5. **Last non-empty line extraction**: On failure, extract the last non-empty line from output for error messages
+   105→        msg = next((ln for ln in reversed(output_lines) if ln), "Unknown error")
+   106→        self.call_from_thread(self.notify, msg, severity="error")
+  </tool_result>
+  <tool_result tool="toolu_01PFpfYXiFtCVk8Y6wHNiAuR">
+     1→---
+     2→title: TUI Subprocess Feedback Patterns
+     3→read_when:
+     4→  - "adding subprocess calls to the TUI"
+     5→  - "implementing background worker feedback in the TUI"
+     6→  - "parsing subprocess stderr for status markers"
+     7→tripwires:
+     8→  - action: "adding a subprocess call to the TUI without stderr inspection"
+     9→    warning: "TUI subprocess calls should inspect stderr for known success/failure markers. See subprocess-feedback.md for the pattern."
+    10→---
+    11→
+    12→# TUI Subprocess Feedback Patterns
+    13→
+    14→The TUI executes subprocess commands in background workers and provides feedback to users via `self.notify()`. A consistent pattern is used across all subprocess-calling methods.
+    15→
+    16→## Subprocess Error Extraction
+    17→
+    18→&lt;!-- Source: src/erk/tui/app.py --&gt;
+    19→
+    20→A helper function extracts human-readable error messages from the operation result object:
+    21→
+    22→1. Iterate backwards through the output lines (merged stdout/stderr)
+    23→2. Return the first non-empty line found
+    24→3. Fall back to `"Unknown error"` if all lines are empty
+    25→
+    26→## Stderr Inspection for Status Markers
+    27→
+    28→TUI background workers check `result.stderr` for specific success markers after subprocess calls. For example, the address-remote handler checks for `"Updated dispatch metadata"` in stderr to confirm a workflow dispatch succeeded.
+    29→
+    30→This pattern is necessary because subprocess exit code 0 alone doesn't distinguish between "successfully dispatched" and "silently did nothing."
+
+... [26 lines omitted] ...
+
+    38→3. On failure (`return_code != 0`): extract the last non-empty output line as the error message, notify with `severity="error"` (5s timeout)
+    45→CLI-side diagnostic output via `user_output` warnings was implemented in PR #8078 but subsequently reverted in commit a50fa13f2 (which eliminated the `--no-wait` flag and `dispatch_workflow()` method). The silent failure problem — where a dispatch succeeds but produces no user-visible feedback — remains a known gap. The TUI-side stderr inspection partially mitigates this, but CLI users don't benefit from it.
+    50→- [Error Detection Patterns](../cli/error-detection-patterns.md) — Keyword detection for parsing subprocess stderr
+  </tool_result>
+  <tool_result tool="toolu_016mrZKQmRS6zpPbpgK93xsn">
+     1→---
+     2→title: Textual Async Best Practices
+     3→last_audited: "2026-02-17 18:30 PT"
+     4→audit_result: clean
+     5→read_when:
+     6→  - "overriding Screen actions"
+     7→  - "working with async/await in Textual"
+     8→  - "testing async TUI code"
+     9→---
+    10→
+    11→# Textual Async Best Practices
+    12→
+    13→Guide for working with async/await in Textual applications.
+    14→
+    15→## When to Make Actions Async
+    16→
+    17→Actions (methods prefixed with `action_`) can be either sync or async depending on what they do:
+    18→
+    19→**Sync Actions** - For immediate, non-blocking operations:
+    20→
+    21→```python
+    22→def action_toggle_filter(self) -&gt; None:
+    23→    """Toggle filter visibility."""
+    24→    self._filter_visible = not self._filter_visible
+    25→    self.query_one("#filter").visible = self._filter_visible
+    26→```
+    27→
+    28→**Async Actions** - When you need to:
+    29→
+    30→- Wait for I/O operations
+
+... [147 lines omitted] ...
+
+    53→        super().action_dismiss()  # Type error!
+   129→def action_submit(self) -&gt; None:  # Type error
+   152→## Exception Handling in Background Workers (Error Boundary Pattern)
+   154→When using `@work(thread=True)` for background data fetching, exceptions in the worker thread are swallowed by Textual unless explicitly handled. The approved pattern wraps the entire worker body in a try/except that calls `self.app.call_from_thread()` to report errors back to the UI thread:
+   162→    except Exception as e:
+   163→        self.app.call_from_thread(self._on_error, str(e))
+   166→This is an **approved EAFP exception** for UI error boundaries — the try/except is not for control flow but for preventing silent worker failures. The `call_from_thread()` bridge ensures widget mutations happen on the UI thread.
+  </tool_result>
+  <assistant>Now I'll edit each file to add `curated_in: erk-tui` as the last field before the closing `---` in the frontmatter:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="18378" cache_read_input_tokens="16358" cache_creation="{'ephemeral_5m_input_tokens': 18378, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01NSBiCKtezhJ8MygesRCWms">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/multi-operation-tracking.md</param>
+    <param name="old_string">  - action: "calling self.notify() or self._finish_operation() directly from a background ...[truncated 41 chars]...updates from @work(thread=True) methods. Direct calls cause thread-safety violations."
+---</param>
+    <param name="new_string">  - action: "calling self.notify() or self._finish_operation() directly from a background ...[truncated 61 chars]...hread=True) methods. Direct calls cause thread-safety violations."
+curated_in: erk-tui
+---</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="18378" cache_read_input_tokens="16358" cache_creation="{'ephemeral_5m_input_tokens': 18378, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01VqhM1StNacWNLpXHPPcaht">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/one-shot-prompt-modal.md</param>
+    <param name="old_string">read_when:
+  - "adding a new modal or input screen to the TUI"
+  - "working with the one-shot dispatch workflow in erk dash"
+  - "adding global keybindings that trigger modals"
+---</param>
+    <param name="new_string">read_when:
+  - "adding a new modal or input screen to the TUI"
+  - "working with the one-shot dispatch workflow in erk dash"
+  - "adding global keybindings that trigger modals"
+curated_in: erk-tui
+---</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="18378" cache_read_input_tokens="16358" cache_creation="{'ephemeral_5m_input_tokens': 18378, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_015c73ruKgm6hMRnoCeL4vmR">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/plan-row-data.md</param>
+    <param name="old_string">  - "checking which PlanRowData fields are nullable"
+last_audited: "2026-02-23 00:15 PT"
+audit_result: edited
+---</param>
+    <param name="new_string">  - "checking which PlanRowData fields are nullable"
+last_audited: "2026-02-23 00:15 PT"
+audit_result: edited
+curated_in: erk-tui
+---</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="18378" cache_read_input_tokens="16358" cache_creation="{'ephemeral_5m_input_tokens': 18378, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01CmCfZrx5WdT415oh5Mx5wE">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/plan-title-rendering-pipeline.md</param>
+    <param name="old_string">  - action: "using title-stripping functions"
+    warning: "Distinguish `_strip_plan_prefi...[truncated 5 chars]...trip_plan_markers` (plan creation) vs `strip_plan_from_filename` (filename handling)."
+---</param>
+    <param name="new_string">  - action: "using title-stripping functions"
+    warning: "Distinguish `_strip_plan_prefi...[truncated 25 chars]...plan creation) vs `strip_plan_from_filename` (filename handling)."
+curated_in: erk-tui
+---</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="18378" cache_read_input_tokens="16358" cache_creation="{'ephemeral_5m_input_tokens': 18378, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01Vsg5FAWSFXMkbTodzR1nTr">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/runs-tab-architecture.md</param>
+    <param name="old_string">  - action: "adding a new column to RunDataTable without updating RunRowData"
+    warning:...[truncated 29 chars]...ata fields. Add the field to RunRowData first, then add the column in _setup_columns."
+---</param>
+    <param name="new_string">  - action: "adding a new column to RunDataTable without updating RunRowData"
+    warning:...[truncated 49 chars]...field to RunRowData first, then add the column in _setup_columns."
+curated_in: erk-tui
+---</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="18378" cache_read_input_tokens="16358" cache_creation="{'ephemeral_5m_input_tokens': 18378, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01JcY438gW5fskqkqPm1q32e">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/stacked-pr-indicator.md</param>
+    <param name="old_string">read_when:
+  - "adding or modifying PR indicators in the TUI dashboard"
+  - "understanding blocking vs. informational indicators"
+  - "working with stacked PR detection"
+---</param>
+    <param name="new_string">read_when:
+  - "adding or modifying PR indicators in the TUI dashboard"
+  - "understanding blocking vs. informational indicators"
+  - "working with stacked PR detection"
+curated_in: erk-tui
+---</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="18378" cache_read_input_tokens="16358" cache_creation="{'ephemeral_5m_input_tokens': 18378, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01Bhcx9KSiZJZuhSUJELc5vF">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/status-indicators.md</param>
+    <param name="old_string">  - action: "extracting status indicators from the lifecycle display string"
+    warning: ...[truncated 138 chars]...ors() for standalone display, format_lifecycle_with_status() for inline."
+    score: 4
+---</param>
+    <param name="new_string">  - action: "extracting status indicators from the lifecycle display string"
+    warning: ...[truncated 158 chars]... display, format_lifecycle_with_status() for inline."
+    score: 4
+curated_in: erk-tui
+---</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="18378" cache_read_input_tokens="16358" cache_creation="{'ephemeral_5m_input_tokens': 18378, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01QPrK51z4bnWBeBtY8hnskq">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/streaming-output.md</param>
+    <param name="old_string">  - action: "displaying subprocess output in plain text widgets without stripping ANSI"
+  ...[truncated 19 chars]...displaying subprocess output in plain text widgets. Raw ANSI codes render as garbage."
+---</param>
+    <param name="new_string">  - action: "displaying subprocess output in plain text widgets without stripping ANSI"
+  ...[truncated 39 chars]...s output in plain text widgets. Raw ANSI codes render as garbage."
+curated_in: erk-tui
+---</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="18378" cache_read_input_tokens="16358" cache_creation="{'ephemeral_5m_input_tokens': 18378, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01BheM5D9TFJjd75mnfusS6v">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/subprocess-feedback.md</param>
+    <param name="old_string">  - action: "adding a subprocess call to the TUI without stderr inspection"
+    warning: "...[truncated 16 chars]...stderr for known success/failure markers. See subprocess-feedback.md for the pattern."
+---</param>
+    <param name="new_string">  - action: "adding a subprocess call to the TUI without stderr inspection"
+    warning: "...[truncated 36 chars]...cess/failure markers. See subprocess-feedback.md for the pattern."
+curated_in: erk-tui
+---</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="18378" cache_read_input_tokens="16358" cache_creation="{'ephemeral_5m_input_tokens': 18378, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01HMBSpPkq8sHjB96hBDtDAi">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/textual-async.md</param>
+    <param name="old_string">  - "overriding Screen actions"
+  - "working with async/await in Textual"
+  - "testing async TUI code"
+---</param>
+    <param name="new_string">  - "overriding Screen actions"
+  - "working with async/await in Textual"
+  - "testing async TUI code"
+curated_in: erk-tui
+---</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="18378" cache_read_input_tokens="16358" cache_creation="{'ephemeral_5m_input_tokens': 18378, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01NSBiCKtezhJ8MygesRCWms">
+The file /home/runner/work/erk/erk/docs/learned/tui/multi-operation-tracking.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01VqhM1StNacWNLpXHPPcaht">
+The file /home/runner/work/erk/erk/docs/learned/tui/one-shot-prompt-modal.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_015c73ruKgm6hMRnoCeL4vmR">
+The file /home/runner/work/erk/erk/docs/learned/tui/plan-row-data.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01CmCfZrx5WdT415oh5Mx5wE">
+The file /home/runner/work/erk/erk/docs/learned/tui/plan-title-rendering-pipeline.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01Vsg5FAWSFXMkbTodzR1nTr">
+The file /home/runner/work/erk/erk/docs/learned/tui/runs-tab-architecture.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01JcY438gW5fskqkqPm1q32e">
+The file /home/runner/work/erk/erk/docs/learned/tui/stacked-pr-indicator.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01Bhcx9KSiZJZuhSUJELc5vF">
+The file /home/runner/work/erk/erk/docs/learned/tui/status-indicators.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01QPrK51z4bnWBeBtY8hnskq">
+The file /home/runner/work/erk/erk/docs/learned/tui/streaming-output.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01BheM5D9TFJjd75mnfusS6v">
+The file /home/runner/work/erk/erk/docs/learned/tui/subprocess-feedback.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01HMBSpPkq8sHjB96hBDtDAi">
+The file /home/runner/work/erk/erk/docs/learned/tui/textual-async.md has been updated successfully.
+  </tool_result>
+  <assistant>Perfect! I've successfully added `curated_in: erk-tui` to the YAML frontmatter of all 10 files in the `/home/runner/work/erk/erk/docs/learned/tui/` directory. 
+
+## Summary
+
+All files have been updated with the `curated_in: erk-tui` field added as the last field before the closing `---` in the frontmatter:
+
+1. **multi-operation-tracking.md** - Added after tripwires section
+2. **one-shot-prompt-modal.md** - Added after read_when section  
+3. **plan-row-data.md** - Added after audit_result field
+4. **plan-title-rendering-pipeline.md** - Added after tripwires section
+5. **runs-tab-architecture.md** - Added after tripwires section
+6. **stacked-pr-indicator.md** - Added after read_when section
+7. **status-indicators.md** - Added after tripwires section
+8. **streaming-output.md** - Added after tripwires section
+9. **subprocess-feedback.md** - Added after tripwires section
+10. **textual-async.md** - Added after read_when section
+
+The field was placed immediately before the closing `---` as requested, without modifying any content after the frontmatter block.</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="2881" cache_read_input_tokens="34736" cache_creation="{'ephemeral_5m_input_tokens': 2881, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>

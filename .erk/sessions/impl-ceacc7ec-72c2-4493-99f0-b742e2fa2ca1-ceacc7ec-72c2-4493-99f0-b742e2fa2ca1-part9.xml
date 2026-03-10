@@ -1,0 +1,1022 @@
+<session>
+  <meta source="agent-a8e9bde" />
+  <meta branch="plnd/create-erk-tui-skill-03-10-0421" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant docs before exploring raw files. Then explore codebase as necessary.
+
+I need to read all the remaining TUI and Textual source docs. Please read and summarize the key content from ALL of these docs:
+
+**docs/learned/tui/** (remaining):
+- keyboard-shortcuts.md
+- status-indicators.md
+- lifecycle-display.md
+- stacked-pr-indicator.md
+- one-shot-prompt-modal.md
+- plan-title-rendering-pipeline.md
+- title-truncation-edge-cases.md
+- streaming-output.md
+- subprocess-feedback.md
+- multi-operation-tracking.md
+- async-action-refresh-pattern.md
+- async-state-snapshot.md
+- textual-async.md
+- modal-screen-pattern.md
+- modal-widget-embedding.md
+- runs-tab-architecture.md
+
+**docs/learned/textual/**:
+- quirks.md
+- background-workers.md
+- testing.md
+- datatable-markup-escaping.md
+- widget-development.md
+
+For each doc, provide:
+1. The key patterns/rules it teaches
+2. Critical tripwires or gotchas
+3. The essential "do this / don't do that" guidance
+
+Focus on distilling the WHY and WHEN, not copying verbatim content.</user>
+  <assistant>I'll read all the remaining TUI and Textual documentation files to provide you with a comprehensive summary.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="15336" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15336, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01UuryZaNnJKDQS52sXAY86Y">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/keyboard-shortcuts.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15336" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15336, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01QNfS8xJUmnD9XqDFHabtcp">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/status-indicators.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15336" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15336, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01XNH2sGQPBAMfVCrjpCFSdf">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/lifecycle-display.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15336" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15336, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_0128ozX97vdVRLEDJWdnmnLK">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/stacked-pr-indicator.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15336" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15336, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01U7nTib1UdgBxCa9ihBigFs">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/one-shot-prompt-modal.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15336" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15336, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01RmpfWZgBiwazj8MgJmGSzA">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/plan-title-rendering-pipeline.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15336" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15336, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Vtn2zTvtnV5VhzjF7gV7vU">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/title-truncation-edge-cases.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15336" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15336, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01UrjzdULfvxum8mcRpGr5eg">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/streaming-output.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15336" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15336, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_013am4m9bpCWiwUMkxHAtve4">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/subprocess-feedback.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15336" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15336, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01KCMXjYPomzt2BcLCaQ57yD">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/multi-operation-tracking.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15336" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15336, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01HsdJnp9t8Bq5KyNwSeJwqP">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/async-action-refresh-pattern.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15336" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15336, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01FDrKogBK1sQeBCFGW51mdb">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/async-state-snapshot.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15336" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15336, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01M3hUXML2CmZTqQDU2pCnXw">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/textual-async.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15336" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15336, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01LBiPFZcrnwfKtgSf5wcAHs">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/modal-screen-pattern.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15336" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15336, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01PwQrXgyap25V1xAxcANpRz">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/modal-widget-embedding.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15336" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15336, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01EbM1d1wDVurGyDazsSvbva">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/runs-tab-architecture.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15336" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15336, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01MSBG2Fz681Gag2iyx3oYKv">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/textual/quirks.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15336" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15336, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01CKj5Y6tEbtPsH2yQdfccey">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/textual/background-workers.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15336" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15336, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01KuSuN61p58zRcXieodYoca">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/textual/testing.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15336" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15336, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01LpV693kHi8ajuqt8SGRzqR">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/textual/datatable-markup-escaping.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15336" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15336, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Cp2HXShGEnnrgKtX6bwM4w">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/textual/widget-development.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15336" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15336, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01UuryZaNnJKDQS52sXAY86Y">
+     1→---
+     2→title: TUI Keyboard Shortcuts Inventory
+     3→read_when:
+     4→  - "adding a new keyboard shortcut to the TUI"
+     5→  - "checking for shortcut conflicts before binding a new key"
+     6→  - "understanding what keys are available in the TUI"
+     7→tripwires:
+     8→  - action: "adding a new key binding without checking existing bindings"
+     9→    warning: "Check this document and ErkDashApp.BINDINGS in app.py for conflicts. Some keys are hidden but still active."
+    10→    score: 4
+    11→---
+    12→
+    13→# TUI Keyboard Shortcuts Inventory
+    14→
+    15→Complete binding inventory from `ErkDashApp.BINDINGS` in `src/erk/tui/app.py`.
+    16→
+    17→## All Bindings
+    18→
+    19→&lt;!-- Source: src/erk/tui/app.py, ErkDashApp.BINDINGS --&gt;
+    20→
+    21→The complete binding inventory is defined in `ErkDashApp.BINDINGS`. The bindings include both visible shortcuts (shown in help) and hidden power-user shortcuts.
+    22→
+    23→## Key Groups
+    24→
+    25→**Navigation:** j/k (vim-style), escape (quit)
+    26→
+    27→**View Switching:** 1/2/3 (direct), left/right (cycle)
+    28→
+    29→**Filters:** o (objective), t (stack), / (text filter), s (sort)
+    30→
+
+... [50 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01QNfS8xJUmnD9XqDFHabtcp">
+     1→---
+     2→title: TUI Status Indicators
+     3→read_when:
+     4→  - "working with status indicators in TUI dashboard"
+     5→  - "adding new emoji indicators to plan display"
+     6→  - "modifying the sts column"
+     7→tripwires:
+     8→  - action: "adding emoji with Unicode variation selector (\\ufe0f) to status indicators"
+     9→    warning: "Variation selector forces double-wide rendering in terminals, breaking column alignment. Current safe emoji: 🥞 🚧 👀 💥 ✔ ❌ 🚀. Test any new emoji in terminal before adding."
+    10→    score: 5
+    11→  - action: "extracting status indicators from the lifecycle display string"
+    12→    warning: "Indicators are computed from RAW PR state fields (is_draft, has_conflicts, review_decision), NOT extracted from lifecycle display. Use compute_status_indicators() for standalone display, format_lifecycle_with_status() for inline."
+    13→    score: 4
+    14→---
+    15→
+    16→# TUI Status Indicators
+    17→
+    18→Status indicators show PR state as emoji in the TUI dashboard. They are computed from raw PR state fields, not extracted from the lifecycle display string.
+    19→
+    20→## Two Public Functions
+    21→
+    22→**Location:** `packages/erk-shared/src/erk_shared/gateway/plan_data_provider/lifecycle.py`
+    23→
+    24→### compute_status_indicators() — Standalone Display
+    25→
+    26→Used for the "sts" column in the dashboard. Returns space-joined emoji string or "-" when empty.
+    27→
+    28→```python
+    29→compute_status_indicators(
+    30→    lifecycle_display="[cyan]impl[/cyan]",
+
+... [61 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01XNH2sGQPBAMfVCrjpCFSdf">
+     1→---
+     2→title: Lifecycle and PR Status Display
+     3→read_when:
+     4→  - "adding a new lifecycle stage to the TUI"
+     5→  - "changing lifecycle abbreviations or colors"
+     6→  - "modifying PR status emoji indicators"
+     7→  - "understanding the stage column in erk dash"
+     8→tripwires:
+     9→  - action: "adding a new lifecycle stage without updating abbreviation map"
+    10→    warning: "The stage column is 8 chars wide. New stages longer than 8 chars need abbreviations in compute_lifecycle_display(). Also update format_lifecycle_with_status() stage detection."
+    11→---
+    12→
+    13→# Lifecycle and PR Status Display
+    14→
+    15→The TUI dashboard shows a `stage` column for planned_pr plans, computed in `lifecycle.py` and displayed only in planned_pr backend mode. PR status indicators (draft/published, conflicts, review decisions) are rendered inline within the stage display.
+    16→
+    17→## Lifecycle Stage Display
+    18→
+    19→&lt;!-- Source: packages/erk-shared/src/erk_shared/gateway/plan_data_provider/lifecycle.py, compute_lifecycle_display --&gt;
+    20→
+    21→`compute_lifecycle_display()` reads `lifecycle_stage` from plan header fields. If absent, it infers the stage from `is_draft` and `pr_state` in plan metadata:
+    22→
+    23→| `is_draft` | `pr_state` | Inferred Stage |
+    24→| ---------- | ---------- | -------------- |
+    25→| `True`     | `"OPEN"`   | `"planned"`    |
+    26→| `False`    | `"OPEN"`   | `"impl"`       |
+    27→| `False`    | `"MERGED"` | `"merged"`     |
+    28→| `False`    | `"CLOSED"` | `"closed"`     |
+    29→
+    30→When the resolved stage is `"planned"` and a workflow run exists, it upgrades to `"impl"`.
+
+... [51 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_0128ozX97vdVRLEDJWdnmnLK">
+     1→---
+     2→title: Stacked PR Indicator
+     3→read_when:
+     4→  - "adding or modifying PR indicators in the TUI dashboard"
+     5→  - "understanding blocking vs. informational indicators"
+     6→  - "working with stacked PR detection"
+     7→---
+     8→
+     9→# Stacked PR Indicator
+    10→
+    11→The pancake emoji (🥞) indicates a stacked PR in the TUI dashboard lifecycle column. It appears when a plan's PR targets a branch other than master/main.
+    12→
+    13→## Dual-Source Detection
+    14→
+    15→Stacked status is detected from two sources with a fallback strategy:
+    16→
+    17→1. **Primary: Graphite `get_parent_branch()`** — When the PR head branch is known, the branch manager's `get_parent_branch()` is consulted first. If it returns a parent branch not in `("master", "main")`, the PR is stacked. Graphite is authoritative because it reflects the actual stack topology.
+    18→
+    19→2. **Fallback: GitHub `base_ref_name`** — Only when Graphite returns `None` (branch not tracked locally). The `base_ref_name` field on `PullRequestInfo` is checked against `("master", "main")`.
+    20→
+    21→&lt;!-- Source: packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py, RealPlanDataProvider._build_row_data --&gt;
+    22→
+    23→See `RealPlanDataProvider._build_row_data()` in `real.py` for the dual-source detection logic.
+    24→
+    25→## Stale Data Handling
+    26→
+    27→Graphite is authoritative because GitHub's `base_ref_name` can become stale. When a parent PR merges, GitHub does not always update the child PR's target branch immediately — the child may still show the old (now-merged) branch as its base. Graphite's local branch tracking reflects the actual stack state, making it the more reliable source for stacking detection.
+    28→
+    29→## Indicator Ordering
+    30→
+
+... [42 lines omitted] ...
+
+    41→- **Blocking indicators** (CI failures, unresolved reviews, merge conflicts) prevent the rocket emoji (🚀) from appearing in the implemented stage.
+  </tool_result>
+  <tool_result tool="toolu_01U7nTib1UdgBxCa9ihBigFs">
+     1→---
+     2→title: One-Shot Prompt Modal
+     3→read_when:
+     4→  - "adding a new modal or input screen to the TUI"
+     5→  - "working with the one-shot dispatch workflow in erk dash"
+     6→  - "adding global keybindings that trigger modals"
+     7→---
+     8→
+     9→# One-Shot Prompt Modal
+    10→
+    11→The `x` keybinding in erk dash opens a modal for dispatching one-shot prompts. This is a global action — no row selection is required.
+    12→
+    13→## Screen Implementation
+    14→
+    15→&lt;!-- Source: src/erk/tui/screens/one_shot_prompt_screen.py --&gt;
+    16→
+    17→`OneShotPromptScreen(ModalScreen[str | None])` at `src/erk/tui/screens/one_shot_prompt_screen.py`:
+    18→
+    19→- **Widget**: `TextArea` (not `Input`) for multi-line prompt support, 32-line height
+    20→- **Submit**: Ctrl+Enter dispatches the prompt (returns stripped text)
+    21→- **Cancel**: Escape dismisses (returns `None`)
+    22→- **No `q` binding**: The screen deliberately omits a `q` keybinding since users need to type `q` in prompts
+    23→
+    24→### Design Decision: TextArea vs Input
+    25→
+    26→`TextArea` was chosen over `Input` to allow multi-line prompts. One-shot prompts often contain detailed instructions spanning multiple lines. The 32-line height provides ample space without overwhelming the screen.
+    27→
+    28→### Design Decision: Ctrl+Enter vs Enter
+    29→
+    30→Ctrl+Enter (not Enter) submits because Enter inserts newlines in the `TextArea`. This avoids interfering with multi-line editing.
+
+... [39 lines omitted] ...
+
+    55→- **Failure**: Shows error toast with the last output line
+  </tool_result>
+  <tool_result tool="toolu_01RmpfWZgBiwazj8MgJmGSzA">
+     1→---
+     2→title: TUI Plan Title Rendering Pipeline
+     3→last_audited: "2026-02-16 04:53 PT"
+     4→audit_result: clean
+     5→read_when:
+     6→  - "debugging why plan titles display incorrectly"
+     7→  - "troubleshooting missing prefixes in TUI"
+     8→  - "understanding plan data flow in TUI"
+     9→tripwires:
+    10→  - action: "modifying how plan titles are displayed in TUI"
+    11→    warning: "Ensure `[erk-learn]` prefix is added BEFORE any filtering/sorting stages."
+    12→  - action: "using title-stripping functions"
+    13→    warning: "Distinguish `_strip_plan_prefixes` (PR creation) vs `_strip_plan_markers` (plan creation) vs `strip_plan_from_filename` (filename handling)."
+    14→---
+    15→
+    16→# TUI Plan Title Rendering Pipeline
+    17→
+    18→Plan titles pass through multiple stages before appearing in the TUI. Issues can occur at any stage.
+    19→
+    20→## The 5-Stage Pipeline
+    21→
+    22→```
+    23→GitHub API → Middleware (prefix) → Filtering → Service (transform) → Widget (render)
+    24→```
+    25→
+    26→### Stage 1: GitHub API Response
+    27→
+    28→GitHub returns raw issue/PR data:
+    29→
+    30→```json
+
+... [100 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01Vtn2zTvtnV5VhzjF7gV7vU">
+     1→---
+     2→title: Title Truncation Edge Cases
+     3→last_audited: "2026-02-16 04:53 PT"
+     4→audit_result: clean
+     5→read_when:
+     6→  - "implementing title truncation in TUI"
+     7→  - "troubleshooting truncated titles showing only prefix"
+     8→  - "working with title display lengths"
+     9→---
+    10→
+    11→# Title Truncation Edge Cases
+    12→
+    13→Title truncation interacts unexpectedly with prefixes and markup. This document covers edge cases to watch for.
+    14→
+    15→## The Basic Problem
+    16→
+    17→When truncation is applied after prefixing:
+    18→
+    19→```
+    20→Original:  "Short Title"
+    21→+ Prefix:  "[erk-learn] Short Title"  (24 chars)
+    22→Truncated: "[erk-learn] Short Ti..."  (20 chars visible)
+    23→```
+    24→
+    25→The `[erk-learn] ` prefix consumes 12 characters of the display budget.
+    26→
+    27→## Edge Cases
+    28→
+    29→### Prefix Longer Than Truncation Limit
+    30→
+
+... [65 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01UrjzdULfvxum8mcRpGr5eg">
+     1→---
+     2→title: TUI Streaming Output Patterns
+     3→read_when:
+     4→  - "displaying streaming command output in TUI"
+     5→  - "executing long-running commands with progress"
+     6→  - "cross-thread UI updates in Textual"
+     7→last_audited: "2026-02-05 00:00 PT"
+     8→audit_result: edited
+     9→tripwires:
+    10→  - action: "accessing _status_bar without null guard"
+    11→    warning: "Guard _status_bar access with `if self._status_bar is not None:` — timing issue during widget lifecycle can cause AttributeError."
+    12→  - action: "using subprocess.Popen without bufsize=1 for streaming"
+    13→    warning: "Use bufsize=1 with text=True for line-buffered streaming Popen output. Without it, output may be block-buffered."
+    14→  - action: "displaying subprocess output in plain text widgets without stripping ANSI"
+    15→    warning: "Use click.unstyle() before displaying subprocess output in plain text widgets. Raw ANSI codes render as garbage."
+    16→---
+    17→
+    18→# TUI Streaming Output Patterns
+    19→
+    20→Patterns for displaying streaming command output in the Erk TUI without blocking the UI thread.
+    21→
+    22→For subprocess execution strategies (streaming vs executor, `stdin=subprocess.DEVNULL` requirement), see [Command Execution Strategies](command-execution.md).
+    23→
+    24→## Architecture Components
+    25→
+    26→1. **Background Thread** - Reads subprocess output via `subprocess.PIPE`
+    27→2. **Output Widget** - `CommandOutputPanel` (`src/erk/tui/widgets/command_output.py`) displays streaming content
+    28→3. **Cross-Thread Bridge** - `app.call_from_thread()` safely updates UI from background thread
+    29→
+    30→## Critical: Threading Safety with `call_from_thread`
+
+... [93 lines omitted] ...
+
+    81→4. **Output collection**: Lines stored in a list for error context extraction on failure
+    82→5. **Last non-empty line extraction**: On failure, extract the last non-empty line from output for error messages
+   105→        msg = next((ln for ln in reversed(output_lines) if ln), "Unknown error")
+   106→        self.call_from_thread(self.notify, msg, severity="error")
+  </tool_result>
+  <tool_result tool="toolu_013am4m9bpCWiwUMkxHAtve4">
+     1→---
+     2→title: TUI Subprocess Feedback Patterns
+     3→read_when:
+     4→  - "adding subprocess calls to the TUI"
+     5→  - "implementing background worker feedback in the TUI"
+     6→  - "parsing subprocess stderr for status markers"
+     7→tripwires:
+     8→  - action: "adding a subprocess call to the TUI without stderr inspection"
+     9→    warning: "TUI subprocess calls should inspect stderr for known success/failure markers. See subprocess-feedback.md for the pattern."
+    10→---
+    11→
+    12→# TUI Subprocess Feedback Patterns
+    13→
+    14→The TUI executes subprocess commands in background workers and provides feedback to users via `self.notify()`. A consistent pattern is used across all subprocess-calling methods.
+    15→
+    16→## Subprocess Error Extraction
+    17→
+    18→&lt;!-- Source: src/erk/tui/app.py --&gt;
+    19→
+    20→A helper function extracts human-readable error messages from the operation result object:
+    21→
+    22→1. Iterate backwards through the output lines (merged stdout/stderr)
+    23→2. Return the first non-empty line found
+    24→3. Fall back to `"Unknown error"` if all lines are empty
+    25→
+    26→## Stderr Inspection for Status Markers
+    27→
+    28→TUI background workers check `result.stderr` for specific success markers after subprocess calls. For example, the address-remote handler checks for `"Updated dispatch metadata"` in stderr to confirm a workflow dispatch succeeded.
+    29→
+    30→This pattern is necessary because subprocess exit code 0 alone doesn't distinguish between "successfully dispatched" and "silently did nothing."
+
+... [26 lines omitted] ...
+
+    38→3. On failure (`return_code != 0`): extract the last non-empty output line as the error message, notify with `severity="error"` (5s timeout)
+    45→CLI-side diagnostic output via `user_output` warnings was implemented in PR #8078 but subsequently reverted in commit a50fa13f2 (which eliminated the `--no-wait` flag and `dispatch_workflow()` method). The silent failure problem — where a dispatch succeeds but produces no user-visible feedback — remains a known gap. The TUI-side stderr inspection partially mitigates this, but CLI users don't benefit from it.
+    50→- [Error Detection Patterns](../cli/error-detection-patterns.md) — Keyword detection for parsing subprocess stderr
+  </tool_result>
+  <tool_result tool="toolu_01KCMXjYPomzt2BcLCaQ57yD">
+     1→---
+     2→title: TUI Multi-Operation Tracking
+     3→read_when:
+     4→  - "adding a new background operation to the TUI"
+     5→  - "implementing status bar progress for a workflow command"
+     6→  - "debugging operation lifecycle or stuck operations"
+     7→tripwires:
+     8→  - action: "calling start_operation() without a matching finish_operation() in the error path"
+     9→    warning: "Always call finish_operation() in both success and error paths. Use try/finally or explicit error handling. Missing finish calls leave ghost operations in the status bar."
+    10→  - action: "constructing op IDs without the {action}-{resource}-{id} pattern"
+    11→    warning: "Op IDs must follow the convention: f'{action}-{resource_type}-{resource_id}' (e.g., 'land-pr-456', 'close-plan-123'). Non-unique IDs cause operations to overwrite each other."
+    12→  - action: "using subprocess.run() instead of _run_streaming_operation() for TUI commands"
+    13→    warning: "TUI background operations must use _run_streaming_operation() for live progress. subprocess.run() blocks without streaming and produces no status bar updates."
+    14→  - action: "calling self.notify() or self._finish_operation() directly from a background thread"
+    15→    warning: "Use self.call_from_thread() for all UI updates from @work(thread=True) methods. Direct calls cause thread-safety violations."
+    16→---
+    17→
+    18→# TUI Multi-Operation Tracking
+    19→
+    20→The TUI supports multiple concurrent background operations with live progress display in the status bar. Operations are tracked via a registry pattern with start/update/finish lifecycle methods.
+    21→
+    22→## Architecture
+    23→
+    24→### \_OperationState
+    25→
+    26→Frozen dataclass in `src/erk/tui/widgets/status_bar.py`. Stores the current label and progress text for a single operation. See source file for implementation details.
+    27→
+    28→### Operations Registry
+    29→
+    30→`_operations: dict[str, _OperationState]` in `src/erk/tui/widgets/status_bar.py` maps op IDs to their current state. Supports multiple concurrent operations; the most recently updated one is displayed.
+
+... [59 lines omitted] ...
+
+    72→**Error path:** Extract the last line of output, finish the operation, and display an error toast with `severity="error"` and `timeout=5` for longer visibility.
+  </tool_result>
+  <tool_result tool="toolu_01HsdJnp9t8Bq5KyNwSeJwqP">
+     1→---
+     2→title: Async Action Refresh Pattern
+     3→read_when:
+     4→  - "adding background operations to the TUI"
+     5→  - "implementing worker thread actions in the dashboard"
+     6→  - "refreshing TUI data after a background subprocess"
+     7→tripwires:
+     8→  - action: "completing a background worker thread without calling action_refresh"
+     9→    warning: "Always call_from_thread(self.action_refresh) after successful background work to update the TUI display."
+    10→    score: 6
+    11→  - action: "passing --no-wait in worker thread subprocess calls"
+    12→    warning: "Never pass --no-wait in worker threads — it defeats the polling purpose. The thread exists to wait for the operation to complete before refreshing."
+    13→    score: 5
+    14→---
+    15→
+    16→# Async Action Refresh Pattern
+    17→
+    18→The TUI dashboard uses `@work(thread=True)` decorated methods to run subprocess operations in background threads without blocking the UI. After each successful operation, the thread triggers a data refresh.
+    19→
+    20→## The Pattern
+    21→
+    22→&lt;!-- Source: src/erk/tui/app.py, _address_remote_async --&gt;
+    23→
+    24→All background worker methods in `app.py` follow the same structure:
+    25→
+    26→1. **Decorate with `@work(thread=True)`** — Textual runs the method in a worker thread
+    27→2. **Run subprocess** — Execute the CLI command (e.g., `erk pr address-remote`)
+    28→3. **Show success toast** — `self.call_from_thread(self.notify, message)`
+    29→4. **Trigger refresh** — `self.call_from_thread(self.action_refresh)`
+    30→5. **Handle errors** — Catch `CalledProcessError`, show error toast
+
+... [24 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01FDrKogBK1sQeBCFGW51mdb">
+     1→---
+     2→title: TUI Async State Snapshot Pattern
+     3→category: tui
+     4→read_when:
+     5→  - "adding async data fetching to the TUI"
+     6→  - "reading self._view_mode during async operations"
+     7→  - "debugging stale data appearing in the wrong tab"
+     8→tripwires:
+     9→  - action: "reading self._view_mode during async data fetch without snapshotting"
+    10→    warning: "Snapshot at fetch start with fetched_mode = self._view_mode. Read this doc."
+    11→  - action: "caching fetched data under self._view_mode after an async operation"
+    12→    warning: "Cache under fetched_mode (snapshot at start), not self._view_mode (may have changed during fetch)."
+    13→---
+    14→
+    15→# TUI Async State Snapshot Pattern
+    16→
+    17→When fetching data asynchronously in the TUI, the user may switch views during the fetch. The "fetched mode" pattern prevents race conditions by snapshotting the active view at fetch start and threading it through the pipeline.
+    18→
+    19→## The Problem
+    20→
+    21→```
+    22→1. User is on Plans tab, fetch starts
+    23→2. User switches to Objectives tab during fetch
+    24→3. Fetch completes with Plans data
+    25→4. BUG: Plans data overwrites Objectives display
+    26→```
+    27→
+    28→Without snapshotting, `self._view_mode` reflects the _current_ view (Objectives), but the fetched data belongs to the _original_ view (Plans). Caching under the wrong key or updating the wrong display corrupts the UI.
+    29→
+    30→## The Solution: `fetched_mode` Snapshot
+
+... [47 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01M3hUXML2CmZTqQDU2pCnXw">
+     1→---
+     2→title: Textual Async Best Practices
+     3→last_audited: "2026-02-17 18:30 PT"
+     4→audit_result: clean
+     5→read_when:
+     6→  - "overriding Screen actions"
+     7→  - "working with async/await in Textual"
+     8→  - "testing async TUI code"
+     9→---
+    10→
+    11→# Textual Async Best Practices
+    12→
+    13→Guide for working with async/await in Textual applications.
+    14→
+    15→## When to Make Actions Async
+    16→
+    17→Actions (methods prefixed with `action_`) can be either sync or async depending on what they do:
+    18→
+    19→**Sync Actions** - For immediate, non-blocking operations:
+    20→
+    21→```python
+    22→def action_toggle_filter(self) -&gt; None:
+    23→    """Toggle filter visibility."""
+    24→    self._filter_visible = not self._filter_visible
+    25→    self.query_one("#filter").visible = self._filter_visible
+    26→```
+    27→
+    28→**Async Actions** - When you need to:
+    29→
+    30→- Wait for I/O operations
+
+... [147 lines omitted] ...
+
+    53→        super().action_dismiss()  # Type error!
+   129→def action_submit(self) -&gt; None:  # Type error
+   152→## Exception Handling in Background Workers (Error Boundary Pattern)
+   154→When using `@work(thread=True)` for background data fetching, exceptions in the worker thread are swallowed by Textual unless explicitly handled. The approved pattern wraps the entire worker body in a try/except that calls `self.app.call_from_thread()` to report errors back to the UI thread:
+   162→    except Exception as e:
+   163→        self.app.call_from_thread(self._on_error, str(e))
+   166→This is an **approved EAFP exception** for UI error boundaries — the try/except is not for control flow but for preventing silent worker failures. The `call_from_thread()` bridge ensures widget mutations happen on the UI thread.
+  </tool_result>
+  <tool_result tool="toolu_01LBiPFZcrnwfKtgSf5wcAHs">
+     1→---
+     2→title: TUI Modal Screen Pattern
+     3→read_when:
+     4→  - "adding a new modal screen to the TUI"
+     5→  - "implementing a ModalScreen subclass"
+     6→  - "displaying detail views or confirmation dialogs"
+     7→tripwires:
+     8→  - action: "creating a ModalScreen without CSS for dismiss behavior"
+     9→    warning: "ModalScreen requires explicit CSS for the overlay. Without it, clicking outside the modal does nothing."
+    10→  - action: "calling widget methods from @work(thread=True) without call_from_thread()"
+    11→    warning: "Background thread widget mutations cause silent UI corruption. Use self.app.call_from_thread(callback, ...)."
+    12→  - action: "using inverted key check in on_key() modal dismiss logic"
+    13→    warning: "if event.key not in (...) is WRONG for dismiss logic — it swallows dismiss keys. Use if event.key in (...) to check for positive dismiss. Regression caused by stacked PR merge order."
+    14→    score: 7
+    15→---
+    16→
+    17→# TUI Modal Screen Pattern
+    18→
+    19→Checklist for implementing a new modal screen in the erk TUI.
+    20→
+    21→## 7-Element Checklist
+    22→
+    23→### 1. ModalScreen Subclass
+    24→
+    25→Extend `ModalScreen` (not `Screen`) to get overlay dismiss behavior:
+    26→
+    27→```python
+    28→from textual.screen import ModalScreen
+    29→
+    30→class MyDetailScreen(ModalScreen):
+
+... [101 lines omitted] ...
+
+    66→    except Exception as e:
+    67→        self.app.call_from_thread(self._on_error, str(e))
+    80→### 6. Error Boundary
+    82→Wrap the entire worker body in try/except. This is an approved EAFP exception for UI error boundaries — it prevents silent worker failures.
+   125→- [Textual Async Best Practices](textual-async.md) — Error boundary pattern details
+  </tool_result>
+  <tool_result tool="toolu_01PwQrXgyap25V1xAxcANpRz">
+     1→---
+     2→title: Modal Widget Embedding Pattern
+     3→read_when:
+     4→  - "reusing PlanDataTable in a modal screen"
+     5→  - "embedding complex widgets in Textual modal screens"
+     6→  - "handling null safety for optional gateway fields in TUI"
+     7→tripwires:
+     8→  - action: "passing id= kwarg to PlanDataTable constructor"
+     9→    warning: "PlanDataTable does not support the id= keyword argument. Use CSS selectors or widget references instead."
+    10→  - action: "accessing optional gateway fields without null checks in TUI event handlers"
+    11→    warning: "Gateway fields like plan_body or objective_content may be None. Always check before accessing in event handlers."
+    12→  - action: "implementing on_key() in a modal without calling event.prevent_default() and event.stop()"
+    13→    warning: "Modal on_key() must call event.prevent_default() and event.stop() BEFORE any logic. Without this, keystrokes leak to the underlying view and trigger unintended actions."
+    14→  - action: "implementing modal dismiss with an inverted key check condition"
+    15→    warning: "Dismiss-on-unhandled pattern: if event.key not in (bound_keys): self.dismiss(). Using the inverted condition (if key in bound_keys: dismiss) is a common bug that dismisses on valid keys instead of unrecognized ones."
+    16→---
+    17→
+    18→# Modal Widget Embedding Pattern
+    19→
+    20→Pattern for reusing complex widgets (like PlanDataTable) inside modal screens. Based on the ObjectivePlansScreen implementation that embeds PlanDataTable in a modal dialog.
+    21→
+    22→## The Pattern
+    23→
+    24→When a screen needs to display a subset of data using an existing table widget:
+    25→
+    26→1. **Create the modal screen** extending `ModalScreen` or `Screen`
+    27→2. **Instantiate the widget** without custom ID (PlanDataTable limitation)
+    28→3. **Configure the widget** for the modal context (different columns, filtered data)
+    29→4. **Handle events** from the embedded widget within the modal screen
+    30→
+
+... [42 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01EbM1d1wDVurGyDazsSvbva">
+     1→---
+     2→title: "Runs Tab Architecture"
+     3→read_when:
+     4→  - "working with TUI Runs tab"
+     5→  - "adding columns to RunDataTable"
+     6→  - "understanding branch resolution in runs"
+     7→  - "modifying workflow run display in TUI"
+     8→tripwires:
+     9→  - action: "using run.branch directly for display without checking PR head_branch first"
+    10→    warning: "After merge+deletion, run.branch becomes master/main. Use PR head_branch as primary source, falling back to run.branch only if not master/main."
+    11→  - action: "adding a new column to RunDataTable without updating RunRowData"
+    12→    warning: "RunDataTable columns are populated from RunRowData fields. Add the field to RunRowData first, then add the column in _setup_columns."
+    13→---
+    14→
+    15→# Runs Tab Architecture
+    16→
+    17→The Runs tab displays GitHub Actions workflow runs in the TUI, alongside Plans, Learn, and Objectives views.
+    18→
+    19→## RunRowData
+    20→
+    21→Frozen dataclass representing one workflow run row.
+    22→
+    23→**Source**: `src/erk/tui/data/types.py`
+    24→
+    25→| Field               | Type               | Description                                             |
+    26→| ------------------- | ------------------ | ------------------------------------------------------- |
+    27→| `run_id`            | `str`              | GitHub Actions workflow run ID                          |
+    28→| `run_url`           | `str \| None`      | URL to the GitHub Actions run page                      |
+    29→| `status`            | `str`              | Raw status: "queued", "in_progress", "completed"        |
+    30→| `conclusion`        | `str \| None`      | Raw conclusion: "success", "failure", "cancelled", None |
+
+... [78 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01MSBG2Fz681Gag2iyx3oYKv">
+     1→---
+     2→title: Textual API Quirks and Workarounds
+     3→read_when:
+     4→  - "working with Textual TUI framework"
+     5→  - "debugging DataTable, App, or CSS issues in Textual"
+     6→  - "writing tests for Textual applications"
+     7→last_audited: "2026-02-16 14:30 PT"
+     8→audit_result: edited
+     9→---
+    10→
+    11→# Textual API Quirks and Workarounds
+    12→
+    13→This document captures API quirks discovered while building the erk dash TUI with Textual.
+    14→
+    15→## DataTable Quirks
+    16→
+    17→### cursor_type Must Be Set via `__init__`
+    18→
+    19→**Problem**: `cursor_type` is a `Reactive[CursorType]`, not a plain attribute. Setting it as a class attribute causes type errors:
+    20→
+    21→```python
+    22→# WRONG - causes type error
+    23→class MyTable(DataTable):
+    24→    cursor_type = "row"  # Type error: Literal['row'] not assignable to Reactive[CursorType]
+    25→```
+    26→
+    27→**Solution**: Pass to `super().__init__()`:
+    28→
+    29→```python
+    30→# CORRECT
+
+... [212 lines omitted] ...
+
+    80→**Problem**: The base `App.action_quit` is an async method. Overriding it with a sync method causes pyright errors about incompatible return types.
+    86→def action_quit(self) -&gt; None:  # Type error: incompatible override
+   104→**Problem**: When loading data in a background thread with `run_in_executor`, you might try to use `call_from_thread` to update the UI. This fails in test context with "must run in different thread" error.
+   159→# WRONG - causes MarkupError at render time
+   163→**Error signature:**
+   166→MarkupError: Expected markup value (found '://github.com/...')
+   196→**Problem**: When displaying raw JSON, code, or file contents in a Static widget, `escape_markup()` may not fully prevent `MarkupError`. Content with Python type annotations like `list[str]` or complex nested escape sequences can still cause parsing failures.
+   198→**Error signature:**
+   201→MarkupError: Expected markup value (found '\\"number\\"],\\n ...')
+   221→**Problem**: The StatusBar widget displays subprocess error messages that may contain brackets (e.g., `[error details]`). With default `markup=True`, these brackets are parsed as Rich markup tags, causing `MarkupError` at render time.
+  </tool_result>
+  <tool_result tool="toolu_01CKj5Y6tEbtPsH2yQdfccey">
+     1→---
+     2→title: Textual Background Workers
+     3→read_when:
+     4→  - "running subprocess in TUI without blocking"
+     5→  - "streaming output to Textual widgets"
+     6→  - "using run_worker for async operations"
+     7→last_audited: "2026-02-16 14:20 PT"
+     8→audit_result: clean
+     9→---
+    10→
+    11→# Textual Background Workers
+    12→
+    13→## When to Use `run_worker()`
+    14→
+    15→Use `run_worker()` for I/O-bound operations that should not block the UI:
+    16→
+    17→- Subprocess execution with output streaming
+    18→- Network requests
+    19→- File operations on large files
+    20→
+    21→## Subprocess Streaming Pattern
+    22→
+    23→```python
+    24→from textual.worker import Worker, WorkerState
+    25→import asyncio
+    26→
+    27→def action_execute(self) -&gt; None:
+    28→    """Start command execution."""
+    29→    self._output_panel.visible = True
+    30→    self.run_worker(self._stream_subprocess, exclusive=True)
+
+... [39 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01KuSuN61p58zRcXieodYoca">
+     1→---
+     2→title: Textual TUI Testing Patterns
+     3→read_when:
+     4→  - "testing Textual TUI components"
+     5→  - "writing tests for ModalScreen"
+     6→  - "testing keyboard bindings"
+     7→  - "using Pilot API for async tests"
+     8→last_audited: "2026-02-16 14:20 PT"
+     9→audit_result: clean
+    10→---
+    11→
+    12→# Textual TUI Testing Patterns
+    13→
+    14→## Overview
+    15→
+    16→This project uses Textual for TUI applications. Testing Textual apps requires async tests with the Pilot API.
+    17→
+    18→## Basic Test Structure
+    19→
+    20→```python
+    21→import pytest
+    22→from erk.tui.app import ErkDashApp, PlanDetailScreen
+    23→
+    24→@pytest.mark.asyncio
+    25→async def test_tui_behavior() -&gt; None:
+    26→    """Test TUI interaction."""
+    27→    provider = FakePlanDataProvider([make_plan_row(123, "Test")])
+    28→    filters = PlanFilters.default()
+    29→    app = ErkDashApp(provider, filters, refresh_interval=0)
+    30→
+
+... [90 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01LpV693kHi8ajuqt8SGRzqR">
+     1→---
+     2→title: DataTable Rich Markup Escaping
+     3→last_audited: "2026-02-17 18:30 PT"
+     4→audit_result: clean
+     5→read_when:
+     6→  - "adding cell values to Textual DataTable"
+     7→  - "displaying user data in DataTable cells"
+     8→  - "troubleshooting invisible text in DataTable"
+     9→tripwires:
+    10→  - action: "adding cell values to Textual DataTable"
+    11→    warning: "Always wrap in `Text(value)` if strings contain user data with brackets. Otherwise `[anything]` will be interpreted as Rich markup."
+    12→---
+    13→
+    14→# DataTable Rich Markup Escaping
+    15→
+    16→Textual's DataTable interprets plain strings as Rich markup by default. This causes user data containing brackets (like `[erk-learn]` prefixes) to disappear.
+    17→
+    18→## The Problem
+    19→
+    20→When you pass a plain string to `DataTable.add_row()`, Rich interprets bracket sequences as markup tags:
+    21→
+    22→```python
+    23→# WRONG: The [prefix] disappears because Rich interprets it as markup
+    24→table.add_row("[erk-learn] My Plan Title")
+    25→# Result: "My Plan Title" (prefix invisible)
+    26→```
+    27→
+    28→The `[erk-learn]` text is treated as a Rich style tag. Since no style named `erk-learn` exists, Rich silently renders nothing for that portion.
+    29→
+    30→## The Solution
+
+... [60 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01Cp2HXShGEnnrgKtX6bwM4w">
+     1→---
+     2→title: Textual Widget Development Guide
+     3→read_when:
+     4→  - "creating Textual widgets"
+     5→  - "adding ModalScreen dialogs"
+     6→  - "implementing keyboard bindings"
+     7→  - "writing Textual CSS styles"
+     8→last_audited: "2026-02-05 00:00 PT"
+     9→audit_result: edited
+    10→---
+    11→
+    12→# Textual Widget Development
+    13→
+    14→For standard Textual API patterns (ModalScreen, Bindings, compose(), CSS, widget types), consult the [Textual documentation](https://textual.textualize.io/). This doc focuses on erk-specific patterns.
+    15→
+    16→## Erk TUI Source Layout
+    17→
+    18→| Component | Location                            |
+    19→| --------- | ----------------------------------- |
+    20→| Main app  | `src/erk/tui/app.py` (`ErkDashApp`) |
+    21→| Widgets   | `src/erk/tui/widgets/`              |
+    22→| Screens   | `src/erk/tui/screens/`              |
+    23→| CSS       | `src/erk/tui/styles/`               |
+    24→
+    25→## Reference Implementations
+    26→
+    27→- **ModalScreens**: `HelpScreen` (`screens/help_screen.py`), `PlanDetailScreen` (`screens/plan_detail_screen.py`), `IssueBodyScreen` (`screens/issue_body_screen.py`)
+    28→- **Streaming output**: `CommandOutputPanel` (`widgets/command_output.py`) — uses `RichLog` for live output display
+    29→- **Clickable links**: `widgets/clickable_link.py` — demonstrates accessing app properties from widgets
+    30→
+
+... [11 lines omitted] ...
+  </tool_result>
+  <assistant>Excellent. I've read all 21 documentation files. Here's a comprehensive summary organized by topic:
+
+## KEYBOARD SHORTCUTS &amp; INPUT
+
+**keyboard-shortcuts.md:**
+- DO: Check ErkDashApp.BINDINGS for conflicts before adding new shortcuts. Follow `action_&lt;verb&gt;_&lt;noun&gt;` naming pattern.
+- DO: Use `priority=True` on arrow key bindings in DataTable screens to override widget defaults (j/k also get this behavior)
+- DON'T: Add emoji variation selectors (\ufe0f) to status indicators — breaks column alignment in terminals. Safe emoji: 🥞 🚧 👀 💥 ✔ ❌ 🚀
+
+## STATUS DISPLAY &amp; LIFECYCLE
+
+**status-indicators.md:**
+- DO: Use `compute_status_indicators()` for standalone "sts" column display, `format_lifecycle_with_status()` for inline display
+- DON'T: Extract indicators from lifecycle display string — compute from raw PR state fields (is_draft, has_conflicts, review_decision)
+- CRITICAL: Never add emoji with variation selectors; test any new emoji in terminal first
+
+**lifecycle-display.md:**
+- DO: Stages are 8 chars max (planned, impl, merged, closed, prompted, planning)
+- DO: Stage detection uses substring matching on lifecycle_display content, not color markup
+- DON'T: Add stages longer than 8 chars without updating abbreviation map AND stage detection in `format_lifecycle_with_status()`
+
+**stacked-pr-indicator.md:**
+- Graphite `get_parent_branch()` is authoritative for stacked detection (falls back to GitHub `base_ref_name`)
+- Pancake emoji (🥞) is informational (doesn't block rocket), unlike CI/review/conflict indicators (blocking)
+
+## MODALS &amp; SCREENS
+
+**one-shot-prompt-modal.md:**
+- DO: Use `TextArea` (not Input) for multi-line prompts, 32-line height
+- DO: Use Ctrl+Enter (not Enter) to submit — Enter inserts newlines
+- DO: Use `time.monotonic_ns()` for operation IDs (reliable uniqueness vs id() recycling)
+- DON'T: Omit `q` binding — users need to type `q` in prompts
+
+**modal-screen-pattern.md:**
+- 7-element checklist: ModalScreen subclass, CSS, BINDINGS, @work(thread=True) for data fetch, call_from_thread() bridge, error boundary, loading placeholder
+- CRITICAL: `event.prevent_default()` + `event.stop()` BEFORE dismiss logic
+- CRITICAL TRIPWIRE: `if event.key not in (...)` dismisses on VALID keys (inverted logic bug). Use positive check: `if event.key in (...)`
+- CSS required for overlay — without it, clicking outside modal does nothing
+
+**modal-widget-embedding.md:**
+- DON'T: Pass `id=` kwarg to PlanDataTable (not supported) — use widget refs or `query_one(PlanDataTable)` instead
+- DO: Guard optional gateway fields before access in event handlers (`if row_data.plan_body is not None`)
+
+## TITLE HANDLING &amp; RENDERING
+
+**plan-title-rendering-pipeline.md:**
+- 5-stage pipeline: GitHub API → Middleware prefix → Filtering → Service transform → Widget render
+- CRITICAL: Prefix enrichment MUST happen BEFORE filtering, not after
+- DO: Wrap titles in `Text()` objects in DataTable to prevent Rich markup parsing
+- Common issue: Rich markup eats `[erk-learn]` prefix — wrap in `Text()` to fix
+
+**title-truncation-edge-cases.md:**
+- DO: Truncate BEFORE prefixing, then add prefix, then wrap in `Text()`
+- Calculate available space: `MAX_DISPLAY - PREFIX_LEN` (e.g., 50 chars - 12 for "[erk-learn] " = 38 for content)
+- Use `len(Text.from_markup(s).plain)` for visible character count vs string length
+
+## DATA FLOW &amp; ASYNC PATTERNS
+
+**async-action-refresh-pattern.md:**
+- DO: Decorate with `@work(thread=True)`, run subprocess, show toast, `call_from_thread(self.action_refresh)`, handle errors
+- DON'T: Pass `--no-wait` in worker threads — defeats the polling purpose
+- DON'T: Forget `action_refresh` — TUI shows stale data until manual refresh
+
+**async-state-snapshot.md:**
+- DO: Snapshot `fetched_mode = self._view_mode` at fetch start, thread through pipeline
+- DO: Cache under `fetched_mode` (always correct), display only if `fetched_mode == self._view_mode`
+- WHY: User may switch tabs during async fetch; snapshotting prevents race conditions and data corruption
+
+**multi-operation-tracking.md:**
+- Op ID pattern: `f"{action}-{resource_type}-{resource_id}"` (e.g., "land-pr-456")
+- DO: Call `finish_operation()` in BOTH success and error paths (use try/finally)
+- DON'T: Use `subprocess.run()` in TUI — use `_run_streaming_operation()` for live progress
+- CRITICAL: All UI updates from @work threads MUST use `call_from_thread()` for thread safety
+
+## STREAMING &amp; SUBPROCESS OUTPUT
+
+**streaming-output.md:**
+- CRITICAL: `call_from_thread()` is App-level method, NOT Widget — store app ref in widget
+- Pattern: subprocess.Popen with `bufsize=1`, `text=True`, `stderr=subprocess.STDOUT`, stream to status bar via `call_from_thread()`
+- DO: Use `click.unstyle()` to strip ANSI codes before displaying in plain text widgets
+- DO: Extract last non-empty output line as error message on failure
+
+**subprocess-feedback.md:**
+- DO: Inspect stderr for success markers (e.g., "Updated dispatch metadata") — exit code 0 alone doesn't distinguish success from silent no-op
+- Standard pattern: success (`return_code==0`) → check output markers → notify (3s), error → extract last line → notify (5s) + `action_refresh()`
+
+## TEXTUAL FRAMEWORK PATTERNS
+
+**textual-async.md:**
+- Async actions needed for: I/O operations, calling other async methods, using `push_screen()` etc
+- CRITICAL: Match base class signature when overriding Screen actions — if base is async, override must be too
+- DO: Use `await pilot.pause()` in tests after key presses/actions for async completion
+- APPROVED EAFP: try/except in @work(thread=True) workers for error boundaries + `call_from_thread()` reporting
+
+**background-workers.md:**
+- Use `run_worker(exclusive=True)` to cancel any running worker before starting new one
+- Always use `call_from_thread()` to update widgets from worker context
+
+**quirks.md - Key Quirks:**
+- DataTable: Set `cursor_type` via `__init__()`, not class attribute. Avoid `_filters` attribute name (internal conflict)
+- DataTable: `clear()` resets cursor — save position, clear, re-add rows, restore by key then index
+- Click handlers: Need BOTH `prevent_default()` AND `stop()` to prevent base DataTable handling
+- URL markup: Always quote URLs in link tags + escape display text: `[link="{url}"]{escaped_text}[/link]`
+- Status bar/Static with subprocess output: Use `markup=False` to prevent bracket parsing
+
+**testing.md:**
+- Always set `refresh_interval=0` in test apps to disable auto-refresh
+- Use multiple `await pilot.pause()` calls — screen transitions need 2+
+- ModalScreen callback receives `T | None`, not just `T`
+
+**datatable-markup-escaping.md:**
+- CRITICAL: Wrap cell values in `Text()` to prevent `[brackets]` being parsed as markup
+- Different from Rich CLI (which uses `escape_markup()`) — DataTable needs `Text()` wrapping
+- Apply to: user titles, plan prefixes, file paths, technical content
+
+**widget-development.md:**
+- Reference implementations: HelpScreen, PlanDetailScreen, CommandOutputPanel, clickable_link
+- CSS/widgets in `src/erk/tui/styles/` and `src/erk/tui/widgets/`
+
+## RUNS TAB
+
+**runs-tab-architecture.md:**
+- RunRowData: frozen dataclass with run_id, status, conclusion, pr_number, branch, checks_display etc
+- Branch resolution priority: PR head_branch → run.branch (if not master/main) → "-"
+- DON'T: Use run.branch directly for display without checking PR head_branch first (becomes master/main after merge+deletion)
+- Add columns to RunDataTable via RunRowData fields first, then _setup_columns
+
+---
+
+## CRITICAL TRIPWIRES (Highest Priority)
+
+1. **Modal key dismiss logic** — `if event.key not in (...)` is WRONG; use `if event.key in (...)`
+2. **Text() wrapping in DataTable** — `[brackets]` disappear if not wrapped in `Text()`
+3. **call_from_thread() threading** — All UI updates from @work threads MUST use this or face silent corruption
+4. **Emoji variation selectors** — Break column alignment; test all new emoji in terminal first
+5. **Snapshotting async state** — Without `fetched_mode` snapshot, tab-switching corrupts display
+6. **Finish operation in error paths** — Missing finish calls leave ghost operations in status bar
+7. **Prefix enrichment order** — Must happen BEFORE filtering or metadata gets lost
+
+All of these are well-documented with specific code locations and clear "do/don't" guidance. The docs emphasize testing patterns, thread safety, and Rich markup handling as the most common pitfall areas.</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="37286" cache_read_input_tokens="9177" cache_creation="{'ephemeral_5m_input_tokens': 37286, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+</session>

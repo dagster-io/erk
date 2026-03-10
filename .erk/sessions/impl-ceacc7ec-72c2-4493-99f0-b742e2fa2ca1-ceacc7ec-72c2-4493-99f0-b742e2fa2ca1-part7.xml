@@ -1,0 +1,683 @@
+<session>
+  <meta source="agent-a57d218" />
+  <meta branch="plnd/create-erk-tui-skill-03-10-0421" />
+  <meta model="claude-sonnet-4-5-20250929" />
+  <user>Add `curated_in: erk-tui` to the YAML frontmatter of the following files. The field should be added as the LAST field before the closing `---` in each file's frontmatter block.
+
+For each file:
+1. Read the file to see its current frontmatter
+2. Find the closing `---` of the frontmatter block
+3. Add `curated_in: erk-tui` as a new line just before the closing `---`
+
+Files to edit:
+
+In /home/runner/work/erk/erk/docs/learned/tui/:
+1. title-truncation-edge-cases.md
+2. tui-command-registration.md
+3. view-aware-commands.md
+4. view-mode-help.md
+5. view-switching.md
+
+In /home/runner/work/erk/erk/docs/learned/textual/:
+6. quirks.md
+7. background-workers.md
+8. testing.md
+9. datatable-markup-escaping.md
+10. widget-development.md
+
+For example, if a file has:
+```
+---
+title: Some Title
+read_when:
+  - "some condition"
+last_audited: "2026-02-05 00:00 PT"
+audit_result: edited
+---
+```
+
+It should become:
+```
+---
+title: Some Title
+read_when:
+  - "some condition"
+last_audited: "2026-02-05 00:00 PT"
+audit_result: edited
+curated_in: erk-tui
+---
+```
+
+IMPORTANT: The `curated_in: erk-tui` line goes after ALL existing fields, immediately before the closing `---`.
+
+Do NOT modify any content after the frontmatter block.</user>
+  <assistant>I'll add `curated_in: erk-tui` to the frontmatter of all the specified files. Let me start by reading each file to see its current frontmatter.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="6987" cache_read_input_tokens="9380" cache_creation="{'ephemeral_5m_input_tokens': 6987, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01KBUQTYfMp1hmoFsKh2KB7d">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/title-truncation-edge-cases.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6987" cache_read_input_tokens="9380" cache_creation="{'ephemeral_5m_input_tokens': 6987, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_016iMJoeHQP1fkt9oUF6gErb">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/tui-command-registration.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6987" cache_read_input_tokens="9380" cache_creation="{'ephemeral_5m_input_tokens': 6987, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_014hayVrYYnPwrS7HJCKMUym">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/view-aware-commands.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6987" cache_read_input_tokens="9380" cache_creation="{'ephemeral_5m_input_tokens': 6987, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01MoBWRhcrDK1ifvT3LJdXe8">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/view-mode-help.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6987" cache_read_input_tokens="9380" cache_creation="{'ephemeral_5m_input_tokens': 6987, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01SK1i2uyW9doeMma4n6pTrT">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/view-switching.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6987" cache_read_input_tokens="9380" cache_creation="{'ephemeral_5m_input_tokens': 6987, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01DdMisQcXfVB2LHAZ4DxQ4j">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/textual/quirks.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6987" cache_read_input_tokens="9380" cache_creation="{'ephemeral_5m_input_tokens': 6987, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01NfxFydosAKN2xAcP98VScL">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/textual/background-workers.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6987" cache_read_input_tokens="9380" cache_creation="{'ephemeral_5m_input_tokens': 6987, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Nz2cQxC6NrcVoUNekU4BNC">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/textual/testing.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6987" cache_read_input_tokens="9380" cache_creation="{'ephemeral_5m_input_tokens': 6987, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01RxV79611URHZrFFc7Qx1wN">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/textual/datatable-markup-escaping.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6987" cache_read_input_tokens="9380" cache_creation="{'ephemeral_5m_input_tokens': 6987, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01TrEyWhKv6oRx6ThPm7sP2P">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/textual/widget-development.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6987" cache_read_input_tokens="9380" cache_creation="{'ephemeral_5m_input_tokens': 6987, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01KBUQTYfMp1hmoFsKh2KB7d">
+     1→---
+     2→title: Title Truncation Edge Cases
+     3→last_audited: "2026-02-16 04:53 PT"
+     4→audit_result: clean
+     5→read_when:
+     6→  - "implementing title truncation in TUI"
+     7→  - "troubleshooting truncated titles showing only prefix"
+     8→  - "working with title display lengths"
+     9→---
+    10→
+    11→# Title Truncation Edge Cases
+    12→
+    13→Title truncation interacts unexpectedly with prefixes and markup. This document covers edge cases to watch for.
+    14→
+    15→## The Basic Problem
+    16→
+    17→When truncation is applied after prefixing:
+    18→
+    19→```
+    20→Original:  "Short Title"
+    21→+ Prefix:  "[erk-learn] Short Title"  (24 chars)
+    22→Truncated: "[erk-learn] Short Ti..."  (20 chars visible)
+    23→```
+    24→
+    25→The `[erk-learn] ` prefix consumes 12 characters of the display budget.
+    26→
+    27→## Edge Cases
+    28→
+    29→### Prefix Longer Than Truncation Limit
+    30→
+
+... [65 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_016iMJoeHQP1fkt9oUF6gErb">
+     1→---
+     2→title: TUI Command Registration
+     3→read_when:
+     4→  - "adding a new TUI command to the registry"
+     5→  - "understanding the 3-place coordination pattern for TUI commands"
+     6→  - "working with TUI command categories or display formatters"
+     7→tripwires:
+     8→  - action: "adding a new TUI command without updating all 3 places"
+     9→    warning: "TUI commands require 3-place coordination: registry definition, display formatter, and action inventory. See tui-command-registration.md."
+    10→  - action: "adding a CLI flag that affects behavior without checking TUI command palette"
+    11→    warning: "TUI command palette generates shell commands via src/erk/tui/commands/registry.py. When adding CLI flags that change behavior, check if TUI-generated commands need the flag too."
+    12→---
+    13→
+    14→# TUI Command Registration
+    15→
+    16→Adding a TUI command requires coordinating three places in the codebase.
+    17→
+    18→## 3-Place Coordination Pattern
+    19→
+    20→When adding a command, update all three:
+    21→
+    22→1. **Display formatter**: A `_display_*()` function that generates the display name
+    23→2. **CommandDefinition**: Entry in `get_all_commands()` with id, name, category, availability, and display getter
+    24→3. **Action inventory**: Command appears in the correct category
+    25→
+    26→All definitions are in `src/erk/tui/commands/registry.py`.
+    27→
+    28→## Single Source of Truth: `launch_key` Field
+    29→
+    30→&lt;!-- Source: src/erk/tui/commands/types.py:60 --&gt;
+
+... [75 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_014hayVrYYnPwrS7HJCKMUym">
+     1→---
+     2→title: View-Aware Command Filtering
+     3→read_when:
+     4→  - "registering a new TUI command with view-mode filtering"
+     5→  - "understanding how commands are filtered by view mode (plans, learn, objectives)"
+     6→  - "adding objective-specific commands to the command palette"
+     7→  - "implementing streaming commands in the TUI"
+     8→tripwires:
+     9→  - action: "registering a new TUI command without a view-mode predicate"
+    10→    warning: "Every command must use _is_plan_view() or _is_objectives_view() to prevent it from appearing in the wrong view. Commands without view predicates appear in all views."
+    11→  - action: "adding streaming commands without using the streaming operation pattern"
+    12→    warning: "Streaming ACTION commands need the streaming operation wrapper with status bar tracking. See streaming-output.md for the current pattern."
+    13→---
+    14→
+    15→# View-Aware Command Filtering
+    16→
+    17→The TUI command palette filters commands by the active view mode. Plan commands appear only in Plans/Learn views; objective commands appear only in the Objectives view. This filtering is implemented through view-mode predicates in the command registry.
+    18→
+    19→## View Mode Predicates
+    20→
+    21→&lt;!-- Source: src/erk/tui/commands/registry.py:21-28 --&gt;
+    22→
+    23→Two predicates partition the command space by view mode:
+    24→
+    25→&lt;!-- See _is_plan_view and _is_objectives_view in src/erk/tui/commands/registry.py:21-28 --&gt;
+    26→
+    27→- `_is_plan_view(ctx)`: Returns `True` when not in Objectives view (i.e., Plans or Learn) — checks `ctx.view_mode != ViewMode.OBJECTIVES`
+    28→- `_is_objectives_view(ctx)`: Returns `True` when in Objectives view — checks `ctx.view_mode == ViewMode.OBJECTIVES`
+    29→
+    30→The `CommandContext.view_mode` field carries the active `ViewMode` enum value. `MainListCommandProvider` reads this dynamically from `self._app._view_mode`, while `PlanCommandProvider` hardcodes `ViewMode.PLANS` since the detail modal is always in plan context.
+
+... [87 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01MoBWRhcrDK1ifvT3LJdXe8">
+     1→---
+     2→title: View-Mode-Aware Help Screen
+     3→read_when:
+     4→  - "modifying the TUI help screen"
+     5→  - "adding view-specific actions to the TUI"
+     6→  - "understanding ViewMode-conditional rendering"
+     7→---
+     8→
+     9→# View-Mode-Aware Help Screen
+    10→
+    11→The TUI `HelpScreen` accepts a `view_mode: ViewMode` parameter and conditionally renders help content based on the active view (plans vs objectives).
+    12→
+    13→## Implementation Pattern
+    14→
+    15→&lt;!-- Source: src/erk/tui/screens/help_screen.py --&gt;
+    16→
+    17→The `HelpScreen.__init__()` stores `view_mode` as an instance variable. A helper method `_is_objectives_view()` wraps the check. The `compose()` method uses this to branch rendering:
+    18→
+    19→```python
+    20→def compose(self) -&gt; ComposeResult:
+    21→    is_objectives = self._is_objectives_view()
+    22→    # ... shared sections ...
+    23→    if is_objectives:
+    24→        yield Label("Enter   View objective details", ...)
+    25→    else:
+    26→        yield Label("Enter   View plan details", ...)
+    27→```
+    28→
+    29→## Conditional Sections
+    30→
+
+... [26 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01SK1i2uyW9doeMma4n6pTrT">
+     1→---
+     2→title: TUI View Switching
+     3→read_when:
+     4→  - "adding a new view mode to the TUI"
+     5→  - "understanding how view switching and caching work"
+     6→  - "debugging data not appearing in a specific view"
+     7→  - "working with PlanBodyScreen content type parameterization"
+     8→tripwires:
+     9→  - action: "adding a new ViewMode without updating VIEW_CONFIGS"
+    10→    warning: "Every ViewMode must have a corresponding ViewConfig in VIEW_CONFIGS. Missing configs cause KeyError at runtime."
+    11→  - action: "using _render() as a method name in Textual widgets"
+    12→    warning: "Textual's LSP reserves _render(). Use _refresh_display() instead (see ViewBar)."
+    13→  - action: "pushing PlanBodyScreen without explicit content_type"
+    14→    warning: "Content type must come from view_mode at push time, not derived inside the screen."
+    15→  - action: "adding labels to ViewConfig.labels expecting OR semantics from GitHub API"
+    16→    warning: "GitHub GraphQL uses AND semantics for label arrays. Multiple labels in a single ViewConfig.labels means items must have ALL listed labels. Use separate views for separate label types. See github-graphql-label-semantics.md."
+    17→  - action: "adding the same label to multiple ViewConfig entries without exclude_labels"
+    18→    warning: "Without exclude_labels, items matching the shared label appear in multiple views. Use exclude_labels for defense-in-depth deduplication (Plans view excludes erk-learn)."
+    19→last_audited: "2026-02-17 00:00 PT"
+    20→audit_result: edited
+    21→---
+    22→
+    23→# TUI View Switching
+    24→
+    25→The TUI supports three views — Plans, Learn, and Objectives — with instant switching via keyboard shortcuts. This document explains the view system architecture, the two-tier filtering strategy, and the caching mechanism that enables sub-millisecond view switches.
+    26→
+    27→## Core Types
+    28→
+    29→&lt;!-- Source: src/erk/tui/views/types.py --&gt;
+    30→
+
+... [120 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01DdMisQcXfVB2LHAZ4DxQ4j">
+     1→---
+     2→title: Textual API Quirks and Workarounds
+     3→read_when:
+     4→  - "working with Textual TUI framework"
+     5→  - "debugging DataTable, App, or CSS issues in Textual"
+     6→  - "writing tests for Textual applications"
+     7→last_audited: "2026-02-16 14:30 PT"
+     8→audit_result: edited
+     9→---
+    10→
+    11→# Textual API Quirks and Workarounds
+    12→
+    13→This document captures API quirks discovered while building the erk dash TUI with Textual.
+    14→
+    15→## DataTable Quirks
+    16→
+    17→### cursor_type Must Be Set via `__init__`
+    18→
+    19→**Problem**: `cursor_type` is a `Reactive[CursorType]`, not a plain attribute. Setting it as a class attribute causes type errors:
+    20→
+    21→```python
+    22→# WRONG - causes type error
+    23→class MyTable(DataTable):
+    24→    cursor_type = "row"  # Type error: Literal['row'] not assignable to Reactive[CursorType]
+    25→```
+    26→
+    27→**Solution**: Pass to `super().__init__()`:
+    28→
+    29→```python
+    30→# CORRECT
+
+... [212 lines omitted] ...
+
+    80→**Problem**: The base `App.action_quit` is an async method. Overriding it with a sync method causes pyright errors about incompatible return types.
+    86→def action_quit(self) -&gt; None:  # Type error: incompatible override
+   104→**Problem**: When loading data in a background thread with `run_in_executor`, you might try to use `call_from_thread` to update the UI. This fails in test context with "must run in different thread" error.
+   159→# WRONG - causes MarkupError at render time
+   163→**Error signature:**
+   166→MarkupError: Expected markup value (found '://github.com/...')
+   196→**Problem**: When displaying raw JSON, code, or file contents in a Static widget, `escape_markup()` may not fully prevent `MarkupError`. Content with Python type annotations like `list[str]` or complex nested escape sequences can still cause parsing failures.
+   198→**Error signature:**
+   201→MarkupError: Expected markup value (found '\\"number\\"],\\n ...')
+   221→**Problem**: The StatusBar widget displays subprocess error messages that may contain brackets (e.g., `[error details]`). With default `markup=True`, these brackets are parsed as Rich markup tags, causing `MarkupError` at render time.
+  </tool_result>
+  <tool_result tool="toolu_01NfxFydosAKN2xAcP98VScL">
+     1→---
+     2→title: Textual Background Workers
+     3→read_when:
+     4→  - "running subprocess in TUI without blocking"
+     5→  - "streaming output to Textual widgets"
+     6→  - "using run_worker for async operations"
+     7→last_audited: "2026-02-16 14:20 PT"
+     8→audit_result: clean
+     9→---
+    10→
+    11→# Textual Background Workers
+    12→
+    13→## When to Use `run_worker()`
+    14→
+    15→Use `run_worker()` for I/O-bound operations that should not block the UI:
+    16→
+    17→- Subprocess execution with output streaming
+    18→- Network requests
+    19→- File operations on large files
+    20→
+    21→## Subprocess Streaming Pattern
+    22→
+    23→```python
+    24→from textual.worker import Worker, WorkerState
+    25→import asyncio
+    26→
+    27→def action_execute(self) -&gt; None:
+    28→    """Start command execution."""
+    29→    self._output_panel.visible = True
+    30→    self.run_worker(self._stream_subprocess, exclusive=True)
+
+... [39 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01Nz2cQxC6NrcVoUNekU4BNC">
+     1→---
+     2→title: Textual TUI Testing Patterns
+     3→read_when:
+     4→  - "testing Textual TUI components"
+     5→  - "writing tests for ModalScreen"
+     6→  - "testing keyboard bindings"
+     7→  - "using Pilot API for async tests"
+     8→last_audited: "2026-02-16 14:20 PT"
+     9→audit_result: clean
+    10→---
+    11→
+    12→# Textual TUI Testing Patterns
+    13→
+    14→## Overview
+    15→
+    16→This project uses Textual for TUI applications. Testing Textual apps requires async tests with the Pilot API.
+    17→
+    18→## Basic Test Structure
+    19→
+    20→```python
+    21→import pytest
+    22→from erk.tui.app import ErkDashApp, PlanDetailScreen
+    23→
+    24→@pytest.mark.asyncio
+    25→async def test_tui_behavior() -&gt; None:
+    26→    """Test TUI interaction."""
+    27→    provider = FakePlanDataProvider([make_plan_row(123, "Test")])
+    28→    filters = PlanFilters.default()
+    29→    app = ErkDashApp(provider, filters, refresh_interval=0)
+    30→
+
+... [90 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01RxV79611URHZrFFc7Qx1wN">
+     1→---
+     2→title: DataTable Rich Markup Escaping
+     3→last_audited: "2026-02-17 18:30 PT"
+     4→audit_result: clean
+     5→read_when:
+     6→  - "adding cell values to Textual DataTable"
+     7→  - "displaying user data in DataTable cells"
+     8→  - "troubleshooting invisible text in DataTable"
+     9→tripwires:
+    10→  - action: "adding cell values to Textual DataTable"
+    11→    warning: "Always wrap in `Text(value)` if strings contain user data with brackets. Otherwise `[anything]` will be interpreted as Rich markup."
+    12→---
+    13→
+    14→# DataTable Rich Markup Escaping
+    15→
+    16→Textual's DataTable interprets plain strings as Rich markup by default. This causes user data containing brackets (like `[erk-learn]` prefixes) to disappear.
+    17→
+    18→## The Problem
+    19→
+    20→When you pass a plain string to `DataTable.add_row()`, Rich interprets bracket sequences as markup tags:
+    21→
+    22→```python
+    23→# WRONG: The [prefix] disappears because Rich interprets it as markup
+    24→table.add_row("[erk-learn] My Plan Title")
+    25→# Result: "My Plan Title" (prefix invisible)
+    26→```
+    27→
+    28→The `[erk-learn]` text is treated as a Rich style tag. Since no style named `erk-learn` exists, Rich silently renders nothing for that portion.
+    29→
+    30→## The Solution
+
+... [60 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01TrEyWhKv6oRx6ThPm7sP2P">
+     1→---
+     2→title: Textual Widget Development Guide
+     3→read_when:
+     4→  - "creating Textual widgets"
+     5→  - "adding ModalScreen dialogs"
+     6→  - "implementing keyboard bindings"
+     7→  - "writing Textual CSS styles"
+     8→last_audited: "2026-02-05 00:00 PT"
+     9→audit_result: edited
+    10→---
+    11→
+    12→# Textual Widget Development
+    13→
+    14→For standard Textual API patterns (ModalScreen, Bindings, compose(), CSS, widget types), consult the [Textual documentation](https://textual.textualize.io/). This doc focuses on erk-specific patterns.
+    15→
+    16→## Erk TUI Source Layout
+    17→
+    18→| Component | Location                            |
+    19→| --------- | ----------------------------------- |
+    20→| Main app  | `src/erk/tui/app.py` (`ErkDashApp`) |
+    21→| Widgets   | `src/erk/tui/widgets/`              |
+    22→| Screens   | `src/erk/tui/screens/`              |
+    23→| CSS       | `src/erk/tui/styles/`               |
+    24→
+    25→## Reference Implementations
+    26→
+    27→- **ModalScreens**: `HelpScreen` (`screens/help_screen.py`), `PlanDetailScreen` (`screens/plan_detail_screen.py`), `IssueBodyScreen` (`screens/issue_body_screen.py`)
+    28→- **Streaming output**: `CommandOutputPanel` (`widgets/command_output.py`) — uses `RichLog` for live output display
+    29→- **Clickable links**: `widgets/clickable_link.py` — demonstrates accessing app properties from widgets
+    30→
+
+... [11 lines omitted] ...
+  </tool_result>
+  <assistant>Now I'll edit each file to add `curated_in: erk-tui` as the last field before the closing `---` in the frontmatter.</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="16566" cache_read_input_tokens="16367" cache_creation="{'ephemeral_5m_input_tokens': 16566, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_018pQQuNnn2DoiPowTby2KdT">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/title-truncation-edge-cases.md</param>
+    <param name="old_string">---
+title: Title Truncation Edge Cases
+last_audited: "2026-02-16 04:53 PT"
+audit_result: c...[truncated 52 chars]...hooting truncated titles showing only prefix"
+  - "working with title display lengths"
+---</param>
+    <param name="new_string">---
+title: Title Truncation Edge Cases
+last_audited: "2026-02-16 04:53 PT"
+audit_result: c...[truncated 72 chars]...tles showing only prefix"
+  - "working with title display lengths"
+curated_in: erk-tui
+---</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="16566" cache_read_input_tokens="16367" cache_creation="{'ephemeral_5m_input_tokens': 16566, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_018J6UeYtUXL9yEE6NWhb7fZ">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/tui-command-registration.md</param>
+    <param name="old_string">---
+title: TUI Command Registration
+read_when:
+  - "adding a new TUI command to the regist...[truncated 548 chars]...ng CLI flags that change behavior, check if TUI-generated commands need the flag too."
+---</param>
+    <param name="new_string">---
+title: TUI Command Registration
+read_when:
+  - "adding a new TUI command to the regist...[truncated 568 chars]...ange behavior, check if TUI-generated commands need the flag too."
+curated_in: erk-tui
+---</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="16566" cache_read_input_tokens="16367" cache_creation="{'ephemeral_5m_input_tokens': 16566, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01EcC2JKUhqw9DBsGxuTrNYA">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/view-aware-commands.md</param>
+    <param name="old_string">---
+title: View-Aware Command Filtering
+read_when:
+  - "registering a new TUI command with...[truncated 619 chars]...on wrapper with status bar tracking. See streaming-output.md for the current pattern."
+---</param>
+    <param name="new_string">---
+title: View-Aware Command Filtering
+read_when:
+  - "registering a new TUI command with...[truncated 639 chars]...us bar tracking. See streaming-output.md for the current pattern."
+curated_in: erk-tui
+---</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="16566" cache_read_input_tokens="16367" cache_creation="{'ephemeral_5m_input_tokens': 16566, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01Q2EjqNrXXCus5QP8SKuJ7G">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/view-mode-help.md</param>
+    <param name="old_string">---
+title: View-Mode-Aware Help Screen
+read_when:
+  - "modifying the TUI help screen"
+  - "adding view-specific actions to the TUI"
+  - "understanding ViewMode-conditional rendering"
+---</param>
+    <param name="new_string">---
+title: View-Mode-Aware Help Screen
+read_when:
+  - "modifying the TUI help screen"
+  - ...[truncated 6 chars]...ons to the TUI"
+  - "understanding ViewMode-conditional rendering"
+curated_in: erk-tui
+---</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="16566" cache_read_input_tokens="16367" cache_creation="{'ephemeral_5m_input_tokens': 16566, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01XZH9KoUWW6dz9yCVVD8hck">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/view-switching.md</param>
+    <param name="old_string">---
+title: TUI View Switching
+read_when:
+  - "adding a new view mode to the TUI"
+  - "unde...[truncated 1245 chars]...ns view excludes erk-learn)."
+last_audited: "2026-02-17 00:00 PT"
+audit_result: edited
+---</param>
+    <param name="new_string">---
+title: TUI View Switching
+read_when:
+  - "adding a new view mode to the TUI"
+  - "unde...[truncated 1265 chars]...-learn)."
+last_audited: "2026-02-17 00:00 PT"
+audit_result: edited
+curated_in: erk-tui
+---</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="16566" cache_read_input_tokens="16367" cache_creation="{'ephemeral_5m_input_tokens': 16566, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01Vkg1GiykQGn26XNTD1z2ha">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/textual/quirks.md</param>
+    <param name="old_string">---
+title: Textual API Quirks and Workarounds
+read_when:
+  - "working with Textual TUI fra...[truncated 60 chars]...sts for Textual applications"
+last_audited: "2026-02-16 14:30 PT"
+audit_result: edited
+---</param>
+    <param name="new_string">---
+title: Textual API Quirks and Workarounds
+read_when:
+  - "working with Textual TUI fra...[truncated 80 chars]...ications"
+last_audited: "2026-02-16 14:30 PT"
+audit_result: edited
+curated_in: erk-tui
+---</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="16566" cache_read_input_tokens="16367" cache_creation="{'ephemeral_5m_input_tokens': 16566, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01Qsy6ZVxSBzWq5Urnnaxa2M">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/textual/background-workers.md</param>
+    <param name="old_string">---
+title: Textual Background Workers
+read_when:
+  - "running subprocess in TUI without bl...[truncated 43 chars]...n_worker for async operations"
+last_audited: "2026-02-16 14:20 PT"
+audit_result: clean
+---</param>
+    <param name="new_string">---
+title: Textual Background Workers
+read_when:
+  - "running subprocess in TUI without bl...[truncated 63 chars]...perations"
+last_audited: "2026-02-16 14:20 PT"
+audit_result: clean
+curated_in: erk-tui
+---</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="16566" cache_read_input_tokens="16367" cache_creation="{'ephemeral_5m_input_tokens': 16566, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01JRfSX8TVpERZyterDMN4tY">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/textual/testing.md</param>
+    <param name="old_string">---
+title: Textual TUI Testing Patterns
+read_when:
+  - "testing Textual TUI components"
+  ...[truncated 53 chars]...ing Pilot API for async tests"
+last_audited: "2026-02-16 14:20 PT"
+audit_result: clean
+---</param>
+    <param name="new_string">---
+title: Textual TUI Testing Patterns
+read_when:
+  - "testing Textual TUI components"
+  ...[truncated 73 chars]...ync tests"
+last_audited: "2026-02-16 14:20 PT"
+audit_result: clean
+curated_in: erk-tui
+---</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="16566" cache_read_input_tokens="16367" cache_creation="{'ephemeral_5m_input_tokens': 16566, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01CqRF4hKoytJdTpvfZUTgeD">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/textual/datatable-markup-escaping.md</param>
+    <param name="old_string">---
+title: DataTable Rich Markup Escaping
+last_audited: "2026-02-17 18:30 PT"
+audit_result...[truncated 266 chars]...n user data with brackets. Otherwise `[anything]` will be interpreted as Rich markup."
+---</param>
+    <param name="new_string">---
+title: DataTable Rich Markup Escaping
+last_audited: "2026-02-17 18:30 PT"
+audit_result...[truncated 286 chars]...ckets. Otherwise `[anything]` will be interpreted as Rich markup."
+curated_in: erk-tui
+---</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="16566" cache_read_input_tokens="16367" cache_creation="{'ephemeral_5m_input_tokens': 16566, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01AyZ5dGaDLSP8zhp6XEZQCz">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/textual/widget-development.md</param>
+    <param name="old_string">---
+title: Textual Widget Development Guide
+read_when:
+  - "creating Textual widgets"
+  - ...[truncated 49 chars]... "writing Textual CSS styles"
+last_audited: "2026-02-05 00:00 PT"
+audit_result: edited
+---</param>
+    <param name="new_string">---
+title: Textual Widget Development Guide
+read_when:
+  - "creating Textual widgets"
+  - ...[truncated 69 chars]...S styles"
+last_audited: "2026-02-05 00:00 PT"
+audit_result: edited
+curated_in: erk-tui
+---</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="16566" cache_read_input_tokens="16367" cache_creation="{'ephemeral_5m_input_tokens': 16566, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_018pQQuNnn2DoiPowTby2KdT">
+The file /home/runner/work/erk/erk/docs/learned/tui/title-truncation-edge-cases.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_018J6UeYtUXL9yEE6NWhb7fZ">
+The file /home/runner/work/erk/erk/docs/learned/tui/tui-command-registration.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01EcC2JKUhqw9DBsGxuTrNYA">
+The file /home/runner/work/erk/erk/docs/learned/tui/view-aware-commands.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01Q2EjqNrXXCus5QP8SKuJ7G">
+The file /home/runner/work/erk/erk/docs/learned/tui/view-mode-help.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01XZH9KoUWW6dz9yCVVD8hck">
+The file /home/runner/work/erk/erk/docs/learned/tui/view-switching.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01Vkg1GiykQGn26XNTD1z2ha">
+The file /home/runner/work/erk/erk/docs/learned/textual/quirks.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01Qsy6ZVxSBzWq5Urnnaxa2M">
+The file /home/runner/work/erk/erk/docs/learned/textual/background-workers.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01JRfSX8TVpERZyterDMN4tY">
+The file /home/runner/work/erk/erk/docs/learned/textual/testing.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01CqRF4hKoytJdTpvfZUTgeD">
+The file /home/runner/work/erk/erk/docs/learned/textual/datatable-markup-escaping.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01AyZ5dGaDLSP8zhp6XEZQCz">
+The file /home/runner/work/erk/erk/docs/learned/textual/widget-development.md has been updated successfully.
+  </tool_result>
+  <assistant>Perfect! I've successfully added `curated_in: erk-tui` to the YAML frontmatter of all 10 files. The field has been added as the last field before the closing `---` in each file's frontmatter block.
+
+## Summary
+
+Successfully edited the following files:
+
+### TUI directory (/home/runner/work/erk/erk/docs/learned/tui/):
+1. **title-truncation-edge-cases.md** - Added `curated_in: erk-tui` after `read_when`
+2. **tui-command-registration.md** - Added `curated_in: erk-tui` after `tripwires`
+3. **view-aware-commands.md** - Added `curated_in: erk-tui` after `tripwires`
+4. **view-mode-help.md** - Added `curated_in: erk-tui` after `read_when`
+5. **view-switching.md** - Added `curated_in: erk-tui` after `audit_result`
+
+### Textual directory (/home/runner/work/erk/erk/docs/learned/textual/):
+6. **quirks.md** - Added `curated_in: erk-tui` after `audit_result`
+7. **background-workers.md** - Added `curated_in: erk-tui` after `audit_result`
+8. **testing.md** - Added `curated_in: erk-tui` after `audit_result`
+9. **datatable-markup-escaping.md** - Added `curated_in: erk-tui` after `tripwires`
+10. **widget-development.md** - Added `curated_in: erk-tui` after `audit_result`
+
+All files now have the `curated_in: erk-tui` field positioned correctly as the last field before the closing `---` in their YAML frontmatter, without modifying any content after the frontmatter block.</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="4569" cache_read_input_tokens="32933" cache_creation="{'ephemeral_5m_input_tokens': 4569, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>

@@ -1,0 +1,614 @@
+<session>
+  <meta source="agent-a93a20f" />
+  <meta branch="plnd/create-erk-tui-skill-03-10-0421" />
+  <meta model="claude-sonnet-4-5-20250929" />
+  <user>Add `curated_in: erk-tui` to the YAML frontmatter of the following docs/learned/tui/ files. The field should be added as the LAST field before the closing `---` in each file's frontmatter block.
+
+For each file:
+1. Read the file to see its current frontmatter
+2. Find the closing `---` of the frontmatter block
+3. Add `curated_in: erk-tui` as a new line just before the closing `---`
+
+Files to edit (all in /home/runner/work/erk/erk/docs/learned/tui/):
+1. data-contract.md
+2. derived-display-columns.md
+3. dual-handler-pattern.md
+4. filter-pipeline.md
+5. filter-toggle-pattern.md
+6. frozen-dataclass-field-management.md
+7. keyboard-shortcuts.md
+8. lifecycle-display.md
+9. modal-screen-pattern.md
+10. modal-widget-embedding.md
+
+For example, if a file has:
+```
+---
+title: Some Title
+read_when:
+  - "some condition"
+tripwires:
+  - action: "something"
+    warning: "something"
+last_audited: "2026-02-05 00:00 PT"
+audit_result: edited
+---
+```
+
+It should become:
+```
+---
+title: Some Title
+read_when:
+  - "some condition"
+tripwires:
+  - action: "something"
+    warning: "something"
+last_audited: "2026-02-05 00:00 PT"
+audit_result: edited
+curated_in: erk-tui
+---
+```
+
+IMPORTANT: The `curated_in: erk-tui` line goes after ALL existing fields, immediately before the closing `---`.
+
+Do NOT modify any content after the frontmatter block.</user>
+  <assistant>I'll add `curated_in: erk-tui` to the YAML frontmatter of all 10 files in the docs/learned/tui/ directory. Let me start by reading each file to see their current frontmatter.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="7015" cache_read_input_tokens="9380" cache_creation="{'ephemeral_5m_input_tokens': 7015, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01CYbUSR4mEChvcCCJfcviYz">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/data-contract.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="7015" cache_read_input_tokens="9380" cache_creation="{'ephemeral_5m_input_tokens': 7015, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_019pKSyD4yw9hEA6hMZUyTvv">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/derived-display-columns.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="7015" cache_read_input_tokens="9380" cache_creation="{'ephemeral_5m_input_tokens': 7015, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_017frUYPM3ngrH6hWNe264RV">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/dual-handler-pattern.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="7015" cache_read_input_tokens="9380" cache_creation="{'ephemeral_5m_input_tokens': 7015, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01N4TpzefpyMB7xoYuDrPVbk">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/filter-pipeline.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="7015" cache_read_input_tokens="9380" cache_creation="{'ephemeral_5m_input_tokens': 7015, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_018auPVrkDBCccEuhxuMyuZc">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/filter-toggle-pattern.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="7015" cache_read_input_tokens="9380" cache_creation="{'ephemeral_5m_input_tokens': 7015, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01W9YVxAYPTJJ5pvzD4jL8iX">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/frozen-dataclass-field-management.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="7015" cache_read_input_tokens="9380" cache_creation="{'ephemeral_5m_input_tokens': 7015, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_014YB4P95YFd8gscqk95qLqW">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/keyboard-shortcuts.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="7015" cache_read_input_tokens="9380" cache_creation="{'ephemeral_5m_input_tokens': 7015, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01JTvCKroWMtiuhSetkCqSfy">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/lifecycle-display.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="7015" cache_read_input_tokens="9380" cache_creation="{'ephemeral_5m_input_tokens': 7015, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01KELNhrpBom8tpmeF9PLr1Z">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/modal-screen-pattern.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="7015" cache_read_input_tokens="9380" cache_creation="{'ephemeral_5m_input_tokens': 7015, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_018q13WDXdqggEU81m1tMxzR">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/modal-widget-embedding.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="7015" cache_read_input_tokens="9380" cache_creation="{'ephemeral_5m_input_tokens': 7015, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01CYbUSR4mEChvcCCJfcviYz">
+     1→---
+     2→title: TUI Data Contract
+     3→read_when:
+     4→  - "building an alternate frontend consuming plan data"
+     5→  - "adding fields to PlanRowData or PlanDataProvider"
+     6→  - "understanding the display-vs-raw field duality"
+     7→  - "serializing plan data to JSON for external consumers"
+     8→tripwires:
+     9→  - action: "formatting display strings during table render"
+    10→    warning: "Display strings are pre-formatted at fetch time. Add new *_display fields to PlanRowData and format in RealPlanDataProvider._build_row_data(), not in the widget layer."
+    11→  - action: "adding a field to PlanRowData without updating make_plan_row"
+    12→    warning: "The fake's make_plan_row() helper must stay in sync. Add the new field with a sensible default there too, or all TUI tests will break."
+    13→  - action: "putting PlanDataProvider ABC in src/erk/tui/"
+    14→    warning: "The ABC lives in erk-shared so provider implementations are co-located in the shared package. External consumers import from erk-shared alongside other shared gateways."
+    15→  - action: "constructing PlanFilters without copying all fields from existing filters"
+    16→    warning: "All fields must be explicitly copied in _load_data() PlanFilters construction. Missing fields (like creator) cause silent filtering failures."
+    17→last_audited: "2026-02-16 14:20 PT"
+    18→audit_result: edited
+    19→---
+    20→
+    21→# TUI Data Contract
+    22→
+    23→The TUI data layer is designed around a single frozen dataclass (`PlanRowData`) that carries both display-ready strings and raw identifiers. This document explains the design decisions behind the data contract, the cross-package split, and the pitfalls of JSON serialization — things that can't be learned by reading any single source file.
+    24→
+    25→## Why Display and Raw Fields Coexist
+    26→
+    27→&lt;!-- Source: src/erk/tui/data/types.py, PlanRowData --&gt;
+    28→
+    29→`PlanRowData` carries two kinds of fields for the same data. For example, `pr_number` (raw `int | None`) and `pr_display` (pre-formatted `str` like `"#123 👀"`). This is deliberate:
+    30→
+
+... [215 lines omitted] ...
+
+   143→| `run_conclusion` | `str`                              | Yes      | Workflow run conclusion: `"success"`, `"failure"`, `"cancelled"`, etc. |
+   225→Adding a field to `PlanRowData` touches at minimum five places. Missing any one causes test failures or silent data loss:
+  </tool_result>
+  <tool_result tool="toolu_019pKSyD4yw9hEA6hMZUyTvv">
+     1→---
+     2→title: Derived Display Columns
+     3→read_when:
+     4→  - "adding a TUI column that uses an existing PlanRowData field"
+     5→  - "deciding whether a new column needs gateway/query changes"
+     6→---
+     7→
+     8→# Derived Display Columns
+     9→
+    10→When a new TUI column reuses an already-present `PlanRowData` field (no new data needed), you can skip the gateway and data-layer steps from the standard [5-step column addition pattern](column-addition-pattern.md).
+    11→
+    12→## When This Applies
+    13→
+    14→The standard 5-step pattern assumes the column requires new data from the backend. If the data already exists in `PlanRowData` (perhaps fetched for a different purpose), skip steps 1, 2, 4, and 5. Only step 3 (add column + value in table) is needed.
+    15→
+    16→## Reduced Checklist
+    17→
+    18→| Step | File                        | Change                        |
+    19→| ---- | --------------------------- | ----------------------------- |
+    20→| 3    | `tui/widgets/plan_table.py` | Add column definition + value |
+    21→
+    22→Plus: update all index-based test assertions (see column index cascade tripwire in [column-addition-pattern.md](column-addition-pattern.md)).
+    23→
+    24→## Example: Branch Column
+    25→
+    26→The branch column displays `pr_head_branch` and `worktree_branch` — both already present in `PlanRowData` for other purposes (PR discovery, worktree display). No gateway query, data class field, or serialization changes were needed. Only the column definition and render logic were added to `plan_table.py`.
+    27→
+    28→## Decision: Standard vs Derived
+    29→
+    30→| Question                                   | Answer | Pattern                           |
+
+... [15 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_017frUYPM3ngrH6hWNe264RV">
+     1→---
+     2→title: Dual Provider Pattern for Context-Agnostic Commands
+     3→read_when:
+     4→  - "implementing a TUI command that works from both list and detail views"
+     5→  - "understanding how MainListCommandProvider and PlanCommandProvider share commands"
+     6→  - "adding command palette support to a new screen"
+     7→tripwires:
+     8→  - action: "duplicating command definitions for list and detail contexts"
+     9→    warning: "Commands are defined once in the registry. Use a second Provider subclass with its own _get_context() to serve the same commands from a new context."
+    10→  - action: "duplicating execute_palette_command logic between ErkDashApp and PlanDetailScreen"
+    11→    warning: "This duplication is a known trade-off. Both ErkDashApp.execute_palette_command() and PlanDetailScreen.execute_command() implement the same command_id switch because they dispatch to different APIs (provider methods vs executor methods). See the asymmetries section below."
+    12→  - action: "showing toast from a modal screen"
+    13→    warning: "Call self.dismiss() before app-level toasts. Modal blocks the correct z-layer, so toasts must render at app level after modal dismissal."
+    14→last_audited: "2026-02-16 14:20 PT"
+    15→audit_result: clean
+    16→---
+    17→
+    18→# Dual Provider Pattern for Context-Agnostic Commands
+    19→
+    20→The TUI command palette serves the same set of commands from two different UI contexts (main list and plan detail modal) without duplicating command definitions. This is achieved through Textual's `Provider` mechanism: two provider classes share one command registry but resolve `CommandContext` from different sources.
+    21→
+    22→## Why Two Providers, Not Two Registries
+    23→
+    24→The core design question was: when a user opens the command palette from the detail modal, should it show a different set of commands than from the main list? The answer is no — the same operations (open PR, copy checkout, close plan) apply regardless of context. What differs is only _which plan_ the command operates on and _how the command dispatches_.
+    25→
+    26→&lt;!-- Source: src/erk/tui/commands/provider.py, MainListCommandProvider --&gt;
+    27→&lt;!-- Source: src/erk/tui/commands/provider.py, PlanCommandProvider --&gt;
+    28→
+    29→`MainListCommandProvider` resolves context from the table's selected row (`_app._get_selected_row()`), while `PlanCommandProvider` resolves context from the detail screen's `_row` field. Both call the same `get_available_commands()` with the resolved `CommandContext`, so command definitions, availability predicates, and display names are defined exactly once.
+    30→
+
+... [83 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01N4TpzefpyMB7xoYuDrPVbk">
+     1→---
+     2→title: TUI Filter Pipeline Pattern
+     3→read_when:
+     4→  - "adding a new filter to the TUI dashboard"
+     5→  - "understanding how objective/stack/text filters interact"
+     6→  - "modifying the escape key behavior in the TUI"
+     7→tripwires:
+     8→  - action: "adding a new filter without updating the escape chain"
+     9→    warning: "New filter implementations must add an entry to `action_exit_app()` progressive escape chain. Missing entries leave filters stuck with no way for the user to clear them."
+    10→  - action: "changing filter application order in _apply_filter_and_sort()"
+    11→    warning: "Filter order is intentional: objective → stack → text → sort. Objective is broadest (cross-stack), stack is mid-level, text is narrowest. Changing order produces unexpected results."
+    12→  - action: "using a mutable set for _stack_filter_branches"
+    13→    warning: "Stack filter branches use frozenset[str] for immutability and efficient membership testing. Do not use set or list."
+    14→---
+    15→
+    16→# TUI Filter Pipeline Pattern
+    17→
+    18→The TUI dashboard applies filters in a defined pipeline sequence: objective filter, stack filter, text filter, then sort. Each filter follows the same toggle pattern with state variables, toggle actions, and escape chain integration.
+    19→
+    20→## Filter Pipeline
+    21→
+    22→`_apply_filter_and_sort()` in `src/erk/tui/app.py` applies filters in sequence:
+    23→
+    24→1. **Objective filter**: Filters rows matching `_objective_filter_issue`
+    25→2. **Stack filter**: Filters rows matching branches in `_stack_filter_branches`
+    26→3. **Text filter**: Applies text search query if `FilterMode.ACTIVE`
+    27→4. **Sort**: Sorts using `SortKey` (supports `BranchActivity` ordering)
+    28→
+    29→## State Variables
+    30→
+
+... [53 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_018auPVrkDBCccEuhxuMyuZc">
+     1→---
+     2→title: TUI Filter Toggle Pattern
+     3→read_when:
+     4→  - "adding a filter toggle to the TUI dashboard"
+     5→  - "implementing server-side filtering in the TUI"
+     6→  - "adding keybindings that toggle dashboard state"
+     7→tripwires:
+     8→  - action: "adding a filter toggle to the TUI dashboard"
+     9→    warning: "Server-side filters (like author) must clear _data_cache on toggle. Client-side filters (like stack, objective) only re-filter cached rows. Follow the 6-component pattern in filter-toggle-pattern.md."
+    10→---
+    11→
+    12→# TUI Filter Toggle Pattern
+    13→
+    14→Pattern for adding a filter toggle to the erk TUI dashboard. The author filter is the reference implementation.
+    15→
+    16→## 6 Required Components
+    17→
+    18→Each component below is demonstrated by the author filter toggle. The reference files are listed in the "Reference Implementation" section at the bottom.
+    19→
+    20→&lt;!-- Source: src/erk/tui/app.py, _show_all_users --&gt;
+    21→&lt;!-- Source: src/erk/tui/actions/filter_actions.py, action_toggle_all_users --&gt;
+    22→&lt;!-- Source: src/erk/tui/widgets/status_bar.py, set_author_filter --&gt;
+    23→&lt;!-- Source: src/erk/tui/screens/help_screen.py, help binding labels --&gt;
+    24→
+    25→### 1. Field Initialization (app.py)
+    26→
+    27→Add a boolean field (e.g., `_show_all_users = False`) in the app's `__init__`. See `ErkDashApp` in `src/erk/tui/app.py`.
+    28→
+    29→### 2. Action Handler (filter_actions.py)
+    30→
+
+... [45 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01W9YVxAYPTJJ5pvzD4jL8iX">
+     1→---
+     2→title: Frozen Dataclass Field Management
+     3→read_when:
+     4→  - "removing a field from a frozen dataclass"
+     5→  - "renaming a field in PlanRowData or similar frozen dataclass"
+     6→  - "getting unexpected constructor errors after field changes"
+     7→tripwires:
+     8→  - action: "removing a field from a frozen dataclass"
+     9→    warning: "Grep for the class name across ALL constructor sites. Frozen dataclasses have 5+ places to update: field definition, real provider, fake provider, test helpers, and filtering/display logic. Missing one causes runtime TypeError."
+    10→  - action: "using positional arguments when constructing PlanRowData"
+    11→    warning: "Always use keyword arguments for frozen dataclass construction. Positional arguments break silently when fields are reordered. Use make_plan_row() helper in tests."
+    12→---
+    13→
+    14→# Frozen Dataclass Field Management
+    15→
+    16→Frozen dataclasses like `PlanRowData` have fields referenced across many files. Adding or removing a field requires updating every construction site, which is error-prone because the frozen constraint means you cannot incrementally update — all constructor calls must be correct simultaneously.
+    17→
+    18→## The Removal Checklist
+    19→
+    20→When removing a field from a frozen dataclass:
+    21→
+    22→1. **Remove the field definition** from the dataclass in `data/types.py`
+    23→2. **Remove from real provider** — `RealPlanDataProvider._build_row_data()` in the plan data provider
+    24→3. **Remove from fake provider** — `FakePlanDataProvider` and the `make_plan_row()` helper in `packages/erk-shared/src/erk_shared/gateway/plan_data_provider/fake.py`
+    25→4. **Remove from display logic** — `PlanDataTable._row_to_values()` in `plan_table.py`
+    26→5. **Remove from any filtering/sorting logic** that references the field
+    27→6. **Remove from documentation** — `docs/learned/tui/plan-row-data.md`
+    28→
+    29→The critical step is #3 — `make_plan_row()` is used extensively in tests. Missing this causes widespread test failures.
+    30→
+
+... [32 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_014YB4P95YFd8gscqk95qLqW">
+     1→---
+     2→title: TUI Keyboard Shortcuts Inventory
+     3→read_when:
+     4→  - "adding a new keyboard shortcut to the TUI"
+     5→  - "checking for shortcut conflicts before binding a new key"
+     6→  - "understanding what keys are available in the TUI"
+     7→tripwires:
+     8→  - action: "adding a new key binding without checking existing bindings"
+     9→    warning: "Check this document and ErkDashApp.BINDINGS in app.py for conflicts. Some keys are hidden but still active."
+    10→    score: 4
+    11→---
+    12→
+    13→# TUI Keyboard Shortcuts Inventory
+    14→
+    15→Complete binding inventory from `ErkDashApp.BINDINGS` in `src/erk/tui/app.py`.
+    16→
+    17→## All Bindings
+    18→
+    19→&lt;!-- Source: src/erk/tui/app.py, ErkDashApp.BINDINGS --&gt;
+    20→
+    21→The complete binding inventory is defined in `ErkDashApp.BINDINGS`. The bindings include both visible shortcuts (shown in help) and hidden power-user shortcuts.
+    22→
+    23→## Key Groups
+    24→
+    25→**Navigation:** j/k (vim-style), escape (quit)
+    26→
+    27→**View Switching:** 1/2/3 (direct), left/right (cycle)
+    28→
+    29→**Filters:** o (objective), t (stack), / (text filter), s (sort)
+    30→
+
+... [50 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01JTvCKroWMtiuhSetkCqSfy">
+     1→---
+     2→title: Lifecycle and PR Status Display
+     3→read_when:
+     4→  - "adding a new lifecycle stage to the TUI"
+     5→  - "changing lifecycle abbreviations or colors"
+     6→  - "modifying PR status emoji indicators"
+     7→  - "understanding the stage column in erk dash"
+     8→tripwires:
+     9→  - action: "adding a new lifecycle stage without updating abbreviation map"
+    10→    warning: "The stage column is 8 chars wide. New stages longer than 8 chars need abbreviations in compute_lifecycle_display(). Also update format_lifecycle_with_status() stage detection."
+    11→---
+    12→
+    13→# Lifecycle and PR Status Display
+    14→
+    15→The TUI dashboard shows a `stage` column for planned_pr plans, computed in `lifecycle.py` and displayed only in planned_pr backend mode. PR status indicators (draft/published, conflicts, review decisions) are rendered inline within the stage display.
+    16→
+    17→## Lifecycle Stage Display
+    18→
+    19→&lt;!-- Source: packages/erk-shared/src/erk_shared/gateway/plan_data_provider/lifecycle.py, compute_lifecycle_display --&gt;
+    20→
+    21→`compute_lifecycle_display()` reads `lifecycle_stage` from plan header fields. If absent, it infers the stage from `is_draft` and `pr_state` in plan metadata:
+    22→
+    23→| `is_draft` | `pr_state` | Inferred Stage |
+    24→| ---------- | ---------- | -------------- |
+    25→| `True`     | `"OPEN"`   | `"planned"`    |
+    26→| `False`    | `"OPEN"`   | `"impl"`       |
+    27→| `False`    | `"MERGED"` | `"merged"`     |
+    28→| `False`    | `"CLOSED"` | `"closed"`     |
+    29→
+    30→When the resolved stage is `"planned"` and a workflow run exists, it upgrades to `"impl"`.
+
+... [51 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01KELNhrpBom8tpmeF9PLr1Z">
+     1→---
+     2→title: TUI Modal Screen Pattern
+     3→read_when:
+     4→  - "adding a new modal screen to the TUI"
+     5→  - "implementing a ModalScreen subclass"
+     6→  - "displaying detail views or confirmation dialogs"
+     7→tripwires:
+     8→  - action: "creating a ModalScreen without CSS for dismiss behavior"
+     9→    warning: "ModalScreen requires explicit CSS for the overlay. Without it, clicking outside the modal does nothing."
+    10→  - action: "calling widget methods from @work(thread=True) without call_from_thread()"
+    11→    warning: "Background thread widget mutations cause silent UI corruption. Use self.app.call_from_thread(callback, ...)."
+    12→  - action: "using inverted key check in on_key() modal dismiss logic"
+    13→    warning: "if event.key not in (...) is WRONG for dismiss logic — it swallows dismiss keys. Use if event.key in (...) to check for positive dismiss. Regression caused by stacked PR merge order."
+    14→    score: 7
+    15→---
+    16→
+    17→# TUI Modal Screen Pattern
+    18→
+    19→Checklist for implementing a new modal screen in the erk TUI.
+    20→
+    21→## 7-Element Checklist
+    22→
+    23→### 1. ModalScreen Subclass
+    24→
+    25→Extend `ModalScreen` (not `Screen`) to get overlay dismiss behavior:
+    26→
+    27→```python
+    28→from textual.screen import ModalScreen
+    29→
+    30→class MyDetailScreen(ModalScreen):
+
+... [101 lines omitted] ...
+
+    66→    except Exception as e:
+    67→        self.app.call_from_thread(self._on_error, str(e))
+    80→### 6. Error Boundary
+    82→Wrap the entire worker body in try/except. This is an approved EAFP exception for UI error boundaries — it prevents silent worker failures.
+   125→- [Textual Async Best Practices](textual-async.md) — Error boundary pattern details
+  </tool_result>
+  <tool_result tool="toolu_018q13WDXdqggEU81m1tMxzR">
+     1→---
+     2→title: Modal Widget Embedding Pattern
+     3→read_when:
+     4→  - "reusing PlanDataTable in a modal screen"
+     5→  - "embedding complex widgets in Textual modal screens"
+     6→  - "handling null safety for optional gateway fields in TUI"
+     7→tripwires:
+     8→  - action: "passing id= kwarg to PlanDataTable constructor"
+     9→    warning: "PlanDataTable does not support the id= keyword argument. Use CSS selectors or widget references instead."
+    10→  - action: "accessing optional gateway fields without null checks in TUI event handlers"
+    11→    warning: "Gateway fields like plan_body or objective_content may be None. Always check before accessing in event handlers."
+    12→  - action: "implementing on_key() in a modal without calling event.prevent_default() and event.stop()"
+    13→    warning: "Modal on_key() must call event.prevent_default() and event.stop() BEFORE any logic. Without this, keystrokes leak to the underlying view and trigger unintended actions."
+    14→  - action: "implementing modal dismiss with an inverted key check condition"
+    15→    warning: "Dismiss-on-unhandled pattern: if event.key not in (bound_keys): self.dismiss(). Using the inverted condition (if key in bound_keys: dismiss) is a common bug that dismisses on valid keys instead of unrecognized ones."
+    16→---
+    17→
+    18→# Modal Widget Embedding Pattern
+    19→
+    20→Pattern for reusing complex widgets (like PlanDataTable) inside modal screens. Based on the ObjectivePlansScreen implementation that embeds PlanDataTable in a modal dialog.
+    21→
+    22→## The Pattern
+    23→
+    24→When a screen needs to display a subset of data using an existing table widget:
+    25→
+    26→1. **Create the modal screen** extending `ModalScreen` or `Screen`
+    27→2. **Instantiate the widget** without custom ID (PlanDataTable limitation)
+    28→3. **Configure the widget** for the modal context (different columns, filtered data)
+    29→4. **Handle events** from the embedded widget within the modal screen
+    30→
+
+... [42 lines omitted] ...
+  </tool_result>
+  <assistant>Now I'll edit each file to add `curated_in: erk-tui` as the last field before the closing `---` in the frontmatter:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="18539" cache_read_input_tokens="16395" cache_creation="{'ephemeral_5m_input_tokens': 18539, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01QNutJRy7AFmMgL4nqrRHAV">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/data-contract.md</param>
+    <param name="old_string">last_audited: "2026-02-16 14:20 PT"
+audit_result: edited
+---</param>
+    <param name="new_string">last_audited: "2026-02-16 14:20 PT"
+audit_result: edited
+curated_in: erk-tui
+---</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="18539" cache_read_input_tokens="16395" cache_creation="{'ephemeral_5m_input_tokens': 18539, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01FbvnTjkVAkXacuVPeNyFM7">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/derived-display-columns.md</param>
+    <param name="old_string">read_when:
+  - "adding a TUI column that uses an existing PlanRowData field"
+  - "deciding whether a new column needs gateway/query changes"
+---</param>
+    <param name="new_string">read_when:
+  - "adding a TUI column that uses an existing PlanRowData field"
+  - "deciding whether a new column needs gateway/query changes"
+curated_in: erk-tui
+---</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="18539" cache_read_input_tokens="16395" cache_creation="{'ephemeral_5m_input_tokens': 18539, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01FUFqgYTnh5FcRAk8QMbMTB">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/dual-handler-pattern.md</param>
+    <param name="old_string">last_audited: "2026-02-16 14:20 PT"
+audit_result: clean
+---</param>
+    <param name="new_string">last_audited: "2026-02-16 14:20 PT"
+audit_result: clean
+curated_in: erk-tui
+---</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="18539" cache_read_input_tokens="16395" cache_creation="{'ephemeral_5m_input_tokens': 18539, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01KgkDdh47p8Y3hXG9qH7vic">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/filter-pipeline.md</param>
+    <param name="old_string">  - action: "using a mutable set for _stack_filter_branches"
+    warning: "Stack filter branches use frozenset[str] for immutability and efficient membership testing. Do not use set or list."
+---</param>
+    <param name="new_string">  - action: "using a mutable set for _stack_filter_branches"
+    warning: "Stack filter br...[truncated 15 chars]...ability and efficient membership testing. Do not use set or list."
+curated_in: erk-tui
+---</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="18539" cache_read_input_tokens="16395" cache_creation="{'ephemeral_5m_input_tokens': 18539, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01KZPcvBa4GpBxkiHmR7Dnph">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/filter-toggle-pattern.md</param>
+    <param name="old_string">  - action: "adding a filter toggle to the TUI dashboard"
+    warning: "Server-side filter...[truncated 76 chars]...ly re-filter cached rows. Follow the 6-component pattern in filter-toggle-pattern.md."
+---</param>
+    <param name="new_string">  - action: "adding a filter toggle to the TUI dashboard"
+    warning: "Server-side filter...[truncated 96 chars]...rows. Follow the 6-component pattern in filter-toggle-pattern.md."
+curated_in: erk-tui
+---</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="18539" cache_read_input_tokens="16395" cache_creation="{'ephemeral_5m_input_tokens': 18539, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01J6bMusBc3zaBtwANBoooED">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/frozen-dataclass-field-management.md</param>
+    <param name="old_string">  - action: "using positional arguments when constructing PlanRowData"
+    warning: "Alway...[truncated 53 chars]...uments break silently when fields are reordered. Use make_plan_row() helper in tests."
+---</param>
+    <param name="new_string">  - action: "using positional arguments when constructing PlanRowData"
+    warning: "Alway...[truncated 73 chars]...y when fields are reordered. Use make_plan_row() helper in tests."
+curated_in: erk-tui
+---</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="18539" cache_read_input_tokens="16395" cache_creation="{'ephemeral_5m_input_tokens': 18539, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01RBD2yCXrwwfhSbYVngz3ds">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/keyboard-shortcuts.md</param>
+    <param name="old_string">  - action: "adding a new key binding without checking existing bindings"
+    warning: "Ch...[truncated 13 chars]...BINDINGS in app.py for conflicts. Some keys are hidden but still active."
+    score: 4
+---</param>
+    <param name="new_string">  - action: "adding a new key binding without checking existing bindings"
+    warning: "Ch...[truncated 33 chars]...or conflicts. Some keys are hidden but still active."
+    score: 4
+curated_in: erk-tui
+---</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="18539" cache_read_input_tokens="16395" cache_creation="{'ephemeral_5m_input_tokens': 18539, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01WFM8P5gH8uvUu8nUBtNGid">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/lifecycle-display.md</param>
+    <param name="old_string">  - action: "adding a new lifecycle stage without updating abbreviation map"
+    warning: ...[truncated 71 chars]...pute_lifecycle_display(). Also update format_lifecycle_with_status() stage detection."
+---</param>
+    <param name="new_string">  - action: "adding a new lifecycle stage without updating abbreviation map"
+    warning: ...[truncated 91 chars]...ay(). Also update format_lifecycle_with_status() stage detection."
+curated_in: erk-tui
+---</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="18539" cache_read_input_tokens="16395" cache_creation="{'ephemeral_5m_input_tokens': 18539, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01XwKm6UuQmoAMBaPEGuzK5i">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/modal-screen-pattern.md</param>
+    <param name="old_string">  - action: "using inverted key check in on_key() modal dismiss logic"
+    warning: "if ev...[truncated 85 chars]...check for positive dismiss. Regression caused by stacked PR merge order."
+    score: 7
+---</param>
+    <param name="new_string">  - action: "using inverted key check in on_key() modal dismiss logic"
+    warning: "if ev...[truncated 105 chars]...ismiss. Regression caused by stacked PR merge order."
+    score: 7
+curated_in: erk-tui
+---</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="18539" cache_read_input_tokens="16395" cache_creation="{'ephemeral_5m_input_tokens': 18539, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01MihzG97S6tBRAUByGBDzsz">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/modal-widget-embedding.md</param>
+    <param name="old_string">  - action: "implementing modal dismiss with an inverted key check condition"
+    warning:...[truncated 112 chars]...: dismiss) is a common bug that dismisses on valid keys instead of unrecognized ones."
+---</param>
+    <param name="new_string">  - action: "implementing modal dismiss with an inverted key check condition"
+    warning:...[truncated 132 chars]...on bug that dismisses on valid keys instead of unrecognized ones."
+curated_in: erk-tui
+---</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="18539" cache_read_input_tokens="16395" cache_creation="{'ephemeral_5m_input_tokens': 18539, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01QNutJRy7AFmMgL4nqrRHAV">
+The file /home/runner/work/erk/erk/docs/learned/tui/data-contract.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01FbvnTjkVAkXacuVPeNyFM7">
+The file /home/runner/work/erk/erk/docs/learned/tui/derived-display-columns.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01FUFqgYTnh5FcRAk8QMbMTB">
+The file /home/runner/work/erk/erk/docs/learned/tui/dual-handler-pattern.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01KgkDdh47p8Y3hXG9qH7vic">
+The file /home/runner/work/erk/erk/docs/learned/tui/filter-pipeline.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01KZPcvBa4GpBxkiHmR7Dnph">
+The file /home/runner/work/erk/erk/docs/learned/tui/filter-toggle-pattern.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01J6bMusBc3zaBtwANBoooED">
+The file /home/runner/work/erk/erk/docs/learned/tui/frozen-dataclass-field-management.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01RBD2yCXrwwfhSbYVngz3ds">
+The file /home/runner/work/erk/erk/docs/learned/tui/keyboard-shortcuts.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01WFM8P5gH8uvUu8nUBtNGid">
+The file /home/runner/work/erk/erk/docs/learned/tui/lifecycle-display.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01XwKm6UuQmoAMBaPEGuzK5i">
+The file /home/runner/work/erk/erk/docs/learned/tui/modal-screen-pattern.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01MihzG97S6tBRAUByGBDzsz">
+The file /home/runner/work/erk/erk/docs/learned/tui/modal-widget-embedding.md has been updated successfully.
+  </tool_result>
+  <assistant>Perfect! I've successfully added `curated_in: erk-tui` to the YAML frontmatter of all 10 files in `/home/runner/work/erk/erk/docs/learned/tui/`. 
+
+## Summary
+
+All files have been updated with the `curated_in: erk-tui` field added as the last field before the closing `---` in their frontmatter blocks:
+
+1. **data-contract.md** - Added after `audit_result: edited`
+2. **derived-display-columns.md** - Added after the `read_when` list
+3. **dual-handler-pattern.md** - Added after `audit_result: clean`
+4. **filter-pipeline.md** - Added after the last tripwire entry
+5. **filter-toggle-pattern.md** - Added after the tripwire entry
+6. **frozen-dataclass-field-management.md** - Added after the last tripwire entry
+7. **keyboard-shortcuts.md** - Added after `score: 4`
+8. **lifecycle-display.md** - Added after the tripwire entry
+9. **modal-screen-pattern.md** - Added after `score: 7`
+10. **modal-widget-embedding.md** - Added after the last tripwire entry
+
+Each file's frontmatter now includes the `curated_in: erk-tui` field in the correct position (immediately before the closing `---`), and no content after the frontmatter was modified.</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="2931" cache_read_input_tokens="34934" cache_creation="{'ephemeral_5m_input_tokens': 2931, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>

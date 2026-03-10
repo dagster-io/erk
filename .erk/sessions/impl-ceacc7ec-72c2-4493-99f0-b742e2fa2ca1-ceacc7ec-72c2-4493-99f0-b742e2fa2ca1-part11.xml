@@ -1,0 +1,600 @@
+<session>
+  <meta source="agent-abff5c2" />
+  <meta branch="plnd/create-erk-tui-skill-03-10-0421" />
+  <meta model="claude-sonnet-4-5-20250929" />
+  <user>Add `curated_in: erk-tui` to the YAML frontmatter of the following docs/learned/tui/ files. The field should be added as the LAST field before the closing `---` in each file's frontmatter block.
+
+For each file:
+1. Read the file to see its current frontmatter
+2. Find the closing `---` of the frontmatter block
+3. Add `curated_in: erk-tui` as a new line just before the closing `---`
+
+Files to edit (all in /home/runner/work/erk/erk/docs/learned/tui/):
+1. architecture.md
+2. adding-commands.md
+3. action-inventory.md
+4. async-action-refresh-pattern.md
+5. async-state-snapshot.md
+6. clipboard-text-generation.md
+7. column-addition-pattern.md
+8. command-execution.md
+9. command-palette.md
+10. dashboard-columns.md
+
+For example, if a file has:
+```
+---
+title: Some Title
+read_when:
+  - "some condition"
+---
+```
+
+It should become:
+```
+---
+title: Some Title
+read_when:
+  - "some condition"
+curated_in: erk-tui
+---
+```
+
+IMPORTANT: Some files have additional fields like `tripwires:`, `last_audited:`, `audit_result:` etc. The `curated_in: erk-tui` line goes after ALL existing fields, immediately before the closing `---`.
+
+Do NOT modify any content after the frontmatter block.</user>
+  <assistant>I'll read all the files first to see their current frontmatter, then add the `curated_in: erk-tui` field to each one.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="6943" cache_read_input_tokens="9380" cache_creation="{'ephemeral_5m_input_tokens': 6943, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01S56kTBWZ95MCdeApL3obLT">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/architecture.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6943" cache_read_input_tokens="9380" cache_creation="{'ephemeral_5m_input_tokens': 6943, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_014jQy5deQhRr9hCcGSWHBZi">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/adding-commands.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6943" cache_read_input_tokens="9380" cache_creation="{'ephemeral_5m_input_tokens': 6943, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01QDm9cqWmqMTF5vvEm1A58c">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/action-inventory.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6943" cache_read_input_tokens="9380" cache_creation="{'ephemeral_5m_input_tokens': 6943, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01VA1ZZ4xEVeokSUVbAYgX6T">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/async-action-refresh-pattern.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6943" cache_read_input_tokens="9380" cache_creation="{'ephemeral_5m_input_tokens': 6943, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01JEkPsEggMWZTQ4yW1cXNfH">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/async-state-snapshot.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6943" cache_read_input_tokens="9380" cache_creation="{'ephemeral_5m_input_tokens': 6943, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01KWypr9KR5sxho5Ew5BxLuH">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/clipboard-text-generation.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6943" cache_read_input_tokens="9380" cache_creation="{'ephemeral_5m_input_tokens': 6943, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01HD4GNorC2C7s7VFWp1cMK8">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/column-addition-pattern.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6943" cache_read_input_tokens="9380" cache_creation="{'ephemeral_5m_input_tokens': 6943, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01V3BfQTrAQtC9LJY9j5Faoj">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/command-execution.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6943" cache_read_input_tokens="9380" cache_creation="{'ephemeral_5m_input_tokens': 6943, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01KWSRr5zqQdrb8faXjQ1PGM">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/command-palette.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6943" cache_read_input_tokens="9380" cache_creation="{'ephemeral_5m_input_tokens': 6943, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Jr9ryNCbQVGiUqASghGRfh">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/dashboard-columns.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6943" cache_read_input_tokens="9380" cache_creation="{'ephemeral_5m_input_tokens': 6943, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01S56kTBWZ95MCdeApL3obLT">
+     1→---
+     2→title: TUI Architecture Overview
+     3→read_when:
+     4→  - "understanding TUI structure"
+     5→  - "implementing TUI components"
+     6→  - "working with TUI data providers"
+     7→tripwires:
+     8→  - action: "reusing same DOM element id across loading/empty/content states"
+     9→    warning: "query_one() returns wrong element silently when id is reused across lifecycle phases. Use unique IDs per phase."
+    10→  - action: "calling widget methods directly from @work(thread=True) background threads"
+    11→    warning: "Direct widget calls from background threads cause silent UI corruption. Must use self.app.call_from_thread(callback, ...)."
+    12→  - action: "extending PlanDataProvider ABC"
+    13→    warning: "Requires 3-file update: abc.py + real.py + fake.py. Fake must initialize new dict in __init__. Missing init causes AttributeError at test time."
+    14→  - action: "adding a DataTable column with add_column(key=...)"
+    15→    warning: "Column key is a data binding contract — must match data field name. Silent failure when mismatched."
+    16→  - action: "moving @on decorated event handlers to a mixin"
+    17→    warning: "Textual's _MessagePumpMeta only scans class.__dict__, not inherited methods. Event handlers on mixins are silently ignored."
+    18→  - action: "adding CI check formatting to TUI screens"
+    19→    warning: "Use src/erk/tui/formatting/ci_checks.py shared module (format_check_line, format_summary_blockquote, format_check_runs) instead of duplicating formatting logic."
+    20→last_audited: "2026-02-17 18:30 PT"
+    21→audit_result: clean
+    22→---
+    23→
+    24→# TUI Architecture Overview
+    25→
+    26→The erk TUI is built with Textual and follows a layered architecture separating data fetching, filtering, and rendering.
+    27→
+    28→## Directory Structure
+    29→
+    30→```
+
+... [183 lines omitted] ...
+
+   128→Use fake providers instead of mocking. `FakePlanDataProvider` lives in `tests.fakes.gateway.plan_data_provider` and accepts keyword-only arguments (`plans`, `clipboard`, `browser`, `repo_root`, `fetch_error`). The `make_plan_row()` helper in the same module creates test `PlanRowData` instances with sensible defaults.
+  </tool_result>
+  <tool_result tool="toolu_014jQy5deQhRr9hCcGSWHBZi">
+     1→---
+     2→title: Adding Commands to TUI
+     3→read_when:
+     4→  - "adding a new command to the TUI command palette"
+     5→  - "implementing TUI actions with streaming output"
+     6→  - "understanding the dual-handler pattern for TUI commands"
+     7→tripwires:
+     8→  - action: "generating TUI commands that depend on optional PlanRowData fields"
+     9→    warning: "Implement three-layer validation: registry predicate, handler guard, app-level helper. Never rely on registry predicate alone."
+    10→last_audited: "2026-02-05 00:00 PT"
+    11→audit_result: edited
+    12→---
+    13→
+    14→# Adding Commands to TUI
+    15→
+    16→## Architecture: The Dual-Handler Pattern
+    17→
+    18→Commands follow a **dual-handler pattern**:
+    19→
+    20→1. **Registry** (`src/erk/tui/commands/registry.py`) — Defines `CommandDefinition` with metadata and availability predicates
+    21→2. **Handlers** — Implement actual logic in two locations:
+    22→   - `ErkDashApp.execute_palette_command()` in `app.py` — Main list context
+    23→   - `PlanDetailScreen.execute_command()` — Detail modal context
+    24→
+    25→Commands need different behavior depending on invocation context. See the actual source files for current command definitions and handler implementations.
+    26→
+    27→## Adding a New Command
+    28→
+    29→1. **Add `CommandDefinition`** to `registry.py` with id, name, description, category, shortcut, availability predicate
+    30→2. **Add handler** in `ErkDashApp.execute_palette_command()` for main list context
+
+... [74 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01QDm9cqWmqMTF5vvEm1A58c">
+     1→---
+     2→title: TUI Command Architecture
+     3→read_when:
+     4→  - "adding a new command to the TUI or desktop dashboard"
+     5→  - "understanding how command availability is determined"
+     6→  - "choosing which execution pattern a new command should use"
+     7→tripwires:
+     8→  - action: "adding a command without an availability predicate"
+     9→    warning: "Every command needs an is_available predicate based on PlanRowData field presence. Commands without predicates appear when they can't execute."
+    10→  - action: "adding an ACTION command that executes instantly"
+    11→    warning: "ACTION category implies mutative operations. Instant operations belong in OPEN or COPY categories."
+    12→last_audited: "2026-02-08 00:00 PT"
+    13→audit_result: edited
+    14→---
+    15→
+    16→# TUI Command Architecture
+    17→
+    18→The TUI command system uses a data-driven registry pattern where commands declare their own availability based on `PlanRowData` field presence. This decouples command definitions from UI rendering, enabling the same registry to serve multiple frontends (TUI command palette, desktop toolbar).
+    19→
+    20→## Why Data-Driven Availability
+    21→
+    22→&lt;!-- Source: src/erk/tui/commands/registry.py, get_all_commands --&gt;
+    23→
+    24→Commands don't check "can I run?" at execution time — they declare upfront what data they need via `is_available` predicates. This design was chosen because:
+    25→
+    26→1. **Multiple consumers need the same logic.** The TUI command palette (`MainListCommandProvider`, `PlanCommandProvider`) and the desktop dashboard toolbar both need to know which actions are valid for a given row. Centralizing predicates in the registry avoids duplicating availability logic across frontends.
+    27→
+    28→2. **Availability depends on `PlanRowData` nullability.** Each `PlanRowData` field is nullable for a reason (no PR yet, no workflow run, etc.). The predicates express which combination of non-null fields a command requires. This makes the availability contract explicit and testable.
+    29→
+    30→3. **Commands that are always available use `lambda _: True`** — these are plan-level operations (close, prepare, dispatch) that only need the issue number, which is always present.
+
+... [67 lines omitted] ...
+
+    58→**Anti-pattern**: Writing `is_available=lambda ctx: True` for a command that uses `ctx.row.pr_number`. The predicate will allow execution when `pr_number` is None, causing a runtime error. This is why the [three-layer null validation](adding-commands.md) pattern exists — the predicate is necessary but not sufficient.
+  </tool_result>
+  <tool_result tool="toolu_01VA1ZZ4xEVeokSUVbAYgX6T">
+     1→---
+     2→title: Async Action Refresh Pattern
+     3→read_when:
+     4→  - "adding background operations to the TUI"
+     5→  - "implementing worker thread actions in the dashboard"
+     6→  - "refreshing TUI data after a background subprocess"
+     7→tripwires:
+     8→  - action: "completing a background worker thread without calling action_refresh"
+     9→    warning: "Always call_from_thread(self.action_refresh) after successful background work to update the TUI display."
+    10→    score: 6
+    11→  - action: "passing --no-wait in worker thread subprocess calls"
+    12→    warning: "Never pass --no-wait in worker threads — it defeats the polling purpose. The thread exists to wait for the operation to complete before refreshing."
+    13→    score: 5
+    14→---
+    15→
+    16→# Async Action Refresh Pattern
+    17→
+    18→The TUI dashboard uses `@work(thread=True)` decorated methods to run subprocess operations in background threads without blocking the UI. After each successful operation, the thread triggers a data refresh.
+    19→
+    20→## The Pattern
+    21→
+    22→&lt;!-- Source: src/erk/tui/app.py, _address_remote_async --&gt;
+    23→
+    24→All background worker methods in `app.py` follow the same structure:
+    25→
+    26→1. **Decorate with `@work(thread=True)`** — Textual runs the method in a worker thread
+    27→2. **Run subprocess** — Execute the CLI command (e.g., `erk pr address-remote`)
+    28→3. **Show success toast** — `self.call_from_thread(self.notify, message)`
+    29→4. **Trigger refresh** — `self.call_from_thread(self.action_refresh)`
+    30→5. **Handle errors** — Catch `CalledProcessError`, show error toast
+
+... [24 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01JEkPsEggMWZTQ4yW1cXNfH">
+     1→---
+     2→title: TUI Async State Snapshot Pattern
+     3→category: tui
+     4→read_when:
+     5→  - "adding async data fetching to the TUI"
+     6→  - "reading self._view_mode during async operations"
+     7→  - "debugging stale data appearing in the wrong tab"
+     8→tripwires:
+     9→  - action: "reading self._view_mode during async data fetch without snapshotting"
+    10→    warning: "Snapshot at fetch start with fetched_mode = self._view_mode. Read this doc."
+    11→  - action: "caching fetched data under self._view_mode after an async operation"
+    12→    warning: "Cache under fetched_mode (snapshot at start), not self._view_mode (may have changed during fetch)."
+    13→---
+    14→
+    15→# TUI Async State Snapshot Pattern
+    16→
+    17→When fetching data asynchronously in the TUI, the user may switch views during the fetch. The "fetched mode" pattern prevents race conditions by snapshotting the active view at fetch start and threading it through the pipeline.
+    18→
+    19→## The Problem
+    20→
+    21→```
+    22→1. User is on Plans tab, fetch starts
+    23→2. User switches to Objectives tab during fetch
+    24→3. Fetch completes with Plans data
+    25→4. BUG: Plans data overwrites Objectives display
+    26→```
+    27→
+    28→Without snapshotting, `self._view_mode` reflects the _current_ view (Objectives), but the fetched data belongs to the _original_ view (Plans). Caching under the wrong key or updating the wrong display corrupts the UI.
+    29→
+    30→## The Solution: `fetched_mode` Snapshot
+
+... [47 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01KWypr9KR5sxho5Ew5BxLuH">
+     1→---
+     2→title: Clipboard Text Generation
+     3→read_when:
+     4→  - "implementing copy-to-clipboard in the TUI"
+     5→  - "adding a new command that supports clipboard copy"
+     6→  - "debugging why a copy command returns wrong text"
+     7→tripwires:
+     8→  - action: "duplicating display name logic for clipboard text"
+     9→    warning: "Use get_copy_text() from registry.py as the single source of truth for clipboard text. Display name generators in command definitions are the canonical source. Do not duplicate this logic in app.py or detail screens."
+    10→    score: 5
+    11→---
+    12→
+    13→# Clipboard Text Generation
+    14→
+    15→The TUI uses a centralized `get_copy_text()` function to generate clipboard text for copy commands. This eliminates duplication between the main plan list and detail screens.
+    16→
+    17→## Single Source of Truth
+    18→
+    19→&lt;!-- Source: src/erk/tui/commands/registry.py:470, get_copy_text --&gt;
+    20→
+    21→`get_copy_text()` in `src/erk/tui/commands/registry.py:470` maps `(command_id, row, view_mode)` to clipboard text:
+    22→
+    23→```python
+    24→def get_copy_text(command_id: str, row: PlanRowData, view_mode: ViewMode) -&gt; str | None:
+    25→```
+    26→
+    27→It finds the command by ID, checks availability, and delegates to the command's `get_display_name` callback. Returns `None` if the command isn't found, isn't available, or has no display name generator.
+    28→
+    29→## Why Display Name Generators Are Canonical
+    30→
+
+... [32 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01HD4GNorC2C7s7VFWp1cMK8">
+     1→---
+     2→title: Column Addition Pattern
+     3→read_when:
+     4→  - "adding a column to the plan table"
+     5→  - "adding a field to PlanRowData"
+     6→  - "modifying plan_table.py column layout"
+     7→tripwires:
+     8→  - action: "adding a column to PlanDataTable without updating make_plan_row"
+     9→    warning: "Column additions require 5 coordinated changes. See column-addition-pattern.md for the complete checklist."
+    10→  - action: "adding or reordering PlanDataTable columns"
+    11→    warning: "TUI column index cascade: adding or reordering columns invalidates ALL test assertions using column indices. Run a systematic grep for column-index assertions (e.g., row[N]) before and after the change. Update every affected test file."
+    12→    score: 6
+    13→last_audited: "2026-02-16 08:00 PT"
+    14→audit_result: clean
+    15→---
+    16→
+    17→# Column Addition Pattern
+    18→
+    19→Adding a column to the PlanDataTable requires 5 coordinated changes across the data pipeline. Missing any one causes runtime errors or test failures.
+    20→
+    21→## Worked Example: created_at Datetime Column (PR #6978)
+    22→
+    23→### 1. Add field to PlanRowData (`src/erk/tui/data/types.py`)
+    24→
+    25→Add both the raw data field and the display-formatted field:
+    26→
+    27→```python
+    28→@dataclass(frozen=True)
+    29→class PlanRowData:
+    30→    created_at: datetime     # Raw value for sorting/filtering
+
+... [94 lines omitted] ...
+
+   112→A mismatch between column count and value count causes a silent rendering error in Textual's DataTable.
+   118→- [Derived Display Columns](derived-display-columns.md) — Exception for columns reusing existing data
+  </tool_result>
+  <tool_result tool="toolu_01V3BfQTrAQtC9LJY9j5Faoj">
+     1→---
+     2→title: Command Execution Strategies
+     3→read_when:
+     4→  - "executing commands in TUI"
+     5→  - "choosing between sync and streaming execution"
+     6→  - "implementing command runners"
+     7→tripwires:
+     8→  - action: "using subprocess.Popen in TUI code without stdin=subprocess.DEVNULL"
+     9→    warning: "Child processes inherit stdin from parent; in TUI context this creates deadlocks when child prompts for user input. Always set `stdin=subprocess.DEVNULL` for TUI subprocess calls."
+    10→last_audited: "2026-02-16 08:00 PT"
+    11→audit_result: clean
+    12→---
+    13→
+    14→# Command Execution Strategies
+    15→
+    16→This guide covers the different strategies for executing commands in erk and when to use each approach.
+    17→
+    18→## Two Strategies
+    19→
+    20→### 1. Streaming Subprocess (Preferred)
+    21→
+    22→**Pattern:** Execute command in subprocess, stream output back to UI in real-time
+    23→
+    24→**Characteristics:**
+    25→
+    26→- Real-time output visibility
+    27→- Non-blocking UI
+    28→- Requires repository context (`repo_root`)
+    29→- Uses background thread for I/O
+    30→- Cross-thread communication with `app.call_from_thread()`
+
+... [165 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01KWSRr5zqQdrb8faXjQ1PGM">
+     1→---
+     2→title: Textual CommandPalette Guide
+     3→read_when:
+     4→  - "implementing command palette in Textual TUI"
+     5→  - "hiding system commands from command palette"
+     6→  - "get_system_commands method"
+     7→  - "removing Keys Quit Screenshot Theme from palette"
+     8→  - "adding emoji prefixes to command palette entries"
+     9→  - "using CommandCategory for command categorization"
+    10→last_audited: "2026-02-05 00:00 PT"
+    11→audit_result: edited
+    12→---
+    13→
+    14→# Textual CommandPalette Guide
+    15→
+    16→For standard Textual CommandPalette patterns (Providers, Hit/DiscoveryHit, Matcher, async generators, Screen.COMMANDS), consult the [Textual documentation](https://textual.textualize.io/). This doc focuses on erk-specific patterns and a critical Textual pitfall.
+    17→
+    18→## System Commands Pitfall
+    19→
+    20→**CRITICAL:** `get_system_commands` must be overridden on the **App class**, not the Screen class. Textual calls `app.get_system_commands(screen)` when opening the palette — it never calls this method on screens.
+    21→
+    22→```python
+    23→# WRONG — This method is never called by Textual
+    24→class MyModalScreen(ModalScreen):
+    25→    def get_system_commands(self, screen: Screen) -&gt; Iterator[SystemCommand]:
+    26→        return iter(())  # Has no effect!
+    27→
+    28→# CORRECT — Override on App class
+    29→class MyApp(App):
+    30→    def get_system_commands(self, screen: Screen) -&gt; Iterator[SystemCommand]:
+
+... [45 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01Jr9ryNCbQVGiUqASghGRfh">
+     1→---
+     2→title: Dashboard Column Inventory
+     3→read_when:
+     4→  - "adding a new column to the erk dash TUI"
+     5→  - "understanding which columns are always present vs conditional"
+     6→  - "debugging why a column is missing in a particular view mode"
+     7→tripwires:
+     8→  - action: "adding stage column outside planned_pr backend check"
+     9→    warning: "stage column is planned_pr-only. It appears before obj in the column order. Check _setup_columns() for the backend conditional block."
+    10→---
+    11→
+    12→# Dashboard Column Inventory
+    13→
+    14→The `erk dash` TUI uses `PlanDataTable` (`src/erk/tui/widgets/plan_table.py`) for its column layout. Column presence depends on the active view mode and plan backend.
+    15→
+    16→## Plans View Columns (Default)
+    17→
+    18→Column order in `_setup_columns()` for `ViewMode.PLANS`:
+    19→
+    20→| Column Header  | Key           | Width | Condition                                           |
+    21→| -------------- | ------------- | ----- | --------------------------------------------------- |
+    22→| `plan` or `pr` | `plan`        | 6     | Always (header is `pr` in planned_pr mode)          |
+    23→| `stage`        | `stage`       | 8     | Only when `plan_backend == "planned_pr"`            |
+    24→| `sts`          | `status`      | 7     | Only when `plan_backend == "planned_pr"`            |
+    25→| `created`      | `created`     | 7     | In planned_pr mode (positioned here, not after run) |
+    26→| `obj`          | `objective`   | 5     | Always                                              |
+    27→| `loc`          | `location`    | 3     | Always (location emoji)                             |
+    28→| `branch`       | `branch`      | 42    | Always                                              |
+    29→| `run-id`       | `run_id`      | 10    | Always                                              |
+    30→| `run`          | `run_state`   | 3     | Always (run state emoji)                            |
+
+... [57 lines omitted] ...
+  </tool_result>
+  <assistant>Now I'll edit each file to add the `curated_in: erk-tui` field before the closing `---` in the frontmatter:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="18449" cache_read_input_tokens="16323" cache_creation="{'ephemeral_5m_input_tokens': 18449, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01Tt2cXKThSL7TWRoDAZBKUD">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/architecture.md</param>
+    <param name="old_string">last_audited: "2026-02-17 18:30 PT"
+audit_result: clean
+---</param>
+    <param name="new_string">last_audited: "2026-02-17 18:30 PT"
+audit_result: clean
+curated_in: erk-tui
+---</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="18449" cache_read_input_tokens="16323" cache_creation="{'ephemeral_5m_input_tokens': 18449, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01Mb1ViA2VbVc2x4BKPmxwTy">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/adding-commands.md</param>
+    <param name="old_string">last_audited: "2026-02-05 00:00 PT"
+audit_result: edited
+---</param>
+    <param name="new_string">last_audited: "2026-02-05 00:00 PT"
+audit_result: edited
+curated_in: erk-tui
+---</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="18449" cache_read_input_tokens="16323" cache_creation="{'ephemeral_5m_input_tokens': 18449, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_014Rjuw8cowAGNn5p7EmR5vB">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/action-inventory.md</param>
+    <param name="old_string">last_audited: "2026-02-08 00:00 PT"
+audit_result: edited
+---</param>
+    <param name="new_string">last_audited: "2026-02-08 00:00 PT"
+audit_result: edited
+curated_in: erk-tui
+---</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="18449" cache_read_input_tokens="16323" cache_creation="{'ephemeral_5m_input_tokens': 18449, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01EyQiH8J9P7MHRu43XZSF5A">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/async-action-refresh-pattern.md</param>
+    <param name="old_string">  - action: "passing --no-wait in worker thread subprocess calls"
+    warning: "Never pass...[truncated 45 chars]...e thread exists to wait for the operation to complete before refreshing."
+    score: 5
+---</param>
+    <param name="new_string">  - action: "passing --no-wait in worker thread subprocess calls"
+    warning: "Never pass...[truncated 65 chars]...ait for the operation to complete before refreshing."
+    score: 5
+curated_in: erk-tui
+---</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="18449" cache_read_input_tokens="16323" cache_creation="{'ephemeral_5m_input_tokens': 18449, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01DAVFwA47bm5S7eFkqFTQBg">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/async-state-snapshot.md</param>
+    <param name="old_string">  - action: "caching fetched data under self._view_mode after an async operation"
+    warning: "Cache under fetched_mode (snapshot at start), not self._view_mode (may have changed during fetch)."
+---</param>
+    <param name="new_string">  - action: "caching fetched data under self._view_mode after an async operation"
+    warn...[truncated 19 chars]...t at start), not self._view_mode (may have changed during fetch)."
+curated_in: erk-tui
+---</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="18449" cache_read_input_tokens="16323" cache_creation="{'ephemeral_5m_input_tokens': 18449, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01XJA1fmNWoKuqSqDkgvN8xX">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/clipboard-text-generation.md</param>
+    <param name="old_string">  - action: "duplicating display name logic for clipboard text"
+    warning: "Use get_copy...[truncated 112 chars]...nonical source. Do not duplicate this logic in app.py or detail screens."
+    score: 5
+---</param>
+    <param name="new_string">  - action: "duplicating display name logic for clipboard text"
+    warning: "Use get_copy...[truncated 132 chars]...ot duplicate this logic in app.py or detail screens."
+    score: 5
+curated_in: erk-tui
+---</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="18449" cache_read_input_tokens="16323" cache_creation="{'ephemeral_5m_input_tokens': 18449, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01TQLUvobjpdZinTHu4ApyaK">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/column-addition-pattern.md</param>
+    <param name="old_string">last_audited: "2026-02-16 08:00 PT"
+audit_result: clean
+---</param>
+    <param name="new_string">last_audited: "2026-02-16 08:00 PT"
+audit_result: clean
+curated_in: erk-tui
+---</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="18449" cache_read_input_tokens="16323" cache_creation="{'ephemeral_5m_input_tokens': 18449, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01R42PHEcs2uQ5auaonTmo9u">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/command-execution.md</param>
+    <param name="old_string">last_audited: "2026-02-16 08:00 PT"
+audit_result: clean
+---</param>
+    <param name="new_string">last_audited: "2026-02-16 08:00 PT"
+audit_result: clean
+curated_in: erk-tui
+---</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="18449" cache_read_input_tokens="16323" cache_creation="{'ephemeral_5m_input_tokens': 18449, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01BMZRs5TQXzjEHn1t3DqUTM">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/command-palette.md</param>
+    <param name="old_string">last_audited: "2026-02-05 00:00 PT"
+audit_result: edited
+---</param>
+    <param name="new_string">last_audited: "2026-02-05 00:00 PT"
+audit_result: edited
+curated_in: erk-tui
+---</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="18449" cache_read_input_tokens="16323" cache_creation="{'ephemeral_5m_input_tokens': 18449, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01LBEPSeG8TUMhUB7zTJAr7R">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/dashboard-columns.md</param>
+    <param name="old_string">  - action: "adding stage column outside planned_pr backend check"
+    warning: "stage col...[truncated 19 chars]...re obj in the column order. Check _setup_columns() for the backend conditional block."
+---</param>
+    <param name="new_string">  - action: "adding stage column outside planned_pr backend check"
+    warning: "stage col...[truncated 39 chars]... order. Check _setup_columns() for the backend conditional block."
+curated_in: erk-tui
+---</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="18449" cache_read_input_tokens="16323" cache_creation="{'ephemeral_5m_input_tokens': 18449, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Tt2cXKThSL7TWRoDAZBKUD">
+The file /home/runner/work/erk/erk/docs/learned/tui/architecture.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01Mb1ViA2VbVc2x4BKPmxwTy">
+The file /home/runner/work/erk/erk/docs/learned/tui/adding-commands.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_014Rjuw8cowAGNn5p7EmR5vB">
+The file /home/runner/work/erk/erk/docs/learned/tui/action-inventory.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01EyQiH8J9P7MHRu43XZSF5A">
+The file /home/runner/work/erk/erk/docs/learned/tui/async-action-refresh-pattern.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01DAVFwA47bm5S7eFkqFTQBg">
+The file /home/runner/work/erk/erk/docs/learned/tui/async-state-snapshot.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01XJA1fmNWoKuqSqDkgvN8xX">
+The file /home/runner/work/erk/erk/docs/learned/tui/clipboard-text-generation.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01TQLUvobjpdZinTHu4ApyaK">
+The file /home/runner/work/erk/erk/docs/learned/tui/column-addition-pattern.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01R42PHEcs2uQ5auaonTmo9u">
+The file /home/runner/work/erk/erk/docs/learned/tui/command-execution.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01BMZRs5TQXzjEHn1t3DqUTM">
+The file /home/runner/work/erk/erk/docs/learned/tui/command-palette.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01LBEPSeG8TUMhUB7zTJAr7R">
+The file /home/runner/work/erk/erk/docs/learned/tui/dashboard-columns.md has been updated successfully.
+  </tool_result>
+  <assistant>Perfect! I've successfully added the `curated_in: erk-tui` field to all 10 files in the `/home/runner/work/erk/erk/docs/learned/tui/` directory. 
+
+## Summary
+
+All files have been updated with the `curated_in: erk-tui` field added as the last field before the closing `---` in their YAML frontmatter:
+
+1. `/home/runner/work/erk/erk/docs/learned/tui/architecture.md` - Added after `audit_result: clean`
+2. `/home/runner/work/erk/erk/docs/learned/tui/adding-commands.md` - Added after `audit_result: edited`
+3. `/home/runner/work/erk/erk/docs/learned/tui/action-inventory.md` - Added after `audit_result: edited`
+4. `/home/runner/work/erk/erk/docs/learned/tui/async-action-refresh-pattern.md` - Added after the tripwires section
+5. `/home/runner/work/erk/erk/docs/learned/tui/async-state-snapshot.md` - Added after the tripwires section
+6. `/home/runner/work/erk/erk/docs/learned/tui/clipboard-text-generation.md` - Added after the tripwires section
+7. `/home/runner/work/erk/erk/docs/learned/tui/column-addition-pattern.md` - Added after `audit_result: clean`
+8. `/home/runner/work/erk/erk/docs/learned/tui/command-execution.md` - Added after `audit_result: clean`
+9. `/home/runner/work/erk/erk/docs/learned/tui/command-palette.md` - Added after `audit_result: edited`
+10. `/home/runner/work/erk/erk/docs/learned/tui/dashboard-columns.md` - Added after the tripwires section
+
+The field was placed correctly in each file, respecting the existing frontmatter structure and appearing immediately before the closing `---` delimiter.</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="2591" cache_read_input_tokens="34772" cache_creation="{'ephemeral_5m_input_tokens': 2591, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>
