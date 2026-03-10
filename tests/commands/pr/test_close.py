@@ -74,7 +74,7 @@ def test_close_plan_with_plan_number() -> None:
 
         # Assert
         assert result.exit_code == 0
-        assert "Closed plan #42" in result.output
+        assert "Closed PR #42" in result.output
         assert 42 in fake_github.closed_prs
         # Verify PlannedPRBackend added a comment before closing
         assert any(num == 42 and "completed" in body for num, body in fake_github.pr_comments)
@@ -104,7 +104,7 @@ def test_close_plan_not_found() -> None:
         # Assert
         assert result.exit_code == 1
         assert "Error" in result.output
-        assert "Plan #999 not found" in result.output
+        assert "PR #999 not found" in result.output
 
 
 def _make_issue_info(plan: Plan) -> IssueInfo:
@@ -177,7 +177,7 @@ def test_close_plan_closes_linked_open_prs() -> None:
 
         # Assert
         assert result.exit_code == 0
-        assert "Closed plan #42" in result.output
+        assert "Closed PR #42" in result.output
         assert "Closed 2 linked PR(s): #100, #101" in result.output
         # Verify both linked PRs were closed via RemoteGitHub
         assert any(cp.number == 100 for cp in fake_remote.closed_prs)
@@ -237,7 +237,7 @@ def test_close_plan_skips_closed_and_merged_prs() -> None:
 
         # Assert
         assert result.exit_code == 0
-        assert "Closed plan #42" in result.output
+        assert "Closed PR #42" in result.output
         assert "Closed 1 linked PR(s): #100" in result.output
         # Only the OPEN linked PR should be closed via RemoteGitHub
         assert any(cp.number == 100 for cp in fake_remote.closed_prs)
@@ -293,7 +293,7 @@ def test_close_plan_no_linked_prs() -> None:
 
         # Assert
         assert result.exit_code == 0
-        assert "Closed plan #42" in result.output
+        assert "Closed PR #42" in result.output
         # No linked PR closing message should appear
         assert "linked PR(s)" not in result.output
 
@@ -321,7 +321,7 @@ def test_close_plan_invalid_identifier() -> None:
 
         # Assert
         assert result.exit_code != 0
-        assert "Invalid plan number or URL" in result.output
+        assert "Invalid PR number or URL" in result.output
         assert "not-a-number" in result.output
 
 
@@ -350,7 +350,7 @@ def test_close_plan_invalid_url_format() -> None:
 
         # Assert
         assert result.exit_code != 0
-        assert "Invalid plan number or URL" in result.output
+        assert "Invalid PR number or URL" in result.output
         assert "https://github.com/owner/repo/issues/456" in result.output
 
 
@@ -469,7 +469,7 @@ def test_close_plan_with_objective_invokes_update() -> None:
 
         # Assert
         assert result.exit_code == 0
-        assert "Closed plan #42" in result.output
+        assert "Closed PR #42" in result.output
         # Verify the objective update command was invoked
         assert len(executor.executed_commands) == 1
         executed_cmd = executor.executed_commands[0][0]
@@ -535,7 +535,7 @@ def test_close_plan_without_objective_skips_update() -> None:
 
         # Assert
         assert result.exit_code == 0
-        assert "Closed plan #42" in result.output
+        assert "Closed PR #42" in result.output
         # No objective update should have been invoked
         assert len(executor.executed_commands) == 0
 
@@ -599,5 +599,5 @@ def test_close_plan_objective_update_failure_does_not_break_close() -> None:
 
         # Assert - close still succeeds even though objective update failed
         assert result.exit_code == 0
-        assert "Closed plan #42" in result.output
+        assert "Closed PR #42" in result.output
         assert "Objective update failed" in result.output

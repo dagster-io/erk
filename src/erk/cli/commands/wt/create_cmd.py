@@ -451,7 +451,7 @@ def _create_json_response(
 @click.option(
     "--keep-plan-file",
     is_flag=True,
-    help="Copy the plan file instead of moving it (requires --from-plan-file).",
+    help="Copy the PR file instead of moving it (requires --from-plan-file).",
 )
 @click.option(
     "--from-plan",

@@ -23,13 +23,13 @@ from erk_shared.output.output import user_output
     "--file",
     "-f",
     type=click.Path(exists=True, path_type=Path),
-    help="Plan file to read",
+    help="PR file to read",
 )
 @click.option(
     "--plan",
     "-p",
     type=str,
-    help="Existing plan ID to check (fetches body and excludes self from comparison)",
+    help="Existing PR ID to check (fetches body and excludes self from comparison)",
 )
 @resolved_repo_option
 @click.pass_obj
@@ -75,7 +75,7 @@ def duplicate_check_plan(
         plan_number = parse_issue_identifier(plan)
         issue = remote.get_issue(owner=repo_id.owner, repo=repo_id.repo, number=plan_number)
         if isinstance(issue, IssueNotFound):
-            user_output(click.style("Error: ", fg="red") + f"Plan {plan_number} not found.")
+            user_output(click.style("Error: ", fg="red") + f"PR {plan_number} not found.")
             raise SystemExit(1)
         content = issue.body
         exclude_plan_id = str(issue.number)
@@ -95,7 +95,7 @@ def duplicate_check_plan(
     else:
         Ensure.invariant(False, "No input provided. Use --plan, --file, or pipe content to stdin.")
 
-    Ensure.not_empty(content.strip(), "Plan content is empty. Provide a non-empty plan.")
+    Ensure.not_empty(content.strip(), "PR content is empty. Provide a non-empty PR.")
 
     has_problems = False
 
@@ -127,9 +127,9 @@ def duplicate_check_plan(
         existing_plans = [p for p in existing_plans if p.pr_identifier != exclude_plan_id]
 
     if not existing_plans:
-        user_output("No existing open plans to compare against.")
+        user_output("No existing open PRs to compare against.")
     else:
-        user_output(f"Checking against {len(existing_plans)} open plan(s):")
+        user_output(f"Checking against {len(existing_plans)} open PR(s):")
         for p in existing_plans:
             user_output(f"  #{p.pr_identifier}: {p.title}")
         user_output("")

@@ -57,7 +57,7 @@ from erk_shared.context.helpers import require_context
 @click.option(
     "--plan-number",
     type=int,
-    help="Linked plan number",
+    help="Linked PR number",
 )
 @click.option(
     "--use-graphite",
@@ -84,7 +84,7 @@ from erk_shared.context.helpers import require_context
     "--skip-learn",
     "skip_learn",
     is_flag=True,
-    help="Skip creating a learn plan",
+    help="Skip creating a learn PR",
 )
 @click.option(
     "--script",

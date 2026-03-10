@@ -99,7 +99,7 @@ def _get_remote_github(ctx: ErkContext) -> RemoteGitHub:
 @click.option(
     "--plan-only",
     is_flag=True,
-    help="Create a plan remotely without implementing it",
+    help="Create a PR remotely without implementing it",
 )
 @click.option(
     "--slug",

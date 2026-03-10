@@ -194,7 +194,7 @@ def _post_or_update_comment(
                 "--jq",
                 ".body",
             ],
-            operation_context=f"get plan issue #{plan_issue} body",
+            operation_context=f"get PR issue #{plan_issue} body",
             cwd=cwd,
             check=False,
         )
@@ -300,12 +300,12 @@ def _update_plan_header_comment_id(
             "--jq",
             ".body",
         ],
-        operation_context=f"get plan issue #{plan_issue} body for update",
+        operation_context=f"get PR issue #{plan_issue} body for update",
         cwd=cwd,
         check=False,
     )
     if result.returncode != 0:
-        click.echo(f"Failed to read plan issue #{plan_issue}", err=True)
+        click.echo(f"Failed to read PR issue #{plan_issue}", err=True)
         return
 
     block = find_metadata_block(result.stdout, BlockKeys.PLAN_HEADER)
@@ -329,14 +329,14 @@ def _update_plan_header_comment_id(
             "--field",
             f"body={updated_body}",
         ],
-        operation_context=f"update plan issue #{plan_issue} ci_summary_comment_id",
+        operation_context=f"update PR issue #{plan_issue} ci_summary_comment_id",
         cwd=cwd,
         check=False,
     )
     if update_result.returncode != 0:
-        click.echo(f"Failed to update plan issue: {update_result.stderr}", err=True)
+        click.echo(f"Failed to update PR issue: {update_result.stderr}", err=True)
     else:
-        click.echo(f"Stored ci_summary_comment_id={comment_id} in plan #{plan_issue}", err=True)
+        click.echo(f"Stored ci_summary_comment_id={comment_id} in PR #{plan_issue}", err=True)
 
 
 def _generate_all_summaries(

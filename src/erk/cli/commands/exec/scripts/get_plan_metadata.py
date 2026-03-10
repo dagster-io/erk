@@ -65,7 +65,7 @@ def get_plan_metadata(
         error_result = MetadataError(
             success=False,
             error="issue_not_found",
-            message=f"Plan #{pr_number} not found",
+            message=f"PR #{pr_number} not found",
         )
         click.echo(json.dumps(asdict(error_result)), err=True)
         raise SystemExit(1)

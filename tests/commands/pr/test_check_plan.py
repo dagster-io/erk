@@ -66,12 +66,12 @@ def test_check_valid_plan_passes() -> None:
 
         # Assert
         assert result.exit_code == 0
-        assert "Validating plan #42" in result.output
+        assert "Validating PR #42" in result.output
         assert "[PASS] plan-header metadata block present" in result.output
         assert "[PASS] plan-header has required fields" in result.output
         assert "[PASS] First comment exists" in result.output
         assert "[PASS] plan-body content extractable" in result.output
-        assert "Plan validation passed" in result.output
+        assert "PR validation passed" in result.output
 
 
 def test_check_missing_plan_header_fails() -> None:
@@ -110,7 +110,7 @@ def test_check_missing_plan_header_fails() -> None:
         # Assert
         assert result.exit_code == 1
         assert "[FAIL] plan-header metadata block present" in result.output
-        assert "Plan validation failed" in result.output
+        assert "PR validation failed" in result.output
 
 
 def test_check_missing_required_field_fails() -> None:
@@ -159,7 +159,7 @@ def test_check_missing_required_field_fails() -> None:
         assert "[PASS] plan-header metadata block present" in result.output
         assert "[FAIL]" in result.output
         assert "created_by" in result.output
-        assert "Plan validation failed" in result.output
+        assert "PR validation failed" in result.output
 
 
 def test_check_missing_first_comment_fails() -> None:
@@ -206,7 +206,7 @@ def test_check_missing_first_comment_fails() -> None:
         # Assert
         assert result.exit_code == 1
         assert "[FAIL] First comment exists" in result.output
-        assert "Plan validation failed" in result.output
+        assert "PR validation failed" in result.output
 
 
 def test_check_missing_plan_body_fails() -> None:
@@ -255,7 +255,7 @@ def test_check_missing_plan_body_fails() -> None:
         assert result.exit_code == 1
         assert "[PASS] First comment exists" in result.output
         assert "[FAIL] plan-body content extractable" in result.output
-        assert "Plan validation failed" in result.output
+        assert "PR validation failed" in result.output
 
 
 def test_check_github_url_parsing() -> None:
@@ -311,8 +311,8 @@ def test_check_github_url_parsing() -> None:
 
         # Assert
         assert result.exit_code == 0
-        assert "Validating plan #42" in result.output
-        assert "Plan validation passed" in result.output
+        assert "Validating PR #42" in result.output
+        assert "PR validation passed" in result.output
 
 
 def test_check_valid_draft_pr_plan_passes() -> None:
@@ -371,7 +371,7 @@ def test_check_valid_draft_pr_plan_passes() -> None:
         assert "[PASS] plan-header metadata block present" in result.output
         assert "[PASS] plan-header has required fields" in result.output
         assert "[PASS] plan content extractable from body" in result.output
-        assert "Plan validation passed" in result.output
+        assert "PR validation passed" in result.output
 
 
 def test_check_invalid_identifier_fails() -> None:
@@ -397,7 +397,7 @@ def test_check_invalid_identifier_fails() -> None:
         # Assert
         assert result.exit_code == 1
         assert "Error:" in result.output
-        assert "Invalid plan number or URL" in result.output
+        assert "Invalid PR number or URL" in result.output
 
 
 # =============================================================================

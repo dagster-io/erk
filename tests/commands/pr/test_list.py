@@ -73,7 +73,7 @@ def test_plan_list_no_filters() -> None:
         result = runner.invoke(cli, ["pr", "list"], obj=ctx)
 
         assert result.exit_code == 0
-        assert "Found 2 plan(s)" in result.output
+        assert "Found 2 PR(s)" in result.output
         assert "#1" in result.output
         assert "#2" in result.output
 
@@ -121,7 +121,7 @@ def test_plan_list_filter_by_state() -> None:
         result = runner.invoke(cli, ["pr", "list", "--state", "open"], obj=ctx)
 
         assert result.exit_code == 0
-        assert "Found 1 plan(s)" in result.output
+        assert "Found 1 PR(s)" in result.output
         assert "#1" in result.output
         assert "#2" not in result.output
 
@@ -175,7 +175,7 @@ def test_plan_list_filter_by_labels() -> None:
         )
 
         assert result.exit_code == 0
-        assert "Found 1 plan(s)" in result.output
+        assert "Found 1 PR(s)" in result.output
         assert "#1" in result.output
         assert "#2" not in result.output
 
@@ -216,7 +216,7 @@ def test_plan_list_with_limit() -> None:
         result = runner.invoke(cli, ["pr", "list", "--limit", "2"], obj=ctx)
 
         assert result.exit_code == 0
-        assert "Found 2 plan(s)" in result.output
+        assert "Found 2 PR(s)" in result.output
 
 
 def test_plan_list_empty_results() -> None:
@@ -247,7 +247,7 @@ def test_plan_list_empty_results() -> None:
         result = runner.invoke(cli, ["pr", "list", "--state", "closed"], obj=ctx)
 
         assert result.exit_code == 0
-        assert "No plans found matching the criteria" in result.output
+        assert "No PRs found matching the criteria" in result.output
 
 
 def test_plan_list_run_columns_always_shown() -> None:
@@ -348,10 +348,10 @@ def test_plan_list_sort_issue_default() -> None:
             env, issues=issues, github=github, plan_list_service=plan_service
         )
 
-        result = runner.invoke(cli, ["pr", "list", "--sort", "plan"], obj=ctx)
+        result = runner.invoke(cli, ["pr", "list", "--sort", "pr"], obj=ctx)
 
         assert result.exit_code == 0
-        assert "Found 2 plan(s)" in result.output
+        assert "Found 2 PR(s)" in result.output
         # Both issues appear (order determined by API, not by sorting since "issue" sort
         # uses the natural API order which is already by issue number descending)
         assert "#1" in result.output
@@ -451,7 +451,7 @@ def test_plan_list_sort_activity_with_local_branch() -> None:
         result = runner.invoke(cli, ["pr", "list", "--sort", "activity"], obj=ctx)
 
         assert result.exit_code == 0, result.output
-        assert "Found 2 plan(s)" in result.output
+        assert "Found 2 PR(s)" in result.output
 
         # Plan 1 (with activity) should appear before Plan 2 (no activity)
         # Use plan IDs since title column is no longer displayed
@@ -582,7 +582,7 @@ def test_plan_list_sort_activity_orders_by_recency() -> None:
         result = runner.invoke(cli, ["pr", "list", "--sort", "activity"], obj=ctx)
 
         assert result.exit_code == 0, result.output
-        assert "Found 2 plan(s)" in result.output
+        assert "Found 2 PR(s)" in result.output
 
         # Plan 2 (newer commit) should appear before Plan 1 (older commit)
         # Use plan IDs since title column is no longer displayed
@@ -661,7 +661,7 @@ def test_pr_list_stage_filter() -> None:
         result = runner.invoke(cli, ["pr", "list", "--stage", "planned"], obj=ctx)
 
         assert result.exit_code == 0
-        assert "Found 1 plan(s)" in result.output
+        assert "Found 1 PR(s)" in result.output
         assert "#1" in result.output
         assert "#2" not in result.output
 

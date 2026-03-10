@@ -94,7 +94,7 @@ def _build_pr_body(
     parts.append("### Diagnosis")
     parts.append("")
     parts.append(
-        f"**Likely cause: Duplicate plan** - The work may already be merged to `{base_branch}`."
+        f"**Likely cause: Duplicate PR** - The work may already be merged to `{base_branch}`."
     )
     parts.append("")
 
@@ -253,7 +253,7 @@ def handle_no_changes(
         result = HandleNoChangesError(
             success=False,
             error="github-api-failed",
-            message=f"Failed to add plan comment: {e}",
+            message=f"Failed to add PR comment: {e}",
         )
         click.echo(json.dumps(asdict(result), indent=2))
         raise SystemExit(1) from None

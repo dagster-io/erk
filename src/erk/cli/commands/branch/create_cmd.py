@@ -37,7 +37,7 @@ from erk_shared.plan_workflow import (
     "for_plan",
     type=str,
     default=None,
-    help="Plan number or URL with erk-plan label",
+    help="PR number or URL with erk-plan label",
 )
 @click.option("--no-slot", is_flag=True, help="Create branch without slot assignment")
 @click.option(
@@ -106,7 +106,7 @@ def branch_create(
     if for_plan is not None and branch_name is not None:
         user_output(
             "Error: Cannot specify both BRANCH and --for-plan.\n"
-            "Use --for-plan to derive branch name from plan, or provide BRANCH directly."
+            "Use --for-plan to derive branch name from PR, or provide BRANCH directly."
         )
         raise SystemExit(1) from None
 
@@ -136,7 +136,7 @@ def branch_create(
         plan_number = parse_issue_identifier(for_plan)
         result = ctx.plan_store.get_plan(repo.root, str(plan_number))
         if isinstance(result, PlanNotFound):
-            raise click.ClickException(f"Plan #{plan_number} not found")
+            raise click.ClickException(f"PR #{plan_number} not found")
         plan = result
 
         result = prepare_plan_for_worktree(plan, ctx.time.now(), warn_non_open=True)
@@ -167,7 +167,7 @@ def branch_create(
     if setup is not None:
         # Plan branch was created by plan-save, so it's expected to exist
         if branch_exists_locally:
-            user_output(f"Checking out plan branch: {branch_name}")
+            user_output(f"Checking out PR branch: {branch_name}")
         else:
             # Branch only on remote — fetch and create local tracking branch
             ctx.git.remote.fetch_branch(repo.root, "origin", branch_name)
@@ -266,7 +266,7 @@ def branch_create(
                 worktree_path=slot_result.worktree_path,
                 target_subpath=None,
                 post_cd_commands=None,
-                final_message=f'echo "Prepared plan #{setup.plan_number} at $(pwd)"',
+                final_message=f'echo "Prepared PR #{setup.plan_number} at $(pwd)"',
                 comment="erk branch create activation script",
             )
             result = ctx.script_writer.write_activation_script(
@@ -277,7 +277,7 @@ def branch_create(
             result.output_for_script_handler()
             sys.exit(0)
 
-        user_output(f"Created .erk/impl-context/ folder from plan #{setup.plan_number}")
+        user_output(f"Created .erk/impl-context/ folder from PR #{setup.plan_number}")
 
         # Write activation script
         activate_script_path = write_worktree_activate_script(

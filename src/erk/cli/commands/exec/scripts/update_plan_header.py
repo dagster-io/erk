@@ -131,7 +131,7 @@ def update_plan_header(
     except PlanHeaderNotFoundError:
         _fail(
             error="no_plan_header",
-            message=f"Plan {pr_id} has no plan-header metadata block.",
+            message=f"PR {pr_id} has no plan-header metadata block.",
         )
     except RuntimeError as e:
         _fail(error="update_failed", message=f"Failed to update plan header: {e}")

@@ -48,7 +48,7 @@ def close_pr(
             json.dumps(
                 {
                     "success": False,
-                    "error": f"Failed to add comment to plan #{pr_number}: {e}",
+                    "error": f"Failed to add comment to PR #{pr_number}: {e}",
                 }
             )
         )
@@ -62,7 +62,7 @@ def close_pr(
             json.dumps(
                 {
                     "success": False,
-                    "error": f"Failed to close plan #{pr_number}: {e}",
+                    "error": f"Failed to close PR #{pr_number}: {e}",
                     "comment_id": comment_id,
                 }
             )

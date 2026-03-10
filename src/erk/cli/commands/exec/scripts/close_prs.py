@@ -176,7 +176,7 @@ def close_prs(ctx: click.Context) -> None:
                 {
                     "pr_number": plan_number,
                     "success": False,
-                    "error": f"Failed to close plan: {e}",
+                    "error": f"Failed to close PR: {e}",
                     "comment_id": comment_id,
                 }
             )

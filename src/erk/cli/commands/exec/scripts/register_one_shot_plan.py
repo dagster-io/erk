@@ -61,7 +61,7 @@ def register_one_shot_plan(
     try:
         issue = issues.get_issue(repo_root, pr_number)
         if isinstance(issue, IssueNotFound):
-            raise RuntimeError(f"Plan #{pr_number} not found")
+            raise RuntimeError(f"PR #{pr_number} not found")
         # Extract owner/repo from run_url for the PR link
         url_parts = run_url.split("/")
         repo_slug = next(

@@ -118,7 +118,7 @@ def test_duplicate_detected() -> None:
 
 
 def test_no_existing_plans() -> None:
-    """No existing open plans returns exit code 0 with message."""
+    """No existing open PRs returns exit code 0 with message."""
     executor = FakePromptExecutor()
     plan_store, _ = create_plan_store_with_plans({})
 
@@ -140,7 +140,7 @@ def test_no_existing_plans() -> None:
         )
 
         assert result.exit_code == 0
-        assert "No existing open plans" in result.output
+        assert "No existing open PRs" in result.output
         # Should not have called LLM
         assert len(executor.prompt_calls) == 0
 
@@ -280,7 +280,7 @@ def test_progress_reporting_lists_plans() -> None:
         )
 
         assert result.exit_code == 0
-        assert "Checking against 2 open plan(s):" in result.output
+        assert "Checking against 2 open PR(s):" in result.output
         assert "#100: Refactor auth" in result.output
         assert "#200: Add dark mode" in result.output
         assert "Analyzing for semantic duplicates..." in result.output

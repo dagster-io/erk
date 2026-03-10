@@ -57,7 +57,7 @@ def parse_issue_identifier(identifier: str) -> int:
 
     user_output(
         click.style("Error: ", fg="red")
-        + f"Invalid plan number or URL: {identifier}\n\n"
+        + f"Invalid PR number or URL: {identifier}\n\n"
         + "Expected formats:\n"
         + "  • Plain number: 123\n"
         + "  • P-prefixed: P123\n"

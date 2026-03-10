@@ -152,7 +152,7 @@ def test_track_learn_evaluation_infers_from_branch(tmp_path: Path) -> None:
     assert result.exit_code == 1
     output = json.loads(result.output)
     assert output["success"] is False
-    assert "No plan specified" in output["message"]
+    assert "No PR specified" in output["message"]
 
 
 def test_track_learn_evaluation_with_url_format(tmp_path: Path) -> None:
@@ -219,7 +219,7 @@ def test_track_learn_evaluation_fails_without_issue(tmp_path: Path) -> None:
     assert result.exit_code == 1
     output = json.loads(result.output)
     assert output["success"] is False
-    assert "No plan specified" in output["message"]
+    assert "No PR specified" in output["message"]
 
 
 def test_track_learn_evaluation_fails_with_invalid_issue(tmp_path: Path) -> None:

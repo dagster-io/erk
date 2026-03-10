@@ -24,7 +24,7 @@ from erk_shared.context.helpers import require_plan_backend, require_repo_root
 @click.option(
     "--label",
     required=True,
-    help="Label to add to the plan",
+    help="Label to add to the PR",
 )
 @click.pass_context
 def add_plan_label(

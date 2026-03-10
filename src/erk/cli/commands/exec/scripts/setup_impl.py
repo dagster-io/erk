@@ -148,7 +148,7 @@ def _setup_from_file(
 
 
 @click.command(name="setup-impl")
-@click.option("--issue", "pr_number", type=int, default=None, help="Plan number to set up from")
+@click.option("--issue", "pr_number", type=int, default=None, help="PR number to set up from")
 @click.option(
     "--file",
     "file_path",
@@ -242,17 +242,17 @@ def setup_impl(ctx: click.Context, pr_number: int | None, file_path: Path | None
     if detection.get("found"):
         detected_number = detection["pr_number"]
         if isinstance(detected_number, int):
-            click.echo(f"Auto-detected plan #{detected_number} from branch", err=True)
+            click.echo(f"Auto-detected PR #{detected_number} from branch", err=True)
             _handle_issue_setup(ctx, pr_number=detected_number)
             return
 
-    # 3c: No plan found
+    # 3c: No PR found
     click.echo(
         json.dumps(
             {
                 "success": False,
                 "error": "no_plan_found",
-                "message": "No plan found. Provide --issue, --file, or run from a plan branch.",
+                "message": "No PR found. Provide --issue, --file, or run from a PR branch.",
             }
         )
     )

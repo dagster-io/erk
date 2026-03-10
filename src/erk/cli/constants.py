@@ -60,5 +60,5 @@ ERK_PR_LABEL = "erk-pr"
 # Learn plan label (for plans that learn from sessions)
 ERK_LEARN_LABEL = "erk-learn"
 
-ERK_LEARN_LABEL_DESCRIPTION = "Documentation learning plan"
+ERK_LEARN_LABEL_DESCRIPTION = "Documentation learning PR"
 ERK_LEARN_LABEL_COLOR = "D93F0B"  # Orange-red

@@ -478,7 +478,7 @@ class TestObjectiveFetchContext:
         assert result.exit_code == 1
         data = json.loads(result.output)
         assert data["success"] is False
-        assert "No plan found for branch" in data["error"]
+        assert "No PR found for branch" in data["error"]
         assert "feature-branch" in data["error"]
 
     def test_plan_not_found(self, tmp_path: Path) -> None:
@@ -507,7 +507,7 @@ class TestObjectiveFetchContext:
         assert result.exit_code == 1
         data = json.loads(result.output)
         assert data["success"] is False
-        assert "No plan found for branch" in data["error"]
+        assert "No PR found for branch" in data["error"]
 
 
 class TestDiscoveryMode:
@@ -921,7 +921,7 @@ class TestPlannedPRBackend:
         assert result.exit_code == 1
         data = json.loads(result.output)
         assert data["success"] is False
-        assert "No plan found for branch" in data["error"]
+        assert "No PR found for branch" in data["error"]
 
 
 class TestDirectPlanLookup:

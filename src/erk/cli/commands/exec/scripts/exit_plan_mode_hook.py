@@ -275,7 +275,7 @@ def build_step2_message(
     next_steps = format_plan_next_steps_plain(plan_number, url=url)
 
     lines = [
-        f"Plan #{plan_number} saved successfully.",
+        f"PR #{plan_number} saved successfully.",
         "",
         "Display ALL of the following next-steps commands to the user as plain text.",
         "Show every line exactly as written — do NOT summarize, truncate, or omit any lines.",
@@ -517,7 +517,7 @@ def determine_exit_action(hook_input: HookInput) -> HookOutput:
         else:
             # Fallback for markers without a plan number (migration safety)
             saved_msg = (
-                "Plan PR saved. Planning session complete. "
+                "PR saved. Planning session complete. "
                 "Do NOT call ExitPlanMode again — plan mode stays on "
                 "to prevent accidental edits. Session is done."
             )

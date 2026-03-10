@@ -46,7 +46,7 @@ from erk_shared.plan_utils import extract_title_from_plan, get_title_tag_from_la
     "--pr-number",
     type=int,
     required=True,
-    help="Plan number to update",
+    help="PR number to update",
 )
 @click.option(
     "--format",
@@ -58,15 +58,15 @@ from erk_shared.plan_utils import extract_title_from_plan, get_title_tag_from_la
 @click.option(
     "--plan-path",
     type=click.Path(exists=True, path_type=Path),
-    help="Direct path to plan file (overrides session lookup)",
+    help="Direct path to PR file (overrides session lookup)",
 )
 @click.option(
     "--session-id",
-    help="Session ID to find plan file in scratch storage",
+    help="Session ID to find PR file in scratch storage",
 )
 @click.option(
     "--summary",
-    help="AI-generated summary to display above the collapsed plan in the PR body",
+    help="AI-generated summary to display above the collapsed PR in the PR body",
 )
 @click.pass_context
 def plan_update(
@@ -112,7 +112,7 @@ def plan_update(
     plan_id = str(pr_number)
     plan_result = backend.get_plan(repo_root, plan_id)
     if isinstance(plan_result, PlanNotFound):
-        _handle_update_error(f"Plan #{pr_number} not found")
+        _handle_update_error(f"PR #{pr_number} not found")
 
     # Narrow type for type checker (PlanNotFound case exits above)
     assert not isinstance(plan_result, PlanNotFound)
@@ -153,7 +153,7 @@ def plan_update(
 
     # Step 6: Output success
     if output_format == "display":
-        click.echo(f"Plan #{pr_number} updated")
+        click.echo(f"PR #{pr_number} updated")
         click.echo(f"Title: {full_title}")
         click.echo(f"URL: {plan_result.url}")
         if branch_updated:

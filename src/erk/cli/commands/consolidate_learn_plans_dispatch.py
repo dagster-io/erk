@@ -70,7 +70,7 @@ def dispatch_consolidate_learn_plans(
     user_output(click.style(f"  \u2713 Authenticated as {submitted_by}", dim=True))
 
     trunk = remote.get_default_branch_name(owner=owner, repo=repo)
-    pr_title = "Consolidate learn plans"
+    pr_title = "Consolidate learn PRs"
 
     branch_name = _generate_branch_name(time_gateway=time_gateway)
 
@@ -121,7 +121,7 @@ def dispatch_consolidate_learn_plans(
         current_step = "Committing prompt file"
         user_output("Committing prompt file...")
         prompt_content = (
-            "Consolidate all open erk-learn plans into a single documentation update.\n"
+            "Consolidate all open erk-learn PRs into a single documentation update.\n"
             "Run /erk:system:consolidate-learn-plans-plan to query, consolidate, and implement.\n"
         )
         remote.create_file_commit(
@@ -129,7 +129,7 @@ def dispatch_consolidate_learn_plans(
             repo=repo,
             path=".erk/impl-context/prompt.md",
             content=prompt_content,
-            message="Consolidate learn plans",
+            message="Consolidate learn PRs",
             branch=branch_name,
         )
         user_output(click.style("  \u2713 Committed", dim=True))
@@ -166,7 +166,7 @@ def dispatch_consolidate_learn_plans(
             learned_from_issue=None,
             lifecycle_stage="prompted",
         )
-        placeholder_content = "_Consolidating learn plans: content will be populated by workflow._"
+        placeholder_content = "_Consolidating learn PRs: content will be populated by workflow._"
         pr_body_initial = build_plan_stage_body(metadata_body, placeholder_content, summary="")
         pr_number = remote.create_pull_request(
             owner=owner,

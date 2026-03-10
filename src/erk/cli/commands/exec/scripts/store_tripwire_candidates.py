@@ -45,7 +45,7 @@ class StoreError:
 
 
 @click.command(name="store-tripwire-candidates")
-@click.option("--pr-number", required=True, type=int, help="Plan number")
+@click.option("--pr-number", required=True, type=int, help="PR number")
 @click.option("--candidates-file", required=True, help="Path to tripwire-candidates.json")
 @click.pass_context
 def store_tripwire_candidates(

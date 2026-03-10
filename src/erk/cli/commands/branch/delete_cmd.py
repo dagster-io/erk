@@ -169,14 +169,14 @@ def _format_pr_text(pr_info: tuple[int, str] | None) -> str:
 def _format_plan_text(plan_info: tuple[int, PlanState] | None) -> str:
     """Format plan info for display in planning phase."""
     if plan_info is None:
-        return "Close associated plan (if any)"
+        return "Close associated PR (if any)"
 
     number, state = plan_info
     if state == PlanState.OPEN:
-        return f"Close plan #{number} (currently open)"
+        return f"Close PR #{number} (currently open)"
     else:
         state_text = click.style("closed", fg="yellow")
-        return f"Plan #{number} already {state_text}"
+        return f"PR #{number} already {state_text}"
 
 
 def _confirm_branch_delete(ctx: ErkContext, *, force: bool, dry_run: bool) -> bool:
@@ -345,7 +345,7 @@ def _delete_branch(
     "--all",
     "close_all",
     is_flag=True,
-    help="Also close associated PR and plan.",
+    help="Also close associated PRs.",
 )
 @click.option(
     "--dry-run",

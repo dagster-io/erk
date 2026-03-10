@@ -339,7 +339,7 @@ def _dispatch_one_shot(
     "--plan",
     "plan_number",
     type=int,
-    help="Plan number (required for learn)",
+    help="PR number (required for learn)",
 )
 @click.option(
     "--no-squash",

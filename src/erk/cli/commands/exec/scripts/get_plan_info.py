@@ -29,7 +29,7 @@ from erk_shared.plan_store.types import PlanNotFound
 @click.option(
     "--include-body",
     is_flag=True,
-    help="Include the plan body content in the response",
+    help="Include the PR body content in the response",
 )
 @click.pass_context
 def get_plan_info(
@@ -51,7 +51,7 @@ def get_plan_info(
                 {
                     "success": False,
                     "error": "plan_not_found",
-                    "message": f"Plan #{pr_number} not found",
+                    "message": f"PR #{pr_number} not found",
                 }
             ),
             err=True,

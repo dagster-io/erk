@@ -22,11 +22,11 @@ from erk_shared.plan_utils import extract_title_from_plan
     "--file",
     "-f",
     type=click.Path(exists=True, path_type=Path),
-    help="Plan file to read",
+    help="PR file to read",
 )
-@click.option("--title", "-t", type=str, help="Plan title (default: extract from H1)")
+@click.option("--title", "-t", type=str, help="PR title (default: extract from H1)")
 @click.option("--label", "-l", multiple=True, help="Additional labels")
-@click.option("--summary", help="AI-generated summary to display above the collapsed plan")
+@click.option("--summary", help="AI-generated summary to display above the collapsed PR")
 @click.pass_obj
 def pr_create(
     ctx: ErkContext,
@@ -74,7 +74,7 @@ def pr_create(
         Ensure.invariant(False, "No input provided. Use --file or pipe content to stdin.")
 
     # Validate content is not empty
-    Ensure.not_empty(content.strip(), "Plan content is empty. Provide a non-empty plan.")
+    Ensure.not_empty(content.strip(), "PR content is empty. Provide a non-empty PR body.")
 
     # Build labels: erk-pr + erk-plan + any extra
     labels = ["erk-pr", "erk-plan"]
@@ -124,9 +124,9 @@ def pr_create(
         raise SystemExit(1)
 
     # Display success message with next steps
-    user_output(f"Created plan #{result.pr_number}")
+    user_output(f"Created PR #{result.pr_number}")
     user_output("")
-    user_output(f"Plan: {result.pr_url}")
+    user_output(f"PR: {result.pr_url}")
     user_output(f"Branch: {result.branch_name}")
     user_output("")
     if (

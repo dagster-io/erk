@@ -116,7 +116,7 @@ def test_view_remote_not_found() -> None:
     result = runner.invoke(cli, ["pr", "view", "999", "--repo", "owner/repo"], obj=ctx)
 
     assert result.exit_code == 1
-    assert "Plan #999 not found" in result.output
+    assert "PR #999 not found" in result.output
 
 
 def test_view_remote_requires_identifier() -> None:
@@ -144,7 +144,7 @@ def test_close_remote_closes_plan() -> None:
     result = runner.invoke(cli, ["pr", "close", "42", "--repo", "owner/repo"], obj=ctx)
 
     assert result.exit_code == 0
-    assert "Closed plan #42" in result.output
+    assert "Closed PR #42" in result.output
     assert len(fake_remote.closed_issues) == 1
     assert fake_remote.closed_issues[0].number == 42
 
@@ -164,7 +164,7 @@ def test_close_remote_closes_linked_prs() -> None:
     result = runner.invoke(cli, ["pr", "close", "42", "--repo", "owner/repo"], obj=ctx)
 
     assert result.exit_code == 0
-    assert "Closed plan #42" in result.output
+    assert "Closed PR #42" in result.output
     assert "Closed 1 linked PR(s): #100" in result.output
     # Only OPEN PR should be closed
     assert len(fake_remote.closed_prs) == 1
@@ -180,7 +180,7 @@ def test_close_remote_not_found() -> None:
     result = runner.invoke(cli, ["pr", "close", "999", "--repo", "owner/repo"], obj=ctx)
 
     assert result.exit_code == 1
-    assert "Plan #999 not found" in result.output
+    assert "PR #999 not found" in result.output
 
 
 # --- pr log --repo ---
@@ -214,8 +214,8 @@ worktree_name: test-wt
     result = runner.invoke(cli, ["pr", "log", "42", "--repo", "owner/repo"], obj=ctx)
 
     assert result.exit_code == 0
-    assert "Plan #42 Event Timeline" in result.output
-    assert "Plan created" in result.output
+    assert "PR #42 Event Timeline" in result.output
+    assert "PR created" in result.output
 
 
 def test_log_remote_not_found() -> None:
@@ -227,7 +227,7 @@ def test_log_remote_not_found() -> None:
     result = runner.invoke(cli, ["pr", "log", "999", "--repo", "owner/repo"], obj=ctx)
 
     assert result.exit_code == 1
-    assert "Plan '999' not found" in result.output
+    assert "PR '999' not found" in result.output
 
 
 def test_log_remote_no_events() -> None:
@@ -270,7 +270,7 @@ def test_check_remote_plan_not_found() -> None:
     result = runner.invoke(cli, ["pr", "check", "999", "--repo", "owner/repo"], obj=ctx)
 
     assert result.exit_code == 1
-    assert "Plan #999 not found" in result.output
+    assert "PR #999 not found" in result.output
 
 
 # --- repo_resolution edge cases ---
@@ -411,7 +411,7 @@ def test_list_remote_shows_plans() -> None:
     )
 
     assert result.exit_code == 0
-    assert "Found 2 plan(s)" in result.output
+    assert "Found 2 PR(s)" in result.output
     assert "#1" in result.output
     assert "#2" in result.output
 
@@ -434,7 +434,7 @@ def test_list_remote_empty() -> None:
     )
 
     assert result.exit_code == 0
-    assert "No plans found" in result.output
+    assert "No PRs found" in result.output
 
 
 # --- pr dispatch --repo ---
@@ -496,7 +496,7 @@ def test_dispatch_remote_dispatches_workflow() -> None:
 
     assert result.exit_code == 0, f"Unexpected failure:\n{result.output}"
     assert "Workflow dispatched" in result.output
-    assert "1 plan(s) dispatched successfully" in result.output
+    assert "1 PR(s) dispatched successfully" in result.output
 
     # Verify workflow was dispatched
     assert len(fake_remote.dispatched_workflows) == 1
@@ -524,7 +524,7 @@ def test_dispatch_remote_plan_not_found() -> None:
     )
 
     assert result.exit_code != 0
-    assert "Plan #999 not found" in result.output
+    assert "PR #999 not found" in result.output
 
 
 def test_dispatch_remote_missing_label() -> None:
@@ -574,7 +574,7 @@ def test_dispatch_remote_requires_plan_number() -> None:
     )
 
     assert result.exit_code != 0
-    assert "Plan number(s) required in remote mode" in result.output
+    assert "PR number(s) required in remote mode" in result.output
 
 
 def test_dispatch_remote_multiple_plans() -> None:
@@ -592,7 +592,7 @@ def test_dispatch_remote_multiple_plans() -> None:
     )
 
     assert result.exit_code == 0, f"Unexpected failure:\n{result.output}"
-    assert "2 plan(s) dispatched successfully" in result.output
+    assert "2 PR(s) dispatched successfully" in result.output
     assert len(fake_remote.dispatched_workflows) == 2
 
 

@@ -29,10 +29,10 @@ def test_create_from_file(tmp_path) -> None:
 
         # Assert
         assert result.exit_code == 0, f"Command failed: {result.output}"
-        assert "Created plan #999" in result.output
-        assert "Plan:" in result.output
-        assert "Checkout plan #999:" in result.output
-        assert "Dispatch plan #999:" in result.output
+        assert "Created PR #999" in result.output
+        assert "PR:" in result.output
+        assert "Checkout PR #999:" in result.output
+        assert "Dispatch PR #999:" in result.output
 
         # Verify draft PR was created with correct title
         assert len(fake_github.created_prs) == 1
@@ -71,7 +71,7 @@ def test_create_from_stdin() -> None:
 
         # Assert
         assert result.exit_code == 0, f"Command failed: {result.output}"
-        assert "Created plan #999" in result.output
+        assert "Created PR #999" in result.output
 
         # Verify title was extracted from H1 (with [erk-plan] prefix)
         _branch, pr_title, _body, _base, _draft = fake_github.created_prs[0]

@@ -185,7 +185,7 @@ def _update_manifest(
     "--pr-number",
     required=True,
     type=int,
-    help="Plan identifier for the planned-pr-context branch",
+    help="PR identifier for the planned-pr-context branch",
 )
 @click.pass_context
 def push_session(
