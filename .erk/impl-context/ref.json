@@ -1,0 +1,8 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Plan: Sweep plan_id/plan_url/plan_title refs in submit pipeline, dispatch, and PlanContext",
+  "objective_id": 9109,
+  "node_ids": [
+    "3.6.2"
+  ]
+}
