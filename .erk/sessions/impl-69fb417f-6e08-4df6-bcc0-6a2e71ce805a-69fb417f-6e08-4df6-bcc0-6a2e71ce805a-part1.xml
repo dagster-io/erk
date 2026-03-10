@@ -1,0 +1,1185 @@
+<session>
+  <meta branch="plnd/O9109-automate-obj-node-up-03-10-1252" />
+  <meta model="claude-opus-4-6" />
+  <user>&lt;command-message&gt;erk:plan-implement is running…&lt;/command-message&gt;
+&lt;command-name&gt;/erk:plan-implement&lt;/command-name&gt;
+&lt;command-args&gt;9157&lt;/command-args&gt;</user>
+  <user># /erk:plan-implement
+
+Implement a plan - either from GitHub, a markdown file, an existing impl directory under `.erk/impl-context/`, or by saving the current plan first.
+
+This is the primary implementation workflow - it orchestrates:
+
+1. Setting up the impl directory under `.erk/impl-context/&lt;branch&gt;/` (from issue, file, existing folder, or fresh plan)
+2. Executing the implementation
+3. Running CI and submitting the PR
+
+## Prerequisites
+
+- Must be in a git repository managed by erk
+- GitHub CLI (`gh`) must be authenticated
+- One of:
+  - A plan number, URL, or file path argument
+  - An existing impl directory under `.erk/impl-context/`
+  - A plan branch checked out (e.g., `plnd/...` or `P{number}-...`)
+  - A plan in `~/.claude/plans/` (from plan mode)
+
+## Usage
+
+```bash
+/erk:plan-implement                    # Use impl directory, detect from branch, or save current plan
+/erk:plan-implement 2521               # Fetch and implement plan #2521
+/erk:plan-implement https://github.com/owner/repo/pull/2521   # URL form
+/erk:plan-implement ./my-plan.md       # Implement from local markdown file
+```
+
+---
+
+## CRITICAL: PR Operations
+
+**NEVER** run direct GitHub CLI commands for PR operations during implementation:
+
+- `gh pr edit` — destroys plan-header metadata block
+- `gh pr ready` — bypasses lifecycle tracking
+- `gh pr close` / `gh pr merge`
+
+All PR operations are handled by `erk pr submit` in Step 13. It automatically:
+
+- Generates the PR title and body
+- Preserves the plan-header metadata block
+- Marks draft PRs as ready for review
+- Updates lifecycle stage
+
+## Agent Instructions
+
+### Step 1: Set Up Implementation
+
+Parse `9157` and run the consolidated setup command:
+
+- **If numeric** (e.g., `2521`): `erk exec setup-impl --issue 2521`
+- **If GitHub URL** (e.g., `https://github.com/.../issues/2521`): Extract number, `erk exec setup-impl --issue 2521`
+- **If path to file** (anything else non-empty): `erk exec setup-impl --file &lt;path&gt;`
+- **If empty**: `erk exec setup-impl` (auto-detects from `.erk/impl-context/`, branch, or fails)
+
+```bash
+erk exec setup-impl [--issue &lt;N&gt; | --file &lt;path&gt;]
+```
+
+This single command handles:
+
+- Fetching plan from GitHub (draft PR)
+- Setting up from a local markdown file
+- Auto-detecting from existing impl directory under `.erk/impl-context/`
+- Auto-detecting plan number from branch name (P{number}-... or PR lookup)
+- Creating/checking out the feature branch
+- Creating impl directory under `.erk/impl-context/&lt;branch&gt;/` with plan content
+- Running impl-init validation
+- Cleaning up `.erk/impl-context/` staging directory (git rm + commit + push)
+
+Otherwise, generate a branch slug and set up from the specified issue:
+
+1. Fetch the title: `gh pr view &lt;ISSUE_ARG&gt; --json title -q .title`
+2. Generate a branch slug from the title:
+   - 2-4 hyphenated lowercase words, max 30 characters
+   - Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+   - Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+   - Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+3. Store as `BRANCH_SLUG`.
+
+```bash
+erk exec setup-impl --issue &lt;ISSUE_ARG&gt; --branch-slug="${BRANCH_SLUG}"
+```
+
+If `setup-impl` exits with code 1 and `error: "no_plan_found"`, fall back to saving the current plan:
+
+Generate a branch slug from the plan title (the first `# ` heading in the plan file):
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Store as `BRANCH_SLUG`
+
+Save the current plan to GitHub and capture the plan number:
+
+```bash
+erk exec plan-save --format json --session-id="${CLAUDE_SESSION_ID}" --branch-slug="${BRANCH_SLUG}"
+```
+
+Parse the JSON output to get `plan_number`, then:
+
+```bash
+erk exec setup-impl --issue &lt;plan_number&gt;
+```
+
+The `setup-impl` output includes `related_docs` (skills and docs to load) and `has_plan_tracking` (whether GitHub issue tracking is active).
+
+If this fails, display the error and stop.
+
+### Step 2: Read Plan and Load Context
+
+Read `plan.md` from the impl directory set up in Step 1 to understand:
+
+- Overall goal and context
+- Context &amp; Understanding sections (API quirks, architectural insights, pitfalls)
+- Implementation phases and dependencies
+- Success criteria
+
+**Context Consumption**: Plans contain expensive discoveries. Ignoring `[CRITICAL:]` tags, "Related Context:" subsections, or "DO NOT" items causes repeated mistakes.
+
+### Step 3: Load Related Documentation
+
+If plan contains "Related Documentation" section, load listed skills via Skill tool and read listed docs.
+
+### Step 4: Create TodoWrite Entries
+
+Create todo entries for each phase from the plan.
+
+### Step 5: Signal GitHub Started
+
+```bash
+erk exec impl-signal started --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This also deletes the Claude plan file (from `~/.claude/plans/`) since:
+
+- The content has been saved to GitHub
+- The content has been snapshotted to `.erk/scratch/`
+- Keeping it could cause confusion if the user tries to re-save
+
+### Step 6: Execute Each Phase Sequentially
+
+For each phase:
+
+1. **Mark phase as in_progress** (in TodoWrite)
+2. **Read task requirements** carefully
+3. **Implement code AND tests together**:
+   - Load `dignified-python-313` skill for coding standards
+   - Load `fake-driven-testing` skill for test patterns
+   - Follow project AGENTS.md standards
+4. **Mark phase as completed** (in TodoWrite)
+5. **Report progress**: changes made, what's next
+
+**Important:** `plan.md` is immutable - NEVER edit during implementation
+
+### Step 7: Report Progress
+
+After each phase: report changes made and what's next.
+
+### Step 8: Final Verification
+
+Confirm all tasks executed, success criteria met, note deviations, summarize changes.
+
+### Step 9: Signal GitHub Ended
+
+```bash
+erk exec impl-signal ended --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+### Step 10: Upload Session for Async Learn
+
+```bash
+erk exec upload-impl-session --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This reads plan reference from the impl directory, captures session info, and uploads for async learn processing.
+
+### Step 11: Clean Up Impl Context
+
+Remove the `.erk/impl-context/` directory from the repo:
+
+```bash
+erk exec cleanup-impl-context
+```
+
+This removes `.erk/impl-context/`, stages the deletion, commits, and pushes — all idempotent.
+
+### Step 12: Run CI Iteratively
+
+1. If `.erk/prompt-hooks/post-plan-implement-ci.md` exists: follow its instructions
+2. Otherwise: check CLAUDE.md/AGENTS.md for CI commands
+
+### Step 13: Submit PR
+
+Push the branch and create or update the PR using the Graphite-aware submit pipeline:
+
+```bash
+erk pr submit
+```
+
+This handles pushing commits, creating/updating the PR, generating the PR description, and enhancing with Graphite stack metadata when available.
+
+After successful submission, signal lifecycle transition:
+
+```bash
+erk exec impl-signal submitted 2&gt;/dev/null || true
+```
+
+Then validate PR completion invariants:
+
+```bash
+erk pr check --stage=impl
+```
+
+This validates PR submission readiness including implementation-specific checks
+(e.g., `.erk/impl-context/` must be cleaned up). If checks fail, display output and warn user.
+
+### Step 14: Output Format
+
+- **Start**: "Setting up implementation..." or "Fetching plan #X..."
+- **After setup**: "Implementation environment ready, reading plan..."
+- **Each phase**: "Phase X: [brief description]" with code changes
+- **End**: "Plan execution complete. [Summary]"
+
+---
+
+## Related Commands
+
+- `/erk:plan-save` - Save plan only, don't implement (for defer-to-later workflow)
+- `/erk:replan` - Re-plan an existing plan with current codebase state
+</user>
+  <assistant>
+
+I'll start by setting up the implementation for plan #9157.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="11291" cache_read_input_tokens="17332" cache_creation="{'ephemeral_5m_input_tokens': 11291, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01NWnHnJMEReyKaVV6QCPaxD">
+    <param name="command">erk exec setup-impl --issue 9157</param>
+    <param name="description">Set up implementation for plan #9157</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="11291" cache_read_input_tokens="17332" cache_creation="{'ephemeral_5m_input_tokens': 11291, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01NWnHnJMEReyKaVV6QCPaxD">
+{"success": true, "impl_path": "/home/runner/work/erk/erk/.erk/impl-context/plnd--O9109-automate-obj-node-up-03-10-1252", "pr_number": 9157, "pr_url": "https://github.com/dagster-io/erk/pull/9157", "branch": "plnd/O9109-automate-obj-node-up-03-10-1252", "pr_title": "[erk-pr] Plan: Automate objective node update in plan_save.py", "no_impl": false}
+{"success": true, "source": "issue", "pr_number": 9157, "has_plan_tracking": true, "valid": true, "related_docs": {"skills": [], "docs": []}}
+Already on PR branch 'plnd/O9109-automate-obj-node-up-03-10-1252', teleporting from remote...
+  </tool_result>
+  <assistant>Setup successful. Let me read the plan now.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="364" cache_read_input_tokens="28623" cache_creation="{'ephemeral_5m_input_tokens': 364, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_014kbmSuGidWfNp3Rp1xkfuP">
+    <param name="file_path">/home/runner/work/erk/erk/.erk/impl-context/plnd--O9109-automate-obj-node-up-03-10-1252/plan.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="364" cache_read_input_tokens="28623" cache_creation="{'ephemeral_5m_input_tokens': 364, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_014kbmSuGidWfNp3Rp1xkfuP">
+     1→# Plan: Automate objective node update in plan_save.py
+     2→
+     3→## Context
+     4→
+     5→When `/erk:plan-save` creates a PR linked to an objective, the objective's roadmap nodes should be updated to `in_progress` with the PR reference. Currently this is delegated to Step 6 of the `plan-save.md` skill — an agent-driven step that isn't guaranteed to execute. PR #9152 (objective #9109, nodes 3.1–3.3) demonstrated this failure: the PR was created but the objective was never updated.
+     6→
+     7→**Fix:** Move the objective node update into `plan_save.py` itself, making it atomic with PR creation.
+     8→
+     9→## Changes
+    10→
+    11→### 1. Add objective update in `_save_as_planned_pr` (`src/erk/cli/commands/exec/scripts/plan_save.py`)
+    12→
+    13→After the PR is created (line ~315, where `plan_number` is set), add:
+    14→
+    15→```python
+    16→# Update objective roadmap nodes (fail-open)
+    17→if objective_issue is not None and node_ids is not None:
+    18→    _update_objective_nodes(ctx, objective_issue, node_ids, plan_number)
+    19→```
+    20→
+    21→Implement `_update_objective_nodes` as a helper that:
+    22→- Builds command: `["erk", "exec", "update-objective-node", str(objective_issue), "--node", node_id, ..., "--pr", f"#{plan_number}", "--status", "in_progress"]`
+    23→- For multiple nodes, repeat `--node` for each node_id (the command supports this)
+    24→- Uses the **Graceful Degradation Pattern** from `docs/learned/architecture/subprocess-wrappers.md`:
+    25→  ```python
+    26→  try:
+    27→      result = subprocess.run(cmd, check=True, capture_output=True, text=True, cwd=repo_root)
+    28→      click.echo(f"Updated objective #{objective_issue} roadmap: {node_ids} → PR #{plan_number}", err=True)
+    29→      return True
+    30→  except subprocess.CalledProcessError as e:
+
+... [37 lines omitted] ...
+
+    31→      click.echo(f"Warning: Failed to update objective #{objective_issue} roadmap: {e.stderr}", err=True)
+    33→  except FileNotFoundError:
+    34→      click.echo("Warning: erk command not found, skipping objective update", err=True)
+    37→- This is the correct pattern for optional operations per the subprocess wrappers doc — explicit `check=True` with `CalledProcessError` handling, not a wrapper function
+  </tool_result>
+  <assistant>Now let me load the relevant documentation and explore the current code before implementing.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1340" cache_read_input_tokens="28987" cache_creation="{'ephemeral_5m_input_tokens': 1340, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01Vo9uCyeZSLkEQHCwJfD6Zc">
+    <param name="todos">[{'content': 'Read plan_save.py and understand current structure', 'status': 'in_progress'...[truncated 884 chars]...CI checks'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1340" cache_read_input_tokens="28987" cache_creation="{'ephemeral_5m_input_tokens': 1340, 'ephemeral_1h_input_tokens': 0}" output_tokens="370" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Vo9uCyeZSLkEQHCwJfD6Zc">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="Bash" id="toolu_016n6FYnmVLXsiMaSkwr78AW">
+    <param name="command">erk exec impl-signal started --session-id "69fb417f-6e08-4df6-bcc0-6a2e71ce805a" 2&gt;/dev/null || true</param>
+    <param name="description">Signal implementation started</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="402" cache_read_input_tokens="30327" cache_creation="{'ephemeral_5m_input_tokens': 402, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_013YhR3BQg5fv8Gv2RhXHNqa">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/plan_save.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="402" cache_read_input_tokens="30327" cache_creation="{'ephemeral_5m_input_tokens': 402, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_019DMzUaLtMErqGExTVm8R8p">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/commands/erk/plan-save.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="402" cache_read_input_tokens="30327" cache_creation="{'ephemeral_5m_input_tokens': 402, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_012bWq54SYMU7tMrhRAyUR5f">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/subprocess-wrappers.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="402" cache_read_input_tokens="30327" cache_creation="{'ephemeral_5m_input_tokens': 402, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01ToHcfhKAGpiJ491xaq84AL">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/tripwires.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="402" cache_read_input_tokens="30327" cache_creation="{'ephemeral_5m_input_tokens': 402, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_016n6FYnmVLXsiMaSkwr78AW">
+{
+  "success": true,
+  "event": "started",
+  "pr_number": 9157
+}
+  </tool_result>
+  <tool_result tool="toolu_013YhR3BQg5fv8Gv2RhXHNqa">
+     1→"""Plan save: creates a draft PR with the plan content.
+     2→
+     3→Usage:
+     4→    erk exec plan-save [OPTIONS]
+     5→
+     6→Options:
+     7→    --format json|display: Output format (default: json)
+     8→    --plan-file PATH: Use specific plan file (highest priority)
+     9→    --session-id ID: Session ID for scoped plan lookup
+    10→    --plan-type standard|learn: Plan type (default: standard)
+    11→    --learned-from-issue INT: Parent plan (for learn plans)
+    12→    --created-from-workflow-run-url URL: Workflow run URL
+    13→
+    14→Objective linking: use --objective to pass directly, or rely on
+    15→automatic linking via the objective-context session marker
+    16→(created by /erk:objective-plan). The --objective flag takes
+    17→precedence over the session marker.
+    18→
+    19→Exit Codes:
+    20→    0: Success
+    21→    1: Error
+    22→    2: Validation failed
+    23→"""
+    24→
+    25→import json
+    26→from pathlib import Path
+    27→
+    28→import click
+    29→
+    30→from erk.cli.commands.exec.scripts.validate_plan_content import _validate_plan_content
+
+... [556 lines omitted] ...
+
+   162→            click.echo(f"Error: {title_validation.message}", err=True)
+   168→                        "error": f"Plan title validation failed: {title_validation.reason}",
+   169→                        "error_type": "validation_failed",
+   183→            click.echo("Error: --current-branch requires a checked-out branch.", err=True)
+   190→                "Error: --branch-slug is required. "
+   222→            click.echo(f"Error: {create_result.message}", err=True)
+   314→        raise RuntimeError(msg)
+   418→            click.echo("Error: No plan found in ~/.claude/plans/", err=True)
+   420→            click.echo(json.dumps({"success": False, "error": "No plan found in ~/.claude/plans/"}))
+   450→    valid, error, details = _validate_plan_content(plan)
+   453→            click.echo(f"Error: Plan validation failed: {error}", err=True)
+   459→                        "error": f"Plan validation failed: {error}",
+   460→                        "error_type": "validation_failed",
+  </tool_result>
+  <tool_result tool="toolu_019DMzUaLtMErqGExTVm8R8p">
+     1→---
+     2→description: Save the current session's plan to GitHub
+     3→argument-hint: "[--plan-type=learn]"
+     4→---
+     5→
+     6→# /erk:plan-save
+     7→
+     8→Save the current session's plan to GitHub with session context.
+     9→
+    10→## Usage
+    11→
+    12→```bash
+    13→/erk:plan-save                           # Standalone plan
+    14→/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+    15→/erk:plan-save --objective=123           # Explicit objective link (overrides marker)
+    16→/erk:plan-save --current-branch          # Use current branch instead of creating new plnd/ branch
+    17→```
+    18→
+    19→Objective linking: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command. Use `--objective=&lt;number&gt;` to override the marker or provide the link when no marker exists (e.g., during replan).
+    20→
+    21→## Plan Storage
+    22→
+    23→The plan is saved using the configured backend:
+    24→
+    25→- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+    26→  The JSON output contract includes `plan_number`, `plan_url`, `title`, `branch_name`, `plan_backend`.
+    27→
+    28→## Agent Instructions
+    29→
+    30→### Step 1: Parse Arguments
+
+... [208 lines omitted] ...
+
+   100→If the command fails, display the error and stop.
+   115→- If `success: false` or value doesn't match: verification failed
+   121→**On verification failure:**
+   123→Display error and remediation steps:
+   126→ERROR: Objective link verification failed
+   163→**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+   185→On failure, display the error message and suggest:
+  </tool_result>
+  <tool_result tool="toolu_012bWq54SYMU7tMrhRAyUR5f">
+     1→---
+     2→title: Subprocess Wrappers
+     3→last_audited: "2026-02-16 00:00 PT"
+     4→audit_result: edited
+     5→read_when:
+     6→  - "using subprocess wrappers"
+     7→  - "executing shell commands"
+     8→  - "understanding subprocess patterns"
+     9→tripwires:
+    10→  - action: "using bare subprocess.run with check=True"
+    11→    warning: "Use wrapper functions: run_subprocess_with_context() (gateway) or run_with_error_reporting() (CLI). Exception: Graceful degradation pattern with explicit CalledProcessError handling is acceptable for optional operations."
+    12→    pattern: "subprocess\\.run\\("
+    13→  - action: "adding a Claude subprocess call with --print mode"
+    14→    warning: "Always include --no-session-persistence flag and use env=build_claude_subprocess_env() parameter. Both are required to prevent session persistence and CLAUDECODE context leakage. See the 'Claude Subprocess Environment' section."
+    15→  - action: "using sed -i in scripts that run on both macOS and Linux"
+    16→    warning: "macOS sed requires `sed -i ''` (empty string argument) while Linux sed uses `sed -i` (no argument). Scripts that use sed -i without handling this difference will fail silently on one platform."
+    17→    score: 4
+    18→---
+    19→
+    20→# Subprocess Execution Wrappers
+    21→
+    22→**NEVER use bare `subprocess.run(..., check=True)`. ALWAYS use wrapper functions.**
+    23→
+    24→This guide explains the two-layer pattern for subprocess execution in erk: gateway layer and CLI layer wrappers.
+    25→
+    26→## Scope
+    27→
+    28→**These rules apply to production erk code** in `src/erk/` and `packages/erk-shared/`.
+    29→
+    30→**Exception: erk-dev** (`packages/erk-dev/`) is developer tooling and is exempt from these rules. Direct `subprocess.run` is acceptable in erk-dev commands since they don't need the testability/dry-run benefits of wrapper functions.
+
+... [348 lines omitted] ...
+
+    34→Erk uses a two-layer design for subprocess execution to provide consistent error handling across different boundaries:
+    36→- **Gateway layer**: `run_subprocess_with_context()` - Raises RuntimeError for business logic
+    37→- **CLI layer**: `run_with_error_reporting()` - Prints user-friendly message and raises SystemExit
+    47→**Behavior**: Raises `RuntimeError` with rich context on failure
+    49→**Usage**: Pass `cmd` (the command list), `operation_context` (human-readable description), and `cwd` (working directory). On failure, raises `RuntimeError` with the operation context, command, exit code, and stderr.
+    57→- **Rich error messages**: Includes operation context, command, exit code, stderr
+    58→- **Exception chaining**: Preserves original CalledProcessError for debugging
+    61→### run_with_error_reporting (CLI Layer)
+    63→**When to use**: In CLI command handlers where you want to immediately exit on failure with a user-friendly message.
+    65→**Import**: `from erk.cli.subprocess_utils import run_with_error_reporting`
+    67→**Behavior**: Prints error message to stderr and raises `SystemExit` on failure
+    72→from erk.cli.subprocess_utils import run_with_error_reporting
+    74→# ✅ CORRECT: User-friendly error messages + SystemExit
+    75→run_with_error_reporting(
+    84→- **User-friendly**: Error messages are clear and actionable
+    86→- **No exception handling needed**: Wrapper handles everything
+    90→- **Rich error messages**: Both wrappers include operation context, command, exit code, and stderr
+    91→- **Exception chaining**: Preserves original CalledProcessError for debugging
+    92→- **Consistent patterns**: Two clear boundaries with appropriate error handling
+    93→- **Debugging support**: Full context available in error messages and logs
+   110→Not all subprocess calls should use `run_with_error_reporting()`. Use explicit exception handling when:
+   112→1. **The operation is optional** - Failure should not stop the main workflow
+   114→3. **Warning vs Error** - You want to show a warning and continue, not exit
+   119→# Pattern: check=True with explicit CalledProcessError handling
+   123→except subprocess.CalledProcessError as e:
+   124→    # Show warning, continue execution
+   125→    user_output(click.style("⚠ ", fg="yellow") + f"Optional operation failed: {e}")
+   126→except FileNotFoundError:
+   135→| CLI command that must succeed  | `run_with_error_reporting()`    | SystemExit on failure is correct |
+   136→| Optional background operation  | Explicit exception handling     | Main operation should continue   |
+   137→| Gateway real.py implementation | `run_subprocess_with_context()` | Consistent error wrapping        |
+   141→For GitHub API commands that may fail due to transient network errors, use `execute_gh_command_with_retry()`:
+   151→- Automatic retry on transient errors (network timeouts, connection failures)
+   157→## Error Accumulation Pattern
+   183→# Use accumulated stderr in error msg
+   190→- Stderr is accumulated as list, joined only when needed for error message
+   259→| **Error handling**        | Returns `None` on any failure          | Raises exception or returns error type |
+   262→| **Caller responsibility** | Check for `None`, decide how to handle | Catch exception or check error type    |
+   270→See `_get_pr_for_plan_direct()` in `src/erk/cli/commands/exec/scripts/trigger_async_learn.py`. Returns `dict[str, object] | None` — `None` on any failure (missing issue, metadata, branch, or PR).
+   274→- **No exceptions** - Never raises, always returns `None` on failure
+   275→- **No error messages** - Caller decides what to log
+   276→- **Uniform failure** - All failure modes return `None` consistently
+   286→Use when the operation is **critical** and failure should be explicit:
+   288→See `get_pr_for_plan()` in `src/erk/cli/commands/exec/scripts/get_pr_for_plan.py` for the full implementation. It is a Click command that raises `SystemExit(1)` with JSON error output on any failure, and attempts branch_name recovery via pattern matching.
+   292→- **Explicit errors** - Each failure mode has specific error message
+   294→- **Clear contract** - Caller knows exceptions mean critical failure
+   298→- User-facing commands where failure needs explanation
+   300→- CLI commands that should exit with error message
+   331→The same PR lookup in `get_pr_for_plan.py` is **strict** because it's a user-facing command where the user explicitly asked for the PR and expects either the answer or a clear error message.
+   367→- **CLI layer**: Use `run_with_error_reporting()` for command handlers
+  </tool_result>
+  <tool_result tool="toolu_01ToHcfhKAGpiJ491xaq84AL">
+     1→---
+     2→title: Planning Tripwires
+     3→read_when:
+     4→  - "working on planning code"
+     5→---
+     6→
+     7→&lt;!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY --&gt;
+     8→&lt;!-- Edit source frontmatter, then run 'erk docs sync' to regenerate. --&gt;
+     9→&lt;!-- Generated from planning/*.md frontmatter --&gt;
+    10→
+    11→# Planning Tripwires
+    12→
+    13→Rules triggered by matching actions in code.
+    14→
+    15→**adding &lt;code&gt; inside &lt;summary&gt; elements in PR bodies** → Read [Planned PR Lifecycle](planned-pr-lifecycle.md) first. Graphite doesn't render &lt;code&gt; inside &lt;summary&gt; — use plain text instead. GitHub renders it but Graphite does not. The correct format is &lt;summary&gt;original-plan&lt;/summary&gt; not &lt;summary&gt;&lt;code&gt;original-plan&lt;/code&gt;&lt;/summary&gt;.
+    16→
+    17→**adding Closes #N to a planned PR footer** → Read [Planned PR Lifecycle](planned-pr-lifecycle.md) first. Planned PR IS the plan. Self-referential close would close the plan itself. Use issue_number=None for github-draft-pr backend.
+    18→
+    19→**adding a new PR-dependent step to trigger-async-learn** → Read [Learn Without PR Context](learn-without-pr-context.md) first. Any new PR-dependent step must handle the None case from \_get_pr_for_plan_direct. The entire PR comment block is gated on pr_result not being None.
+    20→
+    21→**adding a new filtering step to preprocess_session.py** → Read [Session Preprocessing Architecture](session-preprocessing.md) first. There are TWO preprocessing implementations: the exec script (preprocess_session.py) and erk-shared (session_preprocessing.py). The exec script has the full filtering pipeline; erk-shared has only Stage 1 mechanical reduction. New filters go in the exec script. Read this doc first.
+    22→
+    23→**adding a new pipeline stage to the async learn pipeline** → Read [Learn Pipeline Workflow](learn-pipeline-workflow.md) first. New stages must be direct Python function calls, not subprocess invocations. The orchestrator uses tight coupling for performance. See the Direct-Call Architecture section in planned-pr-context-local-preprocessing.md.
+    24→
+    25→**adding a new setup path to plan-implement without routing through Step 2d** → Read [Impl-Context Staging Directory](impl-context.md) first. Impl-context cleanup routing: all code paths that set up an implementation context must route through Step 2d in plan-implement.md, which is the single convergence point for .erk/impl-context/ cleanup. Adding a new setup path that bypasses Step 2d will silently skip cleanup, leaving .erk/impl-context/ files in the final PR diff.
+    26→
+    27→**adding branch_name to plan-header at creation time** → Read [Branch Name Inference](branch-name-inference.md) first. branch_name is intentionally omitted at creation because the branch doesn't exist yet. The plan-save → branch-create → impl-signal lifecycle requires this gap. See the temporal gap section below.
+    28→
+    29→**adding dry-run support to one-shot commands** → Read [One-Shot Workflow](one-shot-workflow.md) first. One-shot dry-run mode must NOT create skeleton issues
+    30→
+
+... [241 lines omitted] ...
+
+    45→**after plan-implement execution completes** → Read [Plan Lifecycle](lifecycle.md) first. Always clean .erk/impl-context/ with `git rm -rf .erk/impl-context/` and commit. Transient artifacts cause CI formatter failures (Prettier).
+    67→**calling `create_impl_context()` without checking `impl_context_exists()` first** → Read [Impl-Context Staging Directory](impl-context.md) first. Both submit paths use LBYL: `if impl_context_exists(): remove_impl_context()` before creating. Stale .erk/impl-context/ from a prior failed submission causes errors.
+    79→**calling update_metadata() on PlannedPRBackend without verifying plan exists** → Read [Planned PR Backend](planned-pr-backend.md) first. PlannedPRBackend.update_metadata() raises PlanHeaderNotFoundError if the header block is absent. Read operations (get_plan) return None gracefully. Always check plan existence before writing metadata.
+    81→**capturing subagent output inline when it may exceed 1KB** → Read [Agent Orchestration Safety Patterns](agent-orchestration-safety.md) first. Bash tool truncates output at ~10KB with no error. Use Write tool to save agent output to scratch storage, then pass the file path to dependent agents.
+    83→**catching PlanHeaderNotFoundError** → Read [PlanBackend Migration Guide](plan-backend-migration.md) first. PlanHeaderNotFoundError is an exception; PlanNotFound is a result type - use LBYL for the latter
+    89→**checking erk exec plan-save --format json output for empty result** → Read [Planned PR Backend](planned-pr-backend.md) first. Empty stdout does not mean failure. The duplicate-detection path writes JSON to stderr, not stdout. Always capture both streams with 2&gt;&amp;1 or check for empty stdout and retry with stderr capture.
+    95→**closing a plan without verifying all items were addressed** → Read [Complete File Inventory Protocol](complete-inventory-protocol.md) first. Compare the file inventory against the plan's items before closing. Silent omissions are the most common failure mode.
+    97→**committing to planned-PR plan branches after checkout without pulling remote** → Read [Planned PR Branch Teleport](planned-pr-branch-teleport.md) first. Both setup_impl_from_pr.py and submit.py use the same three-step teleport: fetch_branch -&gt; checkout/create_tracking -&gt; pull_rebase. Skipping pull_rebase causes non-fast-forward push failures.
+   141→**grepping only for the error message text** → Read [Source Investigation Over Trial-and-Error](debugging-patterns.md) first. Also grep for function names extracted from the error (e.g., 'checkout_footer' from 'Missing checkout footer'). Validator function names are more stable search targets than error message strings.
+   159→**making a third trial-and-error attempt at a validation fix** → Read [Source Investigation Over Trial-and-Error](debugging-patterns.md) first. After 2 failed attempts, stop guessing. Grep for the validator function and read the source to understand the exact requirement.
+   161→**making objective-update-after-land exit non-zero** → Read [Objective Update After Land](objective-update-after-land.md) first. This script uses fail-open design. Failures must not block landing. See objective-update-after-land.md.
+   187→**pushing implementation commits after impl-context cleanup without git pull --rebase** → Read [Impl-Context Staging Directory](impl-context.md) first. After git rm + commit + push of .erk/impl-context/, the local branch may diverge from remote if other commits were pushed. Run git pull --rebase before pushing further implementation commits to avoid non-fast-forward push failures.
+   193→**reading parallel agent output without verifying files exist** → Read [Parallel Agent Orchestration for Bulk Operations](parallel-audit-pattern.md) first. Always verify output files exist (ls -la) before reading. Agent failures may produce empty or missing files.
+   205→**renaming a lifecycle stage value** → Read [Plan Lifecycle](lifecycle.md) first. Update 3 locations: LifecycleStageValue type, valid_stages set, and color conditions in compute_lifecycle_display(). Missing any location causes silent validation failures or incorrect TUI colors.
+   213→**reviewing a PR that contains .erk/impl-context/ files** → Read [Impl-Context Staging Directory](impl-context.md) first. Leave a PR comment telling the author to remove .erk/impl-context/. This is an erk tooling error — the directory should have been cleaned up before implementation. Run: git rm -rf .erk/impl-context/ &amp;&amp; git commit -m 'Remove leaked impl-context'
+   223→**saving a plan linked to an objective** → Read [Plan Lifecycle](lifecycle.md) first. Always verify the link was saved correctly with `erk exec get-plan-metadata &lt;issue&gt; objective_issue`. Silent failures can leave plans unlinked from their objectives.
+   229→**treating missing PR as an error in the learn pipeline** → Read [Learn Without PR Context](learn-without-pr-context.md) first. No-PR is a valid workflow state, not an error. The learn pipeline must degrade gracefully — sessions alone provide sufficient material for insight extraction.
+   241→**using assertive metadata writes in a best-effort context** → Read [Metadata Update Patterns](metadata-update-patterns.md) first. write_dispatch_metadata() raises on error. maybe_update_plan_dispatch_metadata() uses LBYL guards and silent skip with warning. Choose based on whether failure should block the operation.
+   263→**writing post-dispatch operations without try/except guards** → Read [One-Shot Workflow](one-shot-workflow.md) first. Post-dispatch operations (metadata write, queued comment) are best-effort. Wrap in try/except with user-visible warnings. See write_dispatch_metadata() and create_submission_queued_block() in one_shot_dispatch.py.
+  </tool_result>
+  <assistant>Good, I've read the plan and all the relevant context. Now let me also look at the `update-objective-node` command to understand the CLI it exposes, and examine existing tests.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="26696" cache_read_input_tokens="30729" cache_creation="{'ephemeral_5m_input_tokens': 26696, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01NrZ6uhBsL4VLdWzWxTjCB8">
+    <param name="todos">[{'content': 'Read plan_save.py and understand current structure', 'status': 'completed', ...[truncated 886 chars]...CI checks'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="26696" cache_read_input_tokens="30729" cache_creation="{'ephemeral_5m_input_tokens': 26696, 'ephemeral_1h_input_tokens': 0}" output_tokens="386" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01NrZ6uhBsL4VLdWzWxTjCB8">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01HUNFXBTSbvL3RygfggJjPQ">
+    <param name="pattern">update-objective-node</param>
+    <param name="path">/home/runner/work/erk/erk/src</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="428" cache_read_input_tokens="57425" cache_creation="{'ephemeral_5m_input_tokens': 428, 'ephemeral_1h_input_tokens': 0}" output_tokens="26" service_tier="standard" inference_geo="global" />
+  <tool_use name="Glob" id="toolu_016b8TFQfMiH3t8eFPB1ZLLM">
+    <param name="pattern">tests/unit/cli/commands/exec/scripts/test_plan_save*.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="428" cache_read_input_tokens="57425" cache_creation="{'ephemeral_5m_input_tokens': 428, 'ephemeral_1h_input_tokens': 0}" output_tokens="26" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01Tua9RRZT6hDg2qQXVQh3qk">
+    <param name="pattern">update.objective.node</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="428" cache_read_input_tokens="57425" cache_creation="{'ephemeral_5m_input_tokens': 428, 'ephemeral_1h_input_tokens': 0}" output_tokens="26" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Tua9RRZT6hDg2qQXVQh3qk">
+Found 2 files
+src/erk/cli/commands/exec/scripts/update_objective_node.py
+src/erk/cli/commands/exec/scripts/objective_apply_landed_update.py
+  </tool_result>
+  <tool_result tool="toolu_016b8TFQfMiH3t8eFPB1ZLLM">
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_plan_save.py
+  </tool_result>
+  <tool_result tool="toolu_01HUNFXBTSbvL3RygfggJjPQ">
+Found 2 files
+src/erk/cli/commands/exec/scripts/update_objective_node.py
+src/erk/cli/commands/exec/group.py
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Qs566AcEqLUFKawKF6kh16">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/update_objective_node.py</param>
+  </tool_use>
+  <usage input_tokens="135" cache_creation_input_tokens="291" cache_read_input_tokens="57853" cache_creation="{'ephemeral_5m_input_tokens': 291, 'ephemeral_1h_input_tokens': 0}" output_tokens="18" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01FUHopizgTU7UsWpckp9nTh">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_plan_save.py</param>
+  </tool_use>
+  <usage input_tokens="135" cache_creation_input_tokens="291" cache_read_input_tokens="57853" cache_creation="{'ephemeral_5m_input_tokens': 291, 'ephemeral_1h_input_tokens': 0}" output_tokens="18" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Qs566AcEqLUFKawKF6kh16">
+     1→"""Update node PR cells in an objective's roadmap table.
+     2→
+     3→Why this command exists (instead of using update-issue-body directly):
+     4→
+     5→    The alternative is "fetch body -&gt; parse markdown table -&gt; find node row -&gt;
+     6→    surgically edit the PR cell -&gt; write entire body back". That's ~15
+     7→    lines of fragile ad-hoc Python that every caller (skills, hooks, scripts)
+     8→    must duplicate. The roadmap table has a specific structure
+     9→    (| node_id | description | status | pr |) and the update has
+    10→    specific semantics:
+    11→
+    12→    1. Find the row by node ID across all phases
+    13→    2. Compute display status from the PR value
+    14→    3. Write status and PR cells atomically so the table is
+    15→       always human-readable without requiring a parse pass
+    16→
+    17→    Encoding this once in a tested CLI command means:
+    18→    - No duplicated table-parsing logic across callers
+    19→    - Testable edge cases (node not found, no roadmap, clearing PR)
+    20→    - Atomic mental model: "update node 1.3's PR to X"
+    21→    - Resilient to roadmap format changes (one command updates, not N sites)
+    22→
+    23→Usage:
+    24→    # Single node -- landed PR
+    25→    erk exec update-objective-node 6423 --node 1.3 --pr "#6500" --status done
+    26→
+    27→    # Clear PR
+    28→    erk exec update-objective-node 6423 --node 1.3 --pr ""
+    29→
+    30→    # Status-only update (preserve existing PR)
+
+... [529 lines omitted] ...
+
+    41→        Each node result: {node_id, success, previous_pr, error}
+    80→def _node_error_message(node_id: str, issue_number: int, error: object) -&gt; str:
+    81→    if error == "node_not_found":
+    83→    return f"Failed to replace cells for node '{node_id}'"
+    94→    backlink_warning: str | None
+    99→        return cls(backlink_set=True, backlink_warning=None, backlink_skip=None)
+   102→    def warning(cls, *, message: str) -&gt; BacklinkResult:
+   103→        return cls(backlink_set=False, backlink_warning=message, backlink_skip=None)
+   107→        return cls(backlink_set=False, backlink_warning=None, backlink_skip=reason)
+   115→    error: str | None
+   119→        return cls(node_id=node_id, success=True, previous_pr=previous_pr, error=None)
+   122→    def fail(cls, *, node_id: str, error: str) -&gt; UpdateObjectiveNodeResult:
+   123→        return cls(node_id=node_id, success=False, previous_pr=None, error=error)
+   127→class UpdateObjectiveNodeError:
+   128→    error: str
+   132→        return {"success": False, "error": self.error, "message": self.message}
+   187→    UpdateObjectiveNodeMultiOutput | UpdateObjectiveNodeError | UpdateObjectiveNodeSuccess
+   219→        return UpdateObjectiveNodeError(
+   220→            error=single.error or "unknown",
+   221→            message=_node_error_message(node[0], issue_number, single.error),
+   305→    except ValueError:
+   322→    Never raises — backlink failure doesn't block the node update.
+   331→        return BacklinkResult.warning(message=f"PR {pr_ref} not found")
+   339→        return BacklinkResult.warning(
+   422→        err = UpdateObjectiveNodeError(
+   423→            error="no_update",
+   436→        err = UpdateObjectiveNodeError(
+   437→            error="issue_not_found",
+   446→        err = UpdateObjectiveNodeError(
+   447→            error="no_roadmap",
+   458→            UpdateObjectiveNodeResult.fail(node_id=n, error="node_not_found") for n in missing_nodes
+   476→    any_failure = False
+   481→            results.append(UpdateObjectiveNodeResult.fail(node_id=node_id, error="node_not_found"))
+   482→            any_failure = True
+   496→                UpdateObjectiveNodeResult.fail(node_id=node_id, error="replacement_failed")
+   498→            any_failure = True
+   504→    # Exit early if all nodes failed
+   505→    if any_failure and not any(r.success for r in results):
+   534→    # failure doesn't prevent the node update from succeeding.
+  </tool_result>
+  <tool_result tool="toolu_01FUHopizgTU7UsWpckp9nTh">
+     1→"""Unit tests for plan-save command (draft PR creation)."""
+     2→
+     3→import json
+     4→from pathlib import Path
+     5→
+     6→import pytest
+     7→from click.testing import CliRunner
+     8→
+     9→from erk.cli.commands.exec.scripts.plan_save import plan_save
+    10→from erk_shared.context.context import ErkContext
+    11→from erk_shared.plan_store.planned_pr_lifecycle import IMPL_CONTEXT_DIR
+    12→from tests.fakes.gateway.claude_installation import FakeClaudeInstallation
+    13→from tests.fakes.gateway.git import FakeGit
+    14→from tests.fakes.gateway.github import FakeLocalGitHub
+    15→from tests.fakes.gateway.graphite import FakeGraphite
+    16→from tests.fakes.tests.shared_context import context_for_test
+    17→
+    18→# Valid plan content that passes validation (100+ chars with structure)
+    19→VALID_PLAN_CONTENT = """# Feature Plan
+    20→
+    21→This plan describes the implementation of a new feature.
+    22→
+    23→- Step 1: Set up the environment
+    24→- Step 2: Implement the core logic
+    25→- Step 3: Add tests and documentation"""
+    26→
+    27→
+    28→def _planned_pr_context(
+    29→    *,
+    30→    tmp_path: Path,
+
+... [897 lines omitted] ...
+
+    61→    assert result.exit_code == 0, f"Failed: {result.output}"
+    79→    assert result.exit_code == 0, f"Failed: {result.output}"
+   101→    assert "No plan found" in output["error"]
+   104→def test_planned_pr_validation_failure(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -&gt; None:
+   105→    """Short plan: exit code 2, error_type='validation_failed'."""
+   119→    assert output["error_type"] == "validation_failed"
+   134→    assert result1.exit_code == 0, f"First call failed: {result1.output}"
+   145→    assert result2.exit_code == 0, f"Second call failed: {result2.output}"
+   189→    assert result1.exit_code == 0, f"First call failed: {result1.output}"
+   205→    assert result2.exit_code == 0, f"Second call failed: {result2.output}"
+   229→    assert result.exit_code == 0, f"Failed: {result.output}"
+   255→    assert result.exit_code == 0, f"Failed: {result.output}"
+   279→    assert result.exit_code == 0, f"Failed: {result.output}"
+   298→    assert result.exit_code == 0, f"Failed: {result.output}"
+   312→    assert result.exit_code == 0, f"Failed: {result.output}"
+   347→    assert result.exit_code == 0, f"Failed: {result.output}"
+   370→    assert result.exit_code == 0, f"Failed: {result.output}"
+   411→    assert result.exit_code == 0, f"Failed: {result.output}"
+   451→    assert result.exit_code == 0, f"Failed: {result.output}"
+   479→    assert result.exit_code == 0, f"Failed: {result.output}"
+   515→    assert result.exit_code == 0, f"Failed: {result.output}"
+   559→    assert output["error_type"] == "validation_failed"
+   579→    assert output["error_type"] == "validation_failed"
+   585→    """Planned-PR save shows error message for invalid title in display format."""
+   610→    assert result.exit_code == 0, f"Failed: {result.output}"
+   628→    assert result.exit_code == 0, f"Failed: {result.output}"
+   669→    assert result.exit_code == 0, f"Failed: {result.output}"
+   680→def test_planned_pr_branch_slug_missing_errors(
+   683→    """When --branch-slug is not provided, exits with error and remediation message."""
+   712→    assert result.exit_code == 0, f"Failed: {result.output}"
+   745→    assert result.exit_code == 0, f"Failed: {result.output}"
+   762→    assert result.exit_code == 0, f"Failed: {result.output}"
+   786→    assert result.exit_code == 0, f"Failed: {result.output}"
+   809→    assert result.exit_code == 0, f"Failed: {result.output}"
+   835→    assert result.exit_code == 0, f"Failed: {result.output}"
+   861→    assert result.exit_code == 0, f"Failed: {result.output}"
+   880→    assert result.exit_code == 0, f"Failed: {result.output}"
+   907→    assert result.exit_code == 0, f"Failed: {result.output}"
+  </tool_result>
+  <assistant>Now I have a thorough understanding of the codebase. Let me load the dignified-python skill and then implement the changes.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="21983" cache_read_input_tokens="58144" cache_creation="{'ephemeral_5m_input_tokens': 21983, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Skill" id="toolu_01MNjRXCpuSj4VF6VxfMfir6">
+    <param name="skill">dignified-python</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="21983" cache_read_input_tokens="58144" cache_creation="{'ephemeral_5m_input_tokens': 21983, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01MNjRXCpuSj4VF6VxfMfir6">
+Launching skill: dignified-python
+  </tool_result>
+  <user>Base directory for this skill: /home/runner/work/erk/erk/.claude/skills/dignified-python
+
+# Dignified Python Coding Standards
+
+## Core Knowledge (ALWAYS Loaded)
+
+@dignified-python-core.md
+
+## Version Detection
+
+**Identify the project's minimum Python version** by checking (in order):
+
+1. `pyproject.toml` - Look for `requires-python` field (e.g., `requires-python = "&gt;=3.12"`)
+2. `setup.py` or `setup.cfg` - Look for `python_requires`
+3. `.python-version` file - Contains version like `3.12` or `3.12.0`
+4. Default to Python 3.12 if no version specifier found
+
+**Once identified, load the appropriate version-specific file:**
+
+- Python 3.10: Load `versions/python-3.10.md`
+- Python 3.11: Load `versions/python-3.11.md`
+- Python 3.12: Load `versions/python-3.12.md`
+- Python 3.13: Load `versions/python-3.13.md`
+
+## Conditional Loading (Load Based on Task Patterns)
+
+Core files above cover 80%+ of Python code patterns. Only load these additional files when you detect specific patterns:
+
+Pattern detection examples:
+
+- If task mentions "click" or "CLI" -&gt; Load `cli-patterns.md`
+- If task mentions "subprocess" -&gt; Load `subprocess.md`
+
+## When to Read Each Reference Document
+
+The `references/` directory contains detailed guidance for specialized topics. Load these on-demand when you encounter relevant patterns:
+
+### `references/exception-handling.md`
+
+**Read when**:
+
+- Writing try/except blocks
+- Wrapping third-party APIs that may raise
+- Seeing or writing `from e` or `from None`
+- Unsure if LBYL alternative exists
+
+### `references/interfaces.md`
+
+**Read when**:
+
+- Creating ABC or Protocol classes
+- Writing @abstractmethod decorators
+- Designing gateway layer interfaces
+- Choosing between ABC and Protocol
+
+### `references/typing-advanced.md`
+
+**Read when**:
+
+- Using typing.cast()
+- Creating Literal type aliases
+- Narrowing types in conditional blocks
+
+### `references/module-design.md`
+
+**Read when**:
+
+- Creating new Python modules
+- Adding module-level code (beyond simple constants)
+- Using @cache decorator at module level
+- Seeing Path() or computation at module level
+- Considering inline imports
+
+### `references/api-design.md`
+
+**Read when**:
+
+- Adding default parameter values to functions
+- Defining functions with 5 or more parameters
+- Using ThreadPoolExecutor.submit()
+- Reviewing function signatures
+
+### `references/checklists.md`
+
+**Read when**:
+
+- Final review before committing Python code
+- Unsure if you've followed all rules
+- Need a quick lookup of requirements
+
+## How to Use This Skill
+
+1. **Core knowledge** is loaded automatically (LBYL, pathlib, basic imports, anti-patterns)
+2. **Version detection** happens once - identify the minimum Python version and load the appropriate version file
+3. **Reference documents** are loaded on-demand based on the triggers above
+4. **Additional patterns** may require extra loading (CLI patterns, subprocess)
+5. **Each file is self-contained** with complete guidance for its domain
+</user>
+  <assistant>
+
+Now let me check the Python version for this project and load the appropriate version file.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="1158" cache_read_input_tokens="80127" cache_creation="{'ephemeral_5m_input_tokens': 1158, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01M2hGFyyyiaojgXt6UCugdE">
+    <param name="pattern">requires-python</param>
+    <param name="path">/home/runner/work/erk/erk/pyproject.toml</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="1158" cache_read_input_tokens="80127" cache_creation="{'ephemeral_5m_input_tokens': 1158, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01M2hGFyyyiaojgXt6UCugdE">
+18:requires-python = "&gt;=3.11"
+  </tool_result>
+  <tool_use name="Read" id="toolu_019hPyJ3uof2JLJbN5qUsDjB">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/skills/dignified-python/dignified-python-core.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="152" cache_read_input_tokens="81285" cache_creation="{'ephemeral_5m_input_tokens': 152, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01YUANzq4Rf9MejTAX4NGT19">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/skills/dignified-python/versions/python-3.11.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="152" cache_read_input_tokens="81285" cache_creation="{'ephemeral_5m_input_tokens': 152, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_019hPyJ3uof2JLJbN5qUsDjB">
+     1→---
+     2→---
+     3→
+     4→# Dignified Python - Core Standards
+     5→
+     6→This document contains the core Python coding standards that apply to 80%+ of Python code. These principles are loaded with every skill invocation.
+     7→
+     8→For conditional loading of specialized patterns:
+     9→
+    10→- CLI development -&gt; Load `cli-patterns.md`
+    11→- Subprocess operations -&gt; Load `subprocess.md`
+    12→
+    13→For detailed reference material, see the "When to Read Each Reference" section in SKILL.md.
+    14→
+    15→---
+    16→
+    17→## The Cornerstone: LBYL Over EAFP
+    18→
+    19→**Look Before You Leap: Check conditions proactively, NEVER use exceptions for control flow.**
+    20→
+    21→This is the single most important rule in dignified Python. Every pattern below flows from this principle.
+    22→
+    23→```python
+    24→# CORRECT: Check first
+    25→if key in mapping:
+    26→    value = mapping[key]
+    27→    process(value)
+    28→
+    29→# WRONG: Exception as control flow
+    30→try:
+
+... [502 lines omitted] ...
+
+    33→except KeyError:
+    39→## Exception Handling Basics
+    45→LBYL means checking conditions before acting. EAFP (Easier to Ask for Forgiveness than Permission) means trying operations and catching exceptions. In dignified Python, we strongly prefer LBYL.
+    65→# WRONG: KeyError as control flow
+    68→except KeyError:
+    72→### When Exceptions ARE Acceptable
+    74→Exceptions are ONLY acceptable at:
+    76→1. **Error boundaries** (CLI/API level)
+    80→**Default: Let exceptions bubble up**
+    82→**When you must use try-except: scope the try block to the single operation that raises.** Don't wrap multiple operations in one try block — each handler should know exactly what failed. Use early returns to keep subsequent code flat.
+    84→For detailed exception handling patterns including minimal exception scope, B904 chaining, third-party API examples, and anti-patterns, see `references/exception-handling.md`.
+   118→- `.resolve()` raises `OSError` for non-existent paths
+   119→- `.is_relative_to()` raises `ValueError` for invalid comparisons
+   120→- Checking `.exists()` first avoids exceptions entirely (LBYL!)
+   135→# WRONG: Using exceptions for path validation
+   140→except (OSError, ValueError):
+   180→3. **Inline imports only for specific exceptions** (circular deps, TYPE_CHECKING, conditional features)
+   211→**Acceptable exceptions:**
+   480→    log.warning("Non-numeric plan_id")
+   494→- **Raise exception**: When invalid data indicates a programming error or corrupt state
+   521→- **Exception chaining (B904), minimal exception scope**: `references/exception-handling.md`
+  </tool_result>
+  <tool_result tool="toolu_01YUANzq4Rf9MejTAX4NGT19">
+     1→---
+     2→---
+     3→
+     4→# Type Annotations - Python 3.11
+     5→
+     6→This document provides complete, canonical type annotation guidance for Python 3.11.
+     7→
+     8→## Overview
+     9→
+    10→Python 3.11 builds on 3.10's type syntax with the addition of the `Self` type (PEP 673), making method chaining and builder patterns significantly cleaner. All modern syntax from 3.10 continues to work.
+    11→
+    12→**What's new in 3.11:**
+    13→
+    14→- `Self` type for self-returning methods (PEP 673)
+    15→- Variadic generics with TypeVarTuple (PEP 646)
+    16→- Significantly improved error messages
+    17→
+    18→**Available from 3.10:**
+    19→
+    20→- Built-in generic types: `list[T]`, `dict[K, V]`, etc. (PEP 585)
+    21→- Union types with `|` operator (PEP 604)
+    22→- Optional with `X | None`
+    23→
+    24→**What you need from typing module:**
+    25→
+    26→- `Self` for self-returning methods (NEW)
+    27→- `TypeVar` for generic functions/classes
+    28→- `Generic` for generic classes
+    29→- `Protocol` for structural typing (rare - prefer ABC)
+    30→- `TYPE_CHECKING` for conditional imports
+
+... [512 lines omitted] ...
+
+   370→            raise ValueError("FROM table not specified")
+   412→            raise FileNotFoundError(f"Config not found: {path}")
+   473→All code should pass type checking without errors.
+   528→2. **Enjoy improved error messages** (no code changes needed)
+  </tool_result>
+  <assistant>Good, I now have all the context I need. Let me start implementing. The plan says to use the Graceful Degradation Pattern with `subprocess.run` for calling `erk exec update-objective-node`. This is an optional operation that should fail open.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="11807" cache_read_input_tokens="81437" cache_creation="{'ephemeral_5m_input_tokens': 11807, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01DQA5vuVxWNgs38ai2mFx5U">
+    <param name="todos">[{'content': 'Read plan_save.py and understand current structure', 'status': 'completed', ...[truncated 888 chars]...CI checks'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="11807" cache_read_input_tokens="81437" cache_creation="{'ephemeral_5m_input_tokens': 11807, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01DQA5vuVxWNgs38ai2mFx5U">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Now let me implement the `_update_objective_nodes` helper and integrate it into `_save_as_planned_pr`. The plan specifies using `subprocess.run` with the Graceful Degradation pattern (explicit `check=True` with `CalledProcessError` handling). I need to add the `subprocess` import and the helper function.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="444" cache_read_input_tokens="93244" cache_creation="{'ephemeral_5m_input_tokens': 444, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01SHsM9fMrG8rK6YzAJhMMvz">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/plan_save.py</param>
+    <param name="old_string">import json
+from pathlib import Path
+
+import click</param>
+    <param name="new_string">import json
+import subprocess
+from pathlib import Path
+
+import click</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="444" cache_read_input_tokens="93244" cache_creation="{'ephemeral_5m_input_tokens': 444, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01SHsM9fMrG8rK6YzAJhMMvz">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/plan_save.py has been updated successfully.
+  </tool_result>
+  <assistant>Now add the `_update_objective_nodes` helper function. I'll place it before `_save_as_planned_pr`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="271" cache_read_input_tokens="93688" cache_creation="{'ephemeral_5m_input_tokens': 271, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01AR3im1AMejdQfBDUxMgaKe">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/plan_save.py</param>
+    <param name="old_string">def _save_as_planned_pr(</param>
+    <param name="new_string">def _update_objective_nodes(
+    *,
+    objective_issue: int,
+    node_ids: tuple[str, ......[truncated 1367 chars]...und, skipping objective update", err=True)
+        return False
+
+
+def _save_as_planned_pr(</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="271" cache_read_input_tokens="93688" cache_creation="{'ephemeral_5m_input_tokens': 271, 'ephemeral_1h_input_tokens': 0}" output_tokens="612" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01AR3im1AMejdQfBDUxMgaKe">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/plan_save.py has been updated successfully.
+  </tool_result>
+  <assistant>Now add the call to `_update_objective_nodes` after PR creation and before markers, and add `objective_updated` to the output. Let me add the call after `plan_number` is set (around line 315 in the original, now shifted):</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="661" cache_read_input_tokens="93959" cache_creation="{'ephemeral_5m_input_tokens': 661, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01Yam17G9v2owwFGRw53Z6YX">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/plan_save.py</param>
+    <param name="offset">350</param>
+    <param name="limit">70</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="661" cache_read_input_tokens="93959" cache_creation="{'ephemeral_5m_input_tokens': 661, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Yam17G9v2owwFGRw53Z6YX">
+   350→    prefixed_title = f"{title_tag} {title}"
+   351→
+   352→    # Create draft PR via backend
+   353→    backend = PlannedPRBackend(github, github_issues, time=RealTime())
+   354→    result = backend.create_plan(
+   355→        repo_root=repo_root,
+   356→        title=prefixed_title,
+   357→        content=plan_content,
+   358→        labels=tuple(labels),
+   359→        metadata=metadata,
+   360→        summary=summary or "",
+   361→    )
+   362→
+   363→    if not result.pr_id.isdigit():
+   364→        msg = f"Expected numeric pr_id from planned PR creation, got: {result.pr_id!r}"
+   365→        raise RuntimeError(msg)
+   366→    plan_number = int(result.pr_id)
+   367→
+   368→    # Create markers and snapshot
+   369→    snapshot_result: PlanSnapshot | None = None
+   370→    if session_id is not None:
+   371→        create_plan_saved_marker(session_id, repo_root, plan_number)
+   372→        create_plan_saved_issue_marker(session_id, repo_root, plan_number, title=title)
+   373→        create_plan_saved_branch_marker(session_id, repo_root, branch_name)
+   374→
+   375→        snapshot_result = _get_snapshot_result(
+   376→            session_id=session_id,
+   377→            plan_file=plan_file,
+   378→            cwd=cwd,
+   379→            claude_installation=claude_installation,
+
+... [45 lines omitted] ...
+  </tool_result>
+  <assistant>Now I'll add the call to `_update_objective_nodes` after `plan_number` is set, and add `objective_updated` to the JSON output:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1477" cache_read_input_tokens="94620" cache_creation="{'ephemeral_5m_input_tokens': 1477, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01LNMdK4hp9fFT3kHP5EJrXP">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/plan_save.py</param>
+    <param name="old_string">    plan_number = int(result.pr_id)
+
+    # Create markers and snapshot</param>
+    <param name="new_string">    plan_number = int(result.pr_id)
+
+    # Update objective roadmap nodes (fail-open)
+    ...[truncated 220 chars]...plan_number,
+            repo_root=repo_root,
+        )
+
+    # Create markers and snapshot</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1477" cache_read_input_tokens="94620" cache_creation="{'ephemeral_5m_input_tokens': 1477, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01LNMdK4hp9fFT3kHP5EJrXP">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/plan_save.py has been updated successfully.
+  </tool_result>
+  <assistant>Now add `objective_updated` to both output paths (display and JSON):</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="338" cache_read_input_tokens="96097" cache_creation="{'ephemeral_5m_input_tokens': 338, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01EPY4VQ8FqbUfFvThP7UPaK">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/plan_save.py</param>
+    <param name="old_string">            "plan_backend": "planned_pr",
+            "objective_issue": objective_issue,
+...[truncated 58 chars]...hived_to"] = str(snapshot_result.snapshot_dir)
+        click.echo(json.dumps(output_data))</param>
+    <param name="new_string">            "plan_backend": "planned_pr",
+            "objective_issue": objective_issue,
+...[truncated 110 chars]...hived_to"] = str(snapshot_result.snapshot_dir)
+        click.echo(json.dumps(output_data))</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="338" cache_read_input_tokens="96097" cache_creation="{'ephemeral_5m_input_tokens': 338, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01EPY4VQ8FqbUfFvThP7UPaK">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/plan_save.py has been updated successfully.
+  </tool_result>
+  <assistant>Good. Phases 1 and 2 are done. Now let me update the plan-save.md Step 6 to be verification-only:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="591" cache_read_input_tokens="96435" cache_creation="{'ephemeral_5m_input_tokens': 591, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01GvDyEk1H64Dcy5Sr1taqqg">
+    <param name="todos">[{'content': 'Read plan_save.py and understand current structure', 'status': 'completed', ...[truncated 892 chars]...CI checks'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="591" cache_read_input_tokens="96435" cache_creation="{'ephemeral_5m_input_tokens': 591, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01GvDyEk1H64Dcy5Sr1taqqg">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01G3hLsp74A63PMQs9bMKHBZ">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/commands/erk/plan-save.md</param>
+    <param name="old_string">### Step 6: Update Objective Roadmap (if objective linked)
+
+**Only run this step if `objec...[truncated 948 chars]...ully, just the roadmap tracking didn't update. The user can manually update the objective.</param>
+    <param name="new_string">### Step 6: Verify Objective Roadmap Update (if objective linked)
+
+**Only run this step if...[truncated 590 chars]...ive-node &lt;objective-issue&gt; --node &lt;node_id&gt; --pr "#&lt;plan_number&gt;" --status in_progress
+```</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="421" cache_read_input_tokens="97026" cache_creation="{'ephemeral_5m_input_tokens': 421, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01G3hLsp74A63PMQs9bMKHBZ">
+The file /home/runner/work/erk/erk/.claude/commands/erk/plan-save.md has been updated successfully.
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01Ax5ZezQND5SFaWvDKD9n9K">
+    <param name="todos">[{'content': 'Read plan_save.py and understand current structure', 'status': 'completed', ...[truncated 894 chars]...CI checks'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="645" cache_read_input_tokens="97447" cache_creation="{'ephemeral_5m_input_tokens': 645, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Ax5ZezQND5SFaWvDKD9n9K">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Now let me write the tests. The plan says:
+1. Test that `_update_objective_nodes` is called when `objective_issue` and `node_ids` are set
+2. Test that plan save succeeds even when objective update fails (fail-open)
+
+I need to add tests that mock `subprocess.run` since the helper calls it. Let me check the test patterns first:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="386" cache_read_input_tokens="98092" cache_creation="{'ephemeral_5m_input_tokens': 386, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01LPxPxkiuj5FByqFaZoSmjC">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_plan_save.py</param>
+    <param name="offset">234</param>
+    <param name="limit">40</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="386" cache_read_input_tokens="98092" cache_creation="{'ephemeral_5m_input_tokens': 386, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01LPxPxkiuj5FByqFaZoSmjC">
+   234→
+   235→def test_planned_pr_objective_issue_from_marker(
+   236→    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+   237→) -&gt; None:
+   238→    """Objective context marker links plan to objective via branch name, metadata, and ref.json."""
+   239→    fake_git = FakeGit(current_branches={tmp_path: "main"})
+   240→    ctx = _planned_pr_context(tmp_path=tmp_path, fake_git=fake_git, monkeypatch=monkeypatch)
+   241→    runner = CliRunner()
+   242→
+   243→    # Create objective-context marker
+   244→    session_id = "marker-session"
+   245→    marker_dir = tmp_path / ".erk" / "scratch" / "sessions" / session_id
+   246→    marker_dir.mkdir(parents=True)
+   247→    (marker_dir / "objective-context.marker").write_text("123", encoding="utf-8")
+   248→
+   249→    result = runner.invoke(
+   250→        plan_save,
+   251→        ["--format", "json", "--session-id", session_id, "--branch-slug", "test-slug"],
+   252→        obj=ctx,
+   253→    )
+   254→
+   255→    assert result.exit_code == 0, f"Failed: {result.output}"
+   256→    # Parse JSON from output (skip stderr lines mixed in by CliRunner)
+   257→    json_line = next(line for line in result.output.strip().splitlines() if line.startswith("{"))
+   258→    output = json.loads(json_line)
+   259→    assert output["success"] is True
+   260→    # Branch name should include objective ID
+   261→    assert "O123" in output["branch_name"]
+   262→    # objective_issue in JSON output
+   263→    assert output["objective_issue"] == 123
+
+... [15 lines omitted] ...
+  </tool_result>
+  <assistant>Now I'll add the tests at the end of the test file. I need to test:
+1. `_update_objective_nodes` is called when objective_issue and node_ids are set, and `objective_updated` is true
+2. Plan save succeeds even when objective update fails (fail-open), `objective_updated` is false
+3. `objective_updated` is false when no objective is linked</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="961" cache_read_input_tokens="98478" cache_creation="{'ephemeral_5m_input_tokens': 961, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+</session>

@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "pr_number": 9157,
+  "sessions": [
+    {
+      "session_id": "69fb417f-6e08-4df6-bcc0-6a2e71ce805a",
+      "stage": "impl",
+      "source": "local",
+      "uploaded_at": "2026-03-10T12:59:35.335329+00:00",
+      "files": [
+        "impl-69fb417f-6e08-4df6-bcc0-6a2e71ce805a-69fb417f-6e08-4df6-bcc0-6a2e71ce805a-part1.xml",
+        "impl-69fb417f-6e08-4df6-bcc0-6a2e71ce805a-69fb417f-6e08-4df6-bcc0-6a2e71ce805a-part2.xml",
+        "impl-69fb417f-6e08-4df6-bcc0-6a2e71ce805a-69fb417f-6e08-4df6-bcc0-6a2e71ce805a-part3.xml",
+        "impl-69fb417f-6e08-4df6-bcc0-6a2e71ce805a-69fb417f-6e08-4df6-bcc0-6a2e71ce805a-part4.xml",
+        "impl-69fb417f-6e08-4df6-bcc0-6a2e71ce805a-69fb417f-6e08-4df6-bcc0-6a2e71ce805a-part5.xml",
+        "impl-69fb417f-6e08-4df6-bcc0-6a2e71ce805a-69fb417f-6e08-4df6-bcc0-6a2e71ce805a-part6.xml"
+      ],
+      "user_turns": 3,
+      "duration_minutes": 5,
+      "raw_size_kb": 680,
+      "xml_size_kb": 99,
+      "git_branch": "plnd/O9109-automate-obj-node-up-03-10-1252"
+    }
+  ]
+}
