@@ -65,7 +65,7 @@ The legacy fallback maps old fields to new PlanRef structure:
 
 ### `has_plan_ref(impl_dir) -> bool`
 
-Returns `True` if either `plan-ref.json` or legacy `issue.json` exists.
+Returns `True` if either `plan-ref.json` or `ref.json` exists.
 
 ### `validate_plan_linkage(impl_dir, branch_name) -> str | None`
 
