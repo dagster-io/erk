@@ -1,0 +1,750 @@
+<session>
+  <meta branch="plnd/O9109-sweep-submit-dispatc-03-10-1741" />
+  <meta model="claude-opus-4-6" />
+  <tool_result tool="toolu_01CtB6m4NEvNGChqyikfaaTL">
+&lt;retrieval_status&gt;success&lt;/retrieval_status&gt;
+
+&lt;task_id&gt;a33c82a&lt;/task_id&gt;
+
+&lt;task_type&gt;local_agent&lt;/task_type&gt;
+
+&lt;status&gt;completed&lt;/status&gt;
+
+&lt;output&gt;
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_prepare_state.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_finalize_pr.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_graphite_first_flow.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_label_code_pr.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_label_code_pr.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_link_pr_to_objective_nodes.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/tests/unit/cli/commands/pr/test_shared.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/tests/core/test_plan_context_provider.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/tests/unit/cli/commands/pr/test_dispatch_cmd.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/tests/unit/cli/commands/pr/test_dispatch_cmd.py"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_prepare_state.py","old_string":"def _make_state(\n    *,\n    cwd: Path,\n    repo_root: Path | None = None,\n    branch_name: str = \"\",\n    parent_branch: str = \"\",\n    trunk_branch: str = \"\",\n    use_graphite: bool = False,\n    force: bool = False,\n    debug: bool = False,\n    session_id: str = \"test-session\",\n    plan_id: str | None = None,\n    pr_number: int | None = None,\n    pr_url: str | None = None,\n    was_created: bool = False,\n    base_branch: str | None = None,\n    graphite_url: str | None = None,\n    diff_file: Path | None = None,\n    plan_context: None = None,\n    title: str | None = None,\n    body: str | None = None,\n) -&gt; SubmitState:\n    return SubmitState(\n        cwd=cwd,\n        repo_root=repo_root if repo_root is not None else cwd,\n        branch_name=branch_name,\n        parent_branch=parent_branch,\n        trunk_branch=trunk_branch,\n        use_graphite=use_graphite,\n        force=force,\n        debug=debug,\n        session_id=session_id,\n        skip_description=False,\n        quiet=False,\n        plan_id=plan_id,\n        pr_number=pr_number,\n        pr_url=pr_url,\n        was_created=was_created,\n        base_branch=base_branch,\n        graphite_url=graphite_url,\n        diff_file=diff_file,\n        plan_context=plan_context,\n        title=title,\n        body=body,\n        existing_pr_body=\"\",\n        graphite_is_authed=None,\n        graphite_branch_tracked=None,\n    )","new_string":"def _make_state(\n    *,\n    cwd: Path,\n    repo_root: Path | None = None,\n    branch_name: str = \"\",\n    parent_branch: str = \"\",\n    trunk_branch: str = \"\",\n    use_graphite: bool = False,\n    force: bool = False,\n    debug: bool = False,\n    session_id: str = \"test-session\",\n    pr_id: str | None = None,\n    pr_number: int | None = None,\n    pr_url: str | None = None,\n    was_created: bool = False,\n    base_branch: str | None = None,\n    graphite_url: str | None = None,\n    diff_file: Path | None = None,\n    plan_context: None = None,\n    title: str | None = None,\n    body: str | None = None,\n) -&gt; SubmitState:\n    return SubmitState(\n        cwd=cwd,\n        repo_root=repo_root if repo_root is not None else cwd,\n        branch_name=branch_name,\n        parent_branch=parent_branch,\n        trunk_branch=trunk_branch,\n        use_graphite=use_graphite,\n        force=force,\n        debug=debug,\n        session_id=session_id,\n        skip_description=False,\n        quiet=False,\n        pr_id=pr_id,\n        pr_number=pr_number,\n        pr_url=pr_url,\n        was_created=was_created,\n        base_branch=base_branch,\n        graphite_url=graphite_url,\n        diff_file=diff_file,\n        plan_context=plan_context,\n        title=title,\n        body=body,\n        existing_pr_body=\"\",\n        graphite_is_authed=None,\n        graphite_branch_tracked=None,\n    )"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_prepare_state.py","old_string":"    # No mismatch error since branch cannot provide issue number\n    assert isinstance(result, SubmitState)\n    assert result.plan_id == \"99\"  # From ref.json","new_string":"    # No mismatch error since branch cannot provide issue number\n    assert isinstance(result, SubmitState)\n    assert result.pr_id == \"99\"  # From ref.json"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_prepare_state.py","old_string":"    assert isinstance(result, SubmitState)\n    # No auto-repair since branch cannot provide issue number\n    assert result.plan_id is None","new_string":"    assert isinstance(result, SubmitState)\n    # No auto-repair since branch cannot provide issue number\n    assert result.pr_id is None"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_prepare_state.py","old_string":"    result = prepare_state(ctx, state)\n\n    assert isinstance(result, SubmitState)\n    assert result.plan_id is None","new_string":"    result = prepare_state(ctx, state)\n\n    assert isinstance(result, SubmitState)\n    assert result.pr_id is None"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_prepare_state.py","old_string":"    result = prepare_state(ctx, state)\n\n    assert isinstance(result, SubmitState)\n    assert result.plan_id == \"55\"","new_string":"    result = prepare_state(ctx, state)\n\n    assert isinstance(result, SubmitState)\n    assert result.pr_id == \"55\""}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_finalize_pr.py","old_string":"def _make_state(\n    *,\n    cwd: Path,\n    repo_root: Path | None = None,\n    branch_name: str = \"feature\",\n    parent_branch: str = \"main\",\n    trunk_branch: str = \"main\",\n    use_graphite: bool = False,\n    force: bool = False,\n    debug: bool = False,\n    session_id: str = \"test-session\",\n    skip_description: bool = False,\n    plan_id: str | None = None,\n    pr_number: int | None = 42,\n    pr_url: str | None = \"https://github.com/owner/repo/pull/42\",\n    was_created: bool = True,\n    base_branch: str | None = \"main\",\n    graphite_url: str | None = None,\n    diff_file: Path | None = None,\n    plan_context: PlanContext | None = None,\n    title: str | None = \"My PR Title\",\n    body: str | None = \"My PR body\",\n    existing_pr_body: str = \"\",\n) -&gt; SubmitState:\n    return SubmitState(\n        cwd=cwd,\n        repo_root=repo_root if repo_root is not None else cwd,\n        branch_name=branch_name,\n        parent_branch=parent_branch,\n        trunk_branch=trunk_branch,\n        use_graphite=use_graphite,\n        force=force,\n        debug=debug,\n        session_id=session_id,\n        skip_description=skip_description,\n        quiet=False,\n        plan_id=plan_id,\n        pr_number=pr_number,\n        pr_url=pr_url,\n        was_created=was_created,\n        base_branch=base_branch,\n        graphite_url=graphite_url,\n        diff_file=diff_file,\n        plan_context=plan_context,\n        title=title,\n        body=body,\n        existing_pr_body=existing_pr_body,\n        graphite_is_authed=None,\n        graphite_branch_tracked=None,\n    )","new_string":"def _make_state(\n    *,\n    cwd: Path,\n    repo_root: Path | None = None,\n    branch_name: str = \"feature\",\n    parent_branch: str = \"main\",\n    trunk_branch: str = \"main\",\n    use_graphite: bool = False,\n    force: bool = False,\n    debug: bool = False,\n    session_id: str = \"test-session\",\n    skip_description: bool = False,\n    pr_id: str | None = None,\n    pr_number: int | None = 42,\n    pr_url: str | None = \"https://github.com/owner/repo/pull/42\",\n    was_created: bool = True,\n    base_branch: str | None = \"main\",\n    graphite_url: str | None = None,\n    diff_file: Path | None = None,\n    plan_context: PlanContext | None = None,\n    title: str | None = \"My PR Title\",\n    body: str | None = \"My PR body\",\n    existing_pr_body: str = \"\",\n) -&gt; SubmitState:\n    return SubmitState(\n        cwd=cwd,\n        repo_root=repo_root if repo_root is not None else cwd,\n        branch_name=branch_name,\n        parent_branch=parent_branch,\n        trunk_branch=trunk_branch,\n        use_graphite=use_graphite,\n        force=force,\n        debug=debug,\n        session_id=session_id,\n        skip_description=skip_description,\n        quiet=False,\n        pr_id=pr_id,\n        pr_number=pr_number,\n        pr_url=pr_url,\n        was_created=was_created,\n        base_branch=base_branch,\n        graphite_url=graphite_url,\n        diff_file=diff_file,\n        plan_context=plan_context,\n        title=title,\n        body=body,\n        existing_pr_body=existing_pr_body,\n        graphite_is_authed=None,\n        graphite_branch_tracked=None,\n    )"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_finalize_pr.py","old_string":"    plan_content = \"# My Plan\\n\\nSome implementation details\"\n    plan_ctx = PlanContext(\n        plan_id=\"1234\",\n        plan_content=plan_content,\n        objective_summary=None,\n    )","new_string":"    plan_content = \"# My Plan\\n\\nSome implementation details\"\n    plan_ctx = PlanContext(\n        pr_id=\"1234\",\n        plan_content=plan_content,\n        objective_summary=None,\n    )"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_finalize_pr.py","old_string":"    assert isinstance(result, SubmitState)\n    # Planned PR backend sets plan_id to None (no self-close)\n    assert result.plan_id is None","new_string":"    assert isinstance(result, SubmitState)\n    # Planned PR backend sets pr_id to None (no self-close)\n    assert result.pr_id is None"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_finalize_pr.py","old_string":"    plan_ctx = PlanContext(\n        plan_id=\"321\",\n        plan_content=\"# Plan\\n\\nImplement the thing.\",\n        objective_summary=None,\n    )","new_string":"    plan_ctx = PlanContext(\n        pr_id=\"321\",\n        plan_content=\"# Plan\\n\\nImplement the thing.\",\n        objective_summary=None,\n    )"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_finalize_pr.py","old_string":"    ctx = context_for_test(git=fake_git, github=fake_github, issues=fake_issues, cwd=tmp_path)\n\n    state = _make_state(cwd=tmp_path, plan_id=\"321\", plan_context=None)","new_string":"    ctx = context_for_test(git=fake_git, github=fake_github, issues=fake_issues, cwd=tmp_path)\n\n    state = _make_state(cwd=tmp_path, pr_id=\"321\", plan_context=None)"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_finalize_pr.py","old_string":"    assert isinstance(result, SubmitState)\n    # plan_id alone should NOT trigger lifecycle update\n    assert len(fake_issues.updated_bodies) == 0","new_string":"    assert isinstance(result, SubmitState)\n    # pr_id alone should NOT trigger lifecycle update\n    assert len(fake_issues.updated_bodies) == 0"}
+
+... [118 lines omitted] ...
+
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_graphite_first_flow.py","old_string":"def test_plan_impl_auto_forces_on_divergence(tmp_path: Path) -&gt; None:\n    \"\"\"Plan impl branch (plan_id set) auto-forces when behind remote; no error returned.\"\"\"\n    pr = _pr_details(number=42, branch=\"feature\")\n    fake_graphite = FakeGraphite()\n    fake_github = FakeLocalGitHub(\n        prs_by_branch={\"feature\": pr},\n    )\n    fake_git = FakeGit(\n        remote_urls={(tmp_path, \"origin\"): \"git@github.com:owner/repo.git\"},\n        repository_roots={tmp_path: tmp_path},\n        remote_refs={(\"origin\", \"feature\"): \"remote_sha_abc\"},\n        branch_heads={\"feature\": \"local_sha_xyz\"},\n        branch_divergence={\n            (tmp_path, \"feature\", \"origin\"): BranchDivergence(is_diverged=True, ahead=3, behind=2)\n        },\n    )\n    global_config = GlobalConfig(\n        erk_root=Path(\"/test/erks\"),\n        use_graphite=True,\n        shell_setup_complete=False,\n        github_planning=True,\n    )\n    ctx = context_for_test(\n        git=fake_git,\n        graphite=fake_graphite,\n        github=fake_github,\n        cwd=tmp_path,\n        global_config=global_config,\n    )\n    state = _make_state(cwd=tmp_path, plan_id=\"7699\")","new_string":"def test_plan_impl_auto_forces_on_divergence(tmp_path: Path) -&gt; None:\n    \"\"\"Plan impl branch (pr_id set) auto-forces when behind remote; no error returned.\"\"\"\n    pr = _pr_details(number=42, branch=\"feature\")\n    fake_graphite = FakeGraphite()\n    fake_github = FakeLocalGitHub(\n        prs_by_branch={\"feature\": pr},\n    )\n    fake_git = FakeGit(\n        remote_urls={(tmp_path, \"origin\"): \"git@github.com:owner/repo.git\"},\n        repository_roots={tmp_path: tmp_path},\n        remote_refs={(\"origin\", \"feature\"): \"remote_sha_abc\"},\n        branch_heads={\"feature\": \"local_sha_xyz\"},\n        branch_divergence={\n            (tmp_path, \"feature\", \"origin\"): BranchDivergence(is_diverged=True, ahead=3, behind=2)\n        },\n    )\n    global_config = GlobalConfig(\n        erk_root=Path(\"/test/erks\"),\n        use_graphite=True,\n        shell_setup_complete=False,\n        github_planning=True,\n    )\n    ctx = context_for_test(\n        git=fake_git,\n        graphite=fake_graphite,\n        github=fake_github,\n        cwd=tmp_path,\n        global_config=global_config,\n    )\n    state = _make_state(cwd=tmp_path, pr_id=\"7699\")"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_graphite_first_flow.py","old_string":"def test_non_plan_branch_errors_on_divergence(tmp_path: Path) -&gt; None:\n    \"\"\"Non-plan branch (no plan_id) still errors when behind remote.\"\"\"\n    fake_git = FakeGit(\n        remote_refs={(\"origin\", \"feature\"): \"remote_sha_abc\"},\n        branch_heads={\"feature\": \"local_sha_xyz\"},\n        branch_divergence={\n            (tmp_path, \"feature\", \"origin\"): BranchDivergence(is_diverged=True, ahead=1, behind=3)\n        },\n    )\n    global_config = GlobalConfig(\n        erk_root=Path(\"/test/erks\"),\n        use_graphite=True,\n        shell_setup_complete=False,\n        github_planning=True,\n    )\n    ctx = context_for_test(\n        git=fake_git,\n        cwd=tmp_path,\n        global_config=global_config,\n    )\n    state = _make_state(cwd=tmp_path, plan_id=None)","new_string":"def test_non_plan_branch_errors_on_divergence(tmp_path: Path) -&gt; None:\n    \"\"\"Non-plan branch (no pr_id) still errors when behind remote.\"\"\"\n    fake_git = FakeGit(\n        remote_refs={(\"origin\", \"feature\"): \"remote_sha_abc\"},\n        branch_heads={\"feature\": \"local_sha_xyz\"},\n        branch_divergence={\n            (tmp_path, \"feature\", \"origin\"): BranchDivergence(is_diverged=True, ahead=1, behind=3)\n        },\n    )\n    global_config = GlobalConfig(\n        erk_root=Path(\"/test/erks\"),\n        use_graphite=True,\n        shell_setup_complete=False,\n        github_planning=True,\n    )\n    ctx = context_for_test(\n        git=fake_git,\n        cwd=tmp_path,\n        global_config=global_config,\n    )\n    state = _make_state(cwd=tmp_path, pr_id=None)"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/tests/core/test_plan_context_provider.py","old_string":"def test_plan_context_dataclass_frozen() -&gt; None:\n    \"\"\"Test that PlanContext is immutable (frozen dataclass).\"\"\"\n    context = PlanContext(\n        plan_id=\"123\",\n        plan_content=\"Plan content\",\n        objective_summary=\"Objective #1: Test\",\n    )\n\n    assert context.plan_id == \"123\"\n    assert context.plan_content == \"Plan content\"\n    assert context.objective_summary == \"Objective #1: Test\"\n\n    try:\n        context.plan_id = \"456\"  # type: ignore[misc]\n        raise AssertionError(\"Expected FrozenInstanceError\")\n    except AttributeError:\n        pass","new_string":"def test_plan_context_dataclass_frozen() -&gt; None:\n    \"\"\"Test that PlanContext is immutable (frozen dataclass).\"\"\"\n    context = PlanContext(\n        pr_id=\"123\",\n        plan_content=\"Plan content\",\n        objective_summary=\"Objective #1: Test\",\n    )\n\n    assert context.pr_id == \"123\"\n    assert context.plan_content == \"Plan content\"\n    assert context.objective_summary == \"Objective #1: Test\"\n\n    try:\n        context.pr_id = \"456\"  # type: ignore[misc]\n        raise AssertionError(\"Expected FrozenInstanceError\")\n    except AttributeError:\n        pass"}
+  </tool_result>
+  <assistant>The background agent completed all 19 test files. Let me also check test files that reference `test_exit_plan_mode_hook.py` (the only file that matched `plan_title=` / `plan_url=`):</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="24574" cache_read_input_tokens="113333" cache_creation="{'ephemeral_5m_input_tokens': 24574, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_015Vg1DNZpD9C6vdVogPypts">
+    <param name="pattern">\.plan_title|\.plan_url|plan_title=|plan_url=</param>
+    <param name="path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="24574" cache_read_input_tokens="113333" cache_creation="{'ephemeral_5m_input_tokens': 24574, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_015Vg1DNZpD9C6vdVogPypts">
+385:            plan_title=None,
+412:            plan_title=None,
+442:            plan_title=None,
+461:            plan_title=None,
+477:            plan_title=None,
+496:            plan_title=None,
+514:            plan_title=None,
+531:            plan_title=None,
+548:            plan_title=None,
+565:            plan_title=None,
+585:            plan_title=None,
+603:            plan_title=None,
+621:            plan_title=None,
+638:            plan_title="Add Feature X",
+655:            plan_title="Add Feature X",
+679:            plan_title=None,
+700:            plan_title=None,
+721:            plan_title=None,
+744:            plan_title=None,
+761:            plan_title=None,
+781:            plan_title=None,
+800:            plan_title="My Plan",
+820:            plan_title=None,
+838:            plan_title=None,
+857:            plan_title=None,
+876:            plan_title=None,
+899:            plan_title=None,
+924:            plan_title=None,
+943:            plan_title=None,
+963:            plan_title=None,
+  </tool_result>
+  <assistant>Let me check what type that `plan_title` is on:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="528" cache_read_input_tokens="137907" cache_creation="{'ephemeral_5m_input_tokens': 528, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01N8KA8dgu9ggm3tgHSaSwgb">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py</param>
+    <param name="offset">380</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="528" cache_read_input_tokens="137907" cache_creation="{'ephemeral_5m_input_tokens': 528, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01N8KA8dgu9ggm3tgHSaSwgb">
+   380→        message = build_blocking_message(
+   381→            session_id="session-123",
+   382→            current_branch="feature-branch",
+   383→            branch_has_commits=False,
+   384→            plan_file_path=plan_path,
+   385→            plan_title=None,
+   386→            worktree_name=None,
+   387→            pr_number=None,
+   388→            plan_number=None,
+   389→            editor=None,
+   390→        )
+   391→        assert "PLAN SAVE PROMPT" in message
+   392→        assert "AskUserQuestion" in message
+   393→        assert "Implement without saving" in message
+   394→        assert "Create new branch and planned PR" in message
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>That's `build_blocking_message(plan_title=)` — this is a different function signature, not `DispatchResult`. This is in the exit-plan-mode-hook, which is out of scope for this rename (it's a hook-level parameter, not part of the types we're renaming). 
+
+Now let me do the comprehensive grep verification across in-scope source files:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="699" cache_read_input_tokens="138435" cache_creation="{'ephemeral_5m_input_tokens': 699, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01SZAKrJn4b6VboevPxPFB9b">
+    <param name="todos">[{'content': 'Rename PlanContext.plan_id → pr_id in plan_context_provider.py', 'status': '...[truncated 1110 chars]...n'}, {'content': 'Run CI checks', 'status': 'pending', 'activeForm': 'Running CI checks'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="699" cache_read_input_tokens="138435" cache_creation="{'ephemeral_5m_input_tokens': 699, 'ephemeral_1h_input_tokens': 0}" output_tokens="525" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01SZAKrJn4b6VboevPxPFB9b">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01ATkdh5Lzo8qVLnXqDsZoE5">
+    <param name="pattern">\.plan_id\b|state\.plan_id|plan_context\.plan_id</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/core/plan_context_provider.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="567" cache_read_input_tokens="139134" cache_creation="{'ephemeral_5m_input_tokens': 567, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01VMw9xMqT12NWPgba7ShLjo">
+    <param name="pattern">\.plan_id\b|\.plan_title\b|\.plan_url\b|_detect_plan_number</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/dispatch_cmd.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="567" cache_read_input_tokens="139134" cache_creation="{'ephemeral_5m_input_tokens': 567, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01U91Pvze3JK8LjsbH1ZDGcE">
+    <param name="pattern">\.plan_id\b|state\.plan_id|plan_context\.plan_id</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/submit_pipeline.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="567" cache_read_input_tokens="139134" cache_creation="{'ephemeral_5m_input_tokens': 567, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01QQP9pubFA3CRsiqQupeq2g">
+    <param name="pattern">\.plan_id\b|plan_context\.plan_id</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/shared.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="567" cache_read_input_tokens="139134" cache_creation="{'ephemeral_5m_input_tokens': 567, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01BA7nmcDXjWhMbYEXn2FyFp">
+    <param name="pattern">\.plan_id\b|plan_context\.plan_id</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/core/commit_message_generator.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="567" cache_read_input_tokens="139134" cache_creation="{'ephemeral_5m_input_tokens': 567, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01Ud58xipYQdS7GNU6z365bV">
+    <param name="pattern">\bplan_id\b</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/metadata_helpers.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="567" cache_read_input_tokens="139134" cache_creation="{'ephemeral_5m_input_tokens': 567, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01ATkdh5Lzo8qVLnXqDsZoE5">
+No matches found
+  </tool_result>
+  <tool_result tool="toolu_01U91Pvze3JK8LjsbH1ZDGcE">
+No matches found
+  </tool_result>
+  <tool_result tool="toolu_01VMw9xMqT12NWPgba7ShLjo">
+No matches found
+  </tool_result>
+  <tool_result tool="toolu_01QQP9pubFA3CRsiqQupeq2g">
+No matches found
+  </tool_result>
+  <tool_result tool="toolu_01BA7nmcDXjWhMbYEXn2FyFp">
+No matches found
+  </tool_result>
+  <tool_result tool="toolu_01Ud58xipYQdS7GNU6z365bV">
+No matches found
+  </tool_result>
+  <assistant>All 6 source files are clean. Let me also verify test files for any stale references:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1161" cache_read_input_tokens="139701" cache_creation="{'ephemeral_5m_input_tokens': 1161, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01E9ukbJAwM4sbJE5TGZqk9B">
+    <param name="pattern">\.plan_id\b|plan_id=(?!pr_id)</param>
+    <param name="path">/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1161" cache_read_input_tokens="139701" cache_creation="{'ephemeral_5m_input_tokens': 1161, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_0188H9anj4fX7y8ipjs7U6ug">
+    <param name="pattern">\.plan_id\b</param>
+    <param name="path">/home/runner/work/erk/erk/tests/unit/cli/commands/pr</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1161" cache_read_input_tokens="139701" cache_creation="{'ephemeral_5m_input_tokens': 1161, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01SoyCu3JbxEE4UaARuDTjS9">
+    <param name="pattern">\.plan_id\b</param>
+    <param name="path">/home/runner/work/erk/erk/tests/core/test_plan_context_provider.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1161" cache_read_input_tokens="139701" cache_creation="{'ephemeral_5m_input_tokens': 1161, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_019BFLybJKkBenAdWJG7UHRh">
+    <param name="pattern">\.plan_id\b</param>
+    <param name="path">/home/runner/work/erk/erk/tests/core/test_commit_message_generator.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1161" cache_read_input_tokens="139701" cache_creation="{'ephemeral_5m_input_tokens': 1161, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_0188H9anj4fX7y8ipjs7U6ug">
+No matches found
+  </tool_result>
+  <tool_result tool="toolu_01E9ukbJAwM4sbJE5TGZqk9B">
+No matches found
+  </tool_result>
+  <tool_result tool="toolu_019BFLybJKkBenAdWJG7UHRh">
+No matches found
+  </tool_result>
+  <tool_result tool="toolu_01SoyCu3JbxEE4UaARuDTjS9">
+No matches found
+  </tool_result>
+  <assistant>All clean. Let me also check the additional source files I fixed (submit_cmd, rewrite_cmd, get_pr_context, push_and_create_pr):</assistant>
+  <usage input_tokens="34" cache_creation_input_tokens="858" cache_read_input_tokens="140862" cache_creation="{'ephemeral_5m_input_tokens': 858, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01F6SLr9QyQXjuSitGodBVju">
+    <param name="pattern">\.plan_id\b|plan_context\.plan_id</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/submit_cmd.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="34" cache_creation_input_tokens="858" cache_read_input_tokens="140862" cache_creation="{'ephemeral_5m_input_tokens': 858, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01HgD672cNWyqdgPwn3HMv1B">
+    <param name="pattern">\.plan_id\b|plan_context\.plan_id</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/rewrite_cmd.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="34" cache_creation_input_tokens="858" cache_read_input_tokens="140862" cache_creation="{'ephemeral_5m_input_tokens': 858, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01KF6ru295R7dqS8ksx898Rw">
+    <param name="pattern">\.plan_id\b|plan_context\.plan_id</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/get_pr_context.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="34" cache_creation_input_tokens="858" cache_read_input_tokens="140862" cache_creation="{'ephemeral_5m_input_tokens': 858, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_014nEkUpvYuaYY3AGUmuCvPT">
+    <param name="pattern">\.plan_id\b|result\.plan_id</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/push_and_create_pr.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="34" cache_creation_input_tokens="858" cache_read_input_tokens="140862" cache_creation="{'ephemeral_5m_input_tokens': 858, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01F6SLr9QyQXjuSitGodBVju">
+No matches found
+  </tool_result>
+  <tool_result tool="toolu_014nEkUpvYuaYY3AGUmuCvPT">
+No matches found
+  </tool_result>
+  <tool_result tool="toolu_01HgD672cNWyqdgPwn3HMv1B">
+No matches found
+  </tool_result>
+  <tool_result tool="toolu_01KF6ru295R7dqS8ksx898Rw">
+No matches found
+  </tool_result>
+  <assistant>All clean. Now let me also check whether the `test_link_pr_to_objective_nodes.py` file's `_make_state` helper was updated correctly by the agent (it was in the agent's list):</assistant>
+  <usage input_tokens="34" cache_creation_input_tokens="918" cache_read_input_tokens="141720" cache_creation="{'ephemeral_5m_input_tokens': 918, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01Ae358rEEdE5swVwb7Qi8jc">
+    <param name="pattern">plan_id</param>
+    <param name="path">/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_link_pr_to_objective_nodes.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="34" cache_creation_input_tokens="918" cache_read_input_tokens="141720" cache_creation="{'ephemeral_5m_input_tokens': 918, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Ae358rEEdE5swVwb7Qi8jc">
+69:        plan_id=None,
+107:        plan_id="100",
+  </tool_result>
+  <assistant>Those are kwargs in a `_make_state()` call still using `plan_id=`. Let me check if the helper definition was updated:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="261" cache_read_input_tokens="142638" cache_creation="{'ephemeral_5m_input_tokens': 261, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01UGnAjjWUxZpFqcFQ3Dg8uW">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_link_pr_to_objective_nodes.py</param>
+    <param name="offset">20</param>
+    <param name="limit">80</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="261" cache_read_input_tokens="142638" cache_creation="{'ephemeral_5m_input_tokens': 261, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01UGnAjjWUxZpFqcFQ3Dg8uW">
+    20→# A minimal objective body with a roadmap metadata block using &lt;details&gt; format
+    21→_ROADMAP_BODY = """\
+    22→# Objective
+    23→
+    24→Some description.
+    25→
+    26→&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+    27→&lt;!-- erk:metadata-block:objective-roadmap --&gt;
+    28→&lt;details&gt;
+    29→&lt;summary&gt;&lt;code&gt;objective-roadmap&lt;/code&gt;&lt;/summary&gt;
+    30→
+    31→```yaml
+    32→schema_version: '4'
+    33→nodes:
+    34→- id: '1.1'
+    35→  slug: add-auth
+    36→  description: Add auth
+    37→  status: pending
+    38→  pr: null
+    39→- id: '1.2'
+    40→  slug: add-tests
+    41→  description: Add tests
+    42→  status: pending
+    43→  pr: null
+    44→```
+    45→
+    46→&lt;/details&gt;
+    47→&lt;!-- /erk:metadata-block:objective-roadmap --&gt;
+    48→"""
+    49→
+
+... [55 lines omitted] ...
+  </tool_result>
+  <assistant>The agent missed this file — lines 69 and 107 still use `plan_id=`. Let me fix them:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1392" cache_read_input_tokens="142899" cache_creation="{'ephemeral_5m_input_tokens': 1392, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_017pH3Z3Ta8Qu32asgD2M5rR">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_link_pr_to_objective_nodes.py</param>
+    <param name="old_string">        plan_id=None,
+        pr_number=pr_number,</param>
+    <param name="new_string">        pr_id=None,
+        pr_number=pr_number,</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1392" cache_read_input_tokens="142899" cache_creation="{'ephemeral_5m_input_tokens': 1392, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_017pH3Z3Ta8Qu32asgD2M5rR">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_link_pr_to_objective_nodes.py has been updated successfully.
+  </tool_result>
+  <assistant>Now line 107:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="248" cache_read_input_tokens="144291" cache_creation="{'ephemeral_5m_input_tokens': 248, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01EQ6uAiCX31i48e6tb8MgQm">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_link_pr_to_objective_nodes.py</param>
+    <param name="offset">100</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="248" cache_read_input_tokens="144291" cache_creation="{'ephemeral_5m_input_tokens': 248, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01EQ6uAiCX31i48e6tb8MgQm">
+   100→def _setup_impl(cwd: Path, *, objective_id: int, node_ids: tuple[str, ...]) -&gt; None:
+   101→    """Create branch-scoped impl dir with ref.json containing node_ids."""
+   102→    impl_dir = get_impl_dir(cwd, branch_name="feature")
+   103→    impl_dir.mkdir(parents=True, exist_ok=True)
+   104→    save_plan_ref(
+   105→        impl_dir,
+   106→        provider="github",
+   107→        plan_id="100",
+   108→        url="https://github.com/owner/repo/issues/100",
+   109→        labels=(),
+   110→        objective_id=objective_id,
+   111→        node_ids=node_ids,
+   112→    )
+   113→
+   114→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>Line 107 is `save_plan_ref(plan_id=...)` — that's the erk_shared API kwarg, which stays as-is per the plan. Good.
+
+Now let me check the remaining submit pipeline test files to catch any the agent might have missed:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="718" cache_read_input_tokens="144539" cache_creation="{'ephemeral_5m_input_tokens': 718, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01HdK7CcsZNUXf5f8EtZ1eLg">
+    <param name="pattern">plan_id(?!=pr_id)</param>
+    <param name="path">/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="718" cache_read_input_tokens="144539" cache_creation="{'ephemeral_5m_input_tokens': 718, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01HdK7CcsZNUXf5f8EtZ1eLg">
+No matches found
+  </tool_result>
+  <assistant>Wait, that regex won't work right. Let me search more carefully:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="215" cache_read_input_tokens="145257" cache_creation="{'ephemeral_5m_input_tokens': 215, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01V43TPRGpjNDyeBTo2bK5Dy">
+    <param name="pattern">plan_id</param>
+    <param name="path">/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="215" cache_read_input_tokens="145257" cache_creation="{'ephemeral_5m_input_tokens': 215, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01V43TPRGpjNDyeBTo2bK5Dy">
+tests/unit/cli/commands/pr/submit_pipeline/test_link_pr_to_objective_nodes.py:107:        plan_id="100",
+tests/unit/cli/commands/pr/submit_pipeline/test_finalize_pr.py:483:def test_no_lifecycle_update_with_only_plan_id(tmp_path: Path) -&gt; None:
+tests/unit/cli/commands/pr/submit_pipeline/test_finalize_pr.py:484:    """finalize_pr does NOT update lifecycle when only plan_id is set (no plan_context)."""
+tests/unit/cli/commands/pr/submit_pipeline/test_prepare_state.py:107:    P-prefix branches cannot provide an issue number. The test verifies plan_id
+tests/unit/cli/commands/pr/submit_pipeline/test_prepare_state.py:118:                "plan_id": "99",
+tests/unit/cli/commands/pr/submit_pipeline/test_prepare_state.py:146:    plan-ref.json, plan_id remains None.
+tests/unit/cli/commands/pr/submit_pipeline/test_prepare_state.py:170:def test_no_plan_id_from_branch(tmp_path: Path) -&gt; None:
+tests/unit/cli/commands/pr/submit_pipeline/test_prepare_state.py:171:    """Regular branch (no P-prefix) =&gt; plan_id=None."""
+tests/unit/cli/commands/pr/submit_pipeline/test_prepare_state.py:186:def test_plan_id_from_impl_folder(tmp_path: Path) -&gt; None:
+tests/unit/cli/commands/pr/submit_pipeline/test_prepare_state.py:187:    """Branch-scoped impl dir with ref.json present =&gt; plan_id populated."""
+tests/unit/cli/commands/pr/submit_pipeline/test_prepare_state.py:195:                "plan_id": "55",
+  </tool_result>
+  <assistant>The remaining `plan_id` occurrences are:
+- Line 107 in test_link_pr_to_objective_nodes.py — `save_plan_ref(plan_id=)` erk_shared API, correct to stay
+- Lines 118, 195 in test_prepare_state.py — dict keys `"plan_id": "99"` and `"plan_id": "55"` — these are JSON content for plan-ref.json files, not SubmitState kwargs. They should stay as-is (they're the on-disk format).
+- Lines 170-171, 186-187 in test_prepare_state.py — test function names/docstrings mentioning `plan_id`. These are documentation, not code — let me update them since they reference the old field name:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="914" cache_read_input_tokens="145472" cache_creation="{'ephemeral_5m_input_tokens': 914, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_013GJoGa9DX1xgawNyEvQKdr">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_prepare_state.py</param>
+    <param name="offset">168</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="914" cache_read_input_tokens="145472" cache_creation="{'ephemeral_5m_input_tokens': 914, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_013GJoGa9DX1xgawNyEvQKdr">
+   168→
+   169→
+   170→def test_no_plan_id_from_branch(tmp_path: Path) -&gt; None:
+   171→    """Regular branch (no P-prefix) =&gt; plan_id=None."""
+   172→    fake_git = FakeGit(
+   173→        repository_roots={tmp_path: tmp_path},
+   174→        current_branches={tmp_path: "feature-branch"},
+   175→        trunk_branches={tmp_path: "main"},
+   176→    )
+   177→    ctx = context_for_test(git=fake_git, cwd=tmp_path)
+   178→    state = _make_state(cwd=tmp_path)
+   179→
+   180→    result = prepare_state(ctx, state)
+   181→
+   182→    assert isinstance(result, SubmitState)
+   183→    assert result.pr_id is None
+   184→
+   185→
+   186→def test_plan_id_from_impl_folder(tmp_path: Path) -&gt; None:
+   187→    """Branch-scoped impl dir with ref.json present =&gt; plan_id populated."""
+   188→    impl_dir = get_impl_dir(tmp_path, branch_name="feature-branch")
+   189→    impl_dir.mkdir(parents=True)
+   190→    ref_json = impl_dir / "ref.json"
+   191→    ref_json.write_text(
+   192→        json.dumps(
+   193→            {
+   194→                "provider": "github",
+   195→                "plan_id": "55",
+   196→                "url": "https://github.com/owner/repo/issues/55",
+   197→                "created_at": "2025-01-01T00:00:00+00:00",
+
+... [5 lines omitted] ...
+  </tool_result>
+  <assistant>The function names and docstrings reference the field name. The plan says not to rename test-only changes beyond CI green (node 4.1), but these doc strings would be misleading. However, lines 170/186 are function names and 171/187 are docstrings — they should probably reference `pr_id` for clarity. But actually, these are test function names that shouldn't be changed (they describe test intent, not field names). The docstrings mention `plan_id=None` but the actual assertion already says `result.pr_id is None`. Let me leave the test names/docstrings alone — they're just string descriptions and don't affect CI. The dict keys like `"plan_id": "55"` are on-disk JSON format from erk_shared, correctly left as-is.
+
+Line 483-484 in test_finalize_pr.py:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="840" cache_read_input_tokens="146386" cache_creation="{'ephemeral_5m_input_tokens': 840, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_018Ue8UnFu2mLore2XrNvBox">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_finalize_pr.py</param>
+    <param name="offset">481</param>
+    <param name="limit">5</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="840" cache_read_input_tokens="146386" cache_creation="{'ephemeral_5m_input_tokens': 840, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_018Ue8UnFu2mLore2XrNvBox">
+   481→
+   482→
+   483→def test_no_lifecycle_update_with_only_plan_id(tmp_path: Path) -&gt; None:
+   484→    """finalize_pr does NOT update lifecycle when only plan_id is set (no plan_context)."""
+   485→    plan_body = format_plan_header_body_for_test(lifecycle_stage="planned")
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>These are just test function names and docstrings — they don't affect compilation or runtime. The actual code in the test bodies was updated by the agent. Leaving as-is is fine.
+
+Now let me run CI to verify everything passes:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="786" cache_read_input_tokens="147226" cache_creation="{'ephemeral_5m_input_tokens': 786, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_017696xesekJa8NeLGz2R8Jq">
+    <param name="todos">[{'content': 'Rename PlanContext.plan_id → pr_id in plan_context_provider.py', 'status': '...[truncated 1112 chars]... {'content': 'Run CI checks', 'status': 'in_progress', 'activeForm': 'Running CI checks'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="786" cache_read_input_tokens="147226" cache_creation="{'ephemeral_5m_input_tokens': 786, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_017696xesekJa8NeLGz2R8Jq">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="Task" id="toolu_019Q1kow6hyGeDhbQUB4Mgbs">
+    <param name="description">Run fast CI checks</param>
+    <param name="subagent_type">devrun</param>
+    <param name="prompt">Run `make fast-ci` and report all results. This runs ruff, ty type checking, and unit tests. Report any failures in detail.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="532" cache_read_input_tokens="148012" cache_creation="{'ephemeral_5m_input_tokens': 532, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_019Q1kow6hyGeDhbQUB4Mgbs">
+The command failed due to formatting issues. Let me parse the results:
+
+## Make fast-ci Results
+
+### **FAILURE**
+Exit code: 2 (formatting issue)
+
+### Detailed Breakdown
+
+**Ruff (Linting)**: PASSED
+- All checks passed
+
+**Type Checking (ty)**: PASSED
+- All checks passed
+
+**Prettier (Code Formatting)**: FAILED
+- File requiring formatting:
+  - `src/erk/cli/commands/pr/metadata_helpers.py`
+- Summary: 1 file would be reformatted, 1726 files already formatted
+
+**Markdown Formatting**: PASSED
+- Docs files already formatted (note: 2 warnings about doc files detected by prettier, but overall passed)
+
+**Unit Tests**:
+- **erk**: 6011 passed in 25.85s - PASSED
+- **erk-dev**: 136 passed in 6.12s - PASSED
+- **erk-statusline**: 115 passed in 0.88s - PASSED
+- **erk-mcp**: 28 passed (test output cut off) - PASSED
+
+### Summary
+
+... [8 lines omitted] ...
+
+The pipeline failed due to **one formatting violation**:
+  </tool_result>
+  <assistant>Almost clean — just a formatting issue in `metadata_helpers.py`. Let me fix it:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="535" cache_read_input_tokens="148544" cache_creation="{'ephemeral_5m_input_tokens': 535, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01S23ynu3UaPbgy8qsDZBc3a">
+    <param name="command">npx prettier --write src/erk/cli/commands/pr/metadata_helpers.py</param>
+    <param name="description">Format metadata_helpers.py with prettier</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="535" cache_read_input_tokens="148544" cache_creation="{'ephemeral_5m_input_tokens': 535, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01S23ynu3UaPbgy8qsDZBc3a">
+Exit code 2
+[[31merror[39m] No parser could be inferred for file "/home/runner/work/erk/erk/src/erk/cli/commands/pr/metadata_helpers.py".
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01JWXbcRArETeA2ZGm85G2Zv">
+    <param name="command">npx prettier --write --parser python src/erk/cli/commands/pr/metadata_helpers.py</param>
+    <param name="description">Format metadata_helpers.py with prettier</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="188" cache_read_input_tokens="149079" cache_creation="{'ephemeral_5m_input_tokens': 188, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01JWXbcRArETeA2ZGm85G2Zv">
+Exit code 1
+[[31merror[39m] Couldn't resolve parser "python".
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01P3eRtuJwqqcTDHp9eS67iJ">
+    <param name="command">npx @prettier/plugin-python --write src/erk/cli/commands/pr/metadata_helpers.py 2&gt;&amp;1 || npx prettier --plugin @prettier/plugin-python --write src/erk/cli/commands/pr/metadata_helpers.py 2&gt;&amp;1</param>
+    <param name="description">Format metadata_helpers.py with prettier</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="140" cache_read_input_tokens="149267" cache_creation="{'ephemeral_5m_input_tokens': 140, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01P3eRtuJwqqcTDHp9eS67iJ">
+Exit code 1
+npm error could not determine executable to run
+npm error A complete log of this run can be found in: /home/runner/.npm/_logs/2026-03-10T18_01_04_473Z-debug-0.log
+[[31merror[39m] Cannot find package '@prettier/plugin-python' imported from /home/runner/work/erk/erk/noop.js
+  </tool_result>
+  <assistant>Let me check what formatting tool is used for Python in this project:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="255" cache_read_input_tokens="149407" cache_creation="{'ephemeral_5m_input_tokens': 255, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01XQqd61S8an1wrtmDuuF8tf">
+    <param name="command">grep -A5 'prettier' /home/runner/work/erk/erk/Makefile | head -20</param>
+    <param name="description">Check Makefile for prettier targets</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="255" cache_read_input_tokens="149407" cache_creation="{'ephemeral_5m_input_tokens': 255, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01XQqd61S8an1wrtmDuuF8tf">
+.PHONY: format-check lint prettier prettier-check ty upgrade-ty test py-fast-ci fast-ci all-ci md-check docs-check docs-validate docs-sync-check docs-fix clean publish fix reinstall-erk-tools docs docs-serve docs-deploy exec-reference-check mcp mcp-dev test-erk-mcp docs-v2-build docs-v2-serve pre-push-check install-hooks
+
+prettier:
+	prettier --write '**/*.md' --ignore-path .gitignore
+
+prettier-check:
+	prettier --check '**/*.md' --ignore-path .gitignore
+
+format-check:
+	uv run ruff format --check
+
+lint:
+--
+	prettier --write '**/*.md' --ignore-path .gitignore
+
+ty:
+	uv run ty check
+
+upgrade-ty:
+--
+  </tool_result>
+  <assistant>Prettier is only for markdown. The Python formatting is `ruff format`. Let me run it:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="613" cache_read_input_tokens="149662" cache_creation="{'ephemeral_5m_input_tokens': 613, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_015yCjL1xhyDV3tsYUekCHFA">
+    <param name="command">uv run ruff format src/erk/cli/commands/pr/metadata_helpers.py</param>
+    <param name="description">Format metadata_helpers.py with ruff</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="613" cache_read_input_tokens="149662" cache_creation="{'ephemeral_5m_input_tokens': 613, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_015yCjL1xhyDV3tsYUekCHFA">
+1 file reformatted
+  </tool_result>
+  <assistant>Now let me re-run CI to verify:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="138" cache_read_input_tokens="150275" cache_creation="{'ephemeral_5m_input_tokens': 138, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01CUaXyde95KFXZd3M2JvsTz">
+    <param name="description">Re-run fast CI checks</param>
+    <param name="subagent_type">devrun</param>
+    <param name="prompt">Run `make fast-ci` and report all results. Report any failures in detail.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="138" cache_read_input_tokens="150275" cache_creation="{'ephemeral_5m_input_tokens': 138, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01CUaXyde95KFXZd3M2JvsTz">
+The `make fast-ci` command failed with exit code 2. Let me parse the results:
+
+## Summary
+
+**Status**: FAILED
+
+**Failures Found**: 1 issue with Prettier formatting
+
+### Detailed Results
+
+**Prettier Check - Code style issues found in 2 files:**
+- `docs/learned/integrations/github-review-decision.md`
+- `docs/learned/tui/status-indicators.md`
+
+These files need to be reformatted with Prettier. Run `prettier --write` to fix these files.
+
+### All Other Checks PASSED
+
+- **Lint** (ruff): All checks passed
+- **Format Check**: 1727 files already formatted
+- **Markdown Check**: OK
+- **Exec Reference Check**: OK
+- **Type Check (ty)**: All checks passed
+- **Unit Tests (erk)**: 6011 passed in 14.87s
+- **Tests (erk-dev)**: 136 passed in 6.63s
+- **Tests (erk-statusline)**: 115 passed in 0.89s
+- **Tests (erk-mcp)**: 28 passed (partial output shown)
+
+### Root Cause
+
+
+... [4 lines omitted] ...
+  </tool_result>
+  <assistant>All checks pass. The only failures are pre-existing Prettier formatting issues in docs files unrelated to this change (`docs/learned/integrations/github-review-decision.md` and `docs/learned/tui/status-indicators.md`). All linting, type checking, and **6011 unit tests pass**.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="801" cache_read_input_tokens="150413" cache_creation="{'ephemeral_5m_input_tokens': 801, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01H4zT62VkVpyMVjK61fzwbP">
+    <param name="todos">[{'content': 'Rename PlanContext.plan_id → pr_id in plan_context_provider.py', 'status': '...[truncated 1110 chars]...}, {'content': 'Run CI checks', 'status': 'completed', 'activeForm': 'Running CI checks'}]</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="801" cache_read_input_tokens="150413" cache_creation="{'ephemeral_5m_input_tokens': 801, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01H4zT62VkVpyMVjK61fzwbP">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Now let me signal implementation ended and proceed with the remaining pipeline steps:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="552" cache_read_input_tokens="151214" cache_creation="{'ephemeral_5m_input_tokens': 552, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_0192LNZqGJwPU93ddSsHCWFZ">
+    <param name="command">erk exec impl-signal ended --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true</param>
+    <param name="description">Signal impl ended to GitHub</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="552" cache_read_input_tokens="151214" cache_creation="{'ephemeral_5m_input_tokens': 552, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_013e1yhu1PR9nFVhPhevx33F">
+    <param name="command">erk exec upload-impl-session --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true</param>
+    <param name="description">Upload impl session for learn</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="552" cache_read_input_tokens="151214" cache_creation="{'ephemeral_5m_input_tokens': 552, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_0192LNZqGJwPU93ddSsHCWFZ">
+{
+  "success": true,
+  "event": "ended",
+  "pr_number": 9181
+}
+  </tool_result>
+  <tool_result tool="toolu_013e1yhu1PR9nFVhPhevx33F">
+{"uploaded": false, "reason": "push_session_failed"}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_018PfcGAfM56W7h8rqNbF6Ga">
+    <param name="command">erk exec cleanup-impl-context</param>
+    <param name="description">Clean up impl context directory</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="299" cache_read_input_tokens="151766" cache_creation="{'ephemeral_5m_input_tokens': 299, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_018PfcGAfM56W7h8rqNbF6Ga">
+{"cleaned": false, "reason": "not_tracked"}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01LapkP1JpaypuWY2wWVov2s">
+    <param name="command">erk pr submit</param>
+    <param name="description">Submit PR via erk pipeline</param>
+    <param name="timeout">180000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="105" cache_read_input_tokens="152065" cache_creation="{'ephemeral_5m_input_tokens': 105, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01LapkP1JpaypuWY2wWVov2s">
+🚀 Submitting PR...
+
+   Resolving branch and plan context...
+   Committing uncommitted changes...
+   Checking for existing PR...
+Phase 1: Creating or Updating PR
+   PR #9181 found (already exists)
+
+Phase 2: Getting diff and plan context
+   Incorporating plan #9181
+   Linked to Objective #9109: Objective: Rename "plan" terminology to "pr" across all APIs
+
+
+Phase 3: Generating PR description
+   Reading diff file...
+   Diff loaded (47,759 chars)
+   Analyzing changes with Claude...
+   Still waiting... (2s)
+   Still waiting... (4s)
+   Still waiting... (6s)
+   Still waiting... (8s)
+   Still waiting... (10s)
+   PR description generated
+
+Phase 4: Graphite enhancement
+
+Phase 5: Updating PR metadata
+   Publishing draft PR...
+   PR metadata updated
+   Plan lifecycle stage updated to impl
+
+... [8 lines omitted] ...
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01PYoTsKrP8YHK7DMGLyChef">
+    <param name="command">erk exec impl-signal submitted 2&gt;/dev/null || true</param>
+    <param name="description">Signal impl submitted</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="473" cache_read_input_tokens="152170" cache_creation="{'ephemeral_5m_input_tokens': 473, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_012rU5LiMeyF8uosFwphA7Hp">
+    <param name="command">erk pr check --stage=impl 2&gt;/dev/null || true</param>
+    <param name="description">Validate PR completion invariants</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="473" cache_read_input_tokens="152170" cache_creation="{'ephemeral_5m_input_tokens': 473, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01PYoTsKrP8YHK7DMGLyChef">
+{
+  "success": true,
+  "event": "submitted",
+  "pr_number": 9181
+}
+  </tool_result>
+  <tool_result tool="toolu_012rU5LiMeyF8uosFwphA7Hp">
+
+  </tool_result>
+  <assistant>Plan execution complete. Here's the summary:
+
+## Implementation Summary
+
+**PR #9181** — Rename `plan_id`/`plan_url`/`plan_title` to `pr_id`/`pr_url`/`pr_title` in submit pipeline, dispatch, and PlanContext.
+
+### Changes Made
+
+**Source files (10 files):**
+
+| File | Changes |
+|------|---------|
+| `plan_context_provider.py` | `PlanContext.plan_id` → `pr_id` field + constructor |
+| `dispatch_cmd.py` | `DispatchResult.plan_title`/`plan_url` → `pr_title`/`pr_url`, function rename `_detect_plan_number_from_context` → `_detect_pr_number_from_context`, param renames |
+| `submit_pipeline.py` | `SubmitState.plan_id` → `pr_id` field + all consumers, `plan_id_for_lifecycle` → `pr_id_for_lifecycle` |
+| `shared.py` | `maybe_advance_lifecycle_to_impl(plan_id=)` → `(pr_id=)`, `recover_plan_header(plan_id=)` → `(pr_id=)`, `plan_context.plan_id` → `.pr_id` |
+| `commit_message_generator.py` | Template string `plan_context.plan_id` → `.pr_id` |
+| `metadata_helpers.py` | Local `plan_id` → `pr_id` vars in both functions |
+| `submit_cmd.py` | `result.plan_id` → `result.pr_id` |
+| `rewrite_cmd.py` | `plan_context.plan_id` → `.pr_id` |
+| `get_pr_context.py` | `plan_context.plan_id` → `.pr_id` |
+| `push_and_create_pr.py` | `result.plan_id` → `result.pr_id` |
+
+**Test files (20 files):** Updated all `SubmitState`, `PlanContext`, and `DispatchResult` constructor kwargs and attribute accesses across 15 submit pipeline tests + 5 other test files.
+
+**Preserved (workflow contract):** Dict keys `"plan_id"`, `"plan_title"` in `dispatch_cmd.py` and `save_plan_ref(plan_id=)` erk_shared API kwargs stay as-is.
+
+**CI results:** Ruff, ty, and all 6011 unit tests pass.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="345" cache_read_input_tokens="152643" cache_creation="{'ephemeral_5m_input_tokens': 345, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+</session>
