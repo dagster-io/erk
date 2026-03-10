@@ -96,13 +96,13 @@ Returns `(phases, validation_errors) | None`. Returns `None` when the body is no
 
 <!-- Source: packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py, add_node_to_frontmatter -->
 
-`add_node_to_frontmatter()` (line 393) adds a new node to a roadmap phase with auto-assigned node ID. Parameters: `block_content`, `phase`, `description`, `slug`, `status`, `depends_on`, `comment`. If `slug` is not provided, it auto-generates one via `slugify_description()`. Returns `(updated_yaml, assigned_node_id)` or `None` if the phase doesn't exist.
+`add_node_to_frontmatter()` adds a new node to a roadmap phase with auto-assigned node ID. Parameters: `block_content`, `phase`, `description`, `slug`, `status`, `depends_on`, `comment`. If `slug` is not provided, it auto-generates one via `slugify_description()`. Returns `(updated_yaml, assigned_node_id)` or `None` if frontmatter parsing fails.
 
 ### `slugify_description()`
 
 <!-- Source: packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py, slugify_description -->
 
-`slugify_description()` (line 729) converts a description string to a kebab-case slug: lowercase, replace non-alphanumeric with hyphens, collapse multiple hyphens, strip leading/trailing hyphens.
+`slugify_description()` converts a description string to a kebab-case slug: lowercase, replace non-alphanumeric with hyphens, collapse multiple hyphens, strip leading/trailing hyphens.
 
 ### Related Exec Commands
 
