@@ -1,8 +1,10 @@
 {
   "provider": "github-draft-pr",
-  "title": "Plan: Sweep plan_id/plan_url/plan_title refs in submit pipeline, dispatch, and PlanContext",
+  "plan_id": "9181",
+  "url": "https://github.com/dagster-io/erk/pull/9181",
+  "created_at": "2026-03-10T17:45:17.472302",
+  "synced_at": "2026-03-10T17:45:17.472302",
+  "labels": [],
   "objective_id": 9109,
-  "node_ids": [
-    "3.6.2"
-  ]
+  "node_ids": null
 }
