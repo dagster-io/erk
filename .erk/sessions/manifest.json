@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "pr_number": 9171,
+  "sessions": [
+    {
+      "session_id": "",
+      "stage": "impl",
+      "source": "local",
+      "uploaded_at": "2026-03-10T17:39:41.692864+00:00",
+      "files": [
+        "impl--d6d08fe0-3862-4648-9b76-7c2f8cfcc569.xml"
+      ],
+      "user_turns": 2,
+      "duration_minutes": 1,
+      "raw_size_kb": 153,
+      "xml_size_kb": 28,
+      "git_branch": "plnd/fix-an-inaccurate-claim-in-03-10-1541"
+    }
+  ]
+}
