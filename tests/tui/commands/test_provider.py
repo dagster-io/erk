@@ -48,9 +48,7 @@ def test_run_command_provider_search_filters_by_query() -> None:
     commands = get_available_run_commands(ctx)
 
     # Build search text the same way the Provider does: "description: display_name"
-    search_texts = [
-        f"{cmd.description}: {get_run_display_name(cmd, ctx)}" for cmd in commands
-    ]
+    search_texts = [f"{cmd.description}: {get_run_display_name(cmd, ctx)}" for cmd in commands]
 
     # "retry" should match only retry-related commands (subset of all)
     retry_matches = [t for t in search_texts if "retry" in t.lower()]

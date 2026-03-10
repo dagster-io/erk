@@ -76,12 +76,14 @@ class TestRunPaletteOpenCommands:
         """Open run URL launches browser with run URL."""
         browser = FakeBrowserLauncher()
         provider = FakePlanDataProvider()
-        provider.set_runs([
-            make_run_row(
-                "12345",
-                run_url="https://github.com/test/repo/actions/runs/12345",
-            )
-        ])
+        provider.set_runs(
+            [
+                make_run_row(
+                    "12345",
+                    run_url="https://github.com/test/repo/actions/runs/12345",
+                )
+            ]
+        )
         app = ErkDashApp(
             provider=provider,
             service=FakePrService(browser=browser),
@@ -106,12 +108,14 @@ class TestRunPaletteOpenCommands:
         """Open run PR launches browser with PR URL."""
         browser = FakeBrowserLauncher()
         provider = FakePlanDataProvider()
-        provider.set_runs([
-            make_run_row(
-                "12345",
-                pr_url="https://github.com/test/repo/pull/456",
-            )
-        ])
+        provider.set_runs(
+            [
+                make_run_row(
+                    "12345",
+                    pr_url="https://github.com/test/repo/pull/456",
+                )
+            ]
+        )
         app = ErkDashApp(
             provider=provider,
             service=FakePrService(browser=browser),
@@ -188,9 +192,7 @@ class TestRunPaletteActionCommands:
 
         captured: tuple[str, str, bool] | None = None
 
-        def mock_retry(
-            self_app: ErkDashApp, op_id: str, run_id: str, *, failed_only: bool
-        ) -> None:
+        def mock_retry(self_app: ErkDashApp, op_id: str, run_id: str, *, failed_only: bool) -> None:
             nonlocal captured
             captured = (op_id, run_id, failed_only)
 
@@ -228,9 +230,7 @@ class TestRunPaletteActionCommands:
 
         captured: tuple[str, str, bool] | None = None
 
-        def mock_retry(
-            self_app: ErkDashApp, op_id: str, run_id: str, *, failed_only: bool
-        ) -> None:
+        def mock_retry(self_app: ErkDashApp, op_id: str, run_id: str, *, failed_only: bool) -> None:
             nonlocal captured
             captured = (op_id, run_id, failed_only)
 
