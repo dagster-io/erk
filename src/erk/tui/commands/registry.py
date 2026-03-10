@@ -204,8 +204,8 @@ def _display_codespace_run_plan(ctx: CommandContext) -> str:
 
 def _display_open_objective(ctx: CommandContext) -> str:
     """Display name for open_objective command."""
-    if ctx.row.pr_url:
-        return ctx.row.pr_url
+    if ctx.row.objective_url is not None:
+        return ctx.row.objective_url
     return "Objective"
 
 
@@ -409,7 +409,7 @@ def get_all_commands() -> list[CommandDefinition]:
             category=CommandCategory.OPEN,
             shortcut="p",
             launch_key=None,
-            is_available=lambda ctx: _is_objectives_view(ctx) and ctx.row.pr_url is not None,
+            is_available=lambda ctx: _is_objectives_view(ctx) and ctx.row.objective_url is not None,
             get_display_name=_display_open_objective,
         ),
         # === PLAN COPIES ===

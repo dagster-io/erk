@@ -243,8 +243,8 @@ class PaletteActionsMixin:
             self.notify(f"Copied: {cmd}")
 
         elif command_id == "open_objective":
-            if row.pr_url:
-                self._service.browser.launch(row.pr_url)
+            if row.objective_url is not None:
+                self._service.browser.launch(row.objective_url)
                 self.notify(f"Opened objective #{row.pr_number}")
 
         elif command_id == "one_shot_plan":

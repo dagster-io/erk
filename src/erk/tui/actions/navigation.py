@@ -254,8 +254,8 @@ class NavigationActionsMixin:
             return
 
         if self._view_mode == ViewMode.OBJECTIVES:
-            if row.pr_url:
-                self._service.browser.launch(row.pr_url)
+            if row.objective_url is not None:
+                self._service.browser.launch(row.objective_url)
                 if self._status_bar is not None:
                     self._status_bar.set_message(f"Opened objective #{row.pr_number}")
             else:
