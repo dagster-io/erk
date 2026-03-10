@@ -307,6 +307,7 @@ class RealPrDataProvider(PrDataProvider):
             title_display = "-"
             checks_display = "-"
             pr_state: str | None = None
+            pr_status_display = "-"
 
             if pr_num is not None:
                 pr_info = pr_info_map.get(pr_num)
@@ -323,6 +324,7 @@ class RealPrDataProvider(PrDataProvider):
                     title_display = title
                     checks_display = strip_rich_markup(format_checks_cell(pr_info))
                     pr_state = pr_info.state
+                    pr_status_display = strip_rich_markup(get_pr_status_emoji(pr_info))
                 else:
                     # Have PR number but no details
                     pr_url = (
@@ -358,6 +360,7 @@ class RealPrDataProvider(PrDataProvider):
                     pr_display=pr_display,
                     pr_title=pr_title,
                     pr_state=pr_state,
+                    pr_status_display=pr_status_display,
                     title_display=title_display,
                     branch_display=branch_display,
                     submitted_display=submitted_display,
