@@ -25,6 +25,7 @@ from erk_shared.gateway.github.metadata.plan_header import (
 )
 from erk_shared.gateway.github.metadata.schemas import (
     CREATED_FROM_SESSION,
+    CREATED_FROM_WORKFLOW_RUN_ID,
     CREATED_FROM_WORKFLOW_RUN_URL,
     LEARNED_FROM_ISSUE,
     OBJECTIVE_ISSUE,
@@ -321,6 +322,13 @@ class PlannedPRBackend(PlanBackend):
             else None
         )
 
+        created_from_workflow_run_id_raw = metadata.get(CREATED_FROM_WORKFLOW_RUN_ID)
+        created_from_workflow_run_id_val: str | None = (
+            str(created_from_workflow_run_id_raw)
+            if created_from_workflow_run_id_raw is not None
+            else None
+        )
+
         created_at = self._time.now().replace(tzinfo=UTC).isoformat()
         metadata_body = format_plan_header_body(
             created_at=created_at,
@@ -342,6 +350,7 @@ class PlannedPRBackend(PlanBackend):
             objective_issue=objective_id,
             created_from_session=created_from_session_str,
             created_from_workflow_run_url=created_from_workflow_run_url_val,
+            created_from_workflow_run_id=created_from_workflow_run_id_val,
             last_learn_session=None,
             last_learn_at=None,
             learn_status=None,
@@ -666,6 +675,7 @@ class PlannedPRBackend(PlanBackend):
             objective_issue=None,
             created_from_session=None,
             created_from_workflow_run_url=None,
+            created_from_workflow_run_id=None,
             last_learn_session=None,
             last_learn_at=None,
             learn_status=None,

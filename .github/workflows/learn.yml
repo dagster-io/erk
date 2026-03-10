@@ -65,6 +65,7 @@ jobs:
           GH_TOKEN: ${{ secrets.ERK_QUEUE_GH_PAT }}
           PLAN_ID: ${{ inputs.pr_number }}
           WORKFLOW_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          WORKFLOW_RUN_ID: ${{ github.run_id }}
         run: |
           claude --print \
             --verbose \

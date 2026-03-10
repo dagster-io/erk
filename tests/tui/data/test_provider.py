@@ -1846,6 +1846,77 @@ class TestPlanningRunIdFallback:
         assert row.run_conclusion is None
         assert row.run_state_display == "-"
 
+    def test_planning_run_id_field_takes_precedence_over_url_parsing(self, tmp_path: Path) -> None:
+        """created_from_workflow_run_id field is preferred over URL parsing."""
+        provider = self._make_provider(tmp_path)
+
+        pr_body = format_plan_header_body_for_test(
+            created_from_workflow_run_url="https://github.com/test/repo/actions/runs/11111111",
+            created_from_workflow_run_id="22222222",
+        )
+        plan = Plan(
+            pr_identifier="123",
+            title="Test Plan",
+            body=pr_body,
+            state=PlanState.OPEN,
+            url="https://github.com/test/repo/issues/123",
+            labels=[],
+            assignees=[],
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC),
+            metadata={},
+            objective_id=None,
+            header_fields=_parse_header_fields(pr_body),
+        )
+
+        row = provider._build_row_data(
+            plan=plan,
+            pr_number=123,
+            pr_linkages={},
+            workflow_run=None,
+            worktree_by_pr_number={},
+            use_graphite=False,
+        )
+
+        assert row.run_id == "22222222"
+        assert row.run_url == "https://github.com/test/repo/actions/runs/11111111"
+        assert row.run_id_display == "22222222"
+
+    def test_planning_run_id_field_without_url(self, tmp_path: Path) -> None:
+        """created_from_workflow_run_id without URL still populates run_id."""
+        provider = self._make_provider(tmp_path)
+
+        pr_body = format_plan_header_body_for_test(
+            created_from_workflow_run_id="33333333",
+        )
+        plan = Plan(
+            pr_identifier="123",
+            title="Test Plan",
+            body=pr_body,
+            state=PlanState.OPEN,
+            url="https://github.com/test/repo/issues/123",
+            labels=[],
+            assignees=[],
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC),
+            metadata={},
+            objective_id=None,
+            header_fields=_parse_header_fields(pr_body),
+        )
+
+        row = provider._build_row_data(
+            plan=plan,
+            pr_number=123,
+            pr_linkages={},
+            workflow_run=None,
+            worktree_by_pr_number={},
+            use_graphite=False,
+        )
+
+        assert row.run_id == "33333333"
+        assert row.run_url is None
+        assert row.run_id_display == "33333333"
+
     def test_no_planning_run_url_shows_dash(self, tmp_path: Path) -> None:
         """Without planning run URL or dispatched run, run fields are defaults."""
         provider = self._make_provider(tmp_path)
