@@ -1,29 +1,34 @@
 """Command to list plans with filtering."""
 
-import tempfile
 from collections.abc import Callable
-from dataclasses import dataclass
-from pathlib import Path
-from typing import Any, ParamSpec, TypeVar
+from typing import ParamSpec, TypeVar
 
 import click
 from rich.console import Console
 from rich.table import Table
 from rich.text import Text
 
+from erk.cli.commands.pr.list_operation import (
+    PrListRequest,
+    PrListResult,
+    PrListRunState,
+    PrListSort,
+    PrListStage,
+    PrListState,
+    run_pr_list,
+)
 from erk.cli.core import discover_repo_context
-from erk.cli.repo_resolution import get_remote_github, resolved_repo_option
+from erk.cli.ensure import UserFacingCliError
+from erk.cli.repo_resolution import resolved_repo_option
 from erk.core.context import ErkContext
 from erk.core.display_utils import strip_rich_markup
 from erk.core.repo_discovery import ensure_erk_metadata_dir
 from erk.tui.app import ErkDashApp
 from erk.tui.data.real_provider import RealPlanDataProvider
-from erk.tui.data.types import PlanFilters, PlanRowData, serialize_plan_row
-from erk.tui.sorting.logic import sort_plans
+from erk.tui.data.types import PlanFilters, PlanRowData
 from erk.tui.sorting.types import SortKey, SortState
-from erk_shared.agentclick.json_command import json_command
-from erk_shared.agentclick.mcp_exposed import mcp_exposed
-from erk_shared.context.types import NoRepoSentinel
+from erk_shared.agentclick.machine_command import MachineCommandError
+from erk_shared.core.typing_utils import narrow_to_literal
 from erk_shared.gateway.browser.real import RealBrowserLauncher
 from erk_shared.gateway.clipboard.real import RealClipboard
 from erk_shared.gateway.github.emoji import get_pr_status_emoji
@@ -38,17 +43,6 @@ from erk_shared.output.output import user_output
 
 P = ParamSpec("P")
 T = TypeVar("T")
-
-
-@dataclass(frozen=True)
-class PrListResult:
-    """JSON result for erk pr list."""
-
-    plans: list[dict[str, Any]]
-    count: int
-
-    def to_json_dict(self) -> dict[str, Any]:
-        return {"plans": self.plans, "count": self.count}
 
 
 def format_pr_cell(pr: PullRequestInfo, *, use_graphite: bool, graphite_url: str | None) -> str:
@@ -252,101 +246,19 @@ def _row_to_static_values(
     return tuple(values)
 
 
-def _pr_list_impl(
-    ctx: ErkContext,
-    *,
-    label: tuple[str, ...],
-    state: str | None,
-    run_state: str | None,
-    stage: str | None,
-    limit: int | None,
-    all_users: bool,
-    sort: str,
-    repo_id: GitHubRepoId,
-    json_stdout: bool,
-) -> PrListResult | None:
-    http_client = ctx.http_client
-    if http_client is None:
-        user_output(click.style("Error: ", fg="red") + "GitHub authentication not available")
-        raise SystemExit(1)
+def _render_pr_list_result(result: PrListResult) -> None:
+    for warning in result.warnings:
+        user_output(click.style("Warning: ", fg="yellow") + warning)
 
-    # Determine creator filter via RemoteGitHub (works for both local and remote)
-    creator: str | None = None
-    if not all_users:
-        remote = get_remote_github(ctx)
-        is_authenticated, username, _ = remote.check_auth_status()
-        if is_authenticated and username:
-            creator = username
-
-    labels = label if label else ("erk-pr",)
-
-    # Determine location root
-    if not isinstance(ctx.repo, NoRepoSentinel):
-        root = ctx.repo.root
-    else:
-        root = Path(tempfile.gettempdir()) / "erk-remote"
-
-    location = GitHubRepoLocation(
-        root=root,
-        repo_id=repo_id,
-    )
-
-    provider = RealPlanDataProvider(
-        ctx,
-        location=location,
-        http_client=http_client,
-    )
-
-    effective_state: IssueFilterState = "closed" if state == "closed" else "open"
-
-    filters = PlanFilters(
-        labels=labels,
-        state=effective_state,
-        run_state=run_state,
-        limit=limit,
-        show_prs=True,
-        show_runs=True,
-        exclude_labels=(),
-        creator=creator,
-        show_pr_column=False,
-        lifecycle_stage=stage,
-    )
-
-    rows, timings = provider.fetch_plans(filters)
-
-    if timings is not None and timings.warnings:
-        for warning in timings.warnings:
-            user_output(click.style("Warning: ", fg="yellow") + warning)
-
-    if stage is not None:
-        rows = [r for r in rows if strip_rich_markup(r.lifecycle_display).startswith(stage)]
-
-    if not rows:
-        if json_stdout:
-            return PrListResult(plans=[], count=0)
+    if not result.rows:
         user_output("No plans found matching the criteria.")
-        return None
+        return
 
-    # Sort: branch activity only available with local repo
-    if sort == "activity" and not isinstance(ctx.repo, NoRepoSentinel):
-        sort_key = SortKey.BRANCH_ACTIVITY
-        activity_by_plan = provider.fetch_branch_activity(rows)
-        rows = sort_plans(rows, sort_key, activity_by_plan=activity_by_plan)
-    else:
-        sort_key = SortKey.PLAN_ID
-        rows = sort_plans(rows, sort_key)
-
-    if json_stdout:
-        plans = [serialize_plan_row(row) for row in rows]
-        return PrListResult(plans=plans, count=len(plans))
-
-    table = _build_static_table(rows, show_pr_column=False)
-
-    user_output(f"\nFound {len(rows)} plan(s):\n")
+    table = _build_static_table(list(result.rows), show_pr_column=False)
+    user_output(f"\nFound {len(result.rows)} plan(s):\n")
     console = Console(stderr=True, width=200, force_terminal=True)
     console.print(table)
     console.print()
-    return None
 
 
 def _run_interactive_mode(
@@ -456,15 +368,48 @@ def _run_interactive_mode(
     app.run()
 
 
-@mcp_exposed(
-    name="pr_list",
-    description=(
-        "List erk plans with status, labels, and metadata."
-        " Returns JSON array of plans."
-        " Use state parameter to filter by 'open' or 'closed'."
-    ),
-)
-@json_command(exclude_json_input=frozenset({"repo_id"}), output_types=(PrListResult,))
+def _build_pr_list_request(
+    *,
+    label: tuple[str, ...],
+    state: str | None,
+    run_state: str | None,
+    stage: str | None,
+    limit: int | None,
+    all_users: bool,
+    sort: str,
+    repo: str,
+) -> PrListRequest:
+    state_value: PrListState | None = narrow_to_literal(state, PrListState)
+    if state is not None and state_value is None:
+        raise UserFacingCliError(f"Invalid state value: {state}", error_type="cli_error")
+
+    run_state_value: PrListRunState | None = narrow_to_literal(run_state, PrListRunState)
+    if run_state is not None and run_state_value is None:
+        raise UserFacingCliError(
+            f"Invalid run state value: {run_state}",
+            error_type="cli_error",
+        )
+
+    stage_value: PrListStage | None = narrow_to_literal(stage, PrListStage)
+    if stage is not None and stage_value is None:
+        raise UserFacingCliError(f"Invalid stage value: {stage}", error_type="cli_error")
+
+    sort_value: PrListSort | None = narrow_to_literal(sort, PrListSort)
+    if sort_value is None:
+        raise UserFacingCliError(f"Invalid sort value: {sort}", error_type="cli_error")
+
+    return PrListRequest(
+        labels=label,
+        state=state_value,
+        run_state=run_state_value,
+        stage=stage_value,
+        limit=limit,
+        all_users=all_users,
+        sort=sort_value,
+        repo=repo,
+    )
+
+
 @click.command("list")
 @pr_filter_options
 @resolved_repo_option
@@ -480,8 +425,7 @@ def pr_list(
     all_users: bool,
     sort: str,
     repo_id: GitHubRepoId,
-    json_stdout: bool,
-) -> PrListResult | None:
+) -> None:
     """List plans as a static table.
 
     By default, shows only plans created by you. Use --all-users (-A)
@@ -499,8 +443,7 @@ def pr_list(
         erk pr list --sort activity      # Sort by recent branch activity
         erk pr list --repo owner/repo    # Remote mode (no local git required)
     """
-    return _pr_list_impl(
-        ctx,
+    request = _build_pr_list_request(
         label=label,
         state=state,
         run_state=run_state,
@@ -508,9 +451,12 @@ def pr_list(
         limit=limit,
         all_users=all_users,
         sort=sort,
-        repo_id=repo_id,
-        json_stdout=json_stdout,
+        repo=f"{repo_id.owner}/{repo_id.repo}",
     )
+    result = run_pr_list(request, ctx=ctx)
+    if isinstance(result, MachineCommandError):
+        raise UserFacingCliError(result.message, error_type=result.error_type)
+    _render_pr_list_result(result)
 
 
 @click.command("dash")

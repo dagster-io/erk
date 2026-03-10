@@ -1,111 +1,124 @@
 ---
-title: "Adding --json to CLI Commands"
+title: "Adding Machine Commands"
 read_when:
-  - "adding --json flag to a CLI command"
+  - "adding a machine-readable CLI surface"
   - "exposing a command via MCP"
-  - "creating result dataclasses for JSON output"
-  - "stacking @mcp_exposed and @json_command decorators"
+  - "splitting human and machine CLI commands"
+  - "creating request/result dataclasses for CLI operations"
 tripwires:
-  - action: "placing @mcp_exposed below @json_command in decorator stack"
-    warning: "@mcp_exposed must be ABOVE @json_command. Correct order: @mcp_exposed > @json_command > @click.command."
-  - action: "creating a result dataclass without to_json_dict() method"
-    warning: "Result dataclasses should implement to_json_dict() for custom serialization. Without it, emit_json_result() falls back to dataclasses.asdict() which may not handle complex types correctly."
+  - action: "adding a --json flag to a human command for new machine behavior"
+    warning: "Do not mix human and machine transport. Keep the human command under `erk ...` and add a separate machine command under `erk json ...`."
+  - action: "placing @mcp_exposed below @machine_command in decorator stack"
+    warning: "@mcp_exposed must be above @machine_command. Correct order: @mcp_exposed > @machine_command > @click.command."
+  - action: "implementing machine-only logic directly in the human command"
+    warning: "Extract a shared operation first. Human and machine commands should both call the same request/result operation layer."
 ---
 
-# Adding --json to CLI Commands
+# Adding Machine Commands
 
-Step-by-step guide to adding structured JSON output to existing Click commands.
+Erk no longer adds machine behavior to human commands with `--json`. The pattern is now:
 
-## Decorator Stacking Order
+- human command: `erk ...`
+- machine command: `erk json ...`
+- shared business logic: request/result operation function
 
-The decorators must be stacked in this exact order (outermost to innermost):
+## Step 1: Extract a Shared Operation
 
-1. `@mcp_exposed(...)` — MCP exposure (optional, outermost)
-2. `@json_command(...)` — JSON infrastructure
-3. `@click.command(...)` — Click command
-4. `@click.option(...)` — Options/arguments
-5. `@click.pass_obj` — Context passing (innermost)
-
-See `src/erk/cli/commands/pr/list_cmd.py` for a working example of this stack.
-
-## Step 1: Create a Result Dataclass
-
-See `PrListResult` in `src/erk/cli/commands/pr/list_cmd.py` for a working example.
-
-Rules:
-
-- Always frozen dataclass
-- Implement `to_json_dict()` for any custom serialization needs
-- For simple cases, `dataclasses.asdict()` fallback works without `to_json_dict()`
-- Conditionally include fields (e.g., `if self.body is not None`)
-
-## Step 2: Add Decorators
+Create a frozen request dataclass, a result dataclass, and a shared operation function.
 
 ```python
-@json_command(
-    exclude_json_input=frozenset({"repo_id"}),  # Params not accepted via JSON stdin
-    output_types=(PrListResult,),                # Must match return annotation
+@dataclass(frozen=True)
+class PrViewRequest:
+    identifier: str | None = None
+    repo: str | None = None
+    full: bool = False
+
+
+@dataclass(frozen=True)
+class PrViewResult:
+    number: int
+    title: str
+
+
+def run_pr_view(
+    request: PrViewRequest,
+    *,
+    ctx: ErkContext,
+) -> PrViewResult | MachineCommandError:
+    ...
+```
+
+That operation becomes the single source of truth for validation, repo resolution, gateway calls, and returned data.
+
+## Step 2: Keep the Human Command Human
+
+The human command stays on the normal CLI path and renders styled output.
+
+Pattern:
+
+1. parse Click args/options
+2. build the request dataclass
+3. call the shared operation
+4. convert `MachineCommandError` to `UserFacingCliError`
+5. render human output
+
+Do not add `--json`, `--stdin-json`, or transport flags here.
+
+## Step 3: Add the Machine Command Under `erk json`
+
+Create a sibling command in `src/erk/cli/commands/json/`.
+
+```python
+@mcp_exposed(name="pr_view", description="View a plan")
+@machine_command(
+    request_type=PrViewRequest,
+    output_types=(PrViewResult,),
 )
-```
-
-## Step 3: Return the Result
-
-```python
-def pr_list(ctx, ...) -> PrListResult | None:
-    # ... business logic ...
-    if ctx.json_mode:
-        return PrListResult(plans=plan_dicts, count=len(plan_dicts))
-    # ... human-readable output ...
-    return None
-```
-
-The decorator calls `emit_json_result()` on non-None returns when `--json` is active.
-
-## Step 4: Add MCP Exposure (Optional)
-
-```python
-@mcp_exposed(
-    name="pr_list",
-    description="List plans filtered by state and labels"
-)
-```
-
-- `@mcp_exposed` registers the command in `_MCP_REGISTRY` for MCP tool discovery
-- Uses `McpMeta` dataclass to store name and description
-- `discover_mcp_commands()` walks the CLI tree to find all registered commands
-- Does not modify command behavior — purely metadata annotation
-
-**Source**: `packages/erk-shared/src/erk_shared/agentclick/mcp_exposed.py`
-
-## exclude_json_input
-
-Use for parameters that should not be accepted from JSON stdin:
-
-```python
-exclude_json_input=frozenset({"repo_id"})
-```
-
-Common exclusions:
-
-- `repo_id` — resolved from git context, not user input
-- Context-derived parameters that make no sense in JSON input
-
-## Worked Examples
-
-### pr list (`src/erk/cli/commands/pr/list_cmd.py`)
-
-See `src/erk/cli/commands/pr/list_cmd.py` for the full decorator stack and function signature.
-
-### pr view (`src/erk/cli/commands/pr/view_cmd.py`)
-
-```python
-@mcp_exposed(name="pr_view", description="...")
-@json_command(exclude_json_input=frozenset({"repo_id"}), output_types=(PrViewResult,))
 @click.command("view")
-@click.argument("identifier", ...)
-@resolved_repo_option
 @click.pass_obj
-def pr_view(ctx, ...) -> PrViewResult | None:
+def json_pr_view(
+    ctx: ErkContext,
+    *,
+    request: PrViewRequest,
+) -> PrViewResult | MachineCommandError:
+    return run_pr_view(request, ctx=ctx)
 ```
 
-`PrViewResult` demonstrates complex serialization — it uses `_serialize_header_fields()` to handle nested datetime objects and conditionally includes the `body` field.
+Machine commands should not define separate human options. Their input comes from stdin JSON.
+
+## Step 4: Wire the Command Tree
+
+Add the new command to the `json` group:
+
+- `src/erk/cli/commands/json/group.py`
+- nested group modules like `json/pr_group.py` as needed
+- `src/erk/cli/cli.py`
+- `src/erk/cli/help_formatter.py` if the new top-level group needs help categorization
+
+## Step 5: Expose Through MCP
+
+Only decorate the machine command with `@mcp_exposed`.
+
+The MCP server discovers those commands automatically and invokes `erk json ...`, not the human CLI path. If MCP needs the feature, the command must exist in the machine tree.
+
+## Step 6: Rewrite Tests
+
+Cover all three layers:
+
+- operation tests for the shared request/result logic
+- human command tests for UX and error presentation
+- machine command tests for stdin parsing, schema, and MCP parity
+
+Useful assertions:
+
+- `erk json ...` returns structured success/error envelopes
+- `erk ... --json` is rejected for migrated commands
+- MCP-discovered command paths begin with `("json", ...)`
+
+## Canonical Example
+
+The one-shot / `pr list` / `pr view` migration is the reference shape:
+
+- shared operations in `src/erk/cli/commands/*_operation.py`
+- human commands in `src/erk/cli/commands/...`
+- machine commands in `src/erk/cli/commands/json/...`

@@ -10,13 +10,14 @@ from pathlib import Path
 
 import click
 
-from erk.cli.commands.one_shot import _get_remote_github
+from erk.cli.commands.one_shot_operation import _resolve_remote_github
 from erk.cli.commands.one_shot_remote_dispatch import (
     OneShotDispatchParams,
     OneShotDispatchResult,
     dispatch_one_shot_remote,
 )
 from erk.core.context import ErkContext, NoRepoSentinel, RepoContext
+from erk_shared.agentclick.machine_command import MachineCommandError
 from erk_shared.gateway.github.parsing import construct_workflow_run_url
 
 SMOKE_TEST_SLUG = "smoke-test"
@@ -86,7 +87,9 @@ def run_smoke_test(
 
     ref = dispatch_ref if dispatch_ref is not None else ctx.local_config.dispatch_ref
     try:
-        remote = _get_remote_github(ctx)
+        remote = _resolve_remote_github(ctx)
+        if isinstance(remote, MachineCommandError):
+            return SmokeTestError(step="validation", message=remote.message)
         result = dispatch_one_shot_remote(
             remote=remote,
             owner=owner,

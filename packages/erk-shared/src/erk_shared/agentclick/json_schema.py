@@ -1,22 +1,16 @@
-"""JSON Schema generation for @json_command Click commands.
+"""Schema helpers for explicit machine commands."""
 
-Provides:
-- Click parameter type -> JSON Schema type mapping
-- Input schema generation from Click command parameters
-- Output schema generation from result types with json_schema() or plain dataclasses
-- Full schema document assembly (input + output + error)
-"""
+from __future__ import annotations
 
 import dataclasses
+import json
 import types
-from typing import Any, Union, get_args, get_origin
+from dataclasses import MISSING
+from typing import Any, Literal, Union, get_args, get_origin, get_type_hints
 
 import click
 
-from erk_shared.agentclick.json_command import JsonCommandMeta
-
-# Internal params injected by the decorator that should never appear in schemas
-_INTERNAL_PARAMS = frozenset({"json_stdout", "schema_mode", "stdin_json", "ctx"})
+from erk_shared.agentclick.machine_command import MachineCommandMeta
 
 ERROR_SCHEMA: dict[str, Any] = {
     "type": "object",
@@ -29,85 +23,67 @@ ERROR_SCHEMA: dict[str, Any] = {
 }
 
 
-def click_param_to_json_schema(param: click.Parameter) -> dict[str, Any]:
-    """Convert a Click parameter to its JSON Schema representation.
+def build_schema_document(cmd: click.Command) -> dict[str, Any]:
+    """Build the full schema document for a machine command."""
 
-    Args:
-        param: A Click Parameter (Option or Argument)
-
-    Returns:
-        JSON Schema dict for the parameter's type
-    """
-    schema: dict[str, Any] = _click_type_to_schema(param.type, param)
-
-    if isinstance(param, click.Option) and param.help:
-        schema["description"] = param.help
-
-    # Handle nargs=-1 (variadic arguments)
-    if param.nargs == -1:
-        inner = _click_type_to_schema(param.type, param)
-        schema = {"type": "array", "items": inner}
-
-    return schema
-
-
-def _click_type_to_schema(click_type: click.ParamType, param: click.Parameter) -> dict[str, Any]:
-    """Map a Click type to a JSON Schema type dict."""
-    # Check for flag first (before type matching)
-    if isinstance(param, click.Option) and param.is_flag:
-        return {"type": "boolean"}
-
-    if isinstance(click_type, click.types.IntParamType):
-        return {"type": "integer"}
-
-    if isinstance(click_type, click.types.FloatParamType):
-        return {"type": "number"}
-
-    if isinstance(click_type, click.types.BoolParamType):
-        return {"type": "boolean"}
-
-    if isinstance(click_type, click.Path):
-        return {"type": "string", "format": "path"}
-
-    if isinstance(click_type, click.Choice):
-        return {"type": "string", "enum": list(click_type.choices)}
-
-    # STRING and any unrecognized type default to string
-    return {"type": "string"}
+    meta = _get_meta(cmd)
+    return {
+        "command": cmd.name,
+        "input_schema": command_input_schema(cmd),
+        "output_schema": output_type_schema(meta.output_types),
+        "error_schema": ERROR_SCHEMA,
+    }
 
 
 def command_input_schema(cmd: click.Command) -> dict[str, Any]:
-    """Generate JSON Schema for a command's input parameters.
+    """Build the input schema for a machine command."""
 
-    Reads _json_command_meta from the command for exclude/required sets.
-    Skips internal params (json_stdout, schema_mode, stdin_json, ctx).
-
-    Args:
-        cmd: Click Command decorated with @json_command
-
-    Returns:
-        JSON Schema object with properties and required arrays
-    """
     meta = _get_meta(cmd)
+    request_type = meta.request_type
+    request_schema_method = getattr(request_type, "json_schema", None)
+    if callable(request_schema_method):
+        return request_schema_method()
 
-    skip_params = _INTERNAL_PARAMS | meta.exclude_json_input
+    if not dataclasses.is_dataclass(request_type):
+        raise TypeError(f"Request type {request_type.__name__} must be a dataclass")
+
+    return dataclass_input_schema(request_type)
+
+
+def output_type_schema(output_types: tuple[type, ...]) -> dict[str, Any]:
+    """Build the success output schema for a machine command."""
+
+    if len(output_types) == 0:
+        return {
+            "type": "object",
+            "properties": {"success": {"type": "boolean", "const": True}},
+            "required": ["success"],
+        }
+
+    schemas = [_single_output_schema(output_type) for output_type in output_types]
+    if len(schemas) == 1:
+        return schemas[0]
+    return {"oneOf": schemas}
+
+
+def dataclass_input_schema(cls: type) -> dict[str, Any]:
+    """Auto-generate input schema from a dataclass request type."""
+
     properties: dict[str, Any] = {}
     required: list[str] = []
+    field_types = _dataclass_field_types(cls)
 
-    for param in cmd.params:
-        if param.name is None or param.name in skip_params:
-            continue
+    for field in dataclasses.fields(cls):
+        field_type = field_types.get(field.name, field.type)
+        field_schema = _python_type_to_schema(field_type)
+        if field.default is not MISSING:
+            field_schema["default"] = _json_default(field.default)
+        elif field.default_factory is not MISSING:
+            field_schema["default"] = _json_default(field.default_factory())
+        elif not _allows_none(field_type):
+            required.append(field.name)
 
-        properties[param.name] = click_param_to_json_schema(param)
-
-        # Determine if required
-        if param.name in meta.required_json_input:
-            required.append(param.name)
-        elif param.required:
-            required.append(param.name)
-        elif isinstance(param, click.Option) and param.default is None and not param.is_flag:
-            # Options with no default and not explicitly required are optional
-            pass
+        properties[field.name] = field_schema
 
     schema: dict[str, Any] = {"type": "object", "properties": properties}
     if required:
@@ -115,74 +91,16 @@ def command_input_schema(cmd: click.Command) -> dict[str, Any]:
     return schema
 
 
-def output_type_schema(output_types: tuple[type, ...]) -> dict[str, Any]:
-    """Generate JSON Schema for command output types.
+def dataclass_output_schema(cls: type) -> dict[str, Any]:
+    """Auto-generate success output schema from a dataclass result type."""
 
-    For each type:
-    - If json_schema() classmethod exists, use it
-    - Else if plain dataclass (no to_json_dict), auto-generate from fields
-    - Else raise TypeError
-
-    Single type returns schema directly. Multiple types wrap in oneOf.
-    All output schemas include success: true (added by emit_json).
-
-    Args:
-        output_types: Tuple of result types
-
-    Returns:
-        JSON Schema object for the output
-    """
-    if len(output_types) == 0:
-        return {"type": "object", "properties": {"success": {"type": "boolean", "const": True}}}
-
-    schemas = [_single_output_schema(t) for t in output_types]
-
-    if len(schemas) == 1:
-        return schemas[0]
-    return {"oneOf": schemas}
-
-
-def _single_output_schema(cls: type) -> dict[str, Any]:
-    """Generate JSON Schema for a single output type."""
-    json_schema_method = getattr(cls, "json_schema", None)
-    if json_schema_method is not None:
-        return json_schema_method()
-
-    if dataclasses.is_dataclass(cls):
-        return dataclass_to_json_schema(cls)
-
-    raise TypeError(
-        f"Cannot generate schema for {cls.__name__}: "
-        "no json_schema() classmethod and not a dataclass"
-    )
-
-
-# Python type to JSON Schema type mapping
-_PYTHON_TYPE_MAP: dict[type, str] = {
-    str: "string",
-    int: "integer",
-    float: "number",
-    bool: "boolean",
-}
-
-
-def dataclass_to_json_schema(cls: type) -> dict[str, Any]:
-    """Auto-generate JSON Schema from a plain dataclass's fields.
-
-    Includes success: true since emit_json() adds it.
-
-    Args:
-        cls: A dataclass type
-
-    Returns:
-        JSON Schema object
-    """
     properties: dict[str, Any] = {"success": {"type": "boolean", "const": True}}
-    required: list[str] = ["success"]
+    required = ["success"]
+    field_types = _dataclass_field_types(cls)
 
     for field in dataclasses.fields(cls):
-        field_schema = _python_type_to_schema(field.type)
-        properties[field.name] = field_schema
+        field_type = field_types.get(field.name, field.type)
+        properties[field.name] = _python_type_to_schema(field_type)
         required.append(field.name)
 
     return {
@@ -192,64 +110,101 @@ def dataclass_to_json_schema(cls: type) -> dict[str, Any]:
     }
 
 
+def _single_output_schema(output_type: type) -> dict[str, Any]:
+    output_schema_method = getattr(output_type, "json_schema", None)
+    if callable(output_schema_method):
+        return output_schema_method()
+
+    if dataclasses.is_dataclass(output_type):
+        return dataclass_output_schema(output_type)
+
+    raise TypeError(
+        f"Cannot generate schema for {output_type.__name__}: "
+        "no json_schema() classmethod and not a dataclass"
+    )
+
+
 def _python_type_to_schema(type_hint: Any) -> dict[str, Any]:
-    """Map a Python type annotation to JSON Schema."""
-    # Handle direct type matches
-    if type_hint in _PYTHON_TYPE_MAP:
-        return {"type": _PYTHON_TYPE_MAP[type_hint]}
+    if type_hint is Any:
+        return {}
+
+    if type_hint is bool:
+        return {"type": "boolean"}
+    if type_hint is int:
+        return {"type": "integer"}
+    if type_hint is float:
+        return {"type": "number"}
+    if type_hint is str:
+        return {"type": "string"}
 
     origin = get_origin(type_hint)
     args = get_args(type_hint)
 
-    # Handle X | None (types.UnionType) and typing.Optional[X] (typing.Union)
-    if origin is types.UnionType or origin is Union:
-        if type(None) in args:
-            non_none = [a for a in args if a is not type(None)]
-            if len(non_none) == 1 and non_none[0] in _PYTHON_TYPE_MAP:
-                return {"type": [_PYTHON_TYPE_MAP[non_none[0]], "null"]}
-        return {"type": "string"}
+    if origin is Literal:
+        literal_values = list(args)
+        schema = {"enum": literal_values}
+        if literal_values:
+            schema["type"] = _python_value_to_json_type(literal_values[0])
+        return schema
 
-    # list[X]
-    if origin is list and len(args) == 1:
-        items_schema = _python_type_to_schema(args[0])
-        return {"type": "array", "items": items_schema}
+    if origin in (types.UnionType, Union):
+        non_none_types = [arg for arg in args if arg is not type(None)]
+        if type(None) in args and len(non_none_types) == 1:
+            schema = _python_type_to_schema(non_none_types[0])
+            schema_type = schema.get("type")
+            if isinstance(schema_type, str):
+                schema["type"] = [schema_type, "null"]
+            return schema
+        return {"oneOf": [_python_type_to_schema(arg) for arg in args]}
 
-    # dict[str, X]
+    if origin in (list, tuple):
+        item_type = args[0] if args else Any
+        return {"type": "array", "items": _python_type_to_schema(item_type)}
+
     if origin is dict:
         return {"type": "object"}
 
-    # Fallback
+    if dataclasses.is_dataclass(type_hint):
+        return dataclass_input_schema(type_hint)
+
     return {"type": "string"}
 
 
-def build_schema_document(cmd: click.Command) -> dict[str, Any]:
-    """Build the full schema document for a @json_command.
-
-    Returns a dict with command name, input_schema, output_schema, and error_schema.
-
-    Args:
-        cmd: Click Command decorated with @json_command
-
-    Returns:
-        Complete schema document
-    """
-    meta = _get_meta(cmd)
-
-    return {
-        "command": cmd.name,
-        "input_schema": command_input_schema(cmd),
-        "output_schema": output_type_schema(meta.output_types),
-        "error_schema": ERROR_SCHEMA,
-    }
+def _python_value_to_json_type(value: Any) -> str:
+    if isinstance(value, bool):
+        return "boolean"
+    if isinstance(value, int) and not isinstance(value, bool):
+        return "integer"
+    if isinstance(value, float):
+        return "number"
+    if value is None:
+        return "null"
+    return "string"
 
 
-def _get_meta(cmd: click.Command) -> JsonCommandMeta:
-    """Read JsonCommandMeta from a command, with fallback for undecorated commands."""
-    meta = getattr(cmd, "_json_command_meta", None)
-    if meta is not None:
-        return meta
-    return JsonCommandMeta(
-        exclude_json_input=frozenset(),
-        required_json_input=frozenset(),
-        output_types=(),
-    )
+def _allows_none(type_hint: Any) -> bool:
+    origin = get_origin(type_hint)
+    if origin not in (types.UnionType, Union):
+        return False
+    return type(None) in get_args(type_hint)
+
+
+def _get_meta(cmd: click.Command) -> MachineCommandMeta:
+    meta = getattr(cmd, "_machine_command_meta", None)
+    if meta is None:
+        raise TypeError(f"{cmd.name} is not a machine command")
+    return meta
+
+
+def _dataclass_field_types(cls: type) -> dict[str, Any]:
+    return get_type_hints(cls, include_extras=True)
+
+
+def _json_default(value: Any) -> Any:
+    if isinstance(value, tuple):
+        return list(value)
+    try:
+        json.dumps(value)
+    except TypeError:
+        return None
+    return value

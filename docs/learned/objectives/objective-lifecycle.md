@@ -249,7 +249,7 @@ erk exec update-objective-node 6423 --node 1.3 --pr ""  # Clear
 
 ### Node Description Reconciliation
 
-When a plan's implementation diverges from the original node description (e.g., the node says `@json_output` but the PR implemented `@json_command`), this is a "naming divergence" contradiction. The description must be updated to reflect what was actually built.
+When a plan's implementation diverges from the original node description (e.g., the node says `@json_output` but the PR implemented `@machine_command` under `erk json ...`), this is a "naming divergence" contradiction. The description must be updated to reflect what was actually built.
 
 **Workflow**: Update node descriptions BEFORE prose updates, because comment re-rendering uses the current descriptions:
 

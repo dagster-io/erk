@@ -265,6 +265,7 @@ class ErkCommandGroup(click.Group):
             "config",
             "docs",
             "hook",
+            "json",
             "md",
             "objective",
             "plan",
