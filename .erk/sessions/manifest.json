@@ -1,0 +1,31 @@
+{
+  "version": 1,
+  "pr_number": 9163,
+  "sessions": [
+    {
+      "session_id": "",
+      "stage": "impl",
+      "source": "local",
+      "uploaded_at": "2026-03-10T13:43:17.540680+00:00",
+      "files": [
+        "impl--0ab80b46-f509-483d-8308-6733558ff638-part1.xml",
+        "impl--0ab80b46-f509-483d-8308-6733558ff638-part10.xml",
+        "impl--0ab80b46-f509-483d-8308-6733558ff638-part11.xml",
+        "impl--0ab80b46-f509-483d-8308-6733558ff638-part12.xml",
+        "impl--0ab80b46-f509-483d-8308-6733558ff638-part2.xml",
+        "impl--0ab80b46-f509-483d-8308-6733558ff638-part3.xml",
+        "impl--0ab80b46-f509-483d-8308-6733558ff638-part4.xml",
+        "impl--0ab80b46-f509-483d-8308-6733558ff638-part5.xml",
+        "impl--0ab80b46-f509-483d-8308-6733558ff638-part6.xml",
+        "impl--0ab80b46-f509-483d-8308-6733558ff638-part7.xml",
+        "impl--0ab80b46-f509-483d-8308-6733558ff638-part8.xml",
+        "impl--0ab80b46-f509-483d-8308-6733558ff638-part9.xml"
+      ],
+      "user_turns": 3,
+      "duration_minutes": 12,
+      "raw_size_kb": 1044,
+      "xml_size_kb": 336,
+      "git_branch": "plnd/auto-recover-impl-retry-03-10-0929"
+    }
+  ]
+}
