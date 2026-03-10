@@ -147,7 +147,6 @@ class OneShotDryRunResult:
         }
 
 
-
 def generate_branch_name(
     prompt: str,
     *,
