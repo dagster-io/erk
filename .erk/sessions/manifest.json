@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "pr_number": 9172,
+  "sessions": [
+    {
+      "session_id": "c7800124-81d4-4dbb-87e3-973f0103c208",
+      "stage": "impl",
+      "source": "local",
+      "uploaded_at": "2026-03-10T12:01:08.562521+00:00",
+      "files": [
+        "impl-c7800124-81d4-4dbb-87e3-973f0103c208-c7800124-81d4-4dbb-87e3-973f0103c208-part1.xml",
+        "impl-c7800124-81d4-4dbb-87e3-973f0103c208-c7800124-81d4-4dbb-87e3-973f0103c208-part2.xml",
+        "impl-c7800124-81d4-4dbb-87e3-973f0103c208-c7800124-81d4-4dbb-87e3-973f0103c208-part3.xml"
+      ],
+      "user_turns": 2,
+      "duration_minutes": 10,
+      "raw_size_kb": 1746,
+      "xml_size_kb": 162,
+      "git_branch": "plnd/address-debug-impl-review-03-10-1148"
+    }
+  ]
+}
