@@ -20,6 +20,7 @@ from pathlib import Path
 from click.testing import CliRunner
 
 from erk.cli.commands.run.list_cmd import list_runs
+from erk.cli.constants import DISPATCH_WORKFLOW_NAME, PR_ADDRESS_WORKFLOW_NAME
 from erk.core.context import ErkContext
 from erk_shared.gateway.git.abc import WorktreeInfo
 from erk_shared.gateway.github.issues.types import IssueInfo
@@ -28,6 +29,9 @@ from tests.fakes.gateway.git import FakeGit
 from tests.fakes.gateway.github import FakeLocalGitHub
 from tests.fakes.gateway.github_issues import FakeGitHubIssues
 from tests.fakes.tests.context import create_test_context
+
+_IMPL_WORKFLOW = f".github/workflows/{DISPATCH_WORKFLOW_NAME}"
+_ADDR_WORKFLOW = f".github/workflows/{PR_ADDRESS_WORKFLOW_NAME}"
 
 
 def _make_git(tmp_path: Path) -> FakeGit:
@@ -112,6 +116,7 @@ def test_list_runs_pr_address_format_shows_pr(tmp_path: Path) -> None:
             branch="feat-1",
             head_sha="abc123",
             display_title="pr-address:#456:abc123",
+            workflow_path=_ADDR_WORKFLOW,
         ),
     ]
     ctx = _make_ctx(tmp_path, workflow_runs=workflow_runs)
@@ -136,6 +141,7 @@ def test_list_runs_new_plan_implement_format_shows_pr(
             branch="feat-1",
             head_sha="abc123",
             display_title="plnd/add-branch-name-to-run-name (#460):abc456",
+            workflow_path=_IMPL_WORKFLOW,
         ),
     ]
     ctx = _make_ctx(tmp_path, workflow_runs=workflow_runs)
@@ -160,6 +166,7 @@ def test_list_runs_old_plan_format_falls_back_to_plan_pr_linkage(
             branch="feat-1",
             head_sha="abc123",
             display_title="142:abc456",
+            workflow_path=_IMPL_WORKFLOW,
         ),
     ]
 
@@ -205,6 +212,7 @@ def test_list_runs_no_pr_shows_dash(tmp_path: Path) -> None:
             branch="feat-1",
             head_sha="abc123",
             display_title="Some legacy title [abc123]",
+            workflow_path=_IMPL_WORKFLOW,
         ),
     ]
     ctx = _make_ctx(tmp_path, workflow_runs=workflow_runs)
@@ -227,6 +235,7 @@ def test_list_runs_all_workflow_types_shown(tmp_path: Path) -> None:
             branch="feat-1",
             head_sha="abc123",
             display_title="plnd/add-feature (#460):abc456",
+            workflow_path=_IMPL_WORKFLOW,
         ),
         WorkflowRun(
             run_id="222222",
@@ -235,6 +244,7 @@ def test_list_runs_all_workflow_types_shown(tmp_path: Path) -> None:
             branch="feat-2",
             head_sha="def456",
             display_title="pr-address:#460:def456",
+            workflow_path=_ADDR_WORKFLOW,
         ),
         WorkflowRun(
             run_id="333333",
@@ -243,6 +253,7 @@ def test_list_runs_all_workflow_types_shown(tmp_path: Path) -> None:
             branch="feat-3",
             head_sha="ghi789",
             display_title="one-shot:#461:ghi789",
+            workflow_path=".github/workflows/one-shot.yml",
         ),
     ]
     ctx = _make_ctx(tmp_path, workflow_runs=workflow_runs)
@@ -268,6 +279,7 @@ def test_list_runs_multiple_statuses(tmp_path: Path) -> None:
             branch="feat-1",
             head_sha="abc123",
             display_title="plnd/feat-1 (#201):abc",
+            workflow_path=_IMPL_WORKFLOW,
         ),
         WorkflowRun(
             run_id="999888",
@@ -276,6 +288,7 @@ def test_list_runs_multiple_statuses(tmp_path: Path) -> None:
             branch="feat-2",
             head_sha="def456",
             display_title="plnd/feat-2 (#202):def",
+            workflow_path=_IMPL_WORKFLOW,
         ),
         WorkflowRun(
             run_id="789",
@@ -284,6 +297,7 @@ def test_list_runs_multiple_statuses(tmp_path: Path) -> None:
             branch="feat-3",
             head_sha="ghi789",
             display_title="plnd/feat-3 (#203):ghi",
+            workflow_path=_IMPL_WORKFLOW,
         ),
     ]
     ctx = _make_ctx(tmp_path, workflow_runs=workflow_runs)
@@ -314,6 +328,7 @@ def test_list_runs_truncates_long_titles(tmp_path: Path) -> None:
             branch="feat-1",
             head_sha="abc123",
             display_title="142:abc",
+            workflow_path=_IMPL_WORKFLOW,
         ),
     ]
 
@@ -361,6 +376,7 @@ def test_list_runs_displays_submission_time(tmp_path: Path) -> None:
             head_sha="abc123",
             display_title="pr-address:#456:abc456",
             created_at=timestamp,
+            workflow_path=_ADDR_WORKFLOW,
         ),
     ]
     ctx = _make_ctx(tmp_path, workflow_runs=workflow_runs)
@@ -384,6 +400,7 @@ def test_list_runs_handles_missing_timestamp(tmp_path: Path) -> None:
             head_sha="abc123",
             display_title="pr-address:#456:abc456",
             created_at=None,
+            workflow_path=_ADDR_WORKFLOW,
         ),
     ]
     ctx = _make_ctx(tmp_path, workflow_runs=workflow_runs)
@@ -405,6 +422,7 @@ def test_list_runs_shows_workflow_column(tmp_path: Path) -> None:
             branch="feat-1",
             head_sha="abc123",
             display_title="plnd/fix-auth-bug (#460):abc456",
+            workflow_path=_IMPL_WORKFLOW,
         ),
     ]
     ctx = _make_ctx(tmp_path, workflow_runs=workflow_runs)
@@ -429,6 +447,7 @@ def test_list_runs_handles_queued_status(tmp_path: Path) -> None:
             branch="feat-1",
             head_sha="abc123",
             display_title="pr-address:#456:abc",
+            workflow_path=_ADDR_WORKFLOW,
         ),
     ]
     ctx = _make_ctx(tmp_path, workflow_runs=workflow_runs)
@@ -450,6 +469,7 @@ def test_list_runs_handles_cancelled_status(tmp_path: Path) -> None:
             branch="feat-1",
             head_sha="abc123",
             display_title="pr-address:#456:abc",
+            workflow_path=_ADDR_WORKFLOW,
         ),
     ]
     ctx = _make_ctx(tmp_path, workflow_runs=workflow_runs)
@@ -471,6 +491,7 @@ def test_list_runs_pr_column_header(tmp_path: Path) -> None:
             branch="feat-1",
             head_sha="abc123",
             display_title="pr-address:#456:abc",
+            workflow_path=_ADDR_WORKFLOW,
         ),
     ]
     ctx = _make_ctx(tmp_path, workflow_runs=workflow_runs)

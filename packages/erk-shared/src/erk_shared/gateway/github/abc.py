@@ -146,6 +146,27 @@ class LocalGitHub(ABC):
         ...
 
     @abstractmethod
+    def list_all_workflow_runs(
+        self, repo_root: Path, *, limit: int, actor: str | None = None
+    ) -> list[WorkflowRun]:
+        """List workflow runs across all workflows in the repository.
+
+        Uses a single REST API call to fetch runs from all workflows,
+        instead of one call per workflow. Each returned WorkflowRun has
+        workflow_path populated for caller-side workflow name mapping.
+
+        Args:
+            repo_root: Repository root directory
+            limit: Maximum number of runs to return (default: 100)
+            actor: Optional GitHub username to filter runs by (maps to actor query param)
+
+        Returns:
+            List of workflow runs with workflow_path populated,
+            ordered by creation time (newest first)
+        """
+        ...
+
+    @abstractmethod
     def list_workflow_runs(
         self, repo_root: Path, workflow: str, limit: int = 50, *, user: str | None = None
     ) -> list[WorkflowRun]:
@@ -242,6 +263,26 @@ class LocalGitHub(ABC):
         Returns:
             Mapping of plan_number -> list of PRs linked to that plan.
             Returns empty dict if no PRs link to any of the plans.
+        """
+        ...
+
+    @abstractmethod
+    def get_prs_by_numbers(
+        self, location: GitHubRepoLocation, pr_numbers: list[int]
+    ) -> dict[int, PullRequestInfo]:
+        """Batch fetch PR info for specific PR numbers.
+
+        Uses a single GraphQL query to fetch PR details for the given
+        numbers. More efficient than list_prs(state="all") when only
+        a handful of specific PRs are needed.
+
+        Args:
+            location: GitHub repository location (local path + owner/repo identity)
+            pr_numbers: List of PR numbers to fetch
+
+        Returns:
+            Mapping of pr_number -> PullRequestInfo for found PRs.
+            PRs that don't exist are omitted from the result.
         """
         ...
 

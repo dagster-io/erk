@@ -543,6 +543,45 @@ class RealLocalGitHub(LocalGitHub):
         ]
         execute_gh_command_with_retry(cmd, repo_root, self._time)
 
+    def list_all_workflow_runs(
+        self, repo_root: Path, *, limit: int, actor: str | None = None
+    ) -> list[WorkflowRun]:
+        """List workflow runs across all workflows in a single API call."""
+        # GH-API-AUDIT: REST - GET actions/runs (all workflows)
+        query_params = f"per_page={limit}"
+        if actor is not None:
+            query_params += f"&actor={actor}"
+        cmd = [
+            "gh",
+            "api",
+            f"repos/{{owner}}/{{repo}}/actions/runs?{query_params}",
+            "--jq",
+            ".workflow_runs",
+        ]
+
+        stdout = execute_gh_command_with_retry(cmd, repo_root, self._time)
+        data = json.loads(stdout)
+
+        runs = []
+        for run in data:
+            created_at = None
+            if created_at_str := run.get("created_at"):
+                created_at = datetime.fromisoformat(created_at_str.replace("Z", "+00:00"))
+
+            workflow_run = WorkflowRun(
+                run_id=str(run["id"]),
+                status=run["status"],
+                conclusion=run.get("conclusion"),
+                branch=run["head_branch"],
+                head_sha=run["head_sha"],
+                display_title=run.get("display_title"),
+                created_at=created_at,
+                workflow_path=run.get("path"),
+            )
+            runs.append(workflow_run)
+
+        return runs
+
     def list_workflow_runs(
         self, repo_root: Path, workflow: str, limit: int = 50, *, user: str | None = None
     ) -> list[WorkflowRun]:
@@ -899,6 +938,66 @@ query {{
             if prs_with_timestamps:
                 prs_with_timestamps.sort(key=lambda x: x[1], reverse=True)
                 result[plan_number] = [pr for pr, _ in prs_with_timestamps]
+
+        return result
+
+    def get_prs_by_numbers(
+        self, location: GitHubRepoLocation, pr_numbers: list[int]
+    ) -> dict[int, PullRequestInfo]:
+        """Batch fetch PR info for specific PR numbers via GraphQL."""
+        if not pr_numbers:
+            return {}
+
+        pr_queries = []
+        for pr_num in pr_numbers:
+            pr_queries.append(
+                f"    pr_{pr_num}: pullRequest(number: {pr_num}) {{"
+                f" number state url title isDraft headRefName baseRefName"
+                f" mergeable reviewDecision"
+                f" statusCheckRollup {{ state contexts(last: 1) {{"
+                f" totalCount checkRunCountsByState {{ state count }}"
+                f" statusContextCountsByState {{ state count }}"
+                f" }} }}"
+                f" }}"
+            )
+
+        query = f"""query {{
+  repository(owner: "{location.repo_id.owner}", name: "{location.repo_id.repo}") {{
+{chr(10).join(pr_queries)}
+  }}
+}}"""
+
+        try:
+            response = self._execute_batch_pr_query(query, location.root)
+        except (RuntimeError, FileNotFoundError, json.JSONDecodeError):
+            return {}
+
+        result: dict[int, PullRequestInfo] = {}
+        repo_data = response.get("data", {}).get("repository", {})
+        for key, pr_data in repo_data.items():
+            if not key.startswith("pr_") or pr_data is None:
+                continue
+            pr_num = int(key.removeprefix("pr_"))
+            state = pr_data.get("state", "OPEN")
+            is_draft = pr_data.get("isDraft", False)
+            mergeable_raw = pr_data.get("mergeable")
+            has_conflicts = mergeable_raw == "CONFLICTING" if mergeable_raw else None
+            checks_passing, checks_counts = parse_status_rollup(pr_data.get("statusCheckRollup"))
+            result[pr_num] = PullRequestInfo(
+                number=pr_num,
+                state=state,
+                url=pr_data.get("url", ""),
+                is_draft=is_draft,
+                title=pr_data.get("title"),
+                checks_passing=checks_passing,
+                owner=location.repo_id.owner,
+                repo=location.repo_id.repo,
+                has_conflicts=has_conflicts,
+                checks_counts=checks_counts,
+                head_branch=pr_data.get("headRefName"),
+                review_decision=pr_data.get("reviewDecision"),
+                base_ref_name=pr_data.get("baseRefName"),
+            )
 
         return result
 

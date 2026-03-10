@@ -289,6 +289,7 @@ class WorkflowRun:
         "_head_sha",
         "_display_title",
         "_created_at",
+        "_workflow_path",
     )
 
     _run_id: str
@@ -299,6 +300,7 @@ class WorkflowRun:
     _head_sha: str
     _display_title: str | None | _NotAvailable
     _created_at: datetime | None
+    _workflow_path: str | None
 
     def __init__(
         self,
@@ -311,6 +313,7 @@ class WorkflowRun:
         display_title: str | None | _NotAvailable = None,
         created_at: datetime | None = None,
         node_id: str | None = None,
+        workflow_path: str | None = None,
     ) -> None:
         object.__setattr__(self, "_run_id", run_id)
         object.__setattr__(self, "_node_id", node_id)
@@ -320,6 +323,7 @@ class WorkflowRun:
         object.__setattr__(self, "_head_sha", head_sha)
         object.__setattr__(self, "_display_title", display_title)
         object.__setattr__(self, "_created_at", created_at)
+        object.__setattr__(self, "_workflow_path", workflow_path)
 
     def __setattr__(self, name: str, value: object) -> None:
         msg = "WorkflowRun is immutable"
@@ -369,6 +373,14 @@ class WorkflowRun:
     @property
     def created_at(self) -> datetime | None:
         return self._created_at
+
+    @property
+    def workflow_path(self) -> str | None:
+        """Workflow file path (e.g., '.github/workflows/plan-implement.yml').
+
+        Only populated when fetched via list_all_workflow_runs.
+        """
+        return self._workflow_path
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, WorkflowRun):

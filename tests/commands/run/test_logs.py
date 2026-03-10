@@ -58,6 +58,7 @@ def test_logs_auto_detect(tmp_path: Path) -> None:
             conclusion="success",
             branch="main",
             head_sha="abc",
+            workflow_path=".github/workflows/implement-plan.yml",
         ),
         WorkflowRun(
             run_id="222",
@@ -65,6 +66,7 @@ def test_logs_auto_detect(tmp_path: Path) -> None:
             conclusion="success",
             branch="feature-x",
             head_sha="def",
+            workflow_path=".github/workflows/implement-plan.yml",
         ),
     ]
     github_ops = FakeLocalGitHub(

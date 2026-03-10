@@ -185,6 +185,8 @@ class RealPlanDataProvider(PlanDataProvider):
             List of RunRowData for display, sorted by created_at descending
         """
         # Lazy import to avoid circular dependency through erk.cli.commands.run.__init__
+        from concurrent.futures import ThreadPoolExecutor
+
         from erk.cli.commands.run.shared import extract_plan_number, extract_pr_number
 
         _PER_WORKFLOW_LIMIT = 20
@@ -192,21 +194,25 @@ class RealPlanDataProvider(PlanDataProvider):
         _MAX_TITLE_LENGTH = 50
         _MAX_BRANCH_LENGTH = 40
 
-        # 1. Fetch workflow runs from all registered workflows
+        # 1. Fetch workflow runs from each registered workflow in parallel
+        #    Per-workflow queries return only erk runs (not CI/lint noise).
+        #    Filter by current user so multi-contributor repos show only your runs.
+        _, gh_username, _ = self._ctx.github.check_auth_status()
         tagged_runs: list[tuple[WorkflowRun, str]] = []
-        for command_name, workflow_file in WORKFLOW_COMMAND_MAP.items():
-            workflow_runs = self._ctx.github.list_workflow_runs(
-                self._location.root, workflow_file, _PER_WORKFLOW_LIMIT
-            )
-            for run in workflow_runs:
-                tagged_runs.append((run, command_name))
 
-        # Deduplicate by run_id
-        seen: dict[str, tuple[WorkflowRun, str]] = {}
-        for pair in tagged_runs:
-            if pair[0].run_id not in seen:
-                seen[pair[0].run_id] = pair
-        tagged_runs = list(seen.values())
+        def _fetch_workflow(cmd_name: str, workflow_file: str) -> list[tuple[WorkflowRun, str]]:
+            runs = self._ctx.github.list_workflow_runs(
+                self._location.root, workflow_file, _PER_WORKFLOW_LIMIT, user=gh_username
+            )
+            return [(run, cmd_name) for run in runs]
+
+        with ThreadPoolExecutor(max_workers=len(WORKFLOW_COMMAND_MAP)) as executor:
+            futures = {
+                executor.submit(_fetch_workflow, cmd_name, workflow_file): cmd_name
+                for cmd_name, workflow_file in WORKFLOW_COMMAND_MAP.items()
+            }
+            for future in futures:
+                tagged_runs.extend(future.result())
 
         # Sort by created_at descending
         tagged_runs.sort(
@@ -240,28 +246,39 @@ class RealPlanDataProvider(PlanDataProvider):
             if run_plan is not None:
                 plan_to_run_ids.setdefault(run_plan, []).append(run.run_id)
 
-        # 4. Batch fetch PR linkages for plan-number runs
+        # 4. Fetch PR linkages and direct PR info in parallel
+        #    These two calls are independent of each other.
         pr_info_map: dict[int, PullRequestInfo] = {}
-        if plan_numbers:
-            pr_linkages = self._ctx.github.get_prs_linked_to_issues(self._location, plan_numbers)
-            for plan_num, prs in pr_linkages.items():
-                selected_pr = select_display_pr(prs, exclude_pr_numbers=None)
-                if selected_pr is None:
-                    continue
-                pr_info_map[selected_pr.number] = selected_pr
-                for run_id in plan_to_run_ids.get(plan_num, []):
-                    run_pr_numbers[run_id] = selected_pr.number
 
-        # 5. Fetch PR info for directly-extracted PR numbers
-        #    run_pr_numbers has PR numbers from display_title, but pr_info_map
-        #    only contains entries from plan linkage. Fetch all PRs (not just open)
-        #    to get merged/closed PR info for branch display and pr_state filtering.
-        direct_pr_numbers = {n for n in run_pr_numbers.values() if n not in pr_info_map}
-        if direct_pr_numbers:
-            all_prs = self._ctx.github.list_prs(self._location.root, state="all")
-            for pr_info in all_prs.values():
-                if pr_info.number in direct_pr_numbers:
-                    pr_info_map[pr_info.number] = pr_info
+        def _fetch_plan_linkages() -> dict[int, list[PullRequestInfo]]:
+            if not plan_numbers:
+                return {}
+            return self._ctx.github.get_prs_linked_to_issues(self._location, plan_numbers)
+
+        direct_pr_numbers = {n for n in run_pr_numbers.values()}
+
+        def _fetch_direct_prs() -> dict[int, PullRequestInfo]:
+            if not direct_pr_numbers:
+                return {}
+            return self._ctx.github.get_prs_by_numbers(self._location, list(direct_pr_numbers))
+
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            linkage_future = executor.submit(_fetch_plan_linkages)
+            direct_future = executor.submit(_fetch_direct_prs)
+            pr_linkages = linkage_future.result()
+            direct_prs = direct_future.result()
+
+        # Merge plan linkage results
+        for plan_num, prs in pr_linkages.items():
+            selected_pr = select_display_pr(prs, exclude_pr_numbers=None)
+            if selected_pr is None:
+                continue
+            pr_info_map[selected_pr.number] = selected_pr
+            for run_id in plan_to_run_ids.get(plan_num, []):
+                run_pr_numbers[run_id] = selected_pr.number
+
+        # Merge direct PR results
+        pr_info_map.update(direct_prs)
 
         use_graphite = self._ctx.global_config.use_graphite if self._ctx.global_config else False
 

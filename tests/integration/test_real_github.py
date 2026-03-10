@@ -12,7 +12,12 @@ from pathlib import Path
 import pytest
 from pytest import MonkeyPatch
 
-from erk_shared.gateway.github.types import MergeError, MergeResult
+from erk_shared.gateway.github.types import (
+    GitHubRepoId,
+    GitHubRepoLocation,
+    MergeError,
+    MergeResult,
+)
 from tests.fakes.gateway.time import FakeTime
 from tests.integration.test_helpers import mock_subprocess_run
 from tests.test_utils.context_builders import real_github_for_test
@@ -1310,3 +1315,246 @@ def test_get_pr_comment_returns_none_on_empty_body(monkeypatch: MonkeyPatch) -> 
         result = ops.get_pr_comment(Path("/repo"), 99999)
 
         assert result is None
+
+
+# ============================================================================
+# list_all_workflow_runs() Tests
+# ============================================================================
+
+
+def test_list_all_workflow_runs_success(monkeypatch: MonkeyPatch) -> None:
+    """Test list_all_workflow_runs parses REST API output correctly."""
+    sample_response = json.dumps(
+        [
+            {
+                "id": 111,
+                "status": "completed",
+                "conclusion": "success",
+                "head_branch": "feat-1",
+                "head_sha": "aaa111",
+                "display_title": "Run 1",
+                "created_at": "2025-06-01T10:00:00Z",
+                "path": ".github/workflows/plan-implement.yml",
+            },
+            {
+                "id": 222,
+                "status": "in_progress",
+                "conclusion": None,
+                "head_branch": "feat-2",
+                "head_sha": "bbb222",
+                "display_title": "Run 2",
+                "created_at": "2025-06-01T11:00:00Z",
+                "path": ".github/workflows/ci.yml",
+            },
+        ]
+    )
+
+    called_with: list[list[str]] = []
+
+    def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
+        called_with.append(cmd)
+        return subprocess.CompletedProcess(
+            args=cmd, returncode=0, stdout=sample_response, stderr=""
+        )
+
+    with mock_subprocess_run(monkeypatch, mock_run):
+        ops = real_github_for_test()
+        result = ops.list_all_workflow_runs(Path("/repo"), limit=100)
+
+    # Verify command construction
+    assert len(called_with) == 1
+    cmd = called_with[0]
+    assert "gh" in cmd
+    assert "api" in cmd
+    assert any("actions/runs" in arg for arg in cmd)
+    assert any("per_page=100" in arg for arg in cmd)
+
+    # Verify parsed results
+    assert len(result) == 2
+    assert result[0].run_id == "111"
+    assert result[0].status == "completed"
+    assert result[0].conclusion == "success"
+    assert result[0].branch == "feat-1"
+    assert result[0].workflow_path == ".github/workflows/plan-implement.yml"
+    assert result[0].created_at == datetime(2025, 6, 1, 10, 0, 0, tzinfo=UTC)
+
+    assert result[1].run_id == "222"
+    assert result[1].status == "in_progress"
+    assert result[1].conclusion is None
+    assert result[1].workflow_path == ".github/workflows/ci.yml"
+
+
+def test_list_all_workflow_runs_with_actor_filter(monkeypatch: MonkeyPatch) -> None:
+    """Test list_all_workflow_runs includes actor parameter in API URL."""
+    called_with: list[list[str]] = []
+
+    def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
+        called_with.append(cmd)
+        return subprocess.CompletedProcess(args=cmd, returncode=0, stdout="[]", stderr="")
+
+    with mock_subprocess_run(monkeypatch, mock_run):
+        ops = real_github_for_test()
+        ops.list_all_workflow_runs(Path("/repo"), limit=50, actor="testuser")
+
+    assert len(called_with) == 1
+    cmd_str = " ".join(called_with[0])
+    assert "per_page=50" in cmd_str
+    assert "actor=testuser" in cmd_str
+
+
+def test_list_all_workflow_runs_without_actor(monkeypatch: MonkeyPatch) -> None:
+    """Test list_all_workflow_runs omits actor when None."""
+    called_with: list[list[str]] = []
+
+    def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
+        called_with.append(cmd)
+        return subprocess.CompletedProcess(args=cmd, returncode=0, stdout="[]", stderr="")
+
+    with mock_subprocess_run(monkeypatch, mock_run):
+        ops = real_github_for_test()
+        ops.list_all_workflow_runs(Path("/repo"), limit=100)
+
+    cmd_str = " ".join(called_with[0])
+    assert "per_page=100" in cmd_str
+    assert "actor" not in cmd_str
+
+
+# ============================================================================
+# get_prs_by_numbers() Tests
+# ============================================================================
+
+
+def test_get_prs_by_numbers_success(monkeypatch: MonkeyPatch) -> None:
+    """Test get_prs_by_numbers parses GraphQL response correctly."""
+    graphql_response = json.dumps(
+        {
+            "data": {
+                "repository": {
+                    "pr_42": {
+                        "number": 42,
+                        "state": "OPEN",
+                        "url": "https://github.com/owner/repo/pull/42",
+                        "title": "Add feature",
+                        "isDraft": False,
+                        "headRefName": "feat-branch",
+                        "baseRefName": "main",
+                        "mergeable": "MERGEABLE",
+                        "reviewDecision": "APPROVED",
+                    },
+                    "pr_99": {
+                        "number": 99,
+                        "state": "MERGED",
+                        "url": "https://github.com/owner/repo/pull/99",
+                        "title": "Bug fix",
+                        "isDraft": False,
+                        "headRefName": "fix-branch",
+                        "baseRefName": "main",
+                        "mergeable": None,
+                        "reviewDecision": None,
+                    },
+                }
+            }
+        }
+    )
+
+    called_with: list[list[str]] = []
+
+    def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
+        called_with.append(cmd)
+        return subprocess.CompletedProcess(
+            args=cmd, returncode=0, stdout=graphql_response, stderr=""
+        )
+
+    with mock_subprocess_run(monkeypatch, mock_run):
+        ops = real_github_for_test()
+        location = GitHubRepoLocation(
+            root=Path("/repo"),
+            repo_id=GitHubRepoId(owner="owner", repo="repo"),
+        )
+        result = ops.get_prs_by_numbers(location, [42, 99])
+
+    # Verify GraphQL command
+    assert len(called_with) == 1
+    cmd = called_with[0]
+    assert "graphql" in cmd
+
+    # Verify parsed results
+    assert len(result) == 2
+
+    pr42 = result[42]
+    assert pr42.number == 42
+    assert pr42.state == "OPEN"
+    assert pr42.title == "Add feature"
+    assert pr42.is_draft is False
+    assert pr42.head_branch == "feat-branch"
+    assert pr42.has_conflicts is False
+    assert pr42.review_decision == "APPROVED"
+    assert pr42.base_ref_name == "main"
+
+    pr99 = result[99]
+    assert pr99.number == 99
+    assert pr99.state == "MERGED"
+    assert pr99.title == "Bug fix"
+    assert pr99.has_conflicts is None  # mergeable was None
+
+
+def test_get_prs_by_numbers_empty_list(monkeypatch: MonkeyPatch) -> None:
+    """Test get_prs_by_numbers returns empty dict for empty input."""
+    called_with: list[list[str]] = []
+
+    def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
+        called_with.append(cmd)
+        return subprocess.CompletedProcess(args=cmd, returncode=0, stdout="{}", stderr="")
+
+    with mock_subprocess_run(monkeypatch, mock_run):
+        ops = real_github_for_test()
+        location = GitHubRepoLocation(
+            root=Path("/repo"),
+            repo_id=GitHubRepoId(owner="owner", repo="repo"),
+        )
+        result = ops.get_prs_by_numbers(location, [])
+
+    # Should short-circuit without making API call
+    assert result == {}
+    assert len(called_with) == 0
+
+
+def test_get_prs_by_numbers_handles_missing_pr(monkeypatch: MonkeyPatch) -> None:
+    """Test get_prs_by_numbers skips null entries (deleted PRs)."""
+    graphql_response = json.dumps(
+        {
+            "data": {
+                "repository": {
+                    "pr_42": {
+                        "number": 42,
+                        "state": "OPEN",
+                        "url": "https://github.com/owner/repo/pull/42",
+                        "title": "Exists",
+                        "isDraft": False,
+                        "headRefName": "branch",
+                        "baseRefName": "main",
+                        "mergeable": None,
+                        "reviewDecision": None,
+                    },
+                    "pr_999": None,  # PR not found
+                }
+            }
+        }
+    )
+
+    def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
+        return subprocess.CompletedProcess(
+            args=cmd, returncode=0, stdout=graphql_response, stderr=""
+        )
+
+    with mock_subprocess_run(monkeypatch, mock_run):
+        ops = real_github_for_test()
+        location = GitHubRepoLocation(
+            root=Path("/repo"),
+            repo_id=GitHubRepoId(owner="owner", repo="repo"),
+        )
+        result = ops.get_prs_by_numbers(location, [42, 999])
+
+    assert len(result) == 1
+    assert 42 in result
+    assert 999 not in result
