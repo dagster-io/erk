@@ -1,8 +1,10 @@
 {
   "provider": "github-draft-pr",
-  "title": "Plan: Rename Click Arguments/Options (Objective #9109, Node 2.3)",
+  "plan_id": "9130",
+  "url": "https://github.com/dagster-io/erk/pull/9130",
+  "created_at": "2026-03-10T08:23:06.611479",
+  "synced_at": "2026-03-10T08:23:06.611479",
+  "labels": [],
   "objective_id": 9109,
-  "node_ids": [
-    "2.3"
-  ]
+  "node_ids": null
 }
