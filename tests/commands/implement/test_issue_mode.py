@@ -174,7 +174,7 @@ def test_auto_detect_fails_on_plnd_branch_without_plan_ref() -> None:
             current_branches={env.cwd: "plnd/my-feature-01-16-1200"},
         )
         store, fake_github = create_plan_store_with_plans({"42": plan_issue})
-        # Also register the PR under the real branch name so PlannedPRBackend
+        # Also register the PR under the real branch name so GitHubManagedPrBackend
         # can resolve it via get_pr_for_branch during auto-detection.
         # (create_plan_store_with_plans registers under "plan-42")
         real_branch = "P42-my-feature-01-16-1200"

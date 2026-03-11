@@ -297,7 +297,7 @@ def push_session(
         "last_session_source": source,
     }
 
-    plan_result = backend.get_plan(repo_root, pr_number_str)
+    plan_result = backend.get_managed_pr(repo_root, pr_number_str)
     if not isinstance(plan_result, PlanNotFound):
         try:
             backend.update_metadata(repo_root, pr_number_str, metadata)

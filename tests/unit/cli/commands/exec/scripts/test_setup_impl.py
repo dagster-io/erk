@@ -12,7 +12,7 @@ from click.testing import CliRunner
 from erk.cli.commands.exec.scripts.setup_impl import setup_impl
 from erk_shared.context.context import ErkContext
 from erk_shared.impl_folder import get_impl_dir
-from erk_shared.plan_store.planned_pr import PlannedPRBackend
+from erk_shared.plan_store.planned_pr import GitHubManagedPrBackend
 from tests.fakes.gateway.git import FakeGit
 from tests.fakes.gateway.github import FakeLocalGitHub
 from tests.fakes.gateway.graphite import FakeGraphite
@@ -105,8 +105,8 @@ def test_issue_setup_invokes_setup_impl_from_issue(tmp_path: Path) -> None:
     """
     plan_branch = "plan-fix-branch-slug-02-24"
     fake_github = FakeLocalGitHub()
-    backend = PlannedPRBackend(fake_github, fake_github.issues, time=FakeTime())
-    plan_result = backend.create_plan(
+    backend = GitHubManagedPrBackend(fake_github, fake_github.issues, time=FakeTime())
+    plan_result = backend.create_managed_pr(
         repo_root=tmp_path,
         title="Fix branch slug",
         content="# Fix\n\nRemove dead branch_slug parameter.",

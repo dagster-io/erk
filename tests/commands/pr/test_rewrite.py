@@ -14,7 +14,7 @@ from erk_shared.gateway.branch_manager.types import SubmitBranchError
 from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.types import PRDetails
 from erk_shared.gateway.graphite.types import BranchMetadata
-from erk_shared.plan_store.planned_pr import PlannedPRBackend
+from erk_shared.plan_store.planned_pr import GitHubManagedPrBackend
 from erk_shared.plan_store.planned_pr_lifecycle import build_plan_stage_body
 from tests.fakes.gateway.git import FakeGit
 from tests.fakes.gateway.github import FakeLocalGitHub
@@ -329,7 +329,7 @@ def test_pr_rewrite_planned_pr_backend_preserves_metadata() -> None:
             github=github,
             graphite=graphite,
             prompt_executor=executor,
-            plan_store=PlannedPRBackend(github, github.issues, time=FakeTime()),
+            plan_store=GitHubManagedPrBackend(github, github.issues, time=FakeTime()),
         )
 
         result = runner.invoke(pr_group, ["rewrite"], obj=ctx)

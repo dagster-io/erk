@@ -1,15 +1,15 @@
-"""Abstract interface for plan storage backends.
+"""Abstract interface for managed PR backends.
 
-PlanBackend is a BACKEND, not a gateway. Backends compose gateways (like GitHubIssues)
-and should NOT have fake implementations. To test code that uses a PlanBackend,
+ManagedPrBackend is a BACKEND, not a gateway. Backends compose gateways (like GitHubIssues)
+and should NOT have fake implementations. To test code that uses a ManagedPrBackend,
 inject fake gateways into the real backend implementation.
 
 Example:
     # Testing with fake gateway
     fake_issues = FakeGitHubIssues()
     fake_github = FakeLocalGitHub(issues_gateway=fake_issues)
-    backend = PlannedPRBackend(fake_github, fake_issues, time=FakeTime())
-    result = backend.create_plan(...)
+    backend = GitHubManagedPrBackend(fake_github, fake_issues, time=FakeTime())
+    result = backend.create_managed_pr(...)
 
     # Assert on gateway mutations
     assert fake_issues.created_issues[0][0] == "expected title"
@@ -48,23 +48,23 @@ from erk_shared.sessions.discovery import SessionsForPlan
 # ---------------------------------------------------------------------------
 
 
-class PlanBackend(ABC):
-    """Abstract interface for plan storage operations.
+class ManagedPrBackend(ABC):
+    """Abstract interface for managed PR operations.
 
-    Provides the full read/write interface for plan storage backends.
-    Implementations provide backend-specific storage for plans.
+    Provides the full read/write interface for managed PR backends.
+    Implementations provide backend-specific storage for managed PRs.
 
     Read operations:
-        get_plan: Fetch a plan by identifier
-        list_plans: Query plans by criteria
+        get_managed_pr: Fetch a plan by identifier
+        list_managed_prs: Query plans by criteria
         get_provider_name: Get the provider name
-        close_plan: Close a plan
+        close_managed_pr: Close a plan
         get_metadata_field: Get a single metadata field value
 
     Write operations:
-        create_plan: Create a new plan
+        create_managed_pr: Create a new plan
         update_metadata: Update plan metadata
-        update_plan_content: Update plan content body
+        update_managed_pr_content: Update plan content body
         add_comment: Add a comment to a plan
         post_event: Combined metadata update + optional comment
     """
@@ -72,12 +72,12 @@ class PlanBackend(ABC):
     # Read operations
 
     @abstractmethod
-    def get_plan(self, repo_root: Path, plan_id: str) -> Plan | PlanNotFound:
+    def get_managed_pr(self, repo_root: Path, pr_number: str) -> Plan | PlanNotFound:
         """Fetch a plan by identifier.
 
         Args:
             repo_root: Repository root directory
-            plan_id: Provider-specific identifier (e.g., "42", "PROJ-123")
+            pr_number: Provider-specific identifier (e.g., "42", "PROJ-123")
 
         Returns:
             Plan with all metadata, or PlanNotFound if the plan does not exist
@@ -85,7 +85,7 @@ class PlanBackend(ABC):
         ...
 
     @abstractmethod
-    def list_plans(self, repo_root: Path, query: PlanQuery) -> list[Plan]:
+    def list_managed_prs(self, repo_root: Path, query: PlanQuery) -> list[Plan]:
         """Query plans by criteria.
 
         Args:
@@ -113,14 +113,14 @@ class PlanBackend(ABC):
     def get_metadata_field(
         self,
         repo_root: Path,
-        plan_id: str,
+        pr_number: str,
         field_name: str,
     ) -> object | PlanNotFound:
         """Get a single metadata field from a plan.
 
         Args:
             repo_root: Repository root directory
-            plan_id: Provider-specific identifier
+            pr_number: Provider-specific identifier
             field_name: Name of the metadata field to read
 
         Returns:
@@ -132,13 +132,13 @@ class PlanBackend(ABC):
     def get_all_metadata_fields(
         self,
         repo_root: Path,
-        plan_id: str,
+        pr_number: str,
     ) -> dict[str, object] | PlanNotFound:
         """Get all metadata fields from the plan-header block.
 
         Args:
             repo_root: Repository root directory
-            plan_id: Provider-specific identifier
+            pr_number: Provider-specific identifier
 
         Returns:
             Dictionary of all metadata fields, or PlanNotFound if plan doesn't exist.
@@ -147,7 +147,7 @@ class PlanBackend(ABC):
         ...
 
     @abstractmethod
-    def get_comments(self, repo_root: Path, plan_id: str) -> list[str]:
+    def get_comments(self, repo_root: Path, pr_number: str) -> list[str]:
         """Get all comments on a plan.
 
         Used by session discovery to find implementation and learn session IDs
@@ -155,7 +155,7 @@ class PlanBackend(ABC):
 
         Args:
             repo_root: Repository root directory
-            plan_id: Provider-specific identifier
+            pr_number: Provider-specific identifier
 
         Returns:
             List of comment body strings, ordered oldest to newest.
@@ -168,10 +168,10 @@ class PlanBackend(ABC):
 
     # Session discovery (concrete — uses get_plan + get_comments)
 
-    def find_sessions_for_plan(
+    def find_sessions_for_managed_pr(
         self,
         repo_root: Path,
-        plan_id: str,
+        pr_number: str,
     ) -> SessionsForPlan:
         """Find all Claude Code sessions associated with a plan.
 
@@ -182,12 +182,12 @@ class PlanBackend(ABC):
         4. last_learn_session in plan-header (most recent learn session)
         5. learn-invoked comments (previous learn sessions)
 
-        This is a concrete method that delegates to the abstract ``get_plan``
+        This is a concrete method that delegates to the abstract ``get_managed_pr``
         and ``get_comments`` methods, so every backend gets it for free.
 
         Args:
             repo_root: Repository root directory
-            plan_id: Provider-specific identifier
+            pr_number: Provider-specific identifier
 
         Returns:
             SessionsForPlan with all discovered session IDs
@@ -195,16 +195,16 @@ class PlanBackend(ABC):
         Raises:
             RuntimeError: If plan not found
         """
-        plan = self.get_plan(repo_root, plan_id)
+        plan = self.get_managed_pr(repo_root, pr_number)
         if isinstance(plan, PlanNotFound):
-            msg = f"Plan {plan_id} not found"
+            msg = f"Plan {pr_number} not found"
             raise RuntimeError(msg)
 
         planning_session_id = header_str(plan.header_fields, CREATED_FROM_SESSION)
         metadata_impl_session = header_str(plan.header_fields, LAST_LOCAL_IMPL_SESSION)
         metadata_learn_session = header_str(plan.header_fields, LAST_LEARN_SESSION)
 
-        comments = self.get_comments(repo_root, plan_id)
+        comments = self.get_comments(repo_root, pr_number)
         comment_impl_sessions = extract_implementation_sessions(comments)
         comment_learn_sessions = extract_learn_sessions(comments)
 
@@ -245,7 +245,7 @@ class PlanBackend(ABC):
     # Branch → Plan resolution
 
     @abstractmethod
-    def get_plan_for_branch(self, repo_root: Path, branch_name: str) -> Plan | PlanNotFound:
+    def get_managed_pr_for_branch(self, repo_root: Path, branch_name: str) -> Plan | PlanNotFound:
         """Look up the plan associated with a branch.
 
         Resolves the branch name to a plan identifier and fetches the full plan.
@@ -262,14 +262,14 @@ class PlanBackend(ABC):
         ...
 
     @abstractmethod
-    def resolve_plan_id_for_branch(self, repo_root: Path, branch_name: str) -> str | None:
+    def resolve_pr_number_for_branch(self, repo_root: Path, branch_name: str) -> str | None:
         """Resolve plan identifier for a branch without fetching the full plan.
 
         Lightweight resolution that does NOT verify the plan exists.
         Returns None if the branch is not associated with a plan.
 
-        For GitHubPlanBackend this is a zero-cost regex operation.
-        Future backends (e.g., PlannedPRBackend) may require an API call.
+        For GitHubManagedPrBackend this requires an API call to find the
+        draft PR associated with the branch.
 
         Args:
             repo_root: Repository root directory
@@ -283,7 +283,7 @@ class PlanBackend(ABC):
     # Write operations
 
     @abstractmethod
-    def create_plan(
+    def create_managed_pr(
         self,
         *,
         repo_root: Path,
@@ -304,7 +304,7 @@ class PlanBackend(ABC):
             summary: AI-generated summary (empty string if none)
 
         Returns:
-            CreatePlanResult with plan_id and url
+            CreatePlanResult with pr_number and url
 
         Raises:
             RuntimeError: If provider fails
@@ -315,14 +315,14 @@ class PlanBackend(ABC):
     def update_metadata(
         self,
         repo_root: Path,
-        plan_id: str,
+        pr_number: str,
         metadata: Mapping[str, object],
     ) -> None:
         """Update plan metadata.
 
         Args:
             repo_root: Repository root directory
-            plan_id: Provider-specific identifier
+            pr_number: Provider-specific identifier
             metadata: New metadata to set
 
         Raises:
@@ -332,10 +332,10 @@ class PlanBackend(ABC):
         ...
 
     @abstractmethod
-    def update_plan_content(
+    def update_managed_pr_content(
         self,
         repo_root: Path,
-        plan_id: str,
+        pr_number: str,
         content: str,
         *,
         summary: str,
@@ -344,7 +344,7 @@ class PlanBackend(ABC):
 
         Args:
             repo_root: Repository root directory
-            plan_id: Provider-specific identifier
+            pr_number: Provider-specific identifier
             content: New plan content
             summary: AI-generated summary (empty string if none)
 
@@ -354,12 +354,12 @@ class PlanBackend(ABC):
         ...
 
     @abstractmethod
-    def close_plan(self, repo_root: Path, plan_id: str) -> None:
+    def close_managed_pr(self, repo_root: Path, pr_number: str) -> None:
         """Close a plan by its identifier (issue number or GitHub URL).
 
         Args:
             repo_root: Repository root directory
-            plan_id: Plan identifier (issue number like "123" or GitHub URL)
+            pr_number: Plan identifier (issue number like "123" or GitHub URL)
 
         Raises:
             RuntimeError: If provider fails, plan not found, or invalid identifier
@@ -367,17 +367,17 @@ class PlanBackend(ABC):
         ...
 
     @abstractmethod
-    def update_plan_title(
+    def update_managed_pr_title(
         self,
         repo_root: Path,
-        plan_id: str,
+        pr_number: str,
         title: str,
     ) -> None:
         """Update the title of a plan.
 
         Args:
             repo_root: Repository root directory
-            plan_id: Provider-specific identifier (e.g., "42")
+            pr_number: Provider-specific identifier (e.g., "42")
             title: New plan title
 
         Raises:
@@ -389,14 +389,14 @@ class PlanBackend(ABC):
     def add_comment(
         self,
         repo_root: Path,
-        plan_id: str,
+        pr_number: str,
         body: str,
     ) -> str:
         """Add a comment to a plan.
 
         Args:
             repo_root: Repository root directory
-            plan_id: Provider-specific identifier
+            pr_number: Provider-specific identifier
             body: Comment body text
 
         Returns:
@@ -411,14 +411,14 @@ class PlanBackend(ABC):
     def add_label(
         self,
         repo_root: Path,
-        plan_id: str,
+        pr_number: str,
         label: str,
     ) -> None:
         """Add a label to a plan.
 
         Args:
             repo_root: Repository root directory
-            plan_id: Provider-specific identifier
+            pr_number: Provider-specific identifier
             label: Label to add
 
         Raises:
@@ -427,7 +427,7 @@ class PlanBackend(ABC):
         ...
 
     @abstractmethod
-    def ensure_plan_header(self, repo_root: Path, plan_id: str) -> None:
+    def ensure_plan_header(self, repo_root: Path, pr_number: str) -> None:
         """Ensure plan has a plan-header metadata block.
 
         If the plan already has a plan-header, this is a no-op.
@@ -436,7 +436,7 @@ class PlanBackend(ABC):
 
         Args:
             repo_root: Repository root directory
-            plan_id: Provider-specific identifier
+            pr_number: Provider-specific identifier
 
         Raises:
             RuntimeError: If plan not found
@@ -447,7 +447,7 @@ class PlanBackend(ABC):
     def post_event(
         self,
         repo_root: Path,
-        plan_id: str,
+        pr_number: str,
         *,
         metadata: Mapping[str, object],
         comment: str | None,
@@ -456,7 +456,7 @@ class PlanBackend(ABC):
 
         Args:
             repo_root: Repository root directory
-            plan_id: Provider-specific identifier
+            pr_number: Provider-specific identifier
             metadata: Metadata fields to update
             comment: Optional comment body to post
 

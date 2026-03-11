@@ -1,8 +1,8 @@
-"""Draft PR implementation of plan storage.
+"""GitHub draft PR implementation of managed PR backend.
 
-Uses GitHub draft pull requests as the backing store for plans.
+Uses GitHub draft pull requests as the backing store for managed PRs.
 PR body contains the plan-header metadata block followed by plan content.
-The "[erk-pr]" title prefix identifies plan PRs vs regular draft PRs.
+The "[erk-pr]" title prefix identifies managed PRs vs regular draft PRs.
 """
 
 import logging
@@ -35,7 +35,7 @@ from erk_shared.gateway.github.metadata.types import BlockKeys, MetadataBlock
 from erk_shared.gateway.github.pr_footer import build_pr_body_footer
 from erk_shared.gateway.github.types import BodyText, PRDetails, PRNotFound
 from erk_shared.gateway.time.abc import Time
-from erk_shared.plan_store.backend import PlanBackend
+from erk_shared.plan_store.backend import ManagedPrBackend
 from erk_shared.plan_store.conversion import pr_details_to_plan
 from erk_shared.plan_store.planned_pr_lifecycle import (
     build_plan_stage_body,
@@ -76,10 +76,10 @@ def _parse_objective_id(value: object) -> int | None:
     raise ValueError(f"objective_issue must be str or int, got {type(value).__name__}")
 
 
-class PlannedPRBackend(PlanBackend):
-    """Draft PR implementation of plan storage.
+class GitHubManagedPrBackend(ManagedPrBackend):
+    """GitHub draft PR implementation of managed PR backend.
 
-    Uses GitHub draft pull requests as the backing store for plans.
+    Uses GitHub draft pull requests as the backing store for managed PRs.
     Composes the top-level GitHub ABC which already provides all needed
     PR methods (create_pr, get_pr, close_pr, etc.).
 
@@ -94,7 +94,7 @@ class PlannedPRBackend(PlanBackend):
     """
 
     def __init__(self, github: LocalGitHub, github_issues: GitHubIssues, *, time: Time) -> None:
-        """Initialize PlannedPRBackend with GitHub and issues gateways.
+        """Initialize GitHubManagedPrBackend with GitHub and issues gateways.
 
         Args:
             github: GitHub gateway implementation (real or fake)
@@ -115,7 +115,7 @@ class PlannedPRBackend(PlanBackend):
         """
         return "github-draft-pr"
 
-    def resolve_plan_id_for_branch(self, repo_root: Path, branch_name: str) -> str | None:
+    def resolve_pr_number_for_branch(self, repo_root: Path, branch_name: str) -> str | None:
         """Resolve plan identifier for a branch by querying for a PR.
 
         Resolving the plan requires an API call to find the draft PR associated
@@ -133,7 +133,7 @@ class PlannedPRBackend(PlanBackend):
             return None
         return str(result.number)
 
-    def get_plan_for_branch(self, repo_root: Path, branch_name: str) -> Plan | PlanNotFound:
+    def get_managed_pr_for_branch(self, repo_root: Path, branch_name: str) -> Plan | PlanNotFound:
         """Look up the plan associated with a branch.
 
         Queries for a draft PR on the branch and converts to Plan.
@@ -150,23 +150,23 @@ class PlannedPRBackend(PlanBackend):
             return PlanNotFound(pr_id=branch_name)
         return self._convert_to_plan(result)
 
-    def get_plan(self, repo_root: Path, plan_id: str) -> Plan | PlanNotFound:
+    def get_managed_pr(self, repo_root: Path, pr_number: str) -> Plan | PlanNotFound:
         """Fetch plan from a draft PR by PR number.
 
         Args:
             repo_root: Repository root directory
-            plan_id: PR number as string (e.g., "42")
+            pr_number: PR number as string (e.g., "42")
 
         Returns:
             Plan with converted data, or PlanNotFound if PR does not exist
         """
-        pr_number = int(plan_id)
-        result = self._github.get_pr(repo_root, pr_number)
+        pr_num = int(pr_number)
+        result = self._github.get_pr(repo_root, pr_num)
         if isinstance(result, PRNotFound):
-            return PlanNotFound(pr_id=plan_id)
+            return PlanNotFound(pr_id=pr_number)
         return self._convert_to_plan(result)
 
-    def get_comments(self, repo_root: Path, plan_id: str) -> list[str]:
+    def get_comments(self, repo_root: Path, pr_number: str) -> list[str]:
         """Get all comments on a plan's draft PR.
 
         On GitHub, PR discussion comments share the same API as issue comments,
@@ -174,15 +174,15 @@ class PlannedPRBackend(PlanBackend):
 
         Args:
             repo_root: Repository root directory
-            plan_id: PR number as string
+            pr_number: PR number as string
 
         Returns:
             List of comment body strings, ordered oldest to newest
         """
-        pr_number = int(plan_id)
-        return self._github_issues.get_issue_comments(repo_root, pr_number)
+        pr_num = int(pr_number)
+        return self._github_issues.get_issue_comments(repo_root, pr_num)
 
-    def list_plans(self, repo_root: Path, query: PlanQuery) -> list[Plan]:
+    def list_managed_prs(self, repo_root: Path, query: PlanQuery) -> list[Plan]:
         """Query plans from draft PRs.
 
         Lists open PRs, filters to drafts with the [erk-pr] title prefix,
@@ -230,28 +230,28 @@ class PlannedPRBackend(PlanBackend):
 
         return plans
 
-    def close_plan(self, repo_root: Path, plan_id: str) -> None:
+    def close_managed_pr(self, repo_root: Path, pr_number: str) -> None:
         """Close a plan by closing its draft PR.
 
         Adds a comment before closing for audit trail.
 
         Args:
             repo_root: Repository root directory
-            plan_id: PR number as string
+            pr_number: PR number as string
 
         Raises:
             RuntimeError: If PR not found
         """
-        pr_number = int(plan_id)
-        result = self._github.get_pr(repo_root, pr_number)
+        pr_num = int(pr_number)
+        result = self._github.get_pr(repo_root, pr_num)
         if isinstance(result, PRNotFound):
-            msg = f"PR #{pr_number} not found"
+            msg = f"PR #{pr_num} not found"
             raise RuntimeError(msg)
 
-        self._github.create_pr_comment(repo_root, pr_number, "Plan completed via erk pr close")
-        self._github.close_pr(repo_root, pr_number)
+        self._github.create_pr_comment(repo_root, pr_num, "Plan completed via erk pr close")
+        self._github.close_pr(repo_root, pr_num)
 
-    def create_plan(
+    def create_managed_pr(
         self,
         *,
         repo_root: Path,
@@ -280,14 +280,14 @@ class PlannedPRBackend(PlanBackend):
             summary: AI-generated summary (empty string if none)
 
         Returns:
-            CreatePlanResult with plan_id (PR number) and url
+            CreatePlanResult with pr_number (PR number) and url
 
         Raises:
             RuntimeError: If branch_name not in metadata or creation fails
         """
         branch_name = metadata.get("branch_name")
         if branch_name is None or not isinstance(branch_name, str):
-            raise RuntimeError("branch_name is required in metadata for PlannedPRBackend")
+            raise RuntimeError("branch_name is required in metadata for GitHubManagedPrBackend")
 
         # Get username for metadata
         auth_result = self._github.check_auth_status()
@@ -397,23 +397,23 @@ class PlannedPRBackend(PlanBackend):
     def get_metadata_field(
         self,
         repo_root: Path,
-        plan_id: str,
+        pr_number: str,
         field_name: str,
     ) -> object | PlanNotFound:
         """Get a single metadata field from the plan-header block in the PR body.
 
         Args:
             repo_root: Repository root directory
-            plan_id: PR number as string
+            pr_number: PR number as string
             field_name: Name of the metadata field to read
 
         Returns:
             Field value (may be None if unset), or PlanNotFound if PR doesn't exist
         """
-        pr_number = int(plan_id)
-        result = self._github.get_pr(repo_root, pr_number)
+        pr_num = int(pr_number)
+        result = self._github.get_pr(repo_root, pr_num)
         if isinstance(result, PRNotFound):
-            return PlanNotFound(pr_id=plan_id)
+            return PlanNotFound(pr_id=pr_number)
 
         block = find_metadata_block(result.body, BlockKeys.PLAN_HEADER)
         if block is None:
@@ -424,22 +424,22 @@ class PlannedPRBackend(PlanBackend):
     def get_all_metadata_fields(
         self,
         repo_root: Path,
-        plan_id: str,
+        pr_number: str,
     ) -> dict[str, object] | PlanNotFound:
         """Get all metadata fields from the plan-header block in the PR body.
 
         Args:
             repo_root: Repository root directory
-            plan_id: PR number as string
+            pr_number: PR number as string
 
         Returns:
             Dictionary of all metadata fields, or PlanNotFound if PR doesn't exist.
             Returns empty dict if PR exists but has no metadata block.
         """
-        pr_number = int(plan_id)
-        result = self._github.get_pr(repo_root, pr_number)
+        pr_num = int(pr_number)
+        result = self._github.get_pr(repo_root, pr_num)
         if isinstance(result, PRNotFound):
-            return PlanNotFound(pr_id=plan_id)
+            return PlanNotFound(pr_id=pr_number)
 
         block = find_metadata_block(result.body, BlockKeys.PLAN_HEADER)
         if block is None:
@@ -450,7 +450,7 @@ class PlannedPRBackend(PlanBackend):
     def update_metadata(
         self,
         repo_root: Path,
-        plan_id: str,
+        pr_number: str,
         metadata: Mapping[str, object],
     ) -> None:
         """Update plan metadata in the PR body.
@@ -460,17 +460,17 @@ class PlannedPRBackend(PlanBackend):
 
         Args:
             repo_root: Repository root directory
-            plan_id: PR number as string
+            pr_number: PR number as string
             metadata: New metadata to set
 
         Raises:
             PlanHeaderNotFoundError: If PR body has no plan-header metadata block
             RuntimeError: If PR not found or update fails
         """
-        pr_number = int(plan_id)
-        result = self._github.get_pr(repo_root, pr_number)
+        pr_num = int(pr_number)
+        result = self._github.get_pr(repo_root, pr_num)
         if isinstance(result, PRNotFound):
-            msg = f"PR #{pr_number} not found"
+            msg = f"PR #{pr_num} not found"
             raise RuntimeError(msg)
 
         block = find_metadata_block(result.body, BlockKeys.PLAN_HEADER)
@@ -494,12 +494,12 @@ class PlannedPRBackend(PlanBackend):
         updated_body = replace_metadata_block_in_body(
             result.body, BlockKeys.PLAN_HEADER, new_block_content
         )
-        self._github.update_pr_body(repo_root, pr_number, updated_body)
+        self._github.update_pr_body(repo_root, pr_num, updated_body)
 
-    def update_plan_content(
+    def update_managed_pr_content(
         self,
         repo_root: Path,
-        plan_id: str,
+        pr_number: str,
         content: str,
         *,
         summary: str,
@@ -510,17 +510,17 @@ class PlannedPRBackend(PlanBackend):
 
         Args:
             repo_root: Repository root directory
-            plan_id: PR number as string
+            pr_number: PR number as string
             content: New plan content
             summary: AI-generated summary (empty string if none)
 
         Raises:
             RuntimeError: If PR not found
         """
-        pr_number = int(plan_id)
-        result = self._github.get_pr(repo_root, pr_number)
+        pr_num = int(pr_number)
+        result = self._github.get_pr(repo_root, pr_num)
         if isinstance(result, PRNotFound):
-            msg = f"PR #{pr_number} not found"
+            msg = f"PR #{pr_num} not found"
             raise RuntimeError(msg)
 
         # Preserve metadata prefix and replace plan content
@@ -533,12 +533,12 @@ class PlannedPRBackend(PlanBackend):
             # No metadata block found - just set the content
             updated_body = content
 
-        self._github.update_pr_body(repo_root, pr_number, updated_body)
+        self._github.update_pr_body(repo_root, pr_num, updated_body)
 
-    def update_plan_title(
+    def update_managed_pr_title(
         self,
         repo_root: Path,
-        plan_id: str,
+        pr_number: str,
         title: str,
     ) -> None:
         """Update the title of a plan's draft PR.
@@ -548,21 +548,21 @@ class PlannedPRBackend(PlanBackend):
 
         Args:
             repo_root: Repository root directory
-            plan_id: PR number as string (e.g., "42")
+            pr_number: PR number as string (e.g., "42")
             title: New PR title
 
         Raises:
             RuntimeError: If PR not found or update fails
         """
-        pr_number = int(plan_id)
-        result = self._github.get_pr(repo_root, pr_number)
+        pr_num = int(pr_number)
+        result = self._github.get_pr(repo_root, pr_num)
         if isinstance(result, PRNotFound):
-            msg = f"PR #{pr_number} not found"
+            msg = f"PR #{pr_num} not found"
             raise RuntimeError(msg)
 
         self._github.update_pr_title_and_body(
             repo_root=repo_root,
-            pr_number=pr_number,
+            pr_number=pr_num,
             title=title,
             body=BodyText(content=result.body),
         )
@@ -570,37 +570,37 @@ class PlannedPRBackend(PlanBackend):
     def add_label(
         self,
         repo_root: Path,
-        plan_id: str,
+        pr_number: str,
         label: str,
     ) -> None:
         """Add a label to the plan's draft PR.
 
         Args:
             repo_root: Repository root directory
-            plan_id: PR number as string
+            pr_number: PR number as string
             label: Label to add
 
         Raises:
             RuntimeError: If PR not found
         """
-        pr_number = int(plan_id)
-        result = self._github.get_pr(repo_root, pr_number)
+        pr_num = int(pr_number)
+        result = self._github.get_pr(repo_root, pr_num)
         if isinstance(result, PRNotFound):
-            msg = f"PR #{pr_number} not found"
+            msg = f"PR #{pr_num} not found"
             raise RuntimeError(msg)
-        self._github.add_label_to_pr(repo_root, pr_number, label)
+        self._github.add_label_to_pr(repo_root, pr_num, label)
 
     def add_comment(
         self,
         repo_root: Path,
-        plan_id: str,
+        pr_number: str,
         body: str,
     ) -> str:
         """Add a comment to the plan's draft PR.
 
         Args:
             repo_root: Repository root directory
-            plan_id: PR number as string
+            pr_number: PR number as string
             body: Comment body text
 
         Returns:
@@ -609,16 +609,16 @@ class PlannedPRBackend(PlanBackend):
         Raises:
             RuntimeError: If PR not found
         """
-        pr_number = int(plan_id)
-        result = self._github.get_pr(repo_root, pr_number)
+        pr_num = int(pr_number)
+        result = self._github.get_pr(repo_root, pr_num)
         if isinstance(result, PRNotFound):
-            msg = f"PR #{pr_number} not found"
+            msg = f"PR #{pr_num} not found"
             raise RuntimeError(msg)
 
-        comment_id = self._github.create_pr_comment(repo_root, pr_number, body)
+        comment_id = self._github.create_pr_comment(repo_root, pr_num, body)
         return str(comment_id)
 
-    def ensure_plan_header(self, repo_root: Path, plan_id: str) -> None:
+    def ensure_plan_header(self, repo_root: Path, pr_number: str) -> None:
         """Ensure plan has a plan-header metadata block.
 
         If the plan already has a plan-header, this is a no-op.
@@ -629,15 +629,15 @@ class PlannedPRBackend(PlanBackend):
 
         Args:
             repo_root: Repository root directory
-            plan_id: PR number as string
+            pr_number: PR number as string
 
         Raises:
             RuntimeError: If PR not found
         """
-        pr_number = int(plan_id)
-        result = self._github.get_pr(repo_root, pr_number)
+        pr_num = int(pr_number)
+        result = self._github.get_pr(repo_root, pr_num)
         if isinstance(result, PRNotFound):
-            msg = f"PR #{pr_number} not found"
+            msg = f"PR #{pr_num} not found"
             raise RuntimeError(msg)
 
         if has_metadata_block(result.body, BlockKeys.PLAN_HEADER):
@@ -676,12 +676,12 @@ class PlannedPRBackend(PlanBackend):
         )
 
         updated_body = add_metadata_block(result.body, metadata_body)
-        self._github.update_pr_body(repo_root, pr_number, updated_body)
+        self._github.update_pr_body(repo_root, pr_num, updated_body)
 
     def post_event(
         self,
         repo_root: Path,
-        plan_id: str,
+        pr_number: str,
         *,
         metadata: Mapping[str, object],
         comment: str | None,
@@ -690,7 +690,7 @@ class PlannedPRBackend(PlanBackend):
 
         Args:
             repo_root: Repository root directory
-            plan_id: PR number as string
+            pr_number: PR number as string
             metadata: Metadata fields to update
             comment: Optional comment body to post
 
@@ -698,8 +698,8 @@ class PlannedPRBackend(PlanBackend):
             RuntimeError: If PR not found
         """
         if comment is not None:
-            self.add_comment(repo_root, plan_id, comment)
-        self.update_metadata(repo_root, plan_id, metadata)
+            self.add_comment(repo_root, pr_number, comment)
+        self.update_metadata(repo_root, pr_number, metadata)
 
     def _convert_to_plan(self, pr: PRDetails) -> Plan:
         """Convert PRDetails to Plan, extracting plan content from body.

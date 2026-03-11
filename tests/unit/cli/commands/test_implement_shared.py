@@ -8,7 +8,7 @@ from erk.cli.commands.implement_shared import (
     extract_plan_from_current_branch,
     validate_flags,
 )
-from erk_shared.plan_store.planned_pr import PlannedPRBackend
+from erk_shared.plan_store.planned_pr import GitHubManagedPrBackend
 from tests.fakes.gateway.git import FakeGit
 from tests.fakes.gateway.github import FakeLocalGitHub
 from tests.fakes.gateway.time import FakeTime
@@ -16,14 +16,14 @@ from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_isolated_fs_env
 
 
-def _issue_plan_store() -> PlannedPRBackend:
-    """Create a PlannedPRBackend for branch name extraction tests.
+def _issue_plan_store() -> GitHubManagedPrBackend:
+    """Create a GitHubManagedPrBackend for branch name extraction tests.
 
-    PlannedPRBackend uses branch-name-based plan resolution, which is the behavior
+    GitHubManagedPrBackend uses branch-name-based plan resolution, which is the behavior
     needed for testing branch name → plan ID extraction.
     """
     fake_github = FakeLocalGitHub()
-    return PlannedPRBackend(fake_github, fake_github.issues, time=FakeTime())
+    return GitHubManagedPrBackend(fake_github, fake_github.issues, time=FakeTime())
 
 
 def test_extract_plan_from_current_branch_with_p_prefix_returns_none() -> None:

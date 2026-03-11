@@ -21,7 +21,7 @@ Stages
    PR body through stages 1-3 below.
 
 1. Plan Creation
-   ``plan_save`` / ``PlannedPRBackend.create_plan()`` creates a draft PR.
+   ``plan_save`` / ``GitHubManagedPrBackend.create_managed_pr()`` creates a draft PR.
    The body contains an optional AI-generated summary followed by the plan
    content collapsed in a <details> tag, then the plan-header metadata block
    and a checkout footer. The metadata block is self-delimiting via HTML
@@ -39,7 +39,7 @@ Stages
        </details>
 
        [metadata block]
-       \\n---\\n
+       \n---\n
        [checkout footer]
 
 2. Implementation
@@ -60,7 +60,7 @@ Stages
        </details>
 
        [metadata block]
-       \\n---\\n
+       \n---\n
        [checkout footer]
 
    Key invariant: No "Closes #N" in footer. The draft PR IS the plan --
@@ -73,7 +73,7 @@ Stages
 
 Separators
 ----------
-- Footer separator: ``\\n---\\n`` (single newline each side) --
+- Footer separator: ``\n---\n`` (single newline each side) --
   standard PR footer delimiter
 - Content separator (``PLAN_CONTENT_SEPARATOR``): Legacy constant kept
   only for backward compatibility in ``extract_plan_content`` for old PRs

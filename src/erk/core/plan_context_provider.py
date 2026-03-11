@@ -9,7 +9,7 @@ from pathlib import Path
 
 from erk_shared.gateway.github.issues.types import IssueNotFound
 from erk_shared.gateway.remote_github.abc import RemoteGitHub
-from erk_shared.plan_store.backend import PlanBackend
+from erk_shared.plan_store.backend import ManagedPrBackend
 from erk_shared.plan_store.types import PlanNotFound
 
 
@@ -32,13 +32,13 @@ class PlanContextProvider:
     """Provides plan context for branches linked to erk plans.
 
     This provider extracts plan content from the plan backend when a branch
-    is associated with a plan. Uses PlanBackend.get_plan_for_branch() to
+    is associated with a plan. Uses ManagedPrBackend.get_managed_pr_for_branch() to
     encapsulate the branch→plan resolution strategy.
 
     Uses RemoteGitHub for objective title lookup (objectives are issues, not plans).
     """
 
-    def __init__(self, *, plan_backend: PlanBackend, remote_github: RemoteGitHub) -> None:
+    def __init__(self, *, plan_backend: ManagedPrBackend, remote_github: RemoteGitHub) -> None:
         self._plan_backend = plan_backend
         self._remote_github = remote_github
 
@@ -53,13 +53,13 @@ class PlanContextProvider:
         """Get plan context for a branch, if available.
 
         Attempts to fetch plan context by:
-        1. Resolving branch to plan via PlanBackend.get_plan_for_branch()
+        1. Resolving branch to plan via ManagedPrBackend.get_managed_pr_for_branch()
         2. Optionally getting objective title if linked
 
         Returns None on any failure, allowing graceful degradation for
         branches not linked to plans.
         """
-        result = self._plan_backend.get_plan_for_branch(repo_root, branch_name)
+        result = self._plan_backend.get_managed_pr_for_branch(repo_root, branch_name)
         if isinstance(result, PlanNotFound):
             return None
 

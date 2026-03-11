@@ -245,7 +245,7 @@ def handle_no_changes(
         click.echo(json.dumps(asdict(result), indent=2))
         raise SystemExit(1) from None
 
-    # 5. Add comment to plan via PlanBackend
+    # 5. Add comment to plan via ManagedPrBackend
     try:
         comment = _build_issue_comment(pr_number=pr_number)
         backend.add_comment(repo_root, str(pr_number), comment)

@@ -49,10 +49,10 @@ def pr_close(ctx: ErkContext, identifier: str, *, repo_id: GitHubRepoId) -> None
     objective_id: int | None = None
     if not isinstance(ctx.repo, NoRepoSentinel):
         repo_root = ctx.repo.root
-        result = ctx.plan_store.get_plan(repo_root, str(number))
+        result = ctx.plan_store.get_managed_pr(repo_root, str(number))
         if not isinstance(result, PlanNotFound):
             objective_id = result.objective_id
-        ctx.plan_store.close_plan(repo_root, identifier)
+        ctx.plan_store.close_managed_pr(repo_root, identifier)
     else:
         remote.close_issue(owner=repo_id.owner, repo=repo_id.repo, number=number)
 

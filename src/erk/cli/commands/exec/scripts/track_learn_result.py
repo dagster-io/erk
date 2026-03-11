@@ -154,7 +154,7 @@ def track_learn_result(
     # Cast status to LearnStatusValue (already validated by click.Choice)
     learn_status: LearnStatusValue = status  # type: ignore[assignment]
 
-    # Update plan-header with learn result via PlanBackend
+    # Update plan-header with learn result via ManagedPrBackend
     try:
         backend.update_metadata(
             repo_root,

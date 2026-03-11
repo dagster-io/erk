@@ -158,7 +158,7 @@ def maybe_advance_lifecycle_to_impl(
 
     Silently returns on any failure — lifecycle updates must never block submission.
     """
-    plan_result = ctx.plan_backend.get_plan(repo_root, pr_id)
+    plan_result = ctx.plan_backend.get_managed_pr(repo_root, pr_id)
     if isinstance(plan_result, PlanNotFound):
         return
 
@@ -198,7 +198,7 @@ def recover_plan_header(
     Returns None if the plan cannot be found, allowing callers to proceed
     without a plan-header (current behavior).
     """
-    plan_result = ctx.plan_backend.get_plan(repo_root, pr_id)
+    plan_result = ctx.plan_backend.get_managed_pr(repo_root, pr_id)
     if isinstance(plan_result, PlanNotFound):
         return None
 

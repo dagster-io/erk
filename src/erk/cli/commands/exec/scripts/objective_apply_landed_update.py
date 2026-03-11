@@ -215,7 +215,7 @@ def objective_apply_landed_update(
         pr_number = pr_result.number
 
     # --- Resolve plan using PR number (the PR IS the plan) ---
-    plan_result = plan_backend.get_plan(repo_root, str(pr_number))
+    plan_result = plan_backend.get_managed_pr(repo_root, str(pr_number))
     if isinstance(plan_result, PlanNotFound):
         click.echo(_error_json(f"PR #{pr_number} not found"))
         raise SystemExit(1)

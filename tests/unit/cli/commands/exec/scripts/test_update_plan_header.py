@@ -11,7 +11,7 @@ from erk_shared.context.context import ErkContext
 from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.metadata.core import find_metadata_block
 from erk_shared.gateway.github.types import PRNotFound
-from erk_shared.plan_store.planned_pr import PlannedPRBackend
+from erk_shared.plan_store.planned_pr import GitHubManagedPrBackend
 from tests.fakes.gateway.github import FakeLocalGitHub
 from tests.fakes.gateway.github_issues import FakeGitHubIssues
 from tests.fakes.gateway.time import FakeTime
@@ -69,7 +69,7 @@ def test_update_single_field() -> None:
         obj=ErkContext.for_test(
             github=fake_github,
             repo_root=repo_root,
-            plan_store=PlannedPRBackend(fake_github, fake_gh, time=FakeTime()),
+            plan_store=GitHubManagedPrBackend(fake_github, fake_gh, time=FakeTime()),
         ),
     )
 
@@ -104,7 +104,7 @@ def test_update_multiple_fields() -> None:
         obj=ErkContext.for_test(
             github=fake_github,
             repo_root=repo_root,
-            plan_store=PlannedPRBackend(fake_github, fake_gh, time=FakeTime()),
+            plan_store=GitHubManagedPrBackend(fake_github, fake_gh, time=FakeTime()),
         ),
     )
 
@@ -143,7 +143,7 @@ def test_overwrites_existing() -> None:
         obj=ErkContext.for_test(
             github=fake_github,
             repo_root=repo_root,
-            plan_store=PlannedPRBackend(fake_github, fake_gh, time=FakeTime()),
+            plan_store=GitHubManagedPrBackend(fake_github, fake_gh, time=FakeTime()),
         ),
     )
 
@@ -183,7 +183,7 @@ def test_null_coercion() -> None:
         obj=ErkContext.for_test(
             github=fake_github,
             repo_root=repo_root,
-            plan_store=PlannedPRBackend(fake_github, fake_gh, time=FakeTime()),
+            plan_store=GitHubManagedPrBackend(fake_github, fake_gh, time=FakeTime()),
         ),
     )
 
@@ -213,7 +213,7 @@ def test_int_coercion() -> None:
         obj=ErkContext.for_test(
             github=fake_github,
             repo_root=repo_root,
-            plan_store=PlannedPRBackend(fake_github, fake_gh, time=FakeTime()),
+            plan_store=GitHubManagedPrBackend(fake_github, fake_gh, time=FakeTime()),
         ),
     )
 
@@ -244,7 +244,7 @@ def test_run_id_field_stays_string() -> None:
         obj=ErkContext.for_test(
             github=fake_github,
             repo_root=repo_root,
-            plan_store=PlannedPRBackend(fake_github, fake_gh, time=FakeTime()),
+            plan_store=GitHubManagedPrBackend(fake_github, fake_gh, time=FakeTime()),
         ),
     )
 
@@ -275,7 +275,7 @@ def test_dispatched_run_id_stays_string() -> None:
         obj=ErkContext.for_test(
             github=fake_github,
             repo_root=repo_root,
-            plan_store=PlannedPRBackend(fake_github, fake_gh, time=FakeTime()),
+            plan_store=GitHubManagedPrBackend(fake_github, fake_gh, time=FakeTime()),
         ),
     )
 
@@ -306,7 +306,7 @@ def test_non_string_field_still_coerced_to_int() -> None:
         obj=ErkContext.for_test(
             github=fake_github,
             repo_root=repo_root,
-            plan_store=PlannedPRBackend(fake_github, fake_gh, time=FakeTime()),
+            plan_store=GitHubManagedPrBackend(fake_github, fake_gh, time=FakeTime()),
         ),
     )
 
@@ -337,7 +337,7 @@ def test_string_preserved() -> None:
         obj=ErkContext.for_test(
             github=fake_github,
             repo_root=repo_root,
-            plan_store=PlannedPRBackend(fake_github, fake_gh, time=FakeTime()),
+            plan_store=GitHubManagedPrBackend(fake_github, fake_gh, time=FakeTime()),
         ),
     )
 
@@ -373,7 +373,7 @@ def test_schema_validation_rejects_unknown_field() -> None:
         obj=ErkContext.for_test(
             github=fake_github,
             repo_root=repo_root,
-            plan_store=PlannedPRBackend(fake_github, fake_gh, time=FakeTime()),
+            plan_store=GitHubManagedPrBackend(fake_github, fake_gh, time=FakeTime()),
         ),
     )
 
@@ -399,7 +399,7 @@ def test_schema_validation_rejects_invalid_lifecycle_stage() -> None:
         obj=ErkContext.for_test(
             github=fake_github,
             repo_root=repo_root,
-            plan_store=PlannedPRBackend(fake_github, fake_gh, time=FakeTime()),
+            plan_store=GitHubManagedPrBackend(fake_github, fake_gh, time=FakeTime()),
         ),
     )
 
@@ -425,7 +425,7 @@ def test_immutable_field_protected() -> None:
         obj=ErkContext.for_test(
             github=fake_github,
             repo_root=repo_root,
-            plan_store=PlannedPRBackend(fake_github, fake_gh, time=FakeTime()),
+            plan_store=GitHubManagedPrBackend(fake_github, fake_gh, time=FakeTime()),
         ),
     )
 
@@ -456,7 +456,7 @@ def test_no_fields_provided() -> None:
         ["300"],
         obj=ErkContext.for_test(
             github=fake_github,
-            plan_store=PlannedPRBackend(fake_github, fake_gh, time=FakeTime()),
+            plan_store=GitHubManagedPrBackend(fake_github, fake_gh, time=FakeTime()),
         ),
     )
 
@@ -477,7 +477,7 @@ def test_invalid_field_format() -> None:
         ["301", "no-equals-sign"],
         obj=ErkContext.for_test(
             github=fake_github,
-            plan_store=PlannedPRBackend(fake_github, fake_gh, time=FakeTime()),
+            plan_store=GitHubManagedPrBackend(fake_github, fake_gh, time=FakeTime()),
         ),
     )
 
@@ -505,7 +505,7 @@ def test_plan_not_found() -> None:
         obj=ErkContext.for_test(
             github=fake_github,
             repo_root=repo_root,
-            plan_store=PlannedPRBackend(fake_github, fake_gh, time=FakeTime()),
+            plan_store=GitHubManagedPrBackend(fake_github, fake_gh, time=FakeTime()),
         ),
     )
 
@@ -535,7 +535,7 @@ This is an issue created before plan-header blocks were introduced.
         obj=ErkContext.for_test(
             github=fake_github,
             repo_root=repo_root,
-            plan_store=PlannedPRBackend(fake_github, fake_gh, time=FakeTime()),
+            plan_store=GitHubManagedPrBackend(fake_github, fake_gh, time=FakeTime()),
         ),
     )
 

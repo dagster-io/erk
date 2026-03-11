@@ -622,7 +622,7 @@ class TestCreatePlanDraftPRNonNumericPlanId:
         """Non-numeric plan_id from backend returns error result with branch_name set."""
         from unittest.mock import patch
 
-        from erk_shared.plan_store.planned_pr import PlannedPRBackend
+        from erk_shared.plan_store.planned_pr import GitHubManagedPrBackend
         from erk_shared.plan_store.types import CreatePlanResult
 
         fake_issues = FakeGitHubIssues(username="testuser")
@@ -631,7 +631,7 @@ class TestCreatePlanDraftPRNonNumericPlanId:
         def patched_create_plan(self_inner: object, **kwargs: object) -> CreatePlanResult:
             return CreatePlanResult(pr_id="not-a-number", url="")
 
-        with patch.object(PlannedPRBackend, "create_plan", patched_create_plan):
+        with patch.object(GitHubManagedPrBackend, "create_managed_pr", patched_create_plan):
             result = create_plan_draft_pr(
                 git=FakeGit(trunk_branches={tmp_path: "main"}),
                 github=fake_github,

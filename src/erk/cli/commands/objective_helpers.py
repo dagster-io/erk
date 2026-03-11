@@ -31,13 +31,13 @@ def check_and_display_plan_issue_closure(
     Returns the plan issue number if found, None otherwise.
     This is fail-open: returns None silently if the issue doesn't exist.
     """
-    pr_id = ctx.plan_backend.resolve_plan_id_for_branch(repo_root, branch)
+    pr_id = ctx.plan_backend.resolve_pr_number_for_branch(repo_root, branch)
     if pr_id is None:
         return None
 
     pr_number = int(pr_id)
 
-    result = ctx.plan_store.get_plan(repo_root, pr_id)
+    result = ctx.plan_store.get_managed_pr(repo_root, pr_id)
     if isinstance(result, PlanNotFound):
         logger.debug("Plan #%d not found, skipping closure check", pr_number)
         return None
@@ -47,7 +47,7 @@ def check_and_display_plan_issue_closure(
         return pr_number
 
     # Issue is open — close it directly (no more "Closes #N" auto-close)
-    ctx.plan_store.close_plan(repo_root, pr_id)
+    ctx.plan_store.close_managed_pr(repo_root, pr_id)
     user_output(click.style("✓", fg="green") + f" Closed plan #{pr_number}")
 
     return pr_number
@@ -63,7 +63,7 @@ def get_objective_for_branch(ctx: ErkContext, repo_root: Path, branch: str) -> i
     Returns None otherwise (fail-open - never blocks landing).
     """
     try:
-        result = ctx.plan_backend.get_plan_for_branch(repo_root, branch)
+        result = ctx.plan_backend.get_managed_pr_for_branch(repo_root, branch)
     except RuntimeError:
         return extract_objective_number(branch)
     if isinstance(result, PlanNotFound):

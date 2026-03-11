@@ -181,7 +181,7 @@ def objective_fetch_context(
 
     # When --plan is provided, do direct plan lookup (skip branch-based discovery)
     if pr_number_arg is not None:
-        plan_result = plan_backend.get_plan(repo_root, str(pr_number_arg))
+        plan_result = plan_backend.get_managed_pr(repo_root, str(pr_number_arg))
         if isinstance(plan_result, PlanNotFound):
             click.echo(_error_json(f"PR #{pr_number_arg} not found"))
             raise SystemExit(1)
@@ -197,7 +197,7 @@ def objective_fetch_context(
                 raise SystemExit(1)
 
         # Resolve plan from branch via backend (works for both P<number>- and plan-... branches)
-        plan_result = plan_backend.get_plan_for_branch(repo_root, branch_name)
+        plan_result = plan_backend.get_managed_pr_for_branch(repo_root, branch_name)
         if isinstance(plan_result, PlanNotFound):
             click.echo(_error_json(f"No PR found for branch '{branch_name}'"))
             raise SystemExit(1)

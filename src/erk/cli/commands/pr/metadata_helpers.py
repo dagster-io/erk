@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING
 import click
 
 from erk_shared.output.output import user_output
-from erk_shared.plan_store.backend import PlanBackend
+from erk_shared.plan_store.backend import ManagedPrBackend
 from erk_shared.plan_store.types import PlanNotFound
 
 if TYPE_CHECKING:
@@ -23,7 +23,7 @@ if TYPE_CHECKING:
 
 def write_dispatch_metadata(
     *,
-    plan_backend: PlanBackend,
+    plan_backend: ManagedPrBackend,
     github: LocalGitHub,
     repo_root: Path,
     pr_number: int,
@@ -41,7 +41,7 @@ def write_dispatch_metadata(
 
     # LBYL: Check plan exists before updating metadata
     pr_id = str(pr_number)
-    plan_result = plan_backend.get_plan(repo_root, pr_id)
+    plan_result = plan_backend.get_managed_pr(repo_root, pr_id)
     if isinstance(plan_result, PlanNotFound):
         raise RuntimeError(f"Plan #{pr_number} not found")
 
@@ -82,7 +82,7 @@ def maybe_update_plan_dispatch_metadata(
         branch_name: Branch name to extract issue number from
         run_id: Workflow run ID from trigger response
     """
-    pr_id = ctx.plan_backend.resolve_plan_id_for_branch(repo.root, branch_name)
+    pr_id = ctx.plan_backend.resolve_pr_number_for_branch(repo.root, branch_name)
     if pr_id is None:
         return
 

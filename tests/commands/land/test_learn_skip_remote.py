@@ -131,12 +131,14 @@ def test_land_skips_learn_prompt_for_remote_pr(
         def mock_find_sessions(repo_root, pr_id):
             find_sessions_called.append(pr_id)
             raise AssertionError(
-                f"find_sessions_for_plan should NOT be called for remote PRs "
+                f"find_sessions_for_managed_pr should NOT be called for remote PRs "
                 f"(no local worktree), but was called with pr_id={pr_id}"
             )
 
         # Patch the method on the plan_backend instance
-        monkeypatch.setattr(test_ctx.plan_backend, "find_sessions_for_plan", mock_find_sessions)
+        monkeypatch.setattr(
+            test_ctx.plan_backend, "find_sessions_for_managed_pr", mock_find_sessions
+        )
 
         # Execute mode: test PR merge with no local worktree
         # Note: worktree_path is None because there's no local checkout
@@ -171,7 +173,7 @@ def test_land_skips_learn_prompt_for_remote_pr(
 def test_land_shows_learn_prompt_for_local_plan_branch() -> None:
     """Test that learn check is satisfied when plan has learn_status=completed_no_plan.
 
-    With PlannedPRBackend, any branch that has a PR resolves to that PR as its plan.
+    With GitHubManagedPrBackend, any branch that has a PR resolves to that PR as its plan.
     The learn check sees learn_status=completed_no_plan in the PR body and returns early,
     so find_sessions_for_plan is never called.
 

@@ -149,7 +149,7 @@ def _discover_sessions(
     """Discover all sessions for a plan.
 
     Args:
-        plan_backend: PlanBackend for session discovery
+        plan_backend: ManagedPrBackend for session discovery
         claude_installation: Claude installation for session lookups
         git: Git gateway for branch operations
         repo_root: Repository root path
@@ -167,8 +167,8 @@ def _discover_sessions(
         git=git,
     )
 
-    # Find sessions for the plan via PlanBackend
-    sessions_for_plan = plan_backend.find_sessions_for_plan(
+    # Find sessions for the plan via ManagedPrBackend
+    sessions_for_plan = plan_backend.find_sessions_for_managed_pr(
         repo_root,
         pr_id,
     )
@@ -274,7 +274,7 @@ def get_learn_sessions(ctx: click.Context, issue: str | None) -> None:
             raise SystemExit(1)
         pr_id = str(pr_number)
     elif branch_name is not None:
-        pr_id = plan_backend.resolve_plan_id_for_branch(repo_root, branch_name)
+        pr_id = plan_backend.resolve_pr_number_for_branch(repo_root, branch_name)
 
     if pr_id is None:
         error = GetLearnSessionsErrorDict(

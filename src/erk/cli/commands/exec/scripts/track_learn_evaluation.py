@@ -90,7 +90,7 @@ def _do_track(
     """Post tracking comment and update plan-header on the plan.
 
     Args:
-        backend: PlanBackend interface for metadata updates and comments
+        backend: ManagedPrBackend interface for metadata updates and comments
         repo_root: Repository root path
         pr_number: Plan number
         session_id: Session ID invoking learn (optional)
@@ -179,7 +179,7 @@ def track_learn_evaluation(ctx: click.Context, issue: str | None, session_id: st
         # Try to infer from current branch
         branch = git.branch.get_current_branch(cwd)
         if branch is not None:
-            pr_id_str = backend.resolve_plan_id_for_branch(repo_root, branch)
+            pr_id_str = backend.resolve_pr_number_for_branch(repo_root, branch)
             if pr_id_str is not None:
                 pr_number = int(pr_id_str)
 

@@ -164,7 +164,7 @@ def _implement_from_issue(
 
     # Fetch plan from GitHub
     ctx.console.info("Fetching plan from GitHub...")
-    result = ctx.plan_store.get_plan(repo.root, plan_number)
+    result = ctx.plan_store.get_managed_pr(repo.root, plan_number)
     if isinstance(result, PlanNotFound):
         user_output(click.style("Error: ", fg="red") + f"Plan #{plan_number} not found")
         raise SystemExit(1)

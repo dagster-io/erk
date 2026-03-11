@@ -343,7 +343,7 @@ def resolve_pr_id(ctx: ErkContext, state: LandState) -> LandState | LandError:
 
     Populates: pr_id.
     """
-    pr_id = ctx.plan_backend.resolve_plan_id_for_branch(state.main_repo_root, state.branch)
+    pr_id = ctx.plan_backend.resolve_pr_number_for_branch(state.main_repo_root, state.branch)
     if pr_id is not None:
         user_output(click.style("  ✓", fg="green") + " Plan context resolved")
     else:

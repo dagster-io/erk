@@ -170,7 +170,7 @@ def close_prs(ctx: click.Context) -> None:
             continue
 
         try:
-            backend.close_plan(repo_root, pr_id)
+            backend.close_managed_pr(repo_root, pr_id)
         except RuntimeError as e:
             results.append(
                 {

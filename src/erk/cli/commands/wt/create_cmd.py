@@ -669,7 +669,7 @@ def create_wt(
         assert pr_number_parsed is not None, "pr_number_parsed must be set when from_plan is True"
 
         # Fetch plan using plan_store
-        result = ctx.plan_store.get_plan(repo.root, str(pr_number_parsed))
+        result = ctx.plan_store.get_managed_pr(repo.root, str(pr_number_parsed))
         if isinstance(result, PlanNotFound):
             user_output(
                 click.style("Error: ", fg="red")

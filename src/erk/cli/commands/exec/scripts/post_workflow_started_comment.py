@@ -160,7 +160,7 @@ def post_workflow_started_comment(
         now_iso=now_iso,
     )
 
-    # Post comment via PlanBackend (handles both issue and planned-PR plans)
+    # Post comment via ManagedPrBackend (handles both issue and planned-PR plans)
     try:
         backend.add_comment(repo_root, str(pr_number), comment_body)
         result = PostSuccess(success=True, pr_number=pr_number)

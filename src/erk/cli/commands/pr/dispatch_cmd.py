@@ -217,9 +217,9 @@ def _dispatch_planned_pr_plan(
     pr_number = validated.number
     branch_name = validated.branch_name
 
-    # Fetch plan content via PlanBackend
+    # Fetch plan content via ManagedPrBackend
     user_output("Fetching plan content...")
-    result = ctx.plan_store.get_plan(repo.root, str(pr_number))
+    result = ctx.plan_store.get_managed_pr(repo.root, str(pr_number))
     if isinstance(result, PlanNotFound):
         user_output(click.style("Error: ", fg="red") + f"PR #{pr_number}: plan content not found")
         raise SystemExit(1)
@@ -331,7 +331,7 @@ def _dispatch_planned_pr_plan(
     except Exception as e:
         logger.warning("Failed to update PR body with workflow run link: %s", e)
 
-    # Post queued event comment via PlanBackend
+    # Post queued event comment via ManagedPrBackend
     try:
         validation_results = {
             "pr_is_open": True,
@@ -619,7 +619,7 @@ def _detect_pr_number_from_context(
             return int(plan_ref.pr_id)
 
     if branch_name is not None:
-        pr_id = ctx.plan_backend.resolve_plan_id_for_branch(repo.root, branch_name)
+        pr_id = ctx.plan_backend.resolve_pr_number_for_branch(repo.root, branch_name)
         if pr_id is not None and pr_id.isdigit():
             return int(pr_id)
 

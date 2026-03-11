@@ -56,7 +56,7 @@ def close_pr(
 
     # Then close the plan
     try:
-        backend.close_plan(repo_root, pr_id)
+        backend.close_managed_pr(repo_root, pr_id)
     except RuntimeError as e:
         click.echo(
             json.dumps(

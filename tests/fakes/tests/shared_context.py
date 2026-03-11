@@ -29,8 +29,8 @@ from erk_shared.gateway.graphite.abc import Graphite
 from erk_shared.gateway.graphite.branch_ops.abc import GraphiteBranchOps
 from erk_shared.gateway.graphite.disabled import GraphiteDisabled
 from erk_shared.gateway.remote_github.abc import RemoteGitHub
-from erk_shared.plan_store.backend import PlanBackend
-from erk_shared.plan_store.planned_pr import PlannedPRBackend
+from erk_shared.plan_store.backend import ManagedPrBackend
+from erk_shared.plan_store.planned_pr import GitHubManagedPrBackend
 from tests.fakes.gateway.core import (
     FakeCodespaceRegistry,
     FakeObjectiveListService,
@@ -53,7 +53,7 @@ def context_for_test(
     prompt_executor: PromptExecutor | None = None,
     codespace: Codespace | None = None,
     cmux: Cmux | None = None,
-    plan_store: PlanBackend | None = None,
+    plan_store: ManagedPrBackend | None = None,
     local_config: LoadedConfig | None = None,
     remote_github: RemoteGitHub | None = None,
     debug: bool = False,
@@ -70,7 +70,7 @@ def context_for_test(
     This is the factory function for creating test contexts in tests.
     It creates an ErkContext with fake implementations for all services.
 
-    Plan backend defaults to PlannedPRBackend unless explicitly overridden.
+    Plan backend defaults to GitHubManagedPrBackend unless explicitly overridden.
 
     Args:
         github_issues: Optional GitHubIssues implementation. If None, creates FakeGitHubIssues.
@@ -82,7 +82,7 @@ def context_for_test(
         agent_docs: Optional AgentDocs. If None, creates FakeAgentDocs.
         prompt_executor: Optional PromptExecutor. If None, creates FakePromptExecutor.
         codespace: Optional Codespace. If None, creates FakeCodespace.
-        plan_store: Optional PlanBackend. If None, creates PlannedPRBackend.
+        plan_store: Optional ManagedPrBackend. If None, creates GitHubManagedPrBackend.
         local_config: Optional LoadedConfig. If None, uses LoadedConfig.test().
         debug: Whether to enable debug mode (default False).
         repo_root: Repository root path (defaults to Path("/fake/repo"))
@@ -183,12 +183,14 @@ def context_for_test(
 
     resolved_local_config = local_config if local_config is not None else LoadedConfig.test()
 
-    # Resolve plan_store: explicit > PlannedPRBackend default
-    resolved_plan_store: PlanBackend
+    # Resolve plan_store: explicit > GitHubManagedPrBackend default
+    resolved_plan_store: ManagedPrBackend
     if plan_store is not None:
         resolved_plan_store = plan_store
     else:
-        resolved_plan_store = PlannedPRBackend(resolved_github, resolved_issues, time=FakeTime())
+        resolved_plan_store = GitHubManagedPrBackend(
+            resolved_github, resolved_issues, time=FakeTime()
+        )
 
     return ErkContext(
         git=resolved_git,
