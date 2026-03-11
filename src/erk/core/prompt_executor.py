@@ -562,11 +562,11 @@ class ClaudeCliPromptExecutor(PromptExecutor):
             cmd.extend(["--system-prompt", system_prompt])
         if tools is not None:
             cmd.extend(["--allowedTools", ",".join(tools)])
-        cmd.append(prompt)
 
         try:
             result = subprocess.run(
                 cmd,
+                input=prompt,
                 capture_output=True,
                 text=True,
                 cwd=cwd,
@@ -610,7 +610,7 @@ class ClaudeCliPromptExecutor(PromptExecutor):
         """Execute prompt with output streaming directly to terminal.
 
         Implementation details:
-        - Uses subprocess.run with stdin=subprocess.DEVNULL to prevent interactive prompts
+        - Uses subprocess.run with input= to pipe prompt via stdin (avoids ARG_MAX)
         - Passes --print, --model, --output-format stream-json, --verbose
         - Optionally passes --allowedTools when tools is provided
         - Optionally passes --dangerously-skip-permissions when dangerous=True
@@ -630,12 +630,12 @@ class ClaudeCliPromptExecutor(PromptExecutor):
             cmd.extend(["--allowedTools", ",".join(tools)])
         if dangerous:
             cmd.append("--dangerously-skip-permissions")
-        cmd.append(prompt)
 
         result = subprocess.run(
             cmd,
+            input=prompt,
+            text=True,
             cwd=cwd,
-            stdin=subprocess.DEVNULL,
             check=False,
             env=self._subprocess_env(),
         )
