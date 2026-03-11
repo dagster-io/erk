@@ -1,0 +1,983 @@
+<session>
+  <meta branch="master" />
+  <meta model="claude-opus-4-6" />
+  <user>⏺ User answered Claude's questions:
+  ⎿  · 📋 Plan: Deterministic planning run ID from structured metadata
+     Current context: (wt:erk-slot-42) (br:plnd/show-planning-run-id-03-10-1209) (pr:#9175)
+
+     What would you like to do with this plan? → Create new branch and planned PR
+
+⏺ Skill(/erk:plan-save)
+  ⎿  Successfully loaded skill
+
+⏺ Step 1: No special flags passed.
+
+  Step 2: Branch slug from "Deterministic planning run ID from structured metadata": deterministic-run-id-field
+
+  Step 3: Summary: "Adds a first-class created_from_workflow_run_id field to the plan header schema so the TUI dashboard can display the planning run ID deterministically from structured
+  metadata instead of parsing it from the workflow run URL."
+
+  Step 4: Running the save command.
+
+⏺ Bash(erk exec plan-save --format json --session-id="748fc374-c6a8-4910-bf7f-b658479ad53a" --branch-slug="deterministic-run-id-field" --summary="Adds a first-class
+      created_from_workflow_run_id field to the plan header schema so the TUI dashboard can display the planning run ID deterministically from structured metadata instead of parsing it from
+      the workflow run URL.")
+  ⎿  {
+       "success": true,
+       "pr_number": 9206,
+       "pr_url": "https://github.com/dagster-io/erk/pull/9206",
+       "title": "[erk-pr] Plan: Deterministic planning run ID from structured metadata",
+       "branch_name": "plnd/deterministic-run-id-field-03-11-1146",
+       "plan_backend": "planned_pr",
+       "objective_issue": null,
+       "archived_to": "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-42/.erk/scratch/sessions/748fc374-c6a8-4910-bf7f-b658479ad53a/plan_snapshots/000001-5c82aa7b"
+     }
+  ⎿  (timeout 1m)
+
+⏺ Plan saved. No objective linked, skipping verification.
+
+  Step 5: Pushing planning session.
+
+⏺ Bash(erk exec capture-session-info 2&gt;/dev/null)
+  ⎿  SESSION_ID=748fc374-c6a8-4910-bf7f-b658479ad53a
+     SESSION_FILE=/Users/schrockn/.claude/projects/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-42/748fc374-c6a8-4910-bf7f-b658479ad53a.jsonl
+
+⏺ Bash(erk exec push-session --session-file "/Users/schrockn/.claude/projects/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-42/748fc374-c6a8-4910-bf7f-b658479ad53a.jsonl" --session-id
+      "748fc374-c6a8-4910-bf7f-b658479ad53a" --stage planning --source local --pr-number 9206 2&gt;/dev/null || true)
+  ⎿  {
+       "uploaded": true,
+       "pr_number": 9206,
+       "session_branch": "planned-pr-context/9206",
+       "session_id": "748fc374-c6a8-4910-bf7f-b658479ad53a",
+       "stage": "planning",
+       "files": [
+         "planning-748fc374-c6a8-4910-bf7f-b658479ad53a-748fc374-c6a8-4910-bf7f-b658479ad53a-part1.xml",
+         "planning-748fc374-c6a8-4910-bf7f-b658479ad53a-748fc374-c6a8-4910-bf7f-b658479ad53a-part2.xml"
+       ]
+     }
+  ⎿  (timeout 30s)
+
+⏺ Plan "Deterministic planning run ID from structured metadata" saved as draft PR #9206
+  URL: https://github.com/dagster-io/erk/pull/9206
+
+⏺ Next steps for PR #9206:
+
+  Implement PR #9206:
+    In current wt:    erk br co --for-plan 9206 &amp;&amp; erk implement
+      (dangerously):  erk br co --for-plan 9206 &amp;&amp; erk implement -d
+    In new wt:        source "$(erk br co --new-slot --for-plan 9206 --script)" &amp;&amp; erk implement
+      (dangerously):  source "$(erk br co --new-slot --for-plan 9206 --script)" &amp;&amp; erk implement -d
+
+  Checkout PR #9206:
+    In current wt:  erk br co --for-plan 9206
+    In new wt:      erk br co --new-slot --for-plan 9206
+
+  Dispatch PR #9206:
+    CLI command:    erk pr dispatch 9206
+    Slash command:  /erk:pr-dispatch
+
+✻ Sautéed for 4m 9s
+
+
+the language in the  user-facing text here should be "planned pr" rather than "plan"</user>
+  <usage input_tokens="3" cache_creation_input_tokens="11973" cache_read_input_tokens="12741" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 11973}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01EPxkZpzTShKH4c3VmVGZus">
+    <param name="subagent_type">Explore</param>
+    <param name="description">Find plan-save skill output text</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 462 chars]...s). Report the full file path and the relevant lines containing these user-facing strings.</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="11973" cache_read_input_tokens="12741" output_tokens="410" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 11973, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01EPxkZpzTShKH4c3VmVGZus">
+Perfect! Now I have all the information. Let me compile the findings.
+
+## Summary
+
+I found the user-facing output text for the `erk:plan-save` skill. The text is generated in two main locations:
+
+### 1. **Main Source: `/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/output/next_steps.py`**
+
+This file contains the canonical formatting functions for next-steps output:
+
+**Lines 61-76:** `format_plan_next_steps_plain()` function generates the plain-text output for terminal display:
+```python
+def format_plan_next_steps_plain(pr_number: int, *, url: str) -&gt; str:
+    """Format for CLI output (plain text)."""
+    s = PlanNextSteps(pr_number=pr_number, url=url)
+    return f"""Implement PR #{pr_number}:
+  In current wt:    {s.implement_current_wt}
+    (dangerously):  {s.implement_current_wt_dangerous}
+  In new wt:        {s.implement_new_wt}
+    (dangerously):  {s.implement_new_wt_dangerous}
+
+Checkout PR #{pr_number}:
+  In current wt:  {s.checkout}
+  In new wt:      {s.checkout_new_slot}
+
+Dispatch PR #{pr_number}:
+  CLI command:    {s.dispatch}
+  Slash command:  {s.dispatch_slash_command}"""
+```
+
+
+... [53 lines omitted] ...
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="1448" cache_read_input_tokens="24714" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1448}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me read the relevant files to see the exact text that needs changing.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1448" cache_read_input_tokens="24714" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1448}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01PTp7WYFzYRXry8kkLkFjUc">
+    <param name="file_path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/output/next_steps.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1448" cache_read_input_tokens="24714" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1448}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01PTp7WYFzYRXry8kkLkFjUc">
+     1→"""Plan next steps formatting - single source of truth."""
+     2→
+     3→from dataclasses import dataclass
+     4→
+     5→
+     6→@dataclass(frozen=True)
+     7→class PlanNextSteps:
+     8→    """Canonical commands for plan operations."""
+     9→
+    10→    pr_number: int
+    11→    url: str
+    12→
+    13→    @property
+    14→    def view(self) -&gt; str:
+    15→        return self.url
+    16→
+    17→    @property
+    18→    def dispatch(self) -&gt; str:
+    19→        return f"erk pr dispatch {self.pr_number}"
+    20→
+    21→    @property
+    22→    def checkout(self) -&gt; str:
+    23→        return f"erk br co --for-plan {self.pr_number}"
+    24→
+    25→    @property
+    26→    def checkout_new_slot(self) -&gt; str:
+    27→        return f"erk br co --new-slot --for-plan {self.pr_number}"
+    28→
+    29→    @property
+    30→    def dispatch_slash_command(self) -&gt; str:
+
+... [67 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Ax1bEYmwTvdQs8tD2uEKev">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/plan_save.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1448" cache_read_input_tokens="24714" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1448}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Ax1bEYmwTvdQs8tD2uEKev">
+     1→"""Plan save: creates a draft PR with the plan content.
+     2→
+     3→Usage:
+     4→    erk exec plan-save [OPTIONS]
+     5→
+     6→Options:
+     7→    --format json|display: Output format (default: json)
+     8→    --plan-file PATH: Use specific plan file (highest priority)
+     9→    --session-id ID: Session ID for scoped plan lookup
+    10→    --plan-type standard|learn: Plan type (default: standard)
+    11→    --learned-from-issue INT: Parent plan (for learn plans)
+    12→    --created-from-workflow-run-url URL: Workflow run URL
+    13→
+    14→Objective linking: use --objective to pass directly, or rely on
+    15→automatic linking via the objective-context session marker
+    16→(created by /erk:objective-plan). The --objective flag takes
+    17→precedence over the session marker.
+    18→
+    19→Exit Codes:
+    20→    0: Success
+    21→    1: Error
+    22→    2: Validation failed
+    23→"""
+    24→
+    25→import json
+    26→from pathlib import Path
+    27→
+    28→import click
+    29→
+    30→from erk.cli.commands.exec.scripts.validate_plan_content import _validate_plan_content
+
+... [551 lines omitted] ...
+
+   162→            click.echo(f"Error: {title_validation.message}", err=True)
+   168→                        "error": f"Plan title validation failed: {title_validation.reason}",
+   169→                        "error_type": "validation_failed",
+   183→            click.echo("Error: --current-branch requires a checked-out branch.", err=True)
+   190→                "Error: --branch-slug is required. "
+   222→            click.echo(f"Error: {create_result.message}", err=True)
+   314→        raise RuntimeError(msg)
+   418→            click.echo("Error: No plan found in ~/.claude/plans/", err=True)
+   420→            click.echo(json.dumps({"success": False, "error": "No plan found in ~/.claude/plans/"}))
+   450→    valid, error, details = _validate_plan_content(plan)
+   453→            click.echo(f"Error: Plan validation failed: {error}", err=True)
+   459→                        "error": f"Plan validation failed: {error}",
+   460→                        "error_type": "validation_failed",
+  </tool_result>
+  <tool_use name="Read" id="toolu_01UwXZiV8SejbkSf8bNU1ju6">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1448" cache_read_input_tokens="24714" output_tokens="426" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1448, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01UwXZiV8SejbkSf8bNU1ju6">
+     1→#!/usr/bin/env python3
+     2→"""Exit Plan Mode Hook.
+     3→
+     4→Prompts user before exiting plan mode when a plan exists. This hook intercepts
+     5→the ExitPlanMode tool via PreToolUse lifecycle to ask whether to save to GitHub
+     6→or implement immediately.
+     7→
+     8→Exit codes:
+     9→    0: Success (allow exit - no plan, implement-now marker present, or no session)
+    10→    2: Block (plan exists, no implement-now marker - prompt user)
+    11→
+    12→This command is invoked via:
+    13→    erk exec exit-plan-mode-hook
+    14→
+    15→Marker File State Machine
+    16→=========================
+    17→
+    18→This hook uses marker files in .erk/scratch/sessions/&lt;session-id&gt;/ for state management.
+    19→Marker files are self-describing: their names indicate their purpose and their contents
+    20→explain their effect.
+    21→
+    22→Marker Files:
+    23→    exit-plan-mode-hook.implement-now.marker
+    24→        Created by: Agent (when user chooses "Implement without saving")
+    25→        Effect: Next ExitPlanMode call is ALLOWED (exit plan mode, proceed to implementation)
+    26→        Lifecycle: Deleted after being read by next hook invocation
+    27→
+    28→    exit-plan-mode-hook.plan-saved.marker
+    29→        Created by: /erk:plan-save command (both new-branch and current-branch paths)
+    30→        Content: First line is the plan PR number
+
+... [861 lines omitted] ...
+
+   403→                f"⚠️  WARNING: Currently on '{current_branch}'. "
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="22122" cache_read_input_tokens="26162" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 22122}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now let me find the skill file that generates the Claude-facing output text.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="22122" cache_read_input_tokens="26162" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 22122}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01WyfcCxnn8v3dihyCDTqngp">
+    <param name="pattern">.claude/skills/**/plan-save*</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="22122" cache_read_input_tokens="26162" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 22122}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01Q1jZxX8zGX1kYjaMWT12CR">
+    <param name="pattern">Plan.*saved as draft PR</param>
+    <param name="path">/Users/schrockn/code/erk/.claude</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="22122" cache_read_input_tokens="26162" output_tokens="322" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 22122, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Q1jZxX8zGX1kYjaMWT12CR">
+Found 1 file
+.claude/commands/erk/plan-save.md
+  </tool_result>
+  <tool_result tool="toolu_01WyfcCxnn8v3dihyCDTqngp">
+No files found
+  </tool_result>
+  <tool_use name="Read" id="toolu_019cosweUwQPTH24Xg9Ewsuk">
+    <param name="file_path">/Users/schrockn/code/erk/.claude/commands/erk/plan-save.md</param>
+  </tool_use>
+  <usage input_tokens="50" cache_creation_input_tokens="354" cache_read_input_tokens="48284" output_tokens="77" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 354, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_019cosweUwQPTH24Xg9Ewsuk">
+     1→---
+     2→description: Save the current session's plan to GitHub
+     3→argument-hint: "[--plan-type=learn]"
+     4→---
+     5→
+     6→# /erk:plan-save
+     7→
+     8→Save the current session's plan to GitHub with session context.
+     9→
+    10→## Usage
+    11→
+    12→```bash
+    13→/erk:plan-save                           # Standalone plan
+    14→/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+    15→/erk:plan-save --objective=123           # Explicit objective link (overrides marker)
+    16→/erk:plan-save --current-branch          # Use current branch instead of creating new plnd/ branch
+    17→```
+    18→
+    19→Objective linking: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command. Use `--objective=&lt;number&gt;` to override the marker or provide the link when no marker exists (e.g., during replan).
+    20→
+    21→## Plan Storage
+    22→
+    23→The plan is saved using the configured backend:
+    24→
+    25→- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+    26→  The JSON output contract includes `pr_number`, `pr_url`, `title`, `branch_name`, `plan_backend`.
+    27→
+    28→## Agent Instructions
+    29→
+    30→### Step 1: Parse Arguments
+
+... [203 lines omitted] ...
+
+   100→If the command fails, display the error and stop.
+   115→- If `success: false` or value doesn't match: verification failed
+   121→**On verification failure:**
+   123→Display error and remediation steps:
+   126→ERROR: Objective link verification failed
+   163→**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+   185→On failure, display the error message and suggest:
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="3049" cache_read_input_tokens="48638" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3049}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I have a clear picture. Let me also check the `format_next_steps_markdown` function and any other user-facing text referencing "plan" vs "planned PR".</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3049" cache_read_input_tokens="48638" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3049}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01WagTwfEy6dHBqtytcnENfM">
+    <param name="pattern">Plan.*saved|Implement PR|Checkout PR|Dispatch PR</param>
+    <param name="path">/Users/schrockn/code/erk</param>
+    <param name="glob">*.py</param>
+    <param name="output_mode">content</param>
+    <param name="head_limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3049" cache_read_input_tokens="48638" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3049}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01WagTwfEy6dHBqtytcnENfM">
+src/erk/cli/commands/branch/checkout_cmd.py:490:        erk br co --for-plan 123         # Checkout PR branch with .erk/impl-context/ setup
+src/erk/cli/commands/pr/checkout_cmd.py:135:    """Checkout PR or plan into a worktree for review.
+src/erk/cli/commands/pr/checkout_cmd.py:151:        erk pr checkout 123       # Checkout PR #123
+tests/commands/pr/test_create.py:34:        assert "Checkout PR #999:" in result.output
+tests/commands/pr/test_create.py:35:        assert "Dispatch PR #999:" in result.output
+src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py:137:    plan_saved_pr_number: int | None  # Plan number read from plan-saved marker
+src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py:509:    # Plan-saved marker present — show Step 2 "what next?" prompt
+packages/erk-shared/src/erk_shared/scratch/session_markers.py:35:        "Trigger: Plan was successfully saved to GitHub\n"
+packages/erk-shared/src/erk_shared/output/next_steps.py:64:    return f"""Implement PR #{pr_number}:
+packages/erk-shared/src/erk_shared/output/next_steps.py:70:Checkout PR #{pr_number}:
+packages/erk-shared/src/erk_shared/output/next_steps.py:74:Dispatch PR #{pr_number}:
+packages/erk-shared/src/erk_shared/output/next_steps.py:93:**Checkout PR branch:**
+tests/unit/shared/test_next_steps.py:92:        assert "Implement PR #42:" in output
+tests/unit/shared/test_next_steps.py:105:        assert "Dispatch PR #42:" in output
+tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py:130:        """Plan-saved marker blocks exit with Step 2 prompt and deletes the marker."""
+tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py:147:        """Plan-saved marker without plan number uses fallback message."""
+tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py:191:        """Plan-saved marker blocks exit and deletes both markers."""
+tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py:201:        # Plan-saved marker is deleted (session complete)
+tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py:1010:        assert "Dispatch PR #42:" in message
+tests/unit/cli/commands/exec/scripts/test_plan_save.py:71:    """Display format: output contains 'Plan saved as planned PR'."""
+
+[Showing results with pagination = limit: 30, offset: 0]
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01NaoH17XMxtx342dEGfmCnP">
+    <param name="pattern">Plan.*saved|Next steps for PR</param>
+    <param name="path">/Users/schrockn/code/erk</param>
+    <param name="glob">*.md</param>
+    <param name="output_mode">content</param>
+    <param name="head_limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3049" cache_read_input_tokens="48638" output_tokens="3737" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3049, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01NaoH17XMxtx342dEGfmCnP">
+.claude/skills/erk-planning/references/workflow.md:41:- Plan will be saved to `~/.claude/plans/`
+.claude/skills/session-inspector/references/format.md:187:- Added when Plan Mode is exited (plan approved and saved)
+.claude/skills/command-creator/references/examples.md:413:4. **Plan is saved to disk** as a markdown file
+.claude/commands/erk/plan-save.md:169:Display: `Plan already saved as PR #&lt;pr_number&gt; (duplicate skipped)`
+.claude/commands/erk/plan-save.md:176:Plan "&lt;title&gt;" saved as draft PR #&lt;pr_number&gt;
+docs/TAO.md:25:Engineers who want to work in a plan-oriented way face significant friction. Plans are saved as markdown files and must be managed manually, or exist only ephemerally in agent context. There is no system of record. Plans cannot be queried, tracked, or closed. They are not attached to any automation or workflow.
+docs/tutorials/first-plan.md:85:Plan saved as issue #1
+docs/learned/reference/gastown-analysis.md:693:| Propulsion | (weak: plan mode)  | Plan mode implements partial propulsion for saved plans |
+docs/learned/cli/plan-implement.md:181:1. Plan content has been saved to GitHub (permanent storage)
+docs/learned/objectives/roadmap-mutation-patterns.md:36:| Plan saved to GitHub        | Surgical  | Only the status of one step changes to in_progress           |
+docs/learned/planning/branch-name-inference.md:24:1. **Plan saved** → GitHub issue created (no branch exists yet)
+docs/learned/sessions/layout.md:91:When Plan Mode is exited (user approves plan), the assistant entry includes a `slug` field identifying the saved plan:
+docs/learned/sessions/layout.md:113:- **Timing**: Added when Plan Mode is exited (plan approved and saved)
+docs/learned/hooks/hooks.md:352:# Example: Plan already saved to GitHub
+docs/learned/hooks/hooks.md:355:    click.echo("✅ Plan saved to GitHub. Session complete.")
+docs/learned/hooks/pretooluse-implementation.md:64:Exit code 2 is reserved for hooks where the tool's default behavior is actively unwanted (e.g., the ExitPlanMode hook blocks plan approval when a plan was already saved to GitHub).
+docs/learned/planning/scratch-storage.md:94:Plans created in Claude Code are saved to scratch storage for session-scoped lookup:
+docs/learned/planning/session-deduplication.md:22:When Claude retries a blocked ExitPlanMode call, the same plan could be saved multiple times, creating duplicate GitHub issues. This can happen when:
+docs/learned/planning/session-deduplication.md:73:The `plan-saved` marker persists because it represents a state ("plan has been saved") not an action. If the session continues after saving, subsequent ExitPlanMode calls should still know the plan was saved.
+docs/learned/planning/session-deduplication.md:80:2. Subsequent ExitPlanMode calls need to know plan is already saved
+
+[Showing results with pagination = limit: 20, offset: 0]
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="5439" cache_read_input_tokens="51687" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5439}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me also check the test files that will need updating.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="5439" cache_read_input_tokens="51687" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5439}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01EFkmxzSx5mMUgYwMXScqvv">
+    <param name="file_path">/Users/schrockn/code/erk/tests/unit/shared/test_next_steps.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5439" cache_read_input_tokens="51687" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5439}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01EFkmxzSx5mMUgYwMXScqvv">
+     1→"""Tests for next_steps formatting functions."""
+     2→
+     3→from erk_shared.output.next_steps import (
+     4→    PlanNextSteps,
+     5→    format_plan_next_steps_plain,
+     6→)
+     7→
+     8→
+     9→class TestPlanNextSteps:
+    10→    def test_construction(self) -&gt; None:
+    11→        steps = PlanNextSteps(
+    12→            pr_number=42,
+    13→            url="https://github.com/org/repo/pull/42",
+    14→        )
+    15→        assert steps.pr_number == 42
+    16→
+    17→    def test_view_returns_url(self) -&gt; None:
+    18→        steps = PlanNextSteps(
+    19→            pr_number=42,
+    20→            url="https://github.com/org/repo/pull/42",
+    21→        )
+    22→        assert steps.view == "https://github.com/org/repo/pull/42"
+    23→
+    24→    def test_dispatch_uses_pr_number(self) -&gt; None:
+    25→        steps = PlanNextSteps(
+    26→            pr_number=42,
+    27→            url="https://github.com/org/repo/pull/42",
+    28→        )
+    29→        assert steps.dispatch == "erk pr dispatch 42"
+    30→
+
+... [80 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_018d2o3Dpvvm6nh8BsXdrthe">
+    <param name="file_path">/Users/schrockn/code/erk/tests/unit/cli/commands/exec/scripts/test_plan_save.py</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5439" cache_read_input_tokens="51687" output_tokens="213" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 5439, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_018d2o3Dpvvm6nh8BsXdrthe">
+     1→"""Unit tests for plan-save command (draft PR creation)."""
+     2→
+     3→import json
+     4→from pathlib import Path
+     5→
+     6→import pytest
+     7→from click.testing import CliRunner
+     8→
+     9→from erk.cli.commands.exec.scripts.plan_save import plan_save
+    10→from erk_shared.context.context import ErkContext
+    11→from erk_shared.plan_store.planned_pr_lifecycle import IMPL_CONTEXT_DIR
+    12→from tests.fakes.gateway.claude_installation import FakeClaudeInstallation
+    13→from tests.fakes.gateway.git import FakeGit
+    14→from tests.fakes.gateway.github import FakeLocalGitHub
+    15→from tests.fakes.gateway.graphite import FakeGraphite
+    16→from tests.fakes.tests.shared_context import context_for_test
+    17→
+    18→# Valid plan content that passes validation (100+ chars with structure)
+    19→VALID_PLAN_CONTENT = """# Feature Plan
+    20→
+    21→This plan describes the implementation of a new feature.
+    22→
+    23→- Step 1: Set up the environment
+    24→- Step 2: Implement the core logic
+    25→- Step 3: Add tests and documentation"""
+    26→
+    27→
+    28→def _planned_pr_context(
+    29→    *,
+    30→    tmp_path: Path,
+
+... [70 lines omitted] ...
+
+    61→    assert result.exit_code == 0, f"Failed: {result.output}"
+    79→    assert result.exit_code == 0, f"Failed: {result.output}"
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="7488" cache_read_input_tokens="57126" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7488}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me also check the pr create test and the exit_plan_mode_hook test for relevant assertions.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="7488" cache_read_input_tokens="57126" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7488}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01JNavfavn8hVMqe6G1F4qB6">
+    <param name="file_path">/Users/schrockn/code/erk/tests/commands/pr/test_create.py</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="7488" cache_read_input_tokens="57126" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7488}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01JNavfavn8hVMqe6G1F4qB6">
+     1→"""Tests for pr create command."""
+     2→
+     3→from click.testing import CliRunner
+     4→
+     5→from erk.cli.cli import cli
+     6→from erk_shared.gateway.github.metadata.core import find_metadata_block
+     7→from tests.fakes.gateway.console import FakeConsole
+     8→from tests.fakes.gateway.github import FakeLocalGitHub
+     9→from tests.fakes.gateway.github_issues import FakeGitHubIssues
+    10→from tests.test_utils.context_builders import build_workspace_test_context
+    11→from tests.test_utils.env_helpers import erk_inmem_env
+    12→
+    13→
+    14→def test_create_from_file(tmp_path) -&gt; None:
+    15→    """Test creating a plan from a file."""
+    16→    # Arrange
+    17→    plan_file = tmp_path / "test-plan.md"
+    18→    plan_content = "# Test Feature\n\nImplementation details here"
+    19→    plan_file.write_text(plan_content, encoding="utf-8")
+    20→
+    21→    runner = CliRunner()
+    22→    with erk_inmem_env(runner) as env:
+    23→        issues = FakeGitHubIssues()
+    24→        fake_github = FakeLocalGitHub(issues_gateway=issues)
+    25→        ctx = build_workspace_test_context(env, issues=issues, github=fake_github)
+    26→
+    27→        # Act
+    28→        result = runner.invoke(cli, ["pr", "create", "--file", str(plan_file)], obj=ctx)
+    29→
+    30→        # Assert
+
+... [20 lines omitted] ...
+
+    31→        assert result.exit_code == 0, f"Command failed: {result.output}"
+  </tool_result>
+  <tool_use name="Grep" id="toolu_013RhaRvmXcskjbTTyAHtFwC">
+    <param name="pattern">Implement PR|Checkout PR|Dispatch PR|Plan.*saved</param>
+    <param name="path">/Users/schrockn/code/erk/tests</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="7488" cache_read_input_tokens="57126" output_tokens="259" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 7488, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_013RhaRvmXcskjbTTyAHtFwC">
+tests/commands/pr/test_create.py:34:        assert "Checkout PR #999:" in result.output
+tests/commands/pr/test_create.py:35:        assert "Dispatch PR #999:" in result.output
+tests/unit/shared/test_next_steps.py:92:        assert "Implement PR #42:" in output
+tests/unit/shared/test_next_steps.py:105:        assert "Dispatch PR #42:" in output
+tests/unit/cli/commands/exec/scripts/test_plan_save.py:71:    """Display format: output contains 'Plan saved as planned PR'."""
+tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py:130:        """Plan-saved marker blocks exit with Step 2 prompt and deletes the marker."""
+tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py:147:        """Plan-saved marker without plan number uses fallback message."""
+tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py:191:        """Plan-saved marker blocks exit and deletes both markers."""
+tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py:201:        # Plan-saved marker is deleted (session complete)
+tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py:1010:        assert "Dispatch PR #42:" in message
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="3594" cache_read_input_tokens="64614" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3594}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me check the `pr create` command to see where it generates the "Checkout PR" and "Dispatch PR" output.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3594" cache_read_input_tokens="64614" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3594}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01TBDahnwpshGxbGXNaA18nE">
+    <param name="pattern">Checkout PR|Dispatch PR|format_plan_next_steps|format_next_steps</param>
+    <param name="path">/Users/schrockn/code/erk/src/erk/cli/commands/pr</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3594" cache_read_input_tokens="64614" output_tokens="202" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3594, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01TBDahnwpshGxbGXNaA18nE">
+src/erk/cli/commands/pr/checkout_cmd.py:135:    """Checkout PR or plan into a worktree for review.
+src/erk/cli/commands/pr/checkout_cmd.py:151:        erk pr checkout 123       # Checkout PR #123
+src/erk/cli/commands/pr/create_cmd.py:14:from erk_shared.output.next_steps import format_plan_next_steps_plain
+src/erk/cli/commands/pr/create_cmd.py:137:        user_output(format_plan_next_steps_plain(result.pr_number, url=result.pr_url))
+  </tool_result>
+  <tool_use name="Read" id="toolu_01STKaxbBrqymah2a4Rjp6E2">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/pr/create_cmd.py</param>
+    <param name="limit">150</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="372" cache_read_input_tokens="68208" output_tokens="98" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 372, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01STKaxbBrqymah2a4Rjp6E2">
+     1→"""Command to create a plan from markdown content."""
+     2→
+     3→import sys
+     4→from pathlib import Path
+     5→
+     6→import click
+     7→
+     8→from erk.cli.core import discover_repo_context
+     9→from erk.cli.ensure import Ensure
+    10→from erk.core.branch_slug_generator import generate_branch_slug
+    11→from erk.core.context import ErkContext
+    12→from erk.core.repo_discovery import ensure_erk_metadata_dir
+    13→from erk_shared.naming import generate_planned_pr_branch_name
+    14→from erk_shared.output.next_steps import format_plan_next_steps_plain
+    15→from erk_shared.output.output import user_output
+    16→from erk_shared.plan_store.create_plan_draft_pr import create_plan_draft_pr
+    17→from erk_shared.plan_utils import extract_title_from_plan
+    18→
+    19→
+    20→@click.command("create")
+    21→@click.option(
+    22→    "--file",
+    23→    "-f",
+    24→    type=click.Path(exists=True, path_type=Path),
+    25→    help="PR file to read",
+    26→)
+    27→@click.option("--title", "-t", type=str, help="PR title (default: extract from H1)")
+    28→@click.option("--label", "-l", multiple=True, help="Additional labels")
+    29→@click.option("--summary", help="AI-generated summary to display above the collapsed PR")
+    30→@click.pass_obj
+
+... [108 lines omitted] ...
+
+    62→        except OSError as e:
+    63→            user_output(click.style("Error: ", fg="red") + f"Failed to read file: {e}")
+    69→        except OSError as e:
+    70→            user_output(click.style("Error: ", fg="red") + f"Failed to read stdin: {e}")
+   123→        user_output(click.style("Error: ", fg="red") + str(result.error))
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="1980" cache_read_input_tokens="68580" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1980}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I have a complete picture. Let me write the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1980" cache_read_input_tokens="68580" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1980}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01DhN5kYWqyMFTciUbhsN3cz">
+    <param name="file_path">/Users/schrockn/.claude/plans/unified-launching-newt.md</param>
+    <param name="content"># Use "planned PR" terminology in user-facing output
+
+## Context
+
+The user-facing output a...[truncated 1776 chars]...pr/test_create.py tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py -x
+```
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1980" cache_read_input_tokens="68580" output_tokens="1527" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1980, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01DhN5kYWqyMFTciUbhsN3cz">
+File created successfully at: /Users/schrockn/.claude/plans/unified-launching-newt.md
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_01WSqJCeyKALWCBSii5Wa6k6">
+    <param name="query">select:ExitPlanMode</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1751" cache_read_input_tokens="70560" output_tokens="78" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1751, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01WSqJCeyKALWCBSii5Wa6k6">
+
+  </tool_result>
+  <assistant>
+
+Straightforward terminology change across 5 source files and 3 test files. All changes are mechanical string replacements.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="738" cache_read_input_tokens="72311" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 738}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ExitPlanMode" id="toolu_01TbupMaj4ip8GZZAp8r5Di8">
+    <param name="plan"># Use "planned PR" terminology in user-facing output
+
+## Context
+
+The user-facing output a...[truncated 1776 chars]...pr/test_create.py tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py -x
+```
+</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="738" cache_read_input_tokens="72311" output_tokens="66" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 738, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01TbupMaj4ip8GZZAp8r5Di8">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/unified-launching-newt.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Use "planned PR" terminology in user-facing output
+Current context: (wt:erk) (br:master)\n\nWhat would you like to do with this plan?"
+  header: "br:master"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create new branch and planned PR. Stays on current branch." - Create a new branch, save plan as draft PR.
+  2. "Implement without saving" - Implement directly on the current branch without saving a plan PR.
+  3. "View/Edit the Plan" - Open plan in editor to review or modify before deciding.
+
+⚠️  WARNING: Currently on 'master'. We strongly discourage implementing directly on the trunk branch. Consider saving the plan and implementing in a dedicated worktree instead.
+
+If user chooses 'Create new branch and planned PR':
+  1. Run /erk:plan-save
+  2. Call ExitPlanMode to end the planning session.
+
+If user chooses 'Implement without saving':
+  1. Create implement-now marker:
+     erk exec marker create --session-id 54671ef7-c44d-4143-a4d6-fc964f75cc88 \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly on the current branch.
+     Do NOT run 'erk exec setup-impl' or create a new branch.
+
+... [8 lines omitted] ...
+  </tool_result>
+  <assistant>Here's the plan:
+
+# Use "planned PR" terminology in user-facing output
+
+## Context
+
+The user-facing output after saving a plan says `Plan "..." saved as draft PR #9206` and uses bare `Implement PR #`, `Checkout PR #`, `Dispatch PR #` headers. The correct erk domain term for the GitHub PR entity is "planned PR", not "plan".
+
+## Changes
+
+### 1. `packages/erk-shared/src/erk_shared/output/next_steps.py`
+- `Implement PR #` → `Implement planned PR #`
+- `Checkout PR #` → `Checkout planned PR #`
+- `Dispatch PR #` → `Dispatch planned PR #`
+- `**Checkout PR branch:**` → `**Checkout planned PR branch:**`
+
+### 2. `.claude/commands/erk/plan-save.md`
+- `Plan already saved as PR #&lt;pr_number&gt; (duplicate skipped)` → `Planned PR #&lt;pr_number&gt; already saved (duplicate skipped)`
+- `Plan "&lt;title&gt;" saved as draft PR #&lt;pr_number&gt;` → `Planned PR "&lt;title&gt;" saved as #&lt;pr_number&gt;`
+
+### 3. Test updates (5 assertions across 3 files)
+
+## Verification
+```bash
+uv run pytest tests/unit/shared/test_next_steps.py tests/commands/pr/test_create.py tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py -x
+```</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="705" cache_read_input_tokens="73049" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 705}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_01CVXyD928SXa2dQnX8ba1AV">
+    <param name="query">select:AskUserQuestion</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="705" cache_read_input_tokens="73049" output_tokens="435" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 705, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01CVXyD928SXa2dQnX8ba1AV">
+
+  </tool_result>
+  <tool_use name="AskUserQuestion" id="toolu_01JXr3Kz1t4p5Q9SBkAA2EHH">
+    <param name="questions">[{'question': 'What would you like to do with this plan?', 'header': 'br:master', 'options...[truncated 283 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="2887" cache_read_input_tokens="73754" output_tokens="175" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2887, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01JXr3Kz1t4p5Q9SBkAA2EHH">
+User has answered your questions: "What would you like to do with this plan?"="Create new branch and planned PR". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="Skill" id="toolu_01QL9MTfZcGsVkWuCWM68M9v">
+    <param name="skill">erk:plan-save</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="226" cache_read_input_tokens="76641" output_tokens="57" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 226, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01QL9MTfZcGsVkWuCWM68M9v">
+Launching skill: erk:plan-save
+  </tool_result>
+  <user># /erk:plan-save
+
+Save the current session's plan to GitHub with session context.
+
+## Usage
+
+```bash
+/erk:plan-save                           # Standalone plan
+/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+/erk:plan-save --objective=123           # Explicit objective link (overrides marker)
+/erk:plan-save --current-branch          # Use current branch instead of creating new plnd/ branch
+```
+
+Objective linking: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command. Use `--objective=&lt;number&gt;` to override the marker or provide the link when no marker exists (e.g., during replan).
+
+## Plan Storage
+
+The plan is saved using the configured backend:
+
+- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+  The JSON output contract includes `pr_number`, `pr_url`, `title`, `branch_name`, `plan_backend`.
+
+## Agent Instructions
+
+### Step 1: Parse Arguments
+
+Check `` for the `--plan-type`, `--objective`, and `--current-branch` flags:
+
+```
+If  contains "--plan-type=&lt;type&gt;":
+  - Extract the type (standard or learn)
+  - Store as PLAN_TYPE variable
+  - Set PLAN_TYPE_FLAG to "--plan-type=&lt;type&gt;"
+Else:
+  - Set PLAN_TYPE_FLAG to empty string
+
+If  contains "--objective=&lt;number&gt;":
+  - Extract the number
+  - Set OBJECTIVE_FLAG to "--objective=&lt;number&gt;"
+Else:
+  - Set OBJECTIVE_FLAG to empty string
+
+If  contains "--current-branch":
+  - Set CURRENT_BRANCH_FLAG to "--current-branch"
+Else:
+  - Set CURRENT_BRANCH_FLAG to empty string
+```
+
+### Step 2: Generate Branch Slug
+
+**Skip this step if `--current-branch` was passed.** The current branch is used directly.
+
+Before saving, generate a branch slug from the plan title. Read the plan title from the plan file you wrote in plan mode (the first `# ` heading).
+
+Generate a branch slug from the title:
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+
+Store the result as `BRANCH_SLUG`.
+
+### Step 3: Generate Plan Summary
+
+Write a concise 2-3 sentence summary of the plan. This summary will be visible
+at the top of the PR description (above the collapsed full plan).
+
+Guidelines:
+
+- Focus on WHAT the plan does and WHY
+- Do not repeat the title
+- Plain text, no markdown headers or formatting
+- Avoid special shell characters (backticks, dollar signs)
+- Store as PLAN_SUMMARY
+
+### Step 4: Run Save Command
+
+Run this command with the session ID, summary, and optional flags.
+
+If CURRENT_BRANCH_FLAG is set, pass `--current-branch` (no branch slug needed):
+
+```bash
+erk exec plan-save --format json --session-id="54671ef7-c44d-4143-a4d6-fc964f75cc88" --current-branch --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Otherwise, pass the branch slug:
+
+```bash
+erk exec plan-save --format json --session-id="54671ef7-c44d-4143-a4d6-fc964f75cc88" --branch-slug="${BRANCH_SLUG}" --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Parse the JSON output to extract `pr_number` for verification in Step 5.
+
+If the command fails, display the error and stop.
+
+### Step 5: Verify Objective Link (if applicable)
+
+**Only run this step if `objective_issue` is non-null in the JSON output from Step 4.**
+
+Verify the objective link was saved correctly:
+
+```bash
+erk exec get-plan-metadata &lt;pr_number&gt; objective_issue
+```
+
+Parse the JSON response:
+
+- If `success: true` and `value` matches the expected objective number: verification passed
+- If `success: false` or value doesn't match: verification failed
+
+**On verification success:**
+
+Display: `Verified objective link: #&lt;objective-number&gt;`
+
+**On verification failure:**
+
+Display error and remediation steps:
+
+```
+ERROR: Objective link verification failed
+Expected objective: #&lt;expected&gt;
+Actual: &lt;actual-or-null&gt;
+
+The plan was saved but without the correct objective link.
+Fix: Close draft PR #&lt;pr_number&gt;,
+ensure the objective-context marker exists, and re-run /erk:plan-save.
+```
+
+Exit without creating the plan-saved marker. The session continues so the user can retry.
+
+### Step 6: Update Objective Roadmap (if objective linked)
+
+**Only run this step if `objective_issue` was non-null in JSON output and verification passed.**
+
+Update the objective's roadmap table to show that a plan has been created for this node:
+
+1. **Read the roadmap node marker** to get the node ID:
+
+```bash
+step_id=$(erk exec marker read --session-id "54671ef7-c44d-4143-a4d6-fc964f75cc88" roadmap-step)
+```
+
+If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-plan`.
+
+2. **Update the roadmap table** using the dedicated command:
+
+```bash
+erk exec update-objective-node &lt;objective-issue&gt; --node "$step_id" --pr "#&lt;pr_number&gt;" --status in_progress
+```
+
+This atomically fetches the objective body, finds the matching node row, sets the Status cell to `in-progress`, and writes the updated body back.
+
+3. **Report the update:**
+
+Display: `Updated objective #&lt;objective-issue&gt; roadmap: node &lt;step_id&gt; → PR #&lt;pr_number&gt;`
+
+**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+
+### Step 7: Display Results
+
+**If JSON contains `skipped_duplicate: true`:**
+
+Display: `Plan already saved as PR #&lt;pr_number&gt; (duplicate skipped)`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options.
+
+**Otherwise, on success**, display:
+
+```
+Plan "&lt;title&gt;" saved as draft PR #&lt;pr_number&gt;
+URL: &lt;issue_url&gt;
+```
+
+If objective was verified, also display: `Verified objective link: #&lt;objective-number&gt;`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options
+(implement in current worktree, implement in new worktree, or done).
+
+On failure, display the error message and suggest:
+
+- Checking that a plan exists (enter Plan mode and exit it first)
+- Verifying GitHub CLI authentication (`gh auth status`)
+- Checking network connectivity
+
+### Step 5: Push Planning Session
+
+After saving successfully, push the planning session for cross-machine learning.
+This captures the in-progress session state so it's available even if implementation
+happens on a different machine.
+
+Run `erk exec capture-session-info` to get the session file path, then push it:
+
+```bash
+erk exec upload-impl-session --session-id "54671ef7-c44d-4143-a4d6-fc964f75cc88" 2&gt;/dev/null || true
+```
+
+If the plan was saved successfully and `pr_number` is known, use push-session directly
+for better stage tracking:
+
+```bash
+erk exec push-session \
+    --session-file "&lt;session_file_path&gt;" \
+    --session-id "54671ef7-c44d-4143-a4d6-fc964f75cc88" \
+    --stage planning \
+    --source local \
+    --pr-number &lt;pr_number&gt; \
+    2&gt;/dev/null || true
+```
+
+Where `&lt;session_file_path&gt;` is obtained from `erk exec capture-session-info` output
+and `&lt;pr_number&gt;` is from Step 2's JSON output.
+
+**Note:** This is non-critical. If it fails, the plan was still saved successfully.
+The `2&gt;/dev/null || true` ensures graceful degradation.
+
+## Session Tracking
+
+After successfully saving a plan, the plan number is stored in a marker file that enables automatic plan updates in the same session.
+
+**To read the saved plan number:**
+
+```bash
+erk exec marker read --session-id "54671ef7-c44d-4143-a4d6-fc964f75cc88" plan-saved-issue
+```
+
+This returns the plan number (exit code 0) or exits with code 1 if no plan was saved in this session.
+</user>
+  <assistant>
+
+Step 1: No special flags passed.
+
+Step 2: Branch slug from "Use 'planned PR' terminology in user-facing output": `planned-pr-terminology`
+
+Step 3: Summary: "Updates user-facing output strings to use the domain term planned PR instead of bare plan or PR when referring to the GitHub PR entity created from a plan. Changes section headers in next-steps output and display templates in the plan-save skill."
+
+Step 4: Running the save command.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="2278" cache_read_input_tokens="76867" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2278}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01Vtygfv8UC1RV77TEeNNmyW">
+    <param name="command">erk exec plan-save --format json --session-id="54671ef7-c44d-4143-a4d6-fc964f75cc88" --bra...[truncated 182 chars]...hanges section headers in next-steps output and display templates in the plan-save skill."</param>
+    <param name="description">Save plan as draft PR</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2278" cache_read_input_tokens="76867" output_tokens="298" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2278, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Vtygfv8UC1RV77TEeNNmyW">
+{"success": true, "pr_number": 9209, "pr_url": "https://github.com/dagster-io/erk/pull/9209", "title": "[erk-pr] Use \"planned PR\" terminology in user-facing output", "branch_name": "plnd/planned-pr-terminology-03-11-1158", "plan_backend": "planned_pr", "objective_issue": null, "archived_to": "/Users/schrockn/code/erk/.erk/scratch/sessions/54671ef7-c44d-4143-a4d6-fc964f75cc88/plan_snapshots/000001-f6eb3356"}
+  </tool_result>
+  <assistant>Plan saved. No objective linked, skipping verification.
+
+Step 5: Pushing planning session.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="474" cache_read_input_tokens="79145" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 474}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01THu8bJGJ4crTyDfB4CPH2X">
+    <param name="command">erk exec capture-session-info 2&gt;/dev/null</param>
+    <param name="description">Get session file path</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="474" cache_read_input_tokens="79145" output_tokens="107" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 474, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01THu8bJGJ4crTyDfB4CPH2X">
+SESSION_ID=54671ef7-c44d-4143-a4d6-fc964f75cc88
+SESSION_FILE=/Users/schrockn/.claude/projects/-Users-schrockn-code-erk/54671ef7-c44d-4143-a4d6-fc964f75cc88.jsonl
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01ARW52C8Vfn1u7HEDYr1DKz">
+    <param name="command">erk exec push-session --session-file "/Users/schrockn/.claude/projects/-Users-schrockn-cod...[truncated 60 chars]...43-a4d6-fc964f75cc88" --stage planning --source local --pr-number 9209 2&gt;/dev/null || true</param>
+    <param name="description">Push planning session</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="406" cache_read_input_tokens="79619" output_tokens="199" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 406, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+</session>
