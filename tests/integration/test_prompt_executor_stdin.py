@@ -34,9 +34,7 @@ sys.stdout.write(prompt)
 
 
 @pytest.fixture()
-def fake_claude_on_path(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> Path:
+def fake_claude_on_path(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     """Create a fake 'claude' executable and prepend its directory to PATH."""
     bin_dir = tmp_path / "bin"
     bin_dir.mkdir()
@@ -44,9 +42,7 @@ def fake_claude_on_path(
     fake_claude.write_text(FAKE_CLAUDE_SCRIPT)
     fake_claude.chmod(fake_claude.stat().st_mode | stat.S_IEXEC)
 
-    monkeypatch.setenv(
-        "PATH", f"{bin_dir}{os.pathsep}{os.environ.get('PATH', '')}"
-    )
+    monkeypatch.setenv("PATH", f"{bin_dir}{os.pathsep}{os.environ.get('PATH', '')}")
     return fake_claude
 
 
