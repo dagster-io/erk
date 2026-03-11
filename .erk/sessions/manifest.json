@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "pr_number": 9210,
+  "sessions": [
+    {
+      "session_id": "57a5b1e6-c876-430a-ba23-2918749ba151",
+      "stage": "planning",
+      "source": "local",
+      "uploaded_at": "2026-03-11T13:27:13.347301+00:00",
+      "files": [
+        "planning-57a5b1e6-c876-430a-ba23-2918749ba151-57a5b1e6-c876-430a-ba23-2918749ba151.xml"
+      ],
+      "user_turns": 2,
+      "duration_minutes": 33,
+      "raw_size_kb": 1075,
+      "xml_size_kb": 67,
+      "git_branch": "master"
+    }
+  ]
+}
