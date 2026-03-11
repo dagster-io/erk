@@ -34,7 +34,7 @@ Rules triggered by matching actions in code.
 
 **asking devrun agent to fix errors or make tests pass** → Read [Devrun Agent - Read-Only Design](devrun-agent.md) first. Devrun is READ-ONLY. It runs commands and reports results. The parent agent must handle all fixes.
 
-**asserting on FakeGitHubIssues.added_comments for ManagedGitHubPrBackend.add_comment()** → Read [FakeGitHubIssues Dual-Comment Parameters](fake-github-testing.md) first. ManagedGitHubPrBackend routes comments to PR comments (FakeGitHub.pr_comments), not issue comments (FakeGitHubIssues.added_comments). Check the correct fake when testing planned-PR comment operations.
+**asserting on FakeGitHubIssues.added_comments for ManagedGitHubPrBackend.add_comment()** → Read [FakeGitHubIssues Dual-Comment Parameters](fake-github-testing.md) first. ManagedGitHubPrBackend routes comments to PR comments (FakeLocalGitHub.pr_comments), not issue comments (FakeGitHubIssues.added_comments). Check the correct fake when testing planned-PR comment operations.
 
 **asserting on YAML metadata field values with exact string matching** → Read [Erk Test Reference](testing.md) first. Assert on key-only format ('field_name:'), not 'field_name: "value"'. YAML serialization differs from Python repr.
 

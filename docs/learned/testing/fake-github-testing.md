@@ -10,7 +10,7 @@ tripwires:
   - action: "creating custom FakeGitHubIssues without passing to build_workspace_test_context"
     warning: "Always pass issues=issues to build_workspace_test_context when using custom FakeGitHubIssues. Without it, managed_pr_backend operates on a different instance and metadata writes are invisible."
   - action: "asserting on FakeGitHubIssues.added_comments for ManagedGitHubPrBackend.add_comment()"
-    warning: "ManagedGitHubPrBackend routes comments to PR comments (FakeGitHub.pr_comments), not issue comments (FakeGitHubIssues.added_comments). Check the correct fake when testing planned-PR comment operations."
+    warning: "ManagedGitHubPrBackend routes comments to PR comments (FakeLocalGitHub.pr_comments), not issue comments (FakeGitHubIssues.added_comments). Check the correct fake when testing planned-PR comment operations."
     score: 6
 ---
 
