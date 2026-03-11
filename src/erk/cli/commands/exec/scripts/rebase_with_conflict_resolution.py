@@ -45,6 +45,8 @@ from erk_shared.core.prompt_executor import PromptExecutor
 from erk_shared.gateway.git.abc import Git
 from erk_shared.gateway.git.remote_ops.types import PushError
 
+RESOLVE_CONFLICTS_COMMAND = "/erk:system/resolve-conflicts-core"
+
 
 @dataclass(frozen=True)
 class RebaseSuccess:
@@ -147,41 +149,6 @@ def _generate_summary(
     return result.output.strip()
 
 
-CONFLICT_RESOLUTION_PROMPT = """\
-Fix all merge conflicts in this repository and continue the rebase.
-
-Steps:
-
-1. Run `git status` to identify all conflicted files.
-
-2. For each conflicted file, check for the `<!-- AUTO-GENERATED FILE -->` header comment:
-   - Auto-generated files (e.g., tripwires.md, index.md with the auto-generated header): \
-accept either side with `git checkout --theirs <file>`, stage with `git add`. \
-After the rebase completes, regenerate them (e.g., `erk docs sync` for tripwires/index files).
-   - Real content files: proceed to step 3.
-
-3. For each real content file:
-   a. Read the file and understand both sides of the conflict:
-      - `<<<<<<< HEAD` = local changes
-      - `=======` separates local from incoming
-      - `>>>>>>> <commit>` = incoming changes
-   b. Determine what each side was trying to accomplish.
-   c. Resolve intelligently:
-      - If changes are complementary, merge both
-      - If changes conflict semantically, prefer the more recent/complete version
-      - If genuinely unclear, prefer the incoming (upstream) version
-   d. Remove all conflict markers (`<<<<<<<`, `=======`, `>>>>>>>`).
-   e. Stage the resolution: `git add <file>`
-
-4. After resolving all conflicts, stage resolved files and run `git rebase --continue`.
-
-5. If more conflicts appear, repeat from step 1.
-
-6. After rebase completes, regenerate any auto-generated files resolved in step 2 \
-(e.g., run `erk docs sync`).
-"""
-
-
 def _invoke_claude_for_conflicts(
     *,
     prompt_executor: PromptExecutor,
@@ -189,6 +156,10 @@ def _invoke_claude_for_conflicts(
     model: str,
 ) -> bool:
     """Invoke Claude to fix merge conflicts.
+
+    Uses the shared /erk:system/resolve-conflicts-core command, which is the
+    canonical source of truth for conflict resolution logic. The same command
+    is referenced by the interactive pr-resolve-conflicts and diverge-fix commands.
 
     Args:
         prompt_executor: Prompt executor gateway
@@ -198,13 +169,12 @@ def _invoke_claude_for_conflicts(
     Returns:
         True if Claude invocation succeeded.
     """
-    result = prompt_executor.execute_prompt(
-        CONFLICT_RESOLUTION_PROMPT,
-        model=model,
-        tools=None,
-        cwd=cwd,
-        system_prompt=None,
+    result = prompt_executor.execute_command(
+        command=RESOLVE_CONFLICTS_COMMAND,
+        worktree_path=cwd,
         dangerous=True,
+        model=model,
+        permission_mode="dangerous",
     )
     return result.success
 

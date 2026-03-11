@@ -52,26 +52,27 @@ Resolve "Branch X has been updated remotely" errors by reconciling with remote a
 
 6. **If rebase causes conflicts:**
 
-   For each conflicted file:
+   <!-- Canonical conflict resolution logic: .claude/commands/erk/system/resolve-conflicts-core.md -->
 
-   a. **Read the file** - Understand both sides of the conflict by examining the conflict markers:
-   - `<<<<<<< HEAD` marks the start of your local changes
-   - `=======` separates local from incoming changes
-   - `>>>>>>> <commit>` marks the end of incoming changes
+   For each conflicted file, check for the `<!-- AUTO-GENERATED FILE -->` header comment:
+   - **Auto-generated files**: Accept either side with `git checkout --theirs <file>`, stage with `git add`. Regenerate after rebase completes.
+   - **Real content files**: Resolve as follows:
 
-   b. **Understand intent** - Determine what each side was trying to accomplish:
-   - What was the local change trying to do?
-   - What was the remote change trying to do?
-   - Are they complementary or contradictory?
+   a. **Read the file** and understand both sides of the conflict:
+      - `<<<<<<< HEAD` = local changes
+      - `=======` separates local from incoming
+      - `>>>>>>> <commit>` = incoming changes
+
+   b. **Determine what each side was trying to accomplish.**
 
    c. **Resolve intelligently:**
-   - If changes are complementary -> merge both
-   - If changes conflict semantically -> prefer the more recent/complete version
-   - If unclear -> ask the user for guidance
+      - If changes are complementary, merge both
+      - If changes conflict semantically, prefer the more recent/complete version
+      - If genuinely unclear, ask the user for guidance
 
-   d. **Remove all conflict markers** - The resolved file should have no `<<<<<<<`, `=======`, or `>>>>>>>` markers
+   d. **Remove all conflict markers** (`<<<<<<<`, `=======`, `>>>>>>>`).
 
-   e. **Stage the resolution** - `git add <file>`
+   e. **Stage the resolution**: `git add <file>`
 
 7. **Re-track branch with Graphite** (when using Graphite):
 

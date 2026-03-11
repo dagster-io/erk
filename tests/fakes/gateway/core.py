@@ -50,6 +50,16 @@ class PromptCall(NamedTuple):
     dangerous: bool
 
 
+class CommandCall(NamedTuple):
+    """Record of an execute_command call."""
+
+    command: str
+    worktree_path: Path
+    dangerous: bool
+    model: str | None
+    permission_mode: PermissionMode
+
+
 class PassthroughCall(NamedTuple):
     """Record of an execute_prompt_passthrough call."""
 
@@ -65,6 +75,7 @@ class FakePromptExecutor(PromptExecutor):
 
     Attributes:
         is_available: Whether the executor should appear available
+        command_calls: List of CommandCall records
         interactive_calls: List of InteractiveCall records
         prompt_calls: List of PromptCall records
         passthrough_calls: List of PassthroughCall records
@@ -82,6 +93,7 @@ class FakePromptExecutor(PromptExecutor):
         passthrough_exit_code: int = 0,
     ) -> None:
         self.is_available_value = is_available
+        self.command_calls: list[CommandCall] = []
         self.interactive_calls: list[InteractiveCall] = []
         self.prompt_calls: list[PromptCall] = []
         self.passthrough_calls: list[PassthroughCall] = []
@@ -105,6 +117,15 @@ class FakePromptExecutor(PromptExecutor):
         permission_mode: PermissionMode,
         allow_dangerous: bool = False,
     ) -> Iterator[ExecutorEvent]:
+        self.command_calls.append(
+            CommandCall(
+                command=command,
+                worktree_path=worktree_path,
+                dangerous=dangerous,
+                model=model,
+                permission_mode=permission_mode,
+            )
+        )
         yield from self.streaming_events
 
     def execute_interactive(
