@@ -6,6 +6,7 @@ import asyncio
 import subprocess
 from unittest.mock import patch
 
+from erk_mcp.request_context import set_request_github_token
 from erk_mcp.server import (
     MachineCommandTool,
     _build_machine_command_tools,
@@ -35,6 +36,7 @@ class TestRunErkJson:
             capture_output=True,
             text=True,
             check=False,
+            env=None,
         )
 
     @patch("erk_mcp.server.subprocess.run")
@@ -68,6 +70,28 @@ class TestRunErkJson:
             capture_output=True,
             text=True,
             check=False,
+            env=None,
+        )
+
+    @patch("erk_mcp.server.subprocess.run")
+    def test_env_override_passed_to_subprocess(self, mock_run: patch) -> None:
+        mock_run.return_value = subprocess.CompletedProcess(
+            args=["erk", "one-shot"],
+            returncode=0,
+            stdout='{"success": true}',
+            stderr="",
+        )
+        env = {"GH_TOKEN": "user-token-abc", "PATH": "/usr/bin"}
+
+        _run_erk_json(("one-shot",), {"prompt": "Fix bug"}, env_override=env)
+
+        mock_run.assert_called_once_with(
+            ["erk", "one-shot"],
+            input='{"prompt": "Fix bug"}',
+            capture_output=True,
+            text=True,
+            check=False,
+            env={"GH_TOKEN": "user-token-abc", "PATH": "/usr/bin"},
         )
 
 
@@ -145,6 +169,7 @@ class TestMachineCommandTool:
             capture_output=True,
             text=True,
             check=False,
+            env=None,
         )
 
     @patch("erk_mcp.server.subprocess.run")
@@ -167,7 +192,48 @@ class TestMachineCommandTool:
             capture_output=True,
             text=True,
             check=False,
+            env=None,
         )
+
+    @patch("erk_mcp.server.subprocess.run")
+    def test_injects_user_gh_token_when_context_var_set(self, mock_run: patch) -> None:
+        mock_run.return_value = subprocess.CompletedProcess(
+            args=[], returncode=0, stdout='{"success": true}', stderr=""
+        )
+        tool = MachineCommandTool(
+            name="test_tool",
+            cli_command_path=("test-cmd",),
+            description="Test",
+            parameters={"type": "object", "properties": {}},
+        )
+
+        with patch("erk_mcp.server.os.environ", {"PATH": "/usr/bin", "OTHER": "val"}):
+            tok = set_request_github_token("user-gh-token-xyz")
+            try:
+                asyncio.run(tool.run({"prompt": "hello"}))
+            finally:
+                from erk_mcp.request_context import reset_request_github_token
+                reset_request_github_token(tok)
+
+        call_kwargs = mock_run.call_args[1]
+        assert call_kwargs["env"] == {"PATH": "/usr/bin", "OTHER": "val", "GH_TOKEN": "user-gh-token-xyz"}
+
+    @patch("erk_mcp.server.subprocess.run")
+    def test_no_env_override_when_no_context_var(self, mock_run: patch) -> None:
+        mock_run.return_value = subprocess.CompletedProcess(
+            args=[], returncode=0, stdout='{"success": true}', stderr=""
+        )
+        tool = MachineCommandTool(
+            name="test_tool",
+            cli_command_path=("test-cmd",),
+            description="Test",
+            parameters={"type": "object", "properties": {}},
+        )
+
+        asyncio.run(tool.run({"prompt": "hello"}))
+
+        call_kwargs = mock_run.call_args[1]
+        assert call_kwargs["env"] is None
 
     def test_discovered_tools_include_one_shot(self) -> None:
         tools = _build_machine_command_tools()

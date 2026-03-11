@@ -3,12 +3,14 @@
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 from typing import TYPE_CHECKING, Any
 
 from anyio import to_thread
 from fastmcp.tools.tool import Tool, ToolResult
 
+from erk_mcp.request_context import get_request_github_token
 from erk_shared.agentclick.machine_schema import request_schema
 from erk_shared.agentclick.mcp_exposed import discover_mcp_commands
 
@@ -18,12 +20,18 @@ if TYPE_CHECKING:
 DEFAULT_MCP_NAME = "erk"
 
 
-def _run_erk_json(command_path: tuple[str, ...], params: dict[str, Any]) -> str:
+def _run_erk_json(
+    command_path: tuple[str, ...],
+    params: dict[str, Any],
+    *,
+    env_override: dict[str, str] | None = None,
+) -> str:
     """Run erk json command, piping params as JSON stdin.
 
     Args:
         command_path: Tuple of subcommand names, e.g. ("json", "pr", "list").
         params: JSON-serializable dict piped to stdin.
+        env_override: Optional environment dict for the subprocess. None inherits process env.
     """
     result = subprocess.run(
         ["erk", *command_path],
@@ -31,6 +39,7 @@ def _run_erk_json(command_path: tuple[str, ...], params: dict[str, Any]) -> str:
         capture_output=True,
         text=True,
         check=False,
+        env=env_override,
     )
     return result.stdout
 
@@ -51,7 +60,9 @@ class MachineCommandTool(Tool):
             if v is not None:
                 params[k] = v
         path = self.cli_command_path
-        result = await to_thread.run_sync(lambda: _run_erk_json(path, params))
+        user_token = get_request_github_token()
+        env_override = {**os.environ, "GH_TOKEN": user_token} if user_token is not None else None
+        result = await to_thread.run_sync(lambda: _run_erk_json(path, params, env_override=env_override))
         return self.convert_result(result)
 
 

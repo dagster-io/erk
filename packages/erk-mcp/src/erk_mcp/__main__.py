@@ -1,6 +1,7 @@
 import argparse
 import os
 
+from erk_mcp.github_token_middleware import GitHubTokenMiddleware
 from erk_mcp.server import create_mcp
 
 
@@ -19,11 +20,12 @@ def _parse_args(argv: list[str] | None) -> argparse.Namespace:
 def main() -> None:
     args = _parse_args(None)
     mcp = create_mcp()
-    if args.transport == "stdio":
-        mcp.run()
-    else:
+    if args.transport != "stdio":
+        mcp.add_middleware(GitHubTokenMiddleware())
         print(f"Starting erk MCP server on http://{args.host}:{args.port}/mcp")
         mcp.run(transport=args.transport, host=args.host, port=args.port)
+    else:
+        mcp.run()
 
 
 if __name__ == "__main__":
