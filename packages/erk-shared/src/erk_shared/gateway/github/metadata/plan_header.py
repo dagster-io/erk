@@ -28,6 +28,7 @@ from erk_shared.gateway.github.metadata.schemas import (
     CREATED_AT,
     CREATED_BY,
     CREATED_FROM_SESSION,
+    CREATED_FROM_WORKFLOW_RUN_ID,
     CREATED_FROM_WORKFLOW_RUN_URL,
     LAST_DISPATCHED_AT,
     LAST_DISPATCHED_NODE_ID,
@@ -85,6 +86,7 @@ def create_plan_header_block(
     objective_issue: int | None,
     created_from_session: str | None,
     created_from_workflow_run_url: str | None,
+    created_from_workflow_run_id: str | None,
     last_learn_session: str | None,
     last_learn_at: str | None,
     learn_status: LearnStatusValue | None,
@@ -115,6 +117,7 @@ def create_plan_header_block(
         objective_issue: Optional parent objective issue number
         created_from_session: Optional session ID that created this plan
         created_from_workflow_run_url: Optional workflow run URL that created this plan
+        created_from_workflow_run_id: Optional workflow run ID that created this plan
         last_learn_session: Optional session ID that last invoked learn
         last_learn_at: Optional ISO 8601 timestamp of last learn invocation
         learn_status: Optional learning workflow status
@@ -167,6 +170,10 @@ def create_plan_header_block(
     # Include created_from_workflow_run_url if provided
     if created_from_workflow_run_url is not None:
         data[CREATED_FROM_WORKFLOW_RUN_URL] = created_from_workflow_run_url
+
+    # Include created_from_workflow_run_id if provided
+    if created_from_workflow_run_id is not None:
+        data[CREATED_FROM_WORKFLOW_RUN_ID] = created_from_workflow_run_id
 
     # Include last_learn_session if provided
     if last_learn_session is not None:
@@ -224,6 +231,7 @@ def format_plan_header_body(
     objective_issue: int | None,
     created_from_session: str | None,
     created_from_workflow_run_url: str | None,
+    created_from_workflow_run_id: str | None,
     last_learn_session: str | None,
     last_learn_at: str | None,
     learn_status: LearnStatusValue | None,
@@ -257,6 +265,7 @@ def format_plan_header_body(
         objective_issue: Optional parent objective issue number
         created_from_session: Optional session ID that created this plan
         created_from_workflow_run_url: Optional workflow run URL that created this plan
+        created_from_workflow_run_id: Optional workflow run ID that created this plan
         last_learn_session: Optional session ID that last invoked learn
         last_learn_at: Optional ISO 8601 timestamp of last learn invocation
         learn_status: Optional learning workflow status
@@ -288,6 +297,7 @@ def format_plan_header_body(
         objective_issue=objective_issue,
         created_from_session=created_from_session,
         created_from_workflow_run_url=created_from_workflow_run_url,
+        created_from_workflow_run_id=created_from_workflow_run_id,
         last_learn_session=last_learn_session,
         last_learn_at=last_learn_at,
         learn_status=learn_status,

@@ -987,6 +987,7 @@ Save plan as a draft PR.
 | `--plan-type`                     | CHOICE    | No       | -       | PR type: standard (default) or learn                                   |
 | `--learned-from-issue`            | INTEGER   | No       | -       | Parent PR number (for learn plans)                                     |
 | `--created-from-workflow-run-url` | TEXT      | No       | -       | GitHub Actions workflow run URL                                        |
+| `--created-from-workflow-run-id`  | TEXT      | No       | -       | GitHub Actions workflow run ID                                         |
 | `--branch-slug`                   | TEXT      | No       | -       | Pre-generated branch slug (skips LLM call when provided)               |
 | `--objective`                     | INTEGER   | No       | -       | Objective issue number (overrides session marker)                      |
 | `--summary`                       | TEXT      | No       | -       | AI-generated PR summary for PR description                             |

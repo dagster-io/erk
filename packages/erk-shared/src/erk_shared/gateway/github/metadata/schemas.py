@@ -354,6 +354,7 @@ PlanHeaderFieldName = Literal[
     "objective_issue",
     "created_from_session",
     "created_from_workflow_run_url",
+    "created_from_workflow_run_id",
     "last_learn_session",
     "last_learn_at",
     "learn_status",
@@ -395,6 +396,9 @@ OBJECTIVE_ISSUE: Literal["objective_issue"] = "objective_issue"
 CREATED_FROM_SESSION: Literal["created_from_session"] = "created_from_session"
 CREATED_FROM_WORKFLOW_RUN_URL: Literal["created_from_workflow_run_url"] = (
     "created_from_workflow_run_url"
+)
+CREATED_FROM_WORKFLOW_RUN_ID: Literal["created_from_workflow_run_id"] = (
+    "created_from_workflow_run_id"
 )
 LAST_LEARN_SESSION: Literal["last_learn_session"] = "last_learn_session"
 LAST_LEARN_AT: Literal["last_learn_at"] = "last_learn_at"
@@ -484,6 +488,7 @@ class PlanHeaderSchema(MetadataBlockSchema):
         objective_issue: Parent objective issue number (nullable)
         created_from_session: Session ID that created this plan (nullable)
         created_from_workflow_run_url: Workflow run URL that created this plan (nullable)
+        created_from_workflow_run_id: Workflow run ID that created this plan (nullable)
         last_learn_session: Session ID that last invoked learn (nullable)
         last_learn_at: ISO 8601 timestamp of last learn invocation (nullable)
         learn_status: Learning workflow status (nullable)
@@ -524,6 +529,7 @@ class PlanHeaderSchema(MetadataBlockSchema):
             OBJECTIVE_ISSUE,
             CREATED_FROM_SESSION,
             CREATED_FROM_WORKFLOW_RUN_URL,
+            CREATED_FROM_WORKFLOW_RUN_ID,
             LAST_LEARN_SESSION,
             LAST_LEARN_AT,
             LEARN_STATUS,

@@ -114,6 +114,7 @@ def pr_create(
         objective_id=None,
         created_from_session=None,
         created_from_workflow_run_url=None,
+        created_from_workflow_run_id=None,
         learned_from_issue=None,
         summary=summary or "",
         extra_files=None,

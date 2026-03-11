@@ -273,6 +273,7 @@ def _create_learn_pr_core(
         objective_id=None,
         created_from_session=None,
         created_from_workflow_run_url=None,
+        created_from_workflow_run_id=None,
         learned_from_issue=int(pr_id),
         summary=summary,
         extra_files=xml_files or None,

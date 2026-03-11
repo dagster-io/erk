@@ -710,9 +710,12 @@ CMD="erk exec plan-save \
     --session-xml-dir .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn \
     --format json"
 
-# Add workflow run URL if set (enables backlink to GitHub Actions run)
+# Add workflow run URL and ID if set (enables backlink to GitHub Actions run)
 if [ -n "$WORKFLOW_RUN_URL" ]; then
     CMD="$CMD --created-from-workflow-run-url \"$WORKFLOW_RUN_URL\""
+fi
+if [ -n "$WORKFLOW_RUN_ID" ]; then
+    CMD="$CMD --created-from-workflow-run-id \"$WORKFLOW_RUN_ID\""
 fi
 
 eval "$CMD"

@@ -1772,8 +1772,8 @@ class TestBlockingDepsPlans:
         assert displays.count("#400") == 1
 
 
-class TestPlanningRunIdFallback:
-    """Tests for planning run ID fallback from created_from_workflow_run_url."""
+class TestPlanningRunId:
+    """Tests for planning run ID from structured metadata."""
 
     def _make_provider(self, tmp_path: Path) -> RealPrDataProvider:
         """Create a minimal RealPrDataProvider for testing."""
@@ -1808,12 +1808,13 @@ class TestPlanningRunIdFallback:
             http_client=FakeHttpClient(),
         )
 
-    def test_planning_run_url_populates_run_fields(self, tmp_path: Path) -> None:
-        """Planning run URL populates run_id and run_url when no dispatched run."""
+    def test_planning_run_id_populates_run_fields(self, tmp_path: Path) -> None:
+        """Planning run ID field populates run_id and run_url when no dispatched run."""
         provider = self._make_provider(tmp_path)
 
         pr_body = format_plan_header_body_for_test(
-            created_from_workflow_run_url="https://github.com/test/repo/actions/runs/12345678"
+            created_from_workflow_run_url="https://github.com/test/repo/actions/runs/12345678",
+            created_from_workflow_run_id="12345678",
         )
         plan = Plan(
             pr_identifier="123",
@@ -1846,8 +1847,8 @@ class TestPlanningRunIdFallback:
         assert row.run_conclusion is None
         assert row.run_state_display == "-"
 
-    def test_no_planning_run_url_shows_dash(self, tmp_path: Path) -> None:
-        """Without planning run URL or dispatched run, run fields are defaults."""
+    def test_no_planning_run_id_shows_dash(self, tmp_path: Path) -> None:
+        """Without planning run ID or dispatched run, run fields are defaults."""
         provider = self._make_provider(tmp_path)
 
         plan = Plan(
@@ -1878,11 +1879,12 @@ class TestPlanningRunIdFallback:
         assert row.run_id_display == "-"
 
     def test_dispatched_run_takes_precedence(self, tmp_path: Path) -> None:
-        """When both dispatched run and planning run URL exist, dispatched run takes precedence."""
+        """When both dispatched run and planning run ID exist, dispatched run takes precedence."""
         provider = self._make_provider(tmp_path)
 
         pr_body = format_plan_header_body_for_test(
-            created_from_workflow_run_url="https://github.com/test/repo/actions/runs/11111111"
+            created_from_workflow_run_url="https://github.com/test/repo/actions/runs/11111111",
+            created_from_workflow_run_id="11111111",
         )
         plan = Plan(
             pr_identifier="123",
