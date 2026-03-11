@@ -28,22 +28,13 @@ Creates a `ManagedGitHubPrBackend` pre-populated with plans, backed by `FakeGitH
 
 See `create_plan_store_with_plans()` in `tests/test_utils/plan_helpers.py` for the full signature. Returns `tuple[ManagedGitHubPrBackend, FakeGitHub]` — the backend and its backing fake for assertions.
 
-### `_plan_to_pr_details()`
-
-Converts a `Plan` to `PRDetails` for the planned-PR backend. Handles both:
-
-- Bodies with plan-header metadata block (reformats with separator)
-- Plain bodies without metadata (uses directly)
-
-Generates branch names using `f"plan-{plan.plan_identifier}"` and ensures `"erk-pr"` label is present.
-
 ## Convention
 
 After PR #8210, only the ManagedGitHubPrBackend exists. Use `create_plan_store_with_plans()` for all new tests.
 
 ## Context Integration
 
-`context_for_test()` in `src/erk/core/context.py` accepts an optional `plan_store` parameter, allowing tests to inject the backend.
+`context_for_test()` in `tests/test_utils/test_context.py` accepts an optional `plan_store` parameter, allowing tests to inject the backend.
 
 ## Assertion Patterns
 

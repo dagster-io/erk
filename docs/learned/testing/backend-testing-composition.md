@@ -19,7 +19,7 @@ Pattern for testing code that uses Backend ABCs. The key insight: inject fake ga
 
 ```python
 # Correct: real backend with fake gateway
-fake_github = FakeGitHub()
+fake_github = FakeLocalGitHub()
 fake_issues = FakeGitHubIssues()
 backend = ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime())
 
@@ -43,7 +43,7 @@ See `test_started_posts_comment_and_updates_metadata` in
 [`tests/unit/cli/commands/exec/scripts/test_impl_signal.py`](../../../tests/unit/cli/commands/exec/scripts/test_impl_signal.py)
 for the full test. The key elements:
 
-- Creates a `FakeGitHub` with test PRs
+- Creates a `FakeLocalGitHub` with test PRs
 - Invokes `impl_signal` via `CliRunner` with `ErkContext.for_test(github=fake_github)`
 - Asserts on `fake_github.pr_comments`, `fake_github.updated_pr_bodies`, `fake_github.updated_pr_titles`, etc.
 
