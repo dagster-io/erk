@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "pr_number": 9214,
+  "sessions": [
+    {
+      "session_id": "",
+      "stage": "impl",
+      "source": "local",
+      "uploaded_at": "2026-03-11T21:05:56.609498+00:00",
+      "files": [
+        "impl--4f34037f-0582-4ef0-93e2-90baaa4bbd63-part1.xml",
+        "impl--4f34037f-0582-4ef0-93e2-90baaa4bbd63-part2.xml",
+        "impl--4f34037f-0582-4ef0-93e2-90baaa4bbd63-part3.xml",
+        "impl--4f34037f-0582-4ef0-93e2-90baaa4bbd63-part4.xml",
+        "impl--4f34037f-0582-4ef0-93e2-90baaa4bbd63-part5.xml",
+        "impl--4f34037f-0582-4ef0-93e2-90baaa4bbd63-part6.xml",
+        "impl--4f34037f-0582-4ef0-93e2-90baaa4bbd63-part7.xml",
+        "impl--4f34037f-0582-4ef0-93e2-90baaa4bbd63-part8.xml"
+      ],
+      "user_turns": 2,
+      "duration_minutes": 11,
+      "raw_size_kb": 776,
+      "xml_size_kb": 108,
+      "git_branch": "plnd/push-dispatch-logic-to-ope-03-11-1653"
+    }
+  ]
+}
