@@ -1,0 +1,51 @@
+{
+  "version": 1,
+  "pr_number": 9198,
+  "sessions": [
+    {
+      "session_id": "dcfcb4fa-ec57-4779-8a5d-a54cb743a2bf",
+      "stage": "impl",
+      "source": "remote",
+      "uploaded_at": "2026-03-11T00:29:00.199249+00:00",
+      "files": [
+        "impl-dcfcb4fa-ec57-4779-8a5d-a54cb743a2bf-dcfcb4fa-ec57-4779-8a5d-a54cb743a2bf-part1.xml",
+        "impl-dcfcb4fa-ec57-4779-8a5d-a54cb743a2bf-dcfcb4fa-ec57-4779-8a5d-a54cb743a2bf-part10.xml",
+        "impl-dcfcb4fa-ec57-4779-8a5d-a54cb743a2bf-dcfcb4fa-ec57-4779-8a5d-a54cb743a2bf-part11.xml",
+        "impl-dcfcb4fa-ec57-4779-8a5d-a54cb743a2bf-dcfcb4fa-ec57-4779-8a5d-a54cb743a2bf-part12.xml",
+        "impl-dcfcb4fa-ec57-4779-8a5d-a54cb743a2bf-dcfcb4fa-ec57-4779-8a5d-a54cb743a2bf-part13.xml",
+        "impl-dcfcb4fa-ec57-4779-8a5d-a54cb743a2bf-dcfcb4fa-ec57-4779-8a5d-a54cb743a2bf-part14.xml",
+        "impl-dcfcb4fa-ec57-4779-8a5d-a54cb743a2bf-dcfcb4fa-ec57-4779-8a5d-a54cb743a2bf-part15.xml",
+        "impl-dcfcb4fa-ec57-4779-8a5d-a54cb743a2bf-dcfcb4fa-ec57-4779-8a5d-a54cb743a2bf-part16.xml",
+        "impl-dcfcb4fa-ec57-4779-8a5d-a54cb743a2bf-dcfcb4fa-ec57-4779-8a5d-a54cb743a2bf-part17.xml",
+        "impl-dcfcb4fa-ec57-4779-8a5d-a54cb743a2bf-dcfcb4fa-ec57-4779-8a5d-a54cb743a2bf-part18.xml",
+        "impl-dcfcb4fa-ec57-4779-8a5d-a54cb743a2bf-dcfcb4fa-ec57-4779-8a5d-a54cb743a2bf-part19.xml",
+        "impl-dcfcb4fa-ec57-4779-8a5d-a54cb743a2bf-dcfcb4fa-ec57-4779-8a5d-a54cb743a2bf-part2.xml",
+        "impl-dcfcb4fa-ec57-4779-8a5d-a54cb743a2bf-dcfcb4fa-ec57-4779-8a5d-a54cb743a2bf-part20.xml",
+        "impl-dcfcb4fa-ec57-4779-8a5d-a54cb743a2bf-dcfcb4fa-ec57-4779-8a5d-a54cb743a2bf-part21.xml",
+        "impl-dcfcb4fa-ec57-4779-8a5d-a54cb743a2bf-dcfcb4fa-ec57-4779-8a5d-a54cb743a2bf-part22.xml",
+        "impl-dcfcb4fa-ec57-4779-8a5d-a54cb743a2bf-dcfcb4fa-ec57-4779-8a5d-a54cb743a2bf-part23.xml",
+        "impl-dcfcb4fa-ec57-4779-8a5d-a54cb743a2bf-dcfcb4fa-ec57-4779-8a5d-a54cb743a2bf-part24.xml",
+        "impl-dcfcb4fa-ec57-4779-8a5d-a54cb743a2bf-dcfcb4fa-ec57-4779-8a5d-a54cb743a2bf-part25.xml",
+        "impl-dcfcb4fa-ec57-4779-8a5d-a54cb743a2bf-dcfcb4fa-ec57-4779-8a5d-a54cb743a2bf-part26.xml",
+        "impl-dcfcb4fa-ec57-4779-8a5d-a54cb743a2bf-dcfcb4fa-ec57-4779-8a5d-a54cb743a2bf-part27.xml",
+        "impl-dcfcb4fa-ec57-4779-8a5d-a54cb743a2bf-dcfcb4fa-ec57-4779-8a5d-a54cb743a2bf-part28.xml",
+        "impl-dcfcb4fa-ec57-4779-8a5d-a54cb743a2bf-dcfcb4fa-ec57-4779-8a5d-a54cb743a2bf-part29.xml",
+        "impl-dcfcb4fa-ec57-4779-8a5d-a54cb743a2bf-dcfcb4fa-ec57-4779-8a5d-a54cb743a2bf-part3.xml",
+        "impl-dcfcb4fa-ec57-4779-8a5d-a54cb743a2bf-dcfcb4fa-ec57-4779-8a5d-a54cb743a2bf-part30.xml",
+        "impl-dcfcb4fa-ec57-4779-8a5d-a54cb743a2bf-dcfcb4fa-ec57-4779-8a5d-a54cb743a2bf-part31.xml",
+        "impl-dcfcb4fa-ec57-4779-8a5d-a54cb743a2bf-dcfcb4fa-ec57-4779-8a5d-a54cb743a2bf-part32.xml",
+        "impl-dcfcb4fa-ec57-4779-8a5d-a54cb743a2bf-dcfcb4fa-ec57-4779-8a5d-a54cb743a2bf-part4.xml",
+        "impl-dcfcb4fa-ec57-4779-8a5d-a54cb743a2bf-dcfcb4fa-ec57-4779-8a5d-a54cb743a2bf-part5.xml",
+        "impl-dcfcb4fa-ec57-4779-8a5d-a54cb743a2bf-dcfcb4fa-ec57-4779-8a5d-a54cb743a2bf-part6.xml",
+        "impl-dcfcb4fa-ec57-4779-8a5d-a54cb743a2bf-dcfcb4fa-ec57-4779-8a5d-a54cb743a2bf-part7.xml",
+        "impl-dcfcb4fa-ec57-4779-8a5d-a54cb743a2bf-dcfcb4fa-ec57-4779-8a5d-a54cb743a2bf-part8.xml",
+        "impl-dcfcb4fa-ec57-4779-8a5d-a54cb743a2bf-dcfcb4fa-ec57-4779-8a5d-a54cb743a2bf-part9.xml"
+      ],
+      "user_turns": 4,
+      "duration_minutes": 38,
+      "raw_size_kb": 2118,
+      "xml_size_kb": 861,
+      "git_branch": "plnd/O9109-rename-planbackend-m-03-10-2345"
+    }
+  ]
+}

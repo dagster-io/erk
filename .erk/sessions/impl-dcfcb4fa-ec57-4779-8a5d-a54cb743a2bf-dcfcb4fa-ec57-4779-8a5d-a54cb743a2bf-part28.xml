@@ -1,0 +1,934 @@
+<session>
+  <meta source="agent-aec521c" />
+  <meta branch="plnd/O9109-rename-planbackend-m-03-10-2345" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>Search the Python codebase for any occurrences of the following renamed method names being called on objects that are NOT ManagedPrBackend (or its subclass GitHubManagedPrBackend):
+
+Methods to check:
+- `.get_managed_pr(`
+- `.create_managed_pr(`
+- `.close_managed_pr(`
+- `.list_managed_prs(`
+- `.update_managed_pr_content(`
+- `.update_managed_pr_title(`
+- `.get_managed_pr_for_branch(`
+- `.resolve_pr_number_for_branch(`
+- `.find_sessions_for_managed_pr(`
+
+The expected callers of these methods should be:
+- `ctx.plan_store.*` or `ctx.plan_backend.*` — ErkContext attributes that are ManagedPrBackend
+- `plan_backend.*` — local variables of type ManagedPrBackend
+- `backend.*` — local variables of type ManagedPrBackend  
+- `self.*` — within the ManagedPrBackend classes themselves
+
+Look for any suspicious callers that DON'T match these patterns. Specifically look for:
+1. CommandExecutor objects (should use `close_plan`, not `close_managed_pr`)
+2. Any other non-backend classes that might have had a `get_plan()`, `create_plan()`, etc. method that got incorrectly renamed
+
+Search in: /home/runner/work/erk/erk/src/ and /home/runner/work/erk/erk/packages/ and /home/runner/work/erk/erk/tests/
+
+Report any suspicious findings.</user>
+  <assistant>I'll search the Python codebase for calls to those renamed methods and identify any suspicious callers that aren't ManagedPrBackend or its subclasses.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="19268" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 19268, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01PPi4qmvciLs7W13oeSvrJY">
+    <param name="pattern">\.get_managed_pr\(</param>
+    <param name="path">/home/runner/work/erk/erk/src</param>
+    <param name="type">py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="19268" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 19268, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01V2Mmciqz1STvSoBSHRvhGi">
+    <param name="pattern">\.create_managed_pr\(</param>
+    <param name="path">/home/runner/work/erk/erk/src</param>
+    <param name="type">py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="19268" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 19268, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_012x5BLwtgJya2NvZTrcRyEt">
+    <param name="pattern">\.close_managed_pr\(</param>
+    <param name="path">/home/runner/work/erk/erk/src</param>
+    <param name="type">py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="19268" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 19268, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01BJdfJjbK6eydivKKQdb1PW">
+    <param name="pattern">\.list_managed_prs\(</param>
+    <param name="path">/home/runner/work/erk/erk/src</param>
+    <param name="type">py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="19268" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 19268, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01QzM93GR5WybeWY3dUrKjFU">
+    <param name="pattern">\.update_managed_pr_content\(</param>
+    <param name="path">/home/runner/work/erk/erk/src</param>
+    <param name="type">py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="19268" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 19268, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01GtYGMqQE32AEypyfbHUE63">
+    <param name="pattern">\.update_managed_pr_title\(</param>
+    <param name="path">/home/runner/work/erk/erk/src</param>
+    <param name="type">py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="19268" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 19268, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01KyLhpNHAqg6o8Dof9HVKP5">
+    <param name="pattern">\.get_managed_pr_for_branch\(</param>
+    <param name="path">/home/runner/work/erk/erk/src</param>
+    <param name="type">py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="19268" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 19268, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01XnwtNYFmqDnZBqxB3D91vu">
+    <param name="pattern">\.resolve_pr_number_for_branch\(</param>
+    <param name="path">/home/runner/work/erk/erk/src</param>
+    <param name="type">py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="19268" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 19268, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01LEvwFZ3GHSE5kw158mFvBF">
+    <param name="pattern">\.find_sessions_for_managed_pr\(</param>
+    <param name="path">/home/runner/work/erk/erk/src</param>
+    <param name="type">py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="19268" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 19268, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01KyLhpNHAqg6o8Dof9HVKP5">
+src/erk/cli/commands/objective_helpers.py:66:        result = ctx.plan_backend.get_managed_pr_for_branch(repo_root, branch)
+src/erk/cli/commands/exec/scripts/objective_fetch_context.py:200:        plan_result = plan_backend.get_managed_pr_for_branch(repo_root, branch_name)
+src/erk/cli/commands/exec/scripts/resolve_objective_ref.py:109:            result = plan_backend.get_managed_pr_for_branch(repo_root, branch)
+src/erk/core/plan_context_provider.py:35:    is associated with a plan. Uses ManagedPrBackend.get_managed_pr_for_branch() to
+src/erk/core/plan_context_provider.py:56:        1. Resolving branch to plan via ManagedPrBackend.get_managed_pr_for_branch()
+src/erk/core/plan_context_provider.py:62:        result = self._plan_backend.get_managed_pr_for_branch(repo_root, branch_name)
+  </tool_result>
+  <tool_result tool="toolu_012x5BLwtgJya2NvZTrcRyEt">
+src/erk/cli/commands/wt/delete_cmd.py:142:    ctx.plan_store.close_managed_pr(repo_root, str(pr_number))
+src/erk/cli/commands/objective_helpers.py:50:    ctx.plan_store.close_managed_pr(repo_root, pr_id)
+src/erk/cli/commands/pr/close_cmd.py:55:        ctx.plan_store.close_managed_pr(repo_root, identifier)
+src/erk/cli/commands/exec/scripts/close_prs.py:173:            backend.close_managed_pr(repo_root, pr_id)
+src/erk/cli/commands/exec/scripts/close_pr.py:59:        backend.close_managed_pr(repo_root, pr_id)
+  </tool_result>
+  <tool_result tool="toolu_01GtYGMqQE32AEypyfbHUE63">
+src/erk/cli/commands/exec/scripts/plan_update.py:132:        backend.update_managed_pr_title(repo_root, pr_id, full_title)
+  </tool_result>
+  <tool_result tool="toolu_01BJdfJjbK6eydivKKQdb1PW">
+src/erk/cli/commands/wt/delete_cmd.py:69:    plans = ctx.plan_store.list_managed_prs(repo_root, query)
+  </tool_result>
+  <tool_result tool="toolu_01PPi4qmvciLs7W13oeSvrJY">
+src/erk/cli/commands/implement.py:167:    result = ctx.plan_store.get_managed_pr(repo.root, plan_number)
+src/erk/cli/commands/wt/create_cmd.py:672:        result = ctx.plan_store.get_managed_pr(repo.root, str(pr_number_parsed))
+src/erk/cli/commands/objective_helpers.py:40:    result = ctx.plan_store.get_managed_pr(repo_root, pr_id)
+src/erk/cli/commands/branch/create_cmd.py:137:        result = ctx.plan_store.get_managed_pr(repo.root, str(pr_number))
+src/erk/cli/commands/branch/checkout_cmd.py:547:        result = ctx.plan_store.get_managed_pr(repo.root, str(pr_number))
+src/erk/cli/commands/pr/shared.py:161:    plan_result = ctx.plan_backend.get_managed_pr(repo_root, pr_id)
+src/erk/cli/commands/pr/shared.py:201:    plan_result = ctx.plan_backend.get_managed_pr(repo_root, pr_id)
+src/erk/cli/commands/pr/dispatch_cmd.py:222:    result = ctx.plan_store.get_managed_pr(repo.root, str(pr_number))
+src/erk/cli/commands/pr/metadata_helpers.py:44:    plan_result = plan_backend.get_managed_pr(repo_root, pr_id)
+src/erk/cli/commands/pr/close_cmd.py:52:        result = ctx.plan_store.get_managed_pr(repo_root, str(number))
+src/erk/cli/commands/land_learn.py:226:    plan_result = ctx.plan_store.get_managed_pr(repo_root, pr_id)
+src/erk/cli/commands/exec/scripts/plan_update.py:113:    plan_result = backend.get_managed_pr(repo_root, pr_id)
+src/erk/cli/commands/exec/scripts/push_session.py:300:    plan_result = backend.get_managed_pr(repo_root, pr_number_str)
+src/erk/cli/commands/exec/scripts/create_impl_context_from_plan.py:59:    result = backend.get_managed_pr(repo_root, pr_id)
+src/erk/cli/commands/exec/scripts/impl_signal.py:406:    plan_result = backend.get_managed_pr(repo_root, plan_ref.pr_id)
+src/erk/cli/commands/exec/scripts/get_plan_info.py:47:    plan = backend.get_managed_pr(repo_root, pr_id)
+src/erk/cli/commands/exec/scripts/objective_fetch_context.py:184:        plan_result = plan_backend.get_managed_pr(repo_root, str(pr_number_arg))
+src/erk/cli/commands/exec/scripts/objective_apply_landed_update.py:218:    plan_result = plan_backend.get_managed_pr(repo_root, str(pr_number))
+  </tool_result>
+  <tool_result tool="toolu_01QzM93GR5WybeWY3dUrKjFU">
+src/erk/cli/commands/exec/scripts/plan_update.py:122:        backend.update_managed_pr_content(repo_root, pr_id, plan_content.strip(), summary=summary or "")
+  </tool_result>
+  <tool_result tool="toolu_01V2Mmciqz1STvSoBSHRvhGi">
+src/erk/cli/commands/exec/scripts/plan_save.py:303:    result = backend.create_managed_pr(
+  </tool_result>
+  <tool_result tool="toolu_01LEvwFZ3GHSE5kw158mFvBF">
+src/erk/cli/commands/learn/learn_cmd.py:152:    sessions_for_plan = ctx.plan_backend.find_sessions_for_managed_pr(
+src/erk/cli/commands/land_learn.py:193:    sessions = ctx.plan_backend.find_sessions_for_managed_pr(repo_root, pr_id)
+src/erk/cli/commands/exec/scripts/get_learn_sessions.py:171:    sessions_for_plan = plan_backend.find_sessions_for_managed_pr(
+  </tool_result>
+  <tool_result tool="toolu_01XnwtNYFmqDnZBqxB3D91vu">
+src/erk/cli/commands/land_pipeline.py:346:    pr_id = ctx.plan_backend.resolve_pr_number_for_branch(state.main_repo_root, state.branch)
+src/erk/cli/commands/learn/learn_cmd.py:117:        pr_id = ctx.plan_backend.resolve_pr_number_for_branch(ctx.cwd, branch_name)
+src/erk/cli/commands/land_stack.py:286:                pr_id=ctx.plan_backend.resolve_pr_number_for_branch(main_repo_root, branch),
+src/erk/cli/commands/reconcile_pipeline.py:107:        pr_id = ctx.plan_backend.resolve_pr_number_for_branch(main_repo_root, info.branch)
+src/erk/cli/commands/land_cmd.py:935:    pr_id = ctx.plan_backend.resolve_pr_number_for_branch(main_repo_root, branch)
+src/erk/cli/commands/land_cmd.py:1054:    pr_id = ctx.plan_backend.resolve_pr_number_for_branch(main_repo_root, branch)
+src/erk/cli/commands/objective_helpers.py:34:    pr_id = ctx.plan_backend.resolve_pr_number_for_branch(repo_root, branch)
+src/erk/cli/commands/pr/dispatch_cmd.py:622:        pr_id = ctx.plan_backend.resolve_pr_number_for_branch(repo.root, branch_name)
+src/erk/cli/commands/pr/metadata_helpers.py:85:    pr_id = ctx.plan_backend.resolve_pr_number_for_branch(repo.root, branch_name)
+src/erk/cli/commands/pr/view/operation.py:116:        pr_id = ctx.plan_backend.resolve_pr_number_for_branch(ctx.repo.root, branch)
+src/erk/cli/commands/exec/scripts/get_learn_sessions.py:277:        pr_id = plan_backend.resolve_pr_number_for_branch(repo_root, branch_name)
+src/erk/cli/commands/exec/scripts/track_learn_evaluation.py:182:            pr_id_str = backend.resolve_pr_number_for_branch(repo_root, branch)
+src/erk/cli/commands/implement_shared.py:465:    return ctx.plan_backend.resolve_pr_number_for_branch(ctx.cwd, current_branch)
+  </tool_result>
+  <assistant>Now let me check the packages and tests directories:</assistant>
+  <usage input_tokens="163" cache_creation_input_tokens="3457" cache_read_input_tokens="19268" cache_creation="{'ephemeral_5m_input_tokens': 3457, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01GsrtNiz7Dia2VviAX9Yetr">
+    <param name="pattern">\.get_managed_pr\(</param>
+    <param name="path">/home/runner/work/erk/erk/packages</param>
+    <param name="type">py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="163" cache_creation_input_tokens="3457" cache_read_input_tokens="19268" cache_creation="{'ephemeral_5m_input_tokens': 3457, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01KCgQcTL2Ur9GLqMnM89EeS">
+    <param name="pattern">\.create_managed_pr\(</param>
+    <param name="path">/home/runner/work/erk/erk/packages</param>
+    <param name="type">py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="163" cache_creation_input_tokens="3457" cache_read_input_tokens="19268" cache_creation="{'ephemeral_5m_input_tokens': 3457, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01P6XT6TpLnSUvhfVSFHjXGa">
+    <param name="pattern">\.close_managed_pr\(</param>
+    <param name="path">/home/runner/work/erk/erk/packages</param>
+    <param name="type">py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="163" cache_creation_input_tokens="3457" cache_read_input_tokens="19268" cache_creation="{'ephemeral_5m_input_tokens': 3457, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01TdXsaYWKp4bxjdBon2GBsL">
+    <param name="pattern">\.list_managed_prs\(</param>
+    <param name="path">/home/runner/work/erk/erk/packages</param>
+    <param name="type">py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="163" cache_creation_input_tokens="3457" cache_read_input_tokens="19268" cache_creation="{'ephemeral_5m_input_tokens': 3457, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_018NWxJNsjvTF89oXSvvKLDe">
+    <param name="pattern">\.update_managed_pr_content\(</param>
+    <param name="path">/home/runner/work/erk/erk/packages</param>
+    <param name="type">py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="163" cache_creation_input_tokens="3457" cache_read_input_tokens="19268" cache_creation="{'ephemeral_5m_input_tokens': 3457, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01HUWkShE8R2rtG8JGVFaDhn">
+    <param name="pattern">\.update_managed_pr_title\(</param>
+    <param name="path">/home/runner/work/erk/erk/packages</param>
+    <param name="type">py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="163" cache_creation_input_tokens="3457" cache_read_input_tokens="19268" cache_creation="{'ephemeral_5m_input_tokens': 3457, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_019qbvwe4Wqj6GNt4LHx1f6h">
+    <param name="pattern">\.get_managed_pr_for_branch\(</param>
+    <param name="path">/home/runner/work/erk/erk/packages</param>
+    <param name="type">py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="163" cache_creation_input_tokens="3457" cache_read_input_tokens="19268" cache_creation="{'ephemeral_5m_input_tokens': 3457, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01YG4ViE4qeNoias4nX1HaH1">
+    <param name="pattern">\.resolve_pr_number_for_branch\(</param>
+    <param name="path">/home/runner/work/erk/erk/packages</param>
+    <param name="type">py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="163" cache_creation_input_tokens="3457" cache_read_input_tokens="19268" cache_creation="{'ephemeral_5m_input_tokens': 3457, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01Dxe2z4UV7tm2gEK57ic24R">
+    <param name="pattern">\.find_sessions_for_managed_pr\(</param>
+    <param name="path">/home/runner/work/erk/erk/packages</param>
+    <param name="type">py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="163" cache_creation_input_tokens="3457" cache_read_input_tokens="19268" cache_creation="{'ephemeral_5m_input_tokens': 3457, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Dxe2z4UV7tm2gEK57ic24R">
+No matches found
+  </tool_result>
+  <tool_result tool="toolu_01GsrtNiz7Dia2VviAX9Yetr">
+packages/erk-shared/src/erk_shared/plan_store/backend.py:198:        plan = self.get_managed_pr(repo_root, pr_number)
+  </tool_result>
+  <tool_result tool="toolu_01P6XT6TpLnSUvhfVSFHjXGa">
+No matches found
+  </tool_result>
+  <tool_result tool="toolu_01YG4ViE4qeNoias4nX1HaH1">
+No matches found
+  </tool_result>
+  <tool_result tool="toolu_019qbvwe4Wqj6GNt4LHx1f6h">
+No matches found
+  </tool_result>
+  <tool_result tool="toolu_01HUWkShE8R2rtG8JGVFaDhn">
+No matches found
+  </tool_result>
+  <tool_result tool="toolu_01KCgQcTL2Ur9GLqMnM89EeS">
+packages/erk-shared/src/erk_shared/context/helpers.py:416:        ...     result = backend.create_managed_pr(repo_root, title, content, labels, metadata)
+packages/erk-shared/src/erk_shared/plan_store/backend.py:12:    result = backend.create_managed_pr(...)
+packages/erk-shared/src/erk_shared/plan_store/create_plan_draft_pr.py:80:    8. Create draft PR via GitHubManagedPrBackend.create_managed_pr()
+packages/erk-shared/src/erk_shared/plan_store/create_plan_draft_pr.py:174:    result = backend.create_managed_pr(
+packages/erk-shared/src/erk_shared/plan_store/planned_pr_lifecycle.py:24:   ``plan_save`` / ``GitHubManagedPrBackend.create_managed_pr()`` creates a draft PR.
+  </tool_result>
+  <tool_result tool="toolu_01TdXsaYWKp4bxjdBon2GBsL">
+No matches found
+  </tool_result>
+  <tool_result tool="toolu_018NWxJNsjvTF89oXSvvKLDe">
+No matches found
+  </tool_result>
+  <assistant>Now let me check the tests directory:</assistant>
+  <usage input_tokens="115" cache_creation_input_tokens="1736" cache_read_input_tokens="22725" cache_creation="{'ephemeral_5m_input_tokens': 1736, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01YNigXUZLH5gP1AhJHfwAod">
+    <param name="pattern">\.get_managed_pr\(</param>
+    <param name="path">/home/runner/work/erk/erk/tests</param>
+    <param name="type">py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="115" cache_creation_input_tokens="1736" cache_read_input_tokens="22725" cache_creation="{'ephemeral_5m_input_tokens': 1736, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01PpBVf38XErpLP78UaWrmsw">
+    <param name="pattern">\.create_managed_pr\(</param>
+    <param name="path">/home/runner/work/erk/erk/tests</param>
+    <param name="type">py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="115" cache_creation_input_tokens="1736" cache_read_input_tokens="22725" cache_creation="{'ephemeral_5m_input_tokens': 1736, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_014ipNgqNVWzU9mXNpQLZew9">
+    <param name="pattern">\.close_managed_pr\(</param>
+    <param name="path">/home/runner/work/erk/erk/tests</param>
+    <param name="type">py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="115" cache_creation_input_tokens="1736" cache_read_input_tokens="22725" cache_creation="{'ephemeral_5m_input_tokens': 1736, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01WHjrReMY3KyLMr78GgAbKs">
+    <param name="pattern">\.list_managed_prs\(</param>
+    <param name="path">/home/runner/work/erk/erk/tests</param>
+    <param name="type">py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="115" cache_creation_input_tokens="1736" cache_read_input_tokens="22725" cache_creation="{'ephemeral_5m_input_tokens': 1736, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01TwqpsLAUKTPQyV3SPPeN9j">
+    <param name="pattern">\.update_managed_pr_content\(</param>
+    <param name="path">/home/runner/work/erk/erk/tests</param>
+    <param name="type">py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="115" cache_creation_input_tokens="1736" cache_read_input_tokens="22725" cache_creation="{'ephemeral_5m_input_tokens': 1736, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01QeahTxBPmJM1ykJMrdPEFC">
+    <param name="pattern">\.update_managed_pr_title\(</param>
+    <param name="path">/home/runner/work/erk/erk/tests</param>
+    <param name="type">py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="115" cache_creation_input_tokens="1736" cache_read_input_tokens="22725" cache_creation="{'ephemeral_5m_input_tokens': 1736, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01PTFrukD7wVXT2XJFA8wSSJ">
+    <param name="pattern">\.get_managed_pr_for_branch\(</param>
+    <param name="path">/home/runner/work/erk/erk/tests</param>
+    <param name="type">py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="115" cache_creation_input_tokens="1736" cache_read_input_tokens="22725" cache_creation="{'ephemeral_5m_input_tokens': 1736, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01VazEEHUqPQmgUvrmbPGFA6">
+    <param name="pattern">\.resolve_pr_number_for_branch\(</param>
+    <param name="path">/home/runner/work/erk/erk/tests</param>
+    <param name="type">py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="115" cache_creation_input_tokens="1736" cache_read_input_tokens="22725" cache_creation="{'ephemeral_5m_input_tokens': 1736, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01RY3FggLGAkcCw2kWVRiExy">
+    <param name="pattern">\.find_sessions_for_managed_pr\(</param>
+    <param name="path">/home/runner/work/erk/erk/tests</param>
+    <param name="type">py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="115" cache_creation_input_tokens="1736" cache_read_input_tokens="22725" cache_creation="{'ephemeral_5m_input_tokens': 1736, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01TwqpsLAUKTPQyV3SPPeN9j">
+tests/unit/plan_store/test_planned_pr_backend.py:261:    backend.update_managed_pr_content(Path("/repo"), result.pr_id, "Updated content", summary="")
+tests/unit/plan_store/test_plan_backend_interface.py:434:        plan_backend.update_managed_pr_content(Path("/repo"), "99999999", "new content", summary="")
+  </tool_result>
+  <tool_result tool="toolu_01YNigXUZLH5gP1AhJHfwAod">
+tests/unit/plan_store/test_planned_pr_backend.py:263:    plan = backend.get_managed_pr(Path("/repo"), result.pr_id)
+tests/unit/plan_store/test_plan_backend_interface.py:107:    plan = plan_backend.get_managed_pr(Path("/repo"), result.pr_id)
+tests/unit/plan_store/test_plan_backend_interface.py:149:    plan_before = backend.get_managed_pr(Path("/repo"), pr_id)
+tests/unit/plan_store/test_plan_backend_interface.py:155:    plan_after = backend.get_managed_pr(Path("/repo"), pr_id)
+tests/unit/plan_store/test_plan_backend_interface.py:178:    result = plan_backend.get_managed_pr(Path("/repo"), "99999999")
+tests/unit/plan_store/test_plan_backend_interface.py:217:    plan = backend.get_managed_pr(Path("/repo"), pr_id)
+tests/unit/plan_store/test_plan_backend_interface.py:228:    plan = backend.get_managed_pr(Path("/repo"), pr_id)
+tests/unit/plan_store/test_plan_backend_interface.py:241:    plan = backend.get_managed_pr(Path("/repo"), pr_id)
+tests/unit/plan_store/test_plan_backend_interface.py:254:    plan = backend.get_managed_pr(Path("/repo"), pr_id)
+tests/unit/plan_store/test_plan_backend_interface.py:415:    plan = backend.get_managed_pr(Path("/repo"), pr_id)
+tests/unit/plan_store/test_plan_backend_interface.py:628:    plan = backend.get_managed_pr(Path("/repo"), pr_id)
+  </tool_result>
+  <tool_result tool="toolu_01PTFrukD7wVXT2XJFA8wSSJ">
+tests/unit/plan_store/test_planned_pr_backend.py:230:    plan = backend.get_managed_pr_for_branch(Path("/repo"), "my-branch")
+tests/unit/plan_store/test_planned_pr_backend.py:238:    result = backend.get_managed_pr_for_branch(Path("/repo"), "nonexistent")
+  </tool_result>
+  <tool_result tool="toolu_01PpBVf38XErpLP78UaWrmsw">
+tests/unit/cli/commands/exec/scripts/test_add_plan_label.py:27:    create_result = backend.create_managed_pr(
+tests/unit/cli/commands/exec/scripts/test_setup_impl_from_pr.py:120:    plan_result = backend.create_managed_pr(
+tests/unit/cli/commands/exec/scripts/test_setup_impl_from_pr.py:148:    plan_result = backend.create_managed_pr(
+tests/unit/cli/commands/exec/scripts/test_setup_impl_from_pr.py:458:    plan_result = backend.create_managed_pr(
+tests/unit/cli/commands/exec/scripts/test_get_plan_info.py:29:    result = backend.create_managed_pr(
+tests/unit/cli/commands/exec/scripts/test_setup_impl.py:109:    plan_result = backend.create_managed_pr(
+tests/unit/plan_store/test_planned_pr_backend.py:44:        backend.create_managed_pr(
+tests/unit/plan_store/test_planned_pr_backend.py:59:    result = backend.create_managed_pr(
+tests/unit/plan_store/test_planned_pr_backend.py:79:    backend.create_managed_pr(
+tests/unit/plan_store/test_planned_pr_backend.py:96:    backend.create_managed_pr(
+tests/unit/plan_store/test_planned_pr_backend.py:113:    backend.create_managed_pr(
+tests/unit/plan_store/test_planned_pr_backend.py:130:    result = backend.create_managed_pr(
+tests/unit/plan_store/test_planned_pr_backend.py:148:    result = backend.create_managed_pr(
+tests/unit/plan_store/test_planned_pr_backend.py:167:    result = backend.create_managed_pr(
+tests/unit/plan_store/test_planned_pr_backend.py:192:    result = backend.create_managed_pr(
+tests/unit/plan_store/test_planned_pr_backend.py:221:    backend.create_managed_pr(
+tests/unit/plan_store/test_planned_pr_backend.py:252:    result = backend.create_managed_pr(
+tests/unit/plan_store/test_planned_pr_backend.py:279:    backend.create_managed_pr(
+tests/unit/plan_store/test_planned_pr_backend.py:334:    result = backend.create_managed_pr(
+tests/unit/plan_store/test_plan_backend_interface.py:50:    result = backend.create_managed_pr(
+tests/unit/plan_store/test_plan_backend_interface.py:92:    result = plan_backend.create_managed_pr(
+tests/unit/plan_store/test_plan_backend_interface.py:268:        plan_backend.create_managed_pr(
+tests/unit/plan_store/test_plan_backend_interface.py:285:        result = plan_backend.create_managed_pr(
+tests/unit/plan_store/test_plan_backend_interface.py:312:    created = plan_backend.create_managed_pr(
+tests/unit/plan_store/test_plan_backend_interface.py:329:    created = plan_backend.create_managed_pr(
+tests/unit/plan_store/test_plan_backend_interface.py:363:    created = plan_backend.create_managed_pr(
+tests/unit/plan_store/test_plan_backend_interface.py:381:    created = plan_backend.create_managed_pr(
+tests/unit/plan_store/test_plan_backend_interface.py:444:    created = plan_backend.create_managed_pr(
+tests/unit/plan_store/test_plan_backend_interface.py:466:    created = plan_backend.create_managed_pr(
+tests/unit/plan_store/test_plan_backend_interface.py:518:    result = backend.create_managed_pr(
+
+... [2 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01RY3FggLGAkcCw2kWVRiExy">
+tests/unit/plan_store/test_plan_backend_interface.py:548:    result = backend.find_sessions_for_managed_pr(Path("/repo"), pr_id)
+tests/unit/plan_store/test_plan_backend_interface.py:594:    sessions = plan_backend.find_sessions_for_managed_pr(Path("/repo"), pr_id)
+tests/unit/plan_store/test_plan_backend_interface.py:612:        plan_backend.find_sessions_for_managed_pr(Path("/repo"), "99999999")
+  </tool_result>
+  <tool_result tool="toolu_01VazEEHUqPQmgUvrmbPGFA6">
+tests/unit/plan_store/test_planned_pr_backend.py:201:    pr_id = backend.resolve_pr_number_for_branch(Path("/repo"), "my-plan-branch")
+tests/unit/plan_store/test_planned_pr_backend.py:208:    assert backend.resolve_pr_number_for_branch(Path("/repo"), "nonexistent") is None
+  </tool_result>
+  <tool_result tool="toolu_01QeahTxBPmJM1ykJMrdPEFC">
+tests/unit/plan_store/test_plan_backend_interface.py:413:    backend.update_managed_pr_title(Path("/repo"), pr_id, "New Title")
+tests/unit/plan_store/test_plan_backend_interface.py:423:        plan_backend.update_managed_pr_title(Path("/repo"), "99999999", "Title")
+  </tool_result>
+  <tool_result tool="toolu_014ipNgqNVWzU9mXNpQLZew9">
+tests/unit/plan_store/test_plan_backend_interface.py:153:    backend.close_managed_pr(Path("/repo"), pr_id)
+tests/unit/plan_store/test_plan_backend_interface.py:196:        plan_backend.close_managed_pr(Path("/repo"), "99999999")
+  </tool_result>
+  <tool_result tool="toolu_01WHjrReMY3KyLMr78GgAbKs">
+tests/unit/plan_store/test_planned_pr_backend.py:288:    plans = backend.list_managed_prs(Path("/repo"), PlanQuery(state=PlanState.OPEN))
+tests/unit/plan_store/test_plan_backend_interface.py:125:    results = plan_backend.list_managed_prs(Path("/repo"), PlanQuery())
+tests/unit/plan_store/test_plan_backend_interface.py:136:    open_results = backend.list_managed_prs(Path("/repo"), PlanQuery(state=PlanState.OPEN))
+tests/unit/plan_store/test_plan_backend_interface.py:139:    closed_results = backend.list_managed_prs(Path("/repo"), PlanQuery(state=PlanState.CLOSED))
+tests/unit/plan_store/test_plan_backend_interface.py:277:    results = plan_backend.list_managed_prs(Path("/repo"), PlanQuery(limit=2))
+  </tool_result>
+  <assistant>Now let me verify some of these usages by examining the context around a few suspicious ones. Let me check if there are any unexpected callers - particularly looking for CommandExecutor or other non-backend classes. Let me search more broadly:</assistant>
+  <usage input_tokens="630" cache_creation_input_tokens="3210" cache_read_input_tokens="24461" cache_creation="{'ephemeral_5m_input_tokens': 3210, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01WobfEvt3WhfEX4egjAwE4N">
+    <param name="command">find src/erk/cli/commands -name "*.py" -type f | head -20</param>
+    <param name="description">Find Python command files to verify usage patterns</param>
+  </tool_use>
+  <usage input_tokens="630" cache_creation_input_tokens="3210" cache_read_input_tokens="24461" cache_creation="{'ephemeral_5m_input_tokens': 3210, 'ephemeral_1h_input_tokens': 0}" output_tokens="161" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01WobfEvt3WhfEX4egjAwE4N">
+src/erk/cli/commands/launch_cmd.py
+src/erk/cli/commands/cc/jsonl_cmd.py
+src/erk/cli/commands/cc/__init__.py
+src/erk/cli/commands/cc/session/list_cmd.py
+src/erk/cli/commands/cc/session/show_cmd.py
+src/erk/cli/commands/cc/session/__init__.py
+src/erk/cli/commands/consolidate_learn_plans_dispatch.py
+src/erk/cli/commands/init/main.py
+src/erk/cli/commands/init/__init__.py
+src/erk/cli/commands/init/capability/list_cmd.py
+src/erk/cli/commands/init/capability/__init__.py
+src/erk/cli/commands/init/capability/backend_utils.py
+src/erk/cli/commands/init/capability/add_cmd.py
+src/erk/cli/commands/init/capability/remove_cmd.py
+src/erk/cli/commands/implement.py
+src/erk/cli/commands/wt/list_cmd.py
+src/erk/cli/commands/wt/create_cmd.py
+src/erk/cli/commands/wt/__init__.py
+src/erk/cli/commands/wt/current_cmd.py
+src/erk/cli/commands/wt/checkout_cmd.py
+  </tool_result>
+  <assistant>Let me examine a specific usage context - let's look at one of the files that uses these methods to understand what object type is calling them:</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="1165" cache_read_input_tokens="27671" cache_creation="{'ephemeral_5m_input_tokens': 1165, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01SKbpDTtkkN2L65ASTusEzn">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/implement.py</param>
+    <param name="limit">180</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="1165" cache_read_input_tokens="27671" cache_creation="{'ephemeral_5m_input_tokens': 1165, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01QuRXVUBsRq5ACskpJmfPar">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/wt/delete_cmd.py</param>
+    <param name="limit">150</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="1165" cache_read_input_tokens="27671" cache_creation="{'ephemeral_5m_input_tokens': 1165, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01D3u2MvUJ8ZD522zXzytB7A">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/shared.py</param>
+    <param name="limit">210</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="1165" cache_read_input_tokens="27671" cache_creation="{'ephemeral_5m_input_tokens': 1165, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01SKbpDTtkkN2L65ASTusEzn">
+     1→"""Command to implement features from plans or plan files.
+     2→
+     3→This command runs implementation in the current directory using Claude.
+     4→It creates an impl folder (under .erk/impl-context/&lt;branch&gt;/) with the plan
+     5→content and invokes Claude for execution.
+     6→
+     7→Usage:
+     8→- Plan number mode: erk implement 123 or erk implement &lt;URL&gt;
+     9→- Plan file mode: erk implement path/to/plan.md
+    10→- Auto-detect mode: erk implement (on plan branch with plan-ref.json)
+    11→"""
+    12→
+    13→from pathlib import Path
+    14→
+    15→import click
+    16→
+    17→from erk.cli.alias import alias
+    18→from erk.cli.commands.completions import complete_plan_files
+    19→from erk.cli.commands.implement_shared import (
+    20→    PlanSource,
+    21→    build_claude_args,
+    22→    build_command_sequence,
+    23→    detect_target_type,
+    24→    execute_interactive_mode,
+    25→    execute_non_interactive_mode,
+    26→    extract_plan_from_current_branch,
+    27→    implement_common_options,
+    28→    normalize_model_name,
+    29→    output_activation_instructions,
+    30→    prepare_plan_source_from_file,
+
+... [155 lines omitted] ...
+
+   169→        user_output(click.style("Error: ", fg="red") + f"Plan #{plan_number} not found")
+   176→            click.style("Error: ", fg="red")
+  </tool_result>
+  <tool_result tool="toolu_01QuRXVUBsRq5ACskpJmfPar">
+     1→import shutil
+     2→import subprocess
+     3→from pathlib import Path
+     4→
+     5→import click
+     6→
+     7→from erk.cli.commands.completions import complete_worktree_names
+     8→from erk.cli.commands.navigation_helpers import (
+     9→    check_pending_learn_marker,
+    10→    find_assignment_by_worktree_path,
+    11→)
+    12→from erk.cli.commands.slot.unassign_cmd import execute_unassign
+    13→from erk.cli.core import (
+    14→    discover_repo_context,
+    15→    validate_worktree_name_for_deletion,
+    16→    worktree_path_for,
+    17→)
+    18→from erk.cli.ensure import Ensure
+    19→from erk.core.context import ErkContext, create_context, regenerate_context
+    20→from erk.core.repo_discovery import RepoContext, ensure_erk_metadata_dir
+    21→from erk.core.worktree_pool import load_pool_state
+    22→from erk.core.worktree_utils import (
+    23→    find_worktree_containing_path,
+    24→    get_worktree_branch,
+    25→)
+    26→from erk_shared.gateway.git.abc import Git
+    27→from erk_shared.gateway.github.metadata.schemas import WORKTREE_NAME
+    28→from erk_shared.gateway.github.types import PRNotFound
+    29→from erk_shared.output.output import user_output
+    30→from erk_shared.plan_store.conversion import header_str
+
+... [125 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01D3u2MvUJ8ZD522zXzytB7A">
+     1→"""Shared utilities for PR commands.
+     2→
+     3→This module contains common functionality used by multiple PR commands
+     4→(rewrite, submit) to avoid code duplication.
+     5→"""
+     6→
+     7→from __future__ import annotations
+     8→
+     9→import queue
+    10→import re
+    11→import threading
+    12→from dataclasses import dataclass
+    13→from pathlib import Path
+    14→
+    15→import click
+    16→
+    17→from erk.core.commit_message_generator import (
+    18→    CommitMessageGenerator,
+    19→    CommitMessageRequest,
+    20→    CommitMessageResult,
+    21→)
+    22→from erk.core.context import ErkContext
+    23→from erk.core.plan_context_provider import PlanContext
+    24→from erk_shared.gateway.github.metadata.core import find_metadata_block, render_metadata_block
+    25→from erk_shared.gateway.github.metadata.schemas import (
+    26→    CREATED_AT,
+    27→    CREATED_BY,
+    28→    LIFECYCLE_STAGE,
+    29→    SCHEMA_VERSION,
+    30→)
+
+... [185 lines omitted] ...
+
+    59→        click.ClickException: If in detached HEAD state
+    63→        raise click.ClickException("Not on a branch (detached HEAD state)")
+   102→        Path to diff file, or None if extraction failed
+   159→    Silently returns on any failure — lifecycle updates must never block submission.
+   171→    except RuntimeError as e:
+   173→            msg = f"   Warning: failed to update lifecycle stage: {e}"
+  </tool_result>
+  <assistant>Good! All these look correct - they're using `ctx.plan_store`, `ctx.plan_backend`, or the `backend` variable which are all ManagedPrBackend types. Let me check a few more specific contexts to verify no suspicious patterns exist:</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="7409" cache_read_input_tokens="28836" cache_creation="{'ephemeral_5m_input_tokens': 7409, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01KEofCQFgDcqQcFzEGWCFgw">
+    <param name="pattern">class ErkContext</param>
+    <param name="path">/home/runner/work/erk/erk/src</param>
+    <param name="type">py</param>
+    <param name="output_mode">content</param>
+    <param name="head_limit">3</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="7409" cache_read_input_tokens="28836" cache_creation="{'ephemeral_5m_input_tokens': 7409, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01DsMcuANYkiM26HpHijziHo">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/core/context.py</param>
+    <param name="limit">150</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="7409" cache_read_input_tokens="28836" cache_creation="{'ephemeral_5m_input_tokens': 7409, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01DsMcuANYkiM26HpHijziHo">
+     1→"""Application context with dependency injection.
+     2→
+     3→This module provides factory functions for erk CLI context creation.
+     4→The unified ErkContext dataclass is defined in erk_shared.context and
+     5→re-exported here for backwards compatibility.
+     6→"""
+     7→
+     8→from __future__ import annotations
+     9→
+    10→import shutil
+    11→from collections.abc import MutableMapping
+    12→from pathlib import Path
+    13→from typing import TYPE_CHECKING, Any, cast
+    14→
+    15→import click
+    16→import tomlkit
+    17→
+    18→# Re-export types from erk_shared.context and erk.artifacts.paths
+    19→from erk.artifacts.paths import ErkPackageInfo as ErkPackageInfo
+    20→from erk.cli.config import load_config, load_local_config, merge_configs_with_local
+    21→from erk.core.anthropic_prompt_executor import AnthropicApiPromptExecutor
+    22→from erk.core.codex_prompt_executor import CodexCliPromptExecutor
+    23→from erk.core.completion import RealCompletion
+    24→from erk.core.fallback_prompt_executor import FallbackPromptExecutor
+    25→from erk.core.prompt_executor import ClaudeCliPromptExecutor
+    26→from erk.core.repo_discovery import discover_repo_or_sentinel, ensure_erk_metadata_dir
+    27→from erk.core.script_writer import RealScriptWriter
+    28→from erk.core.services.objective_list_service import RealObjectiveListService
+    29→from erk.core.services.plan_list_service import PlannedPRPlanListService
+    30→from erk.core.shell import RealShell
+
+... [125 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01KEofCQFgDcqQcFzEGWCFgw">
+No matches found
+
+[Showing results with pagination = limit: 3, offset: 0]
+  </tool_result>
+  <assistant>Let me check the ErkContext definition in erk_shared to see what plan_store and plan_backend are:</assistant>
+  <usage input_tokens="2497" cache_creation_input_tokens="470" cache_read_input_tokens="36245" cache_creation="{'ephemeral_5m_input_tokens': 470, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01Qo5p8VuxL7Hyuk6mQ71xdM">
+    <param name="command">find /home/runner/work/erk/erk/packages -name "context.py" | head -5</param>
+    <param name="description">Find context definition files</param>
+  </tool_use>
+  <usage input_tokens="2497" cache_creation_input_tokens="470" cache_read_input_tokens="36245" cache_creation="{'ephemeral_5m_input_tokens': 470, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Qo5p8VuxL7Hyuk6mQ71xdM">
+/home/runner/work/erk/erk/packages/erk-statusline/src/erk_statusline/context.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/context/context.py
+/home/runner/work/erk/erk/packages/erk-dev/src/erk_dev/context.py
+  </tool_result>
+  <tool_use name="Read" id="toolu_017Xo6prwsMhPeWQ8f9YYDy9">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/context/context.py</param>
+    <param name="limit">200</param>
+  </tool_use>
+  <usage input_tokens="4" cache_creation_input_tokens="2758" cache_read_input_tokens="36715" cache_creation="{'ephemeral_5m_input_tokens': 2758, 'ephemeral_1h_input_tokens': 0}" output_tokens="18" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017Xo6prwsMhPeWQ8f9YYDy9">
+     1→"""Unified context for erk and erk-kits operations.
+     2→
+     3→This module provides ErkContext - the unified context that holds all dependencies
+     4→for erk and erk-kits operations.
+     5→
+     6→The ABCs for erk-specific services (PromptExecutor, ConfigStore, ScriptWriter,
+     7→PlanListService) are defined in erk_shared.core, enabling
+     8→proper type hints without circular imports. Real implementations remain in erk.
+     9→"""
+    10→
+    11→from __future__ import annotations
+    12→
+    13→from dataclasses import dataclass
+    14→from pathlib import Path
+    15→from typing import TYPE_CHECKING
+    16→
+    17→from erk_shared.context.types import (
+    18→    GlobalConfig,
+    19→    LoadedConfig,
+    20→    NoRepoSentinel,
+    21→    RepoContext,
+    22→)
+    23→
+    24→if TYPE_CHECKING:
+    25→    from erk.artifacts.paths import ErkPackageInfo
+    26→    from erk_shared.core.health_check_runner import HealthCheckRunner
+    27→    from erk_shared.core.objective_list_service import ObjectiveListService
+    28→
+    29→from erk_shared.core.plan_list_service import PlanListService
+    30→from erk_shared.core.prompt_executor import PromptExecutor
+
+... [175 lines omitted] ...
+
+   141→            RuntimeError: If not in a git repository
+   144→            raise RuntimeError("Not in a git repository")
+  </tool_result>
+  <assistant>Perfect! Now let me search for any potentially problematic callers. Let me check if there are any calls from non-backend objects - specifically looking for CommandExecutor or other suspicious patterns:</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="3115" cache_read_input_tokens="39473" cache_creation="{'ephemeral_5m_input_tokens': 3115, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01HpacyBURLh9Thf5dk9teha">
+    <param name="command">grep -r "\.get_managed_pr\|\.create_managed_pr\|\.close_managed_pr\|\.list_managed_prs\|\....[truncated 219 chars]...ests --include="*.py" -B 3 | grep -E "(CommandExecutor|executor\.|from|import)" | head -50</param>
+    <param name="description">Check for suspicious callers like CommandExecutor</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="3115" cache_read_input_tokens="39473" cache_creation="{'ephemeral_5m_input_tokens': 3115, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01HpacyBURLh9Thf5dk9teha">
+/home/runner/work/erk/erk/src/erk/cli/commands/implement.py-    # Fetch plan from GitHub
+/home/runner/work/erk/erk/src/erk/cli/commands/implement.py-    ctx.console.info("Fetching plan from GitHub...")
+/home/runner/work/erk/erk/src/erk/cli/commands/wt/create_cmd.py-        assert pr_number_parsed is not None, "pr_number_parsed must be set when from_plan is True"
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/metadata_helpers.py-        branch_name: Branch name to extract issue number from
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/metadata_helpers.py-        run_id: Workflow run ID from trigger response
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/view/operation.py-                message="No identifier specified and could not infer from branch name",
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/create_impl_context_from_plan.py-    provider = backend.get_provider_name()
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/create_impl_context_from_plan.py-
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/create_impl_context_from_plan.py-    # Fetch plan via ManagedPrBackend
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/create_impl_context_from_plan.py:    result = backend.get_managed_pr(repo_root, pr_id)
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/objective_fetch_context.py-        # Resolve plan from branch via backend (works for both P&lt;number&gt;- and plan-... branches)
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/track_learn_evaluation.py-        # Try to infer from current branch
+/home/runner/work/erk/erk/src/erk/core/plan_context_provider.py-    This provider extracts plan content from the plan backend when a branch
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_setup_impl_from_pr.py-    """
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_setup_impl_from_pr.py-    fake_github = FakeLocalGitHub()
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_setup_impl_from_pr.py-    backend = GitHubManagedPrBackend(fake_github, fake_github.issues, time=FakeTime())
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_setup_impl_from_pr.py:    plan_result = backend.create_managed_pr(
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_setup_impl_from_pr.py-    """
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_setup_impl_from_pr.py-    fake_github = FakeLocalGitHub()
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_setup_impl_from_pr.py-    backend = GitHubManagedPrBackend(fake_github, fake_github.issues, time=FakeTime())
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_setup_impl_from_pr.py:    plan_result = backend.create_managed_pr(
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_setup_impl_from_pr.py-    """
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_setup_impl_from_pr.py-    fake_github = FakeLocalGitHub()
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_setup_impl_from_pr.py-    backend = GitHubManagedPrBackend(fake_github, fake_github.issues, time=FakeTime())
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_setup_impl_from_pr.py:    plan_result = backend.create_managed_pr(
+/home/runner/work/erk/erk/tests/unit/plan_store/test_plan_backend_interface.py-    """Backend returns a list from list_plans (empty is valid)."""
+/home/runner/work/erk/erk/tests/unit/plan_store/test_plan_backend_interface.py-    parsed from the full PR body before stripping) works for both backends.
+  </tool_result>
+  <assistant>Let me check specifically for any variables that might be getting renamed incorrectly. Let me search for old method names that may have been missed:</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="1661" cache_read_input_tokens="42588" cache_creation="{'ephemeral_5m_input_tokens': 1661, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01HTQ15DsmDSRAnkyaK3u85t">
+    <param name="command">grep -r "\.get_plan\(|\.create_plan\(|\.close_plan\(|\.list_plans\(|\.update_plan_content\...[truncated 75 chars]...k/erk/erk/packages /home/runner/work/erk/erk/tests --include="*.py" 2&gt;/dev/null | head -30</param>
+    <param name="description">Search for any remaining old method names that should have been renamed</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="1661" cache_read_input_tokens="42588" cache_creation="{'ephemeral_5m_input_tokens': 1661, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01HTQ15DsmDSRAnkyaK3u85t">
+
+  </tool_result>
+  <assistant>No old method names found. Let me specifically look for old patterns that might have been missed in tests:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="5266" cache_read_input_tokens="44249" cache_creation="{'ephemeral_5m_input_tokens': 5266, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01VsJAyXgidnRrebpq7Hgwtd">
+    <param name="command">grep -r "\.get_plan\|\.create_plan\|\.close_plan\|\.update_plan" /home/runner/work/erk/erk/tests --include="*.py" 2&gt;/dev/null | grep -v "get_plan_info\|create_plan_draft\|close_plan" | head -20</param>
+    <param name="description">Search for old method patterns in tests</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5266" cache_read_input_tokens="44249" cache_creation="{'ephemeral_5m_input_tokens': 5266, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01VsJAyXgidnRrebpq7Hgwtd">
+/home/runner/work/erk/erk/tests/erk_shared/gateway/plan_data_provider/test_real_routing.py:    mock_plan_service.get_plan_list_data.return_value = MagicMock(
+/home/runner/work/erk/erk/tests/erk_shared/gateway/plan_data_provider/test_real_routing.py:        mock_plan_service.get_plan_list_data.assert_not_called()
+/home/runner/work/erk/erk/tests/erk_shared/gateway/plan_data_provider/test_real_routing.py:        mock_plan_service.get_plan_list_data.assert_called_once()
+/home/runner/work/erk/erk/tests/erk_shared/gateway/plan_data_provider/test_real_routing.py:        mock_plan_service.get_plan_list_data.assert_called_once()
+/home/runner/work/erk/erk/tests/erk_shared/gateway/plan_data_provider/test_real_routing.py:        mock_plan_service.get_plan_list_data.assert_called_once()
+/home/runner/work/erk/erk/tests/erk_shared/gateway/plan_data_provider/test_real_routing.py:        assert mock_plan_service.get_plan_list_data.call_count == 0, (
+/home/runner/work/erk/erk/tests/erk_shared/gateway/plan_data_provider/test_real_routing.py:        assert mock_plan_service.get_plan_list_data.call_count == 1, (
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_get_pr_context.py:        # so GitHubManagedPrBackend.get_plan_for_branch returns PlanNotFound
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_get_plan_metadata.py:from erk.cli.commands.exec.scripts.get_plan_metadata import get_plan_metadata
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_get_plans_for_objective.py:from erk.cli.commands.exec.scripts.get_plans_for_objective import (
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_update_pr_description.py:    Note: plan-ref.json exists in .impl/ but GitHubManagedPrBackend.get_plan_for_branch
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_update_pr_description.py:        # (not currently used by GitHubManagedPrBackend.get_plan_for_branch)
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_update_plan_header.py:from erk.cli.commands.exec.scripts.update_plan_header import update_plan_header
+/home/runner/work/erk/erk/tests/unit/services/test_plan_list_service.py:        result = service.get_plan_list_data(
+/home/runner/work/erk/erk/tests/unit/services/test_plan_list_service.py:        result = service.get_plan_list_data(
+/home/runner/work/erk/erk/tests/unit/services/test_plan_list_service.py:        result = service.get_plan_list_data(
+/home/runner/work/erk/erk/tests/unit/services/test_plan_list_service.py:        result = service.get_plan_list_data(
+/home/runner/work/erk/erk/tests/unit/services/test_plan_list_service.py:        result = service.get_plan_list_data(
+/home/runner/work/erk/erk/tests/unit/services/test_plan_list_service.py:        result = service.get_plan_list_data(
+/home/runner/work/erk/erk/tests/unit/services/test_plan_list_service.py:        result = service.get_plan_list_data(
+  </tool_result>
+  <assistant>These are all different methods (get_plan_list_data, etc.) not the ones we're looking for. Let me now do a comprehensive final check - let me verify the actual structure of the calls to make sure they're all using the correct object types:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="1308" cache_read_input_tokens="49515" cache_creation="{'ephemeral_5m_input_tokens': 1308, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_0152TPqGjbKiRdJfop7UgFjf">
+    <param name="command">grep -r "ctx\.plan_store\|ctx\.plan_backend\|backend\|plan_backend" /home/runner/work/erk/erk/src/erk/cli/commands/implement.py | head -5</param>
+    <param name="description">Check implement.py usage pattern</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="1308" cache_read_input_tokens="49515" cache_creation="{'ephemeral_5m_input_tokens': 1308, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0152TPqGjbKiRdJfop7UgFjf">
+    result = ctx.plan_store.get_managed_pr(repo.root, plan_number)
+    provider_name = ctx.plan_store.get_provider_name()
+  </tool_result>
+  <assistant>Let me verify that all the major usage points are correct by looking at the backend.py file to understand the interface better:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="373" cache_read_input_tokens="50823" cache_creation="{'ephemeral_5m_input_tokens': 373, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_014QkLGTwfoEd8QkDCcr8Wkg">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_store/backend.py</param>
+    <param name="limit">250</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="373" cache_read_input_tokens="50823" cache_creation="{'ephemeral_5m_input_tokens': 373, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014QkLGTwfoEd8QkDCcr8Wkg">
+     1→"""Abstract interface for managed PR backends.
+     2→
+     3→ManagedPrBackend is a BACKEND, not a gateway. Backends compose gateways (like GitHubIssues)
+     4→and should NOT have fake implementations. To test code that uses a ManagedPrBackend,
+     5→inject fake gateways into the real backend implementation.
+     6→
+     7→Example:
+     8→    # Testing with fake gateway
+     9→    fake_issues = FakeGitHubIssues()
+    10→    fake_github = FakeLocalGitHub(issues_gateway=fake_issues)
+    11→    backend = GitHubManagedPrBackend(fake_github, fake_issues, time=FakeTime())
+    12→    result = backend.create_managed_pr(...)
+    13→
+    14→    # Assert on gateway mutations
+    15→    assert fake_issues.created_issues[0][0] == "expected title"
+    16→
+    17→See: .claude/skills/fake-driven-testing/references/gateway-architecture.md
+    18→for the full gateway vs backend architecture.
+    19→"""
+    20→
+    21→from __future__ import annotations
+    22→
+    23→from abc import ABC, abstractmethod
+    24→from collections.abc import Mapping
+    25→from pathlib import Path
+    26→
+    27→from erk_shared.gateway.github.metadata.schemas import (
+    28→    CREATED_FROM_SESSION,
+    29→    LAST_LEARN_SESSION,
+    30→    LAST_LOCAL_IMPL_SESSION,
+
+... [225 lines omitted] ...
+
+    99→            RuntimeError: If provider fails
+   165→            RuntimeError: If provider fails or plan not found
+   196→            RuntimeError: If plan not found
+   201→            raise RuntimeError(msg)
+  </tool_result>
+  <assistant>Perfect! Let me now do a final comprehensive check to make sure I haven't missed any suspicious patterns. Let me examine the tests more carefully to verify test patterns are correct:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="3413" cache_read_input_tokens="51196" cache_creation="{'ephemeral_5m_input_tokens': 3413, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01QdcF2skmhLhfytnL14APki">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/plan_store/test_plan_backend_interface.py</param>
+    <param name="limit">150</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="3413" cache_read_input_tokens="51196" cache_creation="{'ephemeral_5m_input_tokens': 3413, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01QdcF2skmhLhfytnL14APki">
+     1→"""Interface tests for ManagedPrBackend implementations.
+     2→
+     3→These tests verify that GitHubManagedPrBackend satisfies the ManagedPrBackend ABC interface.
+     4→"""
+     5→
+     6→from datetime import datetime
+     7→from pathlib import Path
+     8→
+     9→import pytest
+    10→
+    11→from erk_shared.plan_store.backend import ManagedPrBackend
+    12→from erk_shared.plan_store.planned_pr import GitHubManagedPrBackend
+    13→from erk_shared.plan_store.types import PlanNotFound, PlanQuery, PlanState
+    14→from tests.fakes.gateway.github import FakeLocalGitHub
+    15→from tests.fakes.gateway.time import FakeTime
+    16→
+    17→# =============================================================================
+    18→# Fixtures
+    19→# =============================================================================
+    20→
+    21→_BRANCH_COUNTER = 0
+    22→
+    23→
+    24→def _next_branch() -&gt; str:
+    25→    """Generate a unique branch name for tests."""
+    26→    global _BRANCH_COUNTER  # noqa: PLW0603
+    27→    _BRANCH_COUNTER += 1
+    28→    return f"test-branch-{_BRANCH_COUNTER}"
+    29→
+    30→
+
+... [125 lines omitted] ...
+  </tool_result>
+  <assistant>Excellent! The tests are using the correct pattern. Now let me verify the grep results for update methods to ensure they're all correct:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="2377" cache_read_input_tokens="54609" cache_creation="{'ephemeral_5m_input_tokens': 2377, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_013D9d9JfJMLSP7umdXd2JXA">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_store/backend.py</param>
+    <param name="offset">250</param>
+    <param name="limit">200</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="2377" cache_read_input_tokens="54609" cache_creation="{'ephemeral_5m_input_tokens': 2377, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013D9d9JfJMLSP7umdXd2JXA">
+   250→
+   251→        Resolves the branch name to a plan identifier and fetches the full plan.
+   252→        Returns PlanNotFound if the branch is not a plan branch or the plan
+   253→        doesn't exist.
+   254→
+   255→        Args:
+   256→            repo_root: Repository root directory
+   257→            branch_name: Git branch name (e.g., "plnd/fix-bug-01-15-1430")
+   258→
+   259→        Returns:
+   260→            Plan if found, PlanNotFound otherwise
+   261→        """
+   262→        ...
+   263→
+   264→    @abstractmethod
+   265→    def resolve_pr_number_for_branch(self, repo_root: Path, branch_name: str) -&gt; str | None:
+   266→        """Resolve plan identifier for a branch without fetching the full plan.
+   267→
+   268→        Lightweight resolution that does NOT verify the plan exists.
+   269→        Returns None if the branch is not associated with a plan.
+   270→
+   271→        For GitHubManagedPrBackend this requires an API call to find the
+   272→        draft PR associated with the branch.
+   273→
+   274→        Args:
+   275→            repo_root: Repository root directory
+   276→            branch_name: Git branch name
+   277→
+   278→        Returns:
+   279→            Plan identifier string if branch is a plan branch, None otherwise
+
+... [175 lines omitted] ...
+
+   310→            RuntimeError: If provider fails
+   329→            PlanHeaderNotFoundError: If plan has no plan-header metadata block
+   330→            RuntimeError: If provider fails or plan not found
+   352→            RuntimeError: If plan not found or update fails
+   365→            RuntimeError: If provider fails, plan not found, or invalid identifier
+   384→            RuntimeError: If plan not found or update fails
+   406→            RuntimeError: If provider fails or plan not found
+   425→            RuntimeError: If provider fails or plan not found
+   442→            RuntimeError: If plan not found
+  </tool_result>
+  <assistant>Perfect! Now let me do one final comprehensive search to ensure there are no stray calls from non-backend objects. Let me specifically check for any CommandExecutor usage with these methods:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="2236" cache_read_input_tokens="56986" cache_creation="{'ephemeral_5m_input_tokens': 2236, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01TDRA31xLKLhYXjEWiMK1ZA">
+    <param name="command">grep -r "CommandExecutor" /home/runner/work/erk/erk/src /home/runner/work/erk/erk/packages /home/runner/work/erk/erk/tests --include="*.py" -l 2&gt;/dev/null | head -20</param>
+    <param name="description">Find any CommandExecutor references</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="2236" cache_read_input_tokens="56986" cache_creation="{'ephemeral_5m_input_tokens': 2236, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01TDRA31xLKLhYXjEWiMK1ZA">
+/home/runner/work/erk/erk/src/erk/tui/actions/navigation.py
+/home/runner/work/erk/erk/src/erk/tui/screens/plan_detail_screen.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/command_executor/__init__.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/command_executor/real.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/command_executor/abc.py
+/home/runner/work/erk/erk/tests/unit/fakes/test_fake_command_executor.py
+/home/runner/work/erk/erk/tests/tui/commands/test_execute_command.py
+/home/runner/work/erk/erk/tests/fakes/gateway/command_executor.py
+  </tool_result>
+  <assistant>Let me check those CommandExecutor files to see if they have any of our methods:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="582" cache_read_input_tokens="59222" cache_creation="{'ephemeral_5m_input_tokens': 582, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01Hy3jmBqBQDkhK3fE2j4UsG">
+    <param name="command">grep -l "get_managed_pr\|create_managed_pr\|close_managed_pr\|list_managed_prs\|update_man...[truncated 312 chars]...rk/erk/erk/packages/erk-shared/src/erk_shared/gateway/command_executor/real.py 2&gt;/dev/null</param>
+    <param name="description">Check if CommandExecutor has any renamed methods</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="582" cache_read_input_tokens="59222" cache_creation="{'ephemeral_5m_input_tokens': 582, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Hy3jmBqBQDkhK3fE2j4UsG">
+
+  </tool_result>
+  <assistant>Good! CommandExecutor doesn't have any of these methods. Now let me do one more comprehensive check - searching for any suspicious variable names or usage patterns:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="346" cache_read_input_tokens="59804" cache_creation="{'ephemeral_5m_input_tokens': 346, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01KS8ThCNmuDpQTwhVtYsk12">
+    <param name="command">grep -r "plan_store\|plan_backend\|backend" /home/runner/work/erk/erk/src/erk/cli/commands/pr/shared.py | grep -E "^\s*[a-z_]+ = " | head -20</param>
+    <param name="description">Check variable assignments in pr/shared.py</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="346" cache_read_input_tokens="59804" cache_creation="{'ephemeral_5m_input_tokens': 346, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01KS8ThCNmuDpQTwhVtYsk12">
+    plan_result = ctx.plan_backend.get_managed_pr(repo_root, pr_id)
+    plan_result = ctx.plan_backend.get_managed_pr(repo_root, pr_id)
+  </tool_result>
+  <assistant>Perfect! All the variable assignments look correct. Let me now create a final comprehensive summary by examining each call site one more time to build a complete report:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="374" cache_read_input_tokens="60150" cache_creation="{'ephemeral_5m_input_tokens': 374, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>

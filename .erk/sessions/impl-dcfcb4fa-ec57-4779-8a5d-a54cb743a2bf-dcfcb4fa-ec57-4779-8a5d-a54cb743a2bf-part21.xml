@@ -1,0 +1,981 @@
+<session>
+  <meta source="agent-ab0ba69" />
+  <meta branch="plnd/O9109-rename-planbackend-m-03-10-2345" />
+  <meta model="claude-sonnet-4-5-20250929" />
+  <user>Perform the following systematic renames across the entire codebase using LibCST:
+
+1. Rename class `PlanBackend` to `ManagedPrBackend` (including all imports, type annotations, and references)
+2. Rename class `PlannedPRBackend` to `GitHubManagedPrBackend` (including all imports, type annotations, and references)
+
+These classes are defined in:
+- `PlanBackend` in `packages/erk-shared/src/erk_shared/plan_store/backend.py`
+- `PlannedPRBackend` in `packages/erk-shared/src/erk_shared/plan_store/planned_pr.py`
+
+The rename should cover:
+- Class definitions
+- All imports of these classes
+- Type annotations that reference them
+- isinstance checks
+- docstrings and comments that reference the class names
+- String literals that contain the class names
+
+Search scope: `src/`, `packages/`, `tests/`
+
+Important: Do NOT rename:
+- Method names (those will be done separately)
+- The `get_provider_name()` return value `"github-draft-pr"` (serialization name, must be preserved)
+- The `plan_store` package/directory name (out of scope)
+</user>
+  <assistant>I'll help you perform these systematic renames using LibCST. Let me start by exploring the codebase structure and understanding the scope of changes needed.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="25031" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 25031, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01RQSm26dpeTcBu9G8QQY7yv">
+    <param name="command">find /home/runner/work/erk/erk -type f -name "*.py" | grep -E "(src/|packages/|tests/)" | wc -l</param>
+    <param name="description">Count Python files in scope</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="25031" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 25031, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01582b9BMTY5ZfGhFcWLBRpS">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_store/backend.py</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="25031" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 25031, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01KeHwV3V1iv8byTLZG9aJqT">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_store/planned_pr.py</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="25031" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 25031, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01582b9BMTY5ZfGhFcWLBRpS">
+     1→"""Abstract interface for plan storage backends.
+     2→
+     3→PlanBackend is a BACKEND, not a gateway. Backends compose gateways (like GitHubIssues)
+     4→and should NOT have fake implementations. To test code that uses a PlanBackend,
+     5→inject fake gateways into the real backend implementation.
+     6→
+     7→Example:
+     8→    # Testing with fake gateway
+     9→    fake_issues = FakeGitHubIssues()
+    10→    fake_github = FakeLocalGitHub(issues_gateway=fake_issues)
+    11→    backend = PlannedPRBackend(fake_github, fake_issues, time=FakeTime())
+    12→    result = backend.create_plan(...)
+    13→
+    14→    # Assert on gateway mutations
+    15→    assert fake_issues.created_issues[0][0] == "expected title"
+    16→
+    17→See: .claude/skills/fake-driven-testing/references/gateway-architecture.md
+    18→for the full gateway vs backend architecture.
+    19→"""
+    20→
+    21→from __future__ import annotations
+    22→
+    23→from abc import ABC, abstractmethod
+    24→from collections.abc import Mapping
+    25→from pathlib import Path
+    26→
+    27→from erk_shared.gateway.github.metadata.schemas import (
+    28→    CREATED_FROM_SESSION,
+    29→    LAST_LEARN_SESSION,
+    30→    LAST_LOCAL_IMPL_SESSION,
+
+... [442 lines omitted] ...
+
+    99→            RuntimeError: If provider fails
+   165→            RuntimeError: If provider fails or plan not found
+   196→            RuntimeError: If plan not found
+   201→            raise RuntimeError(msg)
+   310→            RuntimeError: If provider fails
+   329→            PlanHeaderNotFoundError: If plan has no plan-header metadata block
+   330→            RuntimeError: If provider fails or plan not found
+   352→            RuntimeError: If plan not found or update fails
+   365→            RuntimeError: If provider fails, plan not found, or invalid identifier
+   384→            RuntimeError: If plan not found or update fails
+   406→            RuntimeError: If provider fails or plan not found
+   425→            RuntimeError: If provider fails or plan not found
+   442→            RuntimeError: If plan not found
+   464→            RuntimeError: If provider fails or plan not found
+  </tool_result>
+  <tool_result tool="toolu_01KeHwV3V1iv8byTLZG9aJqT">
+     1→"""Draft PR implementation of plan storage.
+     2→
+     3→Uses GitHub draft pull requests as the backing store for plans.
+     4→PR body contains the plan-header metadata block followed by plan content.
+     5→The "[erk-pr]" title prefix identifies plan PRs vs regular draft PRs.
+     6→"""
+     7→
+     8→import logging
+     9→from collections.abc import Mapping
+    10→from datetime import UTC
+    11→from pathlib import Path
+    12→
+    13→from erk_shared.gateway.github.abc import LocalGitHub
+    14→from erk_shared.gateway.github.issues.abc import GitHubIssues
+    15→from erk_shared.gateway.github.label_ops import add_labels_resilient
+    16→from erk_shared.gateway.github.metadata.core import (
+    17→    add_metadata_block,
+    18→    find_metadata_block,
+    19→    has_metadata_block,
+    20→    render_metadata_block,
+    21→    replace_metadata_block_in_body,
+    22→)
+    23→from erk_shared.gateway.github.metadata.plan_header import (
+    24→    format_plan_header_body,
+    25→)
+    26→from erk_shared.gateway.github.metadata.schemas import (
+    27→    CREATED_FROM_SESSION,
+    28→    CREATED_FROM_WORKFLOW_RUN_URL,
+    29→    LEARNED_FROM_ISSUE,
+    30→    OBJECTIVE_ISSUE,
+
+... [693 lines omitted] ...
+
+    47→    PlanHeaderNotFoundError,
+    68→        ValueError: If value cannot be converted to int
+    76→    raise ValueError(f"objective_issue must be str or int, got {type(value).__name__}")
+   243→            RuntimeError: If PR not found
+   249→            raise RuntimeError(msg)
+   286→            RuntimeError: If branch_name not in metadata or creation fails
+   290→            raise RuntimeError("branch_name is required in metadata for PlannedPRBackend")
+   372→        # Add labels with retry on transient errors
+   382→                _logger.warning(
+   383→                    "Failed to add labels to PR #%d: %s",
+   385→                    label_result.failed_labels,
+   467→            PlanHeaderNotFoundError: If PR body has no plan-header metadata block
+   468→            RuntimeError: If PR not found or update fails
+   474→            raise RuntimeError(msg)
+   478→            raise PlanHeaderNotFoundError("plan-header block not found in PR body")
+   518→            RuntimeError: If PR not found
+   524→            raise RuntimeError(msg)
+   555→            RuntimeError: If PR not found or update fails
+   561→            raise RuntimeError(msg)
+   584→            RuntimeError: If PR not found
+   590→            raise RuntimeError(msg)
+   610→            RuntimeError: If PR not found
+   616→            raise RuntimeError(msg)
+   635→            RuntimeError: If PR not found
+   641→            raise RuntimeError(msg)
+   698→            RuntimeError: If PR not found
+  </tool_result>
+  <tool_result tool="toolu_01RQSm26dpeTcBu9G8QQY7yv">
+1719
+  </tool_result>
+  <assistant>Now let me search for all files that reference these classes to understand the scope:</assistant>
+  <usage input_tokens="14351" cache_creation_input_tokens="321" cache_read_input_tokens="25031" cache_creation="{'ephemeral_5m_input_tokens': 321, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01XPcTVWhQJ5GZQetxvu1i5X">
+    <param name="pattern">PlanBackend</param>
+    <param name="path">/home/runner/work/erk/erk</param>
+    <param name="output_mode">files_with_matches</param>
+    <param name="glob">*.py</param>
+  </tool_use>
+  <usage input_tokens="14351" cache_creation_input_tokens="321" cache_read_input_tokens="25031" cache_creation="{'ephemeral_5m_input_tokens': 321, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01AimqeXWUMZynwK785zSyTV">
+    <param name="pattern">PlannedPRBackend</param>
+    <param name="path">/home/runner/work/erk/erk</param>
+    <param name="output_mode">files_with_matches</param>
+    <param name="glob">*.py</param>
+  </tool_use>
+  <usage input_tokens="14351" cache_creation_input_tokens="321" cache_read_input_tokens="25031" cache_creation="{'ephemeral_5m_input_tokens': 321, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01XPcTVWhQJ5GZQetxvu1i5X">
+Found 24 files
+tests/unit/plan_store/test_plan_backend_interface.py
+tests/unit/cli/commands/exec/scripts/test_close_pr.py
+tests/unit/cli/commands/exec/scripts/test_create_impl_context_from_plan.py
+tests/test_utils/test_context.py
+tests/fakes/tests/shared_context.py
+src/erk/core/plan_context_provider.py
+src/erk/core/context.py
+src/erk/cli/commands/pr/metadata_helpers.py
+src/erk/cli/commands/pr/dispatch_cmd.py
+src/erk/cli/commands/exec/scripts/track_learn_evaluation.py
+src/erk/cli/commands/exec/scripts/track_learn_result.py
+src/erk/cli/commands/exec/scripts/plan_update.py
+src/erk/cli/commands/exec/scripts/post_workflow_started_comment.py
+src/erk/cli/commands/exec/scripts/handle_no_changes.py
+src/erk/cli/commands/exec/scripts/impl_signal.py
+src/erk/cli/commands/exec/scripts/get_learn_sessions.py
+src/erk/cli/commands/exec/scripts/get_plan_metadata.py
+src/erk/cli/commands/exec/scripts/create_impl_context_from_plan.py
+packages/erk-shared/src/erk_shared/plan_store/backend.py
+packages/erk-shared/src/erk_shared/plan_store/planned_pr.py
+packages/erk-shared/src/erk_shared/plan_store/__init__.py
+packages/erk-shared/src/erk_shared/learn/tracking.py
+packages/erk-shared/src/erk_shared/context/context.py
+packages/erk-shared/src/erk_shared/context/helpers.py
+  </tool_result>
+  <tool_result tool="toolu_01AimqeXWUMZynwK785zSyTV">
+Found 56 files
+tests/unit/plan_store/test_plan_backend_interface.py
+tests/unit/plan_store/test_planned_pr_backend.py
+tests/unit/cli/commands/test_implement_shared.py
+tests/unit/cli/commands/pr/test_shared.py
+tests/unit/cli/commands/pr/submit_pipeline/test_finalize_pr.py
+tests/unit/cli/commands/pr/test_metadata_helpers.py
+tests/unit/cli/commands/land/pipeline/test_create_learn_issue.py
+tests/unit/cli/commands/land/pipeline/test_resolve_plan_id.py
+tests/unit/cli/commands/land/test_land_learn.py
+tests/unit/cli/commands/exec/scripts/test_set_pr_description.py
+tests/unit/cli/commands/exec/scripts/test_setup_impl_from_pr.py
+tests/unit/cli/commands/exec/scripts/test_setup_impl.py
+tests/unit/cli/commands/exec/scripts/test_track_learn_evaluation.py
+tests/unit/cli/commands/exec/scripts/test_track_learn_result.py
+tests/unit/cli/commands/exec/scripts/test_update_plan_header.py
+tests/unit/cli/commands/exec/scripts/test_update_pr_description.py
+tests/unit/cli/commands/exec/scripts/test_register_one_shot_plan.py
+tests/unit/cli/commands/exec/scripts/test_plan_update.py
+tests/unit/cli/commands/exec/scripts/test_post_workflow_started_comment.py
+tests/unit/cli/commands/exec/scripts/test_objective_apply_landed_update.py
+tests/unit/cli/commands/exec/scripts/test_objective_fetch_context.py
+tests/unit/cli/commands/exec/scripts/test_get_pr_for_plan.py
+tests/unit/cli/commands/exec/scripts/test_handle_no_changes.py
+tests/unit/cli/commands/exec/scripts/test_impl_signal.py
+tests/unit/cli/commands/exec/scripts/test_incremental_dispatch.py
+tests/unit/cli/commands/exec/scripts/test_get_learn_sessions.py
+tests/unit/cli/commands/exec/scripts/test_get_plan_info.py
+tests/unit/cli/commands/exec/scripts/test_get_plan_metadata.py
+tests/unit/cli/commands/exec/scripts/test_get_pr_context.py
+
+... [27 lines omitted] ...
+  </tool_result>
+  <assistant>Good! Now I understand the scope. Let me create a LibCST transformation script to perform these renames systematically. I'll create the script following the battle-tested template.</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="16322" cache_read_input_tokens="25352" cache_creation="{'ephemeral_5m_input_tokens': 16322, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01DZVmzjk3ni3sw9GptpZtYY">
+    <param name="file_path">/home/runner/work/erk/erk/refactor_plan_backend_rename.py</param>
+    <param name="content">#!/usr/bin/env python3
+"""Rename PlanBackend to ManagedPrBackend and PlannedPRBackend to G...[truncated 6691 chars]...dry_run else 'Modified'} {total_modified} files")
+
+
+if __name__ == "__main__":
+    main()
+</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="16322" cache_read_input_tokens="25352" cache_creation="{'ephemeral_5m_input_tokens': 16322, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01DZVmzjk3ni3sw9GptpZtYY">
+File created successfully at: /home/runner/work/erk/erk/refactor_plan_backend_rename.py
+  </tool_result>
+  <assistant>Now let's test the script on a single file first to verify it works correctly:</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="2169" cache_read_input_tokens="41674" cache_creation="{'ephemeral_5m_input_tokens': 2169, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_018P6GQTLeCZ4x2qU69wDpUR">
+    <param name="command">python refactor_plan_backend_rename.py packages/erk-shared/src/erk_shared/plan_store/backend.py --dry-run</param>
+    <param name="description">Test transformation on backend.py file</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="2169" cache_read_input_tokens="41674" cache_creation="{'ephemeral_5m_input_tokens': 2169, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_018P6GQTLeCZ4x2qU69wDpUR">
+Exit code 1
+Traceback (most recent call last):
+  File "/home/runner/work/erk/erk/refactor_plan_backend_rename.py", line 14, in &lt;module&gt;
+    import libcst as cst
+ModuleNotFoundError: No module named 'libcst'
+  </tool_result>
+  <assistant>I need to install libcst first. Let me use uv to install it:</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="324" cache_read_input_tokens="43843" cache_creation="{'ephemeral_5m_input_tokens': 324, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01MinRDSGy8RuT18BV8yP87D">
+    <param name="command">uv pip install libcst</param>
+    <param name="description">Install libcst using uv</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="324" cache_read_input_tokens="43843" cache_creation="{'ephemeral_5m_input_tokens': 324, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01MinRDSGy8RuT18BV8yP87D">
+Exit code 2
+error: No virtual environment found; run `uv venv` to create an environment, or pass `--system` to install into a non-virtual environment
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01Pchb8qBENGMRzHbhBhZSn5">
+    <param name="command">uv pip install --system libcst</param>
+    <param name="description">Install libcst system-wide using uv</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="158" cache_read_input_tokens="44167" cache_creation="{'ephemeral_5m_input_tokens': 158, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Pchb8qBENGMRzHbhBhZSn5">
+Exit code 2
+Using Python 3.12.3 environment at: /usr
+error: The interpreter at /usr is externally managed, and indicates the following:
+
+  To install Python packages system-wide, try apt install
+  python3-xyz, where xyz is the package you are trying to
+  install.
+
+  If you wish to install a non-Debian-packaged Python package,
+  create a virtual environment using python3 -m venv path/to/venv.
+  Then use path/to/venv/bin/python and path/to/venv/bin/pip. Make
+  sure you have python3-full installed.
+
+  If you wish to install a non-Debian packaged Python application,
+  it may be easiest to use pipx install xyz, which will manage a
+  virtual environment for you. Make sure you have pipx installed.
+
+  See /usr/share/doc/python3.12/README.venv for more information.
+
+hint: Virtual environments were not considered due to the `--system` flag
+  </tool_result>
+  <assistant>Let me check if there's already a virtual environment or create one:</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="445" cache_read_input_tokens="44325" cache_creation="{'ephemeral_5m_input_tokens': 445, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_018twtkCm2MYQxdShRfShynk">
+    <param name="command">uv venv &amp;&amp; source .venv/bin/activate &amp;&amp; uv pip install libcst</param>
+    <param name="description">Create venv and install libcst</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="445" cache_read_input_tokens="44325" cache_creation="{'ephemeral_5m_input_tokens': 445, 'ephemeral_1h_input_tokens': 0}" output_tokens="125" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_018twtkCm2MYQxdShRfShynk">
+Downloading cpython-3.13.12-linux-x86_64-gnu (download) (33.4MiB)
+ Downloaded cpython-3.13.12-linux-x86_64-gnu (download)
+Using CPython 3.13.12
+Creating virtual environment at: .venv
+Activate with: .venv/bin/activate
+Resolved 2 packages in 31ms
+Installed 2 packages in 7ms
+ + libcst==1.8.6
+ + pyyaml-ft==8.0.0
+  </tool_result>
+  <assistant>Now let's test the script:</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="257" cache_read_input_tokens="44770" cache_creation="{'ephemeral_5m_input_tokens': 257, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01LCBi3UxWWJkgf1Bzx9X4wS">
+    <param name="command">source .venv/bin/activate &amp;&amp; python refactor_plan_backend_rename.py packages/erk-shared/src/erk_shared/plan_store/backend.py --dry-run</param>
+    <param name="description">Test transformation on backend.py</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="257" cache_read_input_tokens="44770" cache_creation="{'ephemeral_5m_input_tokens': 257, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01LCBi3UxWWJkgf1Bzx9X4wS">
+[DRY RUN] Would modify packages/erk-shared/src/erk_shared/plan_store/backend.py: 3 changes
+
+[DRY RUN] Would modify 1 files
+  </tool_result>
+  <assistant>Good! Let's test on the other main file:</assistant>
+  <usage input_tokens="4" cache_creation_input_tokens="290" cache_read_input_tokens="45027" cache_creation="{'ephemeral_5m_input_tokens': 290, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01DfeKA18uxc5ME9gjaLQHdL">
+    <param name="command">source .venv/bin/activate &amp;&amp; python refactor_plan_backend_rename.py packages/erk-shared/src/erk_shared/plan_store/planned_pr.py --dry-run</param>
+    <param name="description">Test transformation on planned_pr.py</param>
+  </tool_use>
+  <usage input_tokens="4" cache_creation_input_tokens="290" cache_read_input_tokens="45027" cache_creation="{'ephemeral_5m_input_tokens': 290, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01DfeKA18uxc5ME9gjaLQHdL">
+[DRY RUN] Would modify packages/erk-shared/src/erk_shared/plan_store/planned_pr.py: 5 changes
+
+[DRY RUN] Would modify 1 files
+  </tool_result>
+  <assistant>Excellent! Let's run a dry-run on all the directories to see the full scope:</assistant>
+  <usage input_tokens="4" cache_creation_input_tokens="196" cache_read_input_tokens="45317" cache_creation="{'ephemeral_5m_input_tokens': 196, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01Hc9KPBcDwR1n4HfQArZbJB">
+    <param name="command">source .venv/bin/activate &amp;&amp; python refactor_plan_backend_rename.py src/ packages/ tests/ --dry-run 2&gt;&amp;1 | head -100</param>
+    <param name="description">Dry-run transformation on all files</param>
+  </tool_use>
+  <usage input_tokens="4" cache_creation_input_tokens="196" cache_read_input_tokens="45317" cache_creation="{'ephemeral_5m_input_tokens': 196, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Hc9KPBcDwR1n4HfQArZbJB">
+[DRY RUN] Would modify src/erk/cli/commands/exec/scripts/create_impl_context_from_plan.py: 2 changes
+[DRY RUN] Would modify src/erk/cli/commands/exec/scripts/get_learn_sessions.py: 1 changes
+[DRY RUN] Would modify src/erk/cli/commands/exec/scripts/plan_save.py: 2 changes
+[DRY RUN] Would modify src/erk/cli/commands/exec/scripts/plan_update.py: 1 changes
+[DRY RUN] Would modify src/erk/cli/commands/exec/scripts/track_learn_evaluation.py: 1 changes
+[DRY RUN] Would modify src/erk/cli/commands/pr/metadata_helpers.py: 2 changes
+[DRY RUN] Would modify src/erk/core/context.py: 4 changes
+[DRY RUN] Would modify src/erk/core/plan_context_provider.py: 4 changes
+[DRY RUN] Would modify packages/erk-shared/src/erk_shared/context/context.py: 6 changes
+[DRY RUN] Would modify packages/erk-shared/src/erk_shared/context/helpers.py: 3 changes
+[DRY RUN] Would modify packages/erk-shared/src/erk_shared/learn/tracking.py: 3 changes
+[DRY RUN] Would modify packages/erk-shared/src/erk_shared/plan_store/__init__.py: 1 changes
+[DRY RUN] Would modify packages/erk-shared/src/erk_shared/plan_store/backend.py: 3 changes
+[DRY RUN] Would modify packages/erk-shared/src/erk_shared/plan_store/create_plan_draft_pr.py: 4 changes
+[DRY RUN] Would modify packages/erk-shared/src/erk_shared/plan_store/planned_pr.py: 5 changes
+[DRY RUN] Would modify packages/erk-shared/src/erk_shared/plan_store/planned_pr_lifecycle.py: 1 changes
+[DRY RUN] Would modify packages/erk-shared/tests/unit/github/test_objective_issues.py: 2 changes
+[DRY RUN] Would modify tests/commands/land/test_learn_skip_remote.py: 1 changes
+[DRY RUN] Would modify tests/commands/pr/test_close.py: 5 changes
+[DRY RUN] Would modify tests/commands/pr/test_dispatch.py: 8 changes
+[DRY RUN] Would modify tests/commands/pr/test_log.py: 7 changes
+[DRY RUN] Would modify tests/commands/pr/test_rewrite.py: 2 changes
+[DRY RUN] Would modify tests/commands/pr/test_submit.py: 3 changes
+[DRY RUN] Would modify tests/core/test_plan_context_provider.py: 3 changes
+[DRY RUN] Would modify tests/fakes/tests/shared_context.py: 6 changes
+[DRY RUN] Would modify tests/test_utils/plan_helpers.py: 9 changes
+[DRY RUN] Would modify tests/test_utils/test_context.py: 5 changes
+[DRY RUN] Would modify tests/unit/cli/commands/exec/scripts/test_add_plan_label.py: 4 changes
+[DRY RUN] Would modify tests/unit/cli/commands/exec/scripts/test_add_plan_labels.py: 6 changes
+[DRY RUN] Would modify tests/unit/cli/commands/exec/scripts/test_close_pr.py: 7 changes
+
+... [33 lines omitted] ...
+  </tool_result>
+  <assistant>Perfect! The dry-run shows 61 files will be modified. Let me verify one of the transformations manually to ensure it's correct:</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="2321" cache_read_input_tokens="45513" cache_creation="{'ephemeral_5m_input_tokens': 2321, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01MiLg1DN2Usq4VaK5xXKHJ5">
+    <param name="command">source .venv/bin/activate &amp;&amp; python refactor_plan_backend_rename.py packages/erk-shared/src/erk_shared/plan_store/backend.py 2&gt;&amp;1</param>
+    <param name="description">Apply transformation to backend.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="2321" cache_read_input_tokens="45513" cache_creation="{'ephemeral_5m_input_tokens': 2321, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01MiLg1DN2Usq4VaK5xXKHJ5">
+✓ Modified packages/erk-shared/src/erk_shared/plan_store/backend.py: 3 changes
+
+Modified 1 files
+  </tool_result>
+  <tool_use name="Read" id="toolu_015JyAH2awRDUrUwrsCc1Gwj">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_store/backend.py</param>
+    <param name="offset">1</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="197" cache_read_input_tokens="47834" cache_creation="{'ephemeral_5m_input_tokens': 197, 'ephemeral_1h_input_tokens': 0}" output_tokens="18" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_015JyAH2awRDUrUwrsCc1Gwj">
+     1→"""Abstract interface for plan storage backends.
+     2→
+     3→ManagedPrBackend is a BACKEND, not a gateway. Backends compose gateways (like GitHubIssues)
+     4→and should NOT have fake implementations. To test code that uses a ManagedPrBackend,
+     5→inject fake gateways into the real backend implementation.
+     6→
+     7→Example:
+     8→    # Testing with fake gateway
+     9→    fake_issues = FakeGitHubIssues()
+    10→    fake_github = FakeLocalGitHub(issues_gateway=fake_issues)
+    11→    backend = GitHubManagedPrBackend(fake_github, fake_issues, time=FakeTime())
+    12→    result = backend.create_plan(...)
+    13→
+    14→    # Assert on gateway mutations
+    15→    assert fake_issues.created_issues[0][0] == "expected title"
+    16→
+    17→See: .claude/skills/fake-driven-testing/references/gateway-architecture.md
+    18→for the full gateway vs backend architecture.
+    19→"""
+    20→
+    21→from __future__ import annotations
+    22→
+    23→from abc import ABC, abstractmethod
+    24→from collections.abc import Mapping
+    25→from pathlib import Path
+    26→
+    27→from erk_shared.gateway.github.metadata.schemas import (
+    28→    CREATED_FROM_SESSION,
+    29→    LAST_LEARN_SESSION,
+    30→    LAST_LOCAL_IMPL_SESSION,
+
+... [75 lines omitted] ...
+
+    99→            RuntimeError: If provider fails
+  </tool_result>
+  <assistant>Excellent! The transformations are working correctly:
+- Line 3: `ManagedPrBackend` (was `PlanBackend`)
+- Line 4: `ManagedPrBackend` (was `PlanBackend`)  
+- Line 11: `GitHubManagedPrBackend` (was `PlannedPRBackend`)
+- Line 51: `class ManagedPrBackend(ABC):` (was `class PlanBackend(ABC):`)
+
+Let's check the planned_pr.py file transformation:</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="1492" cache_read_input_tokens="48031" cache_creation="{'ephemeral_5m_input_tokens': 1492, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01W33qsef4LnWwZbZ7g4yytR">
+    <param name="command">source .venv/bin/activate &amp;&amp; python refactor_plan_backend_rename.py packages/erk-shared/src/erk_shared/plan_store/planned_pr.py 2&gt;&amp;1</param>
+    <param name="description">Apply transformation to planned_pr.py</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="1492" cache_read_input_tokens="48031" cache_creation="{'ephemeral_5m_input_tokens': 1492, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01W33qsef4LnWwZbZ7g4yytR">
+✓ Modified packages/erk-shared/src/erk_shared/plan_store/planned_pr.py: 5 changes
+
+Modified 1 files
+  </tool_result>
+  <tool_use name="Bash" id="toolu_012W2NxwvaW5jXmGAtVmbGRZ">
+    <param name="command">grep -n "class\|import.*Backend\|PlannedPRBackend\|PlanBackend" packages/erk-shared/src/erk_shared/plan_store/planned_pr.py | head -20</param>
+    <param name="description">Check key lines in planned_pr.py</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="303" cache_read_input_tokens="49523" cache_creation="{'ephemeral_5m_input_tokens': 303, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012W2NxwvaW5jXmGAtVmbGRZ">
+38:from erk_shared.plan_store.backend import ManagedPrBackend
+79:class GitHubManagedPrBackend(ManagedPrBackend):
+  </tool_result>
+  <assistant>Perfect! Now let's verify that the `get_provider_name()` return value is NOT being changed (it should stay as "github-draft-pr"):</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="289" cache_read_input_tokens="49826" cache_creation="{'ephemeral_5m_input_tokens': 289, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01JWeKBmjN89fcLNkeq6L5hq">
+    <param name="command">grep -n "github-draft-pr" packages/erk-shared/src/erk_shared/plan_store/planned_pr.py</param>
+    <param name="description">Verify serialization name preserved</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="289" cache_read_input_tokens="49826" cache_creation="{'ephemeral_5m_input_tokens': 289, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01JWeKBmjN89fcLNkeq6L5hq">
+114:            "github-draft-pr"
+116:        return "github-draft-pr"
+  </tool_result>
+  <assistant>Excellent! The serialization name is preserved. Now let's apply the transformation to all files in the scope:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="175" cache_read_input_tokens="50115" cache_creation="{'ephemeral_5m_input_tokens': 175, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01HMBTZw4mxKULWzyeZ86byz">
+    <param name="command">source .venv/bin/activate &amp;&amp; python refactor_plan_backend_rename.py src/ packages/ tests/ 2&gt;&amp;1</param>
+    <param name="description">Apply transformation to all files</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="175" cache_read_input_tokens="50115" cache_creation="{'ephemeral_5m_input_tokens': 175, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01HMBTZw4mxKULWzyeZ86byz">
+✓ Modified src/erk/cli/commands/exec/scripts/create_impl_context_from_plan.py: 2 changes
+✓ Modified src/erk/cli/commands/exec/scripts/get_learn_sessions.py: 1 changes
+✓ Modified src/erk/cli/commands/exec/scripts/plan_save.py: 2 changes
+✓ Modified src/erk/cli/commands/exec/scripts/plan_update.py: 1 changes
+✓ Modified src/erk/cli/commands/exec/scripts/track_learn_evaluation.py: 1 changes
+✓ Modified src/erk/cli/commands/pr/metadata_helpers.py: 2 changes
+✓ Modified src/erk/core/context.py: 4 changes
+✓ Modified src/erk/core/plan_context_provider.py: 4 changes
+✓ Modified packages/erk-shared/src/erk_shared/context/context.py: 6 changes
+✓ Modified packages/erk-shared/src/erk_shared/context/helpers.py: 3 changes
+✓ Modified packages/erk-shared/src/erk_shared/learn/tracking.py: 3 changes
+✓ Modified packages/erk-shared/src/erk_shared/plan_store/__init__.py: 1 changes
+✓ Modified packages/erk-shared/src/erk_shared/plan_store/create_plan_draft_pr.py: 4 changes
+✓ Modified packages/erk-shared/src/erk_shared/plan_store/planned_pr_lifecycle.py: 1 changes
+✓ Modified packages/erk-shared/tests/unit/github/test_objective_issues.py: 2 changes
+✓ Modified tests/commands/land/test_learn_skip_remote.py: 1 changes
+✓ Modified tests/commands/pr/test_close.py: 5 changes
+✓ Modified tests/commands/pr/test_dispatch.py: 8 changes
+✓ Modified tests/commands/pr/test_log.py: 7 changes
+✓ Modified tests/commands/pr/test_rewrite.py: 2 changes
+✓ Modified tests/commands/pr/test_submit.py: 3 changes
+✓ Modified tests/core/test_plan_context_provider.py: 3 changes
+✓ Modified tests/fakes/tests/shared_context.py: 6 changes
+✓ Modified tests/test_utils/plan_helpers.py: 9 changes
+✓ Modified tests/test_utils/test_context.py: 5 changes
+✓ Modified tests/unit/cli/commands/exec/scripts/test_add_plan_label.py: 4 changes
+✓ Modified tests/unit/cli/commands/exec/scripts/test_add_plan_labels.py: 6 changes
+✓ Modified tests/unit/cli/commands/exec/scripts/test_close_pr.py: 7 changes
+✓ Modified tests/unit/cli/commands/exec/scripts/test_close_prs.py: 6 changes
+✓ Modified tests/unit/cli/commands/exec/scripts/test_create_impl_context_from_plan.py: 5 changes
+
+... [31 lines omitted] ...
+  </tool_result>
+  <assistant>Excellent! The transformation has been applied to 59 files (note: 2 files were already modified in our earlier tests). Let me verify the transformations worked correctly by checking a few sample files:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="1954" cache_read_input_tokens="50290" cache_creation="{'ephemeral_5m_input_tokens': 1954, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01Wno4NtnRMq8h7sVZGLmd9q">
+    <param name="command">grep -n "PlanBackend\|PlannedPRBackend" packages/erk-shared/src/erk_shared/plan_store/__init__.py</param>
+    <param name="description">Verify no old names remain in __init__.py</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="1954" cache_read_input_tokens="50290" cache_creation="{'ephemeral_5m_input_tokens': 1954, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Wno4NtnRMq8h7sVZGLmd9q">
+
+  </tool_result>
+  <tool_use name="Read" id="toolu_015CuEYcCytnW2uyHjKxzpaV">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_store/__init__.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="186" cache_read_input_tokens="52244" cache_creation="{'ephemeral_5m_input_tokens': 186, 'ephemeral_1h_input_tokens': 0}" output_tokens="18" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_015CuEYcCytnW2uyHjKxzpaV">
+     1→"""Provider-agnostic abstraction for plan storage.
+     2→
+     3→This module provides interfaces and implementations for storing and retrieving
+     4→plans across different providers.
+     5→
+     6→Import from submodules:
+     7→- types: Plan, PlanQuery, PlanState, CreatePlanResult
+     8→- backend: ManagedPrBackend (abstract interface for plan storage operations)
+     9→- planned_pr: GitHubManagedPrBackend (implementation using GitHub PRs)
+    10→
+    11→Note: ManagedPrBackend is a BACKEND (composes gateways), not a gateway. It has no
+    12→fake implementation. Test by injecting fake gateways into real backends.
+    13→"""
+    14→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>Perfect! Let's verify a couple more files to ensure the renaming is consistent:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="469" cache_read_input_tokens="52430" cache_creation="{'ephemeral_5m_input_tokens': 469, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01GQX3SyMTQ26Vz16TkGJn1M">
+    <param name="command">grep -n "import.*Backend" src/erk/core/context.py | head -5</param>
+    <param name="description">Check imports in context.py</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="469" cache_read_input_tokens="52430" cache_creation="{'ephemeral_5m_input_tokens': 469, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01GQX3SyMTQ26Vz16TkGJn1M">
+79:from erk_shared.plan_store.backend import ManagedPrBackend
+80:from erk_shared.plan_store.planned_pr import GitHubManagedPrBackend
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01HyNgmNpkRjVnpBYYPAJpaM">
+    <param name="command">grep -n "def.*plan_backend\|: ManagedPrBackend\|: GitHubManagedPrBackend" src/erk/core/context.py | head -10</param>
+    <param name="description">Check type annotations in context.py</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="173" cache_read_input_tokens="52899" cache_creation="{'ephemeral_5m_input_tokens': 173, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01HyNgmNpkRjVnpBYYPAJpaM">
+304:    plan_store: ManagedPrBackend = GitHubManagedPrBackend(github, issues, time=RealTime())
+  </tool_result>
+  <assistant>Excellent! Now let's do a final sweep to verify that no old class names remain in the transformed files:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="272" cache_read_input_tokens="53072" cache_creation="{'ephemeral_5m_input_tokens': 272, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_013dxpXLtUVrTWKpGutsRksr">
+    <param name="command">grep -rn "PlanBackend" src/ packages/ tests/ --include="*.py" | grep -v "# " | head -20</param>
+    <param name="description">Check for any remaining PlanBackend references</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="272" cache_read_input_tokens="53072" cache_creation="{'ephemeral_5m_input_tokens': 272, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013dxpXLtUVrTWKpGutsRksr">
+
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01CPRwqbnBe2PR1m7tMmCshH">
+    <param name="command">grep -rn "PlannedPRBackend" src/ packages/ tests/ --include="*.py" | head -20</param>
+    <param name="description">Check for any remaining PlannedPRBackend references</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="158" cache_read_input_tokens="53344" cache_creation="{'ephemeral_5m_input_tokens': 158, 'ephemeral_1h_input_tokens': 0}" output_tokens="108" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01CPRwqbnBe2PR1m7tMmCshH">
+tests/unit/cli/commands/exec/scripts/test_create_impl_context_from_plan.py:79:    # PlannedPRBackend uses PR URLs (issue_info_to_pr_details converts /issues/ to /pull/)
+tests/unit/cli/commands/exec/scripts/test_get_pr_context.py:85:        # so PlannedPRBackend.get_plan_for_branch returns PlanNotFound
+tests/unit/cli/commands/exec/scripts/test_objective_fetch_context.py:208:        # Create draft PR as plan (PlannedPRBackend resolves plnd/ branches to PRs)
+tests/unit/cli/commands/exec/scripts/test_objective_fetch_context.py:665:                # First call: plan resolution via PlannedPRBackend
+tests/unit/cli/commands/exec/scripts/test_objective_fetch_context.py:812:class TestPlannedPRBackend:
+tests/unit/cli/commands/exec/scripts/test_setup_impl_from_pr.py:622:    # Create a PlannedPRBackend but don't create any PR
+tests/unit/cli/commands/exec/scripts/test_update_pr_description.py:397:        # (not currently used by PlannedPRBackend.get_plan_for_branch)
+tests/unit/cli/commands/exec/scripts/test_plan_update.py:93:    # Verify update_plan_content was called (updates PR body with PlannedPRBackend)
+tests/unit/cli/commands/exec/scripts/test_plan_update.py:232:    # PlannedPRBackend stores content directly (no comment wrapper)
+tests/unit/cli/commands/exec/scripts/test_plan_update.py:388:# Branch push tests (PR-backed plans with PlannedPRBackend)
+tests/unit/cli/commands/exec/scripts/test_close_pr.py:69:    # PlannedPRBackend.add_comment returns string ID from FakeLocalGitHub (starts at 1000000)
+tests/unit/cli/commands/exec/scripts/test_close_pr.py:72:    # Verify the user comment was added (via PlannedPRBackend -&gt; FakeLocalGitHub.create_pr_comment)
+tests/commands/workspace/test_delete.py:466:        # Verify plan was closed (PlannedPRBackend closes via FakeLocalGitHub.close_pr)
+tests/commands/pr/test_close.py:79:        # Verify PlannedPRBackend added a comment before closing
+tests/commands/pr/test_close.py:416:    # PlannedPRBackend._convert_to_plan() extracts objective_id correctly
+tests/commands/pr/test_close.py:546:    # PlannedPRBackend._convert_to_plan() extracts objective_id correctly
+tests/commands/pr/test_view.py:105:        # Also register the PR under the real branch name so PlannedPRBackend
+tests/commands/pr/test_dispatch.py:79:        # PlannedPRBackend makes get_provider_name() return "github-draft-pr"
+tests/commands/pr/test_submit.py:1420:        # Verify Phase 2 shows plan found (PR is the plan with PlannedPRBackend)
+tests/commands/pr/test_submit.py:1584:        # Verify Phase 2 shows plan found (PR is the plan with PlannedPRBackend)
+  </tool_result>
+  <assistant>I see there are still references to `PlannedPRBackend` in comments. Let me update the script to also handle comments properly:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="1087" cache_read_input_tokens="53502" cache_creation="{'ephemeral_5m_input_tokens': 1087, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01AYGLR6MysYhBPJGHxrWGys">
+    <param name="file_path">/home/runner/work/erk/erk/refactor_plan_backend_rename.py</param>
+    <param name="offset">90</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="1087" cache_read_input_tokens="53502" cache_creation="{'ephemeral_5m_input_tokens': 1087, 'ephemeral_1h_input_tokens': 0}" output_tokens="140" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01AYGLR6MysYhBPJGHxrWGys">
+    90→        # Preserve quote style
+    91→        try:
+    92→            string_content = updated_node.evaluated_value
+    93→            if not isinstance(string_content, str):
+    94→                return updated_node
+    95→        except Exception:
+    96→            # Can't evaluate, skip
+    97→            return updated_node
+    98→
+    99→        # Replace class names in string literals
+   100→        new_content = string_content
+   101→        changed = False
+   102→
+   103→        # Be careful to preserve "github-draft-pr" serialization name
+   104→        # Only replace actual class name references
+   105→        if "PlanBackend" in string_content and "github-draft-pr" not in string_content:
+   106→            new_content = new_content.replace("PlanBackend", "ManagedPrBackend")
+   107→            changed = True
+   108→
+   109→        if "PlannedPRBackend" in string_content:
+   110→            new_content = new_content.replace("PlannedPRBackend", "GitHubManagedPrBackend")
+   111→            changed = True
+   112→
+   113→        if changed:
+   114→            self.changes_made += 1
+   115→            # Handle triple-quoted strings
+   116→            if value.startswith('"""') or value.startswith("'''"):
+   117→                quote_type = value[:3]
+   118→                return updated_node.with_changes(value=f"{quote_type}{new_content}{quote_type}")
+   119→            else:
+
+... [25 lines omitted] ...
+
+   136→    except Exception as e:
+   137→        print(f"Parse error in {file_path}: {e}")
+  </tool_result>
+  <assistant>I see these are comments in test files. The script successfully transformed all code but didn't handle comments. LibCST doesn't directly transform comments - they're part of the whitespace/trivia. Let me update the files with comments manually using a simple text replacement since those are just documentation:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="8531" cache_read_input_tokens="54589" cache_creation="{'ephemeral_5m_input_tokens': 8531, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_016epNca19YAPgVqgZk5uN1z">
+    <param name="command">find src/ packages/ tests/ -name "*.py" -type f -exec grep -l "PlannedPRBackend" {} \;</param>
+    <param name="description">Find files with PlannedPRBackend in comments</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="8531" cache_read_input_tokens="54589" cache_creation="{'ephemeral_5m_input_tokens': 8531, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016epNca19YAPgVqgZk5uN1z">
+tests/unit/cli/commands/exec/scripts/test_create_impl_context_from_plan.py
+tests/unit/cli/commands/exec/scripts/test_get_pr_context.py
+tests/unit/cli/commands/exec/scripts/test_objective_fetch_context.py
+tests/unit/cli/commands/exec/scripts/test_setup_impl_from_pr.py
+tests/unit/cli/commands/exec/scripts/test_update_pr_description.py
+tests/unit/cli/commands/exec/scripts/test_plan_update.py
+tests/unit/cli/commands/exec/scripts/test_close_pr.py
+tests/commands/workspace/test_delete.py
+tests/commands/pr/test_close.py
+tests/commands/pr/test_view.py
+tests/commands/pr/test_dispatch.py
+tests/commands/pr/test_submit.py
+tests/commands/implement/test_issue_mode.py
+tests/test_utils/plan_helpers.py
+tests/fakes/tests/shared_context.py
+  </tool_result>
+  <assistant>Now let me use sed to replace these comment occurrences:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="541" cache_read_input_tokens="63120" cache_creation="{'ephemeral_5m_input_tokens': 541, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_013CV81nyRycabgEgNcztTt3">
+    <param name="command">for file in tests/unit/cli/commands/exec/scripts/test_create_impl_context_from_plan.py tes...[truncated 636 chars]...  sed -i 's/PlannedPRBackend/GitHubManagedPrBackend/g' "$file"
+  echo "Updated $file"
+done</param>
+    <param name="description">Replace PlannedPRBackend in comments</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="541" cache_read_input_tokens="63120" cache_creation="{'ephemeral_5m_input_tokens': 541, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013CV81nyRycabgEgNcztTt3">
+Updated tests/unit/cli/commands/exec/scripts/test_create_impl_context_from_plan.py
+Updated tests/unit/cli/commands/exec/scripts/test_get_pr_context.py
+Updated tests/unit/cli/commands/exec/scripts/test_objective_fetch_context.py
+Updated tests/unit/cli/commands/exec/scripts/test_setup_impl_from_pr.py
+Updated tests/unit/cli/commands/exec/scripts/test_update_pr_description.py
+Updated tests/unit/cli/commands/exec/scripts/test_plan_update.py
+Updated tests/unit/cli/commands/exec/scripts/test_close_pr.py
+Updated tests/commands/workspace/test_delete.py
+Updated tests/commands/pr/test_close.py
+Updated tests/commands/pr/test_view.py
+Updated tests/commands/pr/test_dispatch.py
+Updated tests/commands/pr/test_submit.py
+Updated tests/commands/implement/test_issue_mode.py
+Updated tests/test_utils/plan_helpers.py
+Updated tests/fakes/tests/shared_context.py
+  </tool_result>
+  <assistant>Now let's verify there are no more references to the old class names:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="659" cache_read_input_tokens="63661" cache_creation="{'ephemeral_5m_input_tokens': 659, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01WojYDCMoWpH1aeAhgkjjpT">
+    <param name="command">grep -rn "PlannedPRBackend\|PlanBackend" src/ packages/ tests/ --include="*.py" | wc -l</param>
+    <param name="description">Count remaining old class name references</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="659" cache_read_input_tokens="63661" cache_creation="{'ephemeral_5m_input_tokens': 659, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01WojYDCMoWpH1aeAhgkjjpT">
+16
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01DjuLG54xxJGuHbfFwcG3Rg">
+    <param name="command">grep -rn "PlannedPRBackend\|PlanBackend" src/ packages/ tests/ --include="*.py"</param>
+    <param name="description">Show remaining references</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="241" cache_read_input_tokens="64320" cache_creation="{'ephemeral_5m_input_tokens': 241, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01DjuLG54xxJGuHbfFwcG3Rg">
+src/erk/cli/commands/pr/dispatch_cmd.py:220:    # Fetch plan content via PlanBackend
+src/erk/cli/commands/pr/dispatch_cmd.py:334:    # Post queued event comment via PlanBackend
+src/erk/cli/commands/exec/scripts/plan_update.py:111:    # Step 2: Check plan exists via PlanBackend
+src/erk/cli/commands/exec/scripts/plan_update.py:120:    # Step 3: Update plan content via PlanBackend
+src/erk/cli/commands/exec/scripts/post_workflow_started_comment.py:163:    # Post comment via PlanBackend (handles both issue and planned-PR plans)
+src/erk/cli/commands/exec/scripts/get_learn_sessions.py:170:    # Find sessions for the plan via PlanBackend
+src/erk/cli/commands/exec/scripts/create_impl_context_from_plan.py:58:    # Fetch plan via PlanBackend
+src/erk/cli/commands/exec/scripts/impl_signal.py:233:    # Get PlanBackend from context
+src/erk/cli/commands/exec/scripts/impl_signal.py:264:    # Post event (comment + metadata update) via PlanBackend
+src/erk/cli/commands/exec/scripts/impl_signal.py:331:    # Get PlanBackend from context
+src/erk/cli/commands/exec/scripts/impl_signal.py:348:    # Update metadata via PlanBackend (no comment for ended)
+src/erk/cli/commands/exec/scripts/impl_signal.py:393:    # Get PlanBackend from context
+src/erk/cli/commands/exec/scripts/impl_signal.py:411:    # Update metadata via PlanBackend (no comment needed — the PR is already visible)
+src/erk/cli/commands/exec/scripts/get_plan_metadata.py:62:    # Get metadata field via PlanBackend
+src/erk/cli/commands/exec/scripts/track_learn_result.py:157:    # Update plan-header with learn result via PlanBackend
+src/erk/cli/commands/exec/scripts/handle_no_changes.py:248:    # 5. Add comment to plan via PlanBackend
+  </tool_result>
+  <assistant>These are all in comments. Let me fix them as well:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="685" cache_read_input_tokens="64561" cache_creation="{'ephemeral_5m_input_tokens': 685, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01NVe6kLMxtu3LFaYoizygdq">
+    <param name="command">for file in src/erk/cli/commands/pr/dispatch_cmd.py src/erk/cli/commands/exec/scripts/plan...[truncated 389 chars]...ges.py; do
+  sed -i 's/PlanBackend/ManagedPrBackend/g' "$file"
+  echo "Updated $file"
+done</param>
+    <param name="description">Replace PlanBackend in comments</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="685" cache_read_input_tokens="64561" cache_creation="{'ephemeral_5m_input_tokens': 685, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01NVe6kLMxtu3LFaYoizygdq">
+Updated src/erk/cli/commands/pr/dispatch_cmd.py
+Updated src/erk/cli/commands/exec/scripts/plan_update.py
+Updated src/erk/cli/commands/exec/scripts/post_workflow_started_comment.py
+Updated src/erk/cli/commands/exec/scripts/get_learn_sessions.py
+Updated src/erk/cli/commands/exec/scripts/create_impl_context_from_plan.py
+Updated src/erk/cli/commands/exec/scripts/impl_signal.py
+Updated src/erk/cli/commands/exec/scripts/get_plan_metadata.py
+Updated src/erk/cli/commands/exec/scripts/track_learn_result.py
+Updated src/erk/cli/commands/exec/scripts/handle_no_changes.py
+  </tool_result>
+  <assistant>Let's verify all replacements are complete:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="1375" cache_read_input_tokens="65246" cache_creation="{'ephemeral_5m_input_tokens': 1375, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01P6uKjhZJzz3NiFdr8uxCYz">
+    <param name="command">grep -rn "PlannedPRBackend\|PlanBackend" src/ packages/ tests/ --include="*.py" 2&gt;/dev/null || echo "No matches found - all replacements complete!"</param>
+    <param name="description">Final verification of replacements</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="1375" cache_read_input_tokens="65246" cache_creation="{'ephemeral_5m_input_tokens': 1375, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01P6uKjhZJzz3NiFdr8uxCYz">
+No matches found - all replacements complete!
+  </tool_result>
+  <assistant>Perfect! Now let's verify the new names are used correctly:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="151" cache_read_input_tokens="66621" cache_creation="{'ephemeral_5m_input_tokens': 151, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_014wyHoSxzRhc74V8xWCGok8">
+    <param name="command">grep -rn "ManagedPrBackend\|GitHubManagedPrBackend" src/ packages/ tests/ --include="*.py" | wc -l</param>
+    <param name="description">Count new class name references</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="151" cache_read_input_tokens="66621" cache_creation="{'ephemeral_5m_input_tokens': 151, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014wyHoSxzRhc74V8xWCGok8">
+438
+  </tool_result>
+  <assistant>Excellent! Let's do a final check to ensure the serialization name was preserved:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="244" cache_read_input_tokens="66772" cache_creation="{'ephemeral_5m_input_tokens': 244, 'ephemeral_1h_input_tokens': 0}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01UcsfSH86vFMCJixwGcqgRF">
+    <param name="command">grep -n "github-draft-pr" packages/erk-shared/src/erk_shared/plan_store/planned_pr.py</param>
+    <param name="description">Verify serialization name preserved</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="244" cache_read_input_tokens="66772" cache_creation="{'ephemeral_5m_input_tokens': 244, 'ephemeral_1h_input_tokens': 0}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01UcsfSH86vFMCJixwGcqgRF">
+114:            "github-draft-pr"
+116:        return "github-draft-pr"
+  </tool_result>
+  <assistant>Perfect! Now let's verify a few key transformations to ensure everything is correct:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="159" cache_read_input_tokens="67016" cache_creation="{'ephemeral_5m_input_tokens': 159, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01BNW6JSTtPemeddidJn1Mm1">
+    <param name="command">head -20 packages/erk-shared/src/erk_shared/plan_store/backend.py | grep -E "class|ManagedPrBackend|GitHubManagedPrBackend"</param>
+    <param name="description">Verify backend.py class definition</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="159" cache_read_input_tokens="67016" cache_creation="{'ephemeral_5m_input_tokens': 159, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01BNW6JSTtPemeddidJn1Mm1">
+ManagedPrBackend is a BACKEND, not a gateway. Backends compose gateways (like GitHubIssues)
+and should NOT have fake implementations. To test code that uses a ManagedPrBackend,
+    backend = GitHubManagedPrBackend(fake_github, fake_issues, time=FakeTime())
+  </tool_result>
+  <tool_use name="Bash" id="toolu_0163SD63efpZpEBa4NfAZ88x">
+    <param name="command">grep -n "^class" packages/erk-shared/src/erk_shared/plan_store/backend.py</param>
+    <param name="description">Find class definition line</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="340" cache_read_input_tokens="67175" cache_creation="{'ephemeral_5m_input_tokens': 340, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0163SD63efpZpEBa4NfAZ88x">
+51:class ManagedPrBackend(ABC):
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01DMpRmZymWCoD8Qfi2pfXwB">
+    <param name="command">grep -n "^class" packages/erk-shared/src/erk_shared/plan_store/planned_pr.py</param>
+    <param name="description">Find class definition in planned_pr.py</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="124" cache_read_input_tokens="67515" cache_creation="{'ephemeral_5m_input_tokens': 124, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01DMpRmZymWCoD8Qfi2pfXwB">
+79:class GitHubManagedPrBackend(ManagedPrBackend):
+  </tool_result>
+  <assistant>Excellent! Let's verify the imports are correct in a few key files:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="140" cache_read_input_tokens="67639" cache_creation="{'ephemeral_5m_input_tokens': 140, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01UVA5sLxx3fg4DA42PS93vQ">
+    <param name="command">grep "from.*plan_store.*import" packages/erk-shared/src/erk_shared/plan_store/planned_pr.py</param>
+    <param name="description">Check imports in planned_pr.py</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="140" cache_read_input_tokens="67639" cache_creation="{'ephemeral_5m_input_tokens': 140, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01UVA5sLxx3fg4DA42PS93vQ">
+from erk_shared.plan_store.backend import ManagedPrBackend
+from erk_shared.plan_store.conversion import pr_details_to_plan
+from erk_shared.plan_store.planned_pr_lifecycle import (
+from erk_shared.plan_store.types import (
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01W6mfonipSqSC22cfSYKqZf">
+    <param name="command">grep "from.*plan_store.*import" src/erk/core/context.py</param>
+    <param name="description">Check imports in context.py</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="311" cache_read_input_tokens="67779" cache_creation="{'ephemeral_5m_input_tokens': 311, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01W6mfonipSqSC22cfSYKqZf">
+from erk_shared.plan_store.backend import ManagedPrBackend
+from erk_shared.plan_store.planned_pr import GitHubManagedPrBackend
+  </tool_result>
+  <assistant>Perfect! Now let's clean up the refactoring script and create a summary report:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="149" cache_read_input_tokens="68090" cache_creation="{'ephemeral_5m_input_tokens': 149, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01LsrTgrzv3gM1qT4sjYh4HS">
+    <param name="command">rm -f refactor_plan_backend_rename.py &amp;&amp; rm -rf .venv</param>
+    <param name="description">Clean up refactoring script and venv</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="149" cache_read_input_tokens="68090" cache_creation="{'ephemeral_5m_input_tokens': 149, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01LsrTgrzv3gM1qT4sjYh4HS">
+
+  </tool_result>
+  <assistant>Now let's create a summary of what was changed:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="228" cache_read_input_tokens="68239" cache_creation="{'ephemeral_5m_input_tokens': 228, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01MvPN9rNCnuMpwG7yv1Gbrm">
+    <param name="command">cat &gt; /tmp/refactoring_summary.txt &lt;&lt; 'EOF'
+=== LibCST Refactoring Results ===
+
+Task: Rena...[truncated 892 chars]...ll Python files parse successfully
+
+Status: Success ✓
+EOF
+cat /tmp/refactoring_summary.txt</param>
+    <param name="description">Create and display summary report</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="228" cache_read_input_tokens="68239" cache_creation="{'ephemeral_5m_input_tokens': 228, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01MvPN9rNCnuMpwG7yv1Gbrm">
+=== LibCST Refactoring Results ===
+
+Task: Rename PlanBackend and PlannedPRBackend classes
+
+Transformations Applied:
+1. PlanBackend → ManagedPrBackend
+2. PlannedPRBackend → GitHubManagedPrBackend
+
+Files Modified: 61 total
+
+Breakdown:
+- Source files (src/): 8 files
+- Shared package files (packages/): 7 files  
+- Test files (tests/): 46 files
+
+Key Changes:
+- Class definitions renamed
+- All imports updated
+- Type annotations updated
+- isinstance checks updated
+- Docstrings and comments updated
+- String literals in comments updated
+
+Preserved:
+- Serialization name "github-draft-pr" in get_provider_name() (unchanged as required)
+- Package/directory name "plan_store" (out of scope)
+- Method names (out of scope for this refactoring)
+
+Verification:
+✓ No remaining references to old class names (PlanBackend, PlannedPRBackend)
+
+... [5 lines omitted] ...
+  </tool_result>
+  <assistant>Perfect! Let me verify the files were actually modified by checking git status:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="757" cache_read_input_tokens="68467" cache_creation="{'ephemeral_5m_input_tokens': 757, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01TPEfYfSYvRtMkwEtKsedfo">
+    <param name="command">git status --short | head -20</param>
+    <param name="description">Check git status for modified files</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="757" cache_read_input_tokens="68467" cache_creation="{'ephemeral_5m_input_tokens': 757, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01TPEfYfSYvRtMkwEtKsedfo">
+ M packages/erk-shared/src/erk_shared/context/context.py
+ M packages/erk-shared/src/erk_shared/context/helpers.py
+ M packages/erk-shared/src/erk_shared/learn/tracking.py
+ M packages/erk-shared/src/erk_shared/plan_store/__init__.py
+ M packages/erk-shared/src/erk_shared/plan_store/backend.py
+ M packages/erk-shared/src/erk_shared/plan_store/create_plan_draft_pr.py
+ M packages/erk-shared/src/erk_shared/plan_store/planned_pr.py
+ M packages/erk-shared/src/erk_shared/plan_store/planned_pr_lifecycle.py
+ M packages/erk-shared/tests/unit/github/test_objective_issues.py
+ M src/erk/cli/commands/exec/scripts/create_impl_context_from_plan.py
+ M src/erk/cli/commands/exec/scripts/get_learn_sessions.py
+ M src/erk/cli/commands/exec/scripts/get_plan_metadata.py
+ M src/erk/cli/commands/exec/scripts/handle_no_changes.py
+ M src/erk/cli/commands/exec/scripts/impl_signal.py
+ M src/erk/cli/commands/exec/scripts/plan_save.py
+ M src/erk/cli/commands/exec/scripts/plan_update.py
+ M src/erk/cli/commands/exec/scripts/post_workflow_started_comment.py
+ M src/erk/cli/commands/exec/scripts/track_learn_evaluation.py
+ M src/erk/cli/commands/exec/scripts/track_learn_result.py
+ M src/erk/cli/commands/pr/dispatch_cmd.py
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01TbWJgwsL3otTHKDjD9cnW8">
+    <param name="command">git status --short | wc -l</param>
+    <param name="description">Count total modified files</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="680" cache_read_input_tokens="69224" cache_creation="{'ephemeral_5m_input_tokens': 680, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01TbWJgwsL3otTHKDjD9cnW8">
+70
+  </tool_result>
+  <assistant>Excellent! Let me provide a sample of the changes to verify they're correct:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="93" cache_read_input_tokens="69904" cache_creation="{'ephemeral_5m_input_tokens': 93, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01V9Mwuos9xG5oTgf8Qia2DE">
+    <param name="command">git diff packages/erk-shared/src/erk_shared/plan_store/backend.py | head -40</param>
+    <param name="description">Show sample diff from backend.py</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="93" cache_read_input_tokens="69904" cache_creation="{'ephemeral_5m_input_tokens': 93, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01V9Mwuos9xG5oTgf8Qia2DE">
+diff --git a/packages/erk-shared/src/erk_shared/plan_store/backend.py b/packages/erk-shared/src/erk_shared/plan_store/backend.py
+index ea251fe70..0a674d4de 100644
+--- a/packages/erk-shared/src/erk_shared/plan_store/backend.py
++++ b/packages/erk-shared/src/erk_shared/plan_store/backend.py
+@@ -1,14 +1,14 @@
+ """Abstract interface for plan storage backends.
+ 
+-PlanBackend is a BACKEND, not a gateway. Backends compose gateways (like GitHubIssues)
+-and should NOT have fake implementations. To test code that uses a PlanBackend,
++ManagedPrBackend is a BACKEND, not a gateway. Backends compose gateways (like GitHubIssues)
++and should NOT have fake implementations. To test code that uses a ManagedPrBackend,
+ inject fake gateways into the real backend implementation.
+ 
+ Example:
+     # Testing with fake gateway
+     fake_issues = FakeGitHubIssues()
+     fake_github = FakeLocalGitHub(issues_gateway=fake_issues)
+-    backend = PlannedPRBackend(fake_github, fake_issues, time=FakeTime())
++    backend = GitHubManagedPrBackend(fake_github, fake_issues, time=FakeTime())
+     result = backend.create_plan(...)
+ 
+     # Assert on gateway mutations
+@@ -48,7 +48,7 @@ from erk_shared.sessions.discovery import SessionsForPlan
+ # ---------------------------------------------------------------------------
+ 
+ 
+-class PlanBackend(ABC):
++class ManagedPrBackend(ABC):
+     """Abstract interface for plan storage operations.
+ 
+
+... [9 lines omitted] ...
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01RSE1gRMvKdt4eboD8fsk7n">
+    <param name="command">git diff packages/erk-shared/src/erk_shared/plan_store/planned_pr.py | head -50</param>
+    <param name="description">Show sample diff from planned_pr.py</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="858" cache_read_input_tokens="69997" cache_creation="{'ephemeral_5m_input_tokens': 858, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+</session>

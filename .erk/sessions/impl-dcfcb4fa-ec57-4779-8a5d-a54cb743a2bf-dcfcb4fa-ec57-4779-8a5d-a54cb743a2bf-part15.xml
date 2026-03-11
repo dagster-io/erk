@@ -1,0 +1,279 @@
+<session>
+  <meta source="agent-a770805" />
+  <meta branch="plnd/O9109-rename-planbackend-m-03-10-2345" />
+  <meta model="claude-sonnet-4-5-20250929" />
+  <user>Update all references to old class names in .claude/skills/ directory. Replace:
+- `PlanBackend` → `ManagedPrBackend`
+- `PlannedPRBackend` → `GitHubManagedPrBackend`
+- `FakePlanBackend` → `FakeManagedPrBackend`
+- `GitHubPlanBackend` → `GitHubManagedPrBackend` (the current name of the implementation class)
+
+Files to update (found via grep):
+1. .claude/skills/fake-driven-testing/references/anti-patterns.md
+2. .claude/skills/fake-driven-testing/references/gateway-architecture.md
+
+These are skill reference documents. Read each file, make the replacements, and write back.
+
+Important:
+- The provider name "github-draft-pr" should NOT be changed (serialization name)
+- When updating code examples, also update method names: `.create_plan(` → `.create_managed_pr(`, etc.
+- Use the Edit tool with replace_all where appropriate for each file
+</user>
+  <assistant>I'll update the references to the old class names in the skill files. Let me first read both files to see what needs to be changed.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="16200" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 16200, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01WLfuY757Tc9Z1sjX342DS4">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/skills/fake-driven-testing/references/anti-patterns.md</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="16200" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 16200, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_014iabYnomMs23J1PGZiiBPu">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/skills/fake-driven-testing/references/gateway-architecture.md</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="16200" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 16200, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014iabYnomMs23J1PGZiiBPu">
+     1→---
+     2→name: fake-driven-testing-gateway-architecture
+     3→description: Gateway layer architecture and interface patterns
+     4→---
+     5→
+     6→# Gateway Layer Architecture
+     7→
+     8→**Read this when**: You need to understand or modify the gateway layer (the thin wrapper interfaces over external state).
+     9→
+    10→## Overview
+    11→
+    12→**Naming note**: "Gateway" is a common name for this pattern. These classes are also called **adapters**, **providers**, or **ports** in other contexts. The pattern matters more than the name.
+    13→
+    14→## What Are Gateway Classes?
+    15→
+    16→**Gateway classes are thin wrappers around heavyweight external APIs** that:
+    17→
+    18→- Touch external state (filesystem, database, APIs, message queues)
+    19→- Could be slow (network calls, disk I/O, subprocess execution)
+    20→- Could fail periodically (network issues, rate limits, service outages)
+    21→- Are difficult to test directly
+    22→
+    23→## The Four Implementations
+    24→
+    25→Every gateway interface has **four implementations**:
+    26→
+    27→### 1. Abstract Interface (ABC)
+    28→
+    29→Defines the contract all implementations must follow.
+    30→
+
+... [543 lines omitted] ...
+
+   113→        except Exception:
+   125→- Lets exceptions bubble up (no try/except for control flow)
+   158→        # Simulate failure if configured
+   160→            raise RuntimeError(f"Simulated failure for: {sql}")
+   344→        raise FileNotFoundError(f"File not found: {path}")
+   363→        raise FileNotFoundError(f"File not found: {path}")
+   494→        raise FileNotFoundError(f"File not found: {path}")
+   497→**Exception**: Fakes may create real directories when necessary for integration, but should not read/write actual files.
+  </tool_result>
+  <tool_result tool="toolu_01WLfuY757Tc9Z1sjX342DS4">
+     1→---
+     2→name: fake-driven-testing-anti-patterns
+     3→description: Common testing mistakes to avoid
+     4→---
+     5→
+     6→# Testing Anti-Patterns
+     7→
+     8→**Read this when**: You're unsure if your approach is correct, or want to avoid common mistakes.
+     9→
+    10→## Overview
+    11→
+    12→This document covers common anti-patterns in Python testing and how to avoid them. Each anti-pattern includes examples of what NOT to do and the correct approach.
+    13→
+    14→## ❌ Testing Speculative Features
+    15→
+    16→**NEVER write tests for code that doesn't exist yet** (unless doing TDD RIGHT NOW).
+    17→
+    18→### Wrong Approach
+    19→
+    20→```python
+    21→# ❌ WRONG: Placeholder test for future feature
+    22→# def test_feature_we_might_add_later():
+    23→#     """TODO: Implement this feature next sprint."""
+    24→#     pass
+    25→
+    26→# ❌ WRONG: Test stub for "maybe someday" idea
+    27→# def test_hypothetical_feature():
+    28→#     """Feature we're considering for Q2."""
+    29→#     # Not implemented yet, just a placeholder
+    30→#     pass
+
+... [809 lines omitted] ...
+
+   194→4. **CI/CD failures**: Paths may not exist on CI systems
+   195→5. **Permission errors**: Tests may not have write access to hardcoded paths
+   225→        # Old signature - type error!
+   231→        # Old signature - type error!
+   234→# Result: Type errors, broken tests, runtime failures
+   256→- **Type errors**: Implementations don't match interface
+   257→- **Runtime errors**: Tests pass locally but fail in production
+   295→# ✅ CORRECT: Fast, better error messages (for Click CLIs)
+   329→- subprocess: Harder to set breakpoints, unclear errors
+   330→- Test clients: Direct access to exceptions, clear stack traces
+   525→### Exception: Directory Creation
+   604→    with pytest.raises(ValueError, match="Invalid order"):
+   819→| Not updating all layers      | Type errors, broken tests         | Update ABC/Real/Fake/DryRun |
+  </tool_result>
+  <assistant>Now I'll update both files with the renamed classes. I'll use the Edit tool with replace_all where appropriate.</assistant>
+  <usage input_tokens="7005" cache_creation_input_tokens="10230" cache_read_input_tokens="16200" cache_creation="{'ephemeral_5m_input_tokens': 10230, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_017cgWJtDA9EWK5G5drk4bjH">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/skills/fake-driven-testing/references/anti-patterns.md</param>
+    <param name="old_string">- **Backends** = higher-level abstractions that COMPOSE gateways (PlannedPRBackend)
+  - Only need ABC + real implementations
+  - **NO fake implementation needed** - inject fake gateways instead</param>
+    <param name="new_string">- **Backends** = higher-level abstractions that COMPOSE gateways (GitHubManagedPrBackend)
+  - Only need ABC + real implementations
+  - **NO fake implementation needed** - inject fake gateways instead</param>
+  </tool_use>
+  <usage input_tokens="7005" cache_creation_input_tokens="10230" cache_read_input_tokens="16200" cache_creation="{'ephemeral_5m_input_tokens': 10230, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01ShvXfBeyPzwbnfT8RwJCg8">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/skills/fake-driven-testing/references/anti-patterns.md</param>
+    <param name="old_string"># ❌ WRONG: Creating a fake backend
+class PlanBackend(ABC):
+    @abstractmethod
+    def cre...[truncated 541 chars]...      # Duplicates logic that should be tested via real backend + fake gateway
+        ...</param>
+    <param name="new_string"># ❌ WRONG: Creating a fake backend
+class ManagedPrBackend(ABC):
+    @abstractmethod
+    de...[truncated 622 chars]...      # Duplicates logic that should be tested via real backend + fake gateway
+        ...</param>
+  </tool_use>
+  <usage input_tokens="7005" cache_creation_input_tokens="10230" cache_read_input_tokens="16200" cache_creation="{'ephemeral_5m_input_tokens': 10230, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_018Jw5VM2KH1FbAxQJVu1hiK">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/skills/fake-driven-testing/references/anti-patterns.md</param>
+    <param name="old_string"># ✅ CORRECT: Backend composes gateways, no fake needed
+class PlanBackend(ABC):
+    @abstra...[truncated 658 chars]...assert fake_issues.created_issues[0][0] == "expected title"
+    assert result.pr_id == "1"</param>
+    <param name="new_string"># ✅ CORRECT: Backend composes gateways, no fake needed
+class ManagedPrBackend(ABC):
+    @a...[truncated 717 chars]...assert fake_issues.created_issues[0][0] == "expected title"
+    assert result.pr_id == "1"</param>
+  </tool_use>
+  <usage input_tokens="7005" cache_creation_input_tokens="10230" cache_read_input_tokens="16200" cache_creation="{'ephemeral_5m_input_tokens': 10230, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01NZCyfg6unXku8rrrjfAHun">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/skills/fake-driven-testing/references/anti-patterns.md</param>
+    <param name="old_string">```
+CLI → ErkContext (DI container)
+  → GitHubPlanBackend (backend - REAL in tests)
+    → FakeGitHubIssues (gateway - FAKE in tests)  ← DI stops here
+```</param>
+    <param name="new_string">```
+CLI → ErkContext (DI container)
+  → GitHubManagedPrBackend (backend - REAL in tests)
+    → FakeGitHubIssues (gateway - FAKE in tests)  ← DI stops here
+```</param>
+  </tool_use>
+  <usage input_tokens="7005" cache_creation_input_tokens="10230" cache_read_input_tokens="16200" cache_creation="{'ephemeral_5m_input_tokens': 10230, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01MCT1YshX5NbVtuXUWmpXbQ">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/skills/fake-driven-testing/references/gateway-architecture.md</param>
+    <param name="old_string">| **Examples**        | `LocalGitHub`, `Git`, `Graphite`, `Shell`, `Time` | `PlannedPRBackend`, `PlanBackend` implementations                              |</param>
+    <param name="new_string">| **Examples**        | `LocalGitHub`, `Git`, `Graphite`, `Shell`, `Time` | `GitHubManagedPrBackend`, `ManagedPrBackend` implementations                   |</param>
+  </tool_use>
+  <usage input_tokens="7005" cache_creation_input_tokens="10230" cache_read_input_tokens="16200" cache_creation="{'ephemeral_5m_input_tokens': 10230, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01EXgSFCNch5d53Rz2RoCJrw">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/skills/fake-driven-testing/references/gateway-architecture.md</param>
+    <param name="old_string">| **Testing**         | Use `FakeLocalGitHub` directly                    | Use `PlannedPRBackend(FakeLocalGitHub(), FakeGitHubIssues(), time=FakeTime())` |</param>
+    <param name="new_string">| **Testing**         | Use `FakeLocalGitHub` directly                    | Use `GitHubManagedPrBackend(FakeLocalGitHub(), FakeGitHubIssues(), time=FakeTime())` |</param>
+  </tool_use>
+  <usage input_tokens="7005" cache_creation_input_tokens="10230" cache_read_input_tokens="16200" cache_creation="{'ephemeral_5m_input_tokens': 10230, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01DDRMzhR9TLpEbCwzEHec3Z">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/skills/fake-driven-testing/references/gateway-architecture.md</param>
+    <param name="old_string">```python
+# Backend takes gateways as constructor arguments
+class PlannedPRBackend(PlanBac...[truncated 333 chars]...eate_pr(...)
+        return CreatePlanResult(pr_id=str(result.number), url=result.url)
+```</param>
+    <param name="new_string">```python
+# Backend takes gateways as constructor arguments
+class GitHubManagedPrBackend(M...[truncated 360 chars]...pr(...)
+        return CreateManagedPrResult(pr_id=str(result.number), url=result.url)
+```</param>
+  </tool_use>
+  <usage input_tokens="7005" cache_creation_input_tokens="10230" cache_read_input_tokens="16200" cache_creation="{'ephemeral_5m_input_tokens': 10230, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01KsQcxXREfR6RpqAKVNyYZ5">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/skills/fake-driven-testing/references/gateway-architecture.md</param>
+    <param name="old_string">```python
+# ✅ CORRECT: Inject fake gateways into real backend
+def test_create_plan():
+    ...[truncated 247 chars]...: Creating a fake backend
+class FakePlanBackend(PlanBackend):  # DON'T DO THIS
+    ...
+```</param>
+    <param name="new_string">```python
+# ✅ CORRECT: Inject fake gateways into real backend
+def test_create_managed_pr()...[truncated 287 chars]... a fake backend
+class FakeManagedPrBackend(ManagedPrBackend):  # DON'T DO THIS
+    ...
+```</param>
+  </tool_use>
+  <usage input_tokens="7005" cache_creation_input_tokens="10230" cache_read_input_tokens="16200" cache_creation="{'ephemeral_5m_input_tokens': 10230, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017cgWJtDA9EWK5G5drk4bjH">
+The file /home/runner/work/erk/erk/.claude/skills/fake-driven-testing/references/anti-patterns.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01ShvXfBeyPzwbnfT8RwJCg8">
+The file /home/runner/work/erk/erk/.claude/skills/fake-driven-testing/references/anti-patterns.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_018Jw5VM2KH1FbAxQJVu1hiK">
+The file /home/runner/work/erk/erk/.claude/skills/fake-driven-testing/references/anti-patterns.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01NZCyfg6unXku8rrrjfAHun">
+The file /home/runner/work/erk/erk/.claude/skills/fake-driven-testing/references/anti-patterns.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01MCT1YshX5NbVtuXUWmpXbQ">
+The file /home/runner/work/erk/erk/.claude/skills/fake-driven-testing/references/gateway-architecture.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01EXgSFCNch5d53Rz2RoCJrw">
+The file /home/runner/work/erk/erk/.claude/skills/fake-driven-testing/references/gateway-architecture.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01DDRMzhR9TLpEbCwzEHec3Z">
+The file /home/runner/work/erk/erk/.claude/skills/fake-driven-testing/references/gateway-architecture.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01KsQcxXREfR6RpqAKVNyYZ5">
+The file /home/runner/work/erk/erk/.claude/skills/fake-driven-testing/references/gateway-architecture.md has been updated successfully.
+  </tool_result>
+  <assistant>Perfect! I've successfully updated all references to the old class names in both skill reference documents. Here's a summary of the changes made:
+
+## Updated Files
+
+### 1. `/home/runner/work/erk/erk/.claude/skills/fake-driven-testing/references/anti-patterns.md`
+
+**Class name updates:**
+- `PlanBackend` → `ManagedPrBackend`
+- `GitHubPlanBackend` → `GitHubManagedPrBackend`
+- `FakePlanBackend` → `FakeManagedPrBackend`
+- `PlannedPRBackend` → `GitHubManagedPrBackend` (in DI container example)
+
+**Method name updates:**
+- `.create_plan(...)` → `.create_managed_pr(...)`
+- `CreatePlanResult` → `CreateManagedPrResult`
+- `test_create_plan()` → `test_create_managed_pr()`
+
+**Variable name updates:**
+- `plans` → `managed_prs` (in fake backend constructor)
+
+### 2. `/home/runner/work/erk/erk/.claude/skills/fake-driven-testing/references/gateway-architecture.md`
+
+**Class name updates:**
+- `PlannedPRBackend` → `GitHubManagedPrBackend` (in table and examples)
+- `PlanBackend` → `ManagedPrBackend`
+- `FakePlanBackend` → `FakeManagedPrBackend`
+
+**Method name updates:**
+- `.create_plan(...)` → `.create_managed_pr(...)`
+- `CreatePlanResult` → `CreateManagedPrResult`
+- `test_create_plan()` → `test_create_managed_pr()`
+
+**Variable name updates:**
+- `plan_backend` → `managed_pr_backend`
+
+All changes have been completed successfully. The skill reference documents now use the correct terminology consistent with the semantic rename from "plan" to "managed PR" for the backend architecture.</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="10601" cache_read_input_tokens="26430" cache_creation="{'ephemeral_5m_input_tokens': 10601, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>
