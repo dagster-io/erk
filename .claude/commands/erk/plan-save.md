@@ -166,14 +166,14 @@ Display: `Updated objective #<objective-issue> roadmap: node <step_id> → PR #<
 
 **If JSON contains `skipped_duplicate: true`:**
 
-Display: `Plan already saved as PR #<pr_number> (duplicate skipped)`
+Display: `Planned PR #<pr_number> already saved (duplicate skipped)`
 
 Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options.
 
 **Otherwise, on success**, display:
 
 ```
-Plan "<title>" saved as draft PR #<pr_number>
+Planned PR "<title>" saved as #<pr_number>
 URL: <issue_url>
 ```
 

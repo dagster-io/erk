@@ -61,17 +61,17 @@ CHECKOUT_SLASH_COMMAND = "/erk:prepare"
 def format_plan_next_steps_plain(pr_number: int, *, url: str) -> str:
     """Format for CLI output (plain text)."""
     s = PlanNextSteps(pr_number=pr_number, url=url)
-    return f"""Implement PR #{pr_number}:
+    return f"""Implement planned PR #{pr_number}:
   In current wt:    {s.implement_current_wt}
     (dangerously):  {s.implement_current_wt_dangerous}
   In new wt:        {s.implement_new_wt}
     (dangerously):  {s.implement_new_wt_dangerous}
 
-Checkout PR #{pr_number}:
+Checkout planned PR #{pr_number}:
   In current wt:  {s.checkout}
   In new wt:      {s.checkout_new_slot}
 
-Dispatch PR #{pr_number}:
+Dispatch planned PR #{pr_number}:
   CLI command:    {s.dispatch}
   Slash command:  {s.dispatch_slash_command}"""
 
@@ -90,7 +90,7 @@ def format_next_steps_markdown(pr_number: int, *, url: str) -> str:
 
 ### Local Execution
 
-**Checkout PR branch:**
+**Checkout planned PR branch:**
 ```bash
 {s.checkout}
 ```"""

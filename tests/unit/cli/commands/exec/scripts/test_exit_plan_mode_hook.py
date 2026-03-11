@@ -1007,7 +1007,7 @@ class TestBuildStep2Message:
         message = build_step2_message(pr_number=42, url="")
         assert "erk pr dispatch 42" in message
         assert "/erk:pr-dispatch" in message
-        assert "Dispatch PR #42:" in message
+        assert "Dispatch planned PR #42:" in message
 
     def test_session_complete_no_exit_plan_mode(self) -> None:
         """Step 2 tells Claude not to call ExitPlanMode again."""

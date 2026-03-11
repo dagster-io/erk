@@ -31,8 +31,8 @@ def test_create_from_file(tmp_path) -> None:
         assert result.exit_code == 0, f"Command failed: {result.output}"
         assert "Created PR #999" in result.output
         assert "PR:" in result.output
-        assert "Checkout PR #999:" in result.output
-        assert "Dispatch PR #999:" in result.output
+        assert "Checkout planned PR #999:" in result.output
+        assert "Dispatch planned PR #999:" in result.output
 
         # Verify draft PR was created with correct title
         assert len(fake_github.created_prs) == 1

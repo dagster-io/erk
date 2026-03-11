@@ -89,7 +89,7 @@ class TestFormatPlanNextStepsPlain:
 
     def test_hierarchical_format(self) -> None:
         output = format_plan_next_steps_plain(42, url="https://github.com/org/repo/pull/42")
-        assert "Implement PR #42:" in output
+        assert "Implement planned PR #42:" in output
         assert "In current wt:" in output
         assert "In new wt:" in output
 
@@ -102,7 +102,7 @@ class TestFormatPlanNextStepsPlain:
         output = format_plan_next_steps_plain(42, url="https://github.com/org/repo/pull/42")
         assert "erk pr dispatch 42" in output
         assert "/erk:pr-dispatch" in output
-        assert "Dispatch PR #42:" in output
+        assert "Dispatch planned PR #42:" in output
 
     def test_contains_checkout_new_slot(self) -> None:
         output = format_plan_next_steps_plain(42, url="https://github.com/org/repo/pull/42")
