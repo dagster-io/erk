@@ -54,7 +54,7 @@ Rules triggered by matching actions in code.
 
 **creating a FakeLocalGitHub PR without checking auto-registration in \_pr_details** → Read [FakeLocalGitHub API Reference](fake-github-api-reference.md) first. FakeLocalGitHub.create_pr() auto-registers the PR in \_pr_details. Manually adding to \_pr_details after create_pr() causes duplicates.
 
-**creating a FakeManagedPrBackend for testing caller code** → Read [Backend Testing Composition](backend-testing-composition.md) first. Use real backend + fake gateway instead. FakeGitHub injected into ManagedGitHubPrBackend. Fake backends are only for validating ABC contract across providers.
+**creating a FakeManagedPrBackend for testing caller code** → Read [Backend Testing Composition](backend-testing-composition.md) first. Use real backend + fake gateway instead. FakeLocalGitHub injected into ManagedGitHubPrBackend. Fake backends are only for validating ABC contract across providers.
 
 **creating a fake gateway without constructor-injected error configuration** → Read [Gateway Fake Testing Exemplar](gateway-fake-testing-exemplar.md) first. Fakes must accept error variants at construction time (e.g., push_to_remote_error=PushError(...)) to enable failure injection in tests.
 

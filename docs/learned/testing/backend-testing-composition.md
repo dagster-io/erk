@@ -6,7 +6,7 @@ read_when:
   - "writing tests for exec scripts with backend operations"
 tripwires:
   - action: "creating a FakeManagedPrBackend for testing caller code"
-    warning: "Use real backend + fake gateway instead. FakeGitHub injected into ManagedGitHubPrBackend. Fake backends are only for validating ABC contract across providers."
+    warning: "Use real backend + fake gateway instead. FakeLocalGitHub injected into ManagedGitHubPrBackend. Fake backends are only for validating ABC contract across providers."
 last_audited: "2026-02-16 14:20 PT"
 audit_result: clean
 ---
