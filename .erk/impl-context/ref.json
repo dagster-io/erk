@@ -1,4 +1,10 @@
 {
   "provider": "github-draft-pr",
-  "title": "Fix: Pass claude CLI prompts via stdin to avoid ARG_MAX"
+  "plan_id": "9200",
+  "url": "https://github.com/dagster-io/erk/pull/9200",
+  "created_at": "2026-03-11T10:10:39.312297",
+  "synced_at": "2026-03-11T10:10:39.312297",
+  "labels": [],
+  "objective_id": null,
+  "node_ids": null
 }
