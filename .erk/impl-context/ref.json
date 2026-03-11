@@ -1,4 +1,10 @@
 {
   "provider": "github-draft-pr",
-  "title": "Use \"planned PR\" terminology in user-facing output"
+  "plan_id": "9209",
+  "url": "https://github.com/dagster-io/erk/pull/9209",
+  "created_at": "2026-03-11T13:26:37.518573",
+  "synced_at": "2026-03-11T13:26:37.518573",
+  "labels": [],
+  "objective_id": null,
+  "node_ids": null
 }
