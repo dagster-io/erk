@@ -15,6 +15,21 @@
       "raw_size_kb": 488,
       "xml_size_kb": 56,
       "git_branch": "master"
+    },
+    {
+      "session_id": "dab7aac8-df4b-4537-b356-1d753973ea85",
+      "stage": "impl",
+      "source": "local",
+      "uploaded_at": "2026-03-11T17:29:18.545453+00:00",
+      "files": [
+        "impl-dab7aac8-df4b-4537-b356-1d753973ea85-dab7aac8-df4b-4537-b356-1d753973ea85-part1.xml",
+        "impl-dab7aac8-df4b-4537-b356-1d753973ea85-dab7aac8-df4b-4537-b356-1d753973ea85-part2.xml"
+      ],
+      "user_turns": 2,
+      "duration_minutes": 2,
+      "raw_size_kb": 377,
+      "xml_size_kb": 41,
+      "git_branch": "plnd/planned-pr-terminology-03-11-1158"
     }
   ]
 }
