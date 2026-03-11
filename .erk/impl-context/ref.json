@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Learn: Fix: Pass claude CLI prompts via stdin to avoid ARG_MAX"
+}
