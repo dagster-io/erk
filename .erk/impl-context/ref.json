@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Plan: Push business logic from dispatch cli.py down to operation.py"
+}
