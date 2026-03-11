@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Switch all remote dispatch workflows to Sonnet 4.6"
+}
