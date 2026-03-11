@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "pr_number": 9199,
+  "sessions": [
+    {
+      "session_id": "7b750600-bdf9-428c-bde1-6eaaa1f67de9",
+      "stage": "impl",
+      "source": "local",
+      "uploaded_at": "2026-03-11T15:50:09.402753+00:00",
+      "files": [
+        "impl-7b750600-bdf9-428c-bde1-6eaaa1f67de9-7b750600-bdf9-428c-bde1-6eaaa1f67de9.xml"
+      ],
+      "user_turns": 2,
+      "duration_minutes": 2,
+      "raw_size_kb": 169,
+      "xml_size_kb": 43,
+      "git_branch": "plnd/add-objective-tripwire-03-11-0644"
+    }
+  ]
+}
