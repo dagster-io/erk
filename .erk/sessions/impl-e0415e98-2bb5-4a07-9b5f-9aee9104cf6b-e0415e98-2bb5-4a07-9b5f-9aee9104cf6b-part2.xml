@@ -14,4 +14,1031 @@
     <param name="description">Push planning session for cross-machine learning</param>
   </tool_use>
   <usage input_tokens="1" cache_creation_input_tokens="251" cache_read_input_tokens="81316" output_tokens="124" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 251}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01X8nHxRTZSe9XBLLvzc4M6m">
+{"uploaded": true, "pr_number": 8715}
+  </tool_result>
+  <assistant>Plan saved as draft PR #9202.
+URL: https://github.com/dagster-io/erk/pull/9202</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="149" cache_read_input_tokens="81567" cache_creation="{'ephemeral_5m_input_tokens': 149, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="ExitPlanMode" id="toolu_014VTSZa7tWDwPzgTMzBLKYY">
+    <param name="plan"># Plan: Per-User GitHub Attribution for erk-mcp
+
+## Context
+
+erk-mcp is deployed in Kubern...[truncated 13586 chars]...— grep `_run_erk_json` stdout and all ToolResult payloads; assert no token value surfaces
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="149" cache_read_input_tokens="81567" output_tokens="69" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 149}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_014VTSZa7tWDwPzgTMzBLKYY">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: ⚠️  Your erk (0.9.5) doesn't match required (0.9.11)
+   You must update or erk may not work properly.
+   Update: uv sync
+
+PR #9202 saved successfully.
+
+Display ALL of the following next-steps commands to the user as plain text.
+Show every line exactly as written — do NOT summarize, truncate, or omit any lines.
+(do NOT use AskUserQuestion — just display the text):
+
+Implement PR #9202:
+  In current wt:    erk br co --for-plan 9202 &amp;&amp; erk implement
+    (dangerously):  erk br co --for-plan 9202 &amp;&amp; erk implement -d
+  In new wt:        source "$(erk br co --new-slot --for-plan 9202 --script)" &amp;&amp; erk implement
+    (dangerously):  source "$(erk br co --new-slot --for-plan 9202 --script)" &amp;&amp; erk implement -d
+
+Checkout PR #9202:
+  In current wt:  erk br co --for-plan 9202
+  In new wt:      erk br co --new-slot --for-plan 9202
+
+Dispatch PR #9202:
+  CLI command:    erk pr dispatch 9202
+  Slash command:  /erk:pr-dispatch
+
+Session complete. Do NOT call ExitPlanMode again.
+
+  </tool_result>
+  <assistant>Plan saved as draft PR #9202. Here are your next steps:
+
+**Implement PR #9202:**
+```
+In current wt:    erk br co --for-plan 9202 &amp;&amp; erk implement
+  (dangerously):  erk br co --for-plan 9202 &amp;&amp; erk implement -d
+In new wt:        source "$(erk br co --new-slot --for-plan 9202 --script)" &amp;&amp; erk implement
+  (dangerously):  source "$(erk br co --new-slot --for-plan 9202 --script)" &amp;&amp; erk implement -d
+```
+
+**Checkout PR #9202:**
+```
+In current wt:  erk br co --for-plan 9202
+In new wt:      erk br co --new-slot --for-plan 9202
+```
+
+**Dispatch PR #9202:**
+```
+CLI command:    erk pr dispatch 9202
+Slash command:  /erk:pr-dispatch
+```</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="487" cache_read_input_tokens="81716" output_tokens="240" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 487}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <user>In @~/src/dagster-compass it looks like it's possible to configure the oauth for the MCP server. my coworker state, "its the oauth of the mcp server
+[11:45 AM]so if you can figure out how to redirect oauth to github" can you explore that topic?</user>
+  <usage input_tokens="3" cache_creation_input_tokens="83116" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 83116, 'ephemeral_1h_input_tokens': 0}" output_tokens="0" service_tier="standard" inference_geo="global" />
+  <tool_use name="Agent" id="toolu_015CSchLsg1dzGZNMD9iCe4B">
+    <param name="description">Explore MCP OAuth config in dagster-compass</param>
+    <param name="subagent_type">Explore</param>
+    <param name="prompt">Explore /Users/colton/src/dagster-compass to understand how MCP server OAuth is configured...[truncated 943 chars]...path or if it needs to be added
+- Key files and code paths relevant to OAuth configuration</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="83116" cache_read_input_tokens="0" output_tokens="444" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 83116}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_015CSchLsg1dzGZNMD9iCe4B">
+Perfect! I now have a comprehensive understanding. Let me create a detailed summary document:
+
+## Comprehensive Summary: MCP Server OAuth Configuration in Dagster Compass
+
+Based on my thorough exploration of the dagster-compass codebase, here's a detailed analysis of how MCP server OAuth is currently configured and whether it can be redirected to use GitHub OAuth for user identity.
+
+---
+
+### 1. **Current MCP OAuth Architecture**
+
+#### **Generic MCP OAuth Flow** (in `/packages/csbot/src/csbot/slackbot/webapp/mcp_oauth.py`)
+
+The MCP server supports a generic OAuth 2.0 authorization code flow with PKCE (Proof Key for Code Exchange):
+
+1. **Initiation** (`/auth/mcp-oauth/start`):
+   - MCP server URL and server ID are provided
+   - System discovers OAuth metadata from the MCP server:
+     - Fetches `/.well-known/oauth-protected-resource` to find authorization server URL
+     - Fetches `/.well-known/oauth-authorization-server` from the AS to get endpoint URLs
+   - Client is dynamically registered at the MCP server's registration endpoint
+   - PKCE challenge is generated
+   - User is redirected to the MCP server's authorization endpoint
+
+2. **Callback** (`/auth/mcp-oauth/callback`):
+   - Authorization code is exchanged for access token
+   - Tokens are stored in the `mcp_server_auth` table with encryption
+   - State validation and CSRF protection via cookies
+
+#### **OAuth Metadata Discovery**
+
+
+... [205 lines omitted] ...
+  </tool_result>
+  <usage input_tokens="3" cache_creation_input_tokens="4500" cache_read_input_tokens="83116" cache_creation="{'ephemeral_5m_input_tokens': 4500, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <assistant>This is a key insight - it changes the approach significantly. Let me explore the fastmcp OAuth server capabilities to understand if erk-mcp can implement the OAuth AS role and proxy to GitHub.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="4500" cache_read_input_tokens="83116" cache_creation="{'ephemeral_5m_input_tokens': 4500, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <tool_use name="Agent" id="toolu_012NMdPCS66Ys14yPNSZsyZr">
+    <param name="description">Explore fastmcp OAuth server and Compass MCP OAuth flow details</param>
+    <param name="subagent_type">Explore</param>
+    <param name="prompt">Explore two areas and report findings in detail:
+
+## Area 1: FastMCP OAuth Server capabili...[truncated 1370 chars]...MCP OAuth flow handle this transparently? What does erk-mcp need to implement on its side?</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="4500" cache_read_input_tokens="83116" output_tokens="1779" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 4500}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_012NMdPCS66Ys14yPNSZsyZr">
+Perfect! Now I have all the information I need. Let me compile a comprehensive report of my findings.
+
+## DETAILED EXPLORATION REPORT: FastMCP OAuth Server and Compass MCP OAuth Flow
+
+Based on my thorough analysis of the fastmcp package and Compass's existing implementation, here are the detailed findings:
+
+---
+
+### **AREA 1: FASTMCP OAUTH SERVER CAPABILITIES**
+
+#### 1. **OAuth Provider/Server Interfaces in `/fastmcp/server/auth/`**
+
+FastMCP has a sophisticated OAuth authentication architecture with multiple layers:
+
+**Core Hierarchy:**
+- `/fastmcp/server/auth/auth.py` contains the base class hierarchy:
+  - `AuthProvider` (line 207): Base class for all auth providers
+  - `TokenVerifier` (line 352): Token verification only (Resource Servers)
+  - `RemoteAuthProvider` (line 389): Resource servers with known authorization servers (RFC 9728)
+  - `MultiAuth` (line 472): Composes multiple auth providers (tries server first, then verifiers)
+  - `OAuthProvider` (line 583): **Full OAuth Authorization Server** with client registration, authorization flows, token issuance
+
+**Key OAuth Proxy Implementation:**
+- `/fastmcp/server/auth/oauth_proxy/proxy.py`: `OAuthProxy` class that acts as a **transparent proxy** to upstream OAuth servers
+  - Implements local Dynamic Client Registration (DCR)
+  - Forwards auth and token endpoints to upstream providers
+  - Validates tokens using upstream JWKS
+  - Handles PKCE end-to-end (client → proxy → upstream)
+  - Supports both fixed and dynamic client credentials
+
+
+... [338 lines omitted] ...
+
+    # Security error
+                logger.warning("Skipping MCP server with expiring/expired token")
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="5735" cache_read_input_tokens="87616" cache_creation="{'ephemeral_5m_input_tokens': 5735, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <assistant>This is a significant architectural insight. FastMCP's `OAuthProxy` class could let erk-mcp act as a standard OAuth Authorization Server that transparently redirects to GitHub — meaning Compass's existing MCP OAuth flow would work with zero changes on the Compass side. Let me check one critical detail before updating the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="5735" cache_read_input_tokens="87616" cache_creation="{'ephemeral_5m_input_tokens': 5735, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <tool_use name="Agent" id="toolu_01JpzuiQ3sNarrtvbSCcBFyg">
+    <param name="description">Check Compass per-user MCP token storage and OAuthProxy GitHub compatibility</param>
+    <param name="subagent_type">Explore</param>
+    <param name="prompt">Explore two focused questions in the dagster-compass and fastmcp codebases:
+
+## Question 1...[truncated 1419 chars]...which doesn't publish /.well-known/oauth-authorization-server) can be used as an upstream.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5735" cache_read_input_tokens="87616" output_tokens="2424" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 5735}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01JpzuiQ3sNarrtvbSCcBFyg">
+Perfect! Now I have all the information I need. Let me create a comprehensive report:
+
+## Summary of Findings
+
+### Question 1: Does Compass support per-USER MCP OAuth token storage?
+
+**Answer: NO - not currently, but the infrastructure exists to support it.**
+
+#### Evidence:
+
+1. **Database Schema Support**: The `mcp_server_auth` table in `/Users/colton/src/dagster-compass/packages/csbot/src/csbot/slackbot/storage/schema_changes.py` (lines 4129-4146) includes:
+   - `scope` column with CHECK constraint: `scope IN ('organization', 'user')`
+   - `org_user_id` column (INTEGER, nullable)
+   - Unique indexes for both scopes:
+     - `idx_mcp_server_auth_org`: enforces one org-scoped token per MCP server
+     - `idx_mcp_server_auth_user`: enforces one user-scoped token per (MCP server, org_user_id) pair
+   - **The schema SUPPORTS per-user storage** via the `org_user_id` and scope fields
+
+2. **Current Method Signature** - `/Users/colton/src/dagster-compass/packages/csbot/src/csbot/slackbot/storage/interface.py` (lines 1724-1744):
+   ```python
+   async def save_mcp_server_oauth(
+       self,
+       mcp_server_id: int,
+       organization_id: int,
+       access_token: str,
+       refresh_token: str | None,
+       token_expires_at: datetime | None,
+   ) -&gt; None:
+   ```
+   **NO user_id/org_user_id parameter is accepted.** This is a gap between schema and API.
+
+... [147 lines omitted] ...
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="5023" cache_read_input_tokens="93351" cache_creation="{'ephemeral_5m_input_tokens': 5023, 'ephemeral_1h_input_tokens': 0}" output_tokens="12" service_tier="standard" inference_geo="global" />
+  <assistant>Now I have the full picture. Let me ask the key architectural question before updating the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="5023" cache_read_input_tokens="93351" cache_creation="{'ephemeral_5m_input_tokens': 5023, 'ephemeral_1h_input_tokens': 0}" output_tokens="12" service_tier="standard" inference_geo="global" />
+  <tool_use name="AskUserQuestion" id="toolu_01YUJGmqMhNRfRN9jTHJy4ax">
+    <param name="questions">[{'question': 'The MCP OAuth approach would require changes in both repos. How do you want...[truncated 684 chars]...ers. The MCP OAuth approach is good info but the device flow plan is already written.'}]}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5023" cache_read_input_tokens="93351" output_tokens="995" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 5023}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01YUJGmqMhNRfRN9jTHJy4ax">
+User has answered your questions: "The MCP OAuth approach would require changes in both repos. How do you want to proceed?"="Provide a full plan on if there are changes required in both repos. But i was hoping that it wouldn't require that much. Let's iterate on the plan." user notes: Provide a full plan on if there are changes required in both repos. But i was hoping that it wouldn't require that much. Let's iterate on the plan.. You can now continue with the user's answers in mind.
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="99567" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 99567, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <assistant>Now I can see the minimum viable path. The cleanest approach:
+
+1. **erk-mcp**: Use FastMCP's built-in `OAuthProxy` with GitHub as upstream — replaces the custom device flow entirely
+2. **erk-mcp**: Return `github_auth_required` error with an `auth_url` pointing to erk-mcp's OAuthProxy authorize endpoint (includes Slack user ID in state)
+3. **Compass**: Just add `X-Slack-User-Id` header to MCP requests (1-line change) + handle the `github_auth_required` error by DMing the user the `auth_url`
+
+No Compass changes to token storage needed. Let me update the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="99567" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 99567, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01CojXr2vGLYMrqJoGvwrQLJ">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/colton/.claude/plans/flickering-jingling-hellman.md</param>
+    <param name="old_string"># Plan: Per-User GitHub Attribution for erk-mcp
+
+## Context
+
+erk-mcp is deployed in Kubern...[truncated 1137 chars]... stored grant, the subprocess inherits the process-level
+`GH_TOKEN` (bot token) unchanged.</param>
+    <param name="new_string"># Plan: Per-User GitHub Attribution for erk-mcp
+
+## Context
+
+erk-mcp is deployed in Kubern...[truncated 1685 chars]...er or no stored grant, subprocess inherits process-level
+`GH_TOKEN` (bot token) unchanged.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="99567" cache_read_input_tokens="0" output_tokens="4173" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 99567}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01CojXr2vGLYMrqJoGvwrQLJ">
+The file /Users/colton/.claude/plans/flickering-jingling-hellman.md has been updated successfully.
+  </tool_result>
+  <assistant>Now replace Phase 3 (device flow) and Phase 4 with the OAuthProxy approach:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="4178" cache_read_input_tokens="99567" cache_creation="{'ephemeral_5m_input_tokens': 4178, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01SpjcD8hArA93WS74RhCdn6">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/colton/.claude/plans/flickering-jingling-hellman.md</param>
+    <param name="old_string">## Phase 3: FastMCP Middleware
+
+### New: `packages/erk-mcp/src/erk_mcp/slack_user_middlewa...[truncated 4677 chars]...token refresh) |
+| `ERK_MCP_INTERNAL_SECRET` | Shared secret for `/auth/github/*` routes |</param>
+    <param name="new_string">## Phase 3: FastMCP Middleware
+
+### New: `packages/erk-mcp/src/erk_mcp/slack_user_middlewa...[truncated 5608 chars]...g Slack user IDs |
+| `ERK_MCP_INTERNAL_SECRET` | Shared secret for `/auth/github/revoke` |</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4178" cache_read_input_tokens="99567" output_tokens="3523" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 4178}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01SpjcD8hArA93WS74RhCdn6">
+The file /Users/colton/.claude/plans/flickering-jingling-hellman.md has been updated successfully.
+  </tool_result>
+  <assistant>Now update the file paths table and tests section to reflect the new approach:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3691" cache_read_input_tokens="103745" cache_creation="{'ephemeral_5m_input_tokens': 3691, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_0127NNybRj4Nz6pAo5DANZft">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/colton/.claude/plans/flickering-jingling-hellman.md</param>
+    <param name="old_string">## Modify: `packages/erk-mcp/src/erk_mcp/__main__.py`
+
+```python
+def main() -&gt; None:
+    a...[truncated 3649 chars]... — grep `_run_erk_json` stdout and all ToolResult payloads; assert no token value surfaces</param>
+    <param name="new_string">## Modify: `packages/erk-mcp/src/erk_mcp/__main__.py`
+
+```python
+def main() -&gt; None:
+    a...[truncated 4736 chars]... — grep `_run_erk_json` stdout and all ToolResult payloads; assert no token value surfaces</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3691" cache_read_input_tokens="103745" output_tokens="2996" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 3691}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0127NNybRj4Nz6pAo5DANZft">
+The file /Users/colton/.claude/plans/flickering-jingling-hellman.md has been updated successfully.
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_01P8xPqUvcyEP1Dv8AazGq6f">
+    <param name="allowedPrompts">[{'tool': 'Bash', 'prompt': 'run tests'}, {'tool': 'Bash', 'prompt': 'install dependencies'}]</param>
+    <param name="plan"># Plan: Per-User GitHub Attribution for erk-mcp
+
+## Context
+
+erk-mcp is deployed in Kubern...[truncated 16152 chars]...— grep `_run_erk_json` stdout and all ToolResult payloads; assert no token value surfaces
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3149" cache_read_input_tokens="107436" output_tokens="88" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 3149}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01P8xPqUvcyEP1Dv8AazGq6f">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: ⚠️  Your erk (0.9.5) doesn't match required (0.9.11)
+   You must update or erk may not work properly.
+   Update: uv sync
+
+DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/colton/.claude/plans/flickering-jingling-hellman.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Plan: Per-User GitHub Attribution for erk-mcp
+Current context: (wt:erk) (br:master) (plan:#8715)\n\nWhat would you like to do with this plan?"
+  header: "br:master"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create new branch and planned PR. Stays on current branch." - Create a new branch, save plan as draft PR.
+  2. "Implement without saving" - Implement directly on the current branch without saving a plan PR.
+  3. "View/Edit the Plan" - Open plan in editor to review or modify before deciding.
+
+⚠️  WARNING: Currently on 'master'. We strongly discourage implementing directly on the trunk branch. Consider saving the plan and implementing in a dedicated worktree instead.
+
+If user chooses 'Create new branch and planned PR':
+  1. Run /erk:plan-save
+  2. Call ExitPlanMode to end the planning session.
+
+If user chooses 'Implement without saving':
+  1. Create implement-now marker:
+     erk exec marker create --session-id e0415e98-2bb5-4a07-9b5f-9aee9104cf6b \
+
+... [14 lines omitted] ...
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="808" cache_read_input_tokens="110585" cache_creation="{'ephemeral_5m_input_tokens': 808, 'ephemeral_1h_input_tokens': 0}" output_tokens="9" service_tier="standard" inference_geo="global" />
+  <assistant>Here's the updated plan:
+
+---
+
+# Plan: Per-User GitHub Attribution for erk-mcp
+
+## Architecture Overview
+
+The key insight: **FastMCP has a built-in `OAuthProxy`** that makes erk-mcp a standard MCP OAuth Authorization Server with GitHub as the upstream identity provider. Compass's existing MCP OAuth flow works transparently — no Compass token storage changes needed. The only Compass change is adding `X-Slack-User-Id` to MCP request headers (1 line).
+
+```
+Slack bot → HTTP POST to /mcp (with X-Slack-User-Id: U123 header)
+  → SlackUserMiddleware
+      ├─ grant found → inject GH_TOKEN into subprocess env
+      └─ no grant → return {error_type: "github_auth_required", auth_url: "..."}
+
+User clicks auth_url (one-time):
+  → erk-mcp OAuthProxy /authorize (state contains Slack user ID)
+  → GitHub OAuth → user grants
+  → GitHub → erk-mcp /oauth/callback
+  → stores GitHub token in GrantStore keyed by Slack user ID
+```
+
+## Changes
+
+### erk-mcp (new files)
+- **`request_context.py`** — ContextVar for per-request GitHub token (propagates to threads via asyncio)
+- **`grant_store.py`** — `UserGrant` + `GrantStore` ABC + `JsonFileGrantStore` (atomic JSON) + `FakeGrantStore`
+- **`token_refresh.py`** — refresh GitHub token when within 5 minutes of expiry
+- **`slack_user_middleware.py`** — `SlackUserMiddleware`: reads `X-Slack-User-Id` header, looks up grant, sets ContextVar or returns `github_auth_required` with `auth_url`
+- **`github_oauth_proxy.py`** — `build_github_oauth_proxy()`: configures `OAuthProxy` with GitHub endpoints; handles Slack user ID threading through OAuth state parameter
+
+### erk-mcp (modified)
+- **`server.py`** — `_run_erk_json()` gains `env_override` param; `MachineCommandTool.run()` reads ContextVar to build `{**os.environ, "GH_TOKEN": user_token}`
+- **`__main__.py`** — wires middleware + OAuthProxy + revoke route for HTTP transport
+
+### dagster-compass (minimal)
+- **`anthropic_agent.py`** — add `X-Slack-User-Id` header to MCP requests (1 line)
+- Slack bot error handling — handle `github_auth_required` → DM user with `auth_url`
+
+### New K8s secrets
+`ERK_MCP_GRANT_STORE_PATH`, `ERK_MCP_GITHUB_CLIENT_ID`, `ERK_MCP_GITHUB_CLIENT_SECRET`, `ERK_MCP_BASE_URL`, `ERK_MCP_OAUTH_STATE_SECRET`, `ERK_MCP_INTERNAL_SECRET`
+
+---</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="808" cache_read_input_tokens="110585" cache_creation="{'ephemeral_5m_input_tokens': 808, 'ephemeral_1h_input_tokens': 0}" output_tokens="9" service_tier="standard" inference_geo="global" />
+  <tool_use name="AskUserQuestion" id="toolu_014BTLDYonc29SYXW7QHd9pg">
+    <param name="questions">[{'question': '📋 Plan: Per-User GitHub Attribution for erk-mcp\nCurrent context: (wt:erk) ...[truncated 387 chars]...t the Plan', 'description': 'Open plan in editor to review or modify before deciding.'}]}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="808" cache_read_input_tokens="110585" output_tokens="994" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 808}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_014BTLDYonc29SYXW7QHd9pg">
+User has answered your questions: "📋 Plan: Per-User GitHub Attribution for erk-mcp
+Current context: (wt:erk) (br:master) (plan:#8715)
+
+What would you like to do with this plan?"="View/Edit the Plan". You can now continue with the user's answers in mind.
+  </tool_result>
+  <assistant>Please open the plan in a separate terminal to review or edit it:
+
+```
+nvim /Users/colton/.claude/plans/flickering-jingling-hellman.md
+```
+
+Let me know when you're done and what you'd like to do next.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1084" cache_read_input_tokens="111393" output_tokens="61" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 1084}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <user>Can you explain to me what the user flow would look like through Slack end-to-end?</user>
+  <usage input_tokens="3" cache_creation_input_tokens="112717" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 112717, 'ephemeral_1h_input_tokens': 0}" output_tokens="0" service_tier="standard" inference_geo="global" />
+  <assistant>Here's the end-to-end user flow:
+
+---
+
+## First-time use (user hasn't connected GitHub)
+
+1. **Slack user triggers `one_shot`** — e.g., posts a message that causes the Compass bot to call erk-mcp's `one_shot` tool
+
+2. **Compass sends MCP request** with `X-Slack-User-Id: U123` header
+
+3. **erk-mcp middleware** sees `U123`, checks the GrantStore — no grant found
+
+4. **erk-mcp returns** `github_auth_required` error to Compass with an `auth_url`:
+   ```json
+   {
+     "error_type": "github_auth_required",
+     "auth_url": "https://erk-mcp.example.com/authorize?state=&lt;signed-state-with-U123&gt;&amp;..."
+   }
+   ```
+
+5. **Compass bot DMs the Slack user**: _"To submit plans as yourself, connect your GitHub account: [Connect GitHub](&lt;auth_url&gt;)"_
+
+6. **User clicks the link** → browser opens → GitHub OAuth consent screen: _"erk-mcp wants permission to act on your behalf"_ → user clicks **Authorize**
+
+7. **GitHub redirects back** to erk-mcp's `/oauth/callback`
+
+8. **erk-mcp** exchanges the code for the user's GitHub token, extracts the Slack user ID from the signed state, stores `U123 → github_token` in the GrantStore
+
+9. **Browser shows**: _"Connected! You can close this tab."_
+
+10. **User goes back to Slack** and re-triggers the action (or Compass auto-retries)
+
+---
+
+## Subsequent uses (user already connected)
+
+1. **Slack user triggers `one_shot`**
+
+2. **Compass sends MCP request** with `X-Slack-User-Id: U123`
+
+3. **erk-mcp middleware** sees `U123`, looks up the GrantStore → finds their GitHub token
+
+4. **erk-mcp runs** `erk json one-shot` with `GH_TOKEN=&lt;user's GitHub token&gt;` in the subprocess env
+
+5. **`one_shot`** creates the branch, commits, and opens the PR — all attributed to the user's GitHub identity
+
+6. **`submitted_by`** resolves to their GitHub username via `GET /user`
+
+7. **PR appears on GitHub** with the Slack user as the actor, not `elementl-devtools`
+
+---
+
+## Token expiry (background, invisible to user)
+
+- GitHub App user tokens expire every ~8 hours
+- On each request, `token_refresh.py` checks if the token expires within 5 minutes
+- If so, it refreshes silently using the refresh token — user never sees this
+- If the refresh token itself expires (6 months), the user gets the `github_auth_required` flow again</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="112717" cache_read_input_tokens="0" output_tokens="797" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 112717}" inference_geo="" iterations="[]" speed="standard" />
+  <user>i feel like you didn't pick up on the fact that we have user level oauth for mcp servers, is that true? it should be in ~/src/dagster-compass.</user>
+  <usage input_tokens="3" cache_creation_input_tokens="1088" cache_read_input_tokens="112717" cache_creation="{'ephemeral_5m_input_tokens': 1088, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <tool_use name="Agent" id="toolu_016krbmHYDHHrTEcnWRuovpB">
+    <param name="description">Deep dive on per-user MCP OAuth in Compass</param>
+    <param name="subagent_type">Explore</param>
+    <param name="prompt">Look very carefully at /Users/colton/src/dagster-compass for per-user MCP OAuth token stor...[truncated 1163 chars]...ery file and code path that handles per-user MCP tokens differently from org-level tokens.</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1088" cache_read_input_tokens="112717" output_tokens="576" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 1088}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_016krbmHYDHHrTEcnWRuovpB">
+Based on my thorough search, I can now provide you with a comprehensive report:
+
+## Per-User MCP OAuth Implementation Analysis
+
+I've found that **per-user MCP OAuth IS implemented at the SCHEMA level, but is NOT ACTIVELY USED in the current codebase**. Here's what I discovered:
+
+### 1. Database Schema (FULLY IMPLEMENTED)
+
+**File:** `/Users/colton/src/dagster-compass/packages/csbot/src/csbot/slackbot/storage/schema_changes.py` (lines 4115-4162)
+
+**Class:** `CreateMcpServerAuthTable`
+
+The `mcp_server_auth` table has:
+- `scope` column: `TEXT NOT NULL CHECK (scope IN ('organization', 'user'))`
+- `org_user_id` column: `INTEGER` (Foreign key to `org_users.id`)
+- **Constraint:** `(scope = 'organization' AND org_user_id IS NULL) OR (scope = 'user' AND org_user_id IS NOT NULL)`
+- **Two unique indexes:**
+  - `idx_mcp_server_auth_org`: For organization-scoped tokens `(mcp_server_id) WHERE scope = 'organization'`
+  - `idx_mcp_server_auth_user`: For user-scoped tokens `(mcp_server_id, org_user_id) WHERE scope = 'user'`
+
+### 2. Storage Interface (NOT YET EXTENDED)
+
+**File:** `/Users/colton/src/dagster-compass/packages/csbot/src/csbot/slackbot/storage/interface.py` (lines 1724-1744)
+
+The interface only defines:
+```python
+async def save_mcp_server_oauth(
+    self,
+    mcp_server_id: int,
+    organization_id: int,
+
+... [69 lines omitted] ...
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="1835" cache_read_input_tokens="113805" cache_creation="{'ephemeral_5m_input_tokens': 1835, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <assistant>You're right to push back. The schema fully supports per-user tokens (`scope='user'`, `org_user_id` FK, unique index per user+server). What's missing is the **application layer** — the methods to save/load user-scoped tokens aren't implemented yet.
+
+This actually enables a **cleaner approach** that eliminates the `X-Slack-User-Id` header entirely:
+
+- Each Slack user completes MCP OAuth with erk-mcp (one-time, via Compass's existing OAuth UI)
+- Compass stores erk-mcp's JWT token **per user** in `mcp_server_auth` with `scope='user'`
+- When Compass calls erk-mcp for user Alice, it sends **Alice's Bearer token** — not Bob's
+- erk-mcp validates the Bearer token → resolves to Alice's GitHub token → injects as `GH_TOKEN`
+- No custom headers needed. The token itself carries the identity.
+
+The Compass work needed to activate the schema:
+1. Add `save_mcp_server_oauth_for_user(org_user_id, ...)` to the storage interface + postgres impl
+2. Update `_load_mcp_servers()` to prefer user-scoped token when available
+3. Pass current user's `org_user_id` when initiating MCP OAuth and loading configs
+
+Do you want me to update the plan to use this approach (leveraging the existing schema instead of `X-Slack-User-Id` headers)?</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1835" cache_read_input_tokens="113805" cache_creation="{'ephemeral_5m_input_tokens': 1835, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <tool_use name="AskUserQuestion" id="toolu_019co5d7xpWgMeAnmkb1Qaf7">
+    <param name="questions">[{'question': 'Which approach should the plan use for user identity?', 'header': 'Identity...[truncated 449 chars]...ser ID in a separate grant store. Less Compass work but couples erk-mcp to Slack IDs.'}]}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1835" cache_read_input_tokens="113805" output_tokens="1461" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 1835}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_019co5d7xpWgMeAnmkb1Qaf7">
+User has answered your questions: "Which approach should the plan use for user identity?"="Per-user Bearer tokens (use existing schema)". You can now continue with the user's answers in mind.
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="1614" cache_read_input_tokens="115640" cache_creation="{'ephemeral_5m_input_tokens': 1614, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <assistant>Good. Now let me look at how the Compass agent gets created per-user to understand the token loading flow needed.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1614" cache_read_input_tokens="115640" cache_creation="{'ephemeral_5m_input_tokens': 1614, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <tool_use name="Agent" id="toolu_01V6UBdKC1PyHTFL4iRFFqNU">
+    <param name="description">Explore Compass agent creation and user context</param>
+    <param name="subagent_type">Explore</param>
+    <param name="prompt">In /Users/colton/src/dagster-compass, explore how the Anthropic agent is created per Slack...[truncated 1015 chars]...easily receive an org_user_id, and what the current path to trigger per-user MCP OAuth is.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1614" cache_read_input_tokens="115640" output_tokens="2023" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 1614}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01V6UBdKC1PyHTFL4iRFFqNU">
+Perfect! Now I have all the information I need. Let me compile my findings:
+
+## Report: User Context in Anthropic Agent and MCP OAuth Flow
+
+### 1. **AnthropicAgent Constructor and Instantiation**
+
+**File**: `/Users/colton/src/dagster-compass/packages/csbot/src/csbot/agents/anthropic/anthropic_agent.py`
+
+The `AnthropicAgent` constructor is minimal:
+```python
+def __init__(
+    self, anthropic_client: AnthropicClientProtocol, model: str = "claude-sonnet-4-20250514"
+):
+    self.client = anthropic_client
+    self._model = model
+```
+
+The agent is created via factory functions (`from_api_key`, `from_bedrock`) that only accept API credentials and model name. **No user ID or context is passed to the agent at creation time.**
+
+### 2. **Agent Creation Flow in Slack Context**
+
+**Files**: 
+- `/Users/colton/src/dagster-compass/packages/csbot/src/csbot/agents/factory.py`
+- `/Users/colton/src/dagster-compass/packages/csbot/src/csbot/slackbot/channel_bot/bot.py` (line 476)
+
+The bot creates the agent once at initialization from `AIConfig`:
+```python
+self.agent = create_agent_from_config(ai_config)  # Line 476
+```
+
+
+... [118 lines omitted] ...
+  </tool_result>
+  <usage input_tokens="3" cache_creation_input_tokens="4016" cache_read_input_tokens="117254" cache_creation="{'ephemeral_5m_input_tokens': 4016, 'ephemeral_1h_input_tokens': 0}" output_tokens="0" service_tier="standard" inference_geo="global" />
+  <assistant>Now I have the complete picture. Let me rewrite the plan with the accurate architecture.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="4016" cache_read_input_tokens="117254" cache_creation="{'ephemeral_5m_input_tokens': 4016, 'ephemeral_1h_input_tokens': 0}" output_tokens="0" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_017g23T84XupunjNipKscL9i">
+    <param name="file_path">/Users/colton/.claude/plans/flickering-jingling-hellman.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="4016" cache_read_input_tokens="117254" output_tokens="1513" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 4016}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_017g23T84XupunjNipKscL9i">
+     1→# Plan: Per-User GitHub Attribution for erk-mcp
+     2→
+     3→## Context
+     4→
+     5→erk-mcp is deployed in Kubernetes with a shared GitHub App installation token (`GH_TOKEN` env var). All
+     6→`one_shot` PRs are attributed to the app identity (`elementl-devtools`) rather than the human Slack user
+     7→who triggered the request. This plan wires in GitHub App user access tokens so PRs show the actual user.
+     8→
+     9→The core mechanism is simple: `GH_TOKEN` in the subprocess environment determines which GitHub identity
+    10→`erk json one-shot` uses. Injecting a per-user `GH_TOKEN` override into that subprocess env is sufficient —
+    11→no `ErkContext` changes needed.
+    12→
+    13→## Architecture Overview
+    14→
+    15→```
+    16→Slack bot → HTTP POST to /mcp (with X-Slack-User-Id: U123 header)
+    17→  → SlackUserMiddleware (FastMCP Middleware.on_call_tool)
+    18→      reads header, looks up UserGrant in GrantStore
+    19→      ├─ grant found → sets ContextVar[github_token]
+    20→      └─ no grant → returns {error_type: "github_auth_required", auth_url: "..."}
+    21→  → MachineCommandTool.run()
+    22→      reads ContextVar, builds env_override
+    23→  → subprocess.run(["erk", ...], env={**os.environ, "GH_TOKEN": user_token})
+    24→      → gh auth token → returns user_token
+    25→      → submitted_by = remote.get_authenticated_user() → GitHub user
+    26→```
+    27→
+    28→**Initial authorization** (one-time per user):
+    29→```
+    30→Slack user clicks auth_url from github_auth_required error
+
+... [364 lines omitted] ...
+
+    39→and handle `github_auth_required` errors by DMing the user the `auth_url`.
+   142→- Backed by `ERK_MCP_GRANT_STORE_PATH` env var (raise `RuntimeError` at startup if absent)
+   218→        # {"success": false, "error_type": "github_auth_required",
+   290→**On `github_auth_required` error**:
+   291→Compass Slack bot reads `error.auth_url` from the tool result JSON and DMs the user:
+   364→| Slack bot error handling | Modify | Handle `github_auth_required` error → DM user with `auth_url` |
+   381→4. **Middleware with unconnected user** — unit test: header present but no grant → assert `ToolResult` JSON has `error_type == "github_auth_required"` and a valid `auth_url`
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="8023" cache_read_input_tokens="121270" cache_creation="{'ephemeral_5m_input_tokens': 8023, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <assistant>Now I have a clear and accurate picture.</assistant>
+  <usage input_tokens="0" output_tokens="0" cache_creation_input_tokens="0" cache_read_input_tokens="0" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="None" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 0}" inference_geo="None" iterations="None" speed="None" />
+  <user>[Request interrupted by user]</user>
+  <user>I wanted to stop you to provide with the full context of my conversation with my peer on this implementation: Neil Fulwiler  [2:23 PM]
+i feel like it didn't pick up on the fact that we have user level oauth for mcp servers, or if it did, what did it say?
+[2:25 PM]seems like we can just split the MCP server endpoint with the Oauth endpoint (configure independently). then users oauth against github, we ship bearer token in call to erk mcp server, you take it and push it into GH token
+[2:25 PM]unless these aren't oauth tokens at all?
+[2:25 PM]no they are, plan has /oauth/callback
+colton  [2:26 PM]
+ah yes that sounds very reasonable
+[2:27 PM]when will we trigger or enforce them to go through the github oauth flow?
+Neil Fulwiler  [2:27 PM]
+wehenver oauth token expires
+[2:27 PM](the first time, its when agent decides it needs to use the mcp server, and doesn't have auth, so it prompts you)
+colton  [2:28 PM]
+will we need a setting in the mcp server config like, "require github oauth" or something?
+[2:28 PM]sorry perhaps that already happens and i just missed that
+Neil Fulwiler  [2:28 PM]
+i think we just split the configuration, like curerntly it assumes the oauth endpoint is the same as the MCP server url
+colton  [2:28 PM]
+i see.
+Neil Fulwiler  [2:29 PM]
+or sorry it actually truncates, so if its buildkite.com/mcp it oauths against buildkite.com
+[2:29 PM]so just radio button defaulted to on with "use billing address for shipping address"
+colton  [2:29 PM]
+that sounds perfect, good call.
+[2:30 PM]i'll paste this feedback to my session and see what results :smile:
+Neil Fulwiler  [2:30 PM]
+ask it if it didn't find mcp user oauth and what we should add to docs</user>
+  <usage input_tokens="3" cache_creation_input_tokens="684" cache_read_input_tokens="129293" cache_creation="{'ephemeral_5m_input_tokens': 684, 'ephemeral_1h_input_tokens': 0}" output_tokens="0" service_tier="standard" inference_geo="global" />
+  <assistant>This is very clarifying. Neil's key points:
+
+1. **Compass already has the OAuth plumbing** — it just needs the config to allow a separate OAuth server URL (currently it truncates the MCP URL to its origin as the auth server)
+2. **The flow**: users OAuth against GitHub → Bearer token ships in the MCP call → erk-mcp extracts it as `GH_TOKEN`
+3. **When**: first time agent needs the server with no auth → prompts user; on expiry → re-prompts
+
+And his question: **did I find the user-level MCP OAuth and what should be added to docs?**
+
+**What I found**: The `mcp_server_auth` table has `scope='user'` and `org_user_id` columns with proper unique indexes — the schema is fully designed for per-user tokens. But the application code never uses it — `save_mcp_server_oauth` hardcodes `scope='organization'`, and `_load_mcp_servers` only joins on `scope='organization'`. The agent is also created once per org, not per user, so user context isn't available at token-load time.
+
+**What's missing from docs** (and what needs to be built):
+- How to activate the dormant `scope='user'` path
+- Pattern for loading MCP tokens per-request with `org_user_id` context
+- How the agent surfaces "no auth / expired" to the Slack user instead of silently skipping the server
+
+Let me now rewrite the plan with accurate Compass changes:</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="684" cache_read_input_tokens="129293" cache_creation="{'ephemeral_5m_input_tokens': 684, 'ephemeral_1h_input_tokens': 0}" output_tokens="0" service_tier="standard" inference_geo="global" />
+  <tool_use name="Write" id="toolu_015NaSexMK5LyuuL9HXzGLoz">
+    <param name="file_path">/Users/colton/.claude/plans/flickering-jingling-hellman.md</param>
+    <param name="content"># Plan: Per-User GitHub Attribution for erk-mcp
+
+## Context
+
+erk-mcp is deployed in Kubern...[truncated 14004 chars]...10. **Token security** — no token values in `_run_erk_json` stdout or ToolResult payloads
+</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="684" cache_read_input_tokens="129293" output_tokens="7520" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 684}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_015NaSexMK5LyuuL9HXzGLoz">
+The file /Users/colton/.claude/plans/flickering-jingling-hellman.md has been updated successfully.
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_01Ne3tdXNSo7H3VZTSnMRuVj">
+    <param name="plan"># Plan: Per-User GitHub Attribution for erk-mcp
+
+## Context
+
+erk-mcp is deployed in Kubern...[truncated 14004 chars]...10. **Token security** — no token values in `_run_erk_json` stdout or ToolResult payloads
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="8606" cache_read_input_tokens="129977" output_tokens="38" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 8606}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Ne3tdXNSo7H3VZTSnMRuVj">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: ⚠️  Your erk (0.9.5) doesn't match required (0.9.11)
+   You must update or erk may not work properly.
+   Update: uv sync
+
+DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/colton/.claude/plans/flickering-jingling-hellman.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Plan: Per-User GitHub Attribution for erk-mcp
+Current context: (wt:erk) (br:master) (plan:#8715)\n\nWhat would you like to do with this plan?"
+  header: "br:master"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create new branch and planned PR. Stays on current branch." - Create a new branch, save plan as draft PR.
+  2. "Implement without saving" - Implement directly on the current branch without saving a plan PR.
+  3. "View/Edit the Plan" - Open plan in editor to review or modify before deciding.
+
+⚠️  WARNING: Currently on 'master'. We strongly discourage implementing directly on the trunk branch. Consider saving the plan and implementing in a dedicated worktree instead.
+
+If user chooses 'Create new branch and planned PR':
+  1. Run /erk:plan-save
+  2. Call ExitPlanMode to end the planning session.
+
+If user chooses 'Implement without saving':
+  1. Create implement-now marker:
+     erk exec marker create --session-id e0415e98-2bb5-4a07-9b5f-9aee9104cf6b \
+
+... [14 lines omitted] ...
+  </tool_result>
+  <assistant>Here's the updated plan, now reflecting the correct architecture:
+
+---
+
+**What changed**: Dropped the `X-Slack-User-Id` header approach. The Bearer token itself carries user identity via the JWT `sub` claim — `GitHubTokenMiddleware` resolves it to the GitHub token. The Compass changes activate the dormant `scope='user'` schema path. No OAuth server URL split needed since erk-mcp hosts its own OAuthProxy at the same origin.
+
+**On Neil's doc question**: The `scope='user'` and `org_user_id` columns in `mcp_server_auth` are fully designed but completely unused in application code. There's no documentation explaining the intended per-user pattern. The gap to document: when/how to store user-scoped tokens, how `_load_mcp_servers` should be extended, and the auth-required prompting pattern for individual users.
+
+---</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="758" cache_read_input_tokens="138583" cache_creation="{'ephemeral_5m_input_tokens': 758, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="AskUserQuestion" id="toolu_01UDWSdLZjRSLMqCWLtcppCL">
+    <param name="questions">[{'question': '📋 Plan: Per-User GitHub Attribution for erk-mcp\nCurrent context: (wt:erk) ...[truncated 387 chars]...t the Plan', 'description': 'Open plan in editor to review or modify before deciding.'}]}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="758" cache_read_input_tokens="138583" output_tokens="428" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 758}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01UDWSdLZjRSLMqCWLtcppCL">
+User has answered your questions: "📋 Plan: Per-User GitHub Attribution for erk-mcp
+Current context: (wt:erk) (br:master) (plan:#8715)
+
+What would you like to do with this plan?"="View/Edit the Plan". You can now continue with the user's answers in mind.
+  </tool_result>
+  <assistant>Please open the plan in a separate terminal to review or edit:
+
+```
+nvim /Users/colton/.claude/plans/flickering-jingling-hellman.md
+```
+
+Let me know when you're done.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="625" cache_read_input_tokens="139341" output_tokens="52" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 625}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <user>Great, let's proceed with the `dagster-compass` Changes only for now.</user>
+  <usage input_tokens="3" cache_creation_input_tokens="228" cache_read_input_tokens="139966" cache_creation="{'ephemeral_5m_input_tokens': 228, 'ephemeral_1h_input_tokens': 0}" output_tokens="0" service_tier="standard" inference_geo="global" />
+  <tool_use name="ExitPlanMode" id="toolu_01VxVtCDvxX6HgerKGatpKTH">
+    <param name="plan"># Plan: Per-User GitHub Attribution for erk-mcp
+
+## Context
+
+erk-mcp is deployed in Kubern...[truncated 14004 chars]...10. **Token security** — no token values in `_run_erk_json` stdout or ToolResult payloads
+</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="228" cache_read_input_tokens="139966" output_tokens="599" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 228}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01VxVtCDvxX6HgerKGatpKTH">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: ⚠️  Your erk (0.9.5) doesn't match required (0.9.11)
+   You must update or erk may not work properly.
+   Update: uv sync
+
+DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/colton/.claude/plans/flickering-jingling-hellman.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Plan: Per-User GitHub Attribution for erk-mcp
+Current context: (wt:erk) (br:master) (plan:#8715)\n\nWhat would you like to do with this plan?"
+  header: "br:master"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create new branch and planned PR. Stays on current branch." - Create a new branch, save plan as draft PR.
+  2. "Implement without saving" - Implement directly on the current branch without saving a plan PR.
+  3. "View/Edit the Plan" - Open plan in editor to review or modify before deciding.
+
+⚠️  WARNING: Currently on 'master'. We strongly discourage implementing directly on the trunk branch. Consider saving the plan and implementing in a dedicated worktree instead.
+
+If user chooses 'Create new branch and planned PR':
+  1. Run /erk:plan-save
+  2. Call ExitPlanMode to end the planning session.
+
+If user chooses 'Implement without saving':
+  1. Create implement-now marker:
+     erk exec marker create --session-id e0415e98-2bb5-4a07-9b5f-9aee9104cf6b \
+
+... [14 lines omitted] ...
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="1408" cache_read_input_tokens="140194" cache_creation="{'ephemeral_5m_input_tokens': 1408, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <assistant>The updated plan needs to be saved (PR #9202 has the old version). Let me save it first:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1408" cache_read_input_tokens="140194" cache_creation="{'ephemeral_5m_input_tokens': 1408, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <tool_use name="Skill" id="toolu_01BNTaPjj4EtPdM3XdCC4pWm">
+    <param name="skill">erk:plan-save</param>
+    <param name="args">--current-branch</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1408" cache_read_input_tokens="140194" output_tokens="343" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 1408}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01BNTaPjj4EtPdM3XdCC4pWm">
+Launching skill: erk:plan-save
+  </tool_result>
+  <user># /erk:plan-save
+
+Save the current session's plan to GitHub with session context.
+
+## Usage
+
+```bash
+/erk:plan-save                           # Standalone plan
+/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+/erk:plan-save --objective=123           # Explicit objective link (overrides marker)
+/erk:plan-save --current-branch          # Use current branch instead of creating new plnd/ branch
+```
+
+Objective linking: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command. Use `--objective=&lt;number&gt;` to override the marker or provide the link when no marker exists (e.g., during replan).
+
+## Plan Storage
+
+The plan is saved using the configured backend:
+
+- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+  The JSON output contract includes `pr_number`, `pr_url`, `title`, `branch_name`, `plan_backend`.
+
+## Agent Instructions
+
+### Step 1: Parse Arguments
+
+Check `--current-branch` for the `--plan-type`, `--objective`, and `--current-branch` flags:
+
+```
+If --current-branch contains "--plan-type=&lt;type&gt;":
+  - Extract the type (standard or learn)
+  - Store as PLAN_TYPE variable
+  - Set PLAN_TYPE_FLAG to "--plan-type=&lt;type&gt;"
+Else:
+  - Set PLAN_TYPE_FLAG to empty string
+
+If --current-branch contains "--objective=&lt;number&gt;":
+  - Extract the number
+  - Set OBJECTIVE_FLAG to "--objective=&lt;number&gt;"
+Else:
+  - Set OBJECTIVE_FLAG to empty string
+
+If --current-branch contains "--current-branch":
+  - Set CURRENT_BRANCH_FLAG to "--current-branch"
+Else:
+  - Set CURRENT_BRANCH_FLAG to empty string
+```
+
+### Step 2: Generate Branch Slug
+
+**Skip this step if `--current-branch` was passed.** The current branch is used directly.
+
+Before saving, generate a branch slug from the plan title. Read the plan title from the plan file you wrote in plan mode (the first `# ` heading).
+
+Generate a branch slug from the title:
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+
+Store the result as `BRANCH_SLUG`.
+
+### Step 3: Generate Plan Summary
+
+Write a concise 2-3 sentence summary of the plan. This summary will be visible
+at the top of the PR description (above the collapsed full plan).
+
+Guidelines:
+
+- Focus on WHAT the plan does and WHY
+- Do not repeat the title
+- Plain text, no markdown headers or formatting
+- Avoid special shell characters (backticks, dollar signs)
+- Store as PLAN_SUMMARY
+
+### Step 4: Run Save Command
+
+Run this command with the session ID, summary, and optional flags.
+
+If CURRENT_BRANCH_FLAG is set, pass `--current-branch` (no branch slug needed):
+
+```bash
+erk exec plan-save --format json --session-id="e0415e98-2bb5-4a07-9b5f-9aee9104cf6b" --current-branch --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Otherwise, pass the branch slug:
+
+```bash
+erk exec plan-save --format json --session-id="e0415e98-2bb5-4a07-9b5f-9aee9104cf6b" --branch-slug="${BRANCH_SLUG}" --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Parse the JSON output to extract `pr_number` for verification in Step 5.
+
+If the command fails, display the error and stop.
+
+### Step 5: Verify Objective Link (if applicable)
+
+**Only run this step if `objective_issue` is non-null in the JSON output from Step 4.**
+
+Verify the objective link was saved correctly:
+
+```bash
+erk exec get-plan-metadata &lt;pr_number&gt; objective_issue
+```
+
+Parse the JSON response:
+
+- If `success: true` and `value` matches the expected objective number: verification passed
+- If `success: false` or value doesn't match: verification failed
+
+**On verification success:**
+
+Display: `Verified objective link: #&lt;objective-number&gt;`
+
+**On verification failure:**
+
+Display error and remediation steps:
+
+```
+ERROR: Objective link verification failed
+Expected objective: #&lt;expected&gt;
+Actual: &lt;actual-or-null&gt;
+
+The plan was saved but without the correct objective link.
+Fix: Close draft PR #&lt;pr_number&gt;,
+ensure the objective-context marker exists, and re-run /erk:plan-save.
+```
+
+Exit without creating the plan-saved marker. The session continues so the user can retry.
+
+### Step 6: Update Objective Roadmap (if objective linked)
+
+**Only run this step if `objective_issue` was non-null in JSON output and verification passed.**
+
+Update the objective's roadmap table to show that a plan has been created for this node:
+
+1. **Read the roadmap node marker** to get the node ID:
+
+```bash
+step_id=$(erk exec marker read --session-id "e0415e98-2bb5-4a07-9b5f-9aee9104cf6b" roadmap-step)
+```
+
+If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-plan`.
+
+2. **Update the roadmap table** using the dedicated command:
+
+```bash
+erk exec update-objective-node &lt;objective-issue&gt; --node "$step_id" --pr "#&lt;pr_number&gt;" --status in_progress
+```
+
+This atomically fetches the objective body, finds the matching node row, sets the Status cell to `in-progress`, and writes the updated body back.
+
+3. **Report the update:**
+
+Display: `Updated objective #&lt;objective-issue&gt; roadmap: node &lt;step_id&gt; → PR #&lt;pr_number&gt;`
+
+**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+
+### Step 7: Display Results
+
+**If JSON contains `skipped_duplicate: true`:**
+
+Display: `Plan already saved as PR #&lt;pr_number&gt; (duplicate skipped)`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options.
+
+**Otherwise, on success**, display:
+
+```
+Plan "&lt;title&gt;" saved as draft PR #&lt;pr_number&gt;
+URL: &lt;issue_url&gt;
+```
+
+If objective was verified, also display: `Verified objective link: #&lt;objective-number&gt;`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options
+(implement in current worktree, implement in new worktree, or done).
+
+On failure, display the error message and suggest:
+
+- Checking that a plan exists (enter Plan mode and exit it first)
+- Verifying GitHub CLI authentication (`gh auth status`)
+- Checking network connectivity
+
+### Step 5: Push Planning Session
+
+After saving successfully, push the planning session for cross-machine learning.
+This captures the in-progress session state so it's available even if implementation
+happens on a different machine.
+
+Run `erk exec capture-session-info` to get the session file path, then push it:
+
+```bash
+erk exec upload-impl-session --session-id "e0415e98-2bb5-4a07-9b5f-9aee9104cf6b" 2&gt;/dev/null || true
+```
+
+If the plan was saved successfully and `pr_number` is known, use push-session directly
+for better stage tracking:
+
+```bash
+erk exec push-session \
+    --session-file "&lt;session_file_path&gt;" \
+    --session-id "e0415e98-2bb5-4a07-9b5f-9aee9104cf6b" \
+    --stage planning \
+    --source local \
+    --pr-number &lt;pr_number&gt; \
+    2&gt;/dev/null || true
+```
+
+Where `&lt;session_file_path&gt;` is obtained from `erk exec capture-session-info` output
+and `&lt;pr_number&gt;` is from Step 2's JSON output.
+
+**Note:** This is non-critical. If it fails, the plan was still saved successfully.
+The `2&gt;/dev/null || true` ensures graceful degradation.
+
+## Session Tracking
+
+After successfully saving a plan, the plan number is stored in a marker file that enables automatic plan updates in the same session.
+
+**To read the saved plan number:**
+
+```bash
+erk exec marker read --session-id "e0415e98-2bb5-4a07-9b5f-9aee9104cf6b" plan-saved-issue
+```
+
+This returns the plan number (exit code 0) or exits with code 1 if no plan was saved in this session.
+</user>
+  <usage input_tokens="2" cache_creation_input_tokens="2599" cache_read_input_tokens="141602" cache_creation="{'ephemeral_5m_input_tokens': 2599, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
 </session>
