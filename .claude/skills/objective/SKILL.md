@@ -47,6 +47,14 @@ capture lessons learned along the way.
 11. **Context over code** - Provide references to patterns, not prescriptive implementations
 12. **Session handoff ready** - Body should be self-contained for any session to pick up and implement
 
+## CLI Architecture: Read vs Write
+
+> **`erk objective` = read-only** (check, view, list, plan, close)
+> **`erk exec` = mutations** (add-objective-node, update-objective-node, objective-render-roadmap, etc.)
+>
+> Never try `erk objective add-node` or `erk objective update-node` — these don't exist.
+> All roadmap mutations go through `erk exec` commands.
+
 ## Quick Reference
 
 ### Creating an Objective

@@ -82,6 +82,8 @@ Rules triggered by matching actions in code.
 
 **treating status as a single-source value** → Read [Roadmap Status System](roadmap-status-system.md) first. Status resolution uses a two-tier system: explicit values first, then PR-based inference. Always check both the Status and PR columns.
 
+**trying to mutate an objective via `erk objective` subcommands (add-node, update-node, etc.)** → Read [Objective Lifecycle](objective-lifecycle.md) first. `erk objective` is read-only (check, view, list, plan, close). All roadmap mutations use `erk exec` commands: `erk exec add-objective-node`, `erk exec update-objective-node`. The `--phase` flag auto-assigns sequential node IDs within a phase (no `--id` flag exists).
+
 **updating objective from multiple concurrent plan completions** → Read [Objective Lifecycle](objective-lifecycle.md) first. When multiple nodes in an objective complete simultaneously, concurrent updates can race. Check objective state before updating to avoid overwriting recent changes.
 
 **updating roadmap step in only one location (frontmatter or table)** → Read [Objective Lifecycle](objective-lifecycle.md) first. Must update both frontmatter AND markdown table during the dual-write migration period. Use update-objective-node which handles both atomically.
