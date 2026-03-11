@@ -702,4 +702,105 @@ Todos have been modified successfully. Ensure that you continue to use the todo 
   "pr_number": 9209
 }
   </tool_result>
+  <tool_result tool="toolu_01Hb22H5dP1EUt8uL6YXkyvo">
+{"uploaded": true, "pr_number": 9209}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01RirKQrASqeNafx8atPWd9T">
+    <param name="command">erk exec cleanup-impl-context</param>
+    <param name="description">Clean up impl context directory</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="326" cache_read_input_tokens="66102" cache_creation="{'ephemeral_5m_input_tokens': 326, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01RirKQrASqeNafx8atPWd9T">
+{"cleaned": false, "reason": "not_tracked"}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01TQGi4eaZdZrkjT527GEqqh">
+    <param name="command">erk pr submit</param>
+    <param name="description">Submit PR via erk</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="105" cache_read_input_tokens="66428" cache_creation="{'ephemeral_5m_input_tokens': 105, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01TQGi4eaZdZrkjT527GEqqh">
+🚀 Submitting PR...
+
+   Resolving branch and plan context...
+   Committing uncommitted changes...
+   Checking for existing PR...
+Phase 1: Creating or Updating PR
+   PR #9209 found (already exists)
+
+Phase 2: Getting diff and plan context
+   Incorporating plan #9209
+
+
+Phase 3: Generating PR description
+   Reading diff file...
+   Diff loaded (4,631 chars)
+   Analyzing changes with Claude...
+   Still waiting... (2s)
+   Still waiting... (4s)
+   Still waiting... (6s)
+   PR description generated
+
+Phase 4: Graphite enhancement
+
+Phase 5: Updating PR metadata
+   Publishing draft PR...
+   PR metadata updated
+
+✅ PR submitted
+
+  Action:      Updated PR #9209
+
+... [4 lines omitted] ...
+  </tool_result>
+  <tool_use name="Bash" id="toolu_012EV2PUvFeKV7wRhJtSJhZ1">
+    <param name="command">erk exec impl-signal submitted 2&gt;/dev/null || true</param>
+    <param name="description">Signal PR submitted</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="390" cache_read_input_tokens="66533" cache_creation="{'ephemeral_5m_input_tokens': 390, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01HR6XEVTWo6v8c8djX99xFe">
+    <param name="command">erk pr check --stage=impl 2&gt;/dev/null || true</param>
+    <param name="description">Validate PR completion</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="390" cache_read_input_tokens="66533" cache_creation="{'ephemeral_5m_input_tokens': 390, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_012EV2PUvFeKV7wRhJtSJhZ1">
+{
+  "success": true,
+  "event": "submitted",
+  "pr_number": 9209
+}
+  </tool_result>
+  <tool_result tool="toolu_01HR6XEVTWo6v8c8djX99xFe">
+
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01BrGQypN3hmaR7wjsmFgZKU">
+    <param name="todos">[{'content': "Update next_steps.py with 'planned PR' terminology", 'status': 'completed', ...[truncated 458 chars]...ication'}, {'content': 'Submit PR', 'status': 'completed', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="427" cache_read_input_tokens="66923" cache_creation="{'ephemeral_5m_input_tokens': 427, 'ephemeral_1h_input_tokens': 0}" output_tokens="225" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01BrGQypN3hmaR7wjsmFgZKU">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Plan execution complete. Here's a summary of the changes:
+
+**PR #9209** - Use "planned PR" terminology in user-facing output
+
+### Changes Made
+
+1. **`packages/erk-shared/src/erk_shared/output/next_steps.py`** - Updated 4 section headers:
+   - `Implement PR #` → `Implement planned PR #`
+   - `Checkout PR #` → `Checkout planned PR #`
+   - `Dispatch PR #` → `Dispatch planned PR #`
+   - `**Checkout PR branch:**` → `**Checkout planned PR branch:**`
+
+2. **`.claude/commands/erk/plan-save.md`** - Updated 2 display templates:
+   - `Plan already saved as PR #&lt;pr_number&gt; (duplicate skipped)` → `Planned PR #&lt;pr_number&gt; already saved (duplicate skipped)`
+   - `Plan "&lt;title&gt;" saved as draft PR #&lt;pr_number&gt;` → `Planned PR "&lt;title&gt;" saved as #&lt;pr_number&gt;`
+
+3. **Test files** - Updated 5 assertions across 3 test files to match the new terminology:
+   - `tests/unit/shared/test_next_steps.py` (2 assertions)
+   - `tests/commands/pr/test_create.py` (2 assertions)
+   - `tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py` (1 assertion)
+
+All 119 affected tests pass. PR submitted: https://github.com/dagster-io/erk/pull/9209</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="267" cache_read_input_tokens="67350" cache_creation="{'ephemeral_5m_input_tokens': 267, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
 </session>
