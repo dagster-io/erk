@@ -15,6 +15,21 @@
       "raw_size_kb": 384,
       "xml_size_kb": 44,
       "git_branch": "master"
+    },
+    {
+      "session_id": "d014e0c0-002d-4d76-ac5c-c4f9e29c7668",
+      "stage": "impl",
+      "source": "local",
+      "uploaded_at": "2026-03-11T11:55:31.902046+00:00",
+      "files": [
+        "impl-d014e0c0-002d-4d76-ac5c-c4f9e29c7668-d014e0c0-002d-4d76-ac5c-c4f9e29c7668-part1.xml",
+        "impl-d014e0c0-002d-4d76-ac5c-c4f9e29c7668-d014e0c0-002d-4d76-ac5c-c4f9e29c7668-part2.xml"
+      ],
+      "user_turns": 3,
+      "duration_minutes": 2,
+      "raw_size_kb": 504,
+      "xml_size_kb": 77,
+      "git_branch": "plnd/switch-dispatch-to-sonnet-03-11-1151"
     }
   ]
 }
