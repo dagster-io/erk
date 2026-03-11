@@ -1,0 +1,282 @@
+<session>
+  <meta branch="plnd/show-planning-run-id-03-10-1209" />
+  <meta model="claude-opus-4-6" />
+  <tool_result tool="toolu_01PdLQ95nRAA4kkU9ZmhD5M9">
+User has answered your questions: "📋 Plan: Deterministic planning run ID from structured metadata
+Current context: (wt:erk-slot-42) (br:plnd/show-planning-run-id-03-10-1209) (pr:#9175)
+
+What would you like to do with this plan?"="Create new branch and planned PR". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="Skill" id="toolu_01MTosKannwdUwpwuAtTLJfu">
+    <param name="skill">erk:plan-save</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="350" cache_read_input_tokens="75853" output_tokens="57" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 350, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01MTosKannwdUwpwuAtTLJfu">
+Launching skill: erk:plan-save
+  </tool_result>
+  <user># /erk:plan-save
+
+Save the current session's plan to GitHub with session context.
+
+## Usage
+
+```bash
+/erk:plan-save                           # Standalone plan
+/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+/erk:plan-save --objective=123           # Explicit objective link (overrides marker)
+/erk:plan-save --current-branch          # Use current branch instead of creating new plnd/ branch
+```
+
+Objective linking: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command. Use `--objective=&lt;number&gt;` to override the marker or provide the link when no marker exists (e.g., during replan).
+
+## Plan Storage
+
+The plan is saved using the configured backend:
+
+- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+  The JSON output contract includes `pr_number`, `pr_url`, `title`, `branch_name`, `plan_backend`.
+
+## Agent Instructions
+
+### Step 1: Parse Arguments
+
+Check `` for the `--plan-type`, `--objective`, and `--current-branch` flags:
+
+```
+If  contains "--plan-type=&lt;type&gt;":
+  - Extract the type (standard or learn)
+  - Store as PLAN_TYPE variable
+  - Set PLAN_TYPE_FLAG to "--plan-type=&lt;type&gt;"
+Else:
+  - Set PLAN_TYPE_FLAG to empty string
+
+If  contains "--objective=&lt;number&gt;":
+  - Extract the number
+  - Set OBJECTIVE_FLAG to "--objective=&lt;number&gt;"
+Else:
+  - Set OBJECTIVE_FLAG to empty string
+
+If  contains "--current-branch":
+  - Set CURRENT_BRANCH_FLAG to "--current-branch"
+Else:
+  - Set CURRENT_BRANCH_FLAG to empty string
+```
+
+### Step 2: Generate Branch Slug
+
+**Skip this step if `--current-branch` was passed.** The current branch is used directly.
+
+Before saving, generate a branch slug from the plan title. Read the plan title from the plan file you wrote in plan mode (the first `# ` heading).
+
+Generate a branch slug from the title:
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+
+Store the result as `BRANCH_SLUG`.
+
+### Step 3: Generate Plan Summary
+
+Write a concise 2-3 sentence summary of the plan. This summary will be visible
+at the top of the PR description (above the collapsed full plan).
+
+Guidelines:
+
+- Focus on WHAT the plan does and WHY
+- Do not repeat the title
+- Plain text, no markdown headers or formatting
+- Avoid special shell characters (backticks, dollar signs)
+- Store as PLAN_SUMMARY
+
+### Step 4: Run Save Command
+
+Run this command with the session ID, summary, and optional flags.
+
+If CURRENT_BRANCH_FLAG is set, pass `--current-branch` (no branch slug needed):
+
+```bash
+erk exec plan-save --format json --session-id="748fc374-c6a8-4910-bf7f-b658479ad53a" --current-branch --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Otherwise, pass the branch slug:
+
+```bash
+erk exec plan-save --format json --session-id="748fc374-c6a8-4910-bf7f-b658479ad53a" --branch-slug="${BRANCH_SLUG}" --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Parse the JSON output to extract `pr_number` for verification in Step 5.
+
+If the command fails, display the error and stop.
+
+### Step 5: Verify Objective Link (if applicable)
+
+**Only run this step if `objective_issue` is non-null in the JSON output from Step 4.**
+
+Verify the objective link was saved correctly:
+
+```bash
+erk exec get-plan-metadata &lt;pr_number&gt; objective_issue
+```
+
+Parse the JSON response:
+
+- If `success: true` and `value` matches the expected objective number: verification passed
+- If `success: false` or value doesn't match: verification failed
+
+**On verification success:**
+
+Display: `Verified objective link: #&lt;objective-number&gt;`
+
+**On verification failure:**
+
+Display error and remediation steps:
+
+```
+ERROR: Objective link verification failed
+Expected objective: #&lt;expected&gt;
+Actual: &lt;actual-or-null&gt;
+
+The plan was saved but without the correct objective link.
+Fix: Close draft PR #&lt;pr_number&gt;,
+ensure the objective-context marker exists, and re-run /erk:plan-save.
+```
+
+Exit without creating the plan-saved marker. The session continues so the user can retry.
+
+### Step 6: Update Objective Roadmap (if objective linked)
+
+**Only run this step if `objective_issue` was non-null in JSON output and verification passed.**
+
+Update the objective's roadmap table to show that a plan has been created for this node:
+
+1. **Read the roadmap node marker** to get the node ID:
+
+```bash
+step_id=$(erk exec marker read --session-id "748fc374-c6a8-4910-bf7f-b658479ad53a" roadmap-step)
+```
+
+If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-plan`.
+
+2. **Update the roadmap table** using the dedicated command:
+
+```bash
+erk exec update-objective-node &lt;objective-issue&gt; --node "$step_id" --pr "#&lt;pr_number&gt;" --status in_progress
+```
+
+This atomically fetches the objective body, finds the matching node row, sets the Status cell to `in-progress`, and writes the updated body back.
+
+3. **Report the update:**
+
+Display: `Updated objective #&lt;objective-issue&gt; roadmap: node &lt;step_id&gt; → PR #&lt;pr_number&gt;`
+
+**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+
+### Step 7: Display Results
+
+**If JSON contains `skipped_duplicate: true`:**
+
+Display: `Plan already saved as PR #&lt;pr_number&gt; (duplicate skipped)`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options.
+
+**Otherwise, on success**, display:
+
+```
+Plan "&lt;title&gt;" saved as draft PR #&lt;pr_number&gt;
+URL: &lt;issue_url&gt;
+```
+
+If objective was verified, also display: `Verified objective link: #&lt;objective-number&gt;`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options
+(implement in current worktree, implement in new worktree, or done).
+
+On failure, display the error message and suggest:
+
+- Checking that a plan exists (enter Plan mode and exit it first)
+- Verifying GitHub CLI authentication (`gh auth status`)
+- Checking network connectivity
+
+### Step 5: Push Planning Session
+
+After saving successfully, push the planning session for cross-machine learning.
+This captures the in-progress session state so it's available even if implementation
+happens on a different machine.
+
+Run `erk exec capture-session-info` to get the session file path, then push it:
+
+```bash
+erk exec upload-impl-session --session-id "748fc374-c6a8-4910-bf7f-b658479ad53a" 2&gt;/dev/null || true
+```
+
+If the plan was saved successfully and `pr_number` is known, use push-session directly
+for better stage tracking:
+
+```bash
+erk exec push-session \
+    --session-file "&lt;session_file_path&gt;" \
+    --session-id "748fc374-c6a8-4910-bf7f-b658479ad53a" \
+    --stage planning \
+    --source local \
+    --pr-number &lt;pr_number&gt; \
+    2&gt;/dev/null || true
+```
+
+Where `&lt;session_file_path&gt;` is obtained from `erk exec capture-session-info` output
+and `&lt;pr_number&gt;` is from Step 2's JSON output.
+
+**Note:** This is non-critical. If it fails, the plan was still saved successfully.
+The `2&gt;/dev/null || true` ensures graceful degradation.
+
+## Session Tracking
+
+After successfully saving a plan, the plan number is stored in a marker file that enables automatic plan updates in the same session.
+
+**To read the saved plan number:**
+
+```bash
+erk exec marker read --session-id "748fc374-c6a8-4910-bf7f-b658479ad53a" plan-saved-issue
+```
+
+This returns the plan number (exit code 0) or exits with code 1 if no plan was saved in this session.
+</user>
+  <usage input_tokens="2" cache_creation_input_tokens="2272" cache_read_input_tokens="76203" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2272}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>**Step 1:** No special flags passed.
+
+**Step 2:** Branch slug from "Deterministic planning run ID from structured metadata": `deterministic-run-id-field`
+
+**Step 3:** Summary: "Adds a first-class created_from_workflow_run_id field to the plan header schema so the TUI dashboard can display the planning run ID deterministically from structured metadata instead of parsing it from the workflow run URL."
+
+**Step 4:** Running the save command.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="2272" cache_read_input_tokens="76203" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2272}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01HmdswXux3MRffRFGbSyLMf">
+    <param name="command">erk exec plan-save --format json --session-id="748fc374-c6a8-4910-bf7f-b658479ad53a" --bra...[truncated 164 chars]...terministically from structured metadata instead of parsing it from the workflow run URL."</param>
+    <param name="description">Save plan as draft PR via erk exec plan-save</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2272" cache_read_input_tokens="76203" output_tokens="467" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2272, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01HmdswXux3MRffRFGbSyLMf">
+{"success": true, "pr_number": 9206, "pr_url": "https://github.com/dagster-io/erk/pull/9206", "title": "[erk-pr] Plan: Deterministic planning run ID from structured metadata", "branch_name": "plnd/deterministic-run-id-field-03-11-1146", "plan_backend": "planned_pr", "objective_issue": null, "archived_to": "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-42/.erk/scratch/sessions/748fc374-c6a8-4910-bf7f-b658479ad53a/plan_snapshots/000001-5c82aa7b"}
+  </tool_result>
+  <assistant>Plan saved. No objective linked, skipping verification.
+
+**Step 5:** Pushing planning session.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="625" cache_read_input_tokens="78475" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 625}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01THpoN8SPsYoqsey6dTA7ry">
+    <param name="command">erk exec capture-session-info 2&gt;/dev/null</param>
+    <param name="description">Get session file path for push</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="625" cache_read_input_tokens="78475" output_tokens="110" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 625, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01THpoN8SPsYoqsey6dTA7ry">
+SESSION_ID=748fc374-c6a8-4910-bf7f-b658479ad53a
+SESSION_FILE=/Users/schrockn/.claude/projects/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-42/748fc374-c6a8-4910-bf7f-b658479ad53a.jsonl
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01V4UU9AbKxo13nnhgW8VFw3">
+    <param name="command">erk exec push-session --session-file "/Users/schrockn/.claude/projects/-Users-schrockn--er...[truncated 88 chars]...10-bf7f-b658479ad53a" --stage planning --source local --pr-number 9206 2&gt;/dev/null || true</param>
+    <param name="description">Push planning session for cross-machine learning</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="310" cache_read_input_tokens="79100" output_tokens="216" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 310, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+</session>

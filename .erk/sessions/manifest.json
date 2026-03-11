@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "pr_number": 9206,
+  "sessions": [
+    {
+      "session_id": "748fc374-c6a8-4910-bf7f-b658479ad53a",
+      "stage": "planning",
+      "source": "local",
+      "uploaded_at": "2026-03-11T11:46:28.477888+00:00",
+      "files": [
+        "planning-748fc374-c6a8-4910-bf7f-b658479ad53a-748fc374-c6a8-4910-bf7f-b658479ad53a-part1.xml",
+        "planning-748fc374-c6a8-4910-bf7f-b658479ad53a-748fc374-c6a8-4910-bf7f-b658479ad53a-part2.xml"
+      ],
+      "user_turns": 2,
+      "duration_minutes": 5,
+      "raw_size_kb": 793,
+      "xml_size_kb": 77,
+      "git_branch": "plnd/show-planning-run-id-03-10-1209"
+    }
+  ]
+}
