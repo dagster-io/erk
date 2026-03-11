@@ -24,7 +24,7 @@ on:
         description: "Claude model to use for conflict resolution"
         required: false
         type: string
-        default: "claude-opus-4-6"
+        default: "claude-sonnet-4-6"
 concurrency:
   group: rewrite-${{ github.event.inputs.branch_name }}
   cancel-in-progress: true

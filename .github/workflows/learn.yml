@@ -68,7 +68,7 @@ jobs:
         run: |
           claude --print \
             --verbose \
-            --model claude-opus-4-6 \
+            --model claude-sonnet-4-6 \
             --output-format stream-json \
             --dangerously-skip-permissions \
             "/erk:learn $PLAN_ID"

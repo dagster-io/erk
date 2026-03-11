@@ -1310,7 +1310,7 @@ Summarize an implementation failure using Haiku.
 | ---------------- | ------- | -------- | -------------- | -------------------------- |
 | `--session-file` | PATH    | Yes      | Sentinel.UNSET | Path to session JSONL file |
 | `--pr-number`    | INTEGER | Yes      | Sentinel.UNSET | PR number                  |
-| `--exit-code`    | INTEGER | No       | -              | Exit code                  |
+| `--exit-code`    | INTEGER | No       | Sentinel.UNSET | Exit code                  |
 
 ### track-learn-evaluation
 
