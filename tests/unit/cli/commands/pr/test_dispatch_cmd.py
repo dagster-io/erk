@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from erk.cli.commands.pr.dispatch.cli import _detect_pr_number_from_context
+from erk.cli.commands.pr.dispatch.operation import detect_pr_number_from_context
 from erk_shared.context.types import RepoContext
 from erk_shared.gateway.github.types import PRDetails
 from tests.fakes.gateway.github import FakeLocalGitHub
@@ -47,7 +47,7 @@ def test_fallback_to_plan_backend_when_no_impl_dir(tmp_path: Path) -> None:
     ctx = context_for_test(github=github, cwd=tmp_path, repo_root=tmp_path)
     repo = _repo_context(tmp_path)
 
-    result = _detect_pr_number_from_context(ctx, repo, branch_name=branch)
+    result = detect_pr_number_from_context(ctx, repo, branch_name=branch)
 
     assert result == 42
 
@@ -57,7 +57,7 @@ def test_returns_none_when_no_impl_dir_and_no_plan_backend_match(tmp_path: Path)
     ctx = context_for_test(cwd=tmp_path, repo_root=tmp_path)
     repo = _repo_context(tmp_path)
 
-    result = _detect_pr_number_from_context(ctx, repo, branch_name="feature/unrelated")
+    result = detect_pr_number_from_context(ctx, repo, branch_name="feature/unrelated")
 
     assert result is None
 
@@ -67,6 +67,6 @@ def test_returns_none_when_branch_is_none(tmp_path: Path) -> None:
     ctx = context_for_test(cwd=tmp_path, repo_root=tmp_path)
     repo = _repo_context(tmp_path)
 
-    result = _detect_pr_number_from_context(ctx, repo, branch_name=None)
+    result = detect_pr_number_from_context(ctx, repo, branch_name=None)
 
     assert result is None
