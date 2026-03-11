@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "pr_number": 9204,
+  "sessions": [
+    {
+      "session_id": "780bef2a-c86c-4b45-94c6-102201c642b7",
+      "stage": "impl",
+      "source": "local",
+      "uploaded_at": "2026-03-11T11:39:43.235587+00:00",
+      "files": [
+        "impl-780bef2a-c86c-4b45-94c6-102201c642b7-780bef2a-c86c-4b45-94c6-102201c642b7.xml"
+      ],
+      "user_turns": 2,
+      "duration_minutes": 1,
+      "raw_size_kb": 104,
+      "xml_size_kb": 24,
+      "git_branch": "plnd/github-token-comments-03-11-1137"
+    }
+  ]
+}
