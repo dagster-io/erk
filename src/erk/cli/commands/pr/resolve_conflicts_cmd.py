@@ -69,8 +69,8 @@ def resolve_conflicts(ctx: ErkContext, *, dangerous: bool, safe: bool) -> None:
     conflicted = ctx.git.status.get_conflicted_files(cwd)
     if conflicted:
         click.echo(click.style("\nConflicted files:", fg="red", bold=True))
-        for f in conflicted:
-            click.echo(f"  {f}")
+        for filepath in conflicted:
+            click.echo(f"  {filepath}")
         click.echo()
 
     if not click.confirm("Launch Claude to resolve conflicts?", default=True):
