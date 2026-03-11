@@ -164,6 +164,9 @@ from erk.cli.commands.exec.scripts.setup_impl_from_pr import (
 from erk.cli.commands.exec.scripts.store_tripwire_candidates import (
     store_tripwire_candidates,
 )
+from erk.cli.commands.exec.scripts.summarize_impl_failure import (
+    summarize_impl_failure,
+)
 from erk.cli.commands.exec.scripts.track_learn_evaluation import (
     track_learn_evaluation,
 )
@@ -270,6 +273,7 @@ exec_group.add_command(set_pr_description, name="set-pr-description")
 exec_group.add_command(setup_impl, name="setup-impl")
 exec_group.add_command(setup_impl_from_pr, name="setup-impl-from-pr")
 exec_group.add_command(store_tripwire_candidates, name="store-tripwire-candidates")
+exec_group.add_command(summarize_impl_failure, name="summarize-impl-failure")
 exec_group.add_command(track_learn_evaluation, name="track-learn-evaluation")
 exec_group.add_command(track_learn_result, name="track-learn-result")
 exec_group.add_command(update_issue_body, name="update-issue-body")
