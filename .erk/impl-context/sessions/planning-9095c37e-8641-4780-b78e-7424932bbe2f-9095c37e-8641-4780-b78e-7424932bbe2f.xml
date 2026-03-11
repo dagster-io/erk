@@ -1,0 +1,867 @@
+<session>
+  <meta branch="master" />
+  <meta model="claude-opus-4-6" />
+  <user>what models are used for remote dispatch right now</user>
+  <usage input_tokens="3" cache_creation_input_tokens="14214" cache_read_input_tokens="9131" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 14214}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01FXBkS7SvJXiYnpMprDv9LW">
+    <param name="description">Find remote dispatch models</param>
+    <param name="subagent_type">Explore</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 426 chars]...ection for dispatch
+
+Be thorough - check workflows, CLI code, and any configuration files.</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="14214" cache_read_input_tokens="9131" output_tokens="270" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 14214, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01FXBkS7SvJXiYnpMprDv9LW">
+Excellent! Now I have a comprehensive understanding. Let me compile the final report:
+
+## Summary
+
+I've completed a thorough search of the erk codebase for AI model configurations used in remote dispatch. Here are my findings:
+
+### Model Configuration Locations
+
+#### 1. **GitHub Actions Workflows** (Primary Configuration Points)
+
+All dispatch-related workflows define `model_name` as a workflow input with a standardized default:
+
+| Workflow | Location | Default Model | Input Parameter |
+|----------|----------|---|---|
+| **one-shot.yml** | `/Users/schrockn/code/erk/.github/workflows/one-shot.yml` | `claude-opus-4-6` | `model_name` (line 27-31) |
+| **plan-implement.yml** | `/Users/schrockn/code/erk/.github/workflows/plan-implement.yml` | `claude-opus-4-6` | `model_name` (line 31-35 &amp; 77-81) |
+| **pr-address.yml** | `/Users/schrockn/code/erk/.github/workflows/pr-address.yml` | `claude-opus-4-6` | `model_name` (line 15-19) |
+| **pr-rebase.yml** | `/Users/schrockn/code/erk/.github/workflows/pr-rebase.yml` | `claude-opus-4-6` | `model_name` (default specified) |
+| **pr-rewrite.yml** | `/Users/schrockn/code/erk/.github/workflows/pr-rewrite.yml` | `claude-opus-4-6` | `model_name` (line 23-27) |
+| **consolidate-learn-plans.yml** | `/Users/schrockn/code/erk/.github/workflows/consolidate-learn-plans.yml` | `claude-opus-4-6` | `model_name` (line 23-27) |
+| **learn.yml** | `/Users/schrockn/code/erk/.github/workflows/learn.yml` | `claude-opus-4-6` | Hard-coded (line 71) |
+
+#### 2. **Repository Configuration** (.erk/config.toml)
+
+Location: `/Users/schrockn/code/erk/.erk/config.toml`
+
+Contains workflow-specific model overrides:
+```toml
+[workflows.erk-impl]
+model_name = "claude-opus-4-5"
+
+... [92 lines omitted] ...
+  </tool_result>
+  <assistant>All remote dispatch workflows default to **`claude-opus-4-6`**. Here's the breakdown:
+
+**Workflow defaults** (all 7 Claude-invoking workflows):
+| Workflow | Default Model |
+|---|---|
+| one-shot.yml | `claude-opus-4-6` |
+| plan-implement.yml | `claude-opus-4-6` |
+| pr-address.yml | `claude-opus-4-6` |
+| pr-rebase.yml | `claude-opus-4-6` |
+| pr-rewrite.yml | `claude-opus-4-6` |
+| consolidate-learn-plans.yml | `claude-opus-4-6` |
+| learn.yml | `claude-opus-4-6` (hard-coded) |
+
+**Override chain** (highest to lowest priority):
+1. CLI `--model` flag (e.g., `erk one-shot --model sonnet`)
+2. `.erk/config.toml` per-workflow config — currently has `model_name = "claude-opus-4-5"` for `erk-impl`
+3. Workflow YAML default (`claude-opus-4-6`)
+
+**Available model aliases** (CLI shorthand):
+- `o` / `opus` → `claude-opus-4-6`
+- `s` / `sonnet` → `claude-sonnet-4-6`
+- `h` / `haiku` → `claude-haiku-4-5-20251001`
+
+So in practice: `plan-implement` dispatches use **opus 4.5** (via config.toml override), while everything else uses **opus 4.6**.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2012" cache_read_input_tokens="23345" output_tokens="398" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2012, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <user>
+  ┌─────────────────────────────┬──────────────────────────────┐
+  │          Workflow           │        Default Model         │
+  ├─────────────────────────────┼──────────────────────────────┤
+  │ one-shot.yml                │ claude-opus-4-6              │
+  ├─────────────────────────────┼──────────────────────────────┤
+  │ plan-implement.yml          │ claude-opus-4-6              │
+  ├─────────────────────────────┼──────────────────────────────┤
+  │ pr-address.yml              │ claude-opus-4-6              │
+  ├─────────────────────────────┼──────────────────────────────┤
+  │ pr-rebase.yml               │ claude-opus-4-6              │
+  ├─────────────────────────────┼──────────────────────────────┤
+  │ pr-rewrite.yml              │ claude-opus-4-6              │
+  ├─────────────────────────────┼──────────────────────────────┤
+  │ consolidate-learn-plans.yml │ claude-opus-4-6              │
+  ├─────────────────────────────┼──────────────────────────────┤
+  │ learn.yml                   │ claude-opus-4-6 (hard-coded) │
+
+let's swich all of them to the latest sonnet</user>
+  <usage input_tokens="3" cache_creation_input_tokens="927" cache_read_input_tokens="25357" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 927}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me read the workflow files to understand the exact changes needed.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="927" cache_read_input_tokens="25357" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 927}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_019NWbARLtob86h5stbzjr64">
+    <param name="file_path">/Users/schrockn/code/erk/.github/workflows/one-shot.yml</param>
+    <param name="limit">40</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="927" cache_read_input_tokens="25357" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 927}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019NWbARLtob86h5stbzjr64">
+     1→name: one-shot
+     2→run-name: "one-shot${{ inputs.plan_only &amp;&amp; '(plan)' || '' }}:#${{ inputs.pr_number }}:${{ inputs.distinct_id }}"
+     3→
+     4→on:
+     5→  workflow_dispatch:
+     6→    inputs:
+     7→      prompt:
+     8→        description: "Task description for autonomous execution"
+     9→        required: true
+    10→        type: string
+    11→      branch_name:
+    12→        description: "Branch to work on (created by CLI command)"
+    13→        required: true
+    14→        type: string
+    15→      pr_number:
+    16→        description: "Draft PR number (created by CLI command)"
+    17→        required: true
+    18→        type: string
+    19→      submitted_by:
+    20→        description: "GitHub username of the person who submitted"
+    21→        required: true
+    22→        type: string
+    23→      distinct_id:
+    24→        description: "Unique identifier for run discovery (base36)"
+    25→        required: true
+    26→        type: string
+    27→      model_name:
+    28→        description: "Claude model to use for execution"
+    29→        required: false
+    30→        type: string
+
+... [10 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Pa9e4vGpywNXvtyTnjHHgm">
+    <param name="file_path">/Users/schrockn/code/erk/.github/workflows/plan-implement.yml</param>
+    <param name="limit">90</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="927" cache_read_input_tokens="25357" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 927}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Pa9e4vGpywNXvtyTnjHHgm">
+     1→name: plan-implement
+     2→run-name: "${{ inputs.dispatch_type == 'incremental' &amp;&amp; '[incremental] ' || '' }}${{ inputs.branch_name }} (#${{ inputs.pr_number }}):${{ inputs.distinct_id }}"
+     3→
+     4→on:
+     5→  workflow_dispatch:
+     6→    inputs:
+     7→      plan_id:
+     8→        description: "Plan identifier to implement"
+     9→        required: true
+    10→        type: string
+    11→      submitted_by:
+    12→        description: "GitHub username of the person who submitted the issue"
+    13→        required: true
+    14→        type: string
+    15→      distinct_id:
+    16→        description: "Unique identifier for run discovery (base36)"
+    17→        required: true
+    18→        type: string
+    19→      plan_title:
+    20→        description: "Plan title for workflow run display"
+    21→        required: true
+    22→        type: string
+    23→      branch_name:
+    24→        description: "Branch name for implementation (created by submit command)"
+    25→        required: true
+    26→        type: string
+    27→      pr_number:
+    28→        description: "PR number for implementation (created by submit command)"
+    29→        required: true
+    30→        type: string
+
+... [60 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_011wWGfUKpnDVnxNa9aZAw3N">
+    <param name="file_path">/Users/schrockn/code/erk/.github/workflows/pr-address.yml</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="927" cache_read_input_tokens="25357" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 927}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011wWGfUKpnDVnxNa9aZAw3N">
+     1→name: pr-address
+     2→run-name: "pr-address:#${{ inputs.pr_number }}:${{ inputs.distinct_id }}"
+     3→
+     4→on:
+     5→  workflow_dispatch:
+     6→    inputs:
+     7→      pr_number:
+     8→        description: "PR number to address review comments"
+     9→        required: true
+    10→        type: string
+    11→      distinct_id:
+    12→        description: "Unique identifier for run discovery (base36)"
+    13→        required: true
+    14→        type: string
+    15→      model_name:
+    16→        description: "Claude model to use"
+    17→        required: false
+    18→        type: string
+    19→        default: "claude-opus-4-6"
+    20→concurrency:
+    21→  group: pr-address-${{ github.event.inputs.pr_number }}
+    22→  cancel-in-progress: true
+    23→
+    24→jobs:
+    25→  address:
+    26→    if: vars.CLAUDE_ENABLED != 'false'
+    27→    runs-on: ubuntu-latest
+    28→    timeout-minutes: 30
+    29→    permissions:
+    30→      contents: write
+  </tool_result>
+  <tool_use name="Read" id="toolu_01GHCdhGtWq4xkSQe1b7WCAp">
+    <param name="file_path">/Users/schrockn/code/erk/.github/workflows/pr-rebase.yml</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="927" cache_read_input_tokens="25357" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 927}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01GHCdhGtWq4xkSQe1b7WCAp">
+     1→name: pr-rebase
+     2→run-name: "rebase:#${{ inputs.pr_number }}:${{ inputs.distinct_id }}"
+     3→
+     4→on:
+     5→  workflow_dispatch:
+     6→    inputs:
+     7→      branch_name:
+     8→        description: "Branch to rebase"
+     9→        required: true
+    10→        type: string
+    11→      base_branch:
+    12→        description: "Base branch to rebase onto"
+    13→        required: true
+    14→        type: string
+    15→      pr_number:
+    16→        description: "PR number for status updates"
+    17→        required: true
+    18→        type: string
+    19→      distinct_id:
+    20→        description: "Unique identifier for run discovery (base36)"
+    21→        required: true
+    22→        type: string
+    23→      squash:
+    24→        description: "Whether to squash commits before rebase"
+    25→        required: false
+    26→        type: boolean
+    27→        default: true
+    28→      model_name:
+    29→        description: "Claude model to use for conflict resolution"
+    30→        required: false
+  </tool_result>
+  <tool_use name="Read" id="toolu_01LyqY5bM79Pf35pWzfphDXG">
+    <param name="file_path">/Users/schrockn/code/erk/.github/workflows/pr-rewrite.yml</param>
+    <param name="limit">35</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="927" cache_read_input_tokens="25357" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 927}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01LyqY5bM79Pf35pWzfphDXG">
+     1→name: pr-rewrite
+     2→run-name: "rewrite:#${{ inputs.pr_number }}:${{ inputs.distinct_id }}"
+     3→
+     4→on:
+     5→  workflow_dispatch:
+     6→    inputs:
+     7→      branch_name:
+     8→        description: "Branch to rewrite"
+     9→        required: true
+    10→        type: string
+    11→      base_branch:
+    12→        description: "Base branch to rebase onto"
+    13→        required: true
+    14→        type: string
+    15→      pr_number:
+    16→        description: "PR number for status updates"
+    17→        required: true
+    18→        type: string
+    19→      distinct_id:
+    20→        description: "Unique identifier for run discovery (base36)"
+    21→        required: true
+    22→        type: string
+    23→      model_name:
+    24→        description: "Claude model to use for conflict resolution"
+    25→        required: false
+    26→        type: string
+    27→        default: "claude-opus-4-6"
+    28→concurrency:
+    29→  group: rewrite-${{ github.event.inputs.branch_name }}
+    30→  cancel-in-progress: true
+
+... [5 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01C5Edq3f5fiLpzyLez8Wqgh">
+    <param name="file_path">/Users/schrockn/code/erk/.github/workflows/consolidate-learn-plans.yml</param>
+    <param name="limit">35</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="927" cache_read_input_tokens="25357" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 927}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01C5Edq3f5fiLpzyLez8Wqgh">
+     1→name: consolidate-learn-plans
+     2→run-name: "consolidate-learn-plans:#${{ inputs.pr_number }}:${{ inputs.distinct_id }}"
+     3→
+     4→on:
+     5→  workflow_dispatch:
+     6→    inputs:
+     7→      branch_name:
+     8→        description: "Branch to work on (created by CLI command)"
+     9→        required: true
+    10→        type: string
+    11→      pr_number:
+    12→        description: "Draft PR number (created by CLI command)"
+    13→        required: true
+    14→        type: string
+    15→      submitted_by:
+    16→        description: "GitHub username of the person who submitted"
+    17→        required: true
+    18→        type: string
+    19→      distinct_id:
+    20→        description: "Unique identifier for run discovery (base36)"
+    21→        required: true
+    22→        type: string
+    23→      model_name:
+    24→        description: "Claude model to use for execution"
+    25→        required: false
+    26→        type: string
+    27→        default: "claude-opus-4-6"
+    28→
+    29→concurrency:
+    30→  group: consolidate-learn-plans-${{ inputs.branch_name }}
+
+... [5 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01CEdbK5QFRW6Q3qCQm24FVx">
+    <param name="file_path">/Users/schrockn/code/erk/.github/workflows/learn.yml</param>
+    <param name="limit">80</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="927" cache_read_input_tokens="25357" output_tokens="669" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 927, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01CEdbK5QFRW6Q3qCQm24FVx">
+     1→# Learn Dispatch Workflow
+     2→#
+     3→# Runs /erk:learn on a completed plan to extract insights and patterns
+     4→# from the implementation session. This workflow is triggered asynchronously
+     5→# after a PR lands via the upload-impl-session pipeline.
+     6→#
+     7→# Output: Creates a new learn plan issue containing extracted lessons learned,
+     8→# architectural decisions, and reusable patterns from the implementation.
+     9→
+    10→name: learn
+    11→run-name: "${{ inputs.pr_number }}:${{ inputs.distinct_id }}"
+    12→
+    13→on:
+    14→  workflow_dispatch:
+    15→    inputs:
+    16→      pr_number:
+    17→        description: "PR number to learn from"
+    18→        required: true
+    19→        type: string
+    20→      distinct_id:
+    21→        description: "Unique identifier for run discovery (base36)"
+    22→        required: true
+    23→        type: string
+    24→      learn_branch:
+    25→        description: "Branch containing learn materials in .erk/impl-context/"
+    26→        required: true
+    27→        type: string
+    28→      plan_backend:
+    29→        description: "Plan backend type (github or planned_pr)"
+    30→        required: false
+
+... [49 lines omitted] ...
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="4838" cache_read_input_tokens="26284" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4838}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me also check the pr-rebase default and the config.toml override.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="4838" cache_read_input_tokens="26284" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4838}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_018pew7DG5KngGUodEjhgRtz">
+    <param name="file_path">/Users/schrockn/code/erk/.github/workflows/pr-rebase.yml</param>
+    <param name="offset">30</param>
+    <param name="limit">5</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4838" cache_read_input_tokens="26284" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4838}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_018pew7DG5KngGUodEjhgRtz">
+    30→        required: false
+    31→        type: string
+    32→        default: "claude-opus-4-6"
+    33→concurrency:
+    34→  group: rebase-${{ github.event.inputs.branch_name }}
+  </tool_result>
+  <tool_use name="Read" id="toolu_011ajZ6LRgJBxdHnwFJ9MqfS">
+    <param name="file_path">/Users/schrockn/code/erk/.erk/config.toml</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4838" cache_read_input_tokens="26284" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4838}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011ajZ6LRgJBxdHnwFJ9MqfS">
+     1→# work config for this repository
+     2→# Available template variables: {worktree_path}, {repo_root}, {name}
+     3→
+     4→[env]
+     5→# EXAMPLE_KEY = "{worktree_path}"
+     6→
+     7→[post_create]
+     8→# shell = "bash"
+     9→# commands = [
+    10→#   "uv venv",
+    11→#   "uv run make dev_install",
+    12→# ]
+    13→
+    14→[workflows.erk-impl]
+    15→model_name = "claude-opus-4-5"
+    16→
+    17→[pool]
+    18→max_slots = 64
+    19→
+  </tool_result>
+  <tool_use name="Read" id="toolu_01WPATqncb6ZbEad6EX7buHZ">
+    <param name="file_path">/Users/schrockn/code/erk/docs/learned/ci/workflow-model-policy.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4838" cache_read_input_tokens="26284" output_tokens="299" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 4838, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01WPATqncb6ZbEad6EX7buHZ">
+     1→---
+     2→title: Workflow Model Policy
+     3→last_audited: "2026-02-17 00:00 PT"
+     4→audit_result: clean
+     5→read_when:
+     6→  - "creating or modifying GitHub Actions workflows that invoke Claude"
+     7→  - "choosing which Claude model to use in a workflow"
+     8→  - "understanding why all workflows default to Opus"
+     9→tripwires:
+    10→  - action: "creating workflows that invoke Claude without specifying model"
+    11→    warning: "All workflows MUST default to claude-opus-4-6. See workflow-model-policy.md for the standardization rationale."
+    12→---
+    13→
+    14→# Workflow Model Policy
+    15→
+    16→All erk GitHub Actions workflows that invoke Claude MUST default to `claude-opus-4-6`. This standardization was completed across all 6 Claude-invoking workflows to ensure consistent behavior and eliminate per-workflow model selection confusion.
+    17→
+    18→## Affected Workflows
+    19→
+    20→| Workflow             | Model Parameter           | Default           |
+    21→| -------------------- | ------------------------- | ----------------- |
+    22→| `ci.yml`             | Direct reference          | `claude-opus-4-6` |
+    23→| `learn.yml`          | Direct reference          | `claude-opus-4-6` |
+    24→| `one-shot.yml`       | `model_name` input        | `claude-opus-4-6` |
+    25→| `plan-implement.yml` | `model_name` input (dual) | `claude-opus-4-6` |
+    26→| `pr-address.yml`     | `model_name` input        | `claude-opus-4-6` |
+    27→| `pr-rebase.yml`      | `model_name` input        | `claude-opus-4-6` |
+    28→
+    29→Workflows without Claude invocation (`docs.yml`, `code-reviews.yml`) are not affected.
+    30→
+
+... [25 lines omitted] ...
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="1614" cache_read_input_tokens="31122" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1614}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Straightforward change. Let me write the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1614" cache_read_input_tokens="31122" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1614}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01JVfiSURihBuPEgZAA3eJCg">
+    <param name="file_path">/Users/schrockn/.claude/plans/pure-tinkering-finch.md</param>
+    <param name="content"># Switch all remote dispatch workflows to Sonnet 4.6
+
+## Context
+
+All 7 Claude-invoking wo...[truncated 1162 chars]... return no results
+- `grep "model_name" .erk/config.toml` should show `claude-sonnet-4-6`
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1614" cache_read_input_tokens="31122" output_tokens="737" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1614, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01JVfiSURihBuPEgZAA3eJCg">
+File created successfully at: /Users/schrockn/.claude/plans/pure-tinkering-finch.md
+  </tool_result>
+  <assistant>9 edits across 9 files — all mechanical `claude-opus-4-6` → `claude-sonnet-4-6` replacements, plus updating the config.toml override and the policy doc.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="872" cache_read_input_tokens="32736" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 872}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_01NiP1cAG5hWbXkmqdStcp5u">
+    <param name="query">select:ExitPlanMode</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="872" cache_read_input_tokens="32736" output_tokens="127" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 872, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01NiP1cAG5hWbXkmqdStcp5u">
+
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_0142T4fNpbGhpjcXn1vF57vT">
+    <param name="plan"># Switch all remote dispatch workflows to Sonnet 4.6
+
+## Context
+
+All 7 Claude-invoking wo...[truncated 1162 chars]... return no results
+- `grep "model_name" .erk/config.toml` should show `claude-sonnet-4-6`
+</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="787" cache_read_input_tokens="33608" output_tokens="39" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 787, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0142T4fNpbGhpjcXn1vF57vT">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/pure-tinkering-finch.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Switch all remote dispatch workflows to Sonnet 4.6
+Current context: (wt:erk) (br:master)\n\nWhat would you like to do with this plan?"
+  header: "br:master"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create new branch and planned PR. Stays on current branch." - Create a new branch, save plan as draft PR.
+  2. "Implement without saving" - Implement directly on the current branch without saving a plan PR.
+  3. "View/Edit the Plan" - Open plan in editor to review or modify before deciding.
+
+⚠️  WARNING: Currently on 'master'. We strongly discourage implementing directly on the trunk branch. Consider saving the plan and implementing in a dedicated worktree instead.
+
+If user chooses 'Create new branch and planned PR':
+  1. Run /erk:plan-save
+  2. Call ExitPlanMode to end the planning session.
+
+If user chooses 'Implement without saving':
+  1. Create implement-now marker:
+     erk exec marker create --session-id 9095c37e-8641-4780-b78e-7424932bbe2f \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly on the current branch.
+     Do NOT run 'erk exec setup-impl' or create a new branch.
+
+... [8 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01NSJENpbQY9r1Q6yYH4kRfu">
+    <param name="file_path">/Users/schrockn/.claude/plans/pure-tinkering-finch.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="684" cache_read_input_tokens="34395" output_tokens="74" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 684, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01NSJENpbQY9r1Q6yYH4kRfu">
+     1→# Switch all remote dispatch workflows to Sonnet 4.6
+     2→
+     3→## Context
+     4→
+     5→All 7 Claude-invoking workflows currently default to `claude-opus-4-6`. Additionally, `.erk/config.toml` overrides plan-implement to `claude-opus-4-5`. Switching everything to `claude-sonnet-4-6` for cost/speed optimization.
+     6→
+     7→## Changes
+     8→
+     9→### 1. Workflow YAML defaults (`claude-opus-4-6` → `claude-sonnet-4-6`)
+    10→
+    11→Each file has a `default: "claude-opus-4-6"` line to change:
+    12→
+    13→- `.github/workflows/one-shot.yml` (line 31)
+    14→- `.github/workflows/plan-implement.yml` (line 35 + line 81 — dual default for workflow_dispatch and workflow_call)
+    15→- `.github/workflows/pr-address.yml` (line 19)
+    16→- `.github/workflows/pr-rebase.yml` (line 32)
+    17→- `.github/workflows/pr-rewrite.yml` (line 27)
+    18→- `.github/workflows/consolidate-learn-plans.yml` (line 27)
+    19→- `.github/workflows/learn.yml` (line 71 — hard-coded `--model claude-opus-4-6` in bash)
+    20→
+    21→### 2. Config override (`.erk/config.toml`)
+    22→
+    23→Line 15: `model_name = "claude-opus-4-5"` → `model_name = "claude-sonnet-4-6"`
+    24→
+    25→### 3. Policy doc update (`docs/learned/ci/workflow-model-policy.md`)
+    26→
+    27→Update the policy to reflect `claude-sonnet-4-6` as the new standard default across all workflows and tripwire text.
+    28→
+    29→## Verification
+    30→
+
+... [3 lines omitted] ...
+  </tool_result>
+  <assistant>## Plan: Switch all remote dispatch workflows to Sonnet 4.6
+
+### Context
+
+All 7 Claude-invoking workflows currently default to `claude-opus-4-6`. Additionally, `.erk/config.toml` overrides plan-implement to `claude-opus-4-5`. Switching everything to `claude-sonnet-4-6`.
+
+### Changes
+
+**1. Workflow YAML defaults** (`claude-opus-4-6` → `claude-sonnet-4-6`)
+
+- `.github/workflows/one-shot.yml` (line 31)
+- `.github/workflows/plan-implement.yml` (line 35 + line 81 — dual default)
+- `.github/workflows/pr-address.yml` (line 19)
+- `.github/workflows/pr-rebase.yml` (line 32)
+- `.github/workflows/pr-rewrite.yml` (line 27)
+- `.github/workflows/consolidate-learn-plans.yml` (line 27)
+- `.github/workflows/learn.yml` (line 71 — hard-coded `--model` in bash)
+
+**2. Config override** (`.erk/config.toml`): `claude-opus-4-5` → `claude-sonnet-4-6`
+
+**3. Policy doc update** (`docs/learned/ci/workflow-model-policy.md`)
+
+### Verification
+
+- `grep -r "claude-opus" .github/workflows/` should return no results
+- `grep "model_name" .erk/config.toml` should show `claude-sonnet-4-6`</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="772" cache_read_input_tokens="35079" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 772}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_01NrHUitFebPJZsCTR5R198A">
+    <param name="query">select:AskUserQuestion</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="772" cache_read_input_tokens="35079" output_tokens="457" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 772, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01NrHUitFebPJZsCTR5R198A">
+
+  </tool_result>
+  <tool_use name="AskUserQuestion" id="toolu_01KvGL1dDJkRa6YJuqNSsfF1">
+    <param name="questions">[{'question': '📋 Switch all remote dispatch workflows to Sonnet 4.6\nCurrent context: (wt:...[truncated 403 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1809" cache_read_input_tokens="35851" output_tokens="218" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1809, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01KvGL1dDJkRa6YJuqNSsfF1">
+User has answered your questions: "📋 Switch all remote dispatch workflows to Sonnet 4.6
+Current context: (wt:erk) (br:master)
+
+What would you like to do with this plan?"="Create new branch and planned PR". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="Skill" id="toolu_016znLMwPMs4p3p7WaB3ofM4">
+    <param name="skill">erk:plan-save</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="305" cache_read_input_tokens="37660" output_tokens="57" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 305, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_016znLMwPMs4p3p7WaB3ofM4">
+Launching skill: erk:plan-save
+  </tool_result>
+  <user># /erk:plan-save
+
+Save the current session's plan to GitHub with session context.
+
+## Usage
+
+```bash
+/erk:plan-save                           # Standalone plan
+/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+/erk:plan-save --objective=123           # Explicit objective link (overrides marker)
+/erk:plan-save --current-branch          # Use current branch instead of creating new plnd/ branch
+```
+
+Objective linking: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command. Use `--objective=&lt;number&gt;` to override the marker or provide the link when no marker exists (e.g., during replan).
+
+## Plan Storage
+
+The plan is saved using the configured backend:
+
+- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+  The JSON output contract includes `pr_number`, `pr_url`, `title`, `branch_name`, `plan_backend`.
+
+## Agent Instructions
+
+### Step 1: Parse Arguments
+
+Check `` for the `--plan-type`, `--objective`, and `--current-branch` flags:
+
+```
+If  contains "--plan-type=&lt;type&gt;":
+  - Extract the type (standard or learn)
+  - Store as PLAN_TYPE variable
+  - Set PLAN_TYPE_FLAG to "--plan-type=&lt;type&gt;"
+Else:
+  - Set PLAN_TYPE_FLAG to empty string
+
+If  contains "--objective=&lt;number&gt;":
+  - Extract the number
+  - Set OBJECTIVE_FLAG to "--objective=&lt;number&gt;"
+Else:
+  - Set OBJECTIVE_FLAG to empty string
+
+If  contains "--current-branch":
+  - Set CURRENT_BRANCH_FLAG to "--current-branch"
+Else:
+  - Set CURRENT_BRANCH_FLAG to empty string
+```
+
+### Step 2: Generate Branch Slug
+
+**Skip this step if `--current-branch` was passed.** The current branch is used directly.
+
+Before saving, generate a branch slug from the plan title. Read the plan title from the plan file you wrote in plan mode (the first `# ` heading).
+
+Generate a branch slug from the title:
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+
+Store the result as `BRANCH_SLUG`.
+
+### Step 3: Generate Plan Summary
+
+Write a concise 2-3 sentence summary of the plan. This summary will be visible
+at the top of the PR description (above the collapsed full plan).
+
+Guidelines:
+
+- Focus on WHAT the plan does and WHY
+- Do not repeat the title
+- Plain text, no markdown headers or formatting
+- Avoid special shell characters (backticks, dollar signs)
+- Store as PLAN_SUMMARY
+
+### Step 4: Run Save Command
+
+Run this command with the session ID, summary, and optional flags.
+
+If CURRENT_BRANCH_FLAG is set, pass `--current-branch` (no branch slug needed):
+
+```bash
+erk exec plan-save --format json --session-id="9095c37e-8641-4780-b78e-7424932bbe2f" --current-branch --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Otherwise, pass the branch slug:
+
+```bash
+erk exec plan-save --format json --session-id="9095c37e-8641-4780-b78e-7424932bbe2f" --branch-slug="${BRANCH_SLUG}" --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Parse the JSON output to extract `pr_number` for verification in Step 5.
+
+If the command fails, display the error and stop.
+
+### Step 5: Verify Objective Link (if applicable)
+
+**Only run this step if `objective_issue` is non-null in the JSON output from Step 4.**
+
+Verify the objective link was saved correctly:
+
+```bash
+erk exec get-plan-metadata &lt;pr_number&gt; objective_issue
+```
+
+Parse the JSON response:
+
+- If `success: true` and `value` matches the expected objective number: verification passed
+- If `success: false` or value doesn't match: verification failed
+
+**On verification success:**
+
+Display: `Verified objective link: #&lt;objective-number&gt;`
+
+**On verification failure:**
+
+Display error and remediation steps:
+
+```
+ERROR: Objective link verification failed
+Expected objective: #&lt;expected&gt;
+Actual: &lt;actual-or-null&gt;
+
+The plan was saved but without the correct objective link.
+Fix: Close draft PR #&lt;pr_number&gt;,
+ensure the objective-context marker exists, and re-run /erk:plan-save.
+```
+
+Exit without creating the plan-saved marker. The session continues so the user can retry.
+
+### Step 6: Update Objective Roadmap (if objective linked)
+
+**Only run this step if `objective_issue` was non-null in JSON output and verification passed.**
+
+Update the objective's roadmap table to show that a plan has been created for this node:
+
+1. **Read the roadmap node marker** to get the node ID:
+
+```bash
+step_id=$(erk exec marker read --session-id "9095c37e-8641-4780-b78e-7424932bbe2f" roadmap-step)
+```
+
+If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-plan`.
+
+2. **Update the roadmap table** using the dedicated command:
+
+```bash
+erk exec update-objective-node &lt;objective-issue&gt; --node "$step_id" --pr "#&lt;pr_number&gt;" --status in_progress
+```
+
+This atomically fetches the objective body, finds the matching node row, sets the Status cell to `in-progress`, and writes the updated body back.
+
+3. **Report the update:**
+
+Display: `Updated objective #&lt;objective-issue&gt; roadmap: node &lt;step_id&gt; → PR #&lt;pr_number&gt;`
+
+**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+
+### Step 7: Display Results
+
+**If JSON contains `skipped_duplicate: true`:**
+
+Display: `Plan already saved as PR #&lt;pr_number&gt; (duplicate skipped)`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options.
+
+**Otherwise, on success**, display:
+
+```
+Plan "&lt;title&gt;" saved as draft PR #&lt;pr_number&gt;
+URL: &lt;issue_url&gt;
+```
+
+If objective was verified, also display: `Verified objective link: #&lt;objective-number&gt;`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options
+(implement in current worktree, implement in new worktree, or done).
+
+On failure, display the error message and suggest:
+
+- Checking that a plan exists (enter Plan mode and exit it first)
+- Verifying GitHub CLI authentication (`gh auth status`)
+- Checking network connectivity
+
+### Step 5: Push Planning Session
+
+After saving successfully, push the planning session for cross-machine learning.
+This captures the in-progress session state so it's available even if implementation
+happens on a different machine.
+
+Run `erk exec capture-session-info` to get the session file path, then push it:
+
+```bash
+erk exec upload-impl-session --session-id "9095c37e-8641-4780-b78e-7424932bbe2f" 2&gt;/dev/null || true
+```
+
+If the plan was saved successfully and `pr_number` is known, use push-session directly
+for better stage tracking:
+
+```bash
+erk exec push-session \
+    --session-file "&lt;session_file_path&gt;" \
+    --session-id "9095c37e-8641-4780-b78e-7424932bbe2f" \
+    --stage planning \
+    --source local \
+    --pr-number &lt;pr_number&gt; \
+    2&gt;/dev/null || true
+```
+
+Where `&lt;session_file_path&gt;` is obtained from `erk exec capture-session-info` output
+and `&lt;pr_number&gt;` is from Step 2's JSON output.
+
+**Note:** This is non-critical. If it fails, the plan was still saved successfully.
+The `2&gt;/dev/null || true` ensures graceful degradation.
+
+## Session Tracking
+
+After successfully saving a plan, the plan number is stored in a marker file that enables automatic plan updates in the same session.
+
+**To read the saved plan number:**
+
+```bash
+erk exec marker read --session-id "9095c37e-8641-4780-b78e-7424932bbe2f" plan-saved-issue
+```
+
+This returns the plan number (exit code 0) or exits with code 1 if no plan was saved in this session.
+</user>
+  <usage input_tokens="2" cache_creation_input_tokens="2278" cache_read_input_tokens="37965" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2278}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>**Branch slug:** `switch-dispatch-to-sonnet`
+
+**Plan summary:** Switches all 7 Claude-invoking GitHub Actions workflows and the config.toml override from Opus to claude-sonnet-4-6. Also updates the workflow model policy documentation to reflect the new default.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="2278" cache_read_input_tokens="37965" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2278}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01FkqoYoTbJ1c8oavxwrX36N">
+    <param name="command">erk exec plan-save --format json --session-id="9095c37e-8641-4780-b78e-7424932bbe2f" --bra...[truncated 136 chars]...net-4-6. Also updates the workflow model policy documentation to reflect the new default."</param>
+    <param name="description">Save plan as draft PR</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2278" cache_read_input_tokens="37965" output_tokens="361" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2278, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01FkqoYoTbJ1c8oavxwrX36N">
+{"success": true, "pr_number": 9208, "pr_url": "https://github.com/dagster-io/erk/pull/9208", "title": "[erk-pr] Switch all remote dispatch workflows to Sonnet 4.6", "branch_name": "plnd/switch-dispatch-to-sonnet-03-11-1151", "plan_backend": "planned_pr", "objective_issue": null, "archived_to": "/Users/schrockn/code/erk/.erk/scratch/sessions/9095c37e-8641-4780-b78e-7424932bbe2f/plan_snapshots/000001-85884c47"}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_017hKjT4pwnGRJGtKt9ZJUiV">
+    <param name="command">erk exec capture-session-info 2&gt;/dev/null | head -5</param>
+    <param name="description">Get session file path</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="523" cache_read_input_tokens="40243" output_tokens="89" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 523, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_017hKjT4pwnGRJGtKt9ZJUiV">
+SESSION_ID=9095c37e-8641-4780-b78e-7424932bbe2f
+SESSION_FILE=/Users/schrockn/.claude/projects/-Users-schrockn-code-erk/9095c37e-8641-4780-b78e-7424932bbe2f.jsonl
+  </tool_result>
+  <tool_use name="Bash" id="toolu_013MeG97qkLTzycr4atpgnet">
+    <param name="command">erk exec push-session \
+    --session-file "/Users/schrockn/.claude/projects/-Users-schroc...[truncated 96 chars]...    --stage planning \
+    --source local \
+    --pr-number 9208 \
+    2&gt;/dev/null || true</param>
+    <param name="description">Push planning session</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="279" cache_read_input_tokens="40766" output_tokens="217" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 279, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+</session>
