@@ -44,5 +44,5 @@
 - **[test-coverage-detection.md](test-coverage-detection.md)** — understanding how the test-coverage-review bot maps source to test files, debugging false positives in test coverage review, adding test files in the correct location for coverage detection
 - **[uv-cache-management.md](uv-cache-management.md)** — debugging slow CI jobs or GitHub Actions cache issues, modifying setup-uv configuration, CI jobs timing out in post-job cleanup
 - **[workflow-gating-patterns.md](workflow-gating-patterns.md)** — adding conditional execution to GitHub Actions workflows, understanding why CI was skipped on a PR
-- **[workflow-model-policy.md](workflow-model-policy.md)** — creating or modifying GitHub Actions workflows that invoke Claude, choosing which Claude model to use in a workflow, understanding why all workflows default to Opus
+- **[workflow-model-policy.md](workflow-model-policy.md)** — creating or modifying GitHub Actions workflows that invoke Claude, choosing which Claude model to use in a workflow, understanding why all workflows default to Sonnet 4.6
 - **[workflow-naming-conventions.md](workflow-naming-conventions.md)** — creating new GitHub Actions workflows launchable via erk launch, understanding the relationship between CLI names and workflow files
