@@ -502,12 +502,12 @@ class FakeFileSystem(FileSystemGateway):
 
 ### The Distinction
 
-| Aspect              | Gateway                                           | Backend                                                                        |
-| ------------------- | ------------------------------------------------- | ------------------------------------------------------------------------------ |
-| **Purpose**         | Thin wrapper around external system               | Higher-level abstraction that composes gateways                                |
-| **Examples**        | `LocalGitHub`, `Git`, `Graphite`, `Shell`, `Time` | `GitHubManagedPrBackend`, `ManagedPrBackend` implementations                   |
-| **Implementations** | 4: ABC, Real, Fake, DryRun                        | Just ABC + real implementations                                                |
-| **Needs Fake?**     | ✅ Yes - provides in-memory simulation            | ❌ No - inject fake gateways instead                                           |
+| Aspect              | Gateway                                           | Backend                                                                              |
+| ------------------- | ------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| **Purpose**         | Thin wrapper around external system               | Higher-level abstraction that composes gateways                                      |
+| **Examples**        | `LocalGitHub`, `Git`, `Graphite`, `Shell`, `Time` | `GitHubManagedPrBackend`, `ManagedPrBackend` implementations                         |
+| **Implementations** | 4: ABC, Real, Fake, DryRun                        | Just ABC + real implementations                                                      |
+| **Needs Fake?**     | ✅ Yes - provides in-memory simulation            | ❌ No - inject fake gateways instead                                                 |
 | **Testing**         | Use `FakeLocalGitHub` directly                    | Use `GitHubManagedPrBackend(FakeLocalGitHub(), FakeGitHubIssues(), time=FakeTime())` |
 
 ### Backend Architecture
