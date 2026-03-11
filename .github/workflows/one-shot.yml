@@ -184,7 +184,7 @@ jobs:
       - name: Update plan on rejection
         if: steps.verify.outputs.rejected == 'true' && inputs.plan_issue_number != ''
         env:
-          GH_TOKEN: ${{ secrets.ERK_QUEUE_GH_PAT }}
+          GH_TOKEN: ${{ github.token }}
           PLAN_ISSUE_NUMBER: ${{ inputs.plan_issue_number }}
         run: |
           REASON=$(jq -r '.reason // "Invalid prompt"' .erk/impl-context/plan-result.json)
@@ -217,7 +217,7 @@ jobs:
           && steps.read_result.outputs.plan_id != ''
         continue-on-error: true
         env:
-          GH_TOKEN: ${{ secrets.ERK_QUEUE_GH_PAT }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           erk exec register-one-shot-plan \
             --pr-number "${{ steps.read_result.outputs.plan_id }}" \
