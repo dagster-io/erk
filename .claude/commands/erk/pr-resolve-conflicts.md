@@ -19,16 +19,16 @@ Resolve merge conflicts from a rebase that is already in progress. This command 
 3. **Resolve each real content file:**
 
    a. **Read the file** and understand both sides of the conflict:
-      - `<<<<<<< HEAD` = local changes
-      - `=======` separates local from incoming
-      - `>>>>>>> <commit>` = incoming changes
+   - `<<<<<<< HEAD` = local changes
+   - `=======` separates local from incoming
+   - `>>>>>>> <commit>` = incoming changes
 
    b. **Determine what each side was trying to accomplish.**
 
    c. **Resolve intelligently:**
-      - If changes are complementary, merge both
-      - If changes conflict semantically, prefer the more recent/complete version
-      - If genuinely unclear, ask the user for guidance
+   - If changes are complementary, merge both
+   - If changes conflict semantically, prefer the more recent/complete version
+   - If genuinely unclear, ask the user for guidance
 
    d. **Remove all conflict markers** (`<<<<<<<`, `=======`, `>>>>>>>`).
 
