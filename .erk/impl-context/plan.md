@@ -3,60 +3,43 @@
 ## Context
 
 erk-mcp is deployed in Kubernetes with a shared GitHub App installation token (`GH_TOKEN` env var). All
-`one_shot` PRs are attributed to the app identity (`elementl-devtools`) rather than the human Slack user
-who triggered the request. This plan wires in GitHub App user access tokens so PRs show the actual user.
+`one_shot` PRs are attributed to the app identity (`elementl-devtools`) rather than the human Slack user.
+This plan wires in per-user GitHub OAuth tokens so PRs show the real author.
 
-The core mechanism is simple: `GH_TOKEN` in the subprocess environment determines which GitHub identity
-`erk json one-shot` uses. Injecting a per-user `GH_TOKEN` override into that subprocess env is sufficient —
-no `ErkContext` changes needed. The full plan adds the OAuth layer, token storage, and Slack contract on top.
+The core mechanism: `GH_TOKEN` in the subprocess env determines which GitHub identity `erk json one-shot`
+uses. Injecting a per-user `GH_TOKEN` override into that env is sufficient — no `ErkContext` changes needed.
 
 ## Architecture Overview
 
 ```
-Slack bot → HTTP POST to /mcp (with X-Slack-User-Id header)
-  → SlackUserMiddleware (FastMCP Middleware.on_call_tool)
-      reads header, looks up UserGrant in GrantStore
-      sets ContextVar[user_token]
-  → MachineCommandTool.run()
-      reads ContextVar, builds env_override
-  → subprocess.run(["erk", ...], env={**os.environ, "GH_TOKEN": user_token})
-      → gh auth token → returns user_token
-      → submitted_by = remote.get_authenticated_user() → GitHub user
+One-time user authorization:
+  Compass detects no user-scoped erk-mcp token for this user
+    → triggers MCP OAuth flow for erk-mcp
+    → user authorizes on GitHub via erk-mcp's OAuthProxy
+    → erk-mcp issues its own JWT, stores GitHub token internally
+    → Compass stores erk-mcp JWT with scope='user' for this org_user_id
+
+Per-request flow:
+  Compass loads user-scoped erk-mcp JWT → sends Authorization: Bearer <user-jwt>
+    → FastMCP validates JWT (RequireAuthMiddleware)
+    → GitHubTokenMiddleware looks up GitHub token by JWT sub claim
+    → sets ContextVar[github_token]
+    → MachineCommandTool.run() reads ContextVar
+    → subprocess.run(["erk", ...], env={**os.environ, "GH_TOKEN": user_token})
+    → submitted_by = remote.get_authenticated_user() → real GitHub user
 ```
 
-Fallback: if no `X-Slack-User-Id` header or no stored grant, the subprocess inherits the process-level
-`GH_TOKEN` (bot token) unchanged.
+Fallback: if no user-scoped token, Compass uses the org-scoped token (bot identity).
 
 ---
 
-## Phase 1: Request-Scoped Token Injection (erk-mcp plumbing)
+## erk-mcp Changes
 
-### New: `packages/erk-mcp/src/erk_mcp/request_context.py`
+### Phase 1: Subprocess env override
 
-ContextVar holding the per-request GitHub token. Python asyncio propagates ContextVar snapshots to threads
-spawned via `anyio.to_thread.run_sync`, so the value set in async middleware is readable in the sync
-subprocess-dispatch function.
+**Modify `packages/erk-mcp/src/erk_mcp/server.py`**
 
-```python
-from contextvars import ContextVar, Token
-
-_github_token_for_request: ContextVar[str | None] = ContextVar(
-    "_github_token_for_request", default=None
-)
-
-def set_request_github_token(token: str) -> Token[str | None]:
-    return _github_token_for_request.set(token)
-
-def get_request_github_token() -> str | None:
-    return _github_token_for_request.get()
-
-def reset_request_github_token(token: Token[str | None]) -> None:
-    _github_token_for_request.reset(token)
-```
-
-### Modify: `packages/erk-mcp/src/erk_mcp/server.py`
-
-Add `env_override` parameter to `_run_erk_json()`:
+Add `env_override` param to `_run_erk_json()`, read ContextVar in `MachineCommandTool.run()`:
 
 ```python
 def _run_erk_json(
@@ -71,265 +54,309 @@ def _run_erk_json(
         capture_output=True,
         text=True,
         check=False,
-        env=env_override,   # None = inherit process env (existing behavior)
+        env=env_override,  # None = inherit process env (existing behavior)
     )
     return result.stdout
 ```
 
-In `MachineCommandTool.run()`, read the ContextVar and build the env override:
-
 ```python
-import os
-from erk_mcp.request_context import get_request_github_token
-
-async def run(self, arguments: dict[str, Any]) -> ToolResult:
-    # ... existing None filter ...
-    path = self.cli_command_path
-    user_token = get_request_github_token()
-    env_override = {**os.environ, "GH_TOKEN": user_token} if user_token is not None else None
-    result = await to_thread.run_sync(
-        lambda: _run_erk_json(path, params, env_override=env_override)
-    )
-    return self.convert_result(result)
+# In MachineCommandTool.run():
+user_token = get_request_github_token()  # reads ContextVar
+env_override = {**os.environ, "GH_TOKEN": user_token} if user_token is not None else None
+result = await to_thread.run_sync(
+    lambda: _run_erk_json(path, params, env_override=env_override)
+)
 ```
 
----
+**New `packages/erk-mcp/src/erk_mcp/request_context.py`**
 
-## Phase 2: Token Storage
+ContextVar for per-request GitHub token. Python asyncio propagates ContextVar snapshots to threads
+spawned via `anyio.to_thread.run_sync` — value set in async middleware is readable in the sync function.
 
-### New: `packages/erk-mcp/src/erk_mcp/grant_store.py`
+```python
+from contextvars import ContextVar, Token
 
-**`UserGrant`** — frozen dataclass:
+_github_token_for_request: ContextVar[str | None] = ContextVar(
+    "_github_token_for_request", default=None
+)
+
+def set_request_github_token(token: str) -> Token[str | None]: ...
+def get_request_github_token() -> str | None: ...
+def reset_request_github_token(token: Token[str | None]) -> None: ...
+```
+
+### Phase 2: GitHub OAuth AS Provider
+
+**New `packages/erk-mcp/src/erk_mcp/github_auth_provider.py`**
+
+Implements the MCP SDK's `OAuthAuthorizationServerProvider` interface — the same interface used by
+`_InMemoryOAuthProvider` in `dagster-compass/packages/csbot/src/csbot/compass_dev/mcp.py` (which is the
+reference implementation). Compass's existing MCP OAuth discovery works unchanged because erk-mcp
+publishes its own `/.well-known/oauth-authorization-server` at the same origin.
+
+Key method overrides vs the in-memory reference:
+
+- **`authorize(client, params)`** — instead of auto-approving, redirect to `https://github.com/login/oauth/authorize` with GitHub client_id and the MCP `state` parameter preserved through the round-trip
+- **`exchange_authorization_code(client, auth_code)`** — exchange with GitHub's token endpoint, store the GitHub access token in the GrantStore keyed by a generated `sub`, issue an erk-mcp `OAuthToken` wrapping that `sub`
+- **`load_access_token(token)`** — validate the token string, look up the `sub` → confirm GitHub token still exists in GrantStore
+- **`exchange_refresh_token(client, refresh_token, scopes)`** — refresh the underlying GitHub token via GitHub's refresh endpoint, update GrantStore, issue new erk-mcp tokens
+
+Wired into erk-mcp via `auth_server_provider=` and `AuthSettings` (same API the test server uses):
+
+```python
+from mcp.server.auth.settings import AuthSettings, ClientRegistrationOptions
+from pydantic import AnyHttpUrl
+
+def build_auth_settings(base_url: str) -> AuthSettings:
+    return AuthSettings(
+        issuer_url=AnyHttpUrl(base_url),
+        resource_server_url=AnyHttpUrl(f"{base_url}/mcp"),
+        client_registration_options=ClientRegistrationOptions(enabled=True),
+    )
+```
+
+**Internal token store (`grant_store.py`)**:
 
 ```python
 @dataclass(frozen=True)
 class UserGrant:
-    slack_user_id: str
-    github_login: str
-    access_token: str
+    jwt_sub: str        # erk-mcp JWT sub claim
+    github_token: str   # GitHub access token
+    github_login: str   # GitHub username
+    expires_at: str     # ISO 8601 UTC
     refresh_token: str
-    access_token_expires_at: str   # ISO 8601 UTC
-    refresh_token_expires_at: str  # ISO 8601 UTC
-```
+    refresh_token_expires_at: str
 
-**`GrantStore`** ABC:
-
-```python
 class GrantStore(ABC):
     @abstractmethod
-    def get_grant(self, slack_user_id: str) -> UserGrant | None: ...
+    def get_grant(self, jwt_sub: str) -> UserGrant | None: ...
     @abstractmethod
     def put_grant(self, grant: UserGrant) -> None: ...
     @abstractmethod
-    def delete_grant(self, slack_user_id: str) -> None: ...
+    def delete_grant(self, jwt_sub: str) -> None: ...
 ```
 
-**`JsonFileGrantStore`** — production implementation:
-- Backed by `ERK_MCP_GRANT_STORE_PATH` env var (raise `RuntimeError` at startup if absent)
-- Default path: `/var/run/erk-mcp/grants.json`
-- Stores `{slack_user_id: {grant fields}}` JSON
-- Atomic writes: write to `.tmp` then `os.replace()` to prevent partial reads
-- No in-memory cache (re-read on every `get_grant`) — safe for single-replica K8s
+`JsonFileGrantStore`: atomic JSON file writes, path from `ERK_MCP_GRANT_STORE_PATH`.
+`FakeGrantStore`: test double with `put_calls`/`delete_calls` tracking.
 
-**`FakeGrantStore`** — test double, tracks `put_calls` and `delete_calls` lists.
+**Token refresh (`token_refresh.py`)**: refreshes GitHub token when within 5 min of expiry, persists
+updated grant, returns `None` if refresh token is expired.
 
-**`build_grant_store()`** — factory function that reads env vars and returns a `JsonFileGrantStore`.
+### Phase 3: FastMCP Middleware
 
-### New: `packages/erk-mcp/src/erk_mcp/token_refresh.py`
+**New `packages/erk-mcp/src/erk_mcp/github_token_middleware.py`**
 
-```python
-def refresh_grant_if_needed(grant: UserGrant, store: GrantStore) -> UserGrant | None:
-    """Refresh access token if expiry is within 5 minutes. Returns updated grant or None."""
-```
-
-Compares `grant.access_token_expires_at` to `datetime.now(UTC) + timedelta(minutes=5)`.
-On success: builds new `UserGrant`, calls `store.put_grant()`, returns updated grant.
-On refresh token expiry: returns `None`.
-
----
-
-## Phase 3: FastMCP Middleware
-
-### New: `packages/erk-mcp/src/erk_mcp/slack_user_middleware.py`
+Reads the validated erk-mcp JWT (already verified by FastMCP's `RequireAuthMiddleware`), looks up the
+associated GitHub token, and sets the ContextVar.
 
 ```python
-from fastmcp.server.http import _current_http_request
-from fastmcp.server.middleware.middleware import Middleware, MiddlewareContext, CallNext
-from erk_mcp.grant_store import GrantStore
-from erk_mcp.request_context import set_request_github_token, reset_request_github_token
-from erk_mcp.token_refresh import refresh_grant_if_needed
+from mcp.server.auth.middleware.auth_context import get_access_token
+from fastmcp.server.middleware.middleware import Middleware
 
-SLACK_USER_HEADER = "x-slack-user-id"
-
-class SlackUserMiddleware(Middleware):
+class GitHubTokenMiddleware(Middleware):
     def __init__(self, *, grant_store: GrantStore) -> None:
         self._grant_store = grant_store
 
     async def on_call_tool(self, context, call_next) -> ToolResult:
-        slack_user_id = self._get_slack_user_id()
+        access_token = _get_validated_token()  # from FastMCP auth context
+        if access_token is None:
+            return await call_next(context)  # unauthenticated → fallback to bot token
 
-        if slack_user_id is None:
-            return await call_next(context)  # no header → fallback to process GH_TOKEN
-
-        grant = self._grant_store.get_grant(slack_user_id)
-
+        grant = self._grant_store.get_grant(access_token.sub)
         if grant is None:
-            return self._auth_required_result(slack_user_id)
+            return await call_next(context)  # no GitHub grant → fallback
 
         grant = refresh_grant_if_needed(grant, self._grant_store)
         if grant is None:
-            return self._auth_required_result(slack_user_id)
+            return await call_next(context)  # refresh expired → fallback
 
-        tok = set_request_github_token(grant.access_token)
+        tok = set_request_github_token(grant.github_token)
         try:
             return await call_next(context)
         finally:
             reset_request_github_token(tok)
-
-    def _get_slack_user_id(self) -> str | None:
-        request = _current_http_request.get()
-        if request is None:
-            return None  # stdio transport
-        return request.headers.get(SLACK_USER_HEADER)
-
-    def _auth_required_result(self, slack_user_id: str) -> ToolResult:
-        # Returns ToolResult with TextContent JSON:
-        # {"success": false, "error_type": "github_auth_required",
-        #  "slack_user_id": "...", "message": "..."}
-        ...
 ```
 
----
+**Note**: No `X-Slack-User-Id` header needed. The Bearer token carries user identity.
 
-## Phase 4: GitHub App OAuth (device flow) + Slack Contract
+### Phase 4: Server wiring
 
-### New: `packages/erk-mcp/src/erk_mcp/github_oauth.py`
-
-Uses `httpx` (already a transitive dep via fastmcp) for direct GitHub API calls — no `gh` CLI.
-
-Key dataclasses:
-- `DeviceFlowStart` — `device_code`, `user_code`, `verification_uri`, `expires_in`, `interval`
-- `DeviceFlowToken` — `access_token`, `refresh_token`, `expires_in`, `refresh_token_expires_in`
-- `DeviceFlowPending`, `DeviceFlowExpired`
-
-Key functions:
-- `start_device_flow(*, client_id: str) -> DeviceFlowStart`
-- `poll_device_flow(*, client_id: str, device_code: str) -> DeviceFlowToken | DeviceFlowPending | DeviceFlowExpired`
-- `refresh_access_token(*, client_id, client_secret, refresh_token) -> DeviceFlowToken | None`
-- `get_github_login(*, access_token: str) -> str`
-
-**In-memory pending flow tracking** (module-level, single-process OK):
-```python
-@dataclass(frozen=True)
-class PendingFlow:
-    slack_user_id: str
-    device_code: str
-    expires_at: float  # monotonic time
-
-_pending_flows: dict[str, PendingFlow] = {}  # poll_token -> PendingFlow
-```
-
-### Custom routes on FastMCP server
-
-Added in `__main__.py` via `@mcp.custom_route(...)` decorator:
-
-**`POST /auth/github/start`**
-- Body: `{"slack_user_id": "U123"}`
-- Calls `start_device_flow()`, stores `PendingFlow` keyed by UUID `poll_token`
-- Returns: `{"user_code": "ABCD-1234", "verification_uri": "...", "expires_in": 900, "poll_token": "<uuid>"}`
-- The `device_code` is never returned to the caller
-
-**`POST /auth/github/poll`**
-- Body: `{"poll_token": "<uuid>"}`
-- Calls `poll_device_flow()` with the stored `device_code`
-- On `DeviceFlowToken`: calls `get_github_login()`, builds `UserGrant`, calls `store.put_grant()`, cleans up pending
-- Returns: `{"status": "pending"}` or `{"status": "authorized", "github_login": "username"}`
-
-**`POST /auth/github/revoke`**
-- Body: `{"slack_user_id": "U123"}`
-- Calls `store.delete_grant(slack_user_id)`
-- Returns: `{"status": "revoked"}`
-
-All auth routes validate a shared secret header `X-Internal-Auth` against `ERK_MCP_INTERNAL_SECRET` env var
-to restrict access to the trusted Slack bot. Requests missing or with wrong secret → 403.
-
-### Slack bot responsibilities
-
-1. Add `X-Slack-User-Id: <slack_user_id>` to every MCP tool call request
-2. On `error_type == "github_auth_required"`:
-   - POST `/auth/github/start`
-   - DM the user: "Authorize GitHub at **github.com/login/device** using code **ABCD-1234**"
-   - Poll `/auth/github/poll` until `authorized` or expired
-   - On `authorized`: reply to user confirming connection, optionally retry the original action
-   - On expired: DM user that the code expired and they can try again
-
-### New environment variables (K8s secrets)
-
-| Variable | Purpose |
-|---|---|
-| `ERK_MCP_GRANT_STORE_PATH` | Path to grant store JSON file (mounted volume) |
-| `ERK_MCP_GITHUB_CLIENT_ID` | GitHub App client_id |
-| `ERK_MCP_GITHUB_CLIENT_SECRET` | GitHub App client_secret (for token refresh) |
-| `ERK_MCP_INTERNAL_SECRET` | Shared secret for `/auth/github/*` routes |
-
----
-
-## Modify: `packages/erk-mcp/src/erk_mcp/__main__.py`
+**Modify `packages/erk-mcp/src/erk_mcp/__main__.py`**:
 
 ```python
 def main() -> None:
     args = _parse_args(None)
-    mcp = create_mcp()
-
     if args.transport == "stdio":
-        mcp.run()
+        create_mcp().run()
     else:
         grant_store = build_grant_store()
-        mcp.add_middleware(SlackUserMiddleware(grant_store=grant_store))
-        _register_auth_routes(mcp, grant_store)
-        mcp.run(transport=args.transport, host=args.host, port=args.port)
+        oauth_proxy = build_github_oauth_proxy(
+            base_url=os.environ["ERK_MCP_BASE_URL"],
+            grant_store=grant_store,
+            github_client_id=os.environ["ERK_MCP_GITHUB_CLIENT_ID"],
+            github_client_secret=os.environ["ERK_MCP_GITHUB_CLIENT_SECRET"],
+        )
+        mcp = create_mcp()
+        mcp.add_middleware(GitHubTokenMiddleware(grant_store=grant_store))
+        mcp.run(transport=args.transport, host=args.host, port=args.port, auth=oauth_proxy)
 ```
 
-`_register_auth_routes(mcp, grant_store)` applies the `@mcp.custom_route()` decorators for the three auth endpoints. It lives in a new `auth_routes.py` module.
+### New K8s secrets
+
+| Variable | Purpose |
+|---|---|
+| `ERK_MCP_GRANT_STORE_PATH` | Path for JSON grant store (K8s mounted volume) |
+| `ERK_MCP_GITHUB_CLIENT_ID` | GitHub OAuth App client_id |
+| `ERK_MCP_GITHUB_CLIENT_SECRET` | GitHub OAuth App client_secret |
+| `ERK_MCP_BASE_URL` | Public URL of erk-mcp (e.g. `https://erk-mcp.example.com`) |
+
+---
+
+## dagster-compass Changes
+
+The schema already has `scope='user'` and `org_user_id` in `mcp_server_auth`. The application layer
+just needs to activate it.
+
+### Storage changes
+
+**`packages/csbot/src/csbot/slackbot/storage/interface.py`**
+
+Add user-scoped save method:
+```python
+async def save_mcp_server_oauth_for_user(
+    self,
+    mcp_server_id: int,
+    organization_id: int,
+    org_user_id: int,
+    access_token: str,
+    refresh_token: str | None,
+    token_expires_at: datetime | None,
+) -> None: ...
+```
+
+**`packages/csbot/src/csbot/slackbot/storage/postgresql.py`**
+
+Implement with `scope='user', org_user_id=<id>` (upsert via `idx_mcp_server_auth_user` index).
+
+Update `_load_mcp_servers()` to accept optional `org_user_id` and LEFT JOIN user-scoped auth,
+preferring it over org-scoped when available:
+```sql
+LEFT JOIN mcp_server_auth ma_org ON ms.id = ma_org.mcp_server_id AND ma_org.scope = 'organization'
+LEFT JOIN mcp_server_auth ma_user ON ms.id = ma_user.mcp_server_id
+    AND ma_user.scope = 'user' AND ma_user.org_user_id = %(org_user_id)s
+-- COALESCE: prefer user-scoped token
+COALESCE(ma_user.encrypted_access_token, ma_org.encrypted_access_token) AS encrypted_access_token,
+...
+```
+
+### OAuth flow: capture user identity
+
+**`packages/csbot/src/csbot/slackbot/webapp/mcp_oauth.py`**
+
+Update `mcp_oauth_start` to require user session (already available via `ViewerContext`/cookies) and
+pass `org_user_id` through the OAuth state parameter.
+
+Update `mcp_oauth_callback`: if `org_user_id` is present in state, call
+`save_mcp_server_oauth_for_user()` instead of `save_mcp_server_oauth()`.
+
+### MCP token loading: per-request
+
+**`packages/csbot/src/csbot/agents/anthropic/anthropic_agent.py`** (or the caller)
+
+Currently MCP servers are loaded at bot startup from `bot_config`. To support per-user tokens,
+load fresh server configs at request time in `stream_claude_response`, passing `org_user_id`:
+
+```python
+# In stream_claude_response, when user is available:
+mcp_servers = await storage.load_mcp_servers(
+    organization_id=org_id,
+    org_user_id=user.id if user else None,
+)
+```
+
+### Auth-required prompting
+
+Currently the agent silently skips MCP servers with expired tokens. Change to prompt the user:
+when a server has no auth or expired auth for this user, the agent should surface a message like
+_"You need to connect your GitHub account to use erk. [Connect](<oauth-start-url>)"_ rather than
+skipping silently.
+
+The `mcp_oauth_start` URL for a user would be:
+```
+/auth/mcp-oauth/start?mcp_server_id=N&org_slug=S&user_scoped=true
+```
+
+### OAuth server URL split (Neil's observation)
+
+Currently Compass truncates the MCP URL to its origin to find the OAuth AS. Since erk-mcp hosts
+its own OAuthProxy at the same origin, **no change is needed for erk-mcp**. The existing discovery
+(`GET /.well-known/oauth-protected-resource` → `GET /.well-known/oauth-authorization-server`) will
+work transparently.
+
+If a future MCP server needs a separate OAuth server URL, add an optional `oauth_server_url` field
+to `McpServerConfig` — but that's not needed now.
 
 ---
 
 ## Critical File Paths
 
-| File | Status | Change |
-|---|---|---|
-| `packages/erk-mcp/src/erk_mcp/server.py` | Modify | `env_override` param + ContextVar read in `MachineCommandTool.run()` |
-| `packages/erk-mcp/src/erk_mcp/__main__.py` | Modify | Wire middleware + auth routes for HTTP transport |
-| `packages/erk-mcp/src/erk_mcp/request_context.py` | New | ContextVar module |
-| `packages/erk-mcp/src/erk_mcp/grant_store.py` | New | `UserGrant`, `GrantStore` ABC, `JsonFileGrantStore`, `FakeGrantStore` |
-| `packages/erk-mcp/src/erk_mcp/token_refresh.py` | New | `refresh_grant_if_needed()` |
-| `packages/erk-mcp/src/erk_mcp/slack_user_middleware.py` | New | `SlackUserMiddleware` |
-| `packages/erk-mcp/src/erk_mcp/github_oauth.py` | New | Device flow + refresh + pending flow tracking |
-| `packages/erk-mcp/src/erk_mcp/auth_routes.py` | New | `_register_auth_routes()` with three endpoints |
-| `packages/erk-mcp/tests/test_server.py` | Modify | Add token injection tests |
-| `packages/erk-mcp/tests/test_grant_store.py` | New | `JsonFileGrantStore` round-trip + atomic write |
-| `packages/erk-mcp/tests/test_slack_user_middleware.py` | New | Middleware unit tests with `FakeGrantStore` |
-| `packages/erk-mcp/tests/test_github_oauth.py` | New | Device flow tests with mocked httpx |
-| `packages/erk-mcp/tests/test_auth_routes.py` | New | Auth endpoint tests |
+### erk repo
 
-### FastMCP APIs confirmed available
+| File | Status |
+|---|---|
+| `packages/erk-mcp/src/erk_mcp/server.py` | Modify — `env_override` + ContextVar read |
+| `packages/erk-mcp/src/erk_mcp/__main__.py` | Modify — wire OAuthProxy + middleware |
+| `packages/erk-mcp/src/erk_mcp/request_context.py` | New |
+| `packages/erk-mcp/src/erk_mcp/grant_store.py` | New — `GrantStore` ABC + `JsonFileGrantStore` + `FakeGrantStore` |
+| `packages/erk-mcp/src/erk_mcp/token_refresh.py` | New |
+| `packages/erk-mcp/src/erk_mcp/github_token_middleware.py` | New — `GitHubTokenMiddleware` |
+| `packages/erk-mcp/src/erk_mcp/github_auth_provider.py` | New — `GitHubOAuthProvider(OAuthAuthorizationServerProvider)` |
+| `packages/erk-mcp/tests/test_server.py` | Modify |
+| `packages/erk-mcp/tests/test_grant_store.py` | New |
+| `packages/erk-mcp/tests/test_github_token_middleware.py` | New |
+| `packages/erk-mcp/tests/test_github_auth_provider.py` | New |
 
-- `FastMCP.add_middleware(middleware: Middleware)` — `server/server.py:402`
-- `Middleware.on_call_tool()` hook — `server/middleware/middleware.py:156`
-- `_current_http_request: ContextVar[Request | None]` — `server/http.py:64` (private, stable pattern)
-- `@mcp.custom_route(path, methods)` decorator — `server/mixins/transport.py:97`
+**Key reference**: `dagster-compass/packages/csbot/src/csbot/compass_dev/mcp.py` — `_InMemoryOAuthProvider` is the complete reference for the `OAuthAuthorizationServerProvider` interface that `GitHubOAuthProvider` will implement.
+
+### dagster-compass repo
+
+| File | Status |
+|---|---|
+| `packages/csbot/src/csbot/slackbot/storage/interface.py` | Modify — add `save_mcp_server_oauth_for_user()` |
+| `packages/csbot/src/csbot/slackbot/storage/postgresql.py` | Modify — impl + update `_load_mcp_servers()` |
+| `packages/csbot/src/csbot/slackbot/webapp/mcp_oauth.py` | Modify — capture `org_user_id` in state |
+| `packages/csbot/src/csbot/agents/anthropic/anthropic_agent.py` | Modify — load user-scoped MCP tokens at request time |
+
+### FastMCP APIs confirmed
+
+- `FastMCP.add_middleware(Middleware)` — `server/server.py:402`
+- `Middleware.on_call_tool()` — `server/middleware/middleware.py:156`
+- `OAuthProxy(upstream_authorization_endpoint, upstream_token_endpoint, ...)` — `server/auth/oauth_proxy/proxy.py:228`
+- `get_access_token` from `mcp.server.auth.middleware.auth_context` — for reading validated JWT in middleware
+
+---
+
+## What's Missing from Compass Docs
+
+The `scope='user'` pattern in `mcp_server_auth` is undocumented. The schema implies a planned
+per-user auth flow but there's no doc or comment explaining:
+- When to use user-scoped vs org-scoped tokens
+- How `_load_mcp_servers` is intended to be extended for user context
+- The pattern for surfacing auth-required to individual Slack users
+
+These should be documented in dagster-compass as the implementation lands.
 
 ---
 
 ## Verification
 
-1. **ContextVar thread propagation** — unit test: set ContextVar in async context, read in thread via `anyio.to_thread.run_sync`, assert value visible
-2. **Subprocess env injection** — unit test: patch `subprocess.run`, call `_run_erk_json` with `env_override`, assert `subprocess.run` received `env=env_override` with `GH_TOKEN=<user_token>`
-3. **Middleware with connected user** — unit test: `SlackUserMiddleware` + `FakeGrantStore` with seeded grant, assert ContextVar set to grant's access token and reset after call
-4. **Middleware with unconnected user** — unit test: header present but no grant → assert `ToolResult` JSON has `error_type == "github_auth_required"`
-5. **Middleware stdio fallback** — unit test: `_current_http_request` is `None` → calls `call_next` without setting ContextVar
-6. **JsonFileGrantStore round-trip** — unit test: `put_grant` then `get_grant` returns same grant; atomic write (`.tmp` → rename)
-7. **Token refresh** — unit test: expired access token triggers `refresh_access_token()`, updated grant persisted
-8. **Device flow endpoints** — unit tests with mocked `httpx`: start returns `user_code` + `poll_token`; poll returns `pending` then `authorized`; grant stored on `authorized`
-9. **End-to-end staging** — Slack-triggered `one_shot`: verify PR actor is the human GitHub user; verify bot fallback still works for users with no grant
-10. **Token security** — grep `_run_erk_json` stdout and all ToolResult payloads; assert no token value surfaces
+1. **ContextVar thread propagation** — unit test sets ContextVar in async, reads in thread via `anyio.to_thread.run_sync`
+2. **Subprocess env injection** — patch `subprocess.run`, assert `env=` contains `GH_TOKEN=user_token`
+3. **Middleware with valid grant** — `FakeGrantStore` seeded, assert ContextVar set and reset in `finally`
+4. **Middleware with no grant** — no grant found → `call_next` invoked without ContextVar set (fallback)
+5. **Well-known discovery** — `GET /.well-known/oauth-authorization-server` returns GitHub endpoints
+6. **JsonFileGrantStore** — put/get/delete round-trip; atomic write `.tmp → rename`
+7. **Token refresh** — expired token triggers GitHub refresh, updated grant persisted
+8. **Compass user-scoped storage** — `save_mcp_server_oauth_for_user` inserts `scope='user'`; `_load_mcp_servers(org_user_id=X)` returns user token over org token
+9. **End-to-end staging** — Slack `one_shot`: PR actor is the human GitHub user; unconnected user sees auth prompt; bot fallback works for org-level token
+10. **Token security** — no token values in `_run_erk_json` stdout or ToolResult payloads
