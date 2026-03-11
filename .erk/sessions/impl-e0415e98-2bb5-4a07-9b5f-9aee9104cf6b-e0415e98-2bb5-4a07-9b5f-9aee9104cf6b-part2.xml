@@ -1,0 +1,17 @@
+<session>
+  <meta branch="master" />
+  <meta model="claude-sonnet-4-6" />
+  <tool_use name="Bash" id="toolu_015WaL2v5wbJrSfnCDDbnYxx">
+    <param name="command">erk exec capture-session-info --session-id "e0415e98-2bb5-4a07-9b5f-9aee9104cf6b" 2&gt;/dev/null | grep -o '"session_file":"[^"]*"' | cut -d'"' -f4</param>
+    <param name="description">Get session file path for push-session</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="670" cache_read_input_tokens="80646" output_tokens="146" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 670}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_015WaL2v5wbJrSfnCDDbnYxx">
+
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01X8nHxRTZSe9XBLLvzc4M6m">
+    <param name="command">erk exec upload-impl-session --session-id "e0415e98-2bb5-4a07-9b5f-9aee9104cf6b" 2&gt;/dev/null || true</param>
+    <param name="description">Push planning session for cross-machine learning</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="251" cache_read_input_tokens="81316" output_tokens="124" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 251}" inference_geo="" iterations="[]" speed="standard" />
+</session>

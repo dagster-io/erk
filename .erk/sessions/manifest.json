@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "pr_number": 8715,
+  "sessions": [
+    {
+      "session_id": "e0415e98-2bb5-4a07-9b5f-9aee9104cf6b",
+      "stage": "impl",
+      "source": "local",
+      "uploaded_at": "2026-03-11T10:41:28.694931+00:00",
+      "files": [
+        "impl-e0415e98-2bb5-4a07-9b5f-9aee9104cf6b-e0415e98-2bb5-4a07-9b5f-9aee9104cf6b-part1.xml",
+        "impl-e0415e98-2bb5-4a07-9b5f-9aee9104cf6b-e0415e98-2bb5-4a07-9b5f-9aee9104cf6b-part2.xml"
+      ],
+      "user_turns": 2,
+      "duration_minutes": 19,
+      "raw_size_kb": 1156,
+      "xml_size_kb": 68,
+      "git_branch": "master"
+    }
+  ]
+}

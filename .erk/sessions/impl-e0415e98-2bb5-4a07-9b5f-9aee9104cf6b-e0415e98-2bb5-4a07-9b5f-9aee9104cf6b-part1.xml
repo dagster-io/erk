@@ -1,0 +1,1113 @@
+<session>
+  <meta branch="master" />
+  <meta model="claude-sonnet-4-6" />
+  <user>review @ERK_MCP_GITHUB_ATTRIBUTION_PLAN.md ; I am attempting to provide per-user GitHub attribution for the erk process that has been deployed. This is currently deployed in kubernetes and bot token is set as an environment variable.</user>
+  <usage input_tokens="3" cache_creation_input_tokens="28782" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 28782, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <tool_use name="Agent" id="toolu_01Bk1U4vrEPGgkLwjoCuzJMA">
+    <param name="description">Explore erk-mcp server and request handling</param>
+    <param name="subagent_type">Explore</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic. Read relevant ...[truncated 544 chars]... what auth/token context is available per-request, and how erk is invoked as a subprocess.</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="28782" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 28782, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <tool_use name="Agent" id="toolu_01BvVfa9wcFcwNHTuEPkiZzc">
+    <param name="description">Explore ErkContext, HttpClient, and one_shot flow</param>
+    <param name="subagent_type">Explore</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic. Read relevant ...[truncated 746 chars]...w into HTTP calls, what override points exist, and the submitted_by attribution mechanism.</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="28782" cache_read_input_tokens="0" output_tokens="748" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 28782}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01BvVfa9wcFcwNHTuEPkiZzc">
+Perfect! Now I have a comprehensive understanding of the auth/context plumbing. Let me compile the findings into a clear report:
+
+## Auth and Context Plumbing Exploration - Summary Report
+
+Based on my exploration of the erk codebase, here's the comprehensive analysis of the core auth/context plumbing:
+
+### 1. GitHub Token Retrieval (`packages/erk-shared/src/erk_shared/gateway/http/auth.py`)
+
+**Two main functions:**
+- **`fetch_github_token()`** - Calls `gh auth token --hostname github.com`, raises on failure
+- **`fetch_github_token_or_none()`** - Same command but returns `None` if gh auth is not configured
+
+Both use `run_subprocess_with_context()` as the subprocess wrapper, designed to be called once at startup and cached.
+
+### 2. ErkContext Construction (`src/erk/core/context.py`)
+
+The context creation flow (in `create_context()`):
+
+**Step 1-5: Early setup** - CWD, erk installation, global config, basic gateways (git, time, console)
+
+**Step 6b: HTTP client creation** (lines 272-277):
+```python
+http_client: HttpClient | None = None
+token = fetch_github_token_or_none()
+if token is not None:
+    http_client = RealHttpClient(token=token, base_url="https://api.github.com")
+```
+- Token is fetched once via subprocess
+- If available, wrapped in `RealHttpClient` with the GitHub API base URL
+- **Key design**: Token flows directly into `RealHttpClient` at startup; no caching layer is visible at this level
+
+... [162 lines omitted] ...
+
+    raise UserFacingCliError("GitHub authentication required...")
+3. **Error fallback**: Requires auth with clear error message
+  </tool_result>
+  <tool_result tool="toolu_01Bk1U4vrEPGgkLwjoCuzJMA">
+Now I have enough context. Let me compile my comprehensive analysis:
+
+## Exploration Summary: erk-mcp Architecture &amp; Auth Integration
+
+I've completed a thorough exploration of the erk-mcp package structure, tool registration, subprocess handling, and the planned per-user GitHub attribution system. Here are my findings:
+
+### 1. **How Tools are Registered and one_shot is Invoked**
+
+**Location:** `/Users/colton/src/erk/packages/erk-mcp/src/erk_mcp/server.py`
+
+- **Tool Discovery:** `_build_machine_command_tools()` walks the Click CLI command tree via `discover_mcp_commands()` to find all commands decorated with `@mcp_exposed`.
+- **Current Tools (3 total):**
+  - `one_shot` → command path `("json", "one-shot")`
+  - `pr_list` → command path `("json", "pr", "list")`
+  - `pr_view` → command path `("json", "pr", "view")`
+- **Dynamic Tool Creation:** Each MCP tool is a `MachineCommandTool` instance that stores:
+  - `name` (e.g., "one_shot")
+  - `cli_command_path` (tuple used to construct subprocess args)
+  - `description` (from `@mcp_exposed` decorator)
+  - `parameters` (JSON Schema built from `request_type`)
+
+**Invocation Flow:**
+```
+MCP request → MachineCommandTool.run() 
+  → filters None values from arguments
+  → calls _run_erk_json(command_path, params)
+  → subprocess.run(["erk", ...command_path], input=json.dumps(params))
+  → captures stdout, returns as string
+```
+
+
+... [222 lines omitted] ...
+
+| Error handling | Process fails or uses fallback | Structured `github_auth_required` error |
+  </tool_result>
+  <usage input_tokens="2495" cache_creation_input_tokens="4154" cache_read_input_tokens="28782" cache_creation="{'ephemeral_5m_input_tokens': 4154, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <assistant>Good exploration results. Let me look at a couple of specific files before asking questions.</assistant>
+  <usage input_tokens="2495" cache_creation_input_tokens="4154" cache_read_input_tokens="28782" cache_creation="{'ephemeral_5m_input_tokens': 4154, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01DNoU5MMMqtkkhBbNFqJmJk">
+    <param name="file_path">/Users/colton/src/erk/packages/erk-mcp/src/erk_mcp/server.py</param>
+  </tool_use>
+  <usage input_tokens="2495" cache_creation_input_tokens="4154" cache_read_input_tokens="28782" cache_creation="{'ephemeral_5m_input_tokens': 4154, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01DNoU5MMMqtkkhBbNFqJmJk">
+     1→"""FastMCP server exposing erk capabilities as MCP tools."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→import json
+     6→import subprocess
+     7→from typing import TYPE_CHECKING, Any
+     8→
+     9→from anyio import to_thread
+    10→from fastmcp.tools.tool import Tool, ToolResult
+    11→
+    12→from erk_shared.agentclick.machine_schema import request_schema
+    13→from erk_shared.agentclick.mcp_exposed import discover_mcp_commands
+    14→
+    15→if TYPE_CHECKING:
+    16→    from fastmcp import FastMCP
+    17→
+    18→DEFAULT_MCP_NAME = "erk"
+    19→
+    20→
+    21→def _run_erk_json(command_path: tuple[str, ...], params: dict[str, Any]) -&gt; str:
+    22→    """Run erk json command, piping params as JSON stdin.
+    23→
+    24→    Args:
+    25→        command_path: Tuple of subcommand names, e.g. ("json", "pr", "list").
+    26→        params: JSON-serializable dict piped to stdin.
+    27→    """
+    28→    result = subprocess.run(
+    29→        ["erk", *command_path],
+    30→        input=json.dumps(params),
+
+... [66 lines omitted] ...
+  </tool_result>
+  <tool_use name="Glob" id="toolu_01RspLBZJz8ed9pDfeZuhBq1">
+    <param name="pattern">packages/erk-mcp/**/*.py</param>
+  </tool_use>
+  <usage input_tokens="2495" cache_creation_input_tokens="4154" cache_read_input_tokens="28782" output_tokens="2365" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 4154}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01RspLBZJz8ed9pDfeZuhBq1">
+/Users/colton/src/erk/packages/erk-mcp/src/erk_mcp/__init__.py
+/Users/colton/src/erk/packages/erk-mcp/src/erk_mcp/__main__.py
+/Users/colton/src/erk/packages/erk-mcp/tests/test_main.py
+/Users/colton/src/erk/packages/erk-mcp/src/erk_mcp/server.py
+/Users/colton/src/erk/packages/erk-mcp/tests/test_server.py
+  </tool_result>
+  <tool_use name="Read" id="toolu_01R8V1icrfHaottPCV341ewd">
+    <param name="file_path">/Users/colton/src/erk/packages/erk-mcp/src/erk_mcp/__main__.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6301" cache_read_input_tokens="32936" cache_creation="{'ephemeral_5m_input_tokens': 6301, 'ephemeral_1h_input_tokens': 0}" output_tokens="18" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01R8V1icrfHaottPCV341ewd">
+     1→import argparse
+     2→import os
+     3→
+     4→from erk_mcp.server import create_mcp
+     5→
+     6→
+     7→def _parse_args(argv: list[str] | None) -&gt; argparse.Namespace:
+     8→    parser = argparse.ArgumentParser(description="Run the Erk MCP server.")
+     9→    parser.add_argument("--host", default=os.getenv("ERK_MCP_HOST", "0.0.0.0"))
+    10→    parser.add_argument("--port", type=int, default=9000)
+    11→    parser.add_argument(
+    12→        "--transport",
+    13→        choices=["streamable-http", "stdio"],
+    14→        default="streamable-http",
+    15→    )
+    16→    return parser.parse_args(argv)
+    17→
+    18→
+    19→def main() -&gt; None:
+    20→    args = _parse_args(None)
+    21→    mcp = create_mcp()
+    22→    if args.transport == "stdio":
+    23→        mcp.run()
+    24→    else:
+    25→        print(f"Starting erk MCP server on http://{args.host}:{args.port}/mcp")
+    26→        mcp.run(transport=args.transport, host=args.host, port=args.port)
+    27→
+    28→
+    29→if __name__ == "__main__":
+    30→    main()
+
+... [6 lines omitted] ...
+  </tool_result>
+  <tool_use name="Glob" id="toolu_01JTbCaMZLGmtSfD1HXBkqJx">
+    <param name="pattern">packages/erk-mcp/Dockerfile*</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6301" cache_read_input_tokens="32936" cache_creation="{'ephemeral_5m_input_tokens': 6301, 'ephemeral_1h_input_tokens': 0}" output_tokens="18" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01JTbCaMZLGmtSfD1HXBkqJx">
+No files found
+  </tool_result>
+  <tool_use name="Glob" id="toolu_013aTm2NRSwuvMPnR5hs9jDX">
+    <param name="pattern">**/erk-mcp*.yaml</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6301" cache_read_input_tokens="32936" output_tokens="170" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 6301}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_013aTm2NRSwuvMPnR5hs9jDX">
+No files found
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="725" cache_read_input_tokens="39237" cache_creation="{'ephemeral_5m_input_tokens': 725, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01HRWNAHW2uj6iBALSbvUSFV">
+    <param name="file_path">/Users/colton/src/erk/packages/erk-shared/src/erk_shared/gateway/http/auth.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="725" cache_read_input_tokens="39237" output_tokens="1070" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 725}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01HRWNAHW2uj6iBALSbvUSFV">
+     1→"""GitHub authentication token retrieval.
+     2→
+     3→This module provides functions to fetch GitHub tokens via the gh CLI,
+     4→designed to be called once at startup to avoid repeated subprocess overhead.
+     5→"""
+     6→
+     7→from erk_shared.subprocess_utils import run_subprocess_with_context
+     8→
+     9→
+    10→def fetch_github_token() -&gt; str:
+    11→    """Fetch GitHub token via gh CLI.
+    12→
+    13→    This should be called once at startup and cached. The token can then
+    14→    be used to create RealHttpClient instances for direct API calls.
+    15→
+    16→    Returns:
+    17→        GitHub authentication token
+    18→
+    19→    Raises:
+    20→        RuntimeError: If gh auth token fails
+    21→        ValueError: If token is empty
+    22→    """
+    23→    result = run_subprocess_with_context(
+    24→        cmd=["gh", "auth", "token", "--hostname", "github.com"],
+    25→        operation_context="fetch GitHub token for github.com",
+    26→    )
+    27→    token = result.stdout.strip()
+    28→    if not token:
+    29→        msg = "Empty token returned from gh auth for github.com"
+    30→        raise ValueError(msg)
+
+... [30 lines omitted] ...
+
+    39→    point-of-use with a clear error.
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="1761" cache_read_input_tokens="39962" cache_creation="{'ephemeral_5m_input_tokens': 1761, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <assistant>Now I have a clear picture. Let me ask the key questions before writing the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1761" cache_read_input_tokens="39962" cache_creation="{'ephemeral_5m_input_tokens': 1761, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <tool_use name="ToolSearch" id="toolu_01KzqRpzuEqNXP8V9tja9uTG">
+    <param name="query">select:AskUserQuestion</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1761" cache_read_input_tokens="39962" output_tokens="630" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 1761}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01KzqRpzuEqNXP8V9tja9uTG">
+
+  </tool_result>
+  <usage input_tokens="3" cache_creation_input_tokens="2076" cache_read_input_tokens="41723" cache_creation="{'ephemeral_5m_input_tokens': 2076, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <tool_use name="AskUserQuestion" id="toolu_014pk7nnkZ85yb7dyPWJBizr">
+    <param name="questions">[{'question': 'How is the bot GitHub token currently configured in the K8s deployment?', '...[truncated 1961 chars]...the erk-mcp request-scoped auth plumbing, deferring ErkContext changes to a follow-up'}]}]</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="2076" cache_read_input_tokens="41723" output_tokens="800" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 2076}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_014pk7nnkZ85yb7dyPWJBizr">
+User has answered your questions: "How is the bot GitHub token currently configured in the K8s deployment?"="Via GH_TOKEN like so     spec:
+      containers:
+      - image: 007292508084.dkr.ecr.us-west-2.amazonaws.com/quickdeploy/erk-mcp:11d4690a
+
+        imagePullPolicy: Always
+        name: erk-mcp
+        env:
+        - name: GH_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: erk-mcp-github
+              key: token
+" user notes: Via GH_TOKEN like so     spec:
+      containers:
+      - image: 007292508084.dkr.ecr.us-west-2.amazonaws.com/quickdeploy/erk-mcp:11d4690a
+
+        imagePullPolicy: Always
+        name: erk-mcp
+        env:
+        - name: GH_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: erk-mcp-github
+              key: token, "How will per-user GitHub tokens be obtained and delivered to the MCP server?"="GitHub App OAuth not yet set up", "What scope should this implementation plan cover?"="Full end-to-end (Phases 1-4)". You can now continue with the user's answers in mind.
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="995" cache_read_input_tokens="43799" cache_creation="{'ephemeral_5m_input_tokens': 995, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <assistant>Now I have everything I need. Let me design the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="995" cache_read_input_tokens="43799" cache_creation="{'ephemeral_5m_input_tokens': 995, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <tool_use name="Agent" id="toolu_01PKbZ2beA1dPn9chtZVPNeV">
+    <param name="description">Design full implementation plan for GitHub attribution</param>
+    <param name="subagent_type">Plan</param>
+    <param name="prompt">Design a full implementation plan for per-user GitHub attribution in erk-mcp. I'll give yo...[truncated 5140 chars]... changes for Phase 1-3 since the GH_TOKEN env override approach is simpler and sufficient.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="995" cache_read_input_tokens="43799" output_tokens="4217" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 995}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01PKbZ2beA1dPn9chtZVPNeV">
+I now have enough information to write a comprehensive implementation plan. Let me now produce the plan.
+
+---
+
+## Implementation Plan: Per-User GitHub Attribution in erk-mcp
+
+This plan covers Phases 1-4. The core technical decision is the **GH_TOKEN env override approach**: inject a per-user GitHub token as `GH_TOKEN` into the subprocess environment of `_run_erk_json()`. This is correct and sufficient - no ErkContext changes needed.
+
+---
+
+## Technical Foundation
+
+### How the pieces fit together
+
+The execution chain is:
+
+```
+HTTP request with X-Slack-User-Id header
+  → Starlette ASGI middleware (reads header)
+  → sets ContextVar[user_token]
+  → FastMCP Middleware (on_call_tool hook)
+  → MachineCommandTool.run()
+  → _run_erk_json() reads ContextVar, injects GH_TOKEN into subprocess env
+  → erk json one-shot subprocess
+  → fetch_github_token_or_none() returns injected GH_TOKEN
+  → ErkContext.http_client uses the user token
+  → submitted_by = user's GitHub identity
+```
+
+### Why ContextVar works across threads
+
+... [649 lines omitted] ...
+
+    or no grant is found. Returns a structured github_auth_required error
+            # User is known but has no grant - return auth-required error
+        except RuntimeError:
+        """Return structured github_auth_required error as a ToolResult."""
+The `build_grant_store()` factory reads `ERK_MCP_GRANT_STORE_PATH`. If absent, raises a `RuntimeError` at startup (fail fast rather than silent no-op).
+### `github_auth_required` error JSON shape
+When `SlackUserMiddleware` returns an auth-required error, it produces a ToolResult with a single TextContent item containing JSON:
+  "error_type": "github_auth_required",
+The Slack bot detects `error_type == "github_auth_required"` and:
+- `_make_auth_required_result()` building the structured error ToolResult
+**Step 4 - auth-required error shape (unit test)**: Call `SlackUserMiddleware.on_call_tool()` with a header present but no grant in store. Assert the returned `ToolResult` contains JSON with `error_type == "github_auth_required"`.
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="57344" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 57344, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <assistant>Let me quickly verify the FastMCP middleware API before writing the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="57344" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 57344, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <tool_use name="Glob" id="toolu_01NibtUEQHrU3DwCfSEYVt3i">
+    <param name="pattern">**/.venv/lib/**/fastmcp/server/middleware/*.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="57344" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 57344, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <tool_use name="Glob" id="toolu_019AcUFHVKADoERCKHhRyNBz">
+    <param name="pattern">**/.venv/lib/**/fastmcp/server/dependencies.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="57344" cache_read_input_tokens="0" output_tokens="282" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 57344}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01NibtUEQHrU3DwCfSEYVt3i">
+/Users/colton/src/erk/.venv/lib/python3.13/site-packages/fastmcp/server/middleware/__init__.py
+/Users/colton/src/erk/.venv/lib/python3.13/site-packages/fastmcp/server/middleware/authorization.py
+/Users/colton/src/erk/.venv/lib/python3.13/site-packages/fastmcp/server/middleware/caching.py
+/Users/colton/src/erk/.venv/lib/python3.13/site-packages/fastmcp/server/middleware/dereference.py
+/Users/colton/src/erk/.venv/lib/python3.13/site-packages/fastmcp/server/middleware/error_handling.py
+/Users/colton/src/erk/.venv/lib/python3.13/site-packages/fastmcp/server/middleware/logging.py
+/Users/colton/src/erk/.venv/lib/python3.13/site-packages/fastmcp/server/middleware/middleware.py
+/Users/colton/src/erk/.venv/lib/python3.13/site-packages/fastmcp/server/middleware/ping.py
+/Users/colton/src/erk/.venv/lib/python3.13/site-packages/fastmcp/server/middleware/rate_limiting.py
+/Users/colton/src/erk/.venv/lib/python3.13/site-packages/fastmcp/server/middleware/response_limiting.py
+/Users/colton/src/erk/.venv/lib/python3.13/site-packages/fastmcp/server/middleware/timing.py
+/Users/colton/src/erk/.venv/lib/python3.13/site-packages/fastmcp/server/middleware/tool_injection.py
+  </tool_result>
+  <tool_result tool="toolu_019AcUFHVKADoERCKHhRyNBz">
+/Users/colton/src/erk/.venv/lib/python3.13/site-packages/fastmcp/server/dependencies.py
+  </tool_result>
+  <tool_use name="Read" id="toolu_01LKDDHkZcWnz69Kz2awwsG7">
+    <param name="file_path">/Users/colton/src/erk/.venv/lib/python3.13/site-packages/fastmcp/server/middleware/middleware.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="922" cache_read_input_tokens="57344" cache_creation="{'ephemeral_5m_input_tokens': 922, 'ephemeral_1h_input_tokens': 0}" output_tokens="18" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01LKDDHkZcWnz69Kz2awwsG7">
+     1→from __future__ import annotations
+     2→
+     3→import logging
+     4→from collections.abc import Awaitable, Sequence
+     5→from dataclasses import dataclass, field, replace
+     6→from datetime import datetime, timezone
+     7→from functools import partial
+     8→from typing import (
+     9→    TYPE_CHECKING,
+    10→    Any,
+    11→    Generic,
+    12→    Literal,
+    13→    Protocol,
+    14→    runtime_checkable,
+    15→)
+    16→
+    17→import mcp.types as mt
+    18→from typing_extensions import TypeVar
+    19→
+    20→from fastmcp.prompts.prompt import Prompt, PromptResult
+    21→from fastmcp.resources.resource import Resource, ResourceResult
+    22→from fastmcp.resources.template import ResourceTemplate
+    23→from fastmcp.tools.tool import Tool, ToolResult
+    24→
+    25→if TYPE_CHECKING:
+    26→    from fastmcp.server.context import Context
+    27→
+    28→__all__ = [
+    29→    "CallNext",
+    30→    "Middleware",
+
+... [181 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01BnxMEaR3reqCRfb8A5gXdQ">
+    <param name="file_path">/Users/colton/src/erk/.venv/lib/python3.13/site-packages/fastmcp/server/dependencies.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="922" cache_read_input_tokens="57344" output_tokens="157" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 922}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01BnxMEaR3reqCRfb8A5gXdQ">
+&lt;persisted-output&gt;
+Output too large (56.6KB). Full output saved to: /Users/colton/.claude/projects/-Users-colton-src-erk/e0415e98-2bb5-4a07-9b5f-9aee9104cf6b/tool-results/toolu_01BnxMEaR3reqCRfb8A5gXdQ.txt
+
+Preview (first 2KB):
+     1→"""Dependency injection for FastMCP.
+     2→
+     3→DI features (Depends, CurrentContext, CurrentFastMCP) work without pydocket
+     4→using the uncalled-for DI engine. Only task-related dependencies (CurrentDocket,
+     5→CurrentWorker) and background task execution require fastmcp[tasks].
+     6→"""
+     7→
+     8→from __future__ import annotations
+     9→
+    10→import contextlib
+    11→import inspect
+    12→import logging
+    13→import weakref
+    14→from collections.abc import AsyncGenerator, Callable
+    15→from contextlib import AsyncExitStack, asynccontextmanager
+    16→from contextvars import ContextVar, Token
+    17→from dataclasses import dataclass
+    18→from datetime import datetime, timezone
+    19→from functools import lru_cache
+    20→from typing import TYPE_CHECKING, Any, Protocol, cast, get_type_hints, runtime_checkable
+    21→
+    22→from mcp.server.auth.middleware.auth_context import (
+    23→    get_access_token as _sdk_get_access_token,
+    24→)
+    25→from mcp.server.auth.middleware.bearer_auth import AuthenticatedUser
+    26→from mcp.server.auth.provider import (
+
+... [22 lines omitted] ...
+
+    34→from fastmcp.exceptions import FastMCPError
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="3496" cache_read_input_tokens="58266" cache_creation="{'ephemeral_5m_input_tokens': 3496, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01GS23NgBfgTLdSc6xDc1rMz">
+    <param name="pattern">get_http_request|_current_http_request</param>
+    <param name="path">/Users/colton/src/erk/.venv/lib/python3.13/site-packages/fastmcp</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3496" cache_read_input_tokens="58266" output_tokens="165" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 3496}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01GS23NgBfgTLdSc6xDc1rMz">
+No files found
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01PsYUB5JP8t6Sp1daD3TKNi">
+    <param name="pattern">http_request|current_http|Request</param>
+    <param name="path">/Users/colton/src/erk/.venv/lib/python3.13/site-packages/fastmcp/server/http.py</param>
+    <param name="output_mode">content</param>
+    <param name="head_limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="180" cache_read_input_tokens="61762" output_tokens="148" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 180}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01PsYUB5JP8t6Sp1daD3TKNi">
+17:from starlette.requests import Request
+64:_current_http_request: ContextVar[Request | None] = ContextVar(
+65:    "http_request",
+77:def set_http_request(request: Request) -&gt; Generator[Request, None, None]:
+78:    token = _current_http_request.set(request)
+82:        _current_http_request.reset(token)
+85:class RequestContextMiddleware:
+101:                with set_http_request(Request(scope)):
+127:    # Always add RequestContextMiddleware as the outermost middleware
+129:    middleware.insert(0, Middleware(RequestContextMiddleware))  # type: ignore[arg-type]
+159:        A Starlette application with RequestContextMiddleware
+220:        async def sse_endpoint(request: Request) -&gt; Response:
+
+[Showing results with pagination = limit: 30, offset: 0]
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="487" cache_read_input_tokens="61942" cache_creation="{'ephemeral_5m_input_tokens': 487, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01MyjMmkSeHA3Jd8Vd6GeVgh">
+    <param name="pattern">def get_http_request|current_http_request|CurrentHttpRequest</param>
+    <param name="path">/Users/colton/src/erk/.venv/lib/python3.13/site-packages/fastmcp</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="487" cache_read_input_tokens="61942" output_tokens="360" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 487}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01MyjMmkSeHA3Jd8Vd6GeVgh">
+No matches found
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="469" cache_read_input_tokens="62429" cache_creation="{'ephemeral_5m_input_tokens': 469, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01SjYpbmkxKWsE5cuJVpexvh">
+    <param name="pattern">add_middleware|_middleware</param>
+    <param name="path">/Users/colton/src/erk/.venv/lib/python3.13/site-packages/fastmcp/server/server.py</param>
+    <param name="output_mode">content</param>
+    <param name="head_limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="469" cache_read_input_tokens="62429" output_tokens="343" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 469}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01SjYpbmkxKWsE5cuJVpexvh">
+391:    async def _run_middleware(
+402:    def add_middleware(self, middleware: Middleware) -&gt; None:
+508:    async def list_tools(self, *, run_middleware: bool = True) -&gt; Sequence[Tool]:
+516:            if run_middleware:
+524:                return await self._run_middleware(
+526:                    call_next=lambda context: self.list_tools(run_middleware=False),
+605:        self, *, run_middleware: bool = True
+614:            if run_middleware:
+622:                return await self._run_middleware(
+624:                    call_next=lambda context: self.list_resources(run_middleware=False),
+702:        self, *, run_middleware: bool = True
+711:            if run_middleware:
+719:                return await self._run_middleware(
+722:                        run_middleware=False
+800:    async def list_prompts(self, *, run_middleware: bool = True) -&gt; Sequence[Prompt]:
+808:            if run_middleware:
+816:                return await self._run_middleware(
+818:                    call_next=lambda context: self.list_prompts(run_middleware=False),
+902:        run_middleware: bool = True,
+913:        run_middleware: bool = True,
+
+[Showing results with pagination = limit: 20, offset: 0]
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="679" cache_read_input_tokens="62898" cache_creation="{'ephemeral_5m_input_tokens': 679, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_011E9HPa3Zfc9fYgfkKs9mYg">
+    <param name="pattern">custom_route|add_route</param>
+    <param name="path">/Users/colton/src/erk/.venv/lib/python3.13/site-packages/fastmcp/server/server.py</param>
+    <param name="output_mode">content</param>
+    <param name="head_limit">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="679" cache_read_input_tokens="62898" output_tokens="299" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 679}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_011E9HPa3Zfc9fYgfkKs9mYg">
+No matches found
+
+[Showing results with pagination = limit: 15, offset: 0]
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01AZTG75Sy7Hc4fkpjjYtNrr">
+    <param name="pattern">custom_route|add_route|http_route|starlette_route</param>
+    <param name="path">/Users/colton/src/erk/.venv/lib/python3.13/site-packages/fastmcp</param>
+    <param name="output_mode">content</param>
+    <param name="head_limit">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="330" cache_read_input_tokens="63577" output_tokens="150" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 330}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01AZTG75Sy7Hc4fkpjjYtNrr">
+No matches found
+
+[Showing results with pagination = limit: 10, offset: 0]
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="183" cache_read_input_tokens="63907" cache_creation="{'ephemeral_5m_input_tokens': 183, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01NTdnBH9hKygA4m1V225pGh">
+    <param name="pattern">def create_app\|get_asgi_app\|asgi_app</param>
+    <param name="path">/Users/colton/src/erk/.venv/lib/python3.13/site-packages/fastmcp/server/server.py</param>
+    <param name="output_mode">content</param>
+    <param name="head_limit">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="183" cache_read_input_tokens="63907" output_tokens="651" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 183}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01NTdnBH9hKygA4m1V225pGh">
+No matches found
+
+[Showing results with pagination = limit: 10, offset: 0]
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01DcA8x2hPFXAhAuwFnJC7wQ">
+    <param name="pattern">def run\|http_app\|asgi\|create_http_app</param>
+    <param name="path">/Users/colton/src/erk/.venv/lib/python3.13/site-packages/fastmcp/server/http.py</param>
+    <param name="output_mode">content</param>
+    <param name="head_limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="681" cache_read_input_tokens="64090" output_tokens="157" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 681}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01DcA8x2hPFXAhAuwFnJC7wQ">
+No matches found
+
+[Showing results with pagination = limit: 20, offset: 0]
+  </tool_result>
+  <tool_use name="Grep" id="toolu_016WumqWjs6bXU4eUKqs8Fh4">
+    <param name="pattern">def run\|http_server\|uvicorn\|create_app</param>
+    <param name="path">/Users/colton/src/erk/.venv/lib/python3.13/site-packages/fastmcp/server/server.py</param>
+    <param name="output_mode">content</param>
+    <param name="head_limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1266" cache_read_input_tokens="64771" output_tokens="156" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 1266}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_016WumqWjs6bXU4eUKqs8Fh4">
+No matches found
+
+[Showing results with pagination = limit: 20, offset: 0]
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01ARzW8f3Nwect2ctm2nwRtA">
+    <param name="command">grep -n "def run\|uvicorn\|http_app\|create_app\|starlette_app\|Router\|Route" /Users/colton/src/erk/.venv/lib/python3.13/site-packages/fastmcp/server/http.py | head -30</param>
+    <param name="description">Find FastMCP HTTP server construction patterns</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="189" cache_read_input_tokens="66037" output_tokens="148" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 189}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01ARzW8f3Nwect2ctm2nwRtA">
+19:from starlette.routing import BaseRoute, Mount, Route
+52:                    "returned by `fastmcp_instance.http_app()`. \\n"
+111:    routes: list[BaseRoute],
+145:    routes: list[BaseRoute] | None = None,
+162:    server_routes: list[BaseRoute] = []
+196:            Route(
+224:            Route(
+266:def create_streamable_http_app(
+275:    routes: list[BaseRoute] | None = None,
+297:    server_routes: list[BaseRoute] = []
+310:    streamable_http_app = StreamableHTTPASGIApp(session_manager)
+335:            Route(
+338:                    streamable_http_app,
+349:            Route(
+351:                endpoint=streamable_http_app,
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="358" cache_read_input_tokens="66226" cache_creation="{'ephemeral_5m_input_tokens': 358, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_0171mDpbdnq86egECcLoefFZ">
+    <param name="command">grep -n "def run\|def http_app\|routes\|extra_routes" /Users/colton/src/erk/.venv/lib/python3.13/site-packages/fastmcp/server/server.py | head -30</param>
+    <param name="description">Find FastMCP server run() and http_app() methods</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="358" cache_read_input_tokens="66226" output_tokens="314" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 358}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0171mDpbdnq86egECcLoefFZ">
+258:        self._additional_http_routes: list[BaseRoute] = []
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01WS7kfXWZ14vBYaMv3KLdwR">
+    <param name="command">grep -n "_additional_http_routes\|http_route\|add_route" /Users/colton/src/erk/.venv/lib/python3.13/site-packages/fastmcp/server/server.py | head -20</param>
+    <param name="description">Find how additional HTTP routes are added to FastMCP</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="343" cache_read_input_tokens="66584" output_tokens="136" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 343}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01WS7kfXWZ14vBYaMv3KLdwR">
+258:        self._additional_http_routes: list[BaseRoute] = []
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01BLDsoBVaNaXNjDcTkhi7j6">
+    <param name="command">grep -n "http_app\|_additional_http_routes\|add_route\|def run" /Users/colton/src/erk/.venv/lib/python3.13/site-packages/fastmcp/server/server.py | head -30</param>
+    <param name="description">Find http_app method and route injection points</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="276" cache_read_input_tokens="66927" output_tokens="139" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 276}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01BLDsoBVaNaXNjDcTkhi7j6">
+109:    "sse_path": "Pass `path` to `run_http_async()` or `http_app()`, or set FASTMCP_SSE_PATH.",
+111:    "streamable_http_path": "Pass `path` to `run_http_async()` or `http_app()`, or set FASTMCP_STREAMABLE_HTTP_PATH.",
+112:    "json_response": "Pass `json_response` to `run_http_async()` or `http_app()`, or set FASTMCP_JSON_RESPONSE.",
+113:    "stateless_http": "Pass `stateless_http` to `run_http_async()` or `http_app()`, or set FASTMCP_STATELESS_HTTP.",
+258:        self._additional_http_routes: list[BaseRoute] = []
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01SUd7xJaNjUMc8nUq6WeCNe">
+    <param name="command">grep -n "def http_app\|_additional_http_routes\|custom_route\|additional" /Users/colton/src/erk/.venv/lib/python3.13/site-packages/fastmcp/server/server.py</param>
+    <param name="description">Find http_app method signature</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="446" cache_read_input_tokens="67203" output_tokens="132" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 446}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01SUd7xJaNjUMc8nUq6WeCNe">
+258:        self._additional_http_routes: list[BaseRoute] = []
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01Y9dnzi5EJ1xeFkS5599cma">
+    <param name="command">grep -n "http_app\|run_http" /Users/colton/src/erk/.venv/lib/python3.13/site-packages/fastmcp/server/server.py | head -20</param>
+    <param name="description">Find http_app usage in server</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="162" cache_read_input_tokens="67649" output_tokens="125" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 162}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Y9dnzi5EJ1xeFkS5599cma">
+107:    "host": "Pass `host` to `run_http_async()`, or set FASTMCP_HOST.",
+108:    "port": "Pass `port` to `run_http_async()`, or set FASTMCP_PORT.",
+109:    "sse_path": "Pass `path` to `run_http_async()` or `http_app()`, or set FASTMCP_SSE_PATH.",
+111:    "streamable_http_path": "Pass `path` to `run_http_async()` or `http_app()`, or set FASTMCP_STREAMABLE_HTTP_PATH.",
+112:    "json_response": "Pass `json_response` to `run_http_async()` or `http_app()`, or set FASTMCP_JSON_RESPONSE.",
+113:    "stateless_http": "Pass `stateless_http` to `run_http_async()` or `http_app()`, or set FASTMCP_STATELESS_HTTP.",
+115:    "log_level": "Pass `log_level` to `run_http_async()`, or set FASTMCP_LOG_LEVEL.",
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01Ex7MFdG6wjizShvNQEGQk2">
+    <param name="command">python3 -c "import fastmcp; import inspect; mcp = fastmcp.FastMCP('test'); print([m for m ...[truncated 89 chars]...def http_app" /Users/colton/src/erk/.venv/lib/python3.13/site-packages/fastmcp/ | head -10</param>
+    <param name="description">Find http_app method in fastmcp</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="415" cache_read_input_tokens="67811" output_tokens="195" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 415}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Ex7MFdG6wjizShvNQEGQk2">
+['_additional_http_routes', '_get_additional_http_routes', 'custom_route', 'http_app', 'run_http_async']
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="244" cache_read_input_tokens="68226" cache_creation="{'ephemeral_5m_input_tokens': 244, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01DCco8GFocxcntDxJkrTbaT">
+    <param name="command">grep -n "def custom_route\|def http_app\|_get_additional_http_routes" /Users/colton/src/erk/.venv/lib/python3.13/site-packages/fastmcp/server/server.py | head -10</param>
+    <param name="description">Find custom_route and http_app method signatures</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="244" cache_read_input_tokens="68226" output_tokens="173" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 244}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01DCco8GFocxcntDxJkrTbaT">
+
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01HwwqWajp5CfkDyPww7kXGU">
+    <param name="command">grep -rn "def custom_route\|def http_app\|_get_additional_http_routes" /Users/colton/src/erk/.venv/lib/python3.13/site-packages/fastmcp/ | head -10</param>
+    <param name="description">Find custom_route definition in fastmcp package</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="199" cache_read_input_tokens="68470" output_tokens="136" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 199}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01HwwqWajp5CfkDyPww7kXGU">
+/Users/colton/src/erk/.venv/lib/python3.13/site-packages/fastmcp/server/mixins/transport.py:97:    def custom_route(
+/Users/colton/src/erk/.venv/lib/python3.13/site-packages/fastmcp/server/mixins/transport.py:147:    def _get_additional_http_routes(self: FastMCP) -&gt; list[BaseRoute]:
+/Users/colton/src/erk/.venv/lib/python3.13/site-packages/fastmcp/server/mixins/transport.py:279:    def http_app(
+Binary file /Users/colton/src/erk/.venv/lib/python3.13/site-packages/fastmcp/server/mixins/__pycache__/transport.cpython-313.pyc matches
+Binary file /Users/colton/src/erk/.venv/lib/python3.13/site-packages/fastmcp/server/__pycache__/http.cpython-313.pyc matches
+/Users/colton/src/erk/.venv/lib/python3.13/site-packages/fastmcp/server/http.py:240:    server_routes.extend(server._get_additional_http_routes())
+/Users/colton/src/erk/.venv/lib/python3.13/site-packages/fastmcp/server/http.py:359:    server_routes.extend(server._get_additional_http_routes())
+  </tool_result>
+  <tool_use name="Read" id="toolu_018qPeBgJuYduoSRWoAvCxRM">
+    <param name="file_path">/Users/colton/src/erk/.venv/lib/python3.13/site-packages/fastmcp/server/mixins/transport.py</param>
+    <param name="offset">90</param>
+    <param name="limit">70</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="610" cache_read_input_tokens="68669" output_tokens="123" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 610}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_018qPeBgJuYduoSRWoAvCxRM">
+    90→                self.run_async,
+    91→                transport,
+    92→                show_banner=show_banner,
+    93→                **transport_kwargs,
+    94→            )
+    95→        )
+    96→
+    97→    def custom_route(
+    98→        self: FastMCP,
+    99→        path: str,
+   100→        methods: list[str],
+   101→        name: str | None = None,
+   102→        include_in_schema: bool = True,
+   103→    ) -&gt; Callable[
+   104→        [Callable[[Request], Awaitable[Response]]],
+   105→        Callable[[Request], Awaitable[Response]],
+   106→    ]:
+   107→        """
+   108→        Decorator to register a custom HTTP route on the FastMCP server.
+   109→
+   110→        Allows adding arbitrary HTTP endpoints outside the standard MCP protocol,
+   111→        which can be useful for OAuth callbacks, health checks, or admin APIs.
+   112→        The handler function must be an async function that accepts a Starlette
+   113→        Request and returns a Response.
+   114→
+   115→        Args:
+   116→            path: URL path for the route (e.g., "/auth/callback")
+   117→            methods: List of HTTP methods to support (e.g., ["GET", "POST"])
+   118→            name: Optional name for the route (to reference this route with
+   119→                Starlette's reverse URL lookup feature)
+
+... [45 lines omitted] ...
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="1025" cache_read_input_tokens="69279" cache_creation="{'ephemeral_5m_input_tokens': 1025, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <assistant>Now I have all the details confirmed. Let me write the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1025" cache_read_input_tokens="69279" cache_creation="{'ephemeral_5m_input_tokens': 1025, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <tool_use name="Write" id="toolu_01LjvSbj6fc3nB4Bd2x8vpr1">
+    <param name="file_path">/Users/colton/.claude/plans/flickering-jingling-hellman.md</param>
+    <param name="content"># Plan: Per-User GitHub Attribution for erk-mcp
+
+## Context
+
+erk-mcp is deployed in Kubern...[truncated 13586 chars]...— grep `_run_erk_json` stdout and all ToolResult payloads; assert no token value surfaces
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1025" cache_read_input_tokens="69279" output_tokens="4810" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 1025}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01LjvSbj6fc3nB4Bd2x8vpr1">
+File created successfully at: /Users/colton/.claude/plans/flickering-jingling-hellman.md
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_01EhmWqhXeUzs23ujD4yJMX7">
+    <param name="query">select:ExitPlanMode</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4844" cache_read_input_tokens="70304" output_tokens="78" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 4844}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01EhmWqhXeUzs23ujD4yJMX7">
+
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_01E7Q73euDWFGNgUEeCuU8fF">
+    <param name="allowedPrompts">[{'tool': 'Bash', 'prompt': 'run tests'}, {'tool': 'Bash', 'prompt': 'install dependencies'}]</param>
+    <param name="plan"># Plan: Per-User GitHub Attribution for erk-mcp
+
+## Context
+
+erk-mcp is deployed in Kubern...[truncated 13586 chars]...— grep `_run_erk_json` stdout and all ToolResult payloads; assert no token value surfaces
+</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="847" cache_read_input_tokens="75148" output_tokens="88" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 847}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01E7Q73euDWFGNgUEeCuU8fF">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: ⚠️  Your erk (0.9.5) doesn't match required (0.9.11)
+   You must update or erk may not work properly.
+   Update: uv sync
+
+DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/colton/.claude/plans/flickering-jingling-hellman.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Plan: Per-User GitHub Attribution for erk-mcp
+Current context: (wt:erk) (br:master) (plan:#8715)\n\nWhat would you like to do with this plan?"
+  header: "br:master"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create new branch and planned PR. Stays on current branch." - Create a new branch, save plan as draft PR.
+  2. "Implement without saving" - Implement directly on the current branch without saving a plan PR.
+  3. "View/Edit the Plan" - Open plan in editor to review or modify before deciding.
+
+⚠️  WARNING: Currently on 'master'. We strongly discourage implementing directly on the trunk branch. Consider saving the plan and implementing in a dedicated worktree instead.
+
+If user chooses 'Create new branch and planned PR':
+  1. Run /erk:plan-save
+  2. Call ExitPlanMode to end the planning session.
+
+If user chooses 'Implement without saving':
+  1. Create implement-now marker:
+     erk exec marker create --session-id e0415e98-2bb5-4a07-9b5f-9aee9104cf6b \
+
+... [14 lines omitted] ...
+  </tool_result>
+  <assistant>Here's the plan I've written:
+
+---
+
+# Plan: Per-User GitHub Attribution for erk-mcp
+
+## Context
+
+erk-mcp is deployed in Kubernetes with a shared GitHub App installation token (`GH_TOKEN` env var). All
+`one_shot` PRs are attributed to the app identity (`elementl-devtools`) rather than the human Slack user
+who triggered the request. This plan wires in GitHub App user access tokens so PRs show the actual user.
+
+The core mechanism is simple: `GH_TOKEN` in the subprocess environment determines which GitHub identity
+`erk json one-shot` uses. Injecting a per-user `GH_TOKEN` override into that subprocess env is sufficient —
+no `ErkContext` changes needed. The full plan adds the OAuth layer, token storage, and Slack contract on top.
+
+## Architecture Overview
+
+```
+Slack bot → HTTP POST to /mcp (with X-Slack-User-Id header)
+  → SlackUserMiddleware (FastMCP Middleware.on_call_tool)
+      reads header, looks up UserGrant in GrantStore
+      sets ContextVar[user_token]
+  → MachineCommandTool.run()
+      reads ContextVar, builds env_override
+  → subprocess.run(["erk", ...], env={**os.environ, "GH_TOKEN": user_token})
+      → gh auth token → returns user_token
+      → submitted_by = remote.get_authenticated_user() → GitHub user
+```
+
+Fallback: no header or no stored grant → subprocess inherits process-level `GH_TOKEN` (bot token) unchanged.
+
+## Phase 1: Request-Scoped Token Injection
+
+**New `request_context.py`** — ContextVar `_github_token_for_request` with set/get/reset helpers. Python asyncio propagates ContextVar to threads spawned by `anyio.to_thread.run_sync`.
+
+**Modify `server.py`** — `_run_erk_json()` gains `env_override: dict[str, str] | None` param passed to `subprocess.run(env=...)`. `MachineCommandTool.run()` reads ContextVar and builds `{**os.environ, "GH_TOKEN": user_token}` when set.
+
+## Phase 2: Token Storage
+
+**New `grant_store.py`** — `UserGrant` frozen dataclass, `GrantStore` ABC, `JsonFileGrantStore` (atomic JSON writes, path from `ERK_MCP_GRANT_STORE_PATH`), `FakeGrantStore` test double.
+
+**New `token_refresh.py`** — `refresh_grant_if_needed()` checks 5-minute expiry buffer, calls GitHub refresh endpoint, persists updated grant.
+
+## Phase 3: FastMCP Middleware
+
+**New `slack_user_middleware.py`** — `SlackUserMiddleware(Middleware)` hooks `on_call_tool`. Reads `x-slack-user-id` header via `fastmcp.server.http._current_http_request.get()`, looks up grant, sets ContextVar in try/finally, returns structured `github_auth_required` JSON error for known users with no grant.
+
+**Modify `__main__.py`** — for HTTP transport: build grant store, `mcp.add_middleware(SlackUserMiddleware(...))`, register auth routes.
+
+## Phase 4: GitHub App OAuth (Device Flow) + Slack Contract
+
+**New `github_oauth.py`** — `start_device_flow()`, `poll_device_flow()`, `refresh_access_token()`, `get_github_login()` using httpx directly. In-memory `_pending_flows: dict[str, PendingFlow]` for poll_token → device_code mapping (never returned to caller).
+
+**New `auth_routes.py`** — three `@mcp.custom_route()` endpoints:
+- `POST /auth/github/start` → returns `{user_code, verification_uri, poll_token}`
+- `POST /auth/github/poll` → returns `{status: pending|authorized}`
+- `POST /auth/github/revoke`
+
+All protected by `X-Internal-Auth` header validated against `ERK_MCP_INTERNAL_SECRET`.
+
+**New K8s secrets**: `ERK_MCP_GRANT_STORE_PATH`, `ERK_MCP_GITHUB_CLIENT_ID`, `ERK_MCP_GITHUB_CLIENT_SECRET`, `ERK_MCP_INTERNAL_SECRET`.
+
+**Slack bot changes**: add `X-Slack-User-Id` header on every MCP call; handle `github_auth_required` by calling `/auth/github/start`, DMing the user the device code, polling until authorized.
+
+---</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="905" cache_read_input_tokens="75995" cache_creation="{'ephemeral_5m_input_tokens': 905, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="AskUserQuestion" id="toolu_01W1EWXdQk8RpAM4ifjTLMkA">
+    <param name="questions">[{'question': '📋 Plan: Per-User GitHub Attribution for erk-mcp\nCurrent context: (wt:erk) ...[truncated 387 chars]...t the Plan', 'description': 'Open plan in editor to review or modify before deciding.'}]}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="905" cache_read_input_tokens="75995" output_tokens="1346" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 905}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01W1EWXdQk8RpAM4ifjTLMkA">
+User has answered your questions: "📋 Plan: Per-User GitHub Attribution for erk-mcp
+Current context: (wt:erk) (br:master) (plan:#8715)
+
+What would you like to do with this plan?"="Create new branch and planned PR. Stays on current branch.". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="Skill" id="toolu_0115nqqaNoiofkE71JLwZcpL">
+    <param name="skill">erk:plan-save</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1444" cache_read_input_tokens="76900" output_tokens="57" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 1444}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0115nqqaNoiofkE71JLwZcpL">
+Launching skill: erk:plan-save
+  </tool_result>
+  <user># /erk:plan-save
+
+Save the current session's plan to GitHub with session context.
+
+## Usage
+
+```bash
+/erk:plan-save                           # Standalone plan
+/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+/erk:plan-save --objective=123           # Explicit objective link (overrides marker)
+/erk:plan-save --current-branch          # Use current branch instead of creating new plnd/ branch
+```
+
+Objective linking: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command. Use `--objective=&lt;number&gt;` to override the marker or provide the link when no marker exists (e.g., during replan).
+
+## Plan Storage
+
+The plan is saved using the configured backend:
+
+- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+  The JSON output contract includes `pr_number`, `pr_url`, `title`, `branch_name`, `plan_backend`.
+
+## Agent Instructions
+
+### Step 1: Parse Arguments
+
+Check `` for the `--plan-type`, `--objective`, and `--current-branch` flags:
+
+```
+If  contains "--plan-type=&lt;type&gt;":
+  - Extract the type (standard or learn)
+  - Store as PLAN_TYPE variable
+  - Set PLAN_TYPE_FLAG to "--plan-type=&lt;type&gt;"
+Else:
+  - Set PLAN_TYPE_FLAG to empty string
+
+If  contains "--objective=&lt;number&gt;":
+  - Extract the number
+  - Set OBJECTIVE_FLAG to "--objective=&lt;number&gt;"
+Else:
+  - Set OBJECTIVE_FLAG to empty string
+
+If  contains "--current-branch":
+  - Set CURRENT_BRANCH_FLAG to "--current-branch"
+Else:
+  - Set CURRENT_BRANCH_FLAG to empty string
+```
+
+### Step 2: Generate Branch Slug
+
+**Skip this step if `--current-branch` was passed.** The current branch is used directly.
+
+Before saving, generate a branch slug from the plan title. Read the plan title from the plan file you wrote in plan mode (the first `# ` heading).
+
+Generate a branch slug from the title:
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+
+Store the result as `BRANCH_SLUG`.
+
+### Step 3: Generate Plan Summary
+
+Write a concise 2-3 sentence summary of the plan. This summary will be visible
+at the top of the PR description (above the collapsed full plan).
+
+Guidelines:
+
+- Focus on WHAT the plan does and WHY
+- Do not repeat the title
+- Plain text, no markdown headers or formatting
+- Avoid special shell characters (backticks, dollar signs)
+- Store as PLAN_SUMMARY
+
+### Step 4: Run Save Command
+
+Run this command with the session ID, summary, and optional flags.
+
+If CURRENT_BRANCH_FLAG is set, pass `--current-branch` (no branch slug needed):
+
+```bash
+erk exec plan-save --format json --session-id="e0415e98-2bb5-4a07-9b5f-9aee9104cf6b" --current-branch --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Otherwise, pass the branch slug:
+
+```bash
+erk exec plan-save --format json --session-id="e0415e98-2bb5-4a07-9b5f-9aee9104cf6b" --branch-slug="${BRANCH_SLUG}" --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Parse the JSON output to extract `pr_number` for verification in Step 5.
+
+If the command fails, display the error and stop.
+
+### Step 5: Verify Objective Link (if applicable)
+
+**Only run this step if `objective_issue` is non-null in the JSON output from Step 4.**
+
+Verify the objective link was saved correctly:
+
+```bash
+erk exec get-plan-metadata &lt;pr_number&gt; objective_issue
+```
+
+Parse the JSON response:
+
+- If `success: true` and `value` matches the expected objective number: verification passed
+- If `success: false` or value doesn't match: verification failed
+
+**On verification success:**
+
+Display: `Verified objective link: #&lt;objective-number&gt;`
+
+**On verification failure:**
+
+Display error and remediation steps:
+
+```
+ERROR: Objective link verification failed
+Expected objective: #&lt;expected&gt;
+Actual: &lt;actual-or-null&gt;
+
+The plan was saved but without the correct objective link.
+Fix: Close draft PR #&lt;pr_number&gt;,
+ensure the objective-context marker exists, and re-run /erk:plan-save.
+```
+
+Exit without creating the plan-saved marker. The session continues so the user can retry.
+
+### Step 6: Update Objective Roadmap (if objective linked)
+
+**Only run this step if `objective_issue` was non-null in JSON output and verification passed.**
+
+Update the objective's roadmap table to show that a plan has been created for this node:
+
+1. **Read the roadmap node marker** to get the node ID:
+
+```bash
+step_id=$(erk exec marker read --session-id "e0415e98-2bb5-4a07-9b5f-9aee9104cf6b" roadmap-step)
+```
+
+If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-plan`.
+
+2. **Update the roadmap table** using the dedicated command:
+
+```bash
+erk exec update-objective-node &lt;objective-issue&gt; --node "$step_id" --pr "#&lt;pr_number&gt;" --status in_progress
+```
+
+This atomically fetches the objective body, finds the matching node row, sets the Status cell to `in-progress`, and writes the updated body back.
+
+3. **Report the update:**
+
+Display: `Updated objective #&lt;objective-issue&gt; roadmap: node &lt;step_id&gt; → PR #&lt;pr_number&gt;`
+
+**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+
+### Step 7: Display Results
+
+**If JSON contains `skipped_duplicate: true`:**
+
+Display: `Plan already saved as PR #&lt;pr_number&gt; (duplicate skipped)`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options.
+
+**Otherwise, on success**, display:
+
+```
+Plan "&lt;title&gt;" saved as draft PR #&lt;pr_number&gt;
+URL: &lt;issue_url&gt;
+```
+
+If objective was verified, also display: `Verified objective link: #&lt;objective-number&gt;`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options
+(implement in current worktree, implement in new worktree, or done).
+
+On failure, display the error message and suggest:
+
+- Checking that a plan exists (enter Plan mode and exit it first)
+- Verifying GitHub CLI authentication (`gh auth status`)
+- Checking network connectivity
+
+### Step 5: Push Planning Session
+
+After saving successfully, push the planning session for cross-machine learning.
+This captures the in-progress session state so it's available even if implementation
+happens on a different machine.
+
+Run `erk exec capture-session-info` to get the session file path, then push it:
+
+```bash
+erk exec upload-impl-session --session-id "e0415e98-2bb5-4a07-9b5f-9aee9104cf6b" 2&gt;/dev/null || true
+```
+
+If the plan was saved successfully and `pr_number` is known, use push-session directly
+for better stage tracking:
+
+```bash
+erk exec push-session \
+    --session-file "&lt;session_file_path&gt;" \
+    --session-id "e0415e98-2bb5-4a07-9b5f-9aee9104cf6b" \
+    --stage planning \
+    --source local \
+    --pr-number &lt;pr_number&gt; \
+    2&gt;/dev/null || true
+```
+
+Where `&lt;session_file_path&gt;` is obtained from `erk exec capture-session-info` output
+and `&lt;pr_number&gt;` is from Step 2's JSON output.
+
+**Note:** This is non-critical. If it fails, the plan was still saved successfully.
+The `2&gt;/dev/null || true` ensures graceful degradation.
+
+## Session Tracking
+
+After successfully saving a plan, the plan number is stored in a marker file that enables automatic plan updates in the same session.
+
+**To read the saved plan number:**
+
+```bash
+erk exec marker read --session-id "e0415e98-2bb5-4a07-9b5f-9aee9104cf6b" plan-saved-issue
+```
+
+This returns the plan number (exit code 0) or exits with code 1 if no plan was saved in this session.
+</user>
+  <usage input_tokens="2" cache_creation_input_tokens="2302" cache_read_input_tokens="78344" cache_creation="{'ephemeral_5m_input_tokens': 2302, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01MczYwcM7z2N5Cbj4VEdFR3">
+    <param name="command">PLAN_SUMMARY="Adds per-user GitHub attribution to erk-mcp so Slack-triggered one_shot PRs ...[truncated 404 chars]...98-2bb5-4a07-9b5f-9aee9104cf6b" --branch-slug="${BRANCH_SLUG}" --summary="${PLAN_SUMMARY}"</param>
+    <param name="description">Save plan as draft PR with branch slug</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2302" cache_read_input_tokens="78344" output_tokens="446" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 2302}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01MczYwcM7z2N5Cbj4VEdFR3">
+⚠️  Your erk (0.9.5) doesn't match required (0.9.11)
+   You must update or erk may not work properly.
+   Update: uv sync
+
+{"success": true, "pr_number": 9202, "pr_url": "https://github.com/dagster-io/erk/pull/9202", "title": "[erk-pr] Plan: Per-User GitHub Attribution for erk-mcp", "branch_name": "plnd/add-mcp-user-attribution-03-11-1041", "plan_backend": "planned_pr", "objective_issue": null, "archived_to": "/Users/colton/src/erk/.erk/scratch/sessions/e0415e98-2bb5-4a07-9b5f-9aee9104cf6b/plan_snapshots/000001-a030c155"}
+  </tool_result>
+</session>
