@@ -22,11 +22,11 @@ All plan test helpers are in `tests/test_utils/plan_helpers.py`.
 
 ### `create_plan_store_with_plans()`
 
-Creates a `ManagedGitHubPrBackend` pre-populated with plans, backed by `FakeGitHub`.
+Creates a `ManagedGitHubPrBackend` pre-populated with plans, backed by `FakeLocalGitHub`.
 
 <!-- Source: tests/test_utils/plan_helpers.py, create_plan_store_with_plans -->
 
-See `create_plan_store_with_plans()` in `tests/test_utils/plan_helpers.py` for the full signature. Returns `tuple[ManagedGitHubPrBackend, FakeGitHub]` — the backend and its backing fake for assertions.
+See `create_plan_store_with_plans()` in `tests/test_utils/plan_helpers.py` for the full signature. Returns `tuple[ManagedGitHubPrBackend, FakeLocalGitHub]` — the backend and its backing fake for assertions.
 
 ## Convention
 
