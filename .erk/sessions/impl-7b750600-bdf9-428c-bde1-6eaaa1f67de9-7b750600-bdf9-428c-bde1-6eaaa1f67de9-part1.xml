@@ -1,0 +1,976 @@
+<session>
+  <meta branch="plnd/add-objective-tripwire-03-11-0644" />
+  <meta model="claude-opus-4-6" />
+  <user>&lt;command-message&gt;erk:plan-implement is running…&lt;/command-message&gt;
+&lt;command-name&gt;/erk:plan-implement&lt;/command-name&gt;
+&lt;command-args&gt;9199&lt;/command-args&gt;</user>
+  <user># /erk:plan-implement
+
+Implement a plan - either from GitHub, a markdown file, an existing impl directory under `.erk/impl-context/`, or by saving the current plan first.
+
+This is the primary implementation workflow - it orchestrates:
+
+1. Setting up the impl directory under `.erk/impl-context/&lt;branch&gt;/` (from issue, file, existing folder, or fresh plan)
+2. Executing the implementation
+3. Running CI and submitting the PR
+
+## Prerequisites
+
+- Must be in a git repository managed by erk
+- GitHub CLI (`gh`) must be authenticated
+- One of:
+  - A plan number, URL, or file path argument
+  - An existing impl directory under `.erk/impl-context/`
+  - A plan branch checked out (e.g., `plnd/...` or `P{number}-...`)
+  - A plan in `~/.claude/plans/` (from plan mode)
+
+## Usage
+
+```bash
+/erk:plan-implement                    # Use impl directory, detect from branch, or save current plan
+/erk:plan-implement 2521               # Fetch and implement PR #2521
+/erk:plan-implement https://github.com/owner/repo/pull/2521   # URL form
+/erk:plan-implement ./my-plan.md       # Implement from local markdown file
+```
+
+---
+
+## CRITICAL: PR Operations
+
+**NEVER** run direct GitHub CLI commands for PR operations during implementation:
+
+- `gh pr edit` — destroys plan-header metadata block
+- `gh pr ready` — bypasses lifecycle tracking
+- `gh pr close` / `gh pr merge`
+
+All PR operations are handled by `erk pr submit` in Step 13. It automatically:
+
+- Generates the PR title and body
+- Preserves the plan-header metadata block
+- Marks draft PRs as ready for review
+- Updates lifecycle stage
+
+## Agent Instructions
+
+### Step 1: Set Up Implementation
+
+Parse `9199` and run the consolidated setup command:
+
+- **If numeric** (e.g., `2521`): `erk exec setup-impl --issue 2521`
+- **If GitHub URL** (e.g., `https://github.com/.../issues/2521`): Extract number, `erk exec setup-impl --issue 2521`
+- **If path to file** (anything else non-empty): `erk exec setup-impl --file &lt;path&gt;`
+- **If empty**: `erk exec setup-impl` (auto-detects from `.erk/impl-context/`, branch, or fails)
+
+```bash
+erk exec setup-impl [--issue &lt;N&gt; | --file &lt;path&gt;]
+```
+
+This single command handles:
+
+- Fetching plan from GitHub (draft PR)
+- Setting up from a local markdown file
+- Auto-detecting from existing impl directory under `.erk/impl-context/`
+- Auto-detecting plan number from branch name (P{number}-... or PR lookup)
+- Creating/checking out the feature branch
+- Creating impl directory under `.erk/impl-context/&lt;branch&gt;/` with plan content
+- Running impl-init validation
+- Cleaning up `.erk/impl-context/` staging directory (git rm + commit + push)
+
+Otherwise, generate a branch slug and set up from the specified issue:
+
+1. Fetch the title: `gh pr view &lt;ISSUE_ARG&gt; --json title -q .title`
+2. Generate a branch slug from the title:
+   - 2-4 hyphenated lowercase words, max 30 characters
+   - Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+   - Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+   - Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+3. Store as `BRANCH_SLUG`.
+
+```bash
+erk exec setup-impl --issue &lt;ISSUE_ARG&gt; --branch-slug="${BRANCH_SLUG}"
+```
+
+If `setup-impl` exits with code 1 and `error: "no_plan_found"`, fall back to saving the current plan:
+
+Generate a branch slug from the plan title (the first `# ` heading in the plan file):
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Store as `BRANCH_SLUG`
+
+Save the current plan to GitHub and capture the plan number:
+
+```bash
+erk exec plan-save --format json --session-id="${CLAUDE_SESSION_ID}" --branch-slug="${BRANCH_SLUG}"
+```
+
+Parse the JSON output to get `pr_number`, then:
+
+```bash
+erk exec setup-impl --issue &lt;pr_number&gt;
+```
+
+The `setup-impl` output includes `related_docs` (skills and docs to load) and `has_plan_tracking` (whether GitHub issue tracking is active).
+
+If this fails, display the error and stop.
+
+### Step 2: Read Plan and Load Context
+
+Read `plan.md` from the impl directory set up in Step 1 to understand:
+
+- Overall goal and context
+- Context &amp; Understanding sections (API quirks, architectural insights, pitfalls)
+- Implementation phases and dependencies
+- Success criteria
+
+**Context Consumption**: Plans contain expensive discoveries. Ignoring `[CRITICAL:]` tags, "Related Context:" subsections, or "DO NOT" items causes repeated mistakes.
+
+### Step 3: Load Related Documentation
+
+If plan contains "Related Documentation" section, load listed skills via Skill tool and read listed docs.
+
+### Step 4: Create TodoWrite Entries
+
+Create todo entries for each phase from the plan.
+
+### Step 5: Signal GitHub Started
+
+```bash
+erk exec impl-signal started --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This also deletes the Claude plan file (from `~/.claude/plans/`) since:
+
+- The content has been saved to GitHub
+- The content has been snapshotted to `.erk/scratch/`
+- Keeping it could cause confusion if the user tries to re-save
+
+### Step 6: Execute Each Phase Sequentially
+
+For each phase:
+
+1. **Mark phase as in_progress** (in TodoWrite)
+2. **Read task requirements** carefully
+3. **Implement code AND tests together**:
+   - Load `dignified-python-313` skill for coding standards
+   - Load `fake-driven-testing` skill for test patterns
+   - Follow project AGENTS.md standards
+4. **Mark phase as completed** (in TodoWrite)
+5. **Report progress**: changes made, what's next
+
+**Important:** `plan.md` is immutable - NEVER edit during implementation
+
+### Step 7: Report Progress
+
+After each phase: report changes made and what's next.
+
+### Step 8: Final Verification
+
+Confirm all tasks executed, success criteria met, note deviations, summarize changes.
+
+### Step 9: Signal GitHub Ended
+
+```bash
+erk exec impl-signal ended --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+### Step 10: Upload Session for Async Learn
+
+```bash
+erk exec upload-impl-session --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This reads plan reference from the impl directory, captures session info, and uploads for async learn processing.
+
+### Step 11: Clean Up Impl Context
+
+Remove the `.erk/impl-context/` directory from the repo:
+
+```bash
+erk exec cleanup-impl-context
+```
+
+This removes `.erk/impl-context/`, stages the deletion, commits, and pushes — all idempotent.
+
+### Step 12: Run CI Iteratively
+
+1. If `.erk/prompt-hooks/post-plan-implement-ci.md` exists: follow its instructions
+2. Otherwise: check CLAUDE.md/AGENTS.md for CI commands
+
+### Step 13: Submit PR
+
+Push the branch and create or update the PR using the Graphite-aware submit pipeline:
+
+```bash
+erk pr submit
+```
+
+This handles pushing commits, creating/updating the PR, generating the PR description, and enhancing with Graphite stack metadata when available.
+
+After successful submission, signal lifecycle transition:
+
+```bash
+erk exec impl-signal submitted 2&gt;/dev/null || true
+```
+
+Then validate PR completion invariants:
+
+```bash
+erk pr check --stage=impl
+```
+
+This validates PR submission readiness including implementation-specific checks
+(e.g., `.erk/impl-context/` must be cleaned up). If checks fail, display output and warn user.
+
+### Step 14: Output Format
+
+- **Start**: "Setting up implementation..." or "Fetching plan #X..."
+- **After setup**: "Implementation environment ready, reading plan..."
+- **Each phase**: "Phase X: [brief description]" with code changes
+- **End**: "Plan execution complete. [Summary]"
+
+---
+
+## Related Commands
+
+- `/erk:plan-save` - Save plan only, don't implement (for defer-to-later workflow)
+- `/erk:replan` - Re-plan an existing plan with current codebase state
+</user>
+  <assistant>
+
+I'll start by setting up the implementation for plan #9199.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="28628" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 28628, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_0178Ms6vEbqpMvJMpwC8Gdc7">
+    <param name="command">erk exec setup-impl --issue 9199</param>
+    <param name="description">Set up implementation for plan #9199</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="28628" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 28628, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_0178Ms6vEbqpMvJMpwC8Gdc7">
+{"success": true, "impl_path": "/home/runner/work/erk/erk/.erk/impl-context/plnd--add-objective-tripwire-03-11-0644", "pr_number": 9199, "pr_url": "https://github.com/dagster-io/erk/pull/9199", "branch": "plnd/add-objective-tripwire-03-11-0644", "pr_title": "[erk-pr] Plan: Make objective mutation commands discoverable", "no_impl": false}
+{"success": true, "source": "issue", "pr_number": 9199, "has_plan_tracking": true, "valid": true, "related_docs": {"skills": [], "docs": []}}
+Already on PR branch 'plnd/add-objective-tripwire-03-11-0644', teleporting from remote...
+  </tool_result>
+  <assistant>Implementation environment is ready. Let me read the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="343" cache_read_input_tokens="28628" cache_creation="{'ephemeral_5m_input_tokens': 343, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_013itMexboaLCYkiZqJhgTAm">
+    <param name="file_path">/home/runner/work/erk/erk/.erk/impl-context/plnd--add-objective-tripwire-03-11-0644/plan.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="343" cache_read_input_tokens="28628" cache_creation="{'ephemeral_5m_input_tokens': 343, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_013itMexboaLCYkiZqJhgTAm">
+     1→# Plan: Make objective mutation commands discoverable
+     2→
+     3→## Context
+     4→
+     5→In a previous session, an agent tried `erk objective add-node` (which doesn't exist) instead of `erk exec add-objective-node`. This caused 4 wasted tool calls (1 failure + 2 cascade cancellations + discovery sequence). The objective skill already documents the correct commands, but the critical architectural insight — `erk objective` is read-only, mutations live under `erk exec` — isn't prominent enough to prevent this mistake.
+     6→
+     7→## Changes
+     8→
+     9→### 1. Add CLI architecture callout to objective skill SKILL.md
+    10→
+    11→**File:** `.claude/skills/objective/SKILL.md`
+    12→
+    13→Add a prominent callout section right after the "Key Design Principles" list (after line 48, before "Quick Reference"), something like:
+    14→
+    15→```markdown
+    16→## CLI Architecture: Read vs Write
+    17→
+    18→&gt; **`erk objective` = read-only** (check, view, list, plan, close)
+    19→&gt; **`erk exec` = mutations** (add-objective-node, update-objective-node, objective-render-roadmap, etc.)
+    20→&gt;
+    21→&gt; Never try `erk objective add-node` or `erk objective update-node` — these don't exist.
+    22→&gt; All roadmap mutations go through `erk exec` commands.
+    23→```
+    24→
+    25→### 2. Add tripwire to objectives tripwires
+    26→
+    27→**File:** `docs/learned/objectives/tripwires.md`
+    28→
+    29→Add a new tripwire entry:
+    30→
+
+... [14 lines omitted] ...
+  </tool_result>
+  <assistant>Good, this is a straightforward documentation-only plan with 2 changes. Let me set up the todos and load the relevant tripwires, then read the files I need to modify.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="839" cache_read_input_tokens="28971" cache_creation="{'ephemeral_5m_input_tokens': 839, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01KZxrh2FfHV2VPLpuvtsEJF">
+    <param name="todos">[{'content': 'Add CLI architecture callout to objective SKILL.md', 'status': 'pending', 'a...[truncated 339 chars]...Run CI and submit PR', 'status': 'pending', 'activeForm': 'Running CI and submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="839" cache_read_input_tokens="28971" cache_creation="{'ephemeral_5m_input_tokens': 839, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01KZxrh2FfHV2VPLpuvtsEJF">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="Bash" id="toolu_0145WzbDGd3SAdw837u9ZpQh">
+    <param name="command">erk exec impl-signal started --session-id "7b750600-bdf9-428c-bde1-6eaaa1f67de9" 2&gt;/dev/null || true</param>
+    <param name="description">Signal implementation started</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="277" cache_read_input_tokens="29810" cache_creation="{'ephemeral_5m_input_tokens': 277, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01MY7ndPp2gUcwReJpiUik4F">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/skills/objective/SKILL.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="277" cache_read_input_tokens="29810" cache_creation="{'ephemeral_5m_input_tokens': 277, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01SUhzeJCnray9PbztYM8mYj">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/objectives/tripwires.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="277" cache_read_input_tokens="29810" cache_creation="{'ephemeral_5m_input_tokens': 277, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_0145WzbDGd3SAdw837u9ZpQh">
+{
+  "success": true,
+  "event": "started",
+  "pr_number": 9199
+}
+  </tool_result>
+  <tool_result tool="toolu_01MY7ndPp2gUcwReJpiUik4F">
+     1→---
+     2→name: objective
+     3→description: &gt;
+     4→  This skill should be used when managing objectives - coherent goals that require 2+ plans/PRs
+     5→  to complete. Use when users want to create multi-plan tracking documents, log progress across
+     6→  related PRs, capture lessons learned, or coordinate work that spans multiple erk-plans.
+     7→  Objectives are human-first coordination documents, not executable plans.
+     8→---
+     9→
+    10→# Objective Skill
+    11→
+    12→## Overview
+    13→
+    14→Objectives are coordination documents for goals requiring multiple plans/PRs to complete. Unlike
+    15→erk-plans (single executable implementations), objectives track progress across related work and
+    16→capture lessons learned along the way.
+    17→
+    18→**Scope range:**
+    19→
+    20→- Small: Feature requiring 2-3 related PRs
+    21→- Medium: Refactor spanning several plans
+    22→- Large: Long-running strategic direction emitting many plans
+    23→
+    24→## Objective vs Erk-Plan
+    25→
+    26→| Aspect   | Erk-Plan                         | Objective                           |
+    27→| -------- | -------------------------------- | ----------------------------------- |
+    28→| Purpose  | Single executable implementation | Coordinate 2+ related plans/PRs     |
+    29→| Scope    | One PR or tightly-coupled change | Multiple plans toward coherent goal |
+    30→| Body     | Machine-parseable metadata       | Human-readable markdown             |
+
+... [174 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01SUhzeJCnray9PbztYM8mYj">
+     1→---
+     2→title: Objectives Tripwires
+     3→read_when:
+     4→  - "working on objectives code"
+     5→---
+     6→
+     7→&lt;!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY --&gt;
+     8→&lt;!-- Edit source frontmatter, then run 'erk docs sync' to regenerate. --&gt;
+     9→&lt;!-- Generated from objectives/*.md frontmatter --&gt;
+    10→
+    11→# Objectives Tripwires
+    12→
+    13→Rules triggered by matching actions in code.
+    14→
+    15→**accessing node_id on a RoadmapNode** → Read [Roadmap Shared Parser Architecture](roadmap-parser-api.md) first. The field is named 'id', not 'node_id'. This is a common mistake — check the actual dataclass definition.
+    16→
+    17→**accessing phase names from graph operations without calling enrich_phase_names()** → Read [Phase Name Enrichment](phase-name-enrichment.md) first. Phase names come from markdown headers, not from the parser. After graph_from_phases(), call enrich_phase_names(graph, issue_body) to populate phase names. Without enrichment, phase.name is None.
+    18→
+    19→**adding a new exec command without registering in the exec group** → Read [Objective Exec Command Consolidation](exec-command-consolidation.md) first. New exec scripts must be registered in the Click exec command group and follow the existing pattern: Click command with typed options, LBYL validation, structured result TypedDict.
+    20→
+    21→**adding a new roadmap mutation site without updating this document** → Read [Objective Lifecycle](objective-lifecycle.md) first. All roadmap mutation sites must be documented in objective-lifecycle.md
+    22→
+    23→**adding a new validation check** → Read [Roadmap Validation Architecture](roadmap-validation.md) first. Structural checks go in parse_roadmap() and return warnings alongside data. Semantic checks go in validate_objective() and produce pass/fail results. Don't mix levels.
+    24→
+    25→**adding a required parameter to objective-apply-landed-update without fallback discovery** → Read [Objective Exec Command Consolidation](exec-command-consolidation.md) first. The script auto-fills missing parameters from git/plan state. New parameters should follow the same pattern: explicit flag first, then auto-discovery fallback.
+    26→
+    27→**adding columns to the roadmap table format** → Read [Roadmap Format Versioning](roadmap-format-versioning.md) first. Read this doc to understand the header-based detection and rendering strategy before adding columns.
+    28→
+    29→**adding structural validation to check_cmd.py** → Read [Objective Check Command — Semantic Validation](objective-roadmap-check.md) first. Structural validation (phase headers, table format) belongs in roadmap.py (packages/erk-shared). check_cmd.py handles semantic validation only.
+    30→
+
+... [83 lines omitted] ...
+
+    73→**raising exceptions from validate_objective()** → Read [Objective Check Command — Semantic Validation](objective-roadmap-check.md) first. validate_objective() returns discriminated unions, never raises. Only CLI presentation functions (\_output_json, \_output_human) raise SystemExit.
+   101→**using parse_roadmap() when strict v2 validation is needed** → Read [Roadmap Shared Parser Architecture](roadmap-parser-api.md) first. Use parse_v2_roadmap() for commands that should reject legacy format. parse_roadmap() returns a legacy error string; parse_v2_roadmap() returns None for non-v2 content.
+  </tool_result>
+  <assistant>Now I have both files. Let me implement the changes.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="6499" cache_read_input_tokens="30087" cache_creation="{'ephemeral_5m_input_tokens': 6499, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_019q2kUP4AvqKyHuuWrgYt5v">
+    <param name="todos">[{'content': 'Add CLI architecture callout to objective SKILL.md', 'status': 'in_progress'...[truncated 343 chars]...Run CI and submit PR', 'status': 'pending', 'activeForm': 'Running CI and submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6499" cache_read_input_tokens="30087" cache_creation="{'ephemeral_5m_input_tokens': 6499, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_019q2kUP4AvqKyHuuWrgYt5v">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>### Phase 1: Add CLI architecture callout to SKILL.md
+
+I need to add the callout after line 48 (after "Session handoff ready" principle) and before "Quick Reference" on line 50.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="251" cache_read_input_tokens="36586" cache_creation="{'ephemeral_5m_input_tokens': 251, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01PYe9RChoZBBmmL2VMj2nLb">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/skills/objective/SKILL.md</param>
+    <param name="old_string">12. **Session handoff ready** - Body should be self-contained for any session to pick up and implement
+
+## Quick Reference</param>
+    <param name="new_string">12. **Session handoff ready** - Body should be self-contained for any session to pick up a...[truncated 278 chars]...e don't exist.
+&gt; All roadmap mutations go through `erk exec` commands.
+
+## Quick Reference</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="251" cache_read_input_tokens="36586" cache_creation="{'ephemeral_5m_input_tokens': 251, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01PYe9RChoZBBmmL2VMj2nLb">
+The file /home/runner/work/erk/erk/.claude/skills/objective/SKILL.md has been updated successfully.
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01XFj5TnU1FbWusN8X9fmxpr">
+    <param name="todos">[{'content': 'Add CLI architecture callout to objective SKILL.md', 'status': 'completed', ...[truncated 345 chars]...Run CI and submit PR', 'status': 'pending', 'activeForm': 'Running CI and submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="365" cache_read_input_tokens="36837" cache_creation="{'ephemeral_5m_input_tokens': 365, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01XFj5TnU1FbWusN8X9fmxpr">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>### Phase 2: Add tripwire to objectives tripwires.md
+
+The tripwires file is auto-generated from frontmatter. However, looking at it more carefully, the plan says to add a tripwire entry. Let me check how tripwires are structured — they appear to be in the auto-generated file directly. Let me check if there's a source frontmatter file or if these are managed differently.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="238" cache_read_input_tokens="37202" cache_creation="{'ephemeral_5m_input_tokens': 238, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_014RZZasXZC4AC341cgnEkGx">
+    <param name="pattern">trying to mutate</param>
+    <param name="path">/home/runner/work/erk/erk/docs/learned/objectives/</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="238" cache_read_input_tokens="37202" cache_creation="{'ephemeral_5m_input_tokens': 238, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_014RZZasXZC4AC341cgnEkGx">
+No files found
+  </tool_result>
+  <assistant>The tripwires.md file says "AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY" and "Edit source frontmatter, then run 'erk docs sync' to regenerate." The tripwires are generated from frontmatter in the individual doc files. Let me check how other tripwires are defined — they come from `tripwires` frontmatter in the individual markdown files.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="197" cache_read_input_tokens="37440" cache_creation="{'ephemeral_5m_input_tokens': 197, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_016J66G2kxXN4Nb2DRDtuEZk">
+    <param name="pattern">^tripwires:", "pattern": "tripwires:</param>
+    <param name="path">/home/runner/work/erk/erk/docs/learned/objectives/</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="197" cache_read_input_tokens="37440" cache_creation="{'ephemeral_5m_input_tokens': 197, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_016J66G2kxXN4Nb2DRDtuEZk">
+No files found
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01CFsjQTwY38Xv7CjjAjmTWF">
+    <param name="pattern">tripwires:</param>
+    <param name="path">/home/runner/work/erk/erk/docs/learned/objectives/</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="224" cache_read_input_tokens="37637" cache_creation="{'ephemeral_5m_input_tokens': 224, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01CFsjQTwY38Xv7CjjAjmTWF">
+Found 16 files
+docs/learned/objectives/research-documentation-integration.md
+docs/learned/objectives/roadmap-format-versioning.md
+docs/learned/objectives/roadmap-mutation-patterns.md
+docs/learned/objectives/roadmap-parser-api.md
+docs/learned/objectives/roadmap-parser.md
+docs/learned/objectives/roadmap-status-system.md
+docs/learned/objectives/roadmap-validation.md
+docs/learned/objectives/dependency-graph.md
+docs/learned/objectives/dependency-status-resolution.md
+docs/learned/objectives/exec-command-consolidation.md
+docs/learned/objectives/objective-create-workflow.md
+docs/learned/objectives/objective-lifecycle.md
+docs/learned/objectives/objective-plan-backlinks.md
+docs/learned/objectives/objective-roadmap-check.md
+docs/learned/objectives/objective-storage-format.md
+docs/learned/objectives/phase-name-enrichment.md
+  </tool_result>
+  <assistant>Good — tripwires live in frontmatter of individual docs. The new tripwire needs to reference the SKILL.md file. The best home for this tripwire would be an existing doc that covers the objective lifecycle or the exec command consolidation. Let me check the exec-command-consolidation doc since it's about the exec commands for mutations.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="356" cache_read_input_tokens="37861" cache_creation="{'ephemeral_5m_input_tokens': 356, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01U38tUMKtRX5SKzYqpE23jY">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/objectives/exec-command-consolidation.md</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="356" cache_read_input_tokens="37861" cache_creation="{'ephemeral_5m_input_tokens': 356, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01U38tUMKtRX5SKzYqpE23jY">
+     1→---
+     2→title: Objective Exec Command Consolidation
+     3→read_when:
+     4→  - "working with the objective-apply-landed-update exec script"
+     5→  - "modifying how objectives are updated after landing a PR"
+     6→  - "adding new discovery patterns to exec scripts"
+     7→tripwires:
+     8→  - action: "adding a required parameter to objective-apply-landed-update without fallback discovery"
+     9→    warning: "The script auto-fills missing parameters from git/plan state. New parameters should follow the same pattern: explicit flag first, then auto-discovery fallback."
+    10→  - action: "passing None for optional discovery flags and assuming defaults"
+    11→    warning: "Optional discovery flags (--plan, --objective, --pr) have complex fallback chains. Test edge cases where the fallback source is unavailable (branch deleted, plan not found, PR not created)."
+    12→    score: 5
+    13→  - action: "adding a new exec command without registering in the exec group"
+    14→    warning: "New exec scripts must be registered in the Click exec command group and follow the existing pattern: Click command with typed options, LBYL validation, structured result TypedDict."
+    15→    score: 4
+    16→---
+    17→
+    18→# Objective Exec Command Consolidation
+    19→
+    20→The `objective-apply-landed-update` exec script consolidates what was previously a multi-step workflow into a single command.
+    21→
+    22→## Location
+    23→
+    24→&lt;!-- Source: src/erk/cli/commands/exec/scripts/objective_apply_landed_update.py --&gt;
+    25→
+    26→`src/erk/cli/commands/exec/scripts/objective_apply_landed_update.py`
+    27→
+    28→## Three-Step Consolidation
+    29→
+    30→The script combines three operations into a single invocation:
+
+... [5 lines omitted] ...
+  </tool_result>
+  <assistant>This doc is about the exec command consolidation specifically. The new tripwire is about the broader CLI architecture distinction. Let me check objective-lifecycle.md since it covers the overall objective workflow:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="912" cache_read_input_tokens="38217" cache_creation="{'ephemeral_5m_input_tokens': 912, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01AnH4uRJYhT9JdwF6F8GdDv">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/objectives/objective-lifecycle.md</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="912" cache_read_input_tokens="38217" cache_creation="{'ephemeral_5m_input_tokens': 912, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01AnH4uRJYhT9JdwF6F8GdDv">
+     1→---
+     2→title: Objective Lifecycle
+     3→category: objectives
+     4→read_when:
+     5→  - "creating or modifying objective lifecycle code"
+     6→  - "understanding how objectives are created, mutated, and closed"
+     7→  - "adding new mutation paths to objective roadmaps"
+     8→  - "working with objective-fetch-context or auto-discovery"
+     9→  - "using --next flag on objective implement"
+    10→tripwires:
+    11→  - action: "adding a new roadmap mutation site without updating this document"
+    12→    warning: "All roadmap mutation sites must be documented in objective-lifecycle.md"
+    13→  - action: "updating roadmap step in only one location (frontmatter or table)"
+    14→    warning: "Must update both frontmatter AND markdown table during the dual-write migration period. Use update-objective-node which handles both atomically."
+    15→  - action: "using erk objective inspect"
+    16→    warning: "inspect command was removed in PR #7385. Use `erk objective view` or `/local:objective-view` instead."
+    17→  - action: "running objective-fetch-context on master without --branch"
+    18→    warning: "Auto-discovery fails on non-plan branches. Pass `--branch` explicitly when on master."
+    19→  - action: "calling update-objective-node or plan-save inside objective-plan workflow without creating roadmap-step marker first"
+    20→    warning: "The roadmap-step marker must be created before entering plan mode. If missing, plan-save cannot call update-objective-node, and the objective roadmap table silently fails to update. Create the marker immediately after the user selects a node (step 5 of objective-plan), before gathering code context."
+    21→    score: 5
+    22→  - action: "updating objective from multiple concurrent plan completions"
+    23→    warning: "When multiple nodes in an objective complete simultaneously, concurrent updates can race. Check objective state before updating to avoid overwriting recent changes."
+    24→last_audited: "2026-02-17 00:00 PT"
+    25→audit_result: edited
+    26→---
+    27→
+    28→# Objective Lifecycle
+    29→
+    30→This document describes the complete lifecycle of objective issues from creation to closure, including all mutation paths and data flows.
+
+... [5 lines omitted] ...
+  </tool_result>
+  <assistant>The objective-lifecycle.md is the right place since it covers objective mutations and lifecycle. The tripwire about "trying to mutate an objective via `erk objective` subcommands" fits well here alongside the existing mutation-related tripwires. Let me add it:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="800" cache_read_input_tokens="39129" cache_creation="{'ephemeral_5m_input_tokens': 800, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_019ePfXJZ8KP4fWJbQSbdL8e">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/objectives/objective-lifecycle.md</param>
+    <param name="old_string">  - action: "updating objective from multiple concurrent plan completions"
+    warning: "W...[truncated 54 chars]...ates can race. Check objective state before updating to avoid overwriting recent changes."</param>
+    <param name="new_string">  - action: "updating objective from multiple concurrent plan completions"
+    warning: "W...[truncated 455 chars]...lag auto-assigns sequential node IDs within a phase (no `--id` flag exists)."
+    score: 5</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="800" cache_read_input_tokens="39129" cache_creation="{'ephemeral_5m_input_tokens': 800, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_019ePfXJZ8KP4fWJbQSbdL8e">
+The file /home/runner/work/erk/erk/docs/learned/objectives/objective-lifecycle.md has been updated successfully.
+  </tool_result>
+  <assistant>Now I need to regenerate the tripwires.md file. Let me run `erk docs sync`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="602" cache_read_input_tokens="39929" cache_creation="{'ephemeral_5m_input_tokens': 602, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01Gky1j7oatQ9tCK7f5yrj62">
+    <param name="command">erk docs sync 2&gt;&amp;1</param>
+    <param name="description">Regenerate tripwires index</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="602" cache_read_input_tokens="39929" cache_creation="{'ephemeral_5m_input_tokens': 602, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Gky1j7oatQ9tCK7f5yrj62">
+Scanning docs...
+Generating root index...
+Generating category indexes...
+Collecting tripwires...
+Generating tripwire files...
+Generating tripwires index...
+Updated 2 file(s):
+  ~ objectives/tripwires.md
+  ~ tripwires-index.md
+
+Unchanged: 55 file(s)
+
+Tripwires: 874 collected
+  architecture: 195 (26 with patterns)
+  capabilities: 13
+  changelog: 3
+  checklists: 1
+  ci: 55
+  claude-code: 3
+  cli: 108
+  commands: 11
+  config: 3
+  configuration: 1
+  documentation: 30
+  erk: 27
+  erk-dev: 2
+  gateway: 5
+  hooks: 5
+  integrations: 19
+  objectives: 48
+
+... [14 lines omitted] ...
+  </tool_result>
+  <assistant>The sync updated objectives/tripwires.md (now 48 tripwires, up from 47) and tripwires-index.md. Let me verify the tripwire was added correctly:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="441" cache_read_input_tokens="40531" cache_creation="{'ephemeral_5m_input_tokens': 441, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01D5XHBUq86QDJ4AmVPVKcjb">
+    <param name="pattern">trying to mutate</param>
+    <param name="path">/home/runner/work/erk/erk/docs/learned/objectives/tripwires.md</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="441" cache_read_input_tokens="40531" cache_creation="{'ephemeral_5m_input_tokens': 441, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01D5XHBUq86QDJ4AmVPVKcjb">
+85:**trying to mutate an objective via `erk objective` subcommands (add-node, update-node, etc.)** → Read [Objective Lifecycle](objective-lifecycle.md) first. `erk objective` is read-only (check, view, list, plan, close). All roadmap mutations use `erk exec` commands: `erk exec add-objective-node`, `erk exec update-objective-node`. The `--phase` flag auto-assigns sequential node IDs within a phase (no `--id` flag exists).
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_0124f7bGkr4bnk8QythNWcLC">
+    <param name="todos">[{'content': 'Add CLI architecture callout to objective SKILL.md', 'status': 'completed', ...[truncated 347 chars]...Run CI and submit PR', 'status': 'pending', 'activeForm': 'Running CI and submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="469" cache_read_input_tokens="40972" cache_creation="{'ephemeral_5m_input_tokens': 469, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_0124f7bGkr4bnk8QythNWcLC">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>### Phase 3: Verification
+
+Let me verify the SKILL.md change looks correct and run `erk objective check 9109` as specified in the plan:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="238" cache_read_input_tokens="41441" cache_creation="{'ephemeral_5m_input_tokens': 238, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01Pxpe7uVntrVVYP25ZGzMuT">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/skills/objective/SKILL.md</param>
+    <param name="offset">46</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="238" cache_read_input_tokens="41441" cache_creation="{'ephemeral_5m_input_tokens': 238, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_012nsMhDyPw1FVv3JYysCS7x">
+    <param name="command">erk objective check 9109 2&gt;&amp;1</param>
+    <param name="description">Validate objective check still passes</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="238" cache_read_input_tokens="41441" cache_creation="{'ephemeral_5m_input_tokens': 238, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Pxpe7uVntrVVYP25ZGzMuT">
+    46→10. **Two-step for all changes** - Every addition (context, decisions, phases) gets a comment AND body update
+    47→11. **Context over code** - Provide references to patterns, not prescriptive implementations
+    48→12. **Session handoff ready** - Body should be self-contained for any session to pick up and implement
+    49→
+    50→## CLI Architecture: Read vs Write
+    51→
+    52→&gt; **`erk objective` = read-only** (check, view, list, plan, close)
+    53→&gt; **`erk exec` = mutations** (add-objective-node, update-objective-node, objective-render-roadmap, etc.)
+    54→&gt;
+    55→&gt; Never try `erk objective add-node` or `erk objective update-node` — these don't exist.
+    56→&gt; All roadmap mutations go through `erk exec` commands.
+    57→
+    58→## Quick Reference
+    59→
+    60→### Creating an Objective
+    61→
+    62→```bash
+    63→gh issue create --title "Objective: [Title]" --label "erk-objective" --body "$(cat &lt;&lt;'EOF'
+    64→# Objective: [Title]
+    65→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_012nsMhDyPw1FVv3JYysCS7x">
+Validating objective #9109...
+
+[PASS] Issue has erk-objective label
+[PASS] Roadmap parses successfully
+[PASS] Status/PR consistency
+[PASS] No orphaned done statuses (done steps have PR references)
+[PASS] Phase numbering is sequential
+[PASS] objective-header has objective_comment_id
+[PASS] PR references use '#' prefix
+[PASS] Roadmap table in sync with YAML
+[PASS] PR backlinks: all PR references have matching objective_issue backlinks
+
+Objective validation passed (27/35 done)
+  </tool_result>
+  <assistant>All checks pass. The SKILL.md change looks correct and `erk objective check 9109` passes with no functional changes.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="805" cache_read_input_tokens="41679" cache_creation="{'ephemeral_5m_input_tokens': 805, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01McgYaaHnD8aNQAxvBmUjBk">
+    <param name="todos">[{'content': 'Add CLI architecture callout to objective SKILL.md', 'status': 'completed', ...[truncated 349 chars]...CI and submit PR', 'status': 'in_progress', 'activeForm': 'Running CI and submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="805" cache_read_input_tokens="41679" cache_creation="{'ephemeral_5m_input_tokens': 805, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01McgYaaHnD8aNQAxvBmUjBk">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>### Signal ended and upload session</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="267" cache_read_input_tokens="42484" cache_creation="{'ephemeral_5m_input_tokens': 267, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01ANU8Eb3fFq8M23UWTMc5D4">
+    <param name="command">erk exec impl-signal ended --session-id "7b750600-bdf9-428c-bde1-6eaaa1f67de9" 2&gt;/dev/null || true</param>
+    <param name="description">Signal implementation ended</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="267" cache_read_input_tokens="42484" cache_creation="{'ephemeral_5m_input_tokens': 267, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_017mqeJzHe2H48pa32WhorEG">
+    <param name="command">erk exec upload-impl-session --session-id "7b750600-bdf9-428c-bde1-6eaaa1f67de9" 2&gt;/dev/null || true</param>
+    <param name="description">Upload session for async learn</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="267" cache_read_input_tokens="42484" cache_creation="{'ephemeral_5m_input_tokens': 267, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01ANU8Eb3fFq8M23UWTMc5D4">
+{
+  "success": true,
+  "event": "ended",
+  "pr_number": 9199
+}
+  </tool_result>
+  <tool_result tool="toolu_017mqeJzHe2H48pa32WhorEG">
+{"uploaded": true, "pr_number": 9199}
+  </tool_result>
+  <assistant>### Clean up impl context</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="325" cache_read_input_tokens="42751" cache_creation="{'ephemeral_5m_input_tokens': 325, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01XVQyuE4xSyTTMup8mAbVMS">
+    <param name="command">erk exec cleanup-impl-context</param>
+    <param name="description">Clean up impl context directory</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="325" cache_read_input_tokens="42751" cache_creation="{'ephemeral_5m_input_tokens': 325, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01XVQyuE4xSyTTMup8mAbVMS">
+{"cleaned": false, "reason": "not_tracked"}
+  </tool_result>
+  <assistant>The impl-context directory wasn't tracked in git. Let me check if there's a post-plan-implement CI hook, then run CI:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="129" cache_read_input_tokens="43076" cache_creation="{'ephemeral_5m_input_tokens': 129, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Glob" id="toolu_01MhyDfuKEXPmEGHKcHX1bkD">
+    <param name="pattern">.erk/prompt-hooks/post-plan-implement-ci.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="129" cache_read_input_tokens="43076" cache_creation="{'ephemeral_5m_input_tokens': 129, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01MhyDfuKEXPmEGHKcHX1bkD">
+/home/runner/work/erk/erk/.erk/prompt-hooks/post-plan-implement-ci.md
+  </tool_result>
+  <tool_use name="Read" id="toolu_017gbz65Ep3ryt6GPc9igwtx">
+    <param name="file_path">/home/runner/work/erk/erk/.erk/prompt-hooks/post-plan-implement-ci.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="315" cache_read_input_tokens="43205" cache_creation="{'ephemeral_5m_input_tokens': 315, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_017gbz65Ep3ryt6GPc9igwtx">
+     1→# Post-Implementation CI
+     2→
+     3→Run CI validation after plan implementation using `make fast-ci`.
+     4→
+     5→Load the `ci-iteration` skill for the iterative fix workflow.
+     6→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>This plan only modifies documentation files (SKILL.md and learned docs), so CI checks like linting/type-checking/tests shouldn't be affected. But let me run fast-ci as instructed:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="229" cache_read_input_tokens="43520" cache_creation="{'ephemeral_5m_input_tokens': 229, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_013mV1ahMUdr1w8uRaSf89SS">
+    <param name="description">Run make fast-ci</param>
+    <param name="prompt">Run `make fast-ci` and report the results. Do NOT fix any errors - just report what happened.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="229" cache_read_input_tokens="43520" cache_creation="{'ephemeral_5m_input_tokens': 229, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_013mV1ahMUdr1w8uRaSf89SS">
+**make fast-ci failed: Prettier found formatting issues in 2 files**
+
+The command exited with status code 2. Here's the summary:
+
+**Passing checks:**
+- Lint: All checks passed
+- Format check: 1727 files already formatted
+- Markdown check: OK
+- Exec reference check: OK
+- Type checking (ty): All checks passed
+- Unit tests (erk): 6011 passed
+- Unit tests (erk-dev): 136 passed
+- Unit tests (erk-statusline): 115 passed
+- Unit tests (erk-mcp): 28 passed
+
+**Failing check:**
+- Prettier: Code style issues found in 2 files
+  - `docs/learned/integrations/github-review-decision.md`
+  - `docs/learned/tui/status-indicators.md`
+
+The issue is that these two Markdown files need formatting with Prettier. The make target failed due to the `--check` flag detecting formatting violations.
+agentId: ac11f98 (for resuming to continue this agent's work if needed)
+  </tool_result>
+  <assistant>The prettier failures are in files I didn't modify (`docs/learned/integrations/github-review-decision.md` and `docs/learned/tui/status-indicators.md`) — these are pre-existing issues. Let me fix them anyway to get a clean CI run, then submit.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="602" cache_read_input_tokens="43749" cache_creation="{'ephemeral_5m_input_tokens': 602, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_016xBRLpZdyCE31Wea6un1pa">
+    <param name="description">Run prettier to fix files</param>
+    <param name="prompt">Run `prettier --write docs/learned/integrations/github-review-decision.md docs/learned/tui/status-indicators.md` and report the results. Do NOT fix any errors - just report what happened.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="602" cache_read_input_tokens="43749" cache_creation="{'ephemeral_5m_input_tokens': 602, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_016xBRLpZdyCE31Wea6un1pa">
+prettier passed: 2 files formatted successfully
+
+Both files were processed:
+- `/home/runner/work/erk/erk/docs/learned/integrations/github-review-decision.md` (69ms)
+- `/home/runner/work/erk/erk/docs/learned/tui/status-indicators.md` (26ms)
+agentId: a8eca29 (for resuming to continue this agent's work if needed)
+  </tool_result>
+  <assistant>Now let me re-run CI to confirm everything passes:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="322" cache_read_input_tokens="44351" cache_creation="{'ephemeral_5m_input_tokens': 322, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01CkqDg7vco8yz6bxSFSg9Ux">
+    <param name="description">Re-run make fast-ci</param>
+    <param name="prompt">Run `make fast-ci` and report the results. Do NOT fix any errors - just report what happened.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="322" cache_read_input_tokens="44351" cache_creation="{'ephemeral_5m_input_tokens': 322, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01CkqDg7vco8yz6bxSFSg9Ux">
+The `make fast-ci` command passed successfully. Here's the summary of the results:
+
+**Lint**: All checks passed
+
+**Format Check**: 1727 files already formatted
+
+**Prettier Check**: All matched files use Prettier code style
+
+**Markdown Check**: Passed (no issues reported)
+
+**Exec Reference Check**: `.claude/skills/erk-exec/reference.md` is up to date
+
+**Type Checking (ty)**: All checks passed
+
+**Unit Tests**:
+- erk: 6011 passed in 15.18s
+- erk-dev: 136 passed in 6.23s
+- erk-statusline: 115 passed in 0.92s
+- erk-mcp: 26 passed
+
+**CLAUDE.md/AGENTS.md Standard**: PASSED
+- 19 CLAUDE.md files checked
+- 0 violations
+- All files properly paired
+
+All tests and checks passed with no errors.
+agentId: af4371d (for resuming to continue this agent's work if needed)
+  </tool_result>
+  <assistant>All CI checks pass. Now let me submit the PR:</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="561" cache_read_input_tokens="44673" cache_creation="{'ephemeral_5m_input_tokens': 561, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_0137DPWPWdCi2WnkUhs851Dh">
+    <param name="command">erk pr submit 2&gt;&amp;1</param>
+    <param name="description">Submit PR via erk</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="561" cache_read_input_tokens="44673" cache_creation="{'ephemeral_5m_input_tokens': 561, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_0137DPWPWdCi2WnkUhs851Dh">
+🚀 Submitting PR...
+
+   Resolving branch and plan context...
+   Committing uncommitted changes...
+   Checking for existing PR...
+Phase 1: Creating or Updating PR
+   PR #9199 found (already exists)
+
+Phase 2: Getting diff and plan context
+   Incorporating plan #9199
+
+
+Phase 3: Generating PR description
+   Reading diff file...
+   Diff loaded (6,268 chars)
+   Analyzing changes with Claude...
+   Still waiting... (2s)
+   Still waiting... (4s)
+   Still waiting... (6s)
+   Still waiting... (8s)
+   PR description generated
+
+Phase 4: Graphite enhancement
+
+Phase 5: Updating PR metadata
+   Publishing draft PR...
+   PR metadata updated
+
+✅ PR submitted
+
+
+... [5 lines omitted] ...
+
+  Title:       Add objective mutation command CLI architecture callout to prevent discovery errors
+  </tool_result>
+  <tool_use name="Bash" id="toolu_012BgvHjc5SGkCyTAy3wCma1">
+    <param name="command">erk exec impl-signal submitted 2&gt;/dev/null || true</param>
+    <param name="description">Signal PR submitted</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="421" cache_read_input_tokens="45234" cache_creation="{'ephemeral_5m_input_tokens': 421, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01GUb5Ven6veSvZNa1LayhSB">
+    <param name="command">erk pr check --stage=impl 2&gt;&amp;1</param>
+    <param name="description">Validate PR completion invariants</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="421" cache_read_input_tokens="45234" cache_creation="{'ephemeral_5m_input_tokens': 421, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_012BgvHjc5SGkCyTAy3wCma1">
+{
+  "success": true,
+  "event": "submitted",
+  "pr_number": 9199
+}
+  </tool_result>
+  <tool_result tool="toolu_01GUb5Ven6veSvZNa1LayhSB">
+Exit code 1
+Checking PR #9199 for branch plnd/add-objective-tripwire-03-11-0644...
+
+[FAIL] .erk/impl-context/ still present (should be removed before submission)
+[PASS] Plan reference found (#9199)
+[PASS] PR body contains checkout footer
+
+1 check failed
+  </tool_result>
+  <assistant>The impl-context directory is still present. Let me clean it up properly:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="497" cache_read_input_tokens="45655" cache_creation="{'ephemeral_5m_input_tokens': 497, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01MB5svzZX7sGEBZ99QRstbA">
+    <param name="command">ls /home/runner/work/erk/erk/.erk/impl-context/</param>
+    <param name="description">Check impl-context contents</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="497" cache_read_input_tokens="45655" cache_creation="{'ephemeral_5m_input_tokens': 497, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01MB5svzZX7sGEBZ99QRstbA">
+plan.md
+plnd--add-objective-tripwire-03-11-0644
+ref.json
+run-info.json
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01BiigANmtPyEo5mSRJn6vAT">
+    <param name="command">git -C /home/runner/work/erk/erk rm -rf .erk/impl-context/ &amp;&amp; git -C /home/runner/work/erk/erk commit -m "Clean up impl-context" &amp;&amp; git -C /home/runner/work/erk/erk push</param>
+    <param name="description">Remove impl-context and push</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="153" cache_read_input_tokens="46152" cache_creation="{'ephemeral_5m_input_tokens': 153, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01BiigANmtPyEo5mSRJn6vAT">
+Exit code 128
+fatal: pathspec '.erk/impl-context/' did not match any files
+  </tool_result>
+  <assistant>It's not tracked in git — it's just a local directory. Let me remove it and re-check:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="378" cache_read_input_tokens="46305" cache_creation="{'ephemeral_5m_input_tokens': 378, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01LT72iwaHf8aGCvvNBx7FaH">
+    <param name="command">rm -rf /home/runner/work/erk/erk/.erk/impl-context/ &amp;&amp; erk pr check --stage=impl 2&gt;&amp;1</param>
+    <param name="description">Remove impl-context and re-check</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="378" cache_read_input_tokens="46305" cache_creation="{'ephemeral_5m_input_tokens': 378, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01LT72iwaHf8aGCvvNBx7FaH">
+Checking PR #9199 for branch plnd/add-objective-tripwire-03-11-0644...
+
+[PASS] .erk/impl-context/ not present (cleaned up)
+[PASS] PR body contains checkout footer
+
+All checks passed
+  </tool_result>
+  <assistant>All checks pass now.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="207" cache_read_input_tokens="46683" cache_creation="{'ephemeral_5m_input_tokens': 207, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01WZqBzPLpSEgEWywf1teQr8">
+    <param name="todos">[{'content': 'Add CLI architecture callout to objective SKILL.md', 'status': 'completed', ...[truncated 347 chars]...n CI and submit PR', 'status': 'completed', 'activeForm': 'Running CI and submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="207" cache_read_input_tokens="46683" cache_creation="{'ephemeral_5m_input_tokens': 207, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01WZqBzPLpSEgEWywf1teQr8">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Plan execution complete. Here's the summary:
+
+**PR #9199**: https://github.com/dagster-io/erk/pull/9199
+
+**Changes made:**
+
+1. **`.claude/skills/objective/SKILL.md`** — Added "CLI Architecture: Read vs Write" callout section between Key Design Principles and Quick Reference, making it clear that `erk objective` is read-only and mutations use `erk exec` commands.
+
+2. **`docs/learned/objectives/objective-lifecycle.md`** — Added a new tripwire (score 5) for "trying to mutate an objective via `erk objective` subcommands" that directs agents to the correct `erk exec` commands.
+
+3. **`docs/learned/objectives/tripwires.md`** + **`docs/learned/tripwires-index.md`** — Auto-regenerated via `erk docs sync` (objectives tripwires: 47 → 48).
+
+4. **Two pre-existing prettier fixes** in unrelated docs files.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="242" cache_read_input_tokens="46890" cache_creation="{'ephemeral_5m_input_tokens': 242, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+</session>
