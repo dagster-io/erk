@@ -24,7 +24,7 @@ on:
         description: "Claude model to use for execution"
         required: false
         type: string
-        default: "claude-opus-4-6"
+        default: "claude-sonnet-4-6"
 
 concurrency:
   group: consolidate-learn-plans-${{ inputs.branch_name }}

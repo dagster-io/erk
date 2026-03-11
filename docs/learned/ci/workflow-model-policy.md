@@ -5,28 +5,29 @@ audit_result: clean
 read_when:
   - "creating or modifying GitHub Actions workflows that invoke Claude"
   - "choosing which Claude model to use in a workflow"
-  - "understanding why all workflows default to Opus"
+  - "understanding why all workflows default to Sonnet 4.6"
 tripwires:
   - action: "creating workflows that invoke Claude without specifying model"
-    warning: "All workflows MUST default to claude-opus-4-6. See workflow-model-policy.md for the standardization rationale."
+    warning: "All workflows MUST default to claude-sonnet-4-6. See workflow-model-policy.md for the standardization rationale."
 ---
 
 # Workflow Model Policy
 
-All erk GitHub Actions workflows that invoke Claude MUST default to `claude-opus-4-6`. This standardization was completed across all 6 Claude-invoking workflows to ensure consistent behavior and eliminate per-workflow model selection confusion.
+All erk GitHub Actions workflows that invoke Claude MUST default to `claude-sonnet-4-6`. This standardization was completed across all 7 Claude-invoking workflows to ensure consistent behavior and eliminate per-workflow model selection confusion.
 
 ## Affected Workflows
 
-| Workflow             | Model Parameter           | Default           |
-| -------------------- | ------------------------- | ----------------- |
-| `ci.yml`             | Direct reference          | `claude-opus-4-6` |
-| `learn.yml`          | Direct reference          | `claude-opus-4-6` |
-| `one-shot.yml`       | `model_name` input        | `claude-opus-4-6` |
-| `plan-implement.yml` | `model_name` input (dual) | `claude-opus-4-6` |
-| `pr-address.yml`     | `model_name` input        | `claude-opus-4-6` |
-| `pr-rebase.yml`      | `model_name` input        | `claude-opus-4-6` |
+| Workflow                      | Model Parameter           | Default             |
+| ----------------------------- | ------------------------- | ------------------- |
+| `consolidate-learn-plans.yml` | `model_name` input        | `claude-sonnet-4-6` |
+| `learn.yml`                   | Direct reference          | `claude-sonnet-4-6` |
+| `one-shot.yml`                | `model_name` input        | `claude-sonnet-4-6` |
+| `plan-implement.yml`          | `model_name` input (dual) | `claude-sonnet-4-6` |
+| `pr-address.yml`              | `model_name` input        | `claude-sonnet-4-6` |
+| `pr-rebase.yml`               | `model_name` input        | `claude-sonnet-4-6` |
+| `pr-rewrite.yml`              | `model_name` input        | `claude-sonnet-4-6` |
 
-Workflows without Claude invocation (`docs.yml`, `code-reviews.yml`) are not affected.
+Workflows without Claude invocation are not affected.
 
 ## Review Models Are NOT Standardized
 
@@ -44,7 +45,7 @@ Review models are chosen per-review based on task complexity, not standardized t
 
 ## Dual-Default Pattern in plan-implement.yml
 
-`plan-implement.yml` supports both `workflow_dispatch` (manual trigger) and `workflow_call` (programmatic invocation from other workflows like `one-shot.yml`). Both define `model_name` with the same default (`claude-opus-4-6`) but differ in `distinct_id` handling:
+`plan-implement.yml` supports both `workflow_dispatch` (manual trigger) and `workflow_call` (programmatic invocation from other workflows like `one-shot.yml`). Both define `model_name` with the same default (`claude-sonnet-4-6`) but differ in `distinct_id` handling:
 
 - **workflow_dispatch**: `distinct_id` is required (for manual trigger correlation)
 - **workflow_call**: `distinct_id` is optional with default `"called"` (caller may or may not need correlation)
