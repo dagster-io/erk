@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Plan: Replace `erk pr rebase` with `erk pr resolve-conflicts`"
+}
