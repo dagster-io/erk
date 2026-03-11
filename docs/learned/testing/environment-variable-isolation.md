@@ -29,7 +29,7 @@ See `context_for_test()` in `packages/erk-shared/src/erk_shared/context/testing.
 
 ## `context_for_test()` Implementation
 
-After PR #8210, `context_for_test()` in `packages/erk-shared/src/erk_shared/context/testing.py` no longer checks `ERK_PLAN_BACKEND`. The plan backend is hardcoded to `GitHubManagedPrBackend`.
+After PR #8210, `context_for_test()` in `packages/erk-shared/src/erk_shared/context/testing.py` no longer checks `ERK_PLAN_BACKEND`. The plan backend is hardcoded to `ManagedGitHubPrBackend`.
 
 ## Mitigations
 
@@ -49,7 +49,7 @@ Pass `plan_store` explicitly to `context_for_test()`:
 
 ```python
 ctx = context_for_test(
-    plan_store=GitHubManagedPrBackend(FakeGitHub(), FakeGitHubIssues(), time=FakeTime()),
+    plan_store=ManagedGitHubPrBackend(FakeGitHub(), FakeGitHubIssues(), time=FakeTime()),
     ...
 )
 ```

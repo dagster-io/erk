@@ -17,7 +17,7 @@ from erk.cli.commands.exec.scripts.create_impl_context_from_plan import (
 )
 from erk_shared.context.context import ErkContext
 from erk_shared.gateway.github.issues.types import IssueInfo
-from erk_shared.plan_store.planned_pr import GitHubManagedPrBackend
+from erk_shared.plan_store.planned_pr import ManagedGitHubPrBackend
 from tests.fakes.gateway.github import FakeLocalGitHub
 from tests.fakes.gateway.github_issues import FakeGitHubIssues
 from tests.fakes.gateway.time import FakeTime
@@ -67,7 +67,7 @@ def test_success_creates_impl_context(tmp_path: Path) -> None:
         ["123"],
         obj=ErkContext.for_test(
             github=fake_github,
-            plan_store=GitHubManagedPrBackend(fake_github, fake_issues, time=FakeTime()),
+            plan_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
             repo_root=tmp_path,
         ),
     )
@@ -76,7 +76,7 @@ def test_success_creates_impl_context(tmp_path: Path) -> None:
     output = json.loads(result.output)
     assert output["success"] is True
     assert output["pr_number"] == 123
-    # GitHubManagedPrBackend uses PR URLs (issue_info_to_pr_details converts /issues/ to /pull/)
+    # ManagedGitHubPrBackend uses PR URLs (issue_info_to_pr_details converts /issues/ to /pull/)
     assert "test-owner/test-repo/pull/123" in output["pr_url"]
 
     # Verify .erk/impl-context/ folder was created with correct files
@@ -108,7 +108,7 @@ def test_plan_not_found_exits_with_error(tmp_path: Path) -> None:
         ["999"],
         obj=ErkContext.for_test(
             github=fake_github,
-            plan_store=GitHubManagedPrBackend(fake_github, fake_issues, time=FakeTime()),
+            plan_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
             repo_root=tmp_path,
         ),
     )
@@ -146,7 +146,7 @@ def test_objective_id_preserved_in_ref_json(tmp_path: Path) -> None:
         ["456"],
         obj=ErkContext.for_test(
             github=fake_github,
-            plan_store=GitHubManagedPrBackend(fake_github, fake_issues, time=FakeTime()),
+            plan_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
             repo_root=tmp_path,
         ),
     )

@@ -8,7 +8,7 @@ Example:
     # Testing with fake gateway
     fake_issues = FakeGitHubIssues()
     fake_github = FakeLocalGitHub(issues_gateway=fake_issues)
-    backend = GitHubManagedPrBackend(fake_github, fake_issues, time=FakeTime())
+    backend = ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime())
     result = backend.create_managed_pr(...)
 
     # Assert on gateway mutations
@@ -268,7 +268,7 @@ class ManagedPrBackend(ABC):
         Lightweight resolution that does NOT verify the plan exists.
         Returns None if the branch is not associated with a plan.
 
-        For GitHubManagedPrBackend this requires an API call to find the
+        For ManagedGitHubPrBackend this requires an API call to find the
         draft PR associated with the branch.
 
         Args:

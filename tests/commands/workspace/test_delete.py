@@ -463,7 +463,7 @@ def test_delete_all_closes_pr_and_plan() -> None:
         assert_cli_success(result)
         # Verify PR was closed
         assert 456 in fake_github.closed_prs
-        # Verify plan was closed (GitHubManagedPrBackend closes via FakeLocalGitHub.close_pr)
+        # Verify plan was closed (ManagedGitHubPrBackend closes via FakeLocalGitHub.close_pr)
         assert 123 in fake_github.closed_prs
         # Verify branch was deleted (--all implies --branch)
         assert "feature-branch" in fake_git.deleted_branches

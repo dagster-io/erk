@@ -12,7 +12,7 @@ from erk.cli.commands.exec.scripts.objective_apply_landed_update import (
 )
 from erk_shared.gateway.github.issues.types import IssueComment, IssueInfo
 from erk_shared.gateway.github.types import PRDetails, RepoInfo
-from erk_shared.plan_store.planned_pr import GitHubManagedPrBackend
+from erk_shared.plan_store.planned_pr import ManagedGitHubPrBackend
 from tests.fakes.gateway.git import FakeGit
 from tests.fakes.gateway.github import FakeLocalGitHub
 from tests.fakes.gateway.github_issues import FakeGitHubIssues
@@ -200,7 +200,7 @@ class TestApplyLandedUpdateHappyPath:
             ],
             obj=context_for_test(
                 github=fake_github,
-                plan_store=GitHubManagedPrBackend(fake_github, fake_issues, time=FakeTime()),
+                plan_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
                 remote_github=remote,
                 repo_root=tmp_path,
                 cwd=tmp_path,
@@ -274,7 +274,7 @@ class TestApplyLandedUpdateHappyPath:
             ],
             obj=context_for_test(
                 github=fake_github,
-                plan_store=GitHubManagedPrBackend(fake_github, fake_issues, time=FakeTime()),
+                plan_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
                 remote_github=_make_remote(
                     {6423: objective, 6513: plan},
                     comments_by_id={55555: OBJECTIVE_COMMENT_BODY},
@@ -330,7 +330,7 @@ class TestApplyLandedUpdateNoNodes:
             ],
             obj=context_for_test(
                 github=fake_github,
-                plan_store=GitHubManagedPrBackend(fake_github, fake_issues, time=FakeTime()),
+                plan_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
                 remote_github=remote,
                 repo_root=tmp_path,
                 cwd=tmp_path,
@@ -438,7 +438,7 @@ class TestApplyLandedUpdateAutoMatch:
             ],
             obj=context_for_test(
                 github=fake_github,
-                plan_store=GitHubManagedPrBackend(fake_github, fake_issues, time=FakeTime()),
+                plan_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
                 remote_github=remote,
                 repo_root=tmp_path,
                 cwd=tmp_path,
@@ -484,7 +484,7 @@ class TestApplyLandedUpdateErrors:
             ],
             obj=context_for_test(
                 github=fake_github,
-                plan_store=GitHubManagedPrBackend(fake_github, fake_issues, time=FakeTime()),
+                plan_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
                 remote_github=_make_remote({6513: plan}),
                 repo_root=tmp_path,
                 cwd=tmp_path,
@@ -517,7 +517,7 @@ class TestApplyLandedUpdateErrors:
             ],
             obj=context_for_test(
                 github=fake_github,
-                plan_store=GitHubManagedPrBackend(fake_github, fake_issues, time=FakeTime()),
+                plan_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
                 repo_root=tmp_path,
                 cwd=tmp_path,
                 repo_info=_TEST_REPO_INFO,
@@ -547,7 +547,7 @@ class TestApplyLandedUpdateErrors:
             ],
             obj=context_for_test(
                 github=fake_github,
-                plan_store=GitHubManagedPrBackend(fake_github, fake_issues, time=FakeTime()),
+                plan_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
                 repo_root=tmp_path,
                 cwd=tmp_path,
                 repo_info=_TEST_REPO_INFO,
@@ -645,7 +645,7 @@ class TestApplyLandedUpdateAutoClose:
             ],
             obj=context_for_test(
                 github=fake_github,
-                plan_store=GitHubManagedPrBackend(fake_github, fake_issues, time=FakeTime()),
+                plan_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
                 remote_github=remote,
                 repo_root=tmp_path,
                 cwd=tmp_path,
@@ -706,7 +706,7 @@ class TestApplyLandedUpdateAutoClose:
             ],
             obj=context_for_test(
                 github=fake_github,
-                plan_store=GitHubManagedPrBackend(fake_github, fake_issues, time=FakeTime()),
+                plan_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
                 remote_github=remote,
                 repo_root=tmp_path,
                 cwd=tmp_path,
@@ -765,7 +765,7 @@ class TestApplyLandedUpdateDiscovery:
             ],
             obj=context_for_test(
                 github=fake_github,
-                plan_store=GitHubManagedPrBackend(fake_github, fake_issues, time=FakeTime()),
+                plan_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
                 git=fake_git,
                 repo_root=tmp_path,
                 cwd=tmp_path,

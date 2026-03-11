@@ -505,10 +505,10 @@ class FakeFileSystem(FileSystemGateway):
 | Aspect              | Gateway                                           | Backend                                                                              |
 | ------------------- | ------------------------------------------------- | ------------------------------------------------------------------------------------ |
 | **Purpose**         | Thin wrapper around external system               | Higher-level abstraction that composes gateways                                      |
-| **Examples**        | `LocalGitHub`, `Git`, `Graphite`, `Shell`, `Time` | `GitHubManagedPrBackend`, `ManagedPrBackend` implementations                         |
+| **Examples**        | `LocalGitHub`, `Git`, `Graphite`, `Shell`, `Time` | `ManagedGitHubPrBackend`, `ManagedPrBackend` implementations                         |
 | **Implementations** | 4: ABC, Real, Fake, DryRun                        | Just ABC + real implementations                                                      |
 | **Needs Fake?**     | ✅ Yes - provides in-memory simulation            | ❌ No - inject fake gateways instead                                                 |
-| **Testing**         | Use `FakeLocalGitHub` directly                    | Use `GitHubManagedPrBackend(FakeLocalGitHub(), FakeGitHubIssues(), time=FakeTime())` |
+| **Testing**         | Use `FakeLocalGitHub` directly                    | Use `ManagedGitHubPrBackend(FakeLocalGitHub(), FakeGitHubIssues(), time=FakeTime())` |
 
 ### Backend Architecture
 
@@ -520,7 +520,7 @@ Backends are higher-level abstractions that:
 
 ```python
 # Backend takes gateways as constructor arguments
-class GitHubManagedPrBackend(ManagedPrBackend):
+class ManagedGitHubPrBackend(ManagedPrBackend):
     def __init__(self, github: LocalGitHub, github_issues: GitHubIssues, *, time: Time):
         self._github = github  # Injects gateway
         self._github_issues = github_issues
@@ -541,7 +541,7 @@ To test code that uses a backend, inject fake gateways into the real backend:
 def test_create_managed_pr():
     fake_github = FakeLocalGitHub()
     fake_issues = FakeGitHubIssues()
-    managed_pr_backend = GitHubManagedPrBackend(fake_github, fake_issues, time=FakeTime())
+    managed_pr_backend = ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime())
 
     result = managed_pr_backend.create_managed_pr(...)
 

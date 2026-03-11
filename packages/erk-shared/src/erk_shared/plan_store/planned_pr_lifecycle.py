@@ -21,7 +21,7 @@ Stages
    PR body through stages 1-3 below.
 
 1. Plan Creation
-   ``plan_save`` / ``GitHubManagedPrBackend.create_managed_pr()`` creates a draft PR.
+   ``plan_save`` / ``ManagedGitHubPrBackend.create_managed_pr()`` creates a draft PR.
    The body contains an optional AI-generated summary followed by the plan
    content collapsed in a <details> tag, then the plan-header metadata block
    and a checkout footer. The metadata block is self-delimiting via HTML

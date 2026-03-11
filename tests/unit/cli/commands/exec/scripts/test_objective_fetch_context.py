@@ -10,7 +10,7 @@ from click.testing import CliRunner
 from erk.cli.commands.exec.scripts.objective_fetch_context import objective_fetch_context
 from erk_shared.gateway.github.issues.types import IssueComment, IssueInfo
 from erk_shared.gateway.github.types import PRDetails, PRNotFound, RepoInfo
-from erk_shared.plan_store.planned_pr import GitHubManagedPrBackend
+from erk_shared.plan_store.planned_pr import ManagedGitHubPrBackend
 from tests.fakes.gateway.git import FakeGit
 from tests.fakes.gateway.github import FakeLocalGitHub
 from tests.fakes.gateway.github_issues import FakeGitHubIssues
@@ -205,7 +205,7 @@ class TestObjectiveFetchContext:
     def test_happy_path_with_all_args(self, tmp_path: Path) -> None:
         """All three args provided, returns combined JSON with roadmap."""
         objective = _make_issue(number=6423, title="My Objective", body=ROADMAP_BODY)
-        # Create draft PR as plan (GitHubManagedPrBackend resolves plnd/ branches to PRs)
+        # Create draft PR as plan (ManagedGitHubPrBackend resolves plnd/ branches to PRs)
         plan_pr = _make_pr_details(
             number=6513,
             title="My Plan",
@@ -220,7 +220,7 @@ class TestObjectiveFetchContext:
             prs_by_branch={"plnd/some-branch-01-01-1200": plan_pr},
             issues_gateway=fake_issues,
         )
-        planned_pr_backend = GitHubManagedPrBackend(fake_github, fake_issues, time=FakeTime())
+        planned_pr_backend = ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime())
 
         runner = CliRunner()
         result = runner.invoke(
@@ -261,7 +261,7 @@ class TestObjectiveFetchContext:
             prs_by_branch={"plnd/some-branch-01-01-1200": plan_pr},
             issues_gateway=fake_issues,
         )
-        planned_pr_backend = GitHubManagedPrBackend(fake_github, fake_issues, time=FakeTime())
+        planned_pr_backend = ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime())
 
         runner = CliRunner()
         result = runner.invoke(
@@ -328,7 +328,7 @@ class TestObjectiveFetchContext:
             prs_by_branch={"plnd/some-branch-01-01-1200": plan_pr},
             issues_gateway=fake_issues,
         )
-        planned_pr_backend = GitHubManagedPrBackend(fake_github, fake_issues, time=FakeTime())
+        planned_pr_backend = ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime())
 
         runner = CliRunner()
         result = runner.invoke(
@@ -366,7 +366,7 @@ class TestObjectiveFetchContext:
             prs_by_branch={"plnd/some-branch-01-01-1200": plan_pr},
             issues_gateway=fake_issues,
         )
-        planned_pr_backend = GitHubManagedPrBackend(fake_github, fake_issues, time=FakeTime())
+        planned_pr_backend = ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime())
 
         runner = CliRunner()
         result = runner.invoke(
@@ -402,7 +402,7 @@ class TestObjectiveFetchContext:
             prs_by_branch={"plnd/some-branch-01-01-1200": plan_pr},
             issues_gateway=fake_issues,
         )
-        planned_pr_backend = GitHubManagedPrBackend(fake_github, fake_issues, time=FakeTime())
+        planned_pr_backend = ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime())
 
         runner = CliRunner()
         result = runner.invoke(
@@ -439,7 +439,7 @@ class TestObjectiveFetchContext:
             prs_by_branch={"plnd/some-branch-01-01-1200": plan_pr},
             issues_gateway=fake_issues,
         )
-        planned_pr_backend = GitHubManagedPrBackend(fake_github, fake_issues, time=FakeTime())
+        planned_pr_backend = ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime())
 
         runner = CliRunner()
         result = runner.invoke(
@@ -489,7 +489,7 @@ class TestObjectiveFetchContext:
         fake_issues = FakeGitHubIssues(issues={6423: objective})
         # No plan PR configured for the branch - will trigger PlanNotFound
         fake_github = FakeLocalGitHub(pr_details={6517: pr}, issues_gateway=fake_issues)
-        planned_pr_backend = GitHubManagedPrBackend(fake_github, fake_issues, time=FakeTime())
+        planned_pr_backend = ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime())
 
         runner = CliRunner()
         result = runner.invoke(
@@ -528,7 +528,7 @@ class TestDiscoveryMode:
             prs_by_branch={"plnd/some-branch-01-01-1200": plan_pr},
             issues_gateway=fake_issues,
         )
-        planned_pr_backend = GitHubManagedPrBackend(fake_github, fake_issues, time=FakeTime())
+        planned_pr_backend = ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime())
         fake_git = FakeGit(current_branches={tmp_path: "plnd/some-branch-01-01-1200"})
 
         runner = CliRunner()
@@ -568,7 +568,7 @@ class TestDiscoveryMode:
             prs_by_branch={"plnd/some-branch-01-01-1200": plan_pr},
             issues_gateway=fake_issues,
         )
-        planned_pr_backend = GitHubManagedPrBackend(fake_github, fake_issues, time=FakeTime())
+        planned_pr_backend = ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime())
 
         runner = CliRunner()
         result = runner.invoke(
@@ -611,7 +611,7 @@ class TestDiscoveryMode:
             prs_by_branch={"plnd/some-branch-01-01-1200": pr},
             issues_gateway=fake_issues,
         )
-        planned_pr_backend = GitHubManagedPrBackend(fake_github, fake_issues, time=FakeTime())
+        planned_pr_backend = ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime())
 
         runner = CliRunner()
         result = runner.invoke(
@@ -662,7 +662,7 @@ class TestDiscoveryMode:
         def mock_get_pr_for_branch(repo_root: Path, branch: str) -> PRDetails | PRNotFound:
             call_count[0] += 1
             if call_count[0] == 1:
-                # First call: plan resolution via GitHubManagedPrBackend
+                # First call: plan resolution via ManagedGitHubPrBackend
                 return plan_pr
             else:
                 # Second call: PR discovery
@@ -670,7 +670,7 @@ class TestDiscoveryMode:
 
         fake_github.get_pr_for_branch = mock_get_pr_for_branch
 
-        planned_pr_backend = GitHubManagedPrBackend(fake_github, fake_issues, time=FakeTime())
+        planned_pr_backend = ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime())
         fake_git = FakeGit(current_branches={tmp_path: "plnd/some-branch-01-01-1200"})
 
         runner = CliRunner()
@@ -734,7 +734,7 @@ class TestDiscoveryMode:
             prs_by_branch={"plnd/some-branch-01-01-1200": plan_pr},
             issues_gateway=fake_issues,
         )
-        planned_pr_backend = GitHubManagedPrBackend(fake_github, fake_issues, time=FakeTime())
+        planned_pr_backend = ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime())
 
         runner = CliRunner()
         result = runner.invoke(
@@ -786,7 +786,7 @@ class TestDiscoveryMode:
 
         fake_github.get_pr_for_branch = mock_get_pr_for_branch
 
-        planned_pr_backend = GitHubManagedPrBackend(fake_github, fake_issues, time=FakeTime())
+        planned_pr_backend = ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime())
 
         runner = CliRunner()
         result = runner.invoke(
@@ -809,7 +809,7 @@ class TestDiscoveryMode:
         assert "No PR found" in data["error"]
 
 
-class TestGitHubManagedPrBackend:
+class TestManagedGitHubPrBackend:
     def test_happy_path_planned_pr_plan(self, tmp_path: Path) -> None:
         """Draft PR branch with plan-header resolves plan and objective correctly."""
         objective = _make_issue(number=7419, title="My Objective", body=ROADMAP_BODY)
@@ -832,7 +832,7 @@ class TestGitHubManagedPrBackend:
             pr_details={8002: pr},
             issues_gateway=fake_issues,
         )
-        planned_pr_backend = GitHubManagedPrBackend(fake_github, fake_issues, time=FakeTime())
+        planned_pr_backend = ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime())
 
         runner = CliRunner()
         result = runner.invoke(
@@ -878,7 +878,7 @@ class TestGitHubManagedPrBackend:
             pr_details={8002: pr},
             issues_gateway=fake_issues,
         )
-        planned_pr_backend = GitHubManagedPrBackend(fake_github, fake_issues, time=FakeTime())
+        planned_pr_backend = ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime())
 
         runner = CliRunner()
         result = runner.invoke(
@@ -903,7 +903,7 @@ class TestGitHubManagedPrBackend:
         """Returns error when no PR exists for a plan-... branch."""
         fake_issues = FakeGitHubIssues()
         fake_github = FakeLocalGitHub()
-        planned_pr_backend = GitHubManagedPrBackend(fake_github, fake_issues, time=FakeTime())
+        planned_pr_backend = ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime())
 
         runner = CliRunner()
         result = runner.invoke(
@@ -943,7 +943,7 @@ class TestDirectPlanLookup:
             ["--pr", "6517", "--objective", "6423", "--plan", "6513"],
             obj=context_for_test(
                 github=fake_github,
-                plan_store=GitHubManagedPrBackend(fake_github, fake_issues, time=FakeTime()),
+                plan_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
                 remote_github=_make_remote({6423: objective, 6513: plan}),
                 repo_root=tmp_path,
                 cwd=tmp_path,
@@ -968,7 +968,7 @@ class TestDirectPlanLookup:
             ["--pr", "6517", "--objective", "6423", "--plan", "9999"],
             obj=context_for_test(
                 github=fake_github,
-                plan_store=GitHubManagedPrBackend(fake_github, fake_issues, time=FakeTime()),
+                plan_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
                 repo_root=tmp_path,
                 cwd=tmp_path,
                 repo_info=_TEST_REPO_INFO,
@@ -999,7 +999,7 @@ class TestDirectPlanLookup:
             ["--objective", "6423", "--plan", "6513"],
             obj=context_for_test(
                 github=fake_github,
-                plan_store=GitHubManagedPrBackend(fake_github, fake_issues, time=FakeTime()),
+                plan_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
                 git=fake_git,
                 repo_root=tmp_path,
                 cwd=tmp_path,
@@ -1042,7 +1042,7 @@ class TestObjectiveContent:
             prs_by_branch={"plnd/some-branch-01-01-1200": plan_pr},
             issues_gateway=fake_issues,
         )
-        planned_pr_backend = GitHubManagedPrBackend(fake_github, fake_issues, time=FakeTime())
+        planned_pr_backend = ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime())
 
         runner = CliRunner()
         result = runner.invoke(
@@ -1087,7 +1087,7 @@ class TestObjectiveContent:
             prs_by_branch={"plnd/some-branch-01-01-1200": plan_pr},
             issues_gateway=fake_issues,
         )
-        planned_pr_backend = GitHubManagedPrBackend(fake_github, fake_issues, time=FakeTime())
+        planned_pr_backend = ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime())
 
         runner = CliRunner()
         result = runner.invoke(

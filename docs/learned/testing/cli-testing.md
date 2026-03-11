@@ -335,7 +335,7 @@ def test_command_with_monkeypatch(monkeypatch: pytest.MonkeyPatch) -> None:
 
     # Mock the factory that creates the dependency
     monkeypatch.setattr(
-        "my_module.GitHubManagedPrBackend",
+        "my_module.ManagedGitHubPrBackend",
         lambda github: fake_backend,
     )
 

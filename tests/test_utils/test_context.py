@@ -41,7 +41,7 @@ from erk_shared.gateway.remote_github.abc import RemoteGitHub
 from erk_shared.gateway.shell.abc import Shell
 from erk_shared.gateway.time.abc import Time
 from erk_shared.plan_store.backend import ManagedPrBackend
-from erk_shared.plan_store.planned_pr import GitHubManagedPrBackend
+from erk_shared.plan_store.planned_pr import ManagedGitHubPrBackend
 from tests.fakes.gateway.core import FakeObjectiveListService, FakePlanListService
 
 if TYPE_CHECKING:
@@ -105,7 +105,7 @@ def minimal_context(git: Git, cwd: Path, dry_run: bool = False) -> ErkContext:
         git=git,
         github=fake_github,
         github_admin=FakeGitHubAdmin(),
-        plan_store=GitHubManagedPrBackend(fake_github, fake_issues, time=fake_time),
+        plan_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=fake_time),
         graphite=fake_graphite,
         graphite_branch_ops=fake_graphite_branch_ops,
         console=fake_console,
@@ -248,7 +248,7 @@ def context_for_test(
         github_admin = FakeGitHubAdmin()
 
     if plan_store is None:
-        plan_store = GitHubManagedPrBackend(github, issues, time=FakeTime())
+        plan_store = ManagedGitHubPrBackend(github, issues, time=FakeTime())
 
     # Handle graphite based on global_config.use_graphite to match production behavior
     # When use_graphite=False, use GraphiteDisabled sentinel so that

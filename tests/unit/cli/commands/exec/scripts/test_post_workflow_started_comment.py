@@ -20,7 +20,7 @@ from erk.cli.commands.exec.scripts.post_workflow_started_comment import (
 from erk_shared.context.context import ErkContext
 from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.metadata.core import parse_metadata_blocks
-from erk_shared.plan_store.planned_pr import GitHubManagedPrBackend
+from erk_shared.plan_store.planned_pr import ManagedGitHubPrBackend
 from tests.fakes.gateway.github import FakeLocalGitHub
 from tests.fakes.gateway.github_issues import FakeGitHubIssues
 from tests.fakes.gateway.time import FakeTime
@@ -190,7 +190,7 @@ def test_cli_success(tmp_path: Path) -> None:
     )
     ctx = ErkContext.for_test(
         github=fake_github,
-        plan_store=GitHubManagedPrBackend(fake_github, fake_gh_issues, time=FakeTime()),
+        plan_store=ManagedGitHubPrBackend(fake_github, fake_gh_issues, time=FakeTime()),
         repo_root=tmp_path,
     )
 
@@ -233,7 +233,7 @@ def test_cli_github_api_failure(tmp_path: Path) -> None:
     fake_github = FakeLocalGitHub(issues_gateway=fake_gh_issues)
     ctx = ErkContext.for_test(
         github=fake_github,
-        plan_store=GitHubManagedPrBackend(fake_github, fake_gh_issues, time=FakeTime()),
+        plan_store=ManagedGitHubPrBackend(fake_github, fake_gh_issues, time=FakeTime()),
         repo_root=tmp_path,
     )
 
@@ -288,7 +288,7 @@ def test_cli_passes_correct_args_to_github(tmp_path: Path) -> None:
     )
     ctx = ErkContext.for_test(
         github=fake_github,
-        plan_store=GitHubManagedPrBackend(fake_github, fake_gh_issues, time=FakeTime()),
+        plan_store=ManagedGitHubPrBackend(fake_github, fake_gh_issues, time=FakeTime()),
         repo_root=tmp_path,
     )
 

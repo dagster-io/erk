@@ -238,7 +238,7 @@ class ErkContext:
             github: Optional GitHub implementation. If None, creates FakeLocalGitHub.
             claude_installation: ClaudeInstallation or None. Creates FakeClaudeInstallation if None.
             prompt_executor: Optional PromptExecutor. If None, creates FakePromptExecutor.
-            plan_store: Optional ManagedPrBackend. If None, creates GitHubManagedPrBackend.
+            plan_store: Optional ManagedPrBackend. If None, creates ManagedGitHubPrBackend.
             debug: Whether to enable debug mode (default False).
             repo_root: Repository root path (defaults to Path("/fake/repo"))
             cwd: Current working directory (defaults to Path("/fake/worktree"))

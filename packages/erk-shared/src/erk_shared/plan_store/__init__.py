@@ -7,7 +7,7 @@ and lifecycle stages) across different providers.
 Import from submodules:
 - types: Plan, PlanQuery, PlanState, CreatePlanResult
 - backend: ManagedPrBackend (abstract interface for managed PR operations)
-- planned_pr: GitHubManagedPrBackend (implementation using GitHub PRs)
+- planned_pr: ManagedGitHubPrBackend (implementation using GitHub PRs)
 
 Note: ManagedPrBackend is a BACKEND (composes gateways), not a gateway. It has no
 fake implementation. Test by injecting fake gateways into real backends.

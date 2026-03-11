@@ -7,7 +7,7 @@ Shared function used by all plan creation paths:
 
 Follows the plan_save.py pattern: creates a branch from origin/trunk,
 commits plan.md + ref.json via git plumbing, pushes, then creates a
-draft PR via GitHubManagedPrBackend.
+draft PR via ManagedGitHubPrBackend.
 """
 
 import json
@@ -20,7 +20,7 @@ from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists
 from erk_shared.gateway.github.abc import LocalGitHub
 from erk_shared.gateway.github.issues.abc import GitHubIssues
 from erk_shared.gateway.time.abc import Time
-from erk_shared.plan_store.planned_pr import GitHubManagedPrBackend
+from erk_shared.plan_store.planned_pr import ManagedGitHubPrBackend
 from erk_shared.plan_store.planned_pr_lifecycle import IMPL_CONTEXT_DIR
 from erk_shared.plan_utils import extract_title_from_plan, get_title_tag_from_labels
 
@@ -77,7 +77,7 @@ def create_plan_draft_pr(
     5. Push branch to remote
     6. Build metadata dict with branch_name and optional fields
     7. Prefix title with label tag ([erk-pr] or [erk-learn])
-    8. Create draft PR via GitHubManagedPrBackend.create_managed_pr()
+    8. Create draft PR via ManagedGitHubPrBackend.create_managed_pr()
     9. Return CreatePlanDraftPRResult
 
     Args:
@@ -170,7 +170,7 @@ def create_plan_draft_pr(
     prefixed_title = f"{title_tag} {title}"
 
     # Step 8: Create draft PR via backend
-    backend = GitHubManagedPrBackend(github, github_issues, time=time)
+    backend = ManagedGitHubPrBackend(github, github_issues, time=time)
     result = backend.create_managed_pr(
         repo_root=repo_root,
         title=prefixed_title,

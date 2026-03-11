@@ -1,6 +1,6 @@
 """Unit tests for close-pr command.
 
-Tests use GitHubManagedPrBackend for dependency injection via ErkContext.for_test().
+Tests use ManagedGitHubPrBackend for dependency injection via ErkContext.for_test().
 The command uses ManagedPrBackend which routes to FakeLocalGitHub PR operations.
 """
 
@@ -15,7 +15,7 @@ from erk.cli.commands.exec.scripts.close_pr import (
 from erk_shared.context.context import ErkContext
 from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.types import PRNotFound
-from erk_shared.plan_store.planned_pr import GitHubManagedPrBackend
+from erk_shared.plan_store.planned_pr import ManagedGitHubPrBackend
 from tests.fakes.gateway.github import FakeLocalGitHub
 from tests.fakes.gateway.github_issues import FakeGitHubIssues
 from tests.fakes.gateway.time import FakeTime
@@ -58,7 +58,7 @@ def test_close_pr_success() -> None:
         ["42", "--comment", "Closing: work is done."],
         obj=ErkContext.for_test(
             github=fake_github,
-            plan_store=GitHubManagedPrBackend(fake_github, fake_gh, time=FakeTime()),
+            plan_store=ManagedGitHubPrBackend(fake_github, fake_gh, time=FakeTime()),
         ),
     )
 
@@ -66,11 +66,11 @@ def test_close_pr_success() -> None:
     output = json.loads(result.output)
     assert output["success"] is True
     assert output["pr_number"] == 42
-    # GitHubManagedPrBackend.add_comment returns string ID from FakeLocalGitHub (starts at 1000000)
+    # ManagedGitHubPrBackend.add_comment returns string ID from FakeLocalGitHub (starts at 1000000)
     assert output["comment_id"] == "1000000"
 
     # Verify the user comment was added
-    # (via GitHubManagedPrBackend -> FakeLocalGitHub.create_pr_comment)
+    # (via ManagedGitHubPrBackend -> FakeLocalGitHub.create_pr_comment)
     assert len(fake_github.pr_comments) >= 1
     # First PR comment is the user's comment
     pr_number, comment_body = fake_github.pr_comments[0]
@@ -92,7 +92,7 @@ def test_close_pr_not_found() -> None:
         ["999", "--comment", "This should fail"],
         obj=ErkContext.for_test(
             github=fake_github,
-            plan_store=GitHubManagedPrBackend(fake_github, fake_gh, time=FakeTime()),
+            plan_store=ManagedGitHubPrBackend(fake_github, fake_gh, time=FakeTime()),
         ),
     )
 
@@ -129,7 +129,7 @@ See #1234 for details."""
         ["100", "--comment", multiline_comment],
         obj=ErkContext.for_test(
             github=fake_github,
-            plan_store=GitHubManagedPrBackend(fake_github, fake_gh, time=FakeTime()),
+            plan_store=ManagedGitHubPrBackend(fake_github, fake_gh, time=FakeTime()),
         ),
     )
 
@@ -160,7 +160,7 @@ def test_close_pr_changes_state() -> None:
         ["55", "--comment", "Done"],
         obj=ErkContext.for_test(
             github=fake_github,
-            plan_store=GitHubManagedPrBackend(fake_github, fake_gh, time=FakeTime()),
+            plan_store=ManagedGitHubPrBackend(fake_github, fake_gh, time=FakeTime()),
         ),
     )
 
@@ -187,7 +187,7 @@ def test_close_pr_requires_comment_flag() -> None:
         ["10"],  # Missing --comment
         obj=ErkContext.for_test(
             github=fake_github,
-            plan_store=GitHubManagedPrBackend(fake_github, fake_gh, time=FakeTime()),
+            plan_store=ManagedGitHubPrBackend(fake_github, fake_gh, time=FakeTime()),
         ),
     )
 

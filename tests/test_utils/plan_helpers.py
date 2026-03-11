@@ -1,13 +1,13 @@
 """Helpers for creating plan stores with Plan objects in tests.
 
 This module provides utilities for tests that need to set up plan state.
-It converts Plan objects to GitHubManagedPrBackend backed by FakeLocalGitHub.
+It converts Plan objects to ManagedGitHubPrBackend backed by FakeLocalGitHub.
 """
 
 from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.metadata.plan_header import format_plan_header_body
 from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
-from erk_shared.plan_store.planned_pr import GitHubManagedPrBackend
+from erk_shared.plan_store.planned_pr import ManagedGitHubPrBackend
 from erk_shared.plan_store.planned_pr_lifecycle import (
     DETAILS_CLOSE,
     DETAILS_OPEN,
@@ -49,7 +49,7 @@ def _plan_to_pr_details(plan: Plan) -> PRDetails:
         pr_body = details_section + "\n\n" + metadata_part
     else:
         # Plain body without a plan-header block - synthesize one with branch_name so
-        # GitHubManagedPrBackend._convert_to_plan() can populate header_fields["branch_name"].
+        # ManagedGitHubPrBackend._convert_to_plan() can populate header_fields["branch_name"].
         # Real planned-PR plans always have branch_name in plan-header (set by plan_save).
         metadata_body = format_plan_header_body_for_test(branch_name=branch_name)
         details_section = DETAILS_OPEN + body + DETAILS_CLOSE
@@ -82,11 +82,11 @@ def _plan_to_pr_details(plan: Plan) -> PRDetails:
 
 def create_plan_store_with_plans(
     plans: dict[str, Plan],
-) -> tuple[GitHubManagedPrBackend, FakeLocalGitHub]:
-    """Create GitHubManagedPrBackend backed by FakeLocalGitHub.
+) -> tuple[ManagedGitHubPrBackend, FakeLocalGitHub]:
+    """Create ManagedGitHubPrBackend backed by FakeLocalGitHub.
 
     This helper converts Plan objects to PRDetails so tests can continue
-    constructing Plan objects while using GitHubManagedPrBackend internally.
+    constructing Plan objects while using ManagedGitHubPrBackend internally.
 
     Args:
         plans: Mapping of pr_identifier -> Plan
@@ -128,7 +128,7 @@ def create_plan_store_with_plans(
     for pr_number, labels in pr_labels.items():
         fake_github.set_pr_labels(pr_number, labels)
 
-    return GitHubManagedPrBackend(fake_github, fake_github.issues, time=FakeTime()), fake_github
+    return ManagedGitHubPrBackend(fake_github, fake_github.issues, time=FakeTime()), fake_github
 
 
 def format_plan_header_body_for_test(
@@ -192,9 +192,9 @@ def format_plan_header_body_for_test(
 
 
 def issue_info_to_pr_details(issue: IssueInfo) -> PRDetails:
-    """Convert an IssueInfo to PRDetails for use with GitHubManagedPrBackend.
+    """Convert an IssueInfo to PRDetails for use with ManagedGitHubPrBackend.
 
-    This helper converts IssueInfo test data to PRDetails for use with GitHubManagedPrBackend.
+    This helper converts IssueInfo test data to PRDetails for use with ManagedGitHubPrBackend.
 
     The PR body wraps the issue body in plan lifecycle format (details tags)
     if the body contains a plan-header metadata block.
@@ -241,10 +241,10 @@ def issue_info_to_pr_details(issue: IssueInfo) -> PRDetails:
 
 def create_backend_from_issues(
     issues: dict[int, IssueInfo],
-) -> tuple[GitHubManagedPrBackend, FakeLocalGitHub, FakeGitHubIssues]:
-    """Create a GitHubManagedPrBackend from IssueInfo data.
+) -> tuple[ManagedGitHubPrBackend, FakeLocalGitHub, FakeGitHubIssues]:
+    """Create a ManagedGitHubPrBackend from IssueInfo data.
 
-    Converts test data to PR-based data for GitHubManagedPrBackend.
+    Converts test data to PR-based data for ManagedGitHubPrBackend.
     The FakeGitHubIssues is also created so tests that need comment
     access (same API for PRs and issues) still work.
 
@@ -260,5 +260,5 @@ def create_backend_from_issues(
 
     fake_issues = FakeGitHubIssues(issues=issues)
     fake_github = FakeLocalGitHub(pr_details=pr_details, issues_gateway=fake_issues)
-    backend = GitHubManagedPrBackend(fake_github, fake_issues, time=FakeTime())
+    backend = ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime())
     return backend, fake_github, fake_issues

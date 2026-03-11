@@ -173,7 +173,7 @@ def test_land_skips_learn_prompt_for_remote_pr(
 def test_land_shows_learn_prompt_for_local_plan_branch() -> None:
     """Test that learn check is satisfied when plan has learn_status=completed_no_plan.
 
-    With GitHubManagedPrBackend, any branch that has a PR resolves to that PR as its plan.
+    With ManagedGitHubPrBackend, any branch that has a PR resolves to that PR as its plan.
     The learn check sees learn_status=completed_no_plan in the PR body and returns early,
     so find_sessions_for_plan is never called.
 

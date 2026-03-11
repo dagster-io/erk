@@ -726,7 +726,7 @@ There's a critical distinction between **gateways** and **backends**:
   - Need 4 implementations: ABC, Real, Fake, DryRun
   - Fakes provide in-memory simulation
 
-- **Backends** = higher-level abstractions that COMPOSE gateways (GitHubManagedPrBackend)
+- **Backends** = higher-level abstractions that COMPOSE gateways (ManagedGitHubPrBackend)
   - Only need ABC + real implementations
   - **NO fake implementation needed** - inject fake gateways instead
 
@@ -738,7 +738,7 @@ class ManagedPrBackend(ABC):
     @abstractmethod
     def create_managed_pr(self, ...) -> CreateManagedPrResult: ...
 
-class GitHubManagedPrBackend(ManagedPrBackend):
+class ManagedGitHubPrBackend(ManagedPrBackend):
     def __init__(self, github_issues: GitHubIssues):
         self._github_issues = github_issues
 
@@ -771,7 +771,7 @@ class ManagedPrBackend(ABC):
     @abstractmethod
     def create_managed_pr(self, ...) -> CreateManagedPrResult: ...
 
-class GitHubManagedPrBackend(ManagedPrBackend):
+class ManagedGitHubPrBackend(ManagedPrBackend):
     def __init__(self, github_issues: GitHubIssues):
         self._github_issues = github_issues  # Gateway injected here
 
@@ -782,7 +782,7 @@ class GitHubManagedPrBackend(ManagedPrBackend):
 # ✅ CORRECT: Test backend with fake gateway
 def test_create_managed_pr():
     fake_issues = FakeGitHubIssues()  # Fake at gateway level
-    backend = GitHubManagedPrBackend(fake_issues)  # Real backend
+    backend = ManagedGitHubPrBackend(fake_issues)  # Real backend
 
     result = backend.create_managed_pr(...)
 
@@ -802,7 +802,7 @@ def test_create_managed_pr():
 
 ```
 CLI → ErkContext (DI container)
-  → GitHubManagedPrBackend (backend - REAL in tests)
+  → ManagedGitHubPrBackend (backend - REAL in tests)
     → FakeGitHubIssues (gateway - FAKE in tests)  ← DI stops here
 ```
 

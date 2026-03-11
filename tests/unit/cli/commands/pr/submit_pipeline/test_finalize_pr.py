@@ -14,7 +14,7 @@ from erk_shared.context.types import GlobalConfig
 from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.types import PRDetails
 from erk_shared.impl_folder import get_impl_dir
-from erk_shared.plan_store.planned_pr import GitHubManagedPrBackend
+from erk_shared.plan_store.planned_pr import ManagedGitHubPrBackend
 from erk_shared.plan_store.planned_pr_lifecycle import build_plan_stage_body
 from tests.fakes.gateway.git import FakeGit
 from tests.fakes.gateway.github import FakeLocalGitHub
@@ -322,7 +322,7 @@ def test_finalize_pr_planned_pr_backend_extracts_metadata(tmp_path: Path) -> Non
     ctx = context_for_test(
         git=fake_git,
         github=fake_github,
-        plan_store=GitHubManagedPrBackend(fake_github, fake_github.issues, time=FakeTime()),
+        plan_store=ManagedGitHubPrBackend(fake_github, fake_github.issues, time=FakeTime()),
         cwd=tmp_path,
     )
     state = _make_state(
@@ -536,7 +536,7 @@ def test_updates_lifecycle_stage_for_draft_pr_backend(tmp_path: Path) -> None:
     ctx = context_for_test(
         git=fake_git,
         github=fake_github,
-        plan_store=GitHubManagedPrBackend(fake_github, fake_github.issues, time=FakeTime()),
+        plan_store=ManagedGitHubPrBackend(fake_github, fake_github.issues, time=FakeTime()),
         cwd=tmp_path,
     )
     state = _make_state(

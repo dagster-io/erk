@@ -1,6 +1,6 @@
 """Unit tests for add_plan_label exec command.
 
-Tests backend-aware label addition using GitHubManagedPrBackend and FakeLocalGitHub.
+Tests backend-aware label addition using ManagedGitHubPrBackend and FakeLocalGitHub.
 """
 
 import json
@@ -9,7 +9,7 @@ from pathlib import Path
 from click.testing import CliRunner
 
 from erk.cli.commands.exec.scripts.add_plan_label import add_plan_label
-from erk_shared.plan_store.planned_pr import GitHubManagedPrBackend
+from erk_shared.plan_store.planned_pr import ManagedGitHubPrBackend
 from tests.fakes.gateway.github import FakeLocalGitHub
 from tests.fakes.gateway.time import FakeTime
 from tests.fakes.tests.shared_context import context_for_test
@@ -20,9 +20,9 @@ from tests.fakes.tests.shared_context import context_for_test
 
 
 def test_add_plan_label_success() -> None:
-    """Test successful label addition via GitHubManagedPrBackend."""
+    """Test successful label addition via ManagedGitHubPrBackend."""
     fake_github = FakeLocalGitHub()
-    backend = GitHubManagedPrBackend(fake_github, fake_github.issues, time=FakeTime())
+    backend = ManagedGitHubPrBackend(fake_github, fake_github.issues, time=FakeTime())
 
     create_result = backend.create_managed_pr(
         repo_root=Path("/repo"),

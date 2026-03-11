@@ -6,7 +6,7 @@ read_when:
   - "writing tests for exec scripts with backend operations"
 tripwires:
   - action: "creating a FakeManagedPrBackend for testing caller code"
-    warning: "Use real backend + fake gateway instead. FakeGitHub injected into GitHubManagedPrBackend. Fake backends are only for validating ABC contract across providers."
+    warning: "Use real backend + fake gateway instead. FakeGitHub injected into ManagedGitHubPrBackend. Fake backends are only for validating ABC contract across providers."
 last_audited: "2026-02-16 14:20 PT"
 audit_result: clean
 ---
@@ -21,7 +21,7 @@ Pattern for testing code that uses Backend ABCs. The key insight: inject fake ga
 # Correct: real backend with fake gateway
 fake_github = FakeGitHub()
 fake_issues = FakeGitHubIssues()
-backend = GitHubManagedPrBackend(fake_github, fake_issues, time=FakeTime())
+backend = ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime())
 
 # Wrong: fake backend for testing callers
 fake_backend = FakeManagedPrBackend()  # Only for ABC contract tests
@@ -49,7 +49,7 @@ for the full test. The key elements:
 
 ## When to Use Fake Backends
 
-Fake backends are appropriate only for validating the ABC contract itself across different providers. For example, ensuring both `GitHubManagedPrBackend` and a hypothetical alternative backend implement the same interface correctly.
+Fake backends are appropriate only for validating the ABC contract itself across different providers. For example, ensuring both `ManagedGitHubPrBackend` and a hypothetical alternative backend implement the same interface correctly.
 
 ## Decision Table
 

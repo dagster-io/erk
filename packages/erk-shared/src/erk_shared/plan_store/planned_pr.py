@@ -76,7 +76,7 @@ def _parse_objective_id(value: object) -> int | None:
     raise ValueError(f"objective_issue must be str or int, got {type(value).__name__}")
 
 
-class GitHubManagedPrBackend(ManagedPrBackend):
+class ManagedGitHubPrBackend(ManagedPrBackend):
     """GitHub draft PR implementation of managed PR backend.
 
     Uses GitHub draft pull requests as the backing store for managed PRs.
@@ -94,7 +94,7 @@ class GitHubManagedPrBackend(ManagedPrBackend):
     """
 
     def __init__(self, github: LocalGitHub, github_issues: GitHubIssues, *, time: Time) -> None:
-        """Initialize GitHubManagedPrBackend with GitHub and issues gateways.
+        """Initialize ManagedGitHubPrBackend with GitHub and issues gateways.
 
         Args:
             github: GitHub gateway implementation (real or fake)
@@ -287,7 +287,7 @@ class GitHubManagedPrBackend(ManagedPrBackend):
         """
         branch_name = metadata.get("branch_name")
         if branch_name is None or not isinstance(branch_name, str):
-            raise RuntimeError("branch_name is required in metadata for GitHubManagedPrBackend")
+            raise RuntimeError("branch_name is required in metadata for ManagedGitHubPrBackend")
 
         # Get username for metadata
         auth_result = self._github.check_auth_status()

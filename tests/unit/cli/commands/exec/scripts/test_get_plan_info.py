@@ -1,6 +1,6 @@
 """Unit tests for get_plan_info exec command.
 
-Tests backend-aware plan info retrieval using GitHubManagedPrBackend and FakeLocalGitHub.
+Tests backend-aware plan info retrieval using ManagedGitHubPrBackend and FakeLocalGitHub.
 """
 
 import json
@@ -9,7 +9,7 @@ from pathlib import Path
 from click.testing import CliRunner
 
 from erk.cli.commands.exec.scripts.get_plan_info import get_plan_info
-from erk_shared.plan_store.planned_pr import GitHubManagedPrBackend
+from erk_shared.plan_store.planned_pr import ManagedGitHubPrBackend
 from tests.fakes.gateway.github import FakeLocalGitHub
 from tests.fakes.gateway.time import FakeTime
 from tests.fakes.tests.shared_context import context_for_test
@@ -17,14 +17,14 @@ from tests.fakes.tests.shared_context import context_for_test
 
 def _create_backend_with_plan(
     *, title: str = "Test Plan Title", content: str = "# Plan Content"
-) -> tuple[GitHubManagedPrBackend, FakeLocalGitHub, str]:
-    """Create a GitHubManagedPrBackend with a single plan.
+) -> tuple[ManagedGitHubPrBackend, FakeLocalGitHub, str]:
+    """Create a ManagedGitHubPrBackend with a single plan.
 
     Returns:
         Tuple of (backend, fake_github, pr_id).
     """
     fake_github = FakeLocalGitHub()
-    backend = GitHubManagedPrBackend(fake_github, fake_github.issues, time=FakeTime())
+    backend = ManagedGitHubPrBackend(fake_github, fake_github.issues, time=FakeTime())
 
     result = backend.create_managed_pr(
         repo_root=Path("/repo"),
@@ -43,7 +43,7 @@ def _create_backend_with_plan(
 
 
 def test_get_plan_info_success() -> None:
-    """Test successful plan info retrieval from GitHubManagedPrBackend."""
+    """Test successful plan info retrieval from ManagedGitHubPrBackend."""
     backend, fake_github, pr_id = _create_backend_with_plan()
     runner = CliRunner()
 

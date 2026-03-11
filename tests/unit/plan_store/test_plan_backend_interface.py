@@ -1,6 +1,6 @@
 """Interface tests for ManagedPrBackend implementations.
 
-These tests verify that GitHubManagedPrBackend satisfies the ManagedPrBackend ABC interface.
+These tests verify that ManagedGitHubPrBackend satisfies the ManagedPrBackend ABC interface.
 """
 
 from datetime import datetime
@@ -9,7 +9,7 @@ from pathlib import Path
 import pytest
 
 from erk_shared.plan_store.backend import ManagedPrBackend
-from erk_shared.plan_store.planned_pr import GitHubManagedPrBackend
+from erk_shared.plan_store.planned_pr import ManagedGitHubPrBackend
 from erk_shared.plan_store.types import PlanNotFound, PlanQuery, PlanState
 from tests.fakes.gateway.github import FakeLocalGitHub
 from tests.fakes.gateway.time import FakeTime
@@ -29,23 +29,23 @@ def _next_branch() -> str:
 
 
 def _make_planned_pr_backend() -> ManagedPrBackend:
-    """Create a GitHubManagedPrBackend backed by FakeLocalGitHub."""
+    """Create a ManagedGitHubPrBackend backed by FakeLocalGitHub."""
     fake_github = FakeLocalGitHub()
-    return GitHubManagedPrBackend(fake_github, fake_github.issues, time=FakeTime())
+    return ManagedGitHubPrBackend(fake_github, fake_github.issues, time=FakeTime())
 
 
 def _create_metadata(backend: ManagedPrBackend) -> dict[str, object]:
     """Build the required metadata dict for create_plan().
 
-    GitHubManagedPrBackend requires branch_name metadata.
+    ManagedGitHubPrBackend requires branch_name metadata.
     """
     return {"branch_name": _next_branch()}
 
 
 def _make_planned_pr_backend_with_plan() -> tuple[ManagedPrBackend, str]:
-    """Create GitHubManagedPrBackend with a pre-existing plan by creating one via API."""
+    """Create ManagedGitHubPrBackend with a pre-existing plan by creating one via API."""
     fake_github = FakeLocalGitHub()
-    backend = GitHubManagedPrBackend(fake_github, fake_github.issues, time=FakeTime())
+    backend = ManagedGitHubPrBackend(fake_github, fake_github.issues, time=FakeTime())
 
     result = backend.create_managed_pr(
         repo_root=Path("/repo"),
@@ -60,13 +60,13 @@ def _make_planned_pr_backend_with_plan() -> tuple[ManagedPrBackend, str]:
 
 @pytest.fixture()
 def plan_backend() -> ManagedPrBackend:
-    """Provide a GitHubManagedPrBackend instance."""
+    """Provide a ManagedGitHubPrBackend instance."""
     return _make_planned_pr_backend()
 
 
 @pytest.fixture()
 def backend_with_plan() -> tuple[ManagedPrBackend, str]:
-    """Fixture providing GitHubManagedPrBackend with a pre-existing plan.
+    """Fixture providing ManagedGitHubPrBackend with a pre-existing plan.
 
     Returns:
         Tuple of (backend, pr_id)
@@ -510,9 +510,9 @@ def test_get_comments_returns_empty_list_for_no_comments(
 
 
 def test_get_comments_returns_preconfigured_comments_planned_pr() -> None:
-    """GitHubManagedPrBackend returns pre-configured comments from FakeGitHubIssues."""
+    """ManagedGitHubPrBackend returns pre-configured comments from FakeGitHubIssues."""
     fake_github = FakeLocalGitHub()
-    backend = GitHubManagedPrBackend(fake_github, fake_github.issues, time=FakeTime())
+    backend = ManagedGitHubPrBackend(fake_github, fake_github.issues, time=FakeTime())
 
     # Create a plan so the PR exists
     result = backend.create_managed_pr(

@@ -8,7 +8,7 @@ from erk_shared.gateway.github.metadata.core import MetadataBlock, render_metada
 from erk_shared.gateway.github.types import PRDetails
 from erk_shared.gateway.graphite.types import BranchMetadata
 from erk_shared.impl_folder import build_plan_ref_json
-from erk_shared.plan_store.planned_pr import GitHubManagedPrBackend
+from erk_shared.plan_store.planned_pr import ManagedGitHubPrBackend
 from erk_shared.plan_store.planned_pr_lifecycle import build_plan_stage_body
 from tests.fakes.gateway.git import FakeGit
 from tests.fakes.gateway.github import FakeLocalGitHub
@@ -76,8 +76,8 @@ def test_dispatch_planned_pr_plan_triggers_workflow_with_planned_pr_backend() ->
         fake_issues = FakeGitHubIssues()
         fake_time = FakeTime()
 
-        # GitHubManagedPrBackend makes get_provider_name() return "github-draft-pr"
-        planned_pr_backend = GitHubManagedPrBackend(fake_gh, fake_issues, time=fake_time)
+        # ManagedGitHubPrBackend makes get_provider_name() return "github-draft-pr"
+        planned_pr_backend = ManagedGitHubPrBackend(fake_gh, fake_issues, time=fake_time)
 
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
@@ -206,7 +206,7 @@ def test_dispatch_auto_detects_from_impl_folder() -> None:
         )
         fake_issues = FakeGitHubIssues()
         fake_time = FakeTime()
-        planned_pr_backend = GitHubManagedPrBackend(fake_gh, fake_issues, time=fake_time)
+        planned_pr_backend = ManagedGitHubPrBackend(fake_gh, fake_issues, time=fake_time)
 
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
@@ -281,7 +281,7 @@ def test_dispatch_auto_detects_from_impl_context() -> None:
         )
         fake_issues = FakeGitHubIssues()
         fake_time = FakeTime()
-        planned_pr_backend = GitHubManagedPrBackend(fake_gh, fake_issues, time=fake_time)
+        planned_pr_backend = ManagedGitHubPrBackend(fake_gh, fake_issues, time=fake_time)
 
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
@@ -335,7 +335,7 @@ def test_dispatch_no_args_no_context_fails() -> None:
         )
         fake_issues = FakeGitHubIssues()
         fake_time = FakeTime()
-        planned_pr_backend = GitHubManagedPrBackend(fake_gh, fake_issues, time=fake_time)
+        planned_pr_backend = ManagedGitHubPrBackend(fake_gh, fake_issues, time=fake_time)
 
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
@@ -423,7 +423,7 @@ def test_dispatch_with_ref_option_threads_ref_to_workflow() -> None:
         )
         fake_issues = FakeGitHubIssues()
         fake_time = FakeTime()
-        planned_pr_backend = GitHubManagedPrBackend(fake_gh, fake_issues, time=fake_time)
+        planned_pr_backend = ManagedGitHubPrBackend(fake_gh, fake_issues, time=fake_time)
 
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
@@ -492,7 +492,7 @@ def test_dispatch_skips_create_branch_when_branch_is_checked_out() -> None:
         )
         fake_issues = FakeGitHubIssues()
         fake_time = FakeTime()
-        planned_pr_backend = GitHubManagedPrBackend(fake_gh, fake_issues, time=fake_time)
+        planned_pr_backend = ManagedGitHubPrBackend(fake_gh, fake_issues, time=fake_time)
 
         # Simulate: plan branch is checked out in the current worktree
         git = FakeGit(
@@ -580,7 +580,7 @@ def test_dispatch_rejects_dirty_checked_out_worktree() -> None:
         )
         fake_issues = FakeGitHubIssues()
         fake_time = FakeTime()
-        planned_pr_backend = GitHubManagedPrBackend(fake_gh, fake_issues, time=fake_time)
+        planned_pr_backend = ManagedGitHubPrBackend(fake_gh, fake_issues, time=fake_time)
 
         # Simulate: plan branch is checked out with dirty worktree
         git = FakeGit(

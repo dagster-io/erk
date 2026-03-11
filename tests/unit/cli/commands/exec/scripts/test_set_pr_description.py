@@ -5,7 +5,7 @@ from click.testing import CliRunner
 from erk.cli.commands.exec.scripts.set_pr_description import set_pr_description
 from erk_shared.gateway.github.types import PRDetails
 from erk_shared.gateway.graphite.types import BranchMetadata
-from erk_shared.plan_store.planned_pr import GitHubManagedPrBackend
+from erk_shared.plan_store.planned_pr import ManagedGitHubPrBackend
 from erk_shared.plan_store.planned_pr_lifecycle import build_plan_stage_body
 from tests.fakes.gateway.git import FakeGit
 from tests.fakes.gateway.github import FakeLocalGitHub
@@ -206,7 +206,7 @@ def test_planned_pr_backend_preserves_metadata() -> None:
             git=git,
             graphite=graphite,
             github=github,
-            plan_store=GitHubManagedPrBackend(github, github.issues, time=FakeTime()),
+            plan_store=ManagedGitHubPrBackend(github, github.issues, time=FakeTime()),
         )
 
         result = runner.invoke(

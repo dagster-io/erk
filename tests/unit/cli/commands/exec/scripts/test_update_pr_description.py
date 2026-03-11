@@ -16,7 +16,7 @@ from erk_shared.gateway.github.metadata.plan_header import format_plan_content_c
 from erk_shared.gateway.github.types import PRDetails
 from erk_shared.gateway.graphite.types import BranchMetadata
 from erk_shared.impl_folder import get_impl_dir
-from erk_shared.plan_store.planned_pr import GitHubManagedPrBackend
+from erk_shared.plan_store.planned_pr import ManagedGitHubPrBackend
 from erk_shared.plan_store.planned_pr_lifecycle import build_plan_stage_body
 from tests.fakes.gateway.git import FakeGit
 from tests.fakes.gateway.github import FakeLocalGitHub
@@ -365,11 +365,11 @@ def test_uses_graphite_parent() -> None:
 def test_no_plan_context_after_pxxxx_removal() -> None:
     """Test that plan content from old issue-comment mechanism is NOT embedded.
 
-    With GitHubManagedPrBackend, get_plan_for_branch returns the feature PR on the branch
+    With ManagedGitHubPrBackend, get_plan_for_branch returns the feature PR on the branch
     (PR #42 with empty body). The plan content from issue #123's comment is NOT used.
     The "Fix the bug." text from comment #1000 should not appear in the PR description.
 
-    Note: plan-ref.json exists in .impl/ but GitHubManagedPrBackend.get_plan_for_branch
+    Note: plan-ref.json exists in .impl/ but ManagedGitHubPrBackend.get_plan_for_branch
     doesn't read it. Future work may restore plan context via plan-ref.json lookup.
     """
     runner = CliRunner()
@@ -394,7 +394,7 @@ def test_no_plan_context_after_pxxxx_removal() -> None:
         )
 
         # Create branch-scoped impl dir with ref.json
-        # (not currently used by GitHubManagedPrBackend.get_plan_for_branch)
+        # (not currently used by ManagedGitHubPrBackend.get_plan_for_branch)
         impl_dir = get_impl_dir(env.cwd, branch_name="plnd/fix-bug-123-01-01-1200")
         impl_dir.mkdir(parents=True, exist_ok=True)
         from erk_shared.impl_folder import save_plan_ref
@@ -415,7 +415,7 @@ def test_no_plan_context_after_pxxxx_removal() -> None:
             graphite=graphite,
             github=github,
             prompt_executor=executor,
-            plan_store=GitHubManagedPrBackend(github, fake_github_issues, time=FakeTime()),
+            plan_store=ManagedGitHubPrBackend(github, fake_github_issues, time=FakeTime()),
         )
 
         result = runner.invoke(update_pr_description, [], obj=ctx)
@@ -449,7 +449,7 @@ def test_update_pr_description_planned_pr_backend_preserves_metadata() -> None:
             graphite=graphite,
             github=github,
             prompt_executor=executor,
-            plan_store=GitHubManagedPrBackend(github, github.issues, time=FakeTime()),
+            plan_store=ManagedGitHubPrBackend(github, github.issues, time=FakeTime()),
         )
 
         result = runner.invoke(update_pr_description, [], obj=ctx)

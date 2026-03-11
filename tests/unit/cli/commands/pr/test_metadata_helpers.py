@@ -10,7 +10,7 @@ from erk.cli.commands.pr.metadata_helpers import (
 from erk.core.repo_discovery import RepoContext
 from erk_shared.gateway.github.metadata.core import find_metadata_block
 from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
-from erk_shared.plan_store.planned_pr import GitHubManagedPrBackend
+from erk_shared.plan_store.planned_pr import ManagedGitHubPrBackend
 from tests.commands.dispatch.conftest import create_plan, make_plan_body
 from tests.fakes.gateway.github import FakeLocalGitHub
 from tests.fakes.gateway.time import FakeTime
@@ -21,7 +21,7 @@ from tests.test_utils.test_context import context_for_test
 def _register_branch_alias(fake_github: FakeLocalGitHub, pr_id: str, branch: str) -> None:
     """Register an additional branch name for an existing PR in FakeLocalGitHub.
 
-    GitHubManagedPrBackend resolves plans via get_pr_for_branch, which requires
+    ManagedGitHubPrBackend resolves plans via get_pr_for_branch, which requires
     the PR to be registered under the actual branch name.
     """
     synthetic_branch = f"plan-{pr_id}"
@@ -49,8 +49,8 @@ def _create_backend_with_raw_body(
     *,
     branch: str = "",
     author: str = "test-author",
-) -> tuple[GitHubManagedPrBackend, FakeLocalGitHub]:
-    """Create GitHubManagedPrBackend with a PR that has the exact given body (no auto-synthesis).
+) -> tuple[ManagedGitHubPrBackend, FakeLocalGitHub]:
+    """Create ManagedGitHubPrBackend with a PR that has the exact given body (no auto-synthesis).
 
     This bypasses create_plan_store_with_plans which auto-synthesizes a plan-header
     when the body doesn't contain one. Use this to test ensure_plan_header on PRs
@@ -92,7 +92,7 @@ def _create_backend_with_raw_body(
         pr_details={pr_number: pr_details},
         prs=prs,
     )
-    backend = GitHubManagedPrBackend(fake_github, fake_github.issues, time=FakeTime())
+    backend = ManagedGitHubPrBackend(fake_github, fake_github.issues, time=FakeTime())
     return backend, fake_github
 
 

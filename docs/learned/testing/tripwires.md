@@ -34,7 +34,7 @@ Rules triggered by matching actions in code.
 
 **asking devrun agent to fix errors or make tests pass** → Read [Devrun Agent - Read-Only Design](devrun-agent.md) first. Devrun is READ-ONLY. It runs commands and reports results. The parent agent must handle all fixes.
 
-**asserting on FakeGitHubIssues.added_comments for GitHubManagedPrBackend.add_comment()** → Read [FakeGitHubIssues Dual-Comment Parameters](fake-github-testing.md) first. GitHubManagedPrBackend routes comments to PR comments (FakeGitHub.pr_comments), not issue comments (FakeGitHubIssues.added_comments). Check the correct fake when testing planned-PR comment operations.
+**asserting on FakeGitHubIssues.added_comments for ManagedGitHubPrBackend.add_comment()** → Read [FakeGitHubIssues Dual-Comment Parameters](fake-github-testing.md) first. ManagedGitHubPrBackend routes comments to PR comments (FakeGitHub.pr_comments), not issue comments (FakeGitHubIssues.added_comments). Check the correct fake when testing planned-PR comment operations.
 
 **asserting on YAML metadata field values with exact string matching** → Read [Erk Test Reference](testing.md) first. Assert on key-only format ('field_name:'), not 'field_name: "value"'. YAML serialization differs from Python repr.
 
@@ -54,7 +54,7 @@ Rules triggered by matching actions in code.
 
 **creating a FakeLocalGitHub PR without checking auto-registration in \_pr_details** → Read [FakeLocalGitHub API Reference](fake-github-api-reference.md) first. FakeLocalGitHub.create_pr() auto-registers the PR in \_pr_details. Manually adding to \_pr_details after create_pr() causes duplicates.
 
-**creating a FakeManagedPrBackend for testing caller code** → Read [Backend Testing Composition](backend-testing-composition.md) first. Use real backend + fake gateway instead. FakeGitHub injected into GitHubManagedPrBackend. Fake backends are only for validating ABC contract across providers.
+**creating a FakeManagedPrBackend for testing caller code** → Read [Backend Testing Composition](backend-testing-composition.md) first. Use real backend + fake gateway instead. FakeGitHub injected into ManagedGitHubPrBackend. Fake backends are only for validating ABC contract across providers.
 
 **creating a fake gateway without constructor-injected error configuration** → Read [Gateway Fake Testing Exemplar](gateway-fake-testing-exemplar.md) first. Fakes must accept error variants at construction time (e.g., push_to_remote_error=PushError(...)) to enable failure injection in tests.
 
@@ -144,4 +144,4 @@ Rules triggered by matching actions in code.
 
 **writing a test that depends on the current time** → Read [Time Injection Testing Patterns](time-injection-patterns.md) first. Use FakeTime from context_for_test(). The default fake time is datetime(2024, 1, 15, 14, 30, 0).
 
-**writing plan storage tests that parametrize across both backends** → Read [Plan Storage Testing](dual-backend-testing.md) first. After PR #8210, only the GitHubManagedPrBackend exists. The GitHubPlanStore class was deleted. New plan-related tests should use GitHubManagedPrBackend directly.
+**writing plan storage tests that parametrize across both backends** → Read [Plan Storage Testing](dual-backend-testing.md) first. After PR #8210, only the ManagedGitHubPrBackend exists. The GitHubPlanStore class was deleted. New plan-related tests should use ManagedGitHubPrBackend directly.

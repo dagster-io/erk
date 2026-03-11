@@ -9,7 +9,7 @@ from erk.cli.commands.exec.scripts.incremental_dispatch import incremental_dispa
 from erk_shared.context.context import ErkContext
 from erk_shared.gateway.git.abc import WorktreeInfo
 from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
-from erk_shared.plan_store.planned_pr import GitHubManagedPrBackend
+from erk_shared.plan_store.planned_pr import ManagedGitHubPrBackend
 from tests.fakes.gateway.git import FakeGit
 from tests.fakes.gateway.github import FakeLocalGitHub
 from tests.fakes.gateway.graphite import FakeGraphite
@@ -257,7 +257,7 @@ def test_incremental_dispatch_writes_dispatch_metadata(tmp_path: Path) -> None:
         ),
     }
     fake_github = FakeLocalGitHub(pr_details={42: pr}, prs=prs)
-    plan_store = GitHubManagedPrBackend(fake_github, fake_github.issues, time=FakeTime())
+    plan_store = ManagedGitHubPrBackend(fake_github, fake_github.issues, time=FakeTime())
 
     runner = CliRunner()
     result = runner.invoke(

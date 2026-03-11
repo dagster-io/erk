@@ -30,7 +30,7 @@ from erk_shared.gateway.graphite.branch_ops.abc import GraphiteBranchOps
 from erk_shared.gateway.graphite.disabled import GraphiteDisabled
 from erk_shared.gateway.remote_github.abc import RemoteGitHub
 from erk_shared.plan_store.backend import ManagedPrBackend
-from erk_shared.plan_store.planned_pr import GitHubManagedPrBackend
+from erk_shared.plan_store.planned_pr import ManagedGitHubPrBackend
 from tests.fakes.gateway.core import (
     FakeCodespaceRegistry,
     FakeObjectiveListService,
@@ -70,7 +70,7 @@ def context_for_test(
     This is the factory function for creating test contexts in tests.
     It creates an ErkContext with fake implementations for all services.
 
-    Plan backend defaults to GitHubManagedPrBackend unless explicitly overridden.
+    Plan backend defaults to ManagedGitHubPrBackend unless explicitly overridden.
 
     Args:
         github_issues: Optional GitHubIssues implementation. If None, creates FakeGitHubIssues.
@@ -82,7 +82,7 @@ def context_for_test(
         agent_docs: Optional AgentDocs. If None, creates FakeAgentDocs.
         prompt_executor: Optional PromptExecutor. If None, creates FakePromptExecutor.
         codespace: Optional Codespace. If None, creates FakeCodespace.
-        plan_store: Optional ManagedPrBackend. If None, creates GitHubManagedPrBackend.
+        plan_store: Optional ManagedPrBackend. If None, creates ManagedGitHubPrBackend.
         local_config: Optional LoadedConfig. If None, uses LoadedConfig.test().
         debug: Whether to enable debug mode (default False).
         repo_root: Repository root path (defaults to Path("/fake/repo"))
@@ -183,12 +183,12 @@ def context_for_test(
 
     resolved_local_config = local_config if local_config is not None else LoadedConfig.test()
 
-    # Resolve plan_store: explicit > GitHubManagedPrBackend default
+    # Resolve plan_store: explicit > ManagedGitHubPrBackend default
     resolved_plan_store: ManagedPrBackend
     if plan_store is not None:
         resolved_plan_store = plan_store
     else:
-        resolved_plan_store = GitHubManagedPrBackend(
+        resolved_plan_store = ManagedGitHubPrBackend(
             resolved_github, resolved_issues, time=FakeTime()
         )
 
