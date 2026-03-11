@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Use \"planned PR\" terminology in user-facing output"
+}
