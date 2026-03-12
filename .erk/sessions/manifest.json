@@ -16,6 +16,24 @@
       "raw_size_kb": 1348,
       "xml_size_kb": 69,
       "git_branch": "plnd/delete-planning-skill-03-12-1333"
+    },
+    {
+      "session_id": "",
+      "stage": "impl",
+      "source": "local",
+      "uploaded_at": "2026-03-12T20:13:21.107991+00:00",
+      "files": [
+        "impl--e17493ff-f5d4-4ae5-9ad7-22fef811a225-part1.xml",
+        "impl--e17493ff-f5d4-4ae5-9ad7-22fef811a225-part2.xml",
+        "impl--e17493ff-f5d4-4ae5-9ad7-22fef811a225-part3.xml",
+        "impl--e17493ff-f5d4-4ae5-9ad7-22fef811a225-part4.xml",
+        "impl--e17493ff-f5d4-4ae5-9ad7-22fef811a225-part5.xml"
+      ],
+      "user_turns": 2,
+      "duration_minutes": 6,
+      "raw_size_kb": 370,
+      "xml_size_kb": 89,
+      "git_branch": "plnd/fix-outdated-skill-content-03-12-1448"
     }
   ]
 }
