@@ -1,0 +1,1258 @@
+<session>
+  <meta branch="plnd/capability-tag-grouping-03-12-1321" />
+  <meta model="claude-sonnet-4-6" />
+  <user>&lt;command-message&gt;erk:plan-implement is running…&lt;/command-message&gt;
+&lt;command-name&gt;/erk:plan-implement&lt;/command-name&gt;
+&lt;command-args&gt;9220&lt;/command-args&gt;</user>
+  <user># /erk:plan-implement
+
+Implement a plan - either from GitHub, a markdown file, an existing impl directory under `.erk/impl-context/`, or by saving the current plan first.
+
+This is the primary implementation workflow - it orchestrates:
+
+1. Setting up the impl directory under `.erk/impl-context/&lt;branch&gt;/` (from issue, file, existing folder, or fresh plan)
+2. Executing the implementation
+3. Running CI and submitting the PR
+
+## Prerequisites
+
+- Must be in a git repository managed by erk
+- GitHub CLI (`gh`) must be authenticated
+- One of:
+  - A plan number, URL, or file path argument
+  - An existing impl directory under `.erk/impl-context/`
+  - A plan branch checked out (e.g., `plnd/...` or `P{number}-...`)
+  - A plan in `~/.claude/plans/` (from plan mode)
+
+## Usage
+
+```bash
+/erk:plan-implement                    # Use impl directory, detect from branch, or save current plan
+/erk:plan-implement 2521               # Fetch and implement PR #2521
+/erk:plan-implement https://github.com/owner/repo/pull/2521   # URL form
+/erk:plan-implement ./my-plan.md       # Implement from local markdown file
+```
+
+---
+
+## CRITICAL: PR Operations
+
+**NEVER** run direct GitHub CLI commands for PR operations during implementation:
+
+- `gh pr edit` — destroys plan-header metadata block
+- `gh pr ready` — bypasses lifecycle tracking
+- `gh pr close` / `gh pr merge`
+
+All PR operations are handled by `erk pr submit` in Step 13. It automatically:
+
+- Generates the PR title and body
+- Preserves the plan-header metadata block
+- Marks draft PRs as ready for review
+- Updates lifecycle stage
+
+## Agent Instructions
+
+### Step 1: Set Up Implementation
+
+Parse `9220` and run the consolidated setup command:
+
+- **If numeric** (e.g., `2521`): `erk exec setup-impl --issue 2521`
+- **If GitHub URL** (e.g., `https://github.com/.../issues/2521`): Extract number, `erk exec setup-impl --issue 2521`
+- **If path to file** (anything else non-empty): `erk exec setup-impl --file &lt;path&gt;`
+- **If empty**: `erk exec setup-impl` (auto-detects from `.erk/impl-context/`, branch, or fails)
+
+```bash
+erk exec setup-impl [--issue &lt;N&gt; | --file &lt;path&gt;]
+```
+
+This single command handles:
+
+- Fetching plan from GitHub (draft PR)
+- Setting up from a local markdown file
+- Auto-detecting from existing impl directory under `.erk/impl-context/`
+- Auto-detecting plan number from branch name (P{number}-... or PR lookup)
+- Creating/checking out the feature branch
+- Creating impl directory under `.erk/impl-context/&lt;branch&gt;/` with plan content
+- Running impl-init validation
+- Cleaning up `.erk/impl-context/` staging directory (git rm + commit + push)
+
+Otherwise, generate a branch slug and set up from the specified issue:
+
+1. Fetch the title: `gh pr view &lt;ISSUE_ARG&gt; --json title -q .title`
+2. Generate a branch slug from the title:
+   - 2-4 hyphenated lowercase words, max 30 characters
+   - Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+   - Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+   - Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+3. Store as `BRANCH_SLUG`.
+
+```bash
+erk exec setup-impl --issue &lt;ISSUE_ARG&gt; --branch-slug="${BRANCH_SLUG}"
+```
+
+If `setup-impl` exits with code 1 and `error: "no_plan_found"`, fall back to saving the current plan:
+
+Generate a branch slug from the plan title (the first `# ` heading in the plan file):
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Store as `BRANCH_SLUG`
+
+Save the current plan to GitHub and capture the plan number:
+
+```bash
+erk exec plan-save --format json --session-id="${CLAUDE_SESSION_ID}" --branch-slug="${BRANCH_SLUG}"
+```
+
+Parse the JSON output to get `pr_number`, then:
+
+```bash
+erk exec setup-impl --issue &lt;pr_number&gt;
+```
+
+The `setup-impl` output includes `related_docs` (skills and docs to load) and `has_plan_tracking` (whether GitHub issue tracking is active).
+
+If this fails, display the error and stop.
+
+### Step 2: Read Plan and Load Context
+
+Read `plan.md` from the impl directory set up in Step 1 to understand:
+
+- Overall goal and context
+- Context &amp; Understanding sections (API quirks, architectural insights, pitfalls)
+- Implementation phases and dependencies
+- Success criteria
+
+**Context Consumption**: Plans contain expensive discoveries. Ignoring `[CRITICAL:]` tags, "Related Context:" subsections, or "DO NOT" items causes repeated mistakes.
+
+### Step 3: Load Related Documentation
+
+If plan contains "Related Documentation" section, load listed skills via Skill tool and read listed docs.
+
+### Step 4: Create TodoWrite Entries
+
+Create todo entries for each phase from the plan.
+
+### Step 5: Signal GitHub Started
+
+```bash
+erk exec impl-signal started --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This also deletes the Claude plan file (from `~/.claude/plans/`) since:
+
+- The content has been saved to GitHub
+- The content has been snapshotted to `.erk/scratch/`
+- Keeping it could cause confusion if the user tries to re-save
+
+### Step 6: Execute Each Phase Sequentially
+
+For each phase:
+
+1. **Mark phase as in_progress** (in TodoWrite)
+2. **Read task requirements** carefully
+3. **Implement code AND tests together**:
+   - Load `dignified-python-313` skill for coding standards
+   - Load `fake-driven-testing` skill for test patterns
+   - Follow project AGENTS.md standards
+4. **Mark phase as completed** (in TodoWrite)
+5. **Report progress**: changes made, what's next
+
+**Important:** `plan.md` is immutable - NEVER edit during implementation
+
+### Step 7: Report Progress
+
+After each phase: report changes made and what's next.
+
+### Step 8: Final Verification
+
+Confirm all tasks executed, success criteria met, note deviations, summarize changes.
+
+### Step 9: Signal GitHub Ended
+
+```bash
+erk exec impl-signal ended --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+### Step 10: Upload Session for Async Learn
+
+```bash
+erk exec upload-impl-session --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This reads plan reference from the impl directory, captures session info, and uploads for async learn processing.
+
+### Step 11: Clean Up Impl Context
+
+Remove the `.erk/impl-context/` directory from the repo:
+
+```bash
+erk exec cleanup-impl-context
+```
+
+This removes `.erk/impl-context/`, stages the deletion, commits, and pushes — all idempotent.
+
+### Step 12: Run CI Iteratively
+
+1. If `.erk/prompt-hooks/post-plan-implement-ci.md` exists: follow its instructions
+2. Otherwise: check CLAUDE.md/AGENTS.md for CI commands
+
+### Step 13: Submit PR
+
+Push the branch and create or update the PR using the Graphite-aware submit pipeline:
+
+```bash
+erk pr submit
+```
+
+This handles pushing commits, creating/updating the PR, generating the PR description, and enhancing with Graphite stack metadata when available.
+
+After successful submission, signal lifecycle transition:
+
+```bash
+erk exec impl-signal submitted 2&gt;/dev/null || true
+```
+
+Then validate PR completion invariants:
+
+```bash
+erk pr check --stage=impl
+```
+
+This validates PR submission readiness including implementation-specific checks
+(e.g., `.erk/impl-context/` must be cleaned up). If checks fail, display output and warn user.
+
+### Step 14: Output Format
+
+- **Start**: "Setting up implementation..." or "Fetching plan #X..."
+- **After setup**: "Implementation environment ready, reading plan..."
+- **Each phase**: "Phase X: [brief description]" with code changes
+- **End**: "Plan execution complete. [Summary]"
+
+---
+
+## Related Commands
+
+- `/erk:plan-save` - Save plan only, don't implement (for defer-to-later workflow)
+- `/erk:replan` - Re-plan an existing plan with current codebase state
+</user>
+  <assistant>I'll start implementing plan #9220. Let me set up the implementation environment first.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="28593" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 28593, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01HbADZrBtDEERkwsggNrVLC">
+    <param name="command">erk exec setup-impl --issue 9220 2&gt;&amp;1</param>
+    <param name="description">Set up implementation for plan #9220</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="28593" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 28593, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01HbADZrBtDEERkwsggNrVLC">
+Already on PR branch 'plnd/capability-tag-grouping-03-12-1321', teleporting from remote...
+{"success": true, "impl_path": "/home/runner/work/erk/erk/.erk/impl-context/plnd--capability-tag-grouping-03-12-1321", "pr_number": 9220, "pr_url": "https://github.com/dagster-io/erk/pull/9220", "branch": "plnd/capability-tag-grouping-03-12-1321", "pr_title": "[erk-pr] Plan: Tag-Based Capability Display Grouping", "no_impl": false}
+{"success": true, "source": "issue", "pr_number": 9220, "has_plan_tracking": true, "valid": true, "related_docs": {"skills": [], "docs": []}}
+  </tool_result>
+  <assistant>Implementation environment is ready. Let me read the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="332" cache_read_input_tokens="28593" cache_creation="{'ephemeral_5m_input_tokens': 332, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_017bwr2PedvXEgxpjeYVYr4w">
+    <param name="file_path">/home/runner/work/erk/erk/.erk/impl-context/plnd--capability-tag-grouping-03-12-1321/plan.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="332" cache_read_input_tokens="28593" cache_creation="{'ephemeral_5m_input_tokens': 332, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017bwr2PedvXEgxpjeYVYr4w">
+     1→# Plan: Tag-Based Capability Display Grouping
+     2→
+     3→## Context
+     4→
+     5→`erk init capability list` shows a flat alphabetical list of ~19 capabilities. Related capabilities (e.g., code-reviews-system + its review definitions) are scattered. Adding a `tag` property enables visual grouping in list output.
+     6→
+     7→Tags are display-only — no dependency enforcement, no filtering. Each capability has at most one tag.
+     8→
+     9→## Tag Assignments
+    10→
+    11→| Tag | Capabilities |
+    12→|-----|-------------|
+    13→| `code-reviews` | code-reviews-system, review-dignified-code-simplifier, review-dignified-python, review-tripwires |
+    14→| `devrun` | devrun-agent, devrun-reminder |
+    15→| `dignified-python` | dignified-python, dignified-python-reminder, dignified-code-simplifier |
+    16→| `documentation` | learned-docs, explore-docs-reminder, tripwires-reminder |
+    17→| `external-tools` | gh, gt |
+    18→| None (ungrouped) | erk-planning, fake-driven-testing, erk-bash-permissions, statusline, ruff-format |
+    19→
+    20→## Implementation
+    21→
+    22→### Step 1: Add `tag` property to Capability ABC
+    23→
+    24→**File:** `src/erk/core/capabilities/base.py`
+    25→
+    26→Add a non-abstract `tag` property returning `None` by default (same pattern as `required`, `supported_backends`, `managed_artifacts`).
+    27→
+    28→### Step 2: Set tag on ReviewCapability base class
+    29→
+    30→**File:** `src/erk/core/capabilities/review_capability.py`
+
+... [63 lines omitted] ...
+  </tool_result>
+  <assistant>Now let me signal GitHub that implementation has started and load the relevant context:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1735" cache_read_input_tokens="28925" cache_creation="{'ephemeral_5m_input_tokens': 1735, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01Hguiw7PkqTHQwJsmy2dGRJ">
+    <param name="command">erk exec impl-signal started --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true</param>
+    <param name="description">Signal GitHub implementation started</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1735" cache_read_input_tokens="28925" cache_creation="{'ephemeral_5m_input_tokens': 1735, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Hguiw7PkqTHQwJsmy2dGRJ">
+{
+  "success": false,
+  "event": "started",
+  "error_type": "session-id-required",
+  "message": "Session ID required for impl-signal started. Ensure ${CLAUDE_SESSION_ID} is available in the command context."
+}
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_018D6tfHAA9vwqNDiRnranZQ">
+    <param name="todos">[{'content': 'Add `tag` property to Capability ABC', 'status': 'pending', 'activeForm': 'A...[truncated 658 chars]...Run CI and submit PR', 'status': 'pending', 'activeForm': 'Running CI and submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="188" cache_read_input_tokens="30660" cache_creation="{'ephemeral_5m_input_tokens': 188, 'ephemeral_1h_input_tokens': 0}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_018D6tfHAA9vwqNDiRnranZQ">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Let me read the relevant files first before making changes:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="315" cache_read_input_tokens="30848" cache_creation="{'ephemeral_5m_input_tokens': 315, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_015RxQYwTFgR3ubusCKJ8UWz">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/core/capabilities/base.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="315" cache_read_input_tokens="30848" cache_creation="{'ephemeral_5m_input_tokens': 315, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01TksuDKRu8AtzmH2r8m2paz">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/core/capabilities/review_capability.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="315" cache_read_input_tokens="30848" cache_creation="{'ephemeral_5m_input_tokens': 315, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_015RxQYwTFgR3ubusCKJ8UWz">
+     1→"""Base classes and types for the capability system.
+     2→
+     3→Capabilities are optional features that can be installed via `erk init capability add &lt;name&gt;`.
+     4→Each capability knows how to detect if it's installed and how to install itself.
+     5→"""
+     6→
+     7→from abc import ABC, abstractmethod
+     8→from dataclasses import dataclass
+     9→from pathlib import Path
+    10→from typing import Literal
+    11→
+    12→from erk_shared.context.types import AgentBackend
+    13→
+    14→# Type alias for capability scope
+    15→CapabilityScope = Literal["project", "user"]
+    16→
+    17→# Artifact types that capabilities can declare they manage
+    18→ManagedArtifactType = Literal[
+    19→    "skill", "command", "agent", "workflow", "action", "hook", "prompt", "review"
+    20→]
+    21→
+    22→
+    23→@dataclass(frozen=True)
+    24→class ManagedArtifact:
+    25→    """Describes an artifact managed by a capability for artifact detection.
+    26→
+    27→    This bridges capability declarations with artifact detection/health checks.
+    28→    Used by the registry to determine which artifacts are erk-managed.
+    29→    """
+    30→
+
+... [170 lines omitted] ...
+
+    61→    raise ValueError(f"Unknown agent backend: {backend!r}")
+  </tool_result>
+  <tool_result tool="toolu_01TksuDKRu8AtzmH2r8m2paz">
+     1→"""Base class for review-based capabilities.
+     2→
+     3→ReviewCapability wraps the artifact sync system to install code review definitions
+     4→to external repositories via the capability system.
+     5→"""
+     6→
+     7→from abc import abstractmethod
+     8→from pathlib import Path
+     9→
+    10→from erk.core.capabilities.base import (
+    11→    Capability,
+    12→    CapabilityArtifact,
+    13→    CapabilityResult,
+    14→    CapabilityScope,
+    15→    ManagedArtifact,
+    16→)
+    17→from erk_shared.context.types import AgentBackend
+    18→
+    19→
+    20→class ReviewCapability(Capability):
+    21→    """Base class for capabilities that install a single code review definition.
+    22→
+    23→    Reviews are installed to .erk/reviews/ in the target project.
+    24→    Subclasses only need to implement review_name and description.
+    25→
+    26→    Requires: code-reviews-system capability (checked in preflight)
+    27→    """
+    28→
+    29→    @property
+    30→    @abstractmethod
+
+... [131 lines omitted] ...
+  </tool_result>
+  <assistant>Now let me read the individual capability files and the list command:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="4500" cache_read_input_tokens="31163" cache_creation="{'ephemeral_5m_input_tokens': 4500, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01EgTpPryhwoYr3nohzwKvMZ">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/capabilities/code_reviews_system.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4500" cache_read_input_tokens="31163" cache_creation="{'ephemeral_5m_input_tokens': 4500, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Fm5zaqoX5nx6uspZRBXc31">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/capabilities/skills/bundled.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4500" cache_read_input_tokens="31163" cache_creation="{'ephemeral_5m_input_tokens': 4500, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01WLr85mcds1TFP18k4rNNvu">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/init/capability/list_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4500" cache_read_input_tokens="31163" cache_creation="{'ephemeral_5m_input_tokens': 4500, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01EgTpPryhwoYr3nohzwKvMZ">
+     1→"""CodeReviewsSystemCapability - unified code review workflow infrastructure.
+     2→
+     3→This capability installs the GitHub Actions workflow infrastructure that enables
+     4→convention-based code reviews. Individual review definitions are installed
+     5→separately via review-* capabilities.
+     6→
+     7→Installs:
+     8→- .github/workflows/code-reviews.yml (unified workflow)
+     9→- .github/actions/setup-claude-code/ (Claude Code binary installer)
+    10→- .github/actions/setup-claude-erk/ (erk tool installer)
+    11→- Creates empty .erk/reviews/ directory
+    12→"""
+    13→
+    14→import shutil
+    15→from dataclasses import dataclass
+    16→from functools import cache
+    17→from pathlib import Path
+    18→from typing import Literal
+    19→
+    20→from erk.artifacts.paths import get_bundled_github_dir
+    21→from erk.artifacts.state import add_installed_capability, remove_installed_capability
+    22→from erk.core.capabilities.base import (
+    23→    Capability,
+    24→    CapabilityArtifact,
+    25→    CapabilityResult,
+    26→    CapabilityScope,
+    27→    ManagedArtifact,
+    28→)
+    29→from erk_shared.context.types import AgentBackend
+    30→
+
+... [215 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01Fm5zaqoX5nx6uspZRBXc31">
+     1→"""Bundled skill capabilities — cached factory.
+     2→
+     3→All simple skill capabilities (those that only need a name and description)
+     4→are registered here. The dict is created lazily via a cached function to
+     5→avoid module-import-time allocation.
+     6→
+     7→Skills with custom install/uninstall logic (like learned-docs) are NOT here;
+     8→they have their own capability classes.
+     9→"""
+    10→
+    11→from functools import cache
+    12→
+    13→from erk.core.capabilities.codex_portable import codex_portable_skills
+    14→from erk.core.capabilities.skill_capability import SkillCapability
+    15→from erk_shared.context.types import AgentBackend
+    16→
+    17→_UNBUNDLED_SKILLS: frozenset[str] = frozenset(
+    18→    {
+    19→        "ci-iteration",
+    20→        "cli-skill-creator",
+    21→        "cmux",
+    22→        "command-creator",
+    23→        "learned-docs",  # has its own capability class (LearnedDocsCapability)
+    24→        "refac-cli-push-down",
+    25→        "refac-mock-to-fake",
+    26→        "refac-module-to-subpackage",
+    27→        "rename-swarm",
+    28→        "session-inspector",
+    29→        "erk-skill-onboarding",
+    30→        "skill-creator",
+
+... [80 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01WLr85mcds1TFP18k4rNNvu">
+     1→"""List capabilities and their installation status."""
+     2→
+     3→from pathlib import Path
+     4→
+     5→import click
+     6→
+     7→from erk.cli.commands.init.capability.backend_utils import resolve_backend
+     8→from erk.core.capabilities.base import Capability, CapabilityArtifact
+     9→from erk.core.capabilities.registry import get_capability, list_optional_capabilities
+    10→from erk.core.context import ErkContext
+    11→from erk.core.repo_discovery import NoRepoSentinel, discover_repo_or_sentinel
+    12→from erk_shared.context.types import AgentBackend
+    13→from erk_shared.output.output import user_output
+    14→
+    15→
+    16→@click.command("list")
+    17→@click.argument("name", required=False)
+    18→@click.pass_obj
+    19→def list_cmd(ctx: ErkContext, name: str | None) -&gt; None:
+    20→    """List capabilities and their installation status.
+    21→
+    22→    Without NAME: shows all capabilities with installed status.
+    23→    With NAME: shows detailed status for that specific capability.
+    24→
+    25→    Project-level capabilities require being in a git repository.
+    26→    User-level capabilities can be checked from anywhere.
+    27→    """
+    28→    # Lazy repo discovery - only done if needed
+    29→    erk_root = ctx.erk_installation.root()
+    30→    repo_or_sentinel = discover_repo_or_sentinel(ctx.cwd, erk_root, ctx.git)
+
+... [112 lines omitted] ...
+
+    49→        user_output(click.style("Error: ", fg="red") + f"Unknown capability: {name}")
+    58→            click.style("Error: ", fg="red")
+  </tool_result>
+  <assistant>Now let me read the individual capability files mentioned in the plan:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="6949" cache_read_input_tokens="35663" cache_creation="{'ephemeral_5m_input_tokens': 6949, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01QXQhx1dJzHp4S5KfWLByRA">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/capabilities/agents/devrun.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6949" cache_read_input_tokens="35663" cache_creation="{'ephemeral_5m_input_tokens': 6949, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01UqaYU9ZaypT6CNDfAahrH2">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/capabilities/reminders/devrun.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6949" cache_read_input_tokens="35663" cache_creation="{'ephemeral_5m_input_tokens': 6949, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_019one8GesJdzV1Ne6PELkUv">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/capabilities/reminders/dignified_python.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6949" cache_read_input_tokens="35663" cache_creation="{'ephemeral_5m_input_tokens': 6949, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01QXQhx1dJzHp4S5KfWLByRA">
+     1→"""DevrunAgentCapability - safe execution agent for dev tools."""
+     2→
+     3→import shutil
+     4→from pathlib import Path
+     5→
+     6→from erk.artifacts.paths import get_bundled_claude_dir, get_bundled_codex_dir
+     7→from erk.artifacts.state import add_installed_capability, remove_installed_capability
+     8→from erk.core.capabilities.base import (
+     9→    Capability,
+    10→    CapabilityArtifact,
+    11→    CapabilityResult,
+    12→    CapabilityScope,
+    13→    ManagedArtifact,
+    14→    backend_agent_dir,
+    15→)
+    16→from erk_shared.context.types import AgentBackend
+    17→
+    18→
+    19→class DevrunAgentCapability(Capability):
+    20→    """Safe execution agent for pytest/ty/ruff/make/gt.
+    21→
+    22→    Installs:
+    23→    - .claude/agents/devrun.md
+    24→    """
+    25→
+    26→    @property
+    27→    def name(self) -&gt; str:
+    28→        return "devrun-agent"
+    29→
+    30→    @property
+
+... [115 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01UqaYU9ZaypT6CNDfAahrH2">
+     1→"""DevrunReminderCapability - reminder to use devrun agent."""
+     2→
+     3→from erk.core.capabilities.reminder_capability import ReminderCapability
+     4→
+     5→
+     6→class DevrunReminderCapability(ReminderCapability):
+     7→    """Reminder to use devrun agent for pytest/ty/ruff/prettier/make/gt."""
+     8→
+     9→    @property
+    10→    def reminder_name(self) -&gt; str:
+    11→        return "devrun"
+    12→
+    13→    @property
+    14→    def description(self) -&gt; str:
+    15→        return "Remind agent to use devrun for CI tool commands"
+    16→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_019one8GesJdzV1Ne6PELkUv">
+     1→"""DignifiedPythonReminderCapability - reminder for dignified-python standards."""
+     2→
+     3→from erk.core.capabilities.reminder_capability import ReminderCapability
+     4→
+     5→
+     6→class DignifiedPythonReminderCapability(ReminderCapability):
+     7→    """Reminder to follow dignified-python coding standards."""
+     8→
+     9→    @property
+    10→    def reminder_name(self) -&gt; str:
+    11→        return "dignified-python"
+    12→
+    13→    @property
+    14→    def description(self) -&gt; str:
+    15→        return "Remind agent to follow dignified-python standards"
+    16→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_use name="Read" id="toolu_01QP1L8mYvdZHB162b1C1aD9">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/capabilities/reminders/explore_docs.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2975" cache_read_input_tokens="42612" cache_creation="{'ephemeral_5m_input_tokens': 2975, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01PqGX1jwvpwCrZwxAmsndBa">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/capabilities/reminders/tripwires.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2975" cache_read_input_tokens="42612" cache_creation="{'ephemeral_5m_input_tokens': 2975, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01BCMA7f8i8ZGKGXobvLUeCN">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/capabilities/learned_docs.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2975" cache_read_input_tokens="42612" cache_creation="{'ephemeral_5m_input_tokens': 2975, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01QP1L8mYvdZHB162b1C1aD9">
+     1→"""ExploreDocsReminderCapability - reminder for doc-first Explore prompts."""
+     2→
+     3→from erk.core.capabilities.reminder_capability import ReminderCapability
+     4→
+     5→
+     6→class ExploreDocsReminderCapability(ReminderCapability):
+     7→    """Reminder to include doc-first instructions when spawning Explore agents."""
+     8→
+     9→    @property
+    10→    def reminder_name(self) -&gt; str:
+    11→        return "explore-docs"
+    12→
+    13→    @property
+    14→    def description(self) -&gt; str:
+    15→        return "Remind agent to include doc-first instructions in Explore prompts"
+    16→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_01PqGX1jwvpwCrZwxAmsndBa">
+     1→"""TripwiresReminderCapability - reminder to check tripwires.md."""
+     2→
+     3→from erk.core.capabilities.reminder_capability import ReminderCapability
+     4→
+     5→
+     6→class TripwiresReminderCapability(ReminderCapability):
+     7→    """Reminder to check tripwires.md before performing actions."""
+     8→
+     9→    @property
+    10→    def reminder_name(self) -&gt; str:
+    11→        return "tripwires"
+    12→
+    13→    @property
+    14→    def description(self) -&gt; str:
+    15→        return "Remind agent to check tripwires.md"
+    16→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_01BCMA7f8i8ZGKGXobvLUeCN">
+     1→"""LearnedDocsCapability - agent-discoverable documentation system."""
+     2→
+     3→import shutil
+     4→from pathlib import Path
+     5→
+     6→from erk.artifacts.paths import get_bundled_claude_dir, get_bundled_codex_dir
+     7→from erk.core.capabilities.base import (
+     8→    Capability,
+     9→    CapabilityArtifact,
+    10→    CapabilityResult,
+    11→    CapabilityScope,
+    12→    ManagedArtifact,
+    13→    backend_agent_dir,
+    14→)
+    15→from erk_shared.context.types import AgentBackend
+    16→
+    17→LEARNED_DOCS_README = """\
+    18→---
+    19→title: "Learned Documentation Guide"
+    20→read_when:
+    21→  - "setting up learned docs"
+    22→  - "understanding learned docs structure"
+    23→  - "adding new documentation"
+    24→---
+    25→
+    26→# Learned Documentation
+    27→
+    28→This directory contains agent-discoverable documentation for AI assistants.
+    29→
+    30→## Purpose
+
+... [300 lines omitted] ...
+  </tool_result>
+  <assistant>Now let me read the test file to understand what needs updating:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="5228" cache_read_input_tokens="45587" cache_creation="{'ephemeral_5m_input_tokens': 5228, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_015onqeVZRYPtrxvFWuZWgWX">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/init/capability/test_list_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5228" cache_read_input_tokens="45587" cache_creation="{'ephemeral_5m_input_tokens': 5228, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_015onqeVZRYPtrxvFWuZWgWX">
+     1→"""Tests for erk init capability list command."""
+     2→
+     3→import re
+     4→
+     5→from click.testing import CliRunner
+     6→
+     7→from erk.cli.cli import cli
+     8→from erk_shared.context.types import GlobalConfig
+     9→from tests.fakes.gateway.erk_installation import FakeErkInstallation
+    10→from tests.fakes.gateway.git import FakeGit
+    11→from tests.test_utils.env_helpers import erk_isolated_fs_env
+    12→
+    13→
+    14→def test_capability_list_shows_available_capabilities() -&gt; None:
+    15→    """Test that list command shows all registered capabilities."""
+    16→    runner = CliRunner()
+    17→    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+    18→        git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
+    19→        global_config = GlobalConfig.test(
+    20→            env.cwd / "fake-erks", use_graphite=False, shell_setup_complete=False
+    21→        )
+    22→
+    23→        erk_installation = FakeErkInstallation(config=global_config)
+    24→
+    25→        test_ctx = env.build_context(
+    26→            git=git_ops,
+    27→            erk_installation=erk_installation,
+    28→            global_config=global_config,
+    29→        )
+    30→
+
+... [92 lines omitted] ...
+  </tool_result>
+  <assistant>Now I have a complete picture of what needs to be done. Let me implement all the steps:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1805" cache_read_input_tokens="50815" cache_creation="{'ephemeral_5m_input_tokens': 1805, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TodoWrite" id="toolu_01Njvs6wiEZVijpVYsiPpDpq">
+    <param name="todos">[{'content': 'Add `tag` property to Capability ABC', 'status': 'in_progress', 'activeForm'...[truncated 662 chars]...Run CI and submit PR', 'status': 'pending', 'activeForm': 'Running CI and submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1805" cache_read_input_tokens="50815" cache_creation="{'ephemeral_5m_input_tokens': 1805, 'ephemeral_1h_input_tokens': 0}" output_tokens="296" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Njvs6wiEZVijpVYsiPpDpq">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>**Phase 1: Add `tag` property to Capability ABC**</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="338" cache_read_input_tokens="52620" cache_creation="{'ephemeral_5m_input_tokens': 338, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_012Gcafrx3jaPTCMB92dHKaK">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/core/capabilities/base.py</param>
+    <param name="old_string">    @property
+    def managed_artifacts(self) -&gt; list[ManagedArtifact]:
+        """List of...[truncated 197 chars]...
+
+        Default is empty list for backwards compatibility.
+        """
+        return []</param>
+    <param name="new_string">    @property
+    def tag(self) -&gt; str | None:
+        """Display grouping tag for the cap...[truncated 600 chars]...
+
+        Default is empty list for backwards compatibility.
+        """
+        return []</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="338" cache_read_input_tokens="52620" cache_creation="{'ephemeral_5m_input_tokens': 338, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012Gcafrx3jaPTCMB92dHKaK">
+The file /home/runner/work/erk/erk/src/erk/core/capabilities/base.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01WssC3DjZy5iyw54GBPcoHo">
+    <param name="todos">[{'content': 'Add `tag` property to Capability ABC', 'status': 'completed', 'activeForm': ...[truncated 664 chars]...Run CI and submit PR', 'status': 'pending', 'activeForm': 'Running CI and submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="437" cache_read_input_tokens="52958" cache_creation="{'ephemeral_5m_input_tokens': 437, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01WssC3DjZy5iyw54GBPcoHo">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>**Phase 2: Set tag on ReviewCapability base class**</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="317" cache_read_input_tokens="53395" cache_creation="{'ephemeral_5m_input_tokens': 317, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01EnohcyqVADP59v5GbteqUg">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/core/capabilities/review_capability.py</param>
+    <param name="old_string">    @property
+    def name(self) -&gt; str:
+        """CLI-facing identifier - prefixed with 'review-'."""
+        return f"review-{self.review_name}"</param>
+    <param name="new_string">    @property
+    def tag(self) -&gt; str | None:
+        """All review capabilities are grou...[truncated 97 chars]...acing identifier - prefixed with 'review-'."""
+        return f"review-{self.review_name}"</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="317" cache_read_input_tokens="53395" cache_creation="{'ephemeral_5m_input_tokens': 317, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01EnohcyqVADP59v5GbteqUg">
+The file /home/runner/work/erk/erk/src/erk/core/capabilities/review_capability.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01Ar1MUdCT2QkTN86LMP9rmM">
+    <param name="todos">[{'content': 'Add `tag` property to Capability ABC', 'status': 'completed', 'activeForm': ...[truncated 666 chars]...Run CI and submit PR', 'status': 'pending', 'activeForm': 'Running CI and submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="303" cache_read_input_tokens="53712" cache_creation="{'ephemeral_5m_input_tokens': 303, 'ephemeral_1h_input_tokens': 0}" output_tokens="275" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Ar1MUdCT2QkTN86LMP9rmM">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>**Phase 3: Set tags on individual capability classes**
+
+Now I'll add tags to all the individual capability files:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="317" cache_read_input_tokens="54015" cache_creation="{'ephemeral_5m_input_tokens': 317, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01LEtqBsps5KBXWtAJ3ttzcW">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/capabilities/code_reviews_system.py</param>
+    <param name="old_string">    @property
+    def name(self) -&gt; str:
+        return "code-reviews-system"</param>
+    <param name="new_string">    @property
+    def tag(self) -&gt; str | None:
+        return "code-reviews"
+
+    @property
+    def name(self) -&gt; str:
+        return "code-reviews-system"</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="317" cache_read_input_tokens="54015" cache_creation="{'ephemeral_5m_input_tokens': 317, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01LEtqBsps5KBXWtAJ3ttzcW">
+The file /home/runner/work/erk/erk/src/erk/capabilities/code_reviews_system.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01KSEYcmNMRbAXtvShpAJSGS">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/capabilities/agents/devrun.py</param>
+    <param name="old_string">    @property
+    def name(self) -&gt; str:
+        return "devrun-agent"</param>
+    <param name="new_string">    @property
+    def tag(self) -&gt; str | None:
+        return "devrun"
+
+    @property
+    def name(self) -&gt; str:
+        return "devrun-agent"</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="256" cache_read_input_tokens="54332" cache_creation="{'ephemeral_5m_input_tokens': 256, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01KSEYcmNMRbAXtvShpAJSGS">
+The file /home/runner/work/erk/erk/src/erk/capabilities/agents/devrun.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_014G61KZpnrgYswwFS4AtSNV">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/capabilities/reminders/devrun.py</param>
+    <param name="old_string">class DevrunReminderCapability(ReminderCapability):
+    """Reminder to use devrun agent fo...[truncated 2 chars]...ier/make/gt."""
+
+    @property
+    def reminder_name(self) -&gt; str:
+        return "devrun"</param>
+    <param name="new_string">class DevrunReminderCapability(ReminderCapability):
+    """Reminder to use devrun agent fo...[truncated 74 chars]...return "devrun"
+
+    @property
+    def reminder_name(self) -&gt; str:
+        return "devrun"</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="225" cache_read_input_tokens="54588" cache_creation="{'ephemeral_5m_input_tokens': 225, 'ephemeral_1h_input_tokens': 0}" output_tokens="262" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014G61KZpnrgYswwFS4AtSNV">
+&lt;tool_use_error&gt;File has not been read yet. Read it first before writing to it.&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_use name="Read" id="toolu_014DoJ11phkGvNQRYSWFzSXZ">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/capabilities/reminders/devrun.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="308" cache_read_input_tokens="54813" cache_creation="{'ephemeral_5m_input_tokens': 308, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014DoJ11phkGvNQRYSWFzSXZ">
+     1→"""DevrunReminderCapability - reminder to use devrun agent."""
+     2→
+     3→from erk.core.capabilities.reminder_capability import ReminderCapability
+     4→
+     5→
+     6→class DevrunReminderCapability(ReminderCapability):
+     7→    """Reminder to use devrun agent for pytest/ty/ruff/prettier/make/gt."""
+     8→
+     9→    @property
+    10→    def reminder_name(self) -&gt; str:
+    11→        return "devrun"
+    12→
+    13→    @property
+    14→    def description(self) -&gt; str:
+    15→        return "Remind agent to use devrun for CI tool commands"
+    16→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_use name="Edit" id="toolu_016DofRYDe2pyuvq9SJXCgE9">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/capabilities/reminders/devrun.py</param>
+    <param name="old_string">class DevrunReminderCapability(ReminderCapability):
+    """Reminder to use devrun agent fo...[truncated 116 chars]...description(self) -&gt; str:
+        return "Remind agent to use devrun for CI tool commands"</param>
+    <param name="new_string">class DevrunReminderCapability(ReminderCapability):
+    """Reminder to use devrun agent fo...[truncated 188 chars]...description(self) -&gt; str:
+        return "Remind agent to use devrun for CI tool commands"</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="352" cache_read_input_tokens="55121" cache_creation="{'ephemeral_5m_input_tokens': 352, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016DofRYDe2pyuvq9SJXCgE9">
+The file /home/runner/work/erk/erk/src/erk/capabilities/reminders/devrun.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01QTARVgBjwaXDA3k7QZPksJ">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/capabilities/reminders/dignified_python.py</param>
+    <param name="old_string">class DignifiedPythonReminderCapability(ReminderCapability):
+    """Reminder to follow dig...[truncated 125 chars]...scription(self) -&gt; str:
+        return "Remind agent to follow dignified-python standards"</param>
+    <param name="new_string">class DignifiedPythonReminderCapability(ReminderCapability):
+    """Reminder to follow dig...[truncated 207 chars]...scription(self) -&gt; str:
+        return "Remind agent to follow dignified-python standards"</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="574" cache_read_input_tokens="55473" cache_creation="{'ephemeral_5m_input_tokens': 574, 'ephemeral_1h_input_tokens': 0}" output_tokens="316" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01QTARVgBjwaXDA3k7QZPksJ">
+&lt;tool_use_error&gt;File has not been read yet. Read it first before writing to it.&lt;/tool_use_error&gt;
+  </tool_result>
+  <assistant>The file was already read. Let me check which files I've read vs not read:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="362" cache_read_input_tokens="56047" cache_creation="{'ephemeral_5m_input_tokens': 362, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01CEjDwJAxRTRf9g4dyZowck">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/capabilities/reminders/dignified_python.py</param>
+    <param name="old_string">class DignifiedPythonReminderCapability(ReminderCapability):
+    """Reminder to follow dig...[truncated 9 chars]...s."""
+
+    @property
+    def reminder_name(self) -&gt; str:
+        return "dignified-python"</param>
+    <param name="new_string">class DignifiedPythonReminderCapability(ReminderCapability):
+    """Reminder to follow dig...[truncated 91 chars]...thon"
+
+    @property
+    def reminder_name(self) -&gt; str:
+        return "dignified-python"</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="362" cache_read_input_tokens="56047" cache_creation="{'ephemeral_5m_input_tokens': 362, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01CEjDwJAxRTRf9g4dyZowck">
+&lt;tool_use_error&gt;File has not been read yet. Read it first before writing to it.&lt;/tool_use_error&gt;
+  </tool_result>
+  <assistant>The tool requires reading in the same conversation segment. Let me re-read and then edit:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="530" cache_read_input_tokens="56409" cache_creation="{'ephemeral_5m_input_tokens': 530, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_013HbSXjCYFcwio21Wq5yCay">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/capabilities/reminders/dignified_python.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="530" cache_read_input_tokens="56409" cache_creation="{'ephemeral_5m_input_tokens': 530, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013HbSXjCYFcwio21Wq5yCay">
+     1→"""DignifiedPythonReminderCapability - reminder for dignified-python standards."""
+     2→
+     3→from erk.core.capabilities.reminder_capability import ReminderCapability
+     4→
+     5→
+     6→class DignifiedPythonReminderCapability(ReminderCapability):
+     7→    """Reminder to follow dignified-python coding standards."""
+     8→
+     9→    @property
+    10→    def reminder_name(self) -&gt; str:
+    11→        return "dignified-python"
+    12→
+    13→    @property
+    14→    def description(self) -&gt; str:
+    15→        return "Remind agent to follow dignified-python standards"
+    16→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01D32mXiLNfC2zfhUtk9GDs2">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/capabilities/reminders/dignified_python.py</param>
+    <param name="old_string">class DignifiedPythonReminderCapability(ReminderCapability):
+    """Reminder to follow dig...[truncated 125 chars]...scription(self) -&gt; str:
+        return "Remind agent to follow dignified-python standards"</param>
+    <param name="new_string">class DignifiedPythonReminderCapability(ReminderCapability):
+    """Reminder to follow dig...[truncated 207 chars]...scription(self) -&gt; str:
+        return "Remind agent to follow dignified-python standards"</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="374" cache_read_input_tokens="56939" cache_creation="{'ephemeral_5m_input_tokens': 374, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01D32mXiLNfC2zfhUtk9GDs2">
+The file /home/runner/work/erk/erk/src/erk/capabilities/reminders/dignified_python.py has been updated successfully.
+  </tool_result>
+  <assistant>Now I need to add tags to `explore_docs.py` and `tripwires.py` (both "documentation") and `learned_docs.py` (also "documentation"):</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="570" cache_read_input_tokens="57313" cache_creation="{'ephemeral_5m_input_tokens': 570, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01T1yYchn8RzFWfFzW9UQ3PM">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/capabilities/reminders/explore_docs.py</param>
+    <param name="old_string">class ExploreDocsReminderCapability(ReminderCapability):
+    """Reminder to include doc-fi...[truncated 152 chars]...-&gt; str:
+        return "Remind agent to include doc-first instructions in Explore prompts"</param>
+    <param name="new_string">class ExploreDocsReminderCapability(ReminderCapability):
+    """Reminder to include doc-fi...[truncated 231 chars]...-&gt; str:
+        return "Remind agent to include doc-first instructions in Explore prompts"</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="570" cache_read_input_tokens="57313" cache_creation="{'ephemeral_5m_input_tokens': 570, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01T1yYchn8RzFWfFzW9UQ3PM">
+The file /home/runner/work/erk/erk/src/erk/capabilities/reminders/explore_docs.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01CoGXtoXxtKUmNXnq1T6aYJ">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/capabilities/reminders/tripwires.py</param>
+    <param name="old_string">class TripwiresReminderCapability(ReminderCapability):
+    """Reminder to check tripwires....[truncated 101 chars]...erty
+    def description(self) -&gt; str:
+        return "Remind agent to check tripwires.md"</param>
+    <param name="new_string">class TripwiresReminderCapability(ReminderCapability):
+    """Reminder to check tripwires....[truncated 180 chars]...erty
+    def description(self) -&gt; str:
+        return "Remind agent to check tripwires.md"</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="411" cache_read_input_tokens="57883" cache_creation="{'ephemeral_5m_input_tokens': 411, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01CoGXtoXxtKUmNXnq1T6aYJ">
+The file /home/runner/work/erk/erk/src/erk/capabilities/reminders/tripwires.py has been updated successfully.
+  </tool_result>
+  <assistant>Now add tag to `learned_docs.py`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="563" cache_read_input_tokens="58294" cache_creation="{'ephemeral_5m_input_tokens': 563, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_0199j3N3prFz48yGwUvtdKnc">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/capabilities/learned_docs.py</param>
+    <param name="old_string">    @property
+    def name(self) -&gt; str:
+        return "learned-docs"
+
+    @property
+    def description(self) -&gt; str:
+        return "Autolearning documentation system"</param>
+    <param name="new_string">    @property
+    def tag(self) -&gt; str | None:
+        return "documentation"
+
+    @proper...[truncated 49 chars]...perty
+    def description(self) -&gt; str:
+        return "Autolearning documentation system"</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="563" cache_read_input_tokens="58294" cache_creation="{'ephemeral_5m_input_tokens': 563, 'ephemeral_1h_input_tokens': 0}" output_tokens="239" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0199j3N3prFz48yGwUvtdKnc">
+&lt;tool_use_error&gt;File has not been read yet. Read it first before writing to it.&lt;/tool_use_error&gt;
+  </tool_result>
+  <assistant>The file was read earlier in the conversation. The Edit tool requires reading within its internal tracking. Let me re-read:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="285" cache_read_input_tokens="58857" cache_creation="{'ephemeral_5m_input_tokens': 285, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01X2AGNzNr7NkfwVAmtAPQRE">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/capabilities/learned_docs.py</param>
+    <param name="offset">167</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="285" cache_read_input_tokens="58857" cache_creation="{'ephemeral_5m_input_tokens': 285, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01X2AGNzNr7NkfwVAmtAPQRE">
+   167→class LearnedDocsCapability(Capability):
+   168→    """Capability for the learned-docs agent documentation system."""
+   169→
+   170→    @property
+   171→    def name(self) -&gt; str:
+   172→        return "learned-docs"
+   173→
+   174→    @property
+   175→    def description(self) -&gt; str:
+   176→        return "Autolearning documentation system"
+   177→
+   178→    @property
+   179→    def scope(self) -&gt; CapabilityScope:
+   180→        return "project"
+   181→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_use name="Edit" id="toolu_0165D4ryd6sL6YmbnHJZ6BVe">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/capabilities/learned_docs.py</param>
+    <param name="old_string">class LearnedDocsCapability(Capability):
+    """Capability for the learned-docs agent documentation system."""
+
+    @property
+    def name(self) -&gt; str:
+        return "learned-docs"</param>
+    <param name="new_string">class LearnedDocsCapability(Capability):
+    """Capability for the learned-docs agent docu...[truncated 61 chars]...rn "documentation"
+
+    @property
+    def name(self) -&gt; str:
+        return "learned-docs"</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="579" cache_read_input_tokens="59142" cache_creation="{'ephemeral_5m_input_tokens': 579, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0165D4ryd6sL6YmbnHJZ6BVe">
+The file /home/runner/work/erk/erk/src/erk/capabilities/learned_docs.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01RDpyNyc9YspVAPpaXXe7Af">
+    <param name="todos">[{'content': 'Add `tag` property to Capability ABC', 'status': 'completed', 'activeForm': ...[truncated 668 chars]...Run CI and submit PR', 'status': 'pending', 'activeForm': 'Running CI and submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="274" cache_read_input_tokens="59721" cache_creation="{'ephemeral_5m_input_tokens': 274, 'ephemeral_1h_input_tokens': 0}" output_tokens="275" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01RDpyNyc9YspVAPpaXXe7Af">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>**Phase 4: Add tags to BundledSkillCapability**</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="317" cache_read_input_tokens="59995" cache_creation="{'ephemeral_5m_input_tokens': 317, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01FLXSBC3qw33NhAnBM6cSts">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/capabilities/skills/bundled.py</param>
+    <param name="old_string">_REQUIRED_BUNDLED_SKILLS: frozenset[str] = frozenset(</param>
+    <param name="new_string">_BUNDLED_SKILL_TAGS: dict[str, str] = {
+    "dignified-code-simplifier": "dignified-python...[truncated 5 chars]...ols",
+    "gt": "external-tools",
+}
+
+_REQUIRED_BUNDLED_SKILLS: frozenset[str] = frozenset(</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="317" cache_read_input_tokens="59995" cache_creation="{'ephemeral_5m_input_tokens': 317, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01FLXSBC3qw33NhAnBM6cSts">
+The file /home/runner/work/erk/erk/src/erk/capabilities/skills/bundled.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update `BundledSkillCapability` to accept and expose a `_tag` parameter:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="278" cache_read_input_tokens="60312" cache_creation="{'ephemeral_5m_input_tokens': 278, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01AvrHyfypc1wY5sE8GPRxh3">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/capabilities/skills/bundled.py</param>
+    <param name="old_string">class BundledSkillCapability(SkillCapability):
+    """Concrete SkillCapability for skills ...[truncated 823 chars]...ill_name=name, _description=desc)
+        for name, desc in bundled_skills().items()
+    ]</param>
+    <param name="new_string">class BundledSkillCapability(SkillCapability):
+    """Concrete SkillCapability for skills ...[truncated 1022 chars]...D_SKILL_TAGS.get(name),
+        )
+        for name, desc in bundled_skills().items()
+    ]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="278" cache_read_input_tokens="60312" cache_creation="{'ephemeral_5m_input_tokens': 278, 'ephemeral_1h_input_tokens': 0}" output_tokens="786" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01AvrHyfypc1wY5sE8GPRxh3">
+The file /home/runner/work/erk/erk/src/erk/capabilities/skills/bundled.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01YGgFMqJZKcE7hQ9KLsD9go">
+    <param name="todos">[{'content': 'Add `tag` property to Capability ABC', 'status': 'completed', 'activeForm': ...[truncated 670 chars]...Run CI and submit PR', 'status': 'pending', 'activeForm': 'Running CI and submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="830" cache_read_input_tokens="60590" cache_creation="{'ephemeral_5m_input_tokens': 830, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01YGgFMqJZKcE7hQ9KLsD9go">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>**Phase 5: Update list command for grouped display**</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="317" cache_read_input_tokens="61420" cache_creation="{'ephemeral_5m_input_tokens': 317, 'ephemeral_1h_input_tokens': 0}" output_tokens="7" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01SY3e4umJPeVK6HRZcEKv6i">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/init/capability/list_cmd.py</param>
+    <param name="content">"""List capabilities and their installation status."""
+
+import itertools
+from pathlib impo...[truncated 5599 chars]...r cap in group_caps:
+            _render_capability_line(cap, repo_root, backend=backend)
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="317" cache_read_input_tokens="61420" cache_creation="{'ephemeral_5m_input_tokens': 317, 'ephemeral_1h_input_tokens': 0}" output_tokens="7" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01SY3e4umJPeVK6HRZcEKv6i">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/init/capability/list_cmd.py has been updated. Here's the result of running `cat -n` on a snippet of the edited file:
+     1→"""List capabilities and their installation status."""
+     2→
+     3→import itertools
+     4→from pathlib import Path
+     5→
+     6→import click
+     7→
+     8→from erk.cli.commands.init.capability.backend_utils import resolve_backend
+     9→from erk.core.capabilities.base import Capability, CapabilityArtifact
+    10→from erk.core.capabilities.registry import get_capability, list_optional_capabilities
+    11→from erk.core.context import ErkContext
+    12→from erk.core.repo_discovery import NoRepoSentinel, discover_repo_or_sentinel
+    13→from erk_shared.context.types import AgentBackend
+    14→from erk_shared.output.output import user_output
+    15→
+    16→TAG_DISPLAY_NAMES: dict[str, str] = {
+    17→    "code-reviews": "Code Reviews",
+    18→    "devrun": "Devrun",
+    19→    "dignified-python": "Dignified Python",
+    20→    "documentation": "Documentation",
+    21→    "external-tools": "External Tools",
+    22→}
+    23→
+    24→
+    25→@click.command("list")
+    26→@click.argument("name", required=False)
+    27→@click.pass_obj
+    28→def list_cmd(ctx: ErkContext, name: str | None) -&gt; None:
+    29→    """List capabilities and their installation status.
+
+... [134 lines omitted] ...
+
+    58→        user_output(click.style("Error: ", fg="red") + f"Unknown capability: {name}")
+    67→            click.style("Error: ", fg="red")
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_014YyZskxde19PJ222LCaUW5">
+    <param name="todos">[{'content': 'Add `tag` property to Capability ABC', 'status': 'completed', 'activeForm': ...[truncated 672 chars]...Run CI and submit PR', 'status': 'pending', 'activeForm': 'Running CI and submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4155" cache_read_input_tokens="61737" cache_creation="{'ephemeral_5m_input_tokens': 4155, 'ephemeral_1h_input_tokens': 0}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014YyZskxde19PJ222LCaUW5">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>**Phase 6: Update tests**
+
+The existing test `test_capability_list_sorts_alphabetically` uses a regex that expects the old format `"  ✓/○ capability-name [scope] description"`. With grouped output, capabilities are under group headers, so the format is still the same for each capability line. Let me re-examine what the new output will look like.
+
+The new format is:
+```
+Erk capabilities:
+
+  [Code Reviews]
+  ✓ code-reviews-system          [project]    ...
+  ✓ review-...                   [project]    ...
+
+  [Other]
+  ○ erk-planning                 [user]       ...
+```
+
+The existing `capability_pattern = re.compile(r"^\s+[✓○?]\s+(\S+)\s+\[(\w+)\]", re.MULTILINE)` should still match each capability line. The `[scope]` value contains only word characters, while group headers like `[Code Reviews]` contain spaces so they won't match the `\[(\w+)\]` pattern. The existing tests should still work.
+
+However, I need to update `test_capability_list_sorts_alphabetically` since the sort is now within groups, not globally. Also, I need to add a test for group headers.
+
+Let me look at the test more carefully. The current test verifies that all project capabilities are globally sorted, and all user capabilities are globally sorted. With grouped output, within a group, capabilities are sorted by name — but across groups, the order depends on the tag (alphabetical). The test checks global alphabetical within scope — this would break since capabilities in different groups won't be globally sorted by name.
+
+I'll update the test to verify sorting within groups instead:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="317" cache_read_input_tokens="65892" cache_creation="{'ephemeral_5m_input_tokens': 317, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01H3qQnbdddQVcNDdMQ6rbmd">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/init/capability/test_list_cmd.py</param>
+    <param name="content">"""Tests for erk init capability list command."""
+
+import re
+
+from click.testing import Cl...[truncated 6209 chars]...lues()), (
+            "Expected at least one group with multiple capabilities"
+        )
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="317" cache_read_input_tokens="65892" cache_creation="{'ephemeral_5m_input_tokens': 317, 'ephemeral_1h_input_tokens': 0}" output_tokens="2311" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01H3qQnbdddQVcNDdMQ6rbmd">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/init/capability/test_list_cmd.py has been updated. Here's the result of running `cat -n` on a snippet of the edited file:
+     1→"""Tests for erk init capability list command."""
+     2→
+     3→import re
+     4→
+     5→from click.testing import CliRunner
+     6→
+     7→from erk.cli.cli import cli
+     8→from erk_shared.context.types import GlobalConfig
+     9→from tests.fakes.gateway.erk_installation import FakeErkInstallation
+    10→from tests.fakes.gateway.git import FakeGit
+    11→from tests.test_utils.env_helpers import erk_isolated_fs_env
+    12→
+    13→
+    14→def test_capability_list_shows_available_capabilities() -&gt; None:
+    15→    """Test that list command shows all registered capabilities."""
+    16→    runner = CliRunner()
+    17→    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+    18→        git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
+    19→        global_config = GlobalConfig.test(
+    20→            env.cwd / "fake-erks", use_graphite=False, shell_setup_complete=False
+    21→        )
+    22→
+    23→        erk_installation = FakeErkInstallation(config=global_config)
+    24→
+    25→        test_ctx = env.build_context(
+    26→            git=git_ops,
+    27→            erk_installation=erk_installation,
+    28→            global_config=global_config,
+    29→        )
+
+... [133 lines omitted] ...
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_018YwJNfACsCrJzefU7nHmpK">
+    <param name="todos">[{'content': 'Add `tag` property to Capability ABC', 'status': 'completed', 'activeForm': ...[truncated 674 chars]...CI and submit PR', 'status': 'in_progress', 'activeForm': 'Running CI and submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4713" cache_read_input_tokens="66209" cache_creation="{'ephemeral_5m_input_tokens': 4713, 'ephemeral_1h_input_tokens': 0}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_018YwJNfACsCrJzefU7nHmpK">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+</session>
