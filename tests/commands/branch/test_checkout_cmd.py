@@ -536,8 +536,8 @@ def test_branch_checkout_stale_assignment_worktree_missing() -> None:
             )
 
         assert result.exit_code == 0, f"Failed: {result.output}"
-        # Should warn about removing stale assignment (caught by sync_pool_assignments)
-        assert "Removing stale assignment" in result.output
+        # Should report removing stale assignment (caught by sync_pool_assignments)
+        assert "Removed stale assignment" in result.output
         assert "worktree path missing" in result.output
         # Should proceed to assign to a slot
         assert "Assigned stale-branch to" in result.output

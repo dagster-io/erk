@@ -260,8 +260,8 @@ def sync_pool_assignments(
     for assignment in state.assignments:
         if not assignment.worktree_path.exists():
             user_output(
-                click.style("⚠ ", fg="yellow")
-                + f"Removing stale assignment for '{assignment.branch_name}' "
+                click.style("✓ ", fg="green")
+                + f"Removed stale assignment for '{assignment.branch_name}' "
                 + f"in {assignment.slot_name} (worktree path missing)"
             )
             removed_count += 1
@@ -269,8 +269,8 @@ def sync_pool_assignments(
 
         if assignment.branch_name not in all_heads:
             user_output(
-                click.style("⚠ ", fg="yellow")
-                + f"Removing stale assignment for '{assignment.branch_name}' "
+                click.style("✓ ", fg="green")
+                + f"Removed stale assignment for '{assignment.branch_name}' "
                 + f"in {assignment.slot_name} (branch deleted)"
             )
             removed_count += 1
@@ -280,8 +280,8 @@ def sync_pool_assignments(
 
         if actual_branch is not None and is_placeholder_branch(actual_branch):
             user_output(
-                click.style("⚠ ", fg="yellow")
-                + f"Removing stale assignment for '{assignment.branch_name}' "
+                click.style("✓ ", fg="green")
+                + f"Removed stale assignment for '{assignment.branch_name}' "
                 + f"in {assignment.slot_name} (placeholder branch)"
             )
             removed_count += 1
@@ -362,8 +362,8 @@ def _validate_existing_assignment(
     if not existing.worktree_path.exists():
         # Worktree directory doesn't exist - remove stale assignment
         user_output(
-            click.style("⚠ ", fg="yellow")
-            + f"Removing stale assignment for '{branch_name}' "
+            click.style("✓ ", fg="green")
+            + f"Removed stale assignment for '{branch_name}' "
             + f"(worktree {existing.worktree_path} no longer exists)"
         )
         new_assignments = tuple(a for a in state.assignments if a.slot_name != existing.slot_name)
