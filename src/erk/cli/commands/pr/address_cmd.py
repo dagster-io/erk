@@ -6,9 +6,8 @@ For remote resolution via GitHub Actions, use `erk launch pr-address`.
 
 import click
 
-from erk.cli.ensure import Ensure
-from erk.cli.output import stream_command_with_feedback
 from erk.core.context import ErkContext
+from erk_shared.context.types import InteractiveAgentConfig
 
 
 @click.command("address")
@@ -49,30 +48,44 @@ def address(ctx: ErkContext, *, dangerous: bool, safe: bool) -> None:
     \b
       erk config set live_dangerously false
     """
-    effective_dangerous = Ensure.resolve_dangerous(ctx, dangerous=dangerous, safe=safe)
+    if dangerous and safe:
+        raise click.UsageError("--dangerous and --safe are mutually exclusive")
 
-    cwd = ctx.cwd
+    # Get interactive agent config
+    if ctx.global_config is None:
+        ia_config = InteractiveAgentConfig.default()
+    else:
+        ia_config = ctx.global_config.interactive_agent
 
-    # Check Claude availability
-    executor = ctx.prompt_executor
-    Ensure.invariant(
-        executor.is_available(),
-        "Claude CLI is required for addressing PR comments.\n\n"
-        "Install from: https://claude.com/download",
-    )
+    # Map flags to config overrides
+    if dangerous:
+        config = ia_config.with_overrides(
+            permission_mode_override="edits",
+            model_override=None,
+            dangerous_override=True,
+            allow_dangerous_override=None,
+        )
+    elif safe:
+        config = ia_config.with_overrides(
+            permission_mode_override="safe",
+            model_override=None,
+            dangerous_override=None,
+            allow_dangerous_override=None,
+        )
+    else:
+        # Default: edits mode, allow dangerous when live_dangerously is set
+        live_dangerously = (
+            ctx.global_config.live_dangerously if ctx.global_config is not None else True
+        )
+        config = ia_config.with_overrides(
+            permission_mode_override="edits",
+            model_override=None,
+            dangerous_override=None,
+            allow_dangerous_override=True if live_dangerously else None,
+        )
 
-    click.echo(click.style("Invoking Claude to address PR comments...", fg="yellow"))
-
-    # Execute PR address command via Claude
-    result = stream_command_with_feedback(
-        executor=executor,
-        command="/erk:pr-address",
-        worktree_path=cwd,
-        dangerous=effective_dangerous,
-        permission_mode="edits",
-    )
-
-    if not result.success:
-        raise click.ClickException(result.error_message or "PR comment addressing failed")
-
-    click.echo(click.style("\n\u2705 PR comments addressed!", fg="green", bold=True))
+    # Replace current process with Claude
+    try:
+        ctx.agent_launcher.launch_interactive(config, command="/erk:pr-address")
+    except RuntimeError as e:
+        raise click.ClickException(str(e)) from e

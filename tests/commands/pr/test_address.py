@@ -1,196 +1,107 @@
 """Tests for erk pr address command (local variant)."""
 
+from pathlib import Path
+
 from click.testing import CliRunner
 
-from erk.cli.commands.pr import pr_group
+from erk.cli.cli import cli
 from erk_shared.context.types import GlobalConfig
-from tests.fakes.gateway.git import FakeGit
-from tests.fakes.tests.prompt_executor import FakePromptExecutor
-from tests.test_utils.context_builders import build_workspace_test_context
-from tests.test_utils.env_helpers import erk_isolated_fs_env
+from tests.fakes.gateway.agent_launcher import FakeAgentLauncher
+from tests.test_utils.test_context import context_for_test
 
 
-def test_pr_address_success() -> None:
-    """Test successful local address when Claude is available."""
+def test_pr_address_launches_with_correct_command_and_permission_mode() -> None:
+    """Test that address launches agent with /erk:pr-address command in edits mode."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner, env_overrides=None) as env:
-        git = FakeGit(
-            git_common_dirs={env.cwd: env.git_dir},
-            local_branches={env.cwd: ["main", "feature-branch"]},
-            default_branches={env.cwd: "main"},
-            trunk_branches={env.cwd: "main"},
-            current_branches={env.cwd: "feature-branch"},
-        )
+    fake_launcher = FakeAgentLauncher()
+    ctx = context_for_test(agent_launcher=fake_launcher)
 
-        executor = FakePromptExecutor(available=True)
+    result = runner.invoke(cli, ["pr", "address"], obj=ctx)
 
-        ctx = build_workspace_test_context(env, git=git, prompt_executor=executor)
-
-        result = runner.invoke(pr_group, ["address", "--dangerous"], obj=ctx)
-
-        assert result.exit_code == 0
-        assert "PR comments addressed!" in result.output
-
-        # Claude should be invoked for PR comment addressing
-        assert len(executor.executed_commands) == 1
-        command, _, dangerous_flag, _, _ = executor.executed_commands[0]
-        assert command == "/erk:pr-address"
-        assert dangerous_flag is True
+    assert result.exit_code == 0
+    assert fake_launcher.launch_called
+    assert fake_launcher.last_call is not None
+    assert fake_launcher.last_call.command == "/erk:pr-address"
+    assert fake_launcher.last_call.config.permission_mode == "edits"
 
 
-def test_pr_address_succeeds_without_dangerous_flag() -> None:
-    """Test that command succeeds without --dangerous when live_dangerously=True (default)."""
+def test_pr_address_dangerous_flag_sets_dangerous_true() -> None:
+    """Test that --dangerous sets dangerous=True on config."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner, env_overrides=None) as env:
-        git = FakeGit(
-            git_common_dirs={env.cwd: env.git_dir},
-            local_branches={env.cwd: ["main", "feature-branch"]},
-            default_branches={env.cwd: "main"},
-            trunk_branches={env.cwd: "main"},
-            current_branches={env.cwd: "feature-branch"},
-        )
+    fake_launcher = FakeAgentLauncher()
+    ctx = context_for_test(agent_launcher=fake_launcher)
 
-        executor = FakePromptExecutor(available=True)
+    result = runner.invoke(cli, ["pr", "address", "--dangerous"], obj=ctx)
 
-        ctx = build_workspace_test_context(env, git=git, prompt_executor=executor)
-
-        result = runner.invoke(pr_group, ["address"], obj=ctx)
-
-        assert result.exit_code == 0
-        assert "PR comments addressed!" in result.output
+    assert result.exit_code == 0
+    assert fake_launcher.last_call is not None
+    assert fake_launcher.last_call.config.dangerous is True
+    assert fake_launcher.last_call.config.permission_mode == "edits"
 
 
-def test_pr_address_safe_flag_disables_dangerous() -> None:
-    """Test that --safe overrides live_dangerously=True and passes dangerous=False."""
+def test_pr_address_safe_flag_overrides_permission_mode() -> None:
+    """Test that --safe overrides permission mode to safe."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner, env_overrides=None) as env:
-        git = FakeGit(
-            git_common_dirs={env.cwd: env.git_dir},
-            local_branches={env.cwd: ["main", "feature-branch"]},
-            default_branches={env.cwd: "main"},
-            trunk_branches={env.cwd: "main"},
-            current_branches={env.cwd: "feature-branch"},
-        )
+    fake_launcher = FakeAgentLauncher()
+    ctx = context_for_test(agent_launcher=fake_launcher)
 
-        executor = FakePromptExecutor(available=True)
+    result = runner.invoke(cli, ["pr", "address", "--safe"], obj=ctx)
 
-        ctx = build_workspace_test_context(env, git=git, prompt_executor=executor)
-
-        result = runner.invoke(pr_group, ["address", "--safe"], obj=ctx)
-
-        assert result.exit_code == 0
-        assert "PR comments addressed!" in result.output
-        # Verify dangerous=False was passed to executor
-        command, _, dangerous_flag, _, _ = executor.executed_commands[0]
-        assert command == "/erk:pr-address"
-        assert dangerous_flag is False
+    assert result.exit_code == 0
+    assert fake_launcher.last_call is not None
+    assert fake_launcher.last_call.config.permission_mode == "safe"
 
 
 def test_pr_address_dangerous_and_safe_mutually_exclusive() -> None:
     """Test that --dangerous and --safe together produce an error."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner, env_overrides=None) as env:
-        git = FakeGit(
-            git_common_dirs={env.cwd: env.git_dir},
-            local_branches={env.cwd: ["main", "feature-branch"]},
-            default_branches={env.cwd: "main"},
-            trunk_branches={env.cwd: "main"},
-            current_branches={env.cwd: "feature-branch"},
-        )
+    fake_launcher = FakeAgentLauncher()
+    ctx = context_for_test(agent_launcher=fake_launcher)
 
-        executor = FakePromptExecutor(available=True)
+    result = runner.invoke(cli, ["pr", "address", "--dangerous", "--safe"], obj=ctx)
 
-        ctx = build_workspace_test_context(env, git=git, prompt_executor=executor)
-
-        result = runner.invoke(pr_group, ["address", "--dangerous", "--safe"], obj=ctx)
-
-        assert result.exit_code != 0
-        assert "mutually exclusive" in result.output
+    assert result.exit_code != 0
+    assert "mutually exclusive" in result.output
 
 
-def test_pr_address_live_dangerously_false_runs_safe() -> None:
-    """Test that live_dangerously=False makes command run in safe mode by default."""
+def test_pr_address_shows_error_when_agent_not_installed() -> None:
+    """Test that address shows error when agent CLI is not installed."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner, env_overrides=None) as env:
-        git = FakeGit(
-            git_common_dirs={env.cwd: env.git_dir},
-            local_branches={env.cwd: ["main", "feature-branch"]},
-            default_branches={env.cwd: "main"},
-            trunk_branches={env.cwd: "main"},
-            current_branches={env.cwd: "feature-branch"},
-        )
+    fake_launcher = FakeAgentLauncher(
+        launch_error="Claude CLI not found\nInstall from: https://claude.com/download"
+    )
+    ctx = context_for_test(agent_launcher=fake_launcher)
 
-        executor = FakePromptExecutor(available=True)
+    result = runner.invoke(cli, ["pr", "address"], obj=ctx)
 
-        global_config = GlobalConfig.test(
-            env.erk_root,
-            live_dangerously=False,
-        )
-
-        ctx = build_workspace_test_context(
-            env,
-            git=git,
-            prompt_executor=executor,
-            global_config=global_config,
-        )
-
-        result = runner.invoke(pr_group, ["address"], obj=ctx)
-
-        assert result.exit_code == 0
-        assert "PR comments addressed!" in result.output
-        # Verify dangerous=False was passed to executor
-        command, _, dangerous_flag, _, _ = executor.executed_commands[0]
-        assert command == "/erk:pr-address"
-        assert dangerous_flag is False
+    assert result.exit_code == 1
+    assert "Claude CLI not found" in result.output
 
 
-def test_pr_address_claude_not_available() -> None:
-    """Test error when Claude is not installed."""
+def test_pr_address_default_allows_dangerous_when_live_dangerously() -> None:
+    """Test that default mode sets allow_dangerous=True when live_dangerously is true."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner, env_overrides=None) as env:
-        git = FakeGit(
-            git_common_dirs={env.cwd: env.git_dir},
-            local_branches={env.cwd: ["main", "feature-branch"]},
-            default_branches={env.cwd: "main"},
-            trunk_branches={env.cwd: "main"},
-            current_branches={env.cwd: "feature-branch"},
-        )
+    fake_launcher = FakeAgentLauncher()
+    ctx = context_for_test(agent_launcher=fake_launcher)
 
-        executor = FakePromptExecutor(available=False)
+    result = runner.invoke(cli, ["pr", "address"], obj=ctx)
 
-        ctx = build_workspace_test_context(env, git=git, prompt_executor=executor)
-
-        result = runner.invoke(pr_group, ["address", "--dangerous"], obj=ctx)
-
-        assert result.exit_code != 0
-        assert "Claude CLI is required" in result.output
-        assert "claude.com/download" in result.output
-
-        # Verify no command was executed
-        assert len(executor.executed_commands) == 0
+    assert result.exit_code == 0
+    assert fake_launcher.last_call is not None
+    assert fake_launcher.last_call.config.allow_dangerous is True
 
 
-def test_pr_address_fails_on_command_error() -> None:
-    """Test that command fails when slash command execution fails."""
+def test_pr_address_default_no_allow_dangerous_when_live_dangerously_false() -> None:
+    """Test that allow_dangerous is not set when live_dangerously=False."""
     runner = CliRunner()
-    with erk_isolated_fs_env(runner, env_overrides=None) as env:
-        git = FakeGit(
-            git_common_dirs={env.cwd: env.git_dir},
-            local_branches={env.cwd: ["main", "feature-branch"]},
-            default_branches={env.cwd: "main"},
-            trunk_branches={env.cwd: "main"},
-            current_branches={env.cwd: "feature-branch"},
-        )
+    fake_launcher = FakeAgentLauncher()
+    ctx = context_for_test(
+        agent_launcher=fake_launcher,
+        global_config=GlobalConfig.test(Path("/test/erks"), live_dangerously=False),
+    )
 
-        executor = FakePromptExecutor(
-            available=True,
-            command_should_fail=True,
-        )
+    result = runner.invoke(cli, ["pr", "address"], obj=ctx)
 
-        ctx = build_workspace_test_context(env, git=git, prompt_executor=executor)
-
-        result = runner.invoke(pr_group, ["address", "--dangerous"], obj=ctx)
-
-        assert result.exit_code != 0
-        # Error message from FakePromptExecutor
-        assert "failed" in result.output.lower()
+    assert result.exit_code == 0
+    assert fake_launcher.last_call is not None
+    assert fake_launcher.last_call.config.allow_dangerous is False
