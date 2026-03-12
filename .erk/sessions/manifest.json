@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "pr_number": 9218,
+  "sessions": [
+    {
+      "session_id": "8fee6cc7-ee34-4a66-a993-e6358f2c4382",
+      "stage": "impl",
+      "source": "local",
+      "uploaded_at": "2026-03-12T13:25:32.302330+00:00",
+      "files": [
+        "impl-8fee6cc7-ee34-4a66-a993-e6358f2c4382-8fee6cc7-ee34-4a66-a993-e6358f2c4382-part1.xml",
+        "impl-8fee6cc7-ee34-4a66-a993-e6358f2c4382-8fee6cc7-ee34-4a66-a993-e6358f2c4382-part2.xml"
+      ],
+      "user_turns": 2,
+      "duration_minutes": 5,
+      "raw_size_kb": 559,
+      "xml_size_kb": 80,
+      "git_branch": "plnd/local-review-namespace-03-12-1318"
+    }
+  ]
+}
