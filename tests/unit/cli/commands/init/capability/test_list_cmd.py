@@ -135,7 +135,9 @@ def test_capability_list_sorts_alphabetically_within_groups() -> None:
 
         # Find positions of all headers and capability lines
         header_positions = [(m.start(), m.group(1)) for m in header_pattern.finditer(result.output)]
-        cap_positions = [(m.start(), m.group(1)) for m in capability_pattern.finditer(result.output)]
+        cap_positions = [
+            (m.start(), m.group(1)) for m in capability_pattern.finditer(result.output)
+        ]
 
         # Build groups: assign each capability to the nearest preceding header
         groups: dict[str, list[str]] = {}
