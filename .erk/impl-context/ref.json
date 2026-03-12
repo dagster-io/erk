@@ -1,4 +1,0 @@
-{
-  "provider": "github-draft-pr",
-  "title": "Fix: sync_pool_assignments doesn't clean up stale slot assignments"
-}
