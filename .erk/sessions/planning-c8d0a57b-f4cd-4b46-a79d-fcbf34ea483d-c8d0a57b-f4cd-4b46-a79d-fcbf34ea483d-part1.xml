@@ -1,0 +1,1097 @@
+<session>
+  <meta branch="master" />
+  <meta model="claude-opus-4-6" />
+  <user>  ➜  (git:erk) (wt:erk-slot-63) (br:plnd/delete-planning-skill-03-12-1333) | (gh:#9223 st:👀 chks:[✅:15 🚫:4]) │ (O)                                                                       68021 tokens
+  ⏸ plan mode on (shift+tab to cycle) · PR #9223                                                                                                               current:  · latest:  Checking for updates
+
+Resume this session with:
+claude --resume 977f75d9-a6c3-476d-9d8d-d8d9c2c851e9
+➜  erk-slot-63 git:(plnd/delete-planning-skill-03-12-1333) source "$(erk br co --new-slot --for-plan 9228 --script)" &amp;&amp; erk implement -d
+Checking out PR branch: plnd/fix-outdated-skill-content-03-12-1448
+
+Current pool assignments:
+  erk-slot-26: P5504-create-exhaustive-gastown-01-22-0700 (assigned 2026-01-22T07:00:02.264159)
+  erk-slot-30: P5583-add-model-selection-to-le-01-22-0912 (assigned 2026-01-22T09:12:22.110048)
+  erk-slot-18: P5817-remote-pr-address-workflo-01-24-0645 (assigned 2026-01-24T06:45:48.213123)
+  erk-slot-22: P5851-erk-plan-create-pr-addres-01-24-1153 (assigned 2026-01-24T11:53:01.976319)
+  erk-slot-31: P6063-erk-plan-erk-workflow-run-01-26-0115 (assigned 2026-01-26T01:15:59.219616)
+  erk-slot-46: P6461-erk-plan-create-local-int-02-01-0444 (assigned 2026-02-01T04:59:54.846763)
+  erk-slot-52: P6797-erk-plan-subsystem-ground-02-07-1801 (assigned 2026-02-07T18:02:03.179324)
+  erk-slot-13: P7016-erk-plan-audit-plan-docs-02-15-0504 (assigned 2026-02-15T06:03:47.429672)
+  erk-slot-23: P7189-erk-plan-migrate-plan-upd-02-16-0742 (assigned 2026-02-16T07:46:30.131368)
+  erk-slot-25: test-strategy (assigned 2026-02-18T16:49:15.517615)
+  erk-slot-43: plan-plan-draft-pr-plans-in-ci-02-20-1259 (assigned 2026-02-20T13:00:08.048161)
+  erk-slot-24: P7637-erk-plan-fix-tui-plan-bod-02-19-1837 (assigned 2026-02-22T09:00:21.374265)
+  erk-slot-27: planned/O7775-erk-objective-pla-02-22-0858 (assigned 2026-02-22T12:29:59.491044)
+  erk-slot-33: planned/O7823-erk-objective-pla-02-22-0859 (assigned 2026-02-22T14:00:04.005236)
+  erk-slot-34: plnd/O7775-erk-objective-plan-7-02-22-1244 (assigned 2026-02-22T14:00:29.248289)
+  erk-slot-32: plnd/plan-commit-plan-to-branch-02-22-2339 (assigned 2026-02-22T16:02:26.859752)
+  erk-slot-38: stack-me (assigned 2026-02-23T07:03:07.449032)
+  erk-slot-35: plnd/plan-duplicate-plan-detect-02-24-0056 (assigned 2026-02-23T17:47:16.696601)
+  erk-slot-40: plnd/add-objective-blockers-col-02-24-0053 (assigned 2026-02-24T02:40:46.631872)
+  erk-slot-41: plnd/update-changelog-02-26-0936 (assigned 2026-02-26T09:43:20.782278)
+  erk-slot-51: plnd/link-pr-to-objective-nodes-02-26-0518 (assigned 2026-02-26T10:13:38.211199)
+  erk-slot-47: plnd/O8384-restructure-nav-comp-02-27-1005 (assigned 2026-02-27T10:07:13.936702)
+  erk-slot-59: plnd/resilient-plan-header-reco-02-27-1152 (assigned 2026-02-27T15:06:33.239017)
+  erk-slot-36: plnd/tui-learn-plan-toast-02-28-1651 (assigned 2026-02-28T17:13:56.939362)
+  erk-slot-48: plnd/add-session-push-fetch-02-28-1911 (assigned 2026-02-28T22:22:35.252185)
+  erk-slot-55: plnd/fix-duplicate-gt-submit-03-01-0813 (assigned 2026-03-01T08:15:51.442674)
+  erk-slot-54: plnd/doc-mid-rebase-behavior-03-01-1326 (assigned 2026-03-01T13:56:41.115097)
+  erk-slot-56: plnd/eliminate-master-checkout-03-01-1556 (assigned 2026-03-01T18:33:22.274684)
+  erk-slot-57: plnd/O7813-erk-objective-plan-7-03-01-2108 (assigned 2026-03-02T01:56:45.320570)
+  erk-slot-37: plnd/fix-wheel-skill-sync-03-02-0628 (assigned 2026-03-02T06:54:27.312359)
+  erk-slot-60: plnd/auto-execute-activation-03-02-2051 (assigned 2026-03-02T20:54:24.599531)
+  erk-slot-61: plnd/fix-down-root-worktree-03-03-0247 (assigned 2026-03-03T02:48:25.004757)
+  erk-slot-02: plnd/e2e-agent-sdk-tests-03-03-0954 (assigned 2026-03-03T10:06:49.572465)
+  erk-slot-01: plnd/O8762-add-frontmatter-life-03-05-0831 (assigned 2026-03-05T10:49:57.537363)
+  erk-slot-06: plnd/split-test-capabilities-03-06-0146 (assigned 2026-03-06T04:44:23.575619)
+  erk-slot-05: plnd/O8470-tui-incremental-disp-03-07-0151 (assigned 2026-03-06T18:29:44.220478)
+  erk-slot-09: plnd/fix-land-learn-remote-fetc-03-06-2127 (assigned 2026-03-07T10:21:15.502290)
+  erk-slot-03: plnd/add-check-superceded-03-07-2048 (assigned 2026-03-07T16:52:47.597092)
+  erk-slot-04: plnd/add-objective-inference-03-07-1548 (assigned 2026-03-07T16:53:10.097371)
+  erk-slot-10: plnd/update-gateway-abstraction-03-07-1827 (assigned 2026-03-07T18:27:36.285830)
+  erk-slot-08: plnd/fix-objective-auto-close-03-07-2101 (assigned 2026-03-07T21:15:17.287516)
+  erk-slot-07: plnd/spike-skills-cli-backend-03-09-0604 (assigned 2026-03-09T07:14:19.769158)
+  erk-slot-14: plnd/fix-objective-plan-backlin-03-09-1638 (assigned 2026-03-09T17:42:28.759131)
+  erk-slot-11: plnd/multi-node-roadmap-markers-03-09-2244 (assigned 2026-03-09T20:24:59.788729)
+  erk-slot-12: plnd/O9109-rename-exec-json-fie-03-10-0015 (assigned 2026-03-09T20:37:24.494601)
+  erk-slot-17: agentclick-machine-cli-plan.md (assigned 2026-03-09T20:51:33.793220)
+  erk-slot-19: plnd/machine-cli-adapters-03-09-2204 (assigned 2026-03-09T22:05:33.588608)
+  erk-slot-21: plnd/create-erk-tui-skill-03-10-0421 (assigned 2026-03-10T04:50:48.046725)
+  erk-slot-15: plnd/O9109-update-help-strings-03-10-0937 (assigned 2026-03-10T06:25:08.445775)
+  erk-slot-39: plnd/O9109-automate-obj-node-up-03-10-1252 (assigned 2026-03-10T10:44:17.777498)
+  erk-slot-44: plnd/add-debug-impl-run-03-10-1308 (assigned 2026-03-10T11:00:22.651990)
+  erk-slot-16: plnd/address-debug-impl-review-03-10-1148 (assigned 2026-03-10T11:50:41.755677)
+  erk-slot-42: plnd/show-planning-run-id-03-10-1209 (assigned 2026-03-10T13:39:10.581305)
+  erk-slot-45: plnd/add-repo-check-cmd-03-10-1211 (assigned 2026-03-10T13:39:58.928860)
+  erk-slot-50: plnd/O9009-add-json-pr-dispatch-03-10-1728 (assigned 2026-03-10T13:57:44.537894)
+  erk-slot-49: plnd/O9109-rename-planbackend-m-03-10-2345 (assigned 2026-03-11T06:45:38.313595)
+  erk-slot-20: plnd/replace-rebase-resolve-con-03-11-1326 (assigned 2026-03-11T15:23:39.725203)
+  erk-slot-58: plnd/docs-v2-code-reviews-03-12-1314 (assigned 2026-03-12T13:15:30.110616)
+  erk-slot-62: plnd/local-review-namespace-03-12-1318 (assigned 2026-03-12T13:20:04.036599)
+  erk-slot-64: plnd/teleport-helpstring-docs-03-12-1330 (assigned 2026-03-12T13:32:53.832755)
+  erk-slot-63: plnd/delete-planning-skill-03-12-1333 (assigned 2026-03-12T13:35:02.812115)
+  erk-slot-53: plnd/add-teleport-dry-run-03-12-1352 (assigned 2026-03-12T13:55:10.621377)
+
+Pool is full (64 slots).
+Oldest assignment: P5504-create-exhaustive-gastown-01-22-0700 (erk-slot-26)
+Unassign 'P5504-create-exhaustive-gastown-01-22-0700' to make room? [y/N]:
+
+we need to clean up slots. this also indicates we have a bug in the slot management system</user>
+  <usage input_tokens="3" cache_creation_input_tokens="19565" cache_read_input_tokens="9131" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 19565}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me explore the slot management system and understand the current state.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="19565" cache_read_input_tokens="9131" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 19565}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01N3dKy32thzN9hT7g1jAeMK">
+    <param name="subagent_type">Explore</param>
+    <param name="description">Explore slot management system</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 509 chars]...tests/
+
+Be thorough - trace the full lifecycle from assignment to (expected) unassignment.</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="19565" cache_read_input_tokens="9131" output_tokens="424" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 19565, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01N3dKy32thzN9hT7g1jAeMK">
+Now I have comprehensive information. Let me create a detailed report of the slot management system:
+
+## Erk Slot Management System - Complete Overview
+
+Based on my thorough exploration of the codebase and documentation, here's a comprehensive understanding of the slot management system:
+
+### 1. **Slot Assignment &amp; Allocation**
+
+**Location**: `/Users/schrockn/code/erk/src/erk/cli/commands/slot/common.py`
+
+**Core Function**: `allocate_slot_for_branch()` implements unified allocation with these steps:
+
+1. **Check Existing Assignment** - Returns immediately if branch already has a slot (idempotent)
+2. **Fast Path - Reuse Inactive Slot** - `find_inactive_slot()` searches for:
+   - Worktrees that exist in git registry
+   - Not assigned to any branch
+   - No staged/modified tracked files (untracked files are safe)
+3. **Slow Path - Create New Slot** - `find_next_available_slot()` finds unused slot number
+4. **Pool Full - Eviction** - LRU eviction by `assigned_at` timestamp (oldest first)
+
+**State Sync**: `sync_pool_assignments()` runs BEFORE allocation decisions (line 609 in common.py), reconciling `pool.json` with actual git branches.
+
+---
+
+### 2. **Where Slot State is Persisted**
+
+**Location**: `~/.erk/repos/{repo_name}/pool.json`
+
+**Data Structure** (`src/erk/core/worktree_pool.py`):
+```json
+
+... [189 lines omitted] ...
+
+   - Errors if branch already checked out elsewhere
+  </tool_result>
+  <assistant>Good overview. Now let me check the actual state — how many of these 64 slots have PRs that are already merged/closed, and what `erk slot repair` would find.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3168" cache_read_input_tokens="28696" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3168}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_019tbu7gJgYq6MGLCRX2nN8S">
+    <param name="command">cat ~/.erk/repos/erk/pool.json | python3 -c "import json,sys; d=json.load(sys.stdin); prin...[truncated 14 chars]...); print(f'Slots: {len(d[\"slots\"])}'); print(f'Assignments: {len(d[\"assignments\"])}')"</param>
+    <param name="description">Check pool.json stats</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3168" cache_read_input_tokens="28696" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3168}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019tbu7gJgYq6MGLCRX2nN8S">
+Pool size: 64
+Slots: 7
+Assignments: 62
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01EhFVCn1GuR2RbJpKN3kjHr">
+    <param name="command">git worktree list 2&gt;/dev/null | wc -l</param>
+    <param name="description">Count active git worktrees</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3168" cache_read_input_tokens="28696" output_tokens="301" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3168, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01EhFVCn1GuR2RbJpKN3kjHr">
+      67
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01Sddi2FMg2pByvcB7bAxk7X">
+    <param name="command">cat ~/.erk/repos/erk/pool.json | python3 -c "
+import json, sys, subprocess
+
+d = json.load(...[truncated 408 chars]...() else '✗'
+    print(f'{assigned} {slot:15s} {exists} {branch}')
+" 2&gt;/dev/null | head -70</param>
+    <param name="description">List all assignments with branch existence</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="450" cache_read_input_tokens="31864" output_tokens="289" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 450, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Sddi2FMg2pByvcB7bAxk7X">
+2026-01-22 erk-slot-30     ✗ P5583-add-model-selection-to-le-01-22-0912
+2026-01-24 erk-slot-18     ✗ P5817-remote-pr-address-workflo-01-24-0645
+2026-01-24 erk-slot-22     ✗ P5851-erk-plan-create-pr-addres-01-24-1153
+2026-01-26 erk-slot-31     ✗ P6063-erk-plan-erk-workflow-run-01-26-0115
+2026-02-01 erk-slot-46     ✗ P6461-erk-plan-create-local-int-02-01-0444
+2026-02-07 erk-slot-52     ✗ P6797-erk-plan-subsystem-ground-02-07-1801
+2026-02-15 erk-slot-13     ✗ P7016-erk-plan-audit-plan-docs-02-15-0504
+2026-02-16 erk-slot-23     ✗ P7189-erk-plan-migrate-plan-upd-02-16-0742
+2026-02-18 erk-slot-25     ✗ test-strategy
+2026-02-20 erk-slot-43     ✗ plan-plan-draft-pr-plans-in-ci-02-20-1259
+2026-02-22 erk-slot-24     ✗ P7637-erk-plan-fix-tui-plan-bod-02-19-1837
+2026-02-22 erk-slot-27     ✗ planned/O7775-erk-objective-pla-02-22-0858
+2026-02-22 erk-slot-33     ✗ planned/O7823-erk-objective-pla-02-22-0859
+2026-02-22 erk-slot-34     ✗ plnd/O7775-erk-objective-plan-7-02-22-1244
+2026-02-22 erk-slot-32     ✗ plnd/plan-commit-plan-to-branch-02-22-2339
+2026-02-23 erk-slot-38     ✗ stack-me
+2026-02-23 erk-slot-35     ✗ plnd/plan-duplicate-plan-detect-02-24-0056
+2026-02-24 erk-slot-40     ✗ plnd/add-objective-blockers-col-02-24-0053
+2026-02-26 erk-slot-41     ✗ plnd/update-changelog-02-26-0936
+2026-02-26 erk-slot-51     ✗ plnd/link-pr-to-objective-nodes-02-26-0518
+2026-02-27 erk-slot-47     ✓ plnd/O8384-restructure-nav-comp-02-27-1005
+2026-02-27 erk-slot-59     ✗ plnd/resilient-plan-header-reco-02-27-1152
+2026-02-28 erk-slot-36     ✗ plnd/tui-learn-plan-toast-02-28-1651
+2026-02-28 erk-slot-48     ✗ plnd/add-session-push-fetch-02-28-1911
+2026-03-01 erk-slot-55     ✗ plnd/fix-duplicate-gt-submit-03-01-0813
+2026-03-01 erk-slot-54     ✗ plnd/doc-mid-rebase-behavior-03-01-1326
+2026-03-01 erk-slot-56     ✗ plnd/eliminate-master-checkout-03-01-1556
+2026-03-02 erk-slot-57     ✓ plnd/O7813-erk-objective-plan-7-03-01-2108
+2026-03-02 erk-slot-37     ✗ plnd/fix-wheel-skill-sync-03-02-0628
+2026-03-02 erk-slot-60     ✗ plnd/auto-execute-activation-03-02-2051
+
+... [32 lines omitted] ...
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="2579" cache_read_input_tokens="32314" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2579}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Interesting — 20+ assignments reference branches that no longer exist locally (✗). Let me look at why `sync_pool_assignments()` isn't cleaning these up.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2579" cache_read_input_tokens="32314" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2579}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01WSU8Kp1J18aNRoFQUtNnMR">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/slot/common.py</param>
+    <param name="offset">580</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2579" cache_read_input_tokens="32314" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2579}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01WSU8Kp1J18aNRoFQUtNnMR">
+   580→    The branch MUST already exist before calling this function.
+   581→
+   582→    Args:
+   583→        ctx: Erk context (uses ctx.time.now() for testable timestamps)
+   584→        repo: Repository context with pool_json_path and worktrees_dir
+   585→        branch_name: Name of existing branch to assign
+   586→        force: Auto-unassign oldest if pool is full (no interactive prompt)
+   587→        reuse_inactive_slots: Try to reuse unassigned worktrees first
+   588→        cleanup_artifacts: Remove .erk/impl-context/ and .erk/scratch/ on worktree reuse
+   589→
+   590→    Returns:
+   591→        SlotAllocationResult with slot info
+   592→
+   593→    Raises:
+   594→        SystemExit(1): If pool is full and user declined to unassign
+   595→    """
+   596→    ensure_erk_metadata_dir(repo)
+   597→
+   598→    # Get pool size from config or default
+   599→    pool_size = get_pool_size(ctx)
+   600→
+   601→    # Load or create pool state
+   602→    state = load_pool_state(repo.pool_json_path)
+   603→    if state is None:
+   604→        state = PoolState(
+   605→            version="1.0",
+   606→            pool_size=pool_size,
+   607→            slots=(),
+   608→            assignments=(),
+   609→        )
+
+... [70 lines omitted] ...
+  </tool_result>
+  <tool_use name="Grep" id="toolu_017taLziT7jMvHvWgYTXh1Hy">
+    <param name="pattern">def sync_pool_assignments</param>
+    <param name="path">/Users/schrockn/code/erk/src/erk/cli/commands/slot</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2579" cache_read_input_tokens="32314" output_tokens="360" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2579, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_017taLziT7jMvHvWgYTXh1Hy">
+src/erk/cli/commands/slot/common.py:226:def sync_pool_assignments(
+  </tool_result>
+  <tool_use name="Read" id="toolu_019BVQdJ96ar95G3Aykj5Wxd">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/slot/common.py</param>
+    <param name="offset">226</param>
+    <param name="limit">120</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1816" cache_read_input_tokens="34893" output_tokens="113" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1816, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_019BVQdJ96ar95G3Aykj5Wxd">
+   226→def sync_pool_assignments(
+   227→    state: PoolState,
+   228→    git: Git,
+   229→    pool_json_path: Path,
+   230→) -&gt; PoolSyncResult:
+   231→    """Sync pool assignments with actual git branch state.
+   232→
+   233→    For each assignment, checks the actual branch in the worktree and
+   234→    updates pool.json when mismatches are detected. This handles the case
+   235→    where users manually run ``gt create`` or ``git checkout`` in a pool
+   236→    slot, causing the recorded branch to diverge from the actual branch.
+   237→
+   238→    Args:
+   239→        state: Current pool state
+   240→        git: Git gateway for branch operations
+   241→        pool_json_path: Path to pool.json for saving updated state
+   242→
+   243→    Returns:
+   244→        PoolSyncResult with potentially updated state and count of synced assignments
+   245→    """
+   246→    updated_assignments: list[SlotAssignment] = []
+   247→    synced_count = 0
+   248→
+   249→    for assignment in state.assignments:
+   250→        if not assignment.worktree_path.exists():
+   251→            updated_assignments.append(assignment)
+   252→            continue
+   253→
+   254→        actual_branch = git.branch.get_current_branch(assignment.worktree_path)
+   255→
+
+... [90 lines omitted] ...
+
+   314→    3. Worktree has wrong branch → fix it or error if uncommitted changes
+   327→        - both None: Should not happen (raises SystemExit on error)
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="3648" cache_read_input_tokens="34893" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3648}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Found it. In `sync_pool_assignments()` line 250-251: when the worktree path doesn't exist, it **keeps** the assignment. Let me check if the worktree dirs actually exist for the stale ones.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3648" cache_read_input_tokens="34893" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3648}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_014j2EQ4Pyvdj2Ws1N5ks3mg">
+    <param name="command">cat ~/.erk/repos/erk/pool.json | python3 -c "
+import json, sys, subprocess
+from pathlib im...[truncated 783 chars]...t:{\"✓\" if wt_exists else \"✗\"} br:✗ actual:{actual_branch:50s} {branch}')
+" 2&gt;/dev/null</param>
+    <param name="description">Check worktree and branch state for stale assignments</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3648" cache_read_input_tokens="34893" output_tokens="1147" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3648, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_014j2EQ4Pyvdj2Ws1N5ks3mg">
+erk-slot-30     wt:✓ br:✗ actual:__erk-slot-30-br-stub__                            P5583-add-model-selection-to-le-01-22-0912
+erk-slot-18     wt:✓ br:✗ actual:__erk-slot-18-br-stub__                            P5817-remote-pr-address-workflo-01-24-0645
+erk-slot-22     wt:✓ br:✗ actual:__erk-slot-22-br-stub__                            P5851-erk-plan-create-pr-addres-01-24-1153
+erk-slot-31     wt:✓ br:✗ actual:__erk-slot-31-br-stub__                            P6063-erk-plan-erk-workflow-run-01-26-0115
+erk-slot-46     wt:✓ br:✗ actual:__erk-slot-46-br-stub__                            P6461-erk-plan-create-local-int-02-01-0444
+erk-slot-52     wt:✓ br:✗ actual:__erk-slot-52-br-stub__                            P6797-erk-plan-subsystem-ground-02-07-1801
+erk-slot-13     wt:✓ br:✗ actual:__erk-slot-13-br-stub__                            P7016-erk-plan-audit-plan-docs-02-15-0504
+erk-slot-23     wt:✓ br:✗ actual:__erk-slot-23-br-stub__                            P7189-erk-plan-migrate-plan-upd-02-16-0742
+erk-slot-25     wt:✓ br:✗ actual:__erk-slot-25-br-stub__                            test-strategy
+erk-slot-43     wt:✓ br:✗ actual:__erk-slot-43-br-stub__                            plan-plan-draft-pr-plans-in-ci-02-20-1259
+erk-slot-24     wt:✓ br:✗ actual:__erk-slot-24-br-stub__                            P7637-erk-plan-fix-tui-plan-bod-02-19-1837
+erk-slot-27     wt:✓ br:✗ actual:__erk-slot-27-br-stub__                            planned/O7775-erk-objective-pla-02-22-0858
+erk-slot-33     wt:✓ br:✗ actual:__erk-slot-33-br-stub__                            planned/O7823-erk-objective-pla-02-22-0859
+erk-slot-34     wt:✓ br:✗ actual:__erk-slot-34-br-stub__                            plnd/O7775-erk-objective-plan-7-02-22-1244
+erk-slot-32     wt:✓ br:✗ actual:HEAD                                               plnd/plan-commit-plan-to-branch-02-22-2339
+erk-slot-38     wt:✓ br:✗ actual:HEAD                                               stack-me
+erk-slot-35     wt:✓ br:✗ actual:HEAD                                               plnd/plan-duplicate-plan-detect-02-24-0056
+erk-slot-40     wt:✓ br:✗ actual:HEAD                                               plnd/add-objective-blockers-col-02-24-0053
+erk-slot-41     wt:✓ br:✗ actual:HEAD                                               plnd/update-changelog-02-26-0936
+erk-slot-51     wt:✓ br:✗ actual:HEAD                                               plnd/link-pr-to-objective-nodes-02-26-0518
+erk-slot-59     wt:✓ br:✗ actual:HEAD                                               plnd/resilient-plan-header-reco-02-27-1152
+erk-slot-36     wt:✓ br:✗ actual:HEAD                                               plnd/tui-learn-plan-toast-02-28-1651
+erk-slot-48     wt:✓ br:✗ actual:HEAD                                               plnd/add-session-push-fetch-02-28-1911
+erk-slot-55     wt:✓ br:✗ actual:HEAD                                               plnd/fix-duplicate-gt-submit-03-01-0813
+erk-slot-54     wt:✓ br:✗ actual:HEAD                                               plnd/doc-mid-rebase-behavior-03-01-1326
+erk-slot-56     wt:✓ br:✗ actual:HEAD                                               plnd/eliminate-master-checkout-03-01-1556
+erk-slot-37     wt:✓ br:✗ actual:HEAD                                               plnd/fix-wheel-skill-sync-03-02-0628
+erk-slot-60     wt:✓ br:✗ actual:HEAD                                               plnd/auto-execute-activation-03-02-2051
+erk-slot-61     wt:✓ br:✗ actual:HEAD                                               plnd/fix-down-root-worktree-03-03-0247
+erk-slot-06     wt:✓ br:✗ actual:HEAD                                               plnd/split-test-capabilities-03-06-0146
+
+... [7 lines omitted] ...
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="2885" cache_read_input_tokens="38541" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2885}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>The pattern is clear. All 37 stale slots have:
+- Worktree exists (checked out to placeholder branch or detached HEAD)
+- Assigned branch no longer exists
+
+The bug: `sync_pool_assignments()` at line 265-267 explicitly **preserves** assignments when the worktree is on a placeholder branch. And at line 256-259 it preserves assignments when HEAD is detached. Both are cases where the slot has been cleaned up (branch deleted, placeholder checked out) but the assignment wasn't removed.
+
+Let me check the repair command and `find_inactive_slot` to understand the full picture.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2885" cache_read_input_tokens="38541" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2885}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_012VMQkH93jnvuFBcJoURSQL">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/slot/repair_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2885" cache_read_input_tokens="38541" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2885}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012VMQkH93jnvuFBcJoURSQL">
+     1→"""Slot repair command - remove stale assignments from pool state."""
+     2→
+     3→from dataclasses import dataclass
+     4→from pathlib import Path
+     5→
+     6→import click
+     7→
+     8→from erk.cli.commands.slot.diagnostics import (
+     9→    SyncIssue,
+    10→    SyncIssueCode,
+    11→    run_sync_diagnostics,
+    12→)
+    13→from erk.cli.core import discover_repo_context
+    14→from erk.core.context import ErkContext
+    15→from erk.core.worktree_pool import PoolState, SlotAssignment
+    16→from erk_shared.output.output import user_output
+    17→
+    18→# Issue codes that can be repaired by removing the assignment
+    19→REPAIRABLE_CODES = frozenset(
+    20→    {
+    21→        "orphan-state",
+    22→        "missing-branch",
+    23→        "git-registry-missing",
+    24→        "branch-mismatch",
+    25→        "closed-pr",
+    26→    }
+    27→)
+    28→
+    29→
+    30→@dataclass(frozen=True)
+
+... [208 lines omitted] ...
+
+   188→        user_output("Error: No pool configured. Run `erk slot create` first.")
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01Udcy9CCkbjuXztC7K9Kcdp">
+    <param name="pattern">def find_inactive_slot</param>
+    <param name="path">/Users/schrockn/code/erk/src/erk/cli/commands/slot</param>
+    <param name="output_mode">content</param>
+    <param name="-A">60</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2885" cache_read_input_tokens="38541" output_tokens="705" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2885, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Udcy9CCkbjuXztC7K9Kcdp">
+src/erk/cli/commands/slot/common.py:141:def find_inactive_slot(
+src/erk/cli/commands/slot/common.py-142-    state: PoolState,
+src/erk/cli/commands/slot/common.py-143-    git: Git,
+src/erk/cli/commands/slot/common.py-144-    repo_root: Path,
+src/erk/cli/commands/slot/common.py-145-) -&gt; tuple[str, Path] | None:
+/Users/schrockn/code/erk/src/erk/cli/commands/slot/common.py-146-    """Find an available managed slot for reuse.
+/Users/schrockn/code/erk/src/erk/cli/commands/slot/common.py-147-
+/Users/schrockn/code/erk/src/erk/cli/commands/slot/common.py-148-    Searches for worktrees that exist but are not assigned.
+/Users/schrockn/code/erk/src/erk/cli/commands/slot/common.py-149-    Uses git as source of truth for which worktrees exist.
+/Users/schrockn/code/erk/src/erk/cli/commands/slot/common.py-150-    Prefers slots in order (lowest slot number first).
+/Users/schrockn/code/erk/src/erk/cli/commands/slot/common.py-151-    Skips slots with uncommitted changes.
+/Users/schrockn/code/erk/src/erk/cli/commands/slot/common.py-152-
+src/erk/cli/commands/slot/common.py-153-    Args:
+src/erk/cli/commands/slot/common.py-154-        state: Current pool state
+src/erk/cli/commands/slot/common.py-155-        git: Git gateway for worktree operations
+src/erk/cli/commands/slot/common.py-156-        repo_root: Repository root path
+/Users/schrockn/code/erk/src/erk/cli/commands/slot/common.py-157-
+src/erk/cli/commands/slot/common.py-158-    Returns:
+/Users/schrockn/code/erk/src/erk/cli/commands/slot/common.py-159-        Tuple of (slot_name, worktree_path) for an available slot,
+/Users/schrockn/code/erk/src/erk/cli/commands/slot/common.py-160-        or None if no inactive slot found
+/Users/schrockn/code/erk/src/erk/cli/commands/slot/common.py-161-    """
+/Users/schrockn/code/erk/src/erk/cli/commands/slot/common.py-162-    assigned_slots = {a.slot_name for a in state.assignments}
+/Users/schrockn/code/erk/src/erk/cli/commands/slot/common.py-163-
+/Users/schrockn/code/erk/src/erk/cli/commands/slot/common.py-164-    # Get all worktrees from git (source of truth)
+/Users/schrockn/code/erk/src/erk/cli/commands/slot/common.py-165-    worktrees = git.worktree.list_worktrees(repo_root)
+/Users/schrockn/code/erk/src/erk/cli/commands/slot/common.py-166-
+/Users/schrockn/code/erk/src/erk/cli/commands/slot/common.py-167-    # Build lookup of slot_name -&gt; worktree_path for managed slots
+src/erk/cli/commands/slot/common.py-168-    managed_worktrees: dict[str, Path] = {}
+src/erk/cli/commands/slot/common.py-169-    for wt in worktrees:
+/Users/schrockn/code/erk/src/erk/cli/commands/slot/common.py-170-        slot_name = wt.path.name
+
+... [31 lines omitted] ...
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="6122" cache_read_input_tokens="41426" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6122}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now let me check the diagnostics to confirm what issue types these stale slots fall into.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="6122" cache_read_input_tokens="41426" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6122}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01DTNDhjL2Q1DJkgUfQK88b2">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/slot/diagnostics.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6122" cache_read_input_tokens="41426" output_tokens="143" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 6122, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01DTNDhjL2Q1DJkgUfQK88b2">
+     1→"""Slot diagnostics - check pool state consistency with disk and git."""
+     2→
+     3→from dataclasses import dataclass
+     4→from pathlib import Path
+     5→from typing import Literal
+     6→
+     7→from erk.cli.commands.slot.common import generate_slot_name
+     8→from erk.cli.core import discover_repo_context
+     9→from erk.core.context import ErkContext
+    10→from erk.core.worktree_pool import PoolState, SlotAssignment
+    11→from erk_shared.gateway.git.abc import Git, WorktreeInfo
+    12→from erk_shared.gateway.github.types import PRNotFound
+    13→
+    14→# Type alias for sync issue codes - using Literal for type safety
+    15→SyncIssueCode = Literal[
+    16→    "orphan-state",
+    17→    "orphan-dir",
+    18→    "missing-branch",
+    19→    "branch-mismatch",
+    20→    "git-registry-missing",
+    21→    "untracked-worktree",
+    22→    "closed-pr",
+    23→]
+    24→
+    25→
+    26→@dataclass(frozen=True)
+    27→class SyncIssue:
+    28→    """A sync diagnostic issue found during pool state check."""
+    29→
+    30→    code: SyncIssueCode
+
+... [223 lines omitted] ...
+
+   217→            continue  # No PR exists, skip (not an error)
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="3419" cache_read_input_tokens="47548" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3419}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I have the full picture. Let me check the callers of `sync_pool_assignments` and the `execute_unassign` to understand the full flow.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3419" cache_read_input_tokens="47548" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3419}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01NQQchYBPFFoFc4jcVhUpcJ">
+    <param name="pattern">sync_pool_assignments\(</param>
+    <param name="path">/Users/schrockn/code/erk/src</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3419" cache_read_input_tokens="47548" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3419}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01NQQchYBPFFoFc4jcVhUpcJ">
+src/erk/cli/commands/slot/common.py:226:def sync_pool_assignments(
+src/erk/cli/commands/slot/common.py:612:    sync_result = sync_pool_assignments(state, ctx.git, repo.pool_json_path)
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01NgiUSYAR5jbNWoDqBVDbVQ">
+    <param name="pattern">sync_pool_assignments</param>
+    <param name="path">/Users/schrockn/code/erk/tests</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3419" cache_read_input_tokens="47548" output_tokens="2471" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3419, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01NgiUSYAR5jbNWoDqBVDbVQ">
+Found 1 file
+tests/unit/cli/commands/slot/test_common.py
+  </tool_result>
+  <assistant>Good — only one caller of `sync_pool_assignments`. Let me read the existing tests to understand the test patterns.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2795" cache_read_input_tokens="50967" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2795}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_018LAdcW5L1GhLUhHwwfytZG">
+    <param name="pattern">sync_pool_assignments</param>
+    <param name="path">/Users/schrockn/code/erk/tests/unit/cli/commands/slot/test_common.py</param>
+    <param name="output_mode">content</param>
+    <param name="-B">2</param>
+    <param name="-A">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2795" cache_read_input_tokens="50967" output_tokens="181" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2795, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_018LAdcW5L1GhLUhHwwfytZG">
+14-    is_placeholder_branch,
+15-    is_slot_initialized,
+16:    sync_pool_assignments,
+17-)
+18-from erk.cli.config import LoadedConfig
+19-from erk.core.worktree_pool import (
+20-    PoolState,
+21-    SlotAssignment,
+22-    SlotInfo,
+23-    load_pool_state,
+24-    save_pool_state,
+25-)
+26-from erk_shared.gateway.git.abc import WorktreeInfo
+27-from tests.fakes.gateway.git import FakeGit
+28-from tests.test_utils.test_context import context_for_test
+29-
+30-
+31-class TestGetPoolSize:
+32-    """Tests for get_pool_size function."""
+33-
+34-    def test_returns_default_when_no_config(self) -&gt; None:
+35-        """Returns DEFAULT_POOL_SIZE when local_config is None."""
+36-        ctx = context_for_test(local_config=None)
+37-
+38-        result = get_pool_size(ctx)
+39-
+40-        assert result == DEFAULT_POOL_SIZE
+41-
+42-    def test_returns_default_when_pool_size_not_set(self) -&gt; None:
+43-        """Returns DEFAULT_POOL_SIZE when pool_size is None in config."""
+
+... [212 lines omitted] ...
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="3665" cache_read_input_tokens="53762" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3665}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I have a thorough understanding. Let me design the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3665" cache_read_input_tokens="53762" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3665}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01WtWzM5gTa6i18W4NZLw36k">
+    <param name="subagent_type">Plan</param>
+    <param name="description">Design slot cleanup fix plan</param>
+    <param name="prompt">## Task
+Design a fix for stale slot assignments accumulating in erk's worktree pool manage...[truncated 4790 chars]...air`?
+
+Please provide a detailed implementation plan with file paths and specific changes.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3665" cache_read_input_tokens="53762" output_tokens="1466" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3665, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01WtWzM5gTa6i18W4NZLw36k">
+Good. At the call site, both `ctx.git` and `repo.root` are available. Now I have everything I need for a comprehensive design.
+
+Here is the detailed implementation plan.
+
+---
+
+## Implementation Plan: Fix Stale Slot Assignment Accumulation in sync_pool_assignments
+
+### Problem Summary
+
+`sync_pool_assignments()` runs before every slot allocation but preserves stale assignments in three cases where it should remove them. This causes the pool to fill up with ghost assignments, blocking new allocations. Users must manually run `erk slot repair` to reclaim slots.
+
+### Design Decisions
+
+**Question 1: Should we add `removed_count` to `PoolSyncResult`?**
+
+Yes. The `PoolSyncResult` should gain a `removed_count` field to distinguish removals from branch-sync updates. This is important for observability -- the caller or future logging can report "synced N, removed M". The existing `synced_count` tracks branch updates; `removed_count` tracks stale-assignment removals.
+
+**Question 2: Should the sync function log when it removes stale assignments?**
+
+Yes, but minimally. A `user_output` call per removal with a warning-styled prefix (matching the pattern already used in `_validate_existing_assignment` at line 334-337) provides visibility without being noisy.
+
+**Question 3: For detached HEAD, add branch-existence checking or leave to `erk slot repair`?**
+
+Add branch-existence checking. The signature change (adding `repo_root: Path`) is low-cost since there is only one caller and `repo.root` is readily available at the call site. Using `git.branch.get_branch_head(repo_root, branch_name)` to check branch existence is the same approach used in `_check_missing_branches` in `diagnostics.py` (line 146). This handles all three stale cases uniformly: if the assigned branch no longer exists, the assignment is stale regardless of worktree state.
+
+### Approach: Branch-Existence as the Universal Staleness Signal
+
+Rather than treating each case (missing worktree, placeholder branch, detached HEAD) with separate removal logic, the cleanest approach is:
+
+
+... [186 lines omitted] ...
+
+1. **Worktree path does not exist** --&gt; remove assignment, increment `removed_count`, emit warning via `user_output`. Continue to next assignment.
+2. **Assigned branch does not exist** (via `get_branch_head(repo_root, assignment.branch_name) is None`) --&gt; remove assignment, increment `removed_count`, emit warning. Continue.
+4. **Worktree is on placeholder branch** --&gt; remove assignment (slot was freed), increment `removed_count`, emit warning. Continue.
+Warning message format (matching existing pattern from `_validate_existing_assignment`):
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="5113" cache_read_input_tokens="57427" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5113}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me verify the FakeGit branch ops support before finalizing.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="5113" cache_read_input_tokens="57427" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5113}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01WswWyMLms4zyUFCmSXvtG6">
+    <param name="pattern">get_branch_head|get_all_branch_heads|branch_heads</param>
+    <param name="path">/Users/schrockn/code/erk/tests/fakes/gateway</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5113" cache_read_input_tokens="57427" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5113}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01WswWyMLms4zyUFCmSXvtG6">
+tests/fakes/gateway/git_branch_ops.py:39:        branch_heads: dict[str, str] | None = None,
+tests/fakes/gateway/git_branch_ops.py:60:            branch_heads: Mapping of branch name -&gt; commit SHA
+tests/fakes/gateway/git_branch_ops.py:78:        self._branch_heads = branch_heads if branch_heads is not None else {}
+tests/fakes/gateway/git_branch_ops.py:255:        Tracks the update for test assertions and updates branch_heads state.
+tests/fakes/gateway/git_branch_ops.py:258:        self._branch_heads[branch] = target_sha
+tests/fakes/gateway/git_branch_ops.py:263:        Tracks the reset for test assertions and updates branch_heads state.
+tests/fakes/gateway/git_branch_ops.py:269:            self._branch_heads[branch] = target_ref
+tests/fakes/gateway/git_branch_ops.py:328:    def get_branch_head(self, repo_root: Path, branch: str) -&gt; str | None:
+tests/fakes/gateway/git_branch_ops.py:330:        return self._branch_heads.get(branch)
+tests/fakes/gateway/git_branch_ops.py:332:    def get_all_branch_heads(self, repo_root: Path) -&gt; dict[str, str]:
+tests/fakes/gateway/git_branch_ops.py:334:        return dict(self._branch_heads)
+tests/fakes/gateway/git.py:124:        branch_heads: dict[str, str] | None = None,
+tests/fakes/gateway/git.py:183:            branch_heads: Mapping of branch name -&gt; commit SHA
+tests/fakes/gateway/git.py:247:        self._branch_heads = branch_heads or {}
+tests/fakes/gateway/git.py:364:            branch_heads=self._branch_heads,
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01KZCCmUmdxWDW4y2gDjk47h">
+    <param name="pattern">get_branch_head|get_all_branch_heads</param>
+    <param name="path">/Users/schrockn/code/erk/src/erk_shared/gateway/git</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5113" cache_read_input_tokens="57427" output_tokens="354" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 5113, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01KZCCmUmdxWDW4y2gDjk47h">
+&lt;tool_use_error&gt;Path does not exist: /Users/schrockn/code/erk/src/erk_shared/gateway/git. Note: your current working directory is /Users/schrockn/code/erk.&lt;/tool_use_error&gt;
+  </tool_result>
+  <assistant>Good — `FakeGit` already supports `branch_heads` dict and `get_all_branch_heads`. Let me check the ABC for the batch method.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2150" cache_read_input_tokens="62540" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2150}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01K8yY51k9pjrZ2GU3pbWSku">
+    <param name="pattern">get_all_branch_heads</param>
+    <param name="path">/Users/schrockn/code/erk/src</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+    <param name="-A">5</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2150" cache_read_input_tokens="62540" output_tokens="180" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2150, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01K8yY51k9pjrZ2GU3pbWSku">
+No matches found
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01X1yCLssfPr13bXAFjRPoCo">
+    <param name="pattern">get_all_branch_heads</param>
+    <param name="path">/Users/schrockn/code/erk</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+    <param name="glob">*.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="195" cache_read_input_tokens="64690" output_tokens="141" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 195, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01X1yCLssfPr13bXAFjRPoCo">
+tests/fakes/gateway/git_branch_ops.py:332:    def get_all_branch_heads(self, repo_root: Path) -&gt; dict[str, str]:
+packages/erk-shared/src/erk_shared/gateway/git/branch_ops/abc.py:145:    def get_all_branch_heads(self, repo_root: Path) -&gt; dict[str, str]:
+packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py:164:    def get_all_branch_heads(self, repo_root: Path) -&gt; dict[str, str]:
+packages/erk-shared/src/erk_shared/gateway/git/branch_ops/dry_run.py:89:    def get_all_branch_heads(self, repo_root: Path) -&gt; dict[str, str]:
+packages/erk-shared/src/erk_shared/gateway/git/branch_ops/dry_run.py:91:        return self._wrapped.get_all_branch_heads(repo_root)
+packages/erk-shared/src/erk_shared/gateway/graphite/real.py:94:        all_heads = git_ops.branch.get_all_branch_heads(repo_root)
+tests/integration/test_real_git_branch_ops.py:299:def test_get_all_branch_heads_returns_all_branches(
+tests/integration/test_real_git_branch_ops.py:302:    """Test that get_all_branch_heads returns SHAs for all local branches."""
+tests/integration/test_real_git_branch_ops.py:319:    heads = branch_ops.get_all_branch_heads(repo)
+tests/integration/test_real_git_branch_ops.py:338:def test_get_all_branch_heads_returns_empty_on_non_repo(tmp_path: Path) -&gt; None:
+tests/integration/test_real_git_branch_ops.py:339:    """Test that get_all_branch_heads returns empty dict for non-repo directory."""
+tests/integration/test_real_git_branch_ops.py:345:    heads = branch_ops.get_all_branch_heads(not_a_repo)
+  </tool_result>
+  <assistant>`get_all_branch_heads` exists in the ABC, real, and fake implementations. Now let me also quickly check the `user_output` import in common.py to confirm it's available.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="806" cache_read_input_tokens="64885" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 806}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_0114fMRjnjwxLhtWJa1RyQsM">
+    <param name="pattern">from erk_shared.output|import click</param>
+    <param name="path">/Users/schrockn/code/erk/src/erk/cli/commands/slot/common.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="806" cache_read_input_tokens="64885" output_tokens="185" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 806, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0114fMRjnjwxLhtWJa1RyQsM">
+8:import click
+17:from erk_shared.output.output import user_output
+  </tool_result>
+  <assistant>Good. Now let me read the `PoolSyncResult` dataclass to see its current shape.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="315" cache_read_input_tokens="65691" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 315}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01CGu6toe6EGvbUdzWXqkgWf">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/slot/common.py</param>
+    <param name="offset">218</param>
+    <param name="limit">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="315" cache_read_input_tokens="65691" output_tokens="136" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 315, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01CGu6toe6EGvbUdzWXqkgWf">
+   218→@dataclass(frozen=True)
+   219→class PoolSyncResult:
+   220→    """Result of syncing pool assignments with actual git state."""
+   221→
+   222→    state: PoolState
+   223→    synced_count: int
+   224→
+   225→
+   226→def sync_pool_assignments(
+   227→    state: PoolState,
+  </tool_result>
+  <assistant>I have everything I need. Let me write the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="242" cache_read_input_tokens="66006" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 242}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01KxugWMkywbUCVeYaDg34xe">
+    <param name="file_path">/Users/schrockn/.claude/plans/breezy-strolling-spark.md</param>
+    <param name="content"># Fix: sync_pool_assignments doesn't clean up stale slot assignments
+
+## Context
+
+The work...[truncated 3690 chars]...0 repairable issues (sync would have already cleaned them)
+3. Run full CI: `make fast-ci`
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="242" cache_read_input_tokens="66006" output_tokens="1321" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 242, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01KxugWMkywbUCVeYaDg34xe">
+File created successfully at: /Users/schrockn/.claude/plans/breezy-strolling-spark.md
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_01HSAR5cPNJMVirNKANXiNqo">
+    <param name="query">select:ExitPlanMode</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1361" cache_read_input_tokens="66248" output_tokens="78" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1361, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01HSAR5cPNJMVirNKANXiNqo">
+
+  </tool_result>
+  <assistant>
+
+The bug is clear: `sync_pool_assignments()` was designed only for branch-mismatch detection (user manually switched branches), but it explicitly preserves stale assignments when worktrees are on placeholder branches or detached HEAD — exactly the states that indicate a slot was freed. The fix makes sync self-healing by removing assignments when the assigned branch no longer exists or the worktree is on a placeholder.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="835" cache_read_input_tokens="67609" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 835}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ExitPlanMode" id="toolu_018mdvC6ubDGSGxv3yhXNYqt">
+    <param name="plan"># Fix: sync_pool_assignments doesn't clean up stale slot assignments
+
+## Context
+
+The work...[truncated 3690 chars]...0 repairable issues (sync would have already cleaned them)
+3. Run full CI: `make fast-ci`
+</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="835" cache_read_input_tokens="67609" output_tokens="127" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 835, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_018mdvC6ubDGSGxv3yhXNYqt">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/breezy-strolling-spark.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Fix: sync_pool_assignments doesn't clean up stale slot assignments
+Current context: (wt:erk) (br:master)\n\nWhat would you like to do with this plan?"
+  header: "br:master"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create new branch and planned PR. Stays on current branch." - Create a new branch, save plan as draft PR.
+  2. "Implement without saving" - Implement directly on the current branch without saving a plan PR.
+  3. "View/Edit the Plan" - Open plan in editor to review or modify before deciding.
+
+⚠️  WARNING: Currently on 'master'. We strongly discourage implementing directly on the trunk branch. Consider saving the plan and implementing in a dedicated worktree instead.
+
+If user chooses 'Create new branch and planned PR':
+  1. Run /erk:plan-save
+  2. Call ExitPlanMode to end the planning session.
+
+If user chooses 'Implement without saving':
+  1. Create implement-now marker:
+     erk exec marker create --session-id c8d0a57b-f4cd-4b46-a79d-fcbf34ea483d \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly on the current branch.
+     Do NOT run 'erk exec setup-impl' or create a new branch.
+
+... [8 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01T4JkkuBUVxqy7dNfsyxNGf">
+    <param name="file_path">/Users/schrockn/.claude/plans/breezy-strolling-spark.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="781" cache_read_input_tokens="68444" output_tokens="75" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 781, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01T4JkkuBUVxqy7dNfsyxNGf">
+     1→# Fix: sync_pool_assignments doesn't clean up stale slot assignments
+     2→
+     3→## Context
+     4→
+     5→The worktree pool has 64 slots with 62 assignments, but **37 are stale** — the assigned branch no longer exists. Worktrees exist but are on placeholder branches or in detached HEAD state. This happens because `sync_pool_assignments()` (which runs before every allocation) preserves assignments even when the slot is clearly freed. Users must manually run `erk slot repair` to reclaim slots, and nobody does.
+     6→
+     7→**Root cause:** Three cases in `sync_pool_assignments()` where stale assignments are preserved:
+     8→1. Worktree path doesn't exist → keeps assignment (line 250-251)
+     9→2. Worktree on placeholder branch → keeps assignment (line 265-267)
+    10→3. Worktree in detached HEAD with deleted branch → keeps assignment (line 256-259)
+    11→
+    12→## Plan
+    13→
+    14→### 1. Add `removed_count` to `PoolSyncResult`
+    15→
+    16→**File:** `src/erk/cli/commands/slot/common.py:218-223`
+    17→
+    18→Add `removed_count: int` field to distinguish removals from branch-sync updates.
+    19→
+    20→### 2. Add `repo_root` parameter to `sync_pool_assignments`
+    21→
+    22→**File:** `src/erk/cli/commands/slot/common.py:226-230`
+    23→
+    24→New signature adds `repo_root: Path` (needed for `get_all_branch_heads` batch call).
+    25→
+    26→### 3. Rewrite the assignment-processing loop
+    27→
+    28→**File:** `src/erk/cli/commands/slot/common.py:246-278`
+    29→
+    30→Call `git.branch.get_all_branch_heads(repo_root)` once at the top (single `git for-each-ref` call, already exists in ABC/real/fake). Then for each assignment:
+
+... [54 lines omitted] ...
+
+    41→Warning format (matches existing pattern from `_validate_existing_assignment`):
+  </tool_result>
+  <assistant>API Error: 500 {"type":"error","error":{"type":"api_error","message":"Internal server error"},"request_id":"req_011CYyhXggjzvcVpF6z7ETNH"}</assistant>
+  <usage input_tokens="0" output_tokens="0" cache_creation_input_tokens="0" cache_read_input_tokens="0" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="None" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 0}" inference_geo="None" iterations="None" speed="None" />
+  <system subtype="" duration_ms="" />
+  <user>continue</user>
+  <tool_use name="ToolSearch" id="toolu_01A5K6i3KMP96ogTUfib933h">
+    <param name="query">select:AskUserQuestion</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1854" cache_read_input_tokens="69225" output_tokens="78" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1854, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01A5K6i3KMP96ogTUfib933h">
+
+  </tool_result>
+  <assistant>
+
+Here's the plan:
+
+## Fix: sync_pool_assignments doesn't clean up stale slot assignments
+
+### Context
+37 of 62 slot assignments are stale — assigned branches no longer exist. `sync_pool_assignments()` runs before every allocation but explicitly preserves these stale assignments instead of removing them.
+
+### Changes (2 files)
+
+**`src/erk/cli/commands/slot/common.py`**
+1. Add `removed_count: int` to `PoolSyncResult`
+2. Add `repo_root: Path` param to `sync_pool_assignments`
+3. Rewrite loop: call `get_all_branch_heads(repo_root)` once, then remove assignments when worktree missing, branch deleted, or worktree on placeholder branch
+4. Update sole caller (line 612) to pass `repo.root`
+
+**`tests/unit/cli/commands/slot/test_common.py`**
+- Update 3 existing tests to assert removal instead of preservation
+- Split detached HEAD test into two (branch exists vs deleted)
+- Add ~3 new tests for removal paths
+- Update all ~10 sync test calls to pass `repo_root`</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="1433" cache_read_input_tokens="71079" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1433}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_01KnYRSkEw2GXV5X62mEszoL">
+    <param name="questions">[{'question': "📋 Fix: sync_pool_assignments doesn't clean up stale slot assignments\nCurre...[truncated 394 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1433" cache_read_input_tokens="71079" output_tokens="494" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1433, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01KnYRSkEw2GXV5X62mEszoL">
+User has answered your questions: "📋 Fix: sync_pool_assignments doesn't clean up stale slot assignments
+Current context: (wt:erk) (br:master)
+
+What would you like to do with this plan?"="Create new branch and planned PR". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="Skill" id="toolu_01Sr8iS8wrncRND7o385a24m">
+    <param name="skill">erk:plan-save</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="580" cache_read_input_tokens="72512" output_tokens="57" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 580, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Sr8iS8wrncRND7o385a24m">
+Launching skill: erk:plan-save
+  </tool_result>
+  <user># /erk:plan-save
+
+Save the current session's plan to GitHub with session context.
+
+## Usage
+
+```bash
+/erk:plan-save                           # Standalone plan
+/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+/erk:plan-save --objective=123           # Explicit objective link (overrides marker)
+/erk:plan-save --current-branch          # Use current branch instead of creating new plnd/ branch
+```
+
+Objective linking: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command. Use `--objective=&lt;number&gt;` to override the marker or provide the link when no marker exists (e.g., during replan).
+
+## Plan Storage
+
+The plan is saved using the configured backend:
+
+- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+  The JSON output contract includes `pr_number`, `pr_url`, `title`, `branch_name`, `plan_backend`.
+
+## Agent Instructions
+
+### Step 1: Parse Arguments
+
+Check `` for the `--plan-type`, `--objective`, and `--current-branch` flags:
+
+```
+If  contains "--plan-type=&lt;type&gt;":
+  - Extract the type (standard or learn)
+  - Store as PLAN_TYPE variable
+  - Set PLAN_TYPE_FLAG to "--plan-type=&lt;type&gt;"
+Else:
+  - Set PLAN_TYPE_FLAG to empty string
+
+If  contains "--objective=&lt;number&gt;":
+  - Extract the number
+  - Set OBJECTIVE_FLAG to "--objective=&lt;number&gt;"
+Else:
+  - Set OBJECTIVE_FLAG to empty string
+
+If  contains "--current-branch":
+  - Set CURRENT_BRANCH_FLAG to "--current-branch"
+Else:
+  - Set CURRENT_BRANCH_FLAG to empty string
+```
+
+### Step 2: Generate Branch Slug
+
+**Skip this step if `--current-branch` was passed.** The current branch is used directly.
+
+Before saving, generate a branch slug from the plan title. Read the plan title from the plan file you wrote in plan mode (the first `# ` heading).
+
+Generate a branch slug from the title:
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+
+Store the result as `BRANCH_SLUG`.
+
+### Step 3: Generate Plan Summary
+
+Write a concise 2-3 sentence summary of the plan. This summary will be visible
+at the top of the PR description (above the collapsed full plan).
+
+Guidelines:
+
+- Focus on WHAT the plan does and WHY
+- Do not repeat the title
+- Plain text, no markdown headers or formatting
+- Avoid special shell characters (backticks, dollar signs)
+- Store as PLAN_SUMMARY
+
+### Step 4: Run Save Command
+
+Run this command with the session ID, summary, and optional flags.
+
+If CURRENT_BRANCH_FLAG is set, pass `--current-branch` (no branch slug needed):
+
+```bash
+erk exec plan-save --format json --session-id="c8d0a57b-f4cd-4b46-a79d-fcbf34ea483d" --current-branch --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Otherwise, pass the branch slug:
+
+```bash
+erk exec plan-save --format json --session-id="c8d0a57b-f4cd-4b46-a79d-fcbf34ea483d" --branch-slug="${BRANCH_SLUG}" --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Parse the JSON output to extract `pr_number` for verification in Step 5.
+
+If the command fails, display the error and stop.
+
+### Step 5: Verify Objective Link (if applicable)
+
+**Only run this step if `objective_issue` is non-null in the JSON output from Step 4.**
+
+Verify the objective link was saved correctly:
+
+```bash
+erk exec get-plan-metadata &lt;pr_number&gt; objective_issue
+```
+
+Parse the JSON response:
+
+- If `success: true` and `value` matches the expected objective number: verification passed
+- If `success: false` or value doesn't match: verification failed
+
+**On verification success:**
+
+Display: `Verified objective link: #&lt;objective-number&gt;`
+
+**On verification failure:**
+
+Display error and remediation steps:
+
+```
+ERROR: Objective link verification failed
+Expected objective: #&lt;expected&gt;
+Actual: &lt;actual-or-null&gt;
+
+The plan was saved but without the correct objective link.
+Fix: Close draft PR #&lt;pr_number&gt;,
+ensure the objective-context marker exists, and re-run /erk:plan-save.
+```
+
+Exit without creating the plan-saved marker. The session continues so the user can retry.
+
+### Step 6: Update Objective Roadmap (if objective linked)
+
+**Only run this step if `objective_issue` was non-null in JSON output and verification passed.**
+
+Update the objective's roadmap table to show that a plan has been created for this node:
+
+1. **Read the roadmap node marker** to get the node ID:
+
+```bash
+step_id=$(erk exec marker read --session-id "c8d0a57b-f4cd-4b46-a79d-fcbf34ea483d" roadmap-step)
+```
+
+If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-plan`.
+
+2. **Update the roadmap table** using the dedicated command:
+
+```bash
+erk exec update-objective-node &lt;objective-issue&gt; --node "$step_id" --pr "#&lt;pr_number&gt;" --status in_progress
+```
+
+This atomically fetches the objective body, finds the matching node row, sets the Status cell to `in-progress`, and writes the updated body back.
+
+3. **Report the update:**
+
+Display: `Updated objective #&lt;objective-issue&gt; roadmap: node &lt;step_id&gt; → PR #&lt;pr_number&gt;`
+
+**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+
+### Step 7: Display Results
+
+**If JSON contains `skipped_duplicate: true`:**
+
+Display: `Plan already saved as PR #&lt;pr_number&gt; (duplicate skipped)`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options.
+
+**Otherwise, on success**, display:
+
+```
+Plan "&lt;title&gt;" saved as draft PR #&lt;pr_number&gt;
+URL: &lt;issue_url&gt;
+```
+
+If objective was verified, also display: `Verified objective link: #&lt;objective-number&gt;`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options
+(implement in current worktree, implement in new worktree, or done).
+
+On failure, display the error message and suggest:
+
+- Checking that a plan exists (enter Plan mode and exit it first)
+- Verifying GitHub CLI authentication (`gh auth status`)
+- Checking network connectivity
+
+### Step 5: Push Planning Session
+
+After saving successfully, push the planning session for cross-machine learning.
+This captures the in-progress session state so it's available even if implementation
+happens on a different machine.
+
+Run `erk exec capture-session-info` to get the session file path, then push it:
+
+```bash
+erk exec upload-impl-session --session-id "c8d0a57b-f4cd-4b46-a79d-fcbf34ea483d" 2&gt;/dev/null || true
+```
+
+If the plan was saved successfully and `pr_number` is known, use push-session directly
+for better stage tracking:
+
+```bash
+erk exec push-session \
+    --session-file "&lt;session_file_path&gt;" \
+    --session-id "c8d0a57b-f4cd-4b46-a79d-fcbf34ea483d" \
+    --stage planning \
+    --source local \
+    --pr-number &lt;pr_number&gt; \
+    2&gt;/dev/null || true
+```
+
+Where `&lt;session_file_path&gt;` is obtained from `erk exec capture-session-info` output
+and `&lt;pr_number&gt;` is from Step 2's JSON output.
+
+**Note:** This is non-critical. If it fails, the plan was still saved successfully.
+The `2&gt;/dev/null || true` ensures graceful degradation.
+
+## Session Tracking
+
+After successfully saving a plan, the plan number is stored in a marker file that enables automatic plan updates in the same session.
+
+**To read the saved plan number:**
+
+```bash
+erk exec marker read --session-id "c8d0a57b-f4cd-4b46-a79d-fcbf34ea483d" plan-saved-issue
+```
+
+This returns the plan number (exit code 0) or exits with code 1 if no plan was saved in this session.
+</user>
+  <assistant>
+
+**Branch slug:** `fix-stale-slot-sync`
+
+**Summary:** The sync_pool_assignments function preserves stale slot assignments when worktrees are on placeholder branches, in detached HEAD state, or when the assigned branch no longer exists. This fix makes sync self-healing by removing these stale assignments automatically before every allocation, preventing the pool from filling up with ghost entries.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="2302" cache_read_input_tokens="73092" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2302}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01MxiozmpkzinwD9Tuk3GFfW">
+    <param name="command">erk exec plan-save --format json --session-id="c8d0a57b-f4cd-4b46-a79d-fcbf34ea483d" --bra...[truncated 278 chars]...atically before every allocation, preventing the pool from filling up with ghost entries."</param>
+    <param name="description">Save plan as draft PR</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2302" cache_read_input_tokens="73092" output_tokens="299" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2302, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01MxiozmpkzinwD9Tuk3GFfW">
+{"success": true, "pr_number": 9229, "pr_url": "https://github.com/dagster-io/erk/pull/9229", "title": "[erk-pr] Fix: sync_pool_assignments doesn't clean up stale slot assignments", "branch_name": "plnd/fix-stale-slot-sync-03-12-1520", "plan_backend": "planned_pr", "objective_issue": null, "archived_to": "/Users/schrockn/code/erk/.erk/scratch/sessions/c8d0a57b-f4cd-4b46-a79d-fcbf34ea483d/plan_snapshots/000001-496055ae"}
+  </tool_result>
+</session>
