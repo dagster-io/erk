@@ -15,6 +15,21 @@
       "raw_size_kb": 542,
       "xml_size_kb": 42,
       "git_branch": "docs-link-gone"
+    },
+    {
+      "session_id": "268eb823-491c-4fc1-adc0-81e81e6e8d36",
+      "stage": "impl",
+      "source": "local",
+      "uploaded_at": "2026-03-12T13:20:30.772945+00:00",
+      "files": [
+        "impl-268eb823-491c-4fc1-adc0-81e81e6e8d36-268eb823-491c-4fc1-adc0-81e81e6e8d36-part1.xml",
+        "impl-268eb823-491c-4fc1-adc0-81e81e6e8d36-268eb823-491c-4fc1-adc0-81e81e6e8d36-part2.xml"
+      ],
+      "user_turns": 4,
+      "duration_minutes": 13,
+      "raw_size_kb": 518,
+      "xml_size_kb": 72,
+      "git_branch": "plnd/teleport-slot-awareness-03-12-1305"
     }
   ]
 }
