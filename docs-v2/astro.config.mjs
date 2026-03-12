@@ -17,20 +17,12 @@ export default defineConfig({
       ],
       sidebar: [
         {
-          label: "Getting Started",
-          autogenerate: { directory: "getting-started" },
-        },
-        {
           label: "Concepts",
           autogenerate: { directory: "concepts" },
         },
         {
           label: "Guides",
           autogenerate: { directory: "guides" },
-        },
-        {
-          label: "Reference",
-          autogenerate: { directory: "reference" },
         },
       ],
     }),
