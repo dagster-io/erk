@@ -57,6 +57,16 @@ def pr_teleport(
     want your local branch to match the remote exactly.
 
     \b
+    Beyond gh pr checkout:
+        - Force-resets local branch to match remote (discards unpushed commits)
+        - Worktree pool integration (navigates to existing worktrees, updates
+          slot assignments)
+        - Graphite registration (tracks/retracks branch, fetches base for
+          stacked PRs)
+        - Shell activation scripts (--script mode for cmux)
+        - --sync runs gt submit after teleport
+
+    \b
     Examples:
         erk pr teleport 123              # Overwrite current branch with PR #123's remote state
         erk pr teleport 123 -f           # Skip confirmation
