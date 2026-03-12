@@ -4,9 +4,8 @@ from __future__ import annotations
 
 import asyncio
 import subprocess
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
-from erk_mcp.request_context import set_request_github_token
 from erk_mcp.server import (
     MachineCommandTool,
     _build_machine_command_tools,
@@ -196,7 +195,7 @@ class TestMachineCommandTool:
         )
 
     @patch("erk_mcp.server.subprocess.run")
-    def test_injects_user_gh_token_when_context_var_set(self, mock_run: patch) -> None:
+    def test_injects_authenticated_github_token(self, mock_run: patch) -> None:
         mock_run.return_value = subprocess.CompletedProcess(
             args=[], returncode=0, stdout='{"success": true}', stderr=""
         )
@@ -207,16 +206,18 @@ class TestMachineCommandTool:
             parameters={"type": "object", "properties": {}},
         )
 
-        with patch("erk_mcp.server.os.environ", {"PATH": "/usr/bin", "OTHER": "val"}):
-            tok = set_request_github_token("user-gh-token-xyz")
-            try:
+        with patch("erk_mcp.server.os.environ", {"PATH": "/usr/bin"}):
+            with patch(
+                "erk_mcp.server.get_authenticated_github_token",
+                return_value="oauth-upstream-gh-token",
+            ):
                 asyncio.run(tool.run({"prompt": "hello"}))
-            finally:
-                from erk_mcp.request_context import reset_request_github_token
-                reset_request_github_token(tok)
 
         call_kwargs = mock_run.call_args[1]
-        assert call_kwargs["env"] == {"PATH": "/usr/bin", "OTHER": "val", "GH_TOKEN": "user-gh-token-xyz"}
+        assert call_kwargs["env"] == {
+            "PATH": "/usr/bin",
+            "GH_TOKEN": "oauth-upstream-gh-token",
+        }
 
     @patch("erk_mcp.server.subprocess.run")
     def test_no_env_override_when_no_context_var(self, mock_run: patch) -> None:
@@ -234,6 +235,17 @@ class TestMachineCommandTool:
 
         call_kwargs = mock_run.call_args[1]
         assert call_kwargs["env"] is None
+
+    def test_create_mcp_uses_auth_provider_from_env(self) -> None:
+        mock_auth_provider = MagicMock()
+
+        with patch(
+            "erk_mcp.server.build_auth_provider_from_env",
+            return_value=mock_auth_provider,
+        ):
+            server = create_mcp()
+
+        assert server.auth is mock_auth_provider
 
     def test_discovered_tools_include_one_shot(self) -> None:
         tools = _build_machine_command_tools()

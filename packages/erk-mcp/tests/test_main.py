@@ -5,8 +5,9 @@ from __future__ import annotations
 from unittest.mock import MagicMock, patch
 
 import pytest
+from click import ClickException
 
-from erk_mcp.__main__ import _parse_args, main
+from erk_mcp.__main__ import _get_oauth_discovery_url, _parse_args, main
 
 
 class TestParseArgs:
@@ -55,6 +56,7 @@ class TestMain:
 
     def test_http_transport_runs_with_host_port(self, capsys: pytest.CaptureFixture[str]) -> None:
         mock_mcp = MagicMock()
+        mock_mcp.auth = None
         with patch("erk_mcp.__main__.create_mcp", return_value=mock_mcp):
             with patch("erk_mcp.__main__._parse_args") as mock_parse:
                 mock_parse.return_value = MagicMock(
@@ -64,12 +66,14 @@ class TestMain:
                 )
                 main()
 
+        mock_mcp.add_middleware.assert_not_called()
         mock_mcp.run.assert_called_once_with(transport="streamable-http", host="0.0.0.0", port=9000)
         captured = capsys.readouterr()
         assert "http://0.0.0.0:9000/mcp" in captured.out
 
     def test_http_transport_prints_url(self, capsys: pytest.CaptureFixture[str]) -> None:
         mock_mcp = MagicMock()
+        mock_mcp.auth = None
         with patch("erk_mcp.__main__.create_mcp", return_value=mock_mcp):
             with patch("erk_mcp.__main__._parse_args") as mock_parse:
                 mock_parse.return_value = MagicMock(
@@ -84,6 +88,7 @@ class TestMain:
 
     def test_stdio_transport_runs_without_args(self, capsys: pytest.CaptureFixture[str]) -> None:
         mock_mcp = MagicMock()
+        mock_mcp.auth = None
         with patch("erk_mcp.__main__.create_mcp", return_value=mock_mcp):
             with patch("erk_mcp.__main__._parse_args") as mock_parse:
                 mock_parse.return_value = MagicMock(
@@ -96,3 +101,52 @@ class TestMain:
         mock_mcp.run.assert_called_once_with()
         captured = capsys.readouterr()
         assert captured.out == ""
+
+    def test_http_transport_prints_oauth_discovery_url(
+        self, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        mock_auth = MagicMock()
+        mock_auth.base_url = "https://erk.example.com"
+        mock_mcp = MagicMock()
+        mock_mcp.auth = mock_auth
+        with patch("erk_mcp.__main__.create_mcp", return_value=mock_mcp):
+            with patch("erk_mcp.__main__._parse_args") as mock_parse:
+                mock_parse.return_value = MagicMock(
+                    transport="streamable-http",
+                    host="0.0.0.0",
+                    port=9000,
+                )
+                main()
+
+        captured = capsys.readouterr()
+        assert "https://erk.example.com/.well-known/oauth-authorization-server" in captured.out
+
+    def test_create_mcp_value_error_becomes_click_exception(self) -> None:
+        with patch("erk_mcp.__main__.create_mcp", side_effect=ValueError("broken config")):
+            with patch("erk_mcp.__main__._parse_args") as mock_parse:
+                mock_parse.return_value = MagicMock(
+                    transport="streamable-http",
+                    host="0.0.0.0",
+                    port=9000,
+                )
+                with pytest.raises(ClickException, match="broken config"):
+                    main()
+
+
+class TestGetOAuthDiscoveryUrl:
+    def test_returns_none_without_auth(self) -> None:
+        mock_mcp = MagicMock()
+        mock_mcp.auth = None
+
+        assert _get_oauth_discovery_url(mock_mcp) is None
+
+    def test_returns_url_when_auth_has_base_url(self) -> None:
+        mock_auth = MagicMock()
+        mock_auth.base_url = "https://erk.example.com/"
+        mock_mcp = MagicMock()
+        mock_mcp.auth = mock_auth
+
+        assert (
+            _get_oauth_discovery_url(mock_mcp)
+            == "https://erk.example.com/.well-known/oauth-authorization-server"
+        )

@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING, Any
 from anyio import to_thread
 from fastmcp.tools.tool import Tool, ToolResult
 
-from erk_mcp.request_context import get_request_github_token
+from erk_mcp.auth import build_auth_provider_from_env, get_authenticated_github_token
 from erk_shared.agentclick.machine_schema import request_schema
 from erk_shared.agentclick.mcp_exposed import discover_mcp_commands
 
@@ -60,11 +60,13 @@ class MachineCommandTool(Tool):
             if v is not None:
                 params[k] = v
         path = self.cli_command_path
-        user_token = get_request_github_token()
+        user_token = get_authenticated_github_token()
         env_override: dict[str, str] | None = None
         if user_token is not None:
             env_override = {**os.environ, "GH_TOKEN": user_token}
-        result = await to_thread.run_sync(lambda: _run_erk_json(path, params, env_override=env_override))
+        result = await to_thread.run_sync(
+            lambda: _run_erk_json(path, params, env_override=env_override)
+        )
         return self.convert_result(result)
 
 
@@ -93,7 +95,7 @@ def create_mcp() -> FastMCP:
     """Create and configure the FastMCP server instance."""
     from fastmcp import FastMCP
 
-    server = FastMCP(DEFAULT_MCP_NAME)
+    server = FastMCP(DEFAULT_MCP_NAME, auth=build_auth_provider_from_env())
     for tool in _build_machine_command_tools():
         server.add_tool(tool)
     return server
