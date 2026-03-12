@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "pr_number": 9221,
+  "sessions": [
+    {
+      "session_id": "82ee1b5f-8ad4-497d-8ede-895f68f62530",
+      "stage": "impl",
+      "source": "local",
+      "uploaded_at": "2026-03-12T13:34:33.417759+00:00",
+      "files": [
+        "impl-82ee1b5f-8ad4-497d-8ede-895f68f62530-82ee1b5f-8ad4-497d-8ede-895f68f62530.xml"
+      ],
+      "user_turns": 2,
+      "duration_minutes": 1,
+      "raw_size_kb": 111,
+      "xml_size_kb": 26,
+      "git_branch": "plnd/teleport-helpstring-docs-03-12-1330"
+    }
+  ]
+}

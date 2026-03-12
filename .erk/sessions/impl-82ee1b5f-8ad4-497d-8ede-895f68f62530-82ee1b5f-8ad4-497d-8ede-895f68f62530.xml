@@ -1,0 +1,491 @@
+<session>
+  <meta branch="plnd/teleport-helpstring-docs-03-12-1330" />
+  <meta model="claude-opus-4-6" />
+  <user>&lt;command-message&gt;erk:plan-implement&lt;/command-message&gt;
+&lt;command-name&gt;/erk:plan-implement&lt;/command-name&gt;</user>
+  <user># /erk:plan-implement
+
+Implement a plan - either from GitHub, a markdown file, an existing impl directory under `.erk/impl-context/`, or by saving the current plan first.
+
+This is the primary implementation workflow - it orchestrates:
+
+1. Setting up the impl directory under `.erk/impl-context/&lt;branch&gt;/` (from issue, file, existing folder, or fresh plan)
+2. Executing the implementation
+3. Running CI and submitting the PR
+
+## Prerequisites
+
+- Must be in a git repository managed by erk
+- GitHub CLI (`gh`) must be authenticated
+- One of:
+  - A plan number, URL, or file path argument
+  - An existing impl directory under `.erk/impl-context/`
+  - A plan branch checked out (e.g., `plnd/...` or `P{number}-...`)
+  - A plan in `~/.claude/plans/` (from plan mode)
+
+## Usage
+
+```bash
+/erk:plan-implement                    # Use impl directory, detect from branch, or save current plan
+/erk:plan-implement 2521               # Fetch and implement PR #2521
+/erk:plan-implement https://github.com/owner/repo/pull/2521   # URL form
+/erk:plan-implement ./my-plan.md       # Implement from local markdown file
+```
+
+---
+
+## CRITICAL: PR Operations
+
+**NEVER** run direct GitHub CLI commands for PR operations during implementation:
+
+- `gh pr edit` — destroys plan-header metadata block
+- `gh pr ready` — bypasses lifecycle tracking
+- `gh pr close` / `gh pr merge`
+
+All PR operations are handled by `erk pr submit` in Step 13. It automatically:
+
+- Generates the PR title and body
+- Preserves the plan-header metadata block
+- Marks draft PRs as ready for review
+- Updates lifecycle stage
+
+## Agent Instructions
+
+### Step 1: Set Up Implementation
+
+Parse `` and run the consolidated setup command:
+
+- **If numeric** (e.g., `2521`): `erk exec setup-impl --issue 2521`
+- **If GitHub URL** (e.g., `https://github.com/.../issues/2521`): Extract number, `erk exec setup-impl --issue 2521`
+- **If path to file** (anything else non-empty): `erk exec setup-impl --file &lt;path&gt;`
+- **If empty**: `erk exec setup-impl` (auto-detects from `.erk/impl-context/`, branch, or fails)
+
+```bash
+erk exec setup-impl [--issue &lt;N&gt; | --file &lt;path&gt;]
+```
+
+This single command handles:
+
+- Fetching plan from GitHub (draft PR)
+- Setting up from a local markdown file
+- Auto-detecting from existing impl directory under `.erk/impl-context/`
+- Auto-detecting plan number from branch name (P{number}-... or PR lookup)
+- Creating/checking out the feature branch
+- Creating impl directory under `.erk/impl-context/&lt;branch&gt;/` with plan content
+- Running impl-init validation
+- Cleaning up `.erk/impl-context/` staging directory (git rm + commit + push)
+
+Otherwise, generate a branch slug and set up from the specified issue:
+
+1. Fetch the title: `gh pr view &lt;ISSUE_ARG&gt; --json title -q .title`
+2. Generate a branch slug from the title:
+   - 2-4 hyphenated lowercase words, max 30 characters
+   - Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+   - Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+   - Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+3. Store as `BRANCH_SLUG`.
+
+```bash
+erk exec setup-impl --issue &lt;ISSUE_ARG&gt; --branch-slug="${BRANCH_SLUG}"
+```
+
+If `setup-impl` exits with code 1 and `error: "no_plan_found"`, fall back to saving the current plan:
+
+Generate a branch slug from the plan title (the first `# ` heading in the plan file):
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Store as `BRANCH_SLUG`
+
+Save the current plan to GitHub and capture the plan number:
+
+```bash
+erk exec plan-save --format json --session-id="82ee1b5f-8ad4-497d-8ede-895f68f62530" --branch-slug="${BRANCH_SLUG}"
+```
+
+Parse the JSON output to get `pr_number`, then:
+
+```bash
+erk exec setup-impl --issue &lt;pr_number&gt;
+```
+
+The `setup-impl` output includes `related_docs` (skills and docs to load) and `has_plan_tracking` (whether GitHub issue tracking is active).
+
+If this fails, display the error and stop.
+
+### Step 2: Read Plan and Load Context
+
+Read `plan.md` from the impl directory set up in Step 1 to understand:
+
+- Overall goal and context
+- Context &amp; Understanding sections (API quirks, architectural insights, pitfalls)
+- Implementation phases and dependencies
+- Success criteria
+
+**Context Consumption**: Plans contain expensive discoveries. Ignoring `[CRITICAL:]` tags, "Related Context:" subsections, or "DO NOT" items causes repeated mistakes.
+
+### Step 3: Load Related Documentation
+
+If plan contains "Related Documentation" section, load listed skills via Skill tool and read listed docs.
+
+### Step 4: Create TodoWrite Entries
+
+Create todo entries for each phase from the plan.
+
+### Step 5: Signal GitHub Started
+
+```bash
+erk exec impl-signal started --session-id="82ee1b5f-8ad4-497d-8ede-895f68f62530" 2&gt;/dev/null || true
+```
+
+This also deletes the Claude plan file (from `~/.claude/plans/`) since:
+
+- The content has been saved to GitHub
+- The content has been snapshotted to `.erk/scratch/`
+- Keeping it could cause confusion if the user tries to re-save
+
+### Step 6: Execute Each Phase Sequentially
+
+For each phase:
+
+1. **Mark phase as in_progress** (in TodoWrite)
+2. **Read task requirements** carefully
+3. **Implement code AND tests together**:
+   - Load `dignified-python-313` skill for coding standards
+   - Load `fake-driven-testing` skill for test patterns
+   - Follow project AGENTS.md standards
+4. **Mark phase as completed** (in TodoWrite)
+5. **Report progress**: changes made, what's next
+
+**Important:** `plan.md` is immutable - NEVER edit during implementation
+
+### Step 7: Report Progress
+
+After each phase: report changes made and what's next.
+
+### Step 8: Final Verification
+
+Confirm all tasks executed, success criteria met, note deviations, summarize changes.
+
+### Step 9: Signal GitHub Ended
+
+```bash
+erk exec impl-signal ended --session-id="82ee1b5f-8ad4-497d-8ede-895f68f62530" 2&gt;/dev/null || true
+```
+
+### Step 10: Upload Session for Async Learn
+
+```bash
+erk exec upload-impl-session --session-id="82ee1b5f-8ad4-497d-8ede-895f68f62530" 2&gt;/dev/null || true
+```
+
+This reads plan reference from the impl directory, captures session info, and uploads for async learn processing.
+
+### Step 11: Clean Up Impl Context
+
+Remove the `.erk/impl-context/` directory from the repo:
+
+```bash
+erk exec cleanup-impl-context
+```
+
+This removes `.erk/impl-context/`, stages the deletion, commits, and pushes — all idempotent.
+
+### Step 12: Run CI Iteratively
+
+1. If `.erk/prompt-hooks/post-plan-implement-ci.md` exists: follow its instructions
+2. Otherwise: check CLAUDE.md/AGENTS.md for CI commands
+
+### Step 13: Submit PR
+
+Push the branch and create or update the PR using the Graphite-aware submit pipeline:
+
+```bash
+erk pr submit
+```
+
+This handles pushing commits, creating/updating the PR, generating the PR description, and enhancing with Graphite stack metadata when available.
+
+After successful submission, signal lifecycle transition:
+
+```bash
+erk exec impl-signal submitted 2&gt;/dev/null || true
+```
+
+Then validate PR completion invariants:
+
+```bash
+erk pr check --stage=impl
+```
+
+This validates PR submission readiness including implementation-specific checks
+(e.g., `.erk/impl-context/` must be cleaned up). If checks fail, display output and warn user.
+
+### Step 14: Output Format
+
+- **Start**: "Setting up implementation..." or "Fetching plan #X..."
+- **After setup**: "Implementation environment ready, reading plan..."
+- **Each phase**: "Phase X: [brief description]" with code changes
+- **End**: "Plan execution complete. [Summary]"
+
+---
+
+## Related Commands
+
+- `/erk:plan-save` - Save plan only, don't implement (for defer-to-later workflow)
+- `/erk:replan` - Re-plan an existing plan with current codebase state
+</user>
+  <usage input_tokens="2" cache_creation_input_tokens="17499" cache_read_input_tokens="9131" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 17499}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>Setting up implementation from the current branch...</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="17499" cache_read_input_tokens="9131" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 17499}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01QYwR4wVQFqY9BebnGM36jU">
+    <param name="command">erk exec setup-impl</param>
+    <param name="description">Auto-detect plan from branch and set up impl context</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="17499" cache_read_input_tokens="9131" output_tokens="259" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 17499, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01QYwR4wVQFqY9BebnGM36jU">
+Found existing impl dir for PR #9221, skipping branch setup
+{"success": true, "impl_path": "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-64/.erk/impl-context/plnd--teleport-helpstring-docs-03-12-1330", "pr_number": 9221, "pr_url": "https://github.com/dagster-io/erk/pull/9221", "branch": "plnd/teleport-helpstring-docs-03-12-1330", "pr_title": "", "no_impl": false}
+{"success": true, "source": "issue", "pr_number": 9221, "has_plan_tracking": true, "valid": true, "related_docs": {"skills": [], "docs": []}}
+  </tool_result>
+  <assistant>Implementation environment ready. Let me read the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="435" cache_read_input_tokens="26630" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 435}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01TEb6dqeom9obt6TfPes98u">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-64/.erk/impl-context/plnd--teleport-helpstring-docs-03-12-1330/plan.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="435" cache_read_input_tokens="26630" output_tokens="118" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 435, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01TEb6dqeom9obt6TfPes98u">
+     1→# Plan: Improve `erk pr teleport` help string
+     2→
+     3→## Context
+     4→
+     5→The current help string explains teleport vs `erk pr checkout` but doesn't convey the full value proposition — particularly what teleport does beyond `gh pr checkout`. The user wants the help text to better document teleport's capabilities.
+     6→
+     7→## Changes
+     8→
+     9→### File: `src/erk/cli/commands/pr/teleport_cmd.py`
+    10→
+    11→Update the `pr_teleport` Click command docstring (lines 47-63) to add a "Beyond gh pr checkout" section listing:
+    12→
+    13→- Force-resets local branch to match remote (discards unpushed commits)
+    14→- Worktree pool integration (navigates to existing worktrees, updates slot assignments)
+    15→- Graphite registration (tracks/retracks branch, fetches base for stacked PRs)
+    16→- Shell activation scripts (`--script` mode for cmux)
+    17→- `--sync` runs `gt submit` after teleport
+    18→
+    19→Keep the existing structure (summary, checkout-vs-teleport guidance, examples) and add the new section between the guidance and examples.
+    20→
+    21→## Verification
+    22→
+    23→```bash
+    24→uv run python -m erk pr teleport --help
+    25→```
+    26→
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="485" cache_read_input_tokens="27065" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 485}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Clear plan. Let me read the current file to understand the existing help text.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="485" cache_read_input_tokens="27065" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 485}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01QHZa9s2HeQQ3rGw6xCV4nQ">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-64/src/erk/cli/commands/pr/teleport_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="485" cache_read_input_tokens="27065" output_tokens="154" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 485, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01QHZa9s2HeQQ3rGw6xCV4nQ">
+     1→"""Teleport a PR's remote state to the local branch.
+     2→
+     3→Remote-first counterpart to 'checkout'. While checkout preserves local state
+     4→(reusing existing worktrees, keeping unpushed commits), teleport force-resets
+     5→the local branch to match the remote exactly. Use teleport when a remote agent
+     6→has pushed commits and you want your local copy to match.
+     7→
+     8→Operates on the current worktree by default, with --new-slot to create a fresh
+     9→worktree slot.
+    10→"""
+    11→
+    12→from contextlib import nullcontext
+    13→from pathlib import Path
+    14→
+    15→import click
+    16→
+    17→from erk.cli.activation import (
+    18→    activation_config_activate_only,
+    19→    ensure_worktree_activate_script,
+    20→    print_activation_instructions,
+    21→)
+    22→from erk.cli.commands.checkout_helpers import (
+    23→    ensure_branch_has_worktree,
+    24→    navigate_and_display_checkout,
+    25→    script_error_handler,
+    26→)
+    27→from erk.cli.commands.pr.checkout_cmd import _fetch_and_update_branch
+    28→from erk.cli.commands.slot.common import find_assignment_by_worktree, update_slot_assignment_tip
+    29→from erk.cli.ensure import Ensure
+    30→from erk.cli.help_formatter import CommandWithHiddenOptions, script_option
+
+... [345 lines omitted] ...
+
+    69→        ctx.console.error("Not in a git repository")
+    74→        ctx_manager = script_error_handler(ctx)
+    82→            ctx.console.error(
+    89→            ctx.console.error("Teleport is not supported for cross-repository (fork) PRs.")
+   252→    # Check if branch already has a worktree — navigate to it instead of erroring
+   350→    except RuntimeError:
+   365→        click.style("Warning: ", fg="yellow")
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_01DdzyQ8ek4Sfx8gAfu8ChzX">
+    <param name="query">select:TaskCreate,TaskUpdate</param>
+    <param name="max_results">2</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5185" cache_read_input_tokens="27550" output_tokens="78" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 5185, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01DdzyQ8ek4Sfx8gAfu8ChzX">
+
+  </tool_result>
+  <assistant>
+
+Now let me set up tasks and signal started.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="1888" cache_read_input_tokens="32735" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1888}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskCreate" id="toolu_01VBLdoZ4S3QrzcLRzPW4KV1">
+    <param name="subject">Update pr_teleport docstring with "Beyond gh pr checkout" section</param>
+    <param name="description">Add a new section to the Click command docstring listing teleport's capabilities beyond gh...[truncated 7 chars]...worktree pool integration, Graphite registration, shell activation scripts, --sync option.</param>
+    <param name="activeForm">Updating teleport help string</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1888" cache_read_input_tokens="32735" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1888}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01VBLdoZ4S3QrzcLRzPW4KV1">
+Task #1 created successfully: Update pr_teleport docstring with "Beyond gh pr checkout" section
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_011jLbZpeRzVcbXyFwPbVLVc">
+    <param name="subject">Verify help output</param>
+    <param name="description">Run `uv run python -m erk pr teleport --help` to verify the updated help text renders correctly.</param>
+    <param name="activeForm">Verifying help output</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1888" cache_read_input_tokens="32735" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1888}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011jLbZpeRzVcbXyFwPbVLVc">
+Task #2 created successfully: Verify help output
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01WzGy15sxULdL35arNwUe1H">
+    <param name="command">erk exec impl-signal started --session-id="82ee1b5f-8ad4-497d-8ede-895f68f62530" 2&gt;/dev/null || true</param>
+    <param name="description">Signal implementation started</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1888" cache_read_input_tokens="32735" output_tokens="357" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1888, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01WzGy15sxULdL35arNwUe1H">
+{
+  "success": true,
+  "event": "started",
+  "pr_number": 9221
+}
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01MtVCPDjbXqfCHxobbguTTe">
+    <param name="taskId">1</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="504" cache_read_input_tokens="34623" output_tokens="72" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 504, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01MtVCPDjbXqfCHxobbguTTe">
+Updated task #1 status
+  </tool_result>
+  <assistant>Phase 1: Updating the docstring. I'll add the "Beyond gh pr checkout" section between the checkout-vs-teleport guidance and the examples.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="594" cache_read_input_tokens="34623" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 594}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01BDJ16vgaJV8SMUTjPuN6Wp">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-64/src/erk/cli/commands/pr/teleport_cmd.py</param>
+    <param name="old_string">    """Teleport a PR's remote state to local, overwriting local branch.
+
+    Unlike 'check...[truncated 690 chars]...   erk pr teleport 123 --new-slot --script --sync  # Full setup with Graphite sync
+    """</param>
+    <param name="new_string">    """Teleport a PR's remote state to local, overwriting local branch.
+
+    Unlike 'check...[truncated 1115 chars]...   erk pr teleport 123 --new-slot --script --sync  # Full setup with Graphite sync
+    """</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="594" cache_read_input_tokens="34623" output_tokens="742" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 594, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01BDJ16vgaJV8SMUTjPuN6Wp">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-64/src/erk/cli/commands/pr/teleport_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01JtfYoGs7UWwQkKManMpiJQ">
+    <param name="taskId">1</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="823" cache_read_input_tokens="35217" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 823}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01JtfYoGs7UWwQkKManMpiJQ">
+Updated task #1 status
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01BNpLQBEG2uKngHMxV6w6Rg">
+    <param name="taskId">2</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="823" cache_read_input_tokens="35217" output_tokens="125" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 823, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01BNpLQBEG2uKngHMxV6w6Rg">
+Updated task #2 status
+  </tool_result>
+  <assistant>Now let me verify the help output.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="198" cache_read_input_tokens="36040" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 198}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_0134v2VMQHA1yA29xLir9QQk">
+    <param name="description">Verify teleport help output</param>
+    <param name="subagent_type">devrun</param>
+    <param name="prompt">Run `uv run python -m erk pr teleport --help` in /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-64 and report the full output.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="198" cache_read_input_tokens="36040" output_tokens="152" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 198, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0134v2VMQHA1yA29xLir9QQk">
+Here's the full help output for `erk pr teleport`:
+
+```
+Usage: python -m erk pr teleport [OPTIONS] PR_NUMBER
+
+  Teleport a PR's remote state to local, overwriting local branch.
+
+  Unlike 'checkout' which preserves local state (reusing existing worktrees
+  and keeping local commits), teleport is remote-first: it force-resets the
+  local branch to match the remote exactly, discarding any local commits that
+  haven't been pushed.
+
+  Use 'checkout' when you want to start working on a PR locally.
+  Use 'teleport' when a remote agent has pushed new commits and you
+  want your local branch to match the remote exactly.
+
+  Beyond gh pr checkout:
+      - Force-resets local branch to match remote (discards unpushed commits)
+      - Worktree pool integration (navigates to existing worktrees, updates
+        slot assignments)
+      - Graphite registration (tracks/retracks branch, fetches base for
+        stacked PRs)
+      - Shell activation scripts (--script mode for cmux)
+      - --sync runs gt submit after teleport
+
+  Examples:
+      erk pr teleport 123              # Overwrite current branch with PR #123's remote state
+      erk pr teleport 123 -f           # Skip confirmation
+      erk pr teleport 123 --new-slot   # Create a new worktree slot for the PR
+      erk pr teleport 123 --new-slot --script --sync  # Full setup with Graphite sync
+
+... [14 lines omitted] ...
+  </tool_result>
+  <assistant>Help output looks correct — the new "Beyond gh pr checkout" section renders cleanly between the guidance and examples.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="658" cache_read_input_tokens="36238" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 658}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskUpdate" id="toolu_01ArEQBe1YdWbEv8yywLAhqV">
+    <param name="taskId">2</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="658" cache_read_input_tokens="36238" output_tokens="94" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 658, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01ArEQBe1YdWbEv8yywLAhqV">
+Updated task #2 status
+  </tool_result>
+  <assistant>Now signaling completion and cleaning up.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="770" cache_read_input_tokens="36238" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 770}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01JyppmT9hztVRVwAVT1JghE">
+    <param name="command">erk exec impl-signal ended --session-id="82ee1b5f-8ad4-497d-8ede-895f68f62530" 2&gt;/dev/null || true</param>
+    <param name="description">Signal implementation ended</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="770" cache_read_input_tokens="36238" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 770}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_017THzwNWLfETHF75TuPxA3y">
+    <param name="command">erk exec upload-impl-session --session-id="82ee1b5f-8ad4-497d-8ede-895f68f62530" 2&gt;/dev/null || true</param>
+    <param name="description">Upload session for async learn</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="770" cache_read_input_tokens="36238" output_tokens="225" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 770, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01JyppmT9hztVRVwAVT1JghE">
+{
+  "success": true,
+  "event": "ended",
+  "pr_number": 9221
+}
+  </tool_result>
+</session>
