@@ -81,6 +81,8 @@ packages = ["src/erk"]
 ".claude/skills/dignified-code-simplifier" = "erk/data/claude/skills/dignified-code-simplifier"
 ".claude/skills/pr-operations" = "erk/data/claude/skills/pr-operations"
 ".claude/skills/pr-feedback-classifier" = "erk/data/claude/skills/pr-feedback-classifier"
+# Tombstone: overwrites stale skill in customer repos on next sync
+".claude/skills/erk-planning" = "erk/data/claude/skills/erk-planning"
 # Agents: devrun and learn
 ".claude/agents/devrun.md" = "erk/data/claude/agents/devrun.md"
 ".claude/agents/learn" = "erk/data/claude/agents/learn"
