@@ -20,6 +20,25 @@
       "raw_size_kb": 419,
       "xml_size_kb": 91,
       "git_branch": "plnd/capability-tag-grouping-03-12-1321"
+    },
+    {
+      "session_id": "0e3ecaaa-ce84-4561-abf8-e5db96eb0805",
+      "stage": "impl",
+      "source": "remote",
+      "uploaded_at": "2026-03-12T17:43:48.734235+00:00",
+      "files": [
+        "impl-0e3ecaaa-ce84-4561-abf8-e5db96eb0805-0e3ecaaa-ce84-4561-abf8-e5db96eb0805-part1.xml",
+        "impl-0e3ecaaa-ce84-4561-abf8-e5db96eb0805-0e3ecaaa-ce84-4561-abf8-e5db96eb0805-part2.xml",
+        "impl-0e3ecaaa-ce84-4561-abf8-e5db96eb0805-0e3ecaaa-ce84-4561-abf8-e5db96eb0805-part3.xml",
+        "impl-0e3ecaaa-ce84-4561-abf8-e5db96eb0805-0e3ecaaa-ce84-4561-abf8-e5db96eb0805-part4.xml",
+        "impl-0e3ecaaa-ce84-4561-abf8-e5db96eb0805-0e3ecaaa-ce84-4561-abf8-e5db96eb0805-part5.xml",
+        "impl-0e3ecaaa-ce84-4561-abf8-e5db96eb0805-0e3ecaaa-ce84-4561-abf8-e5db96eb0805-part6.xml"
+      ],
+      "user_turns": 2,
+      "duration_minutes": 8,
+      "raw_size_kb": 447,
+      "xml_size_kb": 101,
+      "git_branch": "plnd/capability-tag-grouping-03-12-1321"
     }
   ]
 }
