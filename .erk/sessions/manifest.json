@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "pr_number": 9228,
+  "sessions": [
+    {
+      "session_id": "977f75d9-a6c3-476d-9d8d-d8d9c2c851e9",
+      "stage": "planning",
+      "source": "local",
+      "uploaded_at": "2026-03-12T14:49:13.259786+00:00",
+      "files": [
+        "planning-977f75d9-a6c3-476d-9d8d-d8d9c2c851e9-977f75d9-a6c3-476d-9d8d-d8d9c2c851e9-part1.xml",
+        "planning-977f75d9-a6c3-476d-9d8d-d8d9c2c851e9-977f75d9-a6c3-476d-9d8d-d8d9c2c851e9-part2.xml"
+      ],
+      "user_turns": 2,
+      "duration_minutes": 37,
+      "raw_size_kb": 1348,
+      "xml_size_kb": 69,
+      "git_branch": "plnd/delete-planning-skill-03-12-1333"
+    }
+  ]
+}
