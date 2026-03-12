@@ -120,6 +120,9 @@ class FakeGitBranchOps(GitBranchOps):
         if self._create_branch_error is not None:
             return self._create_branch_error
         self._created_branches.append((cwd, branch_name, start_point, force))
+        # Track in branch_heads so sync_pool_assignments sees the branch as existing
+        if branch_name not in self._branch_heads:
+            self._branch_heads[branch_name] = f"fake-sha-{branch_name}"
         return BranchCreated()
 
     def delete_branch(self, cwd: Path, branch_name: str, *, force: bool) -> None:

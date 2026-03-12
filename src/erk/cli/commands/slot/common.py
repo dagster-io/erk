@@ -221,12 +221,14 @@ class PoolSyncResult:
 
     state: PoolState
     synced_count: int
+    removed_count: int
 
 
 def sync_pool_assignments(
     state: PoolState,
     git: Git,
     pool_json_path: Path,
+    repo_root: Path,
 ) -> PoolSyncResult:
     """Sync pool assignments with actual git branch state.
 
@@ -235,34 +237,62 @@ def sync_pool_assignments(
     where users manually run ``gt create`` or ``git checkout`` in a pool
     slot, causing the recorded branch to diverge from the actual branch.
 
+    Also removes stale assignments where:
+    - The worktree path no longer exists on disk
+    - The assigned branch has been deleted (not in branch heads)
+    - The worktree is on a placeholder branch (slot was freed by ``erk land``)
+
     Args:
         state: Current pool state
         git: Git gateway for branch operations
         pool_json_path: Path to pool.json for saving updated state
+        repo_root: Repository root path (for batch branch-heads lookup)
 
     Returns:
-        PoolSyncResult with potentially updated state and count of synced assignments
+        PoolSyncResult with potentially updated state, count of synced and removed assignments
     """
+    all_heads = git.branch.get_all_branch_heads(repo_root)
+
     updated_assignments: list[SlotAssignment] = []
     synced_count = 0
+    removed_count = 0
 
     for assignment in state.assignments:
         if not assignment.worktree_path.exists():
-            updated_assignments.append(assignment)
+            user_output(
+                click.style("⚠ ", fg="yellow")
+                + f"Removing stale assignment for '{assignment.branch_name}' "
+                + f"in {assignment.slot_name} (worktree path missing)"
+            )
+            removed_count += 1
+            continue
+
+        if assignment.branch_name not in all_heads:
+            user_output(
+                click.style("⚠ ", fg="yellow")
+                + f"Removing stale assignment for '{assignment.branch_name}' "
+                + f"in {assignment.slot_name} (branch deleted)"
+            )
+            removed_count += 1
             continue
 
         actual_branch = git.branch.get_current_branch(assignment.worktree_path)
 
+        if actual_branch is not None and is_placeholder_branch(actual_branch):
+            user_output(
+                click.style("⚠ ", fg="yellow")
+                + f"Removing stale assignment for '{assignment.branch_name}' "
+                + f"in {assignment.slot_name} (placeholder branch)"
+            )
+            removed_count += 1
+            continue
+
         if actual_branch is None:
-            # Detached HEAD — leave assignment unchanged
+            # Detached HEAD with existing branch — keep (legitimate mid-rebase)
             updated_assignments.append(assignment)
             continue
 
         if actual_branch == assignment.branch_name:
-            updated_assignments.append(assignment)
-            continue
-
-        if is_placeholder_branch(actual_branch):
             updated_assignments.append(assignment)
             continue
 
@@ -277,8 +307,8 @@ def sync_pool_assignments(
         )
         synced_count += 1
 
-    if synced_count == 0:
-        return PoolSyncResult(state=state, synced_count=0)
+    if synced_count == 0 and removed_count == 0:
+        return PoolSyncResult(state=state, synced_count=0, removed_count=0)
 
     new_state = PoolState(
         version=state.version,
@@ -287,7 +317,7 @@ def sync_pool_assignments(
         assignments=tuple(updated_assignments),
     )
     save_pool_state(pool_json_path, new_state)
-    return PoolSyncResult(state=new_state, synced_count=synced_count)
+    return PoolSyncResult(state=new_state, synced_count=synced_count, removed_count=removed_count)
 
 
 @dataclass(frozen=True)
@@ -609,7 +639,7 @@ def allocate_slot_for_branch(
         )
 
     # Sync pool assignments with actual git state before making decisions
-    sync_result = sync_pool_assignments(state, ctx.git, repo.pool_json_path)
+    sync_result = sync_pool_assignments(state, ctx.git, repo.pool_json_path, repo.root)
     state = sync_result.state
 
     # Check if branch is already assigned
