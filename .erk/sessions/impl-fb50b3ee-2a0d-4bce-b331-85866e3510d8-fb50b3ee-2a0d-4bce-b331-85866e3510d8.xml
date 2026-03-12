@@ -1,0 +1,755 @@
+<session>
+  <meta branch="plnd/delete-planning-skill-03-12-1333" />
+  <meta model="claude-opus-4-6" />
+  <user>&lt;command-message&gt;erk:plan-implement&lt;/command-message&gt;
+&lt;command-name&gt;/erk:plan-implement&lt;/command-name&gt;</user>
+  <user># /erk:plan-implement
+
+Implement a plan - either from GitHub, a markdown file, an existing impl directory under `.erk/impl-context/`, or by saving the current plan first.
+
+This is the primary implementation workflow - it orchestrates:
+
+1. Setting up the impl directory under `.erk/impl-context/&lt;branch&gt;/` (from issue, file, existing folder, or fresh plan)
+2. Executing the implementation
+3. Running CI and submitting the PR
+
+## Prerequisites
+
+- Must be in a git repository managed by erk
+- GitHub CLI (`gh`) must be authenticated
+- One of:
+  - A plan number, URL, or file path argument
+  - An existing impl directory under `.erk/impl-context/`
+  - A plan branch checked out (e.g., `plnd/...` or `P{number}-...`)
+  - A plan in `~/.claude/plans/` (from plan mode)
+
+## Usage
+
+```bash
+/erk:plan-implement                    # Use impl directory, detect from branch, or save current plan
+/erk:plan-implement 2521               # Fetch and implement PR #2521
+/erk:plan-implement https://github.com/owner/repo/pull/2521   # URL form
+/erk:plan-implement ./my-plan.md       # Implement from local markdown file
+```
+
+---
+
+## CRITICAL: PR Operations
+
+**NEVER** run direct GitHub CLI commands for PR operations during implementation:
+
+- `gh pr edit` — destroys plan-header metadata block
+- `gh pr ready` — bypasses lifecycle tracking
+- `gh pr close` / `gh pr merge`
+
+All PR operations are handled by `erk pr submit` in Step 13. It automatically:
+
+- Generates the PR title and body
+- Preserves the plan-header metadata block
+- Marks draft PRs as ready for review
+- Updates lifecycle stage
+
+## Agent Instructions
+
+### Step 1: Set Up Implementation
+
+Parse `` and run the consolidated setup command:
+
+- **If numeric** (e.g., `2521`): `erk exec setup-impl --issue 2521`
+- **If GitHub URL** (e.g., `https://github.com/.../issues/2521`): Extract number, `erk exec setup-impl --issue 2521`
+- **If path to file** (anything else non-empty): `erk exec setup-impl --file &lt;path&gt;`
+- **If empty**: `erk exec setup-impl` (auto-detects from `.erk/impl-context/`, branch, or fails)
+
+```bash
+erk exec setup-impl [--issue &lt;N&gt; | --file &lt;path&gt;]
+```
+
+This single command handles:
+
+- Fetching plan from GitHub (draft PR)
+- Setting up from a local markdown file
+- Auto-detecting from existing impl directory under `.erk/impl-context/`
+- Auto-detecting plan number from branch name (P{number}-... or PR lookup)
+- Creating/checking out the feature branch
+- Creating impl directory under `.erk/impl-context/&lt;branch&gt;/` with plan content
+- Running impl-init validation
+- Cleaning up `.erk/impl-context/` staging directory (git rm + commit + push)
+
+Otherwise, generate a branch slug and set up from the specified issue:
+
+1. Fetch the title: `gh pr view &lt;ISSUE_ARG&gt; --json title -q .title`
+2. Generate a branch slug from the title:
+   - 2-4 hyphenated lowercase words, max 30 characters
+   - Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+   - Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+   - Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+3. Store as `BRANCH_SLUG`.
+
+```bash
+erk exec setup-impl --issue &lt;ISSUE_ARG&gt; --branch-slug="${BRANCH_SLUG}"
+```
+
+If `setup-impl` exits with code 1 and `error: "no_plan_found"`, fall back to saving the current plan:
+
+Generate a branch slug from the plan title (the first `# ` heading in the plan file):
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Store as `BRANCH_SLUG`
+
+Save the current plan to GitHub and capture the plan number:
+
+```bash
+erk exec plan-save --format json --session-id="fb50b3ee-2a0d-4bce-b331-85866e3510d8" --branch-slug="${BRANCH_SLUG}"
+```
+
+Parse the JSON output to get `pr_number`, then:
+
+```bash
+erk exec setup-impl --issue &lt;pr_number&gt;
+```
+
+The `setup-impl` output includes `related_docs` (skills and docs to load) and `has_plan_tracking` (whether GitHub issue tracking is active).
+
+If this fails, display the error and stop.
+
+### Step 2: Read Plan and Load Context
+
+Read `plan.md` from the impl directory set up in Step 1 to understand:
+
+- Overall goal and context
+- Context &amp; Understanding sections (API quirks, architectural insights, pitfalls)
+- Implementation phases and dependencies
+- Success criteria
+
+**Context Consumption**: Plans contain expensive discoveries. Ignoring `[CRITICAL:]` tags, "Related Context:" subsections, or "DO NOT" items causes repeated mistakes.
+
+### Step 3: Load Related Documentation
+
+If plan contains "Related Documentation" section, load listed skills via Skill tool and read listed docs.
+
+### Step 4: Create TodoWrite Entries
+
+Create todo entries for each phase from the plan.
+
+### Step 5: Signal GitHub Started
+
+```bash
+erk exec impl-signal started --session-id="fb50b3ee-2a0d-4bce-b331-85866e3510d8" 2&gt;/dev/null || true
+```
+
+This also deletes the Claude plan file (from `~/.claude/plans/`) since:
+
+- The content has been saved to GitHub
+- The content has been snapshotted to `.erk/scratch/`
+- Keeping it could cause confusion if the user tries to re-save
+
+### Step 6: Execute Each Phase Sequentially
+
+For each phase:
+
+1. **Mark phase as in_progress** (in TodoWrite)
+2. **Read task requirements** carefully
+3. **Implement code AND tests together**:
+   - Load `dignified-python-313` skill for coding standards
+   - Load `fake-driven-testing` skill for test patterns
+   - Follow project AGENTS.md standards
+4. **Mark phase as completed** (in TodoWrite)
+5. **Report progress**: changes made, what's next
+
+**Important:** `plan.md` is immutable - NEVER edit during implementation
+
+### Step 7: Report Progress
+
+After each phase: report changes made and what's next.
+
+### Step 8: Final Verification
+
+Confirm all tasks executed, success criteria met, note deviations, summarize changes.
+
+### Step 9: Signal GitHub Ended
+
+```bash
+erk exec impl-signal ended --session-id="fb50b3ee-2a0d-4bce-b331-85866e3510d8" 2&gt;/dev/null || true
+```
+
+### Step 10: Upload Session for Async Learn
+
+```bash
+erk exec upload-impl-session --session-id="fb50b3ee-2a0d-4bce-b331-85866e3510d8" 2&gt;/dev/null || true
+```
+
+This reads plan reference from the impl directory, captures session info, and uploads for async learn processing.
+
+### Step 11: Clean Up Impl Context
+
+Remove the `.erk/impl-context/` directory from the repo:
+
+```bash
+erk exec cleanup-impl-context
+```
+
+This removes `.erk/impl-context/`, stages the deletion, commits, and pushes — all idempotent.
+
+### Step 12: Run CI Iteratively
+
+1. If `.erk/prompt-hooks/post-plan-implement-ci.md` exists: follow its instructions
+2. Otherwise: check CLAUDE.md/AGENTS.md for CI commands
+
+### Step 13: Submit PR
+
+Push the branch and create or update the PR using the Graphite-aware submit pipeline:
+
+```bash
+erk pr submit
+```
+
+This handles pushing commits, creating/updating the PR, generating the PR description, and enhancing with Graphite stack metadata when available.
+
+After successful submission, signal lifecycle transition:
+
+```bash
+erk exec impl-signal submitted 2&gt;/dev/null || true
+```
+
+Then validate PR completion invariants:
+
+```bash
+erk pr check --stage=impl
+```
+
+This validates PR submission readiness including implementation-specific checks
+(e.g., `.erk/impl-context/` must be cleaned up). If checks fail, display output and warn user.
+
+### Step 14: Output Format
+
+- **Start**: "Setting up implementation..." or "Fetching plan #X..."
+- **After setup**: "Implementation environment ready, reading plan..."
+- **Each phase**: "Phase X: [brief description]" with code changes
+- **End**: "Plan execution complete. [Summary]"
+
+---
+
+## Related Commands
+
+- `/erk:plan-save` - Save plan only, don't implement (for defer-to-later workflow)
+- `/erk:replan` - Re-plan an existing plan with current codebase state
+</user>
+  <usage input_tokens="2" cache_creation_input_tokens="17504" cache_read_input_tokens="9131" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 17504}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>Setting up implementation from the current branch.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="17504" cache_read_input_tokens="9131" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 17504}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01DkHH2SEPypVWYxY2ssGKW9">
+    <param name="command">erk exec setup-impl</param>
+    <param name="description">Auto-detect and set up implementation from current branch</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="17504" cache_read_input_tokens="9131" output_tokens="291" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 17504, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01DkHH2SEPypVWYxY2ssGKW9">
+Found existing impl dir for PR #9223, skipping branch setup
+{"success": true, "impl_path": "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-63/.erk/impl-context/plnd--delete-planning-skill-03-12-1333", "pr_number": 9223, "pr_url": "https://github.com/dagster-io/erk/pull/9223", "branch": "plnd/delete-planning-skill-03-12-1333", "pr_title": "", "no_impl": false}
+{"success": true, "source": "issue", "pr_number": 9223, "has_plan_tracking": true, "valid": true, "related_docs": {"skills": [], "docs": []}}
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Ej3dmuHZNk5TsFyGRNzzmz">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-63/.erk/impl-context/plnd--delete-planning-skill-03-12-1333/plan.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="465" cache_read_input_tokens="26635" output_tokens="105" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 465, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Ej3dmuHZNk5TsFyGRNzzmz">
+     1→# Delete `erk-planning` skill
+     2→
+     3→## Context
+     4→
+     5→The `erk-planning` skill documents plan PR structure and workflows, but its content is significantly out of date — it describes the legacy issue-based plan format, not the current planned-PR backend. Rather than update it, we're removing it since the slash commands (`/erk:plan-save`, `/local:plan-update`, `/erk:replan`) and AGENTS.md already carry sufficient context.
+     6→
+     7→## Changes
+     8→
+     9→### 1. Delete skill files
+    10→- Delete `.claude/skills/erk-planning/SKILL.md`
+    11→- Delete `.claude/skills/erk-planning/references/workflow.md`
+    12→- Delete `.claude/skills/erk-planning/` directory
+    13→
+    14→### 2. Remove from bundled skill registry
+    15→- **File:** `src/erk/capabilities/skills/bundled.py:53`
+    16→- Remove `"erk-planning": "Plan management",` from `bundled_skills()` dict
+    17→
+    18→### 3. Remove from Codex portable list
+    19→- **File:** `src/erk/core/capabilities/codex_portable.py:22`
+    20→- Remove `"erk-planning",` from `codex_portable_skills()` frozenset
+    21→
+    22→### 4. Remove from pyproject.toml
+    23→- **File:** `pyproject.toml:73`
+    24→- Remove `".claude/skills/erk-planning" = "erk/data/claude/skills/erk-planning"` symlink entry
+    25→
+    26→### 5. Remove references from AGENTS.md
+    27→- **Line 88:** Remove "Load the `erk-planning` skill for detailed guidance." — keep the command list that follows
+    28→- **Line 110:** Remove "Load the `erk-planning` skill (`$erk-planning`) for detailed workflow guidance."
+    29→
+    30→### 6. Remove reference from `/local:plan-update`
+
+... [14 lines omitted] ...
+
+    40→1. Run `ruff check` (via devrun) to confirm no import errors
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="1342" cache_read_input_tokens="26635" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1342}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Implementation environment ready, reading plan. Let me read all the files that need modification.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1342" cache_read_input_tokens="26635" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1342}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_01AuUP6Hoj1B3ucU1GLBYBJ5">
+    <param name="query">select:TaskCreate,TaskUpdate</param>
+    <param name="max_results">2</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1342" cache_read_input_tokens="26635" output_tokens="166" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1342, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01AuUP6Hoj1B3ucU1GLBYBJ5">
+
+  </tool_result>
+  <tool_use name="Read" id="toolu_01SMc55DGnS3FpT44doLPvr2">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-63/src/erk/capabilities/skills/bundled.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1975" cache_read_input_tokens="27977" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1975}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01SMc55DGnS3FpT44doLPvr2">
+     1→"""Bundled skill capabilities — cached factory.
+     2→
+     3→All simple skill capabilities (those that only need a name and description)
+     4→are registered here. The dict is created lazily via a cached function to
+     5→avoid module-import-time allocation.
+     6→
+     7→Skills with custom install/uninstall logic (like learned-docs) are NOT here;
+     8→they have their own capability classes.
+     9→"""
+    10→
+    11→from functools import cache
+    12→
+    13→from erk.core.capabilities.codex_portable import codex_portable_skills
+    14→from erk.core.capabilities.skill_capability import SkillCapability
+    15→from erk_shared.context.types import AgentBackend
+    16→
+    17→_UNBUNDLED_SKILLS: frozenset[str] = frozenset(
+    18→    {
+    19→        "ci-iteration",
+    20→        "cli-skill-creator",
+    21→        "cmux",
+    22→        "command-creator",
+    23→        "learned-docs",  # has its own capability class (LearnedDocsCapability)
+    24→        "refac-cli-push-down",
+    25→        "refac-mock-to-fake",
+    26→        "refac-module-to-subpackage",
+    27→        "rename-swarm",
+    28→        "session-inspector",
+    29→        "erk-skill-onboarding",
+    30→        "skill-creator",
+
+... [75 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Qi6DNG2g1xpGBR5yh86zfF">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-63/src/erk/core/capabilities/codex_portable.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1975" cache_read_input_tokens="27977" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1975}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Qi6DNG2g1xpGBR5yh86zfF">
+     1→"""Registry of skills portable to Codex CLI.
+     2→
+     3→Codex is a generic AI coding agent framework. Skills in codex_portable_skills()
+     4→work with any AI coding agent (not Claude-specific).
+     5→
+     6→Skills in claude_only_skills() reference Claude-specific features like hooks,
+     7→session logs, or Claude Code commands and cannot be ported to Codex.
+     8→"""
+     9→
+    10→from functools import cache
+    11→
+    12→
+    13→@cache
+    14→def codex_portable_skills() -&gt; frozenset[str]:
+    15→    """Skills that work with any AI coding agent (not Claude-specific)."""
+    16→    return frozenset(
+    17→        {
+    18→            "dignified-python",
+    19→            "fake-driven-testing",
+    20→            "erk-diff-analysis",
+    21→            "erk-exec",
+    22→            "erk-planning",
+    23→            "objective",
+    24→            "gh",
+    25→            "gt",
+    26→            "dignified-code-simplifier",
+    27→            "pr-operations",
+    28→            "pr-feedback-classifier",
+    29→        }
+    30→    )
+
+... [7 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01KyaryMLATNiyTZN3Rc2Xrm">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-63/pyproject.toml</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1975" cache_read_input_tokens="27977" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1975}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01KyaryMLATNiyTZN3Rc2Xrm">
+     1→[tool.uv.workspace]
+     2→members = [
+     3→    "packages/erk-dev",
+     4→    "packages/erk-mcp",
+     5→    "packages/erk-shared",
+     6→    "packages/erk-statusline",
+     7→]
+     8→
+     9→[tool.uv.sources]
+    10→erk-dev = { workspace = true }
+    11→erk-mcp = { workspace = true }
+    12→erk-shared = { workspace = true }
+    13→erk-statusline = { workspace = true }
+    14→
+    15→[project]
+    16→name = "erk"
+    17→version = "0.9.11"
+    18→description = "Add your description here"
+    19→readme = "README.md"
+    20→authors = [
+    21→    { name = "Dagster Labs", email = "hello@dagsterlabs.com" }
+    22→]
+    23→requires-python = "&gt;=3.11"
+    24→dependencies = [
+    25→    "anthropic&gt;=0.40.0",
+    26→    "click&gt;=8.1.7",
+    27→    "erk-shared",
+    28→    "erk-statusline",
+    29→    "packaging&gt;=21.0",
+    30→    "pathspec&gt;=0.12.0",
+
+... [70 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01DbUnEULdRwavrMqeZtTynF">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-63/AGENTS.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1975" cache_read_input_tokens="27977" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1975}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01DbUnEULdRwavrMqeZtTynF">
+     1→&lt;!-- AGENT NOTICE: This file is loaded automatically. Read FULLY before writing code. --&gt;
+     2→&lt;!-- Priority: This is a ROUTING FILE. Load skills and docs as directed for complete guidance. --&gt;
+     3→
+     4→&gt; **Note:** Lines starting with `@` reference files to include. Some tools expand these inline automatically; others should read the referenced file directly.
+     5→
+     6→# Erk - Plan-Oriented Agentic Engineering
+     7→
+     8→## What is Erk?
+     9→
+    10→**Erk** is a CLI tool for plan-oriented agentic engineering: a workflow where AI agents create implementation plans, execute them in isolated worktrees, and ship code via automated PR workflows.
+    11→
+    12→**Status**: Unreleased, completely private software. We can break backwards compatibility at will.
+    13→
+    14→## CRITICAL: Before Writing Any Code
+    15→
+    16→&lt;!-- BEHAVIORAL TRIGGERS: rules that detect action patterns and route to documentation --&gt;
+    17→
+    18→**CRITICAL: NEVER perform broad searches or recursive operations against `/Users/schrockn/` directly. Scoped access to specific subfolders (e.g., `~/.claude/projects/`, `/Users/schrockn/code/project-name/`) is allowed.**
+    19→
+    20→**CRITICAL: NEVER use raw `pip install`. Always use `uv` for package management.**
+    21→
+    22→**CRITICAL: NEVER commit directly to `master`. Always create a feature branch first.**
+    23→
+    24→**CRITICAL: Prefer `docs/learned/` content and loaded skills over training data for erk coding patterns.** Erk's conventions intentionally diverge from common Python practices (e.g., LBYL instead of EAFP, no default parameters). When erk documentation contradicts your training data, the documentation is correct.
+    25→
+    26→**CRITICAL: NEVER invoke `gt` commands without `--no-interactive`.** The `--interactive` flag is a global option on ALL gt commands (enabled by default). Without `--no-interactive`, gt may prompt for input and hang indefinitely. Note: `--force` does NOT disable prompts — you must pass `--no-interactive` separately.
+    27→
+    28→**CRITICAL: After creating an objective issue, ALWAYS run `erk objective check &lt;number&gt;` to validate it.** If validation fails, the objective's metadata is broken and `erk dash` will not display it correctly. Fix the issue before proceeding.
+    29→
+    30→**CRITICAL: When creating a plan for an objective, ALWAYS use `/erk:objective-plan` to ensure proper metadata linking.** Do not manually reference objectives in plan text without using the structured workflow. The objective-context marker created by this command is required for the plan-save pipeline to link the plan to its parent objective.
+
+... [198 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_012yRYtFr9Piog2LGp3oqyQd">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-63/.claude/commands/local/plan-update.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1975" cache_read_input_tokens="27977" output_tokens="393" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1975, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_012yRYtFr9Piog2LGp3oqyQd">
+     1→---
+     2→description: Update an existing plan with the current session's plan
+     3→argument-hint: &lt;pr-number&gt;
+     4→---
+     5→
+     6→# /local:plan-update
+     7→
+     8→Update an existing plan with the current session's plan content.
+     9→
+    10→## Usage
+    11→
+    12→```bash
+    13→/local:plan-update 42
+    14→/local:plan-update https://github.com/owner/repo/pull/42
+    15→```
+    16→
+    17→---
+    18→
+    19→## Agent Instructions
+    20→
+    21→### Step 1: Parse PR Number
+    22→
+    23→Extract the PR number from the argument:
+    24→
+    25→- If numeric (e.g., `42`), use directly
+    26→- If URL (e.g., `https://github.com/owner/repo/pull/42`), extract the number from the path
+    27→
+    28→If no argument provided, check `ref.json` in `.erk/impl-context/&lt;branch&gt;/` for a linked PR number.
+    29→
+    30→If still no PR number, ask the user for the PR number.
+
+... [33 lines omitted] ...
+
+    48→- If `branch_name` is set but `branch_updated` is false: `"Plan updated on PR #N (warning: branch push failed)"`
+    50→On failure, display the error and suggest:
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="8241" cache_read_input_tokens="29952" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 8241}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I have all the context. Let me create tasks and start implementing.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="8241" cache_read_input_tokens="29952" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 8241}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskCreate" id="toolu_01YDdq54oAuTqUUc2fuj6uVn">
+    <param name="subject">Delete skill files</param>
+    <param name="description">Delete .claude/skills/erk-planning/ directory and its contents</param>
+    <param name="activeForm">Deleting skill files</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="8241" cache_read_input_tokens="29952" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 8241}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01YDdq54oAuTqUUc2fuj6uVn">
+Task #1 created successfully: Delete skill files
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_01RYbkHechuSqFCcn3WSXmRB">
+    <param name="subject">Remove from bundled skill registry</param>
+    <param name="description">Remove "erk-planning" from bundled_skills() in bundled.py</param>
+    <param name="activeForm">Updating bundled.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="8241" cache_read_input_tokens="29952" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 8241}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01RYbkHechuSqFCcn3WSXmRB">
+Task #2 created successfully: Remove from bundled skill registry
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_01YEiTQJPCGh13xYLa2AmsDx">
+    <param name="subject">Remove from Codex portable list</param>
+    <param name="description">Remove "erk-planning" from codex_portable.py</param>
+    <param name="activeForm">Updating codex_portable.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="8241" cache_read_input_tokens="29952" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 8241}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01YEiTQJPCGh13xYLa2AmsDx">
+Task #3 created successfully: Remove from Codex portable list
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_01DiEMoY3hfcqFRw26uKbttF">
+    <param name="subject">Remove from pyproject.toml</param>
+    <param name="description">Remove erk-planning symlink entry from pyproject.toml</param>
+    <param name="activeForm">Updating pyproject.toml</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="8241" cache_read_input_tokens="29952" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 8241}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01DiEMoY3hfcqFRw26uKbttF">
+Task #4 created successfully: Remove from pyproject.toml
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_01W5RaBfRwE3wbRBkek7Ja1h">
+    <param name="subject">Remove references from AGENTS.md</param>
+    <param name="description">Remove erk-planning references from lines 88 and 110</param>
+    <param name="activeForm">Updating AGENTS.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="8241" cache_read_input_tokens="29952" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 8241}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01W5RaBfRwE3wbRBkek7Ja1h">
+Task #5 created successfully: Remove references from AGENTS.md
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_01WQea1J6yydgjhpygqUUizN">
+    <param name="subject">Remove reference from plan-update command</param>
+    <param name="description">Remove erk-planning skill reference from .claude/commands/local/plan-update.md</param>
+    <param name="activeForm">Updating plan-update.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="8241" cache_read_input_tokens="29952" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 8241}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01WQea1J6yydgjhpygqUUizN">
+Task #6 created successfully: Remove reference from plan-update command
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_01SqcuF1DkxnrVFmW9ue1CtV">
+    <param name="subject">Run CI and verify</param>
+    <param name="description">Run ruff, ty, grep for remaining references, run capability tests</param>
+    <param name="activeForm">Running verification</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="8241" cache_read_input_tokens="29952" output_tokens="732" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 8241, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01SqcuF1DkxnrVFmW9ue1CtV">
+Task #7 created successfully: Run CI and verify
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01LnLHjKJLGNxZG2T5NvVkUj">
+    <param name="command">erk exec impl-signal started --session-id="fb50b3ee-2a0d-4bce-b331-85866e3510d8" 2&gt;/dev/null || true</param>
+    <param name="description">Signal implementation started</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1003" cache_read_input_tokens="38193" output_tokens="116" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1003, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01LnLHjKJLGNxZG2T5NvVkUj">
+{
+  "success": true,
+  "event": "started",
+  "pr_number": 9223
+}
+  </tool_result>
+  <assistant>Now executing all changes. Starting with deleting the skill directory and making all code edits in parallel.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="154" cache_read_input_tokens="39196" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 154}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskUpdate" id="toolu_01JiXnZE9SKQph9w3B7yVSQ3">
+    <param name="taskId">1</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="154" cache_read_input_tokens="39196" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 154}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01JiXnZE9SKQph9w3B7yVSQ3">
+Updated task #1 status
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01TLGWPCsHZDesUjY5aQkFrp">
+    <param name="command">rm -rf /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-63/.claude/skills/erk-planning</param>
+    <param name="description">Delete erk-planning skill directory</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="154" cache_read_input_tokens="39196" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 154}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01TLGWPCsHZDesUjY5aQkFrp">
+(Bash completed with no output)
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01BtzDebnr4jhYt4v48b2uwy">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-63/src/erk/capabilities/skills/bundled.py</param>
+    <param name="old_string">        "erk-planning": "Plan management",
+</param>
+    <param name="new_string"></param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="154" cache_read_input_tokens="39196" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 154}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01BtzDebnr4jhYt4v48b2uwy">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-63/src/erk/capabilities/skills/bundled.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_016co8uvdVFYBvnfLjwpyGHK">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-63/src/erk/core/capabilities/codex_portable.py</param>
+    <param name="old_string">            "erk-planning",
+</param>
+    <param name="new_string"></param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="154" cache_read_input_tokens="39196" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 154}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01YDJ7hQQANFMLJH4xE1uQh5">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-63/pyproject.toml</param>
+    <param name="old_string">".claude/skills/erk-planning" = "erk/data/claude/skills/erk-planning"
+</param>
+    <param name="new_string"></param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="154" cache_read_input_tokens="39196" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 154}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016co8uvdVFYBvnfLjwpyGHK">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-63/src/erk/core/capabilities/codex_portable.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01YDJ7hQQANFMLJH4xE1uQh5">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-63/pyproject.toml has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_016FkBrqsiHZh3i3egu7xuEw">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-63/AGENTS.md</param>
+    <param name="old_string">Load the `erk-planning` skill for detailed guidance. Key commands:</param>
+    <param name="new_string">Key commands:</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="154" cache_read_input_tokens="39196" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 154}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016FkBrqsiHZh3i3egu7xuEw">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-63/AGENTS.md has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01GeH7UAodfHT5SrfWcjN9iz">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-63/AGENTS.md</param>
+    <param name="old_string">Load the `erk-planning` skill (`$erk-planning`) for detailed workflow guidance.
+
+### All Backends</param>
+    <param name="new_string">### All Backends</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="154" cache_read_input_tokens="39196" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 154}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01GeH7UAodfHT5SrfWcjN9iz">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-63/AGENTS.md has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01KoYnwiP2Zp1e4eGdAavwQg">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-63/.claude/commands/local/plan-update.md</param>
+    <param name="old_string">- `/erk:replan` - Recreate an obsolete plan from scratch
+- `erk-planning` skill - Complete plan management documentation</param>
+    <param name="new_string">- `/erk:replan` - Recreate an obsolete plan from scratch</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="154" cache_read_input_tokens="39196" output_tokens="970" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 154, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01KoYnwiP2Zp1e4eGdAavwQg">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-63/.claude/commands/local/plan-update.md has been updated successfully.
+  </tool_result>
+  <assistant>All edits done. Let me mark tasks completed and verify.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="4585" cache_read_input_tokens="39350" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4585}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskUpdate" id="toolu_014V1bvHxNRvQnR1qthdy1z2">
+    <param name="taskId">1</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4585" cache_read_input_tokens="39350" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4585}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014V1bvHxNRvQnR1qthdy1z2">
+Updated task #1 status
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01V6DsU6xJzuBUifDPunj5Tc">
+    <param name="taskId">2</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4585" cache_read_input_tokens="39350" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4585}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01V6DsU6xJzuBUifDPunj5Tc">
+Updated task #2 status
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01Ci3jByKtzUEavUN5Jd4iTB">
+    <param name="taskId">3</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4585" cache_read_input_tokens="39350" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4585}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskUpdate" id="toolu_016SJzMD49BAcHqi3bawBQXQ">
+    <param name="taskId">4</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4585" cache_read_input_tokens="39350" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4585}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Ci3jByKtzUEavUN5Jd4iTB">
+Updated task #3 status
+  </tool_result>
+  <tool_result tool="toolu_016SJzMD49BAcHqi3bawBQXQ">
+Updated task #4 status
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01NkwuEkiNeuiDieAEjEkh6a">
+    <param name="taskId">5</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4585" cache_read_input_tokens="39350" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4585}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01NkwuEkiNeuiDieAEjEkh6a">
+Updated task #5 status
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01QUyiexfXJo6UqjwgSkeLXA">
+    <param name="taskId">6</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4585" cache_read_input_tokens="39350" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4585}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01QUyiexfXJo6UqjwgSkeLXA">
+Updated task #6 status
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01Ek8eFn2fiNq6TGiQoiA2Vi">
+    <param name="taskId">7</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4585" cache_read_input_tokens="39350" output_tokens="404" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 4585, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Ek8eFn2fiNq6TGiQoiA2Vi">
+Updated task #7 status
+  </tool_result>
+  <assistant>Now let me grep for remaining references and verify the skill directory is gone.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3666" cache_read_input_tokens="43935" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3666}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01JE5sB6mWjdithh5sBWcmrU">
+    <param name="pattern">erk-planning</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-63</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3666" cache_read_input_tokens="43935" output_tokens="150" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3666, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01JE5sB6mWjdithh5sBWcmrU">
+.devcontainer/devcontainer.json:2:  "name": "erk-planning",
+docs/user/planner-setup.md:56:  "name": "erk-planning",
+  </tool_result>
+  <assistant>Only the two expected references remain (devcontainer name and docs example — plan explicitly says not to touch these). Now let me run CI.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="208" cache_read_input_tokens="47601" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 208}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_018ZPmRao2SqTNnXWmXDtik3">
+    <param name="command">erk exec impl-signal ended --session-id="fb50b3ee-2a0d-4bce-b331-85866e3510d8" 2&gt;/dev/null || true</param>
+    <param name="description">Signal implementation ended</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="208" cache_read_input_tokens="47601" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 208}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_016tCjCGoix9iDA1QpXExwHv">
+    <param name="command">erk exec upload-impl-session --session-id="fb50b3ee-2a0d-4bce-b331-85866e3510d8" 2&gt;/dev/null || true</param>
+    <param name="description">Upload session for async learn</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="208" cache_read_input_tokens="47601" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 208}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_017HTz1XeWs9HZiXBbWL52ox">
+    <param name="command">erk exec cleanup-impl-context</param>
+    <param name="description">Clean up impl context directory</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="208" cache_read_input_tokens="47601" output_tokens="311" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 208, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_018ZPmRao2SqTNnXWmXDtik3">
+{
+  "success": true,
+  "event": "ended",
+  "pr_number": 9223
+}
+  </tool_result>
+</session>

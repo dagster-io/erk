@@ -15,6 +15,20 @@
       "raw_size_kb": 615,
       "xml_size_kb": 54,
       "git_branch": "master"
+    },
+    {
+      "session_id": "fb50b3ee-2a0d-4bce-b331-85866e3510d8",
+      "stage": "impl",
+      "source": "local",
+      "uploaded_at": "2026-03-12T13:36:46.433491+00:00",
+      "files": [
+        "impl-fb50b3ee-2a0d-4bce-b331-85866e3510d8-fb50b3ee-2a0d-4bce-b331-85866e3510d8.xml"
+      ],
+      "user_turns": 2,
+      "duration_minutes": 2,
+      "raw_size_kb": 191,
+      "xml_size_kb": 42,
+      "git_branch": "plnd/delete-planning-skill-03-12-1333"
     }
   ]
 }
