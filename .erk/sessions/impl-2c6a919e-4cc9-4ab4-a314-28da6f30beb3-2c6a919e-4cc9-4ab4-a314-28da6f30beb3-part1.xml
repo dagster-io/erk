@@ -1,0 +1,1236 @@
+<session>
+  <meta branch="plnd/fix-stale-slot-sync-03-12-1520" />
+  <meta model="claude-opus-4-6" />
+  <user>&lt;command-message&gt;erk:plan-implement&lt;/command-message&gt;
+&lt;command-name&gt;/erk:plan-implement&lt;/command-name&gt;</user>
+  <user># /erk:plan-implement
+
+Implement a plan - either from GitHub, a markdown file, an existing impl directory under `.erk/impl-context/`, or by saving the current plan first.
+
+This is the primary implementation workflow - it orchestrates:
+
+1. Setting up the impl directory under `.erk/impl-context/&lt;branch&gt;/` (from issue, file, existing folder, or fresh plan)
+2. Executing the implementation
+3. Running CI and submitting the PR
+
+## Prerequisites
+
+- Must be in a git repository managed by erk
+- GitHub CLI (`gh`) must be authenticated
+- One of:
+  - A plan number, URL, or file path argument
+  - An existing impl directory under `.erk/impl-context/`
+  - A plan branch checked out (e.g., `plnd/...` or `P{number}-...`)
+  - A plan in `~/.claude/plans/` (from plan mode)
+
+## Usage
+
+```bash
+/erk:plan-implement                    # Use impl directory, detect from branch, or save current plan
+/erk:plan-implement 2521               # Fetch and implement PR #2521
+/erk:plan-implement https://github.com/owner/repo/pull/2521   # URL form
+/erk:plan-implement ./my-plan.md       # Implement from local markdown file
+```
+
+---
+
+## CRITICAL: PR Operations
+
+**NEVER** run direct GitHub CLI commands for PR operations during implementation:
+
+- `gh pr edit` — destroys plan-header metadata block
+- `gh pr ready` — bypasses lifecycle tracking
+- `gh pr close` / `gh pr merge`
+
+All PR operations are handled by `erk pr submit` in Step 13. It automatically:
+
+- Generates the PR title and body
+- Preserves the plan-header metadata block
+- Marks draft PRs as ready for review
+- Updates lifecycle stage
+
+## Agent Instructions
+
+### Step 1: Set Up Implementation
+
+Parse `` and run the consolidated setup command:
+
+- **If numeric** (e.g., `2521`): `erk exec setup-impl --issue 2521`
+- **If GitHub URL** (e.g., `https://github.com/.../issues/2521`): Extract number, `erk exec setup-impl --issue 2521`
+- **If path to file** (anything else non-empty): `erk exec setup-impl --file &lt;path&gt;`
+- **If empty**: `erk exec setup-impl` (auto-detects from `.erk/impl-context/`, branch, or fails)
+
+```bash
+erk exec setup-impl [--issue &lt;N&gt; | --file &lt;path&gt;]
+```
+
+This single command handles:
+
+- Fetching plan from GitHub (draft PR)
+- Setting up from a local markdown file
+- Auto-detecting from existing impl directory under `.erk/impl-context/`
+- Auto-detecting plan number from branch name (P{number}-... or PR lookup)
+- Creating/checking out the feature branch
+- Creating impl directory under `.erk/impl-context/&lt;branch&gt;/` with plan content
+- Running impl-init validation
+- Cleaning up `.erk/impl-context/` staging directory (git rm + commit + push)
+
+Otherwise, generate a branch slug and set up from the specified issue:
+
+1. Fetch the title: `gh pr view &lt;ISSUE_ARG&gt; --json title -q .title`
+2. Generate a branch slug from the title:
+   - 2-4 hyphenated lowercase words, max 30 characters
+   - Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+   - Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+   - Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+3. Store as `BRANCH_SLUG`.
+
+```bash
+erk exec setup-impl --issue &lt;ISSUE_ARG&gt; --branch-slug="${BRANCH_SLUG}"
+```
+
+If `setup-impl` exits with code 1 and `error: "no_plan_found"`, fall back to saving the current plan:
+
+Generate a branch slug from the plan title (the first `# ` heading in the plan file):
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Store as `BRANCH_SLUG`
+
+Save the current plan to GitHub and capture the plan number:
+
+```bash
+erk exec plan-save --format json --session-id="2c6a919e-4cc9-4ab4-a314-28da6f30beb3" --branch-slug="${BRANCH_SLUG}"
+```
+
+Parse the JSON output to get `pr_number`, then:
+
+```bash
+erk exec setup-impl --issue &lt;pr_number&gt;
+```
+
+The `setup-impl` output includes `related_docs` (skills and docs to load) and `has_plan_tracking` (whether GitHub issue tracking is active).
+
+If this fails, display the error and stop.
+
+### Step 2: Read Plan and Load Context
+
+Read `plan.md` from the impl directory set up in Step 1 to understand:
+
+- Overall goal and context
+- Context &amp; Understanding sections (API quirks, architectural insights, pitfalls)
+- Implementation phases and dependencies
+- Success criteria
+
+**Context Consumption**: Plans contain expensive discoveries. Ignoring `[CRITICAL:]` tags, "Related Context:" subsections, or "DO NOT" items causes repeated mistakes.
+
+### Step 3: Load Related Documentation
+
+If plan contains "Related Documentation" section, load listed skills via Skill tool and read listed docs.
+
+### Step 4: Create TodoWrite Entries
+
+Create todo entries for each phase from the plan.
+
+### Step 5: Signal GitHub Started
+
+```bash
+erk exec impl-signal started --session-id="2c6a919e-4cc9-4ab4-a314-28da6f30beb3" 2&gt;/dev/null || true
+```
+
+This also deletes the Claude plan file (from `~/.claude/plans/`) since:
+
+- The content has been saved to GitHub
+- The content has been snapshotted to `.erk/scratch/`
+- Keeping it could cause confusion if the user tries to re-save
+
+### Step 6: Execute Each Phase Sequentially
+
+For each phase:
+
+1. **Mark phase as in_progress** (in TodoWrite)
+2. **Read task requirements** carefully
+3. **Implement code AND tests together**:
+   - Load `dignified-python-313` skill for coding standards
+   - Load `fake-driven-testing` skill for test patterns
+   - Follow project AGENTS.md standards
+4. **Mark phase as completed** (in TodoWrite)
+5. **Report progress**: changes made, what's next
+
+**Important:** `plan.md` is immutable - NEVER edit during implementation
+
+### Step 7: Report Progress
+
+After each phase: report changes made and what's next.
+
+### Step 8: Final Verification
+
+Confirm all tasks executed, success criteria met, note deviations, summarize changes.
+
+### Step 9: Signal GitHub Ended
+
+```bash
+erk exec impl-signal ended --session-id="2c6a919e-4cc9-4ab4-a314-28da6f30beb3" 2&gt;/dev/null || true
+```
+
+### Step 10: Upload Session for Async Learn
+
+```bash
+erk exec upload-impl-session --session-id="2c6a919e-4cc9-4ab4-a314-28da6f30beb3" 2&gt;/dev/null || true
+```
+
+This reads plan reference from the impl directory, captures session info, and uploads for async learn processing.
+
+### Step 11: Clean Up Impl Context
+
+Remove the `.erk/impl-context/` directory from the repo:
+
+```bash
+erk exec cleanup-impl-context
+```
+
+This removes `.erk/impl-context/`, stages the deletion, commits, and pushes — all idempotent.
+
+### Step 12: Run CI Iteratively
+
+1. If `.erk/prompt-hooks/post-plan-implement-ci.md` exists: follow its instructions
+2. Otherwise: check CLAUDE.md/AGENTS.md for CI commands
+
+### Step 13: Submit PR
+
+Push the branch and create or update the PR using the Graphite-aware submit pipeline:
+
+```bash
+erk pr submit
+```
+
+This handles pushing commits, creating/updating the PR, generating the PR description, and enhancing with Graphite stack metadata when available.
+
+After successful submission, signal lifecycle transition:
+
+```bash
+erk exec impl-signal submitted 2&gt;/dev/null || true
+```
+
+Then validate PR completion invariants:
+
+```bash
+erk pr check --stage=impl
+```
+
+This validates PR submission readiness including implementation-specific checks
+(e.g., `.erk/impl-context/` must be cleaned up). If checks fail, display output and warn user.
+
+### Step 14: Output Format
+
+- **Start**: "Setting up implementation..." or "Fetching plan #X..."
+- **After setup**: "Implementation environment ready, reading plan..."
+- **Each phase**: "Phase X: [brief description]" with code changes
+- **End**: "Plan execution complete. [Summary]"
+
+---
+
+## Related Commands
+
+- `/erk:plan-save` - Save plan only, don't implement (for defer-to-later workflow)
+- `/erk:replan` - Re-plan an existing plan with current codebase state
+</user>
+  <usage input_tokens="2" cache_creation_input_tokens="17517" cache_read_input_tokens="9131" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 17517}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Setting up implementation...</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="17517" cache_read_input_tokens="9131" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 17517}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01KXSVKMaBb1XGzwCL2uicdu">
+    <param name="command">erk exec setup-impl 2&gt;&amp;1</param>
+    <param name="description">Auto-detect and set up implementation from branch</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="17517" cache_read_input_tokens="9131" output_tokens="261" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 17517, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01KXSVKMaBb1XGzwCL2uicdu">
+Found existing impl dir for PR #9229, skipping branch setup
+{"success": true, "impl_path": "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-30/.erk/impl-context/plnd--fix-stale-slot-sync-03-12-1520", "pr_number": 9229, "pr_url": "https://github.com/dagster-io/erk/pull/9229", "branch": "plnd/fix-stale-slot-sync-03-12-1520", "pr_title": "", "no_impl": false}
+{"success": true, "source": "issue", "pr_number": 9229, "has_plan_tracking": true, "valid": true, "related_docs": {"skills": [], "docs": []}}
+  </tool_result>
+  <assistant>Implementation environment ready. Let me read the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="439" cache_read_input_tokens="26648" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 439}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_011XKYHFyAV6oohND8KkYEur">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-30/.erk/impl-context/plnd--fix-stale-slot-sync-03-12-1520/plan.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="439" cache_read_input_tokens="26648" output_tokens="119" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 439, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_011XKYHFyAV6oohND8KkYEur">
+     1→# Fix: sync_pool_assignments doesn't clean up stale slot assignments
+     2→
+     3→## Context
+     4→
+     5→The worktree pool has 64 slots with 62 assignments, but **37 are stale** — the assigned branch no longer exists. Worktrees exist but are on placeholder branches or in detached HEAD state. This happens because `sync_pool_assignments()` (which runs before every allocation) preserves assignments even when the slot is clearly freed. Users must manually run `erk slot repair` to reclaim slots, and nobody does.
+     6→
+     7→**Root cause:** Three cases in `sync_pool_assignments()` where stale assignments are preserved:
+     8→1. Worktree path doesn't exist → keeps assignment (line 250-251)
+     9→2. Worktree on placeholder branch → keeps assignment (line 265-267)
+    10→3. Worktree in detached HEAD with deleted branch → keeps assignment (line 256-259)
+    11→
+    12→## Plan
+    13→
+    14→### 1. Add `removed_count` to `PoolSyncResult`
+    15→
+    16→**File:** `src/erk/cli/commands/slot/common.py:218-223`
+    17→
+    18→Add `removed_count: int` field to distinguish removals from branch-sync updates.
+    19→
+    20→### 2. Add `repo_root` parameter to `sync_pool_assignments`
+    21→
+    22→**File:** `src/erk/cli/commands/slot/common.py:226-230`
+    23→
+    24→New signature adds `repo_root: Path` (needed for `get_all_branch_heads` batch call).
+    25→
+    26→### 3. Rewrite the assignment-processing loop
+    27→
+    28→**File:** `src/erk/cli/commands/slot/common.py:246-278`
+    29→
+    30→Call `git.branch.get_all_branch_heads(repo_root)` once at the top (single `git for-each-ref` call, already exists in ABC/real/fake). Then for each assignment:
+
+... [54 lines omitted] ...
+
+    41→Warning format (matches existing pattern from `_validate_existing_assignment`):
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="1627" cache_read_input_tokens="27087" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1627}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me load the relevant context and read the source files.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1627" cache_read_input_tokens="27087" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1627}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_011mrSNg5xRueAsUBSk8Du6T">
+    <param name="query">select:TaskCreate,TaskUpdate,TaskGet</param>
+    <param name="max_results">3</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1627" cache_read_input_tokens="27087" output_tokens="227" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1627, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_011mrSNg5xRueAsUBSk8Du6T">
+
+  </tool_result>
+  <tool_use name="Read" id="toolu_012EB7Jnici8vvNhiLZ12W4x">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-30/src/erk/cli/commands/slot/common.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="2322" cache_read_input_tokens="28714" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2322}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012EB7Jnici8vvNhiLZ12W4x">
+     1→"""Shared utilities for slot commands."""
+     2→
+     3→import re
+     4→import shutil
+     5→from dataclasses import dataclass
+     6→from pathlib import Path
+     7→
+     8→import click
+     9→
+    10→from erk.cli.activation import write_worktree_activate_script
+    11→from erk.core.context import ErkContext
+    12→from erk.core.repo_discovery import RepoContext, ensure_erk_metadata_dir
+    13→from erk.core.worktree_pool import PoolState, SlotAssignment, load_pool_state, save_pool_state
+    14→from erk_shared.gateway.console.abc import Console
+    15→from erk_shared.gateway.git.abc import Git
+    16→from erk_shared.impl_folder import IMPL_DIR_RELATIVE
+    17→from erk_shared.output.output import user_output
+    18→
+    19→
+    20→@dataclass(frozen=True)
+    21→class SlotAllocationResult:
+    22→    """Result of allocating a slot for a branch."""
+    23→
+    24→    slot_name: str
+    25→    worktree_path: Path
+    26→    already_assigned: bool  # True if branch was already in a slot
+    27→
+    28→
+    29→# Default pool configuration
+    30→DEFAULT_POOL_SIZE = 4
+
+... [701 lines omitted] ...
+
+   314→    3. Worktree has wrong branch → fix it or error if uncommitted changes
+   327→        - both None: Should not happen (raises SystemExit on error)
+   365→            click.style("Error: ", fg="red")
+   453→    """Handle pool-full condition: prompt to unassign oldest or error.
+   458→    - If non-interactive (no TTY): error with instructions
+   466→        SlotAssignment to unassign, or None if user declined/error
+   478→            f"Error: Pool is full ({state.pool_size} slots). "
+  </tool_result>
+  <tool_use name="Read" id="toolu_01WHhGw3jQ3RWYfrhkQhoG1u">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-30/tests/unit/cli/commands/slot/test_common.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="2322" cache_read_input_tokens="28714" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2322}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01WHhGw3jQ3RWYfrhkQhoG1u">
+     1→"""Unit tests for slot common module utilities."""
+     2→
+     3→from pathlib import Path
+     4→
+     5→from erk.cli.commands.slot.common import (
+     6→    DEFAULT_POOL_SIZE,
+     7→    extract_slot_number,
+     8→    find_assignment_by_worktree,
+     9→    find_inactive_slot,
+    10→    find_next_available_slot,
+    11→    find_oldest_assignment,
+    12→    get_placeholder_branch_name,
+    13→    get_pool_size,
+    14→    is_placeholder_branch,
+    15→    is_slot_initialized,
+    16→    sync_pool_assignments,
+    17→)
+    18→from erk.cli.config import LoadedConfig
+    19→from erk.core.worktree_pool import (
+    20→    PoolState,
+    21→    SlotAssignment,
+    22→    SlotInfo,
+    23→    load_pool_state,
+    24→    save_pool_state,
+    25→)
+    26→from erk_shared.gateway.git.abc import WorktreeInfo
+    27→from tests.fakes.gateway.git import FakeGit
+    28→from tests.test_utils.test_context import context_for_test
+    29→
+    30→
+
+... [910 lines omitted] ...
+
+   506→        'fatal: &lt;path&gt; already exists'
+  </tool_result>
+  <tool_use name="Skill" id="toolu_0124MbS8wm5G89KoPQDWgmn5">
+    <param name="skill">fake-driven-testing</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="2322" cache_read_input_tokens="28714" output_tokens="210" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2322, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0124MbS8wm5G89KoPQDWgmn5">
+Launching skill: fake-driven-testing
+  </tool_result>
+  <user>Base directory for this skill: /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-30/.claude/skills/fake-driven-testing
+
+# Fake-Driven Testing Architecture for Python
+
+**Use this skill when**: Writing tests, fixing bugs, adding features, or modifying gateway layers in Python projects.
+
+**Prerequisites**: For Python code standards, load the `dignified-python-313` skill first. This skill focuses on testing architecture, not Python syntax.
+
+## Overview
+
+This skill provides a **defense-in-depth testing strategy** with five layers for Python applications:
+
+```
+┌─────────────────────────────────────────────────┐
+│  Layer 5 "smoke": Business Logic Integration Tests (5%)  │  ← Smoke tests over real system
+├─────────────────────────────────────────────────┤
+│  Layer 4 "logic": Business Logic Tests (70%)             │  ← Tests over fakes (MOST TESTS)
+├─────────────────────────────────────────────────┤
+│  Layer 3 "pure": Pure Unit Tests (10%)                   │  ← Zero dependencies, isolated testing
+├─────────────────────────────────────────────────┤
+│  Layer 2 "real-sanity": Integration Sanity Tests (10%)   │  ← Fast validation with mocking
+├─────────────────────────────────────────────────┤
+│  Layer 1 "fake-check": Fake Infrastructure Tests (5%)    │  ← Verify test doubles work
+└─────────────────────────────────────────────────┘
+```
+
+**Philosophy**: Test business logic extensively over fast in-memory fakes. Use real implementations sparingly for integration validation.
+
+**Terminology note**: The "gateway layer" (also called adapters/providers) refers to thin wrappers around heavyweight external APIs (databases, filesystems, HTTP APIs, message queues, etc.). The pattern matters more than the name.
+
+## Quick Decision: What Should I Read?
+
+**Adding a feature or fixing a bug?**
+→ Read `quick-reference.md` first, then `workflows.md#adding-a-new-feature`
+
+**Need to understand where to put a test?**
+→ Read `testing-strategy.md`
+
+**Working with Python-specific patterns?**
+→ Read `python-specific.md`
+
+**Adding/changing a gateway interface?**
+→ Read `gateway-architecture.md`, then `workflows.md#adding-a-gateway-method`
+
+**Creating a backend (higher-level abstraction over gateways)?**
+→ Read `gateway-architecture.md#gateways-vs-backends` - backends compose gateways and do NOT have fakes
+
+**Need to implement a specific pattern (CliRunner, builders, etc.)?**
+→ Read `patterns.md`
+
+**Not sure if I'm doing it right?**
+→ Read `anti-patterns.md`
+
+**Just need a quick lookup?**
+→ Read `quick-reference.md`
+
+## When to Read Each Reference Document
+
+### 📖 `gateway-architecture.md`
+
+**Read when**:
+
+- Adding or changing gateway/ABC interfaces
+- Understanding the ABC/Real/Fake/DryRun pattern
+- Need examples of gateway implementations
+- Want to understand what gateways are (and why they're thin)
+- **Creating a backend** (higher-level abstraction that composes gateways)
+
+**Contents**:
+
+- What are gateway classes? (naming: gateways/adapters/providers)
+- The four implementations (ABC, Real, Fake, DryRun)
+- Code examples for each
+- When to add/change gateway methods
+- Design principles (keep gateways thin)
+- Common gateway types (Database, API, FileSystem, MessageQueue)
+- **Gateways vs Backends** - critical distinction for DI boundaries
+
+### 📖 `testing-strategy.md`
+
+**Read when**:
+
+- Deciding where to put a test
+- Understanding the five testing layers
+- Need test distribution guidance (5/70/10/10/5 rule)
+- Want to know which layer tests what
+
+**Contents**:
+
+- Layer 1 "fake-check": Unit tests of fakes (verify test infrastructure)
+- Layer 2 "real-sanity": Integration sanity tests with mocking (quick validation)
+- Layer 3 "pure": Pure unit tests (zero dependencies, isolated testing)
+- Layer 4 "logic": Business logic over fakes (majority of tests)
+- Layer 5 "smoke": Business logic integration tests (smoke tests over real systems)
+- Decision tree: where should my test go?
+- Test distribution examples
+
+### 📖 `python-specific.md`
+
+**Read when**:
+
+- Working with pytest fixtures
+- Need Python mocking patterns
+- Testing Flask/FastAPI/Django applications
+- Understanding Python testing tools
+- Need Python-specific commands
+
+**Contents**:
+
+- pytest fixtures and parametrization
+- Mocking with unittest.mock and pytest-mock
+- Testing web frameworks (Flask, FastAPI, Django)
+- Python testing commands
+- Type hints in tests
+- Python packaging for test utilities
+
+### 📖 `workflows.md`
+
+**Read when**:
+
+- Adding a new feature (step-by-step)
+- Fixing a bug (step-by-step)
+- Adding a gateway method (complete checklist)
+- Changing an interface (what to update)
+- Managing dry-run features
+
+**Contents**:
+
+- Adding a new feature (TDD workflow)
+- Fixing a bug (reproduce → fix → regression test)
+- Adding a gateway method (8-step checklist with examples)
+- Changing an interface (update all layers)
+- Managing dry-run features (wrapping pattern)
+- Testing with builder patterns
+
+### 📖 `patterns.md`
+
+**Read when**:
+
+- Implementing constructor injection for fakes
+- Adding mutation tracking to fakes
+- Using CliRunner for CLI tests
+- Building complex test scenarios with builders
+- Testing dry-run behavior
+- Need code examples of specific patterns
+
+**Contents**:
+
+- Constructor injection (how and why)
+- Mutation tracking properties (read-only access)
+- Using CliRunner (not subprocess)
+- Builder patterns for complex scenarios
+- Simulated environment pattern
+- Error injection pattern
+- Dry-run testing pattern
+
+### 📖 `anti-patterns.md`
+
+**Read when**:
+
+- Unsure if your approach is correct
+- Want to avoid common mistakes
+- Reviewing code for bad patterns
+- Debugging why tests are slow/brittle
+
+**Contents**:
+
+- ❌ Testing speculative features
+- ❌ Hardcoded paths in tests (catastrophic)
+- ❌ Not updating all layers
+- ❌ Using subprocess in unit tests
+- ❌ Complex logic in gateway classes
+- ❌ Fakes with I/O operations
+- ❌ Testing implementation details
+- ❌ Incomplete test coverage for gateways
+
+### 📖 `quick-reference.md`
+
+**Read when**:
+
+- Quick lookup for file locations
+- Finding example tests to reference
+- Looking up common fixtures
+- Need command reference
+- Want test distribution guidelines
+
+**Contents**:
+
+- Decision tree (where to add test)
+- File location map (source + tests)
+- Common fixtures (tmp_path, CliRunner, etc.)
+- Common test patterns (code snippets)
+- Example tests to reference
+- Useful commands (pytest, ty, etc.)
+- Quick checklist for adding gateway methods
+
+## Quick Navigation by Task
+
+### I'm adding a new feature
+
+1. **Quick start**: `quick-reference.md` → Decision tree
+2. **Step-by-step**: `workflows.md#adding-a-new-feature`
+3. **Patterns**: `patterns.md` (CliRunner, builders)
+4. **Avoid**: `anti-patterns.md` (speculative tests, hardcoded paths)
+
+### I'm fixing a bug
+
+1. **Step-by-step**: `workflows.md#fixing-a-bug`
+2. **Patterns**: `patterns.md#constructor-injection-for-fakes`
+3. **Examples**: `quick-reference.md#example-tests-to-reference`
+
+### I'm adding/changing a gateway method
+
+1. **Understanding**: `gateway-architecture.md`
+2. **Step-by-step**: `workflows.md#adding-a-gateway-method`
+3. **Checklist**: `quick-reference.md#quick-checklist-adding-a-new-gateway-method`
+4. **Avoid**: `anti-patterns.md#not-updating-all-layers`
+
+### I don't know where my test should go
+
+1. **Decision tree**: `quick-reference.md#decision-tree`
+2. **Detailed guide**: `testing-strategy.md`
+3. **Examples**: `quick-reference.md#example-tests-to-reference`
+
+### I need to implement a pattern
+
+1. **All patterns**: `patterns.md`
+2. **Examples**: `quick-reference.md#common-test-patterns`
+
+### I think I'm doing something wrong
+
+1. **Anti-patterns**: `anti-patterns.md`
+2. **Correct approach**: `workflows.md`
+
+## Visual Layer Guide
+
+```
+┌──────────────────────────────────────────────────────────────┐
+│ Layer 5 "smoke": Business Logic Integration Tests (5%)       │
+│ ┌──────────────────────────────────────────────────────────┐ │
+│ │ Real database, filesystem, APIs, actual subprocess        │ │
+│ │ Purpose: Smoke tests, catch integration issues           │ │
+│ │ When: Sparingly, for critical workflows                  │ │
+│ │ Speed: Seconds per test                                   │ │
+│ │ Location: tests/e2e/ or tests/integration/               │ │
+│ └──────────────────────────────────────────────────────────┘ │
+└──────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────┐
+│ Layer 4 "logic": Business Logic Tests (70%) ← MOST TESTS    │
+│ ┌──────────────────────────────────────────────────────────┐ │
+│ │ FakeDatabase, FakeApiClient, FakeFileSystem              │ │
+│ │ Purpose: Test features and business logic extensively    │ │
+│ │ When: For EVERY feature and bug fix                      │ │
+│ │ Speed: Milliseconds per test                              │ │
+│ │ Location: tests/unit/, tests/services/, tests/commands/  │ │
+│ └──────────────────────────────────────────────────────────┘ │
+└──────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────┐
+│ Layer 3 "pure": Pure Unit Tests (10%)                        │
+│ ┌──────────────────────────────────────────────────────────┐ │
+│ │ Zero dependencies, no fakes, no mocks                    │ │
+│ │ Purpose: Test isolated utilities and helpers             │ │
+│ │ When: For pure functions, data structures, parsers       │ │
+│ │ Speed: Milliseconds per test                              │ │
+│ │ Location: tests/unit/                                     │ │
+│ └──────────────────────────────────────────────────────────┘ │
+└──────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────┐
+│ Layer 2 "real-sanity": Integration Sanity Tests (10%)        │
+│ ┌──────────────────────────────────────────────────────────┐ │
+│ │ RealDatabase with mocked connections                     │ │
+│ │ Purpose: Quick validation, catch syntax errors           │ │
+│ │ When: When adding/changing real implementation           │ │
+│ │ Speed: Fast (mocked)                                      │ │
+│ │ Location: tests/integration/test_real_*.py               │ │
+│ └──────────────────────────────────────────────────────────┘ │
+└──────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────┐
+│ Layer 1 "fake-check": Fake Infrastructure Tests (5%)         │
+│ ┌──────────────────────────────────────────────────────────┐ │
+│ │ Test FakeDatabase itself                                 │ │
+│ │ Purpose: Verify test infrastructure is reliable          │ │
+│ │ When: When adding/changing fake implementation           │ │
+│ │ Speed: Milliseconds per test                              │ │
+│ │ Location: tests/unit/fakes/test_fake_*.py               │ │
+│ └──────────────────────────────────────────────────────────┘ │
+└──────────────────────────────────────────────────────────────┘
+```
+
+## Key Principles
+
+1. **Thin gateway layer**: Wrap external state, push complexity to business logic
+2. **Fast tests over fakes**: 70% of tests should use in-memory fakes
+3. **Defense in depth**: Fakes → sanity tests → pure unit → business logic → integration
+4. **Test what you're building**: No speculative tests, only active work
+5. **Update all layers**: When changing interfaces, update ABC/real/fake/dry-run
+6. **Gateways vs Backends**: Gateways have fakes; backends compose gateways and do NOT have fakes
+
+## Layer Selection Guide
+
+**Distinguishing Layer 3 "pure" from Layer 4 "logic":**
+
+- **Layer 3 "pure" (Pure Unit Tests)**: ZERO dependencies - no fakes, no mocks, no external state
+  - Testing string utilities: `sanitize_branch_name("feat/FOO")` → `"feat-foo"`
+  - Testing parsers: `parse_git_status("## main")` → `{"branch": "main"}`
+  - Testing data structures: `LinkedList.append()` without any external dependencies
+
+- **Layer 4 "logic" (Business Logic Tests)**: Uses fakes for external dependencies
+  - Testing commands: `create_worktree(fake_git, name="feature")`
+  - Testing workflows: `submit_pr(fake_gh, fake_git, ...)`
+  - Testing business logic that coordinates multiple integrations
+
+**If your test imports a Fake\*, it belongs in Layer 4 "logic", not Layer 3 "pure".**
+
+## Default Testing Strategy
+
+**When in doubt**:
+
+- Write test over fakes (Layer 4 "logic") for business logic
+- Write pure unit test (Layer 3 "pure") for utilities/helpers with no dependencies
+- Use `pytest` with fixtures
+- Use `tmp_path` fixture (not hardcoded paths)
+- Follow examples in `quick-reference.md`
+
+## Summary
+
+**For quick tasks**: Start with `quick-reference.md`
+
+**For understanding**: Start with `testing-strategy.md` or `gateway-architecture.md`
+
+**For step-by-step guidance**: Use `workflows.md`
+
+**For implementation details**: Use `patterns.md`
+
+**For validation**: Check `anti-patterns.md`
+
+**For Python specifics**: Check `python-specific.md`
+</user>
+  <usage input_tokens="3" cache_creation_input_tokens="31537" cache_read_input_tokens="31036" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 31537}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now let me check the FakeGit's `branch_heads` support and the `get_all_branch_heads` ABC method.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="31537" cache_read_input_tokens="31036" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 31537}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_014kwEFCLFP19oydufk3reic">
+    <param name="pattern">get_all_branch_heads</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="31537" cache_read_input_tokens="31036" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 31537}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014kwEFCLFP19oydufk3reic">
+Found 6 files
+tests/integration/test_real_git_branch_ops.py
+tests/fakes/gateway/git_branch_ops.py
+packages/erk-shared/src/erk_shared/gateway/graphite/real.py
+packages/erk-shared/src/erk_shared/gateway/git/branch_ops/abc.py
+packages/erk-shared/src/erk_shared/gateway/git/branch_ops/dry_run.py
+packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py
+  </tool_result>
+  <tool_use name="Grep" id="toolu_013UveFWJAFMkwzbVoQx3Q39">
+    <param name="pattern">branch_heads</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-30/tests/fakes/gateway</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="31537" cache_read_input_tokens="31036" output_tokens="282" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 31537, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_013UveFWJAFMkwzbVoQx3Q39">
+tests/fakes/gateway/git_branch_ops.py:39:        branch_heads: dict[str, str] | None = None,
+tests/fakes/gateway/git_branch_ops.py:60:            branch_heads: Mapping of branch name -&gt; commit SHA
+tests/fakes/gateway/git_branch_ops.py:78:        self._branch_heads = branch_heads if branch_heads is not None else {}
+tests/fakes/gateway/git_branch_ops.py:255:        Tracks the update for test assertions and updates branch_heads state.
+tests/fakes/gateway/git_branch_ops.py:258:        self._branch_heads[branch] = target_sha
+tests/fakes/gateway/git_branch_ops.py:263:        Tracks the reset for test assertions and updates branch_heads state.
+tests/fakes/gateway/git_branch_ops.py:269:            self._branch_heads[branch] = target_ref
+tests/fakes/gateway/git_branch_ops.py:330:        return self._branch_heads.get(branch)
+tests/fakes/gateway/git_branch_ops.py:332:    def get_all_branch_heads(self, repo_root: Path) -&gt; dict[str, str]:
+tests/fakes/gateway/git_branch_ops.py:334:        return dict(self._branch_heads)
+tests/fakes/gateway/git.py:124:        branch_heads: dict[str, str] | None = None,
+tests/fakes/gateway/git.py:183:            branch_heads: Mapping of branch name -&gt; commit SHA
+tests/fakes/gateway/git.py:247:        self._branch_heads = branch_heads or {}
+tests/fakes/gateway/git.py:364:            branch_heads=self._branch_heads,
+  </tool_result>
+  <assistant>Good — `FakeGit` already supports `branch_heads` and `get_all_branch_heads`. Let me now create the tasks and start implementing.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1031" cache_read_input_tokens="62573" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1031}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskCreate" id="toolu_01TopgSQXjamUfRNXqHxMrRm">
+    <param name="subject">Add removed_count to PoolSyncResult</param>
+    <param name="description">Add `removed_count: int` field to the PoolSyncResult frozen dataclass at line 218-223.</param>
+    <param name="activeForm">Adding removed_count to PoolSyncResult</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1031" cache_read_input_tokens="62573" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1031}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01TopgSQXjamUfRNXqHxMrRm">
+Task #1 created successfully: Add removed_count to PoolSyncResult
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_01PgHEJWeLE7QYhj9A1XSS71">
+    <param name="subject">Add repo_root parameter to sync_pool_assignments</param>
+    <param name="description">Add `repo_root: Path` parameter to the sync_pool_assignments function signature.</param>
+    <param name="activeForm">Adding repo_root parameter</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1031" cache_read_input_tokens="62573" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1031}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01PgHEJWeLE7QYhj9A1XSS71">
+Task #2 created successfully: Add repo_root parameter to sync_pool_assignments
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_01AFkhuC3MaYmbpQtQ8pdSqk">
+    <param name="subject">Rewrite assignment-processing loop</param>
+    <param name="description">Rewrite the loop in sync_pool_assignments to: call get_all_branch_heads once, then for eac...[truncated 29 chars]... deleted branch, placeholder branch) and track removed_count separately from synced_count.</param>
+    <param name="activeForm">Rewriting assignment-processing loop</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1031" cache_read_input_tokens="62573" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1031}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01AFkhuC3MaYmbpQtQ8pdSqk">
+Task #3 created successfully: Rewrite assignment-processing loop
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_01VoMSN7S2mWr675hCZvqa5q">
+    <param name="subject">Update the sole caller to pass repo_root</param>
+    <param name="description">Update allocate_slot_for_branch at line 612 to pass repo.root as the 4th arg to sync_pool_assignments.</param>
+    <param name="activeForm">Updating caller</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1031" cache_read_input_tokens="62573" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1031}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01VoMSN7S2mWr675hCZvqa5q">
+Task #4 created successfully: Update the sole caller to pass repo_root
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_01B5FqFTVtmeYRs4WgGixJr3">
+    <param name="subject">Update tests</param>
+    <param name="description">Update existing sync tests (rename 3, add ~3 new), update all ~10 existing sync test calls to pass repo_root as 4th arg. Add tests for removal behaviors.</param>
+    <param name="activeForm">Updating tests</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1031" cache_read_input_tokens="62573" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1031}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01B5FqFTVtmeYRs4WgGixJr3">
+Task #5 created successfully: Update tests
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_01B1pWwHRyeupufAFDTtP9GS">
+    <param name="subject">Run CI verification</param>
+    <param name="description">Run pytest on the test file to verify all tests pass.</param>
+    <param name="activeForm">Running CI verification</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1031" cache_read_input_tokens="62573" output_tokens="707" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1031, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01B1pWwHRyeupufAFDTtP9GS">
+Task #6 created successfully: Run CI verification
+  </tool_result>
+  <assistant>Now let me signal started and begin implementation.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="948" cache_read_input_tokens="63604" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 948}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_014raS89JyqENLyvxAxFFqgH">
+    <param name="command">erk exec impl-signal started --session-id="2c6a919e-4cc9-4ab4-a314-28da6f30beb3" 2&gt;/dev/null || true</param>
+    <param name="description">Signal GitHub implementation started</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="948" cache_read_input_tokens="63604" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 948}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskUpdate" id="toolu_01JdhTBJdWjdDdCMqABNCAPD">
+    <param name="taskId">1</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="948" cache_read_input_tokens="63604" output_tokens="212" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 948, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_014raS89JyqENLyvxAxFFqgH">
+{
+  "success": true,
+  "event": "started",
+  "pr_number": 9229
+}
+  </tool_result>
+  <tool_result tool="toolu_01JdhTBJdWjdDdCMqABNCAPD">
+Updated task #1 status
+  </tool_result>
+  <assistant>**Phase 1: Add `removed_count` to `PoolSyncResult`**</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="276" cache_read_input_tokens="64552" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 276}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01TToswNamvALsnJ6rQzs1YJ">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-30/src/erk/cli/commands/slot/common.py</param>
+    <param name="old_string">@dataclass(frozen=True)
+class PoolSyncResult:
+    """Result of syncing pool assignments with actual git state."""
+
+    state: PoolState
+    synced_count: int</param>
+    <param name="new_string">@dataclass(frozen=True)
+class PoolSyncResult:
+    """Result of syncing pool assignments with actual git state."""
+
+    state: PoolState
+    synced_count: int
+    removed_count: int</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="276" cache_read_input_tokens="64552" output_tokens="247" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 276, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01TToswNamvALsnJ6rQzs1YJ">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-30/src/erk/cli/commands/slot/common.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01SYiKgZa6BhyCAAFJz3N4Tv">
+    <param name="taskId">1</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="325" cache_read_input_tokens="64828" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 325}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01SYiKgZa6BhyCAAFJz3N4Tv">
+Updated task #1 status
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01NFdoEyaTmPNm6Bfds1buHh">
+    <param name="taskId">2</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="325" cache_read_input_tokens="64828" output_tokens="125" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 325, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01NFdoEyaTmPNm6Bfds1buHh">
+Updated task #2 status
+  </tool_result>
+  <assistant>**Phase 2 &amp; 3: Add `repo_root` parameter and rewrite the assignment-processing loop**</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="198" cache_read_input_tokens="65153" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 198}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01NtYgkPGWBPbRRZi1RMNfWW">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-30/src/erk/cli/commands/slot/common.py</param>
+    <param name="old_string">def sync_pool_assignments(
+    state: PoolState,
+    git: Git,
+    pool_json_path: Path,
+)...[truncated 2022 chars]...son_path, new_state)
+    return PoolSyncResult(state=new_state, synced_count=synced_count)</param>
+    <param name="new_string">def sync_pool_assignments(
+    state: PoolState,
+    git: Git,
+    pool_json_path: Path,
+ ...[truncated 3327 chars]...rn PoolSyncResult(state=new_state, synced_count=synced_count, removed_count=removed_count)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="198" cache_read_input_tokens="65153" output_tokens="1652" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 198, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01NtYgkPGWBPbRRZi1RMNfWW">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-30/src/erk/cli/commands/slot/common.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_016mCSyu2PZ6QeKoBDM7A9bS">
+    <param name="taskId">2</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1730" cache_read_input_tokens="65351" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1730}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016mCSyu2PZ6QeKoBDM7A9bS">
+Updated task #2 status
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_016JGFn5FF23AJ7SUbcs7VxX">
+    <param name="taskId">3</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1730" cache_read_input_tokens="65351" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1730}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016JGFn5FF23AJ7SUbcs7VxX">
+Updated task #3 status
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01HpcBfWjVmRHPeAKYL6Uah1">
+    <param name="taskId">4</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1730" cache_read_input_tokens="65351" output_tokens="178" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1730, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01HpcBfWjVmRHPeAKYL6Uah1">
+Updated task #4 status
+  </tool_result>
+  <assistant>**Phase 4: Update the sole caller**</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="281" cache_read_input_tokens="67081" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 281}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01UdG8RbN821awqmpPpbDJH6">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-30/src/erk/cli/commands/slot/common.py</param>
+    <param name="old_string">    sync_result = sync_pool_assignments(state, ctx.git, repo.pool_json_path)</param>
+    <param name="new_string">    sync_result = sync_pool_assignments(state, ctx.git, repo.pool_json_path, repo.root)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="281" cache_read_input_tokens="67081" output_tokens="211" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 281, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01UdG8RbN821awqmpPpbDJH6">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-30/src/erk/cli/commands/slot/common.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01C6BG9m2QGeA26rcNFXUgzp">
+    <param name="taskId">4</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="270" cache_read_input_tokens="67362" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 270}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01C6BG9m2QGeA26rcNFXUgzp">
+Updated task #4 status
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_014DLfDhS3YD7MViz8Aab3SL">
+    <param name="taskId">5</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="270" cache_read_input_tokens="67362" output_tokens="125" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 270, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_014DLfDhS3YD7MViz8Aab3SL">
+Updated task #5 status
+  </tool_result>
+  <assistant>**Phase 5: Update tests**
+
+Now I need to rewrite the test file. Let me update all existing sync tests to pass `repo_root` as the 4th arg and add `branch_heads` to FakeGit, then rename/add tests per the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="198" cache_read_input_tokens="67632" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 198}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01JondjzGUxVXH5uR8QFECBp">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-30/tests/unit/cli/commands/slot/test_common.py</param>
+    <param name="offset">694</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="198" cache_read_input_tokens="67632" output_tokens="173" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 198, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01JondjzGUxVXH5uR8QFECBp">
+   694→def test_sync_no_changes_when_branches_match(tmp_path: Path) -&gt; None:
+   695→    """Returns same state and synced_count=0 when all branches match."""
+   696→    wt_path = tmp_path / "worktrees" / "erk-slot-01"
+   697→    wt_path.mkdir(parents=True)
+   698→    assignment = SlotAssignment(
+   699→        slot_name="erk-slot-01",
+   700→        branch_name="feature-a",
+   701→        assigned_at="2024-01-01T12:00:00+00:00",
+   702→        worktree_path=wt_path,
+   703→    )
+   704→    state = PoolState.test(assignments=(assignment,))
+   705→    git = FakeGit(current_branches={wt_path: "feature-a"})
+   706→    pool_json = tmp_path / "pool.json"
+   707→
+   708→    result = sync_pool_assignments(state, git, pool_json)
+   709→
+   710→    assert result.synced_count == 0
+   711→    assert result.state is state
+   712→
+   713→
+   714→def test_sync_updates_when_branch_changed(tmp_path: Path) -&gt; None:
+   715→    """Updates branch_name and preserves assigned_at when branch changed."""
+   716→    wt_path = tmp_path / "worktrees" / "erk-slot-01"
+   717→    wt_path.mkdir(parents=True)
+   718→    assignment = SlotAssignment(
+   719→        slot_name="erk-slot-01",
+   720→        branch_name="feature-a",
+   721→        assigned_at="2024-01-01T12:00:00+00:00",
+   722→        worktree_path=wt_path,
+   723→    )
+
+... [217 lines omitted] ...
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="4104" cache_read_input_tokens="67830" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4104}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I'll replace the entire sync test section. All sync tests need `repo_root` as 4th arg and `branch_heads` in FakeGit.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="4104" cache_read_input_tokens="67830" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4104}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01777mvnkArRHvGpnE5SYe5h">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-30/tests/unit/cli/commands/slot/test_common.py</param>
+    <param name="old_string">def test_sync_no_changes_when_branches_match(tmp_path: Path) -&gt; None:
+    """Returns same ...[truncated 8805 chars]...active = find_inactive_slot(sync_result.state, git, repo_root)
+    assert inactive is None</param>
+    <param name="new_string">def test_sync_no_changes_when_branches_match(tmp_path: Path) -&gt; None:
+    """Returns same ...[truncated 14637 chars]...active = find_inactive_slot(sync_result.state, git, repo_root)
+    assert inactive is None</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4104" cache_read_input_tokens="67830" output_tokens="8638" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 4104, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01777mvnkArRHvGpnE5SYe5h">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-30/tests/unit/cli/commands/slot/test_common.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01DbjDLh7mY2SPNTHRUWYvz8">
+    <param name="taskId">5</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="8694" cache_read_input_tokens="71934" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 8694}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskUpdate" id="toolu_01NmKgwvgHF3YZhoVVhBqtcs">
+    <param name="taskId">6</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="8694" cache_read_input_tokens="71934" output_tokens="125" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 8694, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01DbjDLh7mY2SPNTHRUWYvz8">
+Updated task #5 status
+  </tool_result>
+  <tool_result tool="toolu_01NmKgwvgHF3YZhoVVhBqtcs">
+Updated task #6 status
+  </tool_result>
+  <assistant>Now let me run the tests.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="198" cache_read_input_tokens="80628" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 198}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01KquZuQhmKutDNYvoM2R2S4">
+    <param name="subagent_type">devrun</param>
+    <param name="description">Run slot common tests</param>
+    <param name="prompt">Run pytest on tests/unit/cli/commands/slot/test_common.py with -x flag and report results.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="198" cache_read_input_tokens="80628" output_tokens="125" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 198, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01KquZuQhmKutDNYvoM2R2S4">
+pytest passed: 54 tests passed in 0.61s
+
+All tests in `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-30/tests/unit/cli/commands/slot/test_common.py` passed successfully.
+agentId: a3f5ebcf4ad8b409d (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 13314
+tool_uses: 1
+duration_ms: 9469&lt;/usage&gt;
+  </tool_result>
+  <assistant>All 54 tests pass. Let me also check if there are other callers of `sync_pool_assignments` that need updating.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="259" cache_read_input_tokens="80826" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 259}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01W7oqMiVdewxf9DTJyVbGxs">
+    <param name="pattern">sync_pool_assignments</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="259" cache_read_input_tokens="80826" output_tokens="123" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 259, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01W7oqMiVdewxf9DTJyVbGxs">
+src/erk/cli/commands/slot/common.py:227:def sync_pool_assignments(
+src/erk/cli/commands/slot/common.py:642:    sync_result = sync_pool_assignments(state, ctx.git, repo.pool_json_path, repo.root)
+docs/learned/erk/slot-pool-architecture.md:106:&lt;!-- Source: src/erk/cli/commands/slot/common.py:223-287, sync_pool_assignments --&gt;
+docs/learned/erk/slot-pool-architecture.md:108:`sync_pool_assignments()` runs before every allocation decision. It compares each assignment's recorded branch against the actual git branch in the worktree and updates `pool.json` when mismatches are detected. If no corrections are needed, it skips the disk write entirely (preserving file mtime).
+docs/learned/architecture/tripwires.md:101:**calling allocate_slot_for_branch without sync_pool_assignments running first** → Read [Slot Pool State Sync](slot-pool-state-sync.md) first. Pool sync must run BEFORE find_branch_assignment call. Without it, stale pool.json entries cause silent misassignment — a slot may appear free when it's actually occupied by a different branch.
+docs/learned/architecture/slot-pool-state-sync.md:8:  - action: "calling allocate_slot_for_branch without sync_pool_assignments running first"
+docs/learned/architecture/slot-pool-state-sync.md:25:`sync_pool_assignments()` is called at the beginning of `allocate_slot_for_branch()` (line 609 in `common.py`), before any allocation decisions. This ensures the pool state reflects reality before checking if a branch is already assigned or if slots are available.
+docs/learned/architecture/slot-pool-state-sync.md:29:&lt;!-- Source: src/erk/cli/commands/slot/common.py:223-287, sync_pool_assignments --&gt;
+docs/learned/architecture/slot-pool-state-sync.md:45:When `synced_count == 0`, the function returns early with the original state, skipping `save_pool_state()` entirely. Only when at least one assignment was corrected does the function write the updated state to disk. See `sync_pool_assignments()` in [`common.py`](../../../src/erk/cli/commands/slot/common.py) for the implementation.
+docs/learned/architecture/slot-pool-state-sync.md:57:- [`src/erk/cli/commands/slot/common.py`](../../../src/erk/cli/commands/slot/common.py) — `sync_pool_assignments()` (lines 223-287), called from `allocate_slot_for_branch()` (line 609)
+tests/unit/cli/commands/slot/test_common.py:16:    sync_pool_assignments,
+tests/unit/cli/commands/slot/test_common.py:712:    result = sync_pool_assignments(state, git, pool_json, repo_root)
+tests/unit/cli/commands/slot/test_common.py:737:    result = sync_pool_assignments(state, git, pool_json, repo_root)
+tests/unit/cli/commands/slot/test_common.py:767:    sync_pool_assignments(state, git, pool_json, repo_root)
+tests/unit/cli/commands/slot/test_common.py:795:    sync_pool_assignments(state, git, pool_json, repo_root)
+tests/unit/cli/commands/slot/test_common.py:815:    result = sync_pool_assignments(state, git, pool_json, repo_root)
+tests/unit/cli/commands/slot/test_common.py:841:    result = sync_pool_assignments(state, git, pool_json, repo_root)
+tests/unit/cli/commands/slot/test_common.py:867:    result = sync_pool_assignments(state, git, pool_json, repo_root)
+tests/unit/cli/commands/slot/test_common.py:892:    result = sync_pool_assignments(state, git, pool_json, repo_root)
+tests/unit/cli/commands/slot/test_common.py:918:    result = sync_pool_assignments(state, git, pool_json, repo_root)
+tests/unit/cli/commands/slot/test_common.py:939:    sync_pool_assignments(state, git, pool_json, repo_root)
+tests/unit/cli/commands/slot/test_common.py:987:    result = sync_pool_assignments(state, git, pool_json, repo_root)
+tests/unit/cli/commands/slot/test_common.py:1039:    result = sync_pool_assignments(state, git, pool_json, repo_root)
+tests/unit/cli/commands/slot/test_common.py:1097:    sync_result = sync_pool_assignments(state, git, pool_json, repo_root)
+  </tool_result>
+  <assistant>Good — only one production caller (the `allocate_slot_for_branch` call at line 642) which I've already updated. Now let me run the broader test suite to ensure nothing else broke.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1340" cache_read_input_tokens="81085" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1340}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_018fDSa2Jt856t7Bkkq95eA5">
+    <param name="subagent_type">devrun</param>
+    <param name="description">Run broader slot tests</param>
+    <param name="prompt">Run pytest on tests/unit/cli/commands/slot/ with -x flag and report results.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1340" cache_read_input_tokens="81085" output_tokens="157" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1340, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_018fDSa2Jt856t7Bkkq95eA5">
+pytest failed: 1 issue found
+
+**File:** tests/unit/cli/commands/slot/test_assign_cmd.py::test_slot_assign_second_slot (line 124)
+
+**Error:** AssertionError - Test expected "Assigned feature-b to erk-slot-02" but got "Assigned feature-b to erk-slot-01"
+
+**Details:** The test is failing because the slot assignment is reusing erk-slot-01 after cleaning up the stale assignment for feature-a, instead of assigning to the next available slot (erk-slot-02). The actual output shows:
+- "⚠ Removing stale assignment for 'feature-a' in erk-slot-01 (branch deleted)"
+- "✓ Assigned feature-b to erk-slot-01"
+
+But the test expects feature-b to be assigned to erk-slot-02.
+agentId: a80ce9cdc14025d62 (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 14321
+tool_uses: 1
+duration_ms: 4381&lt;/usage&gt;
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="435" cache_read_input_tokens="82425" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 435}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>The new stale-cleanup behavior is removing feature-a's assignment because its branch isn't in `branch_heads`. Let me look at this test and fix it.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="435" cache_read_input_tokens="82425" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 435}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01FPZQrLeRQy87y1u4UYpiMU">
+    <param name="pattern">test_slot_assign_second_slot</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-30/tests/unit/cli/commands/slot/test_assign_cmd.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+    <param name="-A">50</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="435" cache_read_input_tokens="82425" output_tokens="356" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 435, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01FPZQrLeRQy87y1u4UYpiMU">
+89:def test_slot_assign_second_slot() -&gt; None:
+90-    """Test that slot assign uses next available slot."""
+91-    runner = CliRunner()
+92-    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+93-        repo_dir = env.setup_repo_structure()
+94-
+95-        git_ops = FakeGit(
+96-            worktrees=env.build_worktrees("main"),
+97-            current_branches={env.cwd: "main"},
+98-            git_common_dirs={env.cwd: env.git_dir},
+99-            default_branches={env.cwd: "main"},
+100-            local_branches={env.cwd: ["main", "feature-a", "feature-b"]},
+101-        )
+102-
+103-        repo = RepoContext(
+104-            root=env.cwd,
+105-            repo_name=env.cwd.name,
+106-            repo_dir=repo_dir,
+107-            worktrees_dir=repo_dir / "worktrees",
+108-            pool_json_path=repo_dir / "pool.json",
+109-        )
+110-
+111-        test_ctx = env.build_context(git=git_ops, repo=repo)
+112-
+113-        # First assignment
+114-        result1 = runner.invoke(
+115-            cli, ["slot", "assign", "feature-a"], obj=test_ctx, catch_exceptions=False
+116-        )
+117-        assert result1.exit_code == 0
+118-
+
+... [21 lines omitted] ...
+
+121-            cli, ["slot", "assign", "feature-b"], obj=test_ctx, catch_exceptions=False
+  </tool_result>
+  <assistant>The test's FakeGit doesn't have `branch_heads`, so the sync removes the assignment for feature-a. I need to add `branch_heads` to all these FakeGit instances in the assign tests. Let me check how many tests in this file need updating.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1033" cache_read_input_tokens="82860" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1033}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_011dBvFvmped8ykmTgKkZNix">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-30/tests/unit/cli/commands/slot/test_assign_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1033" cache_read_input_tokens="82860" output_tokens="157" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1033, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_011dBvFvmped8ykmTgKkZNix">
+     1→"""Unit tests for slot assign command."""
+     2→
+     3→from click.testing import CliRunner
+     4→
+     5→from erk.cli.cli import cli
+     6→from erk.cli.commands.slot.common import cleanup_worktree_artifacts
+     7→from erk.cli.config import LoadedConfig
+     8→from erk.core.repo_discovery import RepoContext
+     9→from erk.core.worktree_pool import PoolState, SlotAssignment, load_pool_state, save_pool_state
+    10→from erk_shared.gateway.git.abc import WorktreeInfo
+    11→from tests.fakes.gateway.console import FakeConsole
+    12→from tests.fakes.gateway.git import FakeGit
+    13→from tests.test_utils.env_helpers import erk_isolated_fs_env
+    14→
+    15→
+    16→def test_slot_assign_assigns_existing_branch(tmp_path) -&gt; None:
+    17→    """Test that slot assign assigns an existing branch."""
+    18→    runner = CliRunner()
+    19→    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+    20→        repo_dir = env.setup_repo_structure()
+    21→
+    22→        # Create a FakeGit that reports the branch already exists
+    23→        git_ops = FakeGit(
+    24→            worktrees=env.build_worktrees("main"),
+    25→            current_branches={env.cwd: "main"},
+    26→            git_common_dirs={env.cwd: env.git_dir},
+    27→            default_branches={env.cwd: "main"},
+    28→            local_branches={env.cwd: ["main", "feature-test"]},
+    29→        )
+    30→
+
+... [594 lines omitted] ...
+
+    42→            cli, ["slot", "assign", "feature-test"], obj=test_ctx, catch_exceptions=False
+    82→            cli, ["slot", "assign", "nonexistent-branch"], obj=test_ctx, catch_exceptions=False
+   115→            cli, ["slot", "assign", "feature-a"], obj=test_ctx, catch_exceptions=False
+   121→            cli, ["slot", "assign", "feature-b"], obj=test_ctx, catch_exceptions=False
+   158→            cli, ["slot", "assign", "feature-test"], obj=test_ctx, catch_exceptions=False
+   164→            cli, ["slot", "assign", "feature-test"], obj=test_ctx, catch_exceptions=False
+   197→        runner.invoke(cli, ["slot", "assign", "feature-a"], obj=test_ctx, catch_exceptions=False)
+   198→        runner.invoke(cli, ["slot", "assign", "feature-b"], obj=test_ctx, catch_exceptions=False)
+   257→            cli, ["slot", "assign", "--force", "new-branch"], obj=test_ctx, catch_exceptions=False
+   317→        # Console must be non-interactive to test the non-TTY failure path
+   330→            cli, ["slot", "assign", "new-branch"], obj=test_ctx, catch_exceptions=False
+   420→            cli, ["slot", "assign", "--force", "new-branch"], obj=test_ctx, catch_exceptions=False
+   457→            catch_exceptions=False,
+   508→            catch_exceptions=False,
+   546→            catch_exceptions=False,
+   581→            catch_exceptions=False,
+   613→            cli, ["slot", "assign", "feature-test"], obj=test_ctx, catch_exceptions=False
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="9382" cache_read_input_tokens="83893" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 9382}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me check how FakeGitBranchOps.get_all_branch_heads works to understand the correct fix.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="9382" cache_read_input_tokens="83893" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 9382}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01YLxbqMoyifvzY4ejYV6Wpz">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-30/tests/fakes/gateway/git_branch_ops.py</param>
+    <param name="offset">325</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="9382" cache_read_input_tokens="83893" output_tokens="957" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 9382, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+</session>

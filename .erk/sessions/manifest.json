@@ -16,6 +16,22 @@
       "raw_size_kb": 892,
       "xml_size_kb": 73,
       "git_branch": "master"
+    },
+    {
+      "session_id": "2c6a919e-4cc9-4ab4-a314-28da6f30beb3",
+      "stage": "impl",
+      "source": "local",
+      "uploaded_at": "2026-03-12T15:32:58.174751+00:00",
+      "files": [
+        "impl-2c6a919e-4cc9-4ab4-a314-28da6f30beb3-2c6a919e-4cc9-4ab4-a314-28da6f30beb3-part1.xml",
+        "impl-2c6a919e-4cc9-4ab4-a314-28da6f30beb3-2c6a919e-4cc9-4ab4-a314-28da6f30beb3-part2.xml",
+        "impl-2c6a919e-4cc9-4ab4-a314-28da6f30beb3-2c6a919e-4cc9-4ab4-a314-28da6f30beb3-part3.xml"
+      ],
+      "user_turns": 3,
+      "duration_minutes": 10,
+      "raw_size_kb": 1397,
+      "xml_size_kb": 144,
+      "git_branch": "plnd/fix-stale-slot-sync-03-12-1520"
     }
   ]
 }
