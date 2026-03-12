@@ -24,7 +24,7 @@ class GitHubTokenMiddleware(Middleware):
         if request is not None:
             auth = request.headers.get("authorization", "")
             if auth.startswith("Bearer "):
-                user_token = auth[7:]
+                user_token = auth[len("Bearer "):]
                 tok = set_request_github_token(user_token)
                 try:
                     return await call_next(context)

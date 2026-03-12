@@ -61,7 +61,9 @@ class MachineCommandTool(Tool):
                 params[k] = v
         path = self.cli_command_path
         user_token = get_request_github_token()
-        env_override = {**os.environ, "GH_TOKEN": user_token} if user_token is not None else None
+        env_override: dict[str, str] | None = None
+        if user_token is not None:
+            env_override = {**os.environ, "GH_TOKEN": user_token}
         result = await to_thread.run_sync(lambda: _run_erk_json(path, params, env_override=env_override))
         return self.convert_result(result)
 
