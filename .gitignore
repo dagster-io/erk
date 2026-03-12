@@ -31,7 +31,7 @@ site/
 
 .superset/
 
-# Astro/Starlight docs-v2
-docs-v2/node_modules/
-docs-v2/dist/
-docs-v2/.astro/
+# Astro/Starlight docs-site
+docs-site/node_modules/
+docs-site/dist/
+docs-site/.astro/

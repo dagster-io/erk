@@ -1,4 +1,4 @@
-.PHONY: format-check lint prettier prettier-check ty upgrade-ty test py-fast-ci fast-ci all-ci md-check docs-check docs-validate docs-sync-check docs-fix clean publish fix reinstall-erk-tools docs docs-serve docs-deploy exec-reference-check mcp mcp-dev test-erk-mcp docs-v2-build docs-v2-serve pre-push-check install-hooks
+.PHONY: format-check lint prettier prettier-check ty upgrade-ty test py-fast-ci fast-ci all-ci md-check docs-check docs-validate docs-sync-check docs-fix clean publish fix reinstall-erk-tools docs docs-serve docs-deploy exec-reference-check mcp mcp-dev test-erk-mcp docs-site-build docs-site-serve pre-push-check install-hooks
 
 prettier:
 	prettier --write '**/*.md' --ignore-path .gitignore
@@ -180,13 +180,13 @@ clear_impl_context:
 	rm -rf .impl
 	rm -rf .erk/impl-context
 
-# === Documentation v2 (Astro/Starlight) ===
+# === Documentation Site (Astro/Starlight) ===
 
-docs-v2-build:
-	cd docs-v2 && npm install && npm run build
+docs-site-build:
+	cd docs-site && npm install && npm run build
 
-docs-v2-serve:
-	cd docs-v2 && npm install && npm run dev
+docs-site-serve:
+	cd docs-site && npm install && npm run dev
 
 # === Git Hooks ===
 
