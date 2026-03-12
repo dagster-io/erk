@@ -19,7 +19,6 @@ def codex_portable_skills() -> frozenset[str]:
             "fake-driven-testing",
             "erk-diff-analysis",
             "erk-exec",
-            "erk-planning",
             "objective",
             "gh",
             "gt",

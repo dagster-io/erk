@@ -85,7 +85,7 @@ Erk's plan-oriented workflow works across agent backends with different mechanis
 
 ### Claude Code Users
 
-Load the `erk-planning` skill for detailed guidance. Key commands:
+Key commands:
 
 - `/erk:plan-save` — save plan as draft PR
 - `/erk:plan-implement` — implement from a saved plan
@@ -106,8 +106,6 @@ Without built-in plan mode, follow this explicit protocol:
 - `erk exec impl-init --json` returns `"valid": true` before starting work
 - `.erk/impl-context/plan.md` is treated as immutable during implementation
 - `erk exec impl-verify` confirms `.erk/impl-context/` is preserved after implementation
-
-Load the `erk-planning` skill (`$erk-planning`) for detailed workflow guidance.
 
 ### All Backends
 
