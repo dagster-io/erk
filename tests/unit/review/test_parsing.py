@@ -156,7 +156,7 @@ Review instructions here.
             encoding="utf-8",
         )
 
-        result = parse_review_file(review_file)
+        result = parse_review_file(review_file, reviews_dir=tmp_path)
 
         assert result.is_valid
         assert result.errors == ()
@@ -194,6 +194,56 @@ Body.
         assert not result.is_valid
         assert len(result.errors) > 0
 
+    def test_parse_local_review_has_relative_filename(self, tmp_path: Path) -> None:
+        """Local reviews have filename relative to reviews_dir."""
+        reviews_dir = tmp_path / "reviews"
+        local_dir = reviews_dir / "local"
+        local_dir.mkdir(parents=True)
+
+        review_file = local_dir / "my-review.md"
+        review_file.write_text(
+            """\
+---
+name: My Local Review
+paths:
+  - "**/*.py"
+marker: "<!-- local-review -->"
+---
+
+Local review body.
+""",
+            encoding="utf-8",
+        )
+
+        result = parse_review_file(review_file, reviews_dir=reviews_dir)
+
+        assert result.is_valid
+        assert result.parsed_review is not None
+        assert result.parsed_review.filename == "local/my-review.md"
+
+    def test_parse_without_reviews_dir_uses_basename(self, tmp_path: Path) -> None:
+        """Without reviews_dir, filename is just the basename."""
+        review_file = tmp_path / "test.md"
+        review_file.write_text(
+            """\
+---
+name: Test
+paths:
+  - "**/*.py"
+marker: "<!-- test -->"
+---
+
+Body.
+""",
+            encoding="utf-8",
+        )
+
+        result = parse_review_file(review_file)
+
+        assert result.is_valid
+        assert result.parsed_review is not None
+        assert result.parsed_review.filename == "test.md"
+
 
 class TestDiscoverReviewFiles:
     """Tests for discovering review files in a directory."""
@@ -226,6 +276,23 @@ class TestDiscoverReviewFiles:
         files = discover_review_files(tmp_path / "nonexistent")
 
         assert files == []
+
+    def test_discover_includes_local_subdirectory(self, tmp_path: Path) -> None:
+        """Discover files in both top-level and local/ subdirectory."""
+        reviews_dir = tmp_path / "reviews"
+        reviews_dir.mkdir()
+        local_dir = reviews_dir / "local"
+        local_dir.mkdir()
+
+        (reviews_dir / "bundled.md").write_text("---\n---\n", encoding="utf-8")
+        (local_dir / "repo-specific.md").write_text("---\n---\n", encoding="utf-8")
+
+        files = discover_review_files(reviews_dir)
+
+        assert len(files) == 2
+        filenames = [f.name for f in files]
+        assert "bundled.md" in filenames
+        assert "repo-specific.md" in filenames
 
 
 class TestCheckDuplicateMarkers:
@@ -447,6 +514,35 @@ Body.
         assert "b.md" in result.errors
         # Both should have errors mentioning duplicate
         assert any("Duplicate" in e for e in result.errors["a.md"])
+
+    def test_match_local_review(self, tmp_path: Path) -> None:
+        """Match review in local/ subdirectory with correct relative filename."""
+        reviews_dir = tmp_path / "reviews"
+        local_dir = reviews_dir / "local"
+        local_dir.mkdir(parents=True)
+
+        (local_dir / "my-review.md").write_text(
+            """\
+---
+name: Local Review
+paths:
+  - "**/*.py"
+marker: "<!-- local -->"
+---
+
+Body.
+""",
+            encoding="utf-8",
+        )
+
+        result = discover_matching_reviews(
+            reviews_dir=reviews_dir,
+            changed_files=["src/main.py"],
+        )
+
+        assert len(result.reviews) == 1
+        assert result.reviews[0].frontmatter.name == "Local Review"
+        assert result.reviews[0].filename == "local/my-review.md"
 
     def test_multiple_path_patterns(self, tmp_path: Path) -> None:
         """Match files against multiple path patterns."""

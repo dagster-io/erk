@@ -168,16 +168,26 @@ def validate_review_frontmatter(
     ), []
 
 
-def parse_review_file(file_path: Path) -> ReviewValidationResult:
+def parse_review_file(
+    file_path: Path,
+    *,
+    reviews_dir: Path | None = None,
+) -> ReviewValidationResult:
     """Parse and validate a single review definition file.
 
     Args:
         file_path: Path to the review markdown file.
+        reviews_dir: Base reviews directory for computing relative filenames.
+            When provided, ``filename`` is the path relative to this directory
+            (e.g. ``local/my-review.md``). Defaults to the file's basename.
 
     Returns:
         Validation result with parsed review if successful.
     """
-    filename = file_path.name
+    if reviews_dir is not None:
+        filename = str(file_path.relative_to(reviews_dir))
+    else:
+        filename = file_path.name
 
     if not file_path.exists():
         return ReviewValidationResult(
@@ -228,6 +238,9 @@ def parse_review_file(file_path: Path) -> ReviewValidationResult:
 def discover_review_files(reviews_dir: Path) -> list[Path]:
     """Discover all review definition files in a directory.
 
+    Scans both the top-level reviews directory and the ``local/``
+    subdirectory (for repo-specific reviews).
+
     Args:
         reviews_dir: Path to the reviews directory (e.g., .erk/reviews/).
 
@@ -238,6 +251,9 @@ def discover_review_files(reviews_dir: Path) -> list[Path]:
         return []
 
     files = [f for f in reviews_dir.glob("*.md") if f.is_file()]
+    local_dir = reviews_dir / "local"
+    if local_dir.exists():
+        files.extend(f for f in local_dir.glob("*.md") if f.is_file())
     return sorted(files)
 
 
@@ -334,7 +350,7 @@ def discover_matching_reviews(
     errors: dict[str, tuple[str, ...]] = {}
 
     for review_file in review_files:
-        result = parse_review_file(review_file)
+        result = parse_review_file(review_file, reviews_dir=reviews_dir)
 
         if not result.is_valid:
             errors[result.filename] = result.errors
