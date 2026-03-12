@@ -1,0 +1,1057 @@
+<session>
+  <meta branch="master" />
+  <meta model="claude-opus-4-6" />
+  <user>➜  erk-slot-64 git:(plnd/teleport-helpstring-docs-03-12-1330) erk pr address
+
+change erk pr address to launch claude interactively</user>
+  <usage input_tokens="3" cache_creation_input_tokens="16200" cache_read_input_tokens="9131" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 16200}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me explore the current implementation of `erk pr address`.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="16200" cache_read_input_tokens="9131" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 16200}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01AWgWT3aEtqdbwRNJhPrfGK">
+    <param name="description">Explore erk pr address impl</param>
+    <param name="subagent_type">Explore</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 477 chars]...ce code that supports this command
+
+Be very thorough - read the full implementation files.</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="16200" cache_read_input_tokens="9131" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 16200}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01UWmM6sobjfEHwsaRvXW2TV">
+    <param name="description">Explore CLI launch patterns</param>
+    <param name="subagent_type">Explore</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 566 chars]... interactive launch patterns
+
+Be thorough and read full files when you find relevant code.</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="16200" cache_read_input_tokens="9131" output_tokens="586" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 16200, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01UWmM6sobjfEHwsaRvXW2TV">
+Perfect! Now let me compile my findings into a comprehensive report. Let me create a final summary of all the interactive launching patterns I found:
+
+## Summary of Interactive Claude Launching in Erk
+
+I've completed a thorough exploration of how erk launches Claude interactively. Here's my comprehensive report:
+
+### 1. **Core Documentation Files**
+
+The project documents interactive Claude launching in several key places:
+- `/Users/schrockn/code/erk/docs/learned/reference/interactive-claude-config.md` - Configuration system and two-layer permission model
+- `/Users/schrockn/code/erk/docs/learned/architecture/prompt-executor-patterns.md` - PromptExecutor abstraction patterns
+- `/Users/schrockn/code/erk/docs/learned/architecture/claude-cli-integration.md` - Spawning Claude CLI from Python
+
+### 2. **Primary Interactive Launch Pattern: AgentLauncher**
+
+The main pattern for interactive Claude launching uses the `AgentLauncher` abstraction:
+
+**File:** `/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/agent_launcher/abc.py`
+
+```python
+class AgentLauncher(ABC):
+    @abstractmethod
+    def launch_interactive(self, config: InteractiveAgentConfig, *, command: str) -&gt; NoReturn:
+        """Replace current process with agent CLI session using os.execvp()"""
+```
+
+**Implementation:** `/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/agent_launcher/real.py`
+
+The `RealAgentLauncher.launch_interactive()` method:
+1. Validates the backend (only "claude" is currently supported)
+
+... [117 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01AWgWT3aEtqdbwRNJhPrfGK">
+Excellent! Now I have comprehensive understanding. Let me create a summary document with all the information:
+
+## Summary: How `erk pr address` Works
+
+I've thoroughly explored the codebase and found complete documentation and implementation. Here's a comprehensive breakdown:
+
+### 1. CLI Command Definition
+
+**File:** `/Users/schrockn/code/erk/src/erk/cli/commands/pr/address_cmd.py`
+
+The `erk pr address` command is a Click-based CLI tool that:
+- Takes optional flags: `--dangerous` (force mode, skip permission prompts) and `--safe` (disable dangerous mode)
+- Checks that Claude CLI is available on the system
+- Invokes the Claude `/erk:pr-address` command to address PR review comments locally
+- Wraps the execution with `stream_command_with_feedback()` for real-time feedback
+- Handles error reporting if the Claude invocation fails
+
+**Key flow:**
+```
+erk pr address [--dangerous|--safe]
+  ↓
+Ensure Claude is available
+  ↓
+stream_command_with_feedback(executor, "/erk:pr-address", ...)
+  ↓
+Launches Claude with /erk:pr-address command
+```
+
+### 2. Local Addressing Workflow: `/erk:pr-address` Command
+
+
+... [93 lines omitted] ...
+
+  - **Failure**: Provides troubleshooting guidance
+  </tool_result>
+  <usage input_tokens="2166" cache_creation_input_tokens="2387" cache_read_input_tokens="25331" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2387}" output_tokens="12" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me read the current implementation files.</assistant>
+  <usage input_tokens="2166" cache_creation_input_tokens="2387" cache_read_input_tokens="25331" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2387}" output_tokens="12" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_014idPKSBdoCmSTSoGabxxqQ">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/pr/address_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="2166" cache_creation_input_tokens="2387" cache_read_input_tokens="25331" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2387}" output_tokens="12" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014idPKSBdoCmSTSoGabxxqQ">
+     1→"""Address PR review comments with AI-powered resolution.
+     2→
+     3→This command addresses PR review comments locally using Claude CLI.
+     4→For remote resolution via GitHub Actions, use `erk launch pr-address`.
+     5→"""
+     6→
+     7→import click
+     8→
+     9→from erk.cli.ensure import Ensure
+    10→from erk.cli.output import stream_command_with_feedback
+    11→from erk.core.context import ErkContext
+    12→
+    13→
+    14→@click.command("address")
+    15→@click.option(
+    16→    "-d",
+    17→    "--dangerous",
+    18→    is_flag=True,
+    19→    help="Force dangerous mode (skip permission prompts).",
+    20→)
+    21→@click.option(
+    22→    "--safe",
+    23→    is_flag=True,
+    24→    help="Disable dangerous mode (permission prompts enabled).",
+    25→)
+    26→@click.pass_obj
+    27→def address(ctx: ErkContext, *, dangerous: bool, safe: bool) -&gt; None:
+    28→    """Address PR review comments with AI-powered resolution.
+    29→
+    30→    Addresses PR review comments on the current branch using Claude.
+
+... [49 lines omitted] ...
+
+    76→        raise click.ClickException(result.error_message or "PR comment addressing failed")
+  </tool_result>
+  <tool_use name="Read" id="toolu_01HSGKndkbM35baUci1Q5gjy">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/pr/replan_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="2166" cache_creation_input_tokens="2387" cache_read_input_tokens="25331" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2387}" output_tokens="12" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01HSGKndkbM35baUci1Q5gjy">
+     1→"""Launch Claude to replan existing plan(s)."""
+     2→
+     3→import click
+     4→
+     5→from erk.core.context import ErkContext
+     6→from erk_shared.context.types import InteractiveAgentConfig
+     7→
+     8→
+     9→@click.command("replan")
+    10→@click.argument("plan_refs", nargs=-1, required=True)
+    11→@click.pass_obj
+    12→def pr_replan(ctx: ErkContext, plan_refs: tuple[str, ...]) -&gt; None:
+    13→    """Replan existing plan(s) against current codebase state.
+    14→
+    15→    PLAN_REFS are plan numbers or GitHub URLs. Multiple refs can be provided
+    16→    to consolidate plans into a single unified plan.
+    17→
+    18→    This command launches Claude in plan mode to re-evaluate existing plan(s)
+    19→    against the current codebase, creating a fresh plan that incorporates
+    20→    any changes. Original plans are closed after the new plan is created.
+    21→
+    22→    Examples:
+    23→        erk pr replan 2521
+    24→        erk pr replan https://github.com/owner/repo/issues/2521
+    25→        erk pr replan 123 456 789  # Consolidate multiple plans
+    26→    """
+    27→    # Get interactive Claude config with plan mode override
+    28→    if ctx.global_config is None:
+    29→        ia_config = InteractiveAgentConfig.default()
+    30→    else:
+
+... [16 lines omitted] ...
+
+    44→    except RuntimeError as e:
+    45→        raise click.ClickException(str(e)) from e
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Wx4F2qboG8cJNdxNjqXEZZ">
+    <param name="file_path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/agent_launcher/abc.py</param>
+  </tool_use>
+  <usage input_tokens="2166" cache_creation_input_tokens="2387" cache_read_input_tokens="25331" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2387}" output_tokens="12" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Wx4F2qboG8cJNdxNjqXEZZ">
+     1→"""Agent launcher abstraction for testing.
+     2→
+     3→This module provides an ABC for agent CLI launches to enable
+     4→testing without actually executing Claude or replacing the process.
+     5→"""
+     6→
+     7→from abc import ABC, abstractmethod
+     8→from typing import NoReturn
+     9→
+    10→from erk_shared.context.types import InteractiveAgentConfig
+    11→
+    12→
+    13→class AgentLauncher(ABC):
+    14→    """Abstract agent launcher for dependency injection."""
+    15→
+    16→    @abstractmethod
+    17→    def launch_interactive(self, config: InteractiveAgentConfig, *, command: str) -&gt; NoReturn:
+    18→        """Replace current process with agent CLI session.
+    19→
+    20→        Uses os.execvp() to replace the current process, so this
+    21→        method never returns.
+    22→
+    23→        Args:
+    24→            config: InteractiveAgentConfig with resolved values
+    25→            command: The slash command to execute (empty string for no command)
+    26→
+    27→        Note:
+    28→            This method never returns - the process is replaced.
+    29→        """
+    30→        ...
+
+... [1 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_018xWRY8c4e8mBL6hGAjtsPt">
+    <param name="file_path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/agent_launcher/real.py</param>
+  </tool_use>
+  <usage input_tokens="2166" cache_creation_input_tokens="2387" cache_read_input_tokens="25331" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2387}" output_tokens="12" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_018xWRY8c4e8mBL6hGAjtsPt">
+     1→"""Real AgentLauncher implementation using Claude CLI.
+     2→
+     3→RealAgentLauncher provides process replacement to launch Claude CLI
+     4→interactively.
+     5→"""
+     6→
+     7→import os
+     8→import shutil
+     9→from typing import NoReturn
+    10→
+    11→from erk_shared.context.types import InteractiveAgentConfig, permission_mode_to_claude
+    12→from erk_shared.gateway.agent_launcher.abc import AgentLauncher
+    13→
+    14→
+    15→def build_claude_args(
+    16→    config: InteractiveAgentConfig,
+    17→    *,
+    18→    command: str,
+    19→) -&gt; list[str]:
+    20→    """Build Claude CLI argument list for interactive launch.
+    21→
+    22→    Uses the resolved config (with any CLI overrides already applied via
+    23→    config.with_overrides()) to construct the argument list.
+    24→
+    25→    Args:
+    26→        config: InteractiveAgentConfig with resolved values
+    27→        command: The slash command to execute (empty string for no command)
+    28→
+    29→    Returns:
+    30→        List of command arguments suitable for subprocess or os.execvp
+
+... [61 lines omitted] ...
+
+    64→            RuntimeError: If Claude CLI is not available in PATH
+    71→            raise RuntimeError(
+    79→            raise RuntimeError("Claude CLI not found\nInstall from: https://claude.com/download")
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="5637" cache_read_input_tokens="27718" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5637}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me check the `InteractiveAgentConfig` type and the `Ensure.resolve_dangerous` method.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="5637" cache_read_input_tokens="27718" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5637}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01NkM2rp2gRUYofmzoiGbzKX">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/ensure.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5637" cache_read_input_tokens="27718" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5637}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01NkM2rp2gRUYofmzoiGbzKX">
+     1→"""CLI error handling utilities with styled output.
+     2→
+     3→This module provides the Ensure class for asserting invariants in CLI commands
+     4→with consistent, user-friendly error messages. All errors use red "Error:" prefix
+     5→for visual consistency.
+     6→
+     7→Domain-Specific Methods:
+     8→- Git state validations (branch checks, worktree existence, clean state)
+     9→- Configuration validations (required fields, format checks)
+    10→- Argument validations (count, type, range)
+    11→- File/path validations (readable, writable, not hidden)
+    12→- String/collection validations (non-empty, non-null)
+    13→- External tool validations (gh CLI installed)
+    14→"""
+    15→
+    16→from __future__ import annotations
+    17→
+    18→import shutil
+    19→from pathlib import Path
+    20→from typing import TYPE_CHECKING, Any, TypeVar
+    21→
+    22→import click
+    23→
+    24→from erk_shared.gateway.graphite.disabled import GraphiteDisabled, GraphiteDisabledError
+    25→from erk_shared.output.output import user_output
+    26→
+    27→if TYPE_CHECKING:
+    28→    from erk.core.context import ErkContext
+    29→
+    30→T = TypeVar("T")
+
+... [562 lines omitted] ...
+
+    33→class UserFacingCliError(click.ClickException):
+    34→    """Exception for user-facing CLI errors with styled output.
+    36→    Extends click.ClickException so Click catches it automatically at every
+    37→    level (groups, subgroups, commands) and converts it to a styled error
+    42→        raise UserFacingCliError("Not a GitHub repository", error_type="cli_error")
+    43→        raise UserFacingCliError(push_result.message, error_type="cli_error")
+    46→    def __init__(self, message: str, *, error_type: str) -&gt; None:
+    49→        self.error_type = error_type
+    52→        """Display styled error message to stderr."""
+    53→        user_output(click.style("Error: ", fg="red") + self.format_message())
+    57→    """Helper class for asserting invariants with consistent error handling."""
+    60→    def invariant(condition: bool, error_message: str) -&gt; None:
+    61→        """Ensure condition is true, otherwise output styled error and exit.
+    65→            error_message: Error message to display if condition is false.
+    66→                          "Error: " prefix will be added automatically in red.
+    69→            UserFacingCliError: If condition is false
+    72→            raise UserFacingCliError(error_message, error_type="cli_error")
+    75→    def truthy(value: T, error_message: str) -&gt; T:
+    76→        """Ensure value is truthy, otherwise output styled error and exit.
+    80→            error_message: Error message to display if value is falsy.
+    81→                          "Error: " prefix will be added automatically in red.
+    87→            UserFacingCliError: If value is falsy
+    90→            raise UserFacingCliError(error_message, error_type="cli_error")
+    94→    def not_none(value: T | None, error_message: str) -&gt; T:
+    95→        """Ensure value is not None, otherwise output styled error and exit.
+   103→            error_message: Error message to display if value is None.
+   104→                          "Error: " prefix will be added automatically in red.
+   110→            UserFacingCliError: If value is None
+   119→            raise UserFacingCliError(error_message, error_type="cli_error")
+   137→            click.UsageError: If both --dangerous and --safe are provided
+   140→            raise click.UsageError("--dangerous and --safe are mutually exclusive")
+   153→        error_message: str | None = None,
+   155→        """Ensure path exists, otherwise output styled error and exit.
+   166→            error_message: Optional custom error message. If not provided,
+   168→                          "Error: " prefix will be added automatically in red.
+   171→            UserFacingCliError: If path does not exist
+   174→            &gt;&gt;&gt; # Basic usage with default error message
+   177→            &gt;&gt;&gt; # With custom error message
+   181→            if error_message is None:
+   182→                error_message = f"Path not found: {path}"
+   183→            raise UserFacingCliError(error_message, error_type="cli_error")
+   186→    def not_empty(value: str | list | dict | None, error_message: str) -&gt; None:
+   191→            error_message: Error message to display if value is empty.
+   192→                          "Error: " prefix will be added automatically in red.
+   195→            UserFacingCliError: If value is None, empty string, empty list, or empty dict
+   202→            raise UserFacingCliError(error_message, error_type="cli_error")
+   206→        """Ensure worktree exists at path, otherwise output styled error and exit.
+   211→            name: Optional worktree name for friendlier error message
+   218→            &gt;&gt;&gt; Ensure.git_worktree_exists(ctx, wt_path)  # Uses path in error
+   221→            error_message = f"Worktree '{name}' does not exist"
+   223→            error_message = f"Worktree not found: {wt_path}"
+   224→        Ensure.path_exists(ctx, wt_path, error_message)
+   228→        """Ensure git branch exists, otherwise output styled error and exit.
+   236→            UserFacingCliError: If branch does not exist
+   243→            raise UserFacingCliError(
+   245→                error_type="cli_error",
+   250→        """Ensure currently in a git worktree, otherwise output styled error and exit.
+   253→            ctx: Application context (for error handling)
+   257→            UserFacingCliError: If not in a git worktree
+   264→            raise UserFacingCliError(
+   266→                error_type="cli_error",
+   273→        error_message: str | None = None,
+   275→        """Ensure argument count matches expected, otherwise output styled error and exit.
+   280→            error_message: Optional custom error message
+   283→            UserFacingCliError: If argument count does not match expected
+   290→            if error_message is None:
+   292→                    error_message = f"Expected no arguments, got {len(args)}"
+   294→                    error_message = f"Expected 1 argument, got {len(args)}"
+   296→                    error_message = f"Expected {expected} arguments, got {len(args)}"
+   297→            raise UserFacingCliError(error_message, error_type="cli_error")
+   303→        error_message: str | None = None,
+   305→        """Ensure configuration field is set, otherwise output styled error and exit.
+   310→            error_message: Optional custom error message
+   313→            UserFacingCliError: If field is not set (None or missing)
+   324→        except AttributeError:
+   327→            except (KeyError, TypeError):
+   331→            if error_message is None:
+   332→                error_message = (
+   336→            raise UserFacingCliError(error_message, error_type="cli_error")
+   339→    def path_is_dir(ctx: ErkContext, path: Path, error_message: str | None = None) -&gt; None:
+   340→        """Ensure path exists and is a directory, otherwise output styled error and exit.
+   345→            error_message: Optional custom error message
+   348→            UserFacingCliError: If path doesn't exist or is not a directory
+   353→        Ensure.path_exists(ctx, path, error_message)
+   355→            if error_message is None:
+   356→                error_message = f"Path is not a directory: {path}"
+   357→            raise UserFacingCliError(error_message, error_type="cli_error")
+   360→    def path_not_exists(ctx: ErkContext, path: Path, error_message: str) -&gt; None:
+   361→        """Ensure path does NOT exist, otherwise output styled error and exit.
+   368→            error_message: Error message to display if path exists
+   371→            UserFacingCliError: If path already exists
+   382→            raise UserFacingCliError(error_message, error_type="cli_error")
+   392→            UserFacingCliError: If gh CLI is not found on PATH
+   400→            raise UserFacingCliError(
+   404→                error_type="cli_error",
+   415→            UserFacingCliError: If gt CLI is not found on PATH
+   423→            raise UserFacingCliError(
+   427→                error_type="cli_error",
+   435→        outputs a helpful error message based on why Graphite is unavailable
+   444→            UserFacingCliError: If Graphite is disabled or not installed
+   452→            error = GraphiteDisabledError(ctx.graphite.reason)
+   453→            raise UserFacingCliError(str(error), error_type="cli_error")
+   463→            UserFacingCliError: If claude CLI is not found on PATH
+   471→            raise UserFacingCliError(
+   475→                error_type="cli_error",
+   489→            UserFacingCliError: If gt is not authenticated
+   499→            raise UserFacingCliError(
+   503→                error_type="cli_error",
+   519→            UserFacingCliError: If gh is not installed or not authenticated
+   530→            raise UserFacingCliError(
+   534→                error_type="cli_error",
+   553→        If branch exists and is NOT tracked, errors with remediation steps.
+   580→        # Branch exists but is not tracked - error with remediation
+   581→        raise UserFacingCliError(
+   590→            error_type="cli_error",
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01JAUtqaUmVsGVLWS272a5UU">
+    <param name="pattern">class InteractiveAgentConfig</param>
+    <param name="path">/Users/schrockn/code/erk/packages/erk-shared</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5637" cache_read_input_tokens="27718" output_tokens="312" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 5637, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01JAUtqaUmVsGVLWS272a5UU">
+Found 1 file
+packages/erk-shared/src/erk_shared/context/types.py
+  </tool_result>
+  <tool_use name="Read" id="toolu_01S9AQrhDScN7nhMFARz9tWi">
+    <param name="file_path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/context/types.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="8084" cache_read_input_tokens="33355" output_tokens="84" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 8084, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01S9AQrhDScN7nhMFARz9tWi">
+     1→"""Context types for erk and erk-kits.
+     2→
+     3→This module provides the core data types used by ErkContext:
+     4→- RepoContext: Repository discovery result
+     5→- NoRepoSentinel: Sentinel for when not in a repository
+     6→- GlobalConfig: Global erk configuration
+     7→- LoadedConfig: Repository-level configuration
+     8→- InteractiveAgentConfig: Configuration for interactive agent launches (Claude or Codex)
+     9→- AgentBackend: Type for agent backend selection
+    10→- PermissionMode: Generic permission mode for both Claude and Codex
+    11→"""
+    12→
+    13→from __future__ import annotations
+    14→
+    15→from dataclasses import dataclass
+    16→from functools import cache
+    17→from pathlib import Path
+    18→from typing import Literal, Self
+    19→
+    20→from erk_shared.gateway.github.types import GitHubRepoId
+    21→
+    22→# Agent backend types
+    23→AgentBackend = Literal["claude", "codex"]
+    24→
+    25→# Claude CLI permission modes:
+    26→# - "default": Default mode with permission prompts
+    27→# - "acceptEdits": Accept edits without prompts (--permission-mode acceptEdits)
+    28→# - "plan": Plan mode for exploration and planning (--permission-mode plan)
+    29→# - "bypassPermissions": Bypass all permissions (--permission-mode bypassPermissions)
+    30→ClaudePermissionMode = Literal["default", "acceptEdits", "plan", "bypassPermissions"]
+
+... [298 lines omitted] ...
+
+    51→    raise ValueError(f"Unknown permission_mode: {permission_mode}")
+    75→    raise ValueError(f"Unknown permission_mode: {permission_mode}")
+    99→    raise ValueError(f"Unknown permission_mode: {permission_mode}")
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="4538" cache_read_input_tokens="41439" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4538}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me check for existing tests.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="4538" cache_read_input_tokens="41439" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4538}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01ThvFw5fpv2uq7JwwqPZjZh">
+    <param name="pattern">address</param>
+    <param name="path">/Users/schrockn/code/erk/tests</param>
+    <param name="glob">*address*</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4538" cache_read_input_tokens="41439" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4538}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01ThvFw5fpv2uq7JwwqPZjZh">
+Found 3 files
+tests/unit/cli/commands/exec/scripts/test_generate_pr_address_summary.py
+tests/commands/pr/test_address.py
+tests/commands/pr/test_address_remote_cmd.py
+  </tool_result>
+  <tool_use name="Grep" id="toolu_016KyeDFDC1QPdeXpWKev7ZZ">
+    <param name="pattern">stream_command_with_feedback</param>
+    <param name="path">/Users/schrockn/code/erk/src/erk/cli</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4538" cache_read_input_tokens="41439" output_tokens="219" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 4538, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_016KyeDFDC1QPdeXpWKev7ZZ">
+Found 4 files
+src/erk/cli/commands/objective_helpers.py
+src/erk/cli/commands/implement_shared.py
+src/erk/cli/output.py
+src/erk/cli/commands/pr/address_cmd.py
+  </tool_result>
+  <tool_use name="Read" id="toolu_019vTvSLTvy5psKubEqkTTy5">
+    <param name="file_path">/Users/schrockn/code/erk/tests/commands/pr/test_address.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="495" cache_read_input_tokens="45977" output_tokens="76" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 495, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_019vTvSLTvy5psKubEqkTTy5">
+     1→"""Tests for erk pr address command (local variant)."""
+     2→
+     3→from click.testing import CliRunner
+     4→
+     5→from erk.cli.commands.pr import pr_group
+     6→from erk_shared.context.types import GlobalConfig
+     7→from tests.fakes.gateway.git import FakeGit
+     8→from tests.fakes.tests.prompt_executor import FakePromptExecutor
+     9→from tests.test_utils.context_builders import build_workspace_test_context
+    10→from tests.test_utils.env_helpers import erk_isolated_fs_env
+    11→
+    12→
+    13→def test_pr_address_success() -&gt; None:
+    14→    """Test successful local address when Claude is available."""
+    15→    runner = CliRunner()
+    16→    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+    17→        git = FakeGit(
+    18→            git_common_dirs={env.cwd: env.git_dir},
+    19→            local_branches={env.cwd: ["main", "feature-branch"]},
+    20→            default_branches={env.cwd: "main"},
+    21→            trunk_branches={env.cwd: "main"},
+    22→            current_branches={env.cwd: "feature-branch"},
+    23→        )
+    24→
+    25→        executor = FakePromptExecutor(available=True)
+    26→
+    27→        ctx = build_workspace_test_context(env, git=git, prompt_executor=executor)
+    28→
+    29→        result = runner.invoke(pr_group, ["address", "--dangerous"], obj=ctx)
+    30→
+
+... [167 lines omitted] ...
+
+    90→    """Test that --dangerous and --safe together produce an error."""
+   148→    """Test error when Claude is not installed."""
+   173→def test_pr_address_fails_on_command_error() -&gt; None:
+   195→        # Error message from FakePromptExecutor
+   196→        assert "failed" in result.output.lower()
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="7715" cache_read_input_tokens="46472" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7715}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me check the fake agent launcher for testing.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="7715" cache_read_input_tokens="46472" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7715}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_017en7GK8BMjrnHK5TeHq485">
+    <param name="pattern">FakeAgentLauncher</param>
+    <param name="path">/Users/schrockn/code/erk/tests</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="7715" cache_read_input_tokens="46472" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7715}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017en7GK8BMjrnHK5TeHq485">
+Found 6 files
+tests/commands/objective/test_plan.py
+tests/unit/fakes/test_fake_agent_launcher.py
+tests/test_utils/test_context.py
+tests/fakes/tests/shared_context.py
+tests/fakes/gateway/agent_launcher.py
+tests/commands/pr/test_replan.py
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01V6BvgNpLkMvpJ6zdDVcFvp">
+    <param name="pattern">agent_launcher</param>
+    <param name="path">/Users/schrockn/code/erk/tests/test_utils</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="7715" cache_read_input_tokens="46472" output_tokens="234" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 7715, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01V6BvgNpLkMvpJ6zdDVcFvp">
+tests/test_utils/test_context.py:22:from erk_shared.gateway.agent_launcher.abc import AgentLauncher
+tests/test_utils/test_context.py:70:    from tests.fakes.gateway.agent_launcher import FakeAgentLauncher
+tests/test_utils/test_context.py:115:        agent_launcher=FakeAgentLauncher(),
+tests/test_utils/test_context.py:149:    agent_launcher: AgentLauncher | None = None,
+tests/test_utils/test_context.py:206:    from tests.fakes.gateway.agent_launcher import FakeAgentLauncher
+tests/test_utils/test_context.py:294:    if agent_launcher is None:
+tests/test_utils/test_context.py:295:        agent_launcher = FakeAgentLauncher()
+tests/test_utils/test_context.py:363:        agent_launcher=agent_launcher,
+  </tool_result>
+  <tool_use name="Read" id="toolu_014wFcyYnDC8WsCix7PXR1xN">
+    <param name="file_path">/Users/schrockn/code/erk/tests/fakes/gateway/agent_launcher.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="616" cache_read_input_tokens="54187" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 616}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014wFcyYnDC8WsCix7PXR1xN">
+     1→"""Fake AgentLauncher implementation for testing.
+     2→
+     3→FakeAgentLauncher is an in-memory implementation that tracks launch calls
+     4→without actually executing Claude or replacing the process, enabling fast
+     5→and deterministic tests.
+     6→"""
+     7→
+     8→from dataclasses import dataclass
+     9→from typing import NoReturn
+    10→
+    11→from erk_shared.context.types import InteractiveAgentConfig
+    12→from erk_shared.gateway.agent_launcher.abc import AgentLauncher
+    13→
+    14→
+    15→@dataclass(frozen=True)
+    16→class AgentLaunchCall:
+    17→    """Record of an agent launch call for test assertions.
+    18→
+    19→    Attributes:
+    20→        config: InteractiveAgentConfig that was used
+    21→        command: Command that was passed to Claude
+    22→    """
+    23→
+    24→    config: InteractiveAgentConfig
+    25→    command: str
+    26→
+    27→
+    28→class FakeAgentLauncher(AgentLauncher):
+    29→    """In-memory fake implementation that tracks agent launch calls.
+    30→
+
+... [62 lines omitted] ...
+
+    34→    def __init__(self, *, launch_error: str | None = None) -&gt; None:
+    38→            launch_error: If set, launch_interactive raises RuntimeError with this message.
+    43→        self._launch_error = launch_error
+    86→        if self._launch_error is not None:
+    87→            raise RuntimeError(self._launch_error)
+  </tool_result>
+  <tool_use name="Read" id="toolu_018cxm4BFFVJWSEmaExj8dGf">
+    <param name="file_path">/Users/schrockn/code/erk/tests/commands/pr/test_replan.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="616" cache_read_input_tokens="54187" output_tokens="137" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 616, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_018cxm4BFFVJWSEmaExj8dGf">
+     1→"""Tests for erk pr replan command."""
+     2→
+     3→from click.testing import CliRunner
+     4→
+     5→from erk.cli.cli import cli
+     6→from tests.fakes.gateway.agent_launcher import FakeAgentLauncher
+     7→from tests.test_utils.test_context import context_for_test
+     8→
+     9→
+    10→def test_replan_launches_agent_with_plan_mode() -&gt; None:
+    11→    """Test that replan launches agent in plan mode with correct command."""
+    12→    runner = CliRunner()
+    13→    fake_launcher = FakeAgentLauncher()
+    14→    ctx = context_for_test(agent_launcher=fake_launcher)
+    15→
+    16→    result = runner.invoke(cli, ["pr", "replan", "2521"], obj=ctx)
+    17→
+    18→    assert result.exit_code == 0
+    19→    assert fake_launcher.launch_called
+    20→    assert fake_launcher.last_call is not None
+    21→    assert fake_launcher.last_call.command == "/erk:replan 2521"
+    22→    assert fake_launcher.last_call.config.permission_mode == "plan"
+    23→
+    24→
+    25→def test_replan_with_multiple_issue_refs() -&gt; None:
+    26→    """Test that replan passes multiple issue refs to command."""
+    27→    runner = CliRunner()
+    28→    fake_launcher = FakeAgentLauncher()
+    29→    ctx = context_for_test(agent_launcher=fake_launcher)
+    30→
+
+... [31 lines omitted] ...
+
+    49→def test_replan_shows_error_when_agent_not_installed() -&gt; None:
+    50→    """Test that replan shows error when agent CLI is not installed."""
+    53→        launch_error="Claude CLI not found\nInstall from: https://claude.com/download"
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="2291" cache_read_input_tokens="54803" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2291}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I have a thorough understanding. Let me write the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2291" cache_read_input_tokens="54803" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2291}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01Nw8R5ZA13URxxieRKo8x25">
+    <param name="file_path">/Users/schrockn/.claude/plans/virtual-munching-island.md</param>
+    <param name="content"># Plan: Make `erk pr address` launch Claude interactively
+
+## Context
+
+Currently `erk pr a...[truncated 2105 chars]...y` for lint
+- Run `uv run ty check src/erk/cli/commands/pr/address_cmd.py` for type check
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2291" cache_read_input_tokens="54803" output_tokens="832" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2291, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Nw8R5ZA13URxxieRKo8x25">
+File created successfully at: /Users/schrockn/.claude/plans/virtual-munching-island.md
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_01VTs45efwKnck4SDBMKrMvn">
+    <param name="query">select:ExitPlanMode</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="869" cache_read_input_tokens="57094" output_tokens="78" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 869, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01VTs45efwKnck4SDBMKrMvn">
+
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_01RqsAhzKPfSUhDnderx2oNe">
+    <param name="allowedPrompts">[{'tool': 'Bash', 'prompt': 'run tests with pytest'}, {'tool': 'Bash', 'prompt': 'run ruff linter'}, {'tool': 'Bash', 'prompt': 'run ty type checker'}]</param>
+    <param name="plan"># Plan: Make `erk pr address` launch Claude interactively
+
+## Context
+
+Currently `erk pr a...[truncated 2105 chars]...y` for lint
+- Run `uv run ty check src/erk/cli/commands/pr/address_cmd.py` for type check
+</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="738" cache_read_input_tokens="57963" output_tokens="111" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 738, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01RqsAhzKPfSUhDnderx2oNe">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/virtual-munching-island.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Plan: Make `erk pr address` launch Claude interactively
+Current context: (wt:erk) (br:master)\n\nWhat would you like to do with this plan?"
+  header: "br:master"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create new branch and planned PR. Stays on current branch." - Create a new branch, save plan as draft PR.
+  2. "Implement without saving" - Implement directly on the current branch without saving a plan PR.
+  3. "View/Edit the Plan" - Open plan in editor to review or modify before deciding.
+
+⚠️  WARNING: Currently on 'master'. We strongly discourage implementing directly on the trunk branch. Consider saving the plan and implementing in a dedicated worktree instead.
+
+If user chooses 'Create new branch and planned PR':
+  1. Run /erk:plan-save
+  2. Call ExitPlanMode to end the planning session.
+
+If user chooses 'Implement without saving':
+  1. Create implement-now marker:
+     erk exec marker create --session-id 2ff88605-0096-492a-8ffb-48adf576a65e \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly on the current branch.
+     Do NOT run 'erk exec setup-impl' or create a new branch.
+
+... [8 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01QKT63b1oqryqpST8ip2xZg">
+    <param name="file_path">/Users/schrockn/.claude/plans/virtual-munching-island.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="750" cache_read_input_tokens="58701" output_tokens="72" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 750, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01QKT63b1oqryqpST8ip2xZg">
+     1→# Plan: Make `erk pr address` launch Claude interactively
+     2→
+     3→## Context
+     4→
+     5→Currently `erk pr address` runs Claude non-interactively via `stream_command_with_feedback()`, which streams output but doesn't allow user interaction. The user wants it to launch Claude interactively (replacing the current process with `os.execvp`), matching the pattern used by `erk pr replan` and `erk objective plan`.
+     6→
+     7→## Changes
+     8→
+     9→### 1. Rewrite `src/erk/cli/commands/pr/address_cmd.py`
+    10→
+    11→Replace the `stream_command_with_feedback` approach with `ctx.agent_launcher.launch_interactive()`, following the `replan_cmd.py` pattern:
+    12→
+    13→- Remove `stream_command_with_feedback` import and `prompt_executor` usage
+    14→- Load `InteractiveAgentConfig` from `ctx.global_config.interactive_agent` (with `InteractiveAgentConfig.default()` fallback)
+    15→- Map `--dangerous`/`--safe` flags to config overrides:
+    16→  - `--dangerous` → `dangerous_override=True`
+    17→  - `--safe` → `permission_mode_override="safe"`, no dangerous override
+    18→  - Default (neither flag) → use config defaults with `allow_dangerous_override=True` when `live_dangerously` is true
+    19→- Use `config.with_overrides(permission_mode_override="edits", ...)` to set the permission mode (edits mode, matching current behavior)
+    20→- Call `ctx.agent_launcher.launch_interactive(config, command="/erk:pr-address")`
+    21→- Wrap in try/except RuntimeError for CLI not installed errors
+    22→
+    23→### 2. Rewrite `tests/commands/pr/test_address.py`
+    24→
+    25→Replace `FakePromptExecutor`-based tests with `FakeAgentLauncher`-based tests, following `test_replan.py` pattern:
+    26→
+    27→- Test: launches with correct command (`/erk:pr-address`) and permission mode (`edits`)
+    28→- Test: `--dangerous` flag sets `dangerous=True` on config
+    29→- Test: `--safe` flag overrides to safe permission mode
+    30→- Test: `--dangerous` + `--safe` is mutually exclusive error
+
+... [13 lines omitted] ...
+
+    31→- Test: error when agent CLI not installed (`launch_error` on FakeAgentLauncher)
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_01EFPAou6U5y7WcmTJhDGyce">
+    <param name="query">select:AskUserQuestion</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1003" cache_read_input_tokens="59451" output_tokens="77" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1003, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01EFPAou6U5y7WcmTJhDGyce">
+
+  </tool_result>
+  <tool_use name="AskUserQuestion" id="toolu_01RaQjoSL949kg5RPQTnxMsC">
+    <param name="questions">[{'question': '📋 Plan: Make `erk pr address` launch Claude interactively\nCurrent context:...[truncated 406 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1333" cache_read_input_tokens="60454" output_tokens="222" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1333, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01RaQjoSL949kg5RPQTnxMsC">
+User has answered your questions: "📋 Plan: Make `erk pr address` launch Claude interactively
+Current context: (wt:erk) (br:master)
+
+What would you like to do with this plan?"="Create new branch and planned PR". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="Skill" id="toolu_0177x8V7pjp3tWQGTBwSmDqc">
+    <param name="skill">erk:plan-save</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="306" cache_read_input_tokens="61787" output_tokens="57" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 306, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0177x8V7pjp3tWQGTBwSmDqc">
+Launching skill: erk:plan-save
+  </tool_result>
+  <user># /erk:plan-save
+
+Save the current session's plan to GitHub with session context.
+
+## Usage
+
+```bash
+/erk:plan-save                           # Standalone plan
+/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+/erk:plan-save --objective=123           # Explicit objective link (overrides marker)
+/erk:plan-save --current-branch          # Use current branch instead of creating new plnd/ branch
+```
+
+Objective linking: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command. Use `--objective=&lt;number&gt;` to override the marker or provide the link when no marker exists (e.g., during replan).
+
+## Plan Storage
+
+The plan is saved using the configured backend:
+
+- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+  The JSON output contract includes `pr_number`, `pr_url`, `title`, `branch_name`, `plan_backend`.
+
+## Agent Instructions
+
+### Step 1: Parse Arguments
+
+Check `` for the `--plan-type`, `--objective`, and `--current-branch` flags:
+
+```
+If  contains "--plan-type=&lt;type&gt;":
+  - Extract the type (standard or learn)
+  - Store as PLAN_TYPE variable
+  - Set PLAN_TYPE_FLAG to "--plan-type=&lt;type&gt;"
+Else:
+  - Set PLAN_TYPE_FLAG to empty string
+
+If  contains "--objective=&lt;number&gt;":
+  - Extract the number
+  - Set OBJECTIVE_FLAG to "--objective=&lt;number&gt;"
+Else:
+  - Set OBJECTIVE_FLAG to empty string
+
+If  contains "--current-branch":
+  - Set CURRENT_BRANCH_FLAG to "--current-branch"
+Else:
+  - Set CURRENT_BRANCH_FLAG to empty string
+```
+
+### Step 2: Generate Branch Slug
+
+**Skip this step if `--current-branch` was passed.** The current branch is used directly.
+
+Before saving, generate a branch slug from the plan title. Read the plan title from the plan file you wrote in plan mode (the first `# ` heading).
+
+Generate a branch slug from the title:
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+
+Store the result as `BRANCH_SLUG`.
+
+### Step 3: Generate Plan Summary
+
+Write a concise 2-3 sentence summary of the plan. This summary will be visible
+at the top of the PR description (above the collapsed full plan).
+
+Guidelines:
+
+- Focus on WHAT the plan does and WHY
+- Do not repeat the title
+- Plain text, no markdown headers or formatting
+- Avoid special shell characters (backticks, dollar signs)
+- Store as PLAN_SUMMARY
+
+### Step 4: Run Save Command
+
+Run this command with the session ID, summary, and optional flags.
+
+If CURRENT_BRANCH_FLAG is set, pass `--current-branch` (no branch slug needed):
+
+```bash
+erk exec plan-save --format json --session-id="2ff88605-0096-492a-8ffb-48adf576a65e" --current-branch --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Otherwise, pass the branch slug:
+
+```bash
+erk exec plan-save --format json --session-id="2ff88605-0096-492a-8ffb-48adf576a65e" --branch-slug="${BRANCH_SLUG}" --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Parse the JSON output to extract `pr_number` for verification in Step 5.
+
+If the command fails, display the error and stop.
+
+### Step 5: Verify Objective Link (if applicable)
+
+**Only run this step if `objective_issue` is non-null in the JSON output from Step 4.**
+
+Verify the objective link was saved correctly:
+
+```bash
+erk exec get-plan-metadata &lt;pr_number&gt; objective_issue
+```
+
+Parse the JSON response:
+
+- If `success: true` and `value` matches the expected objective number: verification passed
+- If `success: false` or value doesn't match: verification failed
+
+**On verification success:**
+
+Display: `Verified objective link: #&lt;objective-number&gt;`
+
+**On verification failure:**
+
+Display error and remediation steps:
+
+```
+ERROR: Objective link verification failed
+Expected objective: #&lt;expected&gt;
+Actual: &lt;actual-or-null&gt;
+
+The plan was saved but without the correct objective link.
+Fix: Close draft PR #&lt;pr_number&gt;,
+ensure the objective-context marker exists, and re-run /erk:plan-save.
+```
+
+Exit without creating the plan-saved marker. The session continues so the user can retry.
+
+### Step 6: Update Objective Roadmap (if objective linked)
+
+**Only run this step if `objective_issue` was non-null in JSON output and verification passed.**
+
+Update the objective's roadmap table to show that a plan has been created for this node:
+
+1. **Read the roadmap node marker** to get the node ID:
+
+```bash
+step_id=$(erk exec marker read --session-id "2ff88605-0096-492a-8ffb-48adf576a65e" roadmap-step)
+```
+
+If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-plan`.
+
+2. **Update the roadmap table** using the dedicated command:
+
+```bash
+erk exec update-objective-node &lt;objective-issue&gt; --node "$step_id" --pr "#&lt;pr_number&gt;" --status in_progress
+```
+
+This atomically fetches the objective body, finds the matching node row, sets the Status cell to `in-progress`, and writes the updated body back.
+
+3. **Report the update:**
+
+Display: `Updated objective #&lt;objective-issue&gt; roadmap: node &lt;step_id&gt; → PR #&lt;pr_number&gt;`
+
+**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+
+### Step 7: Display Results
+
+**If JSON contains `skipped_duplicate: true`:**
+
+Display: `Plan already saved as PR #&lt;pr_number&gt; (duplicate skipped)`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options.
+
+**Otherwise, on success**, display:
+
+```
+Plan "&lt;title&gt;" saved as draft PR #&lt;pr_number&gt;
+URL: &lt;issue_url&gt;
+```
+
+If objective was verified, also display: `Verified objective link: #&lt;objective-number&gt;`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options
+(implement in current worktree, implement in new worktree, or done).
+
+On failure, display the error message and suggest:
+
+- Checking that a plan exists (enter Plan mode and exit it first)
+- Verifying GitHub CLI authentication (`gh auth status`)
+- Checking network connectivity
+
+### Step 5: Push Planning Session
+
+After saving successfully, push the planning session for cross-machine learning.
+This captures the in-progress session state so it's available even if implementation
+happens on a different machine.
+
+Run `erk exec capture-session-info` to get the session file path, then push it:
+
+```bash
+erk exec upload-impl-session --session-id "2ff88605-0096-492a-8ffb-48adf576a65e" 2&gt;/dev/null || true
+```
+
+If the plan was saved successfully and `pr_number` is known, use push-session directly
+for better stage tracking:
+
+```bash
+erk exec push-session \
+    --session-file "&lt;session_file_path&gt;" \
+    --session-id "2ff88605-0096-492a-8ffb-48adf576a65e" \
+    --stage planning \
+    --source local \
+    --pr-number &lt;pr_number&gt; \
+    2&gt;/dev/null || true
+```
+
+Where `&lt;session_file_path&gt;` is obtained from `erk exec capture-session-info` output
+and `&lt;pr_number&gt;` is from Step 2's JSON output.
+
+**Note:** This is non-critical. If it fails, the plan was still saved successfully.
+The `2&gt;/dev/null || true` ensures graceful degradation.
+
+## Session Tracking
+
+After successfully saving a plan, the plan number is stored in a marker file that enables automatic plan updates in the same session.
+
+**To read the saved plan number:**
+
+```bash
+erk exec marker read --session-id "2ff88605-0096-492a-8ffb-48adf576a65e" plan-saved-issue
+```
+
+This returns the plan number (exit code 0) or exits with code 1 if no plan was saved in this session.
+</user>
+  <usage input_tokens="2" cache_creation_input_tokens="2272" cache_read_input_tokens="62093" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2272}" output_tokens="14" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me save the plan as a draft PR.
+
+**Branch slug:** `address-interactive-launch`
+
+**Plan summary:** Changes erk pr address from running Claude non-interactively via stream_command_with_feedback to launching Claude interactively using AgentLauncher.launch_interactive, matching the pattern used by erk pr replan. Updates tests to use FakeAgentLauncher.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="2272" cache_read_input_tokens="62093" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2272}" output_tokens="14" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01DtNRpjXPy6ntzharVcsthS">
+    <param name="command">erk exec plan-save --format json --session-id="2ff88605-0096-492a-8ffb-48adf576a65e" --bra...[truncated 191 chars]...tive, matching the pattern used by erk pr replan. Updates tests to use FakeAgentLauncher."</param>
+    <param name="description">Save plan as draft PR via erk exec plan-save</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2272" cache_read_input_tokens="62093" output_tokens="388" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2272, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01DtNRpjXPy6ntzharVcsthS">
+{"success": true, "pr_number": 9227, "pr_url": "https://github.com/dagster-io/erk/pull/9227", "title": "[erk-pr] Plan: Make `erk pr address` launch Claude interactively", "branch_name": "plnd/address-interactive-launch-03-12-1405", "plan_backend": "planned_pr", "objective_issue": null, "archived_to": "/Users/schrockn/code/erk/.erk/scratch/sessions/2ff88605-0096-492a-8ffb-48adf576a65e/plan_snapshots/000001-7f6fac5e"}
+  </tool_result>
+  <assistant>Plan saved. Now let me push the planning session and exit plan mode.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1859" cache_read_input_tokens="64365" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1859}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01Fi836Q7YYQCDWZKPqQHLin">
+    <param name="command">erk exec capture-session-info 2&gt;/dev/null</param>
+    <param name="description">Get session file path for push</param>
+    <param name="timeout">10000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1859" cache_read_input_tokens="64365" output_tokens="121" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1859, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Fi836Q7YYQCDWZKPqQHLin">
+SESSION_ID=2ff88605-0096-492a-8ffb-48adf576a65e
+SESSION_FILE=/Users/schrockn/.claude/projects/-Users-schrockn-code-erk/2ff88605-0096-492a-8ffb-48adf576a65e.jsonl
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01Wu76RQVbfW3e6AB62woyoj">
+    <param name="command">erk exec push-session --session-file "/Users/schrockn/.claude/projects/-Users-schrockn-cod...[truncated 60 chars]...2a-8ffb-48adf576a65e" --stage planning --source local --pr-number 9227 2&gt;/dev/null || true</param>
+    <param name="description">Push planning session for cross-machine learning</param>
+    <param name="timeout">15000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="212" cache_read_input_tokens="66224" output_tokens="202" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 212, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+</session>
