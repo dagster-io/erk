@@ -1,0 +1,1068 @@
+<session>
+  <meta branch="plnd/address-interactive-launch-03-12-1405" />
+  <meta model="claude-opus-4-6" />
+  <user>&lt;command-message&gt;erk:plan-implement&lt;/command-message&gt;
+&lt;command-name&gt;/erk:plan-implement&lt;/command-name&gt;</user>
+  <user># /erk:plan-implement
+
+Implement a plan - either from GitHub, a markdown file, an existing impl directory under `.erk/impl-context/`, or by saving the current plan first.
+
+This is the primary implementation workflow - it orchestrates:
+
+1. Setting up the impl directory under `.erk/impl-context/&lt;branch&gt;/` (from issue, file, existing folder, or fresh plan)
+2. Executing the implementation
+3. Running CI and submitting the PR
+
+## Prerequisites
+
+- Must be in a git repository managed by erk
+- GitHub CLI (`gh`) must be authenticated
+- One of:
+  - A plan number, URL, or file path argument
+  - An existing impl directory under `.erk/impl-context/`
+  - A plan branch checked out (e.g., `plnd/...` or `P{number}-...`)
+  - A plan in `~/.claude/plans/` (from plan mode)
+
+## Usage
+
+```bash
+/erk:plan-implement                    # Use impl directory, detect from branch, or save current plan
+/erk:plan-implement 2521               # Fetch and implement PR #2521
+/erk:plan-implement https://github.com/owner/repo/pull/2521   # URL form
+/erk:plan-implement ./my-plan.md       # Implement from local markdown file
+```
+
+---
+
+## CRITICAL: PR Operations
+
+**NEVER** run direct GitHub CLI commands for PR operations during implementation:
+
+- `gh pr edit` — destroys plan-header metadata block
+- `gh pr ready` — bypasses lifecycle tracking
+- `gh pr close` / `gh pr merge`
+
+All PR operations are handled by `erk pr submit` in Step 13. It automatically:
+
+- Generates the PR title and body
+- Preserves the plan-header metadata block
+- Marks draft PRs as ready for review
+- Updates lifecycle stage
+
+## Agent Instructions
+
+### Step 1: Set Up Implementation
+
+Parse `` and run the consolidated setup command:
+
+- **If numeric** (e.g., `2521`): `erk exec setup-impl --issue 2521`
+- **If GitHub URL** (e.g., `https://github.com/.../issues/2521`): Extract number, `erk exec setup-impl --issue 2521`
+- **If path to file** (anything else non-empty): `erk exec setup-impl --file &lt;path&gt;`
+- **If empty**: `erk exec setup-impl` (auto-detects from `.erk/impl-context/`, branch, or fails)
+
+```bash
+erk exec setup-impl [--issue &lt;N&gt; | --file &lt;path&gt;]
+```
+
+This single command handles:
+
+- Fetching plan from GitHub (draft PR)
+- Setting up from a local markdown file
+- Auto-detecting from existing impl directory under `.erk/impl-context/`
+- Auto-detecting plan number from branch name (P{number}-... or PR lookup)
+- Creating/checking out the feature branch
+- Creating impl directory under `.erk/impl-context/&lt;branch&gt;/` with plan content
+- Running impl-init validation
+- Cleaning up `.erk/impl-context/` staging directory (git rm + commit + push)
+
+Otherwise, generate a branch slug and set up from the specified issue:
+
+1. Fetch the title: `gh pr view &lt;ISSUE_ARG&gt; --json title -q .title`
+2. Generate a branch slug from the title:
+   - 2-4 hyphenated lowercase words, max 30 characters
+   - Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+   - Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+   - Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+3. Store as `BRANCH_SLUG`.
+
+```bash
+erk exec setup-impl --issue &lt;ISSUE_ARG&gt; --branch-slug="${BRANCH_SLUG}"
+```
+
+If `setup-impl` exits with code 1 and `error: "no_plan_found"`, fall back to saving the current plan:
+
+Generate a branch slug from the plan title (the first `# ` heading in the plan file):
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Store as `BRANCH_SLUG`
+
+Save the current plan to GitHub and capture the plan number:
+
+```bash
+erk exec plan-save --format json --session-id="272dc956-82bf-4de5-8ea2-d4a7f2b8dfc6" --branch-slug="${BRANCH_SLUG}"
+```
+
+Parse the JSON output to get `pr_number`, then:
+
+```bash
+erk exec setup-impl --issue &lt;pr_number&gt;
+```
+
+The `setup-impl` output includes `related_docs` (skills and docs to load) and `has_plan_tracking` (whether GitHub issue tracking is active).
+
+If this fails, display the error and stop.
+
+### Step 2: Read Plan and Load Context
+
+Read `plan.md` from the impl directory set up in Step 1 to understand:
+
+- Overall goal and context
+- Context &amp; Understanding sections (API quirks, architectural insights, pitfalls)
+- Implementation phases and dependencies
+- Success criteria
+
+**Context Consumption**: Plans contain expensive discoveries. Ignoring `[CRITICAL:]` tags, "Related Context:" subsections, or "DO NOT" items causes repeated mistakes.
+
+### Step 3: Load Related Documentation
+
+If plan contains "Related Documentation" section, load listed skills via Skill tool and read listed docs.
+
+### Step 4: Create TodoWrite Entries
+
+Create todo entries for each phase from the plan.
+
+### Step 5: Signal GitHub Started
+
+```bash
+erk exec impl-signal started --session-id="272dc956-82bf-4de5-8ea2-d4a7f2b8dfc6" 2&gt;/dev/null || true
+```
+
+This also deletes the Claude plan file (from `~/.claude/plans/`) since:
+
+- The content has been saved to GitHub
+- The content has been snapshotted to `.erk/scratch/`
+- Keeping it could cause confusion if the user tries to re-save
+
+### Step 6: Execute Each Phase Sequentially
+
+For each phase:
+
+1. **Mark phase as in_progress** (in TodoWrite)
+2. **Read task requirements** carefully
+3. **Implement code AND tests together**:
+   - Load `dignified-python-313` skill for coding standards
+   - Load `fake-driven-testing` skill for test patterns
+   - Follow project AGENTS.md standards
+4. **Mark phase as completed** (in TodoWrite)
+5. **Report progress**: changes made, what's next
+
+**Important:** `plan.md` is immutable - NEVER edit during implementation
+
+### Step 7: Report Progress
+
+After each phase: report changes made and what's next.
+
+### Step 8: Final Verification
+
+Confirm all tasks executed, success criteria met, note deviations, summarize changes.
+
+### Step 9: Signal GitHub Ended
+
+```bash
+erk exec impl-signal ended --session-id="272dc956-82bf-4de5-8ea2-d4a7f2b8dfc6" 2&gt;/dev/null || true
+```
+
+### Step 10: Upload Session for Async Learn
+
+```bash
+erk exec upload-impl-session --session-id="272dc956-82bf-4de5-8ea2-d4a7f2b8dfc6" 2&gt;/dev/null || true
+```
+
+This reads plan reference from the impl directory, captures session info, and uploads for async learn processing.
+
+### Step 11: Clean Up Impl Context
+
+Remove the `.erk/impl-context/` directory from the repo:
+
+```bash
+erk exec cleanup-impl-context
+```
+
+This removes `.erk/impl-context/`, stages the deletion, commits, and pushes — all idempotent.
+
+### Step 12: Run CI Iteratively
+
+1. If `.erk/prompt-hooks/post-plan-implement-ci.md` exists: follow its instructions
+2. Otherwise: check CLAUDE.md/AGENTS.md for CI commands
+
+### Step 13: Submit PR
+
+Push the branch and create or update the PR using the Graphite-aware submit pipeline:
+
+```bash
+erk pr submit
+```
+
+This handles pushing commits, creating/updating the PR, generating the PR description, and enhancing with Graphite stack metadata when available.
+
+After successful submission, signal lifecycle transition:
+
+```bash
+erk exec impl-signal submitted 2&gt;/dev/null || true
+```
+
+Then validate PR completion invariants:
+
+```bash
+erk pr check --stage=impl
+```
+
+This validates PR submission readiness including implementation-specific checks
+(e.g., `.erk/impl-context/` must be cleaned up). If checks fail, display output and warn user.
+
+### Step 14: Output Format
+
+- **Start**: "Setting up implementation..." or "Fetching plan #X..."
+- **After setup**: "Implementation environment ready, reading plan..."
+- **Each phase**: "Phase X: [brief description]" with code changes
+- **End**: "Plan execution complete. [Summary]"
+
+---
+
+## Related Commands
+
+- `/erk:plan-save` - Save plan only, don't implement (for defer-to-later workflow)
+- `/erk:replan` - Re-plan an existing plan with current codebase state
+</user>
+  <usage input_tokens="2" cache_creation_input_tokens="17513" cache_read_input_tokens="9131" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 17513}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Setting up implementation from current branch...</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="17513" cache_read_input_tokens="9131" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 17513}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01Cvawo7SmZkf7JspR3vjwZw">
+    <param name="command">erk exec setup-impl 2&gt;&amp;1</param>
+    <param name="description">Auto-detect and set up implementation from branch</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="17513" cache_read_input_tokens="9131" output_tokens="296" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 17513, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Cvawo7SmZkf7JspR3vjwZw">
+Found existing impl dir for PR #9227, skipping branch setup
+{"success": true, "impl_path": "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-26/.erk/impl-context/plnd--address-interactive-launch-03-12-1405", "pr_number": 9227, "pr_url": "https://github.com/dagster-io/erk/pull/9227", "branch": "plnd/address-interactive-launch-03-12-1405", "pr_title": "", "no_impl": false}
+{"success": true, "source": "issue", "pr_number": 9227, "has_plan_tracking": true, "valid": true, "related_docs": {"skills": [], "docs": []}}
+  </tool_result>
+  <assistant>Implementation environment ready. Let me read the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="469" cache_read_input_tokens="26644" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 469}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01A5Wd1kY5LQA44WtCzYfGAv">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-26/.erk/impl-context/plnd--address-interactive-launch-03-12-1405/plan.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="469" cache_read_input_tokens="26644" output_tokens="116" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 469, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01A5Wd1kY5LQA44WtCzYfGAv">
+     1→# Plan: Make `erk pr address` launch Claude interactively
+     2→
+     3→## Context
+     4→
+     5→Currently `erk pr address` runs Claude non-interactively via `stream_command_with_feedback()`, which streams output but doesn't allow user interaction. The user wants it to launch Claude interactively (replacing the current process with `os.execvp`), matching the pattern used by `erk pr replan` and `erk objective plan`.
+     6→
+     7→## Changes
+     8→
+     9→### 1. Rewrite `src/erk/cli/commands/pr/address_cmd.py`
+    10→
+    11→Replace the `stream_command_with_feedback` approach with `ctx.agent_launcher.launch_interactive()`, following the `replan_cmd.py` pattern:
+    12→
+    13→- Remove `stream_command_with_feedback` import and `prompt_executor` usage
+    14→- Load `InteractiveAgentConfig` from `ctx.global_config.interactive_agent` (with `InteractiveAgentConfig.default()` fallback)
+    15→- Map `--dangerous`/`--safe` flags to config overrides:
+    16→  - `--dangerous` → `dangerous_override=True`
+    17→  - `--safe` → `permission_mode_override="safe"`, no dangerous override
+    18→  - Default (neither flag) → use config defaults with `allow_dangerous_override=True` when `live_dangerously` is true
+    19→- Use `config.with_overrides(permission_mode_override="edits", ...)` to set the permission mode (edits mode, matching current behavior)
+    20→- Call `ctx.agent_launcher.launch_interactive(config, command="/erk:pr-address")`
+    21→- Wrap in try/except RuntimeError for CLI not installed errors
+    22→
+    23→### 2. Rewrite `tests/commands/pr/test_address.py`
+    24→
+    25→Replace `FakePromptExecutor`-based tests with `FakeAgentLauncher`-based tests, following `test_replan.py` pattern:
+    26→
+    27→- Test: launches with correct command (`/erk:pr-address`) and permission mode (`edits`)
+    28→- Test: `--dangerous` flag sets `dangerous=True` on config
+    29→- Test: `--safe` flag overrides to safe permission mode
+    30→- Test: `--dangerous` + `--safe` is mutually exclusive error
+
+... [13 lines omitted] ...
+
+    31→- Test: error when agent CLI not installed (`launch_error` on FakeAgentLauncher)
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="953" cache_read_input_tokens="27113" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 953}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me read the reference files and current implementation.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="953" cache_read_input_tokens="27113" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 953}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_01AME5mjUsbFPQmmF97w4i5n">
+    <param name="query">select:TaskCreate,TaskUpdate</param>
+    <param name="max_results">2</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="953" cache_read_input_tokens="27113" output_tokens="207" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 953, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01AME5mjUsbFPQmmF97w4i5n">
+
+  </tool_result>
+  <tool_use name="Read" id="toolu_01KxdwKXNrwp6M8sCitV4MhK">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-26/src/erk/cli/commands/pr/address_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="2016" cache_read_input_tokens="28066" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2016}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01KxdwKXNrwp6M8sCitV4MhK">
+     1→"""Address PR review comments with AI-powered resolution.
+     2→
+     3→This command addresses PR review comments locally using Claude CLI.
+     4→For remote resolution via GitHub Actions, use `erk launch pr-address`.
+     5→"""
+     6→
+     7→import click
+     8→
+     9→from erk.cli.ensure import Ensure
+    10→from erk.cli.output import stream_command_with_feedback
+    11→from erk.core.context import ErkContext
+    12→
+    13→
+    14→@click.command("address")
+    15→@click.option(
+    16→    "-d",
+    17→    "--dangerous",
+    18→    is_flag=True,
+    19→    help="Force dangerous mode (skip permission prompts).",
+    20→)
+    21→@click.option(
+    22→    "--safe",
+    23→    is_flag=True,
+    24→    help="Disable dangerous mode (permission prompts enabled).",
+    25→)
+    26→@click.pass_obj
+    27→def address(ctx: ErkContext, *, dangerous: bool, safe: bool) -&gt; None:
+    28→    """Address PR review comments with AI-powered resolution.
+    29→
+    30→    Addresses PR review comments on the current branch using Claude.
+
+... [49 lines omitted] ...
+
+    76→        raise click.ClickException(result.error_message or "PR comment addressing failed")
+  </tool_result>
+  <tool_use name="Read" id="toolu_01N9iYwxdETcxYV3bKyskNqi">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-26/tests/commands/pr/test_address.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="2016" cache_read_input_tokens="28066" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2016}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01N9iYwxdETcxYV3bKyskNqi">
+     1→"""Tests for erk pr address command (local variant)."""
+     2→
+     3→from click.testing import CliRunner
+     4→
+     5→from erk.cli.commands.pr import pr_group
+     6→from erk_shared.context.types import GlobalConfig
+     7→from tests.fakes.gateway.git import FakeGit
+     8→from tests.fakes.tests.prompt_executor import FakePromptExecutor
+     9→from tests.test_utils.context_builders import build_workspace_test_context
+    10→from tests.test_utils.env_helpers import erk_isolated_fs_env
+    11→
+    12→
+    13→def test_pr_address_success() -&gt; None:
+    14→    """Test successful local address when Claude is available."""
+    15→    runner = CliRunner()
+    16→    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+    17→        git = FakeGit(
+    18→            git_common_dirs={env.cwd: env.git_dir},
+    19→            local_branches={env.cwd: ["main", "feature-branch"]},
+    20→            default_branches={env.cwd: "main"},
+    21→            trunk_branches={env.cwd: "main"},
+    22→            current_branches={env.cwd: "feature-branch"},
+    23→        )
+    24→
+    25→        executor = FakePromptExecutor(available=True)
+    26→
+    27→        ctx = build_workspace_test_context(env, git=git, prompt_executor=executor)
+    28→
+    29→        result = runner.invoke(pr_group, ["address", "--dangerous"], obj=ctx)
+    30→
+
+... [167 lines omitted] ...
+
+    90→    """Test that --dangerous and --safe together produce an error."""
+   148→    """Test error when Claude is not installed."""
+   173→def test_pr_address_fails_on_command_error() -&gt; None:
+   195→        # Error message from FakePromptExecutor
+   196→        assert "failed" in result.output.lower()
+  </tool_result>
+  <tool_use name="Agent" id="toolu_01Q6sY7ngMTYAWgEKTaVZnP5">
+    <param name="description">Read replan_cmd reference files</param>
+    <param name="subagent_type">Explore</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 408 chars]...n
+6. The launch_interactive method signature
+
+Return the FULL contents of all files found.</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="2016" cache_read_input_tokens="28066" output_tokens="402" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2016, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Q6sY7ngMTYAWgEKTaVZnP5">
+Perfect! I've found and read all the requested files. Here's the complete contents:
+
+## File 1: src/erk/cli/commands/pr/replan_cmd.py (Reference Pattern for Interactive Launch)
+
+```python
+"""Launch Claude to replan existing plan(s)."""
+
+import click
+
+from erk.core.context import ErkContext
+from erk_shared.context.types import InteractiveAgentConfig
+
+
+@click.command("replan")
+@click.argument("plan_refs", nargs=-1, required=True)
+@click.pass_obj
+def pr_replan(ctx: ErkContext, plan_refs: tuple[str, ...]) -&gt; None:
+    """Replan existing plan(s) against current codebase state.
+
+    PLAN_REFS are plan numbers or GitHub URLs. Multiple refs can be provided
+    to consolidate plans into a single unified plan.
+
+    This command launches Claude in plan mode to re-evaluate existing plan(s)
+    against the current codebase, creating a fresh plan that incorporates
+    any changes. Original plans are closed after the new plan is created.
+
+    Examples:
+        erk pr replan 2521
+        erk pr replan https://github.com/owner/repo/issues/2521
+        erk pr replan 123 456 789  # Consolidate multiple plans
+
+... [319 lines omitted] ...
+
+    except RuntimeError as e:
+        raise click.ClickException(str(e)) from e
+def test_replan_shows_error_when_agent_not_installed() -&gt; None:
+    """Test that replan shows error when agent CLI is not installed."""
+        launch_error="Claude CLI not found\nInstall from: https://claude.com/download"
+    def __init__(self, *, launch_error: str | None = None) -&gt; None:
+            launch_error: If set, launch_interactive raises RuntimeError with this message.
+        self._launch_error = launch_error
+        if self._launch_error is not None:
+            raise RuntimeError(self._launch_error)
+  </tool_result>
+  <usage input_tokens="3" cache_creation_input_tokens="12298" cache_read_input_tokens="30082" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 12298}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now let me check how `context_for_test` works and find another command that handles the `--dangerous`/`--safe` flags with interactive launch.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="12298" cache_read_input_tokens="30082" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 12298}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01Aq31PaLtQmJRueftFkWcMi">
+    <param name="pattern">def context_for_test</param>
+    <param name="output_mode">content</param>
+    <param name="-A">20</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-26/tests/test_utils</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="12298" cache_read_input_tokens="30082" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 12298}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Aq31PaLtQmJRueftFkWcMi">
+tests/test_utils/test_context.py:137:def context_for_test(
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-26/tests/test_utils/test_context.py-138-    *,
+tests/test_utils/test_context.py-139-    git: Git | None = None,
+tests/test_utils/test_context.py-140-    github: LocalGitHub | None = None,
+tests/test_utils/test_context.py-141-    github_admin: GitHubAdmin | None = None,
+tests/test_utils/test_context.py-142-    issues: GitHubIssues | None = None,
+tests/test_utils/test_context.py-143-    plan_store: PlanBackend | None = None,
+tests/test_utils/test_context.py-144-    graphite: Graphite | None = None,
+tests/test_utils/test_context.py-145-    console: Console | None = None,
+tests/test_utils/test_context.py-146-    shell: Shell | None = None,
+tests/test_utils/test_context.py-147-    codespace: Codespace | None = None,
+tests/test_utils/test_context.py-148-    cmux: Cmux | None = None,
+tests/test_utils/test_context.py-149-    agent_launcher: AgentLauncher | None = None,
+tests/test_utils/test_context.py-150-    agent_docs: AgentDocs | None = None,
+tests/test_utils/test_context.py-151-    completion: Completion | None = None,
+tests/test_utils/test_context.py-152-    time: Time | None = None,
+tests/test_utils/test_context.py-153-    erk_installation: ErkInstallation | None = None,
+tests/test_utils/test_context.py-154-    script_writer: ScriptWriter | None = None,
+tests/test_utils/test_context.py-155-    plan_list_service: PlanListService | None = None,
+tests/test_utils/test_context.py-156-    objective_list_service: ObjectiveListService | None = None,
+tests/test_utils/test_context.py-157-    codespace_registry: CodespaceRegistry | None = None,
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01Fat8o5C11PhFdcXApFboip">
+    <param name="pattern">launch_interactive.*dangerous|dangerous.*launch_interactive|allow_dangerous_override.*True</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-26/src/erk/cli/commands</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="12298" cache_read_input_tokens="30082" output_tokens="506" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 12298, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Fat8o5C11PhFdcXApFboip">
+Found 1 file
+src/erk/cli/commands/objective/plan_cmd.py
+  </tool_result>
+  <tool_use name="Read" id="toolu_012R5N9mpDph11ZoGZNuoNcS">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-26/src/erk/cli/commands/objective/plan_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1290" cache_read_input_tokens="42380" output_tokens="95" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1290, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_012R5N9mpDph11ZoGZNuoNcS">
+     1→"""Create a plan from an objective node."""
+     2→
+     3→from dataclasses import dataclass
+     4→
+     5→import click
+     6→
+     7→from erk.cli.commands.exec.scripts.update_objective_node import (
+     8→    _replace_node_refs_in_body,
+     9→)
+    10→from erk.cli.commands.implement_shared import normalize_model_name
+    11→from erk.cli.commands.objective.check.validation import (
+    12→    ObjectiveValidationError,
+    13→    ObjectiveValidationSuccess,
+    14→    validate_objective,
+    15→)
+    16→from erk.cli.commands.objective_helpers import get_objective_for_branch
+    17→from erk.cli.commands.one_shot_remote_dispatch import (
+    18→    OneShotDispatchParams,
+    19→    OneShotDispatchResult,
+    20→    dispatch_one_shot_remote,
+    21→)
+    22→from erk.cli.commands.ref_resolution import resolve_dispatch_ref
+    23→from erk.cli.github_parsing import parse_issue_identifier
+    24→from erk.cli.repo_resolution import get_remote_github, repo_option, resolve_owner_repo
+    25→from erk.core.branch_slug_generator import generate_branch_slug
+    26→from erk.core.context import ErkContext, NoRepoSentinel
+    27→from erk_shared.context.types import InteractiveAgentConfig
+    28→from erk_shared.core.prompt_executor import PromptExecutor
+    29→from erk_shared.gateway.github.issues.types import IssueNotFound
+    30→from erk_shared.gateway.github.metadata.core import extract_metadata_value
+
+... [853 lines omitted] ...
+
+    50→    Uses the prompt executor to generate a concise slug. On failure,
+   121→        click.ClickException: If objective cannot be resolved or has no pending nodes
+   131→            raise click.ClickException("Not on a branch")
+   134→            raise click.ClickException(
+   139→        raise click.ClickException(
+   151→    if isinstance(result, ObjectiveValidationError):
+   152→        raise click.ClickException(result.error)
+   156→        raise click.ClickException(f"Objective #{issue_number} has no roadmap phases")
+   160→        raise click.ClickException(f"Objective #{issue_number} has no pending unblocked nodes")
+   166→        raise click.ClickException(
+   167→            f"Internal error: next node '{next_node.id}' not found in phases"
+   207→        click.ClickException: If objective cannot be resolved or has no pending unblocked nodes
+   217→            raise click.ClickException("Not on a branch")
+   220→            raise click.ClickException(
+   225→        raise click.ClickException(
+   237→    if isinstance(result, ObjectiveValidationError):
+   238→        raise click.ClickException(result.error)
+   242→        raise click.ClickException(f"Objective #{issue_number} has no roadmap phases")
+   246→        raise click.ClickException(f"Objective #{issue_number} has no pending unblocked nodes")
+   255→            raise click.ClickException(f"Internal error: node '{node.id}' not found in phases")
+   296→        raise click.UsageError("--ref-current requires a local git repository")
+   486→    Silently catches all errors — the inner skill will retry if needed.
+   633→        raise click.ClickException("--all-unblocked and --node are mutually exclusive")
+   635→        raise click.ClickException("--all-unblocked and --next are mutually exclusive")
+   637→        raise click.ClickException("--next and --node are mutually exclusive")
+   641→        raise click.ClickException("--repo requires --one-shot or --all-unblocked")
+   644→        raise click.ClickException("ISSUE_REF is required unless --next or --all-unblocked is used")
+   653→            raise click.ClickException("--model requires --one-shot")
+   655→            raise click.ClickException("--dry-run requires --one-shot")
+   745→    except RuntimeError as e:
+   746→        raise click.ClickException(str(e)) from e
+   783→        if isinstance(result, ObjectiveValidationError):
+   784→            raise click.ClickException(result.error)
+   789→            raise click.ClickException(f"Objective #{issue_number} has no roadmap phases")
+   797→                raise click.ClickException(
+   811→                raise click.ClickException(
+   812→                    f"Internal error: next_node '{result.next_node['id']}' not found"
+   823→        raise click.UsageError("--ref-current requires a local git repository")
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="11391" cache_read_input_tokens="43670" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 11391}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me check `Ensure.resolve_dangerous` to understand the current dangerous flag logic.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="11391" cache_read_input_tokens="43670" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 11391}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01J8Ut6cFWMKXYz8T6iPg1xY">
+    <param name="pattern">def resolve_dangerous</param>
+    <param name="output_mode">content</param>
+    <param name="-A">30</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-26/src/erk/cli</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="11391" cache_read_input_tokens="43670" output_tokens="250" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 11391, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01J8Ut6cFWMKXYz8T6iPg1xY">
+src/erk/cli/ensure.py:123:    def resolve_dangerous(ctx: ErkContext, *, dangerous: bool, safe: bool) -&gt; bool:
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-26/src/erk/cli/ensure.py-124-        """Resolve effective dangerous mode from flags and config.
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-26/src/erk/cli/ensure.py-125-
+src/erk/cli/ensure.py-126-        Priority: explicit flags &gt; config default &gt; True.
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-26/src/erk/cli/ensure.py-127-
+src/erk/cli/ensure.py-128-        Args:
+src/erk/cli/ensure.py-129-            ctx: Application context with global config
+src/erk/cli/ensure.py-130-            dangerous: Whether the --dangerous flag was provided
+src/erk/cli/ensure.py-131-            safe: Whether the --safe flag was provided
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-26/src/erk/cli/ensure.py-132-
+src/erk/cli/ensure.py-133-        Returns:
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-26/src/erk/cli/ensure.py-134-            True if dangerous mode should be used, False otherwise
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-26/src/erk/cli/ensure.py-135-
+src/erk/cli/ensure.py-136-        Raises:
+src/erk/cli/ensure.py-137-            click.UsageError: If both --dangerous and --safe are provided
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-26/src/erk/cli/ensure.py-138-        """
+src/erk/cli/ensure.py-139-        if dangerous and safe:
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-26/src/erk/cli/ensure.py-140-            raise click.UsageError("--dangerous and --safe are mutually exclusive")
+src/erk/cli/ensure.py-141-        if dangerous:
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-26/src/erk/cli/ensure.py-142-            return True
+src/erk/cli/ensure.py-143-        if safe:
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-26/src/erk/cli/ensure.py-144-            return False
+src/erk/cli/ensure.py-145-        if ctx.global_config is not None:
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-26/src/erk/cli/ensure.py-146-            return ctx.global_config.live_dangerously
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-26/src/erk/cli/ensure.py-147-        return True
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-26/src/erk/cli/ensure.py-148-
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-26/src/erk/cli/ensure.py-149-    @staticmethod
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-26/src/erk/cli/ensure.py-150-    def path_exists(
+src/erk/cli/ensure.py-151-        ctx: ErkContext,
+src/erk/cli/ensure.py-152-        path: Path,
+
+... [1 lines omitted] ...
+
+src/erk/cli/ensure.py-153-        error_message: str | None = None,
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="1312" cache_read_input_tokens="55061" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1312}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I have everything I need. Let me create tasks and implement.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1312" cache_read_input_tokens="55061" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1312}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskCreate" id="toolu_01QoKHiRfvwuC461MFoHoBxD">
+    <param name="subject">Rewrite address_cmd.py to use launch_interactive</param>
+    <param name="description">Replace stream_command_with_feedback with ctx.agent_launcher.launch_interactive(), following replan_cmd.py pattern. Map --dangerous/--safe flags to InteractiveAgentConfig overrides.</param>
+    <param name="activeForm">Rewriting address_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1312" cache_read_input_tokens="55061" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1312}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01QoKHiRfvwuC461MFoHoBxD">
+Task #1 created successfully: Rewrite address_cmd.py to use launch_interactive
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_011fBGzFLXQd5wbpU5w6obve">
+    <param name="subject">Rewrite test_address.py for FakeAgentLauncher</param>
+    <param name="description">Replace FakePromptExecutor-based tests with FakeAgentLauncher-based tests, following test_replan.py pattern.</param>
+    <param name="activeForm">Rewriting test_address.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1312" cache_read_input_tokens="55061" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1312}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011fBGzFLXQd5wbpU5w6obve">
+Task #2 created successfully: Rewrite test_address.py for FakeAgentLauncher
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_01TbomBVbjKMULBDZmYmXNLY">
+    <param name="subject">Run CI checks</param>
+    <param name="description">Run pytest, ruff, and ty checks against modified files.</param>
+    <param name="activeForm">Running CI checks</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1312" cache_read_input_tokens="55061" output_tokens="2150" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1312, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01TbomBVbjKMULBDZmYmXNLY">
+Task #3 created successfully: Run CI checks
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01UwGx5zhKdtDfg7LDS93dQd">
+    <param name="taskId">1</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2258" cache_read_input_tokens="56373" output_tokens="72" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2258, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01UwGx5zhKdtDfg7LDS93dQd">
+Updated task #1 status
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01KLjuEi3jsviPZGbCqjyr2n">
+    <param name="command">erk exec impl-signal started --session-id="272dc956-82bf-4de5-8ea2-d4a7f2b8dfc6" 2&gt;/dev/null || true</param>
+    <param name="description">Signal GitHub that implementation started</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="90" cache_read_input_tokens="58631" output_tokens="148" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 90, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01KLjuEi3jsviPZGbCqjyr2n">
+{
+  "success": true,
+  "event": "started",
+  "pr_number": 9227
+}
+  </tool_result>
+  <assistant>Now let me implement the new `address_cmd.py`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="157" cache_read_input_tokens="58721" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 157}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01X25r7jq8eQAo7kyF7GQmjt">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-26/src/erk/cli/commands/pr/address_cmd.py</param>
+    <param name="content">"""Address PR review comments with AI-powered resolution.
+
+This command addresses PR revie...[truncated 2480 chars]...address")
+    except RuntimeError as e:
+        raise click.ClickException(str(e)) from e
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="157" cache_read_input_tokens="58721" output_tokens="830" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 157, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01X25r7jq8eQAo7kyF7GQmjt">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-26/src/erk/cli/commands/pr/address_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01Qi8qzLq5M8twVf5V6c6KcR">
+    <param name="taskId">1</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="891" cache_read_input_tokens="58878" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 891}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Qi8qzLq5M8twVf5V6c6KcR">
+Updated task #1 status
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01PEGDHTDSKvsjVqqs8KtRa1">
+    <param name="taskId">2</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="891" cache_read_input_tokens="58878" output_tokens="125" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 891, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01PEGDHTDSKvsjVqqs8KtRa1">
+Updated task #2 status
+  </tool_result>
+  <assistant>Now rewrite the tests:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="198" cache_read_input_tokens="59769" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 198}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_0141YbugCfooQrUqNx2YiYDw">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-26/tests/commands/pr/test_address.py</param>
+    <param name="content">"""Tests for erk pr address command (local variant)."""
+
+from click.testing import CliRunn...[truncated 3724 chars]....last_call is not None
+    assert fake_launcher.last_call.config.allow_dangerous is False
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="198" cache_read_input_tokens="59769" output_tokens="1280" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 198, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0141YbugCfooQrUqNx2YiYDw">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-26/tests/commands/pr/test_address.py has been updated successfully.
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="1336" cache_read_input_tokens="59967" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1336}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me check `GlobalConfig.test` to make sure I'm calling it correctly.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1336" cache_read_input_tokens="59967" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1336}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01AQAN8bD5FzpCrpByQnWEEL">
+    <param name="pattern">def test\b</param>
+    <param name="output_mode">content</param>
+    <param name="-A">20</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-26/packages/erk-shared/src/erk_shared/context/types.py</param>
+    <param name="glob">*.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1336" cache_read_input_tokens="59967" output_tokens="241" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1336, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01AQAN8bD5FzpCrpByQnWEEL">
+244:    def test(
+245-        erk_root: Path,
+246-        *,
+247-        use_graphite: bool = True,
+248-        shell_setup_complete: bool = True,
+249-        github_planning: bool = True,
+250-        live_dangerously: bool = True,
+251-        show_hidden_commands: bool = False,
+252-        prompt_learn_on_land: bool = True,
+253-        cmux_integration: bool = False,
+254-        anthropic_api_fast_path: bool = False,
+255-        interactive_agent: InteractiveAgentConfig | None = None,
+256-    ) -&gt; GlobalConfig:
+257-        """Create a GlobalConfig with sensible test defaults."""
+258-        return GlobalConfig(
+259-            erk_root=erk_root,
+260-            use_graphite=use_graphite,
+261-            shell_setup_complete=shell_setup_complete,
+262-            github_planning=github_planning,
+263-            live_dangerously=live_dangerously,
+264-            show_hidden_commands=show_hidden_commands,
+--
+296:    def test(
+297-        *,
+298-        env: dict[str, str] | None = None,
+299-        post_create_commands: list[str] | None = None,
+300-        post_create_shell: str | None = None,
+301-        github_repo: str | None = None,
+302-        pool_size: int | None = None,
+303-        pool_checkout_commands: list[str] | None = None,
+
+... [13 lines omitted] ...
+  </tool_result>
+  <assistant>`GlobalConfig.test` requires `erk_root` as a positional argument. Let me check how `context_for_test` handles this.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="839" cache_read_input_tokens="61303" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 839}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01U6t3VUgJPxNxa3dbBwTEua">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-26/tests/test_utils/test_context.py</param>
+    <param name="offset">137</param>
+    <param name="limit">80</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="839" cache_read_input_tokens="61303" output_tokens="158" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 839, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01U6t3VUgJPxNxa3dbBwTEua">
+   137→def context_for_test(
+   138→    *,
+   139→    git: Git | None = None,
+   140→    github: LocalGitHub | None = None,
+   141→    github_admin: GitHubAdmin | None = None,
+   142→    issues: GitHubIssues | None = None,
+   143→    plan_store: PlanBackend | None = None,
+   144→    graphite: Graphite | None = None,
+   145→    console: Console | None = None,
+   146→    shell: Shell | None = None,
+   147→    codespace: Codespace | None = None,
+   148→    cmux: Cmux | None = None,
+   149→    agent_launcher: AgentLauncher | None = None,
+   150→    agent_docs: AgentDocs | None = None,
+   151→    completion: Completion | None = None,
+   152→    time: Time | None = None,
+   153→    erk_installation: ErkInstallation | None = None,
+   154→    script_writer: ScriptWriter | None = None,
+   155→    plan_list_service: PlanListService | None = None,
+   156→    objective_list_service: ObjectiveListService | None = None,
+   157→    codespace_registry: CodespaceRegistry | None = None,
+   158→    claude_installation: ClaudeInstallation | None = None,
+   159→    prompt_executor: PromptExecutor | None = None,
+   160→    cwd: Path | None = None,
+   161→    global_config: GlobalConfig | None = None,
+   162→    local_config: LoadedConfig | None = None,
+   163→    repo: RepoContext | NoRepoSentinel | None = None,
+   164→    repo_info: RepoInfo | None = None,
+   165→    package_info: ErkPackageInfo | None = None,
+   166→    remote_github: RemoteGitHub | None = None,
+
+... [50 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01NBjgZZvGkoEpWd31jen2JH">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-26/tests/test_utils/test_context.py</param>
+    <param name="offset">216</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2402" cache_read_input_tokens="61303" output_tokens="124" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2402, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01NBjgZZvGkoEpWd31jen2JH">
+   216→    from tests.fakes.gateway.github_admin import FakeGitHubAdmin
+   217→    from tests.fakes.gateway.github_issues import FakeGitHubIssues
+   218→    from tests.fakes.gateway.graphite import FakeGraphite
+   219→    from tests.fakes.gateway.graphite_branch_ops import FakeGraphiteBranchOps
+   220→    from tests.fakes.gateway.http import FakeHttpClient
+   221→    from tests.fakes.gateway.shell import FakeShell
+   222→    from tests.fakes.gateway.time import FakeTime
+   223→    from tests.fakes.tests.prompt_executor import FakePromptExecutor
+   224→    from tests.fakes.tests.script_writer import FakeScriptWriter
+   225→    from tests.test_utils.paths import sentinel_path
+   226→
+   227→    if git is None:
+   228→        git = FakeGit()
+   229→
+   230→    # Track whether issues was explicitly passed (for composition logic below)
+   231→    issues_explicitly_passed = issues is not None
+   232→
+   233→    # Create issues first since it's composed into github
+   234→    if issues is None:
+   235→        issues = FakeGitHubIssues()
+   236→
+   237→    # Compose github with issues
+   238→    # If github is provided without issues_gateway, use github as-is (it has its own issues)
+   239→    # Only inject issues if caller explicitly passed BOTH github and issues
+   240→    if github is None:
+   241→        github = FakeLocalGitHub(issues_gateway=issues)
+   242→    elif isinstance(github, FakeLocalGitHub) and issues_explicitly_passed:
+   243→        # Caller passed both github and issues separately - inject issues
+   244→        # into the existing FakeLocalGitHub instance to preserve test references
+   245→        github._issues_gateway = issues
+
+... [20 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_011CJML1Qy1pZryaA99B7Ybi">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-26/tests/test_utils/test_context.py</param>
+    <param name="offset">265</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="948" cache_read_input_tokens="63705" output_tokens="124" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 948, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_011CJML1Qy1pZryaA99B7Ybi">
+   265→            graphite_branch_ops = graphite.create_linked_branch_ops()
+   266→        else:
+   267→            graphite = GraphiteDisabled(GraphiteDisabledReason.CONFIG_DISABLED)
+   268→    elif isinstance(graphite, FakeGraphite):
+   269→        # Graphite is enabled and is a fake - create linked branch ops
+   270→        graphite_branch_ops = graphite.create_linked_branch_ops()
+   271→    elif not isinstance(graphite, GraphiteDisabled):
+   272→        # Graphite is enabled but not a fake - create unlinked branch ops
+   273→        graphite_branch_ops = FakeGraphiteBranchOps()
+   274→
+   275→    if console is None:
+   276→        console = FakeConsole(
+   277→            is_interactive=True,
+   278→            is_stdout_tty=None,
+   279→            is_stderr_tty=None,
+   280→            confirm_responses=None,
+   281→        )
+   282→
+   283→    if shell is None:
+   284→        shell = FakeShell()
+   285→
+   286→    if codespace is None:
+   287→        codespace = FakeCodespace(
+   288→            run_exit_code=0, repo_id=12345, created_codespace_name="fake-gh-name"
+   289→        )
+   290→
+   291→    if cmux is None:
+   292→        cmux = FakeCmux(workspace_ref="fake-ws")
+   293→
+   294→    if agent_launcher is None:
+
+... [20 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01XX5hK97LuRhvFpPchqzpoZ">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-26/tests/test_utils/test_context.py</param>
+    <param name="offset">314</param>
+    <param name="limit">60</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="762" cache_read_input_tokens="64653" output_tokens="124" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 762, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01XX5hK97LuRhvFpPchqzpoZ">
+   314→    if objective_list_service is None:
+   315→        objective_list_service = RealObjectiveListService(github, time=time)
+   316→
+   317→    if codespace_registry is None:
+   318→        codespace_registry = FakeCodespaceRegistry()
+   319→
+   320→    if claude_installation is None:
+   321→        claude_installation = FakeClaudeInstallation.for_test()
+   322→
+   323→    if prompt_executor is None:
+   324→        prompt_executor = FakePromptExecutor()
+   325→
+   326→    if global_config is None:
+   327→        global_config = GlobalConfig(
+   328→            erk_root=Path("/test/erks"),
+   329→            use_graphite=False,
+   330→            shell_setup_complete=False,
+   331→            github_planning=True,
+   332→        )
+   333→
+   334→    if erk_installation is None:
+   335→        erk_installation = FakeErkInstallation(config=global_config)
+   336→
+   337→    if local_config is None:
+   338→        local_config = LoadedConfig.test()
+   339→
+   340→    if repo is None:
+   341→        repo = NoRepoSentinel()
+   342→
+   343→    # Apply dry-run wrappers if needed (matching production behavior)
+
+... [30 lines omitted] ...
+  </tool_result>
+  <assistant>I see that `context_for_test` creates a default `GlobalConfig` without `live_dangerously` being set — it uses the `GlobalConfig` constructor directly, not `GlobalConfig.test`. Let me check the `GlobalConfig` default value for `live_dangerously`.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="900" cache_read_input_tokens="65415" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 900}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01MbMWv52fEA2vxdzdbJLAL5">
+    <param name="pattern">class GlobalConfig</param>
+    <param name="output_mode">content</param>
+    <param name="-A">30</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-26/packages/erk-shared/src/erk_shared/context/types.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="900" cache_read_input_tokens="65415" output_tokens="217" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 900, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01MbMWv52fEA2vxdzdbJLAL5">
+225:class GlobalConfig:
+226-    """Immutable global configuration data.
+227-
+228-    Loaded once at CLI entry point and stored in ErkContext.
+229-    All fields are read-only after construction.
+230-    """
+231-
+232-    erk_root: Path
+233-    use_graphite: bool
+234-    shell_setup_complete: bool
+235-    github_planning: bool
+236-    live_dangerously: bool = True
+237-    show_hidden_commands: bool = False
+238-    prompt_learn_on_land: bool = True
+239-    cmux_integration: bool = False
+240-    anthropic_api_fast_path: bool = False
+241-    interactive_agent: InteractiveAgentConfig = InteractiveAgentConfig.default()
+242-
+243-    @staticmethod
+244-    def test(
+245-        erk_root: Path,
+246-        *,
+247-        use_graphite: bool = True,
+248-        shell_setup_complete: bool = True,
+249-        github_planning: bool = True,
+250-        live_dangerously: bool = True,
+251-        show_hidden_commands: bool = False,
+252-        prompt_learn_on_land: bool = True,
+253-        cmux_integration: bool = False,
+254-        anthropic_api_fast_path: bool = False,
+
+... [1 lines omitted] ...
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="760" cache_read_input_tokens="66315" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 760}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>I need to fix the `GlobalConfig.test()` call — it requires `erk_root`. Let me update the test.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="760" cache_read_input_tokens="66315" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 760}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01GwZVQGMkriQL4pUF7RH3iz">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-26/tests/commands/pr/test_address.py</param>
+    <param name="old_string">"""Tests for erk pr address command (local variant)."""
+
+from click.testing import CliRunn...[truncated 95 chars]...uncher import FakeAgentLauncher
+from tests.test_utils.test_context import context_for_test</param>
+    <param name="new_string">"""Tests for erk pr address command (local variant)."""
+
+from pathlib import Path
+
+from cl...[truncated 121 chars]...uncher import FakeAgentLauncher
+from tests.test_utils.test_context import context_for_test</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="760" cache_read_input_tokens="66315" output_tokens="562" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 760, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01GwZVQGMkriQL4pUF7RH3iz">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-26/tests/commands/pr/test_address.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_019qZhJGrqMcfifggUTKdNY8">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-26/tests/commands/pr/test_address.py</param>
+    <param name="old_string">        global_config=GlobalConfig.test(live_dangerously=False),</param>
+    <param name="new_string">        global_config=GlobalConfig.test(Path("/test/erks"), live_dangerously=False),</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="632" cache_read_input_tokens="67075" output_tokens="169" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 632, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_019qZhJGrqMcfifggUTKdNY8">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-26/tests/commands/pr/test_address.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01X6fuMARiqnAn3xwfu4ETrU">
+    <param name="taskId">2</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="244" cache_read_input_tokens="67707" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 244}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskUpdate" id="toolu_01NgJvWW8xDR7jXuTmp8YaXA">
+    <param name="taskId">3</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="244" cache_read_input_tokens="67707" output_tokens="125" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 244, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01X6fuMARiqnAn3xwfu4ETrU">
+Updated task #2 status
+  </tool_result>
+  <tool_result tool="toolu_01NgJvWW8xDR7jXuTmp8YaXA">
+Updated task #3 status
+  </tool_result>
+  <assistant>Now let me run the tests and checks.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="198" cache_read_input_tokens="67951" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 198}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_016d5ksmbDy5cjxNUda7N7bY">
+    <param name="description">Run pytest on test_address.py</param>
+    <param name="subagent_type">devrun</param>
+    <param name="prompt">Run `uv run pytest tests/commands/pr/test_address.py -v` and report results.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="198" cache_read_input_tokens="67951" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 198}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01Eq532nNwCjQ7tH4Go8ZFhs">
+    <param name="description">Run ruff and ty checks</param>
+    <param name="subagent_type">devrun</param>
+    <param name="prompt">Run the following commands and report results:
+1. `uv run ruff check src/erk/cli/commands/...[truncated 36 chars]...`uv run ty check src/erk/cli/commands/pr/address_cmd.py tests/commands/pr/test_address.py`</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="198" cache_read_input_tokens="67951" output_tokens="289" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 198, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_016d5ksmbDy5cjxNUda7N7bY">
+pytest passed: All 7 tests passed in 0.50s
+
+The test file `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-26/tests/commands/pr/test_address.py` contains tests for the address command and all tests are passing.
+agentId: a4ce2c7cd325abcb4 (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 13485
+tool_uses: 1
+duration_ms: 4223&lt;/usage&gt;
+  </tool_result>
+  <tool_result tool="toolu_01Eq532nNwCjQ7tH4Go8ZFhs">
+**Results:**
+
+- **ruff passed**: All checks passed!
+- **ty passed**: All checks passed!
+
+Both linting and type checking are clean for `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-26/src/erk/cli/commands/pr/address_cmd.py` and `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-26/tests/commands/pr/test_address.py`.
+agentId: a7d31e28ff997236c (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 13575
+tool_uses: 2
+duration_ms: 4942&lt;/usage&gt;
+  </tool_result>
+  <assistant>All 7 tests pass, ruff and ty checks are clean.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="662" cache_read_input_tokens="68149" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 662}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskUpdate" id="toolu_017Ff8e34BvtDo6ncH4L1jrk">
+    <param name="taskId">3</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="662" cache_read_input_tokens="68149" output_tokens="86" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 662, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_017Ff8e34BvtDo6ncH4L1jrk">
+Updated task #3 status
+  </tool_result>
+  <assistant>Now let me signal completion and clean up.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="766" cache_read_input_tokens="68149" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 766}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01SuD9EDMX2KyaPsa7KtkJgb">
+    <param name="command">erk exec impl-signal ended --session-id="272dc956-82bf-4de5-8ea2-d4a7f2b8dfc6" 2&gt;/dev/null || true</param>
+    <param name="description">Signal GitHub that implementation ended</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="766" cache_read_input_tokens="68149" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 766}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01VdxMfoQLsUL5ASYERFTWFN">
+    <param name="command">erk exec upload-impl-session --session-id="272dc956-82bf-4de5-8ea2-d4a7f2b8dfc6" 2&gt;/dev/null || true</param>
+    <param name="description">Upload session for async learn</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="766" cache_read_input_tokens="68149" output_tokens="232" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 766, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01SuD9EDMX2KyaPsa7KtkJgb">
+{
+  "success": true,
+  "event": "ended",
+  "pr_number": 9227
+}
+  </tool_result>
+</session>

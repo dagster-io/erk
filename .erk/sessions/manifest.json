@@ -15,6 +15,20 @@
       "raw_size_kb": 574,
       "xml_size_kb": 58,
       "git_branch": "master"
+    },
+    {
+      "session_id": "272dc956-82bf-4de5-8ea2-d4a7f2b8dfc6",
+      "stage": "impl",
+      "source": "local",
+      "uploaded_at": "2026-03-12T15:27:47.123279+00:00",
+      "files": [
+        "impl-272dc956-82bf-4de5-8ea2-d4a7f2b8dfc6-272dc956-82bf-4de5-8ea2-d4a7f2b8dfc6.xml"
+      ],
+      "user_turns": 2,
+      "duration_minutes": 4,
+      "raw_size_kb": 402,
+      "xml_size_kb": 63,
+      "git_branch": "plnd/address-interactive-launch-03-12-1405"
     }
   ]
 }
