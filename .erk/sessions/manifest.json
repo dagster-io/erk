@@ -15,6 +15,20 @@
       "raw_size_kb": 84,
       "xml_size_kb": 29,
       "git_branch": "master"
+    },
+    {
+      "session_id": "f4b7311e-93c6-4dfe-8847-bedbddc9d8e4",
+      "stage": "impl",
+      "source": "local",
+      "uploaded_at": "2026-03-12T13:21:12.593140+00:00",
+      "files": [
+        "impl-f4b7311e-93c6-4dfe-8847-bedbddc9d8e4-f4b7311e-93c6-4dfe-8847-bedbddc9d8e4.xml"
+      ],
+      "user_turns": 2,
+      "duration_minutes": 1,
+      "raw_size_kb": 49,
+      "xml_size_kb": 19,
+      "git_branch": "plnd/explicit-uv-workspace-memb-03-12-1318"
     }
   ]
 }
