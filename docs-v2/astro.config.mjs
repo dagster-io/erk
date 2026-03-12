@@ -15,14 +15,11 @@ export default defineConfig({
           href: "https://github.com/dagster-io/erk",
         },
       ],
+      customCss: ["./src/styles/custom.css"],
       sidebar: [
         {
-          label: "Concepts",
-          autogenerate: { directory: "concepts" },
-        },
-        {
-          label: "Guides",
-          autogenerate: { directory: "guides" },
+          label: "Code Reviews",
+          autogenerate: { directory: "code-reviews" },
         },
       ],
     }),

@@ -108,5 +108,5 @@ erk exec run-review --name import-hygiene --dry-run   # Preview the prompt witho
 
 ## Related
 
-- [Code reviews](/concepts/01-code-reviews/) — model selection rationale and the two-phase pattern
-- [Addressing review feedback](/guides/01-addressing-review-feedback/) — how review comments get resolved
+- [Introduction](/code-reviews/01-introduction/) — model selection rationale and the two-phase pattern
+- [Addressing review feedback](/code-reviews/02-addressing-review-feedback/) — how review comments get resolved

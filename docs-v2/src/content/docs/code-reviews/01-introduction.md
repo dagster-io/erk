@@ -1,5 +1,5 @@
 ---
-title: Code reviews
+title: Introduction
 description: How erk uses tiered AI models to review and resolve PR feedback
 ---
 
@@ -39,5 +39,5 @@ Haiku reviews run fast and cost little. Sonnet reviews take longer but handle nu
 
 ## What's next
 
-- [Addressing review feedback](/guides/01-addressing-review-feedback/) — resolve PR comments using the pr-address workflow
-- [Creating a review](/guides/02-creating-a-review/) — add a new automated review to your project
+- [Addressing review feedback](/code-reviews/02-addressing-review-feedback/) — resolve PR comments using the pr-address workflow
+- [Creating a review](/code-reviews/03-creating-a-review/) — add a new automated review to your project

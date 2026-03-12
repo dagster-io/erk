@@ -64,5 +64,5 @@ If any threads remain unresolved, you get a warning listing the stragglers.
 
 ## Related
 
-- [Code reviews](/concepts/01-code-reviews/) — how the two-phase review system works
-- [Creating a review](/guides/02-creating-a-review/) — add a new automated review
+- [Introduction](/code-reviews/01-introduction/) — how the two-phase review system works
+- [Creating a review](/code-reviews/03-creating-a-review/) — add a new automated review
