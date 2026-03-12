@@ -33,6 +33,11 @@ class ReviewCapability(Capability):
         ...
 
     @property
+    def tag(self) -> str | None:
+        """All review capabilities are grouped under 'code-reviews'."""
+        return "code-reviews"
+
+    @property
     def name(self) -> str:
         """CLI-facing identifier - prefixed with 'review-'."""
         return f"review-{self.review_name}"

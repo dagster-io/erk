@@ -129,6 +129,18 @@ class Capability(ABC):
         return ("claude", "codex")
 
     @property
+    def tag(self) -> str | None:
+        """Display grouping tag for the capability list.
+
+        Used to visually group related capabilities in `erk init capability list`.
+        Tags are display-only — no dependency enforcement, no filtering.
+        Each capability has at most one tag.
+
+        Default is None (ungrouped). Override to assign a tag.
+        """
+        return None
+
+    @property
     def managed_artifacts(self) -> list[ManagedArtifact]:
         """List of artifacts this capability manages for artifact detection.
 

@@ -7,6 +7,10 @@ class DignifiedPythonReminderCapability(ReminderCapability):
     """Reminder to follow dignified-python coding standards."""
 
     @property
+    def tag(self) -> str | None:
+        return "dignified-python"
+
+    @property
     def reminder_name(self) -> str:
         return "dignified-python"
 

@@ -24,6 +24,10 @@ class DevrunAgentCapability(Capability):
     """
 
     @property
+    def tag(self) -> str | None:
+        return "devrun"
+
+    @property
     def name(self) -> str:
         return "devrun-agent"
 

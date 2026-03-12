@@ -7,6 +7,10 @@ class ExploreDocsReminderCapability(ReminderCapability):
     """Reminder to include doc-first instructions when spawning Explore agents."""
 
     @property
+    def tag(self) -> str | None:
+        return "documentation"
+
+    @property
     def reminder_name(self) -> str:
         return "explore-docs"
 

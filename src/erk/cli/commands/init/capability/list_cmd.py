@@ -1,5 +1,6 @@
 """List capabilities and their installation status."""
 
+import itertools
 from pathlib import Path
 
 import click
@@ -11,6 +12,14 @@ from erk.core.context import ErkContext
 from erk.core.repo_discovery import NoRepoSentinel, discover_repo_or_sentinel
 from erk_shared.context.types import AgentBackend
 from erk_shared.output.output import user_output
+
+TAG_DISPLAY_NAMES: dict[str, str] = {
+    "code-reviews": "Code Reviews",
+    "devrun": "Devrun",
+    "dignified-python": "Dignified Python",
+    "documentation": "Documentation",
+    "external-tools": "External Tools",
+}
 
 
 @click.command("list")
@@ -109,8 +118,27 @@ def _show_artifact_status(
     user_output(f"    {status} {artifact.path:25} ({artifact.artifact_type})")
 
 
+def _render_capability_line(
+    cap: Capability, repo_root: Path | None, *, backend: AgentBackend
+) -> None:
+    """Render a single capability line with install status indicator."""
+    cap_line = f"{cap.name:35} {f'[{cap.scope}]':10} {cap.description}"
+    check_line = click.style(f"    Checked: {cap.installation_check_description}", dim=True)
+
+    if cap.scope == "project" and repo_root is None:
+        user_output(click.style("  ? ", fg="yellow") + cap_line)
+        user_output(check_line)
+    else:
+        if cap.is_installed(repo_root if cap.scope == "project" else None, backend=backend):
+            user_output(click.style("  ✓ ", fg="green") + cap_line)
+            user_output(check_line)
+        else:
+            user_output(click.style("  ○ ", fg="white") + cap_line)
+            user_output(check_line)
+
+
 def _check_all(repo_root: Path | None, *, backend: AgentBackend) -> None:
-    """Check all capabilities."""
+    """Check all capabilities, grouped by tag."""
     caps = list_optional_capabilities()
 
     if not caps:
@@ -118,19 +146,19 @@ def _check_all(repo_root: Path | None, *, backend: AgentBackend) -> None:
         return
 
     user_output("Erk capabilities:")
-    for cap in sorted(caps, key=lambda c: c.name):
-        cap_line = f"{cap.name:25} {f'[{cap.scope}]':10} {cap.description}"
-        check_line = click.style(f"    Checked: {cap.installation_check_description}", dim=True)
 
-        # Determine if we can check this capability
-        if cap.scope == "project" and repo_root is None:
-            # Can't check project capability without repo
-            user_output(click.style("  ? ", fg="yellow") + cap_line)
-            user_output(check_line)
+    # Sort: tagged capabilities first (alphabetically by tag, then name), ungrouped last
+    sorted_caps = sorted(
+        caps,
+        key=lambda c: (0 if c.tag is not None else 1, c.tag or "", c.name),
+    )
+
+    for tag, group in itertools.groupby(sorted_caps, key=lambda c: c.tag):
+        group_caps = list(group)
+        if tag is not None:
+            display_name = TAG_DISPLAY_NAMES.get(tag, tag)
+            user_output(f"\n  [{display_name}]")
         else:
-            if cap.is_installed(repo_root if cap.scope == "project" else None, backend=backend):
-                user_output(click.style("  ✓ ", fg="green") + cap_line)
-                user_output(check_line)
-            else:
-                user_output(click.style("  ○ ", fg="white") + cap_line)
-                user_output(check_line)
+            user_output("\n  [Other]")
+        for cap in group_caps:
+            _render_capability_line(cap, repo_root, backend=backend)
