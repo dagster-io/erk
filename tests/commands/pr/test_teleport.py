@@ -5,6 +5,7 @@ from pathlib import Path
 from click.testing import CliRunner
 
 from erk.cli.commands.pr import pr_group
+from erk.core.worktree_pool import PoolState, SlotAssignment, load_pool_state, save_pool_state
 from erk_shared.gateway.git.abc import WorktreeInfo
 from erk_shared.gateway.github.types import PRDetails
 from erk_shared.gateway.graphite.types import BranchMetadata
@@ -448,3 +449,50 @@ def test_teleport_in_place_script_mode_with_sync_includes_gt_submit() -> None:
         assert script_path_str != ""
         script_content = Path(script_path_str).read_text(encoding="utf-8")
         assert "gt submit --no-interactive" in script_content
+
+
+def test_teleport_in_place_updates_slot_assignment() -> None:
+    """Teleport in a slot-assigned worktree updates the slot assignment to the new branch."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+        pr = _make_pr_details(500, "new-feature-branch")
+        github = FakeLocalGitHub(pr_details={500: pr})
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            default_branches={env.cwd: "main"},
+            current_branches={env.cwd: "old-branch"},
+            local_branches={env.cwd: ["main", "old-branch"]},
+            remote_branches={env.cwd: ["origin/main", "origin/new-feature-branch"]},
+            repository_roots={env.cwd: env.cwd},
+        )
+
+        # Write initial pool state with a slot assigned to old-branch at env.cwd
+        initial_state = PoolState(
+            version="1.0",
+            pool_size=4,
+            slots=(),
+            assignments=(
+                SlotAssignment(
+                    slot_name="erk-slot-01",
+                    branch_name="old-branch",
+                    assigned_at="2026-01-01T00:00:00",
+                    worktree_path=env.cwd,
+                ),
+            ),
+        )
+        save_pool_state(env.repo.pool_json_path, initial_state)
+
+        ctx = build_workspace_test_context(env, git=git, github=github)
+        result = runner.invoke(pr_group, ["teleport", "500", "--force"], obj=ctx)
+        assert result.exit_code == 0
+        assert "Teleported" in result.output
+        assert "new-feature-branch" in result.output
+
+        # Verify slot assignment was updated to the new branch
+        updated_state = load_pool_state(env.repo.pool_json_path)
+        assert updated_state is not None
+        assert len(updated_state.assignments) == 1
+        assignment = updated_state.assignments[0]
+        assert assignment.slot_name == "erk-slot-01"
+        assert assignment.branch_name == "new-feature-branch"
+        assert assignment.worktree_path == env.cwd

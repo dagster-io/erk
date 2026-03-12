@@ -25,10 +25,12 @@ from erk.cli.commands.checkout_helpers import (
     script_error_handler,
 )
 from erk.cli.commands.pr.checkout_cmd import _fetch_and_update_branch
+from erk.cli.commands.slot.common import find_assignment_by_worktree, update_slot_assignment_tip
 from erk.cli.ensure import Ensure
 from erk.cli.help_formatter import CommandWithHiddenOptions, script_option
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import NoRepoSentinel, RepoContext
+from erk.core.worktree_pool import load_pool_state
 from erk_shared.gateway.github.types import PRNotFound
 
 
@@ -114,6 +116,51 @@ def pr_teleport(
             )
 
 
+def _navigate_to_existing_worktree(
+    ctx: ErkContext,
+    *,
+    repo_root: Path,
+    pr_number: int,
+    branch_name: str,
+    script: bool,
+) -> None:
+    """Check if branch is already in a worktree; if so, navigate and exit."""
+    existing = ctx.git.worktree.find_worktree_for_branch(repo_root, branch_name)
+    if existing is None:
+        return  # Not found, caller continues
+    navigate_and_display_checkout(
+        ctx,
+        worktree_path=existing,
+        branch_name=branch_name,
+        script=script,
+        command_name="pr-teleport",
+        already_existed=True,
+        existing_message=(
+            f"PR #{pr_number} branch "
+            + click.style(f"'{branch_name}'", fg="cyan", bold=True)
+            + " is already checked out at {styled_path}"
+        ),
+        new_message="",
+        script_message_existing=f'echo "PR #{pr_number} already checked out at $(pwd)"',
+        script_message_new="",
+        post_cd_commands=None,
+    )
+    if not script:
+        script_path = ensure_worktree_activate_script(
+            worktree_path=existing,
+            post_create_commands=None,
+        )
+        print_activation_instructions(
+            script_path,
+            source_branch=None,
+            force=False,
+            config=activation_config_activate_only(),
+            copy=True,
+            same_worktree=False,
+        )
+    raise SystemExit(0)
+
+
 def _teleport_in_place(
     ctx: ErkContext,
     repo: RepoContext,
@@ -130,40 +177,13 @@ def _teleport_in_place(
     current_branch = ctx.git.branch.get_current_branch(cwd)
 
     if current_branch != branch_name:
-        # Check if the target branch is already checked out in another worktree
-        existing = ctx.git.worktree.find_worktree_for_branch(repo.root, branch_name)
-        if existing is not None:
-            navigate_and_display_checkout(
-                ctx,
-                worktree_path=existing,
-                branch_name=branch_name,
-                script=script,
-                command_name="pr-teleport",
-                already_existed=True,
-                existing_message=(
-                    f"PR #{pr_number} branch "
-                    + click.style(f"'{branch_name}'", fg="cyan", bold=True)
-                    + " is already checked out at {styled_path}"
-                ),
-                new_message="",
-                script_message_existing=f'echo "PR #{pr_number} already checked out at $(pwd)"',
-                script_message_new="",
-                post_cd_commands=None,
-            )
-            if not script:
-                script_path = ensure_worktree_activate_script(
-                    worktree_path=existing,
-                    post_create_commands=None,
-                )
-                print_activation_instructions(
-                    script_path,
-                    source_branch=None,
-                    force=False,
-                    config=activation_config_activate_only(),
-                    copy=True,
-                    same_worktree=False,
-                )
-            raise SystemExit(0)
+        _navigate_to_existing_worktree(
+            ctx,
+            repo_root=repo.root,
+            pr_number=pr_number,
+            branch_name=branch_name,
+            script=script,
+        )
         # Branch not in any worktree — proceed; checkout below will switch branches
 
     # Fetch latest remote state
@@ -179,6 +199,19 @@ def _teleport_in_place(
 
     # Reset working tree to match the new branch head
     ctx.git.branch.checkout_branch(cwd, branch_name)
+
+    # Slot awareness: update assignment if in a managed slot (matches erk br co)
+    state = load_pool_state(repo.pool_json_path)
+    if state is not None:
+        current_assignment = find_assignment_by_worktree(state, ctx.git, cwd)
+        if current_assignment is not None:
+            update_slot_assignment_tip(
+                repo.pool_json_path,
+                state,
+                current_assignment,
+                branch_name=branch_name,
+                now=ctx.time.now().isoformat(),
+            )
 
     # Register with Graphite (track/retrack for all PRs, fetch base for stacked)
     _register_with_graphite(ctx, repo, branch_name=branch_name, base_ref_name=base_ref_name)
@@ -217,39 +250,13 @@ def _teleport_new_slot(
 ) -> None:
     """Teleport into a new worktree slot, force-updating the branch."""
     # Check if branch already has a worktree — navigate to it instead of erroring
-    existing_worktree = ctx.git.worktree.find_worktree_for_branch(repo.root, branch_name)
-    if existing_worktree is not None:
-        navigate_and_display_checkout(
-            ctx,
-            worktree_path=existing_worktree,
-            branch_name=branch_name,
-            script=script,
-            command_name="pr-teleport",
-            already_existed=True,
-            existing_message=(
-                f"PR #{pr_number} branch "
-                + click.style(f"'{branch_name}'", fg="cyan", bold=True)
-                + " is already checked out at {styled_path}"
-            ),
-            new_message="",
-            script_message_existing=f'echo "PR #{pr_number} already checked out at $(pwd)"',
-            script_message_new="",
-            post_cd_commands=None,
-        )
-        if not script:
-            script_path = ensure_worktree_activate_script(
-                worktree_path=existing_worktree,
-                post_create_commands=None,
-            )
-            print_activation_instructions(
-                script_path,
-                source_branch=None,
-                force=False,
-                config=activation_config_activate_only(),
-                copy=True,
-                same_worktree=False,
-            )
-        raise SystemExit(0)
+    _navigate_to_existing_worktree(
+        ctx,
+        repo_root=repo.root,
+        pr_number=pr_number,
+        branch_name=branch_name,
+        script=script,
+    )
 
     # Fetch and force-update local branch to match remote
     _fetch_and_update_branch(ctx, repo, branch_name=branch_name, pr_number=pr_number)
