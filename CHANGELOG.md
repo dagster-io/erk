@@ -7,6 +7,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+<!-- As of: d5c0167db -->
+
+### Added
+
+- Add `erk json` command namespace providing dedicated machine-readable JSON endpoints for agent and MCP consumption (636ea3d02)
+- Add `erk workflow run cancel` and `erk workflow run retry` commands plus TUI command palette actions for managing workflow runs (9261f93b1)
+- Add implementation failure summary posted as PR comment when remote CI fails (9a59f7015)
+- Add PR status emoji column to Runs tab showing approval state, draft status, and merge conflicts (52067f1ff)
+- Add `erk json objective view` and `erk json objective check` machine commands (3ec429ddc)
+- Add `erk stack sync` command for mechanical divergence resolution across Graphite stacks (hidden) (43983f7af)
+- Add Runs tab to TUI dashboard displaying GitHub Actions workflow runs (963a7574f)
+- Add branch column to Runs tab with vim-style j/k navigation (10aa81f32)
+- Add `--json` and MCP exposure to `erk pr list` and `erk pr view` (8bad317c7)
+- Add prompt validation to one-shot planning workflow to reject invalid prompts (f5c0312ad)
+
+### Changed
+
+- Identify plans by `[erk-pr]`/`[erk-learn]` title prefix instead of `erk-plan` label, simplifying label scheme to two core labels (a024e215e)
+- Rename `[plans]` config section to `[github]` with backwards compatibility fallback (80f4e949c)
+- Rename `--plan` to `--pr` across launch/dispatch commands (064a2988e)
+- Rename plan terminology to PR across core types, gateway interfaces, CLI parameters, JSON output, TUI, and user-facing messages (34ff359af, fe929afcb, 5b8bb600f, 9a193b43c, 63c9de528, 5c628ddd2, bcc0c2d73, 17dfd5e4c)
+- Optimize Runs tab initial load from ~2-3s to ~1s via parallel batch queries (70f0d48a0)
+- Hide `--stack` flag on `erk land` from default help output (052d4bb0e)
+- Hide `erk reconcile` and `learn` commands from default CLI help output (396ac2bd9, cbcdf9f23)
+
+### Fixed
+
+- Fix prompt passing to claude CLI via stdin to avoid ARG_MAX errors with large prompts (0836187a3)
+- Fix objectives view 'p' shortcut to open objective issue instead of PR URL (519e224ad)
+- Fix Runs tab branch column showing "master" for all workflow_dispatch runs (ce0c6873b)
+- Fix stale branch checkout in plan-implement workflow causing implementation on outdated code (50147f1c6)
+
+### Removed
+
+- Remove default `.mcp.json` configuration; users must now configure MCP server locally (62ff56b05)
+
 ## [0.9.11] - 2026-03-09 12:23 PT
 
 ### Changed
