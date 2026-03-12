@@ -39,10 +39,17 @@ from erk_shared.gateway.github.types import PRNotFound
 @click.option("--new-slot", is_flag=True, help="Create a new worktree slot")
 @click.option("-f", "--force", is_flag=True, help="Skip confirmation prompt")
 @click.option("--sync", is_flag=True, help="Run gt submit after teleport to sync with Graphite")
+@click.option("--dry-run", is_flag=True, help="Preview without making changes")
 @script_option
 @click.pass_obj
 def pr_teleport(
-    ctx: ErkContext, pr_number: int, new_slot: bool, force: bool, sync: bool, script: bool
+    ctx: ErkContext,
+    pr_number: int,
+    new_slot: bool,
+    force: bool,
+    sync: bool,
+    dry_run: bool,
+    script: bool,
 ) -> None:
     """Teleport a PR's remote state to local, overwriting local branch.
 
@@ -66,6 +73,7 @@ def pr_teleport(
           fetches base for stacked PRs; --sync runs gt submit after
           teleport)
         - Shell activation scripts (--script mode for cmux)
+        - --dry-run previews what would happen without making changes
 
     \b
     Examples:
@@ -73,6 +81,7 @@ def pr_teleport(
         erk pr teleport 123 -f           # Skip confirmation
         erk pr teleport 123 --new-slot   # Create a new worktree slot for the PR
         erk pr teleport 123 --new-slot --script --sync  # Full setup with Graphite sync
+        erk pr teleport 123 --dry-run    # Preview what would be lost
     """
     Ensure.gh_authenticated(ctx)
 
@@ -80,6 +89,10 @@ def pr_teleport(
         ctx.console.error("Not in a git repository")
         raise SystemExit(1)
     repo: RepoContext = ctx.repo
+
+    # Dry-run forces human-readable output (no script mode)
+    if dry_run:
+        script = False
 
     if script:
         ctx_manager = script_error_handler(ctx)
@@ -112,6 +125,7 @@ def pr_teleport(
                 base_ref_name=base_ref_name,
                 force=force,
                 sync=sync,
+                dry_run=dry_run,
                 script=script,
             )
         else:
@@ -123,6 +137,7 @@ def pr_teleport(
                 base_ref_name=base_ref_name,
                 force=force,
                 sync=sync,
+                dry_run=dry_run,
                 script=script,
             )
 
@@ -181,6 +196,7 @@ def _teleport_in_place(
     base_ref_name: str,
     force: bool,
     sync: bool,
+    dry_run: bool,
     script: bool,
 ) -> None:
     """Teleport by force-resetting the current branch to match remote."""
@@ -200,9 +216,52 @@ def _teleport_in_place(
     # Fetch latest remote state
     ctx.git.remote.fetch_branch(repo.root, "origin", branch_name)
 
-    # Show divergence info and confirm (only if the branch already exists locally)
+    # Compute divergence (used by both confirm and dry-run)
     local_branches = ctx.git.branch.list_local_branches(repo.root)
-    if branch_name in local_branches and not force:
+    branch_exists_locally = branch_name in local_branches
+
+    ahead, behind = 0, 0
+    if branch_exists_locally:
+        try:
+            ahead, behind = ctx.git.branch.get_ahead_behind(cwd, branch_name)
+        except RuntimeError:
+            pass
+
+        if ahead == 0 and behind == 0:
+            ctx.console.info("Branch is already in sync with remote. Nothing to teleport.")
+            raise SystemExit(0)
+
+    if dry_run:
+        staged, modified, untracked = ctx.git.status.get_file_status(cwd)
+        trunk = ctx.git.branch.detect_trunk_branch(repo.root)
+        is_graphite_managed = ctx.branch_manager.is_graphite_managed()
+
+        # Check slot assignment
+        state = load_pool_state(repo.pool_json_path)
+        has_slot = False
+        if state is not None:
+            has_slot = find_assignment_by_worktree(state, ctx.git, cwd) is not None
+
+        _display_dry_run_report(
+            pr_number=pr_number,
+            branch_name=branch_name,
+            base_ref_name=base_ref_name,
+            ahead=ahead,
+            behind=behind,
+            staged=staged,
+            modified=modified,
+            untracked=untracked,
+            is_new_slot=False,
+            branch_exists_locally=branch_exists_locally,
+            is_graphite_managed=is_graphite_managed,
+            trunk=trunk,
+            sync=sync,
+            has_slot=has_slot,
+        )
+        raise SystemExit(0)
+
+    # Show divergence info and confirm (only if the branch already exists locally)
+    if branch_exists_locally and not force:
         _confirm_overwrite(ctx, cwd=cwd, branch_name=branch_name)
 
     # Force-reset local branch to match remote
@@ -257,6 +316,7 @@ def _teleport_new_slot(
     base_ref_name: str,
     force: bool,
     sync: bool,
+    dry_run: bool,
     script: bool,
 ) -> None:
     """Teleport into a new worktree slot, force-updating the branch."""
@@ -268,6 +328,33 @@ def _teleport_new_slot(
         branch_name=branch_name,
         script=script,
     )
+
+    if dry_run:
+        # Fetch to know remote state (read-only network call)
+        ctx.git.remote.fetch_branch(repo.root, "origin", branch_name)
+
+        local_branches = ctx.git.branch.list_local_branches(repo.root)
+        branch_exists_locally = branch_name in local_branches
+        trunk = ctx.git.branch.detect_trunk_branch(repo.root)
+        is_graphite_managed = ctx.branch_manager.is_graphite_managed()
+
+        _display_dry_run_report(
+            pr_number=pr_number,
+            branch_name=branch_name,
+            base_ref_name=base_ref_name,
+            ahead=0,
+            behind=0,
+            staged=[],
+            modified=[],
+            untracked=[],
+            is_new_slot=True,
+            branch_exists_locally=branch_exists_locally,
+            is_graphite_managed=is_graphite_managed,
+            trunk=trunk,
+            sync=sync,
+            has_slot=False,
+        )
+        raise SystemExit(0)
 
     # Fetch and force-update local branch to match remote
     _fetch_and_update_branch(ctx, repo, branch_name=branch_name, pr_number=pr_number)
@@ -315,6 +402,67 @@ def _teleport_new_slot(
             copy=True,
             same_worktree=False,
         )
+
+
+def _display_dry_run_report(
+    *,
+    pr_number: int,
+    branch_name: str,
+    base_ref_name: str,
+    ahead: int,
+    behind: int,
+    staged: list[str],
+    modified: list[str],
+    untracked: list[str],
+    is_new_slot: bool,
+    branch_exists_locally: bool,
+    is_graphite_managed: bool,
+    trunk: str,
+    sync: bool,
+    has_slot: bool,
+) -> None:
+    """Display a dry-run report showing what teleport would do."""
+    click.echo(f"\nDry run: erk pr teleport {pr_number}")
+
+    # Local state section (only for in-place when there's something to report)
+    has_local_state = ahead > 0 or staged or modified or untracked
+    if has_local_state:
+        click.echo(click.style("\n  Local state that would be discarded:", bold=True))
+        if ahead > 0:
+            msg = f"    {ahead} local commit(s) ahead of remote (would be lost)"
+            click.echo(click.style(msg, fg="yellow"))
+        if staged:
+            file_list = ", ".join(staged[:5])
+            suffix = f" (+{len(staged) - 5} more)" if len(staged) > 5 else ""
+            click.echo(f"    {len(staged)} staged file(s): {file_list}{suffix}")
+        if modified:
+            file_list = ", ".join(modified[:5])
+            suffix = f" (+{len(modified) - 5} more)" if len(modified) > 5 else ""
+            click.echo(f"    {len(modified)} modified file(s): {file_list}{suffix}")
+        if untracked:
+            click.echo(f"    {len(untracked)} untracked file(s)")
+
+    # Operations section
+    click.echo(click.style("\n  Operations:", bold=True))
+    click.echo(f"    Would fetch origin/{branch_name}")
+
+    if is_new_slot:
+        click.echo("    Would create new worktree slot")
+    else:
+        click.echo(f"    Would force-reset '{branch_name}' to match remote")
+        click.echo(f"    Would checkout '{branch_name}'")
+        if has_slot:
+            click.echo("    Would update slot assignment")
+
+    if is_graphite_managed:
+        if base_ref_name != trunk:
+            click.echo(f"    Would fetch base branch '{base_ref_name}'")
+        click.echo(f"    Would track branch with Graphite (base: {base_ref_name})")
+
+    if sync:
+        click.echo("    Would run gt submit --no-interactive")
+
+    click.echo(click.style("\n[DRY RUN] No changes made", fg="yellow"))
 
 
 def _register_with_graphite(
