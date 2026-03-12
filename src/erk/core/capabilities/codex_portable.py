@@ -19,13 +19,14 @@ def codex_portable_skills() -> frozenset[str]:
             "fake-driven-testing",
             "erk-diff-analysis",
             "erk-exec",
-            "erk-planning",
             "objective",
             "gh",
             "gt",
             "dignified-code-simplifier",
             "pr-operations",
             "pr-feedback-classifier",
+            # Tombstone: distributed to all repos to overwrite stale copies
+            "erk-planning",
         }
     )
 

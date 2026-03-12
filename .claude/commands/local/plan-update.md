@@ -59,4 +59,3 @@ On failure, display the error and suggest:
 
 - `/erk:plan-save` - Create new plan (instead of updating)
 - `/erk:replan` - Recreate an obsolete plan from scratch
-- `erk-planning` skill - Complete plan management documentation

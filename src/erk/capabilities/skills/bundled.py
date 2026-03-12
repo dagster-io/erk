@@ -50,13 +50,14 @@ def bundled_skills() -> dict[str, str]:
         "fake-driven-testing": "5-layer test architecture with fakes",
         "erk-diff-analysis": "Code diff analysis for commit messages",
         "erk-exec": "Erk exec subcommand reference",
-        "erk-planning": "Plan management",
         "objective": "Objective tracking and management",
         "gh": "GitHub CLI integration",
         "gt": "Graphite stacked PR management",
         "dignified-code-simplifier": "Code simplification review",
         "pr-operations": "Pull request operations",
         "pr-feedback-classifier": "PR feedback classification",
+        # Tombstone: overwrites stale skill in customer repos on next sync
+        "erk-planning": "[REMOVED] Plan management now in slash commands",
     }
 
 
