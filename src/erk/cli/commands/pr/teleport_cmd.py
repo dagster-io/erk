@@ -425,21 +425,21 @@ def _display_dry_run_report(
     click.echo(f"\nDry run: erk pr teleport {pr_number}")
 
     # Local state section (only for in-place when there's something to report)
-    has_local_state = ahead > 0 or len(staged) > 0 or len(modified) > 0 or len(untracked) > 0
+    has_local_state = ahead > 0 or staged or modified or untracked
     if has_local_state:
         click.echo(click.style("\n  Local state that would be discarded:", bold=True))
         if ahead > 0:
             msg = f"    {ahead} local commit(s) ahead of remote (would be lost)"
             click.echo(click.style(msg, fg="yellow"))
-        if len(staged) > 0:
+        if staged:
             file_list = ", ".join(staged[:5])
             suffix = f" (+{len(staged) - 5} more)" if len(staged) > 5 else ""
             click.echo(f"    {len(staged)} staged file(s): {file_list}{suffix}")
-        if len(modified) > 0:
+        if modified:
             file_list = ", ".join(modified[:5])
             suffix = f" (+{len(modified) - 5} more)" if len(modified) > 5 else ""
             click.echo(f"    {len(modified)} modified file(s): {file_list}{suffix}")
-        if len(untracked) > 0:
+        if untracked:
             click.echo(f"    {len(untracked)} untracked file(s)")
 
     # Operations section
