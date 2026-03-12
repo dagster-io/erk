@@ -107,3 +107,4 @@ Guidelines:
 - Be concise but clear (1 sentence)
 - Include the short commit hash in parentheses
 - Add notes for entries that may cause user-visible issues (e.g., "note: this may cause hard failures, please report if encountered")
+- If a new command or flag is `hidden=True` in Click, add "(hidden)" after the description to indicate it's not visible in default help output
