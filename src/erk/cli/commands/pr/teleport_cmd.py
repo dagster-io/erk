@@ -58,13 +58,14 @@ def pr_teleport(
 
     \b
     Beyond gh pr checkout:
-        - Force-resets local branch to match remote (discards unpushed commits)
-        - Worktree pool integration (navigates to existing worktrees, updates
-          slot assignments)
-        - Graphite registration (tracks/retracks branch, fetches base for
-          stacked PRs)
+        - Force-resets local branch to match remote (requires confirmation;
+          use -f to skip)
+        - Worktree pool integration (--new-slot only: navigates to existing
+          worktrees, creates slot and updates assignments)
+        - Graphite integration (when configured: tracks/retracks branch,
+          fetches base for stacked PRs; --sync runs gt submit after
+          teleport)
         - Shell activation scripts (--script mode for cmux)
-        - --sync runs gt submit after teleport
 
     \b
     Examples:
