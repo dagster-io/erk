@@ -7,8 +7,10 @@ import subprocess
 from unittest.mock import MagicMock, patch
 
 from erk_mcp.server import (
+    ROOT_PROTECTED_RESOURCE_METADATA_PATH,
     MachineCommandTool,
     _build_machine_command_tools,
+    _build_root_protected_resource_metadata,
     _run_erk_json,
     create_mcp,
 )
@@ -238,6 +240,9 @@ class TestMachineCommandTool:
 
     def test_create_mcp_uses_auth_provider_from_env(self) -> None:
         mock_auth_provider = MagicMock()
+        mock_auth_provider.base_url = "https://erk.example.com"
+        mock_auth_provider.issuer_url = "https://erk.example.com"
+        mock_auth_provider.required_scopes = ["repo"]
 
         with patch(
             "erk_mcp.server.build_auth_provider_from_env",
@@ -246,6 +251,17 @@ class TestMachineCommandTool:
             server = create_mcp()
 
         assert server.auth is mock_auth_provider
+        route_paths = [route.path for route in server._get_additional_http_routes()]
+        assert ROOT_PROTECTED_RESOURCE_METADATA_PATH in route_paths
+
+    def test_create_mcp_skips_oauth_compat_routes_without_auth_provider(self) -> None:
+        with patch(
+            "erk_mcp.server.build_auth_provider_from_env",
+            return_value=None,
+        ):
+            server = create_mcp()
+
+        assert server._get_additional_http_routes() == []
 
     def test_discovered_tools_include_one_shot(self) -> None:
         tools = _build_machine_command_tools()
@@ -287,6 +303,26 @@ class TestCreateMcp:
         server = create_mcp()
 
         assert isinstance(server, FastMCP)
+
+
+class TestRootProtectedResourceMetadata:
+    def test_returns_none_without_auth(self) -> None:
+        assert _build_root_protected_resource_metadata(None) is None
+
+    def test_builds_metadata_for_root_alias(self) -> None:
+        auth = MagicMock()
+        auth.base_url = "https://erk.example.com"
+        auth.issuer_url = "https://issuer.example.com"
+        auth.required_scopes = ["repo"]
+
+        metadata = _build_root_protected_resource_metadata(auth)
+
+        assert metadata is not None
+        assert str(metadata.resource) == "https://erk.example.com/mcp"
+        assert [str(url) for url in metadata.authorization_servers] == [
+            "https://issuer.example.com/"
+        ]
+        assert metadata.scopes_supported == ["repo"]
 
     def test_server_has_correct_name(self) -> None:
         from erk_mcp.server import DEFAULT_MCP_NAME

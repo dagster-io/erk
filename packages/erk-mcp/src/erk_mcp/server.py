@@ -9,6 +9,10 @@ from typing import TYPE_CHECKING, Any
 
 from anyio import to_thread
 from fastmcp.tools.tool import Tool, ToolResult
+from mcp.server.auth.handlers.metadata import ProtectedResourceMetadataHandler
+from mcp.shared.auth import ProtectedResourceMetadata
+from starlette.requests import Request
+from starlette.responses import Response
 
 from erk_mcp.auth import build_auth_provider_from_env, get_authenticated_github_token
 from erk_shared.agentclick.machine_schema import request_schema
@@ -18,6 +22,8 @@ if TYPE_CHECKING:
     from fastmcp import FastMCP
 
 DEFAULT_MCP_NAME = "erk"
+DEFAULT_MCP_HTTP_PATH = "/mcp"
+ROOT_PROTECTED_RESOURCE_METADATA_PATH = "/.well-known/oauth-protected-resource"
 
 
 def _run_erk_json(
@@ -91,11 +97,47 @@ def _build_machine_command_tools() -> tuple[MachineCommandTool, ...]:
     return tuple(tools)
 
 
+def _build_root_protected_resource_metadata(
+    auth: Any,
+) -> ProtectedResourceMetadata | None:
+    if auth is None or auth.base_url is None:
+        return None
+
+    authorization_server = auth.base_url
+    if getattr(auth, "issuer_url", None) is not None:
+        authorization_server = auth.issuer_url
+
+    return ProtectedResourceMetadata(
+        resource=f"{str(auth.base_url).rstrip('/')}{DEFAULT_MCP_HTTP_PATH}",
+        authorization_servers=[str(authorization_server)],
+        scopes_supported=getattr(auth, "required_scopes", None),
+    )
+
+
+def _add_oauth_compat_routes(server: FastMCP) -> None:
+    metadata = _build_root_protected_resource_metadata(server.auth)
+    if metadata is None:
+        return
+
+    handler = ProtectedResourceMetadataHandler(metadata)
+
+    @server.custom_route(
+        ROOT_PROTECTED_RESOURCE_METADATA_PATH,
+        methods=["GET"],
+        include_in_schema=False,
+    )
+    async def root_oauth_protected_resource_metadata(
+        request: Request,
+    ) -> Response:
+        return await handler.handle(request)
+
+
 def create_mcp() -> FastMCP:
     """Create and configure the FastMCP server instance."""
     from fastmcp import FastMCP
 
     server = FastMCP(DEFAULT_MCP_NAME, auth=build_auth_provider_from_env())
+    _add_oauth_compat_routes(server)
     for tool in _build_machine_command_tools():
         server.add_tool(tool)
     return server

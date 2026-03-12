@@ -7,7 +7,12 @@ from unittest.mock import MagicMock, patch
 import pytest
 from click import ClickException
 
-from erk_mcp.__main__ import _get_oauth_discovery_url, _parse_args, main
+from erk_mcp.__main__ import (
+    _get_oauth_discovery_url,
+    _get_oauth_protected_resource_url,
+    _parse_args,
+    main,
+)
 
 
 class TestParseArgs:
@@ -85,6 +90,7 @@ class TestMain:
 
         captured = capsys.readouterr()
         assert "http://127.0.0.1:8080/mcp" in captured.out
+        assert "GitHub OAuth disabled" in captured.out
 
     def test_stdio_transport_runs_without_args(self, capsys: pytest.CaptureFixture[str]) -> None:
         mock_mcp = MagicMock()
@@ -120,6 +126,7 @@ class TestMain:
 
         captured = capsys.readouterr()
         assert "https://erk.example.com/.well-known/oauth-authorization-server" in captured.out
+        assert "https://erk.example.com/.well-known/oauth-protected-resource" in captured.out
 
     def test_create_mcp_value_error_becomes_click_exception(self) -> None:
         with patch("erk_mcp.__main__.create_mcp", side_effect=ValueError("broken config")):
@@ -149,4 +156,23 @@ class TestGetOAuthDiscoveryUrl:
         assert (
             _get_oauth_discovery_url(mock_mcp)
             == "https://erk.example.com/.well-known/oauth-authorization-server"
+        )
+
+
+class TestGetOAuthProtectedResourceUrl:
+    def test_returns_none_without_auth(self) -> None:
+        mock_mcp = MagicMock()
+        mock_mcp.auth = None
+
+        assert _get_oauth_protected_resource_url(mock_mcp) is None
+
+    def test_returns_url_when_auth_has_base_url(self) -> None:
+        mock_auth = MagicMock()
+        mock_auth.base_url = "https://erk.example.com/"
+        mock_mcp = MagicMock()
+        mock_mcp.auth = mock_auth
+
+        assert (
+            _get_oauth_protected_resource_url(mock_mcp)
+            == "https://erk.example.com/.well-known/oauth-protected-resource"
         )

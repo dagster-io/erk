@@ -46,6 +46,16 @@ When configured, `erk-mcp` exposes OAuth discovery at:
 https://your-public-erk-host.example.com/.well-known/oauth-authorization-server
 ```
 
+For clients that probe protected-resource metadata at the root, `erk-mcp` also
+serves:
+
+```text
+https://your-public-erk-host.example.com/.well-known/oauth-protected-resource
+```
+
+At startup, `erk-mcp` prints both OAuth URLs when auth is enabled. If you only see
+`GitHub OAuth disabled`, the running process does not have OAuth configured.
+
 and uses GitHub OAuth with callback:
 
 ```text
