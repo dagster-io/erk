@@ -1,5 +1,10 @@
 [tool.uv.workspace]
-members = ["packages/*"]
+members = [
+    "packages/erk-dev",
+    "packages/erk-mcp",
+    "packages/erk-shared",
+    "packages/erk-statusline",
+]
 
 [tool.uv.sources]
 erk-dev = { workspace = true }
