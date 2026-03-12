@@ -17,6 +17,21 @@
       "raw_size_kb": 2818,
       "xml_size_kb": 133,
       "git_branch": "master"
+    },
+    {
+      "session_id": "46d30edf-cd68-474c-8a96-eba274850f1d",
+      "stage": "impl",
+      "source": "local",
+      "uploaded_at": "2026-03-12T12:17:24.865918+00:00",
+      "files": [
+        "impl-46d30edf-cd68-474c-8a96-eba274850f1d-46d30edf-cd68-474c-8a96-eba274850f1d-part1.xml",
+        "impl-46d30edf-cd68-474c-8a96-eba274850f1d-46d30edf-cd68-474c-8a96-eba274850f1d-part2.xml"
+      ],
+      "user_turns": 11,
+      "duration_minutes": 1257,
+      "raw_size_kb": 691,
+      "xml_size_kb": 122,
+      "git_branch": "colton/erk-mcp-oauth-bearer"
     }
   ]
 }

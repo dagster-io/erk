@@ -1,0 +1,1338 @@
+<session>
+  <meta branch="master" />
+  <meta model="claude-sonnet-4-6" />
+  <user>Implement the following plan:
+
+# Plan: Per-User GitHub Attribution for erk-mcp
+
+## Context
+
+erk-mcp is deployed in Kubernetes with a shared GitHub App installation token (`GH_TOKEN` env var). All
+`one_shot` PRs are attributed to the app identity (`elementl-devtools`) rather than the human Slack user.
+This plan wires in per-user GitHub OAuth tokens so PRs show the real author.
+
+The core mechanism: `GH_TOKEN` in the subprocess env determines which GitHub identity `erk json one-shot`
+uses. Injecting a per-user `GH_TOKEN` override into that env is sufficient — no `ErkContext` changes needed.
+
+**Simplified design**: erk-mcp reads the Bearer token directly from the `Authorization` header and injects
+it as `GH_TOKEN` in subprocess calls. No OAuth AS, no token store, no grant broker in erk-mcp. Compass
+owns all OAuth complexity: GitHub authorization, token storage, and per-user token loading.
+
+## Architecture Overview
+
+```
+One-time user authorization (Compass-owned):
+  Compass detects no user-scoped erk-mcp token for this user
+    → triggers MCP OAuth flow via mcp_oauth_start
+    → user authorizes on GitHub via Compass's existing GitHub OAuth App
+    → Compass stores the GitHub token with scope='user' for this org_user_id
+
+Per-request flow:
+  Compass loads user-scoped token → sends Authorization: Bearer &lt;github-token&gt;
+    → GitHubTokenMiddleware reads Bearer from Authorization header
+    → sets ContextVar[github_token]
+    → MachineCommandTool.run() reads ContextVar
+    → subprocess.run(["erk", ...], env={**os.environ, "GH_TOKEN": user_token})
+    → submitted_by = remote.get_authenticated_user() → real GitHub user
+```
+
+Fallback: if no user-scoped token, Compass sends the org-scoped token (bot identity). erk-mcp behavior
+is identical either way — it just uses whatever Bearer token it receives.
+
+---
+
+## erk-mcp Changes
+
+### Phase 1: Subprocess env override
+
+**Modify `packages/erk-mcp/src/erk_mcp/server.py`**
+
+Add `env_override` param to `_run_erk_json()`, read ContextVar in `MachineCommandTool.run()`:
+
+```python
+def _run_erk_json(
+    command_path: tuple[str, ...],
+    params: dict[str, Any],
+    *,
+    env_override: dict[str, str] | None = None,
+) -&gt; str:
+    result = subprocess.run(
+        ["erk", *command_path],
+        input=json.dumps(params),
+        capture_output=True,
+        text=True,
+        check=False,
+        env=env_override,  # None = inherit process env (existing behavior)
+    )
+    return result.stdout
+```
+
+```python
+# In MachineCommandTool.run():
+user_token = get_request_github_token()  # reads ContextVar
+env_override = {**os.environ, "GH_TOKEN": user_token} if user_token is not None else None
+result = await to_thread.run_sync(
+    lambda: _run_erk_json(path, params, env_override=env_override)
+)
+```
+
+**New `packages/erk-mcp/src/erk_mcp/request_context.py`**
+
+ContextVar for per-request GitHub token. Python asyncio propagates ContextVar snapshots to threads
+spawned via `anyio.to_thread.run_sync` — value set in async middleware is readable in the sync function.
+
+```python
+from contextvars import ContextVar, Token
+
+_github_token_for_request: ContextVar[str | None] = ContextVar(
+    "_github_token_for_request", default=None
+)
+
+def set_request_github_token(token: str) -&gt; Token[str | None]: ...
+def get_request_github_token() -&gt; str | None: ...
+def reset_request_github_token(token: Token[str | None]) -&gt; None: ...
+```
+
+### Phase 2: Bearer Token Middleware
+
+**New `packages/erk-mcp/src/erk_mcp/github_token_middleware.py`**
+
+Reads the Bearer token directly from the `Authorization` header and injects it into the ContextVar.
+No grant store, no JWT validation, no OAuth AS — Compass is trusted to send the correct token.
+
+```python
+from fastmcp.server.http import _current_http_request
+from fastmcp.server.middleware.middleware import Middleware
+from erk_mcp.request_context import set_request_github_token, reset_request_github_token
+
+class GitHubTokenMiddleware(Middleware):
+    async def on_call_tool(self, context, call_next):
+        request = _current_http_request.get()
+        if request is not None:
+            auth = request.headers.get("authorization", "")
+            if auth.startswith("Bearer "):
+                user_token = auth[7:]
+                tok = set_request_github_token(user_token)
+                try:
+                    return await call_next(context)
+                finally:
+                    reset_request_github_token(tok)
+        return await call_next(context)  # fallback: process-level GH_TOKEN
+```
+
+### Phase 3: Server wiring
+
+**Modify `packages/erk-mcp/src/erk_mcp/__main__.py`**
+
+Wire the middleware for the HTTP transport path:
+
+```python
+def main() -&gt; None:
+    args = _parse_args(None)
+    mcp = create_mcp()
+    if args.transport != "stdio":
+        mcp.add_middleware(GitHubTokenMiddleware())
+    mcp.run(transport=args.transport, host=args.host, port=args.port)
+```
+
+No new K8s secrets needed for erk-mcp — it just reads the Bearer token it receives.
+
+---
+
+## dagster-compass Changes
+
+The `mcp_server_auth` schema already has `scope IN ('organization', 'user')` and `org_user_id` FK.
+The application layer just needs to activate the per-user path.
+
+### Storage changes
+
+**`packages/csbot/src/csbot/slackbot/storage/interface.py`**
+
+Add user-scoped save method:
+```python
+async def save_mcp_server_oauth_for_user(
+    self,
+    mcp_server_id: int,
+    organization_id: int,
+    org_user_id: int,
+    access_token: str,
+    refresh_token: str | None,
+    token_expires_at: datetime | None,
+) -&gt; None: ...
+```
+
+**`packages/csbot/src/csbot/slackbot/storage/postgresql.py`**
+
+Implement with `scope='user', org_user_id=&lt;id&gt;` (upsert via `idx_mcp_server_auth_user` index).
+
+Update `_load_mcp_servers()` to accept optional `org_user_id` and LEFT JOIN user-scoped auth,
+preferring it over org-scoped when available:
+```sql
+LEFT JOIN mcp_server_auth ma_org ON ms.id = ma_org.mcp_server_id AND ma_org.scope = 'organization'
+LEFT JOIN mcp_server_auth ma_user ON ms.id = ma_user.mcp_server_id
+    AND ma_user.scope = 'user' AND ma_user.org_user_id = %(org_user_id)s
+-- COALESCE: prefer user-scoped token
+COALESCE(ma_user.encrypted_access_token, ma_org.encrypted_access_token) AS encrypted_access_token,
+...
+```
+
+### OAuth flow: capture user identity
+
+**`packages/csbot/src/csbot/slackbot/webapp/mcp_oauth.py`**
+
+Update `mcp_oauth_start` to require user session (already available via `ViewerContext`/cookies) and
+pass `org_user_id` through the OAuth state parameter.
+
+Update `mcp_oauth_callback`: if `org_user_id` is present in state, call
+`save_mcp_server_oauth_for_user()` instead of `save_mcp_server_oauth()`.
+
+### MCP token loading: per-request
+
+**`packages/csbot/src/csbot/agents/anthropic/anthropic_agent.py`** (or the caller)
+
+Currently MCP servers are loaded at bot startup from `bot_config`. To support per-user tokens,
+load fresh server configs at request time in `stream_claude_response`, passing `org_user_id`:
+
+```python
+# In stream_claude_response, when user is available:
+mcp_servers = await storage.load_mcp_servers(
+    organization_id=org_id,
+    org_user_id=user.id if user else None,
+)
+```
+
+### Auth-required prompting
+
+When a server has no user-scoped auth, the agent should surface a message like
+_"You need to connect your GitHub account to use erk. [Connect](&lt;oauth-start-url&gt;)"_ rather than
+skipping silently.
+
+The `mcp_oauth_start` URL for a user:
+```
+/auth/mcp-oauth/start?mcp_server_id=N&amp;org_slug=S&amp;user_scoped=true
+```
+
+### OAuth server URL (no change needed)
+
+Compass currently truncates the MCP URL to its origin to discover the OAuth AS. Since erk-mcp
+does not host its own OAuth AS (that's GitHub's), Compass needs no change to its discovery logic —
+it will continue to find `/.well-known/oauth-protected-resource` and `/.well-known/oauth-authorization-server`
+served by erk-mcp's existing FastMCP setup.
+
+If a future MCP server needs a separate OAuth server URL, add an optional `oauth_server_url` field
+to `McpServerConfig` — not needed now.
+
+---
+
+## Critical File Paths
+
+### erk repo
+
+| File | Status |
+|---|---|
+| `packages/erk-mcp/src/erk_mcp/server.py` | Modify — `env_override` param + ContextVar read |
+| `packages/erk-mcp/src/erk_mcp/__main__.py` | Modify — wire `GitHubTokenMiddleware` for HTTP |
+| `packages/erk-mcp/src/erk_mcp/request_context.py` | New — ContextVar module |
+| `packages/erk-mcp/src/erk_mcp/github_token_middleware.py` | New — Bearer token → ContextVar |
+| `packages/erk-mcp/tests/test_server.py` | Modify — env override tests |
+| `packages/erk-mcp/tests/test_github_token_middleware.py` | New |
+
+### dagster-compass repo
+
+| File | Status |
+|---|---|
+| `packages/csbot/src/csbot/slackbot/storage/interface.py` | Modify — add `save_mcp_server_oauth_for_user()` |
+| `packages/csbot/src/csbot/slackbot/storage/postgresql.py` | Modify — impl + update `_load_mcp_servers()` |
+| `packages/csbot/src/csbot/slackbot/webapp/mcp_oauth.py` | Modify — capture `org_user_id` in state |
+| `packages/csbot/src/csbot/agents/anthropic/anthropic_agent.py` | Modify — load user-scoped MCP tokens at request time |
+
+### Key references
+
+- `dagster-compass/packages/csbot/src/csbot/compass_dev/mcp.py` — `_InMemoryOAuthProvider` reference + `test-server-oauth` wiring example
+- `dagster-compass/packages/csbot/src/csbot/slackbot/storage/schema_changes.py` — `mcp_server_auth` schema with `scope='user'` and `idx_mcp_server_auth_user` index
+
+### FastMCP APIs confirmed
+
+- `FastMCP.add_middleware(Middleware)` — `server/server.py:402`
+- `Middleware.on_call_tool()` — `server/middleware/middleware.py:156`
+- `_current_http_request` ContextVar — `fastmcp.server.http` (holds the current Starlette request)
+
+---
+
+## What's Missing from Compass Docs
+
+The `scope='user'` pattern in `mcp_server_auth` is undocumented. These should be documented as the
+implementation lands:
+- When to use user-scoped vs org-scoped tokens
+- How `_load_mcp_servers` is extended for user context
+- The pattern for surfacing auth-required to individual Slack users
+
+---
+
+## Verification
+
+1. **ContextVar thread propagation** — unit test sets ContextVar in async, reads in thread via `anyio.to_thread.run_sync`
+2. **Subprocess env injection** — patch `subprocess.run`, assert `env=` contains `GH_TOKEN=user_token`
+3. **Middleware with Bearer token** — mock `_current_http_request` with `Authorization: Bearer &lt;token&gt;` header, assert ContextVar set and reset in `finally`
+4. **Middleware with no token** — no Authorization header → `call_next` invoked without ContextVar set (process fallback)
+5. **Compass user-scoped storage** — `save_mcp_server_oauth_for_user` inserts `scope='user'`; `_load_mcp_servers(org_user_id=X)` returns user token over org token
+6. **End-to-end staging** — Slack `one_shot`: PR actor is the human GitHub user; unconnected user sees auth prompt; bot fallback works for org-level token
+7. **Token security** — no token values in `_run_erk_json` stdout or ToolResult payloads
+
+
+If you need specific details from before exiting plan mode (like exact code snippets, error messages, or content you generated), read the full transcript at: /Users/colton/.claude/projects/-Users-colton-src-erk/e0415e98-2bb5-4a07-9b5f-9aee9104cf6b.jsonl</user>
+  <usage input_tokens="3" cache_creation_input_tokens="9309" cache_read_input_tokens="12598" cache_creation="{'ephemeral_5m_input_tokens': 9309, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <tool_use name="Glob" id="toolu_01M9GMRwuW3Lbsun5nrV5Dfp">
+    <param name="pattern">packages/erk-mcp/src/erk_mcp/**/*.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="9309" cache_read_input_tokens="12598" cache_creation="{'ephemeral_5m_input_tokens': 9309, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01M9GMRwuW3Lbsun5nrV5Dfp">
+/Users/colton/src/erk/packages/erk-mcp/src/erk_mcp/__init__.py
+/Users/colton/src/erk/packages/erk-mcp/src/erk_mcp/__main__.py
+/Users/colton/src/erk/packages/erk-mcp/src/erk_mcp/server.py
+  </tool_result>
+  <tool_use name="Glob" id="toolu_0143szAk3XXirrzguUCGdwwR">
+    <param name="pattern">packages/erk-mcp/tests/**/*.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="9309" cache_read_input_tokens="12598" output_tokens="150" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 9309}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0143szAk3XXirrzguUCGdwwR">
+/Users/colton/src/erk/packages/erk-mcp/tests/test_main.py
+/Users/colton/src/erk/packages/erk-mcp/tests/test_server.py
+  </tool_result>
+  <tool_use name="Read" id="toolu_01MrbeAKg8LKnc7PNyTr6U9R">
+    <param name="file_path">/Users/colton/src/erk/packages/erk-mcp/src/erk_mcp/server.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3877" cache_read_input_tokens="21907" cache_creation="{'ephemeral_5m_input_tokens': 3877, 'ephemeral_1h_input_tokens': 0}" output_tokens="18" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01MrbeAKg8LKnc7PNyTr6U9R">
+     1→"""FastMCP server exposing erk capabilities as MCP tools."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→import json
+     6→import subprocess
+     7→from typing import TYPE_CHECKING, Any
+     8→
+     9→from anyio import to_thread
+    10→from fastmcp.tools.tool import Tool, ToolResult
+    11→
+    12→from erk_shared.agentclick.machine_schema import request_schema
+    13→from erk_shared.agentclick.mcp_exposed import discover_mcp_commands
+    14→
+    15→if TYPE_CHECKING:
+    16→    from fastmcp import FastMCP
+    17→
+    18→DEFAULT_MCP_NAME = "erk"
+    19→
+    20→
+    21→def _run_erk_json(command_path: tuple[str, ...], params: dict[str, Any]) -&gt; str:
+    22→    """Run erk json command, piping params as JSON stdin.
+    23→
+    24→    Args:
+    25→        command_path: Tuple of subcommand names, e.g. ("json", "pr", "list").
+    26→        params: JSON-serializable dict piped to stdin.
+    27→    """
+    28→    result = subprocess.run(
+    29→        ["erk", *command_path],
+    30→        input=json.dumps(params),
+
+... [66 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_015HnREreiYwEhGMR3THiFYQ">
+    <param name="file_path">/Users/colton/src/erk/packages/erk-mcp/src/erk_mcp/__main__.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3877" cache_read_input_tokens="21907" cache_creation="{'ephemeral_5m_input_tokens': 3877, 'ephemeral_1h_input_tokens': 0}" output_tokens="18" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_015HnREreiYwEhGMR3THiFYQ">
+     1→import argparse
+     2→import os
+     3→
+     4→from erk_mcp.server import create_mcp
+     5→
+     6→
+     7→def _parse_args(argv: list[str] | None) -&gt; argparse.Namespace:
+     8→    parser = argparse.ArgumentParser(description="Run the Erk MCP server.")
+     9→    parser.add_argument("--host", default=os.getenv("ERK_MCP_HOST", "0.0.0.0"))
+    10→    parser.add_argument("--port", type=int, default=9000)
+    11→    parser.add_argument(
+    12→        "--transport",
+    13→        choices=["streamable-http", "stdio"],
+    14→        default="streamable-http",
+    15→    )
+    16→    return parser.parse_args(argv)
+    17→
+    18→
+    19→def main() -&gt; None:
+    20→    args = _parse_args(None)
+    21→    mcp = create_mcp()
+    22→    if args.transport == "stdio":
+    23→        mcp.run()
+    24→    else:
+    25→        print(f"Starting erk MCP server on http://{args.host}:{args.port}/mcp")
+    26→        mcp.run(transport=args.transport, host=args.host, port=args.port)
+    27→
+    28→
+    29→if __name__ == "__main__":
+    30→    main()
+
+... [6 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01MPsJDCGYLdBiJfG6rVtdYk">
+    <param name="file_path">/Users/colton/src/erk/packages/erk-mcp/tests/test_server.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3877" cache_read_input_tokens="21907" cache_creation="{'ephemeral_5m_input_tokens': 3877, 'ephemeral_1h_input_tokens': 0}" output_tokens="18" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01MPsJDCGYLdBiJfG6rVtdYk">
+     1→"""Tests for erk_mcp.server MCP tools and _run_erk_json wrapper."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→import asyncio
+     6→import subprocess
+     7→from unittest.mock import patch
+     8→
+     9→from erk_mcp.server import (
+    10→    MachineCommandTool,
+    11→    _build_machine_command_tools,
+    12→    _run_erk_json,
+    13→    create_mcp,
+    14→)
+    15→
+    16→
+    17→class TestRunErkJson:
+    18→    """Tests for _run_erk_json subprocess wrapper with command path tuples."""
+    19→
+    20→    @patch("erk_mcp.server.subprocess.run")
+    21→    def test_pipes_json_stdin(self, mock_run: patch) -&gt; None:
+    22→        mock_run.return_value = subprocess.CompletedProcess(
+    23→            args=["erk", "one-shot"],
+    24→            returncode=0,
+    25→            stdout='{"success": true}',
+    26→            stderr="",
+    27→        )
+    28→
+    29→        result = _run_erk_json(("one-shot",), {"prompt": "Fix bug"})
+    30→
+
+... [201 lines omitted] ...
+
+    45→            stdout='{"success": false, "error_type": "auth_required"}',
+    51→        assert result == '{"success": false, "error_type": "auth_required"}'
+  </tool_result>
+  <tool_use name="Read" id="toolu_01R3v71CkRuQFXsRc733t3um">
+    <param name="file_path">/Users/colton/src/erk/packages/erk-mcp/tests/test_main.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3877" cache_read_input_tokens="21907" output_tokens="269" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 3877}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01R3v71CkRuQFXsRc733t3um">
+     1→"""Tests for erk_mcp.__main__ arg parsing and startup."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→from unittest.mock import MagicMock, patch
+     6→
+     7→import pytest
+     8→
+     9→from erk_mcp.__main__ import _parse_args, main
+    10→
+    11→
+    12→class TestParseArgs:
+    13→    """Tests for _parse_args argument parsing."""
+    14→
+    15→    def test_defaults(self) -&gt; None:
+    16→        with patch.dict("os.environ", {}, clear=False):
+    17→            args = _parse_args([])
+    18→        assert args.transport == "streamable-http"
+    19→        assert args.host == "0.0.0.0"
+    20→        assert args.port == 9000
+    21→
+    22→    def test_env_var_host_override(self) -&gt; None:
+    23→        with patch.dict("os.environ", {"ERK_MCP_HOST": "127.0.0.1"}):
+    24→            args = _parse_args([])
+    25→        assert args.host == "127.0.0.1"
+    26→
+    27→    def test_env_var_port_does_not_override_default(self) -&gt; None:
+    28→        with patch.dict("os.environ", {"ERK_MCP_PORT": "8888"}):
+    29→            args = _parse_args([])
+    30→        assert args.port == 9000
+
+... [74 lines omitted] ...
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="6785" cache_read_input_tokens="25784" cache_creation="{'ephemeral_5m_input_tokens': 6785, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <assistant>Let me check the FastMCP middleware API to understand the correct imports:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="6785" cache_read_input_tokens="25784" cache_creation="{'ephemeral_5m_input_tokens': 6785, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <tool_use name="Agent" id="toolu_01LLSHG1q5iv4es9WMYkPZWf">
+    <param name="description">Find FastMCP middleware API</param>
+    <param name="subagent_type">Explore</param>
+    <param name="prompt">Find the FastMCP middleware classes and _current_http_request ContextVar in the installed ...[truncated 347 chars]... or .venv in the erk-mcp package.
+
+Return exact file paths and the relevant code snippets.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6785" cache_read_input_tokens="25784" output_tokens="432" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 6785}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01LLSHG1q5iv4es9WMYkPZWf">
+Perfect! Now I have all the information needed. Let me compile the comprehensive findings:
+
+## Summary: FastMCP Middleware Classes and `_current_http_request` ContextVar
+
+### 1. Middleware Base Class
+
+**File:** `/Users/colton/src/erk/.venv/lib/python3.13/site-packages/fastmcp/server/middleware/middleware.py`
+
+The `Middleware` base class (lines 79-206) provides the foundation for all FastMCP middleware. It has the following key structure:
+
+**Core Method:**
+```python
+async def __call__(
+    self,
+    context: MiddlewareContext[T],
+    call_next: CallNext[T, Any],
+) -&gt; Any:
+    """Main entry point that orchestrates the pipeline."""
+    handler_chain = await self._dispatch_handler(
+        context,
+        call_next=call_next,
+    )
+    return await handler_chain(context)
+```
+
+**Hook Methods (all default to calling `call_next`):**
+- `on_message()` - Called for every message
+- `on_request()` - Called for request-type messages
+- `on_notification()` - Called for notification-type messages
+- `on_initialize()` - For initialize requests
+
+... [103 lines omitted] ...
+
+- `/Users/colton/src/erk/.venv/lib/python3.13/site-packages/fastmcp/server/middleware/error_handling.py`
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="2018" cache_read_input_tokens="32569" cache_creation="{'ephemeral_5m_input_tokens': 2018, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <assistant>Now I have everything I need. Let me implement all the changes.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2018" cache_read_input_tokens="32569" cache_creation="{'ephemeral_5m_input_tokens': 2018, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <tool_use name="Write" id="toolu_01N3fBxqUukwmU9PDHE58Vui">
+    <param name="file_path">/Users/colton/src/erk/packages/erk-mcp/src/erk_mcp/request_context.py</param>
+    <param name="content">"""Per-request ContextVar for GitHub token injection."""
+
+from __future__ import annotatio...[truncated 364 chars]...ithub_token(token: Token[str | None]) -&gt; None:
+    _github_token_for_request.reset(token)
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2018" cache_read_input_tokens="32569" output_tokens="711" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 2018}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01N3fBxqUukwmU9PDHE58Vui">
+File created successfully at: /Users/colton/src/erk/packages/erk-mcp/src/erk_mcp/request_context.py
+  </tool_result>
+  <tool_use name="Write" id="toolu_0168Czy4yG4DHjzUoKfF43Ys">
+    <param name="file_path">/Users/colton/src/erk/packages/erk-mcp/src/erk_mcp/github_token_middleware.py</param>
+    <param name="content">"""Middleware that reads Bearer token from Authorization header into a ContextVar."""
+
+fro...[truncated 1020 chars]...                  reset_request_github_token(tok)
+        return await call_next(context)
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="862" cache_read_input_tokens="34587" output_tokens="405" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 862}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0168Czy4yG4DHjzUoKfF43Ys">
+File created successfully at: /Users/colton/src/erk/packages/erk-mcp/src/erk_mcp/github_token_middleware.py
+  </tool_result>
+  <assistant>Now modify `server.py` to add `env_override` and ContextVar read:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="456" cache_read_input_tokens="35449" cache_creation="{'ephemeral_5m_input_tokens': 456, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_013T92pHTQJ9ZRWLj6rU2kTR">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/colton/src/erk/packages/erk-mcp/src/erk_mcp/server.py</param>
+    <param name="old_string">from __future__ import annotations
+
+import json
+import subprocess
+from typing import TYPE_...[truncated 164 chars]...cp_exposed import discover_mcp_commands
+
+if TYPE_CHECKING:
+    from fastmcp import FastMCP</param>
+    <param name="new_string">from __future__ import annotations
+
+import json
+import os
+import subprocess
+from typing im...[truncated 235 chars]...cp_exposed import discover_mcp_commands
+
+if TYPE_CHECKING:
+    from fastmcp import FastMCP</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="456" cache_read_input_tokens="35449" output_tokens="365" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 456}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_013T92pHTQJ9ZRWLj6rU2kTR">
+The file /Users/colton/src/erk/packages/erk-mcp/src/erk_mcp/server.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01BAtYZhmaoNC4VTiZ7fEbBu">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/colton/src/erk/packages/erk-mcp/src/erk_mcp/server.py</param>
+    <param name="old_string">def _run_erk_json(command_path: tuple[str, ...], params: dict[str, Any]) -&gt; str:
+    """Ru...[truncated 285 chars]...apture_output=True,
+        text=True,
+        check=False,
+    )
+    return result.stdout</param>
+    <param name="new_string">def _run_erk_json(
+    command_path: tuple[str, ...],
+    params: dict[str, Any],
+    *,
+ ...[truncated 472 chars]...  text=True,
+        check=False,
+        env=env_override,
+    )
+    return result.stdout</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="432" cache_read_input_tokens="35905" output_tokens="476" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 432}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01BAtYZhmaoNC4VTiZ7fEbBu">
+The file /Users/colton/src/erk/packages/erk-mcp/src/erk_mcp/server.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_011Wkt4mJmL86Fv4dHpEw27Q">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/colton/src/erk/packages/erk-mcp/src/erk_mcp/server.py</param>
+    <param name="old_string">    async def run(self, arguments: dict[str, Any]) -&gt; ToolResult:
+        params: dict[str...[truncated 159 chars]...d.run_sync(lambda: _run_erk_json(path, params))
+        return self.convert_result(result)</param>
+    <param name="new_string">    async def run(self, arguments: dict[str, Any]) -&gt; ToolResult:
+        params: dict[str...[truncated 332 chars]..._json(path, params, env_override=env_override))
+        return self.convert_result(result)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="543" cache_read_input_tokens="36337" output_tokens="404" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 543}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_011Wkt4mJmL86Fv4dHpEw27Q">
+The file /Users/colton/src/erk/packages/erk-mcp/src/erk_mcp/server.py has been updated successfully.
+  </tool_result>
+  <assistant>Now modify `__main__.py` to wire the middleware:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="452" cache_read_input_tokens="36880" cache_creation="{'ephemeral_5m_input_tokens': 452, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01WJrQWYRSAh35rmYcEcSVMz">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/colton/src/erk/packages/erk-mcp/src/erk_mcp/__main__.py</param>
+    <param name="old_string">import argparse
+import os
+
+from erk_mcp.server import create_mcp</param>
+    <param name="new_string">import argparse
+import os
+
+from erk_mcp.github_token_middleware import GitHubTokenMiddleware
+from erk_mcp.server import create_mcp</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="452" cache_read_input_tokens="36880" output_tokens="192" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 452}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01WJrQWYRSAh35rmYcEcSVMz">
+The file /Users/colton/src/erk/packages/erk-mcp/src/erk_mcp/__main__.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01FGFkdytxoBbRdnBqR8zgBA">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/colton/src/erk/packages/erk-mcp/src/erk_mcp/__main__.py</param>
+    <param name="old_string">def main() -&gt; None:
+    args = _parse_args(None)
+    mcp = create_mcp()
+    if args.transp...[truncated 87 chars]...args.port}/mcp")
+        mcp.run(transport=args.transport, host=args.host, port=args.port)</param>
+    <param name="new_string">def main() -&gt; None:
+    args = _parse_args(None)
+    mcp = create_mcp()
+    if args.transp...[truncated 139 chars]....run(transport=args.transport, host=args.host, port=args.port)
+    else:
+        mcp.run()</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="259" cache_read_input_tokens="37332" output_tokens="354" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 259}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01FGFkdytxoBbRdnBqR8zgBA">
+The file /Users/colton/src/erk/packages/erk-mcp/src/erk_mcp/__main__.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update `test_server.py` to add `env=None` to existing assertions and add new env override tests:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="402" cache_read_input_tokens="37591" cache_creation="{'ephemeral_5m_input_tokens': 402, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01NddcWND5SwLmrP8ptNtGLV">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/colton/src/erk/packages/erk-mcp/tests/test_server.py</param>
+    <param name="old_string">"""Tests for erk_mcp.server MCP tools and _run_erk_json wrapper."""
+
+from __future__ impor...[truncated 94 chars]...MachineCommandTool,
+    _build_machine_command_tools,
+    _run_erk_json,
+    create_mcp,
+)</param>
+    <param name="new_string">"""Tests for erk_mcp.server MCP tools and _run_erk_json wrapper."""
+
+from __future__ impor...[truncated 155 chars]...MachineCommandTool,
+    _build_machine_command_tools,
+    _run_erk_json,
+    create_mcp,
+)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="402" cache_read_input_tokens="37591" output_tokens="346" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 402}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01NddcWND5SwLmrP8ptNtGLV">
+The file /Users/colton/src/erk/packages/erk-mcp/tests/test_server.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update the existing assertions to include `env=None`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="520" cache_read_input_tokens="37993" cache_creation="{'ephemeral_5m_input_tokens': 520, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01Nd7HXkipGQL3W7TyGp2ftj">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/colton/src/erk/packages/erk-mcp/tests/test_server.py</param>
+    <param name="old_string">        mock_run.assert_called_once_with(
+            ["erk", "one-shot"],
+            inp...[truncated 8 chars]...            capture_output=True,
+            text=True,
+            check=False,
+        )</param>
+    <param name="new_string">        mock_run.assert_called_once_with(
+            ["erk", "one-shot"],
+            inp...[truncated 30 chars]...tput=True,
+            text=True,
+            check=False,
+            env=None,
+        )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="520" cache_read_input_tokens="37993" output_tokens="270" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 520}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Nd7HXkipGQL3W7TyGp2ftj">
+The file /Users/colton/src/erk/packages/erk-mcp/tests/test_server.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01BvkuE5WkB6eNxYNn1bqC6B">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/colton/src/erk/packages/erk-mcp/tests/test_server.py</param>
+    <param name="old_string">        mock_run.assert_called_once_with(
+            ["erk", "pr", "list"],
+            i...[truncated 38 chars]...
+            text=True,
+            check=False,
+        )
+
+
+class TestMachineCommandTool:</param>
+    <param name="new_string">        mock_run.assert_called_once_with(
+            ["erk", "pr", "list"],
+            i...[truncated 804 chars]...H_TOKEN": "user-token-abc", "PATH": "/usr/bin"},
+        )
+
+
+class TestMachineCommandTool:</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="314" cache_read_input_tokens="38513" output_tokens="513" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 314}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01BvkuE5WkB6eNxYNn1bqC6B">
+The file /Users/colton/src/erk/packages/erk-mcp/tests/test_server.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update the MachineCommandTool test assertions that check the exact subprocess call (they need `env=None` added):</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="557" cache_read_input_tokens="38827" cache_creation="{'ephemeral_5m_input_tokens': 557, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_017n26Tgu9p7aBHoRcaNPs5J">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/colton/src/erk/packages/erk-mcp/tests/test_server.py</param>
+    <param name="old_string">        mock_run.assert_called_once_with(
+            ["erk", "my-command"],
+            i...[truncated 1 chars]...            capture_output=True,
+            text=True,
+            check=False,
+        )</param>
+    <param name="new_string">        mock_run.assert_called_once_with(
+            ["erk", "my-command"],
+            i...[truncated 23 chars]...tput=True,
+            text=True,
+            check=False,
+            env=None,
+        )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="557" cache_read_input_tokens="38827" output_tokens="283" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 557}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_017n26Tgu9p7aBHoRcaNPs5J">
+The file /Users/colton/src/erk/packages/erk-mcp/tests/test_server.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01Ci6qb5TV7akK9TabsDLe6K">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/colton/src/erk/packages/erk-mcp/tests/test_server.py</param>
+    <param name="old_string">        mock_run.assert_called_once_with(
+            ["erk", "pr", "list"],
+            i...[truncated 54 chars]...t=True,
+            check=False,
+        )
+
+    def test_discovered_tools_include_one_shot</param>
+    <param name="new_string">        mock_run.assert_called_once_with(
+            ["erk", "pr", "list"],
+            i...[truncated 1714 chars]...
+        assert call_kwargs["env"] is None
+
+    def test_discovered_tools_include_one_shot</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="327" cache_read_input_tokens="39384" output_tokens="786" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 327}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Ci6qb5TV7akK9TabsDLe6K">
+The file /Users/colton/src/erk/packages/erk-mcp/tests/test_server.py has been updated successfully.
+  </tool_result>
+  <assistant>Now create the middleware test file:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="830" cache_read_input_tokens="39711" cache_creation="{'ephemeral_5m_input_tokens': 830, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Write" id="toolu_01UXX5E8Kf5amp6U6kPd6PBB">
+    <param name="file_path">/Users/colton/src/erk/packages/erk-mcp/tests/test_github_token_middleware.py</param>
+    <param name="content">"""Tests for GitHubTokenMiddleware Bearer token extraction."""
+
+from __future__ import ann...[truncated 4195 chars]...run(middleware.on_call_tool(context, call_next))
+
+        assert captured_token == [None]
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="830" cache_read_input_tokens="39711" output_tokens="1352" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 830}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01UXX5E8Kf5amp6U6kPd6PBB">
+File created successfully at: /Users/colton/src/erk/packages/erk-mcp/tests/test_github_token_middleware.py
+  </tool_result>
+  <assistant>Now let's run the tests to verify everything works:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1399" cache_read_input_tokens="40541" cache_creation="{'ephemeral_5m_input_tokens': 1399, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <tool_use name="Agent" id="toolu_01DS965oG5WsFgJEq9j4HsbA">
+    <param name="description">Run erk-mcp tests</param>
+    <param name="subagent_type">devrun</param>
+    <param name="prompt">Run the erk-mcp tests and report results. Execute: `cd /Users/colton/src/erk &amp;&amp; uv run pytest packages/erk-mcp/tests/ -v 2&gt;&amp;1` and report all output including any failures.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1399" cache_read_input_tokens="40541" output_tokens="162" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 1399}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01DS965oG5WsFgJEq9j4HsbA">
+pytest passed: All 37 tests passed in 0.96s
+
+**Test Results Summary:**
+- **Total tests**: 37
+- **Passed**: 37
+- **Failed**: 0
+- **Skipped**: 0
+
+All test files passed:
+- `packages/erk-mcp/tests/test_github_token_middleware.py` — 6 tests passed
+- `packages/erk-mcp/tests/test_main.py` — 11 tests passed
+- `packages/erk-mcp/tests/test_server.py` — 20 tests passed
+agentId: a588a14379085d898 (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 13343
+tool_uses: 1
+duration_ms: 4867&lt;/usage&gt;
+  </tool_result>
+  <assistant>All 37 tests pass. Here's a summary of what was implemented:
+
+**New files:**
+- `request_context.py` — ContextVar module (`_github_token_for_request`) with `set/get/reset_request_github_token` helpers
+- `github_token_middleware.py` — `GitHubTokenMiddleware` reads `Authorization: Bearer &lt;token&gt;` via `_current_http_request` and sets the ContextVar around each tool call
+- `tests/test_github_token_middleware.py` — 6 tests covering: token set/reset, exception cleanup, no-header fallback, non-Bearer auth, no HTTP request
+
+**Modified files:**
+- `server.py` — `_run_erk_json` gains `env_override` kwarg; `MachineCommandTool.run()` reads the ContextVar and builds `{**os.environ, "GH_TOKEN": user_token}` when a token is present
+- `__main__.py` — wires `GitHubTokenMiddleware` for non-stdio transports
+- `tests/test_server.py` — updated existing `subprocess.run` assertions to include `env=None`; added `test_env_override_passed_to_subprocess`, `test_injects_user_gh_token_when_context_var_set`, and `test_no_env_override_when_no_context_var`
+
+The dagster-compass changes (storage interface, OAuth flow, per-user token loading) are out of scope for this repo.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="480" cache_read_input_tokens="41940" cache_creation="{'ephemeral_5m_input_tokens': 480, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <system subtype="" duration_ms="" />
+  <user>Provide me with a PR summary for these changes.</user>
+  <tool_use name="Skill" id="toolu_01H87PT8NYFBeqrP4vKQvMpu">
+    <param name="skill">generate-pr-description</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="528" cache_read_input_tokens="42420" output_tokens="56" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 528}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01H87PT8NYFBeqrP4vKQvMpu">
+Launching skill: generate-pr-description
+  </tool_result>
+  <user># Write PR summary
+
+Use `gt ls -s` to determine the last git ref in the stack. View all changes since that ref with `git diff`.
+
+Also view the commit messages with `git log`. Use this context, alongside any session context from what you know about the changes to write a PR summary in Markdown, of the format
+
+```md
+## Summary &amp; Motivation
+
+[Brief summary of changes here, including code sample, if a new API was added, etc.]
+
+## How I Tested These Changes
+
+[Very brief summary of test plan here, e.g. "New unit tests.", "New integration tests.", "Existing test suite." This can be a single sentence.]
+
+## Changelog
+
+[End user facing changelog entry, remove this section if no public-facing API was changed and no bug was fixed. Public-facing APIs are identified by the @public decorator. Ignore minor changes. If there are no user-facing changes, remove this section.]
+```
+
+Use bullet points sparingly, and do not overuse italics/bold text. Use short sentences. Output the new markdown to the user so they can copy and paste it into the PR.
+
+</user>
+  <usage input_tokens="2" cache_creation_input_tokens="331" cache_read_input_tokens="42948" cache_creation="{'ephemeral_5m_input_tokens': 331, 'ephemeral_1h_input_tokens': 0}" output_tokens="0" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01NfsoTqiooZCk5mrHcG51Ln">
+    <param name="command">gt ls -s 2&gt;/dev/null | tail -5</param>
+    <param name="description">Get stack info</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="331" cache_read_input_tokens="42948" cache_creation="{'ephemeral_5m_input_tokens': 331, 'ephemeral_1h_input_tokens': 0}" output_tokens="0" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01NfsoTqiooZCk5mrHcG51Ln">
+◯      P8715-add-erk-mcp-http-transport (needs restack)
+│ ◯    plnd/add-erk-mcp-http-transport-03-04-1048 (needs restack)
+│ │ ◯  plnd/add-mcp-user-attribution-03-11-1041
+◉─┴─┘  master
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01MSCnfReq4LBrTbAVqnn5kt">
+    <param name="command">git log --oneline -10</param>
+    <param name="description">Get recent commits</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="331" cache_read_input_tokens="42948" cache_creation="{'ephemeral_5m_input_tokens': 331, 'ephemeral_1h_input_tokens': 0}" output_tokens="0" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01MSCnfReq4LBrTbAVqnn5kt">
+5c628ddd2 Update test fixtures and assertions for renamed PR fields and types (#9196)
+9a193b43c Sweep plan_number/plan_id refs to pr_number/pr_id in exec scripts and remaining leaf commands (#9186)
+052d4bb0e Make `--stack` a hidden flag on `erk land` (#9193)
+6a1056b81 Fix missing GH_TOKEN in consolidate-learn-plans ci-address job (#9189)
+de46378c1 Rename RoadmapNode `reason` field to `comment` (#9182)
+5b8755fa8 Sweep: Rename plan_id/plan_url/plan_title refs to pr_id/pr_url/pr_title in submit pipeline and dispatch (#9181)
+519e224ad Fix objectives view 'p' shortcut to open objective issue instead of PR (#9177)
+bcc0c2d73 Sweep plan_number/plan_id refs to pr_number/pr_id in land pipeline, implement, and core modules (#9178)
+52067f1ff Add PR status emoji column to Runs tab (#9164)
+82f7c70cf Fix plan ID extraction from result JSON in CI workflows (#9174)
+  </tool_result>
+  <tool_use name="Bash" id="toolu_017mVnrzKa3LVw7GRdodtosj">
+    <param name="command">git diff master...HEAD</param>
+    <param name="description">Get diff since master</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="618" cache_read_input_tokens="43279" output_tokens="76" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 618}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_017mVnrzKa3LVw7GRdodtosj">
+
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01LUvWzDdLNN7zuC6ptWiSyy">
+    <param name="command">git diff plnd/add-erk-mcp-http-transport-03-04-1048...plnd/add-mcp-user-attribution-03-11-1041</param>
+    <param name="description">Get diff for the attribution branch</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="102" cache_read_input_tokens="43897" output_tokens="115" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 102}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01LUvWzDdLNN7zuC6ptWiSyy">
+&lt;persisted-output&gt;
+Output too large (6.3MB). Full output saved to: /Users/colton/.claude/projects/-Users-colton-src-erk/46d30edf-cd68-474c-8a96-eba274850f1d/tool-results/bdmqf55md.txt
+
+Preview (first 2KB):
+diff --git a/.claude/agents/changelog/commit-categorizer.md b/.claude/agents/changelog/commit-categorizer.md
+index 6f529945c..c3a23c1b5 100644
+--- a/.claude/agents/changelog/commit-categorizer.md
++++ b/.claude/agents/changelog/commit-categorizer.md
+@@ -44,7 +44,7 @@ This command:
+     {
+       "hash": "af8fa25c9",
+       "subject": "Fix artifact sync... (#3619)",
+-      "body": "...",
++      "body": "..." (truncated to 300 chars),
+       "files_changed": ["src/erk/artifacts/sync.py", ...],
+       "pr_number": 3619
+     }
+@@ -52,6 +52,8 @@ This command:
+ }
+ ```
+ 
++**Note:** Commit bodies are truncated to 300 characters for context window efficiency. Full file lists are preserved for pattern detection.
++
+ **Error handling:**
+ 
+ If `success` is false and error indicates missing "As of" marker:
+@@ -167,9 +169,10 @@ Example format:
+ - Skill/agent documentation updates - usually internal
+ - "Harden", "Strengthen" - usually internal enforcement
+ 
+
+... [15 lines omitted] ...
+
+-**Exception - capability workflows ARE external-facing:**
++**Exception - bundled workflows and capabilities ARE external-facing:**
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="801" cache_read_input_tokens="43999" cache_creation="{'ephemeral_5m_input_tokens': 801, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <assistant>The diff includes the parent branch changes. Let me get just this branch's changes:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="801" cache_read_input_tokens="43999" cache_creation="{'ephemeral_5m_input_tokens': 801, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_016uKvgrDhGdPmsYb5Bu47Bq">
+    <param name="command">git log plnd/add-erk-mcp-http-transport-03-04-1048..plnd/add-mcp-user-attribution-03-11-1041 --oneline</param>
+    <param name="description">Get commits unique to this branch</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="801" cache_read_input_tokens="43999" cache_creation="{'ephemeral_5m_input_tokens': 801, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_016uKvgrDhGdPmsYb5Bu47Bq">
+2b033ab2d Update plan: Per-User GitHub Attribution for erk-mcp
+63a61b9fa Add plan: Plan: Per-User GitHub Attribution for erk-mcp
+5c628ddd2 Update test fixtures and assertions for renamed PR fields and types (#9196)
+9a193b43c Sweep plan_number/plan_id refs to pr_number/pr_id in exec scripts and remaining leaf commands (#9186)
+052d4bb0e Make `--stack` a hidden flag on `erk land` (#9193)
+6a1056b81 Fix missing GH_TOKEN in consolidate-learn-plans ci-address job (#9189)
+de46378c1 Rename RoadmapNode `reason` field to `comment` (#9182)
+5b8755fa8 Sweep: Rename plan_id/plan_url/plan_title refs to pr_id/pr_url/pr_title in submit pipeline and dispatch (#9181)
+519e224ad Fix objectives view 'p' shortcut to open objective issue instead of PR (#9177)
+bcc0c2d73 Sweep plan_number/plan_id refs to pr_number/pr_id in land pipeline, implement, and core modules (#9178)
+52067f1ff Add PR status emoji column to Runs tab (#9164)
+82f7c70cf Fix plan ID extraction from result JSON in CI workflows (#9174)
+8f0836d45 Remove all `erk-plan-review` label references from workflows, commands, and documentation (#9169)
+27a8d08ef Rename "plan" field terminology to "pr" in commands, skills, and docs (#9156)
+63c9de528 Rename TUI plan types to PR (phase 3, nodes 3.1-3.3) (#9152)
+3ec429ddc Create `erk json objective view` and `erk json objective check` machine commands (#9162)
+9261f93b1 Add cancel and retry commands for workflow runs (#9150)
+aa2b5cca9 Consolidate JSON ↔ dataclass utilities into shared module (#9149)
+a024e215e Simplify plan identification from labels to title prefix (#9119)
+636ea3d02 Implement best-of-both-worlds machine command architecture (#9132)
+80f4e949c Update config schema: rename [plans] section to [github] with backwards compatibility (#9146)
+064a2988e Consolidate workflow dispatch inputs: rename plan_number to pr_number and --plan to --pr (#9144)
+17dfd5e4c Update user-facing help strings and error messages: plan → PR (Objective #9109, Node 2.4) (#9140)
+70f0d48a0 Optimize Runs Tab Initial Load: Replace 7 Sequential API Calls with Parallel Batch Queries (#9133)
+cbcdf9f23 Hide `learn` command from default CLI help output (#9138)
+8cb951415 Push down: Review activity log fetch via new CLI command (#9134)
+fe929afcb Rename Click arguments/options: plan → pr (Objective #9109, Node 2.3) (#9130)
+43983f7af Add `erk stack sync` command for mechanical divergence resolution (#9086)
+04b41baf7 Rename PlanBranchSetup to PlannedBranchSetup for clarity (#9131)
+5b8bb600f Rename JSON output fields in exec scripts: plan → pr (Objective #9109, Phase 2 Node 2.1) (#9120)
+
+... [206 lines omitted] ...
+
+de3dd94d7 Add @json_command decorator with structured JSON I/O and unified error handling (#9013)
+9d78e043d Fix teleport --new-slot to navigate to existing worktree instead of erroring (#8984)
+b01bd9e5f Fix doctor warning display and add artifact allowlist (#8847)
+920368558 Implement persistent CI failure summaries as PR comments with fast-path fetch (#8812)
+d29fd053e Fix StatusBar MarkupError crash from subprocess error display (#8733)
+694b8e5c7 Add "Minimal Exception Scope" standard to dignified-python (#8707)
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01QDS32Wv9YDb6WumQmoccSA">
+    <param name="command">git diff plnd/add-erk-mcp-http-transport-03-04-1048..plnd/add-mcp-user-attribution-03-11-1041 -- packages/erk-mcp/</param>
+    <param name="description">Get diff for erk-mcp package only</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="801" cache_read_input_tokens="43999" output_tokens="302" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 801}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01QDS32Wv9YDb6WumQmoccSA">
+diff --git a/packages/erk-mcp/README.md b/packages/erk-mcp/README.md
+new file mode 100644
+index 000000000..33fefcca2
+--- /dev/null
++++ b/packages/erk-mcp/README.md
+@@ -0,0 +1,41 @@
++# erk-mcp
++
++FastMCP server exposing erk capabilities as MCP tools.
++
++## Running the server
++
++```bash
++uv run erk-mcp
++# Starting erk MCP server on http://0.0.0.0:9000/mcp
++```
++
++### Options
++
++| Flag          | Env var        | Default           | Description                             |
++| ------------- | -------------- | ----------------- | --------------------------------------- |
++| `--transport` | —              | `streamable-http` | Transport: `streamable-http` or `stdio` |
++| `--host`      | `ERK_MCP_HOST` | `0.0.0.0`         | Bind address                            |
++| `--port`      | —              | `9000`            | Port                                    |
++
++```bash
++uv run erk-mcp --port 8080
++uv run erk-mcp --host 127.0.0.1 --port 8080
++uv run erk-mcp --transport stdio
++```
+
+... [603 lines omitted] ...
+
+-        raise RuntimeError(f"erk {' '.join(args)} failed (exit {result.returncode}): {stderr}")
+-    def test_nonzero_exit_raises_runtime_error(self, mock_run: patch) -&gt; None:
++            stdout='{"success": false, "error_type": "auth_required"}',
+-            RuntimeError,
+-            match="erk bad-cmd failed \\(exit 1\\): command not found",
++        assert result == '{"success": false, "error_type": "auth_required"}'
+-    def test_error_message_includes_all_args(self, mock_run: patch) -&gt; None:
+-            stderr="  some error  ",
+-            RuntimeError,
+-            match=r"erk exec dash-data --state open failed \(exit 2\): some error",
+-    def test_propagates_runtime_error(self, mock_run_erk: patch) -&gt; None:
+-        mock_run_erk.side_effect = RuntimeError("erk one-shot failed (exit 1): timeout")
+-        with pytest.raises(RuntimeError, match="timeout"):
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="14545" cache_read_input_tokens="44800" cache_creation="{'ephemeral_5m_input_tokens': 14545, 'ephemeral_1h_input_tokens': 0}" output_tokens="11" service_tier="standard" inference_geo="global" />
+  <assistant>```md
+## Summary &amp; Motivation
+
+erk-mcp is deployed in Kubernetes with a shared GitHub App token (`GH_TOKEN`), so all `one_shot` PRs are attributed to the bot identity (`elementl-devtools`) rather than the human who triggered the action. This PR wires in per-user GitHub attribution by injecting the user's token into the subprocess environment on each tool call.
+
+The mechanism is straightforward: Compass loads a user-scoped GitHub OAuth token and sends it as `Authorization: Bearer &lt;token&gt;` on each MCP request. `GitHubTokenMiddleware` reads that header and stores the token in a ContextVar. `MachineCommandTool.run()` reads the ContextVar and builds an env dict with the user's token as `GH_TOKEN` before spawning the `erk` subprocess:
+
+```python
+user_token = get_request_github_token()
+env_override = {**os.environ, "GH_TOKEN": user_token} if user_token is not None else None
+result = await to_thread.run_sync(lambda: _run_erk_json(path, params, env_override=env_override))
+```
+
+When no user token is present (unconnected user, or stdio transport), `env_override` is `None` and the subprocess inherits the process environment as before — no behavioral change for the bot fallback path.
+
+New files:
+- `request_context.py` — `ContextVar[str | None]` with `set/get/reset_request_github_token` helpers
+- `github_token_middleware.py` — `GitHubTokenMiddleware` extracts `Bearer` token from the `Authorization` header and sets/resets the ContextVar around each `on_call_tool` dispatch
+- `tests/test_github_token_middleware.py` — middleware unit tests
+
+## How I Tested These Changes
+
+New unit tests covering ContextVar set/reset, exception cleanup, fallback with no Authorization header, non-Bearer auth schemes, and subprocess env injection. All 37 tests pass.
+```</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="14545" cache_read_input_tokens="44800" output_tokens="655" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 14545}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <user>Ok what is left in the plan?</user>
+  <usage input_tokens="3" cache_creation_input_tokens="923" cache_read_input_tokens="59345" cache_creation="{'ephemeral_5m_input_tokens': 923, 'ephemeral_1h_input_tokens': 0}" output_tokens="0" service_tier="standard" inference_geo="global" />
+  <assistant>All erk-repo changes are complete. The remaining work is in the **dagster-compass repo**:
+
+| File | Work |
+|---|---|
+| `packages/csbot/src/csbot/slackbot/storage/interface.py` | Add `save_mcp_server_oauth_for_user()` method |
+| `packages/csbot/src/csbot/slackbot/storage/postgresql.py` | Implement it + update `_load_mcp_servers()` to LEFT JOIN user-scoped auth, preferring it over org-scoped |
+| `packages/csbot/src/csbot/slackbot/webapp/mcp_oauth.py` | Update `mcp_oauth_start`/`mcp_oauth_callback` to capture `org_user_id` in OAuth state and call the user-scoped save method |
+| `packages/csbot/src/csbot/agents/anthropic/anthropic_agent.py` | Load MCP servers at request time (not bot startup) with `org_user_id` so users get their own token |
+
+There's also the UX side: surfacing an auth-required prompt to Slack users who haven't connected their GitHub account yet, pointing them to the `mcp_oauth_start` URL.
+
+None of those files are in this repo, so they're out of scope for this PR.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="923" cache_read_input_tokens="59345" output_tokens="665" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 923}" inference_geo="" iterations="[]" speed="standard" />
+  <user>Write a new plan to `dagster-compass` so that I can start this work stream there.</user>
+  <usage input_tokens="3" cache_creation_input_tokens="836" cache_read_input_tokens="60268" cache_creation="{'ephemeral_5m_input_tokens': 836, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <tool_use name="Skill" id="toolu_01Y4CZwiJbjh7hMCrRafxZXp">
+    <param name="skill">erk:plan-save</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="836" cache_read_input_tokens="60268" output_tokens="464" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 836}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Y4CZwiJbjh7hMCrRafxZXp">
+Launching skill: erk:plan-save
+  </tool_result>
+  <user># /erk:plan-save
+
+Save the current session's plan to GitHub with session context.
+
+## Usage
+
+```bash
+/erk:plan-save                           # Standalone plan
+/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+/erk:plan-save --objective=123           # Explicit objective link (overrides marker)
+/erk:plan-save --current-branch          # Use current branch instead of creating new plnd/ branch
+```
+
+Objective linking: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command. Use `--objective=&lt;number&gt;` to override the marker or provide the link when no marker exists (e.g., during replan).
+
+## Plan Storage
+
+The plan is saved using the configured backend:
+
+- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+  The JSON output contract includes `pr_number`, `pr_url`, `title`, `branch_name`, `plan_backend`.
+
+## Agent Instructions
+
+### Step 1: Parse Arguments
+
+Check `` for the `--plan-type`, `--objective`, and `--current-branch` flags:
+
+```
+If  contains "--plan-type=&lt;type&gt;":
+  - Extract the type (standard or learn)
+  - Store as PLAN_TYPE variable
+  - Set PLAN_TYPE_FLAG to "--plan-type=&lt;type&gt;"
+Else:
+  - Set PLAN_TYPE_FLAG to empty string
+
+If  contains "--objective=&lt;number&gt;":
+  - Extract the number
+  - Set OBJECTIVE_FLAG to "--objective=&lt;number&gt;"
+Else:
+  - Set OBJECTIVE_FLAG to empty string
+
+If  contains "--current-branch":
+  - Set CURRENT_BRANCH_FLAG to "--current-branch"
+Else:
+  - Set CURRENT_BRANCH_FLAG to empty string
+```
+
+### Step 2: Generate Branch Slug
+
+**Skip this step if `--current-branch` was passed.** The current branch is used directly.
+
+Before saving, generate a branch slug from the plan title. Read the plan title from the plan file you wrote in plan mode (the first `# ` heading).
+
+Generate a branch slug from the title:
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+
+Store the result as `BRANCH_SLUG`.
+
+### Step 3: Generate Plan Summary
+
+Write a concise 2-3 sentence summary of the plan. This summary will be visible
+at the top of the PR description (above the collapsed full plan).
+
+Guidelines:
+
+- Focus on WHAT the plan does and WHY
+- Do not repeat the title
+- Plain text, no markdown headers or formatting
+- Avoid special shell characters (backticks, dollar signs)
+- Store as PLAN_SUMMARY
+
+### Step 4: Run Save Command
+
+Run this command with the session ID, summary, and optional flags.
+
+If CURRENT_BRANCH_FLAG is set, pass `--current-branch` (no branch slug needed):
+
+```bash
+erk exec plan-save --format json --session-id="46d30edf-cd68-474c-8a96-eba274850f1d" --current-branch --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Otherwise, pass the branch slug:
+
+```bash
+erk exec plan-save --format json --session-id="46d30edf-cd68-474c-8a96-eba274850f1d" --branch-slug="${BRANCH_SLUG}" --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Parse the JSON output to extract `pr_number` for verification in Step 5.
+
+If the command fails, display the error and stop.
+
+### Step 5: Verify Objective Link (if applicable)
+
+**Only run this step if `objective_issue` is non-null in the JSON output from Step 4.**
+
+Verify the objective link was saved correctly:
+
+```bash
+erk exec get-plan-metadata &lt;pr_number&gt; objective_issue
+```
+
+Parse the JSON response:
+
+- If `success: true` and `value` matches the expected objective number: verification passed
+- If `success: false` or value doesn't match: verification failed
+
+**On verification success:**
+
+Display: `Verified objective link: #&lt;objective-number&gt;`
+
+**On verification failure:**
+
+Display error and remediation steps:
+
+```
+ERROR: Objective link verification failed
+Expected objective: #&lt;expected&gt;
+Actual: &lt;actual-or-null&gt;
+
+The plan was saved but without the correct objective link.
+Fix: Close draft PR #&lt;pr_number&gt;,
+ensure the objective-context marker exists, and re-run /erk:plan-save.
+```
+
+Exit without creating the plan-saved marker. The session continues so the user can retry.
+
+### Step 6: Update Objective Roadmap (if objective linked)
+
+**Only run this step if `objective_issue` was non-null in JSON output and verification passed.**
+
+Update the objective's roadmap table to show that a plan has been created for this node:
+
+1. **Read the roadmap node marker** to get the node ID:
+
+```bash
+step_id=$(erk exec marker read --session-id "46d30edf-cd68-474c-8a96-eba274850f1d" roadmap-step)
+```
+
+If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-plan`.
+
+2. **Update the roadmap table** using the dedicated command:
+
+```bash
+erk exec update-objective-node &lt;objective-issue&gt; --node "$step_id" --pr "#&lt;pr_number&gt;" --status in_progress
+```
+
+This atomically fetches the objective body, finds the matching node row, sets the Status cell to `in-progress`, and writes the updated body back.
+
+3. **Report the update:**
+
+Display: `Updated objective #&lt;objective-issue&gt; roadmap: node &lt;step_id&gt; → PR #&lt;pr_number&gt;`
+
+**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+
+### Step 7: Display Results
+
+**If JSON contains `skipped_duplicate: true`:**
+
+Display: `Plan already saved as PR #&lt;pr_number&gt; (duplicate skipped)`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options.
+
+**Otherwise, on success**, display:
+
+```
+Plan "&lt;title&gt;" saved as draft PR #&lt;pr_number&gt;
+URL: &lt;issue_url&gt;
+```
+
+If objective was verified, also display: `Verified objective link: #&lt;objective-number&gt;`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options
+(implement in current worktree, implement in new worktree, or done).
+
+On failure, display the error message and suggest:
+
+- Checking that a plan exists (enter Plan mode and exit it first)
+- Verifying GitHub CLI authentication (`gh auth status`)
+- Checking network connectivity
+
+### Step 5: Push Planning Session
+
+After saving successfully, push the planning session for cross-machine learning.
+This captures the in-progress session state so it's available even if implementation
+happens on a different machine.
+
+Run `erk exec capture-session-info` to get the session file path, then push it:
+
+```bash
+erk exec upload-impl-session --session-id "46d30edf-cd68-474c-8a96-eba274850f1d" 2&gt;/dev/null || true
+```
+
+If the plan was saved successfully and `pr_number` is known, use push-session directly
+for better stage tracking:
+
+```bash
+erk exec push-session \
+    --session-file "&lt;session_file_path&gt;" \
+    --session-id "46d30edf-cd68-474c-8a96-eba274850f1d" \
+    --stage planning \
+    --source local \
+    --pr-number &lt;pr_number&gt; \
+    2&gt;/dev/null || true
+```
+
+Where `&lt;session_file_path&gt;` is obtained from `erk exec capture-session-info` output
+and `&lt;pr_number&gt;` is from Step 2's JSON output.
+
+**Note:** This is non-critical. If it fails, the plan was still saved successfully.
+The `2&gt;/dev/null || true` ensures graceful degradation.
+
+## Session Tracking
+
+After successfully saving a plan, the plan number is stored in a marker file that enables automatic plan updates in the same session.
+
+**To read the saved plan number:**
+
+```bash
+erk exec marker read --session-id "46d30edf-cd68-474c-8a96-eba274850f1d" plan-saved-issue
+```
+
+This returns the plan number (exit code 0) or exits with code 1 if no plan was saved in this session.
+</user>
+  <usage input_tokens="2" cache_creation_input_tokens="2685" cache_read_input_tokens="61104" cache_creation="{'ephemeral_5m_input_tokens': 2685, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <assistant>I'll write the plan document and save it. Let me draft the content first, then run the save command.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="2685" cache_read_input_tokens="61104" cache_creation="{'ephemeral_5m_input_tokens': 2685, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01WBhoApsVmuiWMGTAvw3Pjt">
+    <param name="command">cat &gt; /tmp/dagster-compass-mcp-attribution.md &lt;&lt; 'PLAN_EOF'
+# Plan: Per-User GitHub Attrib...[truncated 5762 chars]...b user; unconnected user sees auth prompt; bot fallback works
+PLAN_EOF
+echo "Plan written"</param>
+    <param name="description">Write dagster-compass plan to temp file</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2685" cache_read_input_tokens="61104" output_tokens="4175" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 2685}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01WBhoApsVmuiWMGTAvw3Pjt">
+Plan written
+  </tool_result>
+  <tool_use name="Bash" id="toolu_019wDBrgt9dJbiWJobeV97dL">
+    <param name="command">erk pr create --help 2&gt;&amp;1 | head -30</param>
+    <param name="description">Check erk pr create flags</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4162" cache_read_input_tokens="63789" output_tokens="88" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 4162}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_019wDBrgt9dJbiWJobeV97dL">
+Usage: erk pr create [OPTIONS]
+
+  Create a plan as a draft PR from markdown content.
+
+  Supports two input modes: - File: --file PATH (recommended for automation) -
+  Stdin: pipe content via shell (for Unix composability)
+
+  Examples:     erk pr create --file plan.md     cat plan.md | erk pr create
+  erk pr create --file plan.md --title "Custom Title"     erk pr create --file
+  plan.md --label bug --label urgent
+
+Options:
+  -f, --file PATH   PR file to read
+  -t, --title TEXT  PR title (default: extract from H1)
+  -l, --label TEXT  Additional labels
+  --summary TEXT    AI-generated summary to display above the collapsed PR
+  -h, --help        Show this message and exit.
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01UswFtNqtWRrNcjvDAjVvMB">
+    <param name="command">PLAN_SUMMARY="Wires per-user GitHub OAuth tokens into dagster-compass's MCP infrastructure...[truncated 339 chars]...rk pr create --file /tmp/dagster-compass-mcp-attribution.md --summary "$PLAN_SUMMARY" 2&gt;&amp;1</param>
+    <param name="description">Save plan as draft PR</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="291" cache_read_input_tokens="67951" output_tokens="211" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 291}" inference_geo="" iterations="[]" speed="standard" />
+</session>
