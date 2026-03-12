@@ -25,6 +25,8 @@ def codex_portable_skills() -> frozenset[str]:
             "dignified-code-simplifier",
             "pr-operations",
             "pr-feedback-classifier",
+            # Tombstone: distributed to all repos to overwrite stale copies
+            "erk-planning",
         }
     )
 
