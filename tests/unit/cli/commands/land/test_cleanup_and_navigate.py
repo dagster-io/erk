@@ -968,6 +968,84 @@ def test_cleanup_and_navigate_skip_activation_output_with_up_flag(
     )
 
 
+def test_cleanup_and_navigate_execute_mode_up_outputs_worktree_path(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """Test that execute mode with --up resolves worktree and outputs path to stdout.
+
+    Regression test for bug where skip_activation_output=True with --up exited
+    immediately without resolving the worktree or outputting the cd target path.
+    The shell script captures stdout via TARGET_DIR=$(...) for the cd command.
+    """
+    worktree_path = tmp_path / "worktrees" / "feature-branch"
+    worktree_path.mkdir(parents=True)
+    child_worktree_path = tmp_path / "worktrees" / "child-branch"
+    child_worktree_path.mkdir(parents=True)
+    main_repo_root = tmp_path
+    (main_repo_root / ".git").mkdir()
+
+    fake_git = FakeGit(
+        worktrees={
+            main_repo_root: [
+                WorktreeInfo(path=worktree_path, branch="feature-branch"),
+                WorktreeInfo(path=child_worktree_path, branch="child-branch"),
+            ]
+        },
+        git_common_dirs={main_repo_root: main_repo_root / ".git"},
+        default_branches={main_repo_root: "main"},
+        local_branches={main_repo_root: ["main", "feature-branch", "child-branch"]},
+        existing_paths={
+            worktree_path,
+            child_worktree_path,
+            main_repo_root,
+            main_repo_root / ".git",
+        },
+    )
+
+    ctx = context_for_test(
+        git=fake_git,
+        graphite=GraphiteDisabled(reason=GraphiteDisabledReason.CONFIG_DISABLED),
+        cwd=worktree_path,
+    )
+
+    repo = RepoContext(
+        root=main_repo_root,
+        repo_name="test-repo",
+        repo_dir=main_repo_root,
+        worktrees_dir=tmp_path / "worktrees",
+        pool_json_path=main_repo_root / "pool.json",
+        github=GitHubRepoId(owner="owner", repo="repo"),
+    )
+
+    # Call with skip_activation_output=True (execute mode) and is_current_branch=True
+    # This simulates: sourcing land.sh from the branch's own worktree with --up
+    try:
+        _cleanup_and_navigate(
+            ctx=ctx,
+            repo=repo,
+            branch="feature-branch",
+            worktree_path=None,
+            script=False,
+            pull_flag=False,
+            force=True,
+            is_current_branch=True,
+            target_child_branch="child-branch",
+            no_delete=False,
+            skip_activation_output=True,
+            cleanup_confirmed=True,
+        )
+    except SystemExit as e:
+        assert e.code == 0
+
+    captured = capsys.readouterr()
+
+    # Stdout should contain the resolved child worktree path (captured by TARGET_DIR=$(...))
+    assert str(child_worktree_path) in captured.out, (
+        f"Expected child worktree path in stdout. Got: {captured.out!r}"
+    )
+
+
 def test_cleanup_and_navigate_non_slot_worktree_removes_worktree_not_current_branch(
     tmp_path: Path,
 ) -> None:

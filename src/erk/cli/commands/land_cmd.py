@@ -1062,19 +1062,19 @@ def _land_target(
 
     # Step 4: Determine target path for navigation after landing
     if target.target_child_branch is not None:
-        # --up mode: navigate to child branch worktree
-        target_path = ctx.git.worktree.find_worktree_for_branch(
-            main_repo_root, target.target_child_branch
-        )
-        if target_path is None:
-            # Will auto-create worktree in execute phase
-            if repo.worktrees_dir:
-                target_path = repo.worktrees_dir / target.target_child_branch
-            else:
-                target_path = main_repo_root
+        # --up mode: defer path resolution to execute time.
+        # We can't reliably predict the path at validation time because:
+        # 1. The branch name may contain '/' (e.g., plnd/fix-foo), making the
+        #    worktrees_dir / branch_name fallback produce a nested path.
+        # 2. The worktree may not exist yet and needs slot allocation at execute time.
+        # The execute phase (_navigate_after_land) resolves/creates the worktree and
+        # outputs the path to stdout; the shell script captures it via TARGET_DIR=$(...).
+        target_path = None
+        upstack_navigation = True
     else:
         # Navigate to trunk/root
         target_path = main_repo_root
+        upstack_navigation = False
 
     # Step 5: Handle dry-run mode
     if ctx.dry_run:
@@ -1082,7 +1082,12 @@ def _land_target(
         if slot_assignment is not None:
             user_output(f"Would unassign slot '{slot_assignment.slot_name}'")
         user_output(f"Would delete branch '{branch}'")
-        user_output(f"Would navigate to {target_path}")
+        if upstack_navigation:
+            user_output(
+                f"Would navigate upstack to child branch '{target.target_child_branch}'"
+            )
+        else:
+            user_output(f"Would navigate to {target_path}")
         user_output(f"\n{click.style('[DRY RUN] No changes made', fg='yellow', bold=True)}")
         raise SystemExit(0)
 
@@ -1100,6 +1105,7 @@ def _land_target(
         skip_learn=skip_learn,
         cleanup_confirmed=cleanup_confirmed,
         target_path=target_path,
+        upstack_navigation=upstack_navigation,
     )
 
     # Write script to .erk/bin/land.sh
@@ -1224,8 +1230,30 @@ def _navigate_after_land(
     post_deletion_repo = replace(repo, root=main_repo_root)
 
     if target_child_branch is not None:
-        # Skip activation output in execute mode (script's cd command handles navigation)
         if skip_activation_output:
+            # Execute mode: resolve/create worktree and output path to stdout
+            # The shell script captures this via TARGET_DIR=$(...) and runs cd "$TARGET_DIR"
+            target_path = ctx.git.worktree.find_worktree_for_branch(
+                main_repo_root, target_child_branch
+            )
+            if target_path is None:
+                # Auto-create worktree for child via slot allocation
+                target_path, _ = ensure_branch_has_worktree(
+                    ctx,
+                    post_deletion_repo,
+                    branch_name=target_child_branch,
+                    no_slot=False,
+                    force=False,
+                )
+            # Suggest running gt restack --downstack to update child branch's PR base
+            # Use --downstack to only restack the current branch, avoiding errors if
+            # upstack branches are checked out in other worktrees
+            user_output(
+                click.style("💡", fg="cyan")
+                + f" Run 'gt restack --downstack' in {target_child_branch} to update PR base"
+            )
+            # Output path to stdout — captured by shell script's TARGET_DIR=$(...) substitution
+            machine_output(str(target_path), nl=False)
             raise SystemExit(0)
         target_path = ctx.git.worktree.find_worktree_for_branch(main_repo_root, target_child_branch)
         if target_path is None:
@@ -1314,7 +1342,8 @@ def render_land_execution_script(
     use_graphite: bool,
     skip_learn: bool,
     cleanup_confirmed: bool,
-    target_path: Path,
+    target_path: Path | None,
+    upstack_navigation: bool,
 ) -> str:
     """Generate shell script that executes land and navigates.
 
@@ -1352,6 +1381,13 @@ def render_land_execution_script(
     - --no-delete: preserve branch/slot
     - -f: passed for documentation (execute mode is already non-interactive)
 
+    **Upstack navigation (--up mode):**
+    When upstack_navigation=True, the target path can't be reliably predicted at
+    validation time (branch may contain '/' causing nested path issues, or no worktree
+    exists yet). Instead, we use command substitution: the execute command resolves
+    and/or creates the worktree, then outputs the path to stdout which the script
+    captures and uses for cd.
+
     Args:
         pr_number: PR number to merge (not used directly, passed as arg)
         branch: Branch name being landed (not used directly, passed as arg)
@@ -1359,7 +1395,8 @@ def render_land_execution_script(
         is_current_branch: Whether landing from the branch's own worktree
         objective_number: Linked objective issue number (if any)
         use_graphite: Whether to use Graphite for merge
-        target_path: Where to cd after land completes
+        target_path: Where to cd after land completes (None when upstack_navigation=True)
+        upstack_navigation: If True, capture stdout from land-execute to get the cd target
 
     Returns:
         Shell script content as string
@@ -1391,7 +1428,14 @@ def render_land_execution_script(
     cmd_parts.append('"$@"')
 
     erk_cmd = " ".join(cmd_parts)
-    target_path_str = str(target_path)
+
+    if upstack_navigation:
+        # Capture stdout from land-execute — it outputs the resolved worktree path
+        # user_output() writes to stderr (visible), machine_output() writes to stdout (captured)
+        navigate_line = f'TARGET_DIR=$({erk_cmd}) || return 1\ncd "$TARGET_DIR"'
+    else:
+        target_path_str = str(target_path)
+        navigate_line = f"{erk_cmd} || return 1\ncd {target_path_str}"
 
     return f"""# erk land deferred execution
 # Usage: source land.sh <pr_number> <branch> [flags...]
@@ -1399,8 +1443,7 @@ PR_NUMBER="${{1:?Error: PR number required}}"
 BRANCH="${{2:?Error: Branch name required}}"
 shift 2
 
-{erk_cmd} || return 1
-cd {target_path_str}
+{navigate_line}
 """
 
 
