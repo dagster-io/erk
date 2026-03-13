@@ -1,0 +1,1051 @@
+<session>
+  <meta branch="plnd/O9109-update-test-plan-to-03-10-2146" />
+  <meta model="claude-opus-4-6" />
+  <tool_use name="Agent" id="toolu_01VUPxjEeRJ4RXEjTxZMa6J7">
+    <param name="description">Rename plan→pr in land/pipeline/test_resolve_plan_id.py</param>
+    <param name="model">haiku</param>
+    <param name="prompt">In the file `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/tests/unit/cli/commands/...[truncated 677 chars]...l renames using the Edit tool. Use replace_all=true when a pattern appears multiple times.</param>
+    <param name="run_in_background">True</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="101022" cache_read_input_tokens="12785" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 101022}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01VUPxjEeRJ4RXEjTxZMa6J7">
+Async agent launched successfully.
+agentId: a7b239f2dbb34e445 (internal ID - do not mention to user. Use to resume later if needed.)
+The agent is working in the background. You will be notified automatically when it completes.
+Do not duplicate this agent's work — avoid working with the same files or topics it is using. Work on non-overlapping tasks, or briefly tell the user what you launched and end your response.
+output_file: /private/tmp/claude-501/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-49/tasks/a7b239f2dbb34e445.output
+If asked, you can check progress before completion by using Read or Bash tail on the output file.
+  </tool_result>
+  <tool_use name="Agent" id="toolu_01THC1PknuHAxQoLjwqq4Ggx">
+    <param name="description">Rename plan→pr in unit/cli/test_admin_test_workflow.py</param>
+    <param name="model">haiku</param>
+    <param name="prompt">In the file `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/tests/unit/cli/commands/...[truncated 667 chars]...l renames using the Edit tool. Use replace_all=true when a pattern appears multiple times.</param>
+    <param name="run_in_background">True</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="101022" cache_read_input_tokens="12785" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 101022}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01THC1PknuHAxQoLjwqq4Ggx">
+Async agent launched successfully.
+agentId: a0f88fcee746b1862 (internal ID - do not mention to user. Use to resume later if needed.)
+The agent is working in the background. You will be notified automatically when it completes.
+Do not duplicate this agent's work — avoid working with the same files or topics it is using. Work on non-overlapping tasks, or briefly tell the user what you launched and end your response.
+output_file: /private/tmp/claude-501/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-49/tasks/a0f88fcee746b1862.output
+If asked, you can check progress before completion by using Read or Bash tail on the output file.
+  </tool_result>
+  <tool_use name="Agent" id="toolu_01HbkD5pJpd59F1igNcvn9oE">
+    <param name="description">Rename plan→pr in unit/commands/wt/test_list_helpers.py</param>
+    <param name="model">haiku</param>
+    <param name="prompt">In the file `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/tests/unit/commands/wt/t...[truncated 659 chars]...l renames using the Edit tool. Use replace_all=true when a pattern appears multiple times.</param>
+    <param name="run_in_background">True</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="101022" cache_read_input_tokens="12785" output_tokens="2838" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 101022, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01HbkD5pJpd59F1igNcvn9oE">
+Async agent launched successfully.
+agentId: ac1f202b49af7bc08 (internal ID - do not mention to user. Use to resume later if needed.)
+The agent is working in the background. You will be notified automatically when it completes.
+Do not duplicate this agent's work — avoid working with the same files or topics it is using. Work on non-overlapping tasks, or briefly tell the user what you launched and end your response.
+output_file: /private/tmp/claude-501/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-49/tasks/ac1f202b49af7bc08.output
+If asked, you can check progress before completion by using Read or Bash tail on the output file.
+  </tool_result>
+  <assistant>All **67 agents** launched across 5 batches. Summary:
+- **Batch 1**: 15 agents (fakes, helpers, core, unit tests)
+- **Batch 2**: 15 agents (more unit + command tests)
+- **Batch 3**: 15 agents (commands, TUI, start of exec scripts)
+- **Batch 4**: 15 agents (exec scripts + PR/land unit tests)
+- **Batch 5**: 7 agents (remaining land/PR unit tests)
+
+**Skipped** (4 files with intentional references):
+- `tests/commands/run/test_shared.py` — tests `extract_plan_number`
+- `tests/core/test_plan_duplicate_checker.py` — `"plan_id"` is LLM JSON format
+- `tests/core/utils/test_naming.py` — tests `validate_plan_title`
+- `tests/unit/cli/commands/exec/scripts/test_validate_plan_content.py` — "plan" as noun
+
+Waiting for all agents to complete before running verification...</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="4244" cache_read_input_tokens="113807" output_tokens="263" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 4244, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;task-notification&gt;
+&lt;task-id&gt;a07fa18af43a00cf1&lt;/task-id&gt;
+&lt;tool-use-id&gt;toolu_01Xtf1CTL37J2any21jYhmSL&lt;/tool-use-id&gt;
+&lt;output-file&gt;/private/tmp/claude-501/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-49/tasks/a07fa18af43a00cf1.output&lt;/output-file&gt;
+&lt;status&gt;completed&lt;/status&gt;
+&lt;summary&gt;Agent "Rename plan→pr in fakes/gateway/github_issues.py" completed&lt;/summary&gt;
+&lt;result&gt;Excellent! The rename has been completed successfully. 
+
+## Summary
+
+I've successfully renamed the identifiers in `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/tests/fakes/gateway/github_issues.py`:
+
+**Changes made:**
+- Parameter `plan_number` → `pr_number` in the `get_prs_referencing_issue` method (line 448)
+- Updated the method body to use the new `pr_number` parameter (line 456)
+
+The file contained only one occurrence of `plan_number` (as a parameter), which has been successfully renamed. No other target identifiers (`plan_numbers`, `plan_num`, `plan_id`, `plan_url`, `plan_title`, `plan_identifier`) were found in this file.&lt;/result&gt;
+&lt;usage&gt;&lt;total_tokens&gt;26260&lt;/total_tokens&gt;&lt;tool_uses&gt;3&lt;/tool_uses&gt;&lt;duration_ms&gt;12737&lt;/duration_ms&gt;&lt;/usage&gt;
+&lt;/task-notification&gt;
+Full transcript available at: /private/tmp/claude-501/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-49/tasks/a07fa18af43a00cf1.output</user>
+  <user>&lt;task-notification&gt;
+&lt;task-id&gt;a96e312362fa38875&lt;/task-id&gt;
+&lt;tool-use-id&gt;toolu_014stevmh4RLeoF8iNedaaYD&lt;/tool-use-id&gt;
+&lt;output-file&gt;/private/tmp/claude-501/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-49/tasks/a96e312362fa38875.output&lt;/output-file&gt;
+&lt;status&gt;completed&lt;/status&gt;
+&lt;summary&gt;Agent "Rename plan→pr in core/test_prompt_executor.py" completed&lt;/summary&gt;
+&lt;result&gt;Perfect. The file has been successfully updated. I've renamed the two string keys that contained `plan_number` to `pr_number`:
+
+1. Line 25: `"plan_number": 456,` → `"pr_number": 456,`
+2. Line 63: `"plan_number": 101,` → `"pr_number": 101,`
+
+All other identifiers in the file already use the `pr_` prefix format (pr_number, pr_url, pr_title, etc.). The function names (extract_plan_number, extract_learn_plan_number, validate_plan_title) and class/type names were correctly left unchanged per the requirements. The word "plan" as a noun in docstrings and comments was also left unchanged as instructed.&lt;/result&gt;
+&lt;usage&gt;&lt;total_tokens&gt;30361&lt;/total_tokens&gt;&lt;tool_uses&gt;4&lt;/tool_uses&gt;&lt;duration_ms&gt;12945&lt;/duration_ms&gt;&lt;/usage&gt;
+&lt;/task-notification&gt;
+Full transcript available at: /private/tmp/claude-501/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-49/tasks/a96e312362fa38875.output</user>
+  <user>&lt;task-notification&gt;
+&lt;task-id&gt;a6e5d0f02a8b44716&lt;/task-id&gt;
+&lt;tool-use-id&gt;toolu_01Ru2DjxfxveR9wxXwMFVbHz&lt;/tool-use-id&gt;
+&lt;output-file&gt;/private/tmp/claude-501/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-49/tasks/a6e5d0f02a8b44716.output&lt;/output-file&gt;
+&lt;status&gt;completed&lt;/status&gt;
+&lt;summary&gt;Agent "Rename plan→pr in test_utils/plan_helpers.py" completed&lt;/summary&gt;
+&lt;result&gt;Perfect! The changes have been successfully applied. Let me create a summary of what was done:
+
+## Summary
+
+I have successfully renamed the identifiers in `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/tests/test_utils/plan_helpers.py`:
+
+**Changes applied:**
+1. **Variable name**: `plan_id` → `pr_id` (line 104)
+2. **Docstring reference**: `plan_identifier` → `pr_identifier` (line 92)
+
+**Items correctly preserved (not renamed):**
+- Function names: `extract_plan_number`, `extract_learn_plan_number`, `validate_plan_title` (not present in this file)
+- Class/type names: `Plan`, `PlannedPRBackend`, `PlanState`, etc.
+- Import statements and module paths
+- The word "plan" as a noun in comments (e.g., "plan body", "plan-header", "plan content")
+- Constant names and strings related to "plan" metadata structure
+
+The file now uses `pr_id` and `pr_identifier` consistently in variable names and documentation while preserving all semantic references to "plan" as a concept and in structural names.&lt;/result&gt;
+&lt;usage&gt;&lt;total_tokens&gt;28106&lt;/total_tokens&gt;&lt;tool_uses&gt;3&lt;/tool_uses&gt;&lt;duration_ms&gt;15212&lt;/duration_ms&gt;&lt;/usage&gt;
+&lt;/task-notification&gt;
+Full transcript available at: /private/tmp/claude-501/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-49/tasks/a6e5d0f02a8b44716.output</user>
+  <user>&lt;task-notification&gt;
+&lt;task-id&gt;a30a9ba22e19d07c2&lt;/task-id&gt;
+&lt;tool-use-id&gt;toolu_019JqRfmtEhJo9hSRZ2SojLR&lt;/tool-use-id&gt;
+&lt;output-file&gt;/private/tmp/claude-501/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-49/tasks/a30a9ba22e19d07c2.output&lt;/output-file&gt;
+&lt;status&gt;completed&lt;/status&gt;
+&lt;summary&gt;Agent "Rename plan→pr in fakes/gateway/shell.py" completed&lt;/summary&gt;
+&lt;result&gt;Perfect! All renames have been successfully applied. Here's a summary of the changes made to `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/tests/fakes/gateway/shell.py`:
+
+**Renames Applied:**
+- `extraction_plan_url` parameter → `extraction_pr_url` (line 63)
+- `_extraction_plan_url` instance variable → `_extraction_pr_url` (line 85)
+- Updated docstring references:
+  - Line 77: parameter documentation
+  - Line 107: method documentation
+
+**Preserved (as instructed):**
+- Function names: `run_claude_extraction_plan` unchanged
+- Class names: `FakeShell`, `SpawnSubshellCall` unchanged
+- Import statements: unchanged
+- The word "plan" used as a noun in docstrings: unchanged
+
+All renames are complete and the file is syntactically correct.&lt;/result&gt;
+&lt;usage&gt;&lt;total_tokens&gt;25353&lt;/total_tokens&gt;&lt;tool_uses&gt;6&lt;/tool_uses&gt;&lt;duration_ms&gt;26942&lt;/duration_ms&gt;&lt;/usage&gt;
+&lt;/task-notification&gt;
+Full transcript available at: /private/tmp/claude-501/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-49/tasks/a30a9ba22e19d07c2.output</user>
+  <user>&lt;task-notification&gt;
+&lt;task-id&gt;afcedd7aa3fefedb6&lt;/task-id&gt;
+&lt;tool-use-id&gt;toolu_011po2c3nk1TT4StNwDHCKdR&lt;/tool-use-id&gt;
+&lt;output-file&gt;/private/tmp/claude-501/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-49/tasks/afcedd7aa3fefedb6.output&lt;/output-file&gt;
+&lt;status&gt;completed&lt;/status&gt;
+&lt;summary&gt;Agent "Rename plan→pr in unit/sessions/test_manifest.py" completed&lt;/summary&gt;
+&lt;result&gt;Perfect! I've successfully renamed all the identifiers in the file. Here's a summary of the changes made:
+
+## Summary
+
+Renamed identifiers in `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/tests/unit/sessions/test_manifest.py`:
+
+- Line 44: `"plan_id"` → `"pr_id"` (string key in manifest dict)
+- Line 69: `result["plan_id"]` → `result["pr_id"]` (dict access in assertion)
+
+The file contained only these two instances of identifiers from the requested rename list. No other renames were needed as the file doesn't contain references to `plan_number`, `plan_numbers`, `plan_num`, `plan_url`, `plan_title`, or `plan_identifier`.
+
+The changes preserve all function names, class/type names, imports, and the word "plan" as a noun in comments and strings, as instructed.&lt;/result&gt;
+&lt;usage&gt;&lt;total_tokens&gt;23106&lt;/total_tokens&gt;&lt;tool_uses&gt;4&lt;/tool_uses&gt;&lt;duration_ms&gt;15460&lt;/duration_ms&gt;&lt;/usage&gt;
+&lt;/task-notification&gt;
+Full transcript available at: /private/tmp/claude-501/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-49/tasks/afcedd7aa3fefedb6.output</user>
+  <user>&lt;task-notification&gt;
+&lt;task-id&gt;a47dc5ba99800ec19&lt;/task-id&gt;
+&lt;tool-use-id&gt;toolu_014WFxcTVMWNEosp8iDvM5rU&lt;/tool-use-id&gt;
+&lt;output-file&gt;/private/tmp/claude-501/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-49/tasks/a47dc5ba99800ec19.output&lt;/output-file&gt;
+&lt;status&gt;completed&lt;/status&gt;
+&lt;summary&gt;Agent "Rename plan→pr in unit/status/test_impl_collector.py" completed&lt;/summary&gt;
+&lt;result&gt;Perfect! I've completed the renaming in the file. Here's a summary of the changes made:
+
+## Renames Applied
+
+In `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/tests/unit/status/test_impl_collector.py`:
+
+- **Line 60**: `plan_id="42"` → `pr_id="42"` (parameter name in `save_plan_ref()` call)
+
+The file already had the following identifiers in their new form (no changes needed):
+- `result.pr_number` (lines 28, 46, 75, 98) - already using new name
+- `result.pr_url` (lines 29, 47, 76, 99) - already using new name
+
+No changes were made to:
+- Function names (`PlanFileCollector`, `create_impl_folder`, `save_plan_ref`) - these are not in the rename list
+- Class/type names containing "Plan" (`PlanFileCollector`, `PlanStatus`)
+- Import statements
+- The word "plan" used as a noun in comments and strings
+- Module/file paths
+
+All required renames have been completed successfully.&lt;/result&gt;
+&lt;usage&gt;&lt;total_tokens&gt;23906&lt;/total_tokens&gt;&lt;tool_uses&gt;3&lt;/tool_uses&gt;&lt;duration_ms&gt;15651&lt;/duration_ms&gt;&lt;/usage&gt;
+&lt;/task-notification&gt;
+Full transcript available at: /private/tmp/claude-501/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-49/tasks/a47dc5ba99800ec19.output</user>
+  <user>&lt;task-notification&gt;
+&lt;task-id&gt;aade87420e544b089&lt;/task-id&gt;
+&lt;tool-use-id&gt;toolu_01Gts2um9w7ozxhnKAxNcrUV&lt;/tool-use-id&gt;
+&lt;output-file&gt;/private/tmp/claude-501/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-49/tasks/aade87420e544b089.output&lt;/output-file&gt;
+&lt;status&gt;completed&lt;/status&gt;
+&lt;summary&gt;Agent "Rename plan→pr in unit/shared/test_next_steps.py" completed&lt;/summary&gt;
+&lt;result&gt;Perfect! I've completed the renaming in the test file. Here's a summary of what was changed:
+
+**File:** `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/tests/unit/shared/test_next_steps.py`
+
+**Changes made:**
+1. `test_dispatch_uses_plan_number` → `test_dispatch_uses_pr_number` (line 24)
+2. `test_checkout_uses_plan_number` → `test_checkout_uses_pr_number` (line 31)
+
+The rest of the file was already correctly using `pr_number` in parameter names and function calls. The function names `extract_plan_number`, `extract_learn_plan_number`, and `validate_plan_title` were not renamed as instructed (they are function names that should be preserved), and the class names like `PlanNextSteps` were also not renamed (they are class/type names containing "Plan").&lt;/result&gt;
+&lt;usage&gt;&lt;total_tokens&gt;22904&lt;/total_tokens&gt;&lt;tool_uses&gt;3&lt;/tool_uses&gt;&lt;duration_ms&gt;11792&lt;/duration_ms&gt;&lt;/usage&gt;
+&lt;/task-notification&gt;
+Full transcript available at: /private/tmp/claude-501/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-49/tasks/aade87420e544b089.output</user>
+  <user>&lt;task-notification&gt;
+&lt;task-id&gt;a8f058f56ff24c937&lt;/task-id&gt;
+&lt;tool-use-id&gt;toolu_01JPHWoRfXhAHVxhLAPGwySC&lt;/tool-use-id&gt;
+&lt;output-file&gt;/private/tmp/claude-501/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-49/tasks/a8f058f56ff24c937.output&lt;/output-file&gt;
+&lt;status&gt;completed&lt;/status&gt;
+&lt;summary&gt;Agent "Rename plan→pr in core/test_impl_issue_wt_workflow.py" completed&lt;/summary&gt;
+&lt;result&gt;Excellent! The task is complete. I've successfully renamed all required identifiers in the file:
+
+**Summary of Changes:**
+
+File: `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/tests/core/test_impl_issue_wt_workflow.py`
+
+**Renamed identifiers:**
+- `plan_id` → `pr_id` (4 occurrences at lines 35, 63, 87, and 135)
+
+**Preserved items (as instructed):**
+- Function names like `save_plan_ref`, `read_plan_ref`, `has_plan_ref` remain unchanged
+- Test function names remain unchanged
+- The word "plan" as a noun in docstrings and comments remains unchanged
+- Module paths and imports remain unchanged
+- All other naming patterns not specified in the requirements remain unchanged
+
+All changes have been applied cleanly with no other identifiers affected.&lt;/result&gt;
+&lt;usage&gt;&lt;total_tokens&gt;31844&lt;/total_tokens&gt;&lt;tool_uses&gt;9&lt;/tool_uses&gt;&lt;duration_ms&gt;25605&lt;/duration_ms&gt;&lt;/usage&gt;
+&lt;/task-notification&gt;
+Full transcript available at: /private/tmp/claude-501/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-49/tasks/a8f058f56ff24c937.output</user>
+  <user>&lt;task-notification&gt;
+&lt;task-id&gt;a75b64619fac76377&lt;/task-id&gt;
+&lt;tool-use-id&gt;toolu_01DM9xLU8fwRt6nMVwwM2KkA&lt;/tool-use-id&gt;
+&lt;output-file&gt;/private/tmp/claude-501/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-49/tasks/a75b64619fac76377.output&lt;/output-file&gt;
+&lt;status&gt;completed&lt;/status&gt;
+&lt;summary&gt;Agent "Rename plan→pr in fakes/gateway/github.py" completed&lt;/summary&gt;
+&lt;result&gt;Perfect! All renames have been completed successfully. Here's a summary of the changes made to `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/tests/fakes/gateway/github.py`:
+
+## Changes Applied
+
+1. **Line 97 (docstring):** Renamed `plan_number` → `pr_number` in the `pr_plan_linkages` mapping description
+
+2. **Line 483 (method parameter):** Renamed `plan_numbers` → `pr_numbers` in `get_prs_linked_to_issues()` method signature
+
+3. **Line 487 (docstring):** Updated comment from `plan_numbers` → `pr_numbers` in the docstring
+
+4. **Lines 494-496 (loop variable and references):** Renamed `plan_num` → `pr_num` in the method body
+
+5. **Line 1243 (method parameter):** Renamed `plan_numbers` → `pr_numbers` in `get_issues_by_numbers_with_pr_linkages()` method signature
+
+6. **Line 1249 (docstring):** Updated parameter documentation to use `pr_numbers`
+
+7. **Lines 1254 and 1257 (method body):** Updated all references from `plan_numbers` → `pr_numbers`
+
+All identifier renames have been completed as requested. The file now uses `pr_number`, `pr_numbers`, and `pr_num` consistently, while preserving:
+- Function names (extract_plan_number, extract_learn_plan_number, validate_plan_title)
+- Class/type names (PlanState, Plan, PlanMetadata)
+- The noun "plan" in comments describing plan content
+- Module paths and imports&lt;/result&gt;
+&lt;usage&gt;&lt;total_tokens&gt;28587&lt;/total_tokens&gt;&lt;tool_uses&gt;15&lt;/tool_uses&gt;&lt;duration_ms&gt;45122&lt;/duration_ms&gt;&lt;/usage&gt;
+&lt;/task-notification&gt;
+Full transcript available at: /private/tmp/claude-501/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-49/tasks/a75b64619fac76377.output</user>
+  <user>&lt;task-notification&gt;
+&lt;task-id&gt;a47dfdf04d2941a62&lt;/task-id&gt;
+&lt;tool-use-id&gt;toolu_01DdhsyS9iAHk8EsDG9SMQJg&lt;/tool-use-id&gt;
+&lt;output-file&gt;/private/tmp/claude-501/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-49/tasks/a47dfdf04d2941a62.output&lt;/output-file&gt;
+&lt;status&gt;completed&lt;/status&gt;
+&lt;summary&gt;Agent "Rename plan→pr in unit/shared/test_plan_workflow.py" completed&lt;/summary&gt;
+&lt;result&gt;Perfect! All the required renames have been successfully applied. Let me summarize the changes made:
+
+## Summary
+
+Successfully renamed identifiers in `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/tests/unit/shared/test_plan_workflow.py`:
+
+**Changes made:**
+1. Line 88: Updated docstring "plan number int" → "pr number int"
+2. Lines 98-99: `result.plan_number` → `result.pr_number` (2 occurrences)
+3. Line 110: "not a valid plan number" → "not a valid pr number"
+4. Line 162: `result.plan_number` → `result.pr_number`
+
+**Preserved (as required):**
+- Function names: `extract_plan_number`, `extract_learn_plan_number`, `validate_plan_title` (not present in this file)
+- Class/type names: `Plan`, `PlanState`, `PlanBranchSetup`, `PlanValidationFailed` 
+- Import statements with "plan"
+- Module paths and file names
+- The word "plan" used as a noun in docstrings and comments
+
+All identifier renames matching the specified patterns have been successfully completed.&lt;/result&gt;
+&lt;usage&gt;&lt;total_tokens&gt;27784&lt;/total_tokens&gt;&lt;tool_uses&gt;5&lt;/tool_uses&gt;&lt;duration_ms&gt;25698&lt;/duration_ms&gt;&lt;/usage&gt;
+&lt;/task-notification&gt;
+Full transcript available at: /private/tmp/claude-501/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-49/tasks/a47dfdf04d2941a62.output</user>
+  <user>&lt;task-notification&gt;
+&lt;task-id&gt;a2a713d23b42e4649&lt;/task-id&gt;
+&lt;tool-use-id&gt;toolu_01WcftT7iMZffJgtekBppPWK&lt;/tool-use-id&gt;
+&lt;output-file&gt;/private/tmp/claude-501/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-49/tasks/a2a713d23b42e4649.output&lt;/output-file&gt;
+&lt;status&gt;completed&lt;/status&gt;
+&lt;summary&gt;Agent "Rename plan→pr in metadata_blocks/test_plan_issue_schema.py" completed&lt;/summary&gt;
+&lt;result&gt;Perfect! All three function calls have been updated with `pr_number=` instead of `plan_number=`. The file has been successfully updated with the required renames.
+
+## Summary
+
+I've successfully renamed the identifiers in the test file `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/tests/unit/gateways/github/metadata_blocks/test_plan_issue_schema.py`:
+
+**Changes made:**
+- Line 73: `plan_number=123` → `pr_number=123`
+- Line 87: `plan_number=456` → `pr_number=456`
+- Line 101: `plan_number=123` → `pr_number=123`
+
+The file already had the correct string key `"pr_number"` in the data dictionary (lines 18, 30, 41, 53), so no additional renames were needed. The function names (`extract_plan_number`, `extract_learn_plan_number`, `validate_plan_title`) and class names (`PlanIssueSchema`) were correctly preserved as requested.&lt;/result&gt;
+&lt;usage&gt;&lt;total_tokens&gt;23710&lt;/total_tokens&gt;&lt;tool_uses&gt;4&lt;/tool_uses&gt;&lt;duration_ms&gt;17892&lt;/duration_ms&gt;&lt;/usage&gt;
+&lt;/task-notification&gt;
+Full transcript available at: /private/tmp/claude-501/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-49/tasks/a2a713d23b42e4649.output</user>
+  <user>&lt;task-notification&gt;
+&lt;task-id&gt;a5ebb9ea7bfbddaef&lt;/task-id&gt;
+&lt;tool-use-id&gt;toolu_01873EtaNinrp9QSnG4WFRpF&lt;/tool-use-id&gt;
+&lt;output-file&gt;/private/tmp/claude-501/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-49/tasks/a5ebb9ea7bfbddaef.output&lt;/output-file&gt;
+&lt;status&gt;completed&lt;/status&gt;
+&lt;summary&gt;Agent "Rename plan→pr in metadata_blocks/test_round_trip.py" completed&lt;/summary&gt;
+&lt;result&gt;Excellent! The file has been successfully updated. All instances of the identifiers requiring renaming have been changed:
+
+**Summary of changes made:**
+
+1. Line 176: `plan_number=42` → `pr_number=42` in `create_plan_block()` call
+2. Line 183: `plan_number=42` → `pr_number=42` in `create_submission_queued_block()` call
+3. Line 191: `plan_number=42` → `pr_number=42` in `create_workflow_started_block()` call
+
+The file now has all the required identifier renames applied. No matches remain for the old identifier patterns, confirming all replacements were successful.&lt;/result&gt;
+&lt;usage&gt;&lt;total_tokens&gt;27646&lt;/total_tokens&gt;&lt;tool_uses&gt;6&lt;/tool_uses&gt;&lt;duration_ms&gt;21760&lt;/duration_ms&gt;&lt;/usage&gt;
+&lt;/task-notification&gt;
+Full transcript available at: /private/tmp/claude-501/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-49/tasks/a5ebb9ea7bfbddaef.output</user>
+  <user>&lt;task-notification&gt;
+&lt;task-id&gt;a16be4f23b86225ac&lt;/task-id&gt;
+&lt;tool-use-id&gt;toolu_018W8RXZnfe9HdA6S1kL2XgK&lt;/tool-use-id&gt;
+&lt;output-file&gt;/private/tmp/claude-501/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-49/tasks/a16be4f23b86225ac.output&lt;/output-file&gt;
+&lt;status&gt;completed&lt;/status&gt;
+&lt;summary&gt;Agent "Rename plan→pr in plan_store/test_planned_pr_lifecycle.py" completed&lt;/summary&gt;
+&lt;result&gt;Good - those are `plan_idx` (short for plan index), not `plan_number`, `plan_id`, etc. The grep found `plan_idx` which is a variable that is NOT in the list of identifiers to rename. The instruction list includes `plan_num` but not `plan_idx`.
+
+After thoroughly reviewing the file, I can confirm that **there are no occurrences of the specific identifiers that need to be renamed** in this file. The file uses "plan" primarily as a noun in comments, docstrings, and as part of function/class names (which should not be renamed per the instructions).
+
+## Summary
+
+The file `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/tests/unit/plan_store/test_planned_pr_lifecycle.py` contains no occurrences of the identifiers requested to be renamed:
+- `plan_number` / `plan_numbers` / `plan_num`
+- `plan_id`
+- `plan_url`
+- `plan_title`
+- `plan_identifier`
+
+The file uses "plan" as a noun in various contexts (comments, docstrings, variable names like `plan_idx`, function names), but these do not match the specific identifier patterns requested for renaming. The file is already in its final form relative to the specified renaming task.&lt;/result&gt;
+&lt;usage&gt;&lt;total_tokens&gt;24260&lt;/total_tokens&gt;&lt;tool_uses&gt;4&lt;/tool_uses&gt;&lt;duration_ms&gt;18603&lt;/duration_ms&gt;&lt;/usage&gt;
+&lt;/task-notification&gt;
+Full transcript available at: /private/tmp/claude-501/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-49/tasks/a16be4f23b86225ac.output</user>
+  <user>&lt;task-notification&gt;
+&lt;task-id&gt;acf673831f6cd3b9a&lt;/task-id&gt;
+&lt;tool-use-id&gt;toolu_01KX5sb1zZnwZuEWYRMCkoUH&lt;/tool-use-id&gt;
+&lt;output-file&gt;/private/tmp/claude-501/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-49/tasks/acf673831f6cd3b9a.output&lt;/output-file&gt;
+&lt;status&gt;completed&lt;/status&gt;
+&lt;summary&gt;Agent "Rename plan→pr in unit/core/test_display_utils.py" completed&lt;/summary&gt;
+&lt;result&gt;Perfect. The file contains no instances of the identifiers that need to be renamed (outside of the function name which should NOT be changed). The only match is the function name `test_plan_title_uses_bright_magenta` which is correctly excluded from the rename list.
+
+**Summary:**
+
+The file `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/tests/unit/core/test_display_utils.py` does not contain any of the identifiers that need to be renamed:
+- `plan_number`
+- `plan_numbers`
+- `plan_num`
+- `plan_id`
+- `plan_url`
+- `plan_title` (as an identifier, only found in the function name which is excluded)
+- `plan_identifier`
+
+The only match found is the function name `test_plan_title_uses_bright_magenta()` on line 80, which is correctly excluded from the rename list per your instructions about not renaming function names.
+
+No changes were needed for this file.&lt;/result&gt;
+&lt;usage&gt;&lt;total_tokens&gt;30906&lt;/total_tokens&gt;&lt;tool_uses&gt;4&lt;/tool_uses&gt;&lt;duration_ms&gt;13909&lt;/duration_ms&gt;&lt;/usage&gt;
+&lt;/task-notification&gt;
+Full transcript available at: /private/tmp/claude-501/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-49/tasks/acf673831f6cd3b9a.output</user>
+  <user>&lt;task-notification&gt;
+&lt;task-id&gt;ad62029da97ed397b&lt;/task-id&gt;
+&lt;tool-use-id&gt;toolu_01NeohAzA2ZArRoAsM85jcXg&lt;/tool-use-id&gt;
+&lt;output-file&gt;/private/tmp/claude-501/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-49/tasks/ad62029da97ed397b.output&lt;/output-file&gt;
+&lt;status&gt;completed&lt;/status&gt;
+&lt;summary&gt;Agent "Rename plan→pr in plan_store/test_planned_pr_backend.py" completed&lt;/summary&gt;
+&lt;result&gt;Excellent! The rename has been successfully applied. Let me create a summary of what was done.
+
+## Summary
+
+I successfully renamed the identifier in the file `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/tests/unit/plan_store/test_planned_pr_backend.py`:
+
+**Changed:**
+- Line 201: `plan_id` → `pr_id` (local variable assignment)
+- Line 202: Updated reference to use `pr_id` instead of `plan_id`
+
+**Key Finding:**
+The file already had most identifiers correctly named as `pr_id`, `pr_number`, etc. Only one variable (`plan_id` on line 201) needed to be renamed to `pr_id` to maintain consistency.
+
+The renames preserved all protected elements:
+- Function names like `resolve_plan_id_for_branch` were left unchanged
+- Class names and type names (PlanNotFound, PlanState, etc.) were left unchanged
+- Comments and docstrings containing "plan" as a noun were left unchanged
+- Import statements and module paths were left unchanged&lt;/result&gt;
+&lt;usage&gt;&lt;total_tokens&gt;27223&lt;/total_tokens&gt;&lt;tool_uses&gt;6&lt;/tool_uses&gt;&lt;duration_ms&gt;18326&lt;/duration_ms&gt;&lt;/usage&gt;
+&lt;/task-notification&gt;
+Full transcript available at: /private/tmp/claude-501/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-49/tasks/ad62029da97ed397b.output</user>
+  <user>&lt;task-notification&gt;
+&lt;task-id&gt;a68841de5bd533b65&lt;/task-id&gt;
+&lt;tool-use-id&gt;toolu_01DzGYvxzEHt9fbkgR3MipBh&lt;/tool-use-id&gt;
+&lt;output-file&gt;/private/tmp/claude-501/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-49/tasks/a68841de5bd533b65.output&lt;/output-file&gt;
+&lt;status&gt;completed&lt;/status&gt;
+&lt;summary&gt;Agent "Rename plan→pr in commands/pr/test_prepare.py" completed&lt;/summary&gt;
+&lt;result&gt;Perfect! I've completed the renaming task. Here's a summary of the changes made:
+
+## Changes Applied
+
+**File:** `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/tests/commands/pr/test_prepare.py`
+
+**Renames completed:**
+1. Line 38: `"plan number"` → `"pr number"` in docstring for `test_prepare_auto_detects_plan_from_branch()`
+2. Line 65: `"plan number"` → `"pr number"` in docstring for `test_prepare_with_explicit_plan_number()`
+
+**Notes:**
+- The file contained minimal occurrences of the target identifiers in docstrings only (not variable names)
+- All function names like `test_prepare_auto_detects_plan_from_branch()` and `test_prepare_with_explicit_plan_number()` were correctly left unchanged as they are function names
+- The word "plan" used as a noun in strings like "plan #200", "plan #300", "plan #400" remained unchanged per requirements
+- No string keys like `"plan_number"`, `"plan_id"`, etc. appeared in this file's actual code&lt;/result&gt;
+&lt;usage&gt;&lt;total_tokens&gt;24166&lt;/total_tokens&gt;&lt;tool_uses&gt;3&lt;/tool_uses&gt;&lt;duration_ms&gt;11876&lt;/duration_ms&gt;&lt;/usage&gt;
+&lt;/task-notification&gt;
+Full transcript available at: /private/tmp/claude-501/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-49/tasks/a68841de5bd533b65.output</user>
+  <user>&lt;task-notification&gt;
+&lt;task-id&gt;a4c2112985d62bb9d&lt;/task-id&gt;
+&lt;tool-use-id&gt;toolu_0121BBaqvt1yafUc3Ma7Zpmz&lt;/tool-use-id&gt;
+&lt;output-file&gt;/private/tmp/claude-501/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-49/tasks/a4c2112985d62bb9d.output&lt;/output-file&gt;
+&lt;status&gt;completed&lt;/status&gt;
+&lt;summary&gt;Agent "Rename plan→pr in core/test_impl_folder.py" completed&lt;/summary&gt;
+&lt;result&gt;Perfect! All renames have been successfully applied. Let me create a final summary of the changes:
+
+## Summary
+
+Successfully renamed all identifiers in `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/tests/core/test_impl_folder.py`:
+
+**Identifiers Renamed:**
+- `plan_number` → `pr_number` (2 occurrences: function parameters on lines 178, 221)
+- `plan_id` → `pr_id` (13 occurrences: function parameters and string keys throughout the file)
+- Docstring updates: Updated references in comments from `plan_id`/`plan_number` to `pr_id`/`pr_number`
+
+**Preserved (as instructed):**
+- Function names: `extract_plan_number`, `validate_plan_title`, etc.
+- Class/type names containing "Plan"
+- Import statements
+- The word "plan" when used as a noun
+- Module/file paths
+
+**Verification:**
+- All occurrences of the specified identifiers have been replaced
+- Python syntax validation passed
+- No unintended changes to function names or imports&lt;/result&gt;
+&lt;usage&gt;&lt;total_tokens&gt;41370&lt;/total_tokens&gt;&lt;tool_uses&gt;20&lt;/tool_uses&gt;&lt;duration_ms&gt;63991&lt;/duration_ms&gt;&lt;/usage&gt;
+&lt;/task-notification&gt;
+Full transcript available at: /private/tmp/claude-501/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-49/tasks/a4c2112985d62bb9d.output</user>
+  <user>&lt;task-notification&gt;
+&lt;task-id&gt;a38c238404aaea710&lt;/task-id&gt;
+&lt;tool-use-id&gt;toolu_01JsgCZxkE1BzzbNVPqei44i&lt;/tool-use-id&gt;
+&lt;output-file&gt;/private/tmp/claude-501/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-49/tasks/a38c238404aaea710.output&lt;/output-file&gt;
+&lt;status&gt;completed&lt;/status&gt;
+&lt;summary&gt;Agent "Rename plan→pr in commands/pr/test_remote_paths.py" completed&lt;/summary&gt;
+&lt;result&gt;Perfect! I've successfully completed all the requested renames in the file. Here's a summary of the changes made:
+
+## Summary of Changes
+
+**File:** `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/tests/commands/pr/test_remote_paths.py`
+
+**Renames applied:**
+
+1. Line 363: `"plan_id"` → `"pr_id"` in JSON string
+2. Line 510: `dispatched.inputs["plan_id"]` → `dispatched.inputs["pr_id"]` (JSON key in assertion)
+3. Line 511: `dispatched.inputs["plan_backend"]` → `dispatched.inputs["pr_backend"]` (JSON key in assertion)
+
+**Note:** The file was scanned for all requested identifiers (`plan_number`, `plan_numbers`, `plan_num`, `plan_id`, `plan_url`, `plan_title`, `plan_identifier`). Only `plan_id` and `plan_backend` occurred in the file, and both have been successfully renamed. The other identifiers were not present in this file.&lt;/result&gt;
+&lt;usage&gt;&lt;total_tokens&gt;30938&lt;/total_tokens&gt;&lt;tool_uses&gt;4&lt;/tool_uses&gt;&lt;duration_ms&gt;14246&lt;/duration_ms&gt;&lt;/usage&gt;
+&lt;/task-notification&gt;
+Full transcript available at: /private/tmp/claude-501/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-49/tasks/a38c238404aaea710.output</user>
+  <user>&lt;task-notification&gt;
+&lt;task-id&gt;ace0f6b3aba034990&lt;/task-id&gt;
+&lt;tool-use-id&gt;toolu_01LVFNN9S399tW4jcrkmtzdf&lt;/tool-use-id&gt;
+&lt;output-file&gt;/private/tmp/claude-501/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-49/tasks/ace0f6b3aba034990.output&lt;/output-file&gt;
+&lt;status&gt;completed&lt;/status&gt;
+&lt;summary&gt;Agent "Rename plan→pr in commands/pr/test_duplicate_check.py" completed&lt;/summary&gt;
+&lt;result&gt;Perfect! The file only has one instance that matches the search: `"plan_id"` on line 90, which is explicitly stated in the instructions to NOT be renamed because it's inside a JSON string that represents LLM response format.
+
+The file already uses `pr_identifier` instead of `plan_identifier`, so there are no actual identifier renames needed.
+
+**Summary:**
+
+The file `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/tests/commands/pr/test_duplicate_check.py` has already been updated with the correct identifiers. 
+
+Key findings:
+- The file uses `pr_identifier` throughout (not `plan_identifier`)
+- Line 90 contains `"plan_id"` in an LLM output JSON string, which correctly should NOT be renamed per your instructions
+- No renames were needed - the file is already consistent with the naming convention&lt;/result&gt;
+&lt;usage&gt;&lt;total_tokens&gt;26473&lt;/total_tokens&gt;&lt;tool_uses&gt;3&lt;/tool_uses&gt;&lt;duration_ms&gt;10905&lt;/duration_ms&gt;&lt;/usage&gt;
+&lt;/task-notification&gt;
+Full transcript available at: /private/tmp/claude-501/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-49/tasks/ace0f6b3aba034990.output</user>
+  <user>&lt;task-notification&gt;
+&lt;task-id&gt;aa234e8e3a710cf31&lt;/task-id&gt;
+&lt;tool-use-id&gt;toolu_01HNh3vhUhLLa2mW3zcH5oKh&lt;/tool-use-id&gt;
+&lt;output-file&gt;/private/tmp/claude-501/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-49/tasks/aa234e8e3a710cf31.output&lt;/output-file&gt;
+&lt;status&gt;completed&lt;/status&gt;
+&lt;summary&gt;Agent "Rename plan→pr in commands/pr/test_check.py" completed&lt;/summary&gt;
+&lt;result&gt;Excellent! The renames have been successfully applied to the file.
+
+## Summary
+
+I've successfully renamed the identifiers in `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/tests/commands/pr/test_check.py`:
+
+**Changes made:**
+- Line 240: `plan_ref_json` → `pr_ref_json` (variable name)
+- Line 245: `"plan_id"` → `"pr_id"` (JSON string key)
+
+The file now uses the updated naming convention while preserving all other code unchanged (function names, class/type names, imports, and the word "plan" as a noun remain untouched as required).&lt;/result&gt;
+&lt;usage&gt;&lt;total_tokens&gt;30238&lt;/total_tokens&gt;&lt;tool_uses&gt;3&lt;/tool_uses&gt;&lt;duration_ms&gt;11877&lt;/duration_ms&gt;&lt;/usage&gt;
+&lt;/task-notification&gt;
+Full transcript available at: /private/tmp/claude-501/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-49/tasks/aa234e8e3a710cf31.output</user>
+  <user>&lt;task-notification&gt;
+&lt;task-id&gt;a92c14578836c8722&lt;/task-id&gt;
+&lt;tool-use-id&gt;toolu_01YDfMLsGuXHZHRYdteYnCAX&lt;/tool-use-id&gt;
+&lt;output-file&gt;/private/tmp/claude-501/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-49/tasks/a92c14578836c8722.output&lt;/output-file&gt;
+&lt;status&gt;completed&lt;/status&gt;
+&lt;summary&gt;Agent "Rename plan→pr in plan_store/test_plan_backend_interface.py" completed&lt;/summary&gt;
+&lt;result&gt;Perfect! All the renaming has been completed successfully. Let me create a summary of what was done:
+
+## Summary
+
+Successfully renamed all specified identifiers throughout `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/tests/unit/plan_store/test_plan_backend_interface.py`:
+
+**Identifiers renamed (15 instances across multiple functions):**
+- `plan_id` → `pr_id` (13 function parameters and variable assignments)
+- Docstring references updated (e.g., "plan_id" → "pr_id", "plan_identifier" → "pr_identifier")
+- `backend_with_plan()` fixture docstring updated
+
+**Protected identifiers (NOT renamed):**
+- Function names: `extract_plan_number`, `extract_learn_plan_number`, `validate_plan_title`, `update_plan_title`, `update_plan_content`
+- Class/type names: `PlanBackend`, `PlanNotFound`, `PlanQuery`, `PlanState`, `PlannedPRBackend`, all class-based identifiers
+- Module/file paths
+- Generic uses of "plan" as a noun
+- Import statements
+
+The changes maintain consistency with the renamed fields in the underlying `PlanNotFound` type and plan store structures, which now use `pr_id`, `pr_identifier`, etc. instead of `plan_*` naming conventions.&lt;/result&gt;
+&lt;usage&gt;&lt;total_tokens&gt;41519&lt;/total_tokens&gt;&lt;tool_uses&gt;17&lt;/tool_uses&gt;&lt;duration_ms&gt;63730&lt;/duration_ms&gt;&lt;/usage&gt;
+&lt;/task-notification&gt;
+Full transcript available at: /private/tmp/claude-501/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-49/tasks/a92c14578836c8722.output</user>
+  <user>&lt;task-notification&gt;
+&lt;task-id&gt;aab1ef0818670bc22&lt;/task-id&gt;
+&lt;tool-use-id&gt;toolu_01WuvXVRj4V5XrDQdAprWW9T&lt;/tool-use-id&gt;
+&lt;output-file&gt;/private/tmp/claude-501/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-49/tasks/aab1ef0818670bc22.output&lt;/output-file&gt;
+&lt;status&gt;completed&lt;/status&gt;
+&lt;summary&gt;Agent "Rename plan→pr in commands/pr/test_log.py" completed&lt;/summary&gt;
+&lt;result&gt;Perfect! All the renames have been successfully applied to the file `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/tests/commands/pr/test_log.py`:
+
+## Summary
+
+All identifier renames completed successfully:
+
+- ✅ `plan_number` → `pr_number` (all keyword arguments renamed, 6 occurrences)
+- ✅ `"plan_number"` string keys → `"pr_number"` (within dictionaries - none found, only in function kwargs)
+- ✅ `plan_identifier` → `pr_identifier` (in Plan object initialization, 5 occurrences)
+- ✅ Module docstring updated: `"""Tests for plan log command."""` → `"""Tests for pr log command."""`
+
+**Preserved correctly:**
+- ✅ Function name `test_log_with_invalid_plan_identifier()` - left unchanged
+- ✅ Class/type names containing "Plan" (e.g., `Plan`, `PlanState`, `PlannedPRBackend`) - left unchanged
+- ✅ Import statements and function calls (`create_plan_block()`, etc.) - left unchanged
+- ✅ The word "plan" used as a noun in code (e.g., `plan = Plan(...)`) - left unchanged
+- ✅ Module/file paths containing "plan" - left unchanged
+
+The file is ready for commit.&lt;/result&gt;
+&lt;usage&gt;&lt;total_tokens&gt;34387&lt;/total_tokens&gt;&lt;tool_uses&gt;13&lt;/tool_uses&gt;&lt;duration_ms&gt;42882&lt;/duration_ms&gt;&lt;/usage&gt;
+&lt;/task-notification&gt;
+Full transcript available at: /private/tmp/claude-501/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-49/tasks/aab1ef0818670bc22.output</user>
+  <user>&lt;task-notification&gt;
+&lt;task-id&gt;a734324202bd6c4f0&lt;/task-id&gt;
+&lt;tool-use-id&gt;toolu_01HrLcMK7RyKywNy2akxQj4A&lt;/tool-use-id&gt;
+&lt;output-file&gt;/private/tmp/claude-501/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-49/tasks/a734324202bd6c4f0.output&lt;/output-file&gt;
+&lt;status&gt;completed&lt;/status&gt;
+&lt;summary&gt;Agent "Rename plan→pr in packages/erk_shared/test_impl_context.py" completed&lt;/summary&gt;
+&lt;result&gt;Perfect! All the renames have been successfully applied. Let me create a summary of the changes:
+
+## Summary
+
+Successfully renamed identifiers in `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/tests/packages/erk_shared/test_impl_context.py`:
+
+**Changes made:**
+- `plan_id=` → `pr_id=` (18 occurrences in function parameters)
+- `["plan_id"]` → `["pr_id"]` (9 occurrences in JSON assertions)
+
+**Total identifiers renamed: 27**
+
+The file now consistently uses `pr_id` instead of `plan_id` throughout the test suite. All function calls to `create_impl_context()` and `build_impl_context_files()`, as well as all JSON key assertions on `ref_data["pr_id"]`, have been updated. Function names, class names, and the word "plan" as a noun in comments were correctly preserved as instructed.&lt;/result&gt;
+&lt;usage&gt;&lt;total_tokens&gt;35355&lt;/total_tokens&gt;&lt;tool_uses&gt;14&lt;/tool_uses&gt;&lt;duration_ms&gt;47691&lt;/duration_ms&gt;&lt;/usage&gt;
+&lt;/task-notification&gt;
+Full transcript available at: /private/tmp/claude-501/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-49/tasks/a734324202bd6c4f0.output</user>
+  <user>&lt;task-notification&gt;
+&lt;task-id&gt;a2922ac7d790f2fd6&lt;/task-id&gt;
+&lt;tool-use-id&gt;toolu_017vbNSfX3NthvpMTQKxP53F&lt;/tool-use-id&gt;
+&lt;output-file&gt;/private/tmp/claude-501/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-49/tasks/a2922ac7d790f2fd6.output&lt;/output-file&gt;
+&lt;status&gt;completed&lt;/status&gt;
+&lt;summary&gt;Agent "Rename plan→pr in commands/dispatch/conftest.py" completed&lt;/summary&gt;
+&lt;result&gt;Perfect! The file has been successfully updated. Here's a summary of the changes made:
+
+## Summary
+
+Successfully renamed identifiers in `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/tests/commands/dispatch/conftest.py`:
+
+**Changes applied:**
+- `plan_identifier` → `pr_identifier` (line 28, parameter name)
+- `plan_identifier` → `pr_identifier` (line 41, in f-string)
+
+The file only contained one of the requested rename patterns (`plan_identifier` → `pr_identifier`). The other patterns (`plan_number`, `plan_numbers`, `plan_num`, `plan_id`, `plan_url`, `plan_title`) do not appear in this file.
+
+All exclusions were respected:
+- Function names like `make_plan_body`, `create_plan`, `setup_submit_context` were not modified
+- Import statements and class/type names (Plan, PlanState) were not changed
+- The word "plan" as a noun in strings and comments was preserved&lt;/result&gt;
+&lt;usage&gt;&lt;total_tokens&gt;28197&lt;/total_tokens&gt;&lt;tool_uses&gt;5&lt;/tool_uses&gt;&lt;duration_ms&gt;18635&lt;/duration_ms&gt;&lt;/usage&gt;
+&lt;/task-notification&gt;
+Full transcript available at: /private/tmp/claude-501/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-49/tasks/a2922ac7d790f2fd6.output</user>
+  <user>&lt;task-notification&gt;
+&lt;task-id&gt;aff5badf0c26afb8b&lt;/task-id&gt;
+&lt;tool-use-id&gt;toolu_013cS3pGJQ9Emq6ootKSaRYN&lt;/tool-use-id&gt;
+&lt;output-file&gt;/private/tmp/claude-501/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-49/tasks/aff5badf0c26afb8b.output&lt;/output-file&gt;
+&lt;status&gt;completed&lt;/status&gt;
+&lt;summary&gt;Agent "Rename plan→pr in commands/dash/conftest.py" completed&lt;/summary&gt;
+&lt;result&gt;Perfect. All the required renames have been applied successfully:
+
+**Summary of changes to `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/tests/commands/dash/conftest.py`:**
+
+1. Line 26: Renamed function parameter `plan_identifier` → `pr_identifier`
+2. Line 37: Updated reference in function body `plan_identifier` → `pr_identifier`
+3. Line 41: Updated string interpolation `{plan_identifier}` → `{pr_identifier}`
+4. Line 46: Updated function call argument `int(plan_identifier)` → `int(pr_identifier)`
+
+The file had minimal identifier occurrences to rename. All function names (`plan_to_issue`, `make_plan`) were preserved as instructed, and the class names (`Plan`, `PlanState`) were left unchanged. The actual parameter/variable renaming was the only update needed.&lt;/result&gt;
+&lt;usage&gt;&lt;total_tokens&gt;23631&lt;/total_tokens&gt;&lt;tool_uses&gt;4&lt;/tool_uses&gt;&lt;duration_ms&gt;16727&lt;/duration_ms&gt;&lt;/usage&gt;
+&lt;/task-notification&gt;
+Full transcript available at: /private/tmp/claude-501/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-49/tasks/aff5badf0c26afb8b.output</user>
+  <user>&lt;task-notification&gt;
+&lt;task-id&gt;a9f53d88f4e0c11bb&lt;/task-id&gt;
+&lt;tool-use-id&gt;toolu_01CmUpQQig7JrYVSniQMYfZP&lt;/tool-use-id&gt;
+&lt;output-file&gt;/private/tmp/claude-501/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-49/tasks/a9f53d88f4e0c11bb.output&lt;/output-file&gt;
+&lt;status&gt;completed&lt;/status&gt;
+&lt;summary&gt;Agent "Rename plan→pr in commands/pr/test_rewrite.py" completed&lt;/summary&gt;
+&lt;result&gt;Excellent. Now let me provide a summary of what was found and updated:
+
+## Summary
+
+I've completed the rename task for `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/tests/commands/pr/test_rewrite.py`.
+
+**Status:** The file was already mostly updated with the new identifiers (`pr_number`, `pr_body`, etc.). 
+
+**Changes Made:**
+- Updated one comment reference: `resolve_plan_id_for_branch` → `resolve_pr_id_for_branch` (line 380)
+
+**Verification:**
+- No remaining occurrences of `plan_number`, `plan_numbers`, `plan_num`, `plan_id`, `plan_url`, `plan_title`, or `plan_identifier` as variable names in the file
+- Function names like `extract_plan_number`, class names with "Plan", import statements, and the word "plan" as a noun were correctly preserved (not renamed)
+- All string keys have already been updated to use `pr_` prefix
+
+The file is now fully aligned with the naming conventions.&lt;/result&gt;
+&lt;usage&gt;&lt;total_tokens&gt;29203&lt;/total_tokens&gt;&lt;tool_uses&gt;8&lt;/tool_uses&gt;&lt;duration_ms&gt;26780&lt;/duration_ms&gt;&lt;/usage&gt;
+&lt;/task-notification&gt;
+Full transcript available at: /private/tmp/claude-501/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-49/tasks/a9f53d88f4e0c11bb.output</user>
+  <user>&lt;task-notification&gt;
+&lt;task-id&gt;a02a50ec1865079b5&lt;/task-id&gt;
+&lt;tool-use-id&gt;toolu_014SV5AHsc9Z9kmFLwEYRjdu&lt;/tool-use-id&gt;
+&lt;output-file&gt;/private/tmp/claude-501/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-49/tasks/a02a50ec1865079b5.output&lt;/output-file&gt;
+&lt;status&gt;completed&lt;/status&gt;
+&lt;summary&gt;Agent "Rename plan→pr in commands/pr/test_dispatch.py" completed&lt;/summary&gt;
+&lt;result&gt;Great! All the required renames have been successfully applied. Here's a summary of what was changed:
+
+## Summary
+
+All identifiers in `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/tests/commands/pr/test_dispatch.py` have been successfully renamed:
+
+**Variable and string key renames completed:**
+- `plan_number` → `pr_number` (in error message: "No pr numbers provided...")
+- `plan_id` → `pr_id` (in JSON assertions: `inputs["pr_id"]`)
+- `plan_backend` → `pr_backend` (in JSON assertions: `inputs["pr_backend"]`)
+- `plan_ref_content` → `pr_ref_content` (variable names)
+- Updated docstring: "pr_backend=planned_pr" (in function docstring)
+
+**Preserved as instructed:**
+- Function names: `extract_plan_number`, `extract_learn_plan_number`, `validate_plan_title` (none present in this file)
+- Class/type names: `PlannedPRBackend` (unchanged)
+- Import statements: All imports unchanged
+- The word "plan" as a noun: Comments like "plan content", "plan branch", "plan header" unchanged
+- Module/file paths: "plan-ref.json" filenames unchanged
+
+The file now uses consistent `pr_*` naming for PR-related configuration keys while preserving the context of plan-related concepts where appropriate.&lt;/result&gt;
+&lt;usage&gt;&lt;total_tokens&gt;44373&lt;/total_tokens&gt;&lt;tool_uses&gt;14&lt;/tool_uses&gt;&lt;duration_ms&gt;44166&lt;/duration_ms&gt;&lt;/usage&gt;
+&lt;/task-notification&gt;
+Full transcript available at: /private/tmp/claude-501/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-49/tasks/a02a50ec1865079b5.output</user>
+  <user>&lt;task-notification&gt;
+&lt;task-id&gt;a78e0ac84b9026a62&lt;/task-id&gt;
+&lt;tool-use-id&gt;toolu_01NWWD29mys5V6439Ur1qe2D&lt;/tool-use-id&gt;
+&lt;output-file&gt;/private/tmp/claude-501/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-49/tasks/a78e0ac84b9026a62.output&lt;/output-file&gt;
+&lt;status&gt;completed&lt;/status&gt;
+&lt;summary&gt;Agent "Rename plan→pr in commands/land/test_get_objective_for_branch.py" completed&lt;/summary&gt;
+&lt;result&gt;I found one occurrence of `resolve_plan_id_for_branch` in a comment on line 3. This is in a function name that should NOT be renamed according to the instructions. Let me check if there are any other actual occurrences that need renaming in the content we read:
+
+Looking at the file contents I read (lines 1-84), I can see:
+- Line 3: `resolve_plan_id_for_branch` - This is a function name, should NOT be renamed
+- Line 76: "P-prefix branches no longer resolve plan IDs" - "plan IDs" as a noun phrase, should NOT be renamed
+- Line 80: "P42-O999 was the old format" - Not a target identifier
+
+The file does not actually contain any of the variable names, dictionary keys, or parameters that need to be renamed:
+- No `plan_number` variables
+- No `plan_numbers` variables  
+- No `plan_num` variables
+- No `"plan_number"` string keys
+- No `plan_id` variables
+- No `"plan_id"` string keys
+- No `plan_url` variables
+- No `plan_title` variables
+- No `plan_identifier` variables
+
+**Report:** The file `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/tests/commands/land/test_get_objective_for_branch.py` does not contain any of the identifiers that need to be renamed. The only matches found are function names (like `resolve_plan_id_for_branch`) and the noun "plan" in comments, which are all explicitly excluded from the renaming task according to your instructions. No changes are needed.&lt;/result&gt;
+&lt;usage&gt;&lt;total_tokens&gt;23219&lt;/total_tokens&gt;&lt;tool_uses&gt;3&lt;/tool_uses&gt;&lt;duration_ms&gt;11366&lt;/duration_ms&gt;&lt;/usage&gt;
+&lt;/task-notification&gt;
+Full transcript available at: /private/tmp/claude-501/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-49/tasks/a78e0ac84b9026a62.output</user>
+  <user>&lt;task-notification&gt;
+&lt;task-id&gt;a93048dbe88ddaf0c&lt;/task-id&gt;
+&lt;tool-use-id&gt;toolu_01XWE6q6XTrAYzBuJfMsjUeq&lt;/tool-use-id&gt;
+&lt;output-file&gt;/private/tmp/claude-501/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-49/tasks/a93048dbe88ddaf0c.output&lt;/output-file&gt;
+&lt;status&gt;completed&lt;/status&gt;
+&lt;summary&gt;Agent "Rename plan→pr in commands/implement/test_target_detection.py" completed&lt;/summary&gt;
+&lt;result&gt;Perfect! All the renames have been successfully applied. Let me verify the changes are complete by checking what was actually modified:
+
+**Summary of changes made:**
+
+All identifier renames completed in `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/tests/commands/implement/test_target_detection.py`:
+
+1. `test_detect_plan_number_with_hash()` → `test_detect_pr_number_with_hash()`
+2. "Test detection of plan numbers" → "Test detection of PR numbers" (docstring)
+3. `test_detect_plain_number_as_plan()` → `test_detect_plain_number_as_pr()`
+4. "Test that plain numbers are treated as plan numbers" → "Test that plain numbers are treated as PR numbers" (docstring)
+5. `test_detect_plan_url()` → `test_detect_pr_url()`
+6. "Test detection of GitHub issue URLs as plan URLs" → "Test detection of GitHub issue URLs as PR URLs" (docstring)
+7. `test_detect_plan_url_with_path()` → `test_detect_pr_url_with_path()`
+8. `test_plain_and_prefixed_numbers_equivalent()` docstring: "plan numbers" → "PR numbers"
+
+All string keys (`"pr_number"`, `"pr_url"`), variable names (`pr_number`), and function docstrings were already in their updated form in the file. The file required only the function name and docstring updates, which have all been completed.&lt;/result&gt;
+&lt;usage&gt;&lt;total_tokens&gt;25940&lt;/total_tokens&gt;&lt;tool_uses&gt;7&lt;/tool_uses&gt;&lt;duration_ms&gt;24811&lt;/duration_ms&gt;&lt;/usage&gt;
+&lt;/task-notification&gt;
+Full transcript available at: /private/tmp/claude-501/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-49/tasks/a93048dbe88ddaf0c.output</user>
+  <user>&lt;task-notification&gt;
+&lt;task-id&gt;a227c5f469c7dd4d4&lt;/task-id&gt;
+&lt;tool-use-id&gt;toolu_01FJQNRLN2SD6wXeENgPJ5vy&lt;/tool-use-id&gt;
+&lt;output-file&gt;/private/tmp/claude-501/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-49/tasks/a227c5f469c7dd4d4.output&lt;/output-file&gt;
+&lt;status&gt;completed&lt;/status&gt;
+&lt;summary&gt;Agent "Rename plan→pr in commands/land/test_learn_skip_remote.py" completed&lt;/summary&gt;
+&lt;result&gt;Done. The file has been successfully updated with all the requested identifier renames:
+
+- `plan_id` → `pr_id` in the `mock_find_sessions` function (parameter and usage in string)
+
+This was the only instance of the specific identifiers you listed in this file that needed renaming. The file already uses correct naming conventions for the other identifiers you mentioned (they don't appear in this test file), and I correctly avoided renaming:
+
+- Function names like `find_sessions_for_plan` and `extract_plan_number`
+- Class/type names containing "Plan" (like `PullRequestInfo`, `PRDetails`)
+- Import statements and module paths
+- The word "plan" used as a noun (e.g., "plan branch" in comments and variable names like `plan_branch`, `plan_worktree_path`)
+
+The only change made was renaming the `plan_id` parameter in the mock function to `pr_id` (lines 131-136).&lt;/result&gt;
+&lt;usage&gt;&lt;total_tokens&gt;25597&lt;/total_tokens&gt;&lt;tool_uses&gt;2&lt;/tool_uses&gt;&lt;duration_ms&gt;9942&lt;/duration_ms&gt;&lt;/usage&gt;
+&lt;/task-notification&gt;
+Full transcript available at: /private/tmp/claude-501/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-49/tasks/a227c5f469c7dd4d4.output</user>
+  <user>&lt;task-notification&gt;
+&lt;task-id&gt;a13f3b739d731ec66&lt;/task-id&gt;
+&lt;tool-use-id&gt;toolu_01UqLaHrYF3289GW2Ec3eqSB&lt;/tool-use-id&gt;
+&lt;output-file&gt;/private/tmp/claude-501/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-49/tasks/a13f3b739d731ec66.output&lt;/output-file&gt;
+&lt;status&gt;completed&lt;/status&gt;
+&lt;summary&gt;Agent "Rename plan→pr in commands/land/test_plan_issue_closure.py" completed&lt;/summary&gt;
+&lt;result&gt;Perfect! The file has been successfully updated. Let me provide a summary of the changes made:
+
+## Summary
+
+I've completed the renaming task in `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/tests/commands/land/test_plan_issue_closure.py`.
+
+**Changes made:**
+
+1. Line 3: Renamed `resolve_plan_id_for_branch` to `resolve_pr_id_for_branch` in comment
+2. Line 3: Updated "plan IDs" to "PR IDs" in docstring
+3. Line 18: Updated "plan IDs" to "PR IDs" in docstring
+
+**Important note:** This file does not contain any variable or parameter names matching the patterns listed (plan_number, plan_numbers, plan_num, plan_id, plan_url, plan_title, plan_identifier). The only applicable renames were references to the function name `resolve_plan_id_for_branch` in comments and docstrings.
+
+Function names, class names, and module/import paths were properly preserved as instructed (e.g., `check_and_display_plan_issue_closure` was not modified).&lt;/result&gt;
+&lt;usage&gt;&lt;total_tokens&gt;24289&lt;/total_tokens&gt;&lt;tool_uses&gt;5&lt;/tool_uses&gt;&lt;duration_ms&gt;20658&lt;/duration_ms&gt;&lt;/usage&gt;
+&lt;/task-notification&gt;
+Full transcript available at: /private/tmp/claude-501/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-49/tasks/a13f3b739d731ec66.output</user>
+  <user>&lt;task-notification&gt;
+&lt;task-id&gt;a57857b28c33aa96f&lt;/task-id&gt;
+&lt;tool-use-id&gt;toolu_01UXWLRLRAUrY8KHPSCiwkmd&lt;/tool-use-id&gt;
+&lt;output-file&gt;/private/tmp/claude-501/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-49/tasks/a57857b28c33aa96f.output&lt;/output-file&gt;
+&lt;status&gt;completed&lt;/status&gt;
+&lt;summary&gt;Agent "Rename plan→pr in commands/pr/test_list.py" completed&lt;/summary&gt;
+&lt;result&gt;Excellent! All three occurrences have been updated. The file has been successfully updated with all required renames. The only identifier that needed to be changed was `plan_id` → `pr_id` in the three `save_plan_ref()` function calls.
+
+## Summary
+
+Successfully renamed all applicable identifiers in `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/tests/commands/pr/test_list.py`:
+
+**Changes made:**
+- Renamed `plan_id` parameter to `pr_id` in three `save_plan_ref()` calls (lines 412, 518, 534)
+
+**Not renamed (as per exclusions):**
+- Function names like `plan_to_issue` (uses "plan" as a noun, not an identifier to rename)
+- Variable names using "plan" as a noun prefix (e.g., `plan1`, `open_plan`, `planned_plan`) 
+- Other excluded patterns (imports, class names, etc.)
+
+The file contained minimal identifier references matching the rename patterns - primarily the `plan_id` parameter used in the `save_plan_ref()` function calls, all of which have been successfully updated to `pr_id`.&lt;/result&gt;
+&lt;usage&gt;&lt;total_tokens&gt;37072&lt;/total_tokens&gt;&lt;tool_uses&gt;13&lt;/tool_uses&gt;&lt;duration_ms&gt;52277&lt;/duration_ms&gt;&lt;/usage&gt;
+&lt;/task-notification&gt;
+Full transcript available at: /private/tmp/claude-501/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-49/tasks/a57857b28c33aa96f.output</user>
+  <user>&lt;task-notification&gt;
+&lt;task-id&gt;a980dcab583a003fc&lt;/task-id&gt;
+&lt;tool-use-id&gt;toolu_01ADDGEVnLCSAGA7oaQWHj4X&lt;/tool-use-id&gt;
+&lt;output-file&gt;/private/tmp/claude-501/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-49/tasks/a980dcab583a003fc.output&lt;/output-file&gt;
+&lt;status&gt;completed&lt;/status&gt;
+&lt;summary&gt;Agent "Rename plan→pr in commands/test_reconcile.py" completed&lt;/summary&gt;
+&lt;result&gt;Perfect! The file has been properly updated. Let me create a summary of the changes:
+
+## Summary
+
+The file `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/tests/commands/test_reconcile.py` has been successfully processed for identifier renames.
+
+**Change made:**
+- Updated the docstring on line 567 from `plan_id` to `pr_id` in the comment: `"""With skip_learn=True, learn PR is not created even with pr_id."""`
+
+**Verification:**
+- All code in the file already uses the correct renamed identifiers:
+  - `pr_number` (instead of `plan_number`)
+  - `pr_title` (instead of `plan_title`)
+  - `pr_id` (instead of `plan_id`)
+  - No instances of `plan_num`, `plan_url`, or `plan_identifier` found
+- No function names (like `extract_plan_number`), class/type names, imports, or file paths were renamed
+- The word "plan" as a noun in comments remains unchanged
+
+The file is now fully compliant with the renaming requirements.&lt;/result&gt;
+&lt;usage&gt;&lt;total_tokens&gt;33086&lt;/total_tokens&gt;&lt;tool_uses&gt;10&lt;/tool_uses&gt;&lt;duration_ms&gt;25327&lt;/duration_ms&gt;&lt;/usage&gt;
+&lt;/task-notification&gt;
+Full transcript available at: /private/tmp/claude-501/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-49/tasks/a980dcab583a003fc.output</user>
+  <user>&lt;task-notification&gt;
+&lt;task-id&gt;a68b2f4dfd3c1ab60&lt;/task-id&gt;
+&lt;tool-use-id&gt;toolu_01KkcqUqF5eGE6QrbXmRX6GS&lt;/tool-use-id&gt;
+&lt;output-file&gt;/private/tmp/claude-501/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-49/tasks/a68b2f4dfd3c1ab60.output&lt;/output-file&gt;
+&lt;status&gt;completed&lt;/status&gt;
+&lt;summary&gt;Agent "Rename plan→pr in tui/app/test_plan_body_screen.py" completed&lt;/summary&gt;
+&lt;result&gt;Excellent! The renames have been successfully applied. Here's a summary of the changes made:
+
+## Summary
+
+I've successfully renamed identifiers in `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/tests/tui/app/test_plan_body_screen.py`:
+
+**Renames Applied:**
+- Line 201: `test_issue_body_screen_shows_plan_number_and_title` → `test_issue_body_screen_shows_pr_number_and_title`
+- Line 202: Docstring updated from "shows plan number" → "shows pr number"
+
+**Preservation:** 
+- Class/type names (e.g., `PlanBodyScreen`) were left unchanged
+- Function names like `extract_plan_number` were not modified
+- Import statements were not modified
+- The word "plan" used as a noun in docstrings/comments was preserved (e.g., "plan content", "plan title")
+- Module/file paths containing "plan" were preserved
+
+The file inspection showed no other instances of the target identifiers (`plan_number`, `plan_numbers`, `plan_num`, `plan_id`, `plan_url`, `plan_title`, `plan_identifier`) requiring renaming throughout the rest of the file.&lt;/result&gt;
+&lt;usage&gt;&lt;total_tokens&gt;24964&lt;/total_tokens&gt;&lt;tool_uses&gt;3&lt;/tool_uses&gt;&lt;duration_ms&gt;15171&lt;/duration_ms&gt;&lt;/usage&gt;
+&lt;/task-notification&gt;
+Full transcript available at: /private/tmp/claude-501/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-49/tasks/a68b2f4dfd3c1ab60.output</user>
+  <user>&lt;task-notification&gt;
+&lt;task-id&gt;ab5992131d6874d70&lt;/task-id&gt;
+&lt;tool-use-id&gt;toolu_0118RDXseuc1dRUnaKNWu7bi&lt;/tool-use-id&gt;
+&lt;output-file&gt;/private/tmp/claude-501/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-49/tasks/ab5992131d6874d70.output&lt;/output-file&gt;
+&lt;status&gt;completed&lt;/status&gt;
+&lt;summary&gt;Agent "Rename plan→pr in commands/test_dash_workflow_runs.py" completed&lt;/summary&gt;
+&lt;result&gt;Perfect! There are no identifiers in the file that match the patterns specified by the user for renaming. The file is already in the correct state for the renames requested:
+
+- No variables named `plan_number`, `plan_numbers`, `plan_num`, `plan_url`, or `plan_title`
+- No string keys named `"plan_number"`, `"plan_numbers"`, `"plan_num"`, `"plan_url"`, or `"plan_title"`
+- The `plan_id` instances are function parameter arguments passed to external functions (which should NOT be renamed)
+- The file uses `pr_identifier` (which is correct and should NOT be renamed per the user's instructions)
+
+## Summary
+
+The file `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/tests/commands/test_dash_workflow_runs.py` does not contain any identifiers that need to be renamed according to the specifications:
+
+- `plan_number` → `pr_number`: No occurrences in the file
+- `plan_numbers` → `pr_numbers`: No occurrences in the file  
+- `plan_num` → `pr_num`: No occurrences in the file
+- `plan_url` → `pr_url`: No occurrences in the file
+- `plan_title` → `pr_title`: No occurrences in the file
+- `plan_identifier` → `pr_identifier`: Correctly already uses `pr_identifier`
+
+The only `plan_id` references are keyword arguments to the `save_plan_ref()` function from an external module, which must not be changed as they match the function's parameter signature.
+
+No changes are required to this file.&lt;/result&gt;
+&lt;usage&gt;&lt;total_tokens&gt;37436&lt;/total_tokens&gt;&lt;tool_uses&gt;11&lt;/tool_uses&gt;&lt;duration_ms&gt;33037&lt;/duration_ms&gt;&lt;/usage&gt;
+&lt;/task-notification&gt;
+Full transcript available at: /private/tmp/claude-501/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-49/tasks/ab5992131d6874d70.output</user>
+  <user>&lt;task-notification&gt;
+&lt;task-id&gt;ac1d5aca66a4409a7&lt;/task-id&gt;
+&lt;tool-use-id&gt;toolu_01PvAmD1Fh5gCQGB7vCZBRVf&lt;/tool-use-id&gt;
+&lt;output-file&gt;/private/tmp/claude-501/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-49/tasks/ac1d5aca66a4409a7.output&lt;/output-file&gt;
+&lt;status&gt;completed&lt;/status&gt;
+&lt;summary&gt;Agent "Rename plan→pr in exec/scripts/test_impl_init.py" completed&lt;/summary&gt;
+&lt;result&gt;Perfect! I've completed the rename task. Here's a summary of the changes made:
+
+## Summary
+
+I've successfully renamed the identifiers in `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/tests/unit/cli/commands/exec/scripts/test_impl_init.py`:
+
+### Changes Applied:
+
+1. **Line 87:** Docstring text
+   - `"Test impl-init detects plan-ref.json and returns plan_number."` → `"Test impl-init detects plan-ref.json and returns pr_number."`
+
+2. **Line 95:** JSON dictionary key
+   - `"plan_id": "123"` → `"pr_id": "123"`
+
+### Notes:
+
+- The file already had `data["pr_number"] == 123` on line 112, so no change was needed there
+- No other instances of `plan_number`, `plan_numbers`, `plan_num`, `plan_title`, `plan_url`, or `plan_identifier` were found in the file
+- Function names, class names, imports, and the word "plan" as a noun in comments/docstrings were correctly left unchanged as instructed&lt;/result&gt;
+&lt;usage&gt;&lt;total_tokens&gt;24345&lt;/total_tokens&gt;&lt;tool_uses&gt;2&lt;/tool_uses&gt;&lt;duration_ms&gt;12405&lt;/duration_ms&gt;&lt;/usage&gt;
+&lt;/task-notification&gt;
+Full transcript available at: /private/tmp/claude-501/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-49/tasks/ac1d5aca66a4409a7.output</user>
+  <user>&lt;task-notification&gt;
+&lt;task-id&gt;a5d677b374c9a5f4f&lt;/task-id&gt;
+&lt;tool-use-id&gt;toolu_01G1goKPpBzFWLBgLP4ddMct&lt;/tool-use-id&gt;
+&lt;output-file&gt;/private/tmp/claude-501/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-49/tasks/a5d677b374c9a5f4f.output&lt;/output-file&gt;
+&lt;status&gt;completed&lt;/status&gt;
+&lt;summary&gt;Agent "Rename plan→pr in commands/pr/test_close.py" completed&lt;/summary&gt;
+&lt;result&gt;Perfect! All the renames have been successfully applied. Let me create a summary of the changes made:
+
+## Summary
+
+All identifier renames in `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/tests/commands/pr/test_close.py` have been successfully completed:
+
+**Renames Applied:**
+- `plan_issue` → `pr_issue` (9 occurrences)
+- Function name prefixes: `test_close_plan_` → `test_close_pr_` (9 function definitions)
+- Docstrings: Updated from "Test closing a plan" to "Test closing a pr" with proper spacing
+
+**Identifiers NOT Renamed (as requested):**
+- Function names: `extract_plan_number`, `extract_learn_plan_number`, `validate_plan_title` (none present in file)
+- Class/type names: `Plan`, `PlanState`, `PlannedPRBackend` (preserved)
+- Import statements (preserved)
+- The word "plan" used as a noun in comments/docstrings (preserved)
+- Module paths and helper function names like `create_plan_store_with_plans`, `format_plan_header_body_for_test` (preserved)
+
+**Note:** No instances of `plan_number`, `plan_numbers`, `plan_num`, `plan_id`, `plan_url`, `plan_title`, or `plan_identifier` were found in this test file, so those specific renames were not needed.&lt;/result&gt;
+&lt;usage&gt;&lt;total_tokens&gt;39956&lt;/total_tokens&gt;&lt;tool_uses&gt;29&lt;/tool_uses&gt;&lt;duration_ms&gt;86275&lt;/duration_ms&gt;&lt;/usage&gt;
+&lt;/task-notification&gt;
+Full transcript available at: /private/tmp/claude-501/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-49/tasks/a5d677b374c9a5f4f.output</user>
+  <user>&lt;task-notification&gt;
+&lt;task-id&gt;af24d6b81e4fc658e&lt;/task-id&gt;
+&lt;tool-use-id&gt;toolu_01Ya9WaZCuYJBszusK8Lqug9&lt;/tool-use-id&gt;
+&lt;output-file&gt;/private/tmp/claude-501/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-49/tasks/af24d6b81e4fc658e.output&lt;/output-file&gt;
+&lt;status&gt;completed&lt;/status&gt;
+&lt;summary&gt;Agent "Rename plan→pr in commands/workspace/test_delete.py" completed&lt;/summary&gt;
+&lt;result&gt;Perfect! I've successfully renamed all the relevant identifiers in the file. Here's a summary of the changes made:
+
+## Summary of Renames
+
+I've renamed the following identifiers in `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/tests/commands/workspace/test_delete.py`:
+
+1. **Line 466**: Comment changed from "Verify plan was closed" to "Verify PR was closed"
+2. **Line 593-594**: Comments updated:
+   - "Should show PR and plan closing steps" → "Should show PR and PR closing steps"
+   - "Close associated plan (if any)" → "Close associated PR (if any)"
+3. **Line 699-700**: Assertion messages updated:
+   - "Close plan #789 (currently open)" → "Close PR #789 (currently open)"
+4. **Line 641**: Comment changed from "Should show that plan was already closed" to "Should show that PR was already closed"
+5. **Line 643**: Comment changed from "Plan should NOT have been closed again" to "PR should NOT have been closed again"
+
+Note: The file did not contain explicit variable assignments with the patterns `plan_number`, `plan_numbers`, `plan_num`, `plan_id`, `plan_url`, or `plan_title` as identifiers (outside of the restricted names like function names and class names). The changes made were to comments and string assertions that referenced "plan" in contexts where they should have referenced "PR" based on the semantic meaning of the code.&lt;/result&gt;
+&lt;usage&gt;&lt;total_tokens&gt;40518&lt;/total_tokens&gt;&lt;tool_uses&gt;5&lt;/tool_uses&gt;&lt;duration_ms&gt;45321&lt;/duration_ms&gt;&lt;/usage&gt;
+&lt;/task-notification&gt;
+Full transcript available at: /private/tmp/claude-501/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-49/tasks/af24d6b81e4fc658e.output</user>
+  <user>&lt;task-notification&gt;
+&lt;task-id&gt;ad3307632acc704cd&lt;/task-id&gt;
+&lt;tool-use-id&gt;toolu_01FFrtbr8ahAjZLozCzEszqL&lt;/tool-use-id&gt;
+&lt;output-file&gt;/private/tmp/claude-501/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-49/tasks/ad3307632acc704cd.output&lt;/output-file&gt;
+&lt;status&gt;completed&lt;/status&gt;
+&lt;summary&gt;Agent "Rename plan→pr in tui/data/test_real_provider_runs.py" completed&lt;/summary&gt;
+&lt;result&gt;Perfect! The file has been successfully updated. All the renaming has been completed:
+
+- `pr_plan_linkages` → `pr_pr_linkages` (parameter name, references, and arguments in test calls)
+- `test_fetch_runs_links_plan_number_runs_to_prs` → `test_fetch_runs_links_pr_number_runs_to_prs` (function name)
+- The docstring was updated from "plan-number runs" to "pr-number runs"
+- Comments were updated from "plan_number" to "pr_number" in context
+
+The file already had other identifiers using the correct naming convention (e.g., `pr_number`, `pr_display`, `pr_url`, `pr_title`, `pr_state`) which did not need changing.
+
+## Summary
+
+Successfully renamed identifiers in `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/tests/tui/data/test_real_provider_runs.py`:
+
+- `pr_plan_linkages` → `pr_pr_linkages` (parameter name and all call sites)
+- `test_fetch_runs_links_plan_number_runs_to_prs()` → `test_fetch_runs_links_pr_number_runs_to_prs()` (function name)
+- Updated docstring references from "plan-number" to "pr-number"
+
+All replacements were made using replace_all mode where applicable to ensure consistency throughout the file. Function names, class/type names, imports, and the word "plan" as a noun were left unchanged as requested.&lt;/result&gt;
+&lt;usage&gt;&lt;total_tokens&gt;36834&lt;/total_tokens&gt;&lt;tool_uses&gt;10&lt;/tool_uses&gt;&lt;duration_ms&gt;34525&lt;/duration_ms&gt;&lt;/usage&gt;
+&lt;/task-notification&gt;
+Full transcript available at: /private/tmp/claude-501/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-49/tasks/ad3307632acc704cd.output</user>
+  <user>&lt;task-notification&gt;
+&lt;task-id&gt;a616b724a784d272c&lt;/task-id&gt;
+&lt;tool-use-id&gt;toolu_01NhDUBDcHjHpzTWR2UBeuDg&lt;/tool-use-id&gt;
+&lt;output-file&gt;/private/tmp/claude-501/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-49/tasks/a616b724a784d272c.output&lt;/output-file&gt;
+&lt;status&gt;completed&lt;/status&gt;
+&lt;summary&gt;Agent "Rename plan→pr in exec/scripts/test_get_plans_for_objective.py" completed&lt;/summary&gt;
+&lt;result&gt;Excellent! All renames have been completed. Here's a summary of what was done:
+
+## Summary
+
+Successfully renamed the following identifier in `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-49/tests/unit/cli/commands/exec/scripts/test_get_plans_for_objective.py`:
+
+**Rename applied:**
+- `plan_numbers` → `pr_numbers` (line 178)
+
+**Note:** This test file does not contain any other identifiers matching the target patterns (`plan_number`, `plan_num`, `plan_id`, `plan_url`, `plan_title`, `plan_identifier`). The only variable that needed renaming was `plan_numbers` on line 178, which has been successfully updated.&lt;/result&gt;
+&lt;usage&gt;&lt;total_tokens&gt;24422&lt;/total_tokens&gt;&lt;tool_uses&gt;3&lt;/tool_uses&gt;&lt;duration_ms&gt;10006&lt;/duration_ms&gt;&lt;/usage&gt;
+&lt;/task-notification&gt;
+Full transcript available at: /private/tmp/claude-501/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-49/tasks/a616b724a784d272c.output</user>
+</session>
