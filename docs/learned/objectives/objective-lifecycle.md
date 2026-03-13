@@ -21,6 +21,9 @@ tripwires:
     score: 5
   - action: "updating objective from multiple concurrent plan completions"
     warning: "When multiple nodes in an objective complete simultaneously, concurrent updates can race. Check objective state before updating to avoid overwriting recent changes."
+  - action: "trying to mutate an objective via `erk objective` subcommands (add-node, update-node, etc.)"
+    warning: "`erk objective` is read-only (check, view, list, plan, close). All roadmap mutations use `erk exec` commands: `erk exec add-objective-node`, `erk exec update-objective-node`. The `--phase` flag auto-assigns sequential node IDs within a phase (no `--id` flag exists)."
+    score: 5
 last_audited: "2026-02-17 00:00 PT"
 audit_result: edited
 ---
