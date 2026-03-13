@@ -4,82 +4,64 @@
 
 For the philosophy and design principles behind erk, see [The TAO of erk](TAO.md).
 
-## Quick Start
+## The Composability Model
+
+Erk is designed for incremental adoption. Start with the core workflow and add capabilities as you need them:
+
+| Layer | Name                   | What It Adds                                     |
+| ----- | ---------------------- | ------------------------------------------------ |
+| 0     | **Core Workflow**      | Plan → save → implement → review → land          |
+| 1     | **Worktree Isolation** | Parallel agent execution in separate directories |
+| 2     | **Stacked PRs**        | Graphite-based dependent PR chains               |
+| 3     | **Remote Execution**   | GitHub Actions for sandboxed, scalable dispatch  |
+| 4     | **Objectives**         | Multi-plan coordination toward larger goals      |
+
+Start with Layer 0. Add layers when you need them.
+
+## Getting Started
 
 New to erk? Start here:
 
 1. [Prerequisites](tutorials/prerequisites.md) - Tools you need installed
 2. [Installation](tutorials/installation.md) - Install and configure erk
 3. [Your First Plan](tutorials/first-plan.md) - Complete tutorial from plan to PR
+4. [Advanced Configuration](tutorials/advanced-configuration.md) - Customize erk for your workflow
 
-## Features
+## Layer-by-Layer Guide
 
-- **Plan-First Workflow**: AI agents create detailed implementation plans before writing code
-- **Worktree Isolation**: Each implementation runs in its own isolated git worktree
-- **Agent-Driven Development**: Automated PR workflows powered by Claude Code
-- **Documentation as Code**: Agent-generated documentation lives alongside the codebase
+### Layer 0: The Core Workflow
 
-## Documentation Sections
+The plan-first loop that everything else builds on. An agent creates an implementation plan, saves it as a GitHub draft PR, implements the plan in code, and submits for review. This is the only layer you need to start shipping with erk.
 
-### [Tutorials](tutorials/index.md)
-
-Step-by-step lessons to get you started.
-
-- [Prerequisites](tutorials/prerequisites.md) - Required tools and versions
-- [Installation](tutorials/installation.md) - Installing and initializing erk
-- [Your First Plan](tutorials/first-plan.md) - End-to-end tutorial
-
-### [Topics](topics/index.md)
-
-Core concepts that explain how erk works.
-
-- [Worktrees](topics/worktrees.md) - Parallel development with git worktrees
-- [Graphite Integration](tutorials/graphite-integration.md) - Stacked PR workflows with Graphite
-- [Plan Mode](topics/plan-mode.md) - Claude Code's planning workflow
-- [The Workflow](topics/the-workflow.md) - From idea to merged PR
-- [Plan-Oriented Engineering](topics/plan-oriented-engineering.md) - The philosophy behind erk
-- [Why GitHub Issues for Plans](topics/why-github-issues.md) - Why plans are stored as issues
-
-### [How-to Guides](howto/index.md)
-
-Task-focused recipes for specific goals.
-
+- [The Workflow](topics/the-workflow.md) - Full walkthrough of the plan → PR lifecycle
 - [Use the Local Workflow](howto/local-workflow.md) - Plan, implement, and ship locally
-- [Run Remote Execution](howto/remote-execution.md) - Run implementations in GitHub Actions
+- [Work Without Plans](howto/planless-workflow.md) - Quick changes without formal plans
 - [Checkout and Sync PRs](howto/pr-checkout-sync.md) - Review and iterate on PRs
 - [Automatic Merge Conflict Resolution](howto/conflict-resolution.md) - Handle merge conflicts with AI assistance
-- [Work Without Plans](howto/planless-workflow.md) - Quick changes without formal plans
-- [Extract Documentation](howto/documentation-extraction.md) - Capture patterns for future agents
 
-### [Reference](ref/index.md)
+### Layer 1: Worktree Isolation
 
-Complete technical reference.
+Run multiple agents in parallel, each in its own isolated git worktree. No branch switching, no stashing—every implementation gets a clean working directory.
 
-- [CLI Command Reference](ref/commands.md) - All CLI commands
-- [Slash Command Reference](ref/slash-commands.md) - Claude Code slash commands
-- [Configuration Reference](ref/configuration.md) - Config files and options
-- [File Location Reference](ref/file-locations.md) - Where erk stores data
+- [Worktrees](topics/worktrees.md) - How erk uses git worktrees for isolation
+- [Navigate Branches and Worktrees](howto/navigate-branches-worktrees.md) - Move between worktrees
 
-### [FAQ](faq/index.md)
+### Layer 2: Stacked PRs
 
-Common questions and solutions.
+Chain dependent PRs together with Graphite so reviewers see focused, incremental diffs instead of one massive PR.
 
-## Common User Journeys
+- [Graphite Integration](tutorials/graphite-integration.md) - Set up and use stacked PR workflows
 
-**"I want to start using erk"**
-→ [Prerequisites](tutorials/prerequisites.md) → [Installation](tutorials/installation.md) → [Your First Plan](tutorials/first-plan.md)
+### Layer 3: Remote Execution
 
-**"I want to understand how erk works"**
-→ [The Workflow](topics/the-workflow.md) → [Plan-Oriented Engineering](topics/plan-oriented-engineering.md)
+Dispatch implementations to GitHub Actions for sandboxed, scalable execution. Useful for running untrusted agents or parallelizing work across multiple plans.
 
-**"I'm reviewing a teammate's PR"**
-→ [Checkout and Sync PRs](howto/pr-checkout-sync.md)
+- [Run Remote Execution](howto/remote-execution.md) - Dispatch to GitHub Actions
+- [Test Workflows](howto/test-workflows.md) - Test CI and dispatch workflows
 
-**"My rebase has conflicts"**
-→ [Automatic Merge Conflict Resolution](howto/conflict-resolution.md)
+### Layer 4: Objectives
 
-**"I need quick iteration without planning"**
-→ [Work Without Plans](howto/planless-workflow.md)
+Coordinate multiple plans toward a larger goal. Objectives track progress across related PRs and provide a high-level view of multi-plan work. _(Docs coming in a future phase.)_
 
 ## Other Documentation
 

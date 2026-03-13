@@ -23,32 +23,28 @@ theme:
     - content.code.copy
 
 nav:
-  - Getting Started:
+  - Home:
       - index.md
       - TAO.md
-  - Tutorials:
-      - tutorials/index.md
+  - Getting Started:
       - tutorials/prerequisites.md
       - tutorials/installation.md
       - tutorials/first-plan.md
-      - tutorials/graphite-integration.md
-  - Topics:
-      - topics/index.md
-      - topics/worktrees.md
-      - topics/plan-mode.md
+      - tutorials/advanced-configuration.md
+  - The Core Workflow:
       - topics/the-workflow.md
-      - topics/plan-oriented-engineering.md
-      - topics/why-github-issues.md
-  - How-To Guides:
-      - howto/index.md
       - howto/local-workflow.md
-      - howto/navigate-branches-worktrees.md
-      - howto/test-workflows.md
-      - howto/conflict-resolution.md
       - howto/planless-workflow.md
       - howto/pr-checkout-sync.md
+      - howto/conflict-resolution.md
+  - Worktrees:
+      - topics/worktrees.md
+      - howto/navigate-branches-worktrees.md
+  - Stacked PRs:
+      - tutorials/graphite-integration.md
+  - Remote Execution:
       - howto/remote-execution.md
-      - howto/documentation-extraction.md
+      - howto/test-workflows.md
   - Reference:
       - ref/index.md
       - ref/commands.md
@@ -59,6 +55,7 @@ nav:
       - faq/index.md
   - Contributing:
       - contributing/writing-documentation.md
+      - howto/documentation-extraction.md
 
 extra_css:
   - stylesheets/extra.css
