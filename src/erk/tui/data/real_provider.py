@@ -187,7 +187,7 @@ class RealPrDataProvider(PrDataProvider):
         # Lazy import to avoid circular dependency through erk.cli.commands.run.__init__
         from concurrent.futures import ThreadPoolExecutor
 
-        from erk.cli.commands.run.shared import extract_plan_number, extract_pr_number
+        from erk.cli.commands.run.shared import extract_pr_number
 
         _PER_WORKFLOW_LIMIT = 20
         _MAX_DISPLAY_RUNS = 50
@@ -224,61 +224,21 @@ class RealPrDataProvider(PrDataProvider):
         if not tagged_runs:
             return []
 
-        # 2. Extract PR numbers and plan numbers from display_titles
+        # 2. Extract PR numbers from display_titles
         run_pr_numbers: dict[str, int] = {}
-        plan_numbers: list[int] = []
 
         for run, _workflow_name in tagged_runs:
             pr_num = extract_pr_number(run.display_title)
             if pr_num is not None:
                 run_pr_numbers[run.run_id] = pr_num
-            else:
-                plan_num = extract_plan_number(run.display_title)
-                if plan_num is not None:
-                    plan_numbers.append(plan_num)
 
-        # 3. Build plan→run_ids lookup for batch PR linkage
-        plan_to_run_ids: dict[int, list[str]] = {}
-        for run, _wf in tagged_runs:
-            if run.run_id in run_pr_numbers:
-                continue
-            run_plan = extract_plan_number(run.display_title)
-            if run_plan is not None:
-                plan_to_run_ids.setdefault(run_plan, []).append(run.run_id)
-
-        # 4. Fetch PR linkages and direct PR info in parallel
-        #    These two calls are independent of each other.
+        # 3. Fetch direct PR info
         pr_info_map: dict[int, PullRequestInfo] = {}
-
-        def _fetch_plan_linkages() -> dict[int, list[PullRequestInfo]]:
-            if not plan_numbers:
-                return {}
-            return self._ctx.github.get_prs_linked_to_issues(self._location, plan_numbers)
-
-        direct_pr_numbers = {n for n in run_pr_numbers.values()}
-
-        def _fetch_direct_prs() -> dict[int, PullRequestInfo]:
-            if not direct_pr_numbers:
-                return {}
-            return self._ctx.github.get_prs_by_numbers(self._location, list(direct_pr_numbers))
-
-        with ThreadPoolExecutor(max_workers=2) as executor:
-            linkage_future = executor.submit(_fetch_plan_linkages)
-            direct_future = executor.submit(_fetch_direct_prs)
-            pr_linkages = linkage_future.result()
-            direct_prs = direct_future.result()
-
-        # Merge plan linkage results
-        for plan_num, prs in pr_linkages.items():
-            selected_pr = select_display_pr(prs, exclude_pr_numbers=None)
-            if selected_pr is None:
-                continue
-            pr_info_map[selected_pr.number] = selected_pr
-            for run_id in plan_to_run_ids.get(plan_num, []):
-                run_pr_numbers[run_id] = selected_pr.number
-
-        # Merge direct PR results
-        pr_info_map.update(direct_prs)
+        direct_pr_numbers = set(run_pr_numbers.values())
+        if direct_pr_numbers:
+            pr_info_map = self._ctx.github.get_prs_by_numbers(
+                self._location, list(direct_pr_numbers)
+            )
 
         use_graphite = self._ctx.global_config.use_graphite if self._ctx.global_config else False
 
@@ -613,8 +573,6 @@ class RealPrDataProvider(PrDataProvider):
                 )
                 pr_url = graphite_url if use_graphite and graphite_url else selected_pr.url
                 emoji = get_pr_status_emoji(selected_pr)
-                if selected_pr.will_close_target:
-                    emoji += "🔗"
                 pr_display = f"#{selected_pr.number} {emoji}"
                 checks_display = format_checks_cell(selected_pr)
 

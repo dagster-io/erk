@@ -23,7 +23,6 @@ def _make_remote() -> FakeRemoteGitHub:
         dispatch_run_id="run-1",
         issues=None,
         issue_comments=None,
-        pr_references=None,
     )
 
 

@@ -96,5 +96,4 @@ The `erk-statusline` package has its own plan-ref reading logic via `_load_impl_
 
 ## Related Documentation
 
-- [Issue Reference Flow](issue-reference-flow.md) - How plan references flow to PR bodies
 - [Plan Lifecycle](../planning/lifecycle.md) - Complete plan lifecycle documentation

@@ -49,7 +49,6 @@ def _make_remote(
         dispatch_run_id="run-1",
         issues=issues if issues is not None else {},
         issue_comments=None,
-        pr_references=None,
     )
 
 

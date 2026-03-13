@@ -7,7 +7,7 @@ from click.testing import CliRunner
 from erk.cli.cli import cli
 from erk_shared.context.types import NoRepoSentinel
 from erk_shared.core.plan_list_service import PlanListData
-from erk_shared.gateway.github.issues.types import IssueInfo, PRReference
+from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.metadata.core import MetadataBlock, render_metadata_block
 from erk_shared.plan_store.planned_pr_lifecycle import build_plan_stage_body
 from erk_shared.plan_store.types import Plan, PlanState
@@ -22,7 +22,6 @@ def _make_fake_remote(
     *,
     issues: dict[int, IssueInfo] | None = None,
     issue_comments: dict[int, list[str]] | None = None,
-    pr_references: dict[int, list[PRReference]] | None = None,
 ) -> FakeRemoteGitHub:
     """Create a FakeRemoteGitHub with sensible defaults."""
     return FakeRemoteGitHub(
@@ -33,7 +32,6 @@ def _make_fake_remote(
         dispatch_run_id="run-1",
         issues=issues,
         issue_comments=issue_comments,
-        pr_references=pr_references,
     )
 
 
@@ -147,28 +145,6 @@ def test_close_remote_closes_plan() -> None:
     assert "Closed PR #42" in result.output
     assert len(fake_remote.closed_issues) == 1
     assert fake_remote.closed_issues[0].number == 42
-
-
-def test_close_remote_closes_linked_prs() -> None:
-    """Test pr close --repo closes linked OPEN PRs."""
-    issue = _make_issue(42)
-    open_pr = PRReference(number=100, state="OPEN", is_draft=False)
-    merged_pr = PRReference(number=101, state="MERGED", is_draft=False)
-    fake_remote = _make_fake_remote(
-        issues={42: issue},
-        pr_references={42: [open_pr, merged_pr]},
-    )
-    ctx = _build_remote_context(fake_remote)
-
-    runner = CliRunner()
-    result = runner.invoke(cli, ["pr", "close", "42", "--repo", "owner/repo"], obj=ctx)
-
-    assert result.exit_code == 0
-    assert "Closed PR #42" in result.output
-    assert "Closed 1 linked PR(s): #100" in result.output
-    # Only OPEN PR should be closed
-    assert len(fake_remote.closed_prs) == 1
-    assert fake_remote.closed_prs[0].number == 100
 
 
 def test_close_remote_not_found() -> None:

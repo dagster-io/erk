@@ -182,7 +182,6 @@ def test_plan_with_node_flag() -> None:
             dispatch_run_id="run-1",
             issues={42: objective_issue},
             issue_comments=None,
-            pr_references=None,
         )
         ctx = build_workspace_test_context(
             env,
@@ -352,7 +351,6 @@ def test_plan_next_with_issue_ref() -> None:
             dispatch_run_id="run-1",
             issues={42: objective_issue},
             issue_comments=None,
-            pr_references=None,
         )
         ctx = build_workspace_test_context(
             env,
@@ -412,7 +410,6 @@ def test_mark_node_planning_updates_body() -> None:
         dispatch_run_id="run-1",
         issues={42: objective_issue},
         issue_comments=None,
-        pr_references=None,
     )
 
     _mark_node_planning(
@@ -443,7 +440,6 @@ def test_mark_node_planning_silent_on_missing_issue() -> None:
         dispatch_run_id="run-1",
         issues={},
         issue_comments=None,
-        pr_references=None,
     )
 
     # Should not raise — silently returns
@@ -471,7 +467,6 @@ def test_mark_node_planning_silent_on_unknown_node() -> None:
         dispatch_run_id="run-1",
         issues={42: objective_issue},
         issue_comments=None,
-        pr_references=None,
     )
 
     # Node 9.9 doesn't exist in the roadmap
@@ -549,7 +544,6 @@ def test_plan_next_no_pending_nodes() -> None:
             dispatch_run_id="run-1",
             issues={42: objective_issue},
             issue_comments=None,
-            pr_references=None,
         )
         ctx = build_workspace_test_context(
             env,

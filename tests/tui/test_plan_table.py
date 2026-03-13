@@ -212,7 +212,7 @@ class TestPlanDataTableRowConversion:
             exclude_labels=(),
         )
         table = PlanDataTable(filters)
-        # Use custom pr_display with link indicator (simulates will_close_target=True)
+        # Use custom pr_display with link indicator
         row = make_pr_row(123, "Test Plan", pr_display="#456 ✅🔗")
 
         values = table._row_to_values(row)

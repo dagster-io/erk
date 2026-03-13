@@ -477,25 +477,6 @@ class FakeLocalGitHub(LocalGitHub):
         """
         self._comments_by_id[comment_id] = body
 
-    def get_prs_linked_to_issues(
-        self,
-        location: GitHubRepoLocation,
-        pr_numbers: list[int],
-    ) -> dict[int, list[PullRequestInfo]]:
-        """Get PRs linked to plans (returns pre-configured data).
-
-        Returns only the mappings for plans in pr_numbers that have
-        pre-configured PR linkages. Plans without linkages are omitted.
-
-        The location parameter is accepted but ignored - fake returns
-        pre-configured data regardless of the location.
-        """
-        result = {}
-        for pr_num in pr_numbers:
-            if pr_num in self._pr_plan_linkages:
-                result[pr_num] = self._pr_plan_linkages[pr_num]
-        return result
-
     def get_prs_by_numbers(
         self, location: GitHubRepoLocation, pr_numbers: list[int]
     ) -> dict[int, PullRequestInfo]:
@@ -1204,7 +1185,6 @@ class FakeLocalGitHub(LocalGitHub):
                         repo=pr.repo,
                         has_conflicts=pr.has_conflicts,
                         checks_counts=pr.checks_counts,
-                        will_close_target=pr.will_close_target,
                         head_branch=branch_name,
                     )
                 )

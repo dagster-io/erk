@@ -19,7 +19,6 @@ def test_dispatch_happy_path() -> None:
         dispatch_run_id="run-1",
         issues=None,
         issue_comments=None,
-        pr_references=None,
     )
     time = FakeTime()
 
@@ -89,7 +88,6 @@ def test_dispatch_with_extra_inputs() -> None:
         dispatch_run_id="run-1",
         issues=None,
         issue_comments=None,
-        pr_references=None,
     )
     time = FakeTime()
 
@@ -136,7 +134,6 @@ def test_dispatch_dry_run() -> None:
         dispatch_run_id="run-1",
         issues=None,
         issue_comments=None,
-        pr_references=None,
     )
     time = FakeTime()
 
@@ -177,7 +174,6 @@ def test_dispatch_with_pre_generated_slug_skips_llm() -> None:
         dispatch_run_id="run-1",
         issues=None,
         issue_comments=None,
-        pr_references=None,
     )
     time = FakeTime()
 
@@ -217,7 +213,6 @@ def test_dispatch_long_prompt_truncates_workflow_input() -> None:
         dispatch_run_id="run-1",
         issues=None,
         issue_comments=None,
-        pr_references=None,
     )
     time = FakeTime()
 
@@ -267,7 +262,6 @@ def test_dispatch_explicit_ref_is_passed_to_workflow() -> None:
         dispatch_run_id="run-1",
         issues=None,
         issue_comments=None,
-        pr_references=None,
     )
     time = FakeTime()
 
