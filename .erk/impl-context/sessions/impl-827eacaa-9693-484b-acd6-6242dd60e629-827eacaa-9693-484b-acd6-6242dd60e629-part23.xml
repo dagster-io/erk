@@ -1,0 +1,905 @@
+<session>
+  <meta source="agent-abd361e" />
+  <meta branch="plnd/O9109-sweep-exec-leaf-cmd-03-10-1757" />
+  <meta model="claude-sonnet-4-5-20250929" />
+  <user>You are performing a systematic rename across multiple Python files. For each file listed below, read the file, then use Edit tool with replace_all where appropriate, or targeted edits for specific renames.
+
+## Rename Mapping
+- `plan_number` (local vars, params, dataclass fields) → `pr_number`
+- `plan_id` (local vars, params) → `pr_id`  
+- `plan_url` → `pr_url`
+- `plan_title` → `pr_title`
+- `plan_id_for_lifecycle` → `pr_id_for_lifecycle`
+- `plan_saved_plan_number` → `plan_saved_pr_number`
+- `_extract_plan_number` → `_extract_pr_number`
+- `_detect_plan_number_from_context` → `_detect_pr_number_from_context`
+
+## CRITICAL EXCEPTIONS - DO NOT RENAME:
+1. erk_shared API kwargs: `plan_id=` when passed as keyword argument to erk_shared functions like `save_plan_ref(plan_id=...)`, `build_impl_context_files(plan_id=...)`, `create_impl_context(plan_id=...)` — only rename the VALUE variable, not the keyword
+2. Workflow input dict keys in admin.py: `"plan_id"`, `"plan_title"` string literals used as dict keys for YAML workflow inputs — keep these as-is
+3. Do NOT rename `parse_plan_number_from_url` - that's an erk_shared import
+4. Do NOT rename module-level `extract_plan_title` from erk.core.file_utils — that will be done separately
+5. Do NOT rename imports from erk_shared packages
+6. Keep docstring references to "plan" as a concept (e.g., "plan file", "plan mode") - only rename identifier-like references
+
+## Files to Process (Batch 1 - High occurrence exec scripts):
+
+1. `src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py` — LARGEST FILE: dataclass fields `plan_saved_plan_number`→`plan_saved_pr_number`, `plan_title`→`pr_title`, `plan_number`→`pr_number`; local vars throughout. Be very careful with this file.
+2. `src/erk/cli/commands/exec/scripts/get_learn_sessions.py` — `_extract_plan_number()` function→`_extract_pr_number()`, `plan_id` params/vars→`pr_id`
+3. `src/erk/cli/commands/exec/scripts/track_learn_evaluation.py` — `_extract_plan_number()` function→`_extract_pr_number()`, `plan_number` params→`pr_number`
+4. `src/erk/cli/commands/exec/scripts/objective_save_to_issue.py` — `plan_number` param→`pr_number`, `result.plan_number`→`result.pr_number`, `result.plan_url`→`result.pr_url`
+5. `src/erk/cli/commands/exec/scripts/objective_fetch_context.py` — `_build_roadmap_context(plan_id)` param→`pr_id`, `plan_number` vars→`pr_number`
+
+For each file:
+1. Read the full file
+2. Identify ALL occurrences of plan_number, plan_id, plan_url, plan_title (excluding exceptions above)
+3. Apply the renames using Edit tool
+4. Report what was changed
+
+IMPORTANT: When a variable named plan_id is passed to an erk_shared function as plan_id=plan_id, you need to rename the VALUE (the second plan_id) to pr_id, making it plan_id=pr_id. The keyword name stays as plan_id=.</user>
+  <assistant>I'll systematically rename the identifiers in each file according to the mapping, while respecting the critical exceptions. Let me start by reading all 5 files.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="7491" cache_read_input_tokens="9380" cache_creation="{'ephemeral_5m_input_tokens': 7491, 'ephemeral_1h_input_tokens': 0}" output_tokens="7" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01MLkR8g64jfPsnsbo4oNi79">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="7491" cache_read_input_tokens="9380" cache_creation="{'ephemeral_5m_input_tokens': 7491, 'ephemeral_1h_input_tokens': 0}" output_tokens="7" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01WndsEP1Ffyg8W4FGAHmRZT">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/get_learn_sessions.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="7491" cache_read_input_tokens="9380" cache_creation="{'ephemeral_5m_input_tokens': 7491, 'ephemeral_1h_input_tokens': 0}" output_tokens="7" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_013gSMNxWCz4HhaUbuRyFTSV">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/track_learn_evaluation.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="7491" cache_read_input_tokens="9380" cache_creation="{'ephemeral_5m_input_tokens': 7491, 'ephemeral_1h_input_tokens': 0}" output_tokens="7" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01JY4Eftq8iGfUs2WnQtNTUL">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/objective_save_to_issue.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="7491" cache_read_input_tokens="9380" cache_creation="{'ephemeral_5m_input_tokens': 7491, 'ephemeral_1h_input_tokens': 0}" output_tokens="7" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01USYbAtN9G5tjUyFxk9QT2s">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/objective_fetch_context.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="7491" cache_read_input_tokens="9380" cache_creation="{'ephemeral_5m_input_tokens': 7491, 'ephemeral_1h_input_tokens': 0}" output_tokens="7" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01WndsEP1Ffyg8W4FGAHmRZT">
+     1→"""Get session information for a plan.
+     2→
+     3→This exec script returns JSON with session data for use by the /erk:learn skill.
+     4→It replaces the `erk learn --json --no-track` workflow, separating data retrieval
+     5→from tracking.
+     6→
+     7→Usage:
+     8→    erk exec get-learn-sessions &lt;issue-number&gt;
+     9→    erk exec get-learn-sessions &lt;issue-url&gt;
+    10→
+    11→Output:
+    12→    JSON object with session information:
+    13→    {
+    14→        "success": true,
+    15→        "pr_number": "123",
+    16→        "planning_session_id": "abc-123" | null,
+    17→        "implementation_session_ids": [...],
+    18→        "learn_session_ids": [...],
+    19→        "readable_session_ids": [...],
+    20→        "session_paths": [...],
+    21→        "local_session_ids": [...],
+    22→        "last_remote_impl_at": "2024-01-01T..." | null,
+    23→        "last_remote_impl_run_id": "12345678" | null,
+    24→        "last_remote_impl_session_id": "abc-def-ghi" | null
+    25→    }
+    26→
+    27→Exit Codes:
+    28→    0: Success
+    29→    1: Error (invalid issue, GitHub failure, etc.)
+    30→"""
+
+... [274 lines omitted] ...
+
+    45→    GetLearnSessionsErrorDict,
+   269→            error = GetLearnSessionsErrorDict(
+   271→                error=f"Invalid issue identifier: {issue}",
+   273→            click.echo(json.dumps(error))
+   280→        error = GetLearnSessionsErrorDict(
+   282→            error="No issue specified and could not infer from branch name",
+   284→        click.echo(json.dumps(error))
+  </tool_result>
+  <tool_result tool="toolu_013gSMNxWCz4HhaUbuRyFTSV">
+     1→"""Track learn evaluation completion on a plan.
+     2→
+     3→This exec script posts a tracking comment to the plan and updates
+     4→the plan-header metadata block to record that learn evaluation was performed.
+     5→It replaces the tracking side-effect in `erk learn --no-interactive`.
+     6→
+     7→Usage:
+     8→    erk exec track-learn-evaluation &lt;plan-number&gt; --session-id="..."
+     9→
+    10→Output:
+    11→    JSON object with tracking result:
+    12→    {
+    13→        "success": true,
+    14→        "pr_number": 123,
+    15→        "tracked": true
+    16→    }
+    17→
+    18→Exit Codes:
+    19→    0: Success
+    20→    1: Error (invalid plan, GitHub failure, etc.)
+    21→"""
+    22→
+    23→import json
+    24→from dataclasses import asdict, dataclass
+    25→from datetime import UTC
+    26→from pathlib import Path
+    27→
+    28→import click
+    29→
+    30→from erk_shared.context.helpers import (
+
+... [186 lines omitted] ...
+
+    39→from erk_shared.plan_store.types import PlanHeaderNotFoundError
+    52→class TrackLearnError:
+    53→    """Error result when tracking fails."""
+    56→    error: str
+   122→    except PlanHeaderNotFoundError:
+   123→        error = TrackLearnError(
+   125→            error="no-metadata-block",
+   131→        click.echo(json.dumps(asdict(error)), err=True)
+   133→    except RuntimeError as e:
+   134→        error = TrackLearnError(
+   136→            error="github-api-failed",
+   137→            message=f"Failed to track learn evaluation on PR #{plan_number}: {e}",
+   139→        click.echo(json.dumps(asdict(error)), err=True)
+   171→            error = TrackLearnError(
+   173→                error="invalid-plan-identifier",
+   176→            click.echo(json.dumps(asdict(error)))
+   187→        error = TrackLearnError(
+   189→            error="no-plan-specified",
+   192→        click.echo(json.dumps(asdict(error)))
+  </tool_result>
+  <tool_result tool="toolu_01JY4Eftq8iGfUs2WnQtNTUL">
+     1→"""Save plan as objective GitHub issue.
+     2→
+     3→Usage:
+     4→    erk exec objective-save-to-issue [OPTIONS]
+     5→
+     6→This command extracts a plan and creates a GitHub issue with:
+     7→- erk-objective label only (NOT erk-pr - objectives are not plans)
+     8→- No title suffix
+     9→- Plan content directly in body (no metadata block)
+    10→- No commands section
+    11→
+    12→Options:
+    13→    --session-id ID: Session ID for scoped plan lookup
+    14→    --format: json (default) or display
+    15→    --validate: Run objective validation after creation
+    16→
+    17→Exit Codes:
+    18→    0: Success - objective issue created
+    19→    1: Error - no plan found, gh failure, etc.
+    20→"""
+    21→
+    22→import json
+    23→from pathlib import Path
+    24→from typing import Any, cast
+    25→
+    26→import click
+    27→
+    28→from erk.cli.commands.objective.check.validation import (
+    29→    ObjectiveValidationError,
+    30→    ObjectiveValidationSuccess,
+
+... [247 lines omitted] ...
+
+   179→            click.echo("Error: No PR found in ~/.claude/plans/", err=True)
+   185→            click.echo(json.dumps({"success": False, "error": "No PR found in ~/.claude/plans/"}))
+   201→            click.echo(f"Error: {result.error}", err=True)
+   203→            click.echo(json.dumps({"success": False, "error": result.error}))
+   208→        raise RuntimeError("Unexpected: plan_number is None after success")
+   230→        if isinstance(validation_result, ObjectiveValidationError):
+   233→                "error": validation_result.error,
+   243→                "errors": validation_result.validation_errors,
+   254→                click.echo("Validation: FAILED")
+  </tool_result>
+  <tool_result tool="toolu_01USYbAtN9G5tjUyFxk9QT2s">
+     1→"""Fetch all context needed for objective-update-with-landed-pr in one call.
+     2→
+     3→Bundles objective, plan, PR details, and parsed roadmap context
+     4→into a single JSON blob, eliminating multiple sequential LLM turns for data
+     5→fetching and step matching.
+     6→
+     7→Usage:
+     8→    erk exec objective-fetch-context --pr 6517 --objective 6423 --branch plnd/...
+     9→    erk exec objective-fetch-context  # auto-discovers all arguments
+    10→
+    11→Output:
+    12→    JSON with {success, objective, plan, pr, roadmap} or {success, error}
+    13→
+    14→Exit Codes:
+    15→    0: Success - all data fetched
+    16→    1: Error - missing data or invalid arguments
+    17→"""
+    18→
+    19→import json
+    20→
+    21→import click
+    22→
+    23→from erk.cli.repo_resolution import get_remote_github
+    24→from erk_shared.context.helpers import (
+    25→    require_context,
+    26→    require_cwd,
+    27→    require_git,
+    28→    require_github,
+    29→    require_plan_backend,
+    30→    require_repo_root,
+
+... [247 lines omitted] ...
+
+    53→    ObjectiveFetchContextErrorDict,
+    63→def _error_json(error: str) -&gt; str:
+    64→    result: ObjectiveFetchContextErrorDict = {"success": False, "error": error}
+   176→        click.echo(_error_json("Cannot determine owner/repo from current context"))
+   186→            click.echo(_error_json(f"PR #{plan_number} not found"))
+   196→                click.echo(_error_json("Could not determine current branch (detached HEAD?)"))
+   202→            click.echo(_error_json(f"No PR found for branch '{branch_name}'"))
+   210→            click.echo(_error_json(msg))
+   217→            click.echo(_error_json("Cannot auto-discover PR without --branch or --pr"))
+   221→            click.echo(_error_json(f"No PR found for branch '{branch_name}'"))
+   228→        click.echo(_error_json(f"Objective issue #{objective_number} not found"))
+   234→        click.echo(_error_json(f"PR #{pr_number} not found"))
+  </tool_result>
+  <tool_result tool="toolu_01MLkR8g64jfPsnsbo4oNi79">
+     1→#!/usr/bin/env python3
+     2→"""Exit Plan Mode Hook.
+     3→
+     4→Prompts user before exiting plan mode when a plan exists. This hook intercepts
+     5→the ExitPlanMode tool via PreToolUse lifecycle to ask whether to save to GitHub
+     6→or implement immediately.
+     7→
+     8→Exit codes:
+     9→    0: Success (allow exit - no plan, implement-now marker present, or no session)
+    10→    2: Block (plan exists, no implement-now marker - prompt user)
+    11→
+    12→This command is invoked via:
+    13→    erk exec exit-plan-mode-hook
+    14→
+    15→Marker File State Machine
+    16→=========================
+    17→
+    18→This hook uses marker files in .erk/scratch/sessions/&lt;session-id&gt;/ for state management.
+    19→Marker files are self-describing: their names indicate their purpose and their contents
+    20→explain their effect.
+    21→
+    22→Marker Files:
+    23→    exit-plan-mode-hook.implement-now.marker
+    24→        Created by: Agent (when user chooses "Implement without saving")
+    25→        Effect: Next ExitPlanMode call is ALLOWED (exit plan mode, proceed to implementation)
+    26→        Lifecycle: Deleted after being read by next hook invocation
+    27→
+    28→    exit-plan-mode-hook.plan-saved.marker
+    29→        Created by: /erk:plan-save command (both new-branch and current-branch paths)
+    30→        Content: First line is the plan PR number
+
+... [866 lines omitted] ...
+
+   403→                f"⚠️  WARNING: Currently on '{current_branch}'. "
+  </tool_result>
+  <assistant>Now I'll process each file systematically, applying the rename mapping while respecting the critical exceptions.
+
+## File 1: exit_plan_mode_hook.py
+
+This is the largest file. Let me identify all occurrences:
+- Line 137: `plan_saved_plan_number` (dataclass field) → `plan_saved_pr_number`
+- Line 142: `plan_title` (dataclass field) → `pr_title`
+- Line 147: `plan_number` (dataclass field) → `pr_number`
+- Line 158: `plan_saved_plan_number` param → `plan_saved_pr_number`
+- Line 163: `plan_title` param → `pr_title`
+- Line 168: `plan_number` param → `pr_number`
+- Line 193: `plan_saved_plan_number` value → `plan_saved_pr_number`
+- Line 198: `plan_title` value → `pr_title`
+- Line 203: `plan_number` value → `pr_number`
+- Line 261: `plan_number` param → `pr_number`
+- Line 278: `plan_number` local var → `pr_number` 
+- Line 300: `plan_number` param → `pr_number`
+- Line 334: `plan_number` local var → `pr_number`
+- Line 511: `plan_num` local var → `pr_num`
+- Line 513: `plan_number` param → `pr_number`
+- Line 727: `plan_saved_plan_number` → `plan_saved_pr_number`
+- Line 735: `plan_saved_plan_number` assignment → `plan_saved_pr_number`
+- Line 758: `plan_number` → `pr_number`
+- Line 773-776: `plan_ref.pr_id` is correct (erk_shared API), but `plan_number` var → `pr_number`</assistant>
+  <usage input_tokens="13473" cache_creation_input_tokens="13114" cache_read_input_tokens="16871" cache_creation="{'ephemeral_5m_input_tokens': 13114, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01HRncsNGC6ag5jHXc8hwPev">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py</param>
+    <param name="old_string">    plan_saved_plan_number: int | None  # Plan number read from plan-saved marker
+    incr...[truncated 509 chars]...ent branch
+    plan_number: int | None  # Plan number from .erk/impl-context/plan-ref.json</param>
+    <param name="new_string">    plan_saved_pr_number: int | None  # Plan number read from plan-saved marker
+    increm...[truncated 517 chars]...   pr_number_from_plan_ref: int | None  # Plan number from .erk/impl-context/plan-ref.json</param>
+  </tool_use>
+  <usage input_tokens="13473" cache_creation_input_tokens="13114" cache_read_input_tokens="16871" cache_creation="{'ephemeral_5m_input_tokens': 13114, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01HRncsNGC6ag5jHXc8hwPev">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_018zZkx8Nc3ykAswiroGsaR8">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py</param>
+    <param name="old_string">        plan_saved_plan_number: int | None = None,
+        incremental_plan_marker_exists:...[truncated 300 chars]...None = None,
+        pr_number: int | None = None,
+        plan_number: int | None = None,</param>
+    <param name="new_string">        plan_saved_pr_number: int | None = None,
+        incremental_plan_marker_exists: b...[truncated 308 chars]...
+        pr_number: int | None = None,
+        pr_number_from_plan_ref: int | None = None,</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="14612" cache_read_input_tokens="29985" cache_creation="{'ephemeral_5m_input_tokens': 14612, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_018zZkx8Nc3ykAswiroGsaR8">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01U2WmMQpfWoCNEBipr8tyBZ">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py</param>
+    <param name="old_string">        All fields have sensible defaults for testing:
+        - session_id: "test-session...[truncated 1080 chars]..._name=worktree_name,
+            pr_number=pr_number,
+            plan_number=plan_number,</param>
+    <param name="new_string">        All fields have sensible defaults for testing:
+        - session_id: "test-session...[truncated 1104 chars]...         pr_number=pr_number,
+            pr_number_from_plan_ref=pr_number_from_plan_ref,</param>
+  </tool_use>
+  <usage input_tokens="4" cache_creation_input_tokens="477" cache_read_input_tokens="44597" cache_creation="{'ephemeral_5m_input_tokens': 477, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01U2WmMQpfWoCNEBipr8tyBZ">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01VqX5ozRsMagSjbHDufQGJ5">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py</param>
+    <param name="old_string">def build_step2_message(
+    *,
+    plan_number: int,
+    url: str,
+) -&gt; str:
+    """Build...[truncated 404 chars]...ain(plan_number, url=url)
+
+    lines = [
+        f"PR #{plan_number} saved successfully.",</param>
+    <param name="new_string">def build_step2_message(
+    *,
+    pr_number: int,
+    url: str,
+) -&gt; str:
+    """Build t...[truncated 396 chars]...s_plain(pr_number, url=url)
+
+    lines = [
+        f"PR #{pr_number} saved successfully.",</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="893" cache_read_input_tokens="45074" cache_creation="{'ephemeral_5m_input_tokens': 893, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01VqX5ozRsMagSjbHDufQGJ5">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01AMu4GgXxb6ZTtHpxy8S6YV">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py</param>
+    <param name="old_string">def build_blocking_message(
+    *,
+    session_id: str,
+    current_branch: str | None,
+  ...[truncated 988 chars]...    # First line: title
+    if plan_title:
+        context_lines.append(f"📋 {plan_title}")</param>
+    <param name="new_string">def build_blocking_message(
+    *,
+    session_id: str,
+    current_branch: str | None,
+  ...[truncated 1004 chars]...[]
+
+    # First line: title
+    if pr_title:
+        context_lines.append(f"📋 {pr_title}")</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="623" cache_read_input_tokens="45967" cache_creation="{'ephemeral_5m_input_tokens': 623, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01AMu4GgXxb6ZTtHpxy8S6YV">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_019i5Kba8acfwUk5ySiz1BDG">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py</param>
+    <param name="old_string">    if pr_number is not None:
+        statusline_parts.append(f"pr:#{pr_number}")
+    if plan_number is not None:
+        statusline_parts.append(f"plan:#{plan_number}")</param>
+    <param name="new_string">    if pr_number is not None:
+        statusline_parts.append(f"pr:#{pr_number}")
+    if pr_number_from_plan_ref is not None:
+        statusline_parts.append(f"plan:#{pr_number_from_plan_ref}")</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="865" cache_read_input_tokens="46590" cache_creation="{'ephemeral_5m_input_tokens': 865, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019i5Kba8acfwUk5ySiz1BDG">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01Wt5DuE7we1XTWEpX8fW4Tj">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py</param>
+    <param name="old_string">    # Plan-saved marker present — show Step 2 "what next?" prompt
+    if hook_input.plan_s...[truncated 116 chars]...step2_message(
+                plan_number=plan_num,
+                url="",
+            )</param>
+    <param name="new_string">    # Plan-saved marker present — show Step 2 "what next?" prompt
+    if hook_input.plan_s...[truncated 106 chars]...ild_step2_message(
+                pr_number=pr_num,
+                url="",
+            )</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="299" cache_read_input_tokens="47455" cache_creation="{'ephemeral_5m_input_tokens': 299, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Wt5DuE7we1XTWEpX8fW4Tj">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01AdvaA8Ay6NFi1YZaG2pVb1">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py</param>
+    <param name="old_string">    # Plan exists, no implement-now marker - block and instruct
+    return HookOutput(
+   ...[truncated 405 chars]...plan_number=hook_input.plan_number,
+            editor=hook_input.editor,
+        ),
+    )</param>
+    <param name="new_string">    # Plan exists, no implement-now marker - block and instruct
+    return HookOutput(
+   ...[truncated 425 chars]...hook_input.pr_number_from_plan_ref,
+            editor=hook_input.editor,
+        ),
+    )</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="462" cache_read_input_tokens="47754" cache_creation="{'ephemeral_5m_input_tokens': 462, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01AdvaA8Ay6NFi1YZaG2pVb1">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01EK2HsubTZV4tg1AnKtW59q">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py</param>
+    <param name="old_string">    # Determine marker existence
+    implement_now_marker_exists = False
+    plan_saved_ma...[truncated 425 chars]...exists:
+            plan_saved_plan_number = read_plan_saved_marker(session_id, repo_root)</param>
+    <param name="new_string">    # Determine marker existence
+    implement_now_marker_exists = False
+    plan_saved_ma...[truncated 421 chars]...r_exists:
+            plan_saved_pr_number = read_plan_saved_marker(session_id, repo_root)</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="546" cache_read_input_tokens="48216" cache_creation="{'ephemeral_5m_input_tokens': 546, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01EK2HsubTZV4tg1AnKtW59q">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_012kitQLELeM76R8wAVykLje">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py</param>
+    <param name="old_string">    # Find plan file path (None if doesn't exist)
+    plan_file_path: Path | None = None
+ ...[truncated 438 chars]...ame: str | None = None
+    pr_number: int | None = None
+    plan_number: int | None = None</param>
+    <param name="new_string">    # Find plan file path (None if doesn't exist)
+    plan_file_path: Path | None = None
+ ...[truncated 446 chars]...one = None
+    pr_number: int | None = None
+    pr_number_from_plan_ref: int | None = None</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="546" cache_read_input_tokens="48762" cache_creation="{'ephemeral_5m_input_tokens': 546, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012kitQLELeM76R8wAVykLje">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01JHHwGW1T1oqMccBcyRVgPJ">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py</param>
+    <param name="old_string">        worktree_name = _get_worktree_name(git, repo_root)
+        impl_dir = resolve_impl...[truncated 139 chars]...t(plan_ref.pr_id) if plan_ref is not None and plan_ref.pr_id.isdigit() else None
+        )</param>
+    <param name="new_string">        worktree_name = _get_worktree_name(git, repo_root)
+        impl_dir = resolve_impl...[truncated 151 chars]...t(plan_ref.pr_id) if plan_ref is not None and plan_ref.pr_id.isdigit() else None
+        )</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="664" cache_read_input_tokens="49308" cache_creation="{'ephemeral_5m_input_tokens': 664, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01JHHwGW1T1oqMccBcyRVgPJ">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_012tYyvzSBNPk7ntRFqGFmkv">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py</param>
+    <param name="old_string">    return HookInput(
+        session_id=session_id,
+        github_planning_enabled=githu...[truncated 551 chars]...        pr_number=pr_number,
+        plan_number=plan_number,
+        editor=editor,
+    )</param>
+    <param name="new_string">    return HookInput(
+        session_id=session_id,
+        github_planning_enabled=githu...[truncated 567 chars]...ber,
+        pr_number_from_plan_ref=pr_number_from_plan_ref,
+        editor=editor,
+    )</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="412" cache_read_input_tokens="49972" cache_creation="{'ephemeral_5m_input_tokens': 412, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012tYyvzSBNPk7ntRFqGFmkv">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py has been updated successfully.
+  </tool_result>
+  <assistant>## File 2: get_learn_sessions.py</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="634" cache_read_input_tokens="50384" cache_creation="{'ephemeral_5m_input_tokens': 634, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01GuRqBssouM3ddv1ByKCnQb">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/get_learn_sessions.py</param>
+    <param name="old_string">def _extract_plan_number(identifier: str) -&gt; int | None:
+    """Extract plan number from i...[truncated 41 chars]...ue number or GitHub issue URL
+
+    Returns:
+        Plan number or None if invalid
+    """</param>
+    <param name="new_string">def _extract_pr_number(identifier: str) -&gt; int | None:
+    """Extract PR number from ident...[truncated 35 chars]...ssue number or GitHub issue URL
+
+    Returns:
+        PR number or None if invalid
+    """</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="634" cache_read_input_tokens="50384" cache_creation="{'ephemeral_5m_input_tokens': 634, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01GuRqBssouM3ddv1ByKCnQb">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/get_learn_sessions.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01PEH2FTzfRcZ4bRHxgqqi8y">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/get_learn_sessions.py</param>
+    <param name="old_string">def _fetch_preprocessed_manifest(
+    *,
+    repo_root: Path,
+    plan_id: str,
+    git,
+)...[truncated 247 chars]...ict if found, None otherwise.
+    """
+    session_branch = f"planned-pr-context/{plan_id}"</param>
+    <param name="new_string">def _fetch_preprocessed_manifest(
+    *,
+    repo_root: Path,
+    pr_id: str,
+    git,
+) -...[truncated 241 chars]... dict if found, None otherwise.
+    """
+    session_branch = f"planned-pr-context/{pr_id}"</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="407" cache_read_input_tokens="51018" cache_creation="{'ephemeral_5m_input_tokens': 407, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01PEH2FTzfRcZ4bRHxgqqi8y">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/get_learn_sessions.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01FYWcn6mNrsFQcPPFsjgjNZ">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/get_learn_sessions.py</param>
+    <param name="old_string">def _build_result(
+    *,
+    plan_id: str,
+    sessions_for_plan: SessionsForPlan,
+    re...[truncated 238 chars]...""
+    return GetLearnSessionsResultDict(
+        success=True,
+        pr_number=plan_id,</param>
+    <param name="new_string">def _build_result(
+    *,
+    pr_id: str,
+    sessions_for_plan: SessionsForPlan,
+    read...[truncated 234 chars]...."""
+    return GetLearnSessionsResultDict(
+        success=True,
+        pr_number=pr_id,</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="426" cache_read_input_tokens="51425" cache_creation="{'ephemeral_5m_input_tokens': 426, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01FYWcn6mNrsFQcPPFsjgjNZ">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/get_learn_sessions.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01Gh6SvEcjdJvWhDR3ZjGfAf">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/get_learn_sessions.py</param>
+    <param name="old_string">def _discover_sessions(
+    *,
+    plan_backend,
+    claude_installation,
+    git,
+    rep...[truncated 684 chars]...sed_manifest(
+        repo_root=repo_root,
+        plan_id=plan_id,
+        git=git,
+    )</param>
+    <param name="new_string">def _discover_sessions(
+    *,
+    plan_backend,
+    claude_installation,
+    git,
+    rep...[truncated 676 chars]...ocessed_manifest(
+        repo_root=repo_root,
+        pr_id=pr_id,
+        git=git,
+    )</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="446" cache_read_input_tokens="51851" cache_creation="{'ephemeral_5m_input_tokens': 446, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Gh6SvEcjdJvWhDR3ZjGfAf">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/get_learn_sessions.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01Meh2uCMs7zidw7Gnuj4Czk">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/get_learn_sessions.py</param>
+    <param name="old_string">    # Find sessions for the plan via PlanBackend
+    sessions_for_plan = plan_backend.find...[truncated 2395 chars]... session_sources.append(remote_source)
+
+    return _build_result(
+        plan_id=plan_id,</param>
+    <param name="new_string">    # Find sessions for the plan via PlanBackend
+    sessions_for_plan = plan_backend.find...[truncated 2389 chars]...     session_sources.append(remote_source)
+
+    return _build_result(
+        pr_id=pr_id,</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="748" cache_read_input_tokens="52297" cache_creation="{'ephemeral_5m_input_tokens': 748, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Meh2uCMs7zidw7Gnuj4Czk">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/get_learn_sessions.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01XhDZREigJ4huSwHH82ZoFw">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/get_learn_sessions.py</param>
+    <param name="old_string">    # Get current branch for local session filtering
+    branch_name = git.branch.get_curr...[truncated 1001 chars]...epo_root,
+        cwd=cwd,
+        plan_id=plan_id,
+        branch_name=branch_name,
+    )</param>
+    <param name="new_string">    # Get current branch for local session filtering
+    branch_name = git.branch.get_curr...[truncated 979 chars]...ot=repo_root,
+        cwd=cwd,
+        pr_id=pr_id,
+        branch_name=branch_name,
+    )</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="1592" cache_read_input_tokens="53045" cache_creation="{'ephemeral_5m_input_tokens': 1592, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01XhDZREigJ4huSwHH82ZoFw">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/get_learn_sessions.py has been updated successfully.
+  </tool_result>
+  <assistant>## File 3: track_learn_evaluation.py</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="856" cache_read_input_tokens="54637" cache_creation="{'ephemeral_5m_input_tokens': 856, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01FrUhhsJEk3Qp3FqeJNDa5D">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/track_learn_evaluation.py</param>
+    <param name="old_string">def _extract_plan_number(identifier: str) -&gt; int | None:
+    """Extract plan number from i...[truncated 40 chars]...an number or GitHub issue URL
+
+    Returns:
+        Plan number or None if invalid
+    """</param>
+    <param name="new_string">def _extract_pr_number(identifier: str) -&gt; int | None:
+    """Extract PR number from ident...[truncated 34 chars]...Plan number or GitHub issue URL
+
+    Returns:
+        PR number or None if invalid
+    """</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="856" cache_read_input_tokens="54637" cache_creation="{'ephemeral_5m_input_tokens': 856, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01FrUhhsJEk3Qp3FqeJNDa5D">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/track_learn_evaluation.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01Uvx8bi8gw9frqxVuodY8HY">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/track_learn_evaluation.py</param>
+    <param name="old_string">def _do_track(
+    *,
+    backend,
+    repo_root: Path,
+    plan_number: int,
+    session_...[truncated 1747 chars]...     click.echo(json.dumps(asdict(error)), err=True)
+        raise SystemExit(1) from None</param>
+    <param name="new_string">def _do_track(
+    *,
+    backend,
+    repo_root: Path,
+    pr_number: int,
+    session_id...[truncated 1735 chars]...     click.echo(json.dumps(asdict(error)), err=True)
+        raise SystemExit(1) from None</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="407" cache_read_input_tokens="55493" cache_creation="{'ephemeral_5m_input_tokens': 407, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Uvx8bi8gw9frqxVuodY8HY">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/track_learn_evaluation.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01ThVJTphfbYv9XvhgYVJoEV">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/track_learn_evaluation.py</param>
+    <param name="old_string">    time = require_time(ctx)
+
+    # Resolve plan number: explicit argument or infer from b...[truncated 1223 chars]...rnResult(
+        success=True,
+        pr_number=plan_number,
+        tracked=True,
+    )</param>
+    <param name="new_string">    time = require_time(ctx)
+
+    # Resolve PR number: explicit argument or infer from bra...[truncated 1197 chars]...earnResult(
+        success=True,
+        pr_number=pr_number,
+        tracked=True,
+    )</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="1214" cache_read_input_tokens="55900" cache_creation="{'ephemeral_5m_input_tokens': 1214, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01ThVJTphfbYv9XvhgYVJoEV">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/track_learn_evaluation.py has been updated successfully.
+  </tool_result>
+  <assistant>## File 4: objective_save_to_issue.py</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="970" cache_read_input_tokens="57114" cache_creation="{'ephemeral_5m_input_tokens': 970, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01KymJSEBDJjUkoDSrNB8uFr">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/objective_save_to_issue.py</param>
+    <param name="old_string">def _create_objective_saved_issue_marker(
+    session_id: str, repo_root: Path, plan_numbe...[truncated 577 chars]...jective-saved-issue.marker"
+    marker_file.write_text(str(plan_number), encoding="utf-8")</param>
+    <param name="new_string">def _create_objective_saved_issue_marker(
+    session_id: str, repo_root: Path, pr_number:...[truncated 569 chars]...objective-saved-issue.marker"
+    marker_file.write_text(str(pr_number), encoding="utf-8")</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="970" cache_read_input_tokens="57114" cache_creation="{'ephemeral_5m_input_tokens': 970, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01KymJSEBDJjUkoDSrNB8uFr">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/objective_save_to_issue.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_015RkrYBcYhecuBab1jKLMG3">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/objective_save_to_issue.py</param>
+    <param name="old_string">    if not result.success:
+        if output_format == "display":
+            click.echo(f...[truncated 354 chars]...e:
+        _create_objective_saved_issue_marker(session_id, repo_root, result.plan_number)</param>
+    <param name="new_string">    if not result.success:
+        if output_format == "display":
+            click.echo(f...[truncated 348 chars]...one:
+        _create_objective_saved_issue_marker(session_id, repo_root, result.pr_number)</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="711" cache_read_input_tokens="58084" cache_creation="{'ephemeral_5m_input_tokens': 711, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_015RkrYBcYhecuBab1jKLMG3">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/objective_save_to_issue.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01F2GMCsLwf31DBhfRbN3ffC">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/objective_save_to_issue.py</param>
+    <param name="old_string">    # Optional validation
+    validation_data: dict[str, Any] | None = None
+    if run_val...[truncated 385 chars]...=owner,
+            repo=repo_name,
+            issue_number=result.plan_number,
+        )</param>
+    <param name="new_string">    # Optional validation
+    validation_data: dict[str, Any] | None = None
+    if run_val...[truncated 383 chars]...er=owner,
+            repo=repo_name,
+            issue_number=result.pr_number,
+        )</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="488" cache_read_input_tokens="58795" cache_creation="{'ephemeral_5m_input_tokens': 488, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01F2GMCsLwf31DBhfRbN3ffC">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/objective_save_to_issue.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01NbgH64VfGiyEq3qpDYzdaT">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/objective_save_to_issue.py</param>
+    <param name="old_string">    if output_format == "display":
+        click.echo(f"Objective saved to GitHub issue #{...[truncated 842 chars]...er,
+            "issue_url": result.plan_url,
+            "title": result.title,
+        }</param>
+    <param name="new_string">    if output_format == "display":
+        click.echo(f"Objective saved to GitHub issue #{...[truncated 834 chars]...mber,
+            "issue_url": result.pr_url,
+            "title": result.title,
+        }</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="522" cache_read_input_tokens="59283" cache_creation="{'ephemeral_5m_input_tokens': 522, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01NbgH64VfGiyEq3qpDYzdaT">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/objective_save_to_issue.py has been updated successfully.
+  </tool_result>
+  <assistant>## File 5: objective_fetch_context.py</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="820" cache_read_input_tokens="59805" cache_creation="{'ephemeral_5m_input_tokens': 820, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01BgKU5UsP4aCmbeJYyanBDe">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/objective_fetch_context.py</param>
+    <param name="old_string">def _build_roadmap_context(objective_body: str, plan_id: str) -&gt; RoadmapContextDict:
+    "...[truncated 765 chars]...mary=summary,
+        next_node=next_node,
+        all_complete=graph.is_complete(),
+    )</param>
+    <param name="new_string">def _build_roadmap_context(objective_body: str, pr_id: str) -&gt; RoadmapContextDict:
+    """...[truncated 763 chars]...mary=summary,
+        next_node=next_node,
+        all_complete=graph.is_complete(),
+    )</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="820" cache_read_input_tokens="59805" cache_creation="{'ephemeral_5m_input_tokens': 820, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01BgKU5UsP4aCmbeJYyanBDe">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/objective_fetch_context.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01U6MheCmy1vxxtofHhjNmSG">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/objective_fetch_context.py</param>
+    <param name="old_string">@click.command(name="objective-fetch-context")
+@click.option(
+    "--pr", "pr_number", typ...[truncated 3650 chars]...        raise SystemExit(1)
+
+    roadmap = _build_roadmap_context(objective.body, plan_id)</param>
+    <param name="new_string">@click.command(name="objective-fetch-context")
+@click.option(
+    "--pr", "pr_number", typ...[truncated 3652 chars]...)
+        raise SystemExit(1)
+
+    roadmap = _build_roadmap_context(objective.body, pr_id)</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="761" cache_read_input_tokens="60625" cache_creation="{'ephemeral_5m_input_tokens': 761, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01U6MheCmy1vxxtofHhjNmSG">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/objective_fetch_context.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01ArJst2FFYpFTxPiBwKEXU4">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/objective_fetch_context.py</param>
+    <param name="old_string">    objective_info: ObjectiveInfoDict = {
+        "number": objective.number,
+        "tit...[truncated 232 chars]...ber": plan_id,
+        "title": plan_result.title,
+        "body": plan_result.body,
+    }</param>
+    <param name="new_string">    objective_info: ObjectiveInfoDict = {
+        "number": objective.number,
+        "tit...[truncated 230 chars]...umber": pr_id,
+        "title": plan_result.title,
+        "body": plan_result.body,
+    }</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="2598" cache_read_input_tokens="61386" cache_creation="{'ephemeral_5m_input_tokens': 2598, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01ArJst2FFYpFTxPiBwKEXU4">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/objective_fetch_context.py has been updated successfully.
+  </tool_result>
+  <assistant>Perfect! Now let me verify the changes by doing a quick check to see if there are any remaining occurrences that need attention:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="422" cache_read_input_tokens="63984" cache_creation="{'ephemeral_5m_input_tokens': 422, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01S6V7a84sAE6M8E61shStRS">
+    <param name="command">grep -n "plan_number\|plan_id\|plan_title\|plan_url" src/erk/cli/commands/exec/scripts/exi...[truncated 315 chars]...v "plan file" | grep -v "plan PR" | grep -v "plan mode" | grep -v "plan exists" | head -50</param>
+    <param name="description">Check for any remaining plan_* identifiers</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="422" cache_read_input_tokens="63984" cache_creation="{'ephemeral_5m_input_tokens': 422, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01S6V7a84sAE6M8E61shStRS">
+src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py:225:def extract_plan_title(plan_file_path: Path | None) -&gt; str | None:
+src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py:751:        pr_title = extract_plan_title(plan_file_path)
+src/erk/cli/commands/exec/scripts/get_learn_sessions.py:277:        pr_id = plan_backend.resolve_plan_id_for_branch(repo_root, branch_name)
+src/erk/cli/commands/exec/scripts/track_learn_evaluation.py:182:            pr_id_str = backend.resolve_plan_id_for_branch(repo_root, branch)
+  </tool_result>
+  <assistant>Good! The remaining occurrences are:
+1. `extract_plan_title` - This is a module-level function that will be renamed separately (as noted in the exceptions)
+2. `plan_backend.resolve_plan_id_for_branch(...)` - The method name `resolve_plan_id_for_branch` is correct (it's an erk_shared API method), and we correctly renamed the local variable that receives the result from `plan_id` to `pr_id`.
+
+Let me create a summary of all changes made:
+
+---
+
+## Summary of Changes
+
+I've successfully renamed all `plan_number`, `plan_id`, `plan_url`, and `plan_title` identifiers to their `pr_*` equivalents across the 5 exec script files, while respecting critical exceptions.
+
+### File 1: exit_plan_mode_hook.py (15 renames)
+- **Dataclass fields (HookInput):**
+  - `plan_saved_plan_number` → `plan_saved_pr_number`
+  - `plan_title` → `pr_title`
+  - `plan_number` → `pr_number_from_plan_ref` (to distinguish from PR number field)
+  
+- **Function parameters:**
+  - `build_step2_message()`: `plan_number` → `pr_number`
+  - `build_blocking_message()`: `plan_title` → `pr_title`, `plan_number` → `pr_number_from_plan_ref`
+  
+- **Local variables:**
+  - Multiple occurrences in `determine_exit_action()`, `_gather_inputs()`, and test factory method
+  
+- **Preserved:** `extract_plan_title()` function name (will be renamed separately)
+
+### File 2: get_learn_sessions.py (7 renames)
+- `_extract_plan_number()` → `_extract_pr_number()`
+- `_fetch_preprocessed_manifest()`: param `plan_id` → `pr_id`
+- `_build_result()`: param `plan_id` → `pr_id`
+- `_discover_sessions()`: param `plan_id` → `pr_id`
+- Main function: local var `plan_id` → `pr_id`, `plan_number` → `pr_number`
+- **Preserved:** `plan_backend.resolve_plan_id_for_branch()` method name (erk_shared API)
+
+### File 3: track_learn_evaluation.py (4 renames)
+- `_extract_plan_number()` → `_extract_pr_number()`
+- `_do_track()`: param `plan_number` → `pr_number`
+- Main function: local var `plan_number` → `pr_number`, `plan_id_str` → `pr_id_str`
+- **Preserved:** `backend.resolve_plan_id_for_branch()` method name (erk_shared API)
+
+### File 4: objective_save_to_issue.py (6 renames)
+- `_create_objective_saved_issue_marker()`: param `plan_number` → `pr_number`
+- Main function: 
+  - `result.plan_number` → `result.pr_number` (3 occurrences)
+  - `result.plan_url` → `result.pr_url`
+
+### File 5: objective_fetch_context.py (5 renames)
+- `_build_roadmap_context()`: param `plan_id` → `pr_id`
+- Main function:
+  - Click option param `plan_number` → `pr_number_arg` (to avoid collision with `pr_number`)
+  - Local var `plan_id` → `pr_id`
+  - Used in error messages and result building
+
+### Critical Exceptions Respected:
+1. ✅ erk_shared API kwargs like `plan_id=` in function calls - only renamed the VALUE variable, not the keyword
+2. ✅ Workflow input dict keys - no YAML dict keys in these files
+3. ✅ `parse_plan_number_from_url` import - not present in these files
+4. ✅ Module-level `extract_plan_title` function - preserved (will be renamed separately)
+5. ✅ erk_shared method names like `resolve_plan_id_for_branch()` - preserved
+
+All renames are complete and consistent with the systematic rename pattern across the erk codebase.</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="597" cache_read_input_tokens="64406" cache_creation="{'ephemeral_5m_input_tokens': 597, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>

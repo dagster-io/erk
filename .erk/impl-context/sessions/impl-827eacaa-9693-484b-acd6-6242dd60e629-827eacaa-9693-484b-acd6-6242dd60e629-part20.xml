@@ -1,0 +1,1181 @@
+<session>
+  <meta source="agent-aa47dbd" />
+  <meta branch="plnd/O9109-sweep-exec-leaf-cmd-03-10-1757" />
+  <meta model="claude-sonnet-4-5-20250929" />
+  <user>There are issues in src/erk/cli/commands/pr/checkout_cmd.py from a previous rename attempt. The agent accidentally created duplicate `pr_number` parameters. Read the file and fix any syntax issues where `plan_number` was renamed to `pr_number` but that conflicts with an existing `pr_number` parameter.
+
+The solution: when there's a conflict between a plan_number parameter and an existing pr_number parameter in the same function, rename plan_number to something descriptive like `plan_pr_number` or keep context-specific names.
+
+Also process the following remaining PR command files that still need plan_number/plan_id renames:
+
+1. `src/erk/cli/commands/pr/log_cmd.py` - `plan_number` local vars → `pr_number` (but check for conflicts first)
+2. `src/erk/cli/commands/pr/check_cmd.py` - `plan_number` param/local vars → `pr_number`
+3. `src/erk/cli/commands/pr/view/cli.py` - `plan_url` param → `pr_url`
+4. `src/erk/cli/commands/pr/duplicate_check_cmd.py` - `exclude_plan_id` → `exclude_pr_id`, `plan_number` vars → `pr_number`
+5. `src/erk/cli/commands/pr/close_cmd.py` - `plan_number` local var → `pr_number`
+6. `src/erk/cli/commands/pr/rewrite_cmd.py` - `plan_id` local var → `pr_id`
+7. `src/erk/cli/commands/pr/dispatch_cmd.py` - check if still has plan refs
+8. `src/erk/cli/commands/pr/metadata_helpers.py` - check if still has plan refs
+
+## Rename Mapping
+- `plan_number` (local vars, params, dataclass fields) → `pr_number`
+- `plan_id` (local vars, params) → `pr_id`  
+- `plan_url` → `pr_url`
+- `exclude_plan_id` → `exclude_pr_id`
+
+## CRITICAL EXCEPTIONS:
+1. Do NOT rename erk_shared API kwargs
+2. Keep docstring references to "plan" as a concept
+3. If renaming plan_number would conflict with existing pr_number, use a context-specific alternative name
+
+For each file: read it, identify issues, and apply fixes.</user>
+  <assistant>I'll read and fix the issues in these PR command files, starting with the problematic `checkout_cmd.py` and then processing the remaining files.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="6418" cache_read_input_tokens="10119" cache_creation="{'ephemeral_5m_input_tokens': 6418, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01RH267y9AfeM7jLgqiYTUXy">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/checkout_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6418" cache_read_input_tokens="10119" cache_creation="{'ephemeral_5m_input_tokens': 6418, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_0168y3xqKmmBgCSmqTGB9sbd">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/log_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6418" cache_read_input_tokens="10119" cache_creation="{'ephemeral_5m_input_tokens': 6418, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01D7Ap6mEcwtzVFLVxD7e1Fq">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/check_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6418" cache_read_input_tokens="10119" cache_creation="{'ephemeral_5m_input_tokens': 6418, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01RyX5pSK7GomPbDNUGe8iEH">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/view/cli.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6418" cache_read_input_tokens="10119" cache_creation="{'ephemeral_5m_input_tokens': 6418, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01NLBxPhVruUFCV15wZPDstx">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/duplicate_check_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6418" cache_read_input_tokens="10119" cache_creation="{'ephemeral_5m_input_tokens': 6418, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01E6MNmSFaDoHph38oQtgKyd">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/close_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6418" cache_read_input_tokens="10119" cache_creation="{'ephemeral_5m_input_tokens': 6418, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01LsNdiWCgPnmLWckmhJ9LPb">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/rewrite_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6418" cache_read_input_tokens="10119" cache_creation="{'ephemeral_5m_input_tokens': 6418, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_011KgMPJAVzFBHUBGrveJH43">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/dispatch_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6418" cache_read_input_tokens="10119" cache_creation="{'ephemeral_5m_input_tokens': 6418, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_0139AKNpBSDBnZLqSKBuY9u3">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/metadata_helpers.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6418" cache_read_input_tokens="10119" cache_creation="{'ephemeral_5m_input_tokens': 6418, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01RH267y9AfeM7jLgqiYTUXy">
+     1→"""Checkout a pull request or plan into a worktree.
+     2→
+     3→This command fetches PR code (or finds plan branches) and creates a worktree
+     4→for local review/testing.
+     5→
+     6→Routing:
+     7→- Plain number (123) or PR URL → PR checkout
+     8→- P-prefixed (P123) or issue URL → plan checkout (find branches/PRs for plan)
+     9→"""
+    10→
+    11→import click
+    12→from rich.console import Console
+    13→from rich.table import Table
+    14→
+    15→from erk.cli.activation import (
+    16→    activation_config_activate_only,
+    17→    ensure_worktree_activate_script,
+    18→    print_activation_instructions,
+    19→)
+    20→from erk.cli.alias import alias
+    21→from erk.cli.commands.checkout_helpers import (
+    22→    ensure_branch_has_worktree,
+    23→    navigate_and_display_checkout,
+    24→)
+    25→from erk.cli.commands.pr.dispatch_helpers import sync_branch_to_sha
+    26→from erk.cli.ensure import Ensure
+    27→from erk.cli.help_formatter import CommandWithHiddenOptions, script_option
+    28→from erk.core.context import ErkContext
+    29→from erk.core.repo_discovery import NoRepoSentinel, RepoContext
+    30→from erk_shared.gateway.github.parsing import (
+
+... [455 lines omitted] ...
+
+    82→        click.style("Error: ", fg="red")
+   159→        ctx.console.error("Not in a git repository")
+   192→        ctx.console.error(
+   200→        ctx.console.info(f"Warning: PR #{pr_number} is {pr.state}")
+   283→                f"Warning: Rebase had conflicts. Worktree created but needs manual rebase.\n"
+   410→        ctx.console.error(
+  </tool_result>
+  <tool_result tool="toolu_0168y3xqKmmBgCSmqTGB9sbd">
+     1→"""Command to display chronological event log for a plan."""
+     2→
+     3→import json
+     4→from collections.abc import Callable
+     5→from datetime import datetime
+     6→from typing import Literal, TypeAlias, TypedDict
+     7→
+     8→import click
+     9→
+    10→from erk.cli.github_parsing import parse_issue_identifier
+    11→from erk.cli.repo_resolution import get_remote_github, resolved_repo_option
+    12→from erk.core.context import ErkContext
+    13→from erk_shared.gateway.github.issues.types import IssueNotFound
+    14→from erk_shared.gateway.github.metadata.core import parse_metadata_blocks
+    15→from erk_shared.gateway.github.metadata.types import BlockKeys
+    16→from erk_shared.gateway.github.types import GitHubRepoId
+    17→from erk_shared.output.output import user_output
+    18→
+    19→# Event type literals
+    20→EventType: TypeAlias = Literal[
+    21→    "plan-created",
+    22→    "submission-queued",
+    23→    "workflow-started",
+    24→    "implementation-status",
+    25→    "plan-retry",
+    26→    "worktree-created",
+    27→]
+    28→
+    29→
+    30→# Event metadata types
+
+... [418 lines omitted] ...
+
+   146→            user_output(click.style("Error: ", fg="red") + f"PR '{identifier}' not found")
+   161→    except (RuntimeError, ValueError) as e:
+   162→        user_output(click.style("Error: ", fg="red") + str(e))
+   384→    except (ValueError, AttributeError):
+   426→        if status == "failed":
+   427→            return "Implementation failed"
+  </tool_result>
+  <tool_result tool="toolu_01D7Ap6mEcwtzVFLVxD7e1Fq">
+     1→"""Command to validate PR rules or plan format for the current branch."""
+     2→
+     3→from dataclasses import dataclass
+     4→from typing import NamedTuple
+     5→
+     6→import click
+     7→
+     8→from erk.cli.ensure import Ensure
+     9→from erk.cli.github_parsing import parse_issue_identifier
+    10→from erk.cli.repo_resolution import (
+    11→    get_remote_github,
+    12→    repo_option,
+    13→    resolve_owner_repo,
+    14→)
+    15→from erk.core.context import ErkContext
+    16→from erk_shared.context.types import NoRepoSentinel
+    17→from erk_shared.gateway.github.issues.types import IssueNotFound
+    18→from erk_shared.gateway.github.metadata.core import find_metadata_block
+    19→from erk_shared.gateway.github.metadata.plan_header import extract_plan_from_comment
+    20→from erk_shared.gateway.github.metadata.schemas import PlanHeaderSchema
+    21→from erk_shared.gateway.github.metadata.types import BlockKeys
+    22→from erk_shared.gateway.github.pr_footer import (
+    23→    extract_header_from_body,
+    24→    is_header_at_legacy_position,
+    25→)
+    26→from erk_shared.gateway.github.types import PRNotFound
+    27→from erk_shared.gateway.pr.submit import has_checkout_footer_for_pr
+    28→from erk_shared.gateway.remote_github.abc import RemoteGitHub
+    29→from erk_shared.impl_folder import read_plan_ref, resolve_impl_dir
+    30→from erk_shared.output.output import user_output
+
+... [330 lines omitted] ...
+
+    47→    """Validation completed (may have passed or failed checks).
+    52→        failed_count: Number of failed checks
+    57→    failed_count: int
+    61→class PlanValidationError:
+    62→    """Could not complete validation (API error, network issue, etc.)."""
+    64→    error: str
+    67→PlanValidationResult = PlanValidationSuccess | PlanValidationError
+    84→    It does not produce output or raise SystemExit. It never raises exceptions -
+    85→    API failures are returned as PlanValidationError.
+    94→        PlanValidationSuccess if validation completed (may have passed or failed checks)
+    95→        PlanValidationError if unable to complete validation (API error, etc.)
+   101→        return PlanValidationError(error=f"PR #{plan_number} not found")
+   117→        except ValueError as e:
+   118→            error_msg = str(e).split("\n")[0]
+   119→            checks.append((False, f"plan-header validation failed: {error_msg}"))
+   144→    failed_count = sum(1 for passed, _ in checks if not passed)
+   147→        passed=failed_count == 0,
+   149→        failed_count=failed_count,
+   203→                click.style("Error: ", fg="red")
+   229→    if isinstance(result, PlanValidationError):
+   230→        user_output(click.style("Error: ", fg="red") + f"Failed to validate PR: {result.error}")
+   243→        check_word = "checks" if result.failed_count &gt; 1 else "check"
+   246→                f"PR validation failed ({result.failed_count} {check_word} failed)", fg="red"
+   267→            click.style("Error: ", fg="red") + f"No pull request found for branch '{branch}'"
+   347→    failed_count = sum(1 for c in checks if not c.passed)
+   348→    if failed_count == 0:
+   352→        check_word = "check" if failed_count == 1 else "checks"
+   353→        user_output(click.style(f"{failed_count} {check_word} failed", fg="red"))
+  </tool_result>
+  <tool_result tool="toolu_01RyX5pSK7GomPbDNUGe8iEH">
+     1→"""Command to fetch and display a single plan.
+     2→
+     3→Human-facing command with Click options and rich terminal output.
+     4→Machine-readable JSON equivalent lives in pr/view/json_cli.py.
+     5→"""
+     6→
+     7→from datetime import datetime
+     8→
+     9→import click
+    10→
+    11→from erk.cli.commands.pr.view.operation import PrViewRequest, PrViewResult, run_pr_view
+    12→from erk.cli.repo_resolution import resolved_repo_option
+    13→from erk.core.context import ErkContext
+    14→from erk_shared.agentclick.machine_command import MachineCommandError
+    15→from erk_shared.core.typing_utils import narrow_to_literal
+    16→from erk_shared.gateway.github.metadata.schemas import (
+    17→    CREATED_BY,
+    18→    CREATED_FROM_SESSION,
+    19→    LAST_DISPATCHED_AT,
+    20→    LAST_DISPATCHED_RUN_ID,
+    21→    LAST_LEARN_SESSION,
+    22→    LAST_LOCAL_IMPL_AT,
+    23→    LAST_LOCAL_IMPL_EVENT,
+    24→    LAST_LOCAL_IMPL_SESSION,
+    25→    LAST_LOCAL_IMPL_USER,
+    26→    LAST_REMOTE_IMPL_AT,
+    27→    LEARN_PLAN_ISSUE,
+    28→    LEARN_PLAN_PR,
+    29→    LEARN_RUN_ID,
+    30→    LEARN_STATUS,
+
+... [241 lines omitted] ...
+
+   258→    if isinstance(result, MachineCommandError):
+   259→        user_output(click.style("Error: ", fg="red") + result.message)
+   260→        if result.error_type == "missing_identifier":
+  </tool_result>
+  <tool_result tool="toolu_01NLBxPhVruUFCV15wZPDstx">
+     1→"""Command to check a plan for duplicates and commit-history relevance."""
+     2→
+     3→import sys
+     4→import tempfile
+     5→from pathlib import Path
+     6→
+     7→import click
+     8→
+     9→from erk.cli.ensure import Ensure
+    10→from erk.cli.github_parsing import parse_issue_identifier
+    11→from erk.cli.repo_resolution import get_remote_github, resolved_repo_option
+    12→from erk.core.context import ErkContext
+    13→from erk.core.plan_duplicate_checker import PlanDuplicateChecker
+    14→from erk.core.plan_relevance_checker import PlanRelevanceChecker
+    15→from erk_shared.context.types import NoRepoSentinel
+    16→from erk_shared.gateway.github.issues.types import IssueNotFound
+    17→from erk_shared.gateway.github.types import GitHubRepoId, GitHubRepoLocation
+    18→from erk_shared.output.output import user_output
+    19→
+    20→
+    21→@click.command("duplicate-check")
+    22→@click.option(
+    23→    "--file",
+    24→    "-f",
+    25→    type=click.Path(exists=True, path_type=Path),
+    26→    help="PR file to read",
+    27→)
+    28→@click.option(
+    29→    "--plan",
+    30→    "-p",
+
+... [174 lines omitted] ...
+
+    58→        1: Duplicates found, already implemented, or error
+    78→            user_output(click.style("Error: ", fg="red") + f"PR {plan_number} not found.")
+    86→        except OSError as e:
+    87→            user_output(click.style("Error: ", fg="red") + f"Failed to read file: {e}")
+    92→        except OSError as e:
+    93→            user_output(click.style("Error: ", fg="red") + f"Failed to read stdin: {e}")
+   104→        user_output(click.style("Error: ", fg="red") + "GitHub authentication not available")
+   143→        if dup_result.error is not None:
+   144→            user_output(click.style("Error: ", fg="red") + "Duplicate check failed:")
+   145→            user_output(f"  {dup_result.error}")
+   174→            if rel_result.error is not None:
+   176→                    click.style("Warning: ", fg="yellow")
+   177→                    + f"Relevance check failed: {rel_result.error}"
+  </tool_result>
+  <tool_result tool="toolu_01E6MNmSFaDoHph38oQtgKyd">
+     1→"""Command to close a plan."""
+     2→
+     3→import click
+     4→
+     5→from erk.cli.commands.objective_helpers import run_objective_update_after_close
+     6→from erk.cli.github_parsing import parse_issue_identifier
+     7→from erk.cli.repo_resolution import get_remote_github, resolved_repo_option
+     8→from erk.core.context import ErkContext
+     9→from erk_shared.context.types import NoRepoSentinel
+    10→from erk_shared.gateway.github.issues.types import IssueNotFound
+    11→from erk_shared.gateway.github.types import GitHubRepoId
+    12→from erk_shared.output.output import user_output
+    13→from erk_shared.plan_store.types import PlanNotFound
+    14→
+    15→
+    16→@click.command("close")
+    17→@click.argument("identifier", type=str)
+    18→@resolved_repo_option
+    19→@click.pass_obj
+    20→def pr_close(ctx: ErkContext, identifier: str, *, repo_id: GitHubRepoId) -&gt; None:
+    21→    """Close a PR by PR number or GitHub URL.
+    22→
+    23→    Closes all OPEN PRs linked to the issue in addition to closing the issue itself.
+    24→
+    25→    Examples:
+    26→        erk pr close 42
+    27→        erk pr close 42 --repo owner/repo
+    28→    """
+    29→    remote = get_remote_github(ctx)
+    30→
+
+... [47 lines omitted] ...
+
+    36→        raise click.ClickException(f"PR #{number} not found")
+  </tool_result>
+  <tool_result tool="toolu_01LsNdiWCgPnmLWckmhJ9LPb">
+     1→"""Squash, regenerate AI commit message, push, and update remote PR.
+     2→
+     3→Replaces the old multi-step workflow (gt squash → erk pr summarize → push)
+     4→with a single command that handles the full cycle: squash commits, generate
+     5→an AI-powered commit message, amend the local commit, force-push, and update
+     6→the remote PR title/body.
+     7→"""
+     8→
+     9→from pathlib import Path
+    10→
+    11→import click
+    12→
+    13→from erk.cli.commands.pr.shared import (
+    14→    assemble_pr_body,
+    15→    cleanup_diff_file,
+    16→    discover_branch_context,
+    17→    echo_plan_context_status,
+    18→    maybe_advance_lifecycle_to_impl,
+    19→    render_progress,
+    20→    require_claude_available,
+    21→    run_commit_message_generation,
+    22→    run_diff_extraction,
+    23→)
+    24→from erk.cli.repo_resolution import get_remote_github
+    25→from erk.core.command_log import get_or_generate_session_id
+    26→from erk.core.commit_message_generator import CommitMessageGenerator
+    27→from erk.core.context import ErkContext, NoRepoSentinel
+    28→from erk.core.plan_context_provider import PlanContextProvider
+    29→from erk_shared.gateway.branch_manager.types import SubmitBranchError
+    30→from erk_shared.gateway.github.label_ops import add_labels_resilient
+
+... [207 lines omitted] ...
+
+    35→from erk_shared.gateway.gt.types import SquashError
+    83→        raise click.ClickException(
+    96→    if isinstance(squash_result, SquashError):
+    97→        raise click.ClickException(f"Squash failed: {squash_result.message}")
+   110→        raise click.ClickException("Failed to extract diff for AI analysis")
+   120→        raise click.ClickException("Repository has no GitHub remote configured")
+   144→        raise click.ClickException(f"Failed to generate message: {msg_result.error_message}")
+   166→    if isinstance(submit_result, SubmitBranchError):
+   167→        raise click.ClickException(f"Push failed: {submit_result.message}")
+   221→) -&gt; SquashError | None:
+   222→    """Run squash phase. Returns SquashError on failure, None on success."""
+   229→            if isinstance(result, SquashError):
+  </tool_result>
+  <tool_result tool="toolu_0139AKNpBSDBnZLqSKBuY9u3">
+     1→"""Helpers for plan dispatch metadata updates.
+     2→
+     3→This module extracts shared logic for updating plan dispatch metadata
+     4→when triggering remote workflows on branches that follow the P{plan}-pattern.
+     5→"""
+     6→
+     7→from __future__ import annotations
+     8→
+     9→from pathlib import Path
+    10→from typing import TYPE_CHECKING
+    11→
+    12→import click
+    13→
+    14→from erk_shared.output.output import user_output
+    15→from erk_shared.plan_store.backend import PlanBackend
+    16→from erk_shared.plan_store.types import PlanNotFound
+    17→
+    18→if TYPE_CHECKING:
+    19→    from erk.core.context import ErkContext
+    20→    from erk.core.repo_discovery import RepoContext
+    21→    from erk_shared.gateway.github.abc import LocalGitHub
+    22→
+    23→
+    24→def write_dispatch_metadata(
+    25→    *,
+    26→    plan_backend: PlanBackend,
+    27→    github: LocalGitHub,
+    28→    repo_root: Path,
+    29→    plan_number: int,
+    30→    run_id: str,
+
+... [79 lines omitted] ...
+
+    36→        RuntimeError: If plan not found or node_id unavailable.
+    40→        raise RuntimeError(f"Could not get node_id for run {run_id}")
+    46→        raise RuntimeError(f"Plan #{plan_number} not found")
+  </tool_result>
+  <tool_result tool="toolu_011KgMPJAVzFBHUBGrveJH43">
+     1→"""Dispatch plans for remote AI implementation via GitHub Actions."""
+     2→
+     3→import logging
+     4→import tomllib
+     5→from dataclasses import dataclass
+     6→from datetime import UTC, datetime
+     7→from pathlib import Path
+     8→
+     9→import click
+    10→
+    11→from erk.cli.commands.pr.dispatch_helpers import ensure_trunk_synced, sync_branch_to_sha
+    12→from erk.cli.commands.pr.metadata_helpers import write_dispatch_metadata
+    13→from erk.cli.commands.ref_resolution import resolve_dispatch_ref
+    14→from erk.cli.commands.slot.common import is_placeholder_branch
+    15→from erk.cli.constants import (
+    16→    DISPATCH_WORKFLOW_METADATA_NAME,
+    17→    DISPATCH_WORKFLOW_NAME,
+    18→    ERK_PR_TITLE_PREFIX,
+    19→)
+    20→from erk.cli.core import discover_repo_context
+    21→from erk.cli.ensure import Ensure, UserFacingCliError
+    22→from erk.cli.repo_resolution import get_remote_github, repo_option, resolve_owner_repo
+    23→from erk.core.context import ErkContext
+    24→from erk.core.repo_discovery import RepoContext
+    25→from erk_shared.context.types import NoRepoSentinel
+    26→from erk_shared.gateway.git.remote_ops.types import PushError
+    27→from erk_shared.gateway.github.issues.types import IssueNotFound
+    28→from erk_shared.gateway.github.metadata.core import (
+    29→    create_submission_queued_block,
+    30→    render_erk_issue_event,
+
+... [897 lines omitted] ...
+
+   163→        user_output(click.style("Error: ", fg="red") + f"PR #{pr_number} not found")
+   169→            click.style("Error: ", fg="red")
+   178→            click.style("Error: ", fg="red") + f"PR #{pr_number} is {pr_result.state}\n\n"
+   224→        user_output(click.style("Error: ", fg="red") + f"PR #{pr_number}: plan content not found")
+   266→        except Exception:
+   267→            logger.warning("Failed to sync index after plumbing commit", exc_info=True)
+   272→    if isinstance(push_result, PushError):
+   273→        raise UserFacingCliError(push_result.message, error_type="cli_error")
+   319→    except Exception as e:
+   321→            click.style("Warning: ", fg="yellow") + f"Failed to update dispatch metadata: {e}"
+   331→    except Exception as e:
+   332→        logger.warning("Failed to update PR body with workflow run link: %s", e)
+   363→    except Exception as e:
+   365→            click.style("Warning: ", fg="yellow")
+   366→            + f"Failed to post queued comment: {e}\n"
+   407→        user_output(click.style("Error: ", fg="red") + f"PR #{pr_number} not found")
+   412→            click.style("Error: ", fg="red")
+   420→            click.style("Error: ", fg="red") + f"PR #{pr_number} is {issue.state}\n\n"
+   429→            click.style("Error: ", fg="red")
+   480→        user_output(click.style("Error: ", fg="red") + f"PR #{pr_number}: plan content not found")
+   545→    except Exception as e:
+   546→        logger.warning("Failed to update PR body with workflow run link: %s", e)
+   578→    except Exception as e:
+   580→            click.style("Warning: ", fg="yellow")
+   581→            + f"Failed to post queued comment: {e}\n"
+   651→            click.style("Error: ", fg="red") + "PR number(s) required in remote mode.\n\n"
+   744→            click.style("Error: ", fg="red")
+   754→                click.style("Error: ", fg="red")
+   767→                click.style("Error: ", fg="red") + f"Base branch '{base}' does not exist on remote"
+  </tool_result>
+  <assistant>Now I'll identify the issues and fix them in each file:
+
+## Issue Analysis
+
+**checkout_cmd.py (line 167, 347)**: Has duplicate `pr_number` parameter conflicts where a plan reference number was renamed to `pr_number` but conflicts with an existing `pr_number` parameter.
+
+**log_cmd.py (line 142, 159, 356, 359, 362, 368, 403, 462)**: Has `plan_number` local variables that should be renamed to `pr_number`.
+
+**check_cmd.py (line 75, 101, 222, 224, 227, 302, 306, 310)**: Has `plan_number` parameter/local variables that should be renamed to `pr_number`.
+
+**view/cli.py (line 80)**: Has `plan_url` parameter that should be renamed to `pr_url`.
+
+**duplicate_check_cmd.py (line 70, 76, 78, 81)**: Has `exclude_plan_id` and `plan_number` variables.
+
+**close_cmd.py (line 63)**: Has `plan_number` local variable.
+
+**rewrite_cmd.py**: Already clean - uses `pr_number` consistently.
+
+**dispatch_cmd.py**: Already clean - no plan refs found.
+
+**metadata_helpers.py**: Already clean - uses `pr_number` or `pr_id` consistently.
+
+Let me fix these files:</assistant>
+  <usage input_tokens="1403" cache_creation_input_tokens="41044" cache_read_input_tokens="16537" cache_creation="{'ephemeral_5m_input_tokens': 41044, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_015TSgeNn8dDi79M8c1VuYnS">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/checkout_cmd.py</param>
+    <param name="old_string">def _checkout_plan(
+    ctx: ErkContext,
+    repo: RepoContext,
+    *,
+    pr_number: int,...[truncated 361 chars]...lpful message
+    """
+    prs = ctx.issues.get_prs_referencing_issue(repo.root, pr_number)</param>
+    <param name="new_string">def _checkout_plan(
+    ctx: ErkContext,
+    repo: RepoContext,
+    *,
+    plan_pr_number:...[truncated 371 chars]... message
+    """
+    prs = ctx.issues.get_prs_referencing_issue(repo.root, plan_pr_number)</param>
+  </tool_use>
+  <usage input_tokens="1403" cache_creation_input_tokens="41044" cache_read_input_tokens="16537" cache_creation="{'ephemeral_5m_input_tokens': 41044, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01GtAw4Qq7GtFqhcPVDUntvc">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/checkout_cmd.py</param>
+    <param name="old_string">    if len(open_prs) == 0:
+        user_output(
+            f"No open PR found for PR #{pr...[truncated 599 chars]... Multiple open PRs - display table and exit
+    _display_multiple_prs(pr_number, open_prs)</param>
+    <param name="new_string">    if len(open_prs) == 0:
+        user_output(
+            f"No open PR found for PR #{pl...[truncated 629 chars]...iple open PRs - display table and exit
+    _display_multiple_prs(plan_pr_number, open_prs)</param>
+  </tool_use>
+  <usage input_tokens="1403" cache_creation_input_tokens="41044" cache_read_input_tokens="16537" cache_creation="{'ephemeral_5m_input_tokens': 41044, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01UD2vo8fWmuX1J4fSEhmw8Y">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/checkout_cmd.py</param>
+    <param name="old_string">def _checkout_plan_pr(
+    ctx: ErkContext,
+    repo: RepoContext,
+    *,
+    impl_pr_numb...[truncated 2247 chars]...t PR #{pr_number} (PR #{impl_pr_number}) at $(pwd)"',
+        post_cd_commands=None,
+    )</param>
+    <param name="new_string">def _checkout_plan_pr(
+    ctx: ErkContext,
+    repo: RepoContext,
+    *,
+    impl_pr_numb...[truncated 2282 chars]...#{plan_pr_number} (PR #{impl_pr_number}) at $(pwd)"',
+        post_cd_commands=None,
+    )</param>
+  </tool_use>
+  <usage input_tokens="1403" cache_creation_input_tokens="41044" cache_read_input_tokens="16537" cache_creation="{'ephemeral_5m_input_tokens': 41044, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01CYe9foJkhrcP1v9jucH3pQ">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/checkout_cmd.py</param>
+    <param name="old_string">    if isinstance(ref, _PlanRef):
+        _checkout_plan(
+            ctx, repo, pr_number...[truncated 65 chars]..._checkout_pr(ctx, repo, pr_number=ref.number, no_slot=no_slot, force=force, script=script)</param>
+    <param name="new_string">    if isinstance(ref, _PlanRef):
+        _checkout_plan(
+            ctx, repo, plan_pr_n...[truncated 70 chars]..._checkout_pr(ctx, repo, pr_number=ref.number, no_slot=no_slot, force=force, script=script)</param>
+  </tool_use>
+  <usage input_tokens="1403" cache_creation_input_tokens="41044" cache_read_input_tokens="16537" cache_creation="{'ephemeral_5m_input_tokens': 41044, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_012rFDC8TiXwZA9m2eH9YiHH">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/log_cmd.py</param>
+    <param name="old_string">    try:
+        remote = get_remote_github(ctx)
+
+        plan_number = parse_issue_identi...[truncated 538 chars]...      _output_json(events)
+        else:
+            _output_timeline(events, plan_number)</param>
+    <param name="new_string">    try:
+        remote = get_remote_github(ctx)
+
+        pr_number = parse_issue_identifi...[truncated 530 chars]...        _output_json(events)
+        else:
+            _output_timeline(events, pr_number)</param>
+  </tool_use>
+  <usage input_tokens="1403" cache_creation_input_tokens="41044" cache_read_input_tokens="16537" cache_creation="{'ephemeral_5m_input_tokens': 41044, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_013PYvzZpmQbaYR8tFqhRLKC">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/log_cmd.py</param>
+    <param name="old_string">def _output_timeline(events: list[Event], plan_number: int) -&gt; None:
+    """Output events ...[truncated 203 chars]...PR #{plan_number}")
+        return
+
+    user_output(f"PR #{plan_number} Event Timeline\n")</param>
+    <param name="new_string">def _output_timeline(events: list[Event], pr_number: int) -&gt; None:
+    """Output events as...[truncated 195 chars]...for PR #{pr_number}")
+        return
+
+    user_output(f"PR #{pr_number} Event Timeline\n")</param>
+  </tool_use>
+  <usage input_tokens="1403" cache_creation_input_tokens="41044" cache_read_input_tokens="16537" cache_creation="{'ephemeral_5m_input_tokens': 41044, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01Y4ch4dHyBrFLpUG8kf6ETs">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/check_cmd.py</param>
+    <param name="old_string">def validate_plan_format(
+    remote: RemoteGitHub,
+    *,
+    owner: str,
+    repo: str,
+...[truncated 1003 chars]..., IssueNotFound):
+        return PlanValidationError(error=f"PR #{plan_number} not found")</param>
+    <param name="new_string">def validate_plan_format(
+    remote: RemoteGitHub,
+    *,
+    owner: str,
+    repo: str,
+...[truncated 995 chars]...ue, IssueNotFound):
+        return PlanValidationError(error=f"PR #{pr_number} not found")</param>
+  </tool_use>
+  <usage input_tokens="1403" cache_creation_input_tokens="41044" cache_read_input_tokens="16537" cache_creation="{'ephemeral_5m_input_tokens': 41044, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01QBkBCV3BZL9h59WXvz3ceA">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/check_cmd.py</param>
+    <param name="old_string">        # Issue-based format: plan content is in first comment
+        comments = remote.get_issue_comments(owner=owner, repo=repo, number=plan_number)</param>
+    <param name="new_string">        # Issue-based format: plan content is in first comment
+        comments = remote.get_issue_comments(owner=owner, repo=repo, number=pr_number)</param>
+  </tool_use>
+  <usage input_tokens="1403" cache_creation_input_tokens="41044" cache_read_input_tokens="16537" cache_creation="{'ephemeral_5m_input_tokens': 41044, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_012LT6RwVH7eQKQttPMpd19R">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/check_cmd.py</param>
+    <param name="old_string">    owner, repo_name = resolve_owner_repo(ctx, target_repo=target_repo)
+    remote = get_r...[truncated 131 chars]...esult = validate_plan_format(remote, owner=owner, repo=repo_name, plan_number=plan_number)</param>
+    <param name="new_string">    owner, repo_name = resolve_owner_repo(ctx, target_repo=target_repo)
+    remote = get_r...[truncated 123 chars]...   result = validate_plan_format(remote, owner=owner, repo=repo_name, pr_number=pr_number)</param>
+  </tool_use>
+  <usage input_tokens="1403" cache_creation_input_tokens="41044" cache_read_input_tokens="16537" cache_creation="{'ephemeral_5m_input_tokens': 41044, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_014ZGiVTDxnwGBLpKh7DDppj">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/view/cli.py</param>
+    <param name="old_string">def _format_header_section(header_info: dict[str, object], *, plan_url: str | None) -&gt; lis...[truncated 4194 chars]...nd(_format_field("Learn session", str(header_info[LAST_LEARN_SESSION])))
+
+    return lines</param>
+    <param name="new_string">def _format_header_section(header_info: dict[str, object], *, pr_url: str | None) -&gt; list[...[truncated 4188 chars]...nd(_format_field("Learn session", str(header_info[LAST_LEARN_SESSION])))
+
+    return lines</param>
+  </tool_use>
+  <usage input_tokens="1403" cache_creation_input_tokens="41044" cache_read_input_tokens="16537" cache_creation="{'ephemeral_5m_input_tokens': 41044, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01Kk7TYBXh1uJ1GunR7qT63R">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/view/cli.py</param>
+    <param name="old_string">    created = datetime.fromisoformat(result.created_at).strftime("%Y-%m-%d %H:%M:%S UTC")
+...[truncated 223 chars]...eader_fields, plan_url=result.url)
+    for line in header_lines:
+        user_output(line)</param>
+    <param name="new_string">    created = datetime.fromisoformat(result.created_at).strftime("%Y-%m-%d %H:%M:%S UTC")
+...[truncated 221 chars]....header_fields, pr_url=result.url)
+    for line in header_lines:
+        user_output(line)</param>
+  </tool_use>
+  <usage input_tokens="1403" cache_creation_input_tokens="41044" cache_read_input_tokens="16537" cache_creation="{'ephemeral_5m_input_tokens': 41044, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01EFCC357D6UVHrbCEvoyBph">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/duplicate_check_cmd.py</param>
+    <param name="old_string">    # Resolve plan content
+    exclude_plan_id: str | None = None
+    content: str
+
+    if...[truncated 333 chars]...ise SystemExit(1)
+        content = issue.body
+        exclude_plan_id = str(issue.number)</param>
+    <param name="new_string">    # Resolve plan content
+    exclude_pr_id: str | None = None
+    content: str
+
+    if p...[truncated 323 chars]...raise SystemExit(1)
+        content = issue.body
+        exclude_pr_id = str(issue.number)</param>
+  </tool_use>
+  <usage input_tokens="1403" cache_creation_input_tokens="41044" cache_read_input_tokens="16537" cache_creation="{'ephemeral_5m_input_tokens': 41044, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01DFtB67DXazn3d5t6ki4bUA">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/duplicate_check_cmd.py</param>
+    <param name="old_string">    # Filter to plans only (title prefix check)
+    existing_plans = [p for p in plan_data...[truncated 59 chars]...        existing_plans = [p for p in existing_plans if p.pr_identifier != exclude_plan_id]</param>
+    <param name="new_string">    # Filter to plans only (title prefix check)
+    existing_plans = [p for p in plan_data...[truncated 55 chars]...:
+        existing_plans = [p for p in existing_plans if p.pr_identifier != exclude_pr_id]</param>
+  </tool_use>
+  <usage input_tokens="1403" cache_creation_input_tokens="41044" cache_read_input_tokens="16537" cache_creation="{'ephemeral_5m_input_tokens': 41044, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01VocPqH1C5dsZXVUCD7dTvy">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/close_cmd.py</param>
+    <param name="old_string">    # Objective update (local only)
+    if objective_id is not None:
+        run_objective...[truncated 5 chars]...        ctx,
+            plan_number=number,
+            objective=objective_id,
+        )</param>
+    <param name="new_string">    # Objective update (local only)
+    if objective_id is not None:
+        run_objective...[truncated 3 chars]...          ctx,
+            pr_number=number,
+            objective=objective_id,
+        )</param>
+  </tool_use>
+  <usage input_tokens="1403" cache_creation_input_tokens="41044" cache_read_input_tokens="16537" cache_creation="{'ephemeral_5m_input_tokens': 41044, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_015TSgeNn8dDi79M8c1VuYnS">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/pr/checkout_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01GtAw4Qq7GtFqhcPVDUntvc">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/pr/checkout_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01UD2vo8fWmuX1J4fSEhmw8Y">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/pr/checkout_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01CYe9foJkhrcP1v9jucH3pQ">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/pr/checkout_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_012rFDC8TiXwZA9m2eH9YiHH">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/pr/log_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_013PYvzZpmQbaYR8tFqhRLKC">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/pr/log_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01Y4ch4dHyBrFLpUG8kf6ETs">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/pr/check_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01QBkBCV3BZL9h59WXvz3ceA">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/pr/check_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_012LT6RwVH7eQKQttPMpd19R">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/pr/check_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_014ZGiVTDxnwGBLpKh7DDppj">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/pr/view/cli.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01Kk7TYBXh1uJ1GunR7qT63R">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/pr/view/cli.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01EFCC357D6UVHrbCEvoyBph">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/pr/duplicate_check_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01DFtB67DXazn3d5t6ki4bUA">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/pr/duplicate_check_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01VocPqH1C5dsZXVUCD7dTvy">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/pr/close_cmd.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me verify the fixes and check if there are any remaining issues:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="11984" cache_read_input_tokens="57581" cache_creation="{'ephemeral_5m_input_tokens': 11984, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01MfXy7KVUJDERRRvGCoNJYu">
+    <param name="command">python -m py_compile src/erk/cli/commands/pr/checkout_cmd.py src/erk/cli/commands/pr/log_c...[truncated 52 chars]...cli.py src/erk/cli/commands/pr/duplicate_check_cmd.py src/erk/cli/commands/pr/close_cmd.py</param>
+    <param name="description">Verify syntax of all modified files</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="11984" cache_read_input_tokens="57581" cache_creation="{'ephemeral_5m_input_tokens': 11984, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_013nbmtgPiPBB6t6q6JEt9w5">
+    <param name="pattern">\bplan_number\b</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli/commands/pr</param>
+    <param name="glob">*.py</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="11984" cache_read_input_tokens="57581" cache_creation="{'ephemeral_5m_input_tokens': 11984, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_013j7C4BkF4omyW4VY29TGJo">
+    <param name="pattern">\bplan_id\b</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli/commands/pr</param>
+    <param name="glob">*.py</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="11984" cache_read_input_tokens="57581" cache_creation="{'ephemeral_5m_input_tokens': 11984, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01DWGVSfmqCVcDNzj9Dx4rkA">
+    <param name="pattern">\bplan_url\b</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli/commands/pr</param>
+    <param name="glob">*.py</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="11984" cache_read_input_tokens="57581" cache_creation="{'ephemeral_5m_input_tokens': 11984, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_014ejziigyhcoJciPFaDzZ29">
+    <param name="pattern">\bexclude_plan_id\b</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli/commands/pr</param>
+    <param name="glob">*.py</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="11984" cache_read_input_tokens="57581" cache_creation="{'ephemeral_5m_input_tokens': 11984, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01MfXy7KVUJDERRRvGCoNJYu">
+
+  </tool_result>
+  <tool_result tool="toolu_01DWGVSfmqCVcDNzj9Dx4rkA">
+Found 2 files
+src/erk/cli/commands/pr/dispatch_cmd.py
+src/erk/cli/commands/pr/submit_pipeline.py
+  </tool_result>
+  <tool_result tool="toolu_013nbmtgPiPBB6t6q6JEt9w5">
+Found 5 files
+src/erk/cli/commands/pr/log_cmd.py
+src/erk/cli/commands/pr/checkout_cmd.py
+src/erk/cli/commands/pr/view/operation.py
+src/erk/cli/commands/pr/dispatch_cmd.py
+src/erk/cli/commands/pr/metadata_helpers.py
+  </tool_result>
+  <tool_result tool="toolu_013j7C4BkF4omyW4VY29TGJo">
+Found 6 files
+src/erk/cli/commands/pr/view/cli.py
+src/erk/cli/commands/pr/dispatch_cmd.py
+src/erk/cli/commands/pr/rewrite_cmd.py
+src/erk/cli/commands/pr/shared.py
+src/erk/cli/commands/pr/submit_cmd.py
+src/erk/cli/commands/pr/submit_pipeline.py
+  </tool_result>
+  <tool_result tool="toolu_014ejziigyhcoJciPFaDzZ29">
+No files found
+  </tool_result>
+  <assistant>Good! The syntax is valid. Let me check the remaining occurrences to make sure they're all appropriate:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="1162" cache_read_input_tokens="69565" cache_creation="{'ephemeral_5m_input_tokens': 1162, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_0146hSP1XQppkGZBH9i82TwV">
+    <param name="pattern">\bplan_number\b</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/log_cmd.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1162" cache_read_input_tokens="69565" cache_creation="{'ephemeral_5m_input_tokens': 1162, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_012t51gucchnyprhdBP2b8Q3">
+    <param name="pattern">\bplan_number\b</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/checkout_cmd.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1162" cache_read_input_tokens="69565" cache_creation="{'ephemeral_5m_input_tokens': 1162, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_016M3iDGgL6xaHLnAB7rCEDG">
+    <param name="pattern">\bplan_number\b</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/dispatch_cmd.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1162" cache_read_input_tokens="69565" cache_creation="{'ephemeral_5m_input_tokens': 1162, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01H1qAwSGgwfTo3QdJCGrcQA">
+    <param name="pattern">\bplan_number\b</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/metadata_helpers.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1162" cache_read_input_tokens="69565" cache_creation="{'ephemeral_5m_input_tokens': 1162, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_017sR8hYNpqSGCo42VWRqrvo">
+    <param name="pattern">\bplan_id\b</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/view/cli.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1162" cache_read_input_tokens="69565" cache_creation="{'ephemeral_5m_input_tokens': 1162, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_012oGewaAhMPpAiihLfDN3GW">
+    <param name="pattern">\bplan_url\b</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/dispatch_cmd.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1162" cache_read_input_tokens="69565" cache_creation="{'ephemeral_5m_input_tokens': 1162, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012oGewaAhMPpAiihLfDN3GW">
+93:    plan_url: str
+100:def _build_workflow_run_url(plan_url: str, run_id: str) -&gt; str:
+104:        plan_url: GitHub plan URL (e.g., https://github.com/owner/repo/issues/123)
+110:    owner_repo = extract_owner_repo_from_github_url(plan_url)
+117:def _build_pr_url(plan_url: str, pr_number: int) -&gt; str:
+121:        plan_url: GitHub plan URL (e.g., https://github.com/owner/repo/issues/123)
+127:    owner_repo = extract_owner_repo_from_github_url(plan_url)
+375:        plan_url=validated.url,
+588:        plan_url=validated.url,
+838:        user_output(f"    Plan: {r.plan_url}")
+  </tool_result>
+  <tool_result tool="toolu_016M3iDGgL6xaHLnAB7rCEDG">
+314:            plan_number=pr_number,
+344:            plan_number=pr_number,
+553:            plan_number=pr_number,
+  </tool_result>
+  <tool_result tool="toolu_01H1qAwSGgwfTo3QdJCGrcQA">
+29:    plan_number: int,
+43:    pr_id = str(plan_number)
+46:        raise RuntimeError(f"Plan #{plan_number} not found")
+76:    - Branch doesn't match P{plan_number} pattern
+  </tool_result>
+  <tool_result tool="toolu_017sR8hYNpqSGCo42VWRqrvo">
+191:    id_text = f"#{result.plan_id}"
+  </tool_result>
+  <tool_result tool="toolu_012t51gucchnyprhdBP2b8Q3">
+72:    plan_number = parse_plan_number_from_url(reference)
+73:    if plan_number is not None:
+74:        return _PlanRef(plan_number)
+  </tool_result>
+  <tool_result tool="toolu_0146hSP1XQppkGZBH9i82TwV">
+35:    plan_number: int
+225:        metadata["plan_number"] = data["issue_number"]
+  </tool_result>
+  <assistant>I see there are still some legitimate uses of these names. Let me check which ones need to be fixed:</assistant>
+  <usage input_tokens="494" cache_creation_input_tokens="944" cache_read_input_tokens="70727" cache_creation="{'ephemeral_5m_input_tokens': 944, 'ephemeral_1h_input_tokens': 0}" output_tokens="7" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01RFkF2MTRpBE8tukxjTPhmH">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/log_cmd.py</param>
+    <param name="offset">30</param>
+    <param name="limit">10</param>
+  </tool_use>
+  <usage input_tokens="494" cache_creation_input_tokens="944" cache_read_input_tokens="70727" cache_creation="{'ephemeral_5m_input_tokens': 944, 'ephemeral_1h_input_tokens': 0}" output_tokens="7" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01SQ4pz77xcDY6VNMhiJwU2Y">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/log_cmd.py</param>
+    <param name="offset">220</param>
+    <param name="limit">10</param>
+  </tool_use>
+  <usage input_tokens="494" cache_creation_input_tokens="944" cache_read_input_tokens="70727" cache_creation="{'ephemeral_5m_input_tokens': 944, 'ephemeral_1h_input_tokens': 0}" output_tokens="7" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01RFkF2MTRpBE8tukxjTPhmH">
+    30→# Event metadata types
+    31→class PlanCreatedMetadata(TypedDict, total=False):
+    32→    """Metadata for plan_created event."""
+    33→
+    34→    worktree_name: str
+    35→    plan_number: int
+    36→
+    37→
+    38→class SubmissionQueuedMetadata(TypedDict, total=False):
+    39→    """Metadata for submission_queued event."""
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_01SQ4pz77xcDY6VNMhiJwU2Y">
+   220→
+   221→    metadata: PlanCreatedMetadata = {}
+   222→    if "worktree_name" in data:
+   223→        metadata["worktree_name"] = data["worktree_name"]
+   224→    if "issue_number" in data:
+   225→        metadata["plan_number"] = data["issue_number"]
+   226→
+   227→    return Event(
+   228→        timestamp=timestamp,
+   229→        event_type="plan-created",
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>I see - these are TypedDict fields and metadata keys in `log_cmd.py` that come from the erk_shared API. According to the instructions, we should NOT rename erk_shared API kwargs. Let me check the others:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="1277" cache_read_input_tokens="71671" cache_creation="{'ephemeral_5m_input_tokens': 1277, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01SK71zttUKkbSgE3F1GJw5C">
+    <param name="pattern">parse_plan_number_from_url</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/checkout_cmd.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+    <param name="-B">2</param>
+    <param name="-A">2</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1277" cache_read_input_tokens="71671" cache_creation="{'ephemeral_5m_input_tokens': 1277, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01RSLoCCdX8eCehYZ5tLnYx3">
+    <param name="pattern">create_submission_queued_block</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/dispatch_cmd.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+    <param name="-B">2</param>
+    <param name="-A">5</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1277" cache_read_input_tokens="71671" cache_creation="{'ephemeral_5m_input_tokens': 1277, 'ephemeral_1h_input_tokens': 0}" output_tokens="391" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01SK71zttUKkbSgE3F1GJw5C">
+29-from erk.core.repo_discovery import NoRepoSentinel, RepoContext
+30-from erk_shared.gateway.github.parsing import (
+31:    parse_plan_number_from_url,
+32-    parse_pr_number_from_url,
+33-)
+--
+70-
+71-    # GitHub issue URL → plan
+72:    plan_number = parse_plan_number_from_url(reference)
+73-    if plan_number is not None:
+74-        return _PlanRef(plan_number)
+  </tool_result>
+  <tool_result tool="toolu_01RSLoCCdX8eCehYZ5tLnYx3">
+27-from erk_shared.gateway.github.issues.types import IssueNotFound
+28-from erk_shared.gateway.github.metadata.core import (
+29:    create_submission_queued_block,
+30-    render_erk_issue_event,
+31-)
+32-from erk_shared.gateway.github.metadata.plan_header import extract_plan_header_branch_name
+33-from erk_shared.gateway.github.parsing import (
+34-    construct_pr_url,
+--
+339-        }
+340-
+341:        metadata_block = create_submission_queued_block(
+342-            queued_at=queued_at,
+343-            submitted_by=submitted_by,
+344-            plan_number=pr_number,
+345-            validation_results=validation_results,
+346-            expected_workflow=DISPATCH_WORKFLOW_METADATA_NAME,
+--
+548-    # Post queued event comment (best-effort)
+549-    try:
+550:        metadata_block = create_submission_queued_block(
+551-            queued_at=queued_at,
+552-            submitted_by=submitted_by,
+553-            plan_number=pr_number,
+554-            validation_results={
+555-                "pr_is_open": True,
+  </tool_result>
+  <assistant>I see that:
+1. `parse_plan_number_from_url` in checkout_cmd.py is from erk_shared API - should NOT be renamed
+2. `create_submission_queued_block(..., plan_number=pr_number)` in dispatch_cmd.py is calling an erk_shared API with a kwarg - the kwarg name should NOT be changed (this is correct as-is)
+3. The TypedDict fields and metadata keys in log_cmd.py are from erk_shared API schema - should NOT be renamed
+
+Let me check the remaining occurrences more carefully:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="1001" cache_read_input_tokens="72948" cache_creation="{'ephemeral_5m_input_tokens': 1001, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_012hzXqhN8A6LKW6Na4tS45W">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/metadata_helpers.py</param>
+    <param name="offset">24</param>
+    <param name="limit">35</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1001" cache_read_input_tokens="72948" cache_creation="{'ephemeral_5m_input_tokens': 1001, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01P7g6nbrchVMn9g7tc4seXh">
+    <param name="pattern">DispatchResult</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/dispatch_cmd.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+    <param name="-B">1</param>
+    <param name="-A">8</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1001" cache_read_input_tokens="72948" cache_creation="{'ephemeral_5m_input_tokens': 1001, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012hzXqhN8A6LKW6Na4tS45W">
+    24→def write_dispatch_metadata(
+    25→    *,
+    26→    plan_backend: PlanBackend,
+    27→    github: LocalGitHub,
+    28→    repo_root: Path,
+    29→    plan_number: int,
+    30→    run_id: str,
+    31→    dispatched_at: str,
+    32→) -&gt; None:
+    33→    """Resolve node_id and write dispatch metadata to plan header.
+    34→
+    35→    Raises:
+    36→        RuntimeError: If plan not found or node_id unavailable.
+    37→    """
+    38→    node_id = github.get_workflow_run_node_id(repo_root, run_id)
+    39→    if node_id is None:
+    40→        raise RuntimeError(f"Could not get node_id for run {run_id}")
+    41→
+    42→    # LBYL: Check plan exists before updating metadata
+    43→    pr_id = str(plan_number)
+    44→    plan_result = plan_backend.get_plan(repo_root, pr_id)
+    45→    if isinstance(plan_result, PlanNotFound):
+    46→        raise RuntimeError(f"Plan #{plan_number} not found")
+    47→
+    48→    plan_backend.ensure_plan_header(repo_root, pr_id)
+    49→    plan_backend.update_metadata(
+    50→        repo_root,
+    51→        pr_id,
+    52→        {
+    53→            "last_dispatched_run_id": run_id,
+
+... [10 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01P7g6nbrchVMn9g7tc4seXh">
+87-@dataclass(frozen=True)
+88:class DispatchResult:
+89-    """Result of dispatching a single plan."""
+90-
+91-    pr_number: int
+92-    plan_title: str
+93-    plan_url: str
+94-    impl_pr_number: int | None
+95-    impl_pr_url: str | None
+96-    workflow_run_id: str
+--
+198-    ref: str | None,
+199:) -&gt; DispatchResult:
+200-    """Dispatch a validated planned-PR plan for implementation.
+201-
+202-    For planned-PR plans, the branch and PR already exist. This function:
+203-    - Syncs local branch ref to remote using git plumbing (no checkout)
+204-    - Commits .erk/impl-context/ files directly to branch (no checkout)
+205-    - Pushes and triggers the workflow with plan_backend="planned_pr"
+206-
+207-    Args:
+--
+214-    Returns:
+215:        DispatchResult with URLs and identifiers.
+216-    """
+217-    pr_number = validated.number
+218-    branch_name = validated.branch_name
+219-
+220-    # Fetch plan content via PlanBackend
+221-    user_output("Fetching plan content...")
+
+... [79 lines omitted] ...
+  </tool_result>
+  <assistant>Now I understand the remaining issues:
+
+1. **metadata_helpers.py**: `plan_number` parameter should be renamed to `pr_number` (it's a local parameter, not an erk_shared API)
+2. **dispatch_cmd.py**: `plan_url` and `plan_title` in DispatchResult dataclass should stay as-is (they represent "plan" as a concept, not just the PR)
+
+Let me fix metadata_helpers.py:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="2388" cache_read_input_tokens="73949" cache_creation="{'ephemeral_5m_input_tokens': 2388, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01VzjSZnJ8qDQHbA6BmktEyz">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/metadata_helpers.py</param>
+    <param name="old_string">def write_dispatch_metadata(
+    *,
+    plan_backend: PlanBackend,
+    github: LocalGitHub...[truncated 547 chars]...e(plan_result, PlanNotFound):
+        raise RuntimeError(f"Plan #{plan_number} not found")</param>
+    <param name="new_string">def write_dispatch_metadata(
+    *,
+    plan_backend: PlanBackend,
+    github: LocalGitHub...[truncated 541 chars]...nce(plan_result, PlanNotFound):
+        raise RuntimeError(f"Plan #{pr_number} not found")</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="2388" cache_read_input_tokens="73949" cache_creation="{'ephemeral_5m_input_tokens': 2388, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01GYTFzwxSE4FsTTW8mAGS3X">
+    <param name="pattern">write_dispatch_metadata</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli/commands/pr</param>
+    <param name="glob">*.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+    <param name="-B">2</param>
+    <param name="-A">5</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="2388" cache_read_input_tokens="73949" cache_creation="{'ephemeral_5m_input_tokens': 2388, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01VzjSZnJ8qDQHbA6BmktEyz">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/pr/metadata_helpers.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01GYTFzwxSE4FsTTW8mAGS3X">
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/dispatch_cmd.py-10-
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/dispatch_cmd.py-11-from erk.cli.commands.pr.dispatch_helpers import ensure_trunk_synced, sync_branch_to_sha
+src/erk/cli/commands/pr/dispatch_cmd.py:12:from erk.cli.commands.pr.metadata_helpers import write_dispatch_metadata
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/dispatch_cmd.py-13-from erk.cli.commands.ref_resolution import resolve_dispatch_ref
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/dispatch_cmd.py-14-from erk.cli.commands.slot.common import is_placeholder_branch
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/dispatch_cmd.py-15-from erk.cli.constants import (
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/dispatch_cmd.py-16-    DISPATCH_WORKFLOW_METADATA_NAME,
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/dispatch_cmd.py-17-    DISPATCH_WORKFLOW_NAME,
+--
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/dispatch_cmd.py-308-    # Write dispatch metadata FIRST (before any PR body modification)
+src/erk/cli/commands/pr/dispatch_cmd.py-309-    try:
+src/erk/cli/commands/pr/dispatch_cmd.py:310:        write_dispatch_metadata(
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/dispatch_cmd.py-311-            plan_backend=ctx.plan_backend,
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/dispatch_cmd.py-312-            github=ctx.github,
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/dispatch_cmd.py-313-            repo_root=repo.root,
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/dispatch_cmd.py-314-            plan_number=pr_number,
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/dispatch_cmd.py-315-            run_id=run_id,
+--
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/metadata_helpers.py-22-
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/metadata_helpers.py-23-
+src/erk/cli/commands/pr/metadata_helpers.py:24:def write_dispatch_metadata(
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/metadata_helpers.py-25-    *,
+src/erk/cli/commands/pr/metadata_helpers.py-26-    plan_backend: PlanBackend,
+src/erk/cli/commands/pr/metadata_helpers.py-27-    github: LocalGitHub,
+src/erk/cli/commands/pr/metadata_helpers.py-28-    repo_root: Path,
+src/erk/cli/commands/pr/metadata_helpers.py-29-    pr_number: int,
+  </tool_result>
+  <assistant>Good! Now I need to update the call site in dispatch_cmd.py:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="1990" cache_read_input_tokens="76337" cache_creation="{'ephemeral_5m_input_tokens': 1990, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01DDR9oM6sGKzYxguNAZopop">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/dispatch_cmd.py</param>
+    <param name="old_string">    # Write dispatch metadata FIRST (before any PR body modification)
+    try:
+        wri...[truncated 127 chars]...umber=pr_number,
+            run_id=run_id,
+            dispatched_at=queued_at,
+        )</param>
+    <param name="new_string">    # Write dispatch metadata FIRST (before any PR body modification)
+    try:
+        wri...[truncated 125 chars]...umber=pr_number,
+            run_id=run_id,
+            dispatched_at=queued_at,
+        )</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1990" cache_read_input_tokens="76337" cache_creation="{'ephemeral_5m_input_tokens': 1990, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01CWCXPVnVT7A1vPK2fux1j3">
+    <param name="command">python -m py_compile src/erk/cli/commands/pr/metadata_helpers.py src/erk/cli/commands/pr/dispatch_cmd.py</param>
+    <param name="description">Verify syntax of updated files</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1990" cache_read_input_tokens="76337" cache_creation="{'ephemeral_5m_input_tokens': 1990, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01DDR9oM6sGKzYxguNAZopop">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/pr/dispatch_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01CWCXPVnVT7A1vPK2fux1j3">
+
+  </tool_result>
+  <assistant>Perfect! Now let me do a final check of all the remaining plan_number/plan_id references to confirm they're all legitimate:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="607" cache_read_input_tokens="78327" cache_creation="{'ephemeral_5m_input_tokens': 607, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_019s1jMKFw2u9cFSTrCv6Rkp">
+    <param name="pattern">\bplan_number\b|\bplan_id\b|\bplan_url\b|\bexclude_plan_id\b</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli/commands/pr</param>
+    <param name="glob">*.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="607" cache_read_input_tokens="78327" cache_creation="{'ephemeral_5m_input_tokens': 607, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>

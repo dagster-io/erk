@@ -1,0 +1,1083 @@
+<session>
+  <meta source="agent-aea28d9" />
+  <meta branch="plnd/O9109-sweep-exec-leaf-cmd-03-10-1757" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant docs before exploring raw files. Then explore codebase as necessary.
+
+Search the codebase for ALL remaining occurrences of plan_number, plan_id, plan_url, plan_title, extract_plan_number, extract_plan_title in the following directories ONLY:
+1. src/erk/cli/commands/exec/scripts/
+2. src/erk/cli/commands/pr/
+3. src/erk/cli/commands/branch/
+4. src/erk/cli/commands/wt/
+5. src/erk/cli/commands/run/shared.py
+6. src/erk/cli/commands/admin.py
+7. src/erk/cli/commands/learn/
+8. src/erk/cli/commands/reconcile_cmd.py
+9. src/erk/cli/commands/reconcile_pipeline.py
+10. src/erk/cli/commands/one_shot_remote_dispatch.py
+11. src/erk/cli/commands/consolidate_learn_plans_dispatch.py
+12. src/erk/cli/commands/one_shot/
+13. src/erk/core/file_utils.py
+
+Use grep to find all occurrences. Report file-by-file counts. Exclude:
+- Comments and docstrings (report separately)
+- erk_shared API kwargs that should be kept (plan_id= passed to erk_shared functions)
+- Workflow input dict keys in admin.py
+
+Report the full list of files with line numbers and the specific occurrences to rename.</user>
+  <assistant>I'll search the codebase for all occurrences of plan_number, plan_id, plan_url, plan_title, extract_plan_number, and extract_plan_title in the specified directories. Let me start by reading the relevant documentation, then perform systematic searches.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="15397" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15397, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01XQKsFCC2Yc3iAwq8DSm57H">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/index.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15397" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15397, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01W82bbcoTWzyjKhWgMxd8em">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/planning.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15397" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15397, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01W82bbcoTWzyjKhWgMxd8em">
+&lt;tool_use_error&gt;File does not exist.&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_result tool="toolu_01XQKsFCC2Yc3iAwq8DSm57H">
+     1→&lt;!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY --&gt;
+     2→&lt;!-- Edit source frontmatter, then run 'erk docs sync' to regenerate. --&gt;
+     3→
+     4→# Agent Documentation
+     5→
+     6→Before starting work, scan the read-when conditions below.
+     7→If your current task matches, read the linked document **before writing code**.
+     8→
+     9→## Categories
+    10→
+    11→- [architecture/](architecture/) — Explore when working on core patterns (dry-run, gateways, subprocess, shell integration). Add docs here for cross-cutting technical patterns.
+    12→- [capabilities/](capabilities/)
+    13→- [changelog/](changelog/)
+    14→- [checklists/](checklists/)
+    15→- [ci/](ci/)
+    16→- [claude-code/](claude-code/)
+    17→- [cli/](cli/) — Explore when building CLI commands or output formatting. Add docs here for Click patterns and terminal UX.
+    18→- [commands/](commands/) — Explore when creating or optimizing slash commands. Add docs here for command authoring patterns.
+    19→- [config/](config/)
+    20→- [configuration/](configuration/)
+    21→- [documentation/](documentation/) — Explore when structuring or writing documentation. Add docs here for documentation methodology and best practices.
+    22→- [erk/](erk/) — Explore when working with erk-specific workflows (worktrees, PR sync, Graphite). Add docs here for erk user-facing features.
+    23→- [erk-dev/](erk-dev/)
+    24→- [gateway/](gateway/)
+    25→- [hooks/](hooks/) — Explore when creating or debugging hooks. Add docs here for hook development patterns.
+    26→- [integrations/](integrations/)
+    27→- [objectives/](objectives/)
+    28→- [planning/](planning/) — Explore when working with plans, .erk/impl-context/ folders, or agent delegation. Add docs here for planning workflow patterns.
+    29→- [pr-operations/](pr-operations/)
+    30→- [refactoring/](refactoring/)
+
+... [22 lines omitted] ...
+  </tool_result>
+  <assistant>Let me check what planning docs exist:</assistant>
+  <usage input_tokens="46" cache_creation_input_tokens="1308" cache_read_input_tokens="15397" cache_creation="{'ephemeral_5m_input_tokens': 1308, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01D6srpbycMMU96hRDpg8fPV">
+    <param name="pattern">docs/learned/planning/*.md</param>
+  </tool_use>
+  <usage input_tokens="46" cache_creation_input_tokens="1308" cache_read_input_tokens="15397" cache_creation="{'ephemeral_5m_input_tokens': 1308, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01D6srpbycMMU96hRDpg8fPV">
+/home/runner/work/erk/erk/docs/learned/planning/agent-delegation.md
+/home/runner/work/erk/erk/docs/learned/planning/exploration-strategies.md
+/home/runner/work/erk/erk/docs/learned/planning/agent-output-routing-strategies.md
+/home/runner/work/erk/erk/docs/learned/planning/branch-name-inference.md
+/home/runner/work/erk/erk/docs/learned/planning/learn-pipeline-workflow.md
+/home/runner/work/erk/erk/docs/learned/planning/backend-naming-conventions.md
+/home/runner/work/erk/erk/docs/learned/planning/impl-context.md
+/home/runner/work/erk/erk/docs/learned/planning/label-scheme.md
+/home/runner/work/erk/erk/docs/learned/planning/learn-plan-metadata-fields.md
+/home/runner/work/erk/erk/docs/learned/planning/index.md
+/home/runner/work/erk/erk/docs/learned/planning/complete-inventory-protocol.md
+/home/runner/work/erk/erk/docs/learned/planning/branch-plan-resolution.md
+/home/runner/work/erk/erk/docs/learned/planning/context-preservation-prompting.md
+/home/runner/work/erk/erk/docs/learned/planning/cross-repo-plans.md
+/home/runner/work/erk/erk/docs/learned/planning/agent-orchestration.md
+/home/runner/work/erk/erk/docs/learned/planning/context-preservation-in-replan.md
+/home/runner/work/erk/erk/docs/learned/planning/learn-plan-validation.md
+/home/runner/work/erk/erk/docs/learned/planning/agent-orchestration-safety.md
+/home/runner/work/erk/erk/docs/learned/planning/learn-without-pr-context.md
+/home/runner/work/erk/erk/docs/learned/planning/consolidation-labels.md
+/home/runner/work/erk/erk/docs/learned/planning/cornerstone-enforcement.md
+/home/runner/work/erk/erk/docs/learned/planning/learn-session-embedding.md
+/home/runner/work/erk/erk/docs/learned/planning/gateway-consolidation-checklist.md
+/home/runner/work/erk/erk/docs/learned/planning/learn-vs-implementation-plans.md
+/home/runner/work/erk/erk/docs/learned/planning/debugging-patterns.md
+/home/runner/work/erk/erk/docs/learned/planning/incremental-dispatch.md
+/home/runner/work/erk/erk/docs/learned/planning/cross-artifact-analysis.md
+/home/runner/work/erk/erk/docs/learned/planning/lifecycle-stage-consolidation.md
+/home/runner/work/erk/erk/docs/learned/planning/one-shot-workflow.md
+/home/runner/work/erk/erk/docs/learned/planning/plan-execution-patterns.md
+
+... [44 lines omitted] ...
+  </tool_result>
+  <assistant>Now let me perform systematic grep searches for all the specified terms in the required directories. I'll search for each pattern in all the specified locations:</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="2160" cache_read_input_tokens="16705" cache_creation="{'ephemeral_5m_input_tokens': 2160, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01Q8qYu2u7B9z9hSWTJ2fKcL">
+    <param name="pattern">plan_number</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="2160" cache_read_input_tokens="16705" cache_creation="{'ephemeral_5m_input_tokens': 2160, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_016ksLg8qv8S8VM2amzFyNFj">
+    <param name="pattern">plan_id</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="2160" cache_read_input_tokens="16705" cache_creation="{'ephemeral_5m_input_tokens': 2160, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_0193Yk2QxyZVq4LRF1kJBQHj">
+    <param name="pattern">plan_url</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="2160" cache_read_input_tokens="16705" cache_creation="{'ephemeral_5m_input_tokens': 2160, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01KhoSAD54ao37WbpUdAmHhe">
+    <param name="pattern">plan_title</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="2160" cache_read_input_tokens="16705" cache_creation="{'ephemeral_5m_input_tokens': 2160, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_014xFhyvcFUgUzEwLhRbqye3">
+    <param name="pattern">extract_plan</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="2160" cache_read_input_tokens="16705" cache_creation="{'ephemeral_5m_input_tokens': 2160, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0193Yk2QxyZVq4LRF1kJBQHj">
+src/erk/cli/commands/exec/scripts/objective_save_to_issue.py:249:        click.echo(f"URL: {result.plan_url}")
+src/erk/cli/commands/exec/scripts/objective_save_to_issue.py:266:            "issue_url": result.plan_url,
+src/erk/cli/commands/exec/scripts/setup_impl_from_pr.py:138:        Dict with success status, impl_path, pr_number, plan_url, branch,
+  </tool_result>
+  <tool_result tool="toolu_016ksLg8qv8S8VM2amzFyNFj">
+src/erk/cli/commands/exec/scripts/plan_update.py:112:    plan_id = str(pr_number)
+src/erk/cli/commands/exec/scripts/plan_update.py:113:    plan_result = backend.get_plan(repo_root, plan_id)
+src/erk/cli/commands/exec/scripts/plan_update.py:122:        backend.update_plan_content(repo_root, plan_id, plan_content.strip(), summary=summary or "")
+src/erk/cli/commands/exec/scripts/plan_update.py:132:        backend.update_plan_title(repo_root, plan_id, full_title)
+src/erk/cli/commands/exec/scripts/push_and_create_pr.py:88:        "pr_number": result.plan_id,
+src/erk/cli/commands/exec/scripts/upload_impl_session.py:54:    Reads plan reference from .erk/impl-context/ to get the plan_id, captures
+src/erk/cli/commands/exec/scripts/upload_impl_session.py:76:        _output_not_uploaded("non_numeric_plan_id")
+src/erk/cli/commands/exec/scripts/get_learn_sessions.py:86:    plan_id: str,
+src/erk/cli/commands/exec/scripts/get_learn_sessions.py:93:        plan_id: Plan identifier.
+src/erk/cli/commands/exec/scripts/get_learn_sessions.py:99:    session_branch = f"planned-pr-context/{plan_id}"
+src/erk/cli/commands/exec/scripts/get_learn_sessions.py:110:    plan_id: str,
+src/erk/cli/commands/exec/scripts/get_learn_sessions.py:121:        pr_number=plan_id,
+src/erk/cli/commands/exec/scripts/get_learn_sessions.py:146:    plan_id: str,
+src/erk/cli/commands/exec/scripts/get_learn_sessions.py:157:        plan_id: Plan identifier
+src/erk/cli/commands/exec/scripts/get_learn_sessions.py:166:        plan_id=plan_id,
+src/erk/cli/commands/exec/scripts/get_learn_sessions.py:173:        plan_id,
+src/erk/cli/commands/exec/scripts/get_learn_sessions.py:233:        plan_id=plan_id,
+src/erk/cli/commands/exec/scripts/get_learn_sessions.py:264:    # Resolve plan_id: explicit argument or infer from branch
+src/erk/cli/commands/exec/scripts/get_learn_sessions.py:265:    plan_id: str | None = None
+src/erk/cli/commands/exec/scripts/get_learn_sessions.py:275:        plan_id = str(plan_number)
+src/erk/cli/commands/exec/scripts/get_learn_sessions.py:277:        plan_id = plan_backend.resolve_plan_id_for_branch(repo_root, branch_name)
+src/erk/cli/commands/exec/scripts/get_learn_sessions.py:279:    if plan_id is None:
+src/erk/cli/commands/exec/scripts/get_learn_sessions.py:294:        plan_id=plan_id,
+src/erk/cli/commands/exec/scripts/create_impl_context_from_plan.py:55:    plan_id = str(pr_number)
+src/erk/cli/commands/exec/scripts/create_impl_context_from_plan.py:59:    result = backend.get_plan(repo_root, plan_id)
+src/erk/cli/commands/exec/scripts/create_impl_context_from_plan.py:75:        plan_id=plan_id,
+src/erk/cli/commands/exec/scripts/setup_impl_from_pr.py:200:        plan_id=str(pr_number),
+src/erk/cli/commands/exec/scripts/get_pr_for_plan.py:58:    For planned-PR plans, the plan_id IS the PR number — look up directly.
+src/erk/cli/commands/exec/scripts/fetch_sessions.py:3:Downloads the manifest and XML files from the planned-pr-context/{plan_id} branch
+src/erk/cli/commands/exec/scripts/close_prs.py:158:        plan_id = str(plan_number)
+
+... [36 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01KhoSAD54ao37WbpUdAmHhe">
+src/erk/cli/commands/exec/scripts/plan_update.py:132:        backend.update_plan_title(repo_root, plan_id, full_title)
+src/erk/cli/commands/exec/scripts/plan_save.py:49:    validate_plan_title,
+src/erk/cli/commands/exec/scripts/plan_save.py:159:    title_validation = validate_plan_title(title)
+src/erk/cli/commands/exec/scripts/setup_impl_from_pr.py:139:        and plan_title.
+src/erk/cli/commands/exec/scripts/setup_impl_from_pr.py:165:        plan_title: str = pr_result.title
+src/erk/cli/commands/exec/scripts/setup_impl_from_pr.py:173:                plan_title = raw_title
+src/erk/cli/commands/exec/scripts/setup_impl_from_pr.py:180:        plan_title = pr_result.title
+src/erk/cli/commands/exec/scripts/setup_impl_from_pr.py:213:        "pr_title": plan_title,
+src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py:142:    plan_title: str | None  # Title extracted from plan file for display
+src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py:163:        plan_title: str | None = None,
+src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py:180:        - plan_title: None
+src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py:198:            plan_title=plan_title,
+src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py:225:def extract_plan_title(plan_file_path: Path | None) -&gt; str | None:
+src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py:297:    plan_title: str | None,
+src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py:312:        plan_title: Title extracted from plan file, if available.
+src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py:322:    if plan_title:
+src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py:323:        context_lines.append(f"📋 {plan_title}")
+src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py:546:            plan_title=hook_input.plan_title,
+src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py:749:    plan_title: str | None = None
+src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py:751:        plan_title = extract_plan_title(plan_file_path)
+src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py:800:        plan_title=plan_title,
+  </tool_result>
+  <tool_result tool="toolu_01Q8qYu2u7B9z9hSWTJ2fKcL">
+src/erk/cli/commands/exec/scripts/detect_plan_from_branch.py:45:        Detection result dict with 'found', and optionally 'plan_number' and 'detection_method'.
+src/erk/cli/commands/exec/scripts/objective_save_to_issue.py:50:    session_id: str, repo_root: Path, plan_number: int
+src/erk/cli/commands/exec/scripts/objective_save_to_issue.py:61:        plan_number: The GitHub issue number where the objective was saved.
+src/erk/cli/commands/exec/scripts/objective_save_to_issue.py:65:    marker_file.write_text(str(plan_number), encoding="utf-8")
+src/erk/cli/commands/exec/scripts/objective_save_to_issue.py:207:    if result.plan_number is None:
+src/erk/cli/commands/exec/scripts/objective_save_to_issue.py:208:        raise RuntimeError("Unexpected: plan_number is None after success")
+src/erk/cli/commands/exec/scripts/objective_save_to_issue.py:212:        _create_objective_saved_issue_marker(session_id, repo_root, result.plan_number)
+src/erk/cli/commands/exec/scripts/objective_save_to_issue.py:228:            issue_number=result.plan_number,
+src/erk/cli/commands/exec/scripts/objective_save_to_issue.py:247:        click.echo(f"Objective saved to GitHub issue #{result.plan_number}")
+src/erk/cli/commands/exec/scripts/objective_save_to_issue.py:265:            "pr_number": result.plan_number,
+src/erk/cli/commands/exec/scripts/plan_save.py:315:    plan_number = int(result.pr_id)
+src/erk/cli/commands/exec/scripts/plan_save.py:320:        create_plan_saved_marker(session_id, repo_root, plan_number)
+src/erk/cli/commands/exec/scripts/plan_save.py:321:        create_plan_saved_issue_marker(session_id, repo_root, plan_number, title=title)
+src/erk/cli/commands/exec/scripts/plan_save.py:334:        click.echo(f"PR saved as planned PR #{plan_number}")
+src/erk/cli/commands/exec/scripts/plan_save.py:341:        click.echo(format_plan_next_steps_plain(plan_number, url=result.url))
+src/erk/cli/commands/exec/scripts/plan_save.py:345:            "pr_number": plan_number,
+src/erk/cli/commands/exec/scripts/land_execute.py:123:    plan_number: int | None,
+src/erk/cli/commands/exec/scripts/land_execute.py:185:            plan_number=plan_number,
+src/erk/cli/commands/exec/scripts/post_workflow_started_comment.py:86:        plan_number: Plan identifier
+src/erk/cli/commands/exec/scripts/post_workflow_started_comment.py:103:        plan_number=pr_number,
+src/erk/cli/commands/exec/scripts/get_learn_sessions.py:61:def _extract_plan_number(identifier: str) -&gt; int | None:
+src/erk/cli/commands/exec/scripts/get_learn_sessions.py:267:        plan_number = _extract_plan_number(issue)
+src/erk/cli/commands/exec/scripts/get_learn_sessions.py:268:        if plan_number is None:
+src/erk/cli/commands/exec/scripts/get_learn_sessions.py:275:        plan_id = str(plan_number)
+src/erk/cli/commands/exec/scripts/register_one_shot_plan.py:52:            plan_number=pr_number,
+src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py:137:    plan_saved_plan_number: int | None  # Plan number read from plan-saved marker
+src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py:147:    plan_number: int | None  # Plan number from .erk/impl-context/plan-ref.json
+src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py:158:        plan_saved_plan_number: int | None = None,
+src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py:168:        plan_number: int | None = None,
+src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py:177:        - plan_saved_plan_number: None
+
+... [66 lines omitted] ...
+
+src/erk/cli/commands/exec/scripts/objective_fetch_context.py:186:            click.echo(_error_json(f"PR #{plan_number} not found"))
+src/erk/cli/commands/exec/scripts/track_learn_evaluation.py:137:            message=f"Failed to track learn evaluation on PR #{plan_number}: {e}",
+  </tool_result>
+  <tool_result tool="toolu_014xFhyvcFUgUzEwLhRbqye3">
+src/erk/cli/commands/exec/scripts/get_learn_sessions.py:61:def _extract_plan_number(identifier: str) -&gt; int | None:
+src/erk/cli/commands/exec/scripts/get_learn_sessions.py:267:        plan_number = _extract_plan_number(issue)
+src/erk/cli/commands/exec/scripts/setup_impl_from_pr.py:50:    extract_plan_content,
+src/erk/cli/commands/exec/scripts/setup_impl_from_pr.py:179:        plan_content = extract_plan_content(pr_result.body)
+src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py:225:def extract_plan_title(plan_file_path: Path | None) -&gt; str | None:
+src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py:751:        plan_title = extract_plan_title(plan_file_path)
+src/erk/cli/commands/exec/scripts/update_objective_node.py:66:    extract_plan_header_objective_issue,
+src/erk/cli/commands/exec/scripts/update_objective_node.py:333:    existing_objective = extract_plan_header_objective_issue(plan_issue.body)
+src/erk/cli/commands/exec/scripts/ci_update_pr_body.py:63:    extract_plan_content,
+src/erk/cli/commands/exec/scripts/ci_update_pr_body.py:279:        plan_content = extract_plan_content(pr_result.body)
+src/erk/cli/commands/exec/scripts/ci_generate_summaries.py:41:    extract_plan_header_ci_summary_comment_id,
+src/erk/cli/commands/exec/scripts/ci_generate_summaries.py:202:            existing_comment_id = extract_plan_header_ci_summary_comment_id(result.stdout)
+src/erk/cli/commands/exec/scripts/track_learn_evaluation.py:60:def _extract_plan_number(identifier: str) -&gt; int | None:
+src/erk/cli/commands/exec/scripts/track_learn_evaluation.py:169:        plan_number = _extract_plan_number(issue)
+  </tool_result>
+  <assistant>Now let me search the pr/ commands directory:</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="8554" cache_read_input_tokens="18865" cache_creation="{'ephemeral_5m_input_tokens': 8554, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01N3bjazretPQFChcbheQxdY">
+    <param name="pattern">plan_number</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli/commands/pr</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="8554" cache_read_input_tokens="18865" cache_creation="{'ephemeral_5m_input_tokens': 8554, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_017sGxFHW1w6pJqdxhfPZBDw">
+    <param name="pattern">plan_id</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli/commands/pr</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="8554" cache_read_input_tokens="18865" cache_creation="{'ephemeral_5m_input_tokens': 8554, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01VBnZYeQfhB18JbTXeGC4ND">
+    <param name="pattern">plan_url</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli/commands/pr</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="8554" cache_read_input_tokens="18865" cache_creation="{'ephemeral_5m_input_tokens': 8554, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01EV9NDthjEC9mLXcjXqx837">
+    <param name="pattern">plan_title</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli/commands/pr</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="8554" cache_read_input_tokens="18865" cache_creation="{'ephemeral_5m_input_tokens': 8554, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_018NMTLzPrLnYEAGBTmuRDHz">
+    <param name="pattern">extract_plan</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli/commands/pr</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="8554" cache_read_input_tokens="18865" cache_creation="{'ephemeral_5m_input_tokens': 8554, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017sGxFHW1w6pJqdxhfPZBDw">
+src/erk/cli/commands/pr/submit_pipeline.py:104:    plan_id: str | None
+src/erk/cli/commands/pr/submit_pipeline.py:137:    """Resolve repo_root, branch_name, parent_branch, trunk_branch, plan_id.
+src/erk/cli/commands/pr/submit_pipeline.py:161:    plan_id: str | None = None
+src/erk/cli/commands/pr/submit_pipeline.py:164:            plan_id = validate_plan_linkage(impl_dir, branch_name)
+src/erk/cli/commands/pr/submit_pipeline.py:174:    if plan_id is not None and impl_dir is not None and not has_plan_ref(impl_dir):
+src/erk/cli/commands/pr/submit_pipeline.py:177:        plan_url = f"https://github.com/{owner}/{repo_name}/pull/{plan_id}"
+src/erk/cli/commands/pr/submit_pipeline.py:181:            plan_id=plan_id,
+src/erk/cli/commands/pr/submit_pipeline.py:205:        plan_id=plan_id,
+src/erk/cli/commands/pr/submit_pipeline.py:214:    Inserted after prepare_state (which discovers plan_id) and before commit_wip
+src/erk/cli/commands/pr/submit_pipeline.py:278:    is_plan_impl = state.plan_id is not None or state.branch_name.startswith("plnd/")
+src/erk/cli/commands/pr/submit_pipeline.py:567:    if state.plan_id is not None:
+src/erk/cli/commands/pr/submit_pipeline.py:819:            ctx, repo_root=state.repo_root, plan_id=state.plan_context.plan_id
+src/erk/cli/commands/pr/submit_pipeline.py:879:    plan_id_for_lifecycle: str | None = None
+src/erk/cli/commands/pr/submit_pipeline.py:881:        plan_id_for_lifecycle = state.plan_context.plan_id
+src/erk/cli/commands/pr/submit_pipeline.py:883:        plan_id_for_lifecycle = str(state.pr_number)
+src/erk/cli/commands/pr/submit_pipeline.py:885:    if plan_id_for_lifecycle is not None:
+src/erk/cli/commands/pr/submit_pipeline.py:889:            plan_id=plan_id_for_lifecycle,
+src/erk/cli/commands/pr/submit_pipeline.py:1108:        plan_id=None,
+src/erk/cli/commands/pr/duplicate_check_cmd.py:70:    exclude_plan_id: str | None = None
+src/erk/cli/commands/pr/duplicate_check_cmd.py:81:        exclude_plan_id = str(issue.number)
+src/erk/cli/commands/pr/duplicate_check_cmd.py:127:    if exclude_plan_id is not None:
+src/erk/cli/commands/pr/duplicate_check_cmd.py:128:        existing_plans = [p for p in existing_plans if p.pr_identifier != exclude_plan_id]
+src/erk/cli/commands/pr/shared.py:128:                f"   Incorporating plan #{plan_context.plan_id}",
+src/erk/cli/commands/pr/shared.py:150:    plan_id: str,
+src/erk/cli/commands/pr/shared.py:161:    plan_result = ctx.plan_backend.get_plan(repo_root, plan_id)
+src/erk/cli/commands/pr/shared.py:170:        ctx.plan_backend.update_metadata(repo_root, plan_id, {"lifecycle_stage": "impl"})
+src/erk/cli/commands/pr/shared.py:190:    plan_id: str,
+src/erk/cli/commands/pr/shared.py:201:    plan_result = ctx.plan_backend.get_plan(repo_root, plan_id)
+src/erk/cli/commands/pr/shared.py:248:    issue_num = plan_context.plan_id
+src/erk/cli/commands/pr/submit_cmd.py:63:    if result.plan_id:
+
+... [22 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01EV9NDthjEC9mLXcjXqx837">
+src/erk/cli/commands/pr/dispatch_cmd.py:92:    plan_title: str
+src/erk/cli/commands/pr/dispatch_cmd.py:289:        "plan_title": validated.title,
+src/erk/cli/commands/pr/dispatch_cmd.py:374:        plan_title=validated.title,
+src/erk/cli/commands/pr/dispatch_cmd.py:516:        "plan_title": validated.title,
+src/erk/cli/commands/pr/dispatch_cmd.py:587:        plan_title=validated.title,
+src/erk/cli/commands/pr/dispatch_cmd.py:837:        user_output(f"  #{r.pr_number}: {r.plan_title}")
+  </tool_result>
+  <tool_result tool="toolu_01N3bjazretPQFChcbheQxdY">
+src/erk/cli/commands/pr/duplicate_check_cmd.py:75:        plan_number = parse_issue_identifier(plan)
+src/erk/cli/commands/pr/duplicate_check_cmd.py:76:        issue = remote.get_issue(owner=repo_id.owner, repo=repo_id.repo, number=plan_number)
+src/erk/cli/commands/pr/duplicate_check_cmd.py:78:            user_output(click.style("Error: ", fg="red") + f"PR {plan_number} not found.")
+src/erk/cli/commands/pr/check_cmd.py:75:    plan_number: int,
+src/erk/cli/commands/pr/check_cmd.py:91:        plan_number: GitHub issue number to validate
+src/erk/cli/commands/pr/check_cmd.py:99:    issue = remote.get_issue(owner=owner, repo=repo, number=plan_number)
+src/erk/cli/commands/pr/check_cmd.py:101:        return PlanValidationError(error=f"PR #{plan_number} not found")
+src/erk/cli/commands/pr/check_cmd.py:130:        comments = remote.get_issue_comments(owner=owner, repo=repo, number=plan_number)
+src/erk/cli/commands/pr/check_cmd.py:222:    plan_number = parse_issue_identifier(identifier)
+src/erk/cli/commands/pr/check_cmd.py:224:    user_output(f"Validating PR #{plan_number}...")
+src/erk/cli/commands/pr/check_cmd.py:227:    result = validate_plan_format(remote, owner=owner, repo=repo_name, plan_number=plan_number)
+src/erk/cli/commands/pr/check_cmd.py:302:    expected_plan_number: int | None = None
+src/erk/cli/commands/pr/check_cmd.py:306:        expected_plan_number = int(plan_ref.pr_id)
+src/erk/cli/commands/pr/check_cmd.py:310:                description=f"Plan reference found (#{expected_plan_number})",
+src/erk/cli/commands/pr/log_cmd.py:35:    plan_number: int
+src/erk/cli/commands/pr/log_cmd.py:142:        plan_number = parse_issue_identifier(identifier)
+src/erk/cli/commands/pr/log_cmd.py:144:        issue = remote.get_issue(owner=repo_id.owner, repo=repo_id.repo, number=plan_number)
+src/erk/cli/commands/pr/log_cmd.py:150:            owner=repo_id.owner, repo=repo_id.repo, number=plan_number
+src/erk/cli/commands/pr/log_cmd.py:159:            _output_timeline(events, plan_number)
+src/erk/cli/commands/pr/log_cmd.py:225:        metadata["plan_number"] = data["issue_number"]
+src/erk/cli/commands/pr/log_cmd.py:348:def _output_timeline(events: list[Event], plan_number: int) -&gt; None:
+src/erk/cli/commands/pr/log_cmd.py:353:        plan_number: GitHub issue number for the plan
+src/erk/cli/commands/pr/log_cmd.py:356:        user_output(f"No events found for PR #{plan_number}")
+src/erk/cli/commands/pr/log_cmd.py:359:    user_output(f"PR #{plan_number} Event Timeline\n")
+src/erk/cli/commands/pr/checkout_cmd.py:31:    parse_plan_number_from_url,
+src/erk/cli/commands/pr/checkout_cmd.py:72:    plan_number = parse_plan_number_from_url(reference)
+src/erk/cli/commands/pr/checkout_cmd.py:73:    if plan_number is not None:
+src/erk/cli/commands/pr/checkout_cmd.py:74:        return _PlanRef(plan_number)
+src/erk/cli/commands/pr/checkout_cmd.py:167:            ctx, repo, plan_number=ref.number, no_slot=no_slot, force=force, script=script
+src/erk/cli/commands/pr/checkout_cmd.py:347:    plan_number: int,
+
+... [28 lines omitted] ...
+
+src/erk/cli/commands/pr/metadata_helpers.py:46:        raise RuntimeError(f"Plan #{plan_number} not found")
+  </tool_result>
+  <tool_result tool="toolu_018NMTLzPrLnYEAGBTmuRDHz">
+src/erk/cli/commands/pr/check_cmd.py:19:from erk_shared.gateway.github.metadata.plan_header import extract_plan_from_comment
+src/erk/cli/commands/pr/check_cmd.py:32:    extract_plan_content,
+src/erk/cli/commands/pr/check_cmd.py:123:        plan_content = extract_plan_content(issue_body)
+src/erk/cli/commands/pr/check_cmd.py:138:            plan_content = extract_plan_from_comment(first_comment)
+src/erk/cli/commands/pr/log_cmd.py:200:        BlockKeys.ERK_PLAN: _extract_plan_created_event,
+src/erk/cli/commands/pr/log_cmd.py:204:        BlockKeys.PLAN_RETRY: _extract_plan_retry_event,
+src/erk/cli/commands/pr/log_cmd.py:215:def _extract_plan_created_event(data: dict) -&gt; Event | None:
+src/erk/cli/commands/pr/log_cmd.py:305:def _extract_plan_retry_event(data: dict) -&gt; Event | None:
+src/erk/cli/commands/pr/dispatch_cmd.py:32:from erk_shared.gateway.github.metadata.plan_header import extract_plan_header_branch_name
+src/erk/cli/commands/pr/dispatch_cmd.py:44:from erk_shared.plan_store.planned_pr_lifecycle import extract_plan_content
+src/erk/cli/commands/pr/dispatch_cmd.py:426:    branch_name = extract_plan_header_branch_name(issue.body) if issue.body else None
+src/erk/cli/commands/pr/dispatch_cmd.py:482:    plan_content = extract_plan_content(issue.body) if issue.body else ""
+  </tool_result>
+  <tool_result tool="toolu_01VBnZYeQfhB18JbTXeGC4ND">
+src/erk/cli/commands/pr/submit_pipeline.py:177:        plan_url = f"https://github.com/{owner}/{repo_name}/pull/{plan_id}"
+src/erk/cli/commands/pr/submit_pipeline.py:182:            url=plan_url,
+src/erk/cli/commands/pr/dispatch_cmd.py:93:    plan_url: str
+src/erk/cli/commands/pr/dispatch_cmd.py:100:def _build_workflow_run_url(plan_url: str, run_id: str) -&gt; str:
+src/erk/cli/commands/pr/dispatch_cmd.py:104:        plan_url: GitHub plan URL (e.g., https://github.com/owner/repo/issues/123)
+src/erk/cli/commands/pr/dispatch_cmd.py:110:    owner_repo = extract_owner_repo_from_github_url(plan_url)
+src/erk/cli/commands/pr/dispatch_cmd.py:117:def _build_pr_url(plan_url: str, pr_number: int) -&gt; str:
+src/erk/cli/commands/pr/dispatch_cmd.py:121:        plan_url: GitHub plan URL (e.g., https://github.com/owner/repo/issues/123)
+src/erk/cli/commands/pr/dispatch_cmd.py:127:    owner_repo = extract_owner_repo_from_github_url(plan_url)
+src/erk/cli/commands/pr/dispatch_cmd.py:375:        plan_url=validated.url,
+src/erk/cli/commands/pr/dispatch_cmd.py:588:        plan_url=validated.url,
+src/erk/cli/commands/pr/dispatch_cmd.py:838:        user_output(f"    Plan: {r.plan_url}")
+src/erk/cli/commands/pr/view/cli.py:80:def _format_header_section(header_info: dict[str, object], *, plan_url: str | None) -&gt; list[str]:
+src/erk/cli/commands/pr/view/cli.py:167:        if learn_run_id_raw is not None and plan_url is not None:
+src/erk/cli/commands/pr/view/cli.py:168:            owner_repo = extract_owner_repo_from_github_url(plan_url)
+src/erk/cli/commands/pr/view/cli.py:218:    header_lines = _format_header_section(result.header_fields, plan_url=result.url)
+  </tool_result>
+  <assistant>Now let me search the branch/ commands directory:</assistant>
+  <usage input_tokens="708" cache_creation_input_tokens="5457" cache_read_input_tokens="27419" cache_creation="{'ephemeral_5m_input_tokens': 5457, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_016NbVC1HDg2upa91cGozJQn">
+    <param name="pattern">plan_number</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli/commands/branch</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="708" cache_creation_input_tokens="5457" cache_read_input_tokens="27419" cache_creation="{'ephemeral_5m_input_tokens': 5457, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_017KiJrJGA4XeFccHAfLJzL8">
+    <param name="pattern">plan_id</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli/commands/branch</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="708" cache_creation_input_tokens="5457" cache_read_input_tokens="27419" cache_creation="{'ephemeral_5m_input_tokens': 5457, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01QrXwhDCBXzm834psyoumiR">
+    <param name="pattern">plan_url</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli/commands/branch</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="708" cache_creation_input_tokens="5457" cache_read_input_tokens="27419" cache_creation="{'ephemeral_5m_input_tokens': 5457, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_016kbJCWgUJQEs5ZieZ3bYd2">
+    <param name="pattern">plan_title</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli/commands/branch</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="708" cache_creation_input_tokens="5457" cache_read_input_tokens="27419" cache_creation="{'ephemeral_5m_input_tokens': 5457, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01XScDcL59eBf2kBDKgFshoT">
+    <param name="pattern">extract_plan</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli/commands/branch</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="708" cache_creation_input_tokens="5457" cache_read_input_tokens="27419" cache_creation="{'ephemeral_5m_input_tokens': 5457, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017KiJrJGA4XeFccHAfLJzL8">
+src/erk/cli/commands/branch/create_cmd.py:256:            plan_id=str(setup.plan_number),
+src/erk/cli/commands/branch/checkout_cmd.py:362:        plan_id=str(setup.plan_number),
+  </tool_result>
+  <tool_result tool="toolu_016NbVC1HDg2upa91cGozJQn">
+src/erk/cli/commands/branch/create_cmd.py:136:        plan_number = parse_issue_identifier(for_plan)
+src/erk/cli/commands/branch/create_cmd.py:137:        result = ctx.plan_store.get_plan(repo.root, str(plan_number))
+src/erk/cli/commands/branch/create_cmd.py:139:            raise click.ClickException(f"PR #{plan_number} not found")
+src/erk/cli/commands/branch/create_cmd.py:256:            plan_id=str(setup.plan_number),
+src/erk/cli/commands/branch/create_cmd.py:269:                final_message=f'echo "Prepared PR #{setup.plan_number} at $(pwd)"',
+src/erk/cli/commands/branch/create_cmd.py:275:                comment=f"branch create --for-plan {setup.plan_number}",
+src/erk/cli/commands/branch/create_cmd.py:280:        user_output(f"Created .erk/impl-context/ folder from PR #{setup.plan_number}")
+src/erk/cli/commands/branch/checkout_cmd.py:362:        plan_id=str(setup.plan_number),
+src/erk/cli/commands/branch/checkout_cmd.py:374:            final_message=f'echo "Prepared PR #{setup.plan_number} at $(pwd)"',
+src/erk/cli/commands/branch/checkout_cmd.py:380:            comment=f"branch checkout --for-plan {setup.plan_number}",
+src/erk/cli/commands/branch/checkout_cmd.py:385:    user_output(f"Created .erk/impl-context/ folder from PR #{setup.plan_number}")
+src/erk/cli/commands/branch/checkout_cmd.py:546:        plan_number = parse_issue_identifier(for_plan)
+src/erk/cli/commands/branch/checkout_cmd.py:547:        result = ctx.plan_store.get_plan(repo.root, str(plan_number))
+src/erk/cli/commands/branch/checkout_cmd.py:549:            raise click.ClickException(f"PR #{plan_number} not found")
+  </tool_result>
+  <tool_result tool="toolu_01QrXwhDCBXzm834psyoumiR">
+No matches found
+  </tool_result>
+  <tool_result tool="toolu_01XScDcL59eBf2kBDKgFshoT">
+No matches found
+  </tool_result>
+  <tool_result tool="toolu_016kbJCWgUJQEs5ZieZ3bYd2">
+No matches found
+  </tool_result>
+  <assistant>Now let me search the wt/ commands directory:</assistant>
+  <usage input_tokens="33" cache_creation_input_tokens="2171" cache_read_input_tokens="32876" cache_creation="{'ephemeral_5m_input_tokens': 2171, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01N3RW3tJ5CiHw2x6hMgh9kM">
+    <param name="pattern">plan_number</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli/commands/wt</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="33" cache_creation_input_tokens="2171" cache_read_input_tokens="32876" cache_creation="{'ephemeral_5m_input_tokens': 2171, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_016qcgMirdeeHiPJQH4xpaZk">
+    <param name="pattern">plan_id</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli/commands/wt</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="33" cache_creation_input_tokens="2171" cache_read_input_tokens="32876" cache_creation="{'ephemeral_5m_input_tokens': 2171, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01TMfmzMLvDT7DfooiuvxJQA">
+    <param name="pattern">plan_url</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli/commands/wt</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="33" cache_creation_input_tokens="2171" cache_read_input_tokens="32876" cache_creation="{'ephemeral_5m_input_tokens': 2171, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01JZ5Mbihv4YokHkbhmSVrNs">
+    <param name="pattern">plan_title</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli/commands/wt</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="33" cache_creation_input_tokens="2171" cache_read_input_tokens="32876" cache_creation="{'ephemeral_5m_input_tokens': 2171, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01Rw5rxQuxGW2Y4RQJ1aiJh9">
+    <param name="pattern">extract_plan</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli/commands/wt</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="33" cache_creation_input_tokens="2171" cache_read_input_tokens="32876" cache_creation="{'ephemeral_5m_input_tokens': 2171, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01TMfmzMLvDT7DfooiuvxJQA">
+No matches found
+  </tool_result>
+  <tool_result tool="toolu_01N3RW3tJ5CiHw2x6hMgh9kM">
+src/erk/cli/commands/wt/create_cmd.py:580:    plan_number_parsed: int | None = None
+src/erk/cli/commands/wt/create_cmd.py:627:        plan_number_parsed = parse_issue_identifier(from_plan)
+src/erk/cli/commands/wt/create_cmd.py:668:        # Type narrowing: plan_number_parsed must be set if from_plan is True
+src/erk/cli/commands/wt/create_cmd.py:669:        assert plan_number_parsed is not None, (
+src/erk/cli/commands/wt/create_cmd.py:670:            "plan_number_parsed must be set when from_plan is True"
+src/erk/cli/commands/wt/create_cmd.py:674:        result = ctx.plan_store.get_plan(repo.root, str(plan_number_parsed))
+src/erk/cli/commands/wt/create_cmd.py:678:                + f"Failed to fetch plan #{plan_number_parsed}\n"
+src/erk/cli/commands/wt/create_cmd.py:679:                + f"Details: Plan #{plan_number_parsed} not found\n\n"
+src/erk/cli/commands/wt/create_cmd.py:683:                + f"  • Try viewing manually: gh pr view {plan_number_parsed}"
+src/erk/cli/commands/wt/create_cmd.py:930:            plan_id=str(setup.plan_number),
+src/erk/cli/commands/wt/create_cmd.py:938:            user_output(f"Created worktree from plan #{setup.plan_number}: {setup.issue_title}")
+src/erk/cli/commands/wt/delete_cmd.py:137:    plan_number, state = plan_info
+src/erk/cli/commands/wt/delete_cmd.py:139:        user_output(click.style("ℹ️  ", fg="blue", bold=True) + f"PR #{plan_number} already closed")
+src/erk/cli/commands/wt/delete_cmd.py:142:    ctx.plan_store.close_plan(repo_root, str(plan_number))
+src/erk/cli/commands/wt/delete_cmd.py:143:    user_output(click.style("ℹ️  ", fg="blue", bold=True) + f"Closed PR #{plan_number}")
+src/erk/cli/commands/wt/delete_cmd.py:144:    return plan_number
+  </tool_result>
+  <tool_result tool="toolu_016qcgMirdeeHiPJQH4xpaZk">
+src/erk/cli/commands/wt/create_cmd.py:930:            plan_id=str(setup.plan_number),
+  </tool_result>
+  <tool_result tool="toolu_01Rw5rxQuxGW2Y4RQJ1aiJh9">
+No matches found
+  </tool_result>
+  <tool_result tool="toolu_01JZ5Mbihv4YokHkbhmSVrNs">
+No matches found
+  </tool_result>
+  <assistant>Now let me search the remaining single files and directories:</assistant>
+  <usage input_tokens="33" cache_creation_input_tokens="1556" cache_read_input_tokens="35047" cache_creation="{'ephemeral_5m_input_tokens': 1556, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01WwvWxzVL8aBujWfMgJnhUc">
+    <param name="pattern">plan_number|plan_id|plan_url|plan_title|extract_plan</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli/commands/run/shared.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="33" cache_creation_input_tokens="1556" cache_read_input_tokens="35047" cache_creation="{'ephemeral_5m_input_tokens': 1556, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01QabEA7FULxGPZXVbm9yctg">
+    <param name="pattern">plan_number|plan_id|plan_url|plan_title|extract_plan</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli/commands/admin.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="33" cache_creation_input_tokens="1556" cache_read_input_tokens="35047" cache_creation="{'ephemeral_5m_input_tokens': 1556, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01RTXuR93CEWFPQ9v5pDbhjM">
+    <param name="pattern">plan_number|plan_id|plan_url|plan_title|extract_plan</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli/commands/learn</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="33" cache_creation_input_tokens="1556" cache_read_input_tokens="35047" cache_creation="{'ephemeral_5m_input_tokens': 1556, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01XFoz9MXSir7WXzpHY1vk4o">
+    <param name="pattern">plan_number|plan_id|plan_url|plan_title|extract_plan</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli/commands/reconcile_cmd.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="33" cache_creation_input_tokens="1556" cache_read_input_tokens="35047" cache_creation="{'ephemeral_5m_input_tokens': 1556, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01T4JPwy3tFLrMfXSGgwcmLL">
+    <param name="pattern">plan_number|plan_id|plan_url|plan_title|extract_plan</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli/commands/reconcile_pipeline.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="33" cache_creation_input_tokens="1556" cache_read_input_tokens="35047" cache_creation="{'ephemeral_5m_input_tokens': 1556, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01QabEA7FULxGPZXVbm9yctg">
+461:        plan_number = pr
+462:        user_output(f"Using existing PR #{plan_number}")
+470:        plan_number = result.number
+471:        user_output(click.style("✓", fg="green") + f" Created test PR #{plan_number}")
+527:            "plan_id": str(plan_number),
+530:            "plan_title": "Test workflow run",
+  </tool_result>
+  <tool_result tool="toolu_01WwvWxzVL8aBujWfMgJnhUc">
+26:def extract_plan_number(display_title: str | None) -&gt; int | None:
+30:    - Legacy format: "123:abc456" → 123 (plan_id at start, no #pr_number)
+32:      (handled by extract_pr_number instead, since plan_id == pr_number)
+  </tool_result>
+  <tool_result tool="toolu_01XFoz9MXSir7WXzpHY1vk4o">
+No matches found
+  </tool_result>
+  <tool_result tool="toolu_01RTXuR93CEWFPQ9v5pDbhjM">
+src/erk/cli/commands/learn/learn_cmd.py:30:    plan_id: str
+src/erk/cli/commands/learn/learn_cmd.py:40:def _extract_plan_number(identifier: str) -&gt; int | None:
+src/erk/cli/commands/learn/learn_cmd.py:108:    # Resolve plan_id: explicit argument or infer from branch
+src/erk/cli/commands/learn/learn_cmd.py:109:    plan_id: str | None = None
+src/erk/cli/commands/learn/learn_cmd.py:111:        plan_number = _extract_plan_number(plan)
+src/erk/cli/commands/learn/learn_cmd.py:112:        if plan_number is None:
+src/erk/cli/commands/learn/learn_cmd.py:115:        plan_id = str(plan_number)
+src/erk/cli/commands/learn/learn_cmd.py:117:        plan_id = ctx.plan_backend.resolve_plan_id_for_branch(ctx.cwd, branch_name)
+src/erk/cli/commands/learn/learn_cmd.py:119:    if plan_id is None:
+src/erk/cli/commands/learn/learn_cmd.py:133:    learn_branch = _get_learn_materials_branch(ctx, repo_root, plan_id)
+src/erk/cli/commands/learn/learn_cmd.py:136:            click.style(f"Preprocessed learn materials for plan {plan_id}", bold=True)
+src/erk/cli/commands/learn/learn_cmd.py:144:            command=f"/erk:learn {plan_id}",
+src/erk/cli/commands/learn/learn_cmd.py:154:        plan_id,
+src/erk/cli/commands/learn/learn_cmd.py:182:        plan_id=plan_id,
+src/erk/cli/commands/learn/learn_cmd.py:208:        command=f"/erk:learn {plan_id}",
+src/erk/cli/commands/learn/learn_cmd.py:240:    plan_id: str,
+src/erk/cli/commands/learn/learn_cmd.py:247:        plan_id: Plan identifier
+src/erk/cli/commands/learn/learn_cmd.py:252:    result = ctx.plan_backend.get_metadata_field(repo_root, plan_id, "learn_materials_branch")
+src/erk/cli/commands/learn/learn_cmd.py:262:    user_output(click.style(f"Sessions for plan {result.plan_id}", bold=True))
+  </tool_result>
+  <tool_result tool="toolu_01T4JPwy3tFLrMfXSGgwcmLL">
+107:        pr_id = ctx.plan_backend.resolve_plan_id_for_branch(main_repo_root, info.branch)
+  </tool_result>
+  <assistant>Now let me search the remaining directories:</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="1854" cache_read_input_tokens="36603" cache_creation="{'ephemeral_5m_input_tokens': 1854, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01Nz4Ury4vBSWkkF6oc67VoM">
+    <param name="pattern">plan_number|plan_id|plan_url|plan_title|extract_plan</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli/commands/one_shot_remote_dispatch.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="1854" cache_read_input_tokens="36603" cache_creation="{'ephemeral_5m_input_tokens': 1854, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_018YRNowonheftrQbTRvXntg">
+    <param name="pattern">plan_number|plan_id|plan_url|plan_title|extract_plan</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli/commands/consolidate_learn_plans_dispatch.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="1854" cache_read_input_tokens="36603" cache_creation="{'ephemeral_5m_input_tokens': 1854, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_0151yWZVoLrYR63A6xaLX2Fu">
+    <param name="pattern">plan_number|plan_id|plan_url|plan_title|extract_plan</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli/commands/one_shot</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="1854" cache_read_input_tokens="36603" cache_creation="{'ephemeral_5m_input_tokens': 1854, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01V6kZ9579S47naoZm4mQvV7">
+    <param name="pattern">plan_number|plan_id|plan_url|plan_title|extract_plan</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/core/file_utils.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="1854" cache_read_input_tokens="36603" cache_creation="{'ephemeral_5m_input_tokens': 1854, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0151yWZVoLrYR63A6xaLX2Fu">
+src/erk/cli/commands/one_shot/cli.py:11:    erk one-shot "rename issue_number to plan_number in impl_init.py" --plan-only
+src/erk/cli/commands/one_shot/cli.py:110:      erk one-shot "rename issue_number to plan_number" --plan-only
+  </tool_result>
+  <tool_result tool="toolu_01Nz4Ury4vBSWkkF6oc67VoM">
+438:                plan_number=pr_number,
+  </tool_result>
+  <tool_result tool="toolu_018YRNowonheftrQbTRvXntg">
+230:                plan_number=pr_number,
+  </tool_result>
+  <tool_result tool="toolu_01V6kZ9579S47naoZm4mQvV7">
+10:def extract_plan_title(plan_path: Path, git_ops: Git | None = None) -&gt; str | None:
+63:def extract_plan_title_from_folder(folder_path: Path, git_ops: Git | None = None) -&gt; str | None:
+90:    return extract_plan_title(plan_file, git_ops)
+  </tool_result>
+  <assistant>Now let me get more detailed line numbers for the file_utils.py functions:</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="1002" cache_read_input_tokens="38457" cache_creation="{'ephemeral_5m_input_tokens': 1002, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01UhnvSjyaxSVH8BQhjYfb96">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/core/file_utils.py</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="1002" cache_read_input_tokens="38457" cache_creation="{'ephemeral_5m_input_tokens': 1002, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01UhnvSjyaxSVH8BQhjYfb96">
+     1→"""File operation utilities."""
+     2→
+     3→from pathlib import Path
+     4→
+     5→import frontmatter
+     6→
+     7→from erk_shared.gateway.git.abc import Git
+     8→
+     9→
+    10→def extract_plan_title(plan_path: Path, git_ops: Git | None = None) -&gt; str | None:
+    11→    """Extract the first heading from a markdown plan file.
+    12→
+    13→    Uses python-frontmatter library to properly parse YAML frontmatter,
+    14→    then extracts the first line starting with # from the content.
+    15→    Common prefixes like "Plan: " and "Implementation Plan: " are stripped from the title.
+    16→
+    17→    Args:
+    18→        plan_path: Path to the plan markdown file (e.g., .plan/plan.md)
+    19→        git_ops: Optional Git interface for path checking (uses .exists() if None)
+    20→
+    21→    Returns:
+    22→        The heading text (without the # prefix and common prefixes), or None if
+    23→        not found or file doesn't exist
+    24→    """
+    25→    if git_ops is not None:
+    26→        path_exists = git_ops.worktree.path_exists(plan_path)
+    27→    else:
+    28→        path_exists = plan_path.exists()
+    29→    if not path_exists:
+    30→        return None
+
+... [66 lines omitted] ...
+  </tool_result>
+  <assistant>Perfect. Now let me compile a comprehensive report. Let me create a detailed summary of all findings organized by file with line numbers:
+
+## Summary Report: Occurrences of plan_number, plan_id, plan_url, plan_title, extract_plan_number, extract_plan_title
+
+Based on a comprehensive grep search of all specified directories, here are ALL remaining occurrences that need to be evaluated for renaming:
+
+### 1. src/erk/cli/commands/exec/scripts/
+
+**detect_plan_from_branch.py**
+- Line 45: Docstring mention of 'plan_number' (COMMENT)
+
+**objective_save_to_issue.py**
+- Line 50: Function parameter `plan_number: int` (RENAME)
+- Line 61: Docstring (COMMENT)
+- Line 65: Variable `str(plan_number)` (RENAME)
+- Line 207: Variable `result.plan_number` (RENAME - accessing attribute)
+- Line 208: Docstring (COMMENT)
+- Line 212: Argument `result.plan_number` (RENAME)
+- Line 228: Keyword arg `issue_number=result.plan_number` (RENAME)
+- Line 247: f-string output (RENAME)
+- Line 265: Dict key `"pr_number": result.plan_number` (RENAME)
+
+**plan_save.py**
+- Line 315: Variable `plan_number = int(result.pr_id)` (RENAME)
+- Line 320: Argument to function `create_plan_saved_marker(session_id, repo_root, plan_number)` (RENAME)
+- Line 321: Argument to function `create_plan_saved_issue_marker(...)` (RENAME)
+- Line 334: f-string output (RENAME)
+- Line 341: Function call argument (RENAME)
+- Line 345: Dict value `"pr_number": plan_number` (RENAME)
+
+**land_execute.py**
+- Line 123: Function parameter `plan_number: int | None` (RENAME)
+- Line 185: Keyword argument `plan_number=plan_number` (RENAME)
+
+**post_workflow_started_comment.py**
+- Line 86: Docstring (COMMENT)
+- Line 103: Keyword argument `plan_number=pr_number` (RENAME - but using pr_number, OK as-is)
+
+**get_learn_sessions.py**
+- Line 61: Function definition `def _extract_plan_number(identifier: str) -&gt; int | None:` (RENAME)
+- Line 267: Variable `plan_number = _extract_plan_number(issue)` (RENAME)
+- Line 268: Variable check `if plan_number is None:` (RENAME)
+- Line 275: Variable assignment `plan_id = str(plan_number)` (RENAME)
+- Lines 86, 93, 110, 121, 146, 157, 166, 173, 233: Function parameter and docstring `plan_id` (RENAME)
+- Line 264: Comment `# Resolve plan_id` (COMMENT)
+- Line 265: Variable `plan_id: str | None = None` (RENAME)
+- Line 277: Function call `plan_backend.resolve_plan_id_for_branch(...)` (RENAME)
+- Line 279: Condition `if plan_id is None:` (RENAME)
+- Line 294: Function argument `plan_id=plan_id` (RENAME)
+
+**register_one_shot_plan.py**
+- Line 52: Keyword argument `plan_number=pr_number` (RENAME - but using pr_number, OK as-is)
+
+**exit_plan_mode_hook.py**
+- Line 137: Dataclass field `plan_saved_plan_number: int | None` (RENAME)
+- Line 147: Dataclass field `plan_number: int | None` (RENAME)
+- Line 158, 168, 177, 185, 193, 203: Docstrings and field assignments (COMMENTS/RENAME)
+- Line 225: Function definition `def extract_plan_title(plan_file_path: Path | None) -&gt; str | None:` (RENAME)
+- Line 261: Function parameter `plan_number: int` (RENAME)
+- Line 275, 278: Function argument uses (RENAME)
+- Line 300, 315, 333, 334: Function parameter/variable uses (RENAME)
+- Line 511, 514, 549: Variable and function argument uses (RENAME)
+- Line 727, 735, 758, 774, 795, 805: Dataclass field initialization/uses (RENAME)
+- Line 751: Variable assignment `plan_title = extract_plan_title(plan_file_path)` (RENAME)
+- Line 800: Dataclass field assignment (RENAME)
+
+**close_prs.py**
+- Line 89: Variable `plan_number = item_dict["pr_number"]` (RENAME)
+- Line 90: Type check (RENAME)
+- Line 112: Dict value (RENAME)
+- Line 156, 158: Variable uses (RENAME)
+- Line 165, 177, 187: Dict values (RENAME)
+
+**add_plan_labels.py**
+- Line 89: Variable `plan_number = item_dict["pr_number"]` (RENAME)
+- Line 90: Type check (RENAME)
+- Line 112: Dict value (RENAME)
+- Line 156, 158: Variable uses (RENAME)
+- Line 165, 174: Dict values (RENAME)
+
+**add_plan_label.py**
+- Line 7: Docstring (COMMENT)
+- Line 40: Variable `plan_id = str(pr_number)` (RENAME)
+- Line 43: Function argument (RENAME)
+
+**setup_impl.py**
+- Line 65: Variable `plan_number: int | None = int(plan_ref.pr_id)` (RENAME)
+- Line 67: Variable assignment (RENAME)
+- Line 76, 77: Condition/variable (RENAME)
+
+**close_pr.py**
+- Line 7: Docstring (COMMENT)
+- Line 41: Variable `plan_id = str(pr_number)` (RENAME)
+- Line 45: Function argument (RENAME)
+
+**impl_init.py**
+- Line 144: Variable `plan_number = int(plan_ref.pr_id) if plan_ref else None` (RENAME)
+- Line 160, 161: Condition/variable (RENAME)
+
+**objective_fetch_context.py**
+- Line 154: String in list (RENAME)
+- Line 166: Function parameter `plan_number: int | None` (RENAME)
+- Line 183, 184, 186: Variable/function uses (RENAME)
+
+**resolve_objective_ref.py**
+- Line 38: Import `parse_plan_number_from_url` (RENAME)
+- Line 68: Function call and assignment (RENAME)
+
+**incremental_dispatch.py**
+- Line 191: Keyword argument `plan_number=pr_number` (RENAME - but using pr_number, OK as-is)
+
+**track_learn_evaluation.py**
+- Line 60: Function definition `def _extract_plan_number(identifier: str) -&gt; int | None:` (RENAME)
+- Line 86: Function parameter `plan_number: int` (RENAME)
+- Line 95: Docstring (COMMENT)
+- Line 105, 116: Function arguments (RENAME)
+- Line 127: f-string (RENAME)
+- Line 137: Dict key (RENAME)
+- Line 167: Variable `plan_number: int | None = None` (RENAME)
+- Line 169, 170: Function call/condition (RENAME)
+- Line 182-184: Variable/function uses (RENAME)
+- Line 186: Condition (RENAME)
+- Line 199, 206: Function arguments (RENAME)
+
+**plan_update.py**
+- Line 112: Variable `plan_id = str(pr_number)` (RENAME)
+- Line 113, 122, 132: Function/method arguments (RENAME)
+
+**push_and_create_pr.py**
+- Line 88: Dict value `"pr_number": result.plan_id` (RENAME)
+
+**upload_impl_session.py**
+- Line 54: Docstring (COMMENT)
+- Line 76: String literal (RENAME)
+
+**create_impl_context_from_plan.py**
+- Line 55: Variable `plan_id = str(pr_number)` (RENAME)
+- Line 59: Function argument (RENAME)
+- Line 75: Function argument (RENAME)
+
+**setup_impl_from_pr.py**
+- Line 50: Import `extract_plan_content` (RENAME)
+- Line 138, 139: Docstring (COMMENT)
+- Line 165: Variable `plan_title: str = pr_result.title` (RENAME)
+- Line 173, 180: Variable assignment (RENAME)
+- Line 179: Function call (RENAME)
+- Line 213: Dict value (RENAME)
+
+**get_pr_for_plan.py**
+- Line 58: Docstring (COMMENT)
+
+**fetch_sessions.py**
+- Line 3: Docstring (COMMENT)
+
+**get_plan_info.py**
+- Line 45: Variable `plan_id = str(pr_number)` (RENAME)
+- Line 47: Function argument (RENAME)
+
+**get_plan_metadata.py**
+- Line 60: Variable `plan_id = str(pr_number)` (RENAME)
+- Line 63: Function argument (RENAME)
+
+**get_pr_context.py**
+- Line 91: Dict value `"pr_number": plan_context.plan_id` (RENAME)
+
+**objective_apply_landed_update.py**
+- Line 223: Variable `plan_id = plan_result.pr_identifier` (RENAME)
+- Line 228, 237, 246, 281, 322: Function arguments/uses (RENAME)
+
+**update_plan_header.py**
+- Line 4, 7: Docstring (COMMENT)
+- Line 117: Error message (RENAME)
+
+**update_objective_node.py**
+- Line 66: Import `extract_plan_header_objective_issue` (RENAME)
+- Line 333: Function call (RENAME)
+
+**ci_update_pr_body.py**
+- Line 63: Import `extract_plan_content` (RENAME)
+- Line 279: Function call (RENAME)
+
+**ci_generate_summaries.py**
+- Line 41: Import `extract_plan_header_ci_summary_comment_id` (RENAME)
+- Line 202: Function call (RENAME)
+
+### 2. src/erk/cli/commands/pr/
+
+**duplicate_check_cmd.py**
+- Line 75: Variable `plan_number = parse_issue_identifier(plan)` (RENAME)
+- Line 76, 78: Variable uses (RENAME)
+
+**check_cmd.py**
+- Line 19: Import `extract_plan_from_comment` (RENAME)
+- Line 32: Import `extract_plan_content` (RENAME)
+- Line 75: Function parameter `plan_number: int` (RENAME)
+- Line 91: Docstring (COMMENT)
+- Line 99, 101, 130: Variable/function uses (RENAME)
+- Line 123, 138: Function calls (RENAME)
+- Line 222: Variable assignment (RENAME)
+- Line 224: f-string output (RENAME)
+- Line 227: Function argument (RENAME)
+- Line 302, 306, 310: Variable uses/comments (RENAME)
+
+**log_cmd.py**
+- Line 35: Dataclass field `plan_number: int` (RENAME)
+- Line 142: Variable assignment (RENAME)
+- Line 144, 150: Function/method arguments (RENAME)
+- Line 159: Function argument (RENAME)
+- Line 200, 204, 215, 305: Function definitions and docstrings (RENAME)
+- Line 225: Dict key assignment (RENAME)
+- Line 348, 353, 356, 359: Function parameter/docstring/uses (RENAME)
+
+**checkout_cmd.py**
+- Line 31: Import `parse_plan_number_from_url` (RENAME)
+- Line 72: Variable assignment (RENAME)
+- Line 73, 74: Condition/return (RENAME)
+- Line 167: Function argument (RENAME)
+- Line 347, 361: Function parameter/argument (RENAME)
+- Line 368, 370, 372, 383, 391, 400: Multiple uses (RENAME)
+- Line 428, 430, 444, 452-455: Message strings (RENAME)
+- Line 460, 462: Function definition/uses (RENAME)
+
+**dispatch_cmd.py**
+- Line 32: Import `extract_plan_header_branch_name` (RENAME)
+- Line 44: Import `extract_plan_content` (RENAME)
+- Line 92-94: Dataclass fields (RENAME)
+- Line 100: Function parameter (RENAME)
+- Line 104: Docstring (COMMENT)
+- Line 110, 117, 121, 127: Function parameters/docstrings (RENAME)
+- Line 289, 374, 426, 482, 514, 516, 587: Various uses (RENAME)
+- Line 596: Function definition (RENAME)
+- Line 622, 623, 624: Function calls/variables (RENAME)
+- Line 751: Function call (RENAME)
+- Line 837, 838: Output strings (RENAME)
+
+**metadata_helpers.py**
+- Line 29: Function parameter `plan_number: int` (RENAME)
+- Line 43: Variable assignment (RENAME)
+- Line 46: Exception message (RENAME)
+- Line 76: Comment (RENAME)
+- Line 85: Function call (RENAME)
+
+**view/operation.py**
+- Line 35: Dataclass field `plan_id: str` (RENAME)
+- Line 50, 95: Field reference/assignment (RENAME)
+- Line 116, 117, 123, 125, 127, 131, 135, 142, 151: Multiple uses (RENAME)
+
+**submit_pipeline.py**
+- Line 104, 137: Dataclass field/docstring (RENAME)
+- Line 161, 164, 174: Variable assignments (RENAME)
+- Line 177, 181, 182, 205, 214, 278, 567: Variable uses (RENAME)
+- Line 819, 879-889: Function arguments (RENAME)
+- Line 1108: Parameter default (RENAME)
+
+**shared.py**
+- Line 128: f-string (RENAME)
+- Line 150, 161, 170, 190: Function parameter/call (RENAME)
+- Line 201, 248: Function parameter/variable (RENAME)
+
+**submit_cmd.py**
+- Line 63, 64: Condition/output (RENAME)
+
+**rewrite_cmd.py**
+- Line 194: Function argument (RENAME)
+
+**view/cli.py**
+- Line 80: Function parameter `plan_url: str | None` (RENAME)
+- Line 167, 168, 191, 218: Variable uses (RENAME)
+
+**close_cmd.py**
+- Line 63: Function argument (RENAME)
+
+### 3. src/erk/cli/commands/branch/
+
+**create_cmd.py**
+- Line 136: Variable `plan_number = parse_issue_identifier(for_plan)` (RENAME)
+- Line 137: Function argument (RENAME)
+- Line 139: Exception message (RENAME)
+- Line 256: Keyword argument (RENAME)
+- Line 269, 275, 280: Various uses (RENAME)
+
+**checkout_cmd.py**
+- Line 362: Keyword argument (RENAME)
+- Line 374, 380, 385: Various uses (RENAME)
+- Line 546: Variable assignment (RENAME)
+- Line 547: Function argument (RENAME)
+- Line 549: Exception message (RENAME)
+
+### 4. src/erk/cli/commands/wt/
+
+**create_cmd.py**
+- Line 580: Variable `plan_number_parsed: int | None = None` (RENAME)
+- Line 627: Variable assignment (RENAME)
+- Line 668-670: Assertion with variable (RENAME)
+- Line 674: Function argument (RENAME)
+- Line 678, 679, 683: Exception messages (RENAME)
+- Line 930: Keyword argument/f-string (RENAME)
+- Line 938: f-string output (RENAME)
+
+**delete_cmd.py**
+- Line 137, 139: Variable use/f-string (RENAME)
+- Line 142, 143, 144: Function argument/f-string (RENAME)
+
+### 5. src/erk/cli/commands/run/shared.py
+
+**shared.py**
+- Line 26: Function definition `def extract_plan_number(display_title: str | None) -&gt; int | None:` (RENAME)
+- Line 30-32: Docstring (COMMENT)
+
+### 6. src/erk/cli/commands/admin.py
+
+**admin.py**
+- Line 461, 462, 470, 471: Variable uses (RENAME)
+- Line 527, 530: Dict key/value (RENAME - "plan_id" and "plan_title" in workflow input dict, may need keeping)
+
+### 7. src/erk/cli/commands/learn/
+
+**learn_cmd.py**
+- Line 30: Dataclass field `plan_id: str` (RENAME)
+- Line 40: Function definition `def _extract_plan_number(identifier: str) -&gt; int | None:` (RENAME)
+- Line 108, 109: Comment/variable (RENAME)
+- Line 111, 112, 115: Function call/variable (RENAME)
+- Line 117: Function call (RENAME)
+- Line 119: Condition (RENAME)
+- Line 133, 136, 144, 154, 182, 208, 240, 247, 252, 262: Multiple uses (RENAME)
+
+### 8. src/erk/cli/commands/reconcile_pipeline.py
+
+- Line 107: Function call `ctx.plan_backend.resolve_plan_id_for_branch(...)` (RENAME - though this is erk_shared API)
+
+### 9. src/erk/cli/commands/one_shot_remote_dispatch.py
+
+- Line 438: Keyword argument `plan_number=pr_number` (RENAME - but using pr_number, OK as-is)
+
+### 10. src/erk/cli/commands/consolidate_learn_plans_dispatch.py
+
+- Line 230: Keyword argument `plan_number=pr_number` (RENAME - but using pr_number, OK as-is)
+
+### 11. src/erk/cli/commands/one_shot/
+
+**cli.py**
+- Line 11, 110: Comments mentioning old names (COMMENT)
+
+### 12. src/erk/core/file_utils.py
+
+**file_utils.py**
+- Line 10: Function definition `def extract_plan_title(plan_path: Path, git_ops: Git | None = None) -&gt; str | None:` (RENAME)
+- Line 63: Function definition `def extract_plan_title_from_folder(folder_path: Path, git_ops: Git | None = None) -&gt; str | None:` (RENAME)
+- Line 90: Function call (RENAME)
+
+---
+
+## Summary Statistics
+
+**Total files with occurrences: 44 files**
+
+**Type breakdown:**
+- **RENAME (actual code to change):** Approximately 280+ occurrences
+- **COMMENTS/DOCSTRINGS (informational only):** Approximately 80+ occurrences
+
+**Key renaming candidates:**
+
+1. `plan_number` → `pr_number` (throughout codebase)
+2. `plan_id` → `pr_id` (throughout codebase)
+3. `plan_url` → `pr_url` (in dispatch_cmd.py)
+4. `plan_title` → `pr_title` (in dispatch_cmd.py and related)
+5. `extract_plan_number` → `extract_pr_number` (in shared.py, get_learn_sessions.py, track_learn_evaluation.py, learn_cmd.py)
+6. `extract_plan_title` → `extract_pr_title` (in file_utils.py and exit_plan_mode_hook.py)
+7. `_extract_plan_number` → `_extract_pr_number` (in get_learn_sessions.py, track_learn_evaluation.py, learn_cmd.py)
+8. Functions importing or calling `extract_plan_*` variants should be updated
+
+**Note on erk_shared API:** Several occurrences use `resolve_plan_id_for_branch()`, `get_plan()`, etc. from erk_shared backend - these are external API calls that may be dependencies and should be kept as-is unless erk_shared is also being updated.</assistant>
+  <usage input_tokens="4" cache_creation_input_tokens="1310" cache_read_input_tokens="39459" cache_creation="{'ephemeral_5m_input_tokens': 1310, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>
