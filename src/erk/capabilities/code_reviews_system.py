@@ -89,6 +89,10 @@ class CodeReviewsSystemCapability(Capability):
     """
 
     @property
+    def tag(self) -> str | None:
+        return "code-reviews"
+
+    @property
     def name(self) -> str:
         return "code-reviews-system"
 

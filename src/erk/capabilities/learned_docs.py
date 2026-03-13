@@ -168,6 +168,10 @@ class LearnedDocsCapability(Capability):
     """Capability for the learned-docs agent documentation system."""
 
     @property
+    def tag(self) -> str | None:
+        return "documentation"
+
+    @property
     def name(self) -> str:
         return "learned-docs"
 

@@ -31,6 +31,12 @@ _UNBUNDLED_SKILLS: frozenset[str] = frozenset(
     }
 )
 
+_BUNDLED_SKILL_TAGS: dict[str, str] = {
+    "dignified-code-simplifier": "dignified-python",
+    "gh": "external-tools",
+    "gt": "external-tools",
+}
+
 _REQUIRED_BUNDLED_SKILLS: frozenset[str] = frozenset(
     {
         "erk-diff-analysis",
@@ -74,9 +80,14 @@ def is_required_bundled_skill(skill_name: str) -> bool:
 class BundledSkillCapability(SkillCapability):
     """Concrete SkillCapability for skills registered via bundled_skills() dict."""
 
-    def __init__(self, *, _skill_name: str, _description: str) -> None:
+    def __init__(self, *, _skill_name: str, _description: str, _tag: str | None) -> None:
         self._skill_name = _skill_name
         self._description = _description
+        self._tag = _tag
+
+    @property
+    def tag(self) -> str | None:
+        return self._tag
 
     @property
     def skill_name(self) -> str:
@@ -100,6 +111,10 @@ class BundledSkillCapability(SkillCapability):
 def create_bundled_skill_capabilities() -> list[SkillCapability]:
     """Create SkillCapability instances for all bundled skills."""
     return [
-        BundledSkillCapability(_skill_name=name, _description=desc)
+        BundledSkillCapability(
+            _skill_name=name,
+            _description=desc,
+            _tag=_BUNDLED_SKILL_TAGS.get(name),
+        )
         for name, desc in bundled_skills().items()
     ]

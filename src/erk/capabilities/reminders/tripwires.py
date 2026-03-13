@@ -7,6 +7,10 @@ class TripwiresReminderCapability(ReminderCapability):
     """Reminder to check tripwires.md before performing actions."""
 
     @property
+    def tag(self) -> str | None:
+        return "documentation"
+
+    @property
     def reminder_name(self) -> str:
         return "tripwires"
 
