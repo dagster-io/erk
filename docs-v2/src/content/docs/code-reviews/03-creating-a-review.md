@@ -1,6 +1,8 @@
 ---
 title: Creating a review
 description: Add a new automated code review to your project
+sidebar:
+  hidden: true
 ---
 
 # TODO: Under Construction
