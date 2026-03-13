@@ -48,11 +48,15 @@ from __future__ import annotations
 
 import json
 from dataclasses import asdict, dataclass
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import cast, get_args
 
 import click
 
+from erk.cli.commands.exec.scripts.objective_post_action_comment import (
+    format_action_comment,
+)
 from erk_shared.context.helpers import require_issues, require_repo_root
 from erk_shared.gateway.github.issues.abc import GitHubIssues
 from erk_shared.gateway.github.issues.types import IssueNotFound
@@ -398,6 +402,10 @@ def _set_plan_backlink(
     default=False,
     help="Include the fully-mutated issue body in JSON output as 'updated_body'",
 )
+@click.option(
+    "--comment", "action_comment", required=False, default=None, help="Context for action comment"
+)
+@click.option("--lessons", required=False, default=None, help="Lessons learned for action comment")
 @click.pass_context
 def update_objective_node(
     ctx: click.Context,
@@ -410,6 +418,8 @@ def update_objective_node(
     new_slug: str | None,
     new_comment: str | None,
     include_body: bool,
+    action_comment: str | None,
+    lessons: str | None,
 ) -> None:
     """Update node fields in an objective's roadmap table."""
     if (
@@ -538,6 +548,28 @@ def update_objective_node(
         pr_ref=pr_ref,
         objective_issue_number=issue_number,
     )
+
+    # Auto-post action comment when --comment or --lessons provided
+    if action_comment is not None or lessons is not None:
+        node_ids_str = ", ".join(node)
+        status_desc = explicit_status or "updated"
+        what_was_done = [f"Updated node(s) {node_ids_str} -> {status_desc}"]
+        if action_comment is not None:
+            what_was_done.append(action_comment)
+        lessons_learned = [lessons] if lessons is not None else []
+        roadmap_updates = [f"Node {n}: -> {status_desc}" for n in node]
+
+        comment_text = format_action_comment(
+            title=f"Updated node(s) {node_ids_str}",
+            date=datetime.now(UTC).strftime("%Y-%m-%d"),
+            pr_number=int(pr_ref.lstrip("#")) if pr_ref and pr_ref.startswith("#") else None,
+            phase_step=node_ids_str,
+            what_was_done=what_was_done,
+            lessons_learned=lessons_learned,
+            roadmap_updates=roadmap_updates,
+            body_reconciliation=[],
+        )
+        github.add_comment(repo_root, issue_number, comment_text)
 
     # Build and emit output
     output = _build_output(

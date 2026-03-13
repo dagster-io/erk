@@ -136,16 +136,36 @@ Add new nodes to an existing objective's roadmap:
 # Add to existing phase (auto-assigns next ID, e.g., 1.4)
 erk exec add-objective-node 8470 --phase 1 --description "Clean up dead code"
 
+# With explicit ID (e.g., sub-node 3.6.1)
+erk exec add-objective-node 8470 --id 3.6.1 --description "Handle sub-task"
+
 # With explicit slug and dependencies
 erk exec add-objective-node 8470 --phase 2 \
   --description "Integration tests" \
   --slug integration-tests \
   --depends-on 2.1 --depends-on 2.2
 
-# With comment for adding
+# With reason and action comment
 erk exec add-objective-node 8470 --phase 1 \
   --description "Handle edge case" \
-  --comment "Discovered during re-evaluation"
+  --reason "Discovered during re-evaluation" \
+  --comment "Found during code review" \
+  --lessons "Always check edge cases"
+```
+
+### Removing Nodes
+
+Remove nodes that are no longer needed:
+
+```bash
+# Remove a node
+erk exec remove-objective-node 8470 --node 3.6
+
+# With reason and action comment
+erk exec remove-objective-node 8470 --node 3.6 \
+  --reason "Superseded by new approach" \
+  --comment "Replaced by node 4.1" \
+  --lessons "Keep roadmaps lean"
 ```
 
 ### Updating Node Status

@@ -1,13 +1,10 @@
-"""Add a new node to an objective's roadmap.
+"""Remove a node from an objective's roadmap.
 
 Usage:
-    erk exec add-objective-node 8470 \
-      --phase 1 \
-      --description "Clean up dead modify_existing code" \
-      [--slug cleanup-modify-existing] \
-      [--status pending] \
-      [--depends-on 1.2] [--depends-on 1.3] \
-      [--comment "Added during objective re-evaluation"]
+    erk exec remove-objective-node 8470 --node 3.6 \
+      [--reason "Superseded by new approach"] \
+      [--comment "Removed after re-evaluation"] \
+      [--lessons "Keep roadmaps lean"]
 
 Output:
     JSON with {success, issue_number, node_id, url}
@@ -18,7 +15,6 @@ Exit Codes:
 
 import json
 from datetime import UTC, datetime
-from typing import cast
 
 import click
 
@@ -33,8 +29,7 @@ from erk_shared.gateway.github.metadata.core import (
     replace_metadata_block_in_body,
 )
 from erk_shared.gateway.github.metadata.roadmap import (
-    RoadmapNodeStatus,
-    add_node_to_frontmatter,
+    remove_node_from_frontmatter,
     render_objective_roadmap_block,
     rerender_comment_roadmap,
 )
@@ -42,67 +37,25 @@ from erk_shared.gateway.github.metadata.types import BlockKeys
 from erk_shared.gateway.github.types import BodyText
 
 
-@click.command(name="add-objective-node")
+@click.command(name="remove-objective-node")
 @click.argument("issue_number", type=int)
-@click.option("--phase", required=False, type=int, default=None, help="Phase number to add to")
-@click.option(
-    "--id", "node_id", required=False, default=None, help="Explicit node ID (e.g., '3.6.1')"
-)
-@click.option("--description", required=True, help="Node description")
-@click.option(
-    "--slug",
-    required=False,
-    default=None,
-    help="Kebab-case identifier (auto-generated if omitted)",
-)
-@click.option(
-    "--status",
-    required=False,
-    default="pending",
-    type=click.Choice(["pending", "planning", "done", "in_progress", "blocked", "skipped"]),
-    help="Initial status (default: pending)",
-)
-@click.option(
-    "--depends-on",
-    "depends_on_ids",
-    required=False,
-    multiple=True,
-    help="Dependency node IDs",
-)
-@click.option("--reason", required=False, default=None, help="Reason for adding this node")
+@click.option("--node", "node_id", required=True, help="Node ID to remove (e.g., '3.6')")
+@click.option("--reason", required=False, default=None, help="Reason for removal")
 @click.option(
     "--comment", "action_comment", required=False, default=None, help="Context for action comment"
 )
 @click.option("--lessons", required=False, default=None, help="Lessons learned for action comment")
 @click.pass_context
-def add_objective_node(
+def remove_objective_node(
     ctx: click.Context,
     issue_number: int,
     *,
-    phase: int | None,
-    node_id: str | None,
-    description: str,
-    slug: str | None,
-    status: str,
-    depends_on_ids: tuple[str, ...],
+    node_id: str,
     reason: str | None,
     action_comment: str | None,
     lessons: str | None,
 ) -> None:
-    """Add a new node to an objective's roadmap."""
-    # Validate: need either --phase or --id
-    if phase is None and node_id is None:
-        click.echo(
-            json.dumps(
-                {
-                    "success": False,
-                    "error": "missing_phase_or_id",
-                    "message": "Either --phase or --id must be provided",
-                }
-            )
-        )
-        raise SystemExit(0)
-
+    """Remove a node from an objective's roadmap."""
     github = require_issues(ctx)
     repo_root = require_repo_root(ctx)
 
@@ -140,37 +93,23 @@ def add_objective_node(
         )
         raise SystemExit(0)
 
-    # Build depends_on tuple
-    depends_on: tuple[str, ...] | None = tuple(depends_on_ids) if depends_on_ids else None
-
-    # Add the node
-    result = add_node_to_frontmatter(
+    # Remove the node
+    updated_block_content = remove_node_from_frontmatter(
         roadmap_block.body,
-        phase=phase,
         node_id=node_id,
-        description=description,
-        slug=slug,
-        status=cast(RoadmapNodeStatus, status),
-        depends_on=depends_on,
-        comment=reason,
     )
 
-    if result is None:
-        error_detail = f"node '{node_id}' already exists or " if node_id else ""
+    if updated_block_content is None:
         click.echo(
             json.dumps(
                 {
                     "success": False,
-                    "error": "add_failed",
-                    "message": (
-                        f"Failed to add node ({error_detail}phase {phase}) in issue #{issue_number}"
-                    ),
+                    "error": "node_not_found",
+                    "message": f"Node '{node_id}' not found in issue #{issue_number}",
                 }
             )
         )
         raise SystemExit(0)
-
-    updated_block_content, assigned_node_id = result
 
     # Replace the roadmap block in the issue body
     new_block_with_markers = render_objective_roadmap_block(updated_block_content)
@@ -193,21 +132,23 @@ def add_objective_node(
         if updated_comment is not None and updated_comment != comment_body:
             github.update_comment(repo_root, objective_comment_id, updated_comment)
 
-    # Auto-post action comment when --comment or --lessons provided
-    if action_comment is not None or lessons is not None:
-        what_was_done = [f"Added node {assigned_node_id}: {description}"]
+    # Auto-post action comment when --comment, --lessons, or --reason provided
+    if action_comment is not None or lessons is not None or reason is not None:
+        what_was_done = [f"Removed node {node_id} from roadmap"]
+        if reason is not None:
+            what_was_done.append(f"Reason: {reason}")
         if action_comment is not None:
             what_was_done.append(action_comment)
         lessons_learned = [lessons] if lessons is not None else []
 
         comment_text = format_action_comment(
-            title=f"Added node {assigned_node_id}",
+            title=f"Removed node {node_id}",
             date=datetime.now(UTC).strftime("%Y-%m-%d"),
             pr_number=None,
-            phase_step=assigned_node_id,
+            phase_step=node_id,
             what_was_done=what_was_done,
             lessons_learned=lessons_learned,
-            roadmap_updates=[f"Node {assigned_node_id}: added ({status})"],
+            roadmap_updates=[f"Node {node_id}: removed"],
             body_reconciliation=[],
         )
         github.add_comment(repo_root, issue_number, comment_text)
@@ -217,7 +158,7 @@ def add_objective_node(
             {
                 "success": True,
                 "issue_number": issue_number,
-                "node_id": assigned_node_id,
+                "node_id": node_id,
                 "url": issue.url,
             }
         )

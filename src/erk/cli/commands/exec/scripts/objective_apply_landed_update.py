@@ -28,7 +28,7 @@ from erk.cli.commands.exec.scripts.objective_fetch_context import (
     _fetch_objective_content,
 )
 from erk.cli.commands.exec.scripts.objective_post_action_comment import (
-    _format_action_comment,
+    format_action_comment,
 )
 from erk.cli.commands.exec.scripts.update_objective_node import (
     _find_node_refs,
@@ -290,7 +290,7 @@ def objective_apply_landed_update(
     roadmap_updates = [f"Node {nid}: -> done" for nid in matched_steps]
 
     comment_title = "Objective Complete" if auto_closed else f"Landed PR #{pr_number}"
-    comment_body = _format_action_comment(
+    comment_body = format_action_comment(
         title=comment_title,
         date=date_str,
         pr_number=pr_number,

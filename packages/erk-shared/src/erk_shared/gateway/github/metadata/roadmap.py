@@ -21,6 +21,7 @@ import yaml
 from erk_shared.gateway.github.metadata.core import (
     extract_raw_metadata_blocks,
     parse_metadata_block_body,
+    replace_metadata_block_in_body,
 )
 from erk_shared.gateway.github.metadata.types import BlockKeys
 
@@ -393,7 +394,8 @@ def update_node_in_frontmatter(
 def add_node_to_frontmatter(
     block_content: str,
     *,
-    phase: int,
+    phase: int | None,
+    node_id: str | None,
     description: str,
     slug: str | None,
     status: RoadmapNodeStatus,
@@ -402,12 +404,14 @@ def add_node_to_frontmatter(
 ) -> tuple[str, str] | None:
     """Add a new node to a phase in frontmatter YAML.
 
-    Auto-assigns the next available node ID within the given phase.
-    Appends the new node after the last node of the same phase.
+    When ``node_id`` is provided, uses it directly (explicit ID mode).
+    Otherwise auto-assigns the next available node ID within ``phase``.
 
     Args:
         block_content: Raw content from metadata block
-        phase: Phase number to add to
+        phase: Phase number to add to (required when node_id is None)
+        node_id: Explicit node ID (e.g., "3.6.1"). When provided, phase
+            is inferred from the ID's integer prefix if not given.
         description: Node description
         slug: Kebab-case identifier, or None to auto-generate
         status: Node status (typically "pending")
@@ -416,32 +420,56 @@ def add_node_to_frontmatter(
 
     Returns:
         Tuple of (updated block content, assigned node ID), or None if
-        frontmatter parsing fails
+        frontmatter parsing fails or duplicate ID exists
     """
     steps = parse_roadmap_frontmatter(block_content)
 
     if steps is None:
         return None
 
-    # Find max node number in this phase
-    phase_prefix = f"{phase}."
-    max_node_num = 0
+    existing_ids = {step.id for step in steps}
+
+    if node_id is not None:
+        # Explicit ID mode
+        if node_id in existing_ids:
+            return None
+
+        # Infer phase from ID prefix if not provided
+        resolved_phase = phase
+        if resolved_phase is None:
+            match = re.match(r"^(\d+)", node_id)
+            if match:
+                resolved_phase = int(match.group(1))
+            else:
+                return None
+
+        new_node_id = node_id
+        phase_prefix = f"{resolved_phase}."
+    else:
+        # Auto-assign mode (original behavior)
+        if phase is None:
+            return None
+
+        phase_prefix = f"{phase}."
+        max_node_num = 0
+        for step in steps:
+            if step.id.startswith(phase_prefix):
+                suffix = step.id[len(phase_prefix) :]
+                if suffix.isdigit():
+                    node_num = int(suffix)
+                    if node_num > max_node_num:
+                        max_node_num = node_num
+
+        new_node_id = f"{phase}.{max_node_num + 1}"
+
+        if new_node_id in existing_ids:
+            return None
+
+    # Find insertion point: after last node with matching phase prefix
     last_phase_index = -1
     for i, step in enumerate(steps):
         if step.id.startswith(phase_prefix):
-            suffix = step.id[len(phase_prefix) :]
-            if suffix.isdigit():
-                node_num = int(suffix)
-                if node_num > max_node_num:
-                    max_node_num = node_num
             last_phase_index = i
-
-    new_node_id = f"{phase}.{max_node_num + 1}"
-
-    # Check for duplicate (defensive)
-    existing_ids = {step.id for step in steps}
-    if new_node_id in existing_ids:
-        return None
 
     resolved_slug = slug if slug is not None else slugify_description(description)
 
@@ -461,6 +489,34 @@ def add_node_to_frontmatter(
     updated_steps.insert(insert_index, new_node)
 
     return render_roadmap_block_inner(updated_steps), new_node_id
+
+
+def remove_node_from_frontmatter(
+    block_content: str,
+    *,
+    node_id: str,
+) -> str | None:
+    """Remove a node by ID from frontmatter YAML.
+
+    Args:
+        block_content: Raw content from metadata block
+        node_id: Node ID to remove (e.g., "3.6")
+
+    Returns:
+        Updated block content, or None if frontmatter parsing fails
+        or node_id not found.
+    """
+    steps = parse_roadmap_frontmatter(block_content)
+
+    if steps is None:
+        return None
+
+    # Check node exists (LBYL)
+    if not any(step.id == node_id for step in steps):
+        return None
+
+    updated_steps = [step for step in steps if step.id != node_id]
+    return render_roadmap_block_inner(updated_steps)
 
 
 # ---------------------------------------------------------------------------
@@ -856,7 +912,7 @@ def rerender_comment_roadmap(issue_body: str, comment_body: str) -> str | None:
         return None
 
     _section_content, section_start, section_end = marker_section
-    return (
+    updated = (
         comment_body[:section_start]
         + ROADMAP_TABLE_MARKER_START
         + "\n"
@@ -865,3 +921,15 @@ def rerender_comment_roadmap(issue_body: str, comment_body: str) -> str | None:
         + ROADMAP_TABLE_MARKER_END
         + comment_body[section_end:]
     )
+
+    # Also sync the YAML block in the comment (if present) so it matches the issue body
+    comment_has_roadmap_block = any(
+        block.key == BlockKeys.OBJECTIVE_ROADMAP for block in extract_raw_metadata_blocks(updated)
+    )
+    if comment_has_roadmap_block:
+        roadmap_block_content = render_objective_roadmap_block(render_roadmap_block_inner(steps))
+        updated = replace_metadata_block_in_body(
+            updated, BlockKeys.OBJECTIVE_ROADMAP, roadmap_block_content
+        )
+
+    return updated
