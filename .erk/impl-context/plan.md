@@ -2,10 +2,10 @@
 
 ## Context
 
-Part of **O9109 node 6.1** (rename internal plan_number/plan_id params in TUI). Two bugs found:
+Part of **O9109 node 6.1**. Two bugs in the TUI land workflow:
 
-1. `workers.py:271` passes `--plan-number` but `land-execute` only accepts `--linked-pr-number` — causes landing to fail from TUI with error toast
-2. `plan_detail_screen.py:855-860` calls `_land_pr_async()` with positional args (function is keyword-only via `*`) and missing `plan_number` — causes `TypeError` when landing from detail screen
+1. `workers.py:271` passes `--plan-number` but `land-execute` only accepts `--linked-pr-number` — causes error toast on every TUI land
+2. `plan_detail_screen.py:855-860` calls `_land_pr_async()` with positional args (function is keyword-only via `*`) and missing `plan_number` — would `TypeError` when landing from detail screen
 
 ## Changes
 
@@ -41,6 +41,6 @@ self.app._land_pr_async(
 
 ## Verification
 
-1. Run `pytest tests/tui/` to check for regressions
+1. Run `pytest tests/tui/` for regressions
 2. Run `ty` for type checking
-3. Manual: `erk dash -i`, land a PR from both the main list and the detail screen
+3. Manual: `erk dash -i`, land a PR from both main list and detail screen
