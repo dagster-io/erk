@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "pr_number": 9233,
+  "sessions": [
+    {
+      "session_id": "",
+      "stage": "impl",
+      "source": "local",
+      "uploaded_at": "2026-03-13T19:04:38.113239+00:00",
+      "files": [
+        "impl--511fae2a-e062-433e-b470-76daaa350e0b-part1.xml",
+        "impl--511fae2a-e062-433e-b470-76daaa350e0b-part2.xml",
+        "impl--511fae2a-e062-433e-b470-76daaa350e0b-part3.xml"
+      ],
+      "user_turns": 2,
+      "duration_minutes": 6,
+      "raw_size_kb": 727,
+      "xml_size_kb": 69,
+      "git_branch": "plnd/fix-land-up-cd-path-03-13-1439"
+    }
+  ]
+}
