@@ -134,33 +134,20 @@ ensure the objective-context marker exists, and re-run /erk:plan-save.
 
 Exit without creating the plan-saved marker. The session continues so the user can retry.
 
-### Step 6: Update Objective Roadmap (if objective linked)
+### Step 6: Verify Objective Roadmap Update (if objective linked)
 
 **Only run this step if `objective_issue` was non-null in JSON output and verification passed.**
 
-Update the objective's roadmap table to show that a plan has been created for this node:
+The `plan-save` command now automatically updates objective roadmap nodes when saving a plan linked to an objective. Check the JSON output for `"objective_updated"`:
 
-1. **Read the roadmap node marker** to get the node ID:
+- If `"objective_updated": true`: Display `Objective roadmap updated automatically.`
+- If `"objective_updated": false` and the plan has an objective link: Display a warning that the roadmap update failed and manual update may be needed:
 
-```bash
-step_id=$(erk exec marker read --session-id "${CLAUDE_SESSION_ID}" roadmap-step)
 ```
-
-If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-plan`.
-
-2. **Update the roadmap table** using the dedicated command:
-
-```bash
-erk exec update-objective-node <objective-issue> --node "$step_id" --pr "#<pr_number>" --status in_progress
+Warning: Automatic objective roadmap update failed.
+You may need to manually update the objective with:
+erk exec update-objective-node <objective-issue> --node <node_id> --pr "#<plan_number>" --status in_progress
 ```
-
-This atomically fetches the objective body, finds the matching node row, sets the Status cell to `in-progress`, and writes the updated body back.
-
-3. **Report the update:**
-
-Display: `Updated objective #<objective-issue> roadmap: node <step_id> → PR #<pr_number>`
-
-**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
 
 ### Step 7: Display Results
 

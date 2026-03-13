@@ -1,6 +1,7 @@
 """Unit tests for plan-save command (draft PR creation)."""
 
 import json
+from datetime import UTC, datetime
 from pathlib import Path
 
 import pytest
@@ -8,10 +9,12 @@ from click.testing import CliRunner
 
 from erk.cli.commands.exec.scripts.plan_save import plan_save
 from erk_shared.context.context import ErkContext
+from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.plan_store.planned_pr_lifecycle import IMPL_CONTEXT_DIR
 from tests.fakes.gateway.claude_installation import FakeClaudeInstallation
 from tests.fakes.gateway.git import FakeGit
 from tests.fakes.gateway.github import FakeLocalGitHub
+from tests.fakes.gateway.github_issues import FakeGitHubIssues
 from tests.fakes.gateway.graphite import FakeGraphite
 from tests.fakes.tests.shared_context import context_for_test
 
@@ -23,6 +26,54 @@ This plan describes the implementation of a new feature.
 - Step 1: Set up the environment
 - Step 2: Implement the core logic
 - Step 3: Add tests and documentation"""
+
+_NOW = datetime(2025, 1, 1, tzinfo=UTC)
+
+OBJECTIVE_BODY_WITH_NODE_3_1 = """\
+# Objective: Test
+<!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->
+<!-- erk:metadata-block:objective-roadmap -->
+<details>
+<summary><code>objective-roadmap</code></summary>
+
+```yaml
+
+schema_version: '2'
+steps:
+  - id: '3.1'
+    description: Test step
+    status: pending
+    plan: null
+    pr: null
+
+```
+
+</details>
+<!-- /erk:metadata-block:objective-roadmap -->
+
+## Roadmap
+
+### Phase 3: Testing
+
+| Node | Description | Status | Plan | PR |
+|------|-------------|--------|------|-----|
+| 3.1 | Test step | pending | - | - |
+"""
+
+
+def _make_objective_issue(*, number: int, body: str) -> IssueInfo:
+    return IssueInfo(
+        number=number,
+        title="Test Objective",
+        body=body,
+        state="OPEN",
+        url=f"https://github.com/owner/repo/issues/{number}",
+        labels=["erk-objective"],
+        assignees=[],
+        created_at=_NOW,
+        updated_at=_NOW,
+        author="testuser",
+    )
 
 
 def _planned_pr_context(
@@ -919,3 +970,86 @@ def test_current_branch_creates_unified_plan_saved_marker(
     # Issue and branch markers should still exist
     assert (marker_dir / "plan-saved-issue.marker").exists()
     assert (marker_dir / "plan-saved-branch.marker").exists()
+
+
+# --- Objective node update tests ---
+
+
+def test_planned_pr_objective_updated_when_objective_and_nodes_set(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """objective_updated is True when objective_issue and node_ids are both set."""
+    fake_git = FakeGit(current_branches={tmp_path: "main"})
+    objective_issue = _make_objective_issue(number=789, body=OBJECTIVE_BODY_WITH_NODE_3_1)
+    fake_issues = FakeGitHubIssues(issues={789: objective_issue})
+    fake_github = FakeLocalGitHub(issues_gateway=fake_issues)
+    ctx = _planned_pr_context(
+        tmp_path=tmp_path, fake_git=fake_git, fake_github=fake_github, monkeypatch=monkeypatch
+    )
+    runner = CliRunner()
+
+    # Create objective-context and roadmap-step markers
+    session_id = "obj-update-session"
+    marker_dir = tmp_path / ".erk" / "scratch" / "sessions" / session_id
+    marker_dir.mkdir(parents=True)
+    (marker_dir / "objective-context.marker").write_text("789", encoding="utf-8")
+    (marker_dir / "roadmap-step.marker").write_text("3.1", encoding="utf-8")
+
+    result = runner.invoke(
+        plan_save,
+        ["--format", "json", "--session-id", session_id, "--branch-slug", "test-slug"],
+        obj=ctx,
+    )
+
+    assert result.exit_code == 0, f"Failed: {result.output}"
+    json_line = next(line for line in result.output.strip().splitlines() if line.startswith("{"))
+    output = json.loads(json_line)
+    assert output["success"] is True
+    assert output["objective_updated"] is True
+
+
+def test_planned_pr_succeeds_when_objective_update_fails(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Plan save succeeds even when the objective node update fails (fail-open).
+
+    Issue 789 is not seeded in FakeGitHubIssues, so get_issue returns IssueNotFound,
+    causing _update_objective_nodes to return False gracefully.
+    """
+    fake_git = FakeGit(current_branches={tmp_path: "main"})
+    ctx = _planned_pr_context(tmp_path=tmp_path, fake_git=fake_git, monkeypatch=monkeypatch)
+    runner = CliRunner()
+
+    # Create objective-context and roadmap-step markers
+    session_id = "obj-fail-session"
+    marker_dir = tmp_path / ".erk" / "scratch" / "sessions" / session_id
+    marker_dir.mkdir(parents=True)
+    (marker_dir / "objective-context.marker").write_text("789", encoding="utf-8")
+    (marker_dir / "roadmap-step.marker").write_text("3.1", encoding="utf-8")
+
+    result = runner.invoke(
+        plan_save,
+        ["--format", "json", "--session-id", session_id, "--branch-slug", "test-slug"],
+        obj=ctx,
+    )
+
+    assert result.exit_code == 0, f"Failed: {result.output}"
+    json_line = next(line for line in result.output.strip().splitlines() if line.startswith("{"))
+    output = json.loads(json_line)
+    assert output["success"] is True
+    assert output["objective_updated"] is False
+
+
+def test_planned_pr_objective_updated_false_without_objective(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """objective_updated is False when no objective is linked."""
+    ctx = _planned_pr_context(tmp_path=tmp_path, monkeypatch=monkeypatch)
+    runner = CliRunner()
+
+    result = runner.invoke(plan_save, ["--format", "json", "--branch-slug", "test-slug"], obj=ctx)
+
+    assert result.exit_code == 0, f"Failed: {result.output}"
+    output = json.loads(result.output)
+    assert output["success"] is True
+    assert output["objective_updated"] is False

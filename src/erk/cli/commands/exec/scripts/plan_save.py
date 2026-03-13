@@ -27,6 +27,11 @@ from pathlib import Path
 
 import click
 
+from erk.cli.commands.exec.scripts.update_objective_node import (
+    _find_node_refs,
+    _replace_node_refs_in_body,
+    _set_plan_backlink,
+)
 from erk.cli.commands.exec.scripts.validate_plan_content import _validate_plan_content
 from erk_shared.context.helpers import (
     get_repo_identifier,
@@ -42,6 +47,12 @@ from erk_shared.context.helpers import (
 )
 from erk_shared.gateway.claude_installation.abc import ClaudeInstallation
 from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists
+from erk_shared.gateway.github.issues.abc import GitHubIssues
+from erk_shared.gateway.github.issues.types import IssueNotFound
+from erk_shared.gateway.github.metadata.core import extract_metadata_value
+from erk_shared.gateway.github.metadata.roadmap import parse_roadmap, rerender_comment_roadmap
+from erk_shared.gateway.github.metadata.types import BlockKeys
+from erk_shared.gateway.github.types import BodyText
 from erk_shared.gateway.time.real import RealTime
 from erk_shared.naming import (
     InvalidPlanTitle,
@@ -105,6 +116,103 @@ def _get_snapshot_result(
         claude_installation=claude_installation,
         repo_root=repo_root,
     )
+
+
+def _update_objective_nodes(
+    *,
+    objective_issue: int,
+    node_ids: tuple[str, ...],
+    plan_number: int,
+    github: GitHubIssues,
+    repo_root: Path,
+) -> bool:
+    """Update objective roadmap nodes to in_progress with the plan PR reference.
+
+    Uses the Graceful Degradation Pattern: this is an optional operation that
+    should not block plan saving if it fails. Calls internal Python functions
+    directly instead of shelling out to ``erk exec update-objective-node``.
+
+    Args:
+        objective_issue: Objective issue number.
+        node_ids: Roadmap node IDs to update.
+        plan_number: The plan PR number to reference.
+        github: GitHubIssues gateway for API calls.
+        repo_root: Repository root for cwd.
+
+    Returns:
+        True if the update succeeded, False otherwise.
+    """
+    pr_ref = f"#{plan_number}"
+
+    issue = github.get_issue(repo_root, objective_issue)
+    if isinstance(issue, IssueNotFound):
+        click.echo(
+            f"Warning: Objective #{objective_issue} not found, skipping roadmap update",
+            err=True,
+        )
+        return False
+
+    phases, _ = parse_roadmap(issue.body)
+    if not phases:
+        click.echo(
+            f"Warning: Objective #{objective_issue} has no roadmap table, skipping update",
+            err=True,
+        )
+        return False
+
+    updated_body = issue.body
+    for node_id in node_ids:
+        _, found = _find_node_refs(updated_body, node_id)
+        if not found:
+            click.echo(
+                f"Warning: Node '{node_id}' not found in objective #{objective_issue}",
+                err=True,
+            )
+            return False
+
+        new_body = _replace_node_refs_in_body(
+            updated_body,
+            node_id,
+            new_pr=pr_ref,
+            explicit_status="in_progress",
+            description=None,
+            slug=None,
+            reason=None,
+        )
+        if new_body is None:
+            click.echo(
+                f"Warning: Failed to update node '{node_id}' in objective #{objective_issue}",
+                err=True,
+            )
+            return False
+        updated_body = new_body
+
+    github.update_issue_body(repo_root, objective_issue, BodyText(content=updated_body))
+
+    # Re-render comment roadmap if present
+    objective_comment_id = extract_metadata_value(
+        updated_body, BlockKeys.OBJECTIVE_HEADER, "objective_comment_id"
+    )
+    if objective_comment_id is not None:
+        comment_body = github.get_comment_by_id(repo_root, objective_comment_id)
+        updated_comment = rerender_comment_roadmap(updated_body, comment_body)
+        if updated_comment is not None and updated_comment != comment_body:
+            github.update_comment(repo_root, objective_comment_id, updated_comment)
+
+    # Set backlink on plan PR (fail-open)
+    _set_plan_backlink(
+        github=github,
+        repo_root=repo_root,
+        pr_ref=pr_ref,
+        objective_issue_number=objective_issue,
+    )
+
+    node_list = ", ".join(node_ids)
+    click.echo(
+        f"Updated objective #{objective_issue} roadmap: {node_list} → PR #{plan_number}",
+        err=True,
+    )
+    return True
 
 
 def _save_as_planned_pr(
@@ -314,6 +422,17 @@ def _save_as_planned_pr(
         raise RuntimeError(msg)
     pr_number = int(result.pr_id)
 
+    # Update objective roadmap nodes (fail-open)
+    objective_updated = False
+    if objective_issue is not None and node_ids is not None:
+        objective_updated = _update_objective_nodes(
+            objective_issue=objective_issue,
+            node_ids=node_ids,
+            plan_number=plan_number,
+            github=github_issues,
+            repo_root=repo_root,
+        )
+
     # Create markers and snapshot
     snapshot_result: PlanSnapshot | None = None
     if session_id is not None:
@@ -348,6 +467,7 @@ def _save_as_planned_pr(
             "branch_name": branch_name,
             "plan_backend": "planned_pr",
             "objective_issue": objective_issue,
+            "objective_updated": objective_updated,
         }
         if snapshot_result is not None:
             output_data["archived_to"] = str(snapshot_result.snapshot_dir)
