@@ -9,7 +9,7 @@ from erk.cli.commands.land_pipeline import (
     resolve_pr_id,
 )
 from erk_shared.gateway.github.types import PRDetails
-from erk_shared.plan_store.planned_pr import PlannedPRBackend
+from erk_shared.plan_store.planned_pr import ManagedGitHubPrBackend
 from tests.fakes.gateway.github import FakeLocalGitHub
 from tests.fakes.gateway.github_issues import FakeGitHubIssues
 from tests.fakes.gateway.time import FakeTime
@@ -73,7 +73,7 @@ def test_sets_plan_id_when_branch_has_plan(tmp_path: Path) -> None:
     fake_issues = FakeGitHubIssues(username="testuser")
     fake_github = FakeLocalGitHub(prs_by_branch={branch: pr}, issues_gateway=fake_issues)
     fake_time = FakeTime()
-    plan_store = PlannedPRBackend(fake_github, fake_issues, time=fake_time)
+    plan_store = ManagedGitHubPrBackend(fake_github, fake_issues, time=fake_time)
 
     ctx = context_for_test(
         github=fake_github,
@@ -94,7 +94,7 @@ def test_sets_pr_id_none_when_no_plan(tmp_path: Path) -> None:
     fake_issues = FakeGitHubIssues(username="testuser")
     fake_github = FakeLocalGitHub(issues_gateway=fake_issues)
     fake_time = FakeTime()
-    plan_store = PlannedPRBackend(fake_github, fake_issues, time=fake_time)
+    plan_store = ManagedGitHubPrBackend(fake_github, fake_issues, time=fake_time)
 
     ctx = context_for_test(
         github=fake_github,

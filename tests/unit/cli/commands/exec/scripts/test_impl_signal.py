@@ -1,7 +1,7 @@
 """Tests for impl-signal exec CLI command.
 
 Tests the started/ended event signaling for /erk:plan-implement.
-Uses ErkContext.for_test() for dependency injection with PlannedPRBackend.
+Uses ErkContext.for_test() for dependency injection with ManagedGitHubPrBackend.
 """
 
 import json
@@ -16,7 +16,7 @@ from erk.cli.commands.exec.scripts.impl_signal import impl_signal
 from erk_shared.context.context import ErkContext
 from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.impl_folder import get_impl_dir
-from erk_shared.plan_store.planned_pr import PlannedPRBackend
+from erk_shared.plan_store.planned_pr import ManagedGitHubPrBackend
 from tests.fakes.gateway.git import FakeGit
 from tests.fakes.gateway.github import FakeLocalGitHub
 from tests.fakes.gateway.github_issues import FakeGitHubIssues
@@ -271,7 +271,7 @@ def test_started_fails_with_whitespace_session_id(tmp_path: Path) -> None:
 
 @_requires_git_branch
 def test_started_posts_comment_and_updates_metadata(tmp_path: Path) -> None:
-    """Started event posts a comment and updates PR metadata via PlannedPRBackend."""
+    """Started event posts a comment and updates PR metadata via ManagedGitHubPrBackend."""
     issue = _make_issue(number=123)
     fake_issues = FakeGitHubIssues(issues={123: issue})
     fake_github = FakeLocalGitHub(
@@ -288,7 +288,7 @@ def test_started_posts_comment_and_updates_metadata(tmp_path: Path) -> None:
             cwd=tmp_path,
             git=_fake_git(tmp_path),
             github=fake_github,
-            plan_store=PlannedPRBackend(fake_github, fake_issues, time=FakeTime()),
+            plan_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
         ),
     )
 
@@ -312,7 +312,7 @@ def test_started_posts_comment_and_updates_metadata(tmp_path: Path) -> None:
 
 
 def test_ended_updates_metadata(tmp_path: Path) -> None:
-    """Ended event updates PR metadata via PlannedPRBackend without posting a comment."""
+    """Ended event updates PR metadata via ManagedGitHubPrBackend without posting a comment."""
     issue = _make_issue(number=456)
     fake_issues = FakeGitHubIssues(issues={456: issue})
     fake_github = FakeLocalGitHub(
@@ -329,7 +329,7 @@ def test_ended_updates_metadata(tmp_path: Path) -> None:
             cwd=tmp_path,
             git=_fake_git(tmp_path),
             github=fake_github,
-            plan_store=PlannedPRBackend(fake_github, fake_issues, time=FakeTime()),
+            plan_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
         ),
     )
 
@@ -368,7 +368,7 @@ def test_started_sets_lifecycle_stage_impl(tmp_path: Path) -> None:
             cwd=tmp_path,
             git=_fake_git(tmp_path),
             github=fake_github,
-            plan_store=PlannedPRBackend(fake_github, fake_issues, time=FakeTime()),
+            plan_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
         ),
     )
 
@@ -401,7 +401,7 @@ def test_started_writes_local_run_state(tmp_path: Path) -> None:
             cwd=tmp_path,
             git=_fake_git(tmp_path),
             github=fake_github,
-            plan_store=PlannedPRBackend(fake_github, fake_issues, time=FakeTime()),
+            plan_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
         ),
     )
 
@@ -421,7 +421,7 @@ def test_started_writes_local_run_state(tmp_path: Path) -> None:
 
 
 def test_submitted_updates_lifecycle_stage(tmp_path: Path) -> None:
-    """Submitted event sets lifecycle_stage to 'implemented' via PlannedPRBackend."""
+    """Submitted event sets lifecycle_stage to 'implemented' via ManagedGitHubPrBackend."""
     issue = _make_issue(number=100)
     fake_issues = FakeGitHubIssues(issues={100: issue})
     fake_github = FakeLocalGitHub(
@@ -438,7 +438,7 @@ def test_submitted_updates_lifecycle_stage(tmp_path: Path) -> None:
             cwd=tmp_path,
             git=_fake_git(tmp_path),
             github=fake_github,
-            plan_store=PlannedPRBackend(fake_github, fake_issues, time=FakeTime()),
+            plan_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
         ),
     )
 
@@ -496,7 +496,7 @@ def test_submitted_no_session_id_ok(tmp_path: Path) -> None:
             cwd=tmp_path,
             git=_fake_git(tmp_path),
             github=fake_github,
-            plan_store=PlannedPRBackend(fake_github, fake_issues, time=FakeTime()),
+            plan_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
         ),
     )
 
@@ -521,7 +521,7 @@ def test_submitted_issue_not_found(tmp_path: Path) -> None:
             cwd=tmp_path,
             git=_fake_git(tmp_path),
             github=fake_github,
-            plan_store=PlannedPRBackend(fake_github, fake_issues, time=FakeTime()),
+            plan_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
         ),
     )
 

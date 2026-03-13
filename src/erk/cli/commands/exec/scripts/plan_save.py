@@ -50,7 +50,7 @@ from erk_shared.naming import (
 )
 from erk_shared.output.next_steps import format_plan_next_steps_plain
 from erk_shared.plan_store.plan_content import extract_title_from_plan, resolve_plan_content
-from erk_shared.plan_store.planned_pr import PlannedPRBackend
+from erk_shared.plan_store.planned_pr import ManagedGitHubPrBackend
 from erk_shared.plan_store.planned_pr_lifecycle import IMPL_CONTEXT_DIR
 from erk_shared.plan_utils import get_title_tag_from_labels
 from erk_shared.scratch.plan_snapshots import PlanSnapshot, snapshot_plan_for_session
@@ -299,8 +299,8 @@ def _save_as_planned_pr(
     prefixed_title = f"{title_tag} {title}"
 
     # Create draft PR via backend
-    backend = PlannedPRBackend(github, github_issues, time=RealTime())
-    result = backend.create_plan(
+    backend = ManagedGitHubPrBackend(github, github_issues, time=RealTime())
+    result = backend.create_managed_pr(
         repo_root=repo_root,
         title=prefixed_title,
         content=plan_content,

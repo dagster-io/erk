@@ -6,7 +6,7 @@ from click.testing import CliRunner
 
 from erk.cli.cli import cli
 from erk_shared.gateway.github.issues.types import IssueInfo, PRReference
-from erk_shared.plan_store.planned_pr import PlannedPRBackend
+from erk_shared.plan_store.planned_pr import ManagedGitHubPrBackend
 from erk_shared.plan_store.types import Plan, PlanState
 from tests.fakes.gateway.github import FakeLocalGitHub
 from tests.fakes.gateway.github_issues import FakeGitHubIssues
@@ -76,7 +76,7 @@ def test_close_pr_with_pr_number() -> None:
         assert result.exit_code == 0
         assert "Closed PR #42" in result.output
         assert 42 in fake_github.closed_prs
-        # Verify PlannedPRBackend added a comment before closing
+        # Verify ManagedGitHubPrBackend added a comment before closing
         assert any(num == 42 and "completed" in body for num, body in fake_github.pr_comments)
 
 
@@ -157,7 +157,7 @@ def test_close_pr_closes_linked_open_prs() -> None:
             pr_details={42: issue_info_to_pr_details(issue)},
             issues_gateway=fake_issues,
         )
-        store = PlannedPRBackend(fake_github, fake_issues, time=FakeTime())
+        store = ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime())
         fake_remote = FakeRemoteGitHub(
             authenticated_user="test-user",
             default_branch_name="main",
@@ -217,7 +217,7 @@ def test_close_pr_skips_closed_and_merged_prs() -> None:
             pr_details={42: issue_info_to_pr_details(issue)},
             issues_gateway=fake_issues,
         )
-        store = PlannedPRBackend(fake_github, fake_issues, time=FakeTime())
+        store = ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime())
         fake_remote = FakeRemoteGitHub(
             authenticated_user="test-user",
             default_branch_name="main",
@@ -273,7 +273,7 @@ def test_close_pr_no_linked_prs() -> None:
             pr_details={42: issue_info_to_pr_details(issue)},
             issues_gateway=fake_issues,
         )
-        store = PlannedPRBackend(fake_github, fake_issues, time=FakeTime())
+        store = ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime())
         fake_remote = FakeRemoteGitHub(
             authenticated_user="test-user",
             default_branch_name="main",
@@ -387,7 +387,7 @@ def test_close_pr_reports_closed_prs() -> None:
             pr_details={42: issue_info_to_pr_details(issue)},
             issues_gateway=fake_issues,
         )
-        store = PlannedPRBackend(fake_github, fake_issues, time=FakeTime())
+        store = ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime())
         fake_remote = FakeRemoteGitHub(
             authenticated_user="test-user",
             default_branch_name="main",
@@ -413,7 +413,7 @@ def test_close_pr_reports_closed_prs() -> None:
 def test_close_pr_with_objective_invokes_update() -> None:
     """Test closing a pr linked to an objective invokes the objective update."""
     # Arrange - body must include plan-header with objective_issue so
-    # PlannedPRBackend._convert_to_plan() extracts objective_id correctly
+    # ManagedGitHubPrBackend._convert_to_plan() extracts objective_id correctly
     body_with_header = format_plan_header_body_for_test(objective_issue=99) + "\nPlan content"
     pr_issue = Plan(
         pr_identifier="42",
@@ -543,7 +543,7 @@ def test_close_pr_without_objective_skips_update() -> None:
 def test_close_pr_objective_update_failure_does_not_break_close() -> None:
     """Test that a failing objective update does not prevent plan close from succeeding."""
     # Arrange - body must include plan-header with objective_issue so
-    # PlannedPRBackend._convert_to_plan() extracts objective_id correctly
+    # ManagedGitHubPrBackend._convert_to_plan() extracts objective_id correctly
     body_with_header = format_plan_header_body_for_test(objective_issue=99) + "\nPlan content"
     pr_issue = Plan(
         pr_identifier="42",

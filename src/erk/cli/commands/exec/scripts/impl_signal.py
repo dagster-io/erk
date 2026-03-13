@@ -230,7 +230,7 @@ def _signal_started(ctx: click.Context, session_id: str | None) -> None:
         _output_error(event, "local-state-write-failed", f"Failed to write local state: {e}")
         return
 
-    # Get PlanBackend from context
+    # Get ManagedPrBackend from context
     try:
         backend = require_plan_backend(ctx)
     except SystemExit:
@@ -261,7 +261,7 @@ def _signal_started(ctx: click.Context, session_id: str | None) -> None:
         metadata["last_local_impl_session"] = session_id
         metadata["last_local_impl_user"] = user
 
-    # Post event (comment + metadata update) via PlanBackend
+    # Post event (comment + metadata update) via ManagedPrBackend
     try:
         backend.post_event(
             repo_root,
@@ -328,7 +328,7 @@ def _signal_ended(ctx: click.Context, session_id: str | None) -> None:
         _output_error(event, "local-state-write-failed", f"Failed to write local state: {e}")
         return
 
-    # Get PlanBackend from context
+    # Get ManagedPrBackend from context
     try:
         backend = require_plan_backend(ctx)
     except SystemExit:
@@ -345,7 +345,7 @@ def _signal_ended(ctx: click.Context, session_id: str | None) -> None:
         metadata["last_local_impl_session"] = session_id
         metadata["last_local_impl_user"] = user
 
-    # Update metadata via PlanBackend (no comment for ended)
+    # Update metadata via ManagedPrBackend (no comment for ended)
     try:
         backend.update_metadata(repo_root, plan_ref.pr_id, metadata)
     except RuntimeError as e:
@@ -390,7 +390,7 @@ def _signal_submitted(ctx: click.Context, session_id: str | None) -> None:
         _output_error(event, "context-not-initialized", "Context not initialized")
         return
 
-    # Get PlanBackend from context
+    # Get ManagedPrBackend from context
     try:
         backend = require_plan_backend(ctx)
     except SystemExit:
@@ -403,12 +403,12 @@ def _signal_submitted(ctx: click.Context, session_id: str | None) -> None:
     }
 
     # LBYL: Check plan exists before updating
-    plan_result = backend.get_plan(repo_root, plan_ref.pr_id)
+    plan_result = backend.get_managed_pr(repo_root, plan_ref.pr_id)
     if isinstance(plan_result, PlanNotFound):
         _output_error(event, "plan-not-found", f"PR #{plan_ref.pr_id} not found")
         return
 
-    # Update metadata via PlanBackend (no comment needed — the PR is already visible)
+    # Update metadata via ManagedPrBackend (no comment needed — the PR is already visible)
     try:
         backend.update_metadata(repo_root, plan_ref.pr_id, metadata)
     except RuntimeError as e:

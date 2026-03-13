@@ -104,7 +104,7 @@ def detect_merged_branches(
             continue
 
         # 5. Resolve metadata
-        pr_id = ctx.plan_backend.resolve_plan_id_for_branch(main_repo_root, info.branch)
+        pr_id = ctx.plan_backend.resolve_pr_number_for_branch(main_repo_root, info.branch)
         objective_number = get_objective_for_branch(ctx, main_repo_root, info.branch)
         worktree_path = ctx.git.worktree.find_worktree_for_branch(repo_root, info.branch)
 

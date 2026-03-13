@@ -66,7 +66,7 @@ def _get_plan_info_for_worktree(
     """
     # Search ALL states (open and closed) to find the plan
     query = PlanQuery(labels=["erk-pr"])
-    plans = ctx.plan_store.list_plans(repo_root, query)
+    plans = ctx.plan_store.list_managed_prs(repo_root, query)
 
     for plan in plans:
         plan_worktree_name = header_str(plan.header_fields, WORKTREE_NAME)
@@ -139,7 +139,7 @@ def _close_plan_for_worktree(
         user_output(click.style("ℹ️  ", fg="blue", bold=True) + f"PR #{pr_number} already closed")
         return None
 
-    ctx.plan_store.close_plan(repo_root, str(pr_number))
+    ctx.plan_store.close_managed_pr(repo_root, str(pr_number))
     user_output(click.style("ℹ️  ", fg="blue", bold=True) + f"Closed PR #{pr_number}")
     return pr_number
 

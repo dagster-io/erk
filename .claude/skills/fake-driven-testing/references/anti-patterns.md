@@ -726,7 +726,7 @@ There's a critical distinction between **gateways** and **backends**:
   - Need 4 implementations: ABC, Real, Fake, DryRun
   - Fakes provide in-memory simulation
 
-- **Backends** = higher-level abstractions that COMPOSE gateways (PlannedPRBackend)
+- **Backends** = higher-level abstractions that COMPOSE gateways (ManagedGitHubPrBackend)
   - Only need ABC + real implementations
   - **NO fake implementation needed** - inject fake gateways instead
 
@@ -734,24 +734,24 @@ There's a critical distinction between **gateways** and **backends**:
 
 ```python
 # ❌ WRONG: Creating a fake backend
-class PlanBackend(ABC):
+class ManagedPrBackend(ABC):
     @abstractmethod
-    def create_plan(self, ...) -> CreatePlanResult: ...
+    def create_managed_pr(self, ...) -> CreateManagedPrResult: ...
 
-class GitHubPlanBackend(PlanBackend):
+class ManagedGitHubPrBackend(ManagedPrBackend):
     def __init__(self, github_issues: GitHubIssues):
         self._github_issues = github_issues
 
-    def create_plan(self, ...) -> CreatePlanResult:
+    def create_managed_pr(self, ...) -> CreateManagedPrResult:
         result = self._github_issues.create_issue(...)
-        return CreatePlanResult(...)
+        return CreateManagedPrResult(...)
 
 # ❌ WRONG: DON'T DO THIS - fake backend is unnecessary
-class FakePlanBackend(PlanBackend):
-    def __init__(self, *, plans: dict | None = None):
-        self._plans = plans or {}
+class FakeManagedPrBackend(ManagedPrBackend):
+    def __init__(self, *, managed_prs: dict | None = None):
+        self._managed_prs = managed_prs or {}
 
-    def create_plan(self, ...) -> CreatePlanResult:
+    def create_managed_pr(self, ...) -> CreateManagedPrResult:
         # Duplicates logic that should be tested via real backend + fake gateway
         ...
 ```
@@ -767,24 +767,24 @@ class FakePlanBackend(PlanBackend):
 
 ```python
 # ✅ CORRECT: Backend composes gateways, no fake needed
-class PlanBackend(ABC):
+class ManagedPrBackend(ABC):
     @abstractmethod
-    def create_plan(self, ...) -> CreatePlanResult: ...
+    def create_managed_pr(self, ...) -> CreateManagedPrResult: ...
 
-class GitHubPlanBackend(PlanBackend):
+class ManagedGitHubPrBackend(ManagedPrBackend):
     def __init__(self, github_issues: GitHubIssues):
         self._github_issues = github_issues  # Gateway injected here
 
-    def create_plan(self, ...) -> CreatePlanResult:
+    def create_managed_pr(self, ...) -> CreateManagedPrResult:
         result = self._github_issues.create_issue(...)
-        return CreatePlanResult(pr_id=str(result.number), url=result.url)
+        return CreateManagedPrResult(pr_id=str(result.number), url=result.url)
 
 # ✅ CORRECT: Test backend with fake gateway
-def test_create_plan():
+def test_create_managed_pr():
     fake_issues = FakeGitHubIssues()  # Fake at gateway level
-    backend = GitHubPlanBackend(fake_issues)  # Real backend
+    backend = ManagedGitHubPrBackend(fake_issues)  # Real backend
 
-    result = backend.create_plan(...)
+    result = backend.create_managed_pr(...)
 
     # Assert on gateway mutations
     assert fake_issues.created_issues[0][0] == "expected title"
@@ -802,7 +802,7 @@ def test_create_plan():
 
 ```
 CLI → ErkContext (DI container)
-  → GitHubPlanBackend (backend - REAL in tests)
+  → ManagedGitHubPrBackend (backend - REAL in tests)
     → FakeGitHubIssues (gateway - FAKE in tests)  ← DI stops here
 ```
 

@@ -8,7 +8,7 @@ from erk.core.plan_context_provider import PlanContext
 from erk_shared.gateway.github.metadata.core import find_metadata_block, render_metadata_block
 from erk_shared.gateway.github.metadata.types import MetadataBlock
 from erk_shared.gateway.github.types import PRDetails
-from erk_shared.plan_store.planned_pr import PlannedPRBackend
+from erk_shared.plan_store.planned_pr import ManagedGitHubPrBackend
 from erk_shared.plan_store.planned_pr_lifecycle import build_plan_stage_body
 from tests.fakes.gateway.github import FakeLocalGitHub
 from tests.fakes.gateway.time import FakeTime
@@ -78,10 +78,10 @@ def _pr_without_plan_header(
     )
 
 
-def _backend_from_pr(pr: PRDetails) -> tuple[PlannedPRBackend, FakeLocalGitHub]:
-    """Create PlannedPRBackend from a single PRDetails."""
+def _backend_from_pr(pr: PRDetails) -> tuple[ManagedGitHubPrBackend, FakeLocalGitHub]:
+    """Create ManagedGitHubPrBackend from a single PRDetails."""
     fake_github = FakeLocalGitHub(pr_details={pr.number: pr})
-    backend = PlannedPRBackend(fake_github, fake_github.issues, time=FakeTime())
+    backend = ManagedGitHubPrBackend(fake_github, fake_github.issues, time=FakeTime())
     return backend, fake_github
 
 

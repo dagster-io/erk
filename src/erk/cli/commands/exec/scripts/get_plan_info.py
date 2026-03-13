@@ -44,7 +44,7 @@ def get_plan_info(
 
     pr_id = str(pr_number)
 
-    plan = backend.get_plan(repo_root, pr_id)
+    plan = backend.get_managed_pr(repo_root, pr_id)
     if isinstance(plan, PlanNotFound):
         click.echo(
             json.dumps(

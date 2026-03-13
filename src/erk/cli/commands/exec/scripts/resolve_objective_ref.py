@@ -106,7 +106,7 @@ def resolve_objective_ref(ctx: click.Context, ref: str) -> None:
 
     def get_objective_for_branch(branch: str) -> int | None:
         try:
-            result = plan_backend.get_plan_for_branch(repo_root, branch)
+            result = plan_backend.get_managed_pr_for_branch(repo_root, branch)
         except RuntimeError:
             return None
         if isinstance(result, PlanNotFound):

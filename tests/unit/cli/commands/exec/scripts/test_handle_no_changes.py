@@ -22,7 +22,7 @@ from erk.cli.commands.exec.scripts.handle_no_changes import (
 from erk_shared.context.context import ErkContext
 from erk_shared.gateway.github.metadata.plan_header import format_plan_header_body
 from erk_shared.gateway.github.types import PRDetails
-from erk_shared.plan_store.planned_pr import PlannedPRBackend
+from erk_shared.plan_store.planned_pr import ManagedGitHubPrBackend
 from tests.fakes.gateway.github import FakeLocalGitHub
 from tests.fakes.gateway.github_issues import FakeGitHubIssues
 from tests.fakes.gateway.time import FakeTime
@@ -62,11 +62,11 @@ def _make_plan_header_body() -> str:
 
 def _create_github_with_plan_pr(
     pr_id: int,
-) -> tuple[FakeLocalGitHub, FakeGitHubIssues, PlannedPRBackend]:
-    """Create FakeLocalGitHub with a draft PR configured as a plan for PlannedPRBackend.
+) -> tuple[FakeLocalGitHub, FakeGitHubIssues, ManagedGitHubPrBackend]:
+    """Create FakeLocalGitHub with a draft PR configured as a plan for ManagedGitHubPrBackend.
 
     Returns:
-        Tuple of (FakeLocalGitHub, FakeGitHubIssues, PlannedPRBackend).
+        Tuple of (FakeLocalGitHub, FakeGitHubIssues, ManagedGitHubPrBackend).
     """
     body = _make_plan_header_body()
     issues_gateway = FakeGitHubIssues()
@@ -90,7 +90,7 @@ def _create_github_with_plan_pr(
             ),
         },
     )
-    backend = PlannedPRBackend(fake_github, issues_gateway, time=FakeTime())
+    backend = ManagedGitHubPrBackend(fake_github, issues_gateway, time=FakeTime())
     return fake_github, issues_gateway, backend
 
 

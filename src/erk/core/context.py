@@ -76,8 +76,8 @@ from erk_shared.gateway.http.real import RealHttpClient
 from erk_shared.gateway.time.abc import Time
 from erk_shared.gateway.time.real import RealTime
 from erk_shared.output.output import user_output
-from erk_shared.plan_store.backend import PlanBackend
-from erk_shared.plan_store.planned_pr import PlannedPRBackend
+from erk_shared.plan_store.backend import ManagedPrBackend
+from erk_shared.plan_store.planned_pr import ManagedGitHubPrBackend
 
 if TYPE_CHECKING:
     pass
@@ -301,7 +301,7 @@ def create_context(*, dry_run: bool, script: bool = False, debug: bool = False) 
     issues: GitHubIssues = RealGitHubIssues(target_repo=local_config.github_repo, time=time)
     github: LocalGitHub = RealLocalGitHub(time, repo_info, issues=issues)
 
-    plan_store: PlanBackend = PlannedPRBackend(github, issues, time=RealTime())
+    plan_store: ManagedPrBackend = ManagedGitHubPrBackend(github, issues, time=RealTime())
     plan_list_service: PlanListService = PlannedPRPlanListService(github, time=time)
 
     # Objectives use GitHub issues (not draft PRs)

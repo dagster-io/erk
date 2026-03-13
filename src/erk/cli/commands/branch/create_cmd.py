@@ -134,7 +134,7 @@ def branch_create(
 
     if for_plan is not None:
         pr_number = parse_issue_identifier(for_plan)
-        result = ctx.plan_store.get_plan(repo.root, str(pr_number))
+        result = ctx.plan_store.get_managed_pr(repo.root, str(pr_number))
         if isinstance(result, PlanNotFound):
             raise click.ClickException(f"PR #{pr_number} not found")
         plan = result

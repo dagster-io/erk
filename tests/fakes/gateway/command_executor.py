@@ -65,9 +65,9 @@ class FakeCommandExecutor(CommandExecutor):
         """Track clipboard copy."""
         self._copied_texts.append(text)
 
-    def close_plan(self, pr_number: int, pr_url: str) -> list[int]:
+    def close_plan(self, plan_id: int, plan_url: str) -> list[int]:
         """Track plan close and return configured PRs."""
-        self._closed_plans.append((pr_number, pr_url))
+        self._closed_plans.append((plan_id, plan_url))
         return self._close_pr_return
 
     def notify(self, message: str, *, severity: str | None) -> None:
@@ -78,6 +78,6 @@ class FakeCommandExecutor(CommandExecutor):
         """Track refresh."""
         self._refresh_count += 1
 
-    def dispatch_to_queue(self, pr_number: int, pr_url: str) -> None:
+    def dispatch_to_queue(self, plan_id: int, plan_url: str) -> None:
         """Track queue dispatch."""
-        self._dispatched_to_queue.append((pr_number, pr_url))
+        self._dispatched_to_queue.append((plan_id, plan_url))

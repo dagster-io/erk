@@ -15,7 +15,7 @@ from erk.cli.commands.exec.scripts.setup_impl_from_pr import (
 from erk_shared.context.context import ErkContext
 from erk_shared.gateway.git.remote_ops.types import PullRebaseError
 from erk_shared.impl_folder import get_impl_dir, save_plan_ref
-from erk_shared.plan_store.planned_pr import PlannedPRBackend
+from erk_shared.plan_store.planned_pr import ManagedGitHubPrBackend
 from erk_shared.plan_store.planned_pr_lifecycle import IMPL_CONTEXT_DIR
 from tests.fakes.gateway.git import FakeGit
 from tests.fakes.gateway.github import FakeLocalGitHub
@@ -109,15 +109,15 @@ class TestSetupImplFromPrNoImplFlag:
 def _make_planned_pr_backend(
     tmp_path: Path,
     plan_branch: str,
-) -> tuple[PlannedPRBackend, int]:
-    """Create a PlannedPRBackend with one PR, returning (backend, pr_number).
+) -> tuple[ManagedGitHubPrBackend, int]:
+    """Create a ManagedGitHubPrBackend with one PR, returning (backend, pr_number).
 
     Unlike _make_planned_pr_context, this does not create a full ErkContext,
     allowing the caller to build their own context (e.g., without github).
     """
     fake_github = FakeLocalGitHub()
-    backend = PlannedPRBackend(fake_github, fake_github.issues, time=FakeTime())
-    plan_result = backend.create_plan(
+    backend = ManagedGitHubPrBackend(fake_github, fake_github.issues, time=FakeTime())
+    plan_result = backend.create_managed_pr(
         repo_root=tmp_path,
         title="My PR",
         content="# Plan\n\nImplement something.",
@@ -138,14 +138,14 @@ def _make_planned_pr_context(
 ) -> tuple[ErkContext, int]:
     """Create an ErkContext configured for planned-PR PR backend with shared FakeLocalGitHub.
 
-    The FakeLocalGitHub is shared between the PlannedPRBackend and the context,
+    The FakeLocalGitHub is shared between the ManagedGitHubPrBackend and the context,
     so that both plan_backend.get_provider_name() and github.get_pr() work.
 
     Returns (context, pr_number).
     """
     fake_github = FakeLocalGitHub()
-    backend = PlannedPRBackend(fake_github, fake_github.issues, time=FakeTime())
-    plan_result = backend.create_plan(
+    backend = ManagedGitHubPrBackend(fake_github, fake_github.issues, time=FakeTime())
+    plan_result = backend.create_managed_pr(
         repo_root=tmp_path,
         title="My PR",
         content="# Plan\n\nImplement something.",
@@ -454,8 +454,8 @@ def _invoke_create_impl_context(
     Returns (result_dict, impl_path).
     """
     fake_github = FakeLocalGitHub()
-    backend = PlannedPRBackend(fake_github, fake_github.issues, time=FakeTime())
-    plan_result = backend.create_plan(
+    backend = ManagedGitHubPrBackend(fake_github, fake_github.issues, time=FakeTime())
+    plan_result = backend.create_managed_pr(
         repo_root=tmp_path,
         title="Test PR Title",
         content="# Plan\n\nDo the thing.",
@@ -504,7 +504,7 @@ def _invoke_create_impl_context(
 def test_create_impl_context_pr_not_found(tmp_path: Path) -> None:
     """create_impl_context_from_pr exits 1 when PR does not exist."""
     fake_github = FakeLocalGitHub()
-    backend = PlannedPRBackend(fake_github, fake_github.issues, time=FakeTime())
+    backend = ManagedGitHubPrBackend(fake_github, fake_github.issues, time=FakeTime())
     fake_git = FakeGit(current_branches={tmp_path: "some-branch"})
     ctx = context_for_test(
         github=fake_github,
@@ -619,9 +619,9 @@ def test_create_impl_context_valid_ref_json(tmp_path: Path) -> None:
 
 def test_planned_pr_pr_not_found_reports_error(tmp_path: Path) -> None:
     """When the PR doesn't exist, report an error."""
-    # Create a PlannedPRBackend but don't create any PR
+    # Create a ManagedGitHubPrBackend but don't create any PR
     fake_github = FakeLocalGitHub()
-    backend = PlannedPRBackend(fake_github, fake_github.issues, time=FakeTime())
+    backend = ManagedGitHubPrBackend(fake_github, fake_github.issues, time=FakeTime())
 
     fake_git = FakeGit(current_branches={tmp_path: "master"})
 

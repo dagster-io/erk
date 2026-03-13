@@ -932,7 +932,7 @@ def _execute_land_directly(
     main_repo_root = repo.main_repo_root if repo.main_repo_root else repo.root
 
     # Capture plan context BEFORE execution pipeline (which deletes the branch)
-    pr_id = ctx.plan_backend.resolve_plan_id_for_branch(main_repo_root, branch)
+    pr_id = ctx.plan_backend.resolve_pr_number_for_branch(main_repo_root, branch)
     objective_number = get_objective_for_branch(ctx, main_repo_root, branch)
 
     # Build execution state and run the pipeline directly
@@ -1051,7 +1051,7 @@ def _land_target(
     branch = target.branch
 
     # Step 1: Look up plan and objective for branch (needed for script generation)
-    pr_id = ctx.plan_backend.resolve_plan_id_for_branch(main_repo_root, branch)
+    pr_id = ctx.plan_backend.resolve_pr_number_for_branch(main_repo_root, branch)
     objective_number = get_objective_for_branch(ctx, main_repo_root, branch)
 
     # Step 2: Look up slot assignment (needed for dry-run output)

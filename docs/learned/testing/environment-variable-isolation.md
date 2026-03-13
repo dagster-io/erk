@@ -21,15 +21,15 @@ Previously, setting `ERK_PLAN_BACKEND=planned_pr` in the shell environment cause
 
 ### Root Cause
 
-`context_for_test()` in `packages/erk-shared/src/erk_shared/context/testing.py` creates a test `ErkContext`. After PR #7971, the plan backend selection uses a tautological comparison that always takes the planned-PR path, regardless of environment variables. Tests that set `ERK_PLAN_BACKEND` are now exercising dead code paths. Monkeypatching this variable has no behavioral effect.
+`context_for_test()` in `tests/fakes/tests/shared_context.py` creates a test `ErkContext`. After PR #7971, the plan backend selection uses a tautological comparison that always takes the planned-PR path, regardless of environment variables. Tests that set `ERK_PLAN_BACKEND` are now exercising dead code paths. Monkeypatching this variable has no behavioral effect.
 
-<!-- Source: packages/erk-shared/src/erk_shared/context/testing.py, context_for_test -->
+<!-- Source: tests/fakes/tests/shared_context.py, context_for_test -->
 
-See `context_for_test()` in `packages/erk-shared/src/erk_shared/context/testing.py`.
+See `context_for_test()` in `tests/fakes/tests/shared_context.py`.
 
 ## `context_for_test()` Implementation
 
-After PR #8210, `context_for_test()` in `packages/erk-shared/src/erk_shared/context/testing.py` no longer checks `ERK_PLAN_BACKEND`. The plan backend is hardcoded to `PlannedPRBackend`.
+After PR #8210, `context_for_test()` in `tests/fakes/tests/shared_context.py` no longer checks `ERK_PLAN_BACKEND`. The plan backend is hardcoded to `ManagedGitHubPrBackend`.
 
 ## Mitigations
 
@@ -49,7 +49,7 @@ Pass `plan_store` explicitly to `context_for_test()`:
 
 ```python
 ctx = context_for_test(
-    plan_store=PlannedPRBackend(FakeGitHub(), FakeGitHubIssues(), time=FakeTime()),
+    plan_store=ManagedGitHubPrBackend(FakeLocalGitHub(), FakeGitHubIssues(), time=FakeTime()),
     ...
 )
 ```

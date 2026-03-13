@@ -14,7 +14,7 @@ from erk_shared.gateway.github.metadata.core import (
     create_workflow_started_block,
     render_metadata_block,
 )
-from erk_shared.plan_store.planned_pr import PlannedPRBackend
+from erk_shared.plan_store.planned_pr import ManagedGitHubPrBackend
 from erk_shared.plan_store.types import Plan, PlanState
 from tests.fakes.gateway.github import FakeLocalGitHub
 from tests.fakes.gateway.github_issues import FakeGitHubIssues
@@ -116,7 +116,7 @@ def test_log_displays_timeline_chronologically() -> None:
         pr_details={42: issue_info_to_pr_details(issue)},
         issues_gateway=fake_issues,
     )
-    store = PlannedPRBackend(fake_github, fake_issues, time=FakeTime())
+    store = ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime())
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
@@ -182,7 +182,7 @@ def test_log_json_output() -> None:
         pr_details={42: issue_info_to_pr_details(issue)},
         issues_gateway=fake_issues,
     )
-    store = PlannedPRBackend(fake_github, fake_issues, time=FakeTime())
+    store = ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime())
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
@@ -237,7 +237,7 @@ def test_log_with_no_events() -> None:
         pr_details={42: issue_info_to_pr_details(issue)},
         issues_gateway=fake_issues,
     )
-    store = PlannedPRBackend(fake_github, fake_issues, time=FakeTime())
+    store = ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime())
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
@@ -316,7 +316,7 @@ def test_log_with_all_event_types() -> None:
         pr_details={42: issue_info_to_pr_details(issue)},
         issues_gateway=fake_issues,
     )
-    store = PlannedPRBackend(fake_github, fake_issues, time=FakeTime())
+    store = ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime())
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
@@ -404,7 +404,7 @@ def test_log_multiple_status_updates() -> None:
         pr_details={42: issue_info_to_pr_details(issue)},
         issues_gateway=fake_issues,
     )
-    store = PlannedPRBackend(fake_github, fake_issues, time=FakeTime())
+    store = ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime())
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
@@ -462,7 +462,7 @@ def test_log_json_structure() -> None:
         pr_details={42: issue_info_to_pr_details(issue)},
         issues_gateway=fake_issues,
     )
-    store = PlannedPRBackend(fake_github, fake_issues, time=FakeTime())
+    store = ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime())
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:

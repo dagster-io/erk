@@ -114,7 +114,7 @@ def learn_cmd(
             raise SystemExit(1)
         pr_id = str(pr_number)
     elif branch_name is not None:
-        pr_id = ctx.plan_backend.resolve_plan_id_for_branch(ctx.cwd, branch_name)
+        pr_id = ctx.plan_backend.resolve_pr_number_for_branch(ctx.cwd, branch_name)
 
     if pr_id is None:
         user_output(
@@ -149,9 +149,9 @@ def learn_cmd(
 
     # No learn branch — fall through to session discovery
     # Find sessions for the plan
-    sessions_for_plan = ctx.plan_backend.find_sessions_for_plan(
+    sessions_for_plan = ctx.plan_backend.find_sessions_for_managed_pr(
         repo_root,
-        plan_id=pr_id,
+        pr_number=pr_id,
     )
 
     # Get readable sessions (ones that exist on disk) using global lookup

@@ -8,7 +8,7 @@ from click.testing import CliRunner
 from erk.cli.commands.exec.scripts.add_plan_labels import add_plan_labels
 from erk_shared.context.context import ErkContext
 from erk_shared.gateway.github.issues.types import IssueInfo
-from erk_shared.plan_store.planned_pr import PlannedPRBackend
+from erk_shared.plan_store.planned_pr import ManagedGitHubPrBackend
 from tests.fakes.gateway.github import FakeLocalGitHub
 from tests.fakes.gateway.github_issues import FakeGitHubIssues
 from tests.fakes.gateway.time import FakeTime
@@ -62,7 +62,7 @@ def test_add_plan_labels_batch_success() -> None:
         input=batch_input,
         obj=ErkContext.for_test(
             github=fake_github,
-            plan_store=PlannedPRBackend(fake_github, fake_gh, time=FakeTime()),
+            plan_store=ManagedGitHubPrBackend(fake_github, fake_gh, time=FakeTime()),
         ),
     )
 
@@ -99,7 +99,7 @@ def test_add_plan_labels_partial_failure() -> None:
         input=batch_input,
         obj=ErkContext.for_test(
             github=fake_github,
-            plan_store=PlannedPRBackend(fake_github, fake_gh, time=FakeTime()),
+            plan_store=ManagedGitHubPrBackend(fake_github, fake_gh, time=FakeTime()),
         ),
     )
 
@@ -122,7 +122,7 @@ def test_add_plan_labels_invalid_json() -> None:
         input="not valid json",
         obj=ErkContext.for_test(
             github=fake_github,
-            plan_store=PlannedPRBackend(fake_github, fake_gh, time=FakeTime()),
+            plan_store=ManagedGitHubPrBackend(fake_github, fake_gh, time=FakeTime()),
         ),
     )
 
@@ -145,7 +145,7 @@ def test_add_plan_labels_missing_field() -> None:
         input=batch_input,
         obj=ErkContext.for_test(
             github=fake_github,
-            plan_store=PlannedPRBackend(fake_github, fake_gh, time=FakeTime()),
+            plan_store=ManagedGitHubPrBackend(fake_github, fake_gh, time=FakeTime()),
         ),
     )
 
@@ -167,7 +167,7 @@ def test_add_plan_labels_empty_array() -> None:
         input="[]",
         obj=ErkContext.for_test(
             github=fake_github,
-            plan_store=PlannedPRBackend(fake_github, fake_gh, time=FakeTime()),
+            plan_store=ManagedGitHubPrBackend(fake_github, fake_gh, time=FakeTime()),
         ),
     )
 

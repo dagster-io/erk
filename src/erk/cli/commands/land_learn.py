@@ -190,7 +190,7 @@ def _collect_session_material(
         return all_session_ids, xml_files
 
     # Deprecated fallback: try local JSONL reprocessing
-    sessions = ctx.plan_backend.find_sessions_for_plan(repo_root, pr_id)
+    sessions = ctx.plan_backend.find_sessions_for_managed_pr(repo_root, pr_id)
     all_session_ids = sessions.all_session_ids()
     xml_files = _log_session_discovery(ctx, sessions=sessions, all_session_ids=all_session_ids)
     if xml_files:
@@ -223,7 +223,7 @@ def _create_learn_pr_core(
     Shared by both the merged-branch and land-pipeline callers.
     """
     # Fetch plan to check labels — skip learn plans (cycle prevention)
-    plan_result = ctx.plan_store.get_plan(repo_root, pr_id)
+    plan_result = ctx.plan_store.get_managed_pr(repo_root, pr_id)
     if isinstance(plan_result, PlanNotFound):
         return
     if "erk-learn" in plan_result.labels:

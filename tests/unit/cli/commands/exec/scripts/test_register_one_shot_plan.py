@@ -10,7 +10,7 @@ from erk.cli.commands.exec.scripts.register_one_shot_plan import register_one_sh
 from erk_shared.context.context import ErkContext
 from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.types import PRDetails
-from erk_shared.plan_store.planned_pr import PlannedPRBackend
+from erk_shared.plan_store.planned_pr import ManagedGitHubPrBackend
 from tests.fakes.gateway.github import FakeLocalGitHub
 from tests.fakes.gateway.github_issues import FakeGitHubIssues
 from tests.fakes.gateway.time import FakeTime
@@ -93,7 +93,7 @@ def _ctx(tmp_path: Path, *, issues: FakeGitHubIssues, github: FakeLocalGitHub) -
     (tmp_path / ".erk" / "config.toml").write_text("", encoding="utf-8")
     return ErkContext.for_test(
         github=github,
-        plan_store=PlannedPRBackend(github, issues, time=FakeTime()),
+        plan_store=ManagedGitHubPrBackend(github, issues, time=FakeTime()),
         repo_root=tmp_path,
     )
 

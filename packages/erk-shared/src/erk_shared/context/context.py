@@ -54,7 +54,7 @@ from erk_shared.gateway.http.abc import HttpClient
 from erk_shared.gateway.remote_github.abc import RemoteGitHub
 from erk_shared.gateway.shell.abc import Shell
 from erk_shared.gateway.time.abc import Time
-from erk_shared.plan_store.backend import PlanBackend
+from erk_shared.plan_store.backend import ManagedPrBackend
 
 
 @dataclass(frozen=True)
@@ -87,7 +87,7 @@ class ErkContext:
     erk_installation: ErkInstallation  # ~/.erk/ installation data (config, pool state)
     claude_installation: ClaudeInstallation  # ~/.claude/ installation data (sessions, settings)
     agent_docs: AgentDocs  # docs/learned/ file access
-    plan_store: PlanBackend
+    plan_store: ManagedPrBackend
     prompt_executor: PromptExecutor
 
     # Shell/CLI integrations (moved to erk_shared)
@@ -173,10 +173,10 @@ class ErkContext:
         return self.github.issues
 
     @property
-    def plan_backend(self) -> PlanBackend:
-        """Access plan_store as PlanBackend (read/write interface).
+    def plan_backend(self) -> ManagedPrBackend:
+        """Access plan_store as ManagedPrBackend (read/write interface).
 
-        Since plan_store is typed as PlanBackend, this is a direct alias.
+        Since plan_store is typed as ManagedPrBackend, this is a direct alias.
         Retained for call-site compatibility.
         """
         return self.plan_store
@@ -218,7 +218,7 @@ class ErkContext:
         github_admin: GitHubAdmin | None = None,
         claude_installation: ClaudeInstallation | None = None,
         prompt_executor: PromptExecutor | None = None,
-        plan_store: PlanBackend | None = None,
+        plan_store: ManagedPrBackend | None = None,
         cmux: Cmux | None = None,
         remote_github: RemoteGitHub | None = None,
         debug: bool = False,
@@ -238,7 +238,7 @@ class ErkContext:
             github: Optional GitHub implementation. If None, creates FakeLocalGitHub.
             claude_installation: ClaudeInstallation or None. Creates FakeClaudeInstallation if None.
             prompt_executor: Optional PromptExecutor. If None, creates FakePromptExecutor.
-            plan_store: Optional PlanBackend. If None, creates PlannedPRBackend.
+            plan_store: Optional ManagedPrBackend. If None, creates ManagedGitHubPrBackend.
             debug: Whether to enable debug mode (default False).
             repo_root: Repository root path (defaults to Path("/fake/repo"))
             cwd: Current working directory (defaults to Path("/fake/worktree"))

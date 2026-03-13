@@ -102,7 +102,7 @@ def test_view_plan_infers_from_branch() -> None:
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         store, fake_github = create_plan_store_with_plans({"123": plan_issue})
-        # Also register the PR under the real branch name so PlannedPRBackend
+        # Also register the PR under the real branch name so ManagedGitHubPrBackend
         # can resolve it via get_pr_for_branch during branch inference.
         real_branch = "P123-foo-bar-feature"
         fake_github._prs[real_branch] = fake_github._prs["plan-123"]

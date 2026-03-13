@@ -283,7 +283,7 @@ def _validate_stack_entries(
                 branch=branch,
                 pr_number=pr_details.number,
                 worktree_path=worktree_path,
-                pr_id=ctx.plan_backend.resolve_plan_id_for_branch(main_repo_root, branch),
+                pr_id=ctx.plan_backend.resolve_pr_number_for_branch(main_repo_root, branch),
                 objective_number=get_objective_for_branch(ctx, main_repo_root, branch),
             )
         )

@@ -21,7 +21,7 @@ Two separate `context_for_test()` functions exist in the codebase. They have dif
 
 **Key parameter:** `github_issues=` (not `issues=`)
 
-Always defaults to PlannedPRBackend. Used for isolated unit tests that only need erk-shared dependencies.
+Always defaults to ManagedGitHubPrBackend. Used for isolated unit tests that only need erk-shared dependencies.
 
 ## src/erk Implementation
 

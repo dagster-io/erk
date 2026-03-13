@@ -11,7 +11,7 @@ from click.testing import CliRunner
 
 from erk.cli.commands.exec.scripts.get_learn_sessions import get_learn_sessions
 from erk_shared.context.context import ErkContext
-from erk_shared.plan_store.planned_pr import PlannedPRBackend
+from erk_shared.plan_store.planned_pr import ManagedGitHubPrBackend
 from tests.fakes.gateway.claude_installation import (
     FakeClaudeInstallation,
     FakeProject,
@@ -58,7 +58,7 @@ def test_get_learn_sessions_with_explicit_issue(tmp_path: Path) -> None:
             obj=ErkContext.for_test(
                 git=fake_git,
                 github=fake_github,
-                plan_store=PlannedPRBackend(fake_github, fake_issues, time=FakeTime()),
+                plan_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
                 claude_installation=fake_claude,
                 cwd=cwd,
                 repo_root=cwd,
@@ -94,7 +94,7 @@ def test_get_learn_sessions_infers_from_branch(tmp_path: Path) -> None:
             obj=ErkContext.for_test(
                 git=fake_git,
                 github=fake_github,
-                plan_store=PlannedPRBackend(fake_github, fake_issues, time=FakeTime()),
+                plan_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
                 claude_installation=fake_claude,
                 cwd=cwd,
                 repo_root=cwd,
@@ -127,7 +127,7 @@ def test_get_learn_sessions_with_url_format(tmp_path: Path) -> None:
             obj=ErkContext.for_test(
                 git=fake_git,
                 github=fake_github,
-                plan_store=PlannedPRBackend(fake_github, fake_issues, time=FakeTime()),
+                plan_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
                 claude_installation=fake_claude,
                 cwd=cwd,
                 repo_root=cwd,
@@ -164,7 +164,7 @@ def test_get_learn_sessions_fails_without_issue(tmp_path: Path) -> None:
             obj=ErkContext.for_test(
                 git=fake_git,
                 github=fake_github,
-                plan_store=PlannedPRBackend(fake_github, fake_issues, time=FakeTime()),
+                plan_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
                 claude_installation=fake_claude,
                 cwd=cwd,
                 repo_root=cwd,
@@ -193,7 +193,7 @@ def test_get_learn_sessions_fails_with_invalid_issue(tmp_path: Path) -> None:
             obj=ErkContext.for_test(
                 git=fake_git,
                 github=fake_github,
-                plan_store=PlannedPRBackend(fake_github, fake_issues, time=FakeTime()),
+                plan_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
                 claude_installation=fake_claude,
                 cwd=cwd,
                 repo_root=cwd,
@@ -231,7 +231,7 @@ def test_json_output_structure(tmp_path: Path) -> None:
             obj=ErkContext.for_test(
                 git=fake_git,
                 github=fake_github,
-                plan_store=PlannedPRBackend(fake_github, fake_issues, time=FakeTime()),
+                plan_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
                 claude_installation=fake_claude,
                 cwd=cwd,
                 repo_root=cwd,
@@ -307,7 +307,7 @@ def test_session_sources_contains_local_session_data(tmp_path: Path) -> None:
             obj=ErkContext.for_test(
                 git=fake_git,
                 github=fake_github,
-                plan_store=PlannedPRBackend(fake_github, fake_issues, time=FakeTime()),
+                plan_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
                 claude_installation=fake_claude,
                 cwd=cwd,
                 repo_root=cwd,
@@ -368,7 +368,7 @@ def test_session_sources_includes_remote_session(tmp_path: Path) -> None:
             obj=ErkContext.for_test(
                 git=fake_git,
                 github=fake_github,
-                plan_store=PlannedPRBackend(fake_github, fake_issues, time=FakeTime()),
+                plan_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
                 claude_installation=fake_claude,
                 cwd=cwd,
                 repo_root=cwd,
@@ -431,7 +431,7 @@ def test_session_sources_includes_both_local_and_remote(tmp_path: Path) -> None:
             obj=ErkContext.for_test(
                 git=fake_git,
                 github=fake_github,
-                plan_store=PlannedPRBackend(fake_github, fake_issues, time=FakeTime()),
+                plan_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
                 claude_installation=fake_claude,
                 cwd=cwd,
                 repo_root=cwd,
@@ -486,7 +486,7 @@ def test_session_sources_no_remote_when_metadata_missing(tmp_path: Path) -> None
             obj=ErkContext.for_test(
                 git=fake_git,
                 github=fake_github,
-                plan_store=PlannedPRBackend(fake_github, fake_issues, time=FakeTime()),
+                plan_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
                 claude_installation=fake_claude,
                 cwd=cwd,
                 repo_root=cwd,
@@ -553,7 +553,7 @@ def test_local_fallback_filters_by_branch(tmp_path: Path) -> None:
             obj=ErkContext.for_test(
                 git=fake_git,
                 github=fake_github,
-                plan_store=PlannedPRBackend(fake_github, fake_issues, time=FakeTime()),
+                plan_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
                 claude_installation=fake_claude,
                 cwd=cwd,
                 repo_root=cwd,
@@ -606,7 +606,7 @@ def test_preprocessed_manifest_none_when_branch_missing(tmp_path: Path) -> None:
             obj=ErkContext.for_test(
                 git=fake_git,
                 github=fake_github,
-                plan_store=PlannedPRBackend(fake_github, fake_issues, time=FakeTime()),
+                plan_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
                 claude_installation=fake_claude,
                 cwd=cwd,
                 repo_root=cwd,
@@ -642,7 +642,7 @@ def test_preprocessed_manifest_none_when_manifest_not_on_branch(tmp_path: Path) 
             obj=ErkContext.for_test(
                 git=fake_git,
                 github=fake_github,
-                plan_store=PlannedPRBackend(fake_github, fake_issues, time=FakeTime()),
+                plan_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
                 claude_installation=fake_claude,
                 cwd=cwd,
                 repo_root=cwd,
@@ -696,7 +696,7 @@ def test_preprocessed_manifest_returns_data_on_success(tmp_path: Path) -> None:
             obj=ErkContext.for_test(
                 git=fake_git,
                 github=fake_github,
-                plan_store=PlannedPRBackend(fake_github, fake_issues, time=FakeTime()),
+                plan_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
                 claude_installation=fake_claude,
                 cwd=cwd,
                 repo_root=cwd,

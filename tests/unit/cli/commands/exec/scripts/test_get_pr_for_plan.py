@@ -10,7 +10,7 @@ from click.testing import CliRunner
 
 from erk.cli.commands.exec.scripts.get_pr_for_plan import get_pr_for_plan
 from erk_shared.gateway.github.types import PRDetails
-from erk_shared.plan_store.planned_pr import PlannedPRBackend
+from erk_shared.plan_store.planned_pr import ManagedGitHubPrBackend
 from tests.fakes.gateway.github import FakeLocalGitHub
 from tests.fakes.gateway.github_issues import FakeGitHubIssues
 from tests.fakes.gateway.time import FakeTime
@@ -53,7 +53,7 @@ def test_get_pr_for_plan_success() -> None:
         issues_gateway=fake_issues,
         pr_details={pr_number: make_pr_details(number=pr_number, head_ref_name="plan-branch")},
     )
-    planned_pr_backend = PlannedPRBackend(fake_gh, fake_issues, time=FakeTime())
+    planned_pr_backend = ManagedGitHubPrBackend(fake_gh, fake_issues, time=FakeTime())
     runner = CliRunner()
 
     result = runner.invoke(
@@ -81,7 +81,7 @@ def test_get_pr_for_plan_not_found() -> None:
     """Test error when PR doesn't exist."""
     fake_issues = FakeGitHubIssues()
     fake_gh = FakeLocalGitHub(issues_gateway=fake_issues)
-    planned_pr_backend = PlannedPRBackend(fake_gh, fake_issues, time=FakeTime())
+    planned_pr_backend = ManagedGitHubPrBackend(fake_gh, fake_issues, time=FakeTime())
     runner = CliRunner()
 
     result = runner.invoke(
@@ -112,7 +112,7 @@ def test_json_output_structure_success() -> None:
         issues_gateway=fake_issues,
         pr_details={pr_number: make_pr_details(number=pr_number, head_ref_name="plan-branch")},
     )
-    planned_pr_backend = PlannedPRBackend(fake_gh, fake_issues, time=FakeTime())
+    planned_pr_backend = ManagedGitHubPrBackend(fake_gh, fake_issues, time=FakeTime())
     runner = CliRunner()
 
     result = runner.invoke(
@@ -149,7 +149,7 @@ def test_json_output_structure_error() -> None:
     """Test JSON output structure on error."""
     fake_issues = FakeGitHubIssues()
     fake_gh = FakeLocalGitHub(issues_gateway=fake_issues)
-    planned_pr_backend = PlannedPRBackend(fake_gh, fake_issues, time=FakeTime())
+    planned_pr_backend = ManagedGitHubPrBackend(fake_gh, fake_issues, time=FakeTime())
     runner = CliRunner()
 
     result = runner.invoke(
@@ -185,7 +185,7 @@ def test_get_pr_for_plan_planned_pr_backend() -> None:
         issues_gateway=fake_issues,
         pr_details={pr_number: make_pr_details(number=pr_number, head_ref_name="plan-fix-learn")},
     )
-    planned_pr_backend = PlannedPRBackend(fake_gh, fake_issues, time=FakeTime())
+    planned_pr_backend = ManagedGitHubPrBackend(fake_gh, fake_issues, time=FakeTime())
     runner = CliRunner()
 
     result = runner.invoke(
@@ -206,7 +206,7 @@ def test_get_pr_for_plan_planned_pr_backend_not_found() -> None:
     """Test that planned-PR backend returns error when PR doesn't exist."""
     fake_issues = FakeGitHubIssues()
     fake_gh = FakeLocalGitHub(issues_gateway=fake_issues)
-    planned_pr_backend = PlannedPRBackend(fake_gh, fake_issues, time=FakeTime())
+    planned_pr_backend = ManagedGitHubPrBackend(fake_gh, fake_issues, time=FakeTime())
     runner = CliRunner()
 
     result = runner.invoke(

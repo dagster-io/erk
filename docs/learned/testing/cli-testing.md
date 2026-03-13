@@ -335,7 +335,7 @@ def test_command_with_monkeypatch(monkeypatch: pytest.MonkeyPatch) -> None:
 
     # Mock the factory that creates the dependency
     monkeypatch.setattr(
-        "my_module.PlannedPRBackend",
+        "my_module.ManagedGitHubPrBackend",
         lambda github: fake_backend,
     )
 
@@ -487,7 +487,7 @@ def test_impl_init_success(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> N
 
 ## Pattern 6: FakeGitHub with Shared FakeGitHubIssues
 
-When testing code that uses both `PlanBackend` and direct `FakeGitHubIssues` operations, both must operate on the same instance:
+When testing code that uses both `ManagedPrBackend` and direct `FakeGitHubIssues` operations, both must operate on the same instance:
 
 ```python
 def test_plan_operations_with_shared_issues() -> None:
@@ -500,12 +500,12 @@ def test_plan_operations_with_shared_issues() -> None:
         obj=ErkContext.for_test(github_issues=issues),
     )
 
-    # Both plan_backend metadata writes and direct issue queries
+    # Both managed_pr_backend metadata writes and direct issue queries
     # see the same data because they share the issues instance
     assert result.exit_code == 0
 ```
 
-**Critical:** Always pass `issues=issues` to `build_workspace_test_context` when using custom `FakeGitHubIssues`. Without it, `plan_backend` operates on a different instance and metadata writes are invisible to your test assertions.
+**Critical:** Always pass `issues=issues` to `build_workspace_test_context` when using custom `FakeGitHubIssues`. Without it, `managed_pr_backend` operates on a different instance and metadata writes are invisible to your test assertions.
 
 ## See Also
 

@@ -1,6 +1,6 @@
 """Create .erk/impl-context/ folder from plan content.
 
-This exec command fetches a plan via PlanBackend and creates the .erk/impl-context/
+This exec command fetches a plan via ManagedPrBackend and creates the .erk/impl-context/
 folder structure, providing a testable alternative to inline workflow scripts.
 
 Usage:
@@ -44,7 +44,7 @@ def create_impl_context_from_plan(
 ) -> None:
     """Create .erk/impl-context/ folder from plan content.
 
-    Fetches plan content via PlanBackend and creates .erk/impl-context/ folder structure
+    Fetches plan content via ManagedPrBackend and creates .erk/impl-context/ folder structure
     with plan.md and ref.json metadata.
 
     PLAN_ID: Plan identifier (e.g., GitHub issue number or PR number)
@@ -55,8 +55,8 @@ def create_impl_context_from_plan(
     pr_id = str(pr_number)
     provider = backend.get_provider_name()
 
-    # Fetch plan via PlanBackend
-    result = backend.get_plan(repo_root, pr_id)
+    # Fetch plan via ManagedPrBackend
+    result = backend.get_managed_pr(repo_root, pr_id)
     if isinstance(result, PlanNotFound):
         error_output = {
             "success": False,

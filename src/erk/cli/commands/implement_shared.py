@@ -462,7 +462,7 @@ def extract_plan_from_current_branch(ctx: ErkContext) -> str | None:
     if current_branch is None:
         return None
 
-    return ctx.plan_backend.resolve_plan_id_for_branch(ctx.cwd, current_branch)
+    return ctx.plan_backend.resolve_pr_number_for_branch(ctx.cwd, current_branch)
 
 
 @dataclass(frozen=True)
