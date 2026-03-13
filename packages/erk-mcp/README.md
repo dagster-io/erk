@@ -23,6 +23,49 @@ uv run erk-mcp --host 127.0.0.1 --port 8080
 uv run erk-mcp --transport stdio
 ```
 
+## GitHub OAuth
+
+`erk-mcp` can expose MCP-compatible OAuth endpoints backed by GitHub. Set these
+environment variables before starting the HTTP server:
+
+```bash
+export ERK_MCP_GITHUB_OAUTH_CLIENT_ID=...
+export ERK_MCP_GITHUB_OAUTH_CLIENT_SECRET=...
+export ERK_MCP_PUBLIC_URL=https://your-public-erk-host.example.com
+```
+
+Optional:
+
+```bash
+export ERK_MCP_GITHUB_OAUTH_SCOPES=repo
+```
+
+When configured, `erk-mcp` exposes OAuth discovery at:
+
+```text
+https://your-public-erk-host.example.com/.well-known/oauth-authorization-server
+```
+
+For clients that probe protected-resource metadata at the root, `erk-mcp` also
+serves:
+
+```text
+https://your-public-erk-host.example.com/.well-known/oauth-protected-resource
+```
+
+At startup, `erk-mcp` prints both OAuth URLs when auth is enabled. If you only see
+`GitHub OAuth disabled`, the running process does not have OAuth configured.
+
+and uses GitHub OAuth with callback:
+
+```text
+https://your-public-erk-host.example.com/auth/callback
+```
+
+The MCP client receives a bearer token from FastMCP, and `erk-mcp` resolves that
+back to the authenticated upstream GitHub token before invoking `erk`.
+Direct `Authorization: Bearer <github-token>` passthrough is not supported.
+
 ## Claude Code integration
 
 Add to `~/.claude/settings.json`:

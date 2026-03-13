@@ -1,7 +1,15 @@
+from __future__ import annotations
+
 import argparse
 import os
+from typing import TYPE_CHECKING
+
+import click
 
 from erk_mcp.server import create_mcp
+
+if TYPE_CHECKING:
+    from fastmcp import FastMCP
 
 
 def _parse_args(argv: list[str] | None) -> argparse.Namespace:
@@ -16,13 +24,40 @@ def _parse_args(argv: list[str] | None) -> argparse.Namespace:
     return parser.parse_args(argv)
 
 
+def _get_oauth_discovery_url(mcp: FastMCP) -> str | None:
+    auth = mcp.auth
+    if auth is None or auth.base_url is None:
+        return None
+    return f"{str(auth.base_url).rstrip('/')}/.well-known/oauth-authorization-server"
+
+
+def _get_oauth_protected_resource_url(mcp: FastMCP) -> str | None:
+    auth = mcp.auth
+    if auth is None or auth.base_url is None:
+        return None
+    return f"{str(auth.base_url).rstrip('/')}/.well-known/oauth-protected-resource"
+
+
 def main() -> None:
     args = _parse_args(None)
-    mcp = create_mcp()
+    try:
+        mcp = create_mcp()
+    except ValueError as exc:
+        raise click.ClickException(str(exc)) from exc
     if args.transport == "stdio":
         mcp.run()
     else:
-        print(f"Starting erk MCP server on http://{args.host}:{args.port}/mcp")
+        click.echo(f"Starting erk MCP server on http://{args.host}:{args.port}/mcp")
+        oauth_discovery_url = _get_oauth_discovery_url(mcp)
+        if oauth_discovery_url is not None:
+            click.echo(f"GitHub OAuth discovery available at {oauth_discovery_url}")
+            oauth_protected_resource_url = _get_oauth_protected_resource_url(mcp)
+            if oauth_protected_resource_url is not None:
+                click.echo(
+                    f"OAuth protected-resource metadata available at {oauth_protected_resource_url}"
+                )
+        else:
+            click.echo("GitHub OAuth disabled")
         mcp.run(transport=args.transport, host=args.host, port=args.port)
 
 
