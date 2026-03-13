@@ -853,10 +853,11 @@ class PlanDetailScreen(ModalScreen):
                     op_id = f"land-pr-{row.pr_number}"
                     self.app._start_operation(op_id=op_id, label=f"Landing PR #{row.pr_number}...")
                     self.app._land_pr_async(
-                        op_id,
-                        row.pr_number,
-                        row.pr_head_branch,
-                        row.objective_issue,
+                        op_id=op_id,
+                        pr_number=row.pr_number,
+                        branch=row.pr_head_branch,
+                        objective_issue=row.objective_issue,
+                        plan_number=row.pr_number if not row.is_learn_plan else None,
                     )
 
         elif command_id == "incremental_dispatch":

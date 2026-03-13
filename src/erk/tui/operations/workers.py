@@ -268,7 +268,7 @@ class BackgroundWorkersMixin:
             "-f",
         ]
         if plan_number is not None:
-            command.append(f"--plan-number={plan_number}")
+            command.append(f"--linked-pr-number={plan_number}")
         result = self._run_streaming_operation(
             op_id=op_id,
             command=command,
