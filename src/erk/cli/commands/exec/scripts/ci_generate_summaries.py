@@ -27,7 +27,6 @@ Examples:
 
 from __future__ import annotations
 
-import re
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -119,18 +118,29 @@ def _build_comment_body(summaries: list[tuple[str, str]]) -> str:
     return "\n".join(lines)
 
 
-def _find_plan_issue_for_pr(*, pr_number: int, cwd: Path) -> int | None:
-    """Find the erk-pr issue linked to a PR via its body.
+def _post_or_update_comment(
+    *,
+    pr_number: int,
+    comment_body: str,
+    cwd: Path,
+) -> int | None:
+    """Post a new comment or update an existing CI summary comment on a PR.
 
-    Parses the PR body for 'Resolves #N' or 'Closes #N' patterns.
+    Checks the PR body for a ci_summary_comment_id in the plan-header.
+    If found, updates the existing comment. Otherwise creates a new comment
+    and stores the comment ID.
 
     Args:
-        pr_number: The PR number
+        pr_number: The PR number to comment on
+        comment_body: The comment body to post
         cwd: Repository root directory
 
     Returns:
-        Plan issue number, or None if not found
+        The comment ID, or None if posting failed
     """
+    existing_comment_id: int | None = None
+
+    # Check for existing comment ID in PR's plan-header
     result = run_subprocess_with_context(
         cmd=[
             "gh",
@@ -146,60 +156,8 @@ def _find_plan_issue_for_pr(*, pr_number: int, cwd: Path) -> int | None:
         cwd=cwd,
         check=False,
     )
-    if result.returncode != 0:
-        return None
-
-    body = result.stdout
-    # Match patterns like "Resolves #123" or "Closes #456"
-    match = re.search(r"(?:Resolves|Closes|Fixes)\s+#(\d+)", body, re.IGNORECASE)
-    if match is None:
-        return None
-    return int(match.group(1))
-
-
-def _post_or_update_comment(
-    *,
-    pr_number: int,
-    comment_body: str,
-    cwd: Path,
-) -> int | None:
-    """Post a new comment or update an existing CI summary comment on a PR.
-
-    First checks if the PR's linked plan issue has a ci_summary_comment_id.
-    If so, updates the existing comment. Otherwise creates a new comment
-    and stores the comment ID.
-
-    Args:
-        pr_number: The PR number to comment on
-        comment_body: The comment body to post
-        cwd: Repository root directory
-
-    Returns:
-        The comment ID, or None if posting failed
-    """
-    plan_issue = _find_plan_issue_for_pr(pr_number=pr_number, cwd=cwd)
-
-    existing_comment_id: int | None = None
-
-    # Check for existing comment ID in plan-header
-    if plan_issue is not None:
-        result = run_subprocess_with_context(
-            cmd=[
-                "gh",
-                "issue",
-                "view",
-                str(plan_issue),
-                "--json",
-                "body",
-                "--jq",
-                ".body",
-            ],
-            operation_context=f"get PR issue #{plan_issue} body",
-            cwd=cwd,
-            check=False,
-        )
-        if result.returncode == 0:
-            existing_comment_id = extract_plan_header_ci_summary_comment_id(result.stdout)
+    if result.returncode == 0:
+        existing_comment_id = extract_plan_header_ci_summary_comment_id(result.stdout)
 
     # Update existing comment or create new one
     if existing_comment_id is not None:
@@ -266,12 +224,11 @@ def _post_or_update_comment(
     comment_id = int(comment_id_str)
 
     # Store comment ID in plan-header
-    if plan_issue is not None:
-        _update_plan_header_comment_id(
-            plan_issue=plan_issue,
-            comment_id=comment_id,
-            cwd=cwd,
-        )
+    _update_plan_header_comment_id(
+        plan_issue=pr_number,
+        comment_id=comment_id,
+        cwd=cwd,
+    )
 
     return comment_id
 

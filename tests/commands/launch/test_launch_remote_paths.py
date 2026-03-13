@@ -25,7 +25,6 @@ def _make_fake_remote(
         dispatch_run_id="run-123",
         issues=None,
         issue_comments=None,
-        pr_references=None,
         prs=prs,
     )
 

@@ -12,7 +12,6 @@ from erk_shared.gateway.github.metadata.core import (
     extract_objective_header_comment_id,
 )
 from erk_shared.gateway.github.types import (
-    GitHubRepoId,
     GitHubRepoLocation,
     PRCheckRun,
     PRNotFound,
@@ -69,62 +68,26 @@ class RealPrService(PrService):
         return self._browser
 
     def close_pr(self, pr_number: int, pr_url: str) -> list[int]:
-        """Close a PR and its linked PRs using direct HTTP calls.
+        """Close a PR using direct HTTP calls.
 
         Args:
             pr_number: The PR number to close
-            pr_url: The PR URL for PR linkage lookup
+            pr_url: The PR URL for owner/repo extraction
 
         Returns:
-            List of PR numbers that were also closed
+            Empty list (no linked PRs to close)
         """
         owner_repo = _parse_owner_repo_from_url(pr_url)
         if owner_repo is None:
             return []
         owner, repo = owner_repo
 
-        closed_prs = self._close_linked_prs_http(pr_number, owner, repo)
-
         self._http_client.patch(
             f"repos/{owner}/{repo}/issues/{pr_number}",
             data={"state": "closed"},
         )
 
-        return closed_prs
-
-    def _close_linked_prs_http(
-        self,
-        pr_number: int,
-        owner: str,
-        repo: str,
-    ) -> list[int]:
-        """Close all OPEN PRs linked to an issue using HTTP.
-
-        Args:
-            pr_number: The PR number
-            owner: Repository owner
-            repo: Repository name
-
-        Returns:
-            List of PR numbers that were closed
-        """
-        location = GitHubRepoLocation(
-            root=self._location.root,
-            repo_id=GitHubRepoId(owner=owner, repo=repo),
-        )
-        pr_linkages = self._ctx.github.get_prs_linked_to_issues(location, [pr_number])
-        linked_prs = pr_linkages.get(pr_number, [])
-
-        closed_prs: list[int] = []
-        for pr in linked_prs:
-            if pr.state == "OPEN":
-                self._http_client.patch(
-                    f"repos/{owner}/{repo}/pulls/{pr.number}",
-                    data={"state": "closed"},
-                )
-                closed_prs.append(pr.number)
-
-        return closed_prs
+        return []
 
     def dispatch_to_queue(self, pr_number: int, pr_url: str) -> None:
         """Dispatch a PR to the implementation queue.

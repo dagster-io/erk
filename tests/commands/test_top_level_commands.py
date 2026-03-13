@@ -164,7 +164,6 @@ def test_top_level_view_command_works() -> None:
         dispatch_run_id="run-1",
         issues={123: issue_info},
         issue_comments=None,
-        pr_references=None,
     )
 
     runner = CliRunner()

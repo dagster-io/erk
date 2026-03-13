@@ -10,7 +10,6 @@ from erk_shared.gateway.github.issues.types import (
     IssueComment,
     IssueInfo,
     IssueNotFound,
-    PRReference,
 )
 from erk_shared.gateway.github.types import BodyContent, BodyFile, BodyText
 
@@ -30,7 +29,6 @@ class FakeGitHubIssues(GitHubIssues):
         comments: dict[int, list[str]] | None = None,
         comments_with_urls: dict[int, list[IssueComment]] | None = None,
         username: str | None = "testuser",
-        pr_references: dict[int, list[PRReference]] | None = None,
         add_reaction_error: str | None = None,
         get_comments_error: str | None = None,
         target_repo: str | None = None,
@@ -45,8 +43,6 @@ class FakeGitHubIssues(GitHubIssues):
             comments_with_urls: Mapping of issue number -> list of IssueComment
             username: GitHub username to return (default: "testuser", None means
                 not authenticated)
-            pr_references: Mapping of issue number -> list of PRReference for
-                get_prs_referencing_issue()
             add_reaction_error: If set, add_reaction_to_comment raises RuntimeError
                 with this message
             get_comments_error: If set, get_issue_comments_with_urls raises
@@ -61,7 +57,6 @@ class FakeGitHubIssues(GitHubIssues):
         self._comments = comments or {}
         self._comments_with_urls = comments_with_urls or {}
         self._username = username
-        self._pr_references = pr_references or {}
         self._add_reaction_error = add_reaction_error
         self._get_comments_error = get_comments_error
         self._target_repo = target_repo
@@ -441,19 +436,6 @@ class FakeGitHubIssues(GitHubIssues):
             Username configured in constructor (default: "testuser")
         """
         return self._username
-
-    def get_prs_referencing_issue(
-        self,
-        repo_root: Path,
-        pr_number: int,
-    ) -> list[PRReference]:
-        """Get PRs referencing plan from configured state.
-
-        Returns:
-            List of PRReference from pr_references constructor arg,
-            or empty list if no references configured for this plan.
-        """
-        return self._pr_references.get(pr_number, [])
 
     def add_reaction_to_comment(
         self,

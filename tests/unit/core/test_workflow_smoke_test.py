@@ -42,7 +42,6 @@ class TestRunSmokeTest:
             dispatch_run_id="run-99",
             issues=None,
             issue_comments=None,
-            pr_references=None,
         )
 
         ctx = ErkContext.for_test(

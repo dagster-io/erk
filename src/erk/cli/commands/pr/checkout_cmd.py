@@ -9,8 +9,6 @@ Routing:
 """
 
 import click
-from rich.console import Console
-from rich.table import Table
 
 from erk.cli.activation import (
     activation_config_activate_only,
@@ -42,36 +40,39 @@ class _PrRef:
         self.number = number
 
 
-class _PlanRef:
-    """Parsed plan reference (P-prefix or issue URL)."""
-
-    def __init__(self, number: int) -> None:
-        self.number = number
-
-
-def _parse_checkout_reference(reference: str) -> _PrRef | _PlanRef:
-    """Parse checkout reference into PR or plan reference.
+def _parse_checkout_reference(reference: str) -> _PrRef:
+    """Parse checkout reference into a PR reference.
 
     Routing:
-    - P-prefix (P123, p123) → plan
-    - Issue URL (github.com/.../issues/N) → plan
+    - P-prefix (P123, p123) → error with helpful message
+    - Issue URL (github.com/.../issues/N) → error with helpful message
     - PR URL (github.com/.../pull/N) → PR
     - Plain number (123) → PR
 
     Raises SystemExit(1) on invalid input.
     """
-    # P-prefixed → plan
+    # P-prefixed → error
     if reference.upper().startswith("P") and reference[1:].isdigit():
-        return _PlanRef(int(reference[1:]))
+        user_output(
+            click.style("Error: ", fg="red")
+            + "Plan checkout is not supported. "
+            + "Use `erk pr checkout <pr-number>` with the implementation PR number."
+        )
+        raise SystemExit(1)
 
     # Plain number → PR
     if reference.isdigit():
         return _PrRef(int(reference))
 
-    # GitHub issue URL → plan
+    # GitHub issue URL → error
     plan_number = parse_plan_number_from_url(reference)
     if plan_number is not None:
-        return _PlanRef(plan_number)
+        user_output(
+            click.style("Error: ", fg="red")
+            + "Plan checkout is not supported. "
+            + "Use `erk pr checkout <pr-number>` with the implementation PR number."
+        )
+        raise SystemExit(1)
 
     # GitHub PR URL → PR
     pr_number = parse_pr_number_from_url(reference)
@@ -80,10 +81,9 @@ def _parse_checkout_reference(reference: str) -> _PrRef | _PlanRef:
 
     user_output(
         click.style("Error: ", fg="red")
-        + f"Invalid PR number, plan ID, or URL: {reference}\n\n"
+        + f"Invalid PR number or URL: {reference}\n\n"
         + "Expected formats:\n"
-        + "  PR:   123 or https://github.com/owner/repo/pull/123\n"
-        + "  Plan: P123 or https://github.com/owner/repo/issues/123"
+        + "  123 or https://github.com/owner/repo/pull/123"
     )
     raise SystemExit(1)
 
@@ -161,13 +161,7 @@ def pr_checkout(ctx: ErkContext, reference: str, no_slot: bool, force: bool, scr
     repo: RepoContext = ctx.repo
 
     ref = _parse_checkout_reference(reference)
-
-    if isinstance(ref, _PlanRef):
-        _checkout_plan(
-            ctx, repo, plan_pr_number=ref.number, no_slot=no_slot, force=force, script=script
-        )
-    else:
-        _checkout_pr(ctx, repo, pr_number=ref.number, no_slot=no_slot, force=force, script=script)
+    _checkout_pr(ctx, repo, pr_number=ref.number, no_slot=no_slot, force=force, script=script)
 
 
 # =============================================================================
@@ -333,149 +327,3 @@ def _checkout_pr(
             copy=True,
             same_worktree=False,
         )
-
-
-# =============================================================================
-# Plan checkout (merged from plan/checkout_cmd.py)
-# =============================================================================
-
-
-def _checkout_plan(
-    ctx: ErkContext,
-    repo: RepoContext,
-    *,
-    plan_pr_number: int,
-    no_slot: bool,
-    force: bool,
-    script: bool,
-) -> None:
-    """Checkout a branch associated with a plan.
-
-    Plan IDs are no longer encoded in branch names, so we look up PRs
-    referencing the plan issue directly.
-
-    1. If single open PR -> fetch and checkout
-    2. If multiple open PRs -> display table, no interactive selection
-    3. If no open PRs -> display helpful message
-    """
-    prs = ctx.issues.get_prs_referencing_issue(repo.root, plan_pr_number)
-
-    # Filter to OPEN PRs only
-    open_prs = [pr for pr in prs if pr.state == "OPEN"]
-
-    if len(open_prs) == 0:
-        user_output(
-            f"No open PR found for PR #{plan_pr_number}\n\n"
-            "This PR has not been implemented yet. To prepare it:\n"
-            f"  erk br co --for-plan {plan_pr_number}\n\n"
-            "Or if you've already checked out the branch:\n"
-            f"  erk pr prepare {plan_pr_number}"
-        )
-        raise SystemExit(1)
-
-    if len(open_prs) == 1:
-        # Single PR - fetch and checkout
-        pr = open_prs[0]
-        _checkout_plan_pr(
-            ctx,
-            repo,
-            impl_pr_number=pr.number,
-            plan_pr_number=plan_pr_number,
-            no_slot=no_slot,
-            force=force,
-            script=script,
-        )
-        return
-
-    # Multiple open PRs - display table and exit
-    _display_multiple_prs(plan_pr_number, open_prs)
-    raise SystemExit(0)
-
-
-def _checkout_plan_pr(
-    ctx: ErkContext,
-    repo: RepoContext,
-    *,
-    impl_pr_number: int,
-    plan_pr_number: int,
-    no_slot: bool,
-    force: bool,
-    script: bool,
-) -> None:
-    """Fetch and checkout a PR that references the plan issue."""
-    # Get PR details
-    ctx.console.info(f"Fetching PR #{impl_pr_number}...")
-    pr = ctx.github.get_pr(repo.root, impl_pr_number)
-    if isinstance(pr, PRNotFound):
-        ctx.console.error(
-            f"Could not find PR #{impl_pr_number}\n\n"
-            "Check the PR number and ensure you're authenticated with gh CLI."
-        )
-        raise SystemExit(1)
-
-    branch_name = pr.head_ref_name
-
-    # Check if branch already exists in a worktree - handle this case immediately
-    existing_worktree = ctx.git.worktree.find_worktree_for_branch(repo.root, branch_name)
-    if existing_worktree is not None:
-        navigate_and_display_checkout(
-            ctx,
-            worktree_path=existing_worktree,
-            branch_name=branch_name,
-            script=script,
-            command_name="plan-checkout",
-            already_existed=True,
-            existing_message=f"PR #{plan_pr_number} already checked out at {{styled_path}}",
-            new_message="",  # Not used when already_existed=True
-            script_message_existing=f'echo "Went to worktree for PR #{plan_pr_number}"',
-            script_message_new="",  # Not used when already_existed=True
-            post_cd_commands=None,
-        )
-        return
-
-    # Fetch from remote and force-update local branch
-    _fetch_and_update_branch(ctx, repo, branch_name=branch_name, pr_number=impl_pr_number)
-
-    # Create worktree and navigate
-    worktree_path, already_existed = ensure_branch_has_worktree(
-        ctx, repo, branch_name=branch_name, no_slot=no_slot, force=force
-    )
-
-    new_msg = f"Created worktree for PR #{plan_pr_number} (PR #{impl_pr_number}) at {{styled_path}}"
-    navigate_and_display_checkout(
-        ctx,
-        worktree_path=worktree_path,
-        branch_name=branch_name,
-        script=script,
-        command_name="plan-checkout",
-        already_existed=already_existed,
-        existing_message=f"PR #{plan_pr_number} already checked out at {{styled_path}}",
-        new_message=new_msg,
-        script_message_existing=f'echo "Went to worktree for PR #{plan_pr_number}"',
-        script_message_new=(
-            f'echo "Checked out PR #{plan_pr_number} (PR #{impl_pr_number}) at $(pwd)"'
-        ),
-        post_cd_commands=None,
-    )
-
-
-def _display_multiple_prs(pr_number: int, prs) -> None:
-    """Display table of multiple PRs for a plan."""
-    user_output(f"Multiple open PRs found for plan #{pr_number}:\n")
-
-    table = Table(show_header=True, header_style="bold")
-    table.add_column("pr", style="cyan", no_wrap=True)
-    table.add_column("state", no_wrap=True)
-    table.add_column("draft", no_wrap=True)
-
-    for pr in prs:
-        state_color = "green" if pr.state == "OPEN" else "red"
-        state_text = f"[{state_color}]{pr.state}[/{state_color}]"
-        draft_text = "[dim]yes[/dim]" if pr.is_draft else "-"
-        table.add_row(f"#{pr.number}", state_text, draft_text)
-
-    console = Console(stderr=True, width=200)
-    console.print(table)
-    console.print()
-
-    user_output("Use erk pr checkout to checkout a specific PR:\n  erk pr checkout <pr-number>")

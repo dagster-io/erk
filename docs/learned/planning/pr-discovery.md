@@ -10,24 +10,23 @@ read_when:
 tripwires:
   - action: "assuming branch_name is always present in plan-header metadata"
     warning: "branch_name is null until Phase 2 (pr dispatch). Check the plan metadata field lifecycle in lifecycle.md."
-  - action: "using issue timeline API as the primary PR lookup path"
-    warning: "The primary path is branch_name from plan-header → get_pr_for_branch(). Timeline API is a separate strategy for when branch_name is unavailable."
+  - action: "looking for alternative PR lookup paths beyond branch-based"
+    warning: "Branch-based lookup via get_pr_for_branch() is the only PR discovery strategy. The issue timeline API was removed."
 ---
 
 # PR Discovery Strategies for Plans
 
 Finding the PR associated with a plan is a cross-cutting concern that spans multiple commands (`get-pr-for-plan`, `trigger-async-learn`, `erk pr co`, `erk pr close`). Two fundamentally different strategies exist, chosen based on what metadata is available.
 
-## Why Two Strategies Exist
+## Discovery Strategy
 
-Plan metadata accumulates progressively through the lifecycle. The `branch_name` field — the simplest path to PR discovery — doesn't exist until Phase 2 (submission). Commands that run before submission, or that process older plans with incomplete metadata, need an alternative path.
+Plan metadata accumulates progressively through the lifecycle. The `branch_name` field doesn't exist until Phase 2 (submission). Commands that run before submission will not find a PR.
 
-| Available Data | Strategy            | Used By                                                  |
-| -------------- | ------------------- | -------------------------------------------------------- |
-| `branch_name`  | Branch → PR lookup  | `get-pr-for-plan`, `trigger-async-learn`, land, dispatch |
-| `issue_number` | Issue timeline → PR | `get-issue-timeline-prs`, `pr checkout`, `pr close`      |
+| Available Data | Strategy           | Used By                                                  |
+| -------------- | ------------------ | -------------------------------------------------------- |
+| `branch_name`  | Branch → PR lookup | `get-pr-for-plan`, `trigger-async-learn`, land, dispatch |
 
-## Strategy 1: Branch-Based Lookup (Primary)
+## Branch-Based Lookup
 
 The plan-header metadata block contains a `branch_name` field populated during `erk pr dispatch`. Given a branch name, the GitHub gateway's `get_pr_for_branch()` method returns PR details directly.
 
@@ -35,17 +34,7 @@ The plan-header metadata block contains a `branch_name` field populated during `
 
 See `get_pr_for_plan()` in `src/erk/cli/commands/exec/scripts/get_pr_for_plan.py` for the canonical implementation. This command also includes a **git context fallback**: if `branch_name` is null in metadata but the current branch matches the `P{issue_number}-` naming convention, it infers the branch from git state. This handles cases where `impl-signal` failed to write the metadata.
 
-**Why branch-first**: Branch-to-PR is a deterministic 1:1 lookup via the GitHub API. Issue timeline depends on cross-references being recorded, which requires specific keywords in the PR body.
-
-## Strategy 2: Issue Timeline Lookup (Fallback)
-
-When `branch_name` is unavailable, the GitHub issues timeline API finds PRs that cross-reference the issue. This uses the `get_prs_referencing_issue()` gateway method, which filters timeline events for `cross-referenced` entries.
-
-<!-- Source: src/erk/cli/commands/exec/scripts/get_issue_timeline_prs.py, get_issue_timeline_prs -->
-
-See `get_issue_timeline_prs()` in `src/erk/cli/commands/exec/scripts/get_issue_timeline_prs.py`.
-
-**Limitation**: Only works when the PR body contains "Closes #N" or similar GitHub keywords. PRs created without issue-linking keywords won't appear in timeline results. This is why branch-based lookup is preferred.
+**Why branch-based**: Branch-to-PR is a deterministic 1:1 lookup via the GitHub API.
 
 ## The `trigger-async-learn` Composition
 

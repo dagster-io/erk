@@ -222,7 +222,6 @@ def test_plan_flag_fetches_and_excludes_self() -> None:
         dispatch_run_id="run-1",
         issues={200: issue_200},
         issue_comments=None,
-        pr_references=None,
     )
 
     runner = CliRunner()
@@ -299,7 +298,6 @@ def test_plan_flag_not_found() -> None:
         dispatch_run_id="run-1",
         issues={},
         issue_comments=None,
-        pr_references=None,
     )
 
     runner = CliRunner()

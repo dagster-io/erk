@@ -105,14 +105,9 @@ concurrency:
 
 1. **Dispatch metadata** -- the primary metadata source is the CLI dispatch (`write_dispatch_metadata()` in `src/erk/cli/commands/pr/metadata_helpers.py`), with CI registration as a fallback. Writes `run_id`, `node_id`, `dispatched_at` to the plan entity's `plan-header` metadata block.
 2. **Queued comment** -- adds a "Queued for Implementation" emoji comment to the plan with PR link and workflow run URL
-3. **PR closing reference** -- updates the PR body with `Closes #N` to enable auto-close on merge (handled by PlanBackend)
-4. **Lifecycle stage** -- updates the plan entity's lifecycle stage to "planned"
+3. **Lifecycle stage** -- updates the plan entity's lifecycle stage to "planned"
 
 The command outputs JSON results for each operation with success/error details.
-
-### PR Closing Reference (Timing Constraint)
-
-The `Closes #N` reference must be in the initial PR body at creation time, not added via a post-creation update. GitHub's `willCloseTarget` behavior is evaluated at PR creation — adding it later does not enable auto-close. The one-shot dispatch handles this by including the closing reference in the initial `create_pr()` call.
 
 ### Dispatch Metadata Two-Phase Write
 

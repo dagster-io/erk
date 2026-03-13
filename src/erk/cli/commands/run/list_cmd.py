@@ -8,7 +8,7 @@ from rich.markup import escape as escape_markup
 from rich.table import Table
 
 from erk.cli.commands.pr.list.cli import format_pr_cell
-from erk.cli.commands.run.shared import extract_plan_number, extract_pr_number
+from erk.cli.commands.run.shared import extract_pr_number
 from erk.cli.constants import WORKFLOW_COMMAND_MAP
 from erk.cli.core import discover_repo_context
 from erk.cli.ensure import Ensure
@@ -18,7 +18,6 @@ from erk.core.display_utils import (
     format_workflow_outcome,
     format_workflow_run_id,
 )
-from erk.core.pr_utils import select_display_pr
 from erk_shared.gateway.github.emoji import format_checks_cell
 from erk_shared.gateway.github.parsing import github_repo_location_from_url
 from erk_shared.gateway.github.types import GitHubRepoId, PullRequestInfo, WorkflowRun
@@ -65,20 +64,15 @@ def _list_runs(ctx: ErkContext) -> None:
         user_output("No workflow runs found")
         return
 
-    # 2. Extract PR numbers (direct) and plan numbers (fallback) from display_titles
+    # 2. Extract PR numbers from display_titles
     run_pr_numbers: dict[str, int] = {}  # run_id → pr_number
-    plan_numbers: list[int] = []
 
     for run, _workflow_name in tagged_runs:
         pr_num = extract_pr_number(run.display_title)
         if pr_num is not None:
             run_pr_numbers[run.run_id] = pr_num
-        else:
-            plan_num = extract_plan_number(run.display_title)
-            if plan_num is not None:
-                plan_numbers.append(plan_num)
 
-    # 3. Fetch issues (needed for GitHubRepoLocation and plan→PR linkage)
+    # 3. Fetch issues (needed for GitHubRepoLocation)
     issues = ctx.issues.list_issues(repo_root=repo.root, labels=["erk-pr"])
 
     # Extract location from first issue URL (needed for API calls and links)
@@ -86,31 +80,9 @@ def _list_runs(ctx: ErkContext) -> None:
     if issues:
         location = github_repo_location_from_url(repo.root, issues[0].url)
 
-    # 4. Batch fetch PRs linked to plan issues (for old-format plan-implement runs)
-    #    Pre-build plan→run_ids lookup for efficient mapping
-    plan_to_run_ids: dict[int, list[str]] = {}
-    for run, _wf in tagged_runs:
-        if run.run_id in run_pr_numbers:
-            continue
-        run_plan = extract_plan_number(run.display_title)
-        if run_plan is not None:
-            plan_to_run_ids.setdefault(run_plan, []).append(run.run_id)
-
+    # 4. Fetch PR info for directly-extracted PR numbers
     pr_info_map: dict[int, PullRequestInfo] = {}  # pr_number → PullRequestInfo
-    if plan_numbers and location is not None:
-        pr_linkages = ctx.github.get_prs_linked_to_issues(location, plan_numbers)
-        for plan_num, prs in pr_linkages.items():
-            selected_pr = select_display_pr(prs, exclude_pr_numbers=None)
-            if selected_pr is None:
-                continue
-            pr_info_map[selected_pr.number] = selected_pr
-            for run_id in plan_to_run_ids.get(plan_num, []):
-                run_pr_numbers[run_id] = selected_pr.number
-
-    # 5. Fetch PR info for directly-extracted PR numbers
-    #    run_pr_numbers has PR numbers from display_title, but pr_info_map
-    #    only contains entries from plan linkage. Fetch open PRs to fill gaps.
-    direct_pr_numbers = {n for n in run_pr_numbers.values() if n not in pr_info_map}
+    direct_pr_numbers = set(run_pr_numbers.values())
     if direct_pr_numbers:
         all_open_prs = ctx.github.list_prs(repo.root, state="open")
         for pr_info in all_open_prs.values():

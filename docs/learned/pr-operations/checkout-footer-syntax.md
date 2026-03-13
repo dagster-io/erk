@@ -29,8 +29,6 @@ The footer cannot be included in the initial PR body because **the PR number is 
 
 See `build_pr_body_footer()` in `packages/erk-shared/src/erk_shared/gateway/github/pr_footer.py` for the canonical footer generation.
 
-**Why `Closes` must be in the initial body, not the footer update:** GitHub's `willCloseTarget` field is set at PR creation time and is NOT updated when the body is edited afterward. The `Closes #N` reference is therefore placed in the initial `create_pr()` body, while the checkout command is appended via a subsequent `update_pr_body()` call.
-
 ## PR Number vs Issue Number
 
 The single most common agent mistake is using the plan number from `.erk/impl-context/plan-ref.json` instead of the PR number in the checkout command. These are different GitHub entities:

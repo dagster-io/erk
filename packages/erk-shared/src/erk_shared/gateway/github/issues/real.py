@@ -11,7 +11,6 @@ from erk_shared.gateway.github.issues.types import (
     IssueComment,
     IssueInfo,
     IssueNotFound,
-    PRReference,
 )
 from erk_shared.gateway.github.types import BodyContent, BodyFile, BodyText
 from erk_shared.gateway.time.abc import Time
@@ -550,41 +549,6 @@ class RealGitHubIssues(GitHubIssues):
         if result.returncode != 0:
             return None
         return result.stdout.strip()
-
-    def get_prs_referencing_issue(
-        self,
-        repo_root: Path,
-        plan_number: int,
-    ) -> list[PRReference]:
-        """Get PRs referencing plan via REST timeline API.
-
-        Uses the timeline endpoint to find cross-referenced PRs.
-        """
-        # GH-API-AUDIT: REST - GET issues/{number}/timeline
-        base_cmd = [
-            "gh",
-            "api",
-            f"repos/{{owner}}/{{repo}}/issues/{plan_number}/timeline",
-            "--jq",
-            '[.[] | select(.event == "cross-referenced") '
-            "| select(.source.issue.pull_request) "
-            "| .source.issue | {number, state, is_draft: .draft}]",
-        ]
-        cmd = self._build_gh_command(base_cmd)
-        stdout = execute_gh_command_with_retry(cmd, repo_root, self._time)
-
-        if not stdout.strip():
-            return []
-
-        data = json.loads(stdout)
-        return [
-            PRReference(
-                number=item["number"],
-                state=item["state"].upper(),  # Normalize to "OPEN"/"CLOSED"
-                is_draft=item.get("is_draft") or False,  # Handle null/missing
-            )
-            for item in data
-        ]
 
     def add_reaction_to_comment(
         self,

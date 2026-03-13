@@ -3,7 +3,7 @@
 This file focuses on CLI-specific concerns for the list runs command:
 - Command execution and exit codes
 - Output formatting and display (status indicators, Rich table)
-- PR-centric view with direct PR extraction and plan→PR fallback
+- PR-centric view with direct PR extraction
 
 The integration layer (list_workflow_runs) is tested in:
 - tests/unit/fakes/test_fake_github.py - Fake infrastructure tests
@@ -154,10 +154,10 @@ def test_list_runs_new_plan_implement_format_shows_pr(
     assert "plan-implement" in result.output
 
 
-def test_list_runs_old_plan_format_falls_back_to_plan_pr_linkage(
+def test_list_runs_old_plan_format_shows_dash(
     tmp_path: Path,
 ) -> None:
-    """Old plan-implement format (no #pr) falls back to plan→PR linkage."""
+    """Old plan-implement format (no #pr) shows dashes for PR columns."""
     workflow_runs = [
         WorkflowRun(
             run_id="111222",
@@ -170,36 +170,13 @@ def test_list_runs_old_plan_format_falls_back_to_plan_pr_linkage(
         ),
     ]
 
-    pr_info = PullRequestInfo(
-        number=201,
-        state="OPEN",
-        url="https://github.com/owner/repo/pull/201",
-        is_draft=False,
-        title="Add user auth",
-        checks_passing=True,
-        owner="owner",
-        repo="repo",
-        has_conflicts=False,
-    )
-
-    github = FakeLocalGitHub(
-        workflow_runs=workflow_runs,
-        pr_plan_linkages={142: [pr_info]},
-    )
-    ctx = _make_ctx(
-        tmp_path,
-        workflow_runs=workflow_runs,
-        issues={142: _make_issue(142, "Add user authentication")},
-        github=github,
-    )
+    ctx = _make_ctx(tmp_path, workflow_runs=workflow_runs)
 
     runner = CliRunner()
     result = runner.invoke(list_runs, obj=ctx, catch_exceptions=False)
 
     assert result.exit_code == 0
-    assert "#201" in result.output
-    assert "Add user auth" in result.output
-    assert "✅" in result.output
+    assert "111222" in result.output
 
 
 def test_list_runs_no_pr_shows_dash(tmp_path: Path) -> None:
@@ -327,7 +304,7 @@ def test_list_runs_truncates_long_titles(tmp_path: Path) -> None:
             conclusion="success",
             branch="feat-1",
             head_sha="abc123",
-            display_title="142:abc",
+            display_title="plnd/add-feature (#201):abc456",
             workflow_path=_IMPL_WORKFLOW,
         ),
     ]
@@ -346,12 +323,11 @@ def test_list_runs_truncates_long_titles(tmp_path: Path) -> None:
 
     github = FakeLocalGitHub(
         workflow_runs=workflow_runs,
-        pr_plan_linkages={142: [pr_info]},
+        prs={"feat-1": pr_info},
     )
     ctx = _make_ctx(
         tmp_path,
         workflow_runs=workflow_runs,
-        issues={142: _make_issue(142, "Plan title")},
         github=github,
     )
 

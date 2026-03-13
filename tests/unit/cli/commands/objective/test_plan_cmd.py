@@ -192,7 +192,6 @@ class TestResolveAllUnblocked:
                 dispatch_run_id="run-1",
                 issues={42: issue},
                 issue_comments=None,
-                pr_references=None,
             )
             ctx = build_workspace_test_context(env, git=git, issues=issues, remote_github=remote)
 
@@ -226,7 +225,6 @@ class TestResolveAllUnblocked:
                 dispatch_run_id="run-1",
                 issues={42: issue},
                 issue_comments=None,
-                pr_references=None,
             )
             ctx = build_workspace_test_context(env, git=git, issues=issues, remote_github=remote)
 
@@ -263,7 +261,6 @@ class TestHandleAllUnblocked:
                 dispatch_run_id="run-1",
                 issues={42: issue},
                 issue_comments=None,
-                pr_references=None,
             )
             ctx = build_workspace_test_context(
                 env, git=git, github=github, issues=issues, remote_github=remote
@@ -312,7 +309,6 @@ class TestHandleAllUnblocked:
                 dispatch_run_id="run-1",
                 issues={42: issue},
                 issue_comments=None,
-                pr_references=None,
             )
             ctx = build_workspace_test_context(
                 env, git=git, github=github, issues=issues, remote_github=remote
@@ -362,7 +358,6 @@ class TestHandleAllUnblocked:
                 dispatch_run_id="run-1",
                 issues={42: issue},
                 issue_comments=None,
-                pr_references=None,
             )
             ctx = build_workspace_test_context(
                 env, git=git, github=github, issues=issues, remote_github=remote

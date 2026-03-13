@@ -245,28 +245,6 @@ class LocalGitHub(ABC):
         ...
 
     @abstractmethod
-    def get_prs_linked_to_issues(
-        self,
-        location: GitHubRepoLocation,
-        plan_numbers: list[int],
-    ) -> dict[int, list[PullRequestInfo]]:
-        """Get PRs linked to issues via GitHub's development references.
-
-        Queries GitHub for PRs that reference issues in their description
-        or via GitHub's "Closes #N" linking. Returns a mapping of plan
-        numbers to PRs.
-
-        Args:
-            location: GitHub repository location (local path + owner/repo identity)
-            plan_numbers: List of plan numbers to query
-
-        Returns:
-            Mapping of plan_number -> list of PRs linked to that plan.
-            Returns empty dict if no PRs link to any of the plans.
-        """
-        ...
-
-    @abstractmethod
     def get_prs_by_numbers(
         self, location: GitHubRepoLocation, pr_numbers: list[int]
     ) -> dict[int, PullRequestInfo]:

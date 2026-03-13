@@ -8,7 +8,6 @@ from erk_shared.gateway.github.issues.types import (
     IssueComment,
     IssueInfo,
     IssueNotFound,
-    PRReference,
 )
 from erk_shared.gateway.github.types import BodyContent
 
@@ -107,14 +106,6 @@ class DryRunGitHubIssues(GitHubIssues):
     def get_current_username(self) -> str | None:
         """Delegate to wrapped implementation (read operation)."""
         return self._wrapped.get_current_username()
-
-    def get_prs_referencing_issue(
-        self,
-        repo_root: Path,
-        plan_number: int,
-    ) -> list[PRReference]:
-        """Delegate to wrapped implementation (read-only operation)."""
-        return self._wrapped.get_prs_referencing_issue(repo_root, plan_number)
 
     def add_reaction_to_comment(
         self,

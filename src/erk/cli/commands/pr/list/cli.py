@@ -53,9 +53,6 @@ def format_pr_cell(pr: PullRequestInfo, *, use_graphite: bool, graphite_url: str
     emoji = get_pr_status_emoji(pr)
     pr_text = f"#{pr.number}"
 
-    if pr.will_close_target:
-        emoji += "\U0001f517"
-
     url = graphite_url if use_graphite else pr.url
 
     if url:

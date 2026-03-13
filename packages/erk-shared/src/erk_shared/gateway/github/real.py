@@ -33,7 +33,6 @@ from erk_shared.gateway.github.issues.abc import GitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.parsing import (
     execute_gh_command_with_retry,
-    parse_aggregated_check_counts,
     parse_gh_auth_status_output,
 )
 from erk_shared.gateway.github.pr_data_parsing import (
@@ -195,7 +194,6 @@ class RealLocalGitHub(LocalGitHub):
             Parsed JSON response
         """
         # GH-API-AUDIT: GraphQL - explicit graphql query
-        # WHY GRAPHQL: Used by get_prs_linked_to_issues for erk dash batch queries
         cmd = ["gh", "api", "graphql", "-f", f"query={query}"]
         stdout = execute_gh_command_with_retry(cmd, repo_root, self._time)
         return json.loads(stdout)
@@ -752,195 +750,6 @@ class RealLocalGitHub(LocalGitHub):
             return None
         return body
 
-    def get_prs_linked_to_issues(
-        self,
-        location: GitHubRepoLocation,
-        plan_numbers: list[int],
-    ) -> dict[int, list[PullRequestInfo]]:
-        """Get PRs linked to issues via CrossReferencedEvent timeline.
-
-        Uses GraphQL CrossReferencedEvent to find all PRs that reference each plan,
-        regardless of whether they will close the issue when merged. Includes open,
-        closed, and draft PRs. Used by erk dash for batch queries with full PR data
-        (CI status, mergeability).
-
-        For simpler single-issue queries, see GitHubIssues.get_prs_referencing_issue().
-
-        Note: Uses try/except as an acceptable error boundary for handling gh CLI
-        availability and authentication. We cannot reliably check gh installation
-        and authentication status a priori without duplicating gh's logic.
-        """
-        if not plan_numbers:
-            return {}
-
-        try:
-            # Build and execute GraphQL query to fetch all issues
-            query = self._build_issue_pr_linkage_query(plan_numbers, location.repo_id)
-            response = self._execute_batch_pr_query(query, location.root)
-
-            # Parse response and build inverse mapping
-            return self._parse_issue_pr_linkages(response, location.repo_id)
-        except (RuntimeError, FileNotFoundError, json.JSONDecodeError, KeyError, IndexError):
-            # gh not installed, not authenticated, or parsing failed
-            return {}
-
-    def _build_issue_pr_linkage_query(self, plan_numbers: list[int], repo_id: GitHubRepoId) -> str:
-        """Build GraphQL query to fetch PRs linked to plans via timeline.
-
-        Uses CrossReferencedEvent on issue timelines to find PRs that will close
-        each issue. This is O(plans) instead of O(all PRs in repo).
-
-        Uses pre-aggregated count fields for efficiency (~15-30x smaller payload):
-        - contexts(last: 1) with totalCount, checkRunCountsByState, statusContextCountsByState
-        - Removes title and labels fields (not needed for dash)
-
-        Note: This method still builds dynamic alias queries because GraphQL doesn't
-        support variable alias names. The fragment is reused from graphql_queries.py.
-
-        Args:
-            plan_numbers: List of plan numbers to query
-            repo_id: GitHub repository identity (owner and repo name)
-
-        Returns:
-            GraphQL query string
-        """
-        # Build aliased issue queries using the fragment spread
-        issue_queries = []
-        for plan_num in plan_numbers:
-            issue_query = f"""    issue_{plan_num}: issue(number: {plan_num}) {{
-      timelineItems(itemTypes: [CROSS_REFERENCED_EVENT], first: 20) {{
-        nodes {{
-          ... on CrossReferencedEvent {{
-            ...IssuePRLinkageFields
-          }}
-        }}
-      }}
-    }}"""
-            issue_queries.append(issue_query)
-
-        # Combine fragment definition (from constant) and query
-        query = f"""{ISSUE_PR_LINKAGE_FRAGMENT}
-
-query {{
-  repository(owner: "{repo_id.owner}", name: "{repo_id.repo}") {{
-{chr(10).join(issue_queries)}
-  }}
-}}"""
-        return query
-
-    def _parse_issue_pr_linkages(
-        self, response: dict[str, Any], repo_id: GitHubRepoId
-    ) -> dict[int, list[PullRequestInfo]]:
-        """Parse GraphQL response from issue timeline query.
-
-        Processes CrossReferencedEvent timeline items to extract all PRs that
-        reference each plan.
-
-        Args:
-            response: GraphQL response data
-            repo_id: GitHub repository identity (owner and repo name)
-
-        Returns:
-            Mapping of plan_number -> list of PRs sorted by created_at descending
-        """
-        result: dict[int, list[PullRequestInfo]] = {}
-        repo_data = response.get("data", {}).get("repository", {})
-
-        # Iterate over aliased issue results
-        for key, issue_data in repo_data.items():
-            # Skip non-issue aliases or missing issues
-            if not key.startswith("issue_") or issue_data is None:
-                continue
-
-            # Extract plan number from alias
-            plan_number = int(key.removeprefix("issue_"))
-
-            # Collect PRs with timestamps for sorting
-            prs_with_timestamps: list[tuple[PullRequestInfo, str]] = []
-
-            timeline_items = issue_data.get("timelineItems", {})
-            nodes = timeline_items.get("nodes", [])
-
-            for node in nodes:
-                if node is None:
-                    continue
-
-                source = node.get("source")
-                if source is None:
-                    continue
-
-                # Extract required PR fields
-                pr_number = source.get("number")
-                state = source.get("state")
-                url = source.get("url")
-
-                # Skip if essential fields are missing (source may be Issue, not PR)
-                if pr_number is None or state is None or url is None:
-                    continue
-
-                # Extract optional fields (title no longer fetched for efficiency)
-                is_draft = source.get("isDraft")
-                created_at = source.get("createdAt")
-
-                # Parse checks status and counts using aggregated fields
-                checks_passing = None
-                checks_counts: tuple[int, int] | None = None
-                status_rollup = source.get("statusCheckRollup")
-                if status_rollup is not None:
-                    rollup_state = status_rollup.get("state")
-                    if rollup_state == "SUCCESS":
-                        checks_passing = True
-                    elif rollup_state in ("FAILURE", "ERROR"):
-                        checks_passing = False
-
-                    # Extract check counts from aggregated fields
-                    contexts = status_rollup.get("contexts")
-                    if contexts is not None and isinstance(contexts, dict):
-                        total = contexts.get("totalCount", 0)
-                        if total > 0:
-                            checks_counts = parse_aggregated_check_counts(
-                                contexts.get("checkRunCountsByState", []),
-                                contexts.get("statusContextCountsByState", []),
-                                total,
-                            )
-
-                # Parse conflicts status
-                has_conflicts = None
-                mergeable = source.get("mergeable")
-                if mergeable == "CONFLICTING":
-                    has_conflicts = True
-                elif mergeable == "MERGEABLE":
-                    has_conflicts = False
-
-                # Extract head branch (source branch) for landing
-                head_ref_name = source.get("headRefName")
-
-                # Note: title and labels not fetched (not needed for dash)
-                pr_info = PullRequestInfo(
-                    number=pr_number,
-                    state=state,
-                    url=url,
-                    is_draft=is_draft if is_draft is not None else False,
-                    title=None,  # Not fetched for efficiency
-                    checks_passing=checks_passing,
-                    owner=repo_id.owner,
-                    repo=repo_id.repo,
-                    has_conflicts=has_conflicts,
-                    checks_counts=checks_counts,
-                    head_branch=head_ref_name,
-                )
-
-                # Store with timestamp for sorting
-                if created_at:
-                    prs_with_timestamps.append((pr_info, created_at))
-
-            # Sort by created_at descending and store
-            if prs_with_timestamps:
-                prs_with_timestamps.sort(key=lambda x: x[1], reverse=True)
-                result[plan_number] = [pr for pr, _ in prs_with_timestamps]
-
-        return result
-
     def get_prs_by_numbers(
         self, location: GitHubRepoLocation, pr_numbers: list[int]
     ) -> dict[int, PullRequestInfo]:
@@ -1382,7 +1191,6 @@ query {{
 
         checks_passing, checks_counts = parse_status_rollup(source.get("statusCheckRollup"))
         has_conflicts = parse_mergeable_status(source.get("mergeable"))
-        will_close_target = event.get("willCloseTarget", False)
         review_thread_counts = parse_review_thread_counts(source.get("reviewThreads"))
         head_ref_name = source.get("headRefName")
         review_decision = source.get("reviewDecision")
@@ -1398,7 +1206,6 @@ query {{
             repo=repo_id.repo,
             has_conflicts=has_conflicts,
             checks_counts=checks_counts,
-            will_close_target=will_close_target,
             review_thread_counts=review_thread_counts,
             head_branch=head_ref_name,
             review_decision=review_decision,
@@ -1660,7 +1467,6 @@ query {{
                 repo=self._repo_info.name,
                 has_conflicts=None,  # Not fetched in batch API
                 checks_counts=None,
-                will_close_target=False,
                 head_branch=branch,
                 base_ref_name=pr_data.get("base", {}).get("ref"),
             )
@@ -2506,7 +2312,6 @@ query {{
                     repo=self._repo_info.name,
                     has_conflicts=None,  # Not fetched in this API call
                     checks_counts=None,
-                    will_close_target=False,
                     head_branch=branch,
                 )
             )
