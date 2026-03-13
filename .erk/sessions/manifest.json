@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "pr_number": 9239,
+  "sessions": [
+    {
+      "session_id": "81b57759-353d-4156-a1b1-799af2e8c052",
+      "stage": "impl",
+      "source": "local",
+      "uploaded_at": "2026-03-13T17:20:12.172976+00:00",
+      "files": [
+        "impl-81b57759-353d-4156-a1b1-799af2e8c052-81b57759-353d-4156-a1b1-799af2e8c052.xml"
+      ],
+      "user_turns": 2,
+      "duration_minutes": 3,
+      "raw_size_kb": 346,
+      "xml_size_kb": 56,
+      "git_branch": "plnd/O9109-fix-tui-land-args-03-13-1714"
+    }
+  ]
+}
