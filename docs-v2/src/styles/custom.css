@@ -1,0 +1,51 @@
+/* --- Layout dimensions --- */
+:root {
+  --sl-content-width: 55rem;
+}
+
+/* Narrower right TOC sidebar */
+@media (min-width: 72rem) {
+  .right-sidebar-container {
+    width: calc(var(--sl-sidebar-width) * 0.75);
+  }
+
+  .right-sidebar {
+    width: calc(var(--sl-sidebar-width) * 0.75);
+  }
+}
+
+/* --- Left sidebar: group labels with dividers --- */
+
+/* Group labels: uppercase with letter-spacing */
+starlight-menu-button + nav details > summary {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: var(--sl-text-xs);
+  font-weight: 600;
+  color: var(--sl-color-white);
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--sl-color-hairline-light, var(--sl-color-gray-5));
+  margin-bottom: 0.25rem;
+}
+
+/* --- Right TOC: smaller, tighter --- */
+.right-sidebar-panel {
+  font-size: var(--sl-text-xs);
+}
+
+.right-sidebar-panel h2 {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: var(--sl-text-xs);
+  font-weight: 600;
+}
+
+/* --- Content H2 headings: uppercase with rule --- */
+.sl-markdown-content h2 {
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: var(--sl-text-base);
+  font-weight: 600;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--sl-color-hairline-light, var(--sl-color-gray-5));
+}
