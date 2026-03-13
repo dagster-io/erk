@@ -156,6 +156,8 @@ Rules triggered by matching actions in code.
 
 **launching parallel agents that return results inline instead of writing to files** → Read [Parallel Agent Orchestration for Bulk Operations](parallel-audit-pattern.md) first. Parallel agents must write results via Write tool to .erk/scratch/ files. Inline results can be truncated or lost. The parent agent reads files after completion.
 
+**looking for alternative PR lookup paths beyond branch-based** → Read [PR Discovery Strategies for Plans](pr-discovery.md) first. Branch-based lookup via get_pr_for_branch() is the only PR discovery strategy. The issue timeline API was removed.
+
 **making a third trial-and-error attempt at a validation fix** → Read [Source Investigation Over Trial-and-Error](debugging-patterns.md) first. After 2 failed attempts, stop guessing. Grep for the validator function and read the source to understand the exact requirement.
 
 **making objective-update-after-land exit non-zero** → Read [Objective Update After Land](objective-update-after-land.md) first. This script uses fail-open design. Failures must not block landing. See objective-update-after-land.md.
@@ -245,8 +247,6 @@ Rules triggered by matching actions in code.
 **using extract_metadata_prefix() or extract_plan_header_block() for metadata extraction** → Read [Plan Content Extraction Fallback](metadata-block-fallback.md) first. These functions are deleted. Use find_metadata_block() from packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py for extraction and render_metadata_block() for rendering.
 
 **using gh issue view on a PR ID without checking plan backend type** → Read [Planned PR Backend](planned-pr-backend.md) first. Planned PR PR IDs are PR numbers. Using gh issue view on a planned-PR plan produces a confusing 404. Route to gh pr view based on backend type.
-
-**using issue timeline API as the primary PR lookup path** → Read [PR Discovery Strategies for Plans](pr-discovery.md) first. The primary path is branch_name from plan-header → get_pr_for_branch(). Timeline API is a separate strategy for when branch_name is unavailable.
 
 **using only branch-based discovery for plan/objective resolution** → Read [Objective Update After Land](objective-update-after-land.md) first. Use direct lookup with --plan parameter when available. Branch-based discovery fails if the branch is already deleted. Direct lookup with fallback is the resilient pattern.
 

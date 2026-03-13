@@ -51,14 +51,14 @@ REST API-based GitHub operations without a local git or `gh` CLI dependency. Ena
 
 ### Issues
 
-| Method                                                    | Returns                      | Description          |
-| --------------------------------------------------------- | ---------------------------- | -------------------- |
-| `get_issue(owner, repo, number)`                          | `IssueInfo \| IssueNotFound` | Fetch issue          |
-| `get_issue_comments(owner, repo, number)`                 | `list[str]`                  | All comment bodies   |
-| `list_issues(owner, repo, labels, state, limit, creator)` | `list[IssueInfo]`            | Filtered issue list  |
-| `add_labels(owner, repo, issue_number, labels)`           | `None`                       | Add labels           |
-| `add_issue_comment(owner, repo, issue_number, body)`      | `None`                       | Add comment          |
-| `close_issue(owner, repo, number)`                        | `None`                       | Close issue          |
+| Method                                                    | Returns                      | Description         |
+| --------------------------------------------------------- | ---------------------------- | ------------------- |
+| `get_issue(owner, repo, number)`                          | `IssueInfo \| IssueNotFound` | Fetch issue         |
+| `get_issue_comments(owner, repo, number)`                 | `list[str]`                  | All comment bodies  |
+| `list_issues(owner, repo, labels, state, limit, creator)` | `list[IssueInfo]`            | Filtered issue list |
+| `add_labels(owner, repo, issue_number, labels)`           | `None`                       | Add labels          |
+| `add_issue_comment(owner, repo, issue_number, body)`      | `None`                       | Add comment         |
+| `close_issue(owner, repo, number)`                        | `None`                       | Close issue         |
 
 ### Workflows
 
