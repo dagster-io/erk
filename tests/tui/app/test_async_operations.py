@@ -493,7 +493,7 @@ class TestLandPrAsync:
                 "--pr-number=123",
                 "--branch=test-branch",
                 "-f",
-                "--pr-number=42",
+                "--linked-pr-number=42",
             ]
 
     @pytest.mark.asyncio
