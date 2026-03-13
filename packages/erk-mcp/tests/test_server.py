@@ -359,4 +359,4 @@ class TestRootProtectedResourceMetadata:
         tools = asyncio.run(server.list_tools())
         tool_names = {t.name for t in tools}
 
-        assert tool_names == {"pr_list", "pr_view", "one_shot"}
+        assert tool_names == {"pr_list", "pr_view", "one_shot", "repo_check"}
