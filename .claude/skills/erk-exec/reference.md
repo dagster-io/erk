@@ -61,6 +61,7 @@ Quick reference for all `erk exec` subcommands.
 | `get-review-activity-log`         | Fetch the activity log from an existing review summary comment.                   |
 | `handle-no-changes`               | Handle no-changes scenario gracefully.                                            |
 | `impl-init`                       | Initialize implementation by validating .erk/impl-context/ folder.                |
+| `impl-reset`                      | Reset a plan branch to pre-implementation state for retry.                        |
 | `impl-signal`                     | Signal implementation events to GitHub.                                           |
 | `impl-verify`                     | Verify .erk/impl-context/ folder still exists after implementation.               |
 | `incremental-dispatch`            | Dispatch a local plan against an existing PR for remote implementation.           |
@@ -678,6 +679,18 @@ Initialize implementation by validating .erk/impl-context/ folder.
 | Flag     | Type | Required | Default | Description           |
 | -------- | ---- | -------- | ------- | --------------------- |
 | `--json` | FLAG | No       | -       | Output JSON (default) |
+
+### impl-reset
+
+Reset a plan branch to pre-implementation state for retry.
+
+**Usage:** `erk exec impl-reset`
+
+**Options:**
+
+| Flag            | Type    | Required | Default | Description                                                         |
+| --------------- | ------- | -------- | ------- | ------------------------------------------------------------------- |
+| `--plan-number` | INTEGER | No       | -       | Plan number to reset. Auto-detected from current branch if omitted. |
 
 ### impl-signal
 
