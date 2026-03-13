@@ -382,6 +382,47 @@ Review B.
             assert "filename" in entry
 
 
+def test_discover_reviews_local_subdirectory(tmp_path: Path) -> None:
+    """Test that reviews in local/ subdirectory are discovered with relative filename."""
+    fake_github = FakeLocalGitHub(
+        pr_changed_files={123: ["src/main.py"]},
+    )
+
+    runner = CliRunner()
+    with runner.isolated_filesystem(temp_dir=tmp_path):
+        cwd = Path.cwd()
+        reviews_dir = cwd / ".erk" / "reviews"
+        local_dir = reviews_dir / "local"
+        local_dir.mkdir(parents=True)
+
+        (local_dir / "my-review.md").write_text(
+            """---
+name: My Local Review
+paths:
+  - "**/*.py"
+marker: <!-- local-review -->
+---
+Local review body.
+""",
+            encoding="utf-8",
+        )
+
+        result = runner.invoke(
+            discover_reviews,
+            ["--pr-number", "123"],
+            obj=ErkContext.for_test(github=fake_github, cwd=cwd),
+        )
+
+        assert result.exit_code == 0, result.output
+        output = json.loads(result.output)
+        assert output["success"] is True
+        assert len(output["reviews"]) == 1
+        assert output["reviews"][0]["name"] == "My Local Review"
+        assert output["reviews"][0]["filename"] == "local/my-review.md"
+        # Matrix entry should also use relative filename
+        assert output["matrix"]["include"][0]["filename"] == "local/my-review.md"
+
+
 def test_discover_reviews_no_reviews_directory(tmp_path: Path) -> None:
     """Test behavior when reviews directory doesn't exist."""
     # Don't create any reviews directory

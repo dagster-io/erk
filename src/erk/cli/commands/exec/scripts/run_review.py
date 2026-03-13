@@ -146,7 +146,7 @@ def run_review(
     review_file = reviews_path / f"{review_name}.md"
 
     # Parse and validate the review file
-    result = parse_review_file(review_file)
+    result = parse_review_file(review_file, reviews_dir=reviews_path)
 
     if not result.is_valid:
         error = RunReviewError(

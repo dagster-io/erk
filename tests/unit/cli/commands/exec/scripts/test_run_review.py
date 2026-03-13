@@ -328,6 +328,41 @@ class TestRunReviewLocalMode:
         assert "git merge-base develop HEAD" in result.output
 
 
+class TestRunReviewLocalNamespace:
+    """Tests for --name with local/ prefix."""
+
+    def test_local_review_resolves_to_local_subdir(self, tmp_path: Path) -> None:
+        """--name local/my-review resolves to .erk/reviews/local/my-review.md."""
+        reviews_dir = tmp_path / ".erk" / "reviews"
+        local_dir = reviews_dir / "local"
+        local_dir.mkdir(parents=True)
+
+        (local_dir / "my-review.md").write_text(
+            """\
+---
+name: My Local Review
+paths:
+  - "**/*.py"
+marker: "<!-- local-review -->"
+---
+
+Local review body.
+""",
+            encoding="utf-8",
+        )
+
+        runner = CliRunner()
+        result = runner.invoke(
+            run_review,
+            ["--name", "local/my-review", "--pr-number", "123", "--dry-run"],
+            obj=ErkContext.for_test(cwd=tmp_path),
+        )
+
+        assert result.exit_code == 0
+        assert "My Local Review: Review code changes." in result.output
+        assert "Local review body." in result.output
+
+
 class TestRunReviewFlagValidation:
     """Tests for flag validation."""
 

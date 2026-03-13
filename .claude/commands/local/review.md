@@ -21,7 +21,7 @@ If no changed files, report "No changes found relative to trunk" and stop.
 
 **Read review definitions:**
 
-Read the frontmatter (first `---` block) of each `.erk/reviews/*.md` file. Extract:
+Read the frontmatter (first `---` block) of each `.erk/reviews/*.md` and `.erk/reviews/local/*.md` file. Extract:
 
 - `name`: Review name
 - `paths`: List of glob patterns (gitignore-style, e.g., `**/*.py`, `src/**/*.py`)
