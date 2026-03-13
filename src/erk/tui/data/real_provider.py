@@ -34,6 +34,8 @@ from erk_shared.gateway.github.metadata.roadmap import (
 )
 from erk_shared.gateway.github.metadata.schemas import (
     CI_SUMMARY_COMMENT_ID,
+    CREATED_FROM_WORKFLOW_RUN_ID,
+    CREATED_FROM_WORKFLOW_RUN_URL,
     LAST_LOCAL_IMPL_AT,
     LAST_REMOTE_IMPL_AT,
     LEARN_PLAN_ISSUE,
@@ -663,6 +665,13 @@ class RealPrDataProvider(PrDataProvider):
                     )
             run_id_display = format_workflow_run_id(workflow_run, run_url)
             run_state_display = format_workflow_outcome(workflow_run)
+        else:
+            # Use structured metadata fields for planning-stage PRs
+            created_run_id = header_str(plan.header_fields, CREATED_FROM_WORKFLOW_RUN_ID)
+            if created_run_id is not None:
+                run_id = created_run_id
+                run_url = header_str(plan.header_fields, CREATED_FROM_WORKFLOW_RUN_URL)
+                run_id_display = created_run_id
 
         log_entries: tuple[tuple[str, str, str], ...] = ()
 

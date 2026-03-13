@@ -70,10 +70,10 @@ erk exec marker create --session-id "${CLAUDE_SESSION_ID}" --associated-objectiv
 Then run the save command:
 
 ```bash
-erk exec plan-save --plan-file .erk/impl-context/plan.md --format json --session-id="${CLAUDE_SESSION_ID}" --created-from-workflow-run-url "$WORKFLOW_RUN_URL"
+erk exec plan-save --plan-file .erk/impl-context/plan.md --format json --session-id="${CLAUDE_SESSION_ID}" --created-from-workflow-run-url "$WORKFLOW_RUN_URL" --created-from-workflow-run-id "$WORKFLOW_RUN_ID"
 ```
 
-If the `WORKFLOW_RUN_URL` environment variable is not set, omit the `--created-from-workflow-run-url` flag.
+If the `WORKFLOW_RUN_URL` environment variable is not set, omit the `--created-from-workflow-run-url` and `--created-from-workflow-run-id` flags.
 
 Parse the JSON output. If `success` is not `true`, stop and report the error. Otherwise, extract `pr_number` and `title` from the output.
 

@@ -50,6 +50,7 @@ def _make_plan_header_body() -> str:
         objective_issue=None,
         created_from_session=None,
         created_from_workflow_run_url=None,
+        created_from_workflow_run_id=None,
         last_learn_session=None,
         last_learn_at=None,
         learn_status=None,

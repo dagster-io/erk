@@ -158,6 +158,7 @@ def dispatch_consolidate_learn_plans(
             objective_issue=None,
             created_from_session=None,
             created_from_workflow_run_url=None,
+            created_from_workflow_run_id=None,
             last_learn_session=None,
             last_learn_at=None,
             learn_status=None,

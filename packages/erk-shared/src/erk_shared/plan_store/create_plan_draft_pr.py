@@ -63,6 +63,7 @@ def create_plan_draft_pr(
     objective_id: int | None,
     created_from_session: str | None,
     created_from_workflow_run_url: str | None,
+    created_from_workflow_run_id: str | None,
     learned_from_issue: int | None,
     summary: str,
     extra_files: dict[str, str] | None,
@@ -96,6 +97,7 @@ def create_plan_draft_pr(
         objective_id: Optional parent objective issue number
         created_from_session: Optional session ID
         created_from_workflow_run_url: Optional workflow run URL
+        created_from_workflow_run_id: Optional workflow run ID
         learned_from_issue: Optional parent plan issue number (for learn plans)
         summary: AI-generated summary (empty string if none)
         extra_files: Optional additional files to commit alongside plan.md and ref.json
@@ -164,6 +166,9 @@ def create_plan_draft_pr(
 
     if created_from_workflow_run_url is not None:
         metadata["created_from_workflow_run_url"] = created_from_workflow_run_url
+
+    if created_from_workflow_run_id is not None:
+        metadata["created_from_workflow_run_id"] = created_from_workflow_run_id
 
     # Step 7: Prefix title with label tag
     title_tag = get_title_tag_from_labels(labels)

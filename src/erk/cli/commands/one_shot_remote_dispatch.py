@@ -354,6 +354,7 @@ def dispatch_one_shot_remote(
             objective_issue=objective_id,
             created_from_session=None,
             created_from_workflow_run_url=None,
+            created_from_workflow_run_id=None,
             last_learn_session=None,
             last_learn_at=None,
             learn_status=None,
