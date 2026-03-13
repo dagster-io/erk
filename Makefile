@@ -1,4 +1,4 @@
-.PHONY: format-check lint prettier prettier-check ty upgrade-ty test py-fast-ci fast-ci all-ci md-check docs-check docs-validate docs-sync-check docs-fix clean publish fix reinstall-erk-tools docs docs-serve docs-deploy exec-reference-check mcp mcp-dev test-erk-mcp docs-site-build docs-site-serve pre-push-check install-hooks
+.PHONY: format-check lint prettier prettier-check ty upgrade-ty test py-fast-ci fast-ci all-ci md-check docs-check docs-validate docs-sync-check docs-fix clean publish fix reinstall-erk-tools docs docs-serve exec-reference-check mcp mcp-dev test-erk-mcp pre-push-check install-hooks
 
 prettier:
 	prettier --write '**/*.md' --ignore-path .gitignore
@@ -157,13 +157,10 @@ publish: build
 # === Documentation ===
 
 docs:
-	uv run mkdocs build
+	cd docs-site && npm install && npm run build
 
 docs-serve:
-	uv run mkdocs serve
-
-docs-deploy:
-	uv run mkdocs gh-deploy --force
+	cd docs-site && npm install && npm run dev
 
 pull_master:
 	git -C /Users/schrockn/code/erk pull origin master
@@ -179,14 +176,6 @@ mcp-dev:
 clear_impl_context:
 	rm -rf .impl
 	rm -rf .erk/impl-context
-
-# === Documentation Site (Astro/Starlight) ===
-
-docs-site-build:
-	cd docs-site && npm install && npm run build
-
-docs-site-serve:
-	cd docs-site && npm install && npm run dev
 
 # === Git Hooks ===
 

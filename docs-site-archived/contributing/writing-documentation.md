@@ -115,7 +115,7 @@ Use these questions to categorize new content:
 
 Each category directory contains:
 
-- `index.md` - Section overview for navigation (MkDocs)
+- `index.md` - Section overview for navigation (archived; project now uses Astro/Starlight via `docs-site/`)
 - `README.md` - Section overview for GitHub viewing
 - Individual topic files
 

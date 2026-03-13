@@ -41,18 +41,17 @@ The built-in `GITHUB_TOKEN` has two limitations that require using a PAT:
 
 ## Workflow Overview
 
-| Workflow             | Trigger                | Purpose                                                     |
-| -------------------- | ---------------------- | ----------------------------------------------------------- |
-| `ci.yml`             | push, PR, manual       | Repo-local formatting, validation, and CI failure summaries |
-| `code-reviews.yml`   | PR                     | Convention-based shipped review capability entrypoint       |
-| `docs.yml`           | push to master, manual | Build and deploy MkDocs documentation                       |
-| `docs-site.yml`      | manual                 | Build and deploy the docs-site                              |
-| `learn.yml`          | issue labeled, manual  | Create a branch and dispatch learning work                  |
-| `one-shot.yml`       | manual                 | Plan and implement a task in one remote workflow            |
-| `plan-implement.yml` | manual                 | Execute Claude Code to implement a saved plan               |
-| `pr-address.yml`     | manual                 | Address PR feedback with Claude                             |
-| `pr-rebase.yml`      | manual                 | Rebase a PR with AI-assisted conflict handling              |
-| `pr-rewrite.yml`     | manual                 | Rewrite a PR branch with Claude                             |
+| Workflow             | Trigger               | Purpose                                                     |
+| -------------------- | --------------------- | ----------------------------------------------------------- |
+| `ci.yml`             | push, PR, manual      | Repo-local formatting, validation, and CI failure summaries |
+| `code-reviews.yml`   | PR                    | Convention-based shipped review capability entrypoint       |
+| `docs-site.yml`      | manual                | Build and deploy the docs-site                              |
+| `learn.yml`          | issue labeled, manual | Create a branch and dispatch learning work                  |
+| `one-shot.yml`       | manual                | Plan and implement a task in one remote workflow            |
+| `plan-implement.yml` | manual                | Execute Claude Code to implement a saved plan               |
+| `pr-address.yml`     | manual                | Address PR feedback with Claude                             |
+| `pr-rebase.yml`      | manual                | Rebase a PR with AI-assisted conflict handling              |
+| `pr-rewrite.yml`     | manual                | Rewrite a PR branch with Claude                             |
 
 ## Repository Settings
 
