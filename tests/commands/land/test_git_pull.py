@@ -325,7 +325,7 @@ def test_land_with_up_does_not_call_git_pull() -> None:
         script_path = Path(result.stdout.strip())
         script_content = env.script_writer.get_script_content(script_path)
         assert script_content is not None
-        assert 'TARGET_DIR=$(' in script_content
+        assert "TARGET_DIR=$(" in script_content
         assert 'cd "$TARGET_DIR"' in script_content
 
         # Activation script should not include git pull either

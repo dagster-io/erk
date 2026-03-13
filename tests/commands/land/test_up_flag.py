@@ -117,7 +117,7 @@ def test_land_with_up_navigates_to_child_branch() -> None:
         assert "--target-child" not in script_content
         assert '"$@"' in script_content
         # Script uses deferred path resolution via TARGET_DIR
-        assert 'TARGET_DIR=$(' in script_content
+        assert "TARGET_DIR=$(" in script_content
         assert 'cd "$TARGET_DIR"' in script_content
 
 
@@ -422,5 +422,5 @@ def test_land_with_up_uses_main_repo_root_after_worktree_deletion() -> None:
         assert "--target-child" not in script_content
         assert '"$@"' in script_content
         # Script uses deferred path resolution via TARGET_DIR
-        assert 'TARGET_DIR=$(' in script_content
+        assert "TARGET_DIR=$(" in script_content
         assert 'cd "$TARGET_DIR"' in script_content
