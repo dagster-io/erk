@@ -272,7 +272,7 @@ class RealGitBranchOps(GitBranchOps):
 
         # Get ahead/behind counts
         result = run_subprocess_with_context(
-            cmd=["git", "rev-list", "--left-right", "--count", f"{upstream}...HEAD"],
+            cmd=["git", "rev-list", "--left-right", "--count", f"{upstream}...{branch}"],
             operation_context=f"get ahead/behind counts for branch '{branch}'",
             cwd=cwd,
         )

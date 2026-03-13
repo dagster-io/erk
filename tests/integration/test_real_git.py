@@ -9,6 +9,7 @@ from pathlib import Path
 
 import pytest
 
+from erk_shared.gateway.git.branch_ops.real import RealGitBranchOps
 from erk_shared.gateway.git.real import RealGit
 from tests.integration.conftest import (
     GitSetup,
@@ -1434,6 +1435,61 @@ def test_get_remote_ref_returns_none_for_nonexistent_ref(tmp_path: Path) -> None
 
     # Assert
     assert sha is None
+
+
+def test_get_ahead_behind_uses_branch_not_head(tmp_path: Path) -> None:
+    """Test get_ahead_behind compares the named branch, not HEAD.
+
+    Regression test: when HEAD points to a different branch (e.g. main),
+    get_ahead_behind("feature") must compare feature vs origin/feature,
+    not main vs origin/feature.
+    """
+    remote_repo = tmp_path / "remote"
+    remote_repo.mkdir()
+    local_repo = tmp_path / "local"
+
+    init_git_repo(remote_repo, "main")
+
+    # Create feature branch on remote with one commit
+    subprocess.run(["git", "checkout", "-b", "feature"], cwd=remote_repo, check=True)
+    (remote_repo / "feature.txt").write_text("feature content\n", encoding="utf-8")
+    subprocess.run(["git", "add", "feature.txt"], cwd=remote_repo, check=True)
+    subprocess.run(["git", "commit", "-m", "Feature commit"], cwd=remote_repo, check=True)
+
+    # Clone and set up tracking
+    subprocess.run(
+        ["git", "clone", str(remote_repo), str(local_repo)],
+        check=True,
+        capture_output=True,
+    )
+    subprocess.run(["git", "config", "user.email", "test@test.com"], cwd=local_repo, check=True)
+    subprocess.run(["git", "config", "user.name", "Test User"], cwd=local_repo, check=True)
+
+    # Check out feature locally so it tracks origin/feature
+    subprocess.run(["git", "checkout", "feature"], cwd=local_repo, check=True)
+
+    # Add 2 more commits to the remote feature branch (simulating CI push)
+    (remote_repo / "ci1.txt").write_text("ci 1\n", encoding="utf-8")
+    subprocess.run(["git", "add", "ci1.txt"], cwd=remote_repo, check=True)
+    subprocess.run(["git", "commit", "-m", "CI commit 1"], cwd=remote_repo, check=True)
+    (remote_repo / "ci2.txt").write_text("ci 2\n", encoding="utf-8")
+    subprocess.run(["git", "add", "ci2.txt"], cwd=remote_repo, check=True)
+    subprocess.run(["git", "commit", "-m", "CI commit 2"], cwd=remote_repo, check=True)
+
+    # Fetch so origin/feature is updated
+    subprocess.run(["git", "fetch", "origin"], cwd=local_repo, check=True)
+
+    # Switch back to main — HEAD now points at main, NOT feature
+    subprocess.run(["git", "checkout", "main"], cwd=local_repo, check=True)
+
+    branch_ops = RealGitBranchOps()
+
+    # Act: ask about "feature" while HEAD is on "main"
+    ahead, behind = branch_ops.get_ahead_behind(local_repo, "feature")
+
+    # Assert: feature is 0 ahead, 2 behind origin/feature
+    assert ahead == 0
+    assert behind == 2
 
 
 def test_get_remote_ref_returns_none_for_invalid_remote(tmp_path: Path) -> None:
