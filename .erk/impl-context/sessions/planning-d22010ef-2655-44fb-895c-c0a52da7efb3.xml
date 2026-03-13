@@ -1,0 +1,1459 @@
+<session>
+  <meta branch="master" />
+  <meta model="claude-opus-4-6" />
+  <user>I want to build up @docs-v2/ . I want to start it from scratch
+
+The first section i want to write is about the code reviews subsystem of erk
+
+* Introduction: how we appraoch reviews. Namely fast reviews in CI using cheap models that flag issues, followed by intervention and resolution using more powerful models, steered by a human
+* the pr-address workflow
+* how to add a review</user>
+  <usage input_tokens="3" cache_creation_input_tokens="10834" cache_read_input_tokens="14844" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 10834}" output_tokens="12" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me explore the codebase to understand the review system thoroughly.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="10834" cache_read_input_tokens="14844" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 10834}" output_tokens="12" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01Y8EsKTko82bDBMZB7wW5Nf">
+    <param name="description">Explore review system architecture</param>
+    <param name="subagent_type">Explore</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 746 chars]...for review-related commands/skills
+
+Be very thorough - read full files, not just snippets.</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="10834" cache_read_input_tokens="14844" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 10834}" output_tokens="12" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01CpaqRU2EELUdtkqzvwYAab">
+    <param name="description">Explore pr-address workflow</param>
+    <param name="subagent_type">Explore</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 633 chars]...d code
+- docs/learned/pr-operations/
+
+Read full files to understand the complete workflow.</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="10834" cache_read_input_tokens="14844" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 10834}" output_tokens="12" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_017g8Y1W5At2GJhmG7oK3irX">
+    <param name="description">Explore how to add a review</param>
+    <param name="subagent_type">Explore</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 725 chars]...les of existing reviews and read them fully to understand the pattern for adding new ones.</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="10834" cache_read_input_tokens="14844" output_tokens="985" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 10834, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01CpaqRU2EELUdtkqzvwYAab">
+Now I have comprehensive understanding of the pr-address workflow. Let me compile the full report:
+
+## PR-Address Workflow Overview
+
+I've thoroughly explored the erk pr-address workflow. Here's a comprehensive analysis of how review feedback is addressed/resolved:
+
+### Architecture Summary
+
+The pr-address workflow is a two-path system that fetches PR review comments, classifies them, and resolves them with Claude's assistance:
+
+1. **Local path** (`/erk:pr-address` slash command)
+2. **Remote path** (`erk launch pr-address` → GitHub Actions workflow)
+
+---
+
+### Key Components
+
+#### 1. **Feedback Fetching &amp; Classification**
+
+**Fetch Layer** (`get_pr_feedback.py`):
+- Single PR lookup followed by parallel fetches of review threads and discussion comments
+- Returns JSON with `pr_number`, `pr_title`, `review_threads`, `discussion_comments`
+- Uses GraphQL for review threads, REST API for discussion comments
+- Filters threads with invalid IDs
+
+**Classifier** (`pr-feedback-classifier` skill, `.claude/skills/pr-feedback-classifier/SKILL.md`):
+- Runs as separate subagent with deterministic JSON output
+- Classification categories:
+  - **Actionable**: Code changes requested, violations to fix, bot suggestions
+  - **Informational**: CI status, acknowledgments, optional suggestions
+
+... [159 lines omitted] ...
+
+- Output: `ResolveThreadSuccess` or `ResolveThreadError`
+- Common error: "Item at index 0 is not an object" when using flat string array instead of object array
+- Failure: Error message with workflow link
+  </tool_result>
+  <tool_result tool="toolu_017g8Y1W5At2GJhmG7oK3irX">
+Excellent! Now I have a comprehensive understanding of erk's review system. Let me compile the findings into a clear, organized report.
+
+## Summary: Erk's Code Review System
+
+I've thoroughly explored erk's review system. Here's a comprehensive guide to understanding and adding new code reviews:
+
+### Architecture Overview
+
+Erk uses a **convention-based review system** where all reviews are discovered, executed, and managed by a single GitHub Actions workflow (`.github/workflows/code-reviews.yml`). You don't create separate workflow files — instead, you write markdown files with YAML frontmatter in `.erk/reviews/`.
+
+**Key flow:**
+1. PR is opened/updated
+2. Discovery job (`discover-reviews`) scans changed files against review path patterns
+3. Matching reviews are executed in parallel matrix jobs
+4. Each review posts inline comments and summary comments to the PR
+
+### The Five-Place Pattern for Adding a Review
+
+Creating a new review touches up to **five places** (but only the first three are mandatory):
+
+| Place | What Goes Here | Mandatory? |
+|-------|---|---|
+| `.erk/reviews/&lt;name&gt;.md` | Review definition with frontmatter + numbered steps | ✅ YES |
+| Review spec frontmatter | `paths`, `marker`, `model`, `allowed_tools`, `enabled` | ✅ YES |
+| Review spec body | Numbered steps (Step 1, Step 2, etc.) that Claude executes | ✅ YES |
+| `docs/learned/reviews/&lt;name&gt;.md` | Cross-cutting insights about this review's behavior | ❌ Only if complex |
+| `docs/learned/reviews/index.md` | Auto-generated via `erk docs sync` | ❌ Auto-handled |
+
+**Full reference:** `/Users/schrockn/code/erk/docs/learned/reviews/development.md`
+
+
+... [230 lines omitted] ...
+
+- Failure isolation (if Step 2 fails, Steps 3+ don't execute with partial data)
+5. Returns matching reviews + skipped reviews + disabled reviews + validation errors
+  </tool_result>
+  <tool_result tool="toolu_01Y8EsKTko82bDBMZB7wW5Nf">
+Excellent! Now I have a comprehensive understanding. Let me create a detailed summary document of my findings.
+
+## Summary: Erk Code Review Subsystem
+
+Based on my thorough exploration of erk's codebase, documentation, and architecture, here's a comprehensive analysis of the review system:
+
+### 1. REVIEW SYSTEM ARCHITECTURE
+
+**Core Design Principle**: Convention-based, declarative reviews - defined as markdown files in `.erk/reviews/`, automatically discovered and executed via GitHub Actions.
+
+**Key Components**:
+- **Review Definitions** (`.erk/reviews/*.md`) - YAML frontmatter + markdown body with numbered steps
+- **Discovery** (`erk exec discover-reviews`) - Finds reviews matching changed files via glob patterns
+- **Execution** (`erk exec run-review`) - Assembles prompt with boilerplate and invokes Claude
+- **Orchestration** (`.github/workflows/code-reviews.yml`) - Two-job workflow: discover → matrix parallel execution
+
+**Five Existing Reviews**:
+1. **test-coverage.md** - Verifies source additions have corresponding tests (Haiku)
+2. **dignified-python.md** - Enforces Python coding standards (Haiku)
+3. **tripwires.md** - Flags tripwire rule violations (Sonnet 4-5)
+4. **audit-pr-docs.md** - Detects stale code, duplication, inaccuracy in docs (Sonnet 4-6)
+5. **dignified-code-simplifier.md** - Suggests code simplifications (Haiku)
+
+---
+
+### 2. THE TWO-MODEL PATTERN: "Cheap Model Flags, Powerful Model Resolves"
+
+This is an **implicit architectural pattern** observed in the model choices, NOT explicitly documented with that phrase. The pattern is:
+
+**Cost-Optimized Model (Haiku) for Mechanical Flagging**:
+
+... [356 lines omitted] ...
+
+- `ci-failure-summarization.md` - Distilling error logs into bullet points (Haiku)
+- Missing output indicates dedup failure (forced output makes failures visible)
+   - Returns: comment_id or error
+- Checks: LBYL, exceptions, paths, imports, DI, frozen dataclasses, keyword-only args
+- Exception handling: ABC methods, Click callbacks, test files, etc.
+- Check exceptions before flagging (critical step)
+  - ci-failure-summarization (log distillation)
+  - tripwires (190+ rules, semantic judgment, exception checking)
+- Sonnet: Better for ambiguous edge cases, exception detection, multi-step reasoning
+- `docs/learned/ci/` - Convention-based reviews, taxonomy, failure summarization
+3. **Lazy-Loading Exceptions**: Tripwires review loads docs only for matched rules; exceptions are full-doc audits, not code-enforced
+  </tool_result>
+  <usage input_tokens="5961" cache_creation_input_tokens="5317" cache_read_input_tokens="25678" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5317}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>Great, I have thorough exploration results. Let me now look at the docs-v2 setup and style guide to understand the target format.</assistant>
+  <usage input_tokens="5961" cache_creation_input_tokens="5317" cache_read_input_tokens="25678" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5317}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Piw1anJk8vT3Ad2j2pZtiF">
+    <param name="file_path">/Users/schrockn/code/erk/docs-v2/STYLE-GUIDE.md</param>
+  </tool_use>
+  <usage input_tokens="5961" cache_creation_input_tokens="5317" cache_read_input_tokens="25678" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5317}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Piw1anJk8vT3Ad2j2pZtiF">
+     1→# Erk Documentation Style Guide
+     2→
+     3→Style conventions for writing erk documentation. Adapted from internal engineering docs standards.
+     4→
+     5→## Voice and tone
+     6→
+     7→- **Direct and concise.** Say what you mean in as few words as possible.
+     8→- **Second person.** Address the reader as "you."
+     9→- **Active voice.** "Erk creates a worktree" not "A worktree is created by erk."
+    10→- **Present tense.** "The command runs" not "The command will run."
+    11→- **Confident, not hedging.** "This works because" not "This should work because."
+    12→
+    13→## Banned words and phrases
+    14→
+    15→| Avoid                   | Use instead         |
+    16→| ----------------------- | ------------------- |
+    17→| simply, just, easy      | _(drop the word)_   |
+    18→| leverage                | use                 |
+    19→| utilize                 | use                 |
+    20→| in order to             | to                  |
+    21→| it should be noted that | _(drop the phrase)_ |
+    22→| please                  | _(drop the word)_   |
+    23→| basically               | _(drop the word)_   |
+    24→| obviously, clearly      | _(drop the word)_   |
+    25→
+    26→## Terminology
+    27→
+    28→Use these terms consistently:
+    29→
+    30→| Term          | Usage                                                                      |
+
+... [40 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01N42XvouumNt7P6DxYyN8sT">
+    <param name="file_path">/Users/schrockn/code/erk/docs-v2/astro.config.mjs</param>
+  </tool_use>
+  <usage input_tokens="5961" cache_creation_input_tokens="5317" cache_read_input_tokens="25678" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5317}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01N42XvouumNt7P6DxYyN8sT">
+     1→import { defineConfig } from "astro/config";
+     2→import starlight from "@astrojs/starlight";
+     3→import starlightThemeBlack from "starlight-theme-black";
+     4→
+     5→export default defineConfig({
+     6→  integrations: [
+     7→    starlight({
+     8→      plugins: [starlightThemeBlack({})],
+     9→      title: "Erk",
+    10→      description: "Plan-oriented agentic engineering",
+    11→      social: [
+    12→        {
+    13→          icon: "github",
+    14→          label: "GitHub",
+    15→          href: "https://github.com/dagster-io/erk",
+    16→        },
+    17→      ],
+    18→      sidebar: [
+    19→        {
+    20→          label: "Getting Started",
+    21→          autogenerate: { directory: "getting-started" },
+    22→        },
+    23→        {
+    24→          label: "Concepts",
+    25→          autogenerate: { directory: "concepts" },
+    26→        },
+    27→        {
+    28→          label: "Guides",
+    29→          autogenerate: { directory: "guides" },
+    30→        },
+
+... [9 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01B7oGTqPCsfaFdgPE6XmWaf">
+    <param name="file_path">/Users/schrockn/code/erk/docs-v2/package.json</param>
+  </tool_use>
+  <usage input_tokens="5961" cache_creation_input_tokens="5317" cache_read_input_tokens="25678" output_tokens="278" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 5317, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01B7oGTqPCsfaFdgPE6XmWaf">
+     1→{
+     2→  "name": "erk-docs",
+     3→  "type": "module",
+     4→  "version": "0.0.1",
+     5→  "scripts": {
+     6→    "dev": "astro dev",
+     7→    "start": "astro dev",
+     8→    "build": "astro build",
+     9→    "preview": "astro preview",
+    10→    "astro": "astro"
+    11→  },
+    12→  "dependencies": {
+    13→    "@astrojs/starlight": "^0.34.0",
+    14→    "astro": "^5.5.0",
+    15→    "sharp": "^0.33.0",
+    16→    "starlight-theme-black": "^0.6.0"
+    17→  }
+    18→}
+    19→
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="7990" cache_read_input_tokens="30995" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7990}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01XXFDhHXqkSsA72LMRxumWB">
+    <param name="command">find /Users/schrockn/code/erk/docs-v2/src -type f | head -50</param>
+    <param name="description">List all files in docs-v2 src directory</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="7990" cache_read_input_tokens="30995" output_tokens="157" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 7990, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01XXFDhHXqkSsA72LMRxumWB">
+/Users/schrockn/code/erk/docs-v2/src/content.config.ts
+/Users/schrockn/code/erk/docs-v2/src/content/docs/index.mdx
+/Users/schrockn/code/erk/docs-v2/src/content/docs/getting-started/01-introduction.md
+/Users/schrockn/code/erk/docs-v2/src/content/docs/guides/01-local-workflow.md
+/Users/schrockn/code/erk/docs-v2/src/content/docs/concepts/01-plan-oriented-engineering.md
+/Users/schrockn/code/erk/docs-v2/src/content/docs/reference/01-cli.md
+  </tool_result>
+  <tool_use name="Read" id="toolu_01WYSCrJ5LHdkaHUeP88QihS">
+    <param name="file_path">/Users/schrockn/code/erk/docs-v2/src/content/docs/index.mdx</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="358" cache_read_input_tokens="38985" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 358}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01WYSCrJ5LHdkaHUeP88QihS">
+     1→---
+     2→title: Erk
+     3→description: Plan-oriented agentic engineering
+     4→slug: ""
+     5→head:
+     6→  - tag: meta
+     7→    attrs:
+     8→      http-equiv: refresh
+     9→      content: "0;url=/getting-started/01-introduction/"
+    10→---
+    11→
+    12→Redirecting to [Getting Started](/getting-started/01-introduction/)...
+    13→
+  </tool_result>
+  <tool_use name="Read" id="toolu_018otjZSngztKubrpYo1wJwi">
+    <param name="file_path">/Users/schrockn/code/erk/docs-v2/src/content/docs/getting-started/01-introduction.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="358" cache_read_input_tokens="38985" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 358}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_018otjZSngztKubrpYo1wJwi">
+     1→---
+     2→title: Introduction
+     3→description: What erk is and why it exists
+     4→sidebar:
+     5→  order: 1
+     6→---
+     7→
+     8→Erk is a CLI tool for **plan-oriented agentic engineering**: a workflow where AI agents create implementation plans, execute them in isolated worktrees, and ship code through automated PR workflows.
+     9→
+    10→## The problem
+    11→
+    12→AI coding assistants produce better results when they have clear instructions. Without structure, agents wander through codebases, make inconsistent changes, and lose context. The feedback loop between "tell the AI what to do" and "get working code" is slow and unpredictable.
+    13→
+    14→## The approach
+    15→
+    16→Erk introduces a **plan** as the unit of work. Instead of asking an agent to "fix the login bug," you create a plan that describes the problem, the approach, the files involved, and the success criteria. The agent implements the plan in an isolated worktree and submits a PR.
+    17→
+    18→This approach gives you:
+    19→
+    20→- **Reproducibility** - Plans are documents. You can review, revise, and re-execute them.
+    21→- **Isolation** - Each plan runs in its own worktree. No conflicts with your working directory.
+    22→- **Parallelism** - Multiple agents can implement different plans simultaneously.
+    23→- **Traceability** - Every PR links back to its plan. You can see exactly what was requested and what was delivered.
+    24→
+    25→## Core workflow
+    26→
+    27→```
+    28→Plan  --&gt;  Worktree  --&gt;  Implement  --&gt;  CI  --&gt;  PR
+    29→```
+    30→
+
+... [12 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Ag4464qNhkSYUfne9Hbv4Q">
+    <param name="file_path">/Users/schrockn/code/erk/docs-v2/src/content/docs/concepts/01-plan-oriented-engineering.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="358" cache_read_input_tokens="38985" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 358}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Ag4464qNhkSYUfne9Hbv4Q">
+     1→---
+     2→title: Plan-oriented engineering
+     3→description: Why plans are the unit of work in erk
+     4→sidebar:
+     5→  order: 1
+     6→---
+     7→
+     8→Plan-oriented engineering is the core philosophy behind erk. Every code change begins with a **plan** — a structured document that describes what to build, why, and how.
+     9→
+    10→## Plans as documents
+    11→
+    12→A plan is a markdown document stored as a GitHub draft PR. It contains:
+    13→
+    14→- **Summary** of the change
+    15→- **Context** the implementing agent needs (API quirks, architectural constraints, pitfalls)
+    16→- **Implementation phases** broken into sequential steps
+    17→- **Success criteria** defining what "done" looks like
+    18→
+    19→Plans are not tickets or issues. They are **implementation instructions** written for an AI agent. The level of detail matters: a good plan includes the specific files to modify, the patterns to follow, and the edge cases to handle.
+    20→
+    21→## Why plans work
+    22→
+    23→Traditional development asks you to hold the entire implementation in your head. You write code, run into problems, adjust, and eventually ship. This works for small changes but breaks down when:
+    24→
+    25→- Multiple agents work on a codebase simultaneously
+    26→- Changes span many files and require coordination
+    27→- You want to delegate implementation while maintaining quality
+    28→
+    29→Plans solve this by **separating the thinking from the doing**. You invest time upfront to think through the approach, then hand off execution to an agent that follows the plan mechanically.
+    30→
+
+... [25 lines omitted] ...
+
+    37→- Failed implementations are discarded cleanly
+  </tool_result>
+  <tool_use name="Read" id="toolu_01H8iexYvLhePpbRsuaLbsYn">
+    <param name="file_path">/Users/schrockn/code/erk/docs-v2/src/content/docs/guides/01-local-workflow.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="358" cache_read_input_tokens="38985" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 358}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01H8iexYvLhePpbRsuaLbsYn">
+     1→---
+     2→title: Local workflow
+     3→description: Day-to-day usage of erk for plan-oriented development
+     4→sidebar:
+     5→  order: 1
+     6→---
+     7→
+     8→This guide walks through the typical erk workflow: creating plans, implementing them, and shipping PRs.
+     9→
+    10→## Prerequisites
+    11→
+    12→- Python 3.10+ with [uv](https://docs.astral.sh/uv/) installed
+    13→- Git with worktree support
+    14→- GitHub CLI (`gh`) authenticated
+    15→- Claude Code (for AI-assisted plan creation and implementation)
+    16→
+    17→## Creating a plan
+    18→
+    19→Start by entering plan mode in Claude Code. Describe what you want to build, and the agent will draft a structured plan with phases, context, and success criteria.
+    20→
+    21→```bash
+    22→# In Claude Code, use plan mode to draft a plan
+    23→# The agent creates a structured markdown document
+    24→```
+    25→
+    26→Once satisfied, save the plan to GitHub:
+    27→
+    28→```
+    29→/erk:plan-save
+    30→```
+
+... [60 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01MRpQboPchfsWhDhTQ6BA3T">
+    <param name="file_path">/Users/schrockn/code/erk/docs-v2/src/content/docs/reference/01-cli.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="358" cache_read_input_tokens="38985" output_tokens="352" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 358, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01MRpQboPchfsWhDhTQ6BA3T">
+     1→---
+     2→title: CLI reference
+     3→description: Complete reference for erk CLI commands
+     4→sidebar:
+     5→  order: 1
+     6→---
+     7→
+     8→Erk provides a CLI for managing plans, worktrees, and PR workflows.
+     9→
+    10→## Top-level commands
+    11→
+    12→### `erk pr list`
+    13→
+    14→List open plans and their status.
+    15→
+    16→```bash
+    17→erk pr list
+    18→```
+    19→
+    20→### `erk pr create`
+    21→
+    22→Create a new plan from a markdown file.
+    23→
+    24→```bash
+    25→erk pr create --file plan.md
+    26→```
+    27→
+    28→### `erk implement`
+    29→
+    30→Implement a plan in an isolated worktree.
+
+... [67 lines omitted] ...
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="3736" cache_read_input_tokens="39343" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3736}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now let me read a few key review files directly to ensure accuracy in the docs.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3736" cache_read_input_tokens="39343" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3736}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01BNPh75MR71HbNsnsuWhp7w">
+    <param name="file_path">/Users/schrockn/code/erk/.erk/reviews/test-coverage.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3736" cache_read_input_tokens="39343" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3736}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01BNPh75MR71HbNsnsuWhp7w">
+     1→---
+     2→name: Test Coverage Review
+     3→paths:
+     4→  - "src/**/*.py"
+     5→  - "packages/**/*.py"
+     6→  - "tests/**/*.py"
+     7→marker: "&lt;!-- test-coverage-review --&gt;"
+     8→model: claude-haiku-4-5
+     9→timeout_minutes: 30
+    10→allowed_tools: "Bash(gh:*),Bash(erk exec:*),Read(*)"
+    11→enabled: true
+    12→---
+    13→
+    14→## Step 1: Categorize PR Files
+    15→
+    16→Run `gh pr diff` and `gh pr view --json files` to get the full file list and diff.
+    17→
+    18→Categorize every Python file into these buckets:
+    19→
+    20→- **source_added**: New files in `src/` or `packages/` (not in `tests/`)
+    21→- **source_modified**: Modified files in `src/` or `packages/` (not in `tests/`)
+    22→- **source_deleted**: Deleted files in `src/` or `packages/` (not in `tests/`)
+    23→- **tests_added**: New files in `tests/`
+    24→- **tests_modified**: Modified files in `tests/`
+    25→- **tests_deleted**: Deleted files in `tests/`
+    26→
+    27→**Exclude from analysis** (do not count or flag these):
+    28→
+    29→- `__init__.py` files
+    30→- `conftest.py` files
+
+... [122 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01A22ANVcxbguN6fRAk93eXa">
+    <param name="file_path">/Users/schrockn/code/erk/.erk/reviews/dignified-python.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3736" cache_read_input_tokens="39343" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3736}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01A22ANVcxbguN6fRAk93eXa">
+     1→---
+     2→name: Dignified Python Review
+     3→paths:
+     4→  - "**/*.py"
+     5→marker: "&lt;!-- dignified-python-review --&gt;"
+     6→model: claude-haiku-4-5
+     7→timeout_minutes: 30
+     8→allowed_tools: "Bash(gh:*),Bash(erk exec:*),Read(*)"
+     9→enabled: true
+    10→---
+    11→
+    12→## Step 1: Load the Dignified Python Standards
+    13→
+    14→Read these skill files from the repository:
+    15→
+    16→1. .claude/skills/dignified-python/SKILL.md (routing and version detection)
+    17→2. .claude/skills/dignified-python/dignified-python-core.md (LBYL, exceptions, paths, imports, DI, performance)
+    18→3. .claude/skills/dignified-python/cli-patterns.md (Click best practices)
+    19→4. .claude/skills/dignified-python/subprocess.md (subprocess handling)
+    20→
+    21→## Step 2: Identify Changed Lines
+    22→
+    23→For each Python file, determine which lines were actually modified (not just context):
+    24→
+    25→- Lines starting with `+` in the diff are additions/modifications
+    26→- Lines starting with ` ` (space) are unchanged context
+    27→
+    28→For the `__all__` / re-export rule specifically:
+    29→
+    30→- If `__all__` appears on a `+` line → Flag as violation (actively being modified)
+
+... [91 lines omitted] ...
+
+    40→- Exception handling (no silent swallowing, log at boundaries)
+    80→**CRITICAL: Check for exceptions before flagging violations.**
+    82→Many rules have explicit exceptions documented in the skill files you loaded in Step 1. Before flagging a violation, verify that NO exception applies. Common exceptions include:
+    85→- **LBYL rule**: Exceptions allowed at error boundaries, for third-party API compatibility, or when adding context before re-raising. `assert` is always acceptable in test files (`test_*.py`, `*_test.py`, `conftest.py`). In production code, `assert` is acceptable as long as the asserted expression has no side effects (type narrowing, invariants, preconditions are all fine)
+    90→If the code matches a documented exception, it is NOT a violation. Do not flag it.
+   118→- "False positive dismissed: CLI error boundary pattern"
+  </tool_result>
+  <tool_use name="Read" id="toolu_01A6JUk7m1RgrgknS4DRFf2L">
+    <param name="file_path">/Users/schrockn/code/erk/.erk/reviews/tripwires.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3736" cache_read_input_tokens="39343" output_tokens="313" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3736, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01A6JUk7m1RgrgknS4DRFf2L">
+     1→---
+     2→name: Tripwires Review
+     3→paths:
+     4→  - "**/*.py"
+     5→  - "**/*.sh"
+     6→  - ".claude/**/*.md"
+     7→marker: "&lt;!-- tripwires-review --&gt;"
+     8→model: claude-sonnet-4-5
+     9→timeout_minutes: 30
+    10→allowed_tools: "Bash(gh:*),Bash(erk exec:*),Bash(TZ=*),Bash(grep:*),Read(*)"
+    11→enabled: true
+    12→---
+    13→
+    14→## Step 1: Load Tripwire Index
+    15→
+    16→Tripwires are organized by category. Universal tripwires are in `AGENTS.md`. Category-specific tripwires are in `docs/learned/&lt;category&gt;/tripwires.md` (e.g., `docs/learned/architecture/tripwires.md`, `docs/learned/cli/tripwires.md`).
+    17→
+    18→For comprehensive coverage, read these category tripwire files based on the diff:
+    19→
+    20→- Changes in `src/erk/gateway/` or `packages/erk-shared/src/*/gateway/` → Read `docs/learned/architecture/tripwires.md`
+    21→- Changes in `src/erk/cli/` → Read `docs/learned/cli/tripwires.md`
+    22→- Changes in `tests/` → Read `docs/learned/testing/tripwires.md`
+    23→- Changes in `.github/` → Read `docs/learned/ci/tripwires.md`
+    24→- Changes in `src/erk/tui/` → Read `docs/learned/tui/tripwires.md`
+    25→- Planning-related changes → Read `docs/learned/planning/tripwires.md`
+    26→
+    27→Tripwires come in two formats:
+    28→
+    29→**With explicit pattern** (Tier 1 — mechanical matching):
+    30→
+
+... [113 lines omitted] ...
+
+    81→2. Extract ALL rules AND EXCEPTIONS from that doc
+    82→3. Check if any exceptions apply to the code being reviewed
+    83→4. Only flag as a violation if NO exception applies
+    85→**CRITICAL: Read the full doc to understand exceptions.**
+    87→Many rules have explicit exceptions. For example, the "5+ parameters" rule has exceptions for:
+    92→If the code matches an exception, it is NOT a violation. Do not flag it.
+    94→**You MUST load and read the linked documentation before deciding if something is a violation.** The tripwire summary in tripwires.md is abbreviated - the full exceptions are only in the linked docs.
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="5818" cache_read_input_tokens="43079" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5818}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now let me read the prompt assembly and CI workflow for accuracy.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="5818" cache_read_input_tokens="43079" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5818}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01BcnzL2jjxdpx7ukNMBKJKJ">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/review/prompt_assembly.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5818" cache_read_input_tokens="43079" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5818}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01BcnzL2jjxdpx7ukNMBKJKJ">
+     1→"""Prompt assembly for code reviews.
+     2→
+     3→This module injects standard boilerplate around review-specific instructions
+     4→to create a complete prompt for Claude to execute.
+     5→
+     6→Supports two modes:
+     7→- PR mode: Reviews an existing pull request, posts comments to GitHub
+     8→- Local mode: Reviews uncommitted changes locally, outputs to stdout
+     9→"""
+    10→
+    11→from erk.review.models import ParsedReview
+    12→
+    13→# Boilerplate template for PR reviews (posts comments to GitHub)
+    14→REVIEW_PROMPT_TEMPLATE = """\
+    15→REPO: {repository}
+    16→PR NUMBER: {pr_number}
+    17→
+    18→## Task
+    19→
+    20→{review_name}: Review code changes.
+    21→
+    22→## Step 1: Review-Specific Instructions
+    23→
+    24→{review_body}
+    25→
+    26→## Step 2: Get Existing Activity Log
+    27→
+    28→Fetch the existing activity log to preserve prior entries:
+    29→
+    30→```
+
+... [285 lines omitted] ...
+
+    85→If you skip this output, dedup has failed. Every violation MUST appear with
+   274→        ValueError: If both pr_number and base_branch are provided,
+   278→        raise ValueError("Cannot specify both pr_number and base_branch")
+   280→        raise ValueError("Must specify either pr_number or base_branch")
+  </tool_result>
+  <tool_use name="Read" id="toolu_018EqCEne7agV9pCQtdtxBNi">
+    <param name="file_path">/Users/schrockn/code/erk/.github/workflows/code-reviews.yml</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5818" cache_read_input_tokens="43079" output_tokens="182" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 5818, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_018EqCEne7agV9pCQtdtxBNi">
+     1→name: code-reviews
+     2→
+     3→on:
+     4→  pull_request:
+     5→    types: [opened, synchronize, reopened, ready_for_review]
+     6→
+     7→concurrency:
+     8→  group: code-reviews-${{ github.head_ref || github.ref }}
+     9→  cancel-in-progress: true
+    10→
+    11→jobs:
+    12→  discover:
+    13→    if: vars.CLAUDE_ENABLED != 'false' &amp;&amp; github.event.pull_request.draft != true
+    14→    runs-on: ubuntu-latest
+    15→    timeout-minutes: 5
+    16→    outputs:
+    17→      matrix: ${{ steps.discover.outputs.matrix }}
+    18→      has_reviews: ${{ steps.discover.outputs.has_reviews }}
+    19→    permissions:
+    20→      contents: read
+    21→      pull-requests: read
+    22→
+    23→    steps:
+    24→      - name: Check local review marker
+    25→        id: check-local-review
+    26→        env:
+    27→          GH_TOKEN: ${{ github.token }}
+    28→        run: |
+    29→          HEAD_SHA="${{ github.event.pull_request.head.sha }}"
+    30→          MARKER="&lt;!-- erk:local-review-passed:${HEAD_SHA} --&gt;"
+
+... [95 lines omitted] ...
+
+    66→            echo "Discovery failed"
+  </tool_result>
+  <assistant>Now let me also read the pr-address skill to understand that workflow precisely.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="5293" cache_read_input_tokens="48897" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5293}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01PkkU1c45UKVpAQhdDSk8FQ">
+    <param name="file_path">/Users/schrockn/code/erk/.claude/commands/erk/pr-address.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5293" cache_read_input_tokens="48897" output_tokens="94" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 5293, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01PkkU1c45UKVpAQhdDSk8FQ">
+     1→---
+     2→description: Address PR review comments on current branch
+     3→---
+     4→
+     5→# /erk:pr-address
+     6→
+     7→## Description
+     8→
+     9→Fetches unresolved PR review comments AND PR discussion comments from the current branch's PR and addresses them using holistic analysis with smart batching. Comments are grouped by complexity and relationship, then processed batch-by-batch with incremental commits and resolution.
+    10→
+    11→## Usage
+    12→
+    13→```bash
+    14→/erk:pr-address
+    15→/erk:pr-address --all               # Include resolved threads (for reference)
+    16→/erk:pr-address --pr 6631           # Target specific PR
+    17→/erk:pr-address --pr 6631 --all     # Target specific PR with resolved threads
+    18→```
+    19→
+    20→## Prerequisite
+    21→
+    22→**Load the `pr-operations` skill first** for complete command reference and common mistake patterns.
+    23→
+    24→## Agent Instructions
+    25→
+    26→&gt; **Plan mode**: If plan mode is active, run Phases 0-2 (mode detection, classify feedback, display batched plan) as normal — these are read-only. Then write the execution plan to the plan file and call ExitPlanMode. Do NOT execute Phases 3-6 (edits, commits, resolution) until plan mode is exited and the user approves. In Plan File Mode, the same applies: run PF-1 and PF-2, then write the plan and call ExitPlanMode before executing PF-3 through PF-6.
+    27→
+    28→&gt; **Prerequisite**: Load `pr-operations` skill first for command reference.
+    29→
+    30→&gt; **CRITICAL: Use ONLY `erk exec` Commands**
+
+... [383 lines omitted] ...
+
+    41→   git ls-files --error-unmatch .erk/impl-context/plan.md &gt;/dev/null 2&gt;&amp;1
+    71→Handle errors and empty comments the same way as Phase 1.
+   140→- `error`: Error message if `success` is false
+   142→**Handle errors**: If `success` is false, display the error and exit.
+   406→### Error Handling
+   408→**No PR for branch:** Display error and suggest creating a PR with `gt create` or `gh pr create`
+   410→**GitHub API error:** Display error and suggest checking `gh auth status` and repository access
+   412→**CI failure during batch:** Stop, display the failure, and let the user decide whether to fix and continue or abort
+  </tool_result>
+  <assistant>I now have comprehensive understanding of the review system. Let me now design the documentation structure using a Plan agent.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="5612" cache_read_input_tokens="54190" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5612}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01CyoaBuSDC9nr4qFzMNW9DR">
+    <param name="description">Plan docs-v2 reviews section</param>
+    <param name="subagent_type">Plan</param>
+    <param name="prompt">I need to plan the documentation structure for erk's code review subsystem in docs-v2 (Ast...[truncated 3335 chars]...ocs about reviews - they need to work standalone while also fitting into the broader site.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5612" cache_read_input_tokens="54190" output_tokens="1009" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 5612, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01CyoaBuSDC9nr4qFzMNW9DR">
+Now I have a thorough understanding of the entire review subsystem. Let me design the documentation plan.
+
+---
+
+## Documentation Plan: Code Review Subsystem for docs-v2
+
+### 1. Document Placement Decisions
+
+The three documents map naturally to the existing site structure based on the style guide's litmus tests:
+
+**Document 1: "Code reviews" (Introduction)**
+- **Location**: `docs-v2/src/content/docs/concepts/02-code-reviews.md`
+- **Rationale**: This explains the _why_ of erk's review approach -- the two-phase philosophy (cheap models flag, powerful models resolve, human steers). The style guide litmus test for concepts asks: "Does this explain _why_, not just _how_?" This document answers why erk uses tiered model selection, why reviews run in CI rather than locally, and why resolution is a separate human-steered phase. It sits as the second concept, after plan-oriented engineering, because reviews are the quality assurance layer that closes the loop on the plan-implement-review cycle.
+
+**Document 2: "Addressing review feedback" (The pr-address workflow)**
+- **Location**: `docs-v2/src/content/docs/guides/02-addressing-review-feedback.md`
+- **Rationale**: This walks through a complete workflow with concrete steps -- exactly the guides litmus test: "Does this walk through a complete workflow with concrete steps?" It covers the end-to-end process of going from PR with review comments to all feedback resolved, including the classification, batching, and resolution phases.
+
+**Document 3: "Creating a review" (How to add a review)**
+- **Location**: `docs-v2/src/content/docs/guides/03-creating-a-review.md`
+- **Rationale**: Another workflow guide. The litmus test fits perfectly -- this walks through creating a new review definition end-to-end. Not reference (it is not exhaustive parameter documentation) and not a concept (it is procedural, not philosophical).
+
+### 2. Content Plan for Each Document
+
+---
+
+#### Document 1: `concepts/02-code-reviews.md`
+
+**Frontmatter:**
+```yaml
+
+... [174 lines omitted] ...
+  </tool_result>
+  <usage input_tokens="3" cache_creation_input_tokens="4428" cache_read_input_tokens="59802" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4428}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <assistant>I have a thorough understanding of the system and a clear design. Let me write the plan.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="4428" cache_read_input_tokens="59802" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4428}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01PdTudoeL9PewYdkZB9jTJr">
+    <param name="file_path">/Users/schrockn/.claude/plans/drifting-jumping-bonbon.md</param>
+    <param name="content"># Plan: Code Reviews Documentation for docs-v2
+
+## Context
+
+The docs-v2 site (Astro Starli...[truncated 4209 chars]... under Concepts and Guides with correct ordering
+3. Confirm cross-reference links resolve
+</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="4428" cache_read_input_tokens="59802" output_tokens="1242" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 4428, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01PdTudoeL9PewYdkZB9jTJr">
+File created successfully at: /Users/schrockn/.claude/plans/drifting-jumping-bonbon.md
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_018HcU8b5Rpb7ZgDUJ8XruU3">
+    <param name="query">select:ExitPlanMode</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1379" cache_read_input_tokens="64230" output_tokens="78" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1379, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_018HcU8b5Rpb7ZgDUJ8XruU3">
+
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_017Jmd9dZWC6SPu6MwNKSPwh">
+    <param name="allowedPrompts">[{'tool': 'Bash', 'prompt': 'build docs-v2 site with npm'}, {'tool': 'Bash', 'prompt': 'run docs-v2 dev server'}]</param>
+    <param name="plan"># Plan: Code Reviews Documentation for docs-v2
+
+## Context
+
+The docs-v2 site (Astro Starli...[truncated 4209 chars]... under Concepts and Guides with correct ordering
+3. Confirm cross-reference links resolve
+</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="738" cache_read_input_tokens="65609" output_tokens="101" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 738, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_017Jmd9dZWC6SPu6MwNKSPwh">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/drifting-jumping-bonbon.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Plan: Code Reviews Documentation for docs-v2
+Current context: (wt:erk) (br:master)\n\nWhat would you like to do with this plan?"
+  header: "br:master"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create new branch and planned PR. Stays on current branch." - Create a new branch, save plan as draft PR.
+  2. "Implement without saving" - Implement directly on the current branch without saving a plan PR.
+  3. "View/Edit the Plan" - Open plan in editor to review or modify before deciding.
+
+⚠️  WARNING: Currently on 'master'. We strongly discourage implementing directly on the trunk branch. Consider saving the plan and implementing in a dedicated worktree instead.
+
+If user chooses 'Create new branch and planned PR':
+  1. Run /erk:plan-save
+  2. Call ExitPlanMode to end the planning session.
+
+If user chooses 'Implement without saving':
+  1. Create implement-now marker:
+     erk exec marker create --session-id d22010ef-2655-44fb-895c-c0a52da7efb3 \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly on the current branch.
+     Do NOT run 'erk exec setup-impl' or create a new branch.
+
+... [8 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01JYFufTGfzR3KXXoQ4YgBYa">
+    <param name="file_path">/Users/schrockn/.claude/plans/drifting-jumping-bonbon.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="744" cache_read_input_tokens="66347" output_tokens="74" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 744, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01JYFufTGfzR3KXXoQ4YgBYa">
+     1→# Plan: Code Reviews Documentation for docs-v2
+     2→
+     3→## Context
+     4→
+     5→The docs-v2 site (Astro Starlight) has placeholder content. The first real section to write covers erk's code review subsystem. The user wants three documents: a conceptual introduction, a guide for the pr-address workflow, and a guide for adding new reviews.
+     6→
+     7→## Document 1: `concepts/02-code-reviews.md`
+     8→
+     9→**Title**: Code reviews
+    10→**Description**: How erk uses tiered AI models to review and resolve PR feedback
+    11→
+    12→Sections:
+    13→
+    14→- **The two-phase pattern**: Phase 1 is CI-based detection — cheap models (Haiku) run mechanical checks (style, test coverage, simplification), Sonnet handles judgment-heavy reviews (tripwires, doc audits). Each review posts inline comments + summary on the PR. Phase 2 is human-steered resolution — a human reviews flagged issues, then triggers pr-address where a powerful model classifies, batches, and resolves comments under human oversight.
+    15→- **Convention-based discovery**: Reviews are markdown files in `.erk/reviews/`. A single GitHub Actions workflow discovers matching reviews by file patterns and runs them as parallel matrix jobs. Adding a review = dropping a markdown file.
+    16→- **Model selection**: Table of the five existing reviews mapped to their models with one-line rationale (Haiku for mechanical, Sonnet for judgment, powerful model for resolution).
+    17→- **What reviews check**: One-sentence inventory of the five reviews (test coverage, dignified-python, tripwires, doc audit, code simplifier).
+    18→- **What's next**: Links to the two guides.
+    19→
+    20→Target length: ~350 words. Conceptual, not procedural.
+    21→
+    22→## Document 2: `guides/02-addressing-review-feedback.md`
+    23→
+    24→**Title**: Addressing review feedback
+    25→**Description**: Resolve PR review comments using the pr-address workflow
+    26→
+    27→Sections:
+    28→
+    29→- **Running pr-address**: Show `/erk:pr-address`, `--pr` variant, and the preview command.
+    30→- **How classification works**: Haiku subagent classifies each comment as actionable vs informational, assigns complexity (local, single-file, cross-cutting, complex), detects pre-existing issues in moved code. Comments are grouped into ordered batches.
+
+... [38 lines omitted] ...
+  </tool_result>
+  <assistant>Here's the plan:
+
+---
+
+# Plan: Code Reviews Documentation for docs-v2
+
+## Context
+
+The docs-v2 site (Astro Starlight) has placeholder content. The first real section to write covers erk's code review subsystem. The user wants three documents: a conceptual introduction, a guide for the pr-address workflow, and a guide for adding new reviews.
+
+## Document 1: `concepts/02-code-reviews.md`
+
+**Title**: Code reviews
+**Description**: How erk uses tiered AI models to review and resolve PR feedback
+
+Sections:
+
+- **The two-phase pattern**: Phase 1 is CI-based detection — cheap models (Haiku) run mechanical checks (style, test coverage, simplification), Sonnet handles judgment-heavy reviews (tripwires, doc audits). Each review posts inline comments + summary on the PR. Phase 2 is human-steered resolution — a human reviews flagged issues, then triggers pr-address where a powerful model classifies, batches, and resolves comments under human oversight.
+- **Convention-based discovery**: Reviews are markdown files in `.erk/reviews/`. A single GitHub Actions workflow discovers matching reviews by file patterns and runs them as parallel matrix jobs. Adding a review = dropping a markdown file.
+- **Model selection**: Table of the five existing reviews mapped to their models with one-line rationale (Haiku for mechanical, Sonnet for judgment, powerful model for resolution).
+- **What reviews check**: One-sentence inventory of the five reviews (test coverage, dignified-python, tripwires, doc audit, code simplifier).
+- **What's next**: Links to the two guides.
+
+Target length: ~350 words. Conceptual, not procedural.
+
+## Document 2: `guides/02-addressing-review-feedback.md`
+
+**Title**: Addressing review feedback
+**Description**: Resolve PR review comments using the pr-address workflow
+
+Sections:
+
+- **Running pr-address**: Show `/erk:pr-address`, `--pr` variant, and the preview command.
+- **How classification works**: Haiku subagent classifies each comment as actionable vs informational, assigns complexity (local, single-file, cross-cutting, complex), detects pre-existing issues in moved code. Comments are grouped into ordered batches.
+- **The batching model**: Batch 0 = pre-existing (auto-resolve), Batch 1-2 = local/single-file (auto-proceed), Batch 3-4 = cross-cutting/complex (user approval required), Batch 5 = informational (user decides act/dismiss).
+- **What happens in each batch**: Address → CI → commit → resolve threads → report. Mention false positive handling.
+- **After all batches complete**: Final verification, PR description update, push instructions.
+- **Remote mode**: Brief mention of `erk launch pr-address --pr &lt;number&gt;` for background execution.
+
+Target length: ~500 words. Workflow-oriented with concrete commands.
+
+## Document 3: `guides/03-creating-a-review.md`
+
+**Title**: Creating a review
+**Description**: Add a new automated code review to your project
+
+Sections:
+
+- **Before you start**: Decide extend vs create (same quality dimension + files + tools → extend).
+- **The review file**: Show a minimal complete example with frontmatter + body. Explain each frontmatter field in one line: name, paths, marker, model, timeout_minutes, allowed_tools, enabled.
+- **Writing review instructions**: Numbered steps (`## Step 1: [Action Verb + Object]`). Your spec focuses on what to analyze and what's a violation — boilerplate handles diff, dedup, posting. Use explicit classification taxonomies, not vague prose. Show good vs bad example.
+- **Model selection**: Haiku for mechanical, Sonnet for judgment. Cost/speed trade-off.
+- **Testing your review**: `--dry-run` to preview prompt, `--local` to run against current changes, CI verification checklist.
+
+Target length: ~450 words. Procedural — reader can create a working review by following along.
+
+## Cross-references
+
+- Concept page links forward to both guides in "What's next"
+- Addressing guide links back to concept and forward to creating guide
+- Creating guide links back to concept for model rationale
+
+## Verification
+
+1. Run `cd docs-v2 &amp;&amp; npm run build` to confirm Starlight compiles
+2. Verify pages appear in sidebar under Concepts and Guides with correct ordering
+3. Confirm cross-reference links resolve
+
+---</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1407" cache_read_input_tokens="67091" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1407}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_01RYM3ZoY9CPhJTnheayT1kr">
+    <param name="query">select:AskUserQuestion</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1407" cache_read_input_tokens="67091" output_tokens="1124" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1407, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01RYM3ZoY9CPhJTnheayT1kr">
+
+  </tool_result>
+  <tool_use name="AskUserQuestion" id="toolu_011chnkz32gcQ55NrYCpEmiu">
+    <param name="questions">[{'question': 'What would you like to do with this plan?', 'header': 'br:master', 'options...[truncated 281 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="3578" cache_read_input_tokens="68498" output_tokens="176" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3578, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_011chnkz32gcQ55NrYCpEmiu">
+The user doesn't want to proceed with this tool use. The tool use was rejected (eg. if it was a file edit, the new_string was NOT written to the file). STOP what you are doing and wait for the user to tell you how to proceed.
+  </tool_result>
+  <system subtype="" duration_ms="" />
+  <system subtype="" duration_ms="" />
+  <user>* i don't want anyone viewing the site to see placeholder content. 
+* Don't mention remote mode yet</user>
+  <assistant>
+
+Let me update the plan to address both points.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="434" cache_read_input_tokens="72076" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 434}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_011W7dupMAYg8biKZjBRxBCi">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.claude/plans/drifting-jumping-bonbon.md</param>
+    <param name="old_string">## Context
+
+The docs-v2 site (Astro Starlight) has placeholder content. The first real sec...[truncated 71 chars]...ual introduction, a guide for the pr-address workflow, and a guide for adding new reviews.</param>
+    <param name="new_string">## Context
+
+The docs-v2 site (Astro Starlight) has placeholder content. The first real sec...[truncated 729 chars]...— keep only `Concepts` and `Guides` (since Getting Started and Reference have no content).</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="434" cache_read_input_tokens="72076" output_tokens="455" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 434, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_011W7dupMAYg8biKZjBRxBCi">
+The file /Users/schrockn/.claude/plans/drifting-jumping-bonbon.md has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_019HFUYBj5qk2kM9TsXvEsPi">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.claude/plans/drifting-jumping-bonbon.md</param>
+    <param name="old_string">## Document 1: `concepts/02-code-reviews.md`</param>
+    <param name="new_string">## Document 1: `concepts/01-code-reviews.md`</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="628" cache_read_input_tokens="72510" output_tokens="161" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 628, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_019HFUYBj5qk2kM9TsXvEsPi">
+The file /Users/schrockn/.claude/plans/drifting-jumping-bonbon.md has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01MTFs8VceHtjKF1ZUpqGFCL">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.claude/plans/drifting-jumping-bonbon.md</param>
+    <param name="old_string">- **Remote mode**: Brief mention of `erk launch pr-address --pr &lt;number&gt;` for background execution.
+
+Target length: ~500 words. Workflow-oriented with concrete commands.</param>
+    <param name="new_string">Target length: ~500 words. Workflow-oriented with concrete commands.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="201" cache_read_input_tokens="73138" output_tokens="185" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 201, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01MTFs8VceHtjKF1ZUpqGFCL">
+The file /Users/schrockn/.claude/plans/drifting-jumping-bonbon.md has been updated successfully.
+  </tool_result>
+  <assistant>Now update the numbering for the guide files since we're starting fresh:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="323" cache_read_input_tokens="73339" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 323}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01PmAazFH4P2kTaULPUCAKE6">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.claude/plans/drifting-jumping-bonbon.md</param>
+    <param name="old_string">## Document 2: `guides/02-addressing-review-feedback.md`</param>
+    <param name="new_string">## Document 2: `guides/01-addressing-review-feedback.md`</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="323" cache_read_input_tokens="73339" output_tokens="181" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 323, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01PmAazFH4P2kTaULPUCAKE6">
+The file /Users/schrockn/.claude/plans/drifting-jumping-bonbon.md has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01GNqTsBtcpH5SzhXXi8kDAC">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.claude/plans/drifting-jumping-bonbon.md</param>
+    <param name="old_string">## Document 3: `guides/03-creating-a-review.md`</param>
+    <param name="new_string">## Document 3: `guides/02-creating-a-review.md`</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="221" cache_read_input_tokens="73662" output_tokens="165" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 221, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01GNqTsBtcpH5SzhXXi8kDAC">
+The file /Users/schrockn/.claude/plans/drifting-jumping-bonbon.md has been updated successfully.
+  </tool_result>
+  <assistant>Now update the cross-references to use correct paths:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="205" cache_read_input_tokens="73883" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 205}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01Lm7Wiw1Rvb8QN62qmHxKWJ">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.claude/plans/drifting-jumping-bonbon.md</param>
+    <param name="old_string">## Cross-references
+
+- Concept page links forward to both guides in "What's next"
+- Addres...[truncated 11 chars]...t and forward to creating guide
+- Creating guide links back to concept for model rationale</param>
+    <param name="new_string">## Cross-references
+
+- Concept page links forward to both guides in "What's next"
+- Addres...[truncated 147 chars]...-code-reviews/`, `/guides/01-addressing-review-feedback/`, `/guides/02-creating-a-review/`</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="205" cache_read_input_tokens="73883" output_tokens="276" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 205, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Lm7Wiw1Rvb8QN62qmHxKWJ">
+The file /Users/schrockn/.claude/plans/drifting-jumping-bonbon.md has been updated successfully.
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_01GTiNNTcVftqXKNFDSixo7T">
+    <param name="allowedPrompts">[{'tool': 'Bash', 'prompt': 'build docs-v2 site with npm'}, {'tool': 'Bash', 'prompt': 'run docs-v2 dev server'}, {'tool': 'Bash', 'prompt': 'delete placeholder doc files'}]</param>
+    <param name="plan"># Plan: Code Reviews Documentation for docs-v2
+
+## Context
+
+The docs-v2 site (Astro Starli...[truncated 4902 chars]... under Concepts and Guides with correct ordering
+3. Confirm cross-reference links resolve
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="414" cache_read_input_tokens="74088" output_tokens="118" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 414, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01GTiNNTcVftqXKNFDSixo7T">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/drifting-jumping-bonbon.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Plan: Code Reviews Documentation for docs-v2
+Current context: (wt:erk) (br:master)\n\nWhat would you like to do with this plan?"
+  header: "br:master"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create new branch and planned PR. Stays on current branch." - Create a new branch, save plan as draft PR.
+  2. "Implement without saving" - Implement directly on the current branch without saving a plan PR.
+  3. "View/Edit the Plan" - Open plan in editor to review or modify before deciding.
+
+⚠️  WARNING: Currently on 'master'. We strongly discourage implementing directly on the trunk branch. Consider saving the plan and implementing in a dedicated worktree instead.
+
+If user chooses 'Create new branch and planned PR':
+  1. Run /erk:plan-save
+  2. Call ExitPlanMode to end the planning session.
+
+If user chooses 'Implement without saving':
+  1. Create implement-now marker:
+     erk exec marker create --session-id d22010ef-2655-44fb-895c-c0a52da7efb3 \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly on the current branch.
+     Do NOT run 'erk exec setup-impl' or create a new branch.
+
+... [8 lines omitted] ...
+  </tool_result>
+  <assistant>Here's the updated plan:
+
+---
+
+# Plan: Code Reviews Documentation for docs-v2
+
+## Context
+
+The docs-v2 site (Astro Starlight) has placeholder content. The first real section to write covers erk's code review subsystem. Three documents: a conceptual introduction, a guide for the pr-address workflow, and a guide for adding new reviews.
+
+## Step 0: Remove placeholder content
+
+Delete all existing placeholder files so the site only shows real content:
+
+- `docs-v2/src/content/docs/getting-started/01-introduction.md`
+- `docs-v2/src/content/docs/concepts/01-plan-oriented-engineering.md`
+- `docs-v2/src/content/docs/guides/01-local-workflow.md`
+- `docs-v2/src/content/docs/reference/01-cli.md`
+
+Update `index.mdx` to redirect to `/concepts/01-code-reviews/`. Remove empty sidebar sections from `astro.config.mjs` — keep only Concepts and Guides.
+
+## Document 1: `concepts/01-code-reviews.md`
+
+**Title**: Code reviews — How erk uses tiered AI models to review and resolve PR feedback
+
+Sections: The two-phase pattern (CI detection with cheap models, human-steered resolution with powerful models), convention-based discovery (markdown files in `.erk/reviews/`), model selection table, what reviews check (five existing reviews), what's next links. ~350 words.
+
+## Document 2: `guides/01-addressing-review-feedback.md`
+
+**Title**: Addressing review feedback — Resolve PR review comments using pr-address
+
+Sections: Running pr-address, how classification works, the batching model, what happens in each batch, after all batches complete. ~500 words. *(No remote mode.)*
+
+## Document 3: `guides/02-creating-a-review.md`
+
+**Title**: Creating a review — Add a new automated code review
+
+Sections: Before you start (extend vs create), the review file (minimal example + frontmatter fields), writing review instructions (numbered steps, taxonomies), model selection, testing your review. ~450 words.
+
+---</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="758" cache_read_input_tokens="74502" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 758}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_01GpGXmU1PZN3DJ74ZQXdrWz">
+    <param name="questions">[{'question': 'What would you like to do with this plan?', 'header': 'br:master', 'options...[truncated 281 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="758" cache_read_input_tokens="74502" output_tokens="684" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 758, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01GpGXmU1PZN3DJ74ZQXdrWz">
+User has answered your questions: "What would you like to do with this plan?"="Create new branch and planned PR". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="Skill" id="toolu_013uKBUQSQpJaxt8RyNim1ej">
+    <param name="skill">erk:plan-save</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="843" cache_read_input_tokens="75260" output_tokens="57" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 843, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_013uKBUQSQpJaxt8RyNim1ej">
+Launching skill: erk:plan-save
+  </tool_result>
+  <user># /erk:plan-save
+
+Save the current session's plan to GitHub with session context.
+
+## Usage
+
+```bash
+/erk:plan-save                           # Standalone plan
+/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+/erk:plan-save --objective=123           # Explicit objective link (overrides marker)
+/erk:plan-save --current-branch          # Use current branch instead of creating new plnd/ branch
+```
+
+Objective linking: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command. Use `--objective=&lt;number&gt;` to override the marker or provide the link when no marker exists (e.g., during replan).
+
+## Plan Storage
+
+The plan is saved using the configured backend:
+
+- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+  The JSON output contract includes `pr_number`, `pr_url`, `title`, `branch_name`, `plan_backend`.
+
+## Agent Instructions
+
+### Step 1: Parse Arguments
+
+Check `` for the `--plan-type`, `--objective`, and `--current-branch` flags:
+
+```
+If  contains "--plan-type=&lt;type&gt;":
+  - Extract the type (standard or learn)
+  - Store as PLAN_TYPE variable
+  - Set PLAN_TYPE_FLAG to "--plan-type=&lt;type&gt;"
+Else:
+  - Set PLAN_TYPE_FLAG to empty string
+
+If  contains "--objective=&lt;number&gt;":
+  - Extract the number
+  - Set OBJECTIVE_FLAG to "--objective=&lt;number&gt;"
+Else:
+  - Set OBJECTIVE_FLAG to empty string
+
+If  contains "--current-branch":
+  - Set CURRENT_BRANCH_FLAG to "--current-branch"
+Else:
+  - Set CURRENT_BRANCH_FLAG to empty string
+```
+
+### Step 2: Generate Branch Slug
+
+**Skip this step if `--current-branch` was passed.** The current branch is used directly.
+
+Before saving, generate a branch slug from the plan title. Read the plan title from the plan file you wrote in plan mode (the first `# ` heading).
+
+Generate a branch slug from the title:
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+
+Store the result as `BRANCH_SLUG`.
+
+### Step 3: Generate Plan Summary
+
+Write a concise 2-3 sentence summary of the plan. This summary will be visible
+at the top of the PR description (above the collapsed full plan).
+
+Guidelines:
+
+- Focus on WHAT the plan does and WHY
+- Do not repeat the title
+- Plain text, no markdown headers or formatting
+- Avoid special shell characters (backticks, dollar signs)
+- Store as PLAN_SUMMARY
+
+### Step 4: Run Save Command
+
+Run this command with the session ID, summary, and optional flags.
+
+If CURRENT_BRANCH_FLAG is set, pass `--current-branch` (no branch slug needed):
+
+```bash
+erk exec plan-save --format json --session-id="d22010ef-2655-44fb-895c-c0a52da7efb3" --current-branch --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Otherwise, pass the branch slug:
+
+```bash
+erk exec plan-save --format json --session-id="d22010ef-2655-44fb-895c-c0a52da7efb3" --branch-slug="${BRANCH_SLUG}" --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Parse the JSON output to extract `pr_number` for verification in Step 5.
+
+If the command fails, display the error and stop.
+
+### Step 5: Verify Objective Link (if applicable)
+
+**Only run this step if `objective_issue` is non-null in the JSON output from Step 4.**
+
+Verify the objective link was saved correctly:
+
+```bash
+erk exec get-plan-metadata &lt;pr_number&gt; objective_issue
+```
+
+Parse the JSON response:
+
+- If `success: true` and `value` matches the expected objective number: verification passed
+- If `success: false` or value doesn't match: verification failed
+
+**On verification success:**
+
+Display: `Verified objective link: #&lt;objective-number&gt;`
+
+**On verification failure:**
+
+Display error and remediation steps:
+
+```
+ERROR: Objective link verification failed
+Expected objective: #&lt;expected&gt;
+Actual: &lt;actual-or-null&gt;
+
+The plan was saved but without the correct objective link.
+Fix: Close draft PR #&lt;pr_number&gt;,
+ensure the objective-context marker exists, and re-run /erk:plan-save.
+```
+
+Exit without creating the plan-saved marker. The session continues so the user can retry.
+
+### Step 6: Update Objective Roadmap (if objective linked)
+
+**Only run this step if `objective_issue` was non-null in JSON output and verification passed.**
+
+Update the objective's roadmap table to show that a plan has been created for this node:
+
+1. **Read the roadmap node marker** to get the node ID:
+
+```bash
+step_id=$(erk exec marker read --session-id "d22010ef-2655-44fb-895c-c0a52da7efb3" roadmap-step)
+```
+
+If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-plan`.
+
+2. **Update the roadmap table** using the dedicated command:
+
+```bash
+erk exec update-objective-node &lt;objective-issue&gt; --node "$step_id" --pr "#&lt;pr_number&gt;" --status in_progress
+```
+
+This atomically fetches the objective body, finds the matching node row, sets the Status cell to `in-progress`, and writes the updated body back.
+
+3. **Report the update:**
+
+Display: `Updated objective #&lt;objective-issue&gt; roadmap: node &lt;step_id&gt; → PR #&lt;pr_number&gt;`
+
+**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+
+### Step 7: Display Results
+
+**If JSON contains `skipped_duplicate: true`:**
+
+Display: `Plan already saved as PR #&lt;pr_number&gt; (duplicate skipped)`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options.
+
+**Otherwise, on success**, display:
+
+```
+Plan "&lt;title&gt;" saved as draft PR #&lt;pr_number&gt;
+URL: &lt;issue_url&gt;
+```
+
+If objective was verified, also display: `Verified objective link: #&lt;objective-number&gt;`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options
+(implement in current worktree, implement in new worktree, or done).
+
+On failure, display the error message and suggest:
+
+- Checking that a plan exists (enter Plan mode and exit it first)
+- Verifying GitHub CLI authentication (`gh auth status`)
+- Checking network connectivity
+
+### Step 5: Push Planning Session
+
+After saving successfully, push the planning session for cross-machine learning.
+This captures the in-progress session state so it's available even if implementation
+happens on a different machine.
+
+Run `erk exec capture-session-info` to get the session file path, then push it:
+
+```bash
+erk exec upload-impl-session --session-id "d22010ef-2655-44fb-895c-c0a52da7efb3" 2&gt;/dev/null || true
+```
+
+If the plan was saved successfully and `pr_number` is known, use push-session directly
+for better stage tracking:
+
+```bash
+erk exec push-session \
+    --session-file "&lt;session_file_path&gt;" \
+    --session-id "d22010ef-2655-44fb-895c-c0a52da7efb3" \
+    --stage planning \
+    --source local \
+    --pr-number &lt;pr_number&gt; \
+    2&gt;/dev/null || true
+```
+
+Where `&lt;session_file_path&gt;` is obtained from `erk exec capture-session-info` output
+and `&lt;pr_number&gt;` is from Step 2's JSON output.
+
+**Note:** This is non-critical. If it fails, the plan was still saved successfully.
+The `2&gt;/dev/null || true` ensures graceful degradation.
+
+## Session Tracking
+
+After successfully saving a plan, the plan number is stored in a marker file that enables automatic plan updates in the same session.
+
+**To read the saved plan number:**
+
+```bash
+erk exec marker read --session-id "d22010ef-2655-44fb-895c-c0a52da7efb3" plan-saved-issue
+```
+
+This returns the plan number (exit code 0) or exits with code 1 if no plan was saved in this session.
+</user>
+  <usage input_tokens="2" cache_creation_input_tokens="3121" cache_read_input_tokens="75260" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3121}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <assistant>**Branch slug**: `docs-v2-code-reviews`
+
+**Plan summary**: Writes the first real documentation section for the docs-v2 Starlight site, covering erk's code review subsystem. Creates three pages — a concept page explaining the two-phase review pattern, a guide for addressing review feedback with pr-address, and a guide for creating new reviews — while removing all placeholder content.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="3121" cache_read_input_tokens="75260" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3121}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01VNAYpJKmV7Hj4JT2rr3xQU">
+    <param name="command">erk exec plan-save --format json --session-id="d22010ef-2655-44fb-895c-c0a52da7efb3" --bra...[truncated 262 chars]...-address, and a guide for creating new reviews -- while removing all placeholder content."</param>
+    <param name="description">Save plan as draft PR</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="3121" cache_read_input_tokens="75260" output_tokens="418" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3121, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01VNAYpJKmV7Hj4JT2rr3xQU">
+{"success": true, "pr_number": 9217, "pr_url": "https://github.com/dagster-io/erk/pull/9217", "title": "[erk-pr] Plan: Code Reviews Documentation for docs-v2", "branch_name": "plnd/docs-v2-code-reviews-03-12-1314", "plan_backend": "planned_pr", "objective_issue": null, "archived_to": "/Users/schrockn/code/erk/.erk/scratch/sessions/d22010ef-2655-44fb-895c-c0a52da7efb3/plan_snapshots/000001-e8b75a4b"}
+  </tool_result>
+  <assistant>Plan saved. Now pushing the planning session.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="691" cache_read_input_tokens="78381" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 691}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01MTUWy4QoFM5Upm7NhTjUsu">
+    <param name="command">erk exec upload-impl-session --session-id "d22010ef-2655-44fb-895c-c0a52da7efb3" 2&gt;/dev/null || true</param>
+    <param name="description">Push planning session for cross-machine learning</param>
+    <param name="timeout">15000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="691" cache_read_input_tokens="78381" output_tokens="148" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 691, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01MTUWy4QoFM5Upm7NhTjUsu">
+{"uploaded": false, "reason": "no_impl_folder"}
+  </tool_result>
+  <assistant>Plan "Code Reviews Documentation for docs-v2" saved as draft PR #9217
+URL: https://github.com/dagster-io/erk/pull/9217</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="175" cache_read_input_tokens="79072" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 175}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ExitPlanMode" id="toolu_01ChHcKbPkT5F2y35n9vvL1F">
+    <param name="allowedPrompts">[{'tool': 'Bash', 'prompt': 'build docs-v2 site with npm'}, {'tool': 'Bash', 'prompt': 'ru...[truncated 29 chars]...: 'delete placeholder doc files'}, {'tool': 'Bash', 'prompt': 'install npm dependencies'}]</param>
+    <param name="plan"># Plan: Code Reviews Documentation for docs-v2
+
+## Context
+
+The docs-v2 site (Astro Starli...[truncated 4902 chars]... under Concepts and Guides with correct ordering
+3. Confirm cross-reference links resolve
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="175" cache_read_input_tokens="79072" output_tokens="174" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 175, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01ChHcKbPkT5F2y35n9vvL1F">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: PR #9217 saved successfully.
+
+Display ALL of the following next-steps commands to the user as plain text.
+Show every line exactly as written — do NOT summarize, truncate, or omit any lines.
+(do NOT use AskUserQuestion — just display the text):
+
+Implement PR #9217:
+  In current wt:    erk br co --for-plan 9217 &amp;&amp; erk implement
+    (dangerously):  erk br co --for-plan 9217 &amp;&amp; erk implement -d
+  In new wt:        source "$(erk br co --new-slot --for-plan 9217 --script)" &amp;&amp; erk implement
+    (dangerously):  source "$(erk br co --new-slot --for-plan 9217 --script)" &amp;&amp; erk implement -d
+
+Checkout PR #9217:
+  In current wt:  erk br co --for-plan 9217
+  In new wt:      erk br co --new-slot --for-plan 9217
+
+Dispatch PR #9217:
+  CLI command:    erk pr dispatch 9217
+  Slash command:  /erk:pr-dispatch
+
+Session complete. Do NOT call ExitPlanMode again.
+
+  </tool_result>
+  <assistant>Plan saved as PR #9217. Here are next steps:
+
+**Implement PR #9217:**
+```
+In current wt:    erk br co --for-plan 9217 &amp;&amp; erk implement
+  (dangerously):  erk br co --for-plan 9217 &amp;&amp; erk implement -d
+In new wt:        source "$(erk br co --new-slot --for-plan 9217 --script)" &amp;&amp; erk implement
+  (dangerously):  source "$(erk br co --new-slot --for-plan 9217 --script)" &amp;&amp; erk implement -d
+```
+
+**Checkout PR #9217:**
+```
+In current wt:  erk br co --for-plan 9217
+In new wt:      erk br co --new-slot --for-plan 9217
+```
+
+**Dispatch PR #9217:**
+```
+CLI command:    erk pr dispatch 9217
+Slash command:  /erk:pr-dispatch
+```</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="544" cache_read_input_tokens="79247" output_tokens="238" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 544, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;command-name&gt;/exit&lt;/command-name&gt;
+            &lt;command-message&gt;exit&lt;/command-message&gt;
+            &lt;command-args&gt;&lt;/command-args&gt;</user>
+  <user>&lt;local-command-stdout&gt;Goodbye!&lt;/local-command-stdout&gt;</user>
+</session>
