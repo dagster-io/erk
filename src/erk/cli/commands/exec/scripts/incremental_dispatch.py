@@ -13,7 +13,7 @@ from pathlib import Path
 
 import click
 
-from erk.cli.commands.pr.dispatch_cmd import load_workflow_config
+from erk.cli.commands.pr.dispatch.cli import load_workflow_config
 from erk.cli.commands.pr.dispatch_helpers import ensure_trunk_synced, sync_branch_to_sha
 from erk.cli.commands.pr.metadata_helpers import write_dispatch_metadata
 from erk.cli.commands.ref_resolution import resolve_dispatch_ref

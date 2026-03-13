@@ -8,7 +8,7 @@ from erk.cli.commands.pr.check_cmd import pr_check
 from erk.cli.commands.pr.checkout_cmd import pr_checkout
 from erk.cli.commands.pr.close_cmd import pr_close
 from erk.cli.commands.pr.create_cmd import pr_create
-from erk.cli.commands.pr.dispatch_cmd import pr_dispatch
+from erk.cli.commands.pr.dispatch.cli import pr_dispatch
 from erk.cli.commands.pr.diverge_fix_cmd import pr_diverge_fix
 from erk.cli.commands.pr.duplicate_check_cmd import duplicate_check_plan
 from erk.cli.commands.pr.list.cli import pr_list

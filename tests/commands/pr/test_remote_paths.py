@@ -501,8 +501,8 @@ def test_dispatch_remote_dispatches_workflow() -> None:
     )
 
     assert result.exit_code == 0, f"Unexpected failure:\n{result.output}"
-    assert "Workflow dispatched" in result.output
     assert "1 PR(s) dispatched successfully" in result.output
+    assert "Workflow:" in result.output
 
     # Verify workflow was dispatched
     assert len(fake_remote.dispatched_workflows) == 1
@@ -616,7 +616,7 @@ def test_dispatch_remote_posts_queued_comment() -> None:
     )
 
     assert result.exit_code == 0, f"Unexpected failure:\n{result.output}"
-    assert "Queued event comment posted" in result.output
+    assert "1 PR(s) dispatched successfully" in result.output
     assert len(fake_remote.added_issue_comments) == 1
     assert fake_remote.added_issue_comments[0].issue_number == 42
 

@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from erk.cli.commands.pr.dispatch_cmd import _detect_pr_number_from_context
+from erk.cli.commands.pr.dispatch.cli import _detect_pr_number_from_context
 from erk_shared.context.types import RepoContext
 from erk_shared.gateway.github.types import PRDetails
 from tests.fakes.gateway.github import FakeLocalGitHub
