@@ -26,6 +26,28 @@ DEFAULT_MCP_HTTP_PATH = "/mcp"
 ROOT_PROTECTED_RESOURCE_METADATA_PATH = "/.well-known/oauth-protected-resource"
 
 
+def _build_subprocess_error_output(
+    command_path: tuple[str, ...],
+    *,
+    returncode: int,
+    stderr: str,
+) -> str:
+    stderr_lines = [line.strip() for line in stderr.splitlines() if line.strip()]
+    if stderr_lines:
+        message = stderr_lines[-1]
+    else:
+        joined_path = " ".join(command_path)
+        message = f"erk {joined_path} exited with code {returncode}"
+
+    return json.dumps(
+        {
+            "success": False,
+            "error_type": "cli_subprocess_error",
+            "message": message,
+        }
+    )
+
+
 def _run_erk_json(
     command_path: tuple[str, ...],
     params: dict[str, Any],
@@ -47,6 +69,16 @@ def _run_erk_json(
         check=False,
         env=env_override,
     )
+    if result.stdout.strip():
+        return result.stdout
+
+    if result.returncode != 0:
+        return _build_subprocess_error_output(
+            command_path,
+            returncode=result.returncode,
+            stderr=result.stderr,
+        )
+
     return result.stdout
 
 

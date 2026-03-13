@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import subprocess
 from unittest.mock import MagicMock, patch
 
@@ -52,6 +53,26 @@ class TestRunErkJson:
         result = _run_erk_json(("one-shot",), {"prompt": "Do something"})
 
         assert result == '{"success": false, "error_type": "auth_required"}'
+
+    @patch("erk_mcp.server.subprocess.run")
+    def test_synthesizes_json_error_from_stderr_only_failure(self, mock_run: patch) -> None:
+        mock_run.return_value = subprocess.CompletedProcess(
+            args=["erk", "json", "one-shot"],
+            returncode=1,
+            stdout="",
+            stderr=(
+                "Failed during: Creating draft PR\n"
+                "HTTP 422 for repos/dagster-io/internal/issues/123/labels: Validation Failed\n"
+            ),
+        )
+
+        result = _run_erk_json(("json", "one-shot"), {"prompt": "Do something"})
+
+        assert json.loads(result) == {
+            "success": False,
+            "error_type": "cli_subprocess_error",
+            "message": "HTTP 422 for repos/dagster-io/internal/issues/123/labels: Validation Failed",
+        }
 
     @patch("erk_mcp.server.subprocess.run")
     def test_subcommand_path_expands_correctly(self, mock_run: patch) -> None:
