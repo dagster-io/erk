@@ -118,7 +118,7 @@ class NavigationActionsMixin:
         executor = RealCommandExecutor(
             browser_launch=self._service.browser.launch,
             clipboard_copy=self._service.clipboard.copy,
-            close_plan_fn=self._service.close_pr,
+            close_pr_fn=self._service.close_pr,
             notify_fn=self._notify_with_severity,
             refresh_fn=self.action_refresh,
             dispatch_to_queue_fn=self._service.dispatch_to_queue,

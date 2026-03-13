@@ -202,12 +202,12 @@ def objective_save_to_issue(
         raise SystemExit(1)
 
     # Guard for type narrowing
-    if result.plan_number is None:
+    if result.pr_number is None:
         raise RuntimeError("Unexpected: pr_number is None after success")
 
     # Create marker file to enable idempotency
     if session_id is not None:
-        _create_objective_saved_issue_marker(session_id, repo_root, result.plan_number)
+        _create_objective_saved_issue_marker(session_id, repo_root, result.pr_number)
 
     # Optional validation
     validation_data: dict[str, Any] | None = None
@@ -223,7 +223,7 @@ def objective_save_to_issue(
             remote,
             owner=owner,
             repo=repo_name,
-            issue_number=result.plan_number,
+            issue_number=result.pr_number,
         )
         if isinstance(validation_result, ObjectiveValidationError):
             validation_data = {
@@ -242,7 +242,7 @@ def objective_save_to_issue(
             }
 
     if output_format == "display":
-        click.echo(f"Objective saved to GitHub issue #{result.plan_number}")
+        click.echo(f"Objective saved to GitHub issue #{result.pr_number}")
         click.echo(f"Title: {result.title}")
         click.echo(f"URL: {result.plan_url}")
         if validation_data is not None:
@@ -260,7 +260,7 @@ def objective_save_to_issue(
     else:
         output_data: dict[str, object] = {
             "success": True,
-            "pr_number": result.plan_number,
+            "pr_number": result.pr_number,
             "issue_url": result.plan_url,
             "title": result.title,
         }

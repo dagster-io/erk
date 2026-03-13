@@ -227,7 +227,7 @@ def dispatch_consolidate_learn_plans(
             metadata_block = create_submission_queued_block(
                 queued_at=queued_at,
                 submitted_by=submitted_by,
-                plan_number=pr_number,
+                pr_number=pr_number,
                 validation_results={"pr_is_open": True, "has_erk_pr_title": True},
                 expected_workflow="consolidate-learn-plans",
             )

@@ -70,7 +70,7 @@ def test_plan_issue_schema_get_key() -> None:
 def test_create_plan_issue_block_with_plan_file() -> None:
     """Test create_plan_issue_block with plan_file."""
     block = create_plan_issue_block(
-        plan_number=123,
+        pr_number=123,
         worktree_name="add-user-auth",
         timestamp="2025-11-22T12:00:00Z",
         plan_file="add-user-auth-plan.md",
@@ -84,7 +84,7 @@ def test_create_plan_issue_block_with_plan_file() -> None:
 def test_create_plan_issue_block_without_plan_file() -> None:
     """Test create_plan_issue_block without plan_file."""
     block = create_plan_issue_block(
-        plan_number=456,
+        pr_number=456,
         worktree_name="fix-bug",
         timestamp="2025-11-22T12:00:00Z",
     )
@@ -98,7 +98,7 @@ def test_create_plan_issue_block_without_plan_file() -> None:
 def test_render_erk_issue_event_with_plan_issue_block() -> None:
     """Test render_erk_issue_event with plan issue block and workflow instructions."""
     block = create_plan_issue_block(
-        plan_number=123,
+        pr_number=123,
         worktree_name="add-user-auth",
         timestamp="2025-11-22T12:00:00Z",
     )

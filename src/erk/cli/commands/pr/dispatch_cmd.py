@@ -341,7 +341,7 @@ def _dispatch_planned_pr_plan(
         metadata_block = create_submission_queued_block(
             queued_at=queued_at,
             submitted_by=submitted_by,
-            plan_number=pr_number,
+            pr_number=pr_number,
             validation_results=validation_results,
             expected_workflow=DISPATCH_WORKFLOW_METADATA_NAME,
         )
@@ -550,7 +550,7 @@ def _dispatch_planned_pr_plan_remote(
         metadata_block = create_submission_queued_block(
             queued_at=queued_at,
             submitted_by=submitted_by,
-            plan_number=pr_number,
+            pr_number=pr_number,
             validation_results={
                 "pr_is_open": True,
                 "has_erk_pr_title": True,

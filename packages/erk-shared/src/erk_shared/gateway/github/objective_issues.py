@@ -56,7 +56,7 @@ class CreateObjectiveIssueResult:
 
     Attributes:
         success: Whether the entire operation completed successfully
-        plan_number: Plan number if created (may be set even on failure if
+        pr_number: PR number if created (may be set even on failure if
             partial success - issue created but comment failed)
         plan_url: Plan URL if created
         title: The title used for the issue (extracted or provided)
@@ -64,7 +64,7 @@ class CreateObjectiveIssueResult:
     """
 
     success: bool
-    plan_number: int | None
+    pr_number: int | None
     plan_url: str | None
     title: str
     error: str | None
@@ -143,7 +143,7 @@ def create_objective_issue(
     if username is None:
         return CreateObjectiveIssueResult(
             success=False,
-            plan_number=None,
+            pr_number=None,
             plan_url=None,
             title="",
             error="Could not get GitHub username (gh CLI not authenticated?)",
@@ -159,7 +159,7 @@ def create_objective_issue(
         if isinstance(slug_result, InvalidObjectiveSlug):
             return CreateObjectiveIssueResult(
                 success=False,
-                plan_number=None,
+                pr_number=None,
                 plan_url=None,
                 title=title,
                 error=slug_result.message,
@@ -179,7 +179,7 @@ def create_objective_issue(
     if label_errors:
         return CreateObjectiveIssueResult(
             success=False,
-            plan_number=None,
+            pr_number=None,
             plan_url=None,
             title=title,
             error=label_errors,
@@ -211,7 +211,7 @@ def create_objective_issue(
     except RuntimeError as e:
         return CreateObjectiveIssueResult(
             success=False,
-            plan_number=None,
+            pr_number=None,
             plan_url=None,
             title=title,
             error=f"Failed to create GitHub issue: {e}",
@@ -225,7 +225,7 @@ def create_objective_issue(
         # Partial success - issue created but comment failed
         return CreateObjectiveIssueResult(
             success=False,
-            plan_number=result.number,
+            pr_number=result.number,
             plan_url=result.url,
             title=title,
             error=f"Issue #{result.number} created but failed to add objective comment: {e}",
@@ -246,7 +246,7 @@ def create_objective_issue(
 
     return CreateObjectiveIssueResult(
         success=True,
-        plan_number=result.number,
+        pr_number=result.number,
         plan_url=result.url,
         title=title,
         error=None,

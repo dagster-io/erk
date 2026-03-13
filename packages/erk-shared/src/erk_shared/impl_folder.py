@@ -485,7 +485,7 @@ def add_worktree_creation_comment(
         worktree_name=worktree_name,
         branch_name=branch_name,
         timestamp=timestamp,
-        plan_number=plan_number,
+        pr_number=plan_number,
     )
 
     # Format instructions for implementation
