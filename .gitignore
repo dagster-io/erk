@@ -26,8 +26,8 @@ activate.sh
 CLAUDE.local.md
 .mcp.json
 
-# MkDocs build output
-site/
+# Archived MkDocs build output
+docs-site-archived/site/
 
 .superset/
 
