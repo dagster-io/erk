@@ -72,8 +72,7 @@ class TestRunErkJson:
             "success": False,
             "error_type": "cli_subprocess_error",
             "message": (
-                "HTTP 422 for repos/dagster-io/internal/issues/123/labels: "
-                "Validation Failed"
+                "HTTP 422 for repos/dagster-io/internal/issues/123/labels: Validation Failed"
             ),
         }
 
