@@ -244,7 +244,16 @@ class FakeGit(Git):
         self._default_branches = default_branches or {}
         self._trunk_branches = trunk_branches or {}
         self._git_common_dirs = git_common_dirs or {}
-        self._branch_heads = branch_heads or {}
+        if branch_heads is not None:
+            self._branch_heads = branch_heads
+        else:
+            # Auto-populate from local_branches so sync_pool_assignments
+            # doesn't remove assignments for branches that exist
+            self._branch_heads: dict[str, str] = {}
+            for branches in (local_branches or {}).values():
+                for branch in branches:
+                    if branch not in self._branch_heads:
+                        self._branch_heads[branch] = f"fake-sha-{branch}"
         self._commit_messages = commit_messages or {}
         self._repos_with_staged_changes: set[Path] = staged_repos or set()
         self._file_statuses = file_statuses or {}

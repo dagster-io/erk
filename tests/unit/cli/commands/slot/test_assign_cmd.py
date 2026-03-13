@@ -26,6 +26,7 @@ def test_slot_assign_assigns_existing_branch(tmp_path) -> None:
             git_common_dirs={env.cwd: env.git_dir},
             default_branches={env.cwd: "main"},
             local_branches={env.cwd: ["main", "feature-test"]},
+            branch_heads={"main": "aaa", "feature-test": "bbb"},
         )
 
         repo = RepoContext(
@@ -98,6 +99,7 @@ def test_slot_assign_second_slot() -> None:
             git_common_dirs={env.cwd: env.git_dir},
             default_branches={env.cwd: "main"},
             local_branches={env.cwd: ["main", "feature-a", "feature-b"]},
+            branch_heads={"main": "aaa", "feature-a": "bbb", "feature-b": "ccc"},
         )
 
         repo = RepoContext(
@@ -141,6 +143,7 @@ def test_slot_assign_branch_already_assigned() -> None:
             git_common_dirs={env.cwd: env.git_dir},
             default_branches={env.cwd: "main"},
             local_branches={env.cwd: ["main", "feature-test"]},
+            branch_heads={"main": "aaa", "feature-test": "bbb"},
         )
 
         repo = RepoContext(
@@ -179,6 +182,12 @@ def test_slot_assign_uses_config_pool_size() -> None:
             git_common_dirs={env.cwd: env.git_dir},
             default_branches={env.cwd: "main"},
             local_branches={env.cwd: ["main", "feature-a", "feature-b", "feature-c"]},
+            branch_heads={
+                "main": "aaa",
+                "feature-a": "bbb",
+                "feature-b": "ccc",
+                "feature-c": "ddd",
+            },
         )
 
         repo = RepoContext(
@@ -225,6 +234,7 @@ def test_slot_assign_force_unassigns_oldest() -> None:
             git_common_dirs={env.cwd: env.git_dir, worktree_path: env.git_dir},
             default_branches={env.cwd: "main"},
             local_branches={env.cwd: ["main", "old-branch", "new-branch"]},
+            branch_heads={"main": "aaa", "old-branch": "bbb", "new-branch": "ccc"},
         )
 
         repo = RepoContext(
@@ -289,6 +299,7 @@ def test_slot_assign_pool_full_non_tty_fails() -> None:
             git_common_dirs={env.cwd: env.git_dir, worktree_path: env.git_dir},
             default_branches={env.cwd: "main"},
             local_branches={env.cwd: ["main", "old-branch", "new-branch"]},
+            branch_heads={"main": "aaa", "old-branch": "bbb", "new-branch": "ccc"},
         )
 
         repo = RepoContext(
@@ -388,6 +399,7 @@ def test_slot_assign_cleans_up_artifacts_when_reusing_worktree() -> None:
             git_common_dirs={env.cwd: env.git_dir, worktree_path: env.git_dir},
             default_branches={env.cwd: "main"},
             local_branches={env.cwd: ["main", "old-branch", "new-branch"]},
+            branch_heads={"main": "aaa", "old-branch": "bbb", "new-branch": "ccc"},
         )
 
         repo = RepoContext(
@@ -438,6 +450,7 @@ def test_slot_assign_from_current_branch_moves_branch_to_slot() -> None:
             git_common_dirs={env.cwd: env.git_dir},
             default_branches={env.cwd: "main"},
             local_branches={env.cwd: ["main", "feature-work"]},
+            branch_heads={"main": "aaa", "feature-work": "bbb"},
         )
 
         repo = RepoContext(
@@ -489,6 +502,7 @@ def test_slot_assign_from_current_branch_detaches_when_trunk_in_use() -> None:
             git_common_dirs={env.cwd: env.git_dir, other_worktree: env.git_dir},
             default_branches={env.cwd: "main"},
             local_branches={env.cwd: ["main", "feature-work"]},
+            branch_heads={"main": "aaa", "feature-work": "bbb"},
         )
 
         repo = RepoContext(
@@ -597,6 +611,7 @@ def test_slot_assign_creates_activation_script() -> None:
             git_common_dirs={env.cwd: env.git_dir},
             default_branches={env.cwd: "main"},
             local_branches={env.cwd: ["main", "feature-test"]},
+            branch_heads={"main": "aaa", "feature-test": "bbb"},
         )
 
         repo = RepoContext(

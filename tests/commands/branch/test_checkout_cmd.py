@@ -536,9 +536,9 @@ def test_branch_checkout_stale_assignment_worktree_missing() -> None:
             )
 
         assert result.exit_code == 0, f"Failed: {result.output}"
-        # Should warn about removing stale assignment
-        assert "Removing stale assignment" in result.output
-        assert "no longer exists" in result.output
+        # Should report removing stale assignment (caught by sync_pool_assignments)
+        assert "Removed stale assignment" in result.output
+        assert "worktree path missing" in result.output
         # Should proceed to assign to a slot
         assert "Assigned stale-branch to" in result.output
 
@@ -961,7 +961,7 @@ def test_checkout_new_slot_forces_new_allocation() -> None:
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             default_branches={env.cwd: "main"},
-            local_branches={env.cwd: ["main", "new-feature"]},
+            local_branches={env.cwd: ["main", "existing-branch", "new-feature"]},
             existing_paths={env.cwd, env.repo.worktrees_dir},
         )
 
