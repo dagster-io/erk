@@ -47,9 +47,7 @@ def _read_github_oauth_config_from_env() -> GitHubOAuthConfig | None:
     client_id = os.environ.get("ERK_MCP_GITHUB_OAUTH_CLIENT_ID", "").strip()
     client_secret = os.environ.get("ERK_MCP_GITHUB_OAUTH_CLIENT_SECRET", "").strip()
     public_url = os.environ.get("ERK_MCP_PUBLIC_URL", "").strip()
-    scopes = _parse_github_oauth_scopes(
-        os.environ.get("ERK_MCP_GITHUB_OAUTH_SCOPES", "").strip()
-    )
+    scopes = _parse_github_oauth_scopes(os.environ.get("ERK_MCP_GITHUB_OAUTH_SCOPES", "").strip())
 
     if client_id == "" and client_secret == "" and public_url == "":
         return None
@@ -65,8 +63,7 @@ def _read_github_oauth_config_from_env() -> GitHubOAuthConfig | None:
     if missing_fields:
         missing_fields_display = ", ".join(missing_fields)
         raise ValueError(
-            "GitHub OAuth for erk-mcp is partially configured. Missing: "
-            f"{missing_fields_display}."
+            f"GitHub OAuth for erk-mcp is partially configured. Missing: {missing_fields_display}."
         )
 
     return GitHubOAuthConfig(

@@ -54,8 +54,7 @@ def main() -> None:
             oauth_protected_resource_url = _get_oauth_protected_resource_url(mcp)
             if oauth_protected_resource_url is not None:
                 click.echo(
-                    "OAuth protected-resource metadata available at "
-                    f"{oauth_protected_resource_url}"
+                    f"OAuth protected-resource metadata available at {oauth_protected_resource_url}"
                 )
         else:
             click.echo("GitHub OAuth disabled")
