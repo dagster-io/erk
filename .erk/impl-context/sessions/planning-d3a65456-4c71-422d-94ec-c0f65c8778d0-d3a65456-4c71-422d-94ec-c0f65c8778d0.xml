@@ -1,0 +1,757 @@
+<session>
+  <meta branch="master" />
+  <meta model="claude-opus-4-6" />
+  <user>by default make erk pr teleport checkout the PR on the current worktree. only opt into a new slot with a --new-slot flag. the behavior should be the same as erk br co</user>
+  <usage input_tokens="3" cache_creation_input_tokens="25503" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 25503}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me explore the current implementations of `erk pr teleport` and `erk br co` to understand what needs to change.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="25503" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 25503}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01ECJGNWGTEraz6uE2Unpcxx">
+    <param name="subagent_type">Explore</param>
+    <param name="description">Explore pr teleport and br co</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 666 chars]...d related gateway/service files. Be thorough - trace the full code path for both commands.</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="25503" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 25503}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01ECJGNWGTEraz6uE2Unpcxx">
+Excellent! Now I have a comprehensive understanding. Let me create a summary document with all the detailed findings:
+
+## Summary: Two Commands in Detail
+
+Based on my thorough exploration of the codebase and relevant documentation, here's what I found:
+
+### 1. **`erk pr teleport` Command**
+
+**Click Command Definition** (`/Users/schrockn/code/erk/src/erk/cli/commands/pr/teleport_cmd.py:35-44`):
+```python
+@click.command("teleport", cls=CommandWithHiddenOptions)
+@click.argument("pr_number", type=int)
+@click.option("--new-slot", is_flag=True, help="Create a new worktree slot")
+@click.option("-f", "--force", is_flag=True, help="Skip confirmation prompt")
+@click.option("--sync", is_flag=True, help="Run gt submit after teleport to sync with Graphite")
+@script_option
+@click.pass_obj
+def pr_teleport(
+    ctx: ErkContext, pr_number: int, new_slot: bool, force: bool, sync: bool, script: bool
+) -&gt; None:
+```
+
+**Parameters:**
+- `pr_number` (required): The PR number to teleport
+- `--new-slot`: Create a fresh worktree slot (default: in-place)
+- `-f, --force`: Skip confirmation before overwriting
+- `--sync`: Run `gt submit --no-interactive` after teleport
+- `--script`: Output only activation script
+
+**Core Behavior - Two Modes:**
+
+... [147 lines omitted] ...
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="2872" cache_read_input_tokens="25503" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2872}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me read the actual teleport command to see the current default behavior.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2872" cache_read_input_tokens="25503" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2872}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01EACkByx18D53oJbKqDnKYQ">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/pr/teleport_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2872" cache_read_input_tokens="25503" output_tokens="306" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2872, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01EACkByx18D53oJbKqDnKYQ">
+     1→"""Teleport a PR's remote state to the local branch.
+     2→
+     3→Remote-first counterpart to 'checkout'. While checkout preserves local state
+     4→(reusing existing worktrees, keeping unpushed commits), teleport force-resets
+     5→the local branch to match the remote exactly. Use teleport when a remote agent
+     6→has pushed commits and you want your local copy to match.
+     7→
+     8→Operates on the current worktree by default, with --new-slot to create a fresh
+     9→worktree slot.
+    10→"""
+    11→
+    12→from contextlib import nullcontext
+    13→from pathlib import Path
+    14→
+    15→import click
+    16→
+    17→from erk.cli.activation import (
+    18→    activation_config_activate_only,
+    19→    ensure_worktree_activate_script,
+    20→    print_activation_instructions,
+    21→)
+    22→from erk.cli.commands.checkout_helpers import (
+    23→    ensure_branch_has_worktree,
+    24→    navigate_and_display_checkout,
+    25→    script_error_handler,
+    26→)
+    27→from erk.cli.commands.pr.checkout_cmd import _fetch_and_update_branch
+    28→from erk.cli.ensure import Ensure
+    29→from erk.cli.help_formatter import CommandWithHiddenOptions, script_option
+    30→from erk.core.context import ErkContext
+
+... [338 lines omitted] ...
+
+    67→        ctx.console.error("Not in a git repository")
+    72→        ctx_manager = script_error_handler(ctx)
+    80→            ctx.console.error(
+    87→            ctx.console.error("Teleport is not supported for cross-repository (fork) PRs.")
+   219→    # Check if branch already has a worktree — navigate to it instead of erroring
+   343→    except RuntimeError:
+   358→        click.style("Warning: ", fg="yellow")
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="5288" cache_read_input_tokens="28375" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5288}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now let me read the branch checkout command to compare the exact mechanics.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="5288" cache_read_input_tokens="28375" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5288}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01EuTutqc3nUuaeCxrbJzz2W">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/branch/checkout_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5288" cache_read_input_tokens="28375" output_tokens="1000" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 5288, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01EuTutqc3nUuaeCxrbJzz2W">
+     1→"""Checkout command - find and switch to a worktree by branch name."""
+     2→
+     3→import contextlib
+     4→import sys
+     5→from pathlib import Path
+     6→
+     7→import click
+     8→
+     9→from erk.cli.activation import (
+    10→    activation_config_activate_only,
+    11→    ensure_worktree_activate_script,
+    12→    print_activation_instructions,
+    13→    render_activation_script,
+    14→)
+    15→from erk.cli.alias import alias
+    16→from erk.cli.commands.checkout_helpers import (
+    17→    display_sync_status,
+    18→    navigate_to_worktree,
+    19→    script_error_handler,
+    20→)
+    21→from erk.cli.commands.completions import complete_branch_names
+    22→from erk.cli.commands.pr.dispatch_helpers import sync_branch_to_sha
+    23→from erk.cli.commands.slot.common import (
+    24→    allocate_slot_for_branch,
+    25→    update_slot_assignment_tip,
+    26→)
+    27→from erk.cli.commands.wt.create_cmd import ensure_worktree_for_branch
+    28→from erk.cli.core import discover_repo_context
+    29→from erk.cli.github_parsing import parse_issue_identifier
+    30→from erk.cli.graphite import find_worktrees_containing_branch
+
+... [841 lines omitted] ...
+
+    42→    PlanValidationFailed,
+   438→                f"Warning: Rebase had conflicts. Worktree created but needs manual rebase.\n"
+   494→    handler = script_error_handler(ctx) if script else contextlib.nullcontext()
+   517→    """Implementation body for branch_checkout — separated for error wrapping."""
+   521→            "Error: Cannot specify both BRANCH and --for-plan.\n"
+   527→        user_output("Error: Must provide BRANCH argument or --for-plan option.")
+   531→        user_output("Error: --new-slot and --no-slot cannot be used together.")
+   549→            raise click.ClickException(f"PR #{pr_number} not found")
+   553→        if isinstance(plan_result, PlanValidationFailed):
+   554→            user_output(f"Error: {plan_result.message}")
+   560→        for warning in setup.warnings:
+   561→            user_output(click.style("Warning: ", fg="yellow") + warning)
+   570→            user_output("Error: Could not detect trunk branch.")
+   621→                        f'Error: Cannot create worktree for trunk branch "{trunk_branch}".\n'
+   644→                                f"Error: Branch '{branch}' does not exist.\n"
+   774→            raise click.ClickException(
+   814→            raise click.ClickException(
+   858→                f"Error: Internal state mismatch. Branch '{branch}' was allocated "
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="12932" cache_read_input_tokens="33663" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 12932}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now let me check the tests for teleport to understand the test surface.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="12932" cache_read_input_tokens="33663" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 12932}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01BfFFUqwZq7dxCpy5j1p7Gz">
+    <param name="pattern">**/test*teleport*</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="12932" cache_read_input_tokens="33663" output_tokens="1088" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 12932, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01BfFFUqwZq7dxCpy5j1p7Gz">
+/Users/schrockn/code/erk/tests/commands/pr/test_teleport.py
+  </tool_result>
+  <tool_use name="Read" id="toolu_01HzNFSzrChwdQ3cE2CNgMqq">
+    <param name="file_path">/Users/schrockn/code/erk/tests/commands/pr/test_teleport.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1108" cache_read_input_tokens="46595" output_tokens="77" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1108, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01HzNFSzrChwdQ3cE2CNgMqq">
+     1→"""Tests for erk pr teleport command."""
+     2→
+     3→from pathlib import Path
+     4→
+     5→from click.testing import CliRunner
+     6→
+     7→from erk.cli.commands.pr import pr_group
+     8→from erk_shared.gateway.git.abc import WorktreeInfo
+     9→from erk_shared.gateway.github.types import PRDetails
+    10→from erk_shared.gateway.graphite.types import BranchMetadata
+    11→from tests.fakes.gateway.git import FakeGit
+    12→from tests.fakes.gateway.github import FakeLocalGitHub
+    13→from tests.fakes.gateway.graphite import FakeGraphite
+    14→from tests.test_utils.context_builders import build_workspace_test_context
+    15→from tests.test_utils.env_helpers import erk_isolated_fs_env
+    16→
+    17→
+    18→def _make_pr_details(
+    19→    number: int,
+    20→    head_ref_name: str,
+    21→    *,
+    22→    is_cross_repository: bool = False,
+    23→    state: str = "OPEN",
+    24→    base_ref_name: str = "main",
+    25→) -&gt; PRDetails:
+    26→    return PRDetails(
+    27→        number=number,
+    28→        url=f"https://github.com/owner/repo/pull/{number}",
+    29→        title=f"PR #{number}",
+    30→        body="",
+
+... [421 lines omitted] ...
+
+    44→    """Teleport errors when PR doesn't exist."""
+    59→def test_teleport_cross_repo_errors() -&gt; None:
+   302→    """Teleport --new-slot navigates to existing worktree instead of erroring."""
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="13328" cache_read_input_tokens="46595" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 13328}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me check the checkout_helpers and slot/common modules for shared utilities.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="13328" cache_read_input_tokens="46595" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 13328}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01DusAFS2hQbj9MYFeu7DQuV">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/checkout_helpers.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="13328" cache_read_input_tokens="46595" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 13328}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01DusAFS2hQbj9MYFeu7DQuV">
+     1→"""Checkout navigation helpers - shared across checkout commands.
+     2→
+     3→This module is separate from navigation_helpers.py to avoid circular imports.
+     4→navigation_helpers imports from wt.create_cmd, which triggers wt/__init__.py,
+     5→which imports wt.checkout_cmd. By having checkout-specific helpers here,
+     6→we break that cycle.
+     7→"""
+     8→
+     9→import contextlib
+    10→import logging
+    11→import sys
+    12→from collections.abc import Generator, Sequence
+    13→from pathlib import Path
+    14→
+    15→import click
+    16→
+    17→from erk.cli.activation import (
+    18→    ensure_worktree_activate_script,
+    19→    render_activation_script,
+    20→    render_error_script,
+    21→)
+    22→from erk.cli.commands.slot.common import allocate_slot_for_branch
+    23→from erk.cli.core import worktree_path_for
+    24→from erk.core.context import ErkContext
+    25→from erk.core.repo_discovery import RepoContext
+    26→from erk_shared.output.output import user_output
+    27→
+    28→logger = logging.getLogger(__name__)
+    29→
+    30→
+
+... [299 lines omitted] ...
+
+    31→def _write_error_script_and_exit(ctx: ErkContext) -&gt; None:
+    32→    """Write a minimal error script and output its path, then exit 1.
+    34→    Used by ``script_error_handler`` to ensure ``source "$(erk br co --script)"``
+    35→    always receives a valid file path — even on failure — so the shell never
+    39→        render_error_script(),
+    41→        comment="checkout error",
+    48→def script_error_handler(ctx: ErkContext) -&gt; Generator[None]:
+    49→    """Catch errors in --script mode and emit an error script instead of empty stdout.
+    51→    Wraps the checkout body so that any error path produces a valid script
+    54→    ``source: no such file or directory:`` error.
+    56→    Exception handling:
+    58→    - ``SystemExit(non-zero)``: Error already printed via ``user_output()``;
+    59→      write error script and exit 1.
+    60→    - ``click.ClickException``: Format the error ourselves (Click's handler
+    61→      won't run since we catch first), write error script, exit 1.
+    62→    - ``RuntimeError``: Print to stderr, write error script, exit 1.
+    69→        _write_error_script_and_exit(ctx)
+    70→    except click.ClickException as exc:
+    71→        user_output(f"Error: {exc.format_message()}")
+    72→        _write_error_script_and_exit(ctx)
+    73→    except RuntimeError as exc:
+    74→        user_output(f"Error: {exc}")
+    75→        _write_error_script_and_exit(ctx)
+   116→    - Diverged: Warning with instructions
+   129→    # get_ahead_behind raises RuntimeError on subprocess failure (e.g., network issues).
+   132→    except RuntimeError:
+   133→        logger.debug("Failed to get ahead/behind for %s on %s", branch, worktree_path)
+   143→        # Diverged - most important case, needs warning
+   144→        warning = click.style("⚠ Local has diverged from origin:", fg="yellow")
+   146→        user_output(f"  {warning} {styled_sync}")
+  </tool_result>
+  <tool_use name="Read" id="toolu_0146PD1b639KSr4o94KYngBS">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/slot/common.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="13328" cache_read_input_tokens="46595" output_tokens="5287" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 13328, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0146PD1b639KSr4o94KYngBS">
+     1→"""Shared utilities for slot commands."""
+     2→
+     3→import re
+     4→import shutil
+     5→from dataclasses import dataclass
+     6→from pathlib import Path
+     7→
+     8→import click
+     9→
+    10→from erk.cli.activation import write_worktree_activate_script
+    11→from erk.core.context import ErkContext
+    12→from erk.core.repo_discovery import RepoContext, ensure_erk_metadata_dir
+    13→from erk.core.worktree_pool import PoolState, SlotAssignment, load_pool_state, save_pool_state
+    14→from erk_shared.gateway.console.abc import Console
+    15→from erk_shared.gateway.git.abc import Git
+    16→from erk_shared.impl_folder import IMPL_DIR_RELATIVE
+    17→from erk_shared.output.output import user_output
+    18→
+    19→
+    20→@dataclass(frozen=True)
+    21→class SlotAllocationResult:
+    22→    """Result of allocating a slot for a branch."""
+    23→
+    24→    slot_name: str
+    25→    worktree_path: Path
+    26→    already_assigned: bool  # True if branch was already in a slot
+    27→
+    28→
+    29→# Default pool configuration
+    30→DEFAULT_POOL_SIZE = 4
+
+... [701 lines omitted] ...
+
+   314→    3. Worktree has wrong branch → fix it or error if uncommitted changes
+   327→        - both None: Should not happen (raises SystemExit on error)
+   365→            click.style("Error: ", fg="red")
+   453→    """Handle pool-full condition: prompt to unassign oldest or error.
+   458→    - If non-interactive (no TTY): error with instructions
+   466→        SlotAssignment to unassign, or None if user declined/error
+   478→            f"Error: Pool is full ({state.pool_size} slots). "
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="18909" cache_read_input_tokens="59923" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 18909}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I have a thorough understanding of both commands. Let me write the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="18909" cache_read_input_tokens="59923" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 18909}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_011orFaLhnvauESXPwYYLGy6">
+    <param name="file_path">/Users/schrockn/.claude/plans/ethereal-orbiting-chipmunk.md</param>
+    <param name="content"># Plan: Align `erk pr teleport` default behavior with `erk br co`
+
+## Context
+
+`erk pr tel...[truncated 3013 chars]...r lint
+3. Run `uv run ty check src/erk/cli/commands/pr/teleport_cmd.py` for type checking
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="18909" cache_read_input_tokens="59923" output_tokens="2873" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 18909, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_011orFaLhnvauESXPwYYLGy6">
+File created successfully at: /Users/schrockn/.claude/plans/ethereal-orbiting-chipmunk.md
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_01XKEScWuHGqMYqsjwmQbwMS">
+    <param name="query">select:ExitPlanMode</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2875" cache_read_input_tokens="78832" output_tokens="78" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2875, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01XKEScWuHGqMYqsjwmQbwMS">
+
+  </tool_result>
+  <assistant>
+
+The change is focused: `_teleport_in_place` already does in-place checkout by default, but it's missing slot awareness. When you teleport while in a slot-assigned worktree, the slot assignment should be updated to track the new branch (stack-in-place), matching what `erk br co` does.
+
+The core addition is ~10 lines after the force-reset block in `_teleport_in_place` to load pool state and call `update_slot_assignment_tip` if in a managed slot.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="3613" cache_read_input_tokens="78832" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3613}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ExitPlanMode" id="toolu_017oKv4TyHcdcFzjAPqkfhj2">
+    <param name="allowedPrompts">[{'tool': 'Bash', 'prompt': 'run tests'}, {'tool': 'Bash', 'prompt': 'run linter'}, {'tool': 'Bash', 'prompt': 'run type checker'}]</param>
+    <param name="plan"># Plan: Align `erk pr teleport` default behavior with `erk br co`
+
+## Context
+
+`erk pr tel...[truncated 3013 chars]...r lint
+3. Run `uv run ty check src/erk/cli/commands/pr/teleport_cmd.py` for type checking
+</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="3613" cache_read_input_tokens="78832" output_tokens="225" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3613, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_017oKv4TyHcdcFzjAPqkfhj2">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/ethereal-orbiting-chipmunk.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Plan: Align `erk pr teleport` default behavior with `erk br co`
+Current context: (wt:erk) (br:master)\n\nWhat would you like to do with this plan?"
+  header: "br:master"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create new branch and planned PR. Stays on current branch." - Create a new branch, save plan as draft PR.
+  2. "Implement without saving" - Implement directly on the current branch without saving a plan PR.
+  3. "View/Edit the Plan" - Open plan in editor to review or modify before deciding.
+
+⚠️  WARNING: Currently on 'master'. We strongly discourage implementing directly on the trunk branch. Consider saving the plan and implementing in a dedicated worktree instead.
+
+If user chooses 'Create new branch and planned PR':
+  1. Run /erk:plan-save
+  2. Call ExitPlanMode to end the planning session.
+
+If user chooses 'Implement without saving':
+  1. Create implement-now marker:
+     erk exec marker create --session-id d3a65456-4c71-422d-94ec-c0f65c8778d0 \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly on the current branch.
+     Do NOT run 'erk exec setup-impl' or create a new branch.
+
+... [8 lines omitted] ...
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="980" cache_read_input_tokens="82445" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 980}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Here's the plan:
+
+---
+
+# Plan: Align `erk pr teleport` default behavior with `erk br co`
+
+## Context
+
+`erk pr teleport` and `erk br co` both support in-place checkout (default) and `--new-slot`. However, `teleport`'s in-place path lacks the slot awareness that `erk br co` has. Specifically, `erk br co` does stack-in-place when the user is in a slot-assigned worktree (updates the slot assignment to the new branch). Teleport ignores slots entirely in its default path.
+
+The user wants the default checkout/navigation behavior of `erk pr teleport` to match `erk br co`, while preserving teleport's core differentiator: force-resetting the local branch to match remote.
+
+## Changes
+
+### 1. Add slot awareness to `_teleport_in_place`
+
+**File:** `src/erk/cli/commands/pr/teleport_cmd.py`
+
+After force-resetting the branch to match remote, add the three-path slot logic from `erk br co` (lines 650-762 of `checkout_cmd.py`):
+
+1. Load pool state and check if we're in a slot (`find_assignment_by_worktree` from `slot/common.py`)
+2. If in a slot: call `update_slot_assignment_tip` to update the slot assignment to the teleported branch
+3. If not in a slot: checkout in current worktree (current behavior, unchanged)
+
+### 2. `--new-slot` path - no changes needed
+
+Already uses `ensure_branch_has_worktree` which internally calls `allocate_slot_for_branch`.
+
+### 3. Add test for slot awareness
+
+Add `test_teleport_in_place_updates_slot_assignment` to verify slot assignment is updated when teleporting in a managed slot.
+
+## Files to modify
+
+- `src/erk/cli/commands/pr/teleport_cmd.py`
+- `tests/commands/pr/test_teleport.py`
+
+---</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="980" cache_read_input_tokens="82445" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 980}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_01Lpnu2iCR9iwFVHgqxbYQYB">
+    <param name="query">select:AskUserQuestion</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="980" cache_read_input_tokens="82445" output_tokens="607" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 980, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Lpnu2iCR9iwFVHgqxbYQYB">
+
+  </tool_result>
+  <tool_use name="AskUserQuestion" id="toolu_01AUHu59aJ21PFzQCQzaqFU6">
+    <param name="questions">[{'question': '📋 Plan: Align `erk pr teleport` default behavior with `erk br co`\nCurrent ...[truncated 367 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1863" cache_read_input_tokens="83425" output_tokens="218" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1863, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01AUHu59aJ21PFzQCQzaqFU6">
+User has answered your questions: "📋 Plan: Align `erk pr teleport` default behavior with `erk br co`
+Current context: (wt:erk) (br:master)
+
+What would you like to do with this plan?"="make sure to maximize the amount of code reuse and remove duplication" user notes: make sure to maximize the amount of code reuse and remove duplication. You can now continue with the user's answers in mind.
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="334" cache_read_input_tokens="85288" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 334}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Good feedback. Let me revise the plan to maximize code reuse and reduce duplication within teleport, then ask again.
+
+Looking at the current code, both `_teleport_in_place` and `_teleport_new_slot` have nearly identical "branch already in worktree → navigate" blocks (lines 132-166 and 219-252). Let me revise.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="334" cache_read_input_tokens="85288" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 334}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01DvojomGoofNntK3a96YmJa">
+    <param name="file_path">/Users/schrockn/.claude/plans/ethereal-orbiting-chipmunk.md</param>
+    <param name="content"># Plan: Align `erk pr teleport` default behavior with `erk br co`
+
+## Context
+
+`erk pr tel...[truncated 2560 chars]...commands/pr/teleport_cmd.py`
+3. `uv run ty check src/erk/cli/commands/pr/teleport_cmd.py`
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="334" cache_read_input_tokens="85288" output_tokens="1677" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 334, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01DvojomGoofNntK3a96YmJa">
+The file /Users/schrockn/.claude/plans/ethereal-orbiting-chipmunk.md has been updated successfully.
+  </tool_result>
+  <tool_use name="AskUserQuestion" id="toolu_017e22bQB72UMo61iTM7wnoc">
+    <param name="questions">[{'question': '📋 Plan: Align `erk pr teleport` default behavior with `erk br co`\nCurrent ...[truncated 367 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1920" cache_read_input_tokens="85622" output_tokens="217" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1920, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_017e22bQB72UMo61iTM7wnoc">
+User has answered your questions: "📋 Plan: Align `erk pr teleport` default behavior with `erk br co`
+Current context: (wt:erk) (br:master)
+
+What would you like to do with this plan?"="Save as planned PR". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="Skill" id="toolu_01H46jVcDNxH8o6EnD8soGoL">
+    <param name="skill">erk:plan-save</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="303" cache_read_input_tokens="87542" output_tokens="57" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 303, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01H46jVcDNxH8o6EnD8soGoL">
+Launching skill: erk:plan-save
+  </tool_result>
+  <user># /erk:plan-save
+
+Save the current session's plan to GitHub with session context.
+
+## Usage
+
+```bash
+/erk:plan-save                           # Standalone plan
+/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+/erk:plan-save --objective=123           # Explicit objective link (overrides marker)
+/erk:plan-save --current-branch          # Use current branch instead of creating new plnd/ branch
+```
+
+Objective linking: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command. Use `--objective=&lt;number&gt;` to override the marker or provide the link when no marker exists (e.g., during replan).
+
+## Plan Storage
+
+The plan is saved using the configured backend:
+
+- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+  The JSON output contract includes `pr_number`, `pr_url`, `title`, `branch_name`, `plan_backend`.
+
+## Agent Instructions
+
+### Step 1: Parse Arguments
+
+Check `` for the `--plan-type`, `--objective`, and `--current-branch` flags:
+
+```
+If  contains "--plan-type=&lt;type&gt;":
+  - Extract the type (standard or learn)
+  - Store as PLAN_TYPE variable
+  - Set PLAN_TYPE_FLAG to "--plan-type=&lt;type&gt;"
+Else:
+  - Set PLAN_TYPE_FLAG to empty string
+
+If  contains "--objective=&lt;number&gt;":
+  - Extract the number
+  - Set OBJECTIVE_FLAG to "--objective=&lt;number&gt;"
+Else:
+  - Set OBJECTIVE_FLAG to empty string
+
+If  contains "--current-branch":
+  - Set CURRENT_BRANCH_FLAG to "--current-branch"
+Else:
+  - Set CURRENT_BRANCH_FLAG to empty string
+```
+
+### Step 2: Generate Branch Slug
+
+**Skip this step if `--current-branch` was passed.** The current branch is used directly.
+
+Before saving, generate a branch slug from the plan title. Read the plan title from the plan file you wrote in plan mode (the first `# ` heading).
+
+Generate a branch slug from the title:
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+
+Store the result as `BRANCH_SLUG`.
+
+### Step 3: Generate Plan Summary
+
+Write a concise 2-3 sentence summary of the plan. This summary will be visible
+at the top of the PR description (above the collapsed full plan).
+
+Guidelines:
+
+- Focus on WHAT the plan does and WHY
+- Do not repeat the title
+- Plain text, no markdown headers or formatting
+- Avoid special shell characters (backticks, dollar signs)
+- Store as PLAN_SUMMARY
+
+### Step 4: Run Save Command
+
+Run this command with the session ID, summary, and optional flags.
+
+If CURRENT_BRANCH_FLAG is set, pass `--current-branch` (no branch slug needed):
+
+```bash
+erk exec plan-save --format json --session-id="d3a65456-4c71-422d-94ec-c0f65c8778d0" --current-branch --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Otherwise, pass the branch slug:
+
+```bash
+erk exec plan-save --format json --session-id="d3a65456-4c71-422d-94ec-c0f65c8778d0" --branch-slug="${BRANCH_SLUG}" --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Parse the JSON output to extract `pr_number` for verification in Step 5.
+
+If the command fails, display the error and stop.
+
+### Step 5: Verify Objective Link (if applicable)
+
+**Only run this step if `objective_issue` is non-null in the JSON output from Step 4.**
+
+Verify the objective link was saved correctly:
+
+```bash
+erk exec get-plan-metadata &lt;pr_number&gt; objective_issue
+```
+
+Parse the JSON response:
+
+- If `success: true` and `value` matches the expected objective number: verification passed
+- If `success: false` or value doesn't match: verification failed
+
+**On verification success:**
+
+Display: `Verified objective link: #&lt;objective-number&gt;`
+
+**On verification failure:**
+
+Display error and remediation steps:
+
+```
+ERROR: Objective link verification failed
+Expected objective: #&lt;expected&gt;
+Actual: &lt;actual-or-null&gt;
+
+The plan was saved but without the correct objective link.
+Fix: Close draft PR #&lt;pr_number&gt;,
+ensure the objective-context marker exists, and re-run /erk:plan-save.
+```
+
+Exit without creating the plan-saved marker. The session continues so the user can retry.
+
+### Step 6: Update Objective Roadmap (if objective linked)
+
+**Only run this step if `objective_issue` was non-null in JSON output and verification passed.**
+
+Update the objective's roadmap table to show that a plan has been created for this node:
+
+1. **Read the roadmap node marker** to get the node ID:
+
+```bash
+step_id=$(erk exec marker read --session-id "d3a65456-4c71-422d-94ec-c0f65c8778d0" roadmap-step)
+```
+
+If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-plan`.
+
+2. **Update the roadmap table** using the dedicated command:
+
+```bash
+erk exec update-objective-node &lt;objective-issue&gt; --node "$step_id" --pr "#&lt;pr_number&gt;" --status in_progress
+```
+
+This atomically fetches the objective body, finds the matching node row, sets the Status cell to `in-progress`, and writes the updated body back.
+
+3. **Report the update:**
+
+Display: `Updated objective #&lt;objective-issue&gt; roadmap: node &lt;step_id&gt; → PR #&lt;pr_number&gt;`
+
+**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+
+### Step 7: Display Results
+
+**If JSON contains `skipped_duplicate: true`:**
+
+Display: `Plan already saved as PR #&lt;pr_number&gt; (duplicate skipped)`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options.
+
+**Otherwise, on success**, display:
+
+```
+Plan "&lt;title&gt;" saved as draft PR #&lt;pr_number&gt;
+URL: &lt;issue_url&gt;
+```
+
+If objective was verified, also display: `Verified objective link: #&lt;objective-number&gt;`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options
+(implement in current worktree, implement in new worktree, or done).
+
+On failure, display the error message and suggest:
+
+- Checking that a plan exists (enter Plan mode and exit it first)
+- Verifying GitHub CLI authentication (`gh auth status`)
+- Checking network connectivity
+
+### Step 5: Push Planning Session
+
+After saving successfully, push the planning session for cross-machine learning.
+This captures the in-progress session state so it's available even if implementation
+happens on a different machine.
+
+Run `erk exec capture-session-info` to get the session file path, then push it:
+
+```bash
+erk exec upload-impl-session --session-id "d3a65456-4c71-422d-94ec-c0f65c8778d0" 2&gt;/dev/null || true
+```
+
+If the plan was saved successfully and `pr_number` is known, use push-session directly
+for better stage tracking:
+
+```bash
+erk exec push-session \
+    --session-file "&lt;session_file_path&gt;" \
+    --session-id "d3a65456-4c71-422d-94ec-c0f65c8778d0" \
+    --stage planning \
+    --source local \
+    --pr-number &lt;pr_number&gt; \
+    2&gt;/dev/null || true
+```
+
+Where `&lt;session_file_path&gt;` is obtained from `erk exec capture-session-info` output
+and `&lt;pr_number&gt;` is from Step 2's JSON output.
+
+**Note:** This is non-critical. If it fails, the plan was still saved successfully.
+The `2&gt;/dev/null || true` ensures graceful degradation.
+
+## Session Tracking
+
+After successfully saving a plan, the plan number is stored in a marker file that enables automatic plan updates in the same session.
+
+**To read the saved plan number:**
+
+```bash
+erk exec marker read --session-id "d3a65456-4c71-422d-94ec-c0f65c8778d0" plan-saved-issue
+```
+
+This returns the plan number (exit code 0) or exits with code 1 if no plan was saved in this session.
+</user>
+  <assistant>
+
+**Branch slug:** `teleport-slot-awareness`
+
+**Summary:** Adds slot awareness to erk pr teleport's default in-place path, matching erk br co's stack-in-place behavior. Also extracts duplicated "branch already in worktree" navigation logic into a shared helper to reduce code duplication between the two teleport paths.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="2290" cache_read_input_tokens="87845" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2290}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_017f3gXA5Tpho2oAaAgxbU9c">
+    <param name="command">erk exec plan-save --format json --session-id="d3a65456-4c71-422d-94ec-c0f65c8778d0" --bra...[truncated 186 chars]...ion logic into a shared helper to reduce code duplication between the two teleport paths."</param>
+    <param name="description">Save plan as draft PR</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2290" cache_read_input_tokens="87845" output_tokens="298" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2290, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_017f3gXA5Tpho2oAaAgxbU9c">
+{"success": true, "pr_number": 9215, "pr_url": "https://github.com/dagster-io/erk/pull/9215", "title": "[erk-pr] Plan: Align `erk pr teleport` default behavior with `erk br co`", "branch_name": "plnd/teleport-slot-awareness-03-12-1305", "plan_backend": "planned_pr", "objective_issue": null, "archived_to": "/Users/schrockn/code/erk/.erk/scratch/sessions/d3a65456-4c71-422d-94ec-c0f65c8778d0/plan_snapshots/000001-a43768ae"}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01BG4bUSjH3xZZBPedYqYytQ">
+    <param name="command">erk exec capture-session-info 2&gt;/dev/null</param>
+    <param name="description">Get session file path</param>
+    <param name="timeout">10000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="471" cache_read_input_tokens="90135" output_tokens="103" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 471, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01BG4bUSjH3xZZBPedYqYytQ">
+SESSION_ID=d3a65456-4c71-422d-94ec-c0f65c8778d0
+SESSION_FILE=/Users/schrockn/.claude/projects/-Users-schrockn-code-erk/d3a65456-4c71-422d-94ec-c0f65c8778d0.jsonl
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01FwwhRCfgonZANMjGFn2Wwn">
+    <param name="command">erk exec push-session --session-file "/Users/schrockn/.claude/projects/-Users-schrockn-cod...[truncated 60 chars]...2d-94ec-c0f65c8778d0" --stage planning --source local --pr-number 9215 2&gt;/dev/null || true</param>
+    <param name="description">Push planning session</param>
+    <param name="timeout">15000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1400" cache_read_input_tokens="90606" output_tokens="203" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1400, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+</session>
